@@ -1,5 +1,8 @@
 {
   "name": "@ncfritz/onympus-model",
+  "description": "Contains the model and request/response types for Olympus",
+  "repository": "https://github.com/ncfritz/olympus-model.git",
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
   "version": "1.0.0",
   "main": "build/dist/index.js",
   "types": "build/dist/index.d.ts",
