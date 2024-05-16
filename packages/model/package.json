@@ -1,0 +1,59 @@
+{
+  "name": "@ncfritz/onympus-model",
+  "version": "1.0.0",
+  "main": "build/dist/index.js",
+  "types": "build/dist/index.d.ts",
+  "files": [
+    "build/dist/**"
+  ],
+  "scripts": {
+    "clean": "rm -rf ./build/*",
+    "prebuild": "rimraf dist",
+    "build": "nest build",
+    "lint": "eslint ./src",
+    "lintfix": "eslint ./src --fix"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.3.3",
+    "@nestjs/core": "^10.3.3",
+    "@nestjs/swagger": "^7.3.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "moment": "^2.30.1",
+    "reflect-metadata": "^0.2.1",
+    "rimraf": "^5.0.5",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.3.2",
+    "@nestjs/schematics": "^10.1.1",
+    "@types/node": "^20.11.20",
+    "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "prettier": "^3.2.5",
+    "semantic-release": "^23.1.1",
+    "source-map-support": "^0.5.21",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.3.3"
+  },
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "prettier",
+      "plugin:prettier/recommended"
+    ],
+    "env": {
+      "node": true
+    }
+  }
+}
