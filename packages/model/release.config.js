@@ -27,12 +27,7 @@ module.exports = {
         changelogFile: "./CHANGELOG.md",
       },
     ],
-    [
-      "@semantic-release/release-notes-generator",
-      {
-        preset: "ember",
-      },
-    ],
+    "@semantic-release/release-notes-generator",
     [
       "@semantic-release/npm",
       {
