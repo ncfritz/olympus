@@ -1,5 +1,5 @@
 {
-  "name": "@ncfritz/onympus-model",
+  "name": "@ncfritz/olympus-model",
   "description": "Contains the model and request/response types for Olympus",
   "version": "1.1.0",
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
