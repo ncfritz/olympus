@@ -16,7 +16,7 @@ module.exports = {
           { type: "Update", release: "patch" },
           { type: "Breaking", release: "minor" },
           { type: "Build", release: "patch" },
-          { type: "Upgrade", release: "minor" },
+          { type: "Upgrade", release: "patch" },
           { type: "Chore", release: "patch" },
           { scope: "no-release", release: false },
         ],
