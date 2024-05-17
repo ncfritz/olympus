@@ -7,7 +7,7 @@ module.exports = {
     [
       "@semantic-release/commit-analyzer",
       {
-        preset: "ember",
+        preset: "eslint",
         releaseRules: [
           { type: "Docs", scope: "README", release: "patch" },
           { type: "Fix", release: "minor" },
@@ -25,7 +25,7 @@ module.exports = {
     [
       "@semantic-release/release-notes-generator",
       {
-        preset: "ember",
+        preset: "eslint",
         presetConfig: {
           types: [
             {
