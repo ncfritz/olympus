@@ -7,7 +7,7 @@ module.exports = {
     [
       "@semantic-release/commit-analyzer",
       {
-        preset: "eslint",
+        preset: "conventionalcommits",
         releaseRules: [
           { type: "Docs", release: "patch" },
           { type: "Fix", release: "minor" },
@@ -25,51 +25,51 @@ module.exports = {
     [
       "@semantic-release/release-notes-generator",
       {
-        preset: "eslint",
+        preset: "conventionalcommits",
         presetConfig: {
           types: [
             {
-              type: "Docs",
+              type: "docs",
               section: ":memo: Documentation",
               hidden: false,
             },
             {
-              type: "Fix",
-              section: ":bug: Fixes",
+              type: "fix",
+              section: ":bug: Bug Fixes",
               hidden: false,
             },
             {
-              type: "New",
+              type: "new",
               section: ":sparkles: New Components",
               hidden: false,
             },
             {
-              type: "Feature",
+              type: "feature",
               section: ":fire: New Features",
               hidden: false,
             },
             {
-              type: "Update",
+              type: "update",
               section: ":wrench: Updates",
               hidden: false,
             },
             {
-              type: "Breaking",
+              type: "breaking",
               section: ":boom: Breaking Changes",
               hidden: false,
             },
             {
-              type: "Build",
+              type: "build",
               section: ":rocket: Build Changes",
               hidden: false,
             },
             {
-              type: "Upgrade",
+              type: "upgrade",
               section: ":package: Package Upgrades",
               hidden: false,
             },
             {
-              type: "Chore",
+              type: "chore",
               hidden: true,
             },
           ],
