@@ -10,6 +10,7 @@
     "build/dist/**"
   ],
   "scripts": {
+    "prepare": "is-ci || husky install",
     "clean": "rm -rf ./build/*",
     "prebuild": "rimraf dist",
     "build": "nest build",
@@ -39,6 +40,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
     "husky": "^9.0.11",
+    "is-ci": "^3.0.1",
     "prettier": "^3.2.5",
     "semantic-release": "^23.1.1",
     "source-map-support": "^0.5.21",
