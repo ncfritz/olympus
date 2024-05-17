@@ -9,7 +9,7 @@ module.exports = {
       {
         preset: "eslint",
         releaseRules: [
-          { type: "Docs", scope: "README", release: "patch" },
+          { type: "Docs", release: "patch" },
           { type: "Fix", release: "minor" },
           { type: "New", release: "minor" },
           { type: "Feature", release: "minor" },
