@@ -41,5 +41,13 @@ module.exports = {
         assets: ["dist/*.tgz"],
       },
     ],
+    [
+      "@semantic-release/git",
+      {
+        assets: ["package.json", "CHANGELOG.md"],
+        message:
+          "Chore: ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
+      },
+    ],
   ],
 };
