@@ -9,11 +9,12 @@ module.exports = {
       {
         preset: "ember",
         releaseRules: [
-          { type: "Feature", scope: "README", release: "patch" },
+          { type: "Docs", scope: "README", release: "patch" },
+          { type: "Fix", release: "minor" },
+          { type: "New", release: "minor" },
+          { type: "Feature", release: "minor" },
           { type: "Update", release: "patch" },
-          { type: "New", release: "minor" },
           { type: "Breaking", release: "minor" },
-          { type: "New", release: "minor" },
           { type: "Build", release: "patch" },
           { type: "Upgrade", release: "minor" },
           { type: "Chore", release: "patch" },
@@ -22,12 +23,59 @@ module.exports = {
       },
     ],
     [
-      "@semantic-release/changelog",
+      "@semantic-release/release-notes-generator",
       {
-        changelogFile: "./CHANGELOG.md",
+        preset: "ember",
+        presetConfig: {
+          types: [
+            {
+              type: "Docs",
+              section: ":memo: Documentation",
+              hidden: false,
+            },
+            {
+              type: "Fix",
+              section: ":bug: Fixes",
+              hidden: false,
+            },
+            {
+              type: "New",
+              section: ":sparkles: New Components",
+              hidden: false,
+            },
+            {
+              type: "Feature",
+              section: ":fire: New Features",
+              hidden: false,
+            },
+            {
+              type: "Update",
+              section: ":wrench: Updates",
+              hidden: false,
+            },
+            {
+              type: "Breaking",
+              section: ":boom: Breaking Changes",
+              hidden: false,
+            },
+            {
+              type: "Build",
+              section: ":rocket: Build Changes",
+              hidden: false,
+            },
+            {
+              type: "Upgrade",
+              section: ":package: Package Upgrades",
+              hidden: false,
+            },
+            {
+              type: "Chore",
+              hidden: true,
+            },
+          ],
+        },
       },
     ],
-    "@semantic-release/release-notes-generator",
     [
       "@semantic-release/npm",
       {
@@ -44,7 +92,7 @@ module.exports = {
     [
       "@semantic-release/git",
       {
-        assets: ["package.json", "CHANGELOG.md"],
+        assets: ["package.json"],
         message:
           "Chore: ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
       },
