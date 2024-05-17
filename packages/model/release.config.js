@@ -21,19 +21,24 @@ module.exports = {
         ],
       },
     ],
-    "@semantic-release/release-notes-generator",
     [
-      "@semantic-release/git",
+      "@semantic-release/changelog",
       {
-        assets: ["dist/**/*.{js,css}", "docs", "package.json"],
-        message:
-          "Chore: ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
+        changelogFile: "./CHANGELOG.md",
       },
     ],
+    "@semantic-release/release-notes-generator",
     [
       "@semantic-release/github",
       {
-        assets: ["./build/dist/**/*.js", "./build/dist/**/*.d.ts"],
+        assets: ["README.md", "CHANGELOG.md", "dist", "package.json"],
+      },
+    ],
+    [
+      "@semantic-release/git",
+      {
+        message:
+          "Chore: ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
       },
     ],
   ],
