@@ -1,0 +1,82 @@
+{
+  "name": "@ncfritz/olympus-api",
+  "description": "REST API for Olympus",
+  "version": "1.0.0",
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ncfritz/olympus-api.git"
+  },
+  "main": "dist/main.js",
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "nest build",
+    "lint": "eslint ./src",
+    "lintfix": "eslint ./src --fix",
+    "start": "nest start",
+    "start:prod": "node dist/main",
+    "dev": "nest start --watch"
+  },
+  "dependencies": {
+    "@golevelup/nestjs-graphql-request": "^0.2.2",
+    "@golevelup/nestjs-rabbitmq": "^5.3.0",
+    "@nestjs/apollo": "^12.1.0",
+    "@nestjs/common": "^10.3.8",
+    "@nestjs/core": "^10.3.8",
+    "@nestjs/graphql": "^12.1.1",
+    "@nestjs/platform-express": "^10.3.8",
+    "@nestjs/swagger": "^7.3.1",
+    "apollo-server-express": "^3.13.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "cookie-parser": "^1.4.6",
+    "graphql": "^16.8.1",
+    "jose": "^5.3.0",
+    "moment": "^2.30.1",
+    "moment-timezone": "^0.5.45",
+    "pretty-bytes": "^5.5.0",
+    "pretty-ms": "^7.0.1",
+    "reflect-metadata": "^0.2.2",
+    "speakeasy": "^2.0.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@ncfritz/olympus-model": "latest",
+    "@nestjs/cli": "^10.3.2",
+    "@nestjs/schematics": "^10.1.1",
+    "@types/amqplib": "^0.10.5",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "@types/speakeasy": "^2.0.10",
+    "@types/uuid": "^9.0.8",
+    "@typescript-eslint/eslint-plugin": "^7.9.0",
+    "@typescript-eslint/parser": "^7.9.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.7",
+    "rxjs": "^7.8.1",
+    "source-map-support": "^0.5.21",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.4.5"
+  },
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "prettier",
+      "plugin:prettier/recommended"
+    ],
+    "env": {
+      "node": true
+    }
+  }
+}

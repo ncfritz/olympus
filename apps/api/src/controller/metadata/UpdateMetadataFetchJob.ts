@@ -1,0 +1,136 @@
+import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
+import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
+import {
+  MetadataFetchJob,
+  MetadataFetchJobStatus,
+  UpdateMetadataFetchJobRequest,
+  UpdateMetadataFetchJobResponse,
+} from "@ncfritz/olympus-model";
+import {
+  Body,
+  ClassSerializerInterceptor,
+  Controller,
+  HttpStatus,
+  Param,
+  Put,
+  Res,
+  UseInterceptors,
+} from "@nestjs/common";
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiProduces,
+  ApiTags,
+} from "@nestjs/swagger";
+import { Response } from "express";
+import { gql, GraphQLClient } from "graphql-request";
+import { toDomainObject } from "../../convert/metadata/MetadataFetchJobConverter";
+import { GraphQlMetadataFetchJob } from "../../types/batchJobs";
+import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+
+type GraphQlUpdateMetadataFetchJobResponse = {
+  update_dionysus_metadata_fetch_status_by_pk: GraphQlMetadataFetchJob;
+};
+
+@Controller()
+export class UpdateMetadataFetchJobController {
+  constructor(
+    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
+    private readonly amqpConnection: AmqpConnection,
+  ) {}
+
+  @Put("/v1/metadata/fetchJob/:entityId/:entityType")
+  @ApiOperation({
+    summary: "Updates an existing metadata fetch job",
+    description: "Description",
+    operationId: "DescriberJob",
+  })
+  @ApiTags("Metadata")
+  @ApiProduces("application/json")
+  @ApiConsumes("application/json")
+  @ApiBody({
+    type: UpdateMetadataFetchJobRequest,
+    description: "Input for the UpdateMetadataFetchJob operation",
+  })
+  @ApiParam({
+    name: "entityId",
+    description: "The ID of the job to update",
+    type: String,
+  })
+  @ApiParam({
+    name: "entityType",
+    description: "The type the job to update",
+    type: String,
+  })
+  @ApiOkResponse({
+    description: "The record has been successfully updated.",
+    type: UpdateMetadataFetchJobResponse,
+  })
+  @ApiStandardErrorResponses()
+  @UseInterceptors(ClassSerializerInterceptor)
+  async handle(
+    @Param("entityId") entityId: number,
+    @Param("entityType") entityType: string,
+    @Body() request: Partial<UpdateMetadataFetchJobRequest>,
+    @Res() response: Response,
+  ): Promise<void> {
+    const updateRequest = gql`
+      mutation UpdateMetadataFetchJob(
+        $id: String!
+        $type: String!
+        $changes: dionysus_metadata_fetch_status_set_input = {}
+      ) {
+        update_dionysus_metadata_fetch_status_by_pk(
+          pk_columns: { id: $id, type: $type }
+          _set: $changes
+        ) {
+          id
+          type
+          status
+          createdTime
+          lastUpdatedTime
+          lastFetchedTime
+          ttl
+          jitter
+        }
+      }
+    `;
+
+    const updateResponse =
+      await this.graphQLClient.request<GraphQlUpdateMetadataFetchJobResponse>(
+        updateRequest,
+        {
+          id: entityId,
+          type: entityType,
+          changes: request.job,
+        },
+      );
+
+    const updatedJob: MetadataFetchJob = toDomainObject(
+      updateResponse.update_dionysus_metadata_fetch_status_by_pk,
+    );
+
+    if (
+      updatedJob.status === MetadataFetchJobStatus.QUEUED &&
+      request.publishNotification
+    ) {
+      this.amqpConnection.publish(
+        "metadataJob.trigger",
+        `jobType.${updatedJob.type}`,
+        {
+          entityId: updatedJob.id,
+          entityType: updatedJob.type,
+        },
+      );
+    }
+
+    const responseBody: UpdateMetadataFetchJobResponse = {
+      job: updatedJob,
+    };
+
+    response.status(HttpStatus.OK).send(responseBody);
+  }
+}
