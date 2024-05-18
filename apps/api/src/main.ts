@@ -6,6 +6,10 @@ import * as bodyParser from "body-parser";
 import { AppModule } from "./module/AppModule";
 
 async function bootstrap() {
+  const enableApiExplorer =
+    process.env.NODE_ENV !== "production" ||
+    process.env.ENABLE_API_EXPLORER === "true";
+
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
   app.use(cookieParser());
@@ -18,18 +22,22 @@ async function bootstrap() {
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
   });
 
-  const config = new DocumentBuilder()
-    .setTitle("dionysus-api")
-    .setDescription("Dionysus API")
-    .setVersion("1.0")
-    .setContact("Neil Fritz", "https://ncfritz.net", "ncfritz@ncfritz.net")
-    .addTag("Dionysus")
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
+  if (enableApiExplorer) {
+    const config = new DocumentBuilder()
+      .setTitle("dionysus-api")
+      .setDescription("Dionysus API")
+      .setVersion("1.0")
+      .setContact("Neil Fritz", "https://ncfritz.net", "ncfritz@ncfritz.net")
+      .addTag("Dionysus")
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup("/api-spec", app, document);
+    SwaggerModule.setup("/api-spec", app, document);
+  }
 
   await app.listen(3001);
 }
 
-bootstrap();
+bootstrap().then(() => {
+  console.log("🔥🔥🔥 Olympus API bootstrap complete.");
+});

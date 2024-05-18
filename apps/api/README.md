@@ -8,6 +8,11 @@ The API can be run as a Docker container and will expose port 3000.
 Environment variables are used to configure the NestJS modules that 
 connect to various external data sources:
 
+##### General
+| Variable            | Usage                                                                                                                                                                    | Default Value |
+|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| ENABLE_API_EXPLORER | Enables the Swagger explorer interface.  This MUST be set to `true` if `NODE_ENV` is `production`.  By default the explorer is disabled when running in production mode. |               |
+
 ##### Hasura
 | Variable        | Usage                                      | Default Value |
 |-----------------|--------------------------------------------|---------------|
