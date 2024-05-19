@@ -1,7 +1,7 @@
 # Install dependencies only when needed
 FROM node:20-alpine AS base
 
-# Set up build to allow pullin gfrom GitHub NPM repos
+# Set up build to allow pulling from GitHub NPM repos
 ARG github_token
 ENV GITHUB_TOKEN=$github_token
 
@@ -14,7 +14,7 @@ FROM base AS deps
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+COPY package.json package-lock.json* ./
 RUN npm ci --ignore-scripts
 
 # Rebuild the source code only when needed
@@ -41,6 +41,7 @@ COPY --chown=nestjs:nodejs --from=builder /app/node_modules ./node_modules
 COPY --chown=nestjs:nodejs . .
 
 RUN npm run build
+
 # Running `npm ci` removes the existing node_modules directory and passing in
 # --only=production ensures that only the production dependencies are installed.
 # This ensures that the node_modules directory is as optimized as possible
@@ -48,6 +49,7 @@ RUN npm ci --only=production --ignore-scripts && npm cache clean --force
 
 USER nestjs
 
-EXPOSE 3000
+EXPOSE 3001
 
-CMD node dist/main.js
+CMD node dist/main.js 
+
