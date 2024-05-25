@@ -72,6 +72,7 @@ export class DescribeCalendarItemController {
           importance
           id
           end_time
+          deleted
           duration
           cancelled
           attendees {

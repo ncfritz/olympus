@@ -105,6 +105,7 @@ export class ListCalendarItemsController {
           importance
           id
           end_time
+          deleted
           duration
           cancelled
           attendees {

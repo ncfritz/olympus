@@ -24,6 +24,7 @@ export type GraphQlMeeting = {
   location: string;
   importance: MeetingImportance;
   duration: string;
+  deleted: boolean;
   cancelled: boolean;
   all_day: boolean;
   attendees: GraphQlMeetingAttendee[];
@@ -85,6 +86,7 @@ export const toDomainObject = (input: GraphQlMeeting): Meeting => {
     location: input.location,
     importance: input.importance,
     duration: moment.duration(input.duration).minutes(),
+    isDeleted: input.deleted,
     isCancelled: input.cancelled,
     isAllDay: input.all_day,
     attendees: attendees,

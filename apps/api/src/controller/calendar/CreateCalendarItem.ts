@@ -63,6 +63,7 @@ export class CreateCalendarItemController {
       mutation CreateMeeting(
         $all_day: Boolean!
         $cancelled: Boolean!
+        $deketed: Boolean!
         $duration: numeric!
         $end_time: timestamptz!
         $id: String!
@@ -83,6 +84,7 @@ export class CreateCalendarItemController {
           object: {
             all_day: $all_day
             cancelled: $cancelled
+            deleted: $deleted
             duration: $duration
             end_time: $end_time
             id: $id
@@ -127,6 +129,7 @@ export class CreateCalendarItemController {
             }
           }
           cancelled
+          deleted
           duration
           end_time
           importance
@@ -149,56 +152,6 @@ export class CreateCalendarItemController {
         }
       }
     `;
-
-    console.log(
-      JSON.stringify(
-        {
-          all_day: request.item.isAllDay,
-          cancelled: request.item.isCancelled,
-          duration: request.item.duration,
-          end_time: request.item.endTime,
-          id: request.item.id,
-          importance: request.item.importance,
-          location: request.item.location,
-          occurrence_type: request.item.occurrenceType,
-          reminder: request.item.reminder,
-          response: request.item.response,
-          sensitivity: request.item.sensitivity,
-          start_time: request.item.startTime,
-          status: request.item.status,
-          subject: request.item.subject,
-          type: request.item.type,
-          organizer: {
-            alias: request.item.organizer.alias,
-            email: request.item.organizer.email,
-            given_name: request.item.organizer.givenName,
-            surname: request.item.organizer.surname,
-            type: request.item.organizer.type,
-          },
-          attendees: request.item.attendees.map((attendee) => {
-            return {
-              attendance: attendee.attendance,
-              response: attendee.response,
-              user: {
-                data: {
-                  alias: attendee.alias,
-                  email: attendee.email,
-                  given_name: attendee.givenName,
-                  surname: attendee.surname,
-                  type: attendee.type,
-                },
-                on_conflict: {
-                  constraint: "meeting_user_pkey",
-                  update_columns: ["alias", "given_name", "surname", "type"],
-                },
-              },
-            };
-          }),
-        },
-        null,
-        2,
-      ),
-    );
 
     const insertResponse =
       await this.graphQLClient.request<GraphQlCreateCalendarItemResponse>(
