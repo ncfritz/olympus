@@ -70,6 +70,9 @@ export class Meeting {
   @ApiProperty({ type: Boolean })
   isAllDay: boolean;
 
+  @ApiProperty({ type: Boolean })
+  isDeleted: boolean;
+
   @ApiProperty({ enum: MeetingStatus })
   status: MeetingStatus;
 
