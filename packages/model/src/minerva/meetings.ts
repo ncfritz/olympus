@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, PartialType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
 
@@ -89,6 +89,8 @@ export class Meeting {
   attendees: MeetingAttendee[];
 }
 
+export class PartialMeeting extends PartialType(Meeting) {}
+
 export class MeetingUser {
   @ApiProperty({ type: String })
   email: string;
@@ -159,6 +161,13 @@ export class CreateCalendarItemRequest {
     type: () => Meeting,
   })
   item: Meeting;
+}
+
+export class UpdateCalendarItemRequest {
+  @ApiProperty({
+    type: () => PartialMeeting,
+  })
+  item: PartialMeeting;
 }
 
 export class SingleCalendarItemResponse {
