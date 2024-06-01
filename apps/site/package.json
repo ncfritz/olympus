@@ -10,8 +10,7 @@
     "lint": "next lint",
     "lintfix": "next lint --fix"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@ant-design/icons": "^5.3.7",
     "@deck.gl/geo-layers": "^9.0.14",
