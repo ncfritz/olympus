@@ -295,6 +295,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
               "Countries",
               "Languages",
             ],
+            lineWidth: 0,
           },
           legend: {
             layout: "vertical",
@@ -369,6 +370,9 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
             "#ff8d2f",
             "#ffa600",
           ],
+          xAxis: {
+            lineWidth: 0,
+          },
           tooltip: {
             shared: true,
           },

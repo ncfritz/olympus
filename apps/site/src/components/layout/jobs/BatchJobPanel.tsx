@@ -497,6 +497,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
             labels: {
               format: "{value:%m-%d}",
             },
+            lineWidth: 0,
           },
           yAxis: {
             title: {
@@ -561,6 +562,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
             labels: {
               format: "{value:%m-%d}",
             },
+            lineWidth: 0,
           },
           yAxis: {
             title: {

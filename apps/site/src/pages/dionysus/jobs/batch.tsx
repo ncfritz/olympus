@@ -200,6 +200,7 @@ const BatchJobsPage: React.FunctionComponent = () => {
             labels: {
               format: "{value:%m-%d}",
             },
+            lineWidth: 0,
           },
           yAxis: {
             title: {
@@ -290,6 +291,7 @@ const BatchJobsPage: React.FunctionComponent = () => {
             labels: {
               format: "{value:%m-%d}",
             },
+            lineWidth: 0,
           },
           yAxis: {
             title: {
@@ -377,6 +379,7 @@ const BatchJobsPage: React.FunctionComponent = () => {
           },
           xAxis: {
             categories: jobStats.categories.status,
+            lineWidth: 0,
           },
           legend: {
             layout: "vertical",

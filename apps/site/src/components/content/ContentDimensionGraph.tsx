@@ -40,6 +40,7 @@ const ContentDimensionGraph: React.FunctionComponent<
           },
           xAxis: {
             categories: data.categories,
+            lineWidth: 0,
           },
           yAxis: {
             tickInterval: 50,
