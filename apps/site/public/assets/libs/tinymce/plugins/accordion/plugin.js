@@ -1,1 +1,1054 @@
-!function(){"use strict";let e,t;var o=tinymce.util.Tools.resolve("tinymce.PluginManager");let r=0,n=e=>{let t=new Date().getTime();return e+"_"+Math.floor(1e9*Math.random())+ ++r+String(t)},l=(e,t,o)=>{var r;return!!o(e,t.prototype)||(null===(r=e.constructor)||void 0===r?void 0:r.name)===t.name},i=e=>{let t=typeof e;return null===e?"null":"object"===t&&Array.isArray(e)?"array":"object"===t&&l(e,String,(e,t)=>t.isPrototypeOf(e))?"string":t},a=e=>t=>typeof t===e,d=(e="string",t=>i(t)===e),s=a("boolean"),m=e=>null==e,c=e=>!m(e),u=a("function"),g=a("number"),p=(e,t)=>o=>e(t(o)),h=e=>()=>e,f=(e,t)=>e===t,y=h(!1);class v{constructor(e,t){this.tag=e,this.value=t}static some(e){return new v(!0,e)}static none(){return v.singletonNone}fold(e,t){return this.tag?t(this.value):e()}isSome(){return this.tag}isNone(){return!this.tag}map(e){return this.tag?v.some(e(this.value)):v.none()}bind(e){return this.tag?e(this.value):v.none()}exists(e){return this.tag&&e(this.value)}forall(e){return!this.tag||e(this.value)}filter(e){return!this.tag||e(this.value)?this:v.none()}getOr(e){return this.tag?this.value:e}or(e){return this.tag?this:e}getOrThunk(e){return this.tag?this.value:e()}orThunk(e){return this.tag?this:e()}getOrDie(e){if(this.tag)return this.value;throw Error(null!=e?e:"Called getOrDie on None")}static from(e){return c(e)?v.some(e):v.none()}getOrNull(){return this.tag?this.value:null}getOrUndefined(){return this.value}each(e){this.tag&&e(this.value)}toArray(){return this.tag?[this.value]:[]}toString(){return this.tag?`some(${this.value})`:"none()"}}v.singletonNone=new v(!1);let b=Array.prototype.indexOf,T=(e,t)=>b.call(e,t),w=(e,t)=>T(e,t)>-1,C=(e,t)=>{let o=e.length,r=Array(o);for(let n=0;n<o;n++){let o=e[n];r[n]=t(o,n)}return r},A=(e,t)=>{for(let o=0,r=e.length;o<r;o++)t(e[o],o)},N=(e,t)=>{let o=[];for(let r=0,n=e.length;r<n;r++){let n=e[r];t(n,r)&&o.push(n)}return o},S=(e,t,o)=>(A(e,(e,r)=>{o=t(o,e,r)}),o),x=Object.keys,D=(e,t)=>{let o=x(e);for(let r=0,n=o.length;r<n;r++){let n=o[r];t(e[n],n)}};"undefined"!=typeof window?window:Function("return this;")();let E=e=>e.dom.nodeName.toLowerCase(),M=e=>e.dom.nodeType,k=e=>t=>M(t)===e,O=k(1),P=k(3),R=k(9),B=k(11),L=(e,t,o)=>{if(d(o)||s(o)||g(o))e.setAttribute(t,o+"");else throw console.error("Invalid call to Attribute.set. Key ",t,":: Value ",o,":: Element ",e),Error("Attribute value was not simple")},$=(e,t)=>{let o=e.dom;D(t,(e,t)=>{L(o,t,e)})},I=(e,t)=>{let o=e.dom.getAttribute(t);return null===o?void 0:o},V=(e,t)=>v.from(I(e,t)),j=(e,t)=>{e.dom.removeAttribute(t)},q=e=>S(e.dom.attributes,(e,t)=>(e[t.name]=t.value,e),{}),F=e=>{if(null==e)throw Error("Node cannot be null or undefined");return{dom:e}},K={fromTag:(e,t)=>F((t||document).createElement(e)),fromText:(e,t)=>F((t||document).createTextNode(e)),fromDom:F},z=(e,t)=>{let o=e.dom;if(1!==o.nodeType)return!1;if(void 0!==o.matches)return o.matches(t);if(void 0!==o.msMatchesSelector)return o.msMatchesSelector(t);if(void 0!==o.webkitMatchesSelector)return o.webkitMatchesSelector(t);if(void 0!==o.mozMatchesSelector)return o.mozMatchesSelector(t);throw Error("Browser lacks native selectors")},U=e=>1!==e.nodeType&&9!==e.nodeType&&11!==e.nodeType||0===e.childElementCount,H=(e,t)=>{let o=void 0===t?document:t.dom;return U(o)?[]:C(o.querySelectorAll(e),K.fromDom)},Y=(e,t)=>{let o=void 0===t?document:t.dom;return U(o)?v.none():v.from(o.querySelector(e)).map(K.fromDom)},_=(e,t,o=f)=>e.exists(e=>o(e,t)),G=(t=/^\s+|\s+$/g,e=>e.replace(t,"")),J=e=>void 0!==e.style&&u(e.style.getPropertyValue),Q=e=>K.fromDom(e.dom.ownerDocument),W=e=>R(e)?e:Q(e),X=e=>v.from(e.dom.parentNode).map(K.fromDom),Z=e=>v.from(e.dom.nextSibling).map(K.fromDom),ee=e=>C(e.dom.childNodes,K.fromDom),et=(e,t)=>{let o=e.dom.childNodes;return v.from(o[t]).map(K.fromDom)},eo=e=>et(e,0),er=e=>B(e)&&c(e.dom.host),en=u(Element.prototype.attachShadow)&&u(Node.prototype.getRootNode)?e=>K.fromDom(e.dom.getRootNode()):W,el=e=>{let t=en(e);return er(t)?v.some(t):v.none()},ei=e=>K.fromDom(e.dom.host),ea=e=>{let t=P(e)?e.dom.parentNode:e.dom;if(null==t||null===t.ownerDocument)return!1;let o=t.ownerDocument;return el(K.fromDom(t)).fold(()=>o.body.contains(t),p(ea,ei))},ed=(e,t,o)=>{if(!d(o))throw console.error("Invalid call to CSS.set. Property ",t,":: Value ",o,":: Element ",e),Error("CSS value must be a string: "+o);J(e)&&e.style.setProperty(t,o)},es=(e,t)=>{J(e)&&e.style.removeProperty(t)},em=(e,t)=>J(e)?e.style.getPropertyValue(t):"",ec=(e,t)=>{X(e).each(o=>{o.dom.insertBefore(t.dom,e.dom)})},eu=(e,t)=>{Z(e).fold(()=>{X(e).each(e=>{eg(e,t)})},e=>{ec(e,t)})},eg=(e,t)=>{e.dom.appendChild(t.dom)},ep=(e,t)=>{A(t,(o,r)=>{eu(0===r?e:t[r-1],o)})},eh=(e,t)=>{let o=[];return A(ee(e),e=>{t(e)&&(o=o.concat([e])),o=o.concat(eh(e,t))}),o};var ef=(e,t,o,r,n)=>e(o,r)?v.some(o):u(n)&&n(o)?v.none():t(o,r,n);let ey=(e,t,o)=>{let r=e.dom,n=u(o)?o:y;for(;r.parentNode;){r=r.parentNode;let e=K.fromDom(r);if(t(e))return v.some(e);if(n(e))break}return v.none()},ev=e=>{let t=e.dom;null!==t.parentNode&&t.parentNode.removeChild(t)},eb=(e,t,o)=>ey(e,e=>z(e,t),o),eT=(e,t)=>Y(t,e),ew=((e,t)=>{let o=t=>e(t)?v.from(t.dom.nodeValue):v.none();return{get:r=>{if(!e(r))throw Error("Can only get "+t+" value of a "+t+" node");return o(r).getOr("")},getOption:o,set:(o,r)=>{if(!e(o))throw Error("Can only set raw "+t+" value of a "+t+" node");o.dom.nodeValue=r}}})(P,"text");var eC=["body","p","div","article","aside","figcaption","figure","footer","header","nav","section","ol","ul","li","table","thead","tbody","tfoot","caption","tr","td","th","h1","h2","h3","h4","h5","h6","blockquote","pre","address"];let eA=(e,t)=>({element:e,offset:t}),eN=(e,t,o)=>e.property().isText(t)&&0===e.property().getText(t).trim().length||e.property().isComment(t)?o(t).bind(t=>eN(e,t,o).orThunk(()=>v.some(t))):v.none(),eS=(e,t)=>e.property().isText(t)?e.property().getText(t).length:e.property().children(t).length,ex=(e,t)=>{let o=eN(e,t,e.query().prevSibling).getOr(t);if(e.property().isText(o))return eA(o,eS(e,o));let r=e.property().children(o);return r.length>0?ex(e,r[r.length-1]):eA(o,eS(e,o))},eD={up:h({selector:eb,closest:(e,t,o)=>ef((e,t)=>z(e,t),eb,e,t,o),predicate:ey,all:(e,t)=>{let o=u(t)?t:y,r=e.dom,n=[];for(;null!==r.parentNode&&void 0!==r.parentNode;){let e=r.parentNode,t=K.fromDom(e);if(n.push(t),!0===o(t))break;r=e}return n}}),down:h({selector:(e,t)=>H(t,e),predicate:eh}),styles:h({get:(e,t)=>{let o=e.dom,r=window.getComputedStyle(o).getPropertyValue(t);return""!==r||ea(e)?r:em(o,t)},getRaw:(e,t)=>{let o=em(e.dom,t);return v.from(o).filter(e=>e.length>0)},set:(e,t,o)=>{ed(e.dom,t,o)},remove:(e,t)=>{es(e.dom,t),_(V(e,"style").map(G),"")&&j(e,"style")}}),attrs:h({get:I,set:(e,t,o)=>{L(e.dom,t,o)},remove:j,copyTo:(e,t)=>{$(t,q(e))}}),insert:h({before:ec,after:eu,afterAll:ep,append:eg,appendAll:(e,t)=>{A(t,t=>{eg(e,t)})},prepend:(e,t)=>{eo(e).fold(()=>{eg(e,t)},o=>{e.dom.insertBefore(t.dom,o.dom)})},wrap:(e,t)=>{ec(e,t),eg(t,e)}}),remove:h({unwrap:e=>{let t=ee(e);t.length>0&&ep(e,t),ev(e)},remove:ev}),create:h({nu:K.fromTag,clone:e=>K.fromDom(e.dom.cloneNode(!1)),text:K.fromText}),query:h({comparePosition:(e,t)=>e.dom.compareDocumentPosition(t.dom),prevSibling:e=>v.from(e.dom.previousSibling).map(K.fromDom),nextSibling:Z}),property:h({children:ee,name:E,parent:X,document:e=>W(e).dom,isText:P,isComment:e=>8===M(e)||"#comment"===E(e),isElement:O,isSpecial:e=>w(["script","noscript","iframe","noframes","noembed","title","style","textarea","xmp"],E(e)),getLanguage:e=>O(e)?V(e,"lang"):v.none(),getText:e=>ew.get(e),setText:(e,t)=>ew.set(e,t),isBoundary:e=>!!O(e)&&("body"===E(e)||w(eC,E(e))),isEmptyTag:e=>!!O(e)&&w(["br","img","hr","input"],E(e)),isNonEditable:e=>O(e)&&"false"===I(e,"contenteditable")}),eq:(e,t)=>e.dom===t.dom,is:z},eE=e=>ex(eD,e),eM=(e,t,o)=>e.dispatch("ToggledAccordion",{element:t,state:o}),ek=(e,t,o)=>e.dispatch("ToggledAllAccordions",{elements:t,state:o}),eO="details",eP="mce-accordion",eR="mce-accordion-summary",eB="mce-accordion-body";var eL=tinymce.util.Tools.resolve("tinymce.util.Tools");let e$=e=>(null==e?void 0:e.nodeName)==="SUMMARY",eI=e=>(null==e?void 0:e.nodeName)==="DETAILS",eV=e=>e.hasAttribute("open"),ej=e=>{let t=e.selection.getNode();return e$(t)||!!e.dom.getParent(t,e$)},eq=e=>{let t=e.selection.getRng();return eI(t.startContainer)&&t.collapsed&&0===t.startOffset},eF=e=>!ej(e)&&e.dom.isEditable(e.selection.getNode()),eK=e=>v.from(e.dom.getParent(e.selection.getNode(),eI)),ez=e=>eK(e).isSome(),eU=e=>(e.innerHTML='<br data-mce-bogus="1" />',e),eH=e=>eU(e.dom.create("p")),eY=e=>eU(e.dom.create("summary")),e_=(e,t)=>{let o=eH(e);t.insertAdjacentElement("afterend",o),e.selection.setCursorLocation(o,0)},eG=(e,t)=>{if(e$(null==t?void 0:t.lastChild)){let o=eH(e);t.appendChild(o),e.selection.setCursorLocation(o,0)}},eJ=(e,t)=>{if(!e$(null==t?void 0:t.firstChild)){let o=eY(e);t.prepend(o),e.selection.setCursorLocation(o,0)}},eQ=e=>t=>{eG(e,t),eJ(e,t)},eW=e=>{eL.each(eL.grep(e.dom.select("details",e.getBody())),eQ(e))},eX=e=>{if(!eF(e))return;let t=K.fromDom(e.getBody()),o=n("acc"),r=e.dom.encode(e.selection.getRng().toString()||e.translate("Accordion summary...")),l=e.dom.encode(e.translate("Accordion body...")),i=`<summary class="${eR}">${r}</summary>`,a=`<div class="${eB}"><p>${l}</p></div>`;e.undoManager.transact(()=>{e.insertContent([`<details data-mce-id="${o}" class="${eP}" open="open">`,i,a,"</details>"].join("")),eT(t,`[data-mce-id="${o}"]`).each(t=>{j(t,"data-mce-id"),eT(t,"summary").each(t=>{let o=e.dom.createRng(),r=eE(t);o.setStart(r.element.dom,r.offset),o.setEnd(r.element.dom,r.offset),e.selection.setRng(o)})})})},eZ=(e,t)=>{let o=null!=t?t:!eV(e);return o?e.setAttribute("open","open"):e.removeAttribute("open"),o},e0=(e,t)=>{eK(e).each(o=>{eM(e,o,eZ(o,t))})},e1=e=>{eK(e).each(t=>{let{nextSibling:o}=t;o?(e.selection.select(o,!0),e.selection.collapse(!0)):e_(e,t),t.remove()})},e9=(e,t)=>{let o=Array.from(e.getBody().querySelectorAll("details"));0!==o.length&&(A(o,e=>eZ(e,null!=t?t:!eV(e))),ek(e,o,t))},e3=e=>{e.addCommand("InsertAccordion",()=>eX(e)),e.addCommand("ToggleAccordion",(t,o)=>e0(e,o)),e.addCommand("ToggleAllAccordions",(t,o)=>e9(e,o)),e.addCommand("RemoveAccordion",()=>e1(e))};var e2=tinymce.util.Tools.resolve("tinymce.html.Node");let e4=e=>{var t,o;return null!==(o=null===(t=e.attr("class"))||void 0===t?void 0:t.split(" "))&&void 0!==o?o:[]},e5=(e,t)=>{let o=Array.from(new Set([...e4(e),...t]));o.length>0&&e.attr("class",o.join(" "))},e6=(e,t)=>{let o=N(e4(e),e=>!t.has(e));e.attr("class",o.length>0?o.join(" "):null)},e8=e=>e.name===eO&&w(e4(e),eP),e7=e=>"div"===e.name&&w(e4(e),eB),te=e=>{let t,o;let r=e.children(),n=[];for(let e=0;e<r.length;e++){let l=r[e];"summary"===l.name&&m(t)?t=l:e7(l)&&m(o)?o=l:n.push(l)}return{summaryNode:t,wrapperNode:o,otherNodes:n}},tt=e=>{let t=new e2("br",1);t.attr("data-mce-bogus","1"),e.empty(),e.append(t)},to=e=>{e.on("PreInit",()=>{let{serializer:t,parser:o}=e;o.addNodeFilter(eO,e=>{for(let t=0;t<e.length;t++){let o=e[t];if(e8(o)){let{summaryNode:e,wrapperNode:t,otherNodes:r}=te(o),n=c(e),l=n?e:new e2("summary",1);m(l.firstChild)&&tt(l),e5(l,[eR]),n||(c(o.firstChild)?o.insert(l,o.firstChild,!0):o.append(l));let i=c(t),a=i?t:new e2("div",1);if(a.attr("data-mce-bogus","1"),e5(a,[eB]),r.length>0)for(let e=0;e<r.length;e++){let t=r[e];a.append(t)}if(m(a.firstChild)){let e=new e2("p",1);tt(e),a.append(e)}i||o.append(a)}}}),t.addNodeFilter(eO,e=>{let t=new Set([eR]);for(let o=0;o<e.length;o++){let r=e[o];if(e8(r)){let{summaryNode:e,wrapperNode:o}=te(r);c(e)&&e6(e,t),c(o)&&o.unwrap()}}})})};var tr=tinymce.util.Tools.resolve("tinymce.util.VK");let tn=e=>{e.on("keydown",t=>{(!t.shiftKey&&t.keyCode===tr.ENTER&&ej(e)||eq(e))&&(t.preventDefault(),e.execCommand("ToggleAccordion"))})},tl=e=>{tn(e),e.on("ExecCommand",t=>{let o=t.command.toLowerCase();("delete"===o||"forwarddelete"===o)&&ez(e)&&eW(e)})};var ti=tinymce.util.Tools.resolve("tinymce.Env");let ta=e=>{ti.browser.isSafari()&&e.on("click",t=>{if(e$(t.target)){let o=t.target,r=e.selection.getRng();r.collapsed&&r.startContainer===o.parentNode&&0===r.startOffset&&e.selection.setCursorLocation(o,0)}})},td=e=>t=>{let o=()=>t.setEnabled(eF(e));return e.on("NodeChange",o),()=>e.off("NodeChange",o)},ts=e=>{let t=()=>e.execCommand("InsertAccordion");e.ui.registry.addButton("accordion",{icon:"accordion",tooltip:"Insert accordion",onSetup:td(e),onAction:t}),e.ui.registry.addMenuItem("accordion",{icon:"accordion",text:"Accordion",onSetup:td(e),onAction:t}),e.ui.registry.addToggleButton("accordiontoggle",{icon:"accordion-toggle",tooltip:"Toggle accordion",onAction:()=>e.execCommand("ToggleAccordion")}),e.ui.registry.addToggleButton("accordionremove",{icon:"remove",tooltip:"Delete accordion",onAction:()=>e.execCommand("RemoveAccordion")}),e.ui.registry.addContextToolbar("accordion",{predicate:t=>e.dom.is(t,"details")&&e.getBody().contains(t)&&e.dom.isEditable(t.parentNode),items:"accordiontoggle accordionremove",scope:"node",position:"node"})};o.add("accordion",e=>{ts(e),e3(e),tl(e),to(e),ta(e)})}();
+/**
+ * TinyMCE version 7.1.0 (2024-05-08)
+ */
+
+(function () {
+    'use strict';
+
+    var global$4 = tinymce.util.Tools.resolve('tinymce.PluginManager');
+
+    let unique = 0;
+    const generate = prefix => {
+      const date = new Date();
+      const time = date.getTime();
+      const random = Math.floor(Math.random() * 1000000000);
+      unique++;
+      return prefix + '_' + random + unique + String(time);
+    };
+
+    const hasProto = (v, constructor, predicate) => {
+      var _a;
+      if (predicate(v, constructor.prototype)) {
+        return true;
+      } else {
+        return ((_a = v.constructor) === null || _a === void 0 ? void 0 : _a.name) === constructor.name;
+      }
+    };
+    const typeOf = x => {
+      const t = typeof x;
+      if (x === null) {
+        return 'null';
+      } else if (t === 'object' && Array.isArray(x)) {
+        return 'array';
+      } else if (t === 'object' && hasProto(x, String, (o, proto) => proto.isPrototypeOf(o))) {
+        return 'string';
+      } else {
+        return t;
+      }
+    };
+    const isType$1 = type => value => typeOf(value) === type;
+    const isSimpleType = type => value => typeof value === type;
+    const isString = isType$1('string');
+    const isBoolean = isSimpleType('boolean');
+    const isNullable = a => a === null || a === undefined;
+    const isNonNullable = a => !isNullable(a);
+    const isFunction = isSimpleType('function');
+    const isNumber = isSimpleType('number');
+
+    const compose1 = (fbc, fab) => a => fbc(fab(a));
+    const constant = value => {
+      return () => {
+        return value;
+      };
+    };
+    const tripleEquals = (a, b) => {
+      return a === b;
+    };
+    const never = constant(false);
+
+    class Optional {
+      constructor(tag, value) {
+        this.tag = tag;
+        this.value = value;
+      }
+      static some(value) {
+        return new Optional(true, value);
+      }
+      static none() {
+        return Optional.singletonNone;
+      }
+      fold(onNone, onSome) {
+        if (this.tag) {
+          return onSome(this.value);
+        } else {
+          return onNone();
+        }
+      }
+      isSome() {
+        return this.tag;
+      }
+      isNone() {
+        return !this.tag;
+      }
+      map(mapper) {
+        if (this.tag) {
+          return Optional.some(mapper(this.value));
+        } else {
+          return Optional.none();
+        }
+      }
+      bind(binder) {
+        if (this.tag) {
+          return binder(this.value);
+        } else {
+          return Optional.none();
+        }
+      }
+      exists(predicate) {
+        return this.tag && predicate(this.value);
+      }
+      forall(predicate) {
+        return !this.tag || predicate(this.value);
+      }
+      filter(predicate) {
+        if (!this.tag || predicate(this.value)) {
+          return this;
+        } else {
+          return Optional.none();
+        }
+      }
+      getOr(replacement) {
+        return this.tag ? this.value : replacement;
+      }
+      or(replacement) {
+        return this.tag ? this : replacement;
+      }
+      getOrThunk(thunk) {
+        return this.tag ? this.value : thunk();
+      }
+      orThunk(thunk) {
+        return this.tag ? this : thunk();
+      }
+      getOrDie(message) {
+        if (!this.tag) {
+          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+        } else {
+          return this.value;
+        }
+      }
+      static from(value) {
+        return isNonNullable(value) ? Optional.some(value) : Optional.none();
+      }
+      getOrNull() {
+        return this.tag ? this.value : null;
+      }
+      getOrUndefined() {
+        return this.value;
+      }
+      each(worker) {
+        if (this.tag) {
+          worker(this.value);
+        }
+      }
+      toArray() {
+        return this.tag ? [this.value] : [];
+      }
+      toString() {
+        return this.tag ? `some(${ this.value })` : 'none()';
+      }
+    }
+    Optional.singletonNone = new Optional(false);
+
+    const nativeIndexOf = Array.prototype.indexOf;
+    const rawIndexOf = (ts, t) => nativeIndexOf.call(ts, t);
+    const contains = (xs, x) => rawIndexOf(xs, x) > -1;
+    const map = (xs, f) => {
+      const len = xs.length;
+      const r = new Array(len);
+      for (let i = 0; i < len; i++) {
+        const x = xs[i];
+        r[i] = f(x, i);
+      }
+      return r;
+    };
+    const each$1 = (xs, f) => {
+      for (let i = 0, len = xs.length; i < len; i++) {
+        const x = xs[i];
+        f(x, i);
+      }
+    };
+    const filter = (xs, pred) => {
+      const r = [];
+      for (let i = 0, len = xs.length; i < len; i++) {
+        const x = xs[i];
+        if (pred(x, i)) {
+          r.push(x);
+        }
+      }
+      return r;
+    };
+    const foldl = (xs, f, acc) => {
+      each$1(xs, (x, i) => {
+        acc = f(acc, x, i);
+      });
+      return acc;
+    };
+
+    const keys = Object.keys;
+    const each = (obj, f) => {
+      const props = keys(obj);
+      for (let k = 0, len = props.length; k < len; k++) {
+        const i = props[k];
+        const x = obj[i];
+        f(x, i);
+      }
+    };
+
+    typeof window !== 'undefined' ? window : Function('return this;')();
+
+    const COMMENT = 8;
+    const DOCUMENT = 9;
+    const DOCUMENT_FRAGMENT = 11;
+    const ELEMENT = 1;
+    const TEXT = 3;
+
+    const name = element => {
+      const r = element.dom.nodeName;
+      return r.toLowerCase();
+    };
+    const type = element => element.dom.nodeType;
+    const isType = t => element => type(element) === t;
+    const isComment = element => type(element) === COMMENT || name(element) === '#comment';
+    const isElement = isType(ELEMENT);
+    const isText = isType(TEXT);
+    const isDocument = isType(DOCUMENT);
+    const isDocumentFragment = isType(DOCUMENT_FRAGMENT);
+
+    const rawSet = (dom, key, value) => {
+      if (isString(value) || isBoolean(value) || isNumber(value)) {
+        dom.setAttribute(key, value + '');
+      } else {
+        console.error('Invalid call to Attribute.set. Key ', key, ':: Value ', value, ':: Element ', dom);
+        throw new Error('Attribute value was not simple');
+      }
+    };
+    const set$2 = (element, key, value) => {
+      rawSet(element.dom, key, value);
+    };
+    const setAll = (element, attrs) => {
+      const dom = element.dom;
+      each(attrs, (v, k) => {
+        rawSet(dom, k, v);
+      });
+    };
+    const get$2 = (element, key) => {
+      const v = element.dom.getAttribute(key);
+      return v === null ? undefined : v;
+    };
+    const getOpt = (element, key) => Optional.from(get$2(element, key));
+    const remove$2 = (element, key) => {
+      element.dom.removeAttribute(key);
+    };
+    const clone = element => foldl(element.dom.attributes, (acc, attr) => {
+      acc[attr.name] = attr.value;
+      return acc;
+    }, {});
+
+    const fromHtml = (html, scope) => {
+      const doc = scope || document;
+      const div = doc.createElement('div');
+      div.innerHTML = html;
+      if (!div.hasChildNodes() || div.childNodes.length > 1) {
+        const message = 'HTML does not have a single root node';
+        console.error(message, html);
+        throw new Error(message);
+      }
+      return fromDom(div.childNodes[0]);
+    };
+    const fromTag = (tag, scope) => {
+      const doc = scope || document;
+      const node = doc.createElement(tag);
+      return fromDom(node);
+    };
+    const fromText = (text, scope) => {
+      const doc = scope || document;
+      const node = doc.createTextNode(text);
+      return fromDom(node);
+    };
+    const fromDom = node => {
+      if (node === null || node === undefined) {
+        throw new Error('Node cannot be null or undefined');
+      }
+      return { dom: node };
+    };
+    const fromPoint = (docElm, x, y) => Optional.from(docElm.dom.elementFromPoint(x, y)).map(fromDom);
+    const SugarElement = {
+      fromHtml,
+      fromTag,
+      fromText,
+      fromDom,
+      fromPoint
+    };
+
+    const is$2 = (element, selector) => {
+      const dom = element.dom;
+      if (dom.nodeType !== ELEMENT) {
+        return false;
+      } else {
+        const elem = dom;
+        if (elem.matches !== undefined) {
+          return elem.matches(selector);
+        } else if (elem.msMatchesSelector !== undefined) {
+          return elem.msMatchesSelector(selector);
+        } else if (elem.webkitMatchesSelector !== undefined) {
+          return elem.webkitMatchesSelector(selector);
+        } else if (elem.mozMatchesSelector !== undefined) {
+          return elem.mozMatchesSelector(selector);
+        } else {
+          throw new Error('Browser lacks native selectors');
+        }
+      }
+    };
+    const bypassSelector = dom => dom.nodeType !== ELEMENT && dom.nodeType !== DOCUMENT && dom.nodeType !== DOCUMENT_FRAGMENT || dom.childElementCount === 0;
+    const all = (selector, scope) => {
+      const base = scope === undefined ? document : scope.dom;
+      return bypassSelector(base) ? [] : map(base.querySelectorAll(selector), SugarElement.fromDom);
+    };
+    const one = (selector, scope) => {
+      const base = scope === undefined ? document : scope.dom;
+      return bypassSelector(base) ? Optional.none() : Optional.from(base.querySelector(selector)).map(SugarElement.fromDom);
+    };
+
+    const eq = (e1, e2) => e1.dom === e2.dom;
+    const is$1 = is$2;
+
+    const is = (lhs, rhs, comparator = tripleEquals) => lhs.exists(left => comparator(left, rhs));
+
+    const blank = r => s => s.replace(r, '');
+    const trim = blank(/^\s+|\s+$/g);
+
+    const isSupported = dom => dom.style !== undefined && isFunction(dom.style.getPropertyValue);
+
+    const owner = element => SugarElement.fromDom(element.dom.ownerDocument);
+    const documentOrOwner = dos => isDocument(dos) ? dos : owner(dos);
+    const parent = element => Optional.from(element.dom.parentNode).map(SugarElement.fromDom);
+    const parents = (element, isRoot) => {
+      const stop = isFunction(isRoot) ? isRoot : never;
+      let dom = element.dom;
+      const ret = [];
+      while (dom.parentNode !== null && dom.parentNode !== undefined) {
+        const rawParent = dom.parentNode;
+        const p = SugarElement.fromDom(rawParent);
+        ret.push(p);
+        if (stop(p) === true) {
+          break;
+        } else {
+          dom = rawParent;
+        }
+      }
+      return ret;
+    };
+    const prevSibling = element => Optional.from(element.dom.previousSibling).map(SugarElement.fromDom);
+    const nextSibling = element => Optional.from(element.dom.nextSibling).map(SugarElement.fromDom);
+    const children = element => map(element.dom.childNodes, SugarElement.fromDom);
+    const child = (element, index) => {
+      const cs = element.dom.childNodes;
+      return Optional.from(cs[index]).map(SugarElement.fromDom);
+    };
+    const firstChild = element => child(element, 0);
+
+    const isShadowRoot = dos => isDocumentFragment(dos) && isNonNullable(dos.dom.host);
+    const supported = isFunction(Element.prototype.attachShadow) && isFunction(Node.prototype.getRootNode);
+    const getRootNode = supported ? e => SugarElement.fromDom(e.dom.getRootNode()) : documentOrOwner;
+    const getShadowRoot = e => {
+      const r = getRootNode(e);
+      return isShadowRoot(r) ? Optional.some(r) : Optional.none();
+    };
+    const getShadowHost = e => SugarElement.fromDom(e.dom.host);
+
+    const inBody = element => {
+      const dom = isText(element) ? element.dom.parentNode : element.dom;
+      if (dom === undefined || dom === null || dom.ownerDocument === null) {
+        return false;
+      }
+      const doc = dom.ownerDocument;
+      return getShadowRoot(SugarElement.fromDom(dom)).fold(() => doc.body.contains(dom), compose1(inBody, getShadowHost));
+    };
+
+    const internalSet = (dom, property, value) => {
+      if (!isString(value)) {
+        console.error('Invalid call to CSS.set. Property ', property, ':: Value ', value, ':: Element ', dom);
+        throw new Error('CSS value must be a string: ' + value);
+      }
+      if (isSupported(dom)) {
+        dom.style.setProperty(property, value);
+      }
+    };
+    const internalRemove = (dom, property) => {
+      if (isSupported(dom)) {
+        dom.style.removeProperty(property);
+      }
+    };
+    const set$1 = (element, property, value) => {
+      const dom = element.dom;
+      internalSet(dom, property, value);
+    };
+    const get$1 = (element, property) => {
+      const dom = element.dom;
+      const styles = window.getComputedStyle(dom);
+      const r = styles.getPropertyValue(property);
+      return r === '' && !inBody(element) ? getUnsafeProperty(dom, property) : r;
+    };
+    const getUnsafeProperty = (dom, property) => isSupported(dom) ? dom.style.getPropertyValue(property) : '';
+    const getRaw = (element, property) => {
+      const dom = element.dom;
+      const raw = getUnsafeProperty(dom, property);
+      return Optional.from(raw).filter(r => r.length > 0);
+    };
+    const remove$1 = (element, property) => {
+      const dom = element.dom;
+      internalRemove(dom, property);
+      if (is(getOpt(element, 'style').map(trim), '')) {
+        remove$2(element, 'style');
+      }
+    };
+
+    const before = (marker, element) => {
+      const parent$1 = parent(marker);
+      parent$1.each(v => {
+        v.dom.insertBefore(element.dom, marker.dom);
+      });
+    };
+    const after$1 = (marker, element) => {
+      const sibling = nextSibling(marker);
+      sibling.fold(() => {
+        const parent$1 = parent(marker);
+        parent$1.each(v => {
+          append$1(v, element);
+        });
+      }, v => {
+        before(v, element);
+      });
+    };
+    const prepend = (parent, element) => {
+      const firstChild$1 = firstChild(parent);
+      firstChild$1.fold(() => {
+        append$1(parent, element);
+      }, v => {
+        parent.dom.insertBefore(element.dom, v.dom);
+      });
+    };
+    const append$1 = (parent, element) => {
+      parent.dom.appendChild(element.dom);
+    };
+    const wrap = (element, wrapper) => {
+      before(element, wrapper);
+      append$1(wrapper, element);
+    };
+
+    const after = (marker, elements) => {
+      each$1(elements, (x, i) => {
+        const e = i === 0 ? marker : elements[i - 1];
+        after$1(e, x);
+      });
+    };
+    const append = (parent, elements) => {
+      each$1(elements, x => {
+        append$1(parent, x);
+      });
+    };
+
+    const descendants$1 = (scope, predicate) => {
+      let result = [];
+      each$1(children(scope), x => {
+        if (predicate(x)) {
+          result = result.concat([x]);
+        }
+        result = result.concat(descendants$1(x, predicate));
+      });
+      return result;
+    };
+
+    var ClosestOrAncestor = (is, ancestor, scope, a, isRoot) => {
+      if (is(scope, a)) {
+        return Optional.some(scope);
+      } else if (isFunction(isRoot) && isRoot(scope)) {
+        return Optional.none();
+      } else {
+        return ancestor(scope, a, isRoot);
+      }
+    };
+
+    const ancestor$1 = (scope, predicate, isRoot) => {
+      let element = scope.dom;
+      const stop = isFunction(isRoot) ? isRoot : never;
+      while (element.parentNode) {
+        element = element.parentNode;
+        const el = SugarElement.fromDom(element);
+        if (predicate(el)) {
+          return Optional.some(el);
+        } else if (stop(el)) {
+          break;
+        }
+      }
+      return Optional.none();
+    };
+
+    const remove = element => {
+      const dom = element.dom;
+      if (dom.parentNode !== null) {
+        dom.parentNode.removeChild(dom);
+      }
+    };
+    const unwrap = wrapper => {
+      const children$1 = children(wrapper);
+      if (children$1.length > 0) {
+        after(wrapper, children$1);
+      }
+      remove(wrapper);
+    };
+
+    const descendants = (scope, selector) => all(selector, scope);
+
+    const ancestor = (scope, selector, isRoot) => ancestor$1(scope, e => is$2(e, selector), isRoot);
+    const descendant = (scope, selector) => one(selector, scope);
+    const closest = (scope, selector, isRoot) => {
+      const is = (element, selector) => is$2(element, selector);
+      return ClosestOrAncestor(is, ancestor, scope, selector, isRoot);
+    };
+
+    const NodeValue = (is, name) => {
+      const get = element => {
+        if (!is(element)) {
+          throw new Error('Can only get ' + name + ' value of a ' + name + ' node');
+        }
+        return getOption(element).getOr('');
+      };
+      const getOption = element => is(element) ? Optional.from(element.dom.nodeValue) : Optional.none();
+      const set = (element, value) => {
+        if (!is(element)) {
+          throw new Error('Can only set raw ' + name + ' value of a ' + name + ' node');
+        }
+        element.dom.nodeValue = value;
+      };
+      return {
+        get,
+        getOption,
+        set
+      };
+    };
+
+    const api = NodeValue(isText, 'text');
+    const get = element => api.get(element);
+    const set = (element, value) => api.set(element, value);
+
+    var TagBoundaries = [
+      'body',
+      'p',
+      'div',
+      'article',
+      'aside',
+      'figcaption',
+      'figure',
+      'footer',
+      'header',
+      'nav',
+      'section',
+      'ol',
+      'ul',
+      'li',
+      'table',
+      'thead',
+      'tbody',
+      'tfoot',
+      'caption',
+      'tr',
+      'td',
+      'th',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'blockquote',
+      'pre',
+      'address'
+    ];
+
+    var DomUniverse = () => {
+      const clone$1 = element => {
+        return SugarElement.fromDom(element.dom.cloneNode(false));
+      };
+      const document = element => documentOrOwner(element).dom;
+      const isBoundary = element => {
+        if (!isElement(element)) {
+          return false;
+        }
+        if (name(element) === 'body') {
+          return true;
+        }
+        return contains(TagBoundaries, name(element));
+      };
+      const isEmptyTag = element => {
+        if (!isElement(element)) {
+          return false;
+        }
+        return contains([
+          'br',
+          'img',
+          'hr',
+          'input'
+        ], name(element));
+      };
+      const isNonEditable = element => isElement(element) && get$2(element, 'contenteditable') === 'false';
+      const comparePosition = (element, other) => {
+        return element.dom.compareDocumentPosition(other.dom);
+      };
+      const copyAttributesTo = (source, destination) => {
+        const as = clone(source);
+        setAll(destination, as);
+      };
+      const isSpecial = element => {
+        const tag = name(element);
+        return contains([
+          'script',
+          'noscript',
+          'iframe',
+          'noframes',
+          'noembed',
+          'title',
+          'style',
+          'textarea',
+          'xmp'
+        ], tag);
+      };
+      const getLanguage = element => isElement(element) ? getOpt(element, 'lang') : Optional.none();
+      return {
+        up: constant({
+          selector: ancestor,
+          closest: closest,
+          predicate: ancestor$1,
+          all: parents
+        }),
+        down: constant({
+          selector: descendants,
+          predicate: descendants$1
+        }),
+        styles: constant({
+          get: get$1,
+          getRaw: getRaw,
+          set: set$1,
+          remove: remove$1
+        }),
+        attrs: constant({
+          get: get$2,
+          set: set$2,
+          remove: remove$2,
+          copyTo: copyAttributesTo
+        }),
+        insert: constant({
+          before: before,
+          after: after$1,
+          afterAll: after,
+          append: append$1,
+          appendAll: append,
+          prepend: prepend,
+          wrap: wrap
+        }),
+        remove: constant({
+          unwrap: unwrap,
+          remove: remove
+        }),
+        create: constant({
+          nu: SugarElement.fromTag,
+          clone: clone$1,
+          text: SugarElement.fromText
+        }),
+        query: constant({
+          comparePosition,
+          prevSibling: prevSibling,
+          nextSibling: nextSibling
+        }),
+        property: constant({
+          children: children,
+          name: name,
+          parent: parent,
+          document,
+          isText: isText,
+          isComment: isComment,
+          isElement: isElement,
+          isSpecial,
+          getLanguage,
+          getText: get,
+          setText: set,
+          isBoundary,
+          isEmptyTag,
+          isNonEditable
+        }),
+        eq: eq,
+        is: is$1
+      };
+    };
+
+    const point = (element, offset) => ({
+      element,
+      offset
+    });
+
+    const scan = (universe, element, direction) => {
+      if (universe.property().isText(element) && universe.property().getText(element).trim().length === 0 || universe.property().isComment(element)) {
+        return direction(element).bind(elem => {
+          return scan(universe, elem, direction).orThunk(() => {
+            return Optional.some(elem);
+          });
+        });
+      } else {
+        return Optional.none();
+      }
+    };
+    const toEnd = (universe, element) => {
+      if (universe.property().isText(element)) {
+        return universe.property().getText(element).length;
+      }
+      const children = universe.property().children(element);
+      return children.length;
+    };
+    const freefallRtl$2 = (universe, element) => {
+      const candidate = scan(universe, element, universe.query().prevSibling).getOr(element);
+      if (universe.property().isText(candidate)) {
+        return point(candidate, toEnd(universe, candidate));
+      }
+      const children = universe.property().children(candidate);
+      return children.length > 0 ? freefallRtl$2(universe, children[children.length - 1]) : point(candidate, toEnd(universe, candidate));
+    };
+
+    const freefallRtl$1 = freefallRtl$2;
+
+    const universe = DomUniverse();
+    const freefallRtl = element => {
+      return freefallRtl$1(universe, element);
+    };
+
+    const fireToggleAccordionEvent = (editor, element, state) => editor.dispatch('ToggledAccordion', {
+      element,
+      state
+    });
+    const fireToggleAllAccordionsEvent = (editor, elements, state) => editor.dispatch('ToggledAllAccordions', {
+      elements,
+      state
+    });
+
+    const accordionTag = 'details';
+    const accordionDetailsClass = 'mce-accordion';
+    const accordionSummaryClass = 'mce-accordion-summary';
+    const accordionBodyWrapperClass = 'mce-accordion-body';
+    const accordionBodyWrapperTag = 'div';
+
+    var global$3 = tinymce.util.Tools.resolve('tinymce.util.Tools');
+
+    const isSummary = node => (node === null || node === void 0 ? void 0 : node.nodeName) === 'SUMMARY';
+    const isDetails = node => (node === null || node === void 0 ? void 0 : node.nodeName) === 'DETAILS';
+    const isOpen = details => details.hasAttribute('open');
+    const isInSummary = editor => {
+      const node = editor.selection.getNode();
+      return isSummary(node) || Boolean(editor.dom.getParent(node, isSummary));
+    };
+    const isAtDetailsStart = editor => {
+      const rng = editor.selection.getRng();
+      return isDetails(rng.startContainer) && rng.collapsed && rng.startOffset === 0;
+    };
+    const isInsertAllowed = editor => !isInSummary(editor) && editor.dom.isEditable(editor.selection.getNode());
+    const getSelectedDetails = editor => Optional.from(editor.dom.getParent(editor.selection.getNode(), isDetails));
+    const isDetailsSelected = editor => getSelectedDetails(editor).isSome();
+    const insertBogus = element => {
+      element.innerHTML = '<br data-mce-bogus="1" />';
+      return element;
+    };
+    const createParagraph = editor => insertBogus(editor.dom.create('p'));
+    const createSummary = editor => insertBogus(editor.dom.create('summary'));
+    const insertAndSelectParagraphAfter = (editor, target) => {
+      const paragraph = createParagraph(editor);
+      target.insertAdjacentElement('afterend', paragraph);
+      editor.selection.setCursorLocation(paragraph, 0);
+    };
+    const normalizeContent = (editor, accordion) => {
+      if (isSummary(accordion === null || accordion === void 0 ? void 0 : accordion.lastChild)) {
+        const paragraph = createParagraph(editor);
+        accordion.appendChild(paragraph);
+        editor.selection.setCursorLocation(paragraph, 0);
+      }
+    };
+    const normalizeSummary = (editor, accordion) => {
+      if (!isSummary(accordion === null || accordion === void 0 ? void 0 : accordion.firstChild)) {
+        const summary = createSummary(editor);
+        accordion.prepend(summary);
+        editor.selection.setCursorLocation(summary, 0);
+      }
+    };
+    const normalizeAccordion = editor => accordion => {
+      normalizeContent(editor, accordion);
+      normalizeSummary(editor, accordion);
+    };
+    const normalizeDetails = editor => {
+      global$3.each(global$3.grep(editor.dom.select('details', editor.getBody())), normalizeAccordion(editor));
+    };
+
+    const insertAccordion = editor => {
+      if (!isInsertAllowed(editor)) {
+        return;
+      }
+      const editorBody = SugarElement.fromDom(editor.getBody());
+      const uid = generate('acc');
+      const summaryText = editor.dom.encode(editor.selection.getRng().toString() || editor.translate('Accordion summary...'));
+      const bodyText = editor.dom.encode(editor.translate('Accordion body...'));
+      const accordionSummaryHtml = `<summary class="${ accordionSummaryClass }">${ summaryText }</summary>`;
+      const accordionBodyHtml = `<${ accordionBodyWrapperTag } class="${ accordionBodyWrapperClass }"><p>${ bodyText }</p></${ accordionBodyWrapperTag }>`;
+      editor.undoManager.transact(() => {
+        editor.insertContent([
+          `<details data-mce-id="${ uid }" class="${ accordionDetailsClass }" open="open">`,
+          accordionSummaryHtml,
+          accordionBodyHtml,
+          `</details>`
+        ].join(''));
+        descendant(editorBody, `[data-mce-id="${ uid }"]`).each(detailsElm => {
+          remove$2(detailsElm, 'data-mce-id');
+          descendant(detailsElm, `summary`).each(summaryElm => {
+            const rng = editor.dom.createRng();
+            const des = freefallRtl(summaryElm);
+            rng.setStart(des.element.dom, des.offset);
+            rng.setEnd(des.element.dom, des.offset);
+            editor.selection.setRng(rng);
+          });
+        });
+      });
+    };
+    const toggleDetailsElement = (details, state) => {
+      const shouldOpen = state !== null && state !== void 0 ? state : !isOpen(details);
+      if (shouldOpen) {
+        details.setAttribute('open', 'open');
+      } else {
+        details.removeAttribute('open');
+      }
+      return shouldOpen;
+    };
+    const toggleAccordion = (editor, state) => {
+      getSelectedDetails(editor).each(details => {
+        fireToggleAccordionEvent(editor, details, toggleDetailsElement(details, state));
+      });
+    };
+    const removeAccordion = editor => {
+      getSelectedDetails(editor).each(details => {
+        const {nextSibling} = details;
+        if (nextSibling) {
+          editor.selection.select(nextSibling, true);
+          editor.selection.collapse(true);
+        } else {
+          insertAndSelectParagraphAfter(editor, details);
+        }
+        details.remove();
+      });
+    };
+    const toggleAllAccordions = (editor, state) => {
+      const accordions = Array.from(editor.getBody().querySelectorAll('details'));
+      if (accordions.length === 0) {
+        return;
+      }
+      each$1(accordions, accordion => toggleDetailsElement(accordion, state !== null && state !== void 0 ? state : !isOpen(accordion)));
+      fireToggleAllAccordionsEvent(editor, accordions, state);
+    };
+
+    const register$1 = editor => {
+      editor.addCommand('InsertAccordion', () => insertAccordion(editor));
+      editor.addCommand('ToggleAccordion', (_ui, value) => toggleAccordion(editor, value));
+      editor.addCommand('ToggleAllAccordions', (_ui, value) => toggleAllAccordions(editor, value));
+      editor.addCommand('RemoveAccordion', () => removeAccordion(editor));
+    };
+
+    var global$2 = tinymce.util.Tools.resolve('tinymce.html.Node');
+
+    const getClassList = node => {
+      var _a, _b;
+      return (_b = (_a = node.attr('class')) === null || _a === void 0 ? void 0 : _a.split(' ')) !== null && _b !== void 0 ? _b : [];
+    };
+    const addClasses = (node, classes) => {
+      const classListSet = new Set([
+        ...getClassList(node),
+        ...classes
+      ]);
+      const newClassList = Array.from(classListSet);
+      if (newClassList.length > 0) {
+        node.attr('class', newClassList.join(' '));
+      }
+    };
+    const removeClasses = (node, classes) => {
+      const newClassList = filter(getClassList(node), clazz => !classes.has(clazz));
+      node.attr('class', newClassList.length > 0 ? newClassList.join(' ') : null);
+    };
+    const isAccordionDetailsNode = node => node.name === accordionTag && contains(getClassList(node), accordionDetailsClass);
+    const isAccordionBodyWrapperNode = node => node.name === accordionBodyWrapperTag && contains(getClassList(node), accordionBodyWrapperClass);
+    const getAccordionChildren = accordionNode => {
+      const children = accordionNode.children();
+      let summaryNode;
+      let wrapperNode;
+      const otherNodes = [];
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+        if (child.name === 'summary' && isNullable(summaryNode)) {
+          summaryNode = child;
+        } else if (isAccordionBodyWrapperNode(child) && isNullable(wrapperNode)) {
+          wrapperNode = child;
+        } else {
+          otherNodes.push(child);
+        }
+      }
+      return {
+        summaryNode,
+        wrapperNode,
+        otherNodes
+      };
+    };
+    const padInputNode = node => {
+      const br = new global$2('br', 1);
+      br.attr('data-mce-bogus', '1');
+      node.empty();
+      node.append(br);
+    };
+    const setup$2 = editor => {
+      editor.on('PreInit', () => {
+        const {serializer, parser} = editor;
+        parser.addNodeFilter(accordionTag, nodes => {
+          for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if (isAccordionDetailsNode(node)) {
+              const accordionNode = node;
+              const {summaryNode, wrapperNode, otherNodes} = getAccordionChildren(accordionNode);
+              const hasSummaryNode = isNonNullable(summaryNode);
+              const newSummaryNode = hasSummaryNode ? summaryNode : new global$2('summary', 1);
+              if (isNullable(newSummaryNode.firstChild)) {
+                padInputNode(newSummaryNode);
+              }
+              addClasses(newSummaryNode, [accordionSummaryClass]);
+              if (!hasSummaryNode) {
+                if (isNonNullable(accordionNode.firstChild)) {
+                  accordionNode.insert(newSummaryNode, accordionNode.firstChild, true);
+                } else {
+                  accordionNode.append(newSummaryNode);
+                }
+              }
+              const hasWrapperNode = isNonNullable(wrapperNode);
+              const newWrapperNode = hasWrapperNode ? wrapperNode : new global$2(accordionBodyWrapperTag, 1);
+              newWrapperNode.attr('data-mce-bogus', '1');
+              addClasses(newWrapperNode, [accordionBodyWrapperClass]);
+              if (otherNodes.length > 0) {
+                for (let j = 0; j < otherNodes.length; j++) {
+                  const otherNode = otherNodes[j];
+                  newWrapperNode.append(otherNode);
+                }
+              }
+              if (isNullable(newWrapperNode.firstChild)) {
+                const pNode = new global$2('p', 1);
+                padInputNode(pNode);
+                newWrapperNode.append(pNode);
+              }
+              if (!hasWrapperNode) {
+                accordionNode.append(newWrapperNode);
+              }
+            }
+          }
+        });
+        serializer.addNodeFilter(accordionTag, nodes => {
+          const summaryClassRemoveSet = new Set([accordionSummaryClass]);
+          for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if (isAccordionDetailsNode(node)) {
+              const accordionNode = node;
+              const {summaryNode, wrapperNode} = getAccordionChildren(accordionNode);
+              if (isNonNullable(summaryNode)) {
+                removeClasses(summaryNode, summaryClassRemoveSet);
+              }
+              if (isNonNullable(wrapperNode)) {
+                wrapperNode.unwrap();
+              }
+            }
+          }
+        });
+      });
+    };
+
+    var global$1 = tinymce.util.Tools.resolve('tinymce.util.VK');
+
+    const setupEnterKeyInSummary = editor => {
+      editor.on('keydown', event => {
+        if (!event.shiftKey && event.keyCode === global$1.ENTER && isInSummary(editor) || isAtDetailsStart(editor)) {
+          event.preventDefault();
+          editor.execCommand('ToggleAccordion');
+        }
+      });
+    };
+    const setup$1 = editor => {
+      setupEnterKeyInSummary(editor);
+      editor.on('ExecCommand', e => {
+        const cmd = e.command.toLowerCase();
+        if ((cmd === 'delete' || cmd === 'forwarddelete') && isDetailsSelected(editor)) {
+          normalizeDetails(editor);
+        }
+      });
+    };
+
+    var global = tinymce.util.Tools.resolve('tinymce.Env');
+
+    const setup = editor => {
+      if (global.browser.isSafari()) {
+        editor.on('click', e => {
+          if (isSummary(e.target)) {
+            const summary = e.target;
+            const rng = editor.selection.getRng();
+            if (rng.collapsed && rng.startContainer === summary.parentNode && rng.startOffset === 0) {
+              editor.selection.setCursorLocation(summary, 0);
+            }
+          }
+        });
+      }
+    };
+
+    const onSetup = editor => buttonApi => {
+      const onNodeChange = () => buttonApi.setEnabled(isInsertAllowed(editor));
+      editor.on('NodeChange', onNodeChange);
+      return () => editor.off('NodeChange', onNodeChange);
+    };
+    const register = editor => {
+      const onAction = () => editor.execCommand('InsertAccordion');
+      editor.ui.registry.addButton('accordion', {
+        icon: 'accordion',
+        tooltip: 'Insert accordion',
+        onSetup: onSetup(editor),
+        onAction
+      });
+      editor.ui.registry.addMenuItem('accordion', {
+        icon: 'accordion',
+        text: 'Accordion',
+        onSetup: onSetup(editor),
+        onAction
+      });
+      editor.ui.registry.addToggleButton('accordiontoggle', {
+        icon: 'accordion-toggle',
+        tooltip: 'Toggle accordion',
+        onAction: () => editor.execCommand('ToggleAccordion')
+      });
+      editor.ui.registry.addToggleButton('accordionremove', {
+        icon: 'remove',
+        tooltip: 'Delete accordion',
+        onAction: () => editor.execCommand('RemoveAccordion')
+      });
+      editor.ui.registry.addContextToolbar('accordion', {
+        predicate: accordion => editor.dom.is(accordion, 'details') && editor.getBody().contains(accordion) && editor.dom.isEditable(accordion.parentNode),
+        items: 'accordiontoggle accordionremove',
+        scope: 'node',
+        position: 'node'
+      });
+    };
+
+    var Plugin = () => {
+      global$4.add('accordion', editor => {
+        register(editor);
+        register$1(editor);
+        setup$1(editor);
+        setup$2(editor);
+        setup(editor);
+      });
+    };
+
+    Plugin();
+
+})();
