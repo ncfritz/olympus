@@ -6,6 +6,8 @@
     "start": "next start",
     "app": "electron .",
     "dev": "next dev -p 3000",
+    "clean": "rm -rf .next",
+    "prebuild": "npm run clean",
     "build": "next build",
     "lint": "next lint",
     "lintfix": "next lint --fix"
