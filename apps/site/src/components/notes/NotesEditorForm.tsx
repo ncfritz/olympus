@@ -20,6 +20,7 @@ import {
   getIconForType,
   getSecondaryColorForType,
 } from "../../utils/notes";
+import { PUBLISH_EVENT } from "../common/NotificationSink";
 import NoteRichTextEditor from "./NoteRitchTextEditor";
 import { v4 as uuidv4 } from "uuid";
 import NoteSummaryRichTextEditor from "./NoteSummaryRitchTextEditor";
@@ -83,35 +84,54 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
   style = {},
 }: NotesEditorFormProps) => {
   const onSubmit: SubmitHandler<NotesFormInput> = async (data) => {
-    if (noteId) {
-      const updateResponse = await notesApi.updateNote(noteId, data);
+    try {
+      if (noteId) {
+        const updateResponse = await notesApi.updateNote(noteId, data);
 
-      if (afterUpdate) {
-        await afterUpdate(updateResponse.data.note);
+        if (afterUpdate) {
+          await afterUpdate(updateResponse.data.note);
+        }
+
+        publish("notes:noteUpdated");
+        publish(PUBLISH_EVENT, {
+          type: "success",
+          message: "Note saved",
+          description: "The note has been successfully updated",
+        });
+      } else {
+        let candidate = data;
+
+        if (beforeCreate) {
+          candidate = beforeCreate(candidate);
+        }
+
+        if (!candidate.associations) {
+          candidate.associations = [];
+        }
+
+        const createResponse = await notesApi.createNote(candidate);
+
+        if (afterCreate) {
+          await afterCreate(createResponse.data.note);
+        }
+
+        publish("notes:noteAdded");
+
+        publish(PUBLISH_EVENT, {
+          type: "success",
+          message: "Note saved",
+          description: "The note has been successfully created",
+        });
       }
-
-      publish("notes:noteUpdated");
-    } else {
-      let candidate = data;
-
-      if (beforeCreate) {
-        candidate = beforeCreate(candidate);
-      }
-
-      if (!candidate.associations) {
-        candidate.associations = [];
-      }
-
-      const createResponse = await notesApi.createNote(candidate);
-
-      if (afterCreate) {
-        await afterCreate(createResponse.data.note);
-      }
-
-      publish("notes:noteAdded");
+      formControl.reset(NEW_NOTE);
+      onClose();
+    } catch (e) {
+      publish(PUBLISH_EVENT, {
+        type: "error",
+        message: "Failed to save note",
+        description: "Unable to save note due to a server error",
+      });
     }
-    formControl.reset(NEW_NOTE);
-    onClose();
   };
 
   const title = (

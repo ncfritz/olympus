@@ -11,7 +11,9 @@ import { useState } from "react";
 import * as React from "react";
 import { v4 as uuidv4 } from "uuid";
 import notesApi from "../../api/notestApi";
+import {publish} from "../../utils/events";
 import { config, getIconForType, type Note } from "../../utils/notes";
+import {PUBLISH_EVENT} from "../common/NotificationSink";
 
 export interface NotesTimelineEntryTypeProps {
   entry: Note;
@@ -49,6 +51,22 @@ const NotesTimelineEntryType: React.FunctionComponent<
       }
     }
 
+    if (response.status === 204) {
+      publish(PUBLISH_EVENT, {
+        type: "success",
+        message: "Note deleted",
+        description:
+          "The note has been marked as deleted.  You can restore the note",
+      });
+    } else {
+      publish(PUBLISH_EVENT, {
+        type: "success",
+        message: "Note deleted",
+        description:
+          "The note has been permanently deleted and cannot be recovered",
+      });
+    }
+
     closeMenu();
   };
 
@@ -58,6 +76,12 @@ const NotesTimelineEntryType: React.FunctionComponent<
     if (afterRestore) {
       await afterRestore(response.data.note);
     }
+
+    publish(PUBLISH_EVENT, {
+      type: "success",
+      message: "Note restored",
+      description: "The note has been restored successfully",
+    });
 
     closeMenu();
   };
@@ -70,6 +94,12 @@ const NotesTimelineEntryType: React.FunctionComponent<
     if (afterUpdateFlag) {
       await afterUpdateFlag(response.data.note);
     }
+
+    publish(PUBLISH_EVENT, {
+      type: "success",
+      message: "Note updated",
+      description: `The note flag has been ${response.data.note.flagged ? "set" : "removed"} successfully`,
+    });
 
     closeMenu();
   };

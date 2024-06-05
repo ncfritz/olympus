@@ -3,7 +3,7 @@ import {
   Avatar,
   Button,
   Col,
-  Layout,
+  Layout, notification,
   Popover,
   Row,
   Space,
@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import onairApi from "../../api/onairApi";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { setCurtain } from "../../redux/slices/blackCurtainSlice";
+import NotificationSink from "../common/NotificationSink";
 import NotesEditorModal from "../notes/NotesEditorModal";
 import OnAirDrawer from "../onair/OnAirDrawer";
 import RefreshTimer from "../tools/layout/RefreshTimer";
@@ -23,6 +24,7 @@ const { Header } = Layout;
 
 const AuthHeader: React.FunctionComponent = () => {
   const dispatch = useAppDispatch();
+
   const blackCurtainEnabled = useAppSelector(
     (state) => state.blackCurtain.active,
   );
@@ -165,6 +167,7 @@ const AuthHeader: React.FunctionComponent = () => {
           await fetchOnAirStatus();
         }}
       />
+      <NotificationSink />
     </>
   );
 };
