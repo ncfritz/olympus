@@ -11,9 +11,9 @@ import { useState } from "react";
 import * as React from "react";
 import { v4 as uuidv4 } from "uuid";
 import notesApi from "../../api/notestApi";
-import {publish} from "../../utils/events";
+import { publish } from "../../utils/events";
 import { config, getIconForType, type Note } from "../../utils/notes";
-import {PUBLISH_EVENT} from "../common/NotificationSink";
+import { PUBLISH_EVENT } from "../common/NotificationSink";
 
 export interface NotesTimelineEntryTypeProps {
   entry: Note;
