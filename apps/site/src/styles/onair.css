@@ -6,6 +6,10 @@
     border-left-style: solid !important;
     background-color: #ffffff;
 }
+.oa-event.selected {
+    background-color: #fffcf4;
+}
+
 .oa-event.minerva-event {
     padding: 8px 8px 8px 16px !important;
 }
