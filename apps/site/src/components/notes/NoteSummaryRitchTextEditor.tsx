@@ -112,10 +112,12 @@ const NoteSummaryRichTextEditor: React.FunctionComponent<
               "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
             advcode_inline: true,
             codesample_languages: [
+              { text: "Shell", value: "shell" },
               { text: "JSON", value: "json" },
               { text: "HTML/XML", value: "markup" },
               { text: "CSS", value: "css" },
               { text: "JavaScript", value: "javascript" },
+              { text: "Typescript", value: "typescript" },
               { text: "SQL", value: "sql" },
               { text: "PHP", value: "php" },
               { text: "Ruby", value: "ruby" },
