@@ -38,6 +38,9 @@
 .fc-v-event {
     border: 1px solid #cccccc !important;
 }
+.fc-event:focus::after {
+    background: inherit;
+}
 
 .rdp-day {
     padding: 7px;

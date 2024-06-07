@@ -8,6 +8,7 @@ import {
   Avatar,
   Breadcrumb,
   Col,
+  Collapse,
   Empty,
   Layout,
   Row,
@@ -19,7 +20,8 @@ import {
 import type { BreadcrumbItemType } from "antd/lib/breadcrumb/Breadcrumb";
 import { DateTime } from "luxon";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import { useForm } from "react-hook-form";
@@ -47,7 +49,9 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   startDate,
   breadcrumbs,
 }: DayViewProps) => {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const pathName = usePathname();
 
   const calendarRef = useRef<FullCalendar>(null);
 
@@ -61,6 +65,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   const [eventLoading, setEventLoading] = useState(false);
   const [summary, setSummary] = useState<any>(undefined);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [notedEditorOpen, setNotedEditorOpen] = useState(false);
 
   const { handleSubmit, control, reset } = useForm<NotesFormInput>({
     defaultValues: {
@@ -104,17 +109,11 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
 
   useEffect(() => {
     (async () => {
-      const rawEvents = await meetingsApi.getMeetings(start, 1);
+      const getMeetingsResponse = await meetingsApi.getMeetings(start, 1);
       const parsedEvents: EventInput[] = [];
 
-      rawEvents.data.items.forEach((rawEvent: any) => {
-        const event = meetingsApi.toEvent(rawEvent);
-
-        if (targetEventId && targetEventId === event.id) {
-          ((event.classNames as string[]) || []).push("selected");
-        }
-
-        parsedEvents.push(event);
+      getMeetingsResponse.data.items.forEach((rawEvent: any) => {
+        parsedEvents.push(meetingsApi.toEvent(rawEvent));
       });
 
       setEvents(parsedEvents);
@@ -159,6 +158,10 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
       }
     })();
   }, [targetEventId]);
+
+  const toggleNotesEditor = () => {
+    setNotedEditorOpen(!notedEditorOpen);
+  };
 
   const loadSummary = async (quiet: boolean = false) => {
     if (!quiet) {
@@ -229,11 +232,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
     eventContent = <Spin size={"large"} />;
   } else if (event) {
     eventContent = (
-      <Space
-        direction={"vertical"}
-        size={8}
-        style={{ width: "100%", paddingTop: 56 }}
-      >
+      <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
         <Space
           direction={"vertical"}
           className={`oa-event oa-status-${event.status.toLowerCase()} minerva-event`}
@@ -287,41 +286,65 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
             </Avatar.Group>
           </Space>
         </Space>
-        <Space style={{ marginTop: 32, paddingLeft: 8 }}>
-          <Typography.Title level={4} style={{ marginBottom: 0 }}>
-            Notes
-          </Typography.Title>
-        </Space>
-        <NotesEditorForm
-          onClose={() => {}}
-          beforeCreate={(candidate) => {
-            return {
-              ...candidate,
-              associations: [
-                {
-                  itemId: event.id,
-                  itemType: "meeting",
-                },
-              ],
-            };
-          }}
-          formControl={{
-            control: control,
-            reset: reset,
-            handleSubmit: handleSubmit,
-          }}
-          afterCreate={updateNotes}
-          showTitle={false}
-          showSummary={false}
-        />
         <Space
           direction={"vertical"}
           style={{
             width: "100%",
-            paddingLeft: 8,
+            height: "calc(100vh - 356px)",
             overflowY: "scroll",
           }}
         >
+          <Collapse
+            style={{ padding: 8 }}
+            activeKey={notedEditorOpen ? "dayView-notesEditor" : undefined}
+            onChange={() => {
+              toggleNotesEditor();
+            }}
+            ghost={true}
+            items={[
+              {
+                key: "dayView-notesEditor",
+                label: <Typography.Title level={5}>Add Note</Typography.Title>,
+                children: (
+                  <NotesEditorForm
+                    onClose={() => {
+                      toggleNotesEditor();
+                    }}
+                    beforeCreate={(candidate) => {
+                      return {
+                        ...candidate,
+                        associations: [
+                          {
+                            itemId: event.id,
+                            itemType: "meeting",
+                          },
+                        ],
+                      };
+                    }}
+                    formControl={{
+                      control: control,
+                      reset: reset,
+                      handleSubmit: handleSubmit,
+                    }}
+                    afterCreate={updateNotes}
+                    mainEditorHeight={300}
+                    showTitle={false}
+                    showSummary={false}
+                  />
+                ),
+              },
+            ]}
+          />
+          <Space
+            style={{
+              paddingLeft: 8,
+              width: "100%",
+            }}
+          >
+            <Typography.Title level={5} style={{ marginBottom: 0 }}>
+              Notes
+            </Typography.Title>
+          </Space>
           {notesContent}
         </Space>
       </Space>
@@ -390,6 +413,13 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
                 ref={calendarRef}
                 plugins={[timeGridPlugin, listPlugin]}
                 viewClassNames={"minerva-cal hide-day-header"}
+                eventClassNames={(arg) => {
+                  if (targetEventId && arg.event.id === targetEventId) {
+                    return "selected";
+                  }
+
+                  return "";
+                }}
                 initialDate={startDate.toJSDate()}
                 events={events}
                 initialView="timeGridDay"
@@ -414,6 +444,11 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
                 slotDuration={{ minutes: 15 }}
                 eventClick={(arg) => {
                   setTargetEventId(arg.event.id);
+                  /*router.push(
+                    `${pathName}?e=${arg.event.id}`,
+                    `${pathName}?e=${arg.event.id}`,
+                    { shallow: true },
+                  );*/
                 }}
               />
             </Col>
