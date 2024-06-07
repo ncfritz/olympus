@@ -1,4 +1,4 @@
-import { notification, NotificationArgsProps } from "antd";
+import { notification, type NotificationArgsProps } from "antd";
 import type { IconType } from "antd/es/notification/interface";
 import { useEffect } from "react";
 import { subscribe, unsubscribe } from "../../utils/events";
