@@ -43,9 +43,12 @@ export interface NotesEditorFormProps {
     control: Control<NotesFormInput>;
     reset: UseFormReset<NotesFormInput>;
   };
+  mainEditorHeight?: number;
   showAdditionalInfo?: boolean;
   showTitle?: boolean;
   showSummary?: boolean;
+  showCancelButton?: boolean;
+  summaryEditorHeight?: number;
   additionalInfoPosition?: AdditionalInfoPosition;
   style?: CSSProperties;
 }
@@ -77,9 +80,12 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
   afterUpdate,
   noteId,
   formControl,
+  mainEditorHeight = 400,
   showAdditionalInfo = true,
   showTitle = true,
   showSummary = true,
+  summaryEditorHeight = 200,
+  showCancelButton = true,
   additionalInfoPosition = AdditionalInfoPosition.BOTTOM,
   style = {},
 }: NotesEditorFormProps) => {
@@ -171,7 +177,11 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
         required: "A value must be specified",
       }}
       render={({ field: { onChange, value } }) => (
-        <NoteRichTextEditor onChange={onChange} value={value} height={400} />
+        <NoteRichTextEditor
+          onChange={onChange}
+          value={value}
+          height={mainEditorHeight}
+        />
       )}
     />
   );
@@ -184,7 +194,7 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
         <NoteSummaryRichTextEditor
           onChange={onChange}
           value={value}
-          height={200}
+          height={summaryEditorHeight}
         />
       )}
     />
@@ -284,17 +294,19 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
         >
           Save
         </Button>
-        <Button
-          type={"primary"}
-          danger={true}
-          onClick={() => {
-            formControl.reset(NEW_NOTE);
-            onClose();
-          }}
-          icon={<CloseOutlined />}
-        >
-          Cancel
-        </Button>
+        {showCancelButton && (
+          <Button
+            type={"primary"}
+            danger={true}
+            onClick={() => {
+              formControl.reset(NEW_NOTE);
+              onClose();
+            }}
+            icon={<CloseOutlined />}
+          >
+            Cancel
+          </Button>
+        )}
       </Space>
     </Space>
   );
