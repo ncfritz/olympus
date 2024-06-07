@@ -232,7 +232,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
       <Space
         direction={"vertical"}
         size={8}
-        style={{ width: "100%", paddingTop: 76 }}
+        style={{ width: "100%", paddingTop: 56 }}
       >
         <Space
           direction={"vertical"}
@@ -389,7 +389,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
               <FullCalendar
                 ref={calendarRef}
                 plugins={[timeGridPlugin, listPlugin]}
-                viewClassNames={"minerva-cal"}
+                viewClassNames={"minerva-cal hide-day-header"}
                 initialDate={startDate.toJSDate()}
                 events={events}
                 initialView="timeGridDay"
