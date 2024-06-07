@@ -76,6 +76,7 @@ const TimelineEntry: React.FunctionComponent<TimelineEntryProps> = ({
   let noteContent;
   const noteStyle: CSSProperties = {
     padding: 8,
+    width: "100%",
   };
 
   if (!entryOpen) {
@@ -169,7 +170,12 @@ const TimelineEntry: React.FunctionComponent<TimelineEntryProps> = ({
               <NoteHtmlDisplay value={item.summary} />
             </Space>
           )}
-          <Space direction={"vertical"}>
+          <Space
+            direction={"vertical"}
+            style={{
+              width: "100%",
+            }}
+          >
             {item.summary ? (
               <Collapse
                 ghost={true}
