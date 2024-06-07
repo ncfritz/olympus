@@ -108,7 +108,7 @@
     margin-right: 8px;
 }
 .ant-space-item.timeline-content:nth-of-type(3) {
-    width: 100%;
+    width: calc(100% - 176px);
 }
 
 .ant-space-item.timeline-content .collapsed {
@@ -163,4 +163,7 @@
 .minerva-cal-week .fc-timegrid-col.fc-day-today,
 .minerva-cal-month .fc-daygrid-day.fc-day-today {
         background-color: #f3dea033 !important;
+}
+.minerva-cal.hide-day-header .fc-scrollgrid-section-header {
+    display: none;
 }
