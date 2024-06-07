@@ -39,7 +39,11 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
       const parsedEvents: EventInput[] = [];
 
       rawEvents.data.items.forEach((rawEvent: any) => {
-        parsedEvents.push(meetingsApi.toEvent(rawEvent));
+        const parsedEvent = meetingsApi.toEvent(rawEvent);
+
+        if (!parsedEvent.allDay) {
+          parsedEvents.push(parsedEvent);
+        }
       });
 
       setEvents(parsedEvents);
@@ -127,7 +131,9 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
               center: "",
               end: "",
             }}
+            allDaySlot={false}
             height={"100%"}
+            dayMaxEventRows={5}
             weekNumbers={true}
             weekNumberContent={(arg) => {
               return <div className={"ribbon"}>Week&nbsp;{arg.num}</div>;
