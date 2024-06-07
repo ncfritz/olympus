@@ -6,6 +6,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import { Breadcrumb, Button, Col, Collapse, Layout, Space } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import meetingsApi from "../../api/meetingsApi";
@@ -17,6 +18,8 @@ import NotesEditorForm, {
 const { Sider, Content } = Layout;
 
 const IndexPage: React.FunctionComponent = () => {
+  const router = useRouter();
+
   const calendarRef = useRef<FullCalendar>(null);
 
   const { handleSubmit, control, reset } = useForm<NotesFormInput>({
@@ -42,7 +45,7 @@ const IndexPage: React.FunctionComponent = () => {
 
       setEvents(parsedEvents);
     })();
-  }, [startDate]);
+  }, []);
 
   return (
     <Space>
@@ -153,8 +156,9 @@ const IndexPage: React.FunctionComponent = () => {
               }}
               nowIndicator={true}
               slotDuration={{ minutes: 15 }}
-              eventClick={(arg) => {
-                //setTargetEventId(arg.event.id);
+              eventClick={async (arg) => {
+                const target = `/minerva/meetings/${startDate.year}/${startDate.toFormat("MM")}/${startDate.toFormat("dd")}?e=${encodeURIComponent(arg.event.id)}`;
+                await router.push(target, target, { shallow: true });
               }}
             />
           </Col>
