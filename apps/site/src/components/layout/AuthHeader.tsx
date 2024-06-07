@@ -3,7 +3,7 @@ import {
   Avatar,
   Button,
   Col,
-  Layout, notification,
+  Layout,
   Popover,
   Row,
   Space,
