@@ -1,9 +1,10 @@
 import { CreateCalendarItemController } from "../controller/calendar/CreateCalendarItem";
 import { Module } from "@nestjs/common";
-import { DeleteCalendarItemController } from "../controller/calendar/DeleteCalendarItemController";
-import { DescribeCalendarItemController } from "../controller/calendar/DescribeCalendarItemController";
+import { DeleteCalendarItemController } from "../controller/calendar/DeleteCalendarItem";
+import { DescribeCalendarItemController } from "../controller/calendar/DescribeCalendarItem";
 import { GetMeetingsSummaryController } from "../controller/calendar/GetMeetingsSummary";
-import { ListCalendarItemsController } from "../controller/calendar/ListCalendarItemsController";
+import { ListCalendarItemsController } from "../controller/calendar/ListCalendarItems";
+import { UpdateCalendarItemController } from "../controller/calendar/UpdateCalendarItem";
 import { GraphQLClientModule } from "./GraphQLClientModule";
 
 @Module({
@@ -16,6 +17,7 @@ import { GraphQLClientModule } from "./GraphQLClientModule";
     DeleteCalendarItemController,
     DescribeCalendarItemController,
     ListCalendarItemsController,
+    UpdateCalendarItemController,
   ],
 })
 export class MeetingApiModule {}
