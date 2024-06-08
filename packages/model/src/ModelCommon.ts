@@ -12,7 +12,12 @@ export class PaginatedResults {
   count: number;
 }
 
+export class SystemConfiguration {
+  @ApiProperty({ type: String })
+  "hasura.host": string;
+}
+
 export class PingResponse {
-  @ApiProperty({ additionalProperties: { type: "string" } })
+  @ApiProperty({ type: () => SystemConfiguration })
   config: Record<string, string>;
 }
