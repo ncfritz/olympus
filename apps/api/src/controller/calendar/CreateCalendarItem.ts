@@ -63,7 +63,7 @@ export class CreateCalendarItemController {
       mutation CreateMeeting(
         $all_day: Boolean!
         $cancelled: Boolean!
-        $deketed: Boolean!
+        $deleted: Boolean!
         $duration: numeric!
         $end_time: timestamptz!
         $id: String!
@@ -113,6 +113,26 @@ export class CreateCalendarItemController {
               }
             }
           }
+          on_conflict: {
+            constraint: meetings_pkey
+            update_columns: [
+              all_day
+              cancelled
+              deleted
+              duration
+              end_time
+              importance
+              location
+              occurrence_type
+              reminder
+              response
+              sensitivity
+              start_time
+              status
+              subject
+              type
+            ]
+          }
         ) {
           id
           all_day
@@ -159,6 +179,7 @@ export class CreateCalendarItemController {
         {
           all_day: request.item.isAllDay,
           cancelled: request.item.isCancelled,
+          deleted: false,
           duration: request.item.duration,
           end_time: request.item.endTime,
           id: request.item.id,
