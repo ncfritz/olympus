@@ -36,10 +36,14 @@ const getMeeting = async (id: string) => {
   }
 };
 
-const getSummary = async (start: DateTime, days: number = 30) => {
+const getSummary = async (
+  start: DateTime,
+  days: number = 30,
+  summaryDays: number = 30,
+) => {
   try {
     const getSummaryResponse = await axios.get(
-      `/api/v1/meetings/summary/${start.toISODate()}?days=${days}`,
+      `/api/v1/meetings/summary/${start.toISODate()}?days=${days}&summaryDays=${summaryDays}`,
       {
         headers: {
           "x-ncfritz-tz": Intl.DateTimeFormat().resolvedOptions().timeZone,

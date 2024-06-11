@@ -18,7 +18,7 @@ import {
   Typography,
 } from "antd";
 import type { BreadcrumbItemType } from "antd/lib/breadcrumb/Breadcrumb";
-import { DateTime } from "luxon";
+import { DateTime, Interval } from "luxon";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useRouter } from "next/router";
@@ -28,7 +28,9 @@ import { useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import meetingsApi from "../../../api/meetingsApi";
 import notesApi from "../../../api/notestApi";
+import { publish } from "../../../utils/events";
 import type { Note } from "../../../utils/notes";
+import { PUBLISH_EVENT } from "../../common/NotificationSink";
 import Day from "./DayDoughnut";
 import NotesEditorForm, {
   type NotesFormInput,
@@ -152,12 +154,22 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
           setEvents(newEvents);
         }
       } catch (e) {
-        console.log(e);
+        publish(PUBLISH_EVENT, {
+          type: "error",
+          message: "Failed to load meeting",
+          description: `Unable fetch meeting details, please try again`,
+        });
       } finally {
         setEventLoading(false);
       }
     })();
   }, [targetEventId]);
+
+  useEffect(() => {
+    (async () => {
+      await loadSummary(true);
+    })();
+  }, [dayPickerCurrent]);
 
   const toggleNotesEditor = () => {
     setNotedEditorOpen(!notedEditorOpen);
@@ -168,11 +180,34 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
       setSummaryLoading(true);
     }
 
+    const endOfMonth = dayPickerCurrent.endOf("month");
+    const startOfMonth = dayPickerCurrent.startOf("month");
+    const days = Math.ceil(
+      Interval.fromDateTimes(startOfMonth, endOfMonth).length("days"),
+    );
+
+    const summaryStart = startOfMonth.startOf("week").minus({ day: 1 });
+    const summaryEnd = endOfMonth
+      .plus({ day: 1 })
+      .endOf("week")
+      .minus({ day: 1 });
+    const summaryDays = Math.ceil(
+      Interval.fromDateTimes(summaryStart, summaryEnd).length("days"),
+    );
+
     try {
-      const endOfView = startDate.endOf("month").endOf("week");
-      const summaryResponse = await meetingsApi.getSummary(endOfView, 42);
+      const summaryResponse = await meetingsApi.getSummary(
+        endOfMonth,
+        days,
+        summaryDays,
+      );
       setSummary(summaryResponse.data);
     } catch (e) {
+      publish(PUBLISH_EVENT, {
+        type: "error",
+        message: "Failed to load meeting summary",
+        description: `Unable fetch meeting summary for range ${startOfMonth.toISODate()} to ${endOfMonth.toISODate()}`,
+      });
     } finally {
       setSummaryLoading(false);
     }
@@ -186,7 +221,11 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
       );
       setEventNotes(notesResponse.data.notes);
     } catch (e) {
-    } finally {
+      publish(PUBLISH_EVENT, {
+        type: "error",
+        message: "Failed to load notes",
+        description: `Unable fetch notes for the selected meeting`,
+      });
     }
   };
 
@@ -481,7 +520,6 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
           <DayPicker
             className={"minerva-standard"}
             month={dayPickerCurrent.toJSDate()}
-            toMonth={dayPickerCurrent.toJSDate()}
             showWeekNumber={true}
             showOutsideDays={true}
             formatters={{
