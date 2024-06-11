@@ -97,13 +97,18 @@ export class GetMeetingsSummaryController {
     @HeaderTimezone() tz: string,
     @Param("start") start: string,
     @Query("days") days: number,
+    @Query("summaryDays") summaryDays: number,
     @Res() response: Response,
   ): Promise<void> {
     const endDate = moment(start);
-    const startDate = moment(endDate).subtract({ days: days });
+    const startDate = moment(endDate).subtract({ days: days - 1 });
+    const summaryEnd = endDate.endOf("week");
+    const summaryStart = moment(summaryEnd).subtract({ days: summaryDays - 1 });
     const queryInput = {
       start: startDate,
       end: endDate,
+      summaryStart: summaryStart,
+      summaryEnd: summaryEnd,
       tz: tz,
     };
 
@@ -112,8 +117,8 @@ export class GetMeetingsSummaryController {
     const statusStatistics: Record<string, MeetingStatusStatistics> = {};
 
     for (
-      let m = moment(endDate), i = 0;
-      i <= days;
+      let m = moment(summaryEnd), i = 0;
+      i <= summaryDays;
       m.subtract(1, "days"), i++
     ) {
       statusStatistics[m.format("YYYY-MM-DD")] = EMPTY_COUNTS();
@@ -132,6 +137,8 @@ export class GetMeetingsSummaryController {
         $tz: String!
         $start: timestamptz!
         $end: timestamptz!
+        $summaryStart: timestamptz!
+        $summaryEnd: timestamptz!
       ) {
         minerva_meeting_hour_statistics(
           args: { start_date: $start, end_date: $end, tz: $tz }
@@ -150,7 +157,7 @@ export class GetMeetingsSummaryController {
           status
         }
         minerva_meeting_status_statistics(
-          args: { start_date: $start, end_date: $end, tz: $tz }
+          args: { start_date: $summaryStart, end_date: $summaryEnd, tz: $tz }
         ) {
           count
           duration
