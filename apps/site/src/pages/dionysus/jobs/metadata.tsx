@@ -35,7 +35,7 @@ import metadataApi from "../../../api/metadataApi";
 import Timestamp from "../../../components/data/Timestamp";
 import MetadataFetchJobDetailsPanel from "../../../components/dionysus/jobs/MetadataFetchJobDetailsPanel";
 import { getMetadataJobStatusIndicator } from "../../../components/dionysus/jobs/utils";
-import RefreshTimer from "../../../components/tools/layout/RefreshTimer";
+import RefreshTimer from "../../../components/common/RefreshTimer";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
 
 export interface MetadataFetchjob {

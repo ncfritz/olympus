@@ -21,7 +21,7 @@ const RefreshTimer: React.FunctionComponent<RefreshTimerProps> = ({
     return new Date().getTime();
   }, []);
 
-  let timer: any = undefined;
+  let timer: NodeJS.Timeout | undefined = undefined;
   let dataLastFetched = new Date().getTime();
 
   const handler = () => {
@@ -35,9 +35,9 @@ const RefreshTimer: React.FunctionComponent<RefreshTimerProps> = ({
 
     setPercent(currentPercent);
 
-    console.log(
-      `Now: ${now} - dataLastFetched: ${dataLastFetched} - timeSinceLastFetch: ${timeSinceLastFetch} - percent: ${currentPercent} - TTL: ${ttlMs}`,
-    );
+    //console.log(
+    //  `Now: ${now} - dataLastFetched: ${dataLastFetched} - timeSinceLastFetch: ${timeSinceLastFetch} - percent: ${currentPercent} - TTL: ${ttlMs}`,
+    //);
 
     if (timeSinceInitialization >= ttlMs && timeSinceLastFetch >= ttlMs) {
       try {

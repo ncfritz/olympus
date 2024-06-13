@@ -18,7 +18,7 @@ import { setCurtain } from "../../redux/slices/blackCurtainSlice";
 import NotificationSink from "../common/NotificationSink";
 import NotesEditorModal from "../notes/NotesEditorModal";
 import OnAirDrawer from "../onair/OnAirDrawer";
-import RefreshTimer from "../tools/layout/RefreshTimer";
+import RefreshTimer from "../common/RefreshTimer";
 
 const { Header } = Layout;
 
