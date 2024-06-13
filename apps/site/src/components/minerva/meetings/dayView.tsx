@@ -1,4 +1,4 @@
-import { HomeOutlined, RadarChartOutlined } from "@ant-design/icons";
+import {CaretDownOutlined, CaretRightOutlined, HomeOutlined, RadarChartOutlined} from "@ant-design/icons";
 import type { EventInput } from "@fullcalendar/core";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -14,6 +14,7 @@ import {
   Row,
   Space,
   Spin,
+  Switch,
   Tabs,
   Typography,
 } from "antd";
@@ -68,6 +69,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   const [summary, setSummary] = useState<any>(undefined);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [notedEditorOpen, setNotedEditorOpen] = useState(false);
+  const [showMeta, setShowMeta] = useState(true);
 
   const { handleSubmit, control, reset } = useForm<NotesFormInput>({
     defaultValues: {
@@ -250,7 +252,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
           <TimelineEntry
             key={uuidv4()}
             item={item}
-            showMetadata={false}
+            showMetadata={showMeta}
             showAssociations={false}
             deleteCallback={afterNoteUpdate}
             restoreCallback={afterNoteUpdate}
@@ -336,6 +338,13 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
           <Collapse
             style={{ padding: 8 }}
             activeKey={notedEditorOpen ? "dayView-notesEditor" : undefined}
+            expandIcon={(panelProps) => {
+              return panelProps.isActive ? (
+                <CaretDownOutlined />
+              ) : (
+                <CaretRightOutlined />
+              );
+            }}
             onChange={() => {
               toggleNotesEditor();
             }}
@@ -447,7 +456,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
           }}
         >
           <Row style={{ width: "calc(100% - 780px)" }}>
-            <Col span={10} style={{ height: "calc(100vh - 102px)" }}>
+            <Col span={7} style={{ height: "calc(100vh - 102px)" }}>
               <FullCalendar
                 ref={calendarRef}
                 plugins={[timeGridPlugin, listPlugin]}
@@ -492,7 +501,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
               />
             </Col>
             <Col
-              span={14}
+              span={17}
               style={{
                 height: "calc(100vh - 102px)",
                 borderLeft: "1px solid #e6e6e6",
@@ -560,13 +569,41 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
               },
               {
                 key: "week",
-                label: "This Week",
+                label: "Week",
                 children: "Content of Tab Pane 2",
               },
               {
                 key: "month",
-                label: "This Month",
+                label: "Month",
                 children: "Content of Tab Pane 3",
+              },
+              {
+                key: "config",
+                label: "Configuration",
+                children: (
+                  <Space
+                    size={8}
+                    direction={"vertical"}
+                    style={{ width: "100%" }}
+                  >
+                    <Space
+                      direction={"horizontal"}
+                      style={{
+                        width: "100%",
+                        justifyContent: "space-between",
+                        paddingRight: 8,
+                      }}
+                    >
+                      <Typography.Text>Show note metadata</Typography.Text>
+                      <Switch
+                        checked={showMeta}
+                        onChange={(checked) => {
+                          setShowMeta(checked);
+                        }}
+                      />
+                    </Space>
+                  </Space>
+                ),
               },
             ]}
           />
