@@ -29,13 +29,13 @@ const MeetingsHourOfDayGraph: React.FunctionComponent<
   );
 
   if (!summaryLoading && summary) {
-    const xCategories: string[] = [];
+    const xCategories: string[] = [...Array(24)].map((value, index) => {
+      return index > 12 ? `${index - 12}PM` : `${index}AM`;
+    });
     const hourCounts = summary.hourOfDayStatistics;
 
     for (let d = start; d < end; d = d.plus({ hour: 1 })) {
       const key = d.toFormat("HH");
-
-      xCategories.push(key);
 
       MeetingStatusTypes.forEach((type, count) => {
         series[count].data.push(
@@ -82,6 +82,11 @@ const MeetingsHourOfDayGraph: React.FunctionComponent<
             gridLineDashStyle: "Dot",
             categories: xCategories,
             lineWidth: 0,
+            labels: {
+              style: {
+                fontSize: 9,
+              },
+            },
           },
           yAxis: {
             min: 0,

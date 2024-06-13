@@ -12,6 +12,16 @@ interface MeetingsHourOfDayGraphProps {
   summary: any;
 }
 
+const LABELS: Record<string, string> = {
+  1: "Sunday",
+  2: "Monday",
+  3: "Tuesday",
+  4: "Wednesday",
+  5: "Thursday",
+  6: "Friday",
+  7: "Saturday",
+};
+
 const MeetingsDayOfWeekGraph: React.FunctionComponent<
   MeetingsHourOfDayGraphProps
 > = ({ date, summaryLoading, summary }: MeetingsHourOfDayGraphProps) => {
@@ -35,7 +45,7 @@ const MeetingsDayOfWeekGraph: React.FunctionComponent<
     for (let d = start; d < end; d = d.plus({ day: 1 })) {
       const key = d.weekday.toString();
 
-      xCategories.push(key);
+      xCategories.push(LABELS[key]);
 
       MeetingStatusTypes.forEach((type, count) => {
         series[count].data.push(
