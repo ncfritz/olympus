@@ -17,9 +17,9 @@
     "build": "nest build",
     "lint": "eslint ./src",
     "lintfix": "eslint ./src --fix",
-    "start": "nest start",
+    "start": "NODE_ENV=local nest start",
     "start:prod": "node dist/main",
-    "dev": "nest start --watch"
+    "dev": "NODE_ENV=dev nest start --watch"
   },
   "dependencies": {
     "@apollo/server": "^4.10.4",

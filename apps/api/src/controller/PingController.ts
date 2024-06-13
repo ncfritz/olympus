@@ -32,7 +32,7 @@ export class PingController {
 
     const responseBody: PingResponse = {
       config: {
-        "hasura.host": this.configService.get<string>("hasura.host")!,
+        "hasura.host": this.configService.get<string>("HASURA_HOST")!,
       },
     };
 

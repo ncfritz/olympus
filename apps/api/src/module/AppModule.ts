@@ -1,7 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
-import {PingController} from "../controller/PingController";
+import { PingController } from "../controller/PingController";
 import { LoggerMiddleware } from "../middleware/LoggerMiddleware";
-import configuration from "../utils/configuration";
 import { BatchJobApiModule } from "./BatchJobApiModule";
 import { ContentApiModule } from "./ContentApiModule";
 import { GraphQLClientModule } from "./GraphQLClientModule";
@@ -14,8 +13,8 @@ import { ConfigModule } from "@nestjs/config";
 @Module({
   imports: [
     ConfigModule.forRoot({
+      envFilePath: `${process.env.NODE_ENV}.env`,
       isGlobal: true,
-      load: [configuration],
     }),
     RabbitModule,
     GraphQLClientModule,
