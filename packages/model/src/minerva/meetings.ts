@@ -36,6 +36,12 @@ export class Meeting {
   id: string;
 
   @ApiProperty({ type: String })
+  uid?: string;
+
+  @ApiProperty({ type: String })
+  recurrenceId?: string;
+
+  @ApiProperty({ type: String })
   subject: string;
 
   @ApiProperty({ enum: MeetingSensitivity })
