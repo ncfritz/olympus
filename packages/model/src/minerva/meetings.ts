@@ -31,6 +31,10 @@ export enum MeetingStatus {
   NoData = "NoData",
 }
 
+export enum MeetingSource {
+  AMZN = "AMZN",
+}
+
 export class Meeting {
   @ApiProperty({ type: String })
   id: string;
@@ -78,6 +82,9 @@ export class Meeting {
 
   @ApiProperty({ type: Boolean })
   isDeleted: boolean;
+
+  @ApiProperty({ enum: MeetingSource })
+  source: MeetingSource;
 
   @ApiProperty({ enum: MeetingStatus })
   status: MeetingStatus;
