@@ -32,7 +32,8 @@ export enum MeetingStatus {
 }
 
 export enum MeetingSource {
-  AMZN = "AMZN",
+  AMZN = "amzn",
+  UNKNOWN = "unknown",
 }
 
 export class Meeting {
