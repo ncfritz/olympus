@@ -89,6 +89,7 @@ export class ListCalendarItemsController {
           type
           subject
           status
+          source
           start_time
           sensitivity
           response
@@ -104,6 +105,8 @@ export class ListCalendarItemsController {
           location
           importance
           id
+          uid
+          recurrence_id
           end_time
           deleted
           duration

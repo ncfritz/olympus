@@ -55,6 +55,8 @@ export class DeleteCalendarItemController {
           _set: { deleted: true }
         ) {
           id
+          uid
+          recurrence_id
           all_day
           attendees {
             attendance
@@ -87,6 +89,7 @@ export class DeleteCalendarItemController {
           sensitivity
           start_time
           status
+          source
           subject
           type
         }

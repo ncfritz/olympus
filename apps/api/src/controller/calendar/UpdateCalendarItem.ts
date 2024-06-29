@@ -74,6 +74,8 @@ export class UpdateCalendarItemController {
       ) {
         update_minerva_meetings_by_pk(pk_columns: { id: $id }, _set: $changes) {
           id
+          uid
+          recurrence_id
           all_day
           attendees {
             attendance
@@ -106,6 +108,7 @@ export class UpdateCalendarItemController {
           sensitivity
           start_time
           status
+          source
           subject
           type
         }

@@ -67,6 +67,8 @@ export class CreateCalendarItemController {
         $duration: numeric!
         $end_time: timestamptz!
         $id: String!
+        $uid: String!
+        $recurrence_id: String!
         $importance: String!
         $location: String!
         $occurrence_type: String!
@@ -75,6 +77,7 @@ export class CreateCalendarItemController {
         $sensitivity: String!
         $start_time: timestamptz!
         $status: String!
+        $source: String!
         $subject: String!
         $type: String!
         $attendees: [minerva_meeting_attendees_insert_input!]!
@@ -88,6 +91,8 @@ export class CreateCalendarItemController {
             duration: $duration
             end_time: $end_time
             id: $id
+            uid: $uid
+            recurrence_id: $recurrence_id
             importance: $importance
             location: $location
             occurrence_type: $occurrence_type
@@ -96,6 +101,7 @@ export class CreateCalendarItemController {
             sensitivity: $sensitivity
             start_time: $start_time
             status: $status
+            source: $source
             subject: $subject
             type: $type
             organizer: {
@@ -116,6 +122,8 @@ export class CreateCalendarItemController {
           on_conflict: {
             constraint: meetings_pkey
             update_columns: [
+              uid
+              recurrence_id
               all_day
               cancelled
               deleted
@@ -135,6 +143,8 @@ export class CreateCalendarItemController {
           }
         ) {
           id
+          uid
+          recurrence_id
           all_day
           attendees {
             attendance
@@ -183,6 +193,8 @@ export class CreateCalendarItemController {
           duration: request.item.duration,
           end_time: request.item.endTime,
           id: request.item.id,
+          uid: request.item.uid,
+          recurrence_id: request.item.recurrenceId,
           importance: request.item.importance,
           location: request.item.location,
           occurrence_type: request.item.occurrenceType,

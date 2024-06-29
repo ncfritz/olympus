@@ -56,6 +56,7 @@ export class DescribeCalendarItemController {
           type
           subject
           status
+          source
           start_time
           sensitivity
           response
@@ -71,6 +72,8 @@ export class DescribeCalendarItemController {
           location
           importance
           id
+          uid
+          recurrence_id
           end_time
           deleted
           duration

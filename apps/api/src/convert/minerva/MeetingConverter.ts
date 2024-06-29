@@ -5,15 +5,19 @@ import {
   MeetingOccurrenceType,
   MeetingSensitivity,
   MeetingStatus,
+  MeetingSource,
   MeetingUser,
 } from "@ncfritz/olympus-model";
 import moment from "moment";
 
 export type GraphQlMeeting = {
   id: string;
+  uid: string;
+  recurrence_id: string;
   type: string;
   subject: string;
   status: MeetingStatus;
+  source: MeetingSource;
   start_time: string;
   end_time: string;
   sensitivity: MeetingSensitivity;
@@ -73,9 +77,12 @@ export const toDomainObject = (input: GraphQlMeeting): Meeting => {
 
   return {
     id: input.id,
+    uid: input.uid,
+    recurrenceId: input.recurrence_id,
     type: input.type,
     subject: input.subject,
     status: input.status,
+    source: input.source || MeetingSource.UNKNOWN,
     startTime: moment(input.start_time),
     endTime: input.end_time ? moment(input.end_time) : undefined,
     sensitivity: input.sensitivity,
