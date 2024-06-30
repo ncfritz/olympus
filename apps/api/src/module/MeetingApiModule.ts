@@ -2,6 +2,7 @@ import { CreateCalendarItemController } from "../controller/calendar/CreateCalen
 import { Module } from "@nestjs/common";
 import { DeleteCalendarItemController } from "../controller/calendar/DeleteCalendarItem";
 import { DescribeCalendarItemController } from "../controller/calendar/DescribeCalendarItem";
+import { GetMeetingsStatisticsController } from "../controller/calendar/GetMeetingsStatistics";
 import { GetMeetingsSummaryController } from "../controller/calendar/GetMeetingsSummary";
 import { GetNextCalendarItemOccurrenceController } from "../controller/calendar/GetNextCalendarItemOccurrence";
 import { ListCalendarItemsController } from "../controller/calendar/ListCalendarItems";
@@ -15,6 +16,7 @@ import { GraphQLClientModule } from "./GraphQLClientModule";
   providers: [],
   controllers: [
     CreateCalendarItemController,
+    GetMeetingsStatisticsController,
     GetMeetingsSummaryController,
     GetNextCalendarItemOccurrenceController,
     DeleteCalendarItemController,
