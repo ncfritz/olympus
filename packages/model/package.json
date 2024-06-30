@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "prepare": "is-ci || husky install",
-    "clean": "rm -rf ./dist",
+    "clean": "rimraf dist && rimraf tsconfig.tsbuildinfo",
     "prebuild": "rimraf dist",
     "build": "tsc",
     "lint": "eslint ./src",
