@@ -67,8 +67,8 @@ export class CreateCalendarItemController {
         $duration: numeric!
         $end_time: timestamptz!
         $id: String!
-        $uid: String!
-        $recurrence_id: String!
+        $uid: String
+        $recurrence_id: String
         $importance: String!
         $location: String!
         $occurrence_type: String!
@@ -195,6 +195,7 @@ export class CreateCalendarItemController {
           id: request.item.id,
           uid: request.item.uid,
           recurrence_id: request.item.recurrenceId,
+          source: request.item.source,
           importance: request.item.importance,
           location: request.item.location,
           occurrence_type: request.item.occurrenceType,
