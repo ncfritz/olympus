@@ -199,7 +199,7 @@ export class ListCalendarItemsResponse {
   items: Meeting[];
 }
 
-export class GetMeetingSummaryStatisticsResponse {
+export class GetMeetingStatisticsResponse {
   @ApiProperty({
     type: () => MeetingStatusStatistics,
   })
@@ -209,14 +209,9 @@ export class GetMeetingSummaryStatisticsResponse {
     type: () => MeetingStatusStatistics,
   })
   dayOfWeekStatistics: Record<string, MeetingStatusStatistics>;
-
-  @ApiProperty({
-    type: () => MeetingStatusStatistics,
-  })
-  statusStatistics: Record<string, MeetingStatusStatistics>;
 }
 
-export class GetMeetingStatusStatisticsResponse {
+export class GetMeetingSummaryResponse {
   @ApiProperty({
     type: () => MeetingStatusStatistics,
   })
