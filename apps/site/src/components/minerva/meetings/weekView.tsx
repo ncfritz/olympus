@@ -3,16 +3,18 @@ import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import interactionPlugin from "@fullcalendar/interaction";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { Breadcrumb, Layout, Space } from "antd";
+import { Breadcrumb, Layout, Space, Tabs } from "antd";
 import type { BreadcrumbItemType } from "antd/lib/breadcrumb/Breadcrumb";
-import { DateTime } from "luxon";
+import { DateTime, Interval } from "luxon";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import { type DateRange, DayPicker } from "react-day-picker";
 import meetingsApi from "../../../api/meetingsApi";
+import { publish } from "../../../utils/events";
+import { PUBLISH_EVENT } from "../../common/NotificationSink";
 import Day from "./DayDoughnut";
-import MeetingsHourOfDayGraph from "./MeetingsHourOfDayGraph";
+import MeetingStatisticsPanel from "./MeetingsStatisticsPanel";
 
 const { Sider, Content } = Layout;
 
@@ -28,13 +30,33 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
   const router = useRouter();
   const calendarRef = useRef<FullCalendar>(null);
 
-  let start = startDate;
+  const [dayPickerCurrent, setDayPickerCurrent] = useState(startDate);
+
+  let start = startDate.startOf("day");
+  const endOfMonth = dayPickerCurrent.endOf("month");
+  const startOfMonth = dayPickerCurrent.startOf("month");
+  const summaryStart = startOfMonth.startOf("week").minus({ day: 1 });
+  const summaryEnd = endOfMonth
+    .plus({ day: 1 })
+    .endOf("week")
+    .minus({ day: 1 });
+  const summaryDays = Math.ceil(
+    Interval.fromDateTimes(summaryStart, summaryEnd).length("days"),
+  );
 
   if (start.weekday !== 7) {
     start = start.startOf("week").set({ weekday: 7 }).minus({ weeks: 1 });
   }
 
   const end = start.plus({ days: 6 });
+
+  console.group();
+  console.log(`startOfMonth: ${startOfMonth.toISODate()}`);
+  console.log(`endOfMonth: ${endOfMonth.toISODate()}`);
+  console.log(`summaryStart: ${summaryStart.toISODate()}`);
+  console.log(`summaryEnd: ${summaryEnd.toISODate()}`);
+  console.log(`summaryDays: ${summaryDays}`);
+  console.groupEnd();
 
   const [range, setRange] = useState<DateRange | undefined>({
     from: start.toJSDate(),
@@ -90,6 +112,11 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
       const summaryResponse = await meetingsApi.getSummary(endOfView, 42);
       setSummary(summaryResponse.data);
     } catch (e) {
+      publish(PUBLISH_EVENT, {
+        type: "error",
+        message: "Failed to load meetings",
+        description: `Unable fetch meetings, please try again`,
+      });
     } finally {
       setSummaryLoading(false);
     }
@@ -232,10 +259,30 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
               minWidth: 250,
             }}
           />
-          <MeetingsHourOfDayGraph
-            date={startDate}
-            summaryLoading={summaryLoading}
-            summary={summary}
+          <Tabs
+            defaultActiveKey={"week"}
+            items={[
+              {
+                key: "week",
+                label: "Week",
+                children: (
+                  <MeetingStatisticsPanel
+                    startDate={startOfMonth}
+                    dayCount={7}
+                  />
+                ),
+              },
+              {
+                key: "month",
+                label: "Month",
+                children: (
+                  <MeetingStatisticsPanel
+                    startDate={startOfMonth}
+                    dayCount={30}
+                  />
+                ),
+              },
+            ]}
           />
         </Sider>
       </Layout>
