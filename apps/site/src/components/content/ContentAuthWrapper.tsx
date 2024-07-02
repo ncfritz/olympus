@@ -112,7 +112,7 @@ const ContentAuthWrapper: React.FunctionComponent<ContentAuthWrapperProps> = ({
       </Row>
     );
   } else {
-    return children;
+    return <>{children}</>;
   }
 };
 export default ContentAuthWrapper;
