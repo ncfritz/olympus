@@ -84,22 +84,15 @@ export class GetMeetingsSummaryController {
     @Res() response: Response,
   ): Promise<void> {
     const startDate = moment(start);
-    const endDate = moment(startDate)
-      .add({ days: days + 1 })
-      .subtract({ second: 1 });
+    const endDate = moment(startDate).add(days + 1, "days");
     const queryInput = {
       start: startDate,
       end: endDate,
       tz: tz,
     };
-
     const statusStatistics: Record<string, MeetingStatusStatistics> = {};
 
-    for (
-      let m = moment(endDate), i = 0;
-      i <= days;
-      m.subtract(1, "days"), i++
-    ) {
+    for (let m = moment(startDate), i = 0; i <= days; m.add(1, "days"), i++) {
       statusStatistics[m.format("YYYY-MM-DD")] = EMPTY_COUNTS();
     }
 

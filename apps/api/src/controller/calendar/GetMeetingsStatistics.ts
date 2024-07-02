@@ -93,8 +93,8 @@ export class GetMeetingsStatisticsController {
   ): Promise<void> {
     const startDate = moment(start);
     const endDate = moment(startDate)
-      .add({ days: days + 1 })
-      .subtract({ second: 1 });
+      .add(days + 1, "days")
+      .subtract(1, "second");
     const queryInput = {
       start: startDate,
       end: endDate,
