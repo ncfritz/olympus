@@ -13,6 +13,9 @@
 .oa-event.minerva-event {
     padding: 8px 8px 8px 16px !important;
 }
+.oa-event.no-gutter {
+    margin-left: 0px !important;
+}
 
 .oa-event .fc-event-main {
     color: #333333;
