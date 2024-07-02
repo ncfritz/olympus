@@ -96,8 +96,8 @@ export class GetNextCalendarItemOccurrenceController {
               start_time: { _gt: $current_start_time }
             }
           }
-          limit: 1,
-          order_by: {start_time: asc}
+          limit: 1
+          order_by: { start_time: asc }
         ) {
           all_day
           type
@@ -150,7 +150,10 @@ export class GetNextCalendarItemOccurrenceController {
         },
       );
 
-    const meeting = toDomainObject(queryResponse.minerva_meetings[0]);
+    const meeting =
+      queryResponse.minerva_meetings.length > 0
+        ? toDomainObject(queryResponse.minerva_meetings[0])
+        : undefined;
     const responseBody: SingleCalendarItemResponse = {
       item: meeting,
     };
