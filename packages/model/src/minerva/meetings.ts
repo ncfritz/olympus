@@ -188,7 +188,7 @@ export class SingleCalendarItemResponse {
   @ApiProperty({
     type: () => Meeting,
   })
-  item: Meeting;
+  item?: Meeting;
 }
 
 export class ListCalendarItemsResponse {
