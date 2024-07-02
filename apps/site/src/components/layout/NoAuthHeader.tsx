@@ -1,4 +1,6 @@
 import { Col, Layout, Row } from "antd";
+import { isElectron } from "../../utils/electron";
+import NotificationSink from "../common/NotificationSink";
 
 const { Header } = Layout;
 
@@ -16,12 +18,13 @@ const NoAuthHeader: React.FunctionComponent = () => {
       <Row>
         <Col flex={"none"}>
           <img
-            src={"/header.png"}
+            src={isElectron() ? "/header_electron.png" : "/header.png"}
             style={{ verticalAlign: "top", height: 64 }}
             alt={"Logo"}
           />
         </Col>
       </Row>
+      <NotificationSink />
     </Header>
   );
 };
