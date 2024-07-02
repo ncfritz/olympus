@@ -14,14 +14,12 @@ const TYPE_COLORS = {
   source: "#6b32a8",
   system: "#bf6c00",
   user: "#0026bf",
+  model: "#33493f",
 };
 
-const ContentAssetTagElement: React.FunctionComponent<ContentAssetTagElementProps> = ({
-  assetId,
-  tag,
-  onRemove,
-  onSelectTag,
-}: ContentAssetTagElementProps) => {
+const ContentAssetTagElement: React.FunctionComponent<
+  ContentAssetTagElementProps
+> = ({ assetId, tag, onRemove, onSelectTag }: ContentAssetTagElementProps) => {
   return (
     <Tag
       closable={onRemove !== undefined}

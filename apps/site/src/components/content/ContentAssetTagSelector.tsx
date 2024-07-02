@@ -66,7 +66,7 @@ const ContentAssetTagSelector: React.FunctionComponent<
     }
   };
 
-  let content = <Empty description={"No tags"} />;
+  let content = <Empty description={"No tags"} style={{ marginTop: 36 }} />;
 
   if (tags.length > 0) {
     content = (
