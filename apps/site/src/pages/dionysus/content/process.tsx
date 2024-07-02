@@ -136,6 +136,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
   useEffect(() => {
     const sortedTags: Record<string, ContentAssetTag[]> = {
       system: [],
+      model: [],
       user: [],
       source: [],
       type: [],
@@ -172,22 +173,6 @@ const ContentProcessingPage: React.FunctionComponent = () => {
         subTitle="Please check and modify the following information before resubmitting."
       />
     );
-  } else if (!assetLoading) {
-    const minHeight = 550;
-    const maxHeight = 600;
-    const maxWidth = 800;
-
-    let ratioAdjustment = 1;
-
-    if (asset.width > maxWidth) {
-      ratioAdjustment = maxWidth / asset.width;
-    } else if (asset.height > maxHeight) {
-      ratioAdjustment = maxHeight / asset.height;
-    } else if (asset.height < minHeight) {
-      ratioAdjustment = minHeight / asset.height;
-    }
-
-    contentOffset = contentOffset + Math.floor(ratioAdjustment * asset.height);
   }
 
   if (asset) {
@@ -198,11 +183,28 @@ const ContentProcessingPage: React.FunctionComponent = () => {
     const imgWidth = imgHeight / aspectRatio;
     const videoOrientation = aspectRatio > 1 ? "horizontal" : "vertical";
 
+    const minHeight = 550;
+    const maxHeight = 600;
+    const maxWidth = 800;
+
+    let ratioAdjustment = 1;
+
+    if (asset.width > maxWidth && videoOrientation === "vertical") {
+      ratioAdjustment = maxWidth / asset.width;
+    } else if (asset.height > maxHeight) {
+      ratioAdjustment = maxHeight / asset.height;
+    } else if (asset.height < minHeight) {
+      ratioAdjustment = minHeight / asset.height;
+    }
+
+    contentOffset = contentOffset + Math.floor(ratioAdjustment * asset.height);
+
     let videoWidth, videoHeight;
 
     console.group(`Asset Display - ${asset.id}`);
     console.log(`Image (W x H): ${imgWidth}px x ${imgHeight}px`);
     console.log(`Aspect ratio: ${aspectRatio}`);
+    console.log(`Content offset: ${contentOffset}px`);
     console.groupEnd();
 
     if (videoOrientation === "horizontal") {
@@ -220,13 +222,16 @@ const ContentProcessingPage: React.FunctionComponent = () => {
         direction={"vertical"}
         style={{
           display: "block",
-          width: "calc(100vw - 200px)",
+          width: "calc(100vw - 380px)",
           padding: 16,
         }}
       >
         <Space
           direction={"horizontal"}
-          style={{ justifyContent: "space-between", width: "100%" }}
+          style={{
+            justifyContent: "space-between",
+            width: "100%",
+          }}
         >
           <Space direction={"vertical"}>
             <Typography.Title level={3} style={{ marginBottom: 2 }}>
@@ -237,6 +242,9 @@ const ContentProcessingPage: React.FunctionComponent = () => {
           <Progress
             style={{ width: 450 }}
             percent={(taggedCount / (untaggedCount + taggedCount)) * 100}
+            format={(percent) => {
+              return `${(percent || 0).toFixed(2)}%`;
+            }}
           />
         </Space>
         <Space direction={"horizontal"}>
