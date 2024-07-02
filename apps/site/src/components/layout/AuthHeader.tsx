@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import onairApi from "../../api/onairApi";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { setCurtain } from "../../redux/slices/blackCurtainSlice";
+import { isElectron } from "../../utils/electron";
 import NotificationSink from "../common/NotificationSink";
 import NotesEditorModal from "../notes/NotesEditorModal";
 import OnAirDrawer from "../onair/OnAirDrawer";
@@ -90,6 +91,7 @@ const AuthHeader: React.FunctionComponent = () => {
 
   return (
     <>
+      <div className={"titlebar"} />
       <Header
         style={{
           position: "fixed",
@@ -102,9 +104,10 @@ const AuthHeader: React.FunctionComponent = () => {
         <Row>
           <Col flex={"none"}>
             <img
-              src={"/header.png"}
+              src={isElectron() ? "/header_electron.png" : "/header.png"}
               style={{ verticalAlign: "top", height: 64 }}
               alt={"Logo"}
+              className={isElectron() ? "electron-logo" : ""}
             />
           </Col>
           <Col flex={"auto"}></Col>
