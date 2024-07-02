@@ -36,14 +36,27 @@ const getMeeting = async (id: string) => {
   }
 };
 
-const getSummary = async (
-  start: DateTime,
-  days: number = 30,
-  summaryDays: number = 30,
-) => {
+const getNextMeetingInSeries = async (id: string) => {
+  try {
+    const getNextMeetingRessponse = await axios.get(
+      `/api/v1/meeting/${encodeURIComponent(id)}/next`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return getNextMeetingRessponse;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getSummary = async (start: DateTime, days: number = 30) => {
   try {
     const getSummaryResponse = await axios.get(
-      `/api/v1/meetings/summary/${start.toISODate()}?days=${days}&summaryDays=${summaryDays}`,
+      `/api/v1/meetings/summary/${start.toISODate()}?days=${days}`,
       {
         headers: {
           "x-ncfritz-tz": Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -55,6 +68,26 @@ const getSummary = async (
     );
 
     return getSummaryResponse;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getStatistics = async (start: DateTime, days: number = 30) => {
+  try {
+    const getStatisticsResponse = await axios.get(
+      `/api/v1/meetings/statistics/${start.toISODate()}?days=${days}`,
+      {
+        headers: {
+          "x-ncfritz-tz": Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return getStatisticsResponse;
   } catch (e) {
     throw e;
   }
@@ -75,7 +108,9 @@ const toEvent = (meeting: any): EventInput => {
 const meetingsApi = {
   getMeetings: getMeetings,
   getMeeting: getMeeting,
+  getNextMeetingInSeries: getNextMeetingInSeries,
   getSummary: getSummary,
+  getStatistics: getStatistics,
   toEvent: toEvent,
 };
 export default meetingsApi;

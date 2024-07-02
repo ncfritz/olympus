@@ -1,9 +1,15 @@
-import {CaretDownOutlined, CaretRightOutlined, HomeOutlined, RadarChartOutlined} from "@ant-design/icons";
+import {
+  CalendarOutlined,
+  CaretDownOutlined,
+  CaretRightOutlined,
+  ClockCircleOutlined,
+  HomeOutlined,
+  RadarChartOutlined,
+} from "@ant-design/icons";
 import type { EventInput } from "@fullcalendar/core";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
-
 import {
   Avatar,
   Breadcrumb,
@@ -38,8 +44,7 @@ import NotesEditorForm, {
 } from "../../notes/NotesEditorForm";
 import TimelineEntry from "../../notes/TimelineEntry";
 import AttendeeAvatar from "./AttendeeAvatar";
-import MeetingsDayOfWeekGraph from "./MeetingsDayOfWeekGraph";
-import MeetingsHourOfDayGraph from "./MeetingsHourOfDayGraph";
+import MeetingStatisticsPanel from "./MeetingsStatisticsPanel";
 
 const { Sider, Content } = Layout;
 
@@ -60,14 +65,19 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
 
   const [dayPickerCurrent, setDayPickerCurrent] = useState(startDate);
   const [events, setEvents] = useState<EventInput[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsError, setEventsError] = useState(false);
   const [targetEventId, setTargetEventId] = useState<string | undefined>(
     undefined,
   );
   const [event, setEvent] = useState<any>(undefined);
+  const [nextEventInSeries, setNextEventInSeries] = useState<any>(undefined);
   const [eventNotes, setEventNotes] = useState([]);
   const [eventLoading, setEventLoading] = useState(false);
+  const [eventError, setEventError] = useState(false);
   const [summary, setSummary] = useState<any>(undefined);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState(false);
   const [notedEditorOpen, setNotedEditorOpen] = useState(false);
   const [showMeta, setShowMeta] = useState(true);
 
@@ -83,6 +93,24 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   });
 
   const start = startDate.startOf("day");
+  const endOfMonth = dayPickerCurrent.endOf("month");
+  const startOfMonth = dayPickerCurrent.startOf("month");
+  const summaryStart = startOfMonth.startOf("week").minus({ day: 1 });
+  const summaryEnd = endOfMonth
+    .plus({ day: 1 })
+    .endOf("week")
+    .minus({ day: 1 });
+  const summaryDays = Math.ceil(
+    Interval.fromDateTimes(summaryStart, summaryEnd).length("days"),
+  );
+
+  console.groupCollapsed();
+  console.log(`startOfMonth: ${startOfMonth.toISODate()}`);
+  console.log(`endOfMonth: ${endOfMonth.toISODate()}`);
+  console.log(`summaryStart: ${summaryStart.toISODate()}`);
+  console.log(`summaryEnd: ${summaryEnd.toISODate()}`);
+  console.log(`summaryDays: ${summaryDays}`);
+  console.groupEnd();
 
   const renderDay = (day: Date) => {
     if (summary && summary.statusStatistics) {
@@ -113,15 +141,29 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
 
   useEffect(() => {
     (async () => {
-      const getMeetingsResponse = await meetingsApi.getMeetings(start, 1);
-      const parsedEvents: EventInput[] = [];
+      setEventError(false);
 
-      getMeetingsResponse.data.items.forEach((rawEvent: any) => {
-        parsedEvents.push(meetingsApi.toEvent(rawEvent));
-      });
+      try {
+        setEventsLoading(true);
+        const getMeetingsResponse = await meetingsApi.getMeetings(start, 1);
+        const parsedEvents: EventInput[] = [];
 
-      setEvents(parsedEvents);
-      await loadSummary();
+        getMeetingsResponse.data.items.forEach((rawEvent: any) => {
+          parsedEvents.push(meetingsApi.toEvent(rawEvent));
+        });
+
+        setEvents(parsedEvents);
+        await loadSummary();
+      } catch (e) {
+        publish(PUBLISH_EVENT, {
+          type: "error",
+          message: "Failed to load meetings",
+          description: `Unable fetch meetings, please try again`,
+        });
+        setEventsError(true);
+      } finally {
+        setEventsLoading(false);
+      }
     })();
   }, [startDate]);
 
@@ -130,6 +172,8 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
       setEventLoading(true);
 
       try {
+        setEventError(false);
+
         if (targetEventId) {
           const response = await meetingsApi.getMeeting(targetEventId);
           setEvent(response.data.item);
@@ -138,6 +182,9 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
             targetEventId,
           );
           setEventNotes(notesResponse.data.notes);
+          const nextEventResponse =
+            await meetingsApi.getNextMeetingInSeries(targetEventId);
+          setNextEventInSeries(nextEventResponse.data.item);
 
           const newEvents = [];
 
@@ -161,6 +208,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
           message: "Failed to load meeting",
           description: `Unable fetch meeting details, please try again`,
         });
+        setEventError(true);
       } finally {
         setEventLoading(false);
       }
@@ -182,25 +230,10 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
       setSummaryLoading(true);
     }
 
-    const endOfMonth = dayPickerCurrent.endOf("month");
-    const startOfMonth = dayPickerCurrent.startOf("month");
-    const days = Math.ceil(
-      Interval.fromDateTimes(startOfMonth, endOfMonth).length("days"),
-    );
-
-    const summaryStart = startOfMonth.startOf("week").minus({ day: 1 });
-    const summaryEnd = endOfMonth
-      .plus({ day: 1 })
-      .endOf("week")
-      .minus({ day: 1 });
-    const summaryDays = Math.ceil(
-      Interval.fromDateTimes(summaryStart, summaryEnd).length("days"),
-    );
-
     try {
+      setSummaryError(false);
       const summaryResponse = await meetingsApi.getSummary(
-        endOfMonth,
-        days,
+        summaryStart,
         summaryDays,
       );
       setSummary(summaryResponse.data);
@@ -210,6 +243,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
         message: "Failed to load meeting summary",
         description: `Unable fetch meeting summary for range ${startOfMonth.toISODate()} to ${endOfMonth.toISODate()}`,
       });
+      setSummaryError(true);
     } finally {
       setSummaryLoading(false);
     }
@@ -398,7 +432,43 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
       </Space>
     );
   } else {
-    eventContent = <Empty description={"No event selected"} />;
+    eventContent = (
+      <Empty description={"No event selected"} style={{ marginTop: 64 }} />
+    );
+  }
+
+  let nextEventContent = undefined;
+
+  if (nextEventInSeries) {
+    const nextEventStart = DateTime.fromISO(nextEventInSeries.startTime);
+    const nextEventEnd = DateTime.fromISO(nextEventInSeries.endTime);
+
+    nextEventContent = (
+      <Space
+        direction={"vertical"}
+        className={`oa-event oa-status-${nextEventInSeries.status.toLowerCase()} minerva-event no-gutter`}
+        style={{
+          width: "100%",
+          position: "relative",
+          borderRadius: 6,
+          marginBottom: 16,
+        }}
+      >
+        <Typography.Title level={5}>Next in Series:</Typography.Title>
+        <Space direction={"horizontal"} size={8}>
+          <CalendarOutlined />
+          <Typography.Text style={{ fontSize: "12px" }}>
+            {nextEventStart.toFormat("DDDD")}
+          </Typography.Text>
+        </Space>
+        <Space direction={"horizontal"} size={8}>
+          <ClockCircleOutlined />
+          <Typography.Text style={{ fontSize: "12px" }}>
+            {nextEventStart.toFormat("t")} - {nextEventEnd.toFormat("t")}
+          </Typography.Text>
+        </Space>
+      </Space>
+    );
   }
 
   return (
@@ -546,36 +616,34 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
               minWidth: 250,
             }}
           />
+          {nextEventContent}
           <Tabs
             defaultActiveKey={"today"}
             items={[
               {
                 key: "today",
                 label: "Today",
-                children: (
-                  <>
-                    <MeetingsHourOfDayGraph
-                      date={startDate}
-                      summaryLoading={summaryLoading}
-                      summary={summary}
-                    />
-                    <MeetingsDayOfWeekGraph
-                      date={startDate}
-                      summaryLoading={summaryLoading}
-                      summary={summary}
-                    />
-                  </>
-                ),
+                children: <>dddslak</>,
               },
               {
                 key: "week",
                 label: "Week",
-                children: "Content of Tab Pane 2",
+                children: (
+                  <MeetingStatisticsPanel
+                    startDate={startOfMonth}
+                    dayCount={7}
+                  />
+                ),
               },
               {
                 key: "month",
                 label: "Month",
-                children: "Content of Tab Pane 3",
+                children: (
+                  <MeetingStatisticsPanel
+                    startDate={startOfMonth}
+                    dayCount={30}
+                  />
+                ),
               },
               {
                 key: "config",
