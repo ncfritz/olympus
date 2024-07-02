@@ -43,9 +43,9 @@ const SignInPage: React.FunctionComponent = () => {
     })();
   }, []);
   let providersList: ReactNode | ReactNode[] = (
-    <Spin size={"large"} tip={"Loading providers..."}>
-      <div></div>
-    </Spin>
+    <Space style={{ width: "100%" }}>
+      <Spin size={"large"} />
+    </Space>
   );
 
   if (!loadingProviders) {
