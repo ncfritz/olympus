@@ -6,7 +6,9 @@ import { subscribe, unsubscribe } from "../../utils/events";
 export const PUBLISH_EVENT = "notifications:publish";
 
 const NotificationSink: React.FunctionComponent = () => {
-  const [api, contextHolder] = notification.useNotification();
+  const [api, contextHolder] = notification.useNotification({
+    top: 96,
+  });
 
   useEffect(() => {
     subscribe(PUBLISH_EVENT, onNotificationReceived);
