@@ -15,7 +15,7 @@ const IndexPage: React.FunctionComponent = () => {
         }}
       >
         <Row>
-          <Col span={14}>fff</Col>
+          <Col span={14}>Somewhere! Over the rainbow</Col>
           <Col span={10}>
             <WeatherForecastWidget />
           </Col>

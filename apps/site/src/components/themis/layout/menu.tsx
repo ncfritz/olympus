@@ -1,20 +1,16 @@
 import {
-  ClockCircleOutlined,
-  HomeOutlined,
-  SubnodeOutlined,
-  ToolOutlined,
+  BarChartOutlined,
+  CalendarOutlined, FolderAddOutlined, FolderOutlined,
+  HomeOutlined, UsergroupAddOutlined,
 } from "@ant-design/icons";
-import { Menu } from "antd";
+import { Avatar, Menu, Space, Spin, Typography } from "antd";
+import type { ItemType, MenuItemType } from "antd/es/menu/interface";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import themisApi from "../../../api/themisApi";
+import type { GetReviewYearsResponse } from "../../../pages/api/themis/reviewYears";
 
-const BASE_PATH = "tools";
-const SUB_MENUS = {
-  "/security": "security-container",
-  "/time": "time-container",
-  "/encoding": "encoding_container",
-  "/general": "general_container",
-};
+const BASE_PATH = "themis";
 
 const ThemisMenu: React.FunctionComponent = () => {
   const router = useRouter();
@@ -23,20 +19,27 @@ const ThemisMenu: React.FunctionComponent = () => {
   const [sideMenuSubMenuItems, setSideMenuSubMenuItems] = useState<string[]>(
     [],
   );
+  const [reviewYears, setReviewYears] = useState<
+    GetReviewYearsResponse | undefined
+  >(undefined);
+  const [reviewYearsLoading, setReviewYearsLoading] = useState(false);
+  const [reviewYearsError, setReviewYearsError] = useState(false);
 
   useEffect(() => {
-    const path = router.pathname;
-    const items = [];
+    (async () => {
+      setReviewYearsLoading(true);
+      setReviewYearsError(false);
 
-    for (const [key, value] of Object.entries(SUB_MENUS)) {
-      if (path.startsWith(`/${BASE_PATH}${key}`)) {
-        items.push(value);
+      try {
+        const response = await themisApi.getReviewYears();
+        setReviewYears(response);
+      } catch (e) {
+        setReviewYearsError(true);
+      } finally {
+        setReviewYearsLoading(false);
       }
-    }
-
-    setSideMenuSubMenuItems(items);
-    setSideMenuItem(path);
-  }, [router]);
+    })();
+  }, []);
 
   const updateSubMenus = ({ key }: { key: string }) => {
     const items = [...sideMenuSubMenuItems];
@@ -49,6 +52,57 @@ const ThemisMenu: React.FunctionComponent = () => {
 
     setSideMenuSubMenuItems(items);
   };
+
+  if (reviewYearsLoading) {
+    return (
+      <Space
+        size={8}
+        direction={"vertical"}
+        style={{ marginTop: 64, alignItems: "center", width: "100%" }}
+      >
+        <Spin size="large" />
+        <Typography.Text>Loading...</Typography.Text>
+      </Space>
+    );
+  } else if (reviewYearsError) {
+    return <></>;
+  }
+
+  const menuItems: ItemType<MenuItemType>[] = [];
+
+  if (reviewYears && reviewYears.reviews) {
+    for (const [key, value] of Object.entries(reviewYears.reviews)) {
+      const subMenu = [
+        {
+          key: "",
+          icon: <BarChartOutlined />,
+          label: "Overview",
+        },
+      ];
+
+      value.users.forEach((user) => {
+        subMenu.push({
+          key: `/${BASE_PATH}/review/${user.username}?year=${key}`,
+          icon: (
+            <Avatar
+              size={"small"}
+              shape={"square"}
+              src={`https://cdn.ncfritz.net/amzn/avatar/${user.username}.jpg`}
+            />
+          ),
+          label: `${user.givenName} ${user.surname}`,
+        });
+      });
+
+      menuItems.push({
+        key: `/${BASE_PATH}/reviews/${key}`,
+        icon: <CalendarOutlined />,
+        label: value.year,
+        onTitleClick: updateSubMenus,
+        children: subMenu,
+      });
+    }
+  }
 
   return (
     <Menu
@@ -71,92 +125,19 @@ const ThemisMenu: React.FunctionComponent = () => {
           label: "Home",
         },
         {
-          key: `/${BASE_PATH}/uuid`,
-          icon: <HomeOutlined />,
-          label: "UUID",
+          key: `/${BASE_PATH}/users`,
+          icon: <UsergroupAddOutlined />,
+          label: "Users",
         },
         {
-          key: "security-container",
-          icon: <ToolOutlined />,
-          label: "Metadata",
-          onTitleClick: updateSubMenus,
-          children: [
-            {
-              key: `/${BASE_PATH}/security/sslcon`,
-              icon: <ToolOutlined />,
-              label: "SSL Connection Tester",
-            },
-            {
-              key: `/${BASE_PATH}/security/certv`,
-              icon: <ToolOutlined />,
-              label: "Certificate Viewer",
-            },
-            {
-              key: `/${BASE_PATH}/security/sslmon`,
-              icon: <ToolOutlined />,
-              label: "Certificate Monitor",
-            },
-          ],
+          key: `/${BASE_PATH}/reviewYears`,
+          icon: <FolderOutlined />,
+          label: "Reviews",
         },
         {
-          key: "time-container",
-          icon: <ClockCircleOutlined />,
-          label: "Content",
-          onTitleClick: updateSubMenus,
-          children: [
-            {
-              key: `/${BASE_PATH}/time/zones`,
-              icon: <ClockCircleOutlined />,
-              label: "Timezones",
-            },
-            {
-              key: `/${BASE_PATH}/content/ts`,
-              icon: <ClockCircleOutlined />,
-              label: "Timestamp",
-            },
-          ],
+          type: "divider",
         },
-        {
-          key: "encoding_container",
-          icon: <SubnodeOutlined />,
-          label: "Encoding",
-          onTitleClick: updateSubMenus,
-          children: [
-            {
-              key: `/${BASE_PATH}/encoding/jwt`,
-              icon: <SubnodeOutlined />,
-              label: "JWT Tokens",
-            },
-            {
-              key: `/${BASE_PATH}/encoding/base`,
-              icon: <SubnodeOutlined />,
-              label: "Base64/62",
-            },
-            {
-              key: `/${BASE_PATH}/encoding/json`,
-              icon: <SubnodeOutlined />,
-              label: "JSON Formatter",
-            },
-            {
-              key: `/${BASE_PATH}/encoding/char`,
-              icon: <SubnodeOutlined />,
-              label: "Character",
-            },
-          ],
-        },
-        {
-          key: "general_container",
-          icon: <SubnodeOutlined />,
-          label: "General",
-          onTitleClick: updateSubMenus,
-          children: [
-            {
-              key: `/${BASE_PATH}/encoding/jwt`,
-              icon: <SubnodeOutlined />,
-              label: "JWT Tokens",
-            },
-          ],
-        },
+        ...menuItems,
       ]}
     />
   );
