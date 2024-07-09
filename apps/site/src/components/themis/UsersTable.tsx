@@ -1,9 +1,9 @@
-import {Avatar, Space, Table, type TableProps, Typography} from "antd";
+import { Avatar, Space, Table, type TableProps, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import Link from "next/link";
-import React, {useState} from "react";
-import type {SortOptions} from "../../api/contentApi";
-import type {Certification} from "../../pages/dionysus/metadata/certifications";
+import React, { useState } from "react";
+import type { SortOptions } from "../../api/contentApi";
+import type { Certification } from "../../pages/dionysus/metadata/certifications";
 import type { BasicUserInfo } from "../../types/themis";
 
 export interface UsersTableProps {

@@ -1,7 +1,10 @@
 import {
   BarChartOutlined,
-  CalendarOutlined, FolderAddOutlined, FolderOutlined,
-  HomeOutlined, UsergroupAddOutlined,
+  CalendarOutlined,
+  FolderAddOutlined,
+  FolderOutlined,
+  HomeOutlined,
+  UsergroupAddOutlined,
 } from "@ant-design/icons";
 import { Avatar, Menu, Space, Spin, Typography } from "antd";
 import type { ItemType, MenuItemType } from "antd/es/menu/interface";

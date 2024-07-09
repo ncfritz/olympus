@@ -50,9 +50,7 @@ const IndexPage: React.FunctionComponent = () => {
           height: "calc(100vh - 202px)",
         }}
       >
-        <Content style={{ width: "calc(100vw - 993px)" }}>
-          Themis!
-        </Content>
+        <Content style={{ width: "calc(100vw - 993px)" }}>Themis!</Content>
       </Layout>
     </Space>
   );

@@ -10,7 +10,7 @@ export interface NoteRichTextEditorProps {
 const NoteRichTextEditor: React.FunctionComponent<NoteRichTextEditorProps> = ({
   onChange,
   value,
-  height=300,
+  height = 300,
 }: NoteRichTextEditorProps) => {
   const editorRef = useRef<Editor | null>(null);
 

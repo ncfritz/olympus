@@ -2,7 +2,8 @@ import axios from "axios";
 import type {
   BaseBasicUserInfo,
   BasicUserInfo,
-  JobHistoryEntry, JobInfo,
+  JobHistoryEntry,
+  JobInfo,
   ReviewRating,
 } from "../types/themis";
 

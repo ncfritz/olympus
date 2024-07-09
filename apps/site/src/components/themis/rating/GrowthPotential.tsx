@@ -1,7 +1,7 @@
 import { Typography } from "antd";
 import React from "react";
 import type { PotentialRating } from "../../../types/themis";
-import {potentialColors, type RatingSize} from "./constants";
+import { potentialColors, type RatingSize } from "./constants";
 
 export interface PotentialProps {
   rating: PotentialRating;

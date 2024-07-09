@@ -14,10 +14,7 @@ import React, { type ReactNode, useEffect, useState } from "react";
 import ReactCountryFlag from "react-country-flag/src";
 import metadataApi, { type SortOptions } from "../../../api/metadataApi";
 import Timestamp from "../../../components/data/Timestamp";
-import {
-  CertificationOutlined,
-  MetadataOutlinedIcon,
-} from "../../../icons";
+import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
 
 export interface Country {
   id: string;

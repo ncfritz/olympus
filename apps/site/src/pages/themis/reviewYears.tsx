@@ -11,7 +11,7 @@ import themisApi from "../../api/themisApi";
 import AddUserPanel from "../../components/themis/AddUserPanel";
 import ReviewYearsTable from "../../components/themis/ReviewYearsTable";
 import UsersTable from "../../components/themis/UsersTable";
-import type {BasicUserInfo, ReviewYear} from "../../types/themis";
+import type { BasicUserInfo, ReviewYear } from "../../types/themis";
 
 const { Content } = Layout;
 

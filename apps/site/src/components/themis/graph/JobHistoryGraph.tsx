@@ -35,6 +35,8 @@ const getColor = (level: string, fte: boolean) => {
 
     return "#b5f390";
   }
+
+  return "#ff8080";
 };
 
 interface LevelProps {

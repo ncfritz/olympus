@@ -1,6 +1,7 @@
 import { Typography } from "antd";
 import React from "react";
-import { criticalityColors, CriticalityRating } from "./constants";
+import type { CriticalityRating } from "../../../types/themis";
+import { criticalityColors } from "./constants";
 
 export interface PotentialProps {
   rating: CriticalityRating;

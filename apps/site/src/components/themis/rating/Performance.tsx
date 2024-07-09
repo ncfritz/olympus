@@ -1,9 +1,9 @@
 import { Space, Typography } from "antd";
 import { ArrowDownOutlined, ArrowUpOutlined } from "@ant-design/icons";
 
-import React, { ReactElement } from "react";
-import type {PerformanceRating} from "../../../types/themis";
-import {performanceRatingColors, type RatingSize} from "./constants";
+import React, { type ReactElement } from "react";
+import type { PerformanceRating } from "../../../types/themis";
+import { performanceRatingColors, type RatingSize } from "./constants";
 
 export interface PerformanceProps {
   rating: PerformanceRating;
