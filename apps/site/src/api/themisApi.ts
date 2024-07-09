@@ -7,6 +7,23 @@ import type {
   ReviewRating,
 } from "../types/themis";
 
+const getDataSummary = async (username: string, year: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/data/${year}/dataSummary`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const getReviewYears = async () => {
   try {
     const response = await axios.get(`/api/themis/reviewYears`, {
@@ -238,6 +255,7 @@ const themisApi = {
   createUser: createUser,
   getBasicUserInfo: getBasicUserInfo,
   getJobInfo: getJobInfo,
+  getDataSummary: getDataSummary,
   getJobHistory: getJobHistory,
   getRating: getRating,
   getReviewYears: getReviewYears,
