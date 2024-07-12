@@ -44,7 +44,7 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
       parsedData[entryDate.year] = [];
     }
 
-    if (entry[stat] > localMax) {
+    if ((entry[stat] as number) > localMax) {
       localMax = entry[stat] as number;
     }
 

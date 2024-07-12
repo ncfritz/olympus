@@ -1,6 +1,6 @@
 import { Button, Col, Row, Space, Typography } from "antd";
 import { DateTime } from "luxon";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import themisApi from "../../../api/themisApi";
 import type { CodeStat } from "../../../types/themis";
@@ -128,10 +128,10 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
             <Typography.Text strong={true}>Changes</Typography.Text>
           </Col>
           <Col span={4}>
-            <Typography.Text strong={true}>SLOC Added</Typography.Text>
+            <Typography.Text strong={true}>Added</Typography.Text>
           </Col>
           <Col span={4}>
-            <Typography.Text strong={true}>SLOC Removed</Typography.Text>
+            <Typography.Text strong={true}>Removed</Typography.Text>
           </Col>
           <Col span={4}>
             <Typography.Text strong={true}>Packages</Typography.Text>
