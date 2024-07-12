@@ -18,15 +18,12 @@ import themisApi from "../../../api/themisApi";
 import type { JobInfo } from "../../../types/themis";
 import { publish } from "../../../utils/events";
 import { PUBLISH_EVENT } from "../../common/NotificationSink";
+import type { UserDataTabPanelProps } from "./UserDataTabGroup";
 
-export interface JobInfoPanelProps {
-  username: string;
-  year: string;
-}
-
-const JobInfoPanel: React.FunctionComponent<JobInfoPanelProps> = ({
+const JobInfoPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
   username,
   year,
+  afterSave,
 }) => {
   const [info, setInfo] = useState<JobInfo | undefined>(undefined);
   const [infoLoading, setInfoLoading] = useState(false);
@@ -49,6 +46,8 @@ const JobInfoPanel: React.FunctionComponent<JobInfoPanelProps> = ({
         message: "Job info saved",
         description: "The job info has been successfully saved",
       });
+
+      await afterSave();
     } catch (e) {
       publish(PUBLISH_EVENT, {
         type: "error",

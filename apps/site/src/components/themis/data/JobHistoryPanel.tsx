@@ -2,17 +2,13 @@ import { Button, Col, Empty, Row, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import themisApi from "../../../api/themisApi";
-import type { JobHistoryEntry, ReviewRating } from "../../../types/themis";
+import type { JobHistoryEntry } from "../../../types/themis";
 import { publish } from "../../../utils/events";
 import { PUBLISH_EVENT } from "../../common/NotificationSink";
 import ImportJobHistoryModal from "../form/ImportJobHistoryModal";
 import JobHistoryEntryRow from "../form/JobHistoryEntryRow";
 import JobHistoryGraph from "../graph/JobHistoryGraph";
-
-export interface JobHistoryPanelProps {
-  username: string;
-  year: string;
-}
+import type { UserDataTabPanelProps } from "./UserDataTabGroup";
 
 export type JobHistoryFormData = {
   entries: JobHistoryEntry[];
@@ -26,9 +22,10 @@ export const EMPTY_JOB_HISTORY_ENTRY = {
   fte: false,
 };
 
-const JobHistoryPanel: React.FunctionComponent<JobHistoryPanelProps> = ({
+const JobHistoryPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
   username,
   year,
+  afterSave,
 }) => {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [jobHistory, setJobHistory] = useState<JobHistoryEntry[] | undefined>(
@@ -79,6 +76,8 @@ const JobHistoryPanel: React.FunctionComponent<JobHistoryPanelProps> = ({
         message: "Job history saved",
         description: "Job history has been successfully saved",
       });
+
+      await afterSave();
     } catch (e) {
       publish(PUBLISH_EVENT, {
         type: "error",

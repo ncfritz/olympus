@@ -2,17 +2,14 @@ import { ReloadOutlined } from "@ant-design/icons";
 import { Button, Empty, Result, Space, Spin } from "antd";
 import React, { useEffect, useState } from "react";
 import themisApi from "../../../api/themisApi";
-import type { BasicUserInfo, ReviewRating } from "../../../types/themis";
+import type { ReviewRating } from "../../../types/themis";
 import RatingForm from "../form/RatingForm";
+import type { UserDataTabPanelProps } from "./UserDataTabGroup";
 
-export interface RatingPanelProps {
-  username: string;
-  year: string;
-}
-
-const RatingPanel: React.FunctionComponent<RatingPanelProps> = ({
+const RatingPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
   username,
   year,
+  afterSave,
 }) => {
   const [rating, setRating] = useState<ReviewRating | undefined>(undefined);
   const [ratingLoading, setRatingLoading] = useState(false);
@@ -81,6 +78,7 @@ const RatingPanel: React.FunctionComponent<RatingPanelProps> = ({
         existingRating={rating}
         onUpdateSuccess={async () => {
           await loadRating(true);
+          await afterSave();
         }}
       />
     );

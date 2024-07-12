@@ -4,11 +4,11 @@ import type { JobHistoryEntry } from "../../../../../../../types/themis";
 import { p, safeLoadJson } from "../../../../../../../utils/themis";
 
 export type UpsertJobHistoryRequest = {
-  entries: JobHistoryEntry;
+  entries: JobHistoryEntry[];
 };
 
 export type JobHistoryResponse = {
-  entries: JobHistoryEntry;
+  entries: JobHistoryEntry[];
 };
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {

@@ -7,6 +7,7 @@ import { Space, Tabs } from "antd";
 import { useEffect, useState } from "react";
 import themisApi from "../../../api/themisApi";
 import type { DataSummaryResponse } from "../../../pages/api/themis/user/[username]/data/[year]/dataSummary";
+import CodeStatsPanel from "./CodeStatsPanel";
 import JobHistoryPanel from "./JobHistoryPanel";
 import JobInfoPanel from "./JobInfoPanel";
 import RatingPanel from "./RatingPanel";
@@ -14,6 +15,12 @@ import RatingPanel from "./RatingPanel";
 export interface UserDataTabGroupProps {
   username: string;
   year: string;
+}
+
+export interface UserDataTabPanelProps {
+  username: string;
+  year: string;
+  afterSave: () => Promise<void>;
 }
 
 const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
@@ -44,7 +51,7 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
 
     if (dataSummary) {
       icon = dataSummary[dataId] ? (
-        <CheckCircleFilled />
+        <CheckCircleFilled style={{ color: "#006600" }} />
       ) : (
         <MinusCircleOutlined />
       );
@@ -65,17 +72,35 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
         {
           key: `y${year}-jobInfo`,
           label: tabLabel("jobInfo", "Job Info"),
-          children: <JobInfoPanel username={username} year={year} />,
+          children: (
+            <JobInfoPanel
+              username={username}
+              year={year}
+              afterSave={loadDataSummary}
+            />
+          ),
         },
         {
           key: `y${year}-performance`,
           label: tabLabel("performance", "Performance"),
-          children: <RatingPanel username={username} year={year} />,
+          children: (
+            <RatingPanel
+              username={username}
+              year={year}
+              afterSave={loadDataSummary}
+            />
+          ),
         },
         {
           key: `${year}-history`,
           label: tabLabel("jobHistory", "Work History"),
-          children: <JobHistoryPanel username={username} year={year} />,
+          children: (
+            <JobHistoryPanel
+              username={username}
+              year={year}
+              afterSave={loadDataSummary}
+            />
+          ),
         },
         {
           key: `y${year}-notes`,
@@ -90,7 +115,13 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
         {
           key: `y${year}-code`,
           label: tabLabel("code", "Code"),
-          children: <>Code</>,
+          children: (
+            <CodeStatsPanel
+              username={username}
+              year={year}
+              afterSave={loadDataSummary}
+            />
+          ),
         },
         {
           key: `y${year}-tt`,

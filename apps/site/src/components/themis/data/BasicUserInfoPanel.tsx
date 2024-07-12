@@ -110,7 +110,7 @@ const BasicUserInfoPanel: React.FunctionComponent<BasicUserInfoPanelProps> = ({
       <form onSubmit={handleSubmit(onSubmit)}>
         <Row
           gutter={32}
-          style={{ display: "flex", alignItems: "center", marginBottom: 8 }}
+          style={{ display: "flex", alignItems: "top", marginBottom: 8 }}
         >
           <Col span={1}>
             <Avatar
