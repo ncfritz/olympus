@@ -1,7 +1,7 @@
 import axios from "axios";
 import type {
   BaseBasicUserInfo,
-  BasicUserInfo,
+  BasicUserInfo, CodeStat,
   JobHistoryEntry,
   JobInfo,
   ReviewRating,
@@ -211,6 +211,45 @@ const upsertJobHistory = async (
   }
 };
 
+const getCodeStats = async (username: string, year: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/data/${year}/code`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const upsertCodeStats = async (
+  username: string,
+  year: string,
+  stats: CodeStat[],
+) => {
+  try {
+    const response = await axios.put(
+      `/api/themis/user/${username}/data/${year}/code`,
+      { stats: stats },
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const getJobInfo = async (username: string, year: string) => {
   try {
     const response = await axios.get(
@@ -254,6 +293,7 @@ const themisApi = {
   createDataYear: createDataYear,
   createUser: createUser,
   getBasicUserInfo: getBasicUserInfo,
+  getCodeStats: getCodeStats,
   getJobInfo: getJobInfo,
   getDataSummary: getDataSummary,
   getJobHistory: getJobHistory,
@@ -261,6 +301,7 @@ const themisApi = {
   getReviewYears: getReviewYears,
   listDataYears: listDataYears,
   listUsers: listUsers,
+  upsertCodeStats: upsertCodeStats,
   upsertJobInfo: upsertJobInfo,
   upsertJobHistory: upsertJobHistory,
   upsertRating: upsertRating,

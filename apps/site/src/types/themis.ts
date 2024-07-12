@@ -67,3 +67,11 @@ export type JobInfo = {
   promotionQuarter?: string;
   promotionYear?: string;
 };
+
+export type CodeStat = {
+  date: string;
+  changes: number;
+  added: number;
+  removed: number;
+  packages: number;
+};
