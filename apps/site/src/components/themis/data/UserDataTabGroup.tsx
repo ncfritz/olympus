@@ -6,8 +6,9 @@ import {
 import { Space, Tabs } from "antd";
 import { useEffect, useState } from "react";
 import themisApi from "../../../api/themisApi";
-import type { DataSummaryResponse } from "../../../pages/api/themis/user/[username]/data/[year]/dataSummary";
+import type { UserDataSummary } from "../../../types/themis";
 import CodeStatsPanel from "./CodeStatsPanel";
+import CRStatsPanel from "./CRStatsPanel";
 import JobHistoryPanel from "./JobHistoryPanel";
 import JobInfoPanel from "./JobInfoPanel";
 import RatingPanel from "./RatingPanel";
@@ -27,9 +28,9 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
   username,
   year,
 }) => {
-  const [dataSummary, setDataSummary] = useState<
-    DataSummaryResponse | undefined
-  >(undefined);
+  const [dataSummary, setDataSummary] = useState<UserDataSummary | undefined>(
+    undefined,
+  );
 
   useEffect(() => {
     (async () => {
@@ -39,14 +40,14 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
 
   const loadDataSummary = async () => {
     try {
-      const response = await themisApi.getDataSummary(username, year);
+      const response = await themisApi.getDataSummaryForYear(username, year);
       setDataSummary(response);
     } catch (e) {
       console.log(`Unable to load data summary`);
     }
   };
 
-  const tabLabel = (dataId: keyof DataSummaryResponse, label: string) => {
+  const tabLabel = (dataId: keyof UserDataSummary, label: string) => {
     let icon = <QuestionCircleOutlined />;
 
     if (dataSummary) {
@@ -117,6 +118,17 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
           label: tabLabel("code", "Code"),
           children: (
             <CodeStatsPanel
+              username={username}
+              year={year}
+              afterSave={loadDataSummary}
+            />
+          ),
+        },
+        {
+          key: `y${year}-cr`,
+          label: tabLabel("cr", "Code Reviews"),
+          children: (
+            <CRStatsPanel
               username={username}
               year={year}
               afterSave={loadDataSummary}

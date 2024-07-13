@@ -1,13 +1,30 @@
 import axios from "axios";
 import type {
   BaseBasicUserInfo,
-  BasicUserInfo, CodeStat,
+  BasicUserInfo, CodeStat, CRStat,
   JobHistoryEntry,
   JobInfo,
   ReviewRating,
 } from "../types/themis";
 
-const getDataSummary = async (username: string, year: string) => {
+const getDataSummary = async (username: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/data/dataSummary`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getDataSummaryForYear = async (username: string, year: string) => {
   try {
     const response = await axios.get(
       `/api/themis/user/${username}/data/${year}/dataSummary`,
@@ -250,6 +267,45 @@ const upsertCodeStats = async (
   }
 };
 
+const getCrStats = async (username: string, year: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/data/${year}/cr`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const upsertCrStats = async (
+  username: string,
+  year: string,
+  stats: CRStat[],
+) => {
+  try {
+    const response = await axios.put(
+      `/api/themis/user/${username}/data/${year}/cr`,
+      { stats: stats },
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const getJobInfo = async (username: string, year: string) => {
   try {
     const response = await axios.get(
@@ -293,15 +349,18 @@ const themisApi = {
   createDataYear: createDataYear,
   createUser: createUser,
   getBasicUserInfo: getBasicUserInfo,
+  getCrStats: getCrStats,
   getCodeStats: getCodeStats,
   getJobInfo: getJobInfo,
   getDataSummary: getDataSummary,
+  getDataSummaryForYear: getDataSummaryForYear,
   getJobHistory: getJobHistory,
   getRating: getRating,
   getReviewYears: getReviewYears,
   listDataYears: listDataYears,
   listUsers: listUsers,
   upsertCodeStats: upsertCodeStats,
+  upsertCrStats: upsertCrStats,
   upsertJobInfo: upsertJobInfo,
   upsertJobHistory: upsertJobHistory,
   upsertRating: upsertRating,

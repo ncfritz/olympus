@@ -24,8 +24,10 @@ import React, { useEffect, useState } from "react";
 import themisApi from "../../../api/themisApi";
 import { PUBLISH_EVENT } from "../../../components/common/NotificationSink";
 import BasicUserInfoPanel from "../../../components/themis/data/BasicUserInfoPanel";
+import DataSummaryPanel from "../../../components/themis/data/DataSummaryPanel";
 import UserDataTabGroup from "../../../components/themis/data/UserDataTabGroup";
 import { publish } from "../../../utils/events";
+import type { DataSummaryResponse } from "../../api/themis/user/[username]/data/dataSummary";
 
 const { Content } = Layout;
 
@@ -36,6 +38,11 @@ const IndexPage: React.FunctionComponent = () => {
   const [dataYears, setDataYears] = useState<string[]>([]);
   const [dataYearsLoading, setDataYearsLoading] = useState(false);
   const [dataYearsError, setDataYearsError] = useState(false);
+  const [dataSummary, setDataSummary] = useState<
+    DataSummaryResponse | undefined
+  >(undefined);
+  const [dataSummaryLoading, setDataSummaryLoading] = useState(false);
+  const [dataSummaryError, setDataSummaryError] = useState(false);
   const [newYear, setNewYear] = useState<string | undefined>(undefined);
 
   const loadDataYears = async (quiet: boolean = false) => {
@@ -52,6 +59,23 @@ const IndexPage: React.FunctionComponent = () => {
       setDataYearsError(true);
     } finally {
       setDataYearsLoading(false);
+    }
+  };
+
+  const loadDataSummary = async (quiet: boolean = false) => {
+    if (!quiet) {
+      setDataSummaryLoading(true);
+    }
+
+    setDataYearsError(false);
+
+    try {
+      const response = await themisApi.getDataSummary(params.username);
+      setDataSummary(response);
+    } catch (e) {
+      setDataSummaryError(true);
+    } finally {
+      setDataSummaryLoading(false);
     }
   };
 
@@ -79,6 +103,7 @@ const IndexPage: React.FunctionComponent = () => {
   useEffect(() => {
     (async () => {
       await loadDataYears();
+      await loadDataSummary();
     })();
   }, []);
 
@@ -143,12 +168,26 @@ const IndexPage: React.FunctionComponent = () => {
       />
     );
   } else {
-    const tabs = dataYears.map((year) => {
-      return {
+    const tabs: any[] = [
+      {
+        key: `datayear-summary`,
+        label: "Data Summary",
+        children: (
+          <DataSummaryPanel
+            summary={dataSummary}
+            loading={dataSummaryLoading}
+            error={dataSummaryError}
+          />
+        ),
+      },
+    ];
+
+    dataYears.forEach((year) => {
+      tabs.push({
         key: `datayear-${year}`,
         label: year,
         children: <UserDataTabGroup username={params.username} year={year} />,
-      };
+      });
     });
 
     content = <Tabs items={tabs} tabBarExtraContent={tabActions} />;
