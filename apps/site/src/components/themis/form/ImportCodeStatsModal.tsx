@@ -1,20 +1,27 @@
-import {Button, Form, Input, Modal, Result, Space, Steps} from "antd";
+import {
+  Button,
+  Col,
+  Form,
+  Input,
+  Modal,
+  Result,
+  Row,
+  Space,
+  Steps,
+} from "antd";
 import { DateTime } from "luxon";
-import dynamic from "next/dynamic";
 import { type ReactNode, useState } from "react";
 import type { CodeStat } from "../../../types/themis";
 
-export interface ImportJobHistoryModalProps {
+export interface ImportCodeStatsModalProps {
   isOpen: boolean;
   importFunction: (history: CodeStat[]) => Promise<void>;
   onClose: () => void;
 }
 
 const ImportCodeStatsModal: React.FunctionComponent<
-  ImportJobHistoryModalProps
+  ImportCodeStatsModalProps
 > = ({ isOpen, importFunction, onClose }) => {
-  const DynamicReactJson = dynamic(import("react-json-view"), { ssr: false });
-
   const [currentStep, setCurrentStep] = useState(0);
   const [rawStats, setRawStats] = useState<string | undefined>(undefined);
   const [parsingError, setParsingError] = useState(false);
@@ -113,7 +120,57 @@ const ImportCodeStatsModal: React.FunctionComponent<
       if (parsingError) {
         content = <Result status={"error"} title={"Parsing Failed!"} />;
       } else {
-        content = <>{JSON.stringify(stats)}</>;
+        content = (
+          <Space direction={"vertical"} style={{ width: "100%" }}>
+            <Space direction={"vertical"} style={{ width: "100%" }}>
+              <Row style={{ borderBottom: "1px solid #e6e6e6" }}>
+                <Col span={6}>Week</Col>
+                <Col span={4}>Changes</Col>
+                <Col span={4}>Added</Col>
+                <Col span={4}>Removed</Col>
+                <Col span={4}>Packages</Col>
+              </Row>
+            </Space>
+            <Space
+              direction={"vertical"}
+              style={{ width: "100%", maxHeight: 300, overflow: "scroll" }}
+            >
+              {stats.map((stat) => {
+                return (
+                  <Row>
+                    <Col span={6} style={{ fontSize: 11 }}>
+                      {stat.date}
+                    </Col>
+                    <Col
+                      span={4}
+                      style={{ fontSize: 11, fontFamily: "monospace" }}
+                    >
+                      {stat.changes}
+                    </Col>
+                    <Col
+                      span={4}
+                      style={{ fontSize: 11, fontFamily: "monospace" }}
+                    >
+                      {stat.added}
+                    </Col>
+                    <Col
+                      span={4}
+                      style={{ fontSize: 11, fontFamily: "monospace" }}
+                    >
+                      {stat.removed}
+                    </Col>
+                    <Col
+                      span={4}
+                      style={{ fontSize: 11, fontFamily: "monospace" }}
+                    >
+                      {stat.packages}
+                    </Col>
+                  </Row>
+                );
+              })}
+            </Space>
+          </Space>
+        );
       }
 
       modalButtons.push(

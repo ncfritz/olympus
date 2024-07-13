@@ -18,6 +18,7 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
   data,
   stat,
   max = 10000,
+  axisLabel,
   inferMax,
 }) => {
   HC_more(Highcharts);
@@ -80,11 +81,14 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
       },
       tickInterval: 1,
       lineWidth: 1,
+      lineColor: "#e6e6e6",
       tickWidth: 1,
+      tickColor: "#e6e6e6",
       gridLineWidth: 1,
     },
     yAxis: {
       lineWidth: 1,
+      lineColor: "#e6e6e6",
       tickInterval: 1,
       min: 0,
       max: inferMax ? localMax : max,
@@ -106,7 +110,7 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
     return (
       <Empty
         image={Empty.PRESENTED_IMAGE_SIMPLE}
-        description={"No historic Forte data available"}
+        description={"No historic code statistics available"}
       ></Empty>
     );
   }

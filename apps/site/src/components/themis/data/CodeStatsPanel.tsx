@@ -17,20 +17,22 @@ export type CodeStatsFormData = {
 };
 
 const buildEmptyForm = (year: string): CodeStatsFormData => {
-  const statisticsYear = DateTime.fromISO(year);
+  const statisticsYear = DateTime.fromISO(year).startOf("year");
 
   return {
-    stats: new Array(12).fill(0).map((value, index) => {
-      const currentDate = statisticsYear.set({ month: index + 1 });
+    stats: new Array(statisticsYear.weeksInWeekYear)
+      .fill(0)
+      .map((value, index) => {
+        const currentDate = statisticsYear.set({ weekNumber: index });
 
-      return {
-        date: currentDate.toISODate()!,
-        changes: 0,
-        added: 0,
-        removed: 0,
-        packages: 0,
-      };
-    }),
+        return {
+          date: currentDate.toISODate()!,
+          changes: 0,
+          added: 0,
+          removed: 0,
+          packages: 0,
+        };
+      }),
   };
 };
 
@@ -65,8 +67,10 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
     try {
       const response = await themisApi.getCodeStats(username, year);
       setCodeStats(response.stats);
-      console.log(response);
-      reset(response);
+
+      if (response.stats?.length > 50) {
+        reset(response);
+      }
     } catch (e) {
       setCodeStatsError(true);
     } finally {
@@ -121,7 +125,7 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
     <Row>
       <Col span={10}>
         <Row gutter={8}>
-          <Col span={2} style={{ textAlign: "end" }}>
+          <Col span={4} style={{ textAlign: "end" }}>
             <Typography.Text strong={true}>Week</Typography.Text>
           </Col>
           <Col span={4}>

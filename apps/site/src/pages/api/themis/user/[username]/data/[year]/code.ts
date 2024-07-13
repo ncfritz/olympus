@@ -1,9 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import fs from "node:fs";
-import type {
-  CodeStat,
-  JobHistoryEntry,
-} from "../../../../../../../types/themis";
+import type { CodeStat } from "../../../../../../../types/themis";
 import { p, safeLoadJson } from "../../../../../../../utils/themis";
 
 export type UpsertCodeStatsRequest = {
@@ -24,11 +21,11 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
 
-  const jobHistoryDataPath = p(`users/${username}/data/${year}/code.json`);
+  const codeStatisticsDataPath = p(`users/${username}/data/${year}/code.json`);
 
   if (req.method?.toUpperCase() === "GET") {
     const response = {
-      stats: safeLoadJson<JobHistoryEntry[]>(jobHistoryDataPath, []),
+      stats: safeLoadJson<CodeStat[]>(codeStatisticsDataPath, []),
     };
 
     res.status(200).json(response);
@@ -39,7 +36,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     console.log(newEntries);
 
     fs.writeFileSync(
-      jobHistoryDataPath,
+      codeStatisticsDataPath,
       JSON.stringify(newEntries.stats, null, 2),
     );
 
