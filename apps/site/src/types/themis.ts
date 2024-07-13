@@ -18,6 +18,19 @@ export type ReviewYear = {
   users: BasicUserInfo[];
 };
 
+export type UserDataSummary = {
+  jobInfo: boolean;
+  performance: boolean;
+  jobHistory: boolean;
+  notes: boolean;
+  mentorship: boolean;
+  code: boolean;
+  cr: boolean;
+  tt: boolean;
+  sim: boolean;
+  hiring: boolean;
+};
+
 export type OverallRating =
   | "Unknown"
   | "NA"
@@ -74,4 +87,25 @@ export type CodeStat = {
   added: number;
   removed: number;
   packages: number;
+};
+
+export type CRStat = {
+  date: string;
+  authored: number;
+  commented: number;
+  received: number;
+  approved: number;
+};
+
+export const DATA_PATHS: Record<keyof UserDataSummary, string> = {
+  jobInfo: "jobInfo.json",
+  performance: "rating.json",
+  jobHistory: "jobHistory.json",
+  notes: "notes.json",
+  mentorship: "mentorship.json",
+  code: "code.json",
+  cr: "cr.json",
+  tt: "tt.json",
+  sim: "sim.json",
+  hiring: "hiring.json",
 };

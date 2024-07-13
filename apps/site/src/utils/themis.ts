@@ -1,4 +1,3 @@
-import type { NextApiResponse } from "next";
 import * as fs from "node:fs";
 
 export const p = (pathSuffix: string): string => {
