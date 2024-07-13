@@ -174,6 +174,7 @@ const IndexPage: React.FunctionComponent = () => {
         label: "Data Summary",
         children: (
           <DataSummaryPanel
+            username={params.username}
             summary={dataSummary}
             loading={dataSummaryLoading}
             error={dataSummaryError}
