@@ -145,7 +145,7 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
               width: "100%",
               position: "relative",
               bottom: 64,
-              padding: 8
+              padding: 8,
             }}
           >
             <Typography.Text
