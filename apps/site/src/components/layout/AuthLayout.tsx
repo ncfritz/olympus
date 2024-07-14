@@ -8,7 +8,7 @@ import {
   UpOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
-import { FloatButton, Layout, Menu } from "antd";
+import { FloatButton, Layout, Menu, Space, Typography } from "antd";
 import { useRouter } from "next/router";
 import { type ReactNode, useEffect, useState } from "react";
 import styled from "styled-components";
@@ -81,6 +81,7 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
         style={{ position: "relative", top: 64, backgroundColor: "#ffffff" }}
       >
         <Sider
+          className={"olympus-main-menu"}
           style={{
             overflow: "auto",
             height: "100vh",
@@ -137,6 +138,25 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
               },
             ]}
           />
+          <Space
+            direction={"vertical"}
+            style={{
+              textAlign: "center",
+              width: "100%",
+              position: "relative",
+              bottom: 64,
+              padding: 8
+            }}
+          >
+            <Typography.Text
+              style={{
+                color: "#909293",
+                fontSize: 10,
+              }}
+            >
+              v{process.env.version || "U.know.n"}
+            </Typography.Text>
+          </Space>
         </Sider>
         {applicationMenu && (
           <Sider

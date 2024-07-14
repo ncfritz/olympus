@@ -102,6 +102,12 @@ img.electron-logo {
     width: 1px;
 }
 
+.olympus-main-menu .ant-layout-sider-children {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
 /* Super specific overrides */
 .ncfritz-ant-input-suffixed span.ant-input-affix-wrapper {
     border-top-right-radius: 0px;
