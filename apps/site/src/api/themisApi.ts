@@ -1,7 +1,10 @@
 import axios from "axios";
 import type {
   BaseBasicUserInfo,
-  BasicUserInfo, CodeStat, CRStat,
+  BasicUserInfo,
+  CodeStat,
+  CRStat,
+  ForteSummary,
   JobHistoryEntry,
   JobInfo,
   ReviewRating,
@@ -28,6 +31,23 @@ const getDataSummaryForYear = async (username: string, year: string) => {
   try {
     const response = await axios.get(
       `/api/themis/user/${username}/data/${year}/dataSummary`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getForteSummary = async (username: string, year: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/data/${year}/forte`,
       {
         validateStatus: (status) => {
           return status === 200;
@@ -306,6 +326,28 @@ const upsertCrStats = async (
   }
 };
 
+const upsertForteSummary = async (
+  username: string,
+  year: string,
+  summary: ForteSummary,
+) => {
+  try {
+    const response = await axios.put(
+      `/api/themis/user/${username}/data/${year}/forte`,
+      { summary: summary },
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const getJobInfo = async (username: string, year: string) => {
   try {
     const response = await axios.get(
@@ -354,6 +396,7 @@ const themisApi = {
   getJobInfo: getJobInfo,
   getDataSummary: getDataSummary,
   getDataSummaryForYear: getDataSummaryForYear,
+  getForteSummary: getForteSummary,
   getJobHistory: getJobHistory,
   getRating: getRating,
   getReviewYears: getReviewYears,
@@ -361,6 +404,7 @@ const themisApi = {
   listUsers: listUsers,
   upsertCodeStats: upsertCodeStats,
   upsertCrStats: upsertCrStats,
+  upsertForteSummary: upsertForteSummary,
   upsertJobInfo: upsertJobInfo,
   upsertJobHistory: upsertJobHistory,
   upsertRating: upsertRating,

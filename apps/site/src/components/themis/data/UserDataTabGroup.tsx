@@ -9,6 +9,7 @@ import themisApi from "../../../api/themisApi";
 import type { UserDataSummary } from "../../../types/themis";
 import CodeStatsPanel from "./CodeStatsPanel";
 import CRStatsPanel from "./CRStatsPanel";
+import FortePanel from "./FortePanel";
 import JobHistoryPanel from "./JobHistoryPanel";
 import JobInfoPanel from "./JobInfoPanel";
 import RatingPanel from "./RatingPanel";
@@ -97,6 +98,17 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
           label: tabLabel("jobHistory", "Work History"),
           children: (
             <JobHistoryPanel
+              username={username}
+              year={year}
+              afterSave={loadDataSummary}
+            />
+          ),
+        },
+        {
+          key: `y${year}-forte`,
+          label: tabLabel("forteHistory", "Forte History"),
+          children: (
+            <FortePanel
               username={username}
               year={year}
               afterSave={loadDataSummary}

@@ -1,3 +1,5 @@
+import type {For} from "@babel/types";
+
 export type BaseBasicUserInfo = {
   givenName: string;
   surname: string;
@@ -22,6 +24,7 @@ export type UserDataSummary = {
   jobInfo: boolean;
   performance: boolean;
   jobHistory: boolean;
+  forteHistory: boolean;
   notes: boolean;
   mentorship: boolean;
   code: boolean;
@@ -97,10 +100,35 @@ export type CRStat = {
   approved: number;
 };
 
+export type ForteResult = {
+  strength: number;
+  opportunity: number;
+};
+
+export type ForteSummary = {
+  customerObsession: ForteResult;
+  ownership: ForteResult;
+  inventSimplify: ForteResult;
+  areRightALot: ForteResult;
+  learnBeCurious: ForteResult;
+  hireDevelop: ForteResult;
+  insistHighestStandards: ForteResult;
+  thinkBig: ForteResult;
+  biasForAction: ForteResult;
+  frugality: ForteResult;
+  earnTrust: ForteResult;
+  diveDeep: ForteResult;
+  backbone: ForteResult;
+  deliverResults: ForteResult;
+  bestEmployer: ForteResult;
+  successScale: ForteResult;
+};
+
 export const DATA_PATHS: Record<keyof UserDataSummary, string> = {
   jobInfo: "jobInfo.json",
   performance: "rating.json",
   jobHistory: "jobHistory.json",
+  forteHistory: "forte.json",
   notes: "notes.json",
   mentorship: "mentorship.json",
   code: "code.json",
@@ -108,4 +136,23 @@ export const DATA_PATHS: Record<keyof UserDataSummary, string> = {
   tt: "tt.json",
   sim: "sim.json",
   hiring: "hiring.json",
+};
+
+export const LEADERSHIP_PRINCIPLES: Record<keyof ForteSummary, string> = {
+  customerObsession: "Customer Obsession",
+  ownership: "Ownership",
+  areRightALot: "Are Right a Lot",
+  inventSimplify: "Invent & Simplify",
+  learnBeCurious: "Learn & Be Curious",
+  hireDevelop: "Hire & Develop the Best",
+  thinkBig: "Think Big",
+  insistHighestStandards: "Insist on the Highest Standards",
+  biasForAction: "Bias for Action",
+  frugality: "Frugality",
+  earnTrust: "Earn Trust",
+  diveDeep: "Dive Deep",
+  backbone: "Have Backbone; Disagree & Commit",
+  deliverResults: "Deliver Results",
+  bestEmployer: "Strive to be Earth's Best Employer",
+  successScale: "Success and Scale Bring Great Responsibility",
 };
