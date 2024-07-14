@@ -61,6 +61,23 @@ const getForteSummary = async (username: string, year: string) => {
   }
 };
 
+const getNotes = async (username: string, year: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/data/${year}/notes`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const getReviewYears = async () => {
   try {
     const response = await axios.get(`/api/themis/reviewYears`, {
@@ -387,6 +404,24 @@ const upsertJobInfo = async (
   }
 };
 
+const upsertNotes = async (username: string, year: string, notes: string) => {
+  try {
+    const response = await axios.put(
+      `/api/themis/user/${username}/data/${year}/notes`,
+      { notes: notes },
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const themisApi = {
   createDataYear: createDataYear,
   createUser: createUser,
@@ -398,6 +433,7 @@ const themisApi = {
   getDataSummaryForYear: getDataSummaryForYear,
   getForteSummary: getForteSummary,
   getJobHistory: getJobHistory,
+  getNotes: getNotes,
   getRating: getRating,
   getReviewYears: getReviewYears,
   listDataYears: listDataYears,
@@ -407,6 +443,7 @@ const themisApi = {
   upsertForteSummary: upsertForteSummary,
   upsertJobInfo: upsertJobInfo,
   upsertJobHistory: upsertJobHistory,
+  upsertNotes: upsertNotes,
   upsertRating: upsertRating,
   updateUser: updateUser,
 };

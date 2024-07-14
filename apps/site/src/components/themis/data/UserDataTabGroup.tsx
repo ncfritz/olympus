@@ -12,6 +12,7 @@ import CRStatsPanel from "./CRStatsPanel";
 import FortePanel from "./FortePanel";
 import JobHistoryPanel from "./JobHistoryPanel";
 import JobInfoPanel from "./JobInfoPanel";
+import NotesPanel from "./NotesPanel";
 import RatingPanel from "./RatingPanel";
 
 export interface UserDataTabGroupProps {
@@ -118,7 +119,13 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
         {
           key: `y${year}-notes`,
           label: tabLabel("notes", "Notes"),
-          children: <>Notes</>,
+          children: (
+            <NotesPanel
+              username={username}
+              year={year}
+              afterSave={loadDataSummary}
+            />
+          ),
         },
         {
           key: `y${year}-mentorship`,
