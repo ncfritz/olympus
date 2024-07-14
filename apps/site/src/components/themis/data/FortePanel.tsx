@@ -120,7 +120,7 @@ const FortePanel: React.FunctionComponent<UserDataTabPanelProps> = ({
                   <Controller
                     name={`summary.${key as keyof ForteSummary}.strength`}
                     control={control}
-                    render={({ field }: { field }) => (
+                    render={({ field }: { field: any }) => (
                       <Slider {...field} min={0} max={20} />
                     )}
                   />

@@ -42,6 +42,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         jobInfo: false,
         performance: false,
         jobHistory: false,
+        forteHistory: false,
         notes: false,
         mentorship: false,
         code: false,
