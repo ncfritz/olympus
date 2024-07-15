@@ -1,4 +1,4 @@
-import type {For} from "@babel/types";
+import type { For } from "@babel/types";
 
 export type BaseBasicUserInfo = {
   givenName: string;
@@ -29,7 +29,6 @@ export type UserDataSummary = {
   mentorship: boolean;
   code: boolean;
   cr: boolean;
-  tt: boolean;
   sim: boolean;
   hiring: boolean;
 };
@@ -124,6 +123,24 @@ export type ForteSummary = {
   successScale: ForteResult;
 };
 
+export type SimMetric = "1" | "2" | "3" | "4" | "5" | "99";
+
+export type SimSeverityStats = {
+  "1": number;
+  "2": number;
+  "3": number;
+  "4": number;
+  "5": number;
+  "99": number;
+  total: number;
+};
+
+export type SimStat = {
+  week: number;
+  created: SimSeverityStats;
+  resolved: SimSeverityStats;
+};
+
 export const DATA_PATHS: Record<keyof UserDataSummary, string> = {
   jobInfo: "jobInfo.json",
   performance: "rating.json",
@@ -133,7 +150,6 @@ export const DATA_PATHS: Record<keyof UserDataSummary, string> = {
   mentorship: "mentorship.json",
   code: "code.json",
   cr: "cr.json",
-  tt: "tt.json",
   sim: "sim.json",
   hiring: "hiring.json",
 };

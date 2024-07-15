@@ -14,6 +14,7 @@ import JobHistoryPanel from "./JobHistoryPanel";
 import JobInfoPanel from "./JobInfoPanel";
 import NotesPanel from "./NotesPanel";
 import RatingPanel from "./RatingPanel";
+import SimStatsPanel from "./SimStatsPanel";
 
 export interface UserDataTabGroupProps {
   username: string;
@@ -155,14 +156,15 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
           ),
         },
         {
-          key: `y${year}-tt`,
-          label: tabLabel("tt", "Trouble Tickets"),
-          children: <>Trouble</>,
-        },
-        {
           key: `y${year}-sim`,
           label: tabLabel("sim", "SIM"),
-          children: <>SIM</>,
+          children: (
+            <SimStatsPanel
+              username={username}
+              year={year}
+              afterSave={loadDataSummary}
+            />
+          ),
         },
         {
           key: `y${year}-hiring`,

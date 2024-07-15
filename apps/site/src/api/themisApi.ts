@@ -7,7 +7,7 @@ import type {
   ForteSummary,
   JobHistoryEntry,
   JobInfo,
-  ReviewRating,
+  ReviewRating, SimStat,
 } from "../types/themis";
 
 const getDataSummary = async (username: string) => {
@@ -382,6 +382,23 @@ const getJobInfo = async (username: string, year: string) => {
   }
 };
 
+const getSimStats = async (username: string, year: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/data/${year}/sim`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const upsertJobInfo = async (
   username: string,
   year: string,
@@ -422,12 +439,35 @@ const upsertNotes = async (username: string, year: string, notes: string) => {
   }
 };
 
+const upsertSimStats = async (
+  username: string,
+  year: string,
+  stats: SimStat[],
+) => {
+  try {
+    const response = await axios.put(
+      `/api/themis/user/${username}/data/${year}/sim`,
+      { stats: stats },
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const themisApi = {
   createDataYear: createDataYear,
   createUser: createUser,
   getBasicUserInfo: getBasicUserInfo,
   getCrStats: getCrStats,
   getCodeStats: getCodeStats,
+  getSimStats: getSimStats,
   getJobInfo: getJobInfo,
   getDataSummary: getDataSummary,
   getDataSummaryForYear: getDataSummaryForYear,
@@ -444,6 +484,7 @@ const themisApi = {
   upsertJobInfo: upsertJobInfo,
   upsertJobHistory: upsertJobHistory,
   upsertNotes: upsertNotes,
+  upsertSimStats: upsertSimStats,
   upsertRating: upsertRating,
   updateUser: updateUser,
 };
