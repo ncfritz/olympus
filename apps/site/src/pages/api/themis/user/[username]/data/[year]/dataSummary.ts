@@ -24,7 +24,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       mentorship: false,
       code: false,
       cr: false,
-      tt: false,
       sim: false,
       hiring: false,
     };

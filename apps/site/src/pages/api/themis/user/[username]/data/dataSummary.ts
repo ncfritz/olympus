@@ -13,7 +13,6 @@ const DATA_PATHS: Record<keyof DataSummaryResponse, string> = {
   mentorship: "mentorship.json",
   code: "code.json",
   cr: "cr.json",
-  tt: "tt.json",
   sim: "sim.json",
   hiring: "hiring.json",
 };
@@ -47,7 +46,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         mentorship: false,
         code: false,
         cr: false,
-        tt: false,
         sim: false,
         hiring: false,
       };
