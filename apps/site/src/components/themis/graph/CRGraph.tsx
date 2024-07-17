@@ -2,14 +2,13 @@ import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import HC_more from "highcharts/highcharts-more";
 import { Empty } from "antd";
-import { DateTime } from "luxon";
 import { useEffect } from "react";
-import type {CodeStat, CRStat} from "../../../types/themis";
+import type { CRStat } from "../../../types/themis";
 
 export interface CRGraphProps {
   axisLabel?: string;
   stat: keyof CRStat;
-  data: CRStat[];
+  data: Record<string, CRStat[]>;
   max?: number;
   inferMax?: boolean;
 }
@@ -31,29 +30,26 @@ const CodeGraph: React.FunctionComponent<CRGraphProps> = ({
     });
   }, []);
 
-  const categories: number[] = Array(data.length)
+  const categories: number[] = Array(53)
     .fill(0)
     .map((element, index) => index);
+  const series: any[] = [];
 
-  const parsedData: Record<number, number[]> = {};
   let localMax = 0;
 
-  data.forEach((entry: CRStat) => {
-    const entryDate = DateTime.fromISO(entry.date);
+  Object.keys(data).forEach((year) => {
+    const yearData = data[year];
+    const parsedData: number[] = [];
 
-    if (!Object.keys(parsedData).includes(entryDate.year.toString())) {
-      parsedData[entryDate.year] = [];
-    }
+    yearData.forEach((entry: CRStat) => {
+      if ((entry[stat] as number) > localMax) {
+        localMax = entry[stat] as number;
+      }
 
-    if ((entry[stat] as number) > localMax) {
-      localMax = entry[stat] as number;
-    }
+      parsedData.push(entry[stat] as number);
+    });
 
-    parsedData[entryDate.year].push(entry[stat] as number);
-  });
-
-  const series = Object.entries(parsedData).map(([key, value]) => {
-    return { name: key, data: value, type: "column" };
+    series.push({ name: year, data: parsedData, type: "column" });
   });
 
   const options = {
@@ -87,6 +83,9 @@ const CodeGraph: React.FunctionComponent<CRGraphProps> = ({
       gridLineWidth: 1,
     },
     yAxis: {
+      title: {
+        text: axisLabel,
+      },
       lineWidth: 1,
       lineColor: "#e6e6e6",
       tickInterval: 1,

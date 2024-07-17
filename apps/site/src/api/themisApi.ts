@@ -7,7 +7,8 @@ import type {
   ForteSummary,
   JobHistoryEntry,
   JobInfo,
-  ReviewRating, SimStat,
+  ReviewRating,
+  SimStat,
 } from "../types/themis";
 
 const getDataSummary = async (username: string) => {

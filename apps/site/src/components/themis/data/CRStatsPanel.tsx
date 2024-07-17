@@ -26,7 +26,7 @@ const buildEmptyForm = (year: string): CRStatsFormData => {
         const currentDate = statisticsYear.set({ weekNumber: index });
 
         return {
-          date: currentDate.toISODate()!,
+          week: currentDate.weeksInWeekYear,
           authored: 0,
           commented: 0,
           received: 0,
@@ -108,12 +108,12 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
 
   const formRows = fields
     .sort((a, b) => {
-      return a.date.localeCompare(b.date);
+      return a.week === b.week ? 0 : a.week - b.week > 0 ? 1 : -1;
     })
     .map((field, index) => {
       return (
         <CRStatsEntryRow
-          date={DateTime.fromISO(field.date)}
+          week={field.week}
           index={index}
           control={control}
           register={register}
@@ -168,26 +168,26 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
       <Col span={10}>
         <CRGraph
           axisLabel={"Authored"}
-          data={statsWatch}
+          data={{ [year]: statsWatch }}
           stat={"authored"}
           max={100}
           inferMax={true}
         />
         <CRGraph
           axisLabel={"Commented On"}
-          data={statsWatch}
+          data={{ [year]: statsWatch }}
           stat={"commented"}
           inferMax={true}
         />
         <CRGraph
           axisLabel={"Received"}
-          data={statsWatch}
+          data={{ [year]: statsWatch }}
           stat={"received"}
           inferMax={true}
         />
         <CRGraph
           axisLabel={"Approved"}
-          data={statsWatch}
+          data={{ [year]: statsWatch }}
           stat={"approved"}
           max={30}
           inferMax={true}

@@ -26,7 +26,7 @@ const buildEmptyForm = (year: string): CodeStatsFormData => {
         const currentDate = statisticsYear.set({ weekNumber: index });
 
         return {
-          date: currentDate.toISODate()!,
+          week: currentDate.weeksInWeekYear,
           changes: 0,
           added: 0,
           removed: 0,
@@ -108,12 +108,12 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
 
   const formRows = fields
     .sort((a, b) => {
-      return a.date.localeCompare(b.date);
+      return a.week === b.week ? 0 : a.week - b.week > 0 ? 1 : -1;
     })
     .map((field, index) => {
       return (
         <CodeStatsEntryRow
-          date={DateTime.fromISO(field.date)}
+          week={field.week}
           index={index}
           control={control}
           register={register}
@@ -143,7 +143,7 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
         </Row>
         {formRows}
         <Row gutter={8}>
-          <Col span={2} offset={5}>
+          <Col span={2} offset={4}>
             <Space direction={"horizontal"} size={8}>
               <Button
                 type={"primary"}
@@ -168,26 +168,26 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
       <Col span={10}>
         <CodeGraph
           axisLabel={"Changes"}
-          data={statsWatch}
+          data={{ [year]: statsWatch }}
           stat={"changes"}
           max={100}
           inferMax={true}
         />
         <CodeGraph
           axisLabel={"SLOC Added"}
-          data={statsWatch}
+          data={{ [year]: statsWatch }}
           stat={"added"}
           inferMax={true}
         />
         <CodeGraph
           axisLabel={"SLOC Removed"}
-          data={statsWatch}
+          data={{ [year]: statsWatch }}
           stat={"removed"}
           inferMax={true}
         />
         <CodeGraph
           axisLabel={"Packages"}
-          data={statsWatch}
+          data={{ [year]: statsWatch }}
           stat={"packages"}
           max={30}
           inferMax={true}

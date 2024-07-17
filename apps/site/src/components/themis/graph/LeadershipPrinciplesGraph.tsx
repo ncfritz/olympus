@@ -1,12 +1,8 @@
-import type {For} from "@babel/types";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import HC_more from "highcharts/highcharts-more";
 import { Empty } from "antd";
-import {
-  type ForteSummary,
-  LEADERSHIP_PRINCIPLES,
-} from "../../../types/themis";
+import { type ForteSummary } from "../../../types/themis";
 
 const lpLabels: Record<keyof ForteSummary, string> = {
   customerObsession: "Customer Obsession",

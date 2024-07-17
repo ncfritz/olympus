@@ -2,14 +2,13 @@ import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import HC_more from "highcharts/highcharts-more";
 import { Empty } from "antd";
-import { DateTime } from "luxon";
 import { useEffect } from "react";
 import type { CodeStat } from "../../../types/themis";
 
 export interface CodeGraphProps {
   axisLabel?: string;
   stat: keyof CodeStat;
-  data: CodeStat[];
+  data: Record<string, CodeStat[]>;
   max?: number;
   inferMax?: boolean;
 }
@@ -31,30 +30,29 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
     });
   }, []);
 
-  const categories: number[] = Array(data.length)
+  const categories: number[] = Array(53)
     .fill(0)
     .map((element, index) => index);
+  const series: any[] = [];
 
-  const parsedData: Record<number, number[]> = {};
   let localMax = 0;
 
-  data.forEach((entry: CodeStat) => {
-    const entryDate = DateTime.fromISO(entry.date);
+  Object.keys(data).forEach((year) => {
+    const yearData = data[year];
+    const parsedData: number[] = [];
 
-    if (!Object.keys(parsedData).includes(entryDate.year.toString())) {
-      parsedData[entryDate.year] = [];
-    }
+    yearData.forEach((entry) => {
+      if ((entry[stat] as number) > localMax) {
+        localMax = entry[stat] as number;
+      }
 
-    if ((entry[stat] as number) > localMax) {
-      localMax = entry[stat] as number;
-    }
+      parsedData.push(entry[stat] as number);
+    });
 
-    parsedData[entryDate.year].push(entry[stat] as number);
+    series.push({ name: year, data: parsedData, type: "column" });
   });
 
-  const series = Object.entries(parsedData).map(([key, value]) => {
-    return { name: key, data: value, type: "column" };
-  });
+  console.log(series);
 
   const options = {
     chart: {
@@ -87,6 +85,9 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
       gridLineWidth: 1,
     },
     yAxis: {
+      title: {
+        text: axisLabel,
+      },
       lineWidth: 1,
       lineColor: "#e6e6e6",
       tickInterval: 1,

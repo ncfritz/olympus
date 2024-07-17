@@ -1,12 +1,10 @@
-import {Button, Space, Typography} from "antd";
+import { Button, Space, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import themisApi from "../../../api/themisApi";
-import type { UpsertNotesRequest } from "../../../pages/api/themis/user/[username]/data/[year]/notes";
 import { publish } from "../../../utils/events";
 import { PUBLISH_EVENT } from "../../common/NotificationSink";
 import NoteSummaryRichTextEditor from "../../notes/NoteSummaryRitchTextEditor";
-import type { ForteFormData } from "./FortePanel";
 import type { UserDataTabPanelProps } from "./UserDataTabGroup";
 
 export type NotesFormData = {

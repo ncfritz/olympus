@@ -9,7 +9,6 @@ import {
   Space,
   Steps,
 } from "antd";
-import { DateTime } from "luxon";
 import { type ReactNode, useState } from "react";
 import type { CRStat } from "../../../types/themis";
 
@@ -61,15 +60,15 @@ const ImportCrStatsModal: React.FunctionComponent<ImportCrStatsModalProps> = ({
       const parts = line.split(",", 5);
 
       try {
-        const date = DateTime.fromISO(parts[0]);
-
         if (parts.length <= 0) {
           setParsingError(true);
           return;
         }
 
+        const week = parseInt(parts[0]);
+
         processedEntries.push({
-          date: date.toISODate()!,
+          week: week,
           authored: getStatistic(parts, 1),
           commented: getStatistic(parts, 2),
           received: getStatistic(parts, 3),
@@ -141,7 +140,7 @@ const ImportCrStatsModal: React.FunctionComponent<ImportCrStatsModalProps> = ({
                 return (
                   <Row>
                     <Col span={6} style={{ fontSize: 11 }}>
-                      {stat.date}
+                      {stat.week}
                     </Col>
                     <Col
                       span={4}

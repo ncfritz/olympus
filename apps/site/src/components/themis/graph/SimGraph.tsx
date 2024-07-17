@@ -22,7 +22,7 @@ const SERIES_LABELS = {
   "4": "Sev4",
   "5": "Sev5",
   "99": "Other",
-}
+};
 
 const SimGraph: React.FunctionComponent<SimGraphProps> = ({
   data,
@@ -42,13 +42,13 @@ const SimGraph: React.FunctionComponent<SimGraphProps> = ({
     });
   }, []);
 
-  const categories: any[] = Array(53)
+  const categories: number[] = Array(53)
     .fill(0)
     .map((element, index) => index);
 
   const targetYear = DateTime.fromISO(year);
   const series: any[] = ["1", "2", "3", "4", "5", "99"].map(
-    (metric: SimMetric, index) => {
+    (metric: SimMetric) => {
       return {
         name: SERIES_LABELS[metric],
         type: "column",
@@ -101,6 +101,9 @@ const SimGraph: React.FunctionComponent<SimGraphProps> = ({
       gridLineWidth: 1,
     },
     yAxis: {
+      title: {
+        text: axisLabel,
+      },
       lineWidth: 1,
       lineColor: "#e6e6e6",
       tickInterval: 1,

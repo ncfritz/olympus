@@ -1,5 +1,3 @@
-import type { For } from "@babel/types";
-
 export type BaseBasicUserInfo = {
   givenName: string;
   surname: string;
@@ -84,7 +82,7 @@ export type JobInfo = {
 };
 
 export type CodeStat = {
-  date: string;
+  week: number;
   changes: number;
   added: number;
   removed: number;
@@ -92,7 +90,7 @@ export type CodeStat = {
 };
 
 export type CRStat = {
-  date: string;
+  week: number;
   authored: number;
   commented: number;
   received: number;

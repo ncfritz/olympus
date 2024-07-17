@@ -5,7 +5,7 @@ import {
   Controller,
   type UseFormRegister,
 } from "react-hook-form";
-import type {SimMetric} from "../../../types/themis";
+import type { SimMetric } from "../../../types/themis";
 import type { SimStatsFormData } from "../data/SimStatsPanel";
 
 export interface SimStatsEntryRowProps {
@@ -29,7 +29,7 @@ const CodeStatsEntryRow: React.FunctionComponent<SimStatsEntryRowProps> = ({
           name={`stats.${index}.week`}
           control={control}
           rules={{ required: true }}
-          render={({ field, fieldState }) => (
+          render={({ field }) => (
             <Input
               {...register(`stats.${index}.week`)}
               {...field}

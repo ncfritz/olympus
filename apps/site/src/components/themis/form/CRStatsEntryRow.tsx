@@ -1,5 +1,4 @@
 import { Col, Form, Input, Row, Typography } from "antd";
-import type { DateTime } from "luxon";
 import React from "react";
 import {
   type Control,
@@ -9,14 +8,14 @@ import {
 import type { CRStatsFormData } from "../data/CRStatsPanel";
 
 export interface CodeStatsEntryRowProps {
-  date: DateTime;
+  week: number;
   index: number;
   control: Control<CRStatsFormData>;
   register: UseFormRegister<CRStatsFormData>;
 }
 
 const CodeStatsEntryRow: React.FunctionComponent<CodeStatsEntryRowProps> = ({
-  date,
+  week,
   index,
   control,
   register,
@@ -24,16 +23,14 @@ const CodeStatsEntryRow: React.FunctionComponent<CodeStatsEntryRowProps> = ({
   return (
     <Row gutter={8} style={{ alignItems: "center" }}>
       <Col span={4} style={{ textAlign: "end" }}>
-        <Typography.Text style={{ fontSize: "12px" }}>
-          W{date.toFormat("WW-yyyy")}
-        </Typography.Text>
+        <Typography.Text style={{ fontSize: "12px" }}>W{week}</Typography.Text>
         <Controller
-          name={`stats.${index}.date`}
+          name={`stats.${index}.week`}
           control={control}
           rules={{ required: true }}
-          render={({ field, fieldState }) => (
+          render={({ field }) => (
             <Input
-              {...register(`stats.${index}.date`)}
+              {...register(`stats.${index}.week`)}
               {...field}
               hidden={true}
             />

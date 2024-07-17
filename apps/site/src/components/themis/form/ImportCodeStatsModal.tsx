@@ -9,7 +9,6 @@ import {
   Space,
   Steps,
 } from "antd";
-import { DateTime } from "luxon";
 import { type ReactNode, useState } from "react";
 import type { CodeStat } from "../../../types/themis";
 
@@ -59,15 +58,15 @@ const ImportCodeStatsModal: React.FunctionComponent<
       const parts = line.split(",", 5);
 
       try {
-        const date = DateTime.fromISO(parts[0]);
-
         if (parts.length <= 0) {
           setParsingError(true);
           return;
         }
 
+        const week = parseInt(parts[0]);
+
         processedEntries.push({
-          date: date.toISODate()!,
+          week: week,
           changes: getStatistic(parts, 1),
           added: getStatistic(parts, 2),
           removed: getStatistic(parts, 3),
@@ -139,7 +138,7 @@ const ImportCodeStatsModal: React.FunctionComponent<
                 return (
                   <Row>
                     <Col span={6} style={{ fontSize: 11 }}>
-                      {stat.date}
+                      W{stat.week}
                     </Col>
                     <Col
                       span={4}
