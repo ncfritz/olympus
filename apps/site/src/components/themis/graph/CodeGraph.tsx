@@ -52,8 +52,6 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
     series.push({ name: year, data: parsedData, type: "column" });
   });
 
-  console.log(series);
-
   const options = {
     chart: {
       height: 230,
