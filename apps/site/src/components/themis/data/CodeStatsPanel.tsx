@@ -9,7 +9,6 @@ import { PUBLISH_EVENT } from "../../common/NotificationSink";
 import CodeStatsEntryRow from "../form/CodeStatsEntryRow";
 import ImportCodeStatsModal from "../form/ImportCodeStatsModal";
 import CodeGraph from "../graph/CodeGraph";
-
 import type { UserDataTabPanelProps } from "./UserDataTabGroup";
 
 export type CodeStatsFormData = {

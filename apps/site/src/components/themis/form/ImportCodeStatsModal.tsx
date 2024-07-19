@@ -1,3 +1,4 @@
+import { InboxOutlined } from "@ant-design/icons";
 import {
   Button,
   Col,
@@ -8,9 +9,13 @@ import {
   Row,
   Space,
   Steps,
+  Typography,
+  Upload,
 } from "antd";
 import { type ReactNode, useState } from "react";
 import type { CodeStat } from "../../../types/themis";
+
+const { Dragger } = Upload;
 
 export interface ImportCodeStatsModalProps {
   isOpen: boolean;
@@ -101,15 +106,39 @@ const ImportCodeStatsModal: React.FunctionComponent<
         </Button>,
       );
       contents = (
-        <Form.Item label={"Raw Statistics"} layout={"vertical"}>
-          <Input.TextArea
-            style={{ height: 300 }}
-            value={rawStats}
-            onChange={(e) => {
-              setRawStats(e.currentTarget.value);
+        <Space direction={"vertical"} size={16} style={{ width: "100%" }}>
+          <Dragger
+            showUploadList={false}
+            maxCount={1}
+            beforeUpload={async (file) => {
+              setRawStats(await file.text());
+
+              // Prevent upload
+              return false;
             }}
-          ></Input.TextArea>
-        </Form.Item>
+            onChange={({ file }) => {
+              if (file.status === "done") {
+                console.log(file);
+              }
+            }}
+          >
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <Typography.Text>
+              Click or drag file to this area to upload
+            </Typography.Text>
+          </Dragger>
+          <Form.Item label={"Raw Statistics"} layout={"vertical"}>
+            <Input.TextArea
+              style={{ height: 300 }}
+              value={rawStats}
+              onChange={(e) => {
+                setRawStats(e.currentTarget.value);
+              }}
+            ></Input.TextArea>
+          </Form.Item>
+        </Space>
       );
       break;
     case 1:
