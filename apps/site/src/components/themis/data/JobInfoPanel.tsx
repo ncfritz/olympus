@@ -15,16 +15,24 @@ import {
 import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import themisApi from "../../../api/themisApi";
+import type { DataSummaryResponse } from "../../../pages/api/themis/user/[username]/data/dataSummary";
 import type { JobInfo } from "../../../types/themis";
 import { publish } from "../../../utils/events";
 import { PUBLISH_EVENT } from "../../common/NotificationSink";
+import ImportJobInfoModal from "../form/ImportJobInfoModal";
 import type { UserDataTabPanelProps } from "./UserDataTabGroup";
 
-const JobInfoPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
+export interface JobInfoPanelProps extends UserDataTabPanelProps {
+  dataSummary?: DataSummaryResponse;
+}
+
+const JobInfoPanel: React.FunctionComponent<JobInfoPanelProps> = ({
   username,
   year,
   afterSave,
+  dataSummary,
 }) => {
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [info, setInfo] = useState<JobInfo | undefined>(undefined);
   const [infoLoading, setInfoLoading] = useState(false);
   const [infoError, setInfoError] = useState(false);
@@ -179,7 +187,7 @@ const JobInfoPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
             <Controller
               name={"isManager"}
               control={control}
-              render={({ field, fieldState }) => <Checkbox {...field} />}
+              render={({ field }) => <Checkbox {...field} />}
             />
           </Col>
         </Row>
@@ -450,8 +458,29 @@ const JobInfoPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
             >
               Save
             </Button>
+            <Button
+              type={"default"}
+              style={{ marginRight: 8 }}
+              disabled={!dataSummary}
+              onClick={() => {
+                setImportModalOpen(true);
+              }}
+            >
+              Import
+            </Button>
           </Col>
         </Row>
+        <ImportJobInfoModal
+          isOpen={importModalOpen}
+          username={username}
+          dataSummary={dataSummary}
+          importFunction={async (info) => {
+            reset(info);
+          }}
+          onClose={() => {
+            setImportModalOpen(false);
+          }}
+        />
       </form>
     );
   }

@@ -6,6 +6,7 @@ import {
 import { Space, Tabs } from "antd";
 import { useEffect, useState } from "react";
 import themisApi from "../../../api/themisApi";
+import type { DataSummaryResponse } from "../../../pages/api/themis/user/[username]/data/dataSummary";
 import type { UserDataSummary } from "../../../types/themis";
 import CodeStatsPanel from "./CodeStatsPanel";
 import CRStatsPanel from "./CRStatsPanel";
@@ -19,6 +20,8 @@ import SimStatsPanel from "./SimStatsPanel";
 export interface UserDataTabGroupProps {
   username: string;
   year: string;
+  dataSummaryResponse?: DataSummaryResponse;
+  onSummaryUpdate: () => Promise<void>;
 }
 
 export interface UserDataTabPanelProps {
@@ -30,6 +33,8 @@ export interface UserDataTabPanelProps {
 const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
   username,
   year,
+  dataSummaryResponse,
+  onSummaryUpdate,
 }) => {
   const [dataSummary, setDataSummary] = useState<UserDataSummary | undefined>(
     undefined,
@@ -48,6 +53,11 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
     } catch (e) {
       console.log(`Unable to load data summary`);
     }
+  };
+
+  const panelDidUpdate = async () => {
+    await loadDataSummary();
+    await onSummaryUpdate();
   };
 
   const tabLabel = (dataId: keyof UserDataSummary, label: string) => {
@@ -80,7 +90,8 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
             <JobInfoPanel
               username={username}
               year={year}
-              afterSave={loadDataSummary}
+              afterSave={panelDidUpdate}
+              dataSummary={dataSummaryResponse}
             />
           ),
         },
@@ -91,7 +102,7 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
             <RatingPanel
               username={username}
               year={year}
-              afterSave={loadDataSummary}
+              afterSave={panelDidUpdate}
             />
           ),
         },
@@ -102,7 +113,7 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
             <JobHistoryPanel
               username={username}
               year={year}
-              afterSave={loadDataSummary}
+              afterSave={panelDidUpdate}
             />
           ),
         },
@@ -113,7 +124,7 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
             <FortePanel
               username={username}
               year={year}
-              afterSave={loadDataSummary}
+              afterSave={panelDidUpdate}
             />
           ),
         },
@@ -124,7 +135,7 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
             <NotesPanel
               username={username}
               year={year}
-              afterSave={loadDataSummary}
+              afterSave={panelDidUpdate}
             />
           ),
         },
@@ -140,7 +151,7 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
             <CodeStatsPanel
               username={username}
               year={year}
-              afterSave={loadDataSummary}
+              afterSave={panelDidUpdate}
             />
           ),
         },
@@ -151,7 +162,7 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
             <CRStatsPanel
               username={username}
               year={year}
-              afterSave={loadDataSummary}
+              afterSave={panelDidUpdate}
             />
           ),
         },
@@ -162,7 +173,7 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
             <SimStatsPanel
               username={username}
               year={year}
-              afterSave={loadDataSummary}
+              afterSave={panelDidUpdate}
             />
           ),
         },

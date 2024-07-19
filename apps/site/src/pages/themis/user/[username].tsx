@@ -67,7 +67,7 @@ const IndexPage: React.FunctionComponent = () => {
       setDataSummaryLoading(true);
     }
 
-    setDataYearsError(false);
+    setDataSummaryError(false);
 
     try {
       const response = await themisApi.getDataSummary(params.username);
@@ -83,6 +83,7 @@ const IndexPage: React.FunctionComponent = () => {
     try {
       await themisApi.createDataYear(params.username, newYear!.trim());
       await loadDataYears(true);
+      await loadDataSummary();
 
       publish(PUBLISH_EVENT, {
         type: "success",
@@ -187,7 +188,16 @@ const IndexPage: React.FunctionComponent = () => {
       tabs.push({
         key: `datayear-${year}`,
         label: year,
-        children: <UserDataTabGroup username={params.username} year={year} />,
+        children: (
+          <UserDataTabGroup
+            username={params.username}
+            year={year}
+            dataSummaryResponse={dataSummary}
+            onSummaryUpdate={async () => {
+              await loadDataSummary();
+            }}
+          />
+        ),
       });
     });
 
