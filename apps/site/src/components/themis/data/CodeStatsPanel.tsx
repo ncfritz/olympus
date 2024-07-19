@@ -1,4 +1,5 @@
-import { Button, Col, Row, Space, Typography } from "antd";
+import { InboxOutlined } from "@ant-design/icons";
+import { Button, Col, Row, Space, Typography, Upload } from "antd";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
@@ -10,6 +11,8 @@ import CodeStatsEntryRow from "../form/CodeStatsEntryRow";
 import ImportCodeStatsModal from "../form/ImportCodeStatsModal";
 import CodeGraph from "../graph/CodeGraph";
 import type { UserDataTabPanelProps } from "./UserDataTabGroup";
+
+const { Dragger } = Upload;
 
 export type CodeStatsFormData = {
   stats: CodeStat[];
@@ -120,6 +123,55 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
       );
     });
 
+  const getStatistic = (parts: string[], index: number) => {
+    if (!parts) {
+      return 0;
+    }
+
+    if (parts.length <= index) {
+      return 0;
+    }
+
+    if (parts[index].trim() === "") {
+      return 0;
+    }
+
+    return parseInt(parts[index]);
+  };
+
+  const processCodeStats = (input?: string) => {
+    if (!input) {
+      throw "No input!";
+    }
+
+    const processedEntries: CodeStat[] = [];
+    const rawLines = input?.trim().split("\n") || [];
+
+    if (rawLines?.length < 52) {
+      throw "Input length < 52 lines";
+    }
+
+    rawLines.forEach((line) => {
+      const parts = line.split(",", 5);
+
+      if (parts.length <= 0) {
+        throw "Invalid stats row";
+      }
+
+      const week = parseInt(parts[0]);
+
+      processedEntries.push({
+        week: week,
+        changes: getStatistic(parts, 1),
+        added: getStatistic(parts, 2),
+        removed: getStatistic(parts, 3),
+        packages: getStatistic(parts, 4),
+      });
+    });
+
+    return processedEntries;
+  };
+
   return (
     <Row>
       <Col span={10}>
@@ -164,7 +216,36 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
           </Col>
         </Row>
       </Col>
-      <Col span={10}>
+      <Col span={14}>
+        <Dragger
+          height={120}
+          style={{
+            marginBottom: 16,
+          }}
+          showUploadList={false}
+          maxCount={1}
+          beforeUpload={async (file) => {
+            try {
+              reset({ stats: processCodeStats(await file.text()) });
+            } catch (e) {
+              publish(PUBLISH_EVENT, {
+                type: "error",
+                message: "Failed to parse code statistics",
+                description: "Unable to parse code statistics!",
+              });
+            }
+
+            // Prevent upload
+            return false;
+          }}
+        >
+          <p className="ant-upload-drag-icon">
+            <InboxOutlined />
+          </p>
+          <Typography.Text>
+            Click or drag file to this area to upload
+          </Typography.Text>
+        </Dragger>
         <CodeGraph
           axisLabel={"Changes"}
           data={{ [year]: statsWatch }}
@@ -194,6 +275,7 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
       </Col>
       <ImportCodeStatsModal
         isOpen={importModalOpen}
+        processStatsFunction={processCodeStats}
         importFunction={async (stats) => {
           reset({ stats: stats });
         }}

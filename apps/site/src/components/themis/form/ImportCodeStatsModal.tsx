@@ -19,13 +19,14 @@ const { Dragger } = Upload;
 
 export interface ImportCodeStatsModalProps {
   isOpen: boolean;
+  processStatsFunction: (input?: string) => CodeStat[];
   importFunction: (history: CodeStat[]) => Promise<void>;
   onClose: () => void;
 }
 
 const ImportCodeStatsModal: React.FunctionComponent<
   ImportCodeStatsModalProps
-> = ({ isOpen, importFunction, onClose }) => {
+> = ({ isOpen, importFunction, onClose, processStatsFunction }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [rawStats, setRawStats] = useState<string | undefined>(undefined);
   const [parsingError, setParsingError] = useState(false);
@@ -35,57 +36,14 @@ const ImportCodeStatsModal: React.FunctionComponent<
     onClose();
   };
 
-  const getStatistic = (parts: string[], index: number) => {
-    if (!parts) {
-      return 0;
-    }
-
-    if (parts.length <= index) {
-      return 0;
-    }
-
-    if (parts[index].trim() === "") {
-      return 0;
-    }
-
-    return parseInt(parts[index]);
-  };
-
   const processCodeStats = async () => {
-    const processedEntries: CodeStat[] = [];
-    const rawLines = rawStats?.trim().split("\n") || [];
-
-    if (rawLines?.length < 52) {
+    try {
+      const processedEntries = processStatsFunction(rawStats);
+      setStats(processedEntries);
+    } catch (e) {
       setParsingError(true);
+      console.log(e);
     }
-
-    rawLines.forEach((line) => {
-      const parts = line.split(",", 5);
-
-      try {
-        if (parts.length <= 0) {
-          setParsingError(true);
-          return;
-        }
-
-        const week = parseInt(parts[0]);
-
-        processedEntries.push({
-          week: week,
-          changes: getStatistic(parts, 1),
-          added: getStatistic(parts, 2),
-          removed: getStatistic(parts, 3),
-          packages: getStatistic(parts, 4),
-        });
-
-        setStats(processedEntries);
-      } catch (e) {
-        setParsingError(true);
-        console.log(e);
-      }
-    });
-
-    setStats(processedEntries);
   };
 
   const modalButtons: ReactNode[] = [];
