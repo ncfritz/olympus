@@ -33,6 +33,10 @@ const ImportCodeStatsModal: React.FunctionComponent<
   const [stats, setStats] = useState<CodeStat[]>([]);
 
   const closeModal = () => {
+    setRawStats(undefined);
+    setStats([]);
+    setParsingError(false);
+    setCurrentStep(0);
     onClose();
   };
 
@@ -73,11 +77,6 @@ const ImportCodeStatsModal: React.FunctionComponent<
 
               // Prevent upload
               return false;
-            }}
-            onChange={({ file }) => {
-              if (file.status === "done") {
-                console.log(file);
-              }
             }}
           >
             <p className="ant-upload-drag-icon">

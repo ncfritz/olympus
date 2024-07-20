@@ -1,4 +1,5 @@
-import { Button, Col, Row, Space, Typography } from "antd";
+import {InboxOutlined} from "@ant-design/icons";
+import { Button, Col, Row, Space, Typography, Upload } from "antd";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
@@ -9,8 +10,9 @@ import { PUBLISH_EVENT } from "../../common/NotificationSink";
 import CRStatsEntryRow from "../form/CRStatsEntryRow";
 import ImportCrStatsModal from "../form/ImportCrStatsModal";
 import CRGraph from "../graph/CRGraph";
-
 import type { UserDataTabPanelProps } from "./UserDataTabGroup";
+
+const { Dragger } = Upload;
 
 export type CRStatsFormData = {
   stats: CRStat[];
@@ -106,6 +108,55 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
     }
   };
 
+  const getStatistic = (parts: string[], index: number) => {
+    if (!parts) {
+      return 0;
+    }
+
+    if (parts.length <= index) {
+      return 0;
+    }
+
+    if (parts[index].trim() === "") {
+      return 0;
+    }
+
+    return parseInt(parts[index]);
+  };
+
+  const processCrStats = (input?: string) => {
+    if (!input) {
+      throw "No input!";
+    }
+
+    const processedEntries: CRStat[] = [];
+    const rawLines = input?.trim().split("\n") || [];
+
+    if (rawLines?.length < 52) {
+      throw "Input length < 52 lines";
+    }
+
+    rawLines.forEach((line) => {
+      const parts = line.split(",", 5);
+
+      if (parts.length <= 0) {
+        throw "Invalid stats row";
+      }
+
+      const week = parseInt(parts[0]);
+
+      processedEntries.push({
+        week: week,
+        authored: getStatistic(parts, 1),
+        commented: getStatistic(parts, 2),
+        received: getStatistic(parts, 3),
+        approved: getStatistic(parts, 4),
+      });
+    });
+
+    return processedEntries;
+  };
+
   const formRows = fields
     .sort((a, b) => {
       return a.week === b.week ? 0 : a.week - b.week > 0 ? 1 : -1;
@@ -143,7 +194,7 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
         </Row>
         {formRows}
         <Row gutter={8}>
-          <Col span={2} offset={5}>
+          <Col span={2} offset={4}>
             <Space direction={"horizontal"} size={8}>
               <Button
                 type={"primary"}
@@ -165,7 +216,36 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
           </Col>
         </Row>
       </Col>
-      <Col span={10}>
+      <Col span={14}>
+        <Dragger
+          height={120}
+          style={{
+            marginBottom: 16,
+          }}
+          showUploadList={false}
+          maxCount={1}
+          beforeUpload={async (file) => {
+            try {
+              reset({ stats: processCrStats(await file.text()) });
+            } catch (e) {
+              publish(PUBLISH_EVENT, {
+                type: "error",
+                message: "Failed to parse code statistics",
+                description: "Unable to parse code statistics!",
+              });
+            }
+
+            // Prevent upload
+            return false;
+          }}
+        >
+          <p className="ant-upload-drag-icon">
+            <InboxOutlined />
+          </p>
+          <Typography.Text>
+            Click or drag file to this area to upload
+          </Typography.Text>
+        </Dragger>
         <CRGraph
           axisLabel={"Authored"}
           data={{ [year]: statsWatch }}
@@ -194,6 +274,7 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
         />
       </Col>
       <ImportCrStatsModal
+        processStatsFunction={processCrStats}
         isOpen={importModalOpen}
         importFunction={async (stats) => {
           reset({ stats: stats });

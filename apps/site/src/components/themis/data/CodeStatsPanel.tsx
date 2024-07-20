@@ -108,21 +108,6 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
     }
   };
 
-  const formRows = fields
-    .sort((a, b) => {
-      return a.week === b.week ? 0 : a.week - b.week > 0 ? 1 : -1;
-    })
-    .map((field, index) => {
-      return (
-        <CodeStatsEntryRow
-          week={field.week}
-          index={index}
-          control={control}
-          register={register}
-        />
-      );
-    });
-
   const getStatistic = (parts: string[], index: number) => {
     if (!parts) {
       return 0;
@@ -171,6 +156,21 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
 
     return processedEntries;
   };
+
+  const formRows = fields
+    .sort((a, b) => {
+      return a.week === b.week ? 0 : a.week - b.week > 0 ? 1 : -1;
+    })
+    .map((field, index) => {
+      return (
+        <CodeStatsEntryRow
+          week={field.week}
+          index={index}
+          control={control}
+          register={register}
+        />
+      );
+    });
 
   return (
     <Row>

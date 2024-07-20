@@ -1,3 +1,4 @@
+import { InboxOutlined } from "@ant-design/icons";
 import {
   Button,
   Col,
@@ -8,17 +9,23 @@ import {
   Row,
   Space,
   Steps,
+  Typography,
+  Upload,
 } from "antd";
 import { type ReactNode, useState } from "react";
 import type { CRStat } from "../../../types/themis";
 
+const { Dragger } = Upload;
+
 export interface ImportCrStatsModalProps {
+  processStatsFunction: (input?: string) => CRStat[];
   isOpen: boolean;
   importFunction: (history: CRStat[]) => Promise<void>;
   onClose: () => void;
 }
 
 const ImportCrStatsModal: React.FunctionComponent<ImportCrStatsModalProps> = ({
+  processStatsFunction,
   isOpen,
   importFunction,
   onClose,
@@ -29,60 +36,21 @@ const ImportCrStatsModal: React.FunctionComponent<ImportCrStatsModalProps> = ({
   const [stats, setStats] = useState<CRStat[]>([]);
 
   const closeModal = () => {
+    setRawStats(undefined);
+    setStats([]);
+    setParsingError(false);
+    setCurrentStep(0);
     onClose();
   };
 
-  const getStatistic = (parts: string[], index: number) => {
-    if (!parts) {
-      return 0;
-    }
-
-    if (parts.length <= index) {
-      return 0;
-    }
-
-    if (parts[index].trim() === "") {
-      return 0;
-    }
-
-    return parseInt(parts[index]);
-  };
-
   const processCrStats = async () => {
-    const processedEntries: CRStat[] = [];
-    const rawLines = rawStats?.trim().split("\n") || [];
-
-    if (rawLines?.length < 52) {
+    try {
+      const processedEntries = processStatsFunction(rawStats);
+      setStats(processedEntries);
+    } catch (e) {
       setParsingError(true);
+      console.log(e);
     }
-
-    rawLines.forEach((line) => {
-      const parts = line.split(",", 5);
-
-      try {
-        if (parts.length <= 0) {
-          setParsingError(true);
-          return;
-        }
-
-        const week = parseInt(parts[0]);
-
-        processedEntries.push({
-          week: week,
-          authored: getStatistic(parts, 1),
-          commented: getStatistic(parts, 2),
-          received: getStatistic(parts, 3),
-          approved: getStatistic(parts, 4),
-        });
-
-        setStats(processedEntries);
-      } catch (e) {
-        setParsingError(true);
-        console.log(e);
-      }
-    });
-
-    setStats(processedEntries);
   };
 
   const modalButtons: ReactNode[] = [];
@@ -103,15 +71,34 @@ const ImportCrStatsModal: React.FunctionComponent<ImportCrStatsModalProps> = ({
         </Button>,
       );
       contents = (
-        <Form.Item label={"Raw Statistics"} layout={"vertical"}>
-          <Input.TextArea
-            style={{ height: 300 }}
-            value={rawStats}
-            onChange={(e) => {
-              setRawStats(e.currentTarget.value);
+        <Space direction={"vertical"} size={16} style={{ width: "100%" }}>
+          <Dragger
+            showUploadList={false}
+            maxCount={1}
+            beforeUpload={async (file) => {
+              setRawStats(await file.text());
+
+              // Prevent upload
+              return false;
             }}
-          ></Input.TextArea>
-        </Form.Item>
+          >
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <Typography.Text>
+              Click or drag file to this area to upload
+            </Typography.Text>
+          </Dragger>
+          <Form.Item label={"Raw Statistics"} layout={"vertical"}>
+            <Input.TextArea
+              style={{ height: 300 }}
+              value={rawStats}
+              onChange={(e) => {
+                setRawStats(e.currentTarget.value);
+              }}
+            ></Input.TextArea>
+          </Form.Item>
+        </Space>
       );
       break;
     case 1:
