@@ -10,6 +10,7 @@ const DATA_PATHS: Record<keyof DataSummaryResponse, string> = {
   performance: "rating.json",
   jobHistory: "jobHistory.json",
   notes: "notes.json",
+  forteHistory: "forte.json",
   mentorship: "mentorship.json",
   code: "code.json",
   cr: "cr.json",
