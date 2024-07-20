@@ -16,9 +16,9 @@ export default function handler(
   req: NextApiRequest,
   res: NextApiResponse<GetReviewYearsResponse>,
 ) {
-  if (req.method?.toUpperCase() === "GET") {
-    const yearsPath = p("years");
+  const yearsPath = p("years");
 
+  if (req.method?.toUpperCase() === "GET") {
     if (!fs.existsSync(yearsPath)) {
       res.status(404).end();
       return;
@@ -36,8 +36,14 @@ export default function handler(
         return;
       }
 
+      const reviewDataPath = p(`years/${year}/review.json`);
+
+      if (!fs.existsSync(reviewDataPath)) {
+        return;
+      }
+
       const reviewYear = safeLoadJson<ReviewYearUsers>(
-        p(`years/${year}/users.json`),
+        reviewDataPath,
       );
 
       if (reviewYear && reviewYear.users?.length > 0) {
@@ -45,15 +51,12 @@ export default function handler(
           year: year,
           ratingsComplete: 0,
           users: reviewYear.users.map((user) => {
-            return safeLoadJson<BasicUserInfo>(
-              p(`users/${user}/basicInfo.json`),
-              {
-                username: user,
-                hireDate: DateTime.now().toISODate(),
-                givenName: "Unknown",
-                surname: "Unknown",
-              },
-            )!;
+            return safeLoadJson<BasicUserInfo>(p(`users/${user}/review.json`), {
+              username: user,
+              hireDate: DateTime.now().toISODate(),
+              givenName: "Unknown",
+              surname: "Unknown",
+            })!;
           }),
         });
       }

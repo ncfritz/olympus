@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { UpsertReviewYearBasicInfoRequest } from "../pages/api/themis/review/[year]/basicInfo";
 import type {
   BaseBasicUserInfo,
   BasicUserInfo,
@@ -86,6 +87,41 @@ const getReviewYears = async () => {
         return status === 200;
       },
     });
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getReviewYearBasicInfo = async (year: string) => {
+  try {
+    const response = await axios.get(`/api/themis/review/${year}/basicInfo`, {
+      validateStatus: (status) => {
+        return status === 200;
+      },
+    });
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const upsertReviewYearBasicInfo = async (
+  year: string,
+  review: UpsertReviewYearBasicInfoRequest,
+) => {
+  try {
+    const response = await axios.put(
+      `/api/themis/review/${year}/basicInfo`,
+      review,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
 
     return response.data;
   } catch (e) {
@@ -477,6 +513,7 @@ const themisApi = {
   getNotes: getNotes,
   getRating: getRating,
   getReviewYears: getReviewYears,
+  getReviewYearBasicInfo: getReviewYearBasicInfo,
   listDataYears: listDataYears,
   listUsers: listUsers,
   upsertCodeStats: upsertCodeStats,
@@ -487,6 +524,7 @@ const themisApi = {
   upsertNotes: upsertNotes,
   upsertSimStats: upsertSimStats,
   upsertRating: upsertRating,
+  upsertReviewYearBasicInfo: upsertReviewYearBasicInfo,
   updateUser: updateUser,
 };
 

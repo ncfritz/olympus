@@ -8,10 +8,9 @@ import { Breadcrumb, Button, Drawer, Layout, Space } from "antd";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import themisApi from "../../api/themisApi";
-import AddUserPanel from "../../components/themis/AddUserPanel";
+import AddReviewYearPanel from "../../components/themis/AddReviewYearPanel";
 import ReviewYearsTable from "../../components/themis/ReviewYearsTable";
-import UsersTable from "../../components/themis/UsersTable";
-import type { BasicUserInfo, ReviewYear } from "../../types/themis";
+import type { ReviewYear } from "../../types/themis";
 
 const { Content } = Layout;
 
@@ -21,7 +20,7 @@ const IndexPage: React.FunctionComponent = () => {
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState(false);
 
-  const loadUsers = async (quiet: boolean = false) => {
+  const loadReviewYears = async (quiet: boolean = false) => {
     if (!quiet) {
       setReviewsLoading(true);
     }
@@ -40,7 +39,7 @@ const IndexPage: React.FunctionComponent = () => {
 
   useEffect(() => {
     (async () => {
-      await loadUsers();
+      await loadReviewYears();
     })();
   }, []);
 
@@ -116,19 +115,22 @@ const IndexPage: React.FunctionComponent = () => {
           <ReviewYearsTable reviews={reviews} loading={reviewsLoading} />
         </Content>
         <Drawer
-          title={"Add user"}
+          title={"Add review year"}
           width={500}
           open={newReviewDrawerOpen}
           onClose={() => {
             setNewReviewDrawerOpen(false);
           }}
         >
-          <AddUserPanel
+          <AddReviewYearPanel
+            existingYears={reviews.map((review) => {
+              return review.year;
+            })}
             close={() => {
               setNewReviewDrawerOpen(false);
             }}
             afterAdd={async () => {
-              await loadUsers(true);
+              await loadReviewYears(true);
             }}
           />
         </Drawer>
