@@ -42,21 +42,22 @@ export default function handler(
         return;
       }
 
-      const reviewYear = safeLoadJson<ReviewYearUsers>(
-        reviewDataPath,
-      );
+      const reviewYear = safeLoadJson<ReviewYearUsers>(reviewDataPath);
 
       if (reviewYear && reviewYear.users?.length > 0) {
         response.reviews.push({
           year: year,
           ratingsComplete: 0,
           users: reviewYear.users.map((user) => {
-            return safeLoadJson<BasicUserInfo>(p(`users/${user}/review.json`), {
-              username: user,
-              hireDate: DateTime.now().toISODate(),
-              givenName: "Unknown",
-              surname: "Unknown",
-            })!;
+            return safeLoadJson<BasicUserInfo>(
+              p(`users/${user}/basicInfo.json`),
+              {
+                username: user,
+                hireDate: DateTime.now().toISODate(),
+                givenName: "Unknown",
+                surname: "Unknown",
+              },
+            )!;
           }),
         });
       }
