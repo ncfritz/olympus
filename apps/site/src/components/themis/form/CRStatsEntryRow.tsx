@@ -37,8 +37,8 @@ const CodeStatsEntryRow: React.FunctionComponent<CodeStatsEntryRowProps> = ({
           )}
         />
       </Col>
-      {["authored", "commented", "received", "approved"].map(
-        (metric: "authored" | "commented" | "received" | "approved") => {
+      {["received", "authored", "approved", "commented"].map(
+        (metric: "received" | "authored" | "approved" | "commented") => {
           return (
             <Col span={4}>
               <Controller

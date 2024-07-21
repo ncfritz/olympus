@@ -180,16 +180,16 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
             <Typography.Text strong={true}>Week</Typography.Text>
           </Col>
           <Col span={4}>
-            <Typography.Text strong={true}>Authored</Typography.Text>
-          </Col>
-          <Col span={4}>
-            <Typography.Text strong={true}>Commented</Typography.Text>
-          </Col>
-          <Col span={4}>
             <Typography.Text strong={true}>Received</Typography.Text>
           </Col>
           <Col span={4}>
+            <Typography.Text strong={true}>Authored</Typography.Text>
+          </Col>
+          <Col span={4}>
             <Typography.Text strong={true}>Approved</Typography.Text>
+          </Col>
+          <Col span={4}>
+            <Typography.Text strong={true}>Commented</Typography.Text>
           </Col>
         </Row>
         {formRows}
@@ -247,6 +247,12 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
           </Typography.Text>
         </Dragger>
         <CRGraph
+          axisLabel={"Received"}
+          data={{ [year]: statsWatch }}
+          stat={"received"}
+          inferMax={true}
+        />
+        <CRGraph
           axisLabel={"Authored"}
           data={{ [year]: statsWatch }}
           stat={"authored"}
@@ -254,22 +260,16 @@ const CodeStatsPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
           inferMax={true}
         />
         <CRGraph
-          axisLabel={"Commented On"}
-          data={{ [year]: statsWatch }}
-          stat={"commented"}
-          inferMax={true}
-        />
-        <CRGraph
-          axisLabel={"Received"}
-          data={{ [year]: statsWatch }}
-          stat={"received"}
-          inferMax={true}
-        />
-        <CRGraph
           axisLabel={"Approved"}
           data={{ [year]: statsWatch }}
           stat={"approved"}
           max={30}
+          inferMax={true}
+        />
+        <CRGraph
+          axisLabel={"Commented On"}
+          data={{ [year]: statsWatch }}
+          stat={"commented"}
           inferMax={true}
         />
       </Col>
