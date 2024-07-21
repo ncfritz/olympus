@@ -20,7 +20,7 @@ const { Dragger } = Upload;
 export interface ImportCrStatsModalProps {
   processStatsFunction: (input?: string) => CRStat[];
   isOpen: boolean;
-  importFunction: (history: CRStat[]) => Promise<void>;
+  importFunction: (stats: CRStat[]) => Promise<void>;
   onClose: () => void;
 }
 
