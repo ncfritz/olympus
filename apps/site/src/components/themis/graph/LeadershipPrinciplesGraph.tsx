@@ -41,7 +41,6 @@ const LeadershipPrinciplesGraph: React.FunctionComponent<
     },
   );
 
-  console.log(data);
   Object.entries(data).forEach(([key, value]) => {
     const seriesData = Object.keys(lpLabels).map((key: keyof ForteSummary) => {
       if (!value[key]) {

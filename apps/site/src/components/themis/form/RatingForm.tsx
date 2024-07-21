@@ -69,7 +69,7 @@ const RatingForm: React.FunctionComponent<RatingFormProps> = ({
         gutter={8}
         style={{ display: "flex", alignItems: "center", marginBottom: 8 }}
       >
-        <Col span={2}>
+        <Col span={3}>
           <Typography.Text
             strong={true}
             style={{ display: "flex", justifyContent: "end" }}
@@ -107,7 +107,7 @@ const RatingForm: React.FunctionComponent<RatingFormProps> = ({
         gutter={8}
         style={{ display: "flex", alignItems: "center", marginBottom: 8 }}
       >
-        <Col span={2}>
+        <Col span={3}>
           <Typography.Text
             strong={true}
             style={{ display: "flex", justifyContent: "end" }}
@@ -142,7 +142,7 @@ const RatingForm: React.FunctionComponent<RatingFormProps> = ({
         gutter={8}
         style={{ display: "flex", alignItems: "center", marginBottom: 8 }}
       >
-        <Col span={2}>
+        <Col span={3}>
           <Typography.Text
             strong={true}
             style={{ display: "flex", justifyContent: "end" }}
@@ -175,7 +175,7 @@ const RatingForm: React.FunctionComponent<RatingFormProps> = ({
         </Col>
       </Row>
       <Row style={{ display: "flex", alignItems: "center" }}>
-        <Col offset={2} span={6}>
+        <Col offset={3} span={6}>
           <Button
             type={"primary"}
             htmlType={"submit"}
