@@ -1,4 +1,4 @@
-import {InboxOutlined} from "@ant-design/icons";
+import { InboxOutlined } from "@ant-design/icons";
 import { Button, Col, Row, Space, Typography, Upload } from "antd";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";

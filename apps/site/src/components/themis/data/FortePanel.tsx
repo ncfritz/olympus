@@ -1,6 +1,5 @@
 import { InboxOutlined } from "@ant-design/icons";
 import { Button, Col, Row, Slider, Space, Typography, Upload } from "antd";
-import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import themisApi from "../../../api/themisApi";
