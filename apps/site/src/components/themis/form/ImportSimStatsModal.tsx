@@ -12,7 +12,7 @@ import {
 } from "antd";
 import { DateTime } from "luxon";
 import { type ReactNode, useState } from "react";
-import year from "../../../pages/themis/review/[year]";
+import year from "../../../pages/themis/review/[year]/[username]";
 import type { CRStat, SimSeverityStats, SimStat } from "../../../types/themis";
 
 export interface ImportSimStatsModalProps {
