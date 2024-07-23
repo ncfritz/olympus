@@ -160,23 +160,42 @@ const FortePanel: React.FunctionComponent<UserDataTabPanelProps> = ({
       JSON.stringify(EMPTY_FORTE_SUMMARY),
     );
     const parsedInput = JSON.parse(input!);
-    const feedback = parsedInput.feedbackList;
+    const feedbackList = parsedInput.feedbackList;
+    const anonymisedFeedbackList = parsedInput.anonymisedFeedbacks;
 
-    feedback.forEach((feedbackItem: any) => {
-      const attributes = JSON.parse(feedbackItem.attributes);
+    if (feedbackList) {
+      feedbackList.forEach((feedbackItem: any) => {
+        const attributes = JSON.parse(feedbackItem.attributes);
 
-      if (attributes.feedback?.growthLeadershipPrinciples?.length > 0) {
-        attributes.feedback.growthLeadershipPrinciples.forEach((lp: string) => {
-          updateSummary(parsedSummary, true, lp);
-        });
-      }
+        if (attributes.feedback?.growthLeadershipPrinciples?.length > 0) {
+          attributes.feedback.growthLeadershipPrinciples.forEach(
+            (lp: string) => {
+              updateSummary(parsedSummary, true, lp);
+            },
+          );
+        }
 
-      if (attributes.feedback?.leadershipPrinciples?.length > 0) {
-        attributes.feedback.leadershipPrinciples.forEach((lp: string) => {
-          updateSummary(parsedSummary, false, lp);
-        });
-      }
-    });
+        if (attributes.feedback?.leadershipPrinciples?.length > 0) {
+          attributes.feedback.leadershipPrinciples.forEach((lp: string) => {
+            updateSummary(parsedSummary, false, lp);
+          });
+        }
+      });
+    } else if (anonymisedFeedbackList) {
+      anonymisedFeedbackList.forEach((feedback: any) => {
+        if (feedback?.growthIdeaLeadershipPrinciples?.length > 0) {
+          feedback.growthIdeaLeadershipPrinciples.forEach((lp: string) => {
+            updateSummary(parsedSummary, true, lp);
+          });
+        }
+
+        if (feedback?.superPowerLeadershipPrincipes?.length > 0) {
+          feedback.superPowerLeadershipPrincipes.forEach((lp: string) => {
+            updateSummary(parsedSummary, false, lp);
+          });
+        }
+      });
+    }
 
     return parsedSummary;
   };
