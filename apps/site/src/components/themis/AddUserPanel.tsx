@@ -4,7 +4,7 @@ import React from "react";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 import themisApi from "../../api/themisApi";
 import type { BasicUserInfo } from "../../types/themis";
-import Badge from "./badge";
+import Badge from "./Badge";
 
 export interface AddUserPanelProps {
   close: () => void;
