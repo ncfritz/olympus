@@ -1,5 +1,5 @@
-import { Button, Col, Row, Space, Typography } from "antd";
-import React, { ReactElement } from "react";
+import { Button, Col, Row, Typography } from "antd";
+import React, { type ReactElement } from "react";
 import { EditOutlined } from "@ant-design/icons";
 
 export interface SectionHeadingProps {
