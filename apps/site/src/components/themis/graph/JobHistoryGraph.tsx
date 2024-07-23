@@ -117,10 +117,15 @@ const JobHistoryGraph: React.FunctionComponent<JobHistoryGraphProps> = ({
     },
     xAxis: {
       type: "datetime",
+      lineWidth: 1,
+      lineColor: "#e6e6e6",
+      tickColor: "#e6e6e6",
     },
     yAxis: {
       lineWidth: 1,
+      lineColor: "#e6e6e6",
       tickInterval: 1,
+      tickColor: "#e6e6e6",
       min: 0,
       categories: categories,
       title: {

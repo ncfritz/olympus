@@ -125,13 +125,13 @@ const JobHistoryPanel: React.FunctionComponent<UserDataTabPanelProps> = ({
   }
 
   return (
-    <Space direction={"vertical"} size={16} style={{ width: "100%" }}>
+    <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
       <Row gutter={8}>
         <Col span={18}>
           <JobHistoryGraph data={getValues().entries || []} />
         </Col>
       </Row>
-      <Row gutter={8}>
+      <Row gutter={8} style={{ marginTop: 16}}>
         <Col span={5}>
           <Typography.Text strong={true}>Job Title</Typography.Text>
         </Col>

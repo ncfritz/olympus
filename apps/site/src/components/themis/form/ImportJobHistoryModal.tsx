@@ -1,6 +1,6 @@
-import { Button, Form, Input, Modal, Space, Steps } from "antd";
+import {CheckOutlined} from "@ant-design/icons";
+import {Button, Col, Empty, Form, Input, Modal, Result, Row, Space, Steps, Typography} from "antd";
 import { DateTime } from "luxon";
-import dynamic from "next/dynamic";
 import { type ReactNode, useState } from "react";
 import type { JobHistoryEntry } from "../../../types/themis";
 
@@ -19,6 +19,7 @@ const JOB_CODE_TITLE: Record<string, string> = {
   T03141: "Software Development Engineer",
   T03101: "Software Development Engineer",
   T03081: "Software Development Manager",
+  T03121: "Software Development Manager",
   "901067": "Tech Consultant",
   T25141: "IT Application Development Engineer",
 };
@@ -26,12 +27,11 @@ const JOB_CODE_TITLE: Record<string, string> = {
 const ImportJobHistoryModal: React.FunctionComponent<
   ImportJobHistoryModalProps
 > = ({ isOpen, importFunction, onClose }) => {
-  const DynamicReactJson = dynamic(import("react-json-view"), { ssr: false });
-
   const [currentStep, setCurrentStep] = useState(0);
   const [rawJson, setRawJson] = useState<string | undefined>(undefined);
   const [rawJsonValid, setRawJsonValid] = useState(false);
-  const [parsedJson, setParsedJson] = useState([]);
+  const [parsedJson, setParsedJson] = useState<any>({});
+  const [parsingError, setParsingError] = useState(false);
   const [entries, setEntries] = useState<JobHistoryEntry[]>([]);
 
   const closeModal = () => {
@@ -40,30 +40,62 @@ const ImportJobHistoryModal: React.FunctionComponent<
 
   const processJobHistory = async () => {
     const processedEntries: JobHistoryEntry[] = [];
+    const jobHistory = parsedJson.data?.getJobInfo?.jobHistory;
+    const jobEvents: any[] = parsedJson.jobEvents;
 
-    parsedJson.forEach((history: any, i: number) => {
-      const effectiveDate = DateTime.fromISO(history.effectiveDate);
+    if (jobHistory) {
+      jobHistory.forEach((history: any, i: number) => {
+        const effectiveDate = DateTime.fromISO(history.effectiveDate);
 
-      const entry: any = {
-        fte: history.badgeColor === "BLUE",
-        start: effectiveDate.toISODate(),
-        jobTitle:
-          history.jobCode in JOB_CODE_TITLE
-            ? JOB_CODE_TITLE[history.jobCode]
-            : history.jobCode,
-        level: history.jobLevel !== null ? history.jobLevel : "99",
-      };
+        const entry: any = {
+          fte: history.badgeColor === "BLUE",
+          start: effectiveDate.toISODate(),
+          jobTitle:
+            history.jobCode in JOB_CODE_TITLE
+              ? JOB_CODE_TITLE[history.jobCode]
+              : history.jobCode,
+          level: history.jobLevel !== null ? history.jobLevel : "99",
+        };
 
-      if (history.terminationDate) {
-        entry.end = DateTime.fromISO(history.terminationDate).toISODate();
+        if (history.terminationDate) {
+          entry.end = DateTime.fromISO(history.terminationDate).toISODate();
+        }
+
+        if (processedEntries.length > 0 && !processedEntries[i - 1].end) {
+          processedEntries[i - 1].end = effectiveDate.toISODate()!;
+        }
+
+        processedEntries.push(entry);
+      });
+    } else if (jobEvents) {
+      jobEvents.sort((a: any, b: any) => {
+        return a.startDate.localeCompare(b.startDate);
+      }).forEach((event: any, i: number) => {
+          const startDate = DateTime.fromISO(event.startDate);
+          const endDate: DateTime | undefined = event.endDate ? DateTime.fromISO(event.endDate) : undefined;
+
+          const entry: any = {
+            fte: event.role !== 'Vendor',
+            start: startDate.toISODate(),
+            end: endDate?.toISODate(),
+            jobTitle:
+              event.jobCode in JOB_CODE_TITLE
+                ? JOB_CODE_TITLE[event.jobCode]
+                : event.jobCode,
+            level: event.level !== null ? event.level : "99",
+          };
+
+          //if (history.terminationDate) {
+          //  entry.end = DateTime.fromISO(history.terminationDate).toISODate();
+          //}
+
+          if (processedEntries.length > 0 && !processedEntries[i - 1].end) {
+            processedEntries[i - 1].end = startDate.toISODate()!;
+          }
+
+          processedEntries.push(entry);
+        })
       }
-
-      if (processedEntries.length > 0 && !processedEntries[i - 1].end) {
-        processedEntries[i - 1].end = effectiveDate.toISODate()!;
-      }
-
-      processedEntries.push(entry);
-    });
 
     processedEntries[processedEntries.length - 1].end =
       DateTime.utc().toISODate();
@@ -75,17 +107,6 @@ const ImportJobHistoryModal: React.FunctionComponent<
 
   switch (currentStep) {
     case 0:
-      modalButtons.push(
-        <Button
-          type={"primary"}
-          disabled={!rawJsonValid}
-          onClick={() => {
-            setCurrentStep(currentStep + 1);
-          }}
-        >
-          Parse JSON
-        </Button>,
-      );
       contents = (
         <Form.Item label={"Raw JSON"} layout={"vertical"}>
           <Input.TextArea
@@ -104,42 +125,81 @@ const ImportJobHistoryModal: React.FunctionComponent<
           ></Input.TextArea>
         </Form.Item>
       );
-      break;
-    case 1:
+
       modalButtons.push(
         <Button
           type={"primary"}
+          disabled={!rawJsonValid}
           onClick={async () => {
-            try {
-              await processJobHistory();
-              setCurrentStep(currentStep + 1);
-            } catch (e) {
-              console.log(e);
-            }
+            await processJobHistory();
+            setCurrentStep(currentStep + 1);
           }}
         >
-          Extract Job History
+          Process Entries
         </Button>,
       );
-      contents = (
-        <DynamicReactJson
-          style={{
-            padding: 16,
-            fontSize: 10,
-            height: 400,
-            overflow: "scroll",
-            border: "1px solid #e6e6e6",
-            borderRadius: 5,
-          }}
-          src={parsedJson}
-          indentWidth={2}
-          iconStyle={"square"}
-          displayDataTypes={false}
-          enableClipboard={true}
-        />
-      );
+
       break;
-    case 2:
+    case 1:
+      // eslint-disable-next-line no-case-declarations
+      let content;
+
+      if (parsingError) {
+        content = <Result status={"error"} title={"Parsing Failed!"} />;
+      } else if (entries.length <= 0) {
+        content = <Empty description={"No Forte results present"} />;
+      } else {
+        content = (
+          <Space direction={"vertical"} style={{width: "100%"}}>
+            <Space direction={"vertical"} style={{ width: "100%" }}>
+              <Row style={{ borderBottom: "1px solid #e6e6e6" }}>
+              <Col span={8}>
+                  Job Title
+              </Col>
+              <Col span={6}>
+                  Start Date
+              </Col>
+              <Col span={6}>
+                  End Date
+              </Col>
+              <Col span={2}>
+                  Level
+              </Col>
+              <Col span={2}>
+                  FTE
+              </Col>
+            </Row>
+            </Space>
+            <Space
+              direction={"vertical"}
+              style={{ width: "100%", maxHeight: 400, overflowY: "scroll" }}
+            >
+            {entries.map((entry) => {
+              return (
+                <Row>
+                  <Col span={8}>
+                    {entry.jobTitle}
+                  </Col>
+                  <Col span={6}>
+                    {entry.start}
+                  </Col>
+                  <Col span={6}>
+                    {entry.end}
+                  </Col>
+                  <Col span={2}>
+                    L{entry.level}
+                  </Col>
+                  <Col span={2}>
+                    {entry.fte ? <CheckOutlined /> : ""}
+                  </Col>
+                </Row>
+              )
+            })}
+            </Space>
+          </Space>
+        );
+      }
+
       modalButtons.push(
         <Button
           type={"primary"}
@@ -151,7 +211,9 @@ const ImportJobHistoryModal: React.FunctionComponent<
           Import Job History
         </Button>,
       );
-      contents = <>{JSON.stringify(entries)}</>;
+
+      contents = content;
+
       break;
   }
 
@@ -201,9 +263,6 @@ const ImportJobHistoryModal: React.FunctionComponent<
           items={[
             {
               title: "Enter JSON",
-            },
-            {
-              title: "Review JSON",
             },
             {
               title: "Process Job History",
