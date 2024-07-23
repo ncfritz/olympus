@@ -1,7 +1,6 @@
 import {
   BarChartOutlined,
   CalendarOutlined,
-  FolderAddOutlined,
   FolderOutlined,
   HomeOutlined,
   UsergroupAddOutlined,
@@ -77,7 +76,7 @@ const ThemisMenu: React.FunctionComponent = () => {
     for (const [key, value] of Object.entries(reviewYears.reviews)) {
       const subMenu = [
         {
-          key: "",
+          key: `/${BASE_PATH}/review/${value.year}`,
           icon: <BarChartOutlined />,
           label: "Overview",
         },
@@ -85,7 +84,7 @@ const ThemisMenu: React.FunctionComponent = () => {
 
       value.users.forEach((user) => {
         subMenu.push({
-          key: `/${BASE_PATH}/review/${user.username}?year=${key}`,
+          key: `/${BASE_PATH}/review/${value.year}/${user.username}`,
           icon: (
             <Avatar
               size={"small"}

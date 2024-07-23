@@ -1,8 +1,8 @@
 import {
+  CalendarOutlined,
   FolderAddOutlined,
   HomeOutlined,
   RadarChartOutlined,
-  UsergroupAddOutlined,
 } from "@ant-design/icons";
 import { Breadcrumb, Button, Drawer, Layout, Space } from "antd";
 import Link from "next/link";
@@ -82,7 +82,7 @@ const IndexPage: React.FunctionComponent = () => {
             {
               title: (
                 <Space size={4}>
-                  <UsergroupAddOutlined />
+                  <CalendarOutlined />
                   <span>Reviews</span>
                 </Space>
               ),

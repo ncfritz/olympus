@@ -37,7 +37,11 @@ const UsersTable: React.FunctionComponent<UsersTableProps> = ({
       title: "Year",
       dataIndex: "year",
       render: (value, record) => {
-        return <Typography.Text>{record.year}</Typography.Text>;
+        return (
+          <Link href={`/themis/review/${record.year}`}>
+            <Typography.Text>{record.year}</Typography.Text>
+          </Link>
+        );
       },
       sorter: true,
       width: 100,

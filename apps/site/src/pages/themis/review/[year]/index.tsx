@@ -1,4 +1,4 @@
-import { HomeOutlined, RadarChartOutlined } from "@ant-design/icons";
+import {CalendarOutlined, HomeOutlined, RadarChartOutlined} from "@ant-design/icons";
 import { Breadcrumb, Layout, Space } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -43,8 +43,18 @@ const IndexPage: React.FunctionComponent = () => {
           },
           {
             title: (
+              <Link href={"/themis/reviewYears"}>
+                <Space size={4}>
+                  <CalendarOutlined />
+                  <span>Review Years</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
               <Space size={4}>
-                <RadarChartOutlined />
+                <CalendarOutlined />
                 <span>{router.query.year}</span>
               </Space>
             ),
