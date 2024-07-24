@@ -1,5 +1,6 @@
 import { CheckCircleFilled } from "@ant-design/icons";
 import { Col, Empty, Row, Typography } from "antd";
+import type {ReviewRating} from "../../../types/themis";
 import {
   overallRatingColors,
   performanceRatingColors,
@@ -8,16 +9,16 @@ import {
 import PerformanceHistoryIndicator from "./PerformanceHistoryIndicator";
 
 export interface PerformanceHistoryProps {
-  data: any;
+  data: ReviewRating[];
 }
 
 const PerformanceHistory: React.FunctionComponent<PerformanceHistoryProps> = ({
   data,
 }) => {
-  if (data.past && data.past.length > 0) {
+  if (data && data.length > 0) {
     const rows: any[] = [];
 
-    data.past.forEach((entry: any) => {
+    data.forEach((entry: any) => {
       rows.push(
         <Row>
           <Col span={2} />
@@ -158,7 +159,7 @@ const PerformanceHistory: React.FunctionComponent<PerformanceHistoryProps> = ({
             }}
           >
             <PerformanceHistoryIndicator
-              rating={entry.potential}
+              rating={entry.growth}
               colors={potentialColors}
               allowedRatings={["L"]}
             />
@@ -173,7 +174,7 @@ const PerformanceHistory: React.FunctionComponent<PerformanceHistoryProps> = ({
             }}
           >
             <PerformanceHistoryIndicator
-              rating={entry.potential}
+              rating={entry.growth}
               colors={potentialColors}
               allowedRatings={["M"]}
             />
@@ -188,7 +189,7 @@ const PerformanceHistory: React.FunctionComponent<PerformanceHistoryProps> = ({
             }}
           >
             <PerformanceHistoryIndicator
-              rating={entry.potential}
+              rating={entry.growth}
               colors={potentialColors}
               allowedRatings={["H"]}
             />
@@ -203,7 +204,7 @@ const PerformanceHistory: React.FunctionComponent<PerformanceHistoryProps> = ({
             }}
           >
             <PerformanceHistoryIndicator
-              rating={entry.potential}
+              rating={entry.growth}
               colors={potentialColors}
               allowedRatings={["VH"]}
             />

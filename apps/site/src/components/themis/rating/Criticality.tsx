@@ -3,7 +3,7 @@ import React from "react";
 import type { CriticalityRating } from "../../../types/themis";
 import { criticalityColors } from "./constants";
 
-export interface PotentialProps {
+export interface CriticalityProps {
   rating: CriticalityRating;
   undecoratedText?: boolean;
 }
@@ -16,7 +16,7 @@ const labels: Record<CriticalityRating, string> = {
   vh: "Very High",
 };
 
-const Potential: React.FunctionComponent<PotentialProps> = ({
+const Criticality: React.FunctionComponent<CriticalityProps> = ({
   rating = "Unknown",
   undecoratedText = false,
 }) => {
@@ -53,4 +53,4 @@ const Potential: React.FunctionComponent<PotentialProps> = ({
     </Typography.Text>
   );
 };
-export default Potential;
+export default Criticality;

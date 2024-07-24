@@ -69,7 +69,7 @@ const RatingForm: React.FunctionComponent<RatingFormProps> = ({
         gutter={8}
         style={{ display: "flex", alignItems: "center", marginBottom: 8 }}
       >
-        <Col span={3}>
+        <Col span={4}>
           <Typography.Text
             strong={true}
             style={{ display: "flex", justifyContent: "end" }}
@@ -77,7 +77,7 @@ const RatingForm: React.FunctionComponent<RatingFormProps> = ({
             Performance
           </Typography.Text>
         </Col>
-        <Col span={4}>
+        <Col span={6}>
           <Controller
             name="performance"
             control={control}
@@ -99,7 +99,7 @@ const RatingForm: React.FunctionComponent<RatingFormProps> = ({
             )}
           />
         </Col>
-        <Col span={2}>
+        <Col span={3}>
           <Performance rating={performanceWatch} size={"small"} />
         </Col>
       </Row>
@@ -107,7 +107,7 @@ const RatingForm: React.FunctionComponent<RatingFormProps> = ({
         gutter={8}
         style={{ display: "flex", alignItems: "center", marginBottom: 8 }}
       >
-        <Col span={3}>
+        <Col span={4}>
           <Typography.Text
             strong={true}
             style={{ display: "flex", justifyContent: "end" }}
@@ -115,7 +115,7 @@ const RatingForm: React.FunctionComponent<RatingFormProps> = ({
             Growth Potential
           </Typography.Text>
         </Col>
-        <Col span={4}>
+        <Col span={6}>
           <Controller
             name="growth"
             control={control}
@@ -134,7 +134,7 @@ const RatingForm: React.FunctionComponent<RatingFormProps> = ({
             )}
           />
         </Col>
-        <Col span={2}>
+        <Col span={3}>
           <Potential rating={growthWatch} size={"small"} />
         </Col>
       </Row>
@@ -142,7 +142,7 @@ const RatingForm: React.FunctionComponent<RatingFormProps> = ({
         gutter={8}
         style={{ display: "flex", alignItems: "center", marginBottom: 8 }}
       >
-        <Col span={3}>
+        <Col span={4}>
           <Typography.Text
             strong={true}
             style={{ display: "flex", justifyContent: "end" }}
@@ -150,7 +150,7 @@ const RatingForm: React.FunctionComponent<RatingFormProps> = ({
             Overall
           </Typography.Text>
         </Col>
-        <Col span={4}>
+        <Col span={6}>
           <Controller
             name="overall"
             control={control}
@@ -170,7 +170,7 @@ const RatingForm: React.FunctionComponent<RatingFormProps> = ({
             )}
           />
         </Col>
-        <Col span={2}>
+        <Col span={3}>
           <Overall rating={overallWatch} size={"small"} />
         </Col>
       </Row>

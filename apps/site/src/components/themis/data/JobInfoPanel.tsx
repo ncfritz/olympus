@@ -323,7 +323,7 @@ const JobInfoPanel: React.FunctionComponent<JobInfoPanelProps> = ({
                     value={field.value}
                     style={{ width: "100%" }}
                     options={[
-                      { value: undefined, label: "None" },
+                      { value: null, label: "None" },
                       ...[1, 2, 3, 4].map((value, index) => {
                         return {
                           value: `${parseInt(year) + index}`,
@@ -416,7 +416,7 @@ const JobInfoPanel: React.FunctionComponent<JobInfoPanelProps> = ({
                     value={field.value}
                     style={{ width: "100%" }}
                     options={[
-                      { value: undefined, label: "None" },
+                      { value: null, label: "None" },
                       { value: "Q1", label: "Q1" },
                       { value: "Q2", label: "Q2" },
                       { value: "Q3", label: "Q3" },

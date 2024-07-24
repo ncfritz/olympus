@@ -136,10 +136,10 @@ const EmployeeDetailsSection: React.FunctionComponent<
         </Row>
         <Row style={{ marginBottom: 12 }}>
           <Col span={9}>
-            {DateTime.fromISO(history.hireDate).toFormat("YYYY-MM-DD")}
+            {DateTime.fromISO(history.firstHireDate).toFormat("yyyy-MM-dd")}
           </Col>
           <Col span={9}>
-            {DateTime.fromISO(history.lastHireDate).toFormat("YYYY-MM-DD")}
+            {DateTime.fromISO(history.lastHireDate).toFormat("yyyy-MM-dd")}
           </Col>
         </Row>
         <Row>

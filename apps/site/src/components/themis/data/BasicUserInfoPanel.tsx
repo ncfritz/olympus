@@ -1,5 +1,4 @@
 import {
-  Avatar,
   Button,
   Card,
   Col,
@@ -20,6 +19,7 @@ import themisApi from "../../../api/themisApi";
 import type { BaseBasicUserInfo } from "../../../types/themis";
 import { publish } from "../../../utils/events";
 import { PUBLISH_EVENT } from "../../common/NotificationSink";
+import Badge from "../Badge";
 
 export interface BasicUserInfoPanelProps {
   username: string;
@@ -32,11 +32,13 @@ const BasicUserInfoPanel: React.FunctionComponent<BasicUserInfoPanelProps> = ({
   const [infoLoading, setInfoLoading] = useState(false);
   const [infoError, setInfoError] = useState(false);
 
-  const { handleSubmit, control, reset } = useForm<BaseBasicUserInfo>({
+  const { handleSubmit, control, reset, watch } = useForm<BaseBasicUserInfo>({
     defaultValues: info,
     mode: "onChange",
     reValidateMode: "onChange",
   });
+
+  const firstNameWatch = watch("givenName");
 
   const onSubmit = async (data: BaseBasicUserInfo) => {
     try {
@@ -113,11 +115,7 @@ const BasicUserInfoPanel: React.FunctionComponent<BasicUserInfoPanelProps> = ({
           style={{ display: "flex", alignItems: "top", marginBottom: 8 }}
         >
           <Col span={1}>
-            <Avatar
-              size={120}
-              shape={"square"}
-              src={`https://cdn.ncfritz.net/amzn/avatar/${username}.jpg`}
-            />
+            <Badge username={username} name={firstNameWatch} tenure={1} size={"small"} />
           </Col>
           <Col span={18}>
             <Row
