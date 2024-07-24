@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import fs from "node:fs";
-import type { ReviewRating } from "../../../../../../../types/themis";
+import type {ExtendedReviewRating, ReviewRating} from "../../../../../../../types/themis";
 import { p, safeLoadJson } from "../../../../../../../utils/themis";
 
 export type UpsertRatingRequest = {
@@ -8,10 +8,11 @@ export type UpsertRatingRequest = {
 };
 
 export type ReviewRatingResponse = {
-  rating: ReviewRating;
+  current: ExtendedReviewRating;
+  past?: ExtendedReviewRating[];
 };
 
-const DEFAULT_RATING: ReviewRating = {
+export const DEFAULT_RATING: ReviewRating = {
   growth: "Unknown",
   overall: "Unknown",
   performance: "Unknown",
@@ -20,19 +21,49 @@ const DEFAULT_RATING: ReviewRating = {
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const username = req.query.username;
   const year = req.query.year;
-  const userDataPath = p(`users/${username}/data/${year}`);
+  const userDataPath = p(`users/${username}/data`);
+  const userDataYearPath = `${userDataPath}/${year}`;
 
-  if (!fs.existsSync(userDataPath)) {
+  if (!fs.existsSync(userDataYearPath)) {
     res.status(404).end();
     return;
   }
 
-  const ratingDataPath = p(`users/${username}/data/${year}/rating.json`);
+  const ratingDataPath = `${userDataYearPath}/rating.json`;
 
   if (req.method?.toUpperCase() === "GET") {
-    const response = {
-      rating: safeLoadJson<ReviewRating>(ratingDataPath, DEFAULT_RATING),
+    const includePrevious = req.query.previous === "true";
+    const currentRating = safeLoadJson<ReviewRating>(ratingDataPath, DEFAULT_RATING);
+    let pastReviews: ExtendedReviewRating[] = [];
+
+    if (includePrevious) {
+      const years = fs.readdirSync(userDataPath).map((year) => {
+        const stat = fs.statSync(`${userDataPath}/${year}`);
+        return stat.isDirectory() ? year : undefined;
+      });
+
+      pastReviews = [];
+
+      years.forEach((candidateYear) => {
+        if (candidateYear! < year!) {
+          try {
+            const candidateRating = safeLoadJson<ReviewRating>(`${userDataPath}/${candidateYear}/rating.json`);
+
+            if (candidateRating) {
+              pastReviews!.push({ ...candidateRating, quarter: "4", focal: true, year: candidateYear! });
+            }
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      });
+    }
+
+    const response: ReviewRatingResponse = {
+      current: { ...currentRating!, year: year as string, focal: true, quarter: "4" },
+      past: pastReviews,
     };
+
 
     res.status(200).json(response);
     return;

@@ -1,25 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import fs from "node:fs";
 import type { UserDataSummary } from "../../../../../../types/themis";
-import { p } from "../../../../../../utils/themis";
+import {getUserDataSummary, p} from "../../../../../../utils/themis";
 
 export type DataSummaryResponse = Record<string, UserDataSummary>;
 
-const DATA_PATHS: Record<keyof DataSummaryResponse, string> = {
-  jobInfo: "jobInfo.json",
-  performance: "rating.json",
-  jobHistory: "jobHistory.json",
-  notes: "notes.json",
-  forteHistory: "forte.json",
-  mentorship: "mentorship.json",
-  code: "code.json",
-  cr: "cr.json",
-  sim: "sim.json",
-  hiring: "hiring.json",
-};
-
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  const username = req.query.username;
+  const username = req.query.username as string;
   const userDataPath = p(`users/${username}/data`);
 
   if (!fs.existsSync(userDataPath)) {
@@ -38,26 +25,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         return;
       }
 
-      const summary: UserDataSummary = {
-        jobInfo: false,
-        performance: false,
-        jobHistory: false,
-        forteHistory: false,
-        notes: false,
-        mentorship: false,
-        code: false,
-        cr: false,
-        sim: false,
-        hiring: false,
-      };
-
-      Object.entries(DATA_PATHS).forEach(([key, value]) => {
-        summary[key as keyof UserDataSummary] = fs.existsSync(
-          `${userDataYearPath}/${value}`,
-        );
-      });
-
-      response[year] = summary;
+      response[year] = getUserDataSummary(username, year);
     });
 
     res.status(200).json(response);

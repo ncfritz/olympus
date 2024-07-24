@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import {DATA_PATHS, type UserDataSummary} from "../types/themis";
 
 export const p = (pathSuffix: string): string => {
   if (!pathSuffix.startsWith("/")) {
@@ -33,4 +34,30 @@ export const safeLoadJson = <T>(
     console.error(`Unable to parse file: ${filename}`, e);
     throw "InvalidJson";
   }
+};
+
+export const getUserDataSummary = (username: string, year: string): UserDataSummary => {
+  const userDataPath = p(`users/${username}/data/${year}`);
+
+  const summary: UserDataSummary = {
+    jobInfo: false,
+    performance: false,
+    jobHistory: false,
+    forteHistory: false,
+    notes: false,
+    mentorship: false,
+    code: false,
+    cr: false,
+    sim: false,
+    hiring: false,
+    bbCard: false,
+  };
+
+  Object.entries(DATA_PATHS).forEach(([key, value]) => {
+    summary[key as keyof UserDataSummary] = fs.existsSync(
+      `${userDataPath}/${value}`,
+    );
+  });
+
+  return summary;
 };

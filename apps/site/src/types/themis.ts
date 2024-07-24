@@ -1,3 +1,5 @@
+import Review = google.maps.places.Review;
+
 export type BaseBasicUserInfo = {
   givenName: string;
   surname: string;
@@ -29,6 +31,21 @@ export type UserDataSummary = {
   cr: boolean;
   sim: boolean;
   hiring: boolean;
+  bbCard: boolean;
+};
+
+export type UserDataYearsSummary = {
+  jobInfo: string[];
+  performance: string[];
+  jobHistory: string[];
+  forteHistory: string[];
+  notes: string[];
+  mentorship: string[];
+  code: string[];
+  cr: string[];
+  sim: string[];
+  hiring: string[];
+  bbCard: string[];
 };
 
 export type OverallRating =
@@ -57,6 +74,12 @@ export type ReviewRating = {
   overall: OverallRating;
   performance: PerformanceRating;
 };
+
+export type ExtendedReviewRating = ReviewRating & {
+  year: string;
+  quarter: string;
+  focal: boolean;
+}
 
 export type JobHistoryEntry = {
   jobTitle: string;
@@ -150,6 +173,7 @@ export const DATA_PATHS: Record<keyof UserDataSummary, string> = {
   cr: "cr.json",
   sim: "sim.json",
   hiring: "hiring.json",
+  bbCard: "bbCard.json",
 };
 
 export const LEADERSHIP_PRINCIPLES: Record<keyof ForteSummary, string> = {
