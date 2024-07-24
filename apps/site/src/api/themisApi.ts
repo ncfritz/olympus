@@ -224,10 +224,10 @@ const createDataYear = async (username: string, year: string) => {
   }
 };
 
-const getRating = async (username: string, year: string) => {
+const getRating = async (username: string, year: string, includePrevious: boolean = false) => {
   try {
     const response = await axios.get(
-      `/api/themis/user/${username}/data/${year}/rating`,
+      `/api/themis/user/${username}/data/${year}/rating?previous=${includePrevious}`,
       {
         validateStatus: (status) => {
           return status === 200;
@@ -498,6 +498,44 @@ const upsertSimStats = async (
   }
 };
 
+const getReviewRatingsSummary = async (
+  year: string,
+) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/review/${year}/ratingsSummary`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getReviewUsersSummary = async (
+  year: string,
+) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/review/${year}/usersSummary`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const themisApi = {
   createDataYear: createDataYear,
   createUser: createUser,
@@ -526,6 +564,10 @@ const themisApi = {
   upsertRating: upsertRating,
   upsertReviewYearBasicInfo: upsertReviewYearBasicInfo,
   updateUser: updateUser,
+  review: {
+    getRatingsSummary: getReviewRatingsSummary,
+    getUsersSummary: getReviewUsersSummary,
+  }
 };
 
 export default themisApi;
