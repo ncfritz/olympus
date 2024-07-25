@@ -4,20 +4,33 @@ import {
   CloseCircleFilled,
   HomeOutlined,
   RadarChartOutlined,
-  StopOutlined
+  StopOutlined,
 } from "@ant-design/icons";
-import {Affix, Avatar, Breadcrumb, Button, Col, Layout, Result, Row, Space, Spin, Tag, Typography} from "antd";
+import {
+  Affix,
+  Avatar,
+  Breadcrumb,
+  Button,
+  Col,
+  Layout,
+  Result,
+  Row,
+  Space,
+  Spin,
+  Tag,
+  Typography,
+} from "antd";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import themisApi from "../../../../api/themisApi";
 import RatingsGraph from "../../../../components/themis/graph/RatingsGraph";
 import SparklineGraph from "../../../../components/themis/graph/SparklineGraph";
 import Potential from "../../../../components/themis/rating/GrowthPotential";
 import Overall from "../../../../components/themis/rating/Overall";
 import Performance from "../../../../components/themis/rating/Performance";
-import type {ReviewRatingsSummaryResponse} from "../../../api/themis/review/[year]/ratingsSummary";
-import type {UserReviewSummary} from "../../../api/themis/review/[year]/usersSummary";
+import type { ReviewRatingsSummaryResponse } from "../../../api/themis/review/[year]/ratingsSummary";
+import type { UserReviewSummary } from "../../../api/themis/review/[year]/usersSummary";
 
 const { Content } = Layout;
 
@@ -30,7 +43,8 @@ const IndexPage: React.FunctionComponent = () => {
 
   const [users, setUsers] = useState<UserReviewSummary[]>([]);
   const [olrStats, setOlrStats] = useState<any>([]);
-  const [ratingSummary, setRatingSummary] = useState<ReviewRatingsSummaryResponse>();
+  const [ratingSummary, setRatingSummary] =
+    useState<ReviewRatingsSummaryResponse>();
 
   useEffect(() => {
     if (year !== undefined) {
@@ -39,13 +53,16 @@ const IndexPage: React.FunctionComponent = () => {
           setLoading(true);
           setError(false);
 
-          const usersSummaryResponse = await themisApi.review.getUsersSummary(year as string)
+          const usersSummaryResponse = await themisApi.review.getUsersSummary(
+            year as string,
+          );
           setUsers(usersSummaryResponse.users);
 
           //const olrStatsResponse = await axios.get(`/api/olr/stats/${year}`);
           setOlrStats(usersSummaryResponse.users);
 
-          const reviewRatingsSummaryResponse = await themisApi.review.getRatingsSummary(year as string);
+          const reviewRatingsSummaryResponse =
+            await themisApi.review.getRatingsSummary(year as string);
           setRatingSummary(reviewRatingsSummaryResponse);
         } catch (e) {
           setError(true);
@@ -215,7 +232,7 @@ const IndexPage: React.FunctionComponent = () => {
                     }}
                   >
                     {key}
-                  </Tag>
+                  </Tag>,
                 );
               }
 
@@ -229,7 +246,7 @@ const IndexPage: React.FunctionComponent = () => {
                         router.push(
                           `/themis/review/${year}/${user.basicInfo.username}`,
                           `/themis/review/${year}/${user.basicInfo.username}`,
-                          { shallow: true }
+                          { shallow: true },
                         );
                       }}
                       style={{ cursor: "pointer" }}

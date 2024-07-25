@@ -20,7 +20,7 @@ export interface EmployeeDetailsSectionProps {
   jobInfo: JobInfo;
   year: string;
   history: any;
-  rating: any;
+  rating: ReviewRating;
   updateRating: (data: any) => void;
 }
 
