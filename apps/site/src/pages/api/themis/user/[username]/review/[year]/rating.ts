@@ -12,6 +12,7 @@ export type UpsertRatingRequest = {
 
 export type ReviewRatingResponse = {
   current: ExtendedReviewRating;
+  past?: ExtendedReviewRating[];
 };
 
 export const DEFAULT_RATING: ReviewRating = {
@@ -21,8 +22,8 @@ export const DEFAULT_RATING: ReviewRating = {
 };
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  const username = req.query.username;
-  const year = req.query.year;
+  const username = req.query.username as string;
+  const year = req.query.year as string;
   const userDataPath = p(`users/${username}/data`);
   const userDataYearPath = `${userDataPath}/${year}`;
 
@@ -34,27 +35,51 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const ratingDataPath = `${userDataYearPath}/rating.json`;
 
   if (req.method?.toUpperCase() === "GET") {
-    const rating = safeLoadJson<ReviewRating>(ratingDataPath, DEFAULT_RATING);
+    const currentRating = safeLoadJson<ReviewRating>(
+      ratingDataPath,
+      DEFAULT_RATING,
+    );
+    let pastReviews: ExtendedReviewRating[] = [];
+
+    const years = fs.readdirSync(userDataPath).map((year) => {
+      const stat = fs.statSync(`${userDataPath}/${year}`);
+      return stat.isDirectory() ? year : undefined;
+    });
+
+    pastReviews = [];
+
+    years.forEach((candidateYear) => {
+      if (candidateYear! < year!) {
+        try {
+          const candidateRating = safeLoadJson<ReviewRating>(
+            `${userDataPath}/${candidateYear}/rating.json`,
+          );
+
+          if (candidateRating) {
+            pastReviews!.push({
+              ...candidateRating,
+              quarter: "4",
+              focal: true,
+              year: candidateYear!,
+            });
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    });
 
     const response: ReviewRatingResponse = {
       current: {
-        ...rating!,
+        ...currentRating!,
         year: year as string,
         focal: true,
         quarter: "4",
       },
+      past: pastReviews,
     };
 
     res.status(200).json(response);
-    return;
-  } else if (req.method?.toUpperCase() === "PUT") {
-    const newRating = req.body as UpsertRatingRequest;
-
-    fs.writeFileSync(ratingDataPath, JSON.stringify(newRating.rating, null, 2));
-
-    res.status(200).json({
-      rating: newRating,
-    });
     return;
   }
 

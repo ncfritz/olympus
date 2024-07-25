@@ -536,6 +536,57 @@ const getReviewUsersSummary = async (
   }
 };
 
+const getReviewCodeStats = async (username: string, year: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/review/${year}/code`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getReviewCrStats = async (username: string, year: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/review/${year}/cr`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getReviewRating = async (username: string, year: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/review/${year}/rating`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const themisApi = {
   createDataYear: createDataYear,
   createUser: createUser,
@@ -565,9 +616,12 @@ const themisApi = {
   upsertReviewYearBasicInfo: upsertReviewYearBasicInfo,
   updateUser: updateUser,
   review: {
+    getCodeStats: getReviewCodeStats,
+    getCrStats: getReviewCrStats,
+    getRating: getReviewRating,
     getRatingsSummary: getReviewRatingsSummary,
     getUsersSummary: getReviewUsersSummary,
-  }
+  },
 };
 
 export default themisApi;
