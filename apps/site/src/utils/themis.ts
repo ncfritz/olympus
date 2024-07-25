@@ -36,7 +36,10 @@ export const safeLoadJson = <T>(
   }
 };
 
-export const getUserDataSummary = (username: string, year: string): UserDataSummary => {
+export const getUserDataSummary = (
+  username: string,
+  year: string,
+): UserDataSummary => {
   const userDataPath = p(`users/${username}/data/${year}`);
 
   const summary: UserDataSummary = {
