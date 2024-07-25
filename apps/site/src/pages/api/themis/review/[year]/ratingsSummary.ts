@@ -1,11 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import fs from "node:fs";
-import type {ReviewRating, ReviewYear} from "../../../../../types/themis";
+import type { ReviewRating } from "../../../../../types/themis";
 import { p, safeLoadJson } from "../../../../../utils/themis";
+import { DEFAULT_RATING } from "../../user/[username]/data/[year]/rating";
 
 export type RawReviewData = {
   users: string[];
-}
+};
 
 export type AllowedOV = "LE" | "HV1" | "HV2" | "HV3" | "TT";
 
@@ -18,7 +19,6 @@ export type ReviewRatingsSummaryResponse = {
     TT: number;
   };
 };
-
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const year = req.query.year;
@@ -38,14 +38,16 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         HV2: 0,
         HV3: 0,
         TT: 0,
-      }
+      },
     };
 
-    const reviewDefinition = safeLoadJson<RawReviewData>(reviewDataPath, { users: []  })!;
+    const reviewDefinition = safeLoadJson<RawReviewData>(reviewDataPath, {
+      users: [],
+    })!;
 
     reviewDefinition.users.forEach((username) => {
       const ratingPath = p(`users/${username}/data/${year}/rating.json`);
-      const rating = safeLoadJson<ReviewRating>(ratingPath);
+      const rating = safeLoadJson<ReviewRating>(ratingPath, DEFAULT_RATING);
 
       if (rating && rating.overall !== "NA" && rating.overall !== "Unknown") {
         response.distribution[rating.overall as AllowedOV]++;

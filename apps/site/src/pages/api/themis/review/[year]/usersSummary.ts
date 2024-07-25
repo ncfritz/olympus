@@ -1,34 +1,33 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import {mockSession} from "next-auth/client/__tests__/helpers/mocks";
 import fs from "node:fs";
 import type {
   BasicUserInfo,
   ReviewRating,
-  ReviewYear,
   UserDataSummary,
-  UserDataYearsSummary
+  UserDataYearsSummary,
 } from "../../../../../types/themis";
-import {getUserDataSummary, p, safeLoadJson} from "../../../../../utils/themis";
-import {DEFAULT_RATING} from "../../user/[username]/data/[year]/rating";
-import Review = google.maps.places.Review;
+import {
+  getUserDataSummary,
+  p,
+  safeLoadJson,
+} from "../../../../../utils/themis";
+import { DEFAULT_RATING } from "../../user/[username]/data/[year]/rating";
 
 export type RawReviewData = {
   users: string[];
-}
-
+};
 
 export type UserReviewSummary = {
   basicInfo: BasicUserInfo;
-  dataSummary: UserDataSummary,
+  dataSummary: UserDataSummary;
   pastDataSummary: UserDataYearsSummary;
   rating: ReviewRating;
   bbCard: boolean;
-}
+};
 
 export type UsersSummaryResponse = {
   users: UserReviewSummary[];
 };
-
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const year = req.query.year as string;
@@ -45,7 +44,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       users: [],
     };
 
-    const reviewDefinition = safeLoadJson<RawReviewData>(reviewDataPath, { users: []  })!;
+    const reviewDefinition = safeLoadJson<RawReviewData>(reviewDataPath, {
+      users: [],
+    })!;
 
     reviewDefinition.users.forEach((username) => {
       const userInfoPath = p(`users/${username}/basicInfo.json`);
@@ -65,10 +66,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         bbCard: [],
       };
 
-      for (let i = 0; i < 4; i++) {
-        const targetYear = (currentYear  - i).toString();
+      for (let i = 1; i <= 4; i++) {
+        const targetYear = (currentYear - i).toString();
         const yearDataSummary = getUserDataSummary(username, targetYear);
-        console.log(year);
 
         Object.keys(dataSummary).forEach((key: keyof UserDataYearsSummary) => {
           if (yearDataSummary[key]) {
@@ -77,13 +77,15 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         });
       }
 
+      const userDataSummary = getUserDataSummary(username, year);
+
       response.users.push({
         basicInfo: safeLoadJson<BasicUserInfo>(userInfoPath)!,
-        dataSummary: getUserDataSummary(username, year),
+        dataSummary: userDataSummary,
         pastDataSummary: dataSummary,
         rating: safeLoadJson<ReviewRating>(userRatingPath, DEFAULT_RATING)!,
         bbCard: false,
-      })
+      });
     });
 
     res.status(200).json(response);
