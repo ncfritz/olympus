@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import fs from "node:fs";
 import type { UserDataSummary } from "../../../../../../types/themis";
-import {getUserDataSummary, p} from "../../../../../../utils/themis";
+import { getUserDataSummary, p } from "../../../../../../utils/themis";
 
 export type DataSummaryResponse = Record<string, UserDataSummary>;
 

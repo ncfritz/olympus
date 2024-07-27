@@ -224,7 +224,11 @@ const createDataYear = async (username: string, year: string) => {
   }
 };
 
-const getRating = async (username: string, year: string, includePrevious: boolean = false) => {
+const getRating = async (
+  username: string,
+  year: string,
+  includePrevious: boolean = false,
+) => {
   try {
     const response = await axios.get(
       `/api/themis/user/${username}/data/${year}/rating?previous=${includePrevious}`,
@@ -498,9 +502,7 @@ const upsertSimStats = async (
   }
 };
 
-const getReviewRatingsSummary = async (
-  year: string,
-) => {
+const getReviewRatingsSummary = async (year: string) => {
   try {
     const response = await axios.get(
       `/api/themis/review/${year}/ratingsSummary`,
@@ -517,9 +519,7 @@ const getReviewRatingsSummary = async (
   }
 };
 
-const getReviewUsersSummary = async (
-  year: string,
-) => {
+const getReviewUsersSummary = async (year: string) => {
   try {
     const response = await axios.get(
       `/api/themis/review/${year}/usersSummary`,

@@ -1,6 +1,6 @@
 import { CheckCircleFilled } from "@ant-design/icons";
 import { Col, Empty, Row, Typography } from "antd";
-import type {ReviewRating} from "../../../types/themis";
+import type { ReviewRating } from "../../../types/themis";
 import {
   overallRatingColors,
   performanceRatingColors,

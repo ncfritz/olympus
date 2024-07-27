@@ -1,13 +1,15 @@
-import {Col, Row} from "antd";
-import type {ExtendedReviewRating} from "../../../types/themis";
+import { Col, Row } from "antd";
+import type { ExtendedReviewRating } from "../../../types/themis";
 import PerformanceHistory from "../rating/PerformanceHistory";
 import SectionHeading from "./SectionHeading";
 
 export interface PerformanceHistorySectionProps {
-  reviews?: ExtendedReviewRating[]
+  reviews?: ExtendedReviewRating[];
 }
 
-const PerformanceHistorySection = ({reviews}: PerformanceHistorySectionProps) => {
+const PerformanceHistorySection = ({
+  reviews,
+}: PerformanceHistorySectionProps) => {
   let content = <></>;
 
   if (reviews && reviews.length > 0) {

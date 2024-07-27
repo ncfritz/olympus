@@ -1,4 +1,4 @@
-import {DateTime, Duration, Interval} from "luxon";
+import { DateTime, Duration, Interval } from "luxon";
 import type { NextApiRequest, NextApiResponse } from "next";
 import fs from "node:fs";
 import type { JobHistoryEntry } from "../../../../../../../types/themis";
@@ -38,7 +38,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   let tenure = 0;
   let fteTenure = 0;
 
-
   entries.forEach((entry) => {
     if (!firstHireDate) {
       firstHireDate = entry.start;
@@ -65,7 +64,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     lastEndDate = entry.end;
   });
-
 
   if (req.method?.toUpperCase() === "GET") {
     const response: JobHistoryResponse = {

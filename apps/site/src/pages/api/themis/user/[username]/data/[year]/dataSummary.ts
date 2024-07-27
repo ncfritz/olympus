@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import fs from "node:fs";
-import {getUserDataSummary, p} from "../../../../../../../utils/themis";
+import { getUserDataSummary, p } from "../../../../../../../utils/themis";
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const username = req.query.username as string;
