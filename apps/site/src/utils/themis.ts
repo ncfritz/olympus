@@ -1,5 +1,9 @@
 import * as fs from "node:fs";
-import {DATA_PATHS, type UserDataSummary} from "../types/themis";
+import {
+  DATA_PATHS,
+  type MinMaxAvg,
+  type UserDataSummary,
+} from "../types/themis";
 
 export const p = (pathSuffix: string): string => {
   if (!pathSuffix.startsWith("/")) {
@@ -63,4 +67,28 @@ export const getUserDataSummary = (
   });
 
   return summary;
+};
+
+export const buildMinMaxAvg = (values: number[]): MinMaxAvg => {
+  let min = Number.MAX_SAFE_INTEGER;
+  let max = Number.MIN_SAFE_INTEGER;
+  let total = 0;
+
+  values.forEach((value) => {
+    if (value < min) {
+      min = value;
+    }
+
+    if (value > max) {
+      max = value;
+    }
+
+    total += value;
+  });
+
+  return {
+    min: min,
+    max: max,
+    average: total / values.length,
+  };
 };

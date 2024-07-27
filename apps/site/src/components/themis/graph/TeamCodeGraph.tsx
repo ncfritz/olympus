@@ -3,24 +3,26 @@ import HighchartsReact from "highcharts-react-official";
 import HC_more from "highcharts/highcharts-more";
 import { Empty } from "antd";
 import { useEffect } from "react";
-import type { CodeStat } from "../../../types/themis";
+import type { CodeMinMaxAvg, CodeStat } from "../../../types/themis";
 
-export interface CodeGraphProps {
-  axisLabel?: string;
+export interface TeamCodeGraphProps {
+  username: string;
+  year: string;
   stat: keyof CodeStat;
-  data: Record<string, CodeStat[]>;
+  userStats: CodeStat[];
+  teamStats: CodeMinMaxAvg;
+  axisLabel: string;
   max?: number;
-  inferMax?: boolean;
-  limitInferedMax?: boolean;
+  skipSort?: boolean;
 }
 
-const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
-  data,
+const TeamCodeGraph: React.FunctionComponent<TeamCodeGraphProps> = ({
+  username,
   stat,
-  max = 10000,
   axisLabel,
-  inferMax,
-  limitInferedMax = true,
+  max = 10000,
+  userStats,
+  teamStats,
 }) => {
   HC_more(Highcharts);
 
@@ -35,43 +37,52 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
   const categories: number[] = Array(53)
     .fill(0)
     .map((element, index) => index);
+
   const series: any[] = [];
+  const userData: number[] = [];
+  const teamRangeData: number[][] = [];
+  const teamAvgData: number[] = [];
 
-  let localMax = 0;
-  let inferenceLimitTripped = false;
+  console.log(teamStats);
 
-  Object.keys(data).forEach((year) => {
-    const yearData = data[year];
-    const parsedData: number[] = [];
-
-    yearData.forEach((entry) => {
-      if (entry[stat] > localMax) {
-        if (limitInferedMax && entry[stat] < max) {
-          localMax = entry[stat];
-        } else {
-          inferenceLimitTripped = true;
-        }
-      }
-
-      parsedData.push(entry[stat]);
-    });
-
-    series.push({ name: year, data: parsedData, type: "column" });
+  userStats.forEach((userStat, index) => {
+    userData.push(userStat[stat]);
+    teamRangeData.push([
+      teamStats.min[index][stat],
+      teamStats.max[index][stat],
+    ]);
+    teamAvgData.push(teamStats.average[index][stat]);
   });
 
-  if (inferenceLimitTripped) {
-    localMax = max;
-  }
+  series.push({ name: username, data: userData, type: "column" });
+  series.push({
+    name: "Team Avg",
+    data: teamAvgData,
+    type: "spline",
+  });
+  series.push({
+    name: "Team",
+    data: teamRangeData,
+    type: "areasplinerange",
+    linkedTo: ":previous",
+  });
 
   const options = {
     chart: {
       height: 230,
     },
     plotOptions: {
-      column: {
-        pointWidth: 3,
-        borderWidth: 0,
-        pointPadding: 0,
+      areasplinerange: {
+        marker: {
+          enabled: false,
+        },
+        lineWidth: 0.5,
+        lineColor: "#003f5ccc",
+        color: "#003f5c33",
+      },
+      spline: {
+        lineWidth: 1,
+        lineColor: "#cc0000",
       },
       series: {
         animation: false,
@@ -80,17 +91,17 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
     title: {
       text: null,
     },
-    colors: ["#003f5c66", "#003f5c"],
+    colors: ["#003f5c"],
     xAxis: {
       categories: categories,
       labels: {
         rotation: -45,
       },
-      tickInterval: 1,
       lineWidth: 1,
       lineColor: "#e6e6e6",
+      tickInterval: 1,
+      tickColor: "#efefef",
       tickWidth: 1,
-      tickColor: "#e6e6e6",
       gridLineWidth: 1,
     },
     yAxis: {
@@ -101,12 +112,15 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
       lineColor: "#e6e6e6",
       tickInterval: 1,
       min: 0,
-      max: inferMax ? localMax : max,
+      max: max,
     },
     legend: {
       align: "left",
       verticalAlign: "bottom",
       layout: "horizontal",
+    },
+    tooltip: {
+      shared: true,
     },
     credits: {
       enabled: false,
@@ -120,10 +134,10 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
     return (
       <Empty
         image={Empty.PRESENTED_IMAGE_SIMPLE}
-        description={"No historic code statistics available"}
+        description={"No historic data available"}
       ></Empty>
     );
   }
 };
 
-export default CodeGraph;
+export default TeamCodeGraph;

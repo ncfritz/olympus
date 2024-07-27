@@ -1,5 +1,3 @@
-import Review = google.maps.places.Review;
-
 export type BaseBasicUserInfo = {
   givenName: string;
   surname: string;
@@ -79,7 +77,7 @@ export type ExtendedReviewRating = ReviewRating & {
   year: string;
   quarter: string;
   focal: boolean;
-}
+};
 
 export type JobHistoryEntry = {
   jobTitle: string;
@@ -104,13 +102,30 @@ export type JobInfo = {
   promotionYear?: string;
 };
 
-export type CodeStat = {
-  week: number;
-  changes: number;
-  added: number;
-  removed: number;
-  packages: number;
+export type GenericMinMaxAvg<T> = {
+  min: T;
+  max: T;
+  average: T;
 };
+export type MinMaxAvg = GenericMinMaxAvg<number>;
+export type CodeMinMaxAvg = GenericMinMaxAvg<CodeStat[]>;
+export type CrMinMaxAvg = GenericMinMaxAvg<CRStat[]>;
+
+export type GenericCodeStat<T> = {
+  week: T;
+  changes: T;
+  added: T;
+  removed: T;
+  packages: T;
+};
+export type CodeStat = GenericCodeStat<number>;
+export type PeerStats<T> = {
+  min: T[];
+  max: T[];
+  average: T[];
+};
+export type PeerCodeStats = PeerStats<CodeStat>;
+export type PeerCRStats = PeerStats<CRStat>;
 
 export type CRStat = {
   week: number;

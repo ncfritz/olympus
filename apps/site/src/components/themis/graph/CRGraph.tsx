@@ -11,6 +11,7 @@ export interface CRGraphProps {
   data: Record<string, CRStat[]>;
   max?: number;
   inferMax?: boolean;
+  limitInferedMax?: boolean;
 }
 
 const CodeGraph: React.FunctionComponent<CRGraphProps> = ({
@@ -19,6 +20,7 @@ const CodeGraph: React.FunctionComponent<CRGraphProps> = ({
   max = 10000,
   axisLabel,
   inferMax,
+  limitInferedMax = true,
 }) => {
   HC_more(Highcharts);
 
@@ -36,21 +38,32 @@ const CodeGraph: React.FunctionComponent<CRGraphProps> = ({
   const series: any[] = [];
 
   let localMax = 0;
+  let inferenceLimitTripped = false;
 
   Object.keys(data).forEach((year) => {
     const yearData = data[year];
     const parsedData: number[] = [];
 
     yearData.forEach((entry: CRStat) => {
-      if ((entry[stat] as number) > localMax) {
-        localMax = entry[stat] as number;
+      if (entry[stat] > localMax) {
+        if (limitInferedMax && entry[stat] < max) {
+          localMax = entry[stat];
+        } else {
+          inferenceLimitTripped = true;
+        }
       }
 
-      parsedData.push(entry[stat] as number);
+      parsedData.push(entry[stat]);
     });
 
     series.push({ name: year, data: parsedData, type: "column" });
   });
+
+  if (inferenceLimitTripped) {
+    localMax = max;
+  }
+
+  console.log(localMax);
 
   const options = {
     chart: {

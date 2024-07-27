@@ -3,21 +3,31 @@ import HighchartsReact from "highcharts-react-official";
 import HC_more from "highcharts/highcharts-more";
 import { Empty } from "antd";
 import { useEffect } from "react";
-import type { CodeStatsReviewResponse } from "../../../pages/api/themis/user/[username]/review/[year]/code";
+import type {
+  CodeMinMaxAvg,
+  CodeStat,
+  CrMinMaxAvg,
+  CRStat,
+} from "../../../types/themis";
 
-export interface TeamStatsGraphProps {
+export interface TeamCRGraphProps {
   username: string;
+  year: string;
+  stat: keyof CRStat;
+  userStats: CRStat[];
+  teamStats: CrMinMaxAvg;
   axisLabel: string;
   max?: number;
   skipSort?: boolean;
 }
 
-const TeamStatsGraph: React.FunctionComponent<TeamStatsGraphProps> = ({
+const TeamCRGraph: React.FunctionComponent<TeamCRGraphProps> = ({
   username,
-  data,
+  stat,
   axisLabel,
   max = 10000,
-  skipSort = false,
+  userStats,
+  teamStats,
 }) => {
   HC_more(Highcharts);
 
@@ -29,31 +39,38 @@ const TeamStatsGraph: React.FunctionComponent<TeamStatsGraphProps> = ({
     });
   }, []);
 
-  const categories: any[] = Array(53)
+  const categories: number[] = Array(53)
     .fill(0)
     .map((element, index) => index);
 
   const series: any[] = [];
+  const userData: number[] = [];
+  const teamRangeData: number[][] = [];
+  const teamAvgData: number[] = [];
 
-  if (skipSort) {
-    series.push({
-      name: username,
-      data: data,
-      type: "spline",
-    });
-  } else {
-    const sortedUserData = data.stats.sort((a: any, b: any) => {
-      return a.year - b.year;
-    });
+  console.log(teamStats);
 
-    series.push({
-      name: username,
-      data: sortedUserData[sortedUserData.length - 1].data,
-      type: "spline",
-    });
-  }
+  userStats.forEach((userStat, index) => {
+    userData.push(userStat[stat]);
+    teamRangeData.push([
+      teamStats.min[index][stat],
+      teamStats.max[index][stat],
+    ]);
+    teamAvgData.push(teamStats.average[index][stat]);
+  });
 
-  series.push({ name: "Team", data: teamData, type: "areasplinerange" });
+  series.push({ name: username, data: userData, type: "column" });
+  series.push({
+    name: "Team Avg",
+    data: teamAvgData,
+    type: "spline",
+  });
+  series.push({
+    name: "Team",
+    data: teamRangeData,
+    type: "areasplinerange",
+    linkedTo: ":previous",
+  });
 
   const options = {
     chart: {
@@ -64,7 +81,13 @@ const TeamStatsGraph: React.FunctionComponent<TeamStatsGraphProps> = ({
         marker: {
           enabled: false,
         },
+        lineWidth: 0.5,
+        lineColor: "#003f5ccc",
         color: "#003f5c33",
+      },
+      spline: {
+        lineWidth: 1,
+        lineColor: "#cc0000",
       },
       series: {
         animation: false,
@@ -79,13 +102,19 @@ const TeamStatsGraph: React.FunctionComponent<TeamStatsGraphProps> = ({
       labels: {
         rotation: -45,
       },
-      tickInterval: 1,
       lineWidth: 1,
+      lineColor: "#e6e6e6",
+      tickInterval: 1,
+      tickColor: "#efefef",
       tickWidth: 1,
       gridLineWidth: 1,
     },
     yAxis: {
+      title: {
+        text: axisLabel,
+      },
       lineWidth: 1,
+      lineColor: "#e6e6e6",
       tickInterval: 1,
       min: 0,
       max: max,
@@ -94,6 +123,9 @@ const TeamStatsGraph: React.FunctionComponent<TeamStatsGraphProps> = ({
       align: "left",
       verticalAlign: "bottom",
       layout: "horizontal",
+    },
+    tooltip: {
+      shared: true,
     },
     credits: {
       enabled: false,
@@ -113,4 +145,4 @@ const TeamStatsGraph: React.FunctionComponent<TeamStatsGraphProps> = ({
   }
 };
 
-export default TeamStatsGraph;
+export default TeamCRGraph;

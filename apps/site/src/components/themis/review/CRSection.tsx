@@ -1,28 +1,36 @@
 import { Col, Row, Typography } from "antd";
-import type { CRReviewResponse } from "../../../pages/api/themis/user/[username]/review/[year]/cr";
+import type { CRStatsReviewResponse } from "../../../pages/api/themis/user/[username]/review/[year]/cr";
 import type { CRStat } from "../../../types/themis";
 import CRGraph from "../graph/CRGraph";
+import TeamCRGraph from "../graph/TeamCRGraph";
 
 interface CRSectionProps {
-  data: CRReviewResponse;
+  username: string;
+  data: CRStatsReviewResponse;
 }
 
-const CRSection: React.FunctionComponent<CRSectionProps> = ({ data }) => {
+const CRSection: React.FunctionComponent<CRSectionProps> = ({
+  username,
+  data,
+}) => {
   return (
     <>
       <CRSectionRow
+        username={username}
         stat={"authored"}
         title={"Authored"}
         bottomMargin={32}
         data={data}
       />
       <CRSectionRow
+        username={username}
         stat={"commented"}
         title={"Commented"}
         bottomMargin={32}
         data={data}
       />
       <CRSectionRow
+        username={username}
         stat={"received"}
         title={"Received"}
         bottomMargin={32}
@@ -30,6 +38,7 @@ const CRSection: React.FunctionComponent<CRSectionProps> = ({ data }) => {
         max={50}
       />
       <CRSectionRow
+        username={username}
         stat={"approved"}
         title={"Approved"}
         bottomMargin={32}
@@ -42,16 +51,19 @@ const CRSection: React.FunctionComponent<CRSectionProps> = ({ data }) => {
 
 interface CRRowProps {
   title: string;
+  username: string;
   bottomMargin?: number;
   stat: keyof CRStat;
-  data: CRReviewResponse;
+  data: CRStatsReviewResponse;
   max?: number;
 }
 const CRSectionRow: React.FunctionComponent<CRRowProps> = ({
   data,
+  username,
   stat,
   title,
   bottomMargin = 0,
+  max = 80,
 }) => {
   return (
     <>
@@ -81,6 +93,28 @@ const CRSectionRow: React.FunctionComponent<CRRowProps> = ({
             data={data.stats}
             stat={stat}
             inferMax={true}
+          />
+        </Col>
+        <Col span={6}>
+          <TeamCRGraph
+            year={data.crYear}
+            stat={stat}
+            username={username}
+            axisLabel={"SLOC"}
+            userStats={data.stats[data.crYear]}
+            teamStats={data.peerStats}
+            max={max}
+          />
+        </Col>
+        <Col span={6}>
+          <TeamCRGraph
+            year={data.crYear}
+            stat={stat}
+            username={username}
+            axisLabel={"SLOC"}
+            userStats={data.stats[data.crYear]}
+            teamStats={data.peersInLevelStats}
+            max={max}
           />
         </Col>
       </Row>

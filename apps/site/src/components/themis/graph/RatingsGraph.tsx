@@ -3,7 +3,7 @@ import HighchartsReact from "highcharts-react-official";
 import HC_more from "highcharts/highcharts-more";
 import { useEffect } from "react";
 import bellcurve from "highcharts/modules/histogram-bellcurve";
-import type {ReviewRatingsSummaryResponse} from "../../../pages/api/themis/review/[year]/ratingsSummary";
+import type { ReviewRatingsSummaryResponse } from "../../../pages/api/themis/review/[year]/ratingsSummary";
 
 export interface RatingsGraphProps {
   data: ReviewRatingsSummaryResponse;

@@ -20,8 +20,8 @@ import SectionHeading from "../../../../components/themis/review/SectionHeading"
 import type { BasicUserInfo, JobInfo } from "../../../../types/themis";
 import type { JobHistoryResponse } from "../../../api/themis/user/[username]/data/[year]/jobHistory";
 import type { CodeStatsReviewResponse } from "../../../api/themis/user/[username]/review/[year]/code";
-import type { CRReviewStatsResponse } from "../../../api/themis/user/[username]/review/[year]/cr";
-import type {ReviewRatingResponse} from "../../../api/themis/user/[username]/review/[year]/rating";
+import type { CRStatsReviewResponse } from "../../../api/themis/user/[username]/review/[year]/cr";
+import type { ReviewRatingResponse } from "../../../api/themis/user/[username]/review/[year]/rating";
 
 const { Content } = Layout;
 
@@ -56,7 +56,7 @@ const IndexPage: React.FunctionComponent = () => {
   >(undefined);
   const [codeStatsLoading, setCodeStatsLoading] = useState<any>();
   const [codeStatsError, setCodeStatsError] = useState<any>();
-  const [crStats, setCrStats] = useState<CRReviewStatsResponse | undefined>(
+  const [crStats, setCrStats] = useState<CRStatsReviewResponse | undefined>(
     undefined,
   );
   const [crStatsLoading, setCrtatsLoading] = useState<any>();
@@ -128,14 +128,14 @@ const IndexPage: React.FunctionComponent = () => {
         <Row>
           <Col span={24} className={"break"}>
             <SectionHeading title={"Code"}>
-              <CodeSection data={codeStats!} />
+              <CodeSection username={params.username} data={codeStats!} />
             </SectionHeading>
           </Col>
         </Row>
         <Row>
           <Col span={24} className={"break"}>
             <SectionHeading title={"Code"}>
-              <CRSection data={crStats!} />
+              <CRSection username={params.username} data={crStats!} />
             </SectionHeading>
           </Col>
         </Row>
@@ -215,15 +215,14 @@ const IndexPage: React.FunctionComponent = () => {
       />
       <Layout
         style={{
-          margin: 8,
           position: "fixed",
           background: "#ffffff",
           gap: 16,
           top: 102,
-          marginRight: 788,
           overflowX: "hidden",
           overflowY: "auto",
-          height: "calc(100vh - 102px)",
+          height: "calc(100vh - 110px)",
+          borderRight: "1px solid #e6e6e6",
         }}
       >
         <Content
@@ -232,6 +231,7 @@ const IndexPage: React.FunctionComponent = () => {
             minHeight: 280,
             width: 1224 - 120,
             maxWidth: 1224 - 120,
+            padding: 8,
           }}
         >
           {content}
