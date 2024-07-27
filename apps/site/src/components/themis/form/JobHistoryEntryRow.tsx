@@ -154,7 +154,11 @@ const JobHistoryEntryRow: React.FunctionComponent<JobHistoryEntryRowProps> = ({
           name={`entries.${index}.fte`}
           control={control}
           render={({ field, fieldState }) => (
-            <Checkbox {...register(`entries.${index}.fte`)} {...field} checked={field.value} />
+            <Checkbox
+              {...register(`entries.${index}.fte`)}
+              {...field}
+              checked={field.value}
+            />
           )}
         />
       </Col>

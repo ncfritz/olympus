@@ -1,5 +1,17 @@
-import {CheckOutlined} from "@ant-design/icons";
-import {Button, Col, Empty, Form, Input, Modal, Result, Row, Space, Steps, Typography} from "antd";
+import { CheckOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Col,
+  Empty,
+  Form,
+  Input,
+  Modal,
+  Result,
+  Row,
+  Space,
+  Steps,
+  Typography,
+} from "antd";
 import { DateTime } from "luxon";
 import { type ReactNode, useState } from "react";
 import type { JobHistoryEntry } from "../../../types/themis";
@@ -68,14 +80,18 @@ const ImportJobHistoryModal: React.FunctionComponent<
         processedEntries.push(entry);
       });
     } else if (jobEvents) {
-      jobEvents.sort((a: any, b: any) => {
-        return a.startDate.localeCompare(b.startDate);
-      }).forEach((event: any, i: number) => {
+      jobEvents
+        .sort((a: any, b: any) => {
+          return a.startDate.localeCompare(b.startDate);
+        })
+        .forEach((event: any, i: number) => {
           const startDate = DateTime.fromISO(event.startDate);
-          const endDate: DateTime | undefined = event.endDate ? DateTime.fromISO(event.endDate) : undefined;
+          const endDate: DateTime | undefined = event.endDate
+            ? DateTime.fromISO(event.endDate)
+            : undefined;
 
           const entry: any = {
-            fte: event.role !== 'Vendor',
+            fte: event.role !== "Vendor",
             start: startDate.toISODate(),
             end: endDate?.toISODate(),
             jobTitle:
@@ -94,8 +110,8 @@ const ImportJobHistoryModal: React.FunctionComponent<
           }
 
           processedEntries.push(entry);
-        })
-      }
+        });
+    }
 
     processedEntries[processedEntries.length - 1].end =
       DateTime.utc().toISODate();
@@ -150,51 +166,31 @@ const ImportJobHistoryModal: React.FunctionComponent<
         content = <Empty description={"No Forte results present"} />;
       } else {
         content = (
-          <Space direction={"vertical"} style={{width: "100%"}}>
+          <Space direction={"vertical"} style={{ width: "100%" }}>
             <Space direction={"vertical"} style={{ width: "100%" }}>
               <Row style={{ borderBottom: "1px solid #e6e6e6" }}>
-              <Col span={8}>
-                  Job Title
-              </Col>
-              <Col span={6}>
-                  Start Date
-              </Col>
-              <Col span={6}>
-                  End Date
-              </Col>
-              <Col span={2}>
-                  Level
-              </Col>
-              <Col span={2}>
-                  FTE
-              </Col>
-            </Row>
+                <Col span={8}>Job Title</Col>
+                <Col span={6}>Start Date</Col>
+                <Col span={6}>End Date</Col>
+                <Col span={2}>Level</Col>
+                <Col span={2}>FTE</Col>
+              </Row>
             </Space>
             <Space
               direction={"vertical"}
               style={{ width: "100%", maxHeight: 400, overflowY: "scroll" }}
             >
-            {entries.map((entry) => {
-              return (
-                <Row>
-                  <Col span={8}>
-                    {entry.jobTitle}
-                  </Col>
-                  <Col span={6}>
-                    {entry.start}
-                  </Col>
-                  <Col span={6}>
-                    {entry.end}
-                  </Col>
-                  <Col span={2}>
-                    L{entry.level}
-                  </Col>
-                  <Col span={2}>
-                    {entry.fte ? <CheckOutlined /> : ""}
-                  </Col>
-                </Row>
-              )
-            })}
+              {entries.map((entry) => {
+                return (
+                  <Row>
+                    <Col span={8}>{entry.jobTitle}</Col>
+                    <Col span={6}>{entry.start}</Col>
+                    <Col span={6}>{entry.end}</Col>
+                    <Col span={2}>L{entry.level}</Col>
+                    <Col span={2}>{entry.fte ? <CheckOutlined /> : ""}</Col>
+                  </Row>
+                );
+              })}
             </Space>
           </Space>
         );

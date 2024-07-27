@@ -115,7 +115,12 @@ const BasicUserInfoPanel: React.FunctionComponent<BasicUserInfoPanelProps> = ({
           style={{ display: "flex", alignItems: "top", marginBottom: 8 }}
         >
           <Col span={1}>
-            <Badge username={username} name={firstNameWatch} tenure={1} size={"small"} />
+            <Badge
+              username={username}
+              name={firstNameWatch}
+              tenure={1}
+              size={"small"}
+            />
           </Col>
           <Col span={18}>
             <Row
