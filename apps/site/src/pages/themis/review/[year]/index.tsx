@@ -25,7 +25,6 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import themisApi from "../../../../api/themisApi";
 import RatingsGraph from "../../../../components/themis/graph/RatingsGraph";
-import SparklineGraph from "../../../../components/themis/graph/SparklineGraph";
 import Potential from "../../../../components/themis/rating/GrowthPotential";
 import Overall from "../../../../components/themis/rating/Overall";
 import Performance from "../../../../components/themis/rating/Performance";
@@ -469,7 +468,7 @@ const IndexPage: React.FunctionComponent = () => {
           marginRight: 788,
           overflowX: "hidden",
           overflowY: "auto",
-          height: "calc(100vh - 202px)",
+          height: "calc(100vh - 110px)",
         }}
       >
         <Content

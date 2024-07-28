@@ -2,6 +2,7 @@ import {
   BarChartOutlined,
   CalendarOutlined,
   FolderOutlined,
+  FolderViewOutlined,
   HomeOutlined,
   UsergroupAddOutlined,
 } from "@ant-design/icons";
@@ -77,8 +78,13 @@ const ThemisMenu: React.FunctionComponent = () => {
       const subMenu = [
         {
           key: `/${BASE_PATH}/review/${value.year}`,
-          icon: <BarChartOutlined />,
+          icon: <FolderViewOutlined />,
           label: "Overview",
+        },
+        {
+          key: `/${BASE_PATH}/review/${value.year}/data`,
+          icon: <BarChartOutlined />,
+          label: "Team Data",
         },
       ];
 

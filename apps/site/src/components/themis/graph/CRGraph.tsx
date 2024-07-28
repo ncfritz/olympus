@@ -7,20 +7,24 @@ import type { CRStat } from "../../../types/themis";
 
 export interface CRGraphProps {
   axisLabel?: string;
+  teamAverage?: Record<string, CRStat[]>;
   stat: keyof CRStat;
   data: Record<string, CRStat[]>;
   max?: number;
   inferMax?: boolean;
-  limitInferedMax?: boolean;
+  limitInferredMax?: boolean;
+  height?: number;
 }
 
 const CodeGraph: React.FunctionComponent<CRGraphProps> = ({
   data,
+  teamAverage,
   stat,
   max = 10000,
   axisLabel,
   inferMax,
-  limitInferedMax = true,
+  limitInferredMax = true,
+  height = 230,
 }) => {
   HC_more(Highcharts);
 
@@ -43,37 +47,63 @@ const CodeGraph: React.FunctionComponent<CRGraphProps> = ({
   Object.keys(data).forEach((year) => {
     const yearData = data[year];
     const parsedData: number[] = [];
+    const averageData: number[] = [];
 
-    yearData.forEach((entry: CRStat) => {
-      if (entry[stat] > localMax) {
-        if (limitInferedMax && entry[stat] < max) {
-          localMax = entry[stat];
-        } else {
-          inferenceLimitTripped = true;
-        }
+    yearData.forEach((entry) => {
+      const value = entry[stat];
+      const potentialPoints: number[] = [value];
+
+      if (teamAverage && teamAverage[year]) {
+        const teamValue = teamAverage[year][entry.week - 1][stat];
+        averageData.push(teamValue);
+        potentialPoints.push(teamValue);
       }
 
-      parsedData.push(entry[stat]);
+      potentialPoints.forEach((point) => {
+        if (point > localMax) {
+          if (limitInferredMax && point < max) {
+            localMax = point;
+          } else {
+            inferenceLimitTripped = true;
+          }
+        }
+      });
+
+      parsedData.push(value);
     });
 
     series.push({ name: year, data: parsedData, type: "column" });
+
+    if (teamAverage) {
+      series.push({
+        name: "Team (avg)",
+        data: averageData,
+        type: "spline",
+        lincColor: "#ffcc33",
+      });
+    }
   });
 
   if (inferenceLimitTripped) {
     localMax = max;
   }
 
-  console.log(localMax);
-
   const options = {
     chart: {
-      height: 230,
+      height: height,
     },
     plotOptions: {
       column: {
         pointWidth: 3,
         borderWidth: 0,
         pointPadding: 0,
+      },
+      spline: {
+        lineWidth: 1,
+        lineColor: "#cc0000",
+        marker: {
+          enabled: false,
+        },
       },
       series: {
         animation: false,
@@ -109,6 +139,9 @@ const CodeGraph: React.FunctionComponent<CRGraphProps> = ({
       align: "left",
       verticalAlign: "bottom",
       layout: "horizontal",
+    },
+    tooltip: {
+      shared: true,
     },
     credits: {
       enabled: false,

@@ -9,18 +9,22 @@ export interface CodeGraphProps {
   axisLabel?: string;
   stat: keyof CodeStat;
   data: Record<string, CodeStat[]>;
+  teamAverage?: Record<string, CodeStat[]>;
   max?: number;
   inferMax?: boolean;
-  limitInferedMax?: boolean;
+  limitInferredMax?: boolean;
+  height?: number;
 }
 
 const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
   data,
+  teamAverage,
   stat,
   max = 10000,
   axisLabel,
   inferMax,
-  limitInferedMax = true,
+  limitInferredMax = true,
+  height = 230,
 }) => {
   HC_more(Highcharts);
 
@@ -43,20 +47,41 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
   Object.keys(data).forEach((year) => {
     const yearData = data[year];
     const parsedData: number[] = [];
+    const averageData: number[] = [];
 
     yearData.forEach((entry) => {
-      if (entry[stat] > localMax) {
-        if (limitInferedMax && entry[stat] < max) {
-          localMax = entry[stat];
-        } else {
-          inferenceLimitTripped = true;
-        }
+      const value = entry[stat];
+      const potentialPoints: number[] = [value];
+
+      if (teamAverage && teamAverage[year]) {
+        const teamValue = teamAverage[year][entry.week - 1][stat];
+        averageData.push(teamValue);
+        potentialPoints.push(teamValue);
       }
 
-      parsedData.push(entry[stat]);
+      potentialPoints.forEach((point) => {
+        if (point > localMax) {
+          if (limitInferredMax && point < max) {
+            localMax = point;
+          } else {
+            inferenceLimitTripped = true;
+          }
+        }
+      });
+
+      parsedData.push(value);
     });
 
     series.push({ name: year, data: parsedData, type: "column" });
+
+    if (teamAverage) {
+      series.push({
+        name: "Team (avg)",
+        data: averageData,
+        type: "spline",
+        lincColor: "#ffcc33",
+      });
+    }
   });
 
   if (inferenceLimitTripped) {
@@ -65,13 +90,20 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
 
   const options = {
     chart: {
-      height: 230,
+      height: height,
     },
     plotOptions: {
       column: {
         pointWidth: 3,
         borderWidth: 0,
         pointPadding: 0,
+      },
+      spline: {
+        lineWidth: 1,
+        lineColor: "#cc0000",
+        marker: {
+          enabled: false,
+        },
       },
       series: {
         animation: false,
@@ -107,6 +139,9 @@ const CodeGraph: React.FunctionComponent<CodeGraphProps> = ({
       align: "left",
       verticalAlign: "bottom",
       layout: "horizontal",
+    },
+    tooltip: {
+      shared: true,
     },
     credits: {
       enabled: false,
