@@ -111,7 +111,7 @@ const TeamCRStatisticsPanel = ({ year, users }: TeamCRStatisticsPanelProps) => {
 
     content = (
       <Row>
-        <Row style={{ flexGrow: 1, marginLeft: 100}}>
+        <Row style={{ flexGrow: 1, marginLeft: 100 }}>
           <Col span={6} style={{ textAlign: "center" }}>
             <Typography.Text strong={true}>Authored</Typography.Text>
           </Col>

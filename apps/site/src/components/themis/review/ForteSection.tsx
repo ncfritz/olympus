@@ -1,4 +1,4 @@
-import type {For} from "@babel/types";
+import type { For } from "@babel/types";
 import { Col, Empty, Result, Row, Space, Spin, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import themisApi from "../../../api/themisApi";
