@@ -1,51 +1,110 @@
-import { Col, Row, Typography } from "antd";
+import { Col, Empty, Result, Row, Space, Spin, Typography } from "antd";
+import React, { useEffect, useState } from "react";
+import themisApi from "../../../api/themisApi";
 import type { CodeStatsReviewResponse } from "../../../pages/api/themis/user/[username]/review/[year]/code";
 import type { CodeStat } from "../../../types/themis";
 import CodeGraph from "../graph/CodeGraph";
 import TeamCodeGraph from "../graph/TeamCodeGraph";
+import SectionHeading from "./SectionHeading";
 
 interface CodeSectionProps {
   username: string;
-  data: CodeStatsReviewResponse;
+  year: string;
 }
 
 const CodeSection: React.FunctionComponent<CodeSectionProps> = ({
   username,
-  data,
+  year,
 }) => {
+  const [data, setData] = useState<CodeStatsReviewResponse | undefined>(
+    undefined,
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<any>();
+
+  const loadCodeStats = async (quite = false) => {
+    if (!quite) {
+      setLoading(true);
+    }
+
+    try {
+      setError(undefined);
+
+      const response = await themisApi.review.getCodeStats(username, year);
+      setData(response);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      loadCodeStats();
+    })();
+  }, [username, year]);
+
+  let content;
+
+  if (loading) {
+    content = (
+      <Space
+        direction={"vertical"}
+        style={{ width: "100%", padding: 64, textAlign: "center" }}
+      >
+        <Spin size={"large"} />
+      </Space>
+    );
+  } else if (error) {
+    content = (
+      <Result status={"error"} title={"Unable to load code statistics"} />
+    );
+  } else if (!data) {
+    content = <Empty description={"No code stats found"} />;
+  } else {
+    content = (
+      <>
+        <CodeSectionRow
+          username={username}
+          stat={"added"}
+          title={"SLOC Added"}
+          bottomMargin={32}
+          data={data}
+        />
+        <CodeSectionRow
+          username={username}
+          stat={"removed"}
+          title={"SLOC Removed"}
+          bottomMargin={32}
+          data={data}
+        />
+        <CodeSectionRow
+          username={username}
+          stat={"changes"}
+          title={"Changes"}
+          bottomMargin={32}
+          data={data}
+          max={50}
+        />
+        <CodeSectionRow
+          username={username}
+          stat={"packages"}
+          title={"Packages"}
+          bottomMargin={32}
+          data={data}
+          max={50}
+        />
+      </>
+    );
+  }
+
   return (
-    <>
-      <CodeSectionRow
-        username={username}
-        stat={"added"}
-        title={"SLOC Added"}
-        bottomMargin={32}
-        data={data}
-      />
-      <CodeSectionRow
-        username={username}
-        stat={"removed"}
-        title={"SLOC Removed"}
-        bottomMargin={32}
-        data={data}
-      />
-      <CodeSectionRow
-        username={username}
-        stat={"changes"}
-        title={"Changes"}
-        bottomMargin={32}
-        data={data}
-        max={50}
-      />
-      <CodeSectionRow
-        username={username}
-        stat={"packages"}
-        title={"Packages"}
-        bottomMargin={32}
-        data={data}
-        max={50}
-      />
-    </>
+    <Row>
+      <Col span={24} className={"break"}>
+        <SectionHeading title={"Code"}>{content}</SectionHeading>
+      </Col>
+    </Row>
   );
 };
 
