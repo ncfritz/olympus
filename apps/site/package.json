@@ -1,7 +1,7 @@
 {
   "name": "@ncfritz/olympus-site",
   "type": "module",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "scripts": {
     "start": "next start",
     "app": "electron .",
