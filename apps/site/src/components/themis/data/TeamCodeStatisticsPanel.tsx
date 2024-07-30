@@ -1,4 +1,4 @@
-import { Col, Result, Row, Space, Spin } from "antd";
+import { Col, Result, Row, Space, Spin, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import themisApi from "../../../api/themisApi";
 import type { ReviewYearCodeResponse } from "../../../pages/api/themis/review/[year]/data/code";
@@ -116,6 +116,20 @@ const TeamCodeStatisticsPanel = ({
 
     content = (
       <Row>
+        <Row style={{ flexGrow: 1, marginLeft: 100 }}>
+          <Col span={6} style={{ textAlign: "center" }}>
+            <Typography.Text strong={true}>SLOC Added</Typography.Text>
+          </Col>
+          <Col span={6} style={{ textAlign: "center" }}>
+            <Typography.Text strong={true}>SLOC Removed</Typography.Text>
+          </Col>
+          <Col span={6} style={{ textAlign: "center" }}>
+            <Typography.Text strong={true}>Changes</Typography.Text>
+          </Col>
+          <Col span={6} style={{ textAlign: "center" }}>
+            <Typography.Text strong={true}>Packages</Typography.Text>
+          </Col>
+        </Row>
         <Col span={24}>{userRows}</Col>
       </Row>
     );

@@ -1,4 +1,4 @@
-import { Col, Result, Row, Space, Spin } from "antd";
+import { Col, Result, Row, Space, Spin, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import themisApi from "../../../api/themisApi";
 import type { ReviewYearCRResponse } from "../../../pages/api/themis/review/[year]/data/cr";
@@ -111,6 +111,20 @@ const TeamCRStatisticsPanel = ({ year, users }: TeamCRStatisticsPanelProps) => {
 
     content = (
       <Row>
+        <Row style={{ flexGrow: 1, marginLeft: 100}}>
+          <Col span={6} style={{ textAlign: "center" }}>
+            <Typography.Text strong={true}>Authored</Typography.Text>
+          </Col>
+          <Col span={6} style={{ textAlign: "center" }}>
+            <Typography.Text strong={true}>Received</Typography.Text>
+          </Col>
+          <Col span={6} style={{ textAlign: "center" }}>
+            <Typography.Text strong={true}>Commented</Typography.Text>
+          </Col>
+          <Col span={6} style={{ textAlign: "center" }}>
+            <Typography.Text strong={true}>Approved</Typography.Text>
+          </Col>
+        </Row>
         <Col span={24}>{userRows}</Col>
       </Row>
     );
