@@ -15,6 +15,8 @@ import JobHistoryGraph from "../../../../components/themis/graph/JobHistoryGraph
 import CodeSection from "../../../../components/themis/review/CodeSection";
 import CRSection from "../../../../components/themis/review/CRSection";
 import EmployeeDetailsSection from "../../../../components/themis/review/EmployeeDetailsSection";
+import ForteSection from "../../../../components/themis/review/ForteSection";
+import NotesSection from "../../../../components/themis/review/NotesSection";
 import PerformanceHistorySection from "../../../../components/themis/review/PerformanceHistorySection";
 import SectionHeading from "../../../../components/themis/review/SectionHeading";
 import type { BasicUserInfo, JobInfo } from "../../../../types/themis";
@@ -38,29 +40,22 @@ const IndexPage: React.FunctionComponent = () => {
   );
   const [userInfoLoading, setUserInfoLoading] = useState<any>();
   const [userInfoError, setUserInfoError] = useState<any>();
+
   const [jobInfo, setJobInfo] = useState<JobInfo | undefined>(undefined);
   const [jobInfoLoading, setJobInfoLoading] = useState<any>();
   const [jobInfoError, setJobInfoError] = useState<any>();
+
   const [rating, setRating] = useState<ReviewRatingResponse | undefined>(
     undefined,
   );
   const [ratingLoading, setRatingLoading] = useState<any>();
   const [ratingError, setRatingError] = useState<any>();
+
   const [jobHistory, setJobHistory] = useState<JobHistoryResponse | undefined>(
     undefined,
   );
   const [jobHistoryLoading, setJobHistoryLoading] = useState<any>();
   const [jobHistoryError, setJobHistoryError] = useState<any>();
-  const [codeStats, setCodeStats] = useState<
-    CodeStatsReviewResponse | undefined
-  >(undefined);
-  const [codeStatsLoading, setCodeStatsLoading] = useState<any>();
-  const [codeStatsError, setCodeStatsError] = useState<any>();
-  const [crStats, setCrStats] = useState<CRStatsReviewResponse | undefined>(
-    undefined,
-  );
-  const [crStatsLoading, setCrtatsLoading] = useState<any>();
-  const [crtatsError, setCrtatsError] = useState<any>();
 
   useEffect(() => {
     (async () => {
@@ -81,12 +76,6 @@ const IndexPage: React.FunctionComponent = () => {
           setJobHistory(
             await themisApi.getJobHistory(params.username, params.year),
           );
-          setCodeStats(
-            await themisApi.review.getCodeStats(params.username, params.year),
-          );
-          setCrStats(
-            await themisApi.review.getCrStats(params.username, params.year),
-          );
         } finally {
           setLoading(false);
         }
@@ -102,7 +91,7 @@ const IndexPage: React.FunctionComponent = () => {
         <Spin size={"large"} />
       </Space>
     );
-  } else if (userInfo && jobInfo && rating) {
+  } else if (userInfo && jobInfo && jobHistory && rating) {
     content = (
       <>
         <EmployeeDetailsSection
@@ -125,20 +114,10 @@ const IndexPage: React.FunctionComponent = () => {
             </SectionHeading>
           </Col>
         </Row>
-        <Row>
-          <Col span={24} className={"break"}>
-            <SectionHeading title={"Code"}>
-              <CodeSection username={params.username} data={codeStats!} />
-            </SectionHeading>
-          </Col>
-        </Row>
-        <Row>
-          <Col span={24} className={"break"}>
-            <SectionHeading title={"Code"}>
-              <CRSection username={params.username} data={crStats!} />
-            </SectionHeading>
-          </Col>
-        </Row>
+        <NotesSection username={params.username} year={params.year} />
+        <ForteSection username={params.username} year={params.year} />
+        <CodeSection username={params.username} year={params.year} />
+        <CRSection username={params.username} year={params.year} />
       </>
     );
   }

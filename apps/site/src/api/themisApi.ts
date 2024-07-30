@@ -587,6 +587,40 @@ const getReviewRating = async (username: string, year: string) => {
   }
 };
 
+const getReviewNotes = async (username: string, year: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/review/${year}/notes`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getReviewForte = async (username: string, year: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/review/${year}/forte`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const getAllReviewCodeStats = async (year: string) => {
   try {
     const response = await axios.get(`/api/themis//review/${year}/data/code`, {
@@ -646,6 +680,8 @@ const themisApi = {
   review: {
     getCodeStats: getReviewCodeStats,
     getCrStats: getReviewCrStats,
+    getForte: getReviewForte,
+    getNotes: getReviewNotes,
     getRating: getReviewRating,
     getRatingsSummary: getReviewRatingsSummary,
     getUsersSummary: getReviewUsersSummary,
