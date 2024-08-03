@@ -177,6 +177,18 @@ export type SimStat = {
   resolved: SimSeverityStats;
 };
 
+export type MenteeType = "Peer" | "External";
+
+export type Mentee = {
+  alias: string;
+  givenName: string;
+  surname: string;
+  type: MenteeType;
+  level: number;
+  department: string;
+  notes: string;
+};
+
 export const DATA_PATHS: Record<keyof UserDataSummary, string> = {
   jobInfo: "jobInfo.json",
   performance: "rating.json",

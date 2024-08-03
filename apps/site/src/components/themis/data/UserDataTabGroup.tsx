@@ -13,6 +13,7 @@ import CRStatsPanel from "./CRStatsPanel";
 import FortePanel from "./FortePanel";
 import JobHistoryPanel from "./JobHistoryPanel";
 import JobInfoPanel from "./JobInfoPanel";
+import MentorshipPanel from "./MentorshipPanel";
 import NotesPanel from "./NotesPanel";
 import RatingPanel from "./RatingPanel";
 import SimStatsPanel from "./SimStatsPanel";
@@ -142,7 +143,13 @@ const UserDataTabGroup: React.FunctionComponent<UserDataTabGroupProps> = ({
         {
           key: `y${year}-mentorship`,
           label: tabLabel("mentorship", "Mentorship"),
-          children: <>Mentorship</>,
+          children: (
+            <MentorshipPanel
+              username={username}
+              year={year}
+              afterSave={panelDidUpdate}
+            />
+          ),
         },
         {
           key: `y${year}-code`,

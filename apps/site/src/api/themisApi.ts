@@ -7,7 +7,7 @@ import type {
   CRStat,
   ForteSummary,
   JobHistoryEntry,
-  JobInfo,
+  JobInfo, Mentee,
   ReviewRating,
   SimStat,
 } from "../types/themis";
@@ -50,6 +50,23 @@ const getForteSummary = async (username: string, year: string) => {
   try {
     const response = await axios.get(
       `/api/themis/user/${username}/data/${year}/forte`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const getMentorship = async (username: string, year: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/data/${year}/mentorship`,
       {
         validateStatus: (status) => {
           return status === 200;
@@ -462,6 +479,24 @@ const upsertJobInfo = async (
   }
 };
 
+const upsertMentorship = async (username: string, year: string, mentees: Mentee[]) => {
+  try {
+    const response = await axios.put(
+      `/api/themis/user/${username}/data/${year}/mentorship`,
+      { mentorship: mentees },
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const upsertNotes = async (username: string, year: string, notes: string) => {
   try {
     const response = await axios.put(
@@ -677,6 +712,10 @@ const themisApi = {
   upsertRating: upsertRating,
   upsertReviewYearBasicInfo: upsertReviewYearBasicInfo,
   updateUser: updateUser,
+  data: {
+    getMentorship: getMentorship,
+    upsertMentorship: upsertMentorship,
+  },
   review: {
     getCodeStats: getReviewCodeStats,
     getCrStats: getReviewCrStats,
