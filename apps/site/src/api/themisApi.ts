@@ -622,6 +622,23 @@ const getReviewRating = async (username: string, year: string) => {
   }
 };
 
+const getReviewMentorship = async (username: string, year: string) => {
+  try {
+    const response = await axios.get(
+      `/api/themis/user/${username}/review/${year}/mentorship`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return response.data;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const getReviewNotes = async (username: string, year: string) => {
   try {
     const response = await axios.get(
@@ -720,6 +737,7 @@ const themisApi = {
     getCodeStats: getReviewCodeStats,
     getCrStats: getReviewCrStats,
     getForte: getReviewForte,
+    getMentorship: getReviewMentorship,
     getNotes: getReviewNotes,
     getRating: getReviewRating,
     getRatingsSummary: getReviewRatingsSummary,

@@ -11,11 +11,13 @@ import { useParams } from "next/navigation";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import themisApi from "../../../../api/themisApi";
+import MentorshipPanel from "../../../../components/themis/data/MentorshipPanel";
 import JobHistoryGraph from "../../../../components/themis/graph/JobHistoryGraph";
 import CodeSection from "../../../../components/themis/review/CodeSection";
 import CRSection from "../../../../components/themis/review/CRSection";
 import EmployeeDetailsSection from "../../../../components/themis/review/EmployeeDetailsSection";
 import ForteSection from "../../../../components/themis/review/ForteSection";
+import MentorshipSection from "../../../../components/themis/review/MentorshipSection";
 import NotesSection from "../../../../components/themis/review/NotesSection";
 import PerformanceHistorySection from "../../../../components/themis/review/PerformanceHistorySection";
 import SectionHeading from "../../../../components/themis/review/SectionHeading";
@@ -115,6 +117,7 @@ const IndexPage: React.FunctionComponent = () => {
           </Col>
         </Row>
         <NotesSection username={params.username} year={params.year} />
+        <MentorshipSection username={params.username} year={params.year} />
         <ForteSection username={params.username} year={params.year} />
         <CodeSection username={params.username} year={params.year} />
         <CRSection username={params.username} year={params.year} />
