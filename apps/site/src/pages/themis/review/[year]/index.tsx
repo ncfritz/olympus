@@ -248,7 +248,7 @@ const IndexPage: React.FunctionComponent = () => {
                           { shallow: true },
                         );
                       }}
-                      style={{ cursor: "pointer" }}
+                      style={{ cursor: "pointer", alignItems: "start" }}
                     >
                       <Avatar
                         size={"large"}
@@ -269,6 +269,14 @@ const IndexPage: React.FunctionComponent = () => {
                         <Typography.Text style={{ lineHeight: 0, margin: 0 }}>
                           {user.basicInfo.username}
                         </Typography.Text>
+                        <Space size={8} direction={"horizontal"}>
+                          <Typography.Link
+                            style={{ fontSize: 10 }}
+                            href={`/themis/user/${user.basicInfo.username}`}
+                          >
+                            Data entry
+                          </Typography.Link>
+                        </Space>
                       </Space>
                     </Space>
                   </Col>
