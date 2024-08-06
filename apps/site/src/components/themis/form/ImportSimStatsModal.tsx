@@ -1,3 +1,4 @@
+import { InboxOutlined } from "@ant-design/icons";
 import {
   Button,
   Col,
@@ -9,108 +10,47 @@ import {
   Space,
   Steps,
   Typography,
+  Upload,
 } from "antd";
-import { DateTime } from "luxon";
 import { type ReactNode, useState } from "react";
-import year from "../../../pages/themis/review/[year]/[username]";
-import type { CRStat, SimSeverityStats, SimStat } from "../../../types/themis";
+import type { SimStat } from "../../../types/themis";
+
+const { Dragger } = Upload;
 
 export interface ImportSimStatsModalProps {
-  year: string;
+  processStatsFunction: (input?: string) => SimStat[];
   isOpen: boolean;
-  importFunction: (history: SimStat[]) => Promise<void>;
+  importFunction: (stats: SimStat[]) => Promise<void>;
   onClose: () => void;
 }
 
 const ImportCrStatsModal: React.FunctionComponent<ImportSimStatsModalProps> = ({
-  year,
+  processStatsFunction,
   isOpen,
   importFunction,
   onClose,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [rawCreatedStats, setRawCreatedStats] = useState<string | undefined>(
-    undefined,
-  );
-  const [rawCreatedValid, setRawCreatedValid] = useState(false);
-  const [parsedCreatedStats, setParsedCreatedStats] = useState<any | undefined>(
-    undefined,
-  );
-  const [rawResolvedValid, setRawResolvedValid] = useState(false);
-  const [rawResolvedStats, setRawResolvedStats] = useState<string | undefined>(
-    undefined,
-  );
-  const [parsedResolvedStats, setParsedResolvedStats] = useState<
-    any | undefined
-  >(undefined);
+  const [rawStats, setRawStats] = useState<string | undefined>(undefined);
   const [parsingError, setParsingError] = useState(false);
   const [stats, setStats] = useState<SimStat[]>([]);
 
   const closeModal = () => {
+    setRawStats(undefined);
+    setStats([]);
+    setParsingError(false);
+    setCurrentStep(0);
     onClose();
   };
 
-  const getStatistic = (parts: string[], index: number) => {
-    if (!parts) {
-      return 0;
-    }
-
-    if (parts.length <= index) {
-      return 0;
-    }
-
-    if (parts[index].trim() === "") {
-      return 0;
-    }
-
-    return parseInt(parts[index]);
-  };
-
   const processSimStats = async () => {
-    const processedEntries: SimStat[] = [];
-    const targetYear = DateTime.fromISO(year);
-
-    if (
-      Object.keys(parsedCreatedStats).length < 52 ||
-      Object.keys(parsedResolvedStats).length < 52
-    ) {
-      setParsingError(true);
-    }
-
     try {
-      for (let i = 1; i <= targetYear.weeksInWeekYear; i++) {
-        processedEntries.push({
-          week: i,
-          created: buildSimSeverityEntry(parsedCreatedStats[i.toString()]),
-          resolved: buildSimSeverityEntry(parsedResolvedStats[i.toString()]),
-        });
-      }
-
+      const processedEntries = processStatsFunction(rawStats);
       setStats(processedEntries);
     } catch (e) {
       setParsingError(true);
       console.log(e);
     }
-  };
-
-  const buildSimSeverityEntry = (raw: any) => {
-    const severityStat: SimSeverityStats = {
-      "1": 0,
-      "2": 0,
-      "3": 0,
-      "4": 0,
-      "5": 0,
-      "99": 0,
-      total: 0,
-    };
-
-    ["1", "2", "3", "4", "5", "99"].forEach((severity) => {
-      const value = Object.keys(raw).includes(severity) ? raw[severity] : 0;
-      severityStat[severity as keyof SimSeverityStats] = value;
-      severityStat["total"] += value;
-    });
-
-    return severityStat;
   };
 
   const modalButtons: ReactNode[] = [];
@@ -121,8 +61,9 @@ const ImportCrStatsModal: React.FunctionComponent<ImportSimStatsModalProps> = ({
       modalButtons.push(
         <Button
           type={"primary"}
-          disabled={!rawCreatedValid}
           onClick={async () => {
+            setParsingError(false);
+            await processSimStats();
             setCurrentStep(currentStep + 1);
           }}
         >
@@ -130,57 +71,37 @@ const ImportCrStatsModal: React.FunctionComponent<ImportSimStatsModalProps> = ({
         </Button>,
       );
       contents = (
-        <Form.Item label={"Created Statistics"} layout={"vertical"}>
-          <Input.TextArea
-            style={{ height: 300 }}
-            value={rawCreatedStats}
-            onChange={(e) => {
-              setRawCreatedStats(e.currentTarget.value);
+        <Space direction={"vertical"} size={16} style={{ width: "100%" }}>
+          <Dragger
+            showUploadList={false}
+            maxCount={1}
+            beforeUpload={async (file) => {
+              setRawStats(await file.text());
 
-              try {
-                setParsedCreatedStats(JSON.parse(e.currentTarget.value));
-                setRawCreatedValid(true);
-              } catch (e) {
-                setRawCreatedValid(false);
-              }
+              // Prevent upload
+              return false;
             }}
-          ></Input.TextArea>
-        </Form.Item>
+          >
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <Typography.Text>
+              Click or drag file to this area to upload
+            </Typography.Text>
+          </Dragger>
+          <Form.Item label={"Created Statistics"} layout={"vertical"}>
+            <Input.TextArea
+              style={{ height: 300 }}
+              value={rawStats}
+              onChange={(e) => {
+                setRawStats(e.currentTarget.value);
+              }}
+            ></Input.TextArea>
+          </Form.Item>
+        </Space>
       );
       break;
     case 1:
-      modalButtons.push(
-        <Button
-          type={"primary"}
-          disabled={!rawResolvedValid}
-          onClick={async () => {
-            setCurrentStep(currentStep + 1);
-            await processSimStats();
-          }}
-        >
-          Parse Resolved
-        </Button>,
-      );
-      contents = (
-        <Form.Item label={"Resolved Statistics"} layout={"vertical"}>
-          <Input.TextArea
-            style={{ height: 300 }}
-            value={rawResolvedStats}
-            onChange={(e) => {
-              setRawResolvedStats(e.currentTarget.value);
-
-              try {
-                setParsedResolvedStats(JSON.parse(e.currentTarget.value));
-                setRawResolvedValid(true);
-              } catch (e) {
-                setRawResolvedValid(false);
-              }
-            }}
-          ></Input.TextArea>
-        </Form.Item>
-      );
-      break;
-    case 2:
       // eslint-disable-next-line no-case-declarations
       let content;
 
@@ -384,7 +305,6 @@ const ImportCrStatsModal: React.FunctionComponent<ImportSimStatsModalProps> = ({
           type={"primary"}
           disabled={parsingError}
           onClick={async () => {
-            console.log(stats);
             await importFunction(stats);
             closeModal();
           }}
@@ -442,9 +362,6 @@ const ImportCrStatsModal: React.FunctionComponent<ImportSimStatsModalProps> = ({
           items={[
             {
               title: "Import Created Statistics",
-            },
-            {
-              title: "Import Resolved Statistics",
             },
             {
               title: "Process Stats",
