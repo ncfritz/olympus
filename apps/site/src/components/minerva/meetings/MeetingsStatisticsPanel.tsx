@@ -74,16 +74,18 @@ const MeetingStatisticsPanel: React.FunctionComponent<
     );
   } else {
     content = (
-      <Space direction={"vertical"} size={8}>
+      <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
         <MeetingsHourOfDayGraph
           date={startDate}
           summaryLoading={statisticsLoading}
           summary={statistics}
+          width={400}
         />
         <MeetingsDayOfWeekGraph
           date={startDate}
           summaryLoading={statisticsLoading}
           summary={statistics}
+          width={400}
         />
       </Space>
     );
