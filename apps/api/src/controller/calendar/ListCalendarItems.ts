@@ -65,6 +65,13 @@ export class ListCalendarItemsController {
       end: endTime.toISOString(),
     });
 
+    //               {
+    //                 _and: { start_time: { _lte: $start }, end_time: { _lte: $end } }
+    //               },
+    //               {
+    //                 _and: { start_time: { _gte: $start }, end_time: { _gte: $end } }
+    //               }
+
     const queryRequest = gql`
       query ListCalendarItems($start: timestamptz!, $end: timestamptz!) {
         minerva_meetings(
@@ -72,12 +79,6 @@ export class ListCalendarItemsController {
             _or: [
               {
                 _and: { start_time: { _gte: $start }, end_time: { _lte: $end } }
-              }
-              {
-                _and: { start_time: { _gte: $start }, end_time: { _gte: $end } }
-              }
-              {
-                _and: { start_time: { _lte: $start }, end_time: { _lte: $end } }
               }
               {
                 _and: { start_time: { _lte: $start }, end_time: { _gte: $end } }
