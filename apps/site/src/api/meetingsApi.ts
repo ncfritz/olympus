@@ -53,6 +53,23 @@ const getNextMeetingInSeries = async (id: string) => {
   }
 };
 
+const getPreviousMeetingInSeries = async (id: string, limit = 5) => {
+  try {
+    const getPreviousMeetingsInSeriesRessponse = await axios.get(
+      `/api/v1/meeting/${encodeURIComponent(id)}/previous?limit=${limit}`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return getPreviousMeetingsInSeriesRessponse;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const getSummary = async (start: DateTime, days: number = 30) => {
   try {
     const getSummaryResponse = await axios.get(
@@ -109,6 +126,7 @@ const meetingsApi = {
   getMeetings: getMeetings,
   getMeeting: getMeeting,
   getNextMeetingInSeries: getNextMeetingInSeries,
+  getPreviousMeetingInSeries: getPreviousMeetingInSeries,
   getSummary: getSummary,
   getStatistics: getStatistics,
   toEvent: toEvent,

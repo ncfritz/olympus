@@ -44,7 +44,10 @@ import NotesEditorForm, {
 } from "../../notes/NotesEditorForm";
 import TimelineEntry from "../../notes/TimelineEntry";
 import AttendeeAvatar from "./AttendeeAvatar";
+import DayStatisticsPanel from "./DayStatisticsPanel";
+import EventChip from "./EventChip";
 import MeetingStatisticsPanel from "./MeetingsStatisticsPanel";
+import PreviousMeeting from "./PreviousMeeting";
 
 const { Sider, Content } = Layout;
 
@@ -63,7 +66,9 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
 
   const calendarRef = useRef<FullCalendar>(null);
 
+  const [selectedDate, setSelectedDate] = useState(startDate);
   const [dayPickerCurrent, setDayPickerCurrent] = useState(startDate);
+  const [rawEvents, setRawEvents] = useState<any[]>([]);
   const [events, setEvents] = useState<EventInput[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsError, setEventsError] = useState(false);
@@ -72,6 +77,9 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   );
   const [event, setEvent] = useState<any>(undefined);
   const [nextEventInSeries, setNextEventInSeries] = useState<any>(undefined);
+  const [previousEventsInSeries, setPreviousEventsInSeries] = useState<any[]>(
+    [],
+  );
   const [eventNotes, setEventNotes] = useState([]);
   const [eventLoading, setEventLoading] = useState(false);
   const [eventError, setEventError] = useState(false);
@@ -92,7 +100,6 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
     reValidateMode: "onChange",
   });
 
-  const start = startDate.startOf("day");
   const endOfMonth = dayPickerCurrent.endOf("month");
   const startOfMonth = dayPickerCurrent.startOf("month");
   const summaryStart = startOfMonth.startOf("week").minus({ day: 1 });
@@ -104,7 +111,8 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
     Interval.fromDateTimes(summaryStart, summaryEnd).length("days"),
   );
 
-  console.groupCollapsed();
+  console.groupCollapsed("Date calculations");
+  console.log(`props.startDate: ${startDate.toISODate()}`);
   console.log(`startOfMonth: ${startOfMonth.toISODate()}`);
   console.log(`endOfMonth: ${endOfMonth.toISODate()}`);
   console.log(`summaryStart: ${summaryStart.toISODate()}`);
@@ -144,8 +152,13 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
       setEventError(false);
 
       try {
+        const start = selectedDate.startOf("day");
+
         setEventsLoading(true);
-        const getMeetingsResponse = await meetingsApi.getMeetings(start, 1);
+        const getMeetingsResponse = await meetingsApi.getMeetings(
+          start,
+          1,
+        );
         const parsedEvents: EventInput[] = [];
 
         getMeetingsResponse.data.items.forEach((rawEvent: any) => {
@@ -153,6 +166,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
         });
 
         setEvents(parsedEvents);
+        setRawEvents(getMeetingsResponse.data.items);
         await loadSummary();
       } catch (e) {
         publish(PUBLISH_EVENT, {
@@ -165,7 +179,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
         setEventsLoading(false);
       }
     })();
-  }, [startDate]);
+  }, [selectedDate]);
 
   useEffect(() => {
     (async () => {
@@ -182,9 +196,14 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
             targetEventId,
           );
           setEventNotes(notesResponse.data.notes);
+
           const nextEventResponse =
             await meetingsApi.getNextMeetingInSeries(targetEventId);
           setNextEventInSeries(nextEventResponse.data.item);
+
+          const previousEventsResponse =
+            await meetingsApi.getPreviousMeetingInSeries(targetEventId);
+          setPreviousEventsInSeries(previousEventsResponse.data.items);
 
           const newEvents = [];
 
@@ -268,6 +287,39 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   const afterNoteUpdate = async (updated: Note, isPermanent?: boolean) => {
     await updateNotes();
   };
+
+  let previousOccurrencesContent = undefined;
+
+  if (previousEventsInSeries?.length > 0) {
+    previousOccurrencesContent = (
+      <Space
+        direction={"vertical"}
+        size={8}
+        style={{
+          marginLeft: 8,
+          width: "100%",
+        }}
+        styles={{ item: { width: "100%" } }}
+      >
+        <Typography.Title level={5} style={{ marginBottom: 0 }}>
+          Previous Occurrences
+        </Typography.Title>
+        <Space
+          direction={"vertical"}
+          style={{
+            width: "100%",
+          }}
+          size={0}
+        >
+          {previousEventsInSeries.map((previousEvent) => {
+            return (
+              <PreviousMeeting event={previousEvent} showMeta={showMeta} />
+            );
+          })}
+        </Space>
+      </Space>
+    );
+  }
 
   const notesContent = [];
 
@@ -428,46 +480,13 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
             </Typography.Title>
           </Space>
           {notesContent}
+          {previousOccurrencesContent}
         </Space>
       </Space>
     );
   } else {
     eventContent = (
       <Empty description={"No event selected"} style={{ marginTop: 64 }} />
-    );
-  }
-
-  let nextEventContent = undefined;
-
-  if (nextEventInSeries) {
-    const nextEventStart = DateTime.fromISO(nextEventInSeries.startTime);
-    const nextEventEnd = DateTime.fromISO(nextEventInSeries.endTime);
-
-    nextEventContent = (
-      <Space
-        direction={"vertical"}
-        className={`oa-event oa-status-${nextEventInSeries.status.toLowerCase()} minerva-event no-gutter`}
-        style={{
-          width: "100%",
-          position: "relative",
-          borderRadius: 6,
-          marginBottom: 16,
-        }}
-      >
-        <Typography.Title level={5}>Next in Series:</Typography.Title>
-        <Space direction={"horizontal"} size={8}>
-          <CalendarOutlined />
-          <Typography.Text style={{ fontSize: "12px" }}>
-            {nextEventStart.toFormat("DDDD")}
-          </Typography.Text>
-        </Space>
-        <Space direction={"horizontal"} size={8}>
-          <ClockCircleOutlined />
-          <Typography.Text style={{ fontSize: "12px" }}>
-            {nextEventStart.toFormat("t")} - {nextEventEnd.toFormat("t")}
-          </Typography.Text>
-        </Space>
-      </Space>
     );
   }
 
@@ -538,7 +557,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
 
                   return "";
                 }}
-                initialDate={startDate.toJSDate()}
+                initialDate={selectedDate.toJSDate()}
                 events={events}
                 initialView="timeGridDay"
                 height={"100%"}
@@ -595,16 +614,27 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
             flexDirection: "column",
             alignItems: "center",
           }}
+          className={"sider-full"}
         >
           <DayPicker
             className={"minerva-standard"}
             month={dayPickerCurrent.toJSDate()}
             showWeekNumber={true}
             showOutsideDays={true}
+            selected={selectedDate.toJSDate()}
             formatters={{
               formatDay: renderDay,
             }}
             onDayClick={(date) => {
+              const target = DateTime.fromJSDate(date);
+
+              router.push(
+                `/minerva/meetings/${target.toFormat("yyyy/MM/dd")}`,
+                `/minerva/meetings/${target.toFormat("yyyy/MM/dd")}`,
+                { shallow: true },
+              );
+              setSelectedDate(target);
+
               if (calendarRef && calendarRef.current) {
                 calendarRef.current.getApi().gotoDate(date);
               }
@@ -616,14 +646,18 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
               minWidth: 250,
             }}
           />
-          {nextEventContent}
+          {nextEventInSeries && (
+            <Space direction={"vertical"} style={{ padding: 8, width: "100%" }}>
+              <EventChip event={nextEventInSeries} />
+            </Space>
+          )}
           <Tabs
             defaultActiveKey={"today"}
             items={[
               {
                 key: "today",
                 label: "Today",
-                children: <>dddslak</>,
+                children: <DayStatisticsPanel events={rawEvents} />,
               },
               {
                 key: "week",
@@ -659,7 +693,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
                       style={{
                         width: "100%",
                         justifyContent: "space-between",
-                        paddingRight: 8,
+                        padding: 8,
                       }}
                     >
                       <Typography.Text>Show note metadata</Typography.Text>
