@@ -113,7 +113,7 @@ const AuthHeader: React.FunctionComponent = () => {
           <Col flex={"auto"}></Col>
           <Col>
             <Row gutter={24}>
-              <Col>
+              <Col style={{ alignItems: "center", display: "flex" }}>
                 <Button
                   icon={<EditOutlined size={24} />}
                   ghost={true}
