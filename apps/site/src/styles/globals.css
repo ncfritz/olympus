@@ -191,3 +191,12 @@ img.electron-logo {
 .minerva-cal.hide-day-header .fc-scrollgrid-section-header {
     display: none;
 }
+.sider-full .ant-layout-sider-children {
+    width: 100%;
+}
+.sider-full .rdp-months {
+    justify-content: center;
+}
+.sider-full .ant-tabs-nav-list {
+    margin-left: 8px;
+}

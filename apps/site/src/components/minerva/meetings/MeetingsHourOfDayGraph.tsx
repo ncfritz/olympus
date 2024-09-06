@@ -10,11 +10,17 @@ interface MeetingsHourOfDayGraphProps {
   date: DateTime;
   summaryLoading: boolean;
   summary: any;
+  width?: number;
 }
 
 const MeetingsHourOfDayGraph: React.FunctionComponent<
   MeetingsHourOfDayGraphProps
-> = ({ date, summaryLoading, summary }: MeetingsHourOfDayGraphProps) => {
+> = ({
+  date,
+  summaryLoading,
+  summary,
+  width = 350,
+}: MeetingsHourOfDayGraphProps) => {
   const start = date.startOf("day");
   const end = start.plus({ day: 1 });
 
@@ -62,7 +68,7 @@ const MeetingsHourOfDayGraph: React.FunctionComponent<
           chart: {
             type: "column",
             height: 200,
-            width: 350,
+            width: width,
             backgroundColor: "transparent",
           },
           title: {

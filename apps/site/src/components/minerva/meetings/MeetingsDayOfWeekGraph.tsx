@@ -10,6 +10,7 @@ interface MeetingsHourOfDayGraphProps {
   date: DateTime;
   summaryLoading: boolean;
   summary: any;
+  width?: number;
 }
 
 const LABELS: Record<string, string> = {
@@ -24,7 +25,7 @@ const LABELS: Record<string, string> = {
 
 const MeetingsDayOfWeekGraph: React.FunctionComponent<
   MeetingsHourOfDayGraphProps
-> = ({ date, summaryLoading, summary }: MeetingsHourOfDayGraphProps) => {
+> = ({ date, summaryLoading, summary, width=350 }: MeetingsHourOfDayGraphProps) => {
   const start = date.startOf("week");
   const end = date.endOf("week");
 
@@ -72,7 +73,7 @@ const MeetingsDayOfWeekGraph: React.FunctionComponent<
           chart: {
             type: "column",
             height: 200,
-            width: 350,
+            width: width,
             backgroundColor: "transparent",
           },
           title: {

@@ -15,7 +15,6 @@ const RatingsGraph: React.FunctionComponent<RatingsGraphProps> = ({
   height = 300,
 }) => {
   HC_more(Highcharts);
-  bellcurve(Highcharts);
 
   useEffect(() => {
     Highcharts.setOptions({
@@ -29,11 +28,11 @@ const RatingsGraph: React.FunctionComponent<RatingsGraphProps> = ({
   const series: any[] = [
     {
       name: "Bell curve",
-      type: "bellcurve",
+      type: "spline",
       xAxis: 1,
       yAxis: 1,
-      baseSeries: 1,
-      zIndex: -1,
+      zIndex: 100,
+      data: [0, 0, 5, 35, 25, 15, 20, 0, 0],
     },
   ];
   const distData = [
@@ -56,9 +55,14 @@ const RatingsGraph: React.FunctionComponent<RatingsGraphProps> = ({
     },
     plotOptions: {
       column: {
-        pointWidth: 150,
+        pointWidth: 75,
         borderWidth: 0,
         pointPadding: 0,
+      },
+      spline: {
+        marker: {
+          enabled: false,
+        },
       },
       series: {
         animation: false,
