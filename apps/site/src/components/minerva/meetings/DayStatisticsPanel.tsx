@@ -2,7 +2,7 @@ import { CaretDownOutlined, CaretRightOutlined } from "@ant-design/icons";
 import { Avatar, Collapse, Empty, Flex, Space, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import EventChip from "./EventChip";
-import { ItemType } from "rc-collapse/es/interface";
+import { type ItemType } from "rc-collapse/es/interface";
 
 export interface DayStatisticsPanelProps {
   events: any[];
