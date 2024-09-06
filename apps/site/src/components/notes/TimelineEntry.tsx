@@ -119,6 +119,7 @@ const TimelineEntry: React.FunctionComponent<TimelineEntryProps> = ({
               backgroundColor: "#f5f5f5",
               padding: 6,
               justifyContent: "space-between",
+              lineHeight: "12px",
             }}
           >
             <Typography.Text
@@ -206,6 +207,7 @@ const TimelineEntry: React.FunctionComponent<TimelineEntryProps> = ({
               backgroundColor: "#e6e6e6",
               alignItems: "center",
               fontFamily: "monospace",
+              lineHeight: "12px",
             }}
             size={0}
           >
