@@ -1,6 +1,15 @@
 import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { ListCalendarItemsResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  Query,
+  Res,
+  UsePipes,
+  ValidationPipe,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -59,6 +68,7 @@ export class ListPreviousCalendarItemOccurrencesController {
     type: ListCalendarItemsResponse,
   })
   @ApiStandardErrorResponses()
+  @UsePipes(new ValidationPipe({ transform: true }))
   async handle(
     @Param("meetingId") meetingId: string,
     @Query("limit") limit: number = 5,
@@ -105,8 +115,8 @@ export class ListPreviousCalendarItemOccurrencesController {
               start_time: { _lt: $current_start_time }
             }
           }
-          limit: $limit,
-          order_by: {start_time: desc}
+          limit: $limit
+          order_by: { start_time: desc }
         ) {
           all_day
           type
