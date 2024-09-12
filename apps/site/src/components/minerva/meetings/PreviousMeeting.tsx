@@ -150,7 +150,11 @@ const PreviousMeeting: React.FunctionComponent<PreviousMeetingProps> = ({
               </Space>
             </Space>
           ),
-          children: timelineContents,
+          children: (
+            <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+              {timelineContents}
+            </Space>
+          ),
         },
       ]}
     />
