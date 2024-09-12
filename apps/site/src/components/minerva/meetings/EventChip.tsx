@@ -2,15 +2,24 @@ import { CalendarOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import { Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import React, { type CSSProperties } from "react";
+import styled from "styled-components";
 
 export interface EventChipProps {
   event: any;
+  onClick?: (event: any) => Promise<void>;
   titleOverride?: string;
   style?: CSSProperties;
 }
 
+const HoverableSpace = styled(Space)`
+  &:hover {
+    background-color: #fffbf0;
+  }
+`;
+
 const EventChip: React.FunctionComponent<EventChipProps> = ({
   event,
+  onClick,
   titleOverride,
   style,
 }) => {
@@ -18,7 +27,7 @@ const EventChip: React.FunctionComponent<EventChipProps> = ({
   const end = DateTime.fromISO(event.endTime);
 
   return (
-    <Space
+    <HoverableSpace
       size={2}
       direction={"vertical"}
       className={`oa-event oa-status-${event.status.toLowerCase()} minerva-event no-gutter`}
@@ -26,7 +35,13 @@ const EventChip: React.FunctionComponent<EventChipProps> = ({
         width: "100%",
         position: "relative",
         borderRadius: 6,
+        cursor: onClick ? "pointer" : "default",
         ...style,
+      }}
+      onClick={async () => {
+        if (onClick) {
+          await onClick(event);
+        }
       }}
     >
       <Typography.Title level={5} style={{ marginBottom: 2, fontSize: 12 }}>
@@ -44,7 +59,7 @@ const EventChip: React.FunctionComponent<EventChipProps> = ({
           {start.toFormat("t")} - {end.toFormat("t")}
         </Typography.Text>
       </Space>
-    </Space>
+    </HoverableSpace>
   );
 };
 export default EventChip;

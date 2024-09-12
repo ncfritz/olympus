@@ -2,7 +2,6 @@ import {
   CalendarOutlined,
   CaretDownOutlined,
   CaretRightOutlined,
-  ClockCircleOutlined,
   HomeOutlined,
   RadarChartOutlined,
 } from "@ant-design/icons";
@@ -155,10 +154,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
         const start = selectedDate.startOf("day");
 
         setEventsLoading(true);
-        const getMeetingsResponse = await meetingsApi.getMeetings(
-          start,
-          1,
-        );
+        const getMeetingsResponse = await meetingsApi.getMeetings(start, 1);
         const parsedEvents: EventInput[] = [];
 
         getMeetingsResponse.data.items.forEach((rawEvent: any) => {
@@ -356,7 +352,16 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   let eventContent;
 
   if (eventLoading) {
-    eventContent = <Spin size={"large"} />;
+    eventContent = (
+      <Space
+        direction={"vertical"}
+        style={{ width: "100%", textAlign: "center", marginTop: 64 }}
+      >
+        <Spin size={"large"} tip={"Loading..."}>
+          <div />
+        </Spin>
+      </Space>
+    );
   } else if (event) {
     eventContent = (
       <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
@@ -657,7 +662,14 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
               {
                 key: "today",
                 label: "Today",
-                children: <DayStatisticsPanel events={rawEvents} />,
+                children: (
+                  <DayStatisticsPanel
+                    events={rawEvents}
+                    onEventClick={async (event: any) => {
+                      setTargetEventId(event.id);
+                    }}
+                  />
+                ),
               },
               {
                 key: "week",

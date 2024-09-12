@@ -6,9 +6,10 @@ import { type ItemType } from "rc-collapse/es/interface";
 
 export interface DayStatisticsPanelProps {
   events: any[];
+  onEventClick?: (event: any) => Promise<void>;
 }
 
-interface AtendeeCount {
+interface AttendeeCount {
   email: string;
   alias: string;
   name: string;
@@ -18,12 +19,13 @@ interface AtendeeCount {
 
 const DayStatisticsPanel: React.FunctionComponent<DayStatisticsPanelProps> = ({
   events,
+  onEventClick,
 }) => {
-  const [topAttendees, setTopAttendees] = useState<AtendeeCount[]>([]);
+  const [topAttendees, setTopAttendees] = useState<AttendeeCount[]>([]);
   const [statusTimes, setStatusTimes] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    const attendeeCounts: Record<string, AtendeeCount> = {};
+    const attendeeCounts: Record<string, AttendeeCount> = {};
 
     if (events && events.length > 0) {
       events.forEach((event) => {
@@ -134,7 +136,7 @@ const DayStatisticsPanel: React.FunctionComponent<DayStatisticsPanelProps> = ({
               }}
             >
               {attendee.events.map((event) => {
-                return <EventChip event={event} />;
+                return <EventChip event={event} onClick={onEventClick} />;
               })}
             </Space>,
           ],
