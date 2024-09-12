@@ -181,12 +181,18 @@ img.electron-logo {
     font-size: 14px;
 }
 .rdp.minerva-standard button.rdp-day_selected {
-    background-color: #e3e3ec;
+    background-color: #fffbf0;
 }
 
 .minerva-cal-week .fc-timegrid-col.fc-day-today,
 .minerva-cal-month .fc-daygrid-day.fc-day-today {
-        background-color: #f3dea033 !important;
+    background-color: #f3dea033 !important;
+}
+.fc-event:hover {
+    background-color: #fffbf0;
+}
+.fc-event:focus::after {
+    inset: 0;
 }
 .minerva-cal.hide-day-header .fc-scrollgrid-section-header {
     display: none;
@@ -199,4 +205,10 @@ img.electron-logo {
 }
 .sider-full .ant-tabs-nav-list {
     margin-left: 8px;
+}
+
+@media(prefers-color-scheme: dark) {
+    body {
+        background-color: #ffffff;
+    }
 }
