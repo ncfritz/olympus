@@ -47,16 +47,6 @@ section.ant-layout {
   border-top: 3px red dashed;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-  body {
-    color: white;
-    background: black;
-  }
-}
-
 @media print {
   header,
   aside,
