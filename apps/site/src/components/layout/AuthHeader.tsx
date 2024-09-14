@@ -10,7 +10,7 @@ import {
   Switch,
   Typography,
 } from "antd";
-import { signOut } from "next-auth/react";
+import {signOut, useSession} from "next-auth/react";
 import { useEffect, useState } from "react";
 import onairApi from "../../api/onairApi";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
@@ -25,6 +25,7 @@ const { Header } = Layout;
 
 const AuthHeader: React.FunctionComponent = () => {
   const dispatch = useAppDispatch();
+  const session = useSession();
 
   const blackCurtainEnabled = useAppSelector(
     (state) => state.blackCurtain.active,
@@ -55,6 +56,7 @@ const AuthHeader: React.FunctionComponent = () => {
 
   const popoverContent = (
     <Space direction={"vertical"} style={{ width: 300 }}>
+      <Typography.Text>{JSON.stringify(session)}</Typography.Text>
       <Button
         icon={<LogoutOutlined />}
         block={true}
@@ -144,7 +146,7 @@ const AuthHeader: React.FunctionComponent = () => {
                   placement={"topRight"}
                   showArrow={false}
                 >
-                  <Avatar icon={<UserOutlined />} />
+                  <Avatar src={session.data?.user?.image} />
                 </Popover>
               </Col>
             </Row>
