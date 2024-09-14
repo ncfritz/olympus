@@ -1,36 +1,21 @@
-import { EditOutlined, LogoutOutlined, UserOutlined } from "@ant-design/icons";
-import {
-  Avatar,
-  Button,
-  Col,
-  Layout,
-  Popover,
-  Row,
-  Space,
-  Switch,
-  Typography,
-} from "antd";
-import {signOut, useSession} from "next-auth/react";
+import { EditOutlined } from "@ant-design/icons";
+import { Avatar, Button, Col, Layout, Popover, Row } from "antd";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import onairApi from "../../api/onairApi";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { setCurtain } from "../../redux/slices/blackCurtainSlice";
 import { isElectron } from "../../utils/electron";
 import NotificationSink from "../common/NotificationSink";
 import NotesEditorModal from "../notes/NotesEditorModal";
 import OnAirDrawer from "../onair/OnAirDrawer";
 import RefreshTimer from "../common/RefreshTimer";
+import SettingsDrawer from "./SettingsDrawer";
 
 const { Header } = Layout;
 
 const AuthHeader: React.FunctionComponent = () => {
-  const dispatch = useAppDispatch();
   const session = useSession();
 
-  const blackCurtainEnabled = useAppSelector(
-    (state) => state.blackCurtain.active,
-  );
-
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [onAirOpen, setOnAirOpen] = useState(false);
   const [onAirActive, setOnAirActive] = useState(false);
   const [notesModalOpen, setNotesModalOpen] = useState(false);
@@ -53,43 +38,6 @@ const AuthHeader: React.FunctionComponent = () => {
       await fetchOnAirStatus();
     })();
   }, []);
-
-  const popoverContent = (
-    <Space direction={"vertical"} style={{ width: 300 }}>
-      <Typography.Text>{JSON.stringify(session)}</Typography.Text>
-      <Button
-        icon={<LogoutOutlined />}
-        block={true}
-        type={"text"}
-        style={{
-          textAlign: "left",
-        }}
-        onClick={() => {
-          signOut();
-        }}
-      >
-        Log Out
-      </Button>
-      <Space
-        direction={"horizontal"}
-        style={{
-          marginLeft: 16,
-          display: "flex",
-          width: "100%",
-          alignContent: "space-between",
-        }}
-      >
-        <Typography.Text>Black curtain</Typography.Text>
-        <Switch
-          size={"default"}
-          checked={blackCurtainEnabled}
-          onClick={() => {
-            dispatch(setCurtain(!blackCurtainEnabled));
-          }}
-        />
-      </Space>
-    </Space>
-  );
 
   return (
     <>
@@ -140,14 +88,13 @@ const AuthHeader: React.FunctionComponent = () => {
                 </Button>
               </Col>
               <Col>
-                <Popover
-                  content={popoverContent}
-                  trigger={"hover"}
-                  placement={"topRight"}
-                  showArrow={false}
-                >
-                  <Avatar src={session.data?.user?.image} />
-                </Popover>
+                <Avatar
+                  src={session.data?.user?.image}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => {
+                    setSettingsOpen(true);
+                  }}
+                />
               </Col>
             </Row>
           </Col>
@@ -157,6 +104,12 @@ const AuthHeader: React.FunctionComponent = () => {
         open={notesModalOpen}
         close={() => {
           setNotesModalOpen(false);
+        }}
+      />
+      <SettingsDrawer
+        open={settingsOpen}
+        onClose={() => {
+          setSettingsOpen(false);
         }}
       />
       <OnAirDrawer
