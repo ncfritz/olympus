@@ -54,7 +54,7 @@ RUN npm ci --only=production --ignore-scripts && npm cache clean --force
 
 USER nestjs
 
-EXPOSE 3001
+EXPOSE 3101
 
 CMD node dist/main.js 
 
