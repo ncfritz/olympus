@@ -1,5 +1,13 @@
 import { LogoutOutlined } from "@ant-design/icons";
-import { Avatar, Button, Space, Statistic, Switch, Typography } from "antd";
+import {
+  Avatar,
+  Button,
+  Flex,
+  Space,
+  Statistic,
+  Switch,
+  Typography,
+} from "antd";
 import { DateTime } from "luxon";
 import { signOut, useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
@@ -22,10 +30,10 @@ const SettingsPanel: React.FunctionComponent<
   ).toMillis();
 
   return (
-    <Space direction={"vertical"} style={{ padding: 16, width: "100%" }}>
+    <Flex vertical={true} style={{ height: "100%" }}>
       <Space
         direction={"horizontal"}
-        style={{ width: "100%", alignItems: "baseline" }}
+        style={{ width: "100%", alignItems: "flex-start", padding: 16, borderBottom: "1px solid #efefef" }}
       >
         <Avatar size={96} src={session.data?.user?.image} shape={"square"} />
         <Space
@@ -53,38 +61,54 @@ const SettingsPanel: React.FunctionComponent<
           />
         </Space>
       </Space>
-      <Space
-        direction={"horizontal"}
-        style={{
-          padding: 16,
-          display: "flex",
-          width: "100%",
-          justifyContent: "space-between",
-        }}
+      <Flex
+        vertical={true}
+        style={{ height: "100%", justifyContent: "space-between" }}
       >
-        <Typography.Text>Black curtain</Typography.Text>
-        <Switch
-          size={"default"}
-          checked={!blackCurtainEnabled}
-          onClick={() => {
-            dispatch(setCurtain(!blackCurtainEnabled));
+        <Space
+          direction={"horizontal"}
+          style={{
+            padding: 16,
+            display: "flex",
+            width: "100%",
+            justifyContent: "space-between",
           }}
-        />
-      </Space>
-      <Button
-        icon={<LogoutOutlined />}
-        block={true}
-        type={"text"}
-        style={{
-          textAlign: "left",
-        }}
-        onClick={() => {
-          signOut();
-        }}
-      >
-        Log Out
-      </Button>
-    </Space>
+        >
+          <Typography.Text>Black curtain</Typography.Text>
+          <Switch
+            size={"default"}
+            checked={!blackCurtainEnabled}
+            onClick={() => {
+              dispatch(setCurtain(!blackCurtainEnabled));
+            }}
+          />
+        </Space>
+        <Space
+          direction={"horizontal"}
+          style={{
+            padding: 16,
+            display: "flex",
+            width: "100%",
+            justifyContent: "space-between",
+          }}
+          styles={{
+            item: { width: "100%" },
+          }}
+        >
+          <Button
+            icon={<LogoutOutlined />}
+            block={true}
+            danger={true}
+            type={"primary"}
+            onClick={() => {
+              signOut();
+            }}
+          >
+            Log Out
+          </Button>
+        </Space>
+      </Flex>
+    </Flex>
   );
 };
 export default SettingsPanel;
