@@ -1,31 +1,42 @@
-import { RabbitMQModule } from "@golevelup/nestjs-rabbitmq";
+import { RabbitMQConfig, RabbitMQModule } from "@golevelup/nestjs-rabbitmq";
 import { Module } from "@nestjs/common";
-
-const AMQP_PROTOCOL = process.env.AMQP_PROTOCOL || "amqp";
-const AMQP_HOST = process.env.AMQP_HOST || "localhost";
-const AMQP_PORT = process.env.AMQP_PORT || 5672;
-const AMQP_USER = process.env.AMQP_USER || "admin";
-const AMQP_PASSWORD = process.env.AMQP_PASSWORD || "admin";
-const AMQP_VHOST = process.env.AMQP_VHOST || "/dionysus";
+import { ConfigService } from "@nestjs/config";
 
 @Module({
   imports: [
-    RabbitMQModule.forRoot(RabbitMQModule, {
-      exchanges: [
-        {
-          name: "batchJob.trigger",
-          type: "topic",
-        },
-        {
-          name: "metadataJob.trigger",
-          type: "topic",
-        },
-      ],
-      connectionInitOptions: { wait: true },
-      enableControllerDiscovery: true,
-      uri: `${AMQP_PROTOCOL}://${AMQP_USER}:${AMQP_PASSWORD}@${AMQP_HOST}:${AMQP_PORT}/${encodeURIComponent(AMQP_VHOST)}`,
+    RabbitMQModule.forRootAsync(RabbitMQModule, {
+      inject: [ConfigService],
+      useFactory: (config: ConfigService): RabbitMQConfig => {
+        const amqpProtocol = config.get<string>("AMQP_PROTOCOL", "amqp");
+        const amqpHost = config.get<string>("AMQP_HOST", "localhost");
+        const amqpPort = config.get<string>("AMQP_PORT", "5672");
+        const amqpUser = config.get<string>("AMQP_USER", "admin");
+        const amqpPassword = config.get<string>("AMQP_PASSWORD", "admin");
+        const amqpVhost = config.get<string>("AMQP_VHOST", "/dionysus");
+
+        const amqpEndpoint = `${amqpProtocol}://${amqpUser}:${amqpPassword}@${amqpHost}:${amqpPort}/${encodeURIComponent(
+          amqpVhost,
+        )}`;
+
+        console.log(`Attempting to connect to: ${amqpEndpoint}`);
+
+        return {
+          exchanges: [
+            {
+              name: "batchJob.trigger",
+              type: "topic",
+            },
+            {
+              name: "metadataJob.trigger",
+              type: "topic",
+            },
+          ],
+          connectionInitOptions: { wait: true },
+          enableControllerDiscovery: true,
+          uri: amqpEndpoint,
+        };
+      },
     }),
-    RabbitModule,
   ],
   exports: [RabbitMQModule],
   providers: [],
