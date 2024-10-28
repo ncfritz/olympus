@@ -19,6 +19,7 @@ import { ListContentAssetTagsForAssetController } from "../controller/content/Li
 import { ListDuplicateContentAssetsController } from "../controller/content/ListDuplicateContentAssets";
 import { ListSimilarContentAssetsController } from "../controller/content/ListSimilarContentAssets";
 import { SetContentAssetRatingController } from "../controller/content/SetContentAssetRating";
+import { UploadAssetsController } from "../controller/content/UploadAssets";
 import { VerifyAuthCodeController } from "../controller/content/VerifyAuthCodeController";
 import { GraphQLClientModule } from "./GraphQLClientModule";
 import { RabbitModule } from "./RabbitModule";
@@ -48,6 +49,7 @@ import { RabbitModule } from "./RabbitModule";
     ListDuplicateContentAssetsController,
     ListSimilarContentAssetsController,
     SetContentAssetRatingController,
+    UploadAssetsController,
     VerifyAuthCodeController,
   ],
 })
