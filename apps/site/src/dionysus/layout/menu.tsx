@@ -2,7 +2,7 @@ import {
   ApiOutlined,
   ExperimentOutlined,
   GroupOutlined,
-  HomeOutlined,
+  HomeOutlined, UploadOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
 import { Menu } from "antd";
@@ -176,6 +176,11 @@ const DionysysMenu: React.FunctionComponent = () => {
               key: `/${BASE_PATH}/content`,
               icon: <HomeOutlined />,
               label: "Main",
+            },
+            {
+              key: `/${BASE_PATH}/content/upload`,
+              icon: <UploadOutlined />,
+              label: "Asset Upload",
             },
             {
               key: `/${BASE_PATH}/content/process`,

@@ -1,5 +1,5 @@
-const IndexPage: React.FunctionComponent = () => {
+const ChannelsPage: React.FunctionComponent = () => {
   return <div>Channels</div>;
 };
 
-export default IndexPage;
+export default ChannelsPage;
