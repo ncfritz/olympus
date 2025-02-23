@@ -1,0 +1,38 @@
+{
+  "name": "@ncfritz/olympus-types",
+  "description": "Contains the model and request/response types for Olympus",
+  "version": "1.0.0",
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ncfritz/olympus-types.git"
+  },
+  "readmeFilename": "README.md",
+  "license": "Apache-2.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
+  ],
+  "scripts": {
+    "prepare": "is-ci || husky install",
+    "clean": "rimraf dist && rimraf tsconfig.tsbuildinfo",
+    "prebuild": "rimraf dist",
+    "build": "tsc --incremental false",
+    "lint": "eslint ./src",
+    "lintfix": "eslint ./src --fix"
+  },
+  "devDependencies": {
+    "@ncfritz/olympus-model": "^1.4.2",
+    "tslib": "^2.8.1"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

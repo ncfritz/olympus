@@ -1,0 +1,18 @@
+export default [
+  {
+    files: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
+    parser: "@typescript-eslint/parser",
+    plugins: [
+      "@typescript-eslint"
+    ],
+    extends: [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "prettier",
+      "plugin:prettier/recommended"
+    ],
+    env: {
+      node: true
+    }
+  }
+];
