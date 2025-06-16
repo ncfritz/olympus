@@ -1,6 +1,7 @@
 import { Space, Typography } from "antd";
 import React, { type CSSProperties, type ReactNode } from "react";
 import { type DigitType } from "./interfaces";
+import { v4 as uuidv4 } from "uuid";
 
 export interface UUIDPartRowProps {
   label: string;
@@ -37,6 +38,7 @@ const UUIDPartRow: React.FunctionComponent<UUIDPartRowProps> = ({
       {types.map((type: DigitType) => {
         return (
           <div
+            key={uuidv4()}
             style={{
               minWidth: 24,
               maxWidth: 24,

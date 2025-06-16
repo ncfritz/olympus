@@ -24,6 +24,8 @@ const UUIDDigit: React.FunctionComponent<UUIDDigitProps> = ({
     };
   }
 
+  console.log(type);
+
   return (
     <Space direction={"vertical"} size={16}>
       <Space direction={"vertical"} size={4}>

@@ -11,9 +11,9 @@ import {
   NAMESPACE_OID,
   NAMESPACE_URL,
   NAMESPACE_X_500_DN,
-} from "./constants";
-import { type UUIDGeneratorProps } from "./interfaces";
-import UUIDList from "./UUIDList";
+} from "../constants";
+import { type UUIDGeneratorProps } from "../interfaces";
+import UUIDList from "../UUIDList";
 
 const { Option } = Select;
 
@@ -39,8 +39,6 @@ const UUIDV35Form: React.FunctionComponent<UUIDGeneratorProps> = ({
     });
 
   const onSubmit: SubmitHandler<FormInput> = (data) => {
-    console.log(data);
-
     const generated: string[] = [];
 
     if (version === 3) {

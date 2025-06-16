@@ -3,9 +3,9 @@ import { Button, Form, InputNumber, Space } from "antd";
 import React, { useState } from "react";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
-import { buttonItemLayout, formItemLayout } from "./constants";
-import { type UUIDGeneratorProps } from "./interfaces";
-import UUIDList from "./UUIDList";
+import { buttonItemLayout, formItemLayout } from "../constants";
+import { type UUIDGeneratorProps } from "../interfaces";
+import UUIDList from "../UUIDList";
 
 interface FormInput {
   count: number;

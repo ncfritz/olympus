@@ -11,6 +11,7 @@ export const NAMESPACE_X_500_DN = "6ba7b814-9dad-11d1-80b4-00c04fd430c8";
 export const TIME_LOW: DigitType = { label: "tl", color: "#5f4690" };
 export const TIME_MID: DigitType = { label: "tm", color: "#1e6996" };
 export const TIME_HIGH: DigitType = { label: "th", color: "#37a6a5" };
+export const UNIX_TS_MS: DigitType = { label: "tu", color: "#a7c1dc" };
 export const CLOCK_LOW: DigitType = { label: "cl", color: "#0e8554" };
 export const CLOCK_HIGH: DigitType = { label: "ch", color: "#73af48" };
 export const NODE: DigitType = { label: "n", color: "#888888" };
@@ -51,6 +52,23 @@ export const UUID_V5: DigitType[] = new Array(32)
   .fill(HASH_SHA1, 13, 16)
   .fill(VARIANT, 16, 17)
   .fill(HASH_SHA1, 17, 32);
+
+export const UUID_V6: DigitType[] = new Array(32)
+  .fill(TIME_HIGH, 0, 8)
+  .fill(TIME_MID, 8, 12)
+  .fill(VERSION, 12, 13)
+  .fill(TIME_LOW, 13, 16)
+  .fill(VARIANT, 16, 17)
+  .fill(CLOCK_HIGH, 17, 18)
+  .fill(CLOCK_LOW, 18, 20)
+  .fill(NODE, 20, 32);
+
+export const UUID_V7: DigitType[] = new Array(32)
+  .fill(UNIX_TS_MS, 0, 12)
+  .fill(VERSION, 12, 13)
+  .fill(RANDOM, 13, 16)
+  .fill(VARIANT, 16, 17)
+  .fill(RANDOM, 17, 32);
 
 export const UUID_UNKNOWN: DigitType[] = new Array(32).fill(UNKNOWN, 0, 32);
 

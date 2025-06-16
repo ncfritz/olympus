@@ -3,10 +3,10 @@ import { Button, Form, InputNumber, Space, Typography } from "antd";
 import { MaskedInput } from "antd-mask-input";
 import React, { useState } from "react";
 import { type SubmitHandler, Controller, useForm } from "react-hook-form";
-import { buttonItemLayout, formItemLayout } from "./constants";
-import { type UUIDGeneratorProps } from "./interfaces";
-import { v1 as uuidv1 } from "uuid";
-import UUIDList from "./UUIDList";
+import { buttonItemLayout, formItemLayout } from "../constants";
+import { type UUIDGeneratorProps } from "../interfaces";
+import { v1 as uuidv1, v6 as uuidv6 } from "uuid";
+import UUIDList from "../UUIDList";
 
 interface FormInput {
   count: number;
@@ -16,7 +16,8 @@ interface FormInput {
   nanos?: number;
 }
 
-const UUIDV1Form: React.FunctionComponent<UUIDGeneratorProps> = ({
+const UUIDV16Form: React.FunctionComponent<UUIDGeneratorProps> = ({
+  version,
   getInfo,
 }: UUIDGeneratorProps) => {
   const { handleSubmit, control, reset, setValue, watch } = useForm<FormInput>({
@@ -41,14 +42,25 @@ const UUIDV1Form: React.FunctionComponent<UUIDGeneratorProps> = ({
         : undefined;
 
     for (let i = 0; i < data.count; i++) {
-      generated.push(
-        uuidv1({
-          node: node,
-          clockseq: data.clockSequence,
-          msecs: data.millis,
-          nsecs: data.nanos,
-        }) as unknown as string,
-      );
+      if (version === 1) {
+        generated.push(
+          uuidv1({
+            node: node,
+            clockseq: data.clockSequence,
+            msecs: data.millis,
+            nsecs: data.nanos,
+          }) as unknown as string,
+        );
+      } else {
+        generated.push(
+          uuidv6({
+            node: node,
+            clockseq: data.clockSequence,
+            msecs: data.millis,
+            nsecs: data.nanos,
+          }) as unknown as string,
+        );
+      }
     }
 
     setValues(generated);
@@ -235,7 +247,7 @@ const UUIDV1Form: React.FunctionComponent<UUIDGeneratorProps> = ({
               render={({ field, fieldState }) => (
                 <Form.Item
                   {...formItemLayout}
-                  label={"Milliseconds"}
+                  label={"Nanoseconds"}
                   validateStatus={fieldState.error ? "error" : undefined}
                   help={fieldState.error ? fieldState.error.message : undefined}
                 >
@@ -281,4 +293,4 @@ const UUIDV1Form: React.FunctionComponent<UUIDGeneratorProps> = ({
     </Space>
   );
 };
-export default UUIDV1Form;
+export default UUIDV16Form;

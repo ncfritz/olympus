@@ -3,8 +3,7 @@ import { Button, Divider, Form, Input, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import { useForm, Controller, type SubmitHandler } from "react-hook-form";
 import React, { type ReactNode, useEffect, useState } from "react";
-import { parse as uuidParse, version as uuidVersion } from "uuid";
-import { v1 } from "uuid-time";
+import { parse as uuidParse, v6, version as uuidVersion } from "uuid";
 import {
   buttonItemLayout,
   CLOCK_HIGH,
@@ -17,11 +16,11 @@ import {
   RANDOM,
   TIME_HIGH,
   TIME_LOW,
-  TIME_MID,
+  TIME_MID, UNIX_TS_MS,
   VARIANT,
-  VERSION,
+  VERSION
 } from "./constants";
-import { getByteString, getDefinitionForVersion, getVariant } from "./utils";
+import { getByteString, getDefinitionForVersion, getVariant, v1time, v6time } from "./utils";
 import UUIDDigit from "./UUIDDigit";
 import UUIDPartRow from "./UUIDPartRow";
 
@@ -159,7 +158,7 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
       const clockHigh = getByteString(bytes, 17, 18);
       const clockLow = getByteString(bytes, 18, 20);
 
-      const timestamp = v1(parsed);
+      const timestamp = v1time(parsed);
 
       versionInfoPanel = (
         <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>
@@ -246,6 +245,9 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
         </Space>
       );
     } else if (version === 3 || version === 5) {
+      const hash = [];
+
+
       versionInfoPanel = (
         <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>
           <UUIDPartRow
@@ -287,6 +289,139 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
             label={"variant"}
             types={[VARIANT]}
             description={variant}
+            onHover={setSelectedDigitType}
+          />
+        </Space>
+      );
+    } else if (version === 6) {
+      const timeHigh = getByteString(bytes, 13, 16);
+      const timeLow = getByteString(bytes, 0, 8);
+      const timeMid = getByteString(bytes, 8, 12);
+      const macAddress = getByteString(parsed, 10, 16, ":");
+      const clockHigh = getByteString(bytes, 17, 18);
+      const clockLow = getByteString(bytes, 18, 20);
+
+      const timestamp = v6time(parsed);
+
+      versionInfoPanel = (
+        <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>
+          <UUIDPartRow
+            label={"time_low"}
+            types={[TIME_LOW]}
+            description={
+              <Typography.Text style={{ fontFamily: "monospace" }}>
+                {timeLow}
+              </Typography.Text>
+            }
+            onHover={setSelectedDigitType}
+          />
+          <UUIDPartRow
+            label={"time_mid"}
+            types={[TIME_MID]}
+            description={
+              <Typography.Text style={{ fontFamily: "monospace" }}>
+                {timeMid}
+              </Typography.Text>
+            }
+            onHover={setSelectedDigitType}
+          />
+          <UUIDPartRow
+            label={"time_high"}
+            types={[TIME_HIGH]}
+            description={
+              <Typography.Text style={{ fontFamily: "monospace" }}>
+                {timeHigh}
+              </Typography.Text>
+            }
+            onHover={setSelectedDigitType}
+          />
+          <UUIDPartRow
+            label={"timestamp"}
+            types={[TIME_LOW, TIME_MID, TIME_HIGH]}
+            description={`${timestamp} - ${DateTime.fromMillis(
+              timestamp,
+            ).toISO()}`}
+            onHover={setSelectedDigitType}
+          />
+          <UUIDPartRow
+            label={"version"}
+            types={[VERSION]}
+            description={version}
+            onHover={setSelectedDigitType}
+          />
+          <UUIDPartRow
+            label={"variant"}
+            types={[VARIANT]}
+            description={variant}
+            onHover={setSelectedDigitType}
+          />
+          <UUIDPartRow
+            label={"clock_seq_high"}
+            types={[CLOCK_HIGH]}
+            description={
+              <Typography.Text style={{ fontFamily: "monospace" }}>
+                {clockHigh}
+              </Typography.Text>
+            }
+            onHover={setSelectedDigitType}
+          />
+          <UUIDPartRow
+            label={"clock_seq_low"}
+            types={[CLOCK_LOW]}
+            description={
+              <Typography.Text style={{ fontFamily: "monospace" }}>
+                {clockLow}
+              </Typography.Text>
+            }
+            onHover={setSelectedDigitType}
+          />
+          <UUIDPartRow
+            label={"node"}
+            types={[NODE]}
+            description={
+              <Typography.Text style={{ fontFamily: "monospace" }}>
+                {macAddress}
+              </Typography.Text>
+            }
+            onHover={setSelectedDigitType}
+          />
+        </Space>
+      );
+    } else if (version === 7) {
+      const timestampStr = getByteString(bytes, 0, 12);
+      const timestampMs = parseInt(timestampStr, 16);
+      const timestamp = DateTime.fromMillis(timestampMs);
+
+      versionInfoPanel = (
+        <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>
+          <UUIDPartRow
+            label={"unix_timestamp_ms"}
+            types={[UNIX_TS_MS]}
+            description={`${timestampMs}ms - ${timestamp.toISO()}`}
+            onHover={setSelectedDigitType}
+          />
+          <UUIDPartRow
+            label={"version"}
+            types={[VERSION]}
+            description={version}
+            onHover={setSelectedDigitType}
+          />
+          <UUIDPartRow
+            label={"rand_a"}
+            types={[RANDOM]}
+            description={""}
+            onHover={setSelectedDigitType}
+          />
+          <UUIDPartRow
+            label={"variant"}
+            types={[VARIANT]}
+            description={variant}
+            onHover={setSelectedDigitType}
+          />
+          <UUIDPartRow
+            label={"rand_b"}
+            types={[RANDOM]}
+            description={""}
             onHover={setSelectedDigitType}
           />
         </Space>

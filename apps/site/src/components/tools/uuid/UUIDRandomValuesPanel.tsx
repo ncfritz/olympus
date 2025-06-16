@@ -42,6 +42,20 @@ const UUIDRandomValuesPanel: React.FunctionComponent<
           return generate(5, uuidv4(), NAMESPACE);
         }}
       />
+      <UUIDRandomValue
+        version={6}
+        getInfo={getInfo}
+        generate={() => {
+          return generate(6);
+        }}
+      />
+      <UUIDRandomValue
+        version={7}
+        getInfo={getInfo}
+        generate={() => {
+          return generate(7);
+        }}
+      />
     </Space>
   );
 };
