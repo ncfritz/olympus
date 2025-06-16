@@ -1,9 +1,9 @@
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 import CopyPlugin from "copy-webpack-plugin";
 import path from "path";
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import packageJson from './package.json' with { type: "json" };
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import packageJson from "./package.json" with { type: "json" };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,17 +11,13 @@ const __dirname = dirname(__filename);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
-    version: packageJson.version
+    version: packageJson.version,
   },
   output: "standalone",
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,
   },
-  experimental: {
-    esmExternals: 'loose',
-  },
-  swcMinify: true,
   transpilePackages: [
     "react-country-flag",
     "antd",
@@ -56,21 +52,22 @@ const nextConfig = {
   ],
   webpack: (
     config,
-    { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack }
+    { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack },
   ) => {
     const fileLoaderRule = config.module.rules.find((rule) =>
-      rule.test?.test?.('.svg'),
+      rule.test?.test?.(".svg"),
     );
 
-    config.plugins.push(new CopyPlugin({
-      patterns: [
-        {
-          from: path.join(__dirname, 'node_modules/tinymce'),
-          to: path.join(__dirname, 'public/assets/libs/tinymce')
-        },
-      ]
-    }
-    ));
+    config.plugins.push(
+      new CopyPlugin({
+        patterns: [
+          {
+            from: path.join(__dirname, "node_modules/tinymce"),
+            to: path.join(__dirname, "public/assets/libs/tinymce"),
+          },
+        ],
+      }),
+    );
 
     config.module.rules.push(
       {
@@ -95,10 +92,10 @@ const nextConfig = {
       }),
     ];*/
 
-    fileLoaderRule.exclude = /\.svg$/i
+    fileLoaderRule.exclude = /\.svg$/i;
 
     return config;
-  }
+  },
 };
 
 export default nextConfig;
