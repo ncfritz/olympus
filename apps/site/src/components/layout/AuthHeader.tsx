@@ -1,21 +1,38 @@
-import { EditOutlined } from "@ant-design/icons";
-import { Avatar, Button, Col, Layout, Popover, Row } from "antd";
+import { EditOutlined, InboxOutlined, SearchOutlined } from "@ant-design/icons";
+import { Avatar, Badge, Button, Col, Input, Layout, Row } from "antd";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import { useSocket, useSocketEvent } from "socket.io-react-hook";
+import notificationsApi from "../../api/notificationsApi";
 import onairApi from "../../api/onairApi";
+import { useAppSelector } from "../../redux/hooks";
+import { setUnreadCount } from "../../redux/slices/notificationsSlice";
 import { isElectron } from "../../utils/electron";
-import NotificationSink from "../common/NotificationSink";
+import NotificationSink, {
+  PUBLISH_EVENT,
+  REFRESH_EVENT,
+} from "../common/NotificationSink";
 import NotesEditorModal from "../notes/NotesEditorModal";
 import OnAirDrawer from "../onair/OnAirDrawer";
 import RefreshTimer from "../common/RefreshTimer";
+import NotificationsDrawer from "../notifications/NotificationsDrawer";
 import SettingsDrawer from "./SettingsDrawer";
+import { publish } from "../../utils/events";
 
 const { Header } = Layout;
 
 const AuthHeader: React.FunctionComponent = () => {
   const session = useSession();
+  const dispatch = useDispatch();
+  const { socket, connected } = useSocket("/notifications");
+
+  const unreadNotificationsCount = useAppSelector(
+    (state) => state.notifications.unreadCount,
+  );
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [onAirOpen, setOnAirOpen] = useState(false);
   const [onAirActive, setOnAirActive] = useState(false);
   const [notesModalOpen, setNotesModalOpen] = useState(false);
@@ -29,13 +46,54 @@ const AuthHeader: React.FunctionComponent = () => {
           onAirStatusResponse.status !== "clear",
       );
     } catch (e) {
-      console.log("Unable to fetch OnAir status");
+      console.log("Unable to fetch OnAir status", e);
     }
   };
+
+  const fetchUnreadNotificationsCount = async () => {
+    try {
+      const getUnreadNotificationsCountResponse =
+        await notificationsApi.getUnreadNotificationsCount();
+      dispatch(
+        setUnreadCount(getUnreadNotificationsCountResponse.data.unreadCount),
+      );
+    } catch (e) {
+      console.log("Unable to fetch unread notifications count", e);
+    }
+  };
+
+  useSocketEvent(socket, "notification.push", {
+    onMessage: (message: any) => {
+      if (message && !message.ghost) {
+        publish(PUBLISH_EVENT, {
+          eventId: message.eventId,
+          notificationId: message.notificationId,
+          messageType: message.messageType,
+          type: message.level,
+          durable: message.durable,
+          closable: message.closable,
+          deleteOnClose: message.durable && message.deleteOnClose,
+          visibleDuration: message.visibleDuration,
+          payload: message.payload,
+        });
+      }
+    },
+    keepPrevious: true,
+  });
+  useSocketEvent(socket, "notification.refresh", {
+    onMessage: (message: any) => {
+      publish(REFRESH_EVENT, {
+        groupId: message.groupId,
+      });
+      dispatch(setUnreadCount(message.unreadCount));
+    },
+    keepPrevious: true,
+  });
 
   useEffect(() => {
     (async () => {
       await fetchOnAirStatus();
+      await fetchUnreadNotificationsCount();
     })();
   }, []);
 
@@ -60,31 +118,77 @@ const AuthHeader: React.FunctionComponent = () => {
               className={isElectron() ? "electron-logo" : ""}
             />
           </Col>
-          <Col flex={"auto"}></Col>
-          <Col>
+          <Col
+            flex={"auto"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Input
+              variant="borderless"
+              placeholder={"Search..."}
+              style={{
+                width: 600,
+                background: "#2c3c4a",
+                color: "#9aa4ae",
+              }}
+              prefix={<SearchOutlined />}
+            />
+          </Col>
+          <Col
+            style={{
+              marginLeft: 150,
+            }}
+          >
             <Row gutter={24}>
-              <Col style={{ alignItems: "center", display: "flex" }}>
+              <Col
+                style={{ alignItems: "center", display: "flex", columnGap: 8 }}
+              >
                 <Button
                   icon={<EditOutlined size={24} />}
-                  ghost={true}
-                  type={"default"}
+                  type={"text"}
+                  variant={"filled"}
+                  style={{
+                    color: "#9aa4ae",
+                  }}
                   onClick={() => {
                     setNotesModalOpen(!notesModalOpen);
                   }}
                 />
+                <Badge
+                  count={unreadNotificationsCount}
+                  showZero={false}
+                  offset={[-12, 4]}
+                >
+                  <Button
+                    type={"text"}
+                    variant={"filled"}
+                    style={{
+                      color: "#9aa4ae",
+                      paddingRight: 16,
+                    }}
+                    onClick={() => {
+                      setNotificationsOpen(!notificationsOpen);
+                    }}
+                  >
+                    <InboxOutlined size={24} />
+                  </Button>
+                </Badge>
                 <Button
-                  type={"link"}
+                  type={"default"}
                   onClick={() => {
                     setOnAirOpen(!onAirOpen);
                   }}
+                  style={{
+                    background: onAirActive ? "#ff0000" : "transparent",
+                    borderWidth: 3,
+                    color: "#ffffff",
+                    fontWeight: "bold",
+                  }}
                 >
-                  <img
-                    src={
-                      onAirActive ? "/onair_active.svg" : "/onair_inactive.svg"
-                    }
-                    alt={"OnAir"}
-                    height={24}
-                  />
+                  ON AIR
                 </Button>
               </Col>
               <Col>
@@ -110,6 +214,12 @@ const AuthHeader: React.FunctionComponent = () => {
         open={settingsOpen}
         onClose={() => {
           setSettingsOpen(false);
+        }}
+      />
+      <NotificationsDrawer
+        open={notificationsOpen}
+        onClose={() => {
+          setNotificationsOpen(false);
         }}
       />
       <OnAirDrawer

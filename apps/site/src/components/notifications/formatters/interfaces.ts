@@ -1,0 +1,44 @@
+import type { ReactNode } from "react";
+import { JobStatus, type JobType } from "../../../types/dionysus";
+
+export type NotificationPayload = {
+  title: string;
+  message: string;
+};
+
+export type DionysiusBatchJobPayload = {
+  jobId: string;
+  jobType: JobType;
+  recordCounts: {
+    duplicate: number;
+    expired: number;
+    new: number;
+    noop: number;
+    processed: number;
+    skipped: number;
+    total: number;
+  };
+  status: JobStatus;
+};
+
+export type NotificationEvent<T> = {
+  closable: boolean;
+  deleteOnClose: boolean;
+  durable: boolean;
+  eventId: string;
+  messageType: string;
+  notificationId: string;
+  payload: {
+    type: "plain" | "context";
+    value: T;
+  };
+  type: string;
+  visibleDuration: number;
+  // Optional for in-app messages
+  message?: string;
+  description?: string;
+};
+
+export class NotificationFormatter<T> {
+  format: (payload: T) => [string | ReactNode, string | ReactNode];
+}
