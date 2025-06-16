@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { SingleNoteResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
@@ -6,7 +5,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -23,17 +21,15 @@ type GraphQlDescribeNoteResponse = {
 
 @Controller()
 export class DescribeNoteController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/note/:noteId")
   @ApiOperation({
     summary: "Gets a single note by ID",
     description: "Gets a single note by ID",
     operationId: "DescribeNote",
+    tags: ["Notes"],
   })
-  @ApiTags("Notes")
   @ApiProduces("application/json")
   @ApiParam({
     name: "noteId",

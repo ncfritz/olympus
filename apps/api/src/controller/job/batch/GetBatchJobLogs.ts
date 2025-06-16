@@ -6,7 +6,6 @@ import {
   ApiParam,
   ApiProduces,
   ApiQuery,
-  ApiTags,
 } from "@nestjs/swagger";
 import moment from "moment/moment";
 import { v4 as uuidv4 } from "uuid";
@@ -25,8 +24,8 @@ export class GetBatchJobLogsController {
       "tail the log stream.  It is recommended that when tailing logs, exponential backoff be applied between " +
       "calls.",
     operationId: "GetBatchJobLogs",
+    tags: ["Batch"],
   })
-  @ApiTags("Batch")
   @ApiProduces("application/json")
   @ApiParam({
     name: "jobId",

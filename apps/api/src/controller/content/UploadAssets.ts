@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import { EmptyResponse } from "@ncfritz/olympus-model";
 import {
@@ -13,7 +12,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Request } from "express";
 import { GraphQLClient } from "graphql-request";
@@ -31,7 +29,7 @@ const destinationDir = (
 @Controller()
 export class UploadAssetsController {
   constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
+    private readonly graphQLClient: GraphQLClient,
     private readonly amqpConnection: AmqpConnection,
   ) {}
 
@@ -40,8 +38,8 @@ export class UploadAssetsController {
     summary: "Issues a JWT authorizing black curtain access",
     description: "",
     operationId: "UploadAssets",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiConsumes("multipart/form-data")
   @ApiProduces("application/json")
   @ApiOkResponse({
@@ -70,7 +68,8 @@ export class UploadAssetsController {
       console.log(file);
 
       this.amqpConnection.publish("content.trigger", "jobType.rawIngest", {
-        assetLocation: `/dionysus/downloads/${file.originalname}`,
+        assetLocation: `${process.env.DIONYSUS_PUBLISH_PATH}/${file.filename}`,
+        originalFilename: file.originalname,
         skipWorkflow: false,
       });
     });

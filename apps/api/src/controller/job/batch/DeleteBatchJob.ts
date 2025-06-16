@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { DeleteBatchJobResponse } from "@ncfritz/olympus-model";
 import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
 import {
@@ -6,7 +5,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -14,9 +12,7 @@ import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 @Controller()
 export class DeleteBatchJobController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Delete("/v1/job/batch/:jobId")
   @ApiOperation({
@@ -26,8 +22,8 @@ export class DeleteBatchJobController {
       "and other associated artifacts with the job.  This will not remove or cancel any downstream jobs or " +
       "artifacts created or updated by downstream jobs.",
     operationId: "DeleteBatchJob",
+    tags: ["Batch"],
   })
-  @ApiTags("Batch")
   @ApiProduces("application/json")
   @ApiParam({
     name: "jobId",
@@ -45,7 +41,7 @@ export class DeleteBatchJobController {
     @Res() response: Response,
   ): Promise<void> {
     const deleteRequest = gql`
-      mutation DeleteBatchJob($job_id: uuid!) {
+      mutation DeleteBatchJob($id: uuid!) {
         delete_dionysus_bulk_load_jobs_by_pk(id: $id) {
           id
         }

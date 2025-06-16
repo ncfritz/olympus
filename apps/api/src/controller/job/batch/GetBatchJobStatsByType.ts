@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   GetBatchJobStatsByTypeResponse,
   JobType,
@@ -10,7 +9,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -29,9 +27,7 @@ export type GraphQlBatchJobStatisticsResponse = {
 
 @Controller()
 export class GetBatchJobStatsByTypeController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/jobs/batch/:jobType/stats")
   @ApiOperation({
@@ -39,8 +35,8 @@ export class GetBatchJobStatsByTypeController {
     description:
       "Gets the last 90 days work of execution and performance stats for a batch job type.",
     operationId: "GetBatchJobStatsByType",
+    tags: ["Batch"],
   })
-  @ApiTags("Batch")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiParam({
@@ -59,7 +55,10 @@ export class GetBatchJobStatsByTypeController {
   ): Promise<void> {
     const fetchRequest = gql`
       query GetBatchJobStatistics($type: String!) {
-        dionysus_bulk_load_jobs_statistics(where: { type: { _eq: $type } }) {
+        dionysus_bulk_load_jobs_statistics(
+          where: { type: { _eq: $type } }
+          order_by: { created_date: asc }
+        ) {
           count
           created_date
           duplicate_records
@@ -83,15 +82,13 @@ export class GetBatchJobStatsByTypeController {
       );
 
     const statusCategories: string[] = Object.keys(BATCH_JOB_STATUSES_MAP);
-    const recordSeries: Record<string, number> = {
-      total: 0,
-      new: 0,
-      removed: 0,
-      duplicate: 0,
-      expired: 0,
-      noop: 0,
-      skipped: 0,
-      processed: 0,
+    const recordSeries: Record<string, number[][]> = {
+      total: [],
+      new: [],
+      expired: [],
+      noop: [],
+      skipped: [],
+      processed: [],
     };
 
     const now = moment
@@ -113,7 +110,7 @@ export class GetBatchJobStatsByTypeController {
 
       const seriesIndex = Object.keys(METADATA_CATEGORY_MAP).indexOf(data.type);
 
-      if (seriesIndex > -1) {
+      if (seriesIndex > -1 || (data.type as string) === "redrive") {
         queueTimeSeries[dateIndex] = [
           dataTime.valueOf(),
           data.queue_time as number,
@@ -122,6 +119,21 @@ export class GetBatchJobStatsByTypeController {
           dataTime.valueOf(),
           data.run_time as number,
         ];
+        recordSeries["total"].push([dataTime.valueOf(), data.total_records]);
+        recordSeries["new"].push([dataTime.valueOf(), data.new_records]);
+        recordSeries["expired"].push([
+          dataTime.valueOf(),
+          data.expired_records,
+        ]);
+        recordSeries["noop"].push([dataTime.valueOf(), data.noop_records]);
+        recordSeries["skipped"].push([
+          dataTime.valueOf(),
+          data.skipped_records,
+        ]);
+        recordSeries["processed"].push([
+          dataTime.valueOf(),
+          data.processed_records,
+        ]);
       }
     });
 

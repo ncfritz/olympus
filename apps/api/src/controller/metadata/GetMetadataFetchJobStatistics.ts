@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   GetMetadataFetchJobStatusStatisticsResponse,
   MetadataFetchJobStatus,
@@ -10,7 +9,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -28,9 +26,7 @@ type GraphQlGetMetadataJobStats = {
 
 @Controller()
 export class GetMetadataFetchJobStatisticsController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/job/metadata/stats")
   @ApiOperation({
@@ -38,8 +34,8 @@ export class GetMetadataFetchJobStatisticsController {
     description:
       "Retrieves stats for metadat fetch jobs broken down by job type and status.",
     operationId: "GetMetadataFetchJobStatistics",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiProduces("application/json")
   @ApiOkResponse({
     description: "The statistics were successfully fetched.",

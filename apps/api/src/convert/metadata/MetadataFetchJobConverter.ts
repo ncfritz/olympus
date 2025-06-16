@@ -16,5 +16,8 @@ export const toDomainObject = (
       : undefined,
     ttl: input.ttl,
     jitter: input.jitter,
+    context: input.context
+      ? JSON.parse(Buffer.from(input.context, "base64").toString("utf-8"))
+      : {},
   };
 };

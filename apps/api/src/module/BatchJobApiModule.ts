@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { CreateBatchJobController } from "../controller/job/batch/CreateBatchJob";
+import { CreateRedriveJobController } from "../controller/job/batch/CreateRedriveJob";
 import { DeleteBatchJobController } from "../controller/job/batch/DeleteBatchJob";
 import { DescribeBatchJobController } from "../controller/job/batch/DescribeBatchJob";
 import { GetBatchJobLogsController } from "../controller/job/batch/GetBatchJobLogs";
@@ -17,6 +18,7 @@ import { RabbitModule } from "./RabbitModule";
   providers: [],
   controllers: [
     CreateBatchJobController,
+    CreateRedriveJobController,
     DeleteBatchJobController,
     DescribeBatchJobController,
     GetBatchJobLogsController,

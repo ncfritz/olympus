@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { GetContentAssetWithStatsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, Headers, HttpStatus, Res } from "@nestjs/common";
 import {
@@ -6,7 +5,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -22,17 +20,15 @@ type GraphQlGerContentAssetQueryResponse = {
 
 @Controller()
 export class GetUntaggedContentAssetController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/content/assets/untagged")
   @ApiOperation({
     summary: "Get a single content asset",
     description: "Gets a single content asset by ID.",
     operationId: "GetUntaggedContentAsset",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiProduces("application/json")
   @ApiHeader({
     name: "x-dionysus-content-bc",
@@ -53,11 +49,19 @@ export class GetUntaggedContentAssetController {
     }
 
     const fetchRequest = gql`
-      query GetContentAssets($content_id: uuid) {
+      query GetContentAssets {
         dionysus_content_assets(
           where: {
-            _not: { asset_tags_aggregate: { count: { predicate: { _gt: 1 } } } }
+            _not: {
+              asset_tags_aggregate: {
+                count: {
+                  predicate: { _gt: 1 }
+                  filter: { tag: { type: { _nin: "system" } } }
+                }
+              }
+            }
           }
+          limit: 1
         ) {
           content_id
           asset_sha
@@ -84,7 +88,10 @@ export class GetUntaggedContentAssetController {
           where: {
             _not: {
               asset_tags_aggregate: {
-                count: { predicate: { _gt: 1 }, filter: {} }
+                count: {
+                  predicate: { _gt: 1 }
+                  filter: { tag: { type: { _nin: "system" } } }
+                }
               }
             }
           }
@@ -94,7 +101,14 @@ export class GetUntaggedContentAssetController {
           }
         }
         tagged: dionysus_content_assets_aggregate(
-          where: { asset_tags_aggregate: { count: { predicate: { _gte: 1 } } } }
+          where: {
+            asset_tags_aggregate: {
+              count: {
+                predicate: { _gte: 1 }
+                filter: { tag: { type: { _nin: "system" } } }
+              }
+            }
+          }
         ) {
           aggregate {
             count

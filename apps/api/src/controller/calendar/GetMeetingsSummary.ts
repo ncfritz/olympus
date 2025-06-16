@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   GetMeetingSummaryResponse,
   MeetingStatus,
@@ -12,7 +11,6 @@ import {
   ApiParam,
   ApiProduces,
   ApiQuery,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -46,17 +44,15 @@ const EMPTY_COUNTS = (): MeetingStatusStatistics => {
 
 @Controller()
 export class GetMeetingsSummaryController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/meetings/summary/:start")
   @ApiOperation({
     summary: "Gets the monthly summary for meetings",
     description: "Gets monthly summary for meetings",
     operationId: "GetMeetingsSummaryController",
+    tags: ["Meetings"],
   })
-  @ApiTags("Meetings")
   @ApiProduces("application/json")
   @ApiParam({
     name: "start",

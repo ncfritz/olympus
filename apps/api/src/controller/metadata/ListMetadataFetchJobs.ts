@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   ListMetadataFetchJobsResponse,
   MetadataFetchJob,
@@ -10,7 +9,6 @@ import {
   ApiOperation,
   ApiProduces,
   ApiQuery,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -31,10 +29,8 @@ type GraphQlListMetadataJobsResponse = {
 };
 
 @Controller()
-export class ListMetadataFetchJobsResponseController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+export class ListMetadataFetchJobsController {
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/jobs/metadata")
   @ApiOperation({
@@ -44,8 +40,8 @@ export class ListMetadataFetchJobsResponseController {
       "refine the list of certifications fetched.  When filtering, any changes in the filter parameters will " +
       "reset the pagination state.",
     operationId: "ListMetadataFetchJobs",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiProduces("application/json")
   @ApiQuery({
     name: "pageSize",

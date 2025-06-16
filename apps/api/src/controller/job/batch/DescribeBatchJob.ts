@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { BatchJob, DescribeBatchJobResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
@@ -6,7 +5,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -20,17 +18,15 @@ type GraphQlGetBatchJobResponse = {
 
 @Controller()
 export class DescribeBatchJobController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/job/batch/:jobId")
   @ApiOperation({
     summary: "Describes an existing batch job",
     description: "Retrieves the details of a batch job.",
     operationId: "DescriberBatchJob",
+    tags: ["Batch"],
   })
-  @ApiTags("Batch")
   @ApiProduces("application/json")
   @ApiParam({
     name: "jobId",

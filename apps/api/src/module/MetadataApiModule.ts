@@ -10,6 +10,9 @@ import { CreateMovieController } from "../controller/metadata/CreateMovie";
 import { CreateNetworkController } from "../controller/metadata/CreateNetwork";
 import { CreatePersonController } from "../controller/metadata/CreatePerson";
 import { CreateProductionCompanyController } from "../controller/metadata/CreateProductionCompany";
+import { CreateTVEpisodeController } from "../controller/metadata/CreateTVEpisode";
+import { CreateTVSeasonController } from "../controller/metadata/CreateTVSeason";
+import { CreateTVSeriesController } from "../controller/metadata/CreateTVSeries";
 import { DeleteMetadataFetchJobController } from "../controller/metadata/DeleteMetadataFetchJob";
 import { DescribeMetadataFetchJobController } from "../controller/metadata/DescribeMetadataFetchJob";
 import { GetMetadataFetchJobStatisticsController } from "../controller/metadata/GetMetadataFetchJobStatistics";
@@ -18,7 +21,8 @@ import { ListCountriesController } from "../controller/metadata/ListCountries";
 import { ListGenresController } from "../controller/metadata/ListGenres";
 import { ListKeywordsController } from "../controller/metadata/ListKeywords";
 import { ListLanguagesController } from "../controller/metadata/ListLanguages";
-import { ListMetadataFetchJobsResponseController } from "../controller/metadata/ListMetadataFetchJobs";
+import { ListMetadataFetchJobsController } from "../controller/metadata/ListMetadataFetchJobs";
+import { ScrollMetadataFetchJobsController } from "../controller/metadata/ScrollMetadataFetchJobs";
 import { UpdateMetadataFetchJobController } from "../controller/metadata/UpdateMetadataFetchJob";
 import { GraphQLClientModule } from "./GraphQLClientModule";
 import { RabbitModule } from "./RabbitModule";
@@ -39,6 +43,9 @@ import { RabbitModule } from "./RabbitModule";
     CreateMovieController,
     CreatePersonController,
     CreateProductionCompanyController,
+    CreateTVEpisodeController,
+    CreateTVSeasonController,
+    CreateTVSeriesController,
     DeleteMetadataFetchJobController,
     DescribeMetadataFetchJobController,
     GetMetadataFetchJobStatisticsController,
@@ -47,7 +54,8 @@ import { RabbitModule } from "./RabbitModule";
     ListGenresController,
     ListKeywordsController,
     ListLanguagesController,
-    ListMetadataFetchJobsResponseController,
+    ListMetadataFetchJobsController,
+    ScrollMetadataFetchJobsController,
     UpdateMetadataFetchJobController,
   ],
 })

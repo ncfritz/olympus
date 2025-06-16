@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   ContentAsset,
   ListSimilarContentAssetsResponse,
@@ -19,7 +18,6 @@ import {
   ApiParam,
   ApiProduces,
   ApiQuery,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -37,9 +35,7 @@ type GraphQlListSimilarContentAssetsResponse = {
 
 @Controller()
 export class ListSimilarContentAssetsController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/content/asset/:assetId/similar")
   @ApiOperation({
@@ -47,8 +43,8 @@ export class ListSimilarContentAssetsController {
     description:
       "Lists content assets that are similar to this one based on the supplied set of tags.",
     operationId: "ListSimilarContentAssets",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiProduces("application/json")
   @ApiParam({
     name: "assetId",

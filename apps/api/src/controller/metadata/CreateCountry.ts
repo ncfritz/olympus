@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   Country,
   CreateCountryRequest,
@@ -11,7 +10,6 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -25,17 +23,15 @@ type GraphQlCreateCoountryResponse = {
 
 @Controller()
 export class CreateCountryController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/v1/metadata/countries")
   @ApiOperation({
     summary: "Upserts a country",
     description: "Creates or updates a country.",
     operationId: "CreateCountry",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiBody({

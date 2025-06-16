@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   AddContentAssetTagToAssetRequest,
   EmptyResponse,
@@ -12,7 +11,6 @@ import {
   ApiParam,
   ApiProduces,
   ApiResponse,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -44,9 +42,7 @@ type InputQueryResponse = {
 
 @Controller()
 export class AddContentAssetTagToAssetController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/v1/content/asset/:assetId/tags")
   @ApiOperation({
@@ -55,8 +51,8 @@ export class AddContentAssetTagToAssetController {
       "Adds a new tag to a content asset.  If the tag does not exist, it will be created prior " +
       "to attaching it to the content asset",
     operationId: "AddContentAssetTagToAsset",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiParam({

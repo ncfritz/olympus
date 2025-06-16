@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { ListCalendarItemsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
 import {
@@ -7,7 +6,6 @@ import {
   ApiParam,
   ApiProduces,
   ApiQuery,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -24,17 +22,15 @@ type GraphQlListCalendarItemsResponse = {
 
 @Controller()
 export class ListCalendarItemsController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/meetings/:start")
   @ApiOperation({
     summary: "Gets a single calendar item by ID",
     description: "Gets a single calendar item by ID",
     operationId: "ListCalendarItems",
+    tags: ["Meetings"],
   })
-  @ApiTags("Meetings")
   @ApiProduces("application/json")
   @ApiParam({
     name: "start",

@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   MetadataFetchJob,
   DescribeMetadataFetchJobResponse,
@@ -9,7 +8,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -23,17 +21,15 @@ type GraphQlGetMetadataFetchJobResponse = {
 
 @Controller()
 export class DescribeMetadataFetchJobController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/metadata/fetchJob/:entityId/:entityType")
   @ApiOperation({
     summary: "Describes an existing metadate fetch job",
     description: "Retrieves the details of a metadata fetch job.",
     operationId: "DescribeMetadataFetchJob",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiProduces("application/json")
   @ApiParam({
     name: "entityId",
@@ -66,6 +62,7 @@ export class DescribeMetadataFetchJobController {
           lastFetchedTime
           ttl
           jitter
+          context
         }
       }
     `;

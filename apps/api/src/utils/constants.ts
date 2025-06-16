@@ -21,5 +21,5 @@ export const BATCH_JOB_STATUSES_MAP = {
   [JobStatus.STARTED]: "Started",
   [JobStatus.SUCCESS]: "Success",
   [JobStatus.CANCELLED]: "Cancelled",
-  [JobStatus.FAILED]: "Fsiled",
+  [JobStatus.FAILED]: "Failed",
 };

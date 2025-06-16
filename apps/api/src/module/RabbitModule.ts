@@ -4,7 +4,7 @@ import { ConfigService } from "@nestjs/config";
 
 @Module({
   imports: [
-    RabbitMQModule.forRootAsync(RabbitMQModule, {
+    RabbitMQModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService): RabbitMQConfig => {
         const amqpProtocol = config.get<string>("AMQP_PROTOCOL", "amqp");
@@ -28,6 +28,13 @@ import { ConfigService } from "@nestjs/config";
             },
             {
               name: "metadataJob.trigger",
+              type: "x-delayed-message",
+              options: {
+                arguments: { "x-delayed-type": "direct" },
+              },
+            },
+            {
+              name: "notifications",
               type: "topic",
             },
           ],

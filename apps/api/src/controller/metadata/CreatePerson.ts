@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   CreatePersonRequest,
   PartialPersonAlsoKnownAs,
@@ -12,7 +11,6 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -26,17 +24,15 @@ type GraphQlCreatePersonResponse = {
 
 @Controller()
 export class CreatePersonController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/v1/metadata/people")
   @ApiOperation({
     summary: "Upserts a person",
     description: "Creates or updates a person.",
     operationId: "CreatePerson",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiBody({

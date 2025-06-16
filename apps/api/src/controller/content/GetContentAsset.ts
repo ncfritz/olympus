@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { GetContentAssetResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
@@ -14,7 +13,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -28,17 +26,15 @@ type GraphQlGerContentAssetQueryResponse = {
 
 @Controller()
 export class GetContentAssetController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/content/asset/:assetId")
   @ApiOperation({
     summary: "Get a single content asset",
     description: "Gets a single content asset by ID.",
     operationId: "GetContentAsset",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiProduces("application/json")
   @ApiParam({
     name: "assetId",

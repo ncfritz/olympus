@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   BatchJob,
   ListBatchJobsResponse,
@@ -10,7 +9,6 @@ import {
   ApiOperation,
   ApiProduces,
   ApiQuery,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -23,9 +21,7 @@ import {
 
 @Controller()
 export class ListBatchJobsController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/jobs/batch")
   @ApiOperation({
@@ -35,8 +31,8 @@ export class ListBatchJobsController {
       "refine the list of jobs fetched.  When filtering, any changes in the filter parameters will " +
       "reset the pagination state.",
     operationId: "ListBatchJobs",
+    tags: ["Batch"],
   })
-  @ApiTags("Batch")
   @ApiProduces("application/json")
   @ApiQuery({
     name: "pageSize",

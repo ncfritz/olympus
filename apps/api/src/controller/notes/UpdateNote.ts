@@ -1,4 +1,4 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
+
 import {
   EmptyResponse,
   Note,
@@ -14,7 +14,6 @@ import {
   ApiParam,
   ApiProduces,
   ApiResponse,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -30,17 +29,15 @@ type GraphQlUpdateNoteResponse = {
 
 @Controller()
 export class UpdateNoteController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/v1/note/:noteId")
   @ApiOperation({
     summary: "Updates an existing note",
     description: "CUpdates an existing node.",
     operationId: "UpdateNote",
+    tags: ["Notes"],
   })
-  @ApiTags("Notes")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiParam({
@@ -68,8 +65,6 @@ export class UpdateNoteController {
     @Body() request: UpdateNoteRequest,
     @Res() response: Response,
   ): Promise<void> {
-    console.log(request);
-
     if (Object.keys(request.note).length === 0) {
       response.status(HttpStatus.NOT_MODIFIED).end();
     }

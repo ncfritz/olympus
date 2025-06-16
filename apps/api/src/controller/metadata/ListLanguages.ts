@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   Language,
   ListLanguagesResponse,
@@ -10,7 +9,6 @@ import {
   ApiOperation,
   ApiProduces,
   ApiQuery,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -32,9 +30,7 @@ type GraphQlListLanguagesResponse = {
 
 @Controller()
 export class ListLanguagesController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/metadata/languages")
   @ApiOperation({
@@ -44,8 +40,8 @@ export class ListLanguagesController {
       "refine the list of languages fetched.  When filtering, any changes in the filter parameters will " +
       "reset the pagination state.",
     operationId: "ListLanguages",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiProduces("application/json")
   @ApiQuery({
     name: "pageSize",

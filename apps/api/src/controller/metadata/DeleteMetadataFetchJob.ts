@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   MetadataFetchJob,
   DeleteMetadataFetchJobResponse,
@@ -9,7 +8,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -23,17 +21,15 @@ type GraphQlDeleteMetadataFetchJobRespons = {
 
 @Controller()
 export class DeleteMetadataFetchJobController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Delete("/v1/metadata/fetchJob/:entityId/:entityType")
   @ApiOperation({
     summary: "Deleted an existing metadate fetch job",
     description: "Deletes the specified fetch job.",
     operationId: "DeleteMetadataFetchJob",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiProduces("application/json")
   @ApiParam({
     name: "entityId",

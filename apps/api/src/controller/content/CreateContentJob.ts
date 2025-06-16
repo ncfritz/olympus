@@ -11,7 +11,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
@@ -25,8 +24,8 @@ export class CreateContentJobController {
     summary: "Creates a new content processing job",
     description: "",
     operationId: "CreateContentJob",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiParam({

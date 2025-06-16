@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   Genre,
   CreateGenreRequest,
@@ -11,7 +10,6 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -25,17 +23,15 @@ type GraphQlCreateGenreResponse = {
 
 @Controller()
 export class CreateGenreController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/v1/metadata/genres")
   @ApiOperation({
     summary: "Upserts a Movie or TV genre",
     description: "Creates or updates a movie or TV genre.",
     operationId: "CreateGenre",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiBody({

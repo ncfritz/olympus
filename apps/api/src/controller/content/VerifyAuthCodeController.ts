@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { EmptyResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
@@ -6,7 +5,6 @@ import {
   ApiOperation,
   ApiProduces,
   ApiQuery,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -24,17 +22,15 @@ type GraphQlGetContentAuthResponse = {
 
 @Controller()
 export class VerifyAuthCodeController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/content/auth/verify")
   @ApiOperation({
     summary: "Issues a JWT authorizing black curtain access",
     description: "",
     operationId: "VerifyAuthCode",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiProduces("application/json")
   @ApiQuery({
     name: "otp",

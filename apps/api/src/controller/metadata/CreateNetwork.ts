@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   CreateNetworkRequest,
   PartialNetworkAlternativeName,
@@ -11,7 +10,6 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -25,17 +23,15 @@ type GraphQlCreateNetworkResponse = {
 
 @Controller()
 export class CreateNetworkController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/v1/metadata/networks")
   @ApiOperation({
     summary: "Upserts a network",
     description: "Creates or updates a network.",
     operationId: "CreateNetwork",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiBody({
@@ -63,7 +59,7 @@ export class CreateNetworkController {
         $headquarters: String!
         $homepage: String!
         $id: numeric!
-        $logo: String!
+        $logo: String
         $name: String!
         $alternativeNames: [dionysus_network_alternative_names_insert_input!]!
         $images: [dionysus_network_images_insert_input!]!

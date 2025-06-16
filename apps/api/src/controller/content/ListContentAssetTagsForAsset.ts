@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   ContentAssetTag,
   ListContentAssetTagsForAssetResponse,
@@ -9,7 +8,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -27,17 +25,15 @@ type GraphQLListContentAssetTagsResponse = {
 
 @Controller()
 export class ListContentAssetTagsForAssetController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/content/asset/:assetId/tags")
   @ApiOperation({
     summary: "Lists the content asset tags for a content asset",
     description: "Lists the content asset tags associated with a content asset",
     operationId: "ListContentAssetTagsForAsset",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiProduces("application/json")
   @ApiParam({
     name: "assetId",

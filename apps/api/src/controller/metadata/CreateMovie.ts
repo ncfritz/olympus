@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { CreateMovieRequest } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Put, Res } from "@nestjs/common";
 import {
@@ -7,7 +6,6 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -21,17 +19,15 @@ type GraphQlCreateMovieResponse = {
 
 @Controller()
 export class CreateMovieController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/v1/metadata/movies")
   @ApiOperation({
     summary: "Upserts a movie",
     description: "Creates or updates a movie.",
     operationId: "CreateMovie",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiBody({
@@ -57,15 +53,15 @@ export class CreateMovieController {
       mutation CreateMovie(
         $id: numeric!
         $adult: Boolean!
-        $backdropPath: String!
+        $backdropPath: String
         $budget: numeric!
         $homepage: String!
-        $imdbId: String!
+        $imdbId: String
         $originalLanguageCode: String!
         $originalTitle: String!
         $overview: String!
-        $posterPath: String!
-        $releaseDate: String!
+        $posterPath: String
+        $releaseDate: String
         $revenue: numeric!
         $runtime: numeric!
         $status: String!

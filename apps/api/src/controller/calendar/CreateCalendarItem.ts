@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   CreateCalendarItemRequest,
   SingleCalendarItemResponse,
@@ -11,7 +10,6 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -27,17 +25,15 @@ type GraphQlCreateCalendarItemResponse = {
 
 @Controller()
 export class CreateCalendarItemController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Post("/v1/meetings")
   @ApiOperation({
     summary: "Creates a new note",
     description: "Creates a new note.",
     operationId: "CreateCalendarItem",
+    tags: ["Meetings"],
   })
-  @ApiTags("Meetings")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiBody({

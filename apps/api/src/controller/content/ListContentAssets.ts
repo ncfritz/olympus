@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   ContentAsset,
   ListContentAssetsResponse,
@@ -18,7 +17,6 @@ import {
   ApiOperation,
   ApiProduces,
   ApiQuery,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -40,9 +38,7 @@ type GraphQlListContentAssetsResponse = {
 
 @Controller()
 export class ListContentAssetsController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/content/assets")
   @ApiOperation({
@@ -52,8 +48,8 @@ export class ListContentAssetsController {
       "refine the list of assets fetched.  When filtering, any changes in the filter parameters will " +
       "reset the pagination state.",
     operationId: "ListContentAssets",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiProduces("application/json")
   @ApiQuery({
     name: "pageSize",

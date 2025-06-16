@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   MetadataFetchJob,
@@ -23,7 +22,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -38,7 +36,7 @@ type GraphQlUpdateMetadataFetchJobResponse = {
 @Controller()
 export class UpdateMetadataFetchJobController {
   constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
+    private readonly graphQLClient: GraphQLClient,
     private readonly amqpConnection: AmqpConnection,
   ) {}
 
@@ -47,8 +45,8 @@ export class UpdateMetadataFetchJobController {
     summary: "Updates an existing metadata fetch job",
     description: "Description",
     operationId: "DescriberJob",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiProduces("application/json")
   @ApiConsumes("application/json")
   @ApiBody({
@@ -95,6 +93,7 @@ export class UpdateMetadataFetchJobController {
           lastFetchedTime
           ttl
           jitter
+          context
         }
       }
     `;
@@ -117,12 +116,19 @@ export class UpdateMetadataFetchJobController {
       updatedJob.status === MetadataFetchJobStatus.QUEUED &&
       request.publishNotification
     ) {
-      this.amqpConnection.publish(
+      await this.amqpConnection.publish(
         "metadataJob.trigger",
         `jobType.${updatedJob.type}`,
         {
           entityId: updatedJob.id,
           entityType: updatedJob.type,
+          bypassCache: request.bypassCache,
+        },
+        {
+          persistent: true,
+          headers: {
+            "x-delay": 10000,
+          },
         },
       );
     }

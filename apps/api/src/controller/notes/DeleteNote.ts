@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { Note, SingleNoteResponse } from "@ncfritz/olympus-model";
 import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
 import {
@@ -8,7 +7,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -35,17 +33,15 @@ type GraphQlHardDeleteNoteResponse = {
 
 @Controller()
 export class DeleteNoteController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Delete("/v1/note/:noteId")
   @ApiOperation({
     summary: "Deleted an existing note",
     description: "Deleted an existing node.",
     operationId: "DeleteNote",
+    tags: ["Notes"],
   })
-  @ApiTags("Notes")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiParam({

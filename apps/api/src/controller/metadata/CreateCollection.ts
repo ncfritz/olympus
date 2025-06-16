@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   CreateCollectionRequest,
   PartialCollectionImage,
@@ -11,7 +10,6 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -35,17 +33,15 @@ type GraphQlCreateCollectionResponse = {
 
 @Controller()
 export class CreateCollectionController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/v1/metadata/collections")
   @ApiOperation({
     summary: "Upserts a collection",
     description: "Creates or updates a collection.",
     operationId: "CreateCollection",
-  })
-  @ApiTags("Metadata")
+tags: ["Metadata"], })
+
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiBody({
@@ -72,8 +68,8 @@ export class CreateCollectionController {
         $id: numeric!
         $name: String!
         $overview: String!
-        $posterPath: String!
-        $backdropPath: String!
+        $posterPath: String
+        $backdropPath: String
         $parts: [dionysus_collection_parts_insert_input!]!
         $images: [dionysus_collection_images_insert_input!]!
       ) {

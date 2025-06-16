@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { ListNotesResponse, Note } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
@@ -6,7 +5,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -24,17 +22,15 @@ type GraphQlListNotesResponse = {
 
 @Controller()
 export class GetNotesForEntityController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/notes/entity/:entityType/:entityId")
   @ApiOperation({
     summary: "Lists notes for a particular day",
     description: "Lists notes for a particular day.",
     operationId: "GetNotesForEntity",
+    tags: ["Notes"],
   })
-  @ApiTags("Notes")
   @ApiProduces("application/json")
   @ApiParam({
     name: "entityType",

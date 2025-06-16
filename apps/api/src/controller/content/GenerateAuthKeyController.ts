@@ -4,7 +4,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import * as speakeasy from "speakeasy";
@@ -17,8 +16,8 @@ export class GenerateAuthKeyController {
     summary: "Issues a JWT authorizing black curtain access",
     description: "",
     operationId: "GenerateAuthKey",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiProduces("application/json")
   @ApiOkResponse({
     description: "If authentication was successful.",

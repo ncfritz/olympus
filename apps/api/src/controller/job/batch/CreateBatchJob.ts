@@ -1,35 +1,31 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   BatchJob,
   CreateBatchJobRequest,
   CreateBatchJobResponse,
+  JobType,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { Body, Controller, Post, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../../convert/batch/BatchJobConverter";
-import { GraphQlBatchJob } from "../../../types/batchJobs";
+import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlCreateBatchJobResponse = {
-  insert_dionysus_bulk_load_jobs_one: GraphQlBatchJob;
-};
+import { BaseCreateBatchJobController } from "./BaseCreateBatchJobController";
 
 @Controller()
-export class CreateBatchJobController {
+export class CreateBatchJobController extends BaseCreateBatchJobController<CreateBatchJobRequest> {
   constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-    private readonly amqpConnection: AmqpConnection,
-  ) {}
+    protected readonly graphQLClient: GraphQLClient,
+    protected readonly amqpConnection: AmqpConnection,
+  ) {
+    super(graphQLClient, amqpConnection);
+  }
 
   @Post("/v1/jobs/batch")
   @ApiOperation({
@@ -39,8 +35,8 @@ export class CreateBatchJobController {
       "This API will create a new job entity to track progress and enqueue a request to be " +
       "processed asynchronously.",
     operationId: "CreateBatchJob",
+    tags: ["Batch"],
   })
-  @ApiTags("Batch")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiBody({
@@ -62,61 +58,26 @@ export class CreateBatchJobController {
     @Body() request: CreateBatchJobRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const insertRequest = gql`
-      mutation CreateBatchJob($type: String) {
-        insert_dionysus_bulk_load_jobs_one(object: { type: $type }) {
-          id
-          type
-          status
-          createdTime
-          lastUpdatedTime
-          startedTime
-          finishedTime
-          totalRecords
-          processedRecords
-          duplicateRecords
-          noOpRecords
-          newRecords
-          expiredRecords
-          skippedRecords
-        }
-      }
-    `;
+    console.log(request);
+    await this.processRequest(request, response);
+  }
 
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateBatchJobResponse>(
-        insertRequest,
-        {
-          type: request.type,
-        },
-      );
-
-    const createdJob: BatchJob = toDomainObject(
-      insertResponse.insert_dionysus_bulk_load_jobs_one,
-    );
-
-    if (request.publishNotification) {
-      this.amqpConnection.publish(
-        "batchJob.trigger",
-        `jobType.${request.type}`,
-        {
-          type: createdJob.type,
-          jobId: createdJob.id,
-          offset: request.offset,
-        },
-      );
-    }
-
-    const responseBody: CreateBatchJobResponse = {
-      job: createdJob,
+  protected buildMessage(request: CreateBatchJobRequest, job: BatchJob): any {
+    return {
+      jobType: job.type,
+      jobId: job.id,
+      offset: request.offset,
+      max: request.maxRecordsToProcess,
     };
+  }
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/v1/job/batch/${createdJob.id}`,
-      )
-      .send(responseBody);
+  protected getJobType(request: CreateBatchJobRequest): JobType {
+    return request.type;
+  }
+
+  protected shouldPublishMessage(
+    request: CreateBatchJobRequest,
+  ): boolean | undefined {
+    return request.publishNotification;
   }
 }

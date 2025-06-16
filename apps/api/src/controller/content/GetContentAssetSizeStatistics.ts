@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { ContentStatisticsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, Headers, HttpStatus, Res } from "@nestjs/common";
 import {
@@ -6,7 +5,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -20,17 +18,15 @@ type GraphQlContentAssetSizeQueryResponse = {
 
 @Controller()
 export class GetContentAssetSizeStatisticsController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/content/assets/statistics/size")
   @ApiOperation({
     summary: "Gets size statistics",
     description: "Gets statistics on the content size.",
     operationId: "GetContentAssetDurationStatistics",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiProduces("application/json")
   @ApiHeader({
     name: "x-dionysus-content-bc",

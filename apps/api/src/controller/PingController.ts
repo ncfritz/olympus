@@ -5,7 +5,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { ApiStandardErrorResponses } from "../utils/controllerDecorators";
@@ -19,8 +18,8 @@ export class PingController {
     summary: "Ping",
     description: "Ping",
     operationId: "Ping",
+    tags: ["Admin"],
   })
-  @ApiTags("Admin")
   @ApiProduces("application/json")
   @ApiOkResponse({
     description: "The calendar items have been successfully fetched.",

@@ -18,5 +18,6 @@ export const toDomainObject = (input: GraphQlBatchJob): BatchJob => {
     newRecords: input.newRecords,
     expiredRecords: input.expiredRecords,
     skippedRecords: input.skippedRecords,
+    maxRecordsToProcess: input.maxRecordsToProcess || undefined,
   };
 };

@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   SetContentAssetRatingRequest,
   EmptyResponse,
@@ -11,7 +10,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -19,17 +17,15 @@ import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
 
 @Controller()
 export class SetContentAssetRatingController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/v1/content/asset/:assetId/rating")
   @ApiOperation({
     summary: "Sets the rating for a content asset",
     description: "Sets the rating for a content asset",
     operationId: "SetContentAssetRating",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiParam({

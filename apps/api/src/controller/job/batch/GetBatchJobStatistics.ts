@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   GetBatchJobStatsResponse,
   JobStatus,
@@ -11,7 +10,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -34,9 +32,7 @@ type GraphQlBatchJobStatisticsResponse = {
 
 @Controller()
 export class GetBatchJobStatisticsController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/jobs/batch/stats")
   @ApiOperation({
@@ -46,8 +42,8 @@ export class GetBatchJobStatisticsController {
       "execution status of the jobs.  For actual execution statistics, callers should use the " +
       "GetBatchJobStatsByType API.",
     operationId: "GetBatchJobStats",
+    tags: ["Batch"],
   })
-  @ApiTags("Batch")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiOkResponse({
@@ -56,9 +52,19 @@ export class GetBatchJobStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
+    const currentTime = moment.utc().set({
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+      milliseconds: 0,
+    });
+    const lastMonth = currentTime.subtract(30, "days");
+
     const fetchRequest = gql`
-      query GetBatchJobStatistics {
-        dionysus_bulk_load_jobs_statistics {
+      query GetBatchJobStatistics($lastMonth: String!) {
+        dionysus_bulk_load_jobs_statistics(
+          where: { created_date: { _gt: $lastMonth } }
+        ) {
           count
           created_date
           duplicate_records
@@ -83,6 +89,9 @@ export class GetBatchJobStatisticsController {
     const fetchResponse =
       await this.graphQLClient.request<GraphQlBatchJobStatisticsResponse>(
         fetchRequest,
+        {
+          lastMonth: lastMonth.toISOString(),
+        },
       );
 
     const statusCategories: string[] = Object.keys(BATCH_JOB_STATUSES_MAP);

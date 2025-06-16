@@ -210,3 +210,4 @@ dist
 
 # Mac
 .DS_Store
+/graph.json

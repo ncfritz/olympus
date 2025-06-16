@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   Country,
   ListCountriesResponse,
@@ -10,7 +9,6 @@ import {
   ApiOperation,
   ApiProduces,
   ApiQuery,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -32,9 +30,7 @@ type GraphQlListCountriesResponse = {
 
 @Controller()
 export class ListCountriesController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/metadata/countries")
   @ApiOperation({
@@ -44,8 +40,8 @@ export class ListCountriesController {
       "refine the list of countries fetched.  When filtering, any changes in the filter parameters will " +
       "reset the pagination state.",
     operationId: "ListCountries",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiProduces("application/json")
   @ApiQuery({
     name: "pageSize",

@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   Meeting,
   UpdateCalendarItemRequest,
@@ -12,7 +11,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -28,17 +26,15 @@ type GraphQlUpdateMeetingResponse = {
 
 @Controller()
 export class UpdateCalendarItemController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/v1/meeting/:meetingId")
   @ApiOperation({
     summary: "Updates an existing note",
     description: "CUpdates an existing node.",
     operationId: "UpdateNote",
+    tags: ["Meetings"],
   })
-  @ApiTags("Notes")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiParam({

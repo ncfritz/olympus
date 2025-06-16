@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   BatchJob,
   PartialBatchJob,
@@ -22,7 +21,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -30,23 +28,21 @@ import { toDomainObject } from "../../../convert/batch/BatchJobConverter";
 import { GraphQlBatchJob } from "../../../types/batchJobs";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
-type GraphQlUpdateMEtadataFetchJobresponse = {
+type GraphQlUpdateMetadataFetchJobResponse = {
   update_dionysus_bulk_load_jobs_by_pk: GraphQlBatchJob;
 };
 
 @Controller()
 export class UpdateBatchJobController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/v1/job/batch/:jobId")
   @ApiOperation({
     summary: "Updates an existing batch job",
     description: "Description",
     operationId: "DescriberJob",
+    tags: ["Batch"],
   })
-  @ApiTags("Batch")
   @ApiProduces("application/json")
   @ApiConsumes("application/json")
   @ApiBody({
@@ -97,7 +93,7 @@ export class UpdateBatchJobController {
     `;
 
     const updateResponse =
-      await this.graphQLClient.request<GraphQlUpdateMEtadataFetchJobresponse>(
+      await this.graphQLClient.request<GraphQlUpdateMetadataFetchJobResponse>(
         updateRequest,
         {
           id: jobId,

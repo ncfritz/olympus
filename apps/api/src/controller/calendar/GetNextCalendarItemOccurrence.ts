@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { SingleCalendarItemResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
@@ -6,7 +5,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -30,17 +28,15 @@ type GraphQlDescribeCalendarItemResponse = {
 
 @Controller()
 export class GetNextCalendarItemOccurrenceController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/meeting/:meetingId/next")
   @ApiOperation({
     summary: "Gets the next occurrence of a meeting in a series",
     description: "Gets the next occurrence of a meeting in a series",
     operationId: "GetNextCalendarItemOccurrence",
+    tags: ["Meetings"],
   })
-  @ApiTags("Meetings")
   @ApiProduces("application/json")
   @ApiParam({
     name: "meetingId",

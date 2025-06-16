@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   MetadataFetchJob,
@@ -13,7 +12,6 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -28,7 +26,7 @@ type GraphQlCreateMetadataFetchJobRespons = {
 @Controller()
 export class CreateMetadataFetchJobController {
   constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
+    private readonly graphQLClient: GraphQLClient,
     private readonly amqpConnection: AmqpConnection,
   ) {}
 
@@ -39,8 +37,8 @@ export class CreateMetadataFetchJobController {
       "Creates a new job to fetch metadata for a TMBD entity.  This API will create a new job entity to track progress and enqueue a request to be " +
       "processed asynchronously.",
     operationId: "CreateMetadataFetchJob",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiBody({
@@ -75,6 +73,7 @@ export class CreateMetadataFetchJobController {
         $ttl: numeric
         $jitter: numeric
         $lastFetchedTime: timestamptz
+        $context: String
       ) {
         insert_dionysus_metadata_fetch_status_one(
           object: {
@@ -84,6 +83,7 @@ export class CreateMetadataFetchJobController {
             ttl: $ttl
             jitter: $jitter
             lastFetchedTime: $lastFetchedTime
+            context: $context
           }
           on_conflict: {
             constraint: metadata_locks_pkey
@@ -98,6 +98,7 @@ export class CreateMetadataFetchJobController {
           lastFetchedTime
           ttl
           jitter
+          context
         }
       }
     `;
@@ -112,6 +113,11 @@ export class CreateMetadataFetchJobController {
           lastFetchedTime: request.lastFetchedTime,
           ttl: ttl,
           jitter: jitter,
+          context: request.context
+            ? Buffer.from(JSON.stringify(request.context), "utf-8").toString(
+                "base64",
+              )
+            : undefined,
         },
       );
 
@@ -120,12 +126,18 @@ export class CreateMetadataFetchJobController {
     );
 
     if (request.publishNotification) {
-      this.amqpConnection.publish(
+      await this.amqpConnection.publish(
         "metadataJob.trigger",
         `jobType.${createdJob.type}`,
         {
           entityId: createdJob.id,
           entityType: createdJob.type,
+        },
+        {
+          persistent: true,
+          headers: {
+            "x-delay": 10000,
+          },
         },
       );
     }

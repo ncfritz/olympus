@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   ContentAsset,
   ListDuplicateContentAssetsResponse,
@@ -9,7 +8,6 @@ import {
   ApiOperation,
   ApiProduces,
   ApiQuery,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -27,9 +25,7 @@ type GraphQlListDuplicateContentAssetsResponse = {
 
 @Controller()
 export class ListDuplicateContentAssetsController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/content/assets/duplicates")
   @ApiOperation({
@@ -38,8 +34,8 @@ export class ListDuplicateContentAssetsController {
       "Lists duplicate content assets for a provided SHA256 sum.  This will check input against existing original" +
       "SHA256 sums and transcoded asset SHA256 sums.",
     operationId: "ListDuplicateContentAssets",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiProduces("application/json")
   @ApiQuery({
     name: "digest",

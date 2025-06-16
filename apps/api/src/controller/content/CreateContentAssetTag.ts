@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   ContentAssetTag,
   CreateContentAssetTagRequest,
@@ -12,7 +11,6 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -26,9 +24,7 @@ type GraphQLCreateContentAssetResponse = {
 
 @Controller()
 export class CreateContentAssetTagController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Post("/v1/content/assetTags")
   @ApiOperation({
@@ -36,8 +32,8 @@ export class CreateContentAssetTagController {
     description:
       "Creates a new content asset.  New assets are assigned their ID by the ingestion process.",
     operationId: "CreateContentAssetTag",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiBody({

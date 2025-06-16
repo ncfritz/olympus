@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { EmptyResponse } from "@ncfritz/olympus-model";
 import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
 import {
@@ -7,7 +6,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -15,17 +13,15 @@ import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
 
 @Controller()
 export class DeleteContentAssetTagFromAssetController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Delete("/v1/content/asset/:assetId/tag/:tagId")
   @ApiOperation({
     summary: "Removes a content asset tag from a content asset",
     description: "Removes a content asset tag from a content asset",
     operationId: "DeleteContentAssetTagFromAsset",
+    tags: ["Content"],
   })
-  @ApiTags("Content")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiParam({

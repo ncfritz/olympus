@@ -1,8 +1,9 @@
 import { ValidationPipe } from "@nestjs/common";
-import { NestFactory } from "@nestjs/core";
+import { NestFactory, PartialGraphHost } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import cookieParser from "cookie-parser";
 import * as bodyParser from "body-parser";
+import * as fs from "fs";
 import { AppModule } from "./module/AppModule";
 
 async function bootstrap() {
@@ -10,22 +11,26 @@ async function bootstrap() {
     process.env.NODE_ENV !== "production" ||
     process.env.ENABLE_API_EXPLORER === "true";
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    snapshot: true,
+    abortOnError: false,
+  });
   app.useGlobalPipes(new ValidationPipe());
   app.use(cookieParser());
   // Allow larger body size
-  app.use(bodyParser.json({ limit: "2mb" }));
-  app.use(bodyParser.urlencoded({ limit: "2mb", extended: true }));
+  app.use(bodyParser.json({ limit: 1024 * 1024 * 10, inflate: true }));
+  app.use(bodyParser.urlencoded({ limit: 1024 * 1024 * 200, extended: true }));
   app.enableCors({
     origin: ["http://localhost:3000"],
     credentials: true,
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
   });
+  app.getHttpServer().setTimeout(2 * 60 * 1000);
 
   if (enableApiExplorer) {
     const config = new DocumentBuilder()
-      .setTitle("dionysus-api")
-      .setDescription("Dionysus API")
+      .setTitle("olympus-api")
+      .setDescription("Olympus API")
       .setVersion("1.0")
       .setContact("Neil Fritz", "https://ncfritz.net", "ncfritz@ncfritz.net")
       .addTag("Dionysus")
@@ -38,6 +43,12 @@ async function bootstrap() {
   await app.listen(3001);
 }
 
-bootstrap().then(() => {
-  console.log("🔥🔥🔥 Olympus API bootstrap complete.");
-});
+bootstrap()
+  .then(() => {
+    console.log("🔥🔥🔥 Olympus API bootstrap complete.");
+  })
+  .catch((e) => {
+    console.error(e);
+    fs.writeFileSync("graph.json", PartialGraphHost.toString() ?? "");
+    process.exit(1);
+  });

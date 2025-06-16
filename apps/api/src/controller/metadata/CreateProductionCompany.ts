@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import {
   CreateProductionCompanyRequest,
   PartialProductionCompanyAlternativeName,
@@ -11,7 +10,6 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -25,17 +23,15 @@ type GraphQlCreateProductionCompanyResponse = {
 
 @Controller()
 export class CreateProductionCompanyController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/v1/metadata/productionCompanies")
   @ApiOperation({
     summary: "Upserts a production company",
     description: "Creates or updates a production company.",
     operationId: "CreateProductionCompany",
+    tags: ["Metadata"],
   })
-  @ApiTags("Metadata")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiBody({
@@ -59,12 +55,12 @@ export class CreateProductionCompanyController {
   ): Promise<void> {
     const insertRequest = gql`
       mutation CreateProductionCompany(
-        $country_id: String!
+        $country_id: String
         $description: String!
         $headquarters: String!
         $homepage: String!
         $id: numeric!
-        $logo: String!
+        $logo: String
         $name: String!
         $parent_company: numeric
         $alternativeNames: [dionysus_production_company_alternative_names_insert_input!]!

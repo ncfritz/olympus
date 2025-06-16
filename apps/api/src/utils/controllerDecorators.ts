@@ -26,7 +26,6 @@ export function ApiStandardErrorResponses(
 
   for (const key in ERROR_DESCRIPTIONS) {
     if (!options || !options.exclude || key in options.exclude) {
-      3;
       apiResponses.push(
         ApiResponse({
           status: key as unknown as number,

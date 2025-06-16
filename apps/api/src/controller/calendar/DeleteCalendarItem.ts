@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { SingleCalendarItemResponse, Meeting } from "@ncfritz/olympus-model";
 import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
 import {
@@ -6,7 +5,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -22,17 +20,15 @@ type GraphQlDeleteCalendarItemResponse = {
 
 @Controller()
 export class DeleteCalendarItemController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Delete("/v1/meeting/:meetingId")
   @ApiOperation({
     summary: "Soft deletes an existing meeting",
     description: "Soft deletes a meeting.",
     operationId: "DeleteCalendarItem",
+    tags: ["Meetings"],
   })
-  @ApiTags("Meetings")
   @ApiProduces("application/json")
   @ApiParam({
     name: "meetingId",

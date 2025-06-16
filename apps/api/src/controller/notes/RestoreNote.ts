@@ -1,4 +1,3 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
 import { SingleNoteResponse } from "@ncfritz/olympus-model";
 import { Controller, HttpStatus, Param, Patch, Res } from "@nestjs/common";
 import {
@@ -7,7 +6,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -20,17 +18,15 @@ type GraphQlRestoreNoteResponse = {
 
 @Controller()
 export class RestoreNoteController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Patch("/v1/note/:noteId")
   @ApiOperation({
     summary: "Restore an existing note",
     description: "Restore an existing node.",
     operationId: "RestoreNote",
+    tags: ["Notes"],
   })
-  @ApiTags("Notes")
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiParam({

@@ -1,4 +1,4 @@
-import { InjectGraphQLClient } from "@golevelup/nestjs-graphql-request";
+
 import { GetSummaryResponse, NoteTypeCounts } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
 import {
@@ -8,7 +8,6 @@ import {
   ApiParam,
   ApiProduces,
   ApiQuery,
-  ApiTags,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -69,17 +68,15 @@ const getTypeForId = (id: number): keyof NoteTypeCounts => {
 
 @Controller()
 export class GetMonthlySummaryController {
-  constructor(
-    @InjectGraphQLClient() private readonly graphQLClient: GraphQLClient,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/v1/notes/summary/:start")
   @ApiOperation({
     summary: "Gets the monthly summary for notes",
     description: "Gets monthly summary for notes",
     operationId: "GetNotesSummaryController",
+    tags: ["Notes"],
   })
-  @ApiTags("Notes")
   @ApiProduces("application/json")
   @ApiParam({
     name: "start",
