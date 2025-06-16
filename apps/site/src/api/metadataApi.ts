@@ -127,11 +127,41 @@ const fetchMetadataFetchJobs = async (
   }
 };
 
+const createMetadataFetchJob = async (
+  id: string,
+  type: string,
+  status: string,
+  ttl: number,
+  jitter: number,
+  publish: boolean,
+  context: Record<string, string>,
+) => {
+  try {
+    const updateMetadataFetchJobResponse = await axios.post(
+      `/api/v1/metadata/fetchJobs`,
+      {
+        id: id,
+        type: type,
+        status: status,
+        ttl: ttl,
+        jitter: jitter,
+        publishNotification: publish,
+        context: context,
+      },
+    );
+
+    return updateMetadataFetchJobResponse;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const updateMetadataFetchJob = async (
   id: string,
   type: string,
   data: any,
   republish: boolean,
+  bypassCache?: boolean,
 ) => {
   try {
     const updateMetadataFetchJobResponse = await axios.put(
@@ -139,6 +169,7 @@ const updateMetadataFetchJob = async (
       {
         job: data,
         publishNotification: republish,
+        bypassCache: bypassCache || false,
       },
     );
 
@@ -178,6 +209,7 @@ const fetchJobStatistics = async () => {
 };
 
 const metadataApi = {
+  createMetadataFetchJob: createMetadataFetchJob,
   deleteMetadataFetchJob: deleteMetadataFetchJob,
   fetchJobStatistics: fetchJobStatistics,
   listCertifications: fetchCertifications,
