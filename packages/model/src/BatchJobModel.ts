@@ -1,11 +1,13 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
-import { LogLine, MetadataJobType } from "./index";
+import { LogLine, MetadataFetchJobStatus, MetadataJobType } from "./index";
 
 export enum JobType {
   MOVIES = "movies",
   TV_SERIES = "tv_series",
+  TV_SEASONS = "tv_seasons",
+  TV_EPISODES = "tv_episodes",
   PEOPLE = "people",
   COLLECTIONS = "collections",
   TV_NETWORKS = "tv_networks",
@@ -15,6 +17,7 @@ export enum JobType {
   GENRES = "genres",
   COUNTRIES = "countries",
   LANGUAGES = "languages",
+  REDRIVE = "redrive",
 }
 
 export enum JobStatus {
@@ -49,6 +52,46 @@ export class CreateBatchJobRequest {
     default: 0,
   })
   offset?: number;
+
+  @ApiProperty({
+    type: Number,
+    description: "The maximum number of records to process",
+    required: false,
+    default: undefined,
+  })
+  maxRecordsToProcess?: number;
+}
+
+export class CreateRedriveJobRequest {
+  @ApiProperty({
+    enum: MetadataJobType,
+    description: "The status of the records to re-drive",
+    required: true,
+  })
+  metadataType?: MetadataJobType;
+
+  @ApiProperty({
+    enum: MetadataFetchJobStatus,
+    description: "The status of the records to re-drive",
+    required: true,
+  })
+  status?: MetadataFetchJobStatus;
+
+  @ApiProperty({
+    enum: MetadataFetchJobStatus,
+    description: "The status of the records after they have been re-driven",
+    required: true,
+  })
+  targetStatus?: MetadataFetchJobStatus;
+
+  @ApiProperty({
+    type: Boolean,
+    description:
+      "Defaults to true, set to false to prevent publishing an AMQP message",
+    required: false,
+    default: true,
+  })
+  publishNotification?: boolean;
 }
 
 export class CreateBatchJobResponse {
@@ -108,7 +151,7 @@ export class GetBatchJobStatsByTypeResponse {
     additionalProperties: { type: "BatchJobStats" },
   })
   series: {
-    records: Record<string, number>;
+    records: Record<string, number[][]>;
     timing: {
       queueTime: number[][];
       runtime: number[][];
@@ -168,6 +211,9 @@ export class BatchJob {
 
   @ApiProperty({ type: Number })
   totalRecords: number;
+
+  @ApiProperty({ type: Number })
+  maxRecordsToProcess?: number;
 
   @ApiProperty({ type: Number })
   skippedRecords: number;

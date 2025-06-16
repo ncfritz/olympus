@@ -29,6 +29,9 @@ export enum MetadataJobType {
   LANGUAGES = "languages",
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export class FetchJobContext<K extends keyof never, T> {}
+
 export class MetadataFetchJob {
   @ApiProperty({ type: String })
   id: string;
@@ -56,6 +59,11 @@ export class MetadataFetchJob {
 
   @ApiProperty({ type: Number })
   jitter: number;
+
+  @ApiProperty({
+    type: () => FetchJobContext,
+  })
+  context: FetchJobContext<string, never>;
 }
 
 export class PartialMetadataFetchJob extends OmitType(MetadataFetchJob, [
@@ -64,6 +72,11 @@ export class PartialMetadataFetchJob extends OmitType(MetadataFetchJob, [
   "createdTime",
   "lastUpdatedTime",
 ]) {}
+
+export class PartialMetadataFetchJobWithoutContext extends OmitType(
+  PartialMetadataFetchJob,
+  ["context"],
+) {}
 
 export class CreateMetadataFetchJobRequest {
   @ApiProperty({
@@ -112,6 +125,11 @@ export class CreateMetadataFetchJobRequest {
     default: true,
   })
   publishNotification?: boolean;
+
+  @ApiProperty({
+    type: () => FetchJobContext,
+  })
+  context: FetchJobContext<string, never>;
 }
 
 export class CreateMetadataFetchJobResponse {
@@ -139,7 +157,7 @@ export class UpdateMetadataFetchJobRequest {
   @ApiProperty({
     type: () => PartialMetadataFetchJob,
   })
-  job: PartialMetadataFetchJob;
+  job: PartialMetadataFetchJobWithoutContext;
 
   @ApiProperty({
     type: Boolean,
@@ -147,6 +165,13 @@ export class UpdateMetadataFetchJobRequest {
     default: true,
   })
   publishNotification?: boolean;
+
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    default: false,
+  })
+  bypassCache?: boolean;
 }
 
 export class UpdateMetadataFetchJobResponse {
