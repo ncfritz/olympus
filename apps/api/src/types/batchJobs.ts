@@ -22,6 +22,7 @@ export type GraphQlBatchJob = {
   expiredRecords: number;
   skippedRecords: number;
   processedRecords: number;
+  maxRecordsToProcess?: number;
 };
 
 export type GraphQlListBatchJobsResponse = {
@@ -77,6 +78,7 @@ export type GraphQlMetadataFetchJob = {
   status: MetadataFetchJobStatus;
   ttl: number;
   type: MetadataJobType;
+  context: string;
 };
 
 export type GraphQlBulkLoadJobStat = {
