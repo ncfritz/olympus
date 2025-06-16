@@ -19,7 +19,7 @@
     "prepare": "is-ci || husky install",
     "clean": "rimraf dist && rimraf tsconfig.tsbuildinfo",
     "prebuild": "rimraf dist",
-    "build": "tsc",
+    "build": "tsc --incremental false",
     "lint": "eslint ./src",
     "lintfix": "eslint ./src --fix"
   },
@@ -37,6 +37,7 @@
     "@nestjs/schematics": "^11.0.0",
     "@semantic-release/git": "^10.0.1",
     "@types/node": "^22.13.0",
+    "@types/nodemailer": "^6.4.17",
     "@typescript-eslint/eslint-plugin": "^8.22.0",
     "@typescript-eslint/parser": "^8.22.0",
     "commitizen": "^4.3.1",
@@ -56,6 +57,9 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "nodemailer": "^6.10.0"
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
