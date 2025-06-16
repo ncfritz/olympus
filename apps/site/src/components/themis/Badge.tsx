@@ -145,7 +145,7 @@ const Badge: React.FunctionComponent<BadgeProps> = ({
         }}
       >
         <Image
-          src={`https://cdn.ncfritz.net/amzn/avatar/${username}.jpg`}
+          src={`https://cdn.internal.ncfritz.net/amzn/avatar/${username}.jpg`}
           fallback={"/peccy.png"}
           preview={false}
           width={dimensions.imageWidth}

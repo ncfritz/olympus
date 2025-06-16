@@ -252,7 +252,7 @@ const IndexPage: React.FunctionComponent = () => {
                     >
                       <Avatar
                         size={"large"}
-                        src={`https://cdn.ncfritz.net/amzn/avatar/${user.basicInfo.username}.jpg`}
+                        src={`https://cdn.internal.ncfritz.net/amzn/avatar/${user.basicInfo.username}.jpg`}
                         shape={"square"}
                       />
                       <Space direction={"vertical"} size={4}>

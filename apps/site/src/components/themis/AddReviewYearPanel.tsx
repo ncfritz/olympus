@@ -11,7 +11,6 @@ import {
   Typography,
 } from "antd";
 import dayjs from "dayjs";
-import { DateTime } from "luxon";
 import React, { useEffect, useState } from "react";
 import {
   Controller,
@@ -126,7 +125,7 @@ const AddReviewYearPanel: React.FunctionComponent<AddReviewYearPanelProps> = ({
                 <Avatar
                   size={"large"}
                   shape={"square"}
-                  src={`https://cdn.ncfritz.net/amzn/avatar/${field.value.username}.jpg`}
+                  src={`https://cdn.internal.ncfritz.net/amzn/avatar/${field.value.username}.jpg`}
                 />
                 <Space direction={"vertical"} size={0}>
                   <Typography.Text italic={true} style={{ fontSize: 11 }}>
@@ -199,7 +198,7 @@ const AddReviewYearPanel: React.FunctionComponent<AddReviewYearPanelProps> = ({
                   >
                     <Avatar
                       size={"small"}
-                      src={`https://cdn.ncfritz.net/amzn/avatar/${option.data.info.username}.jpg`}
+                      src={`https://cdn.internal.ncfritz.net/amzn/avatar/${option.data.info.username}.jpg`}
                     />
                     <Space
                       direction={"horizontal"}

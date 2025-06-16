@@ -56,7 +56,7 @@ const UsersTable: React.FunctionComponent<UsersTableProps> = ({
             {record.users.map((user) => {
               return (
                 <Avatar
-                  src={`https://cdn.ncfritz.net/amzn/avatar/${user.username}.jpg`}
+                  src={`https://cdn.internal.ncfritz.net/amzn/avatar/${user.username}.jpg`}
                 />
               );
             })}

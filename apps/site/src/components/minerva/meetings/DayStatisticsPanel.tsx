@@ -92,7 +92,7 @@ const DayStatisticsPanel: React.FunctionComponent<DayStatisticsPanelProps> = ({
               <Avatar
                 shape={"square"}
                 size={"default"}
-                src={`https://cdn.ncfritz.net/amzn/avatar/${attendee.alias}.jpg`}
+                src={`https://cdn.internal.ncfritz.net/amzn/avatar/${attendee.alias}.jpg`}
               />
               <Flex vertical={false} flex={1}>
                 <Space

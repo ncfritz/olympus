@@ -386,7 +386,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
               <Avatar
                 shape={"circle"}
                 size={"large"}
-                src={`https://cdn.ncfritz.net/amzn/avatar/${event.organizer.alias}.jpg`}
+                src={`https://cdn.internal.ncfritz.net/amzn/avatar/${event.organizer.alias}.jpg`}
               />
               <Space direction={"vertical"} size={0}>
                 <Typography.Title

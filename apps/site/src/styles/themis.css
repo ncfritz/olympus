@@ -6,7 +6,7 @@ section.ant-layout {
 .vtext {
   writing-mode: vertical-lr;
   display: flex;
-  justify-content: end;
+  justify-content: flex-end;
   align-items: center
 }
 
@@ -39,7 +39,7 @@ section.ant-layout {
 .t-c-b {
   display: flex;
   justify-content: center;
-  align-content: end;
+  align-content: flex-end;
   flex-wrap: wrap;
 }
 

@@ -207,6 +207,33 @@ img.electron-logo {
     margin-left: 8px;
 }
 
+
+
+.notificationContext .ant-form-item-row {
+    display: block;
+}
+.ant-form-item-label > label .ant-form-item-tooltip {
+    cursor: inherit !important;
+}
+.flex-first-item > .ant-space-item:first-of-type {
+    display: flex;
+    flex-grow: 1;
+}
+
+.table-row-hover:hover {
+    background-color: #fffbf0;
+}
+.table-cell-hover:hover {
+    background-color: #ffe28f;
+    cursor: pointer;
+}
+
+.ant-steps.workflowSteps .ant-steps-item-title {
+  width: 100%;
+  padding-right: 0px;
+}
+
+
 @media(prefers-color-scheme: dark) {
     body {
         background-color: #ffffff;

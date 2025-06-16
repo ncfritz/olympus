@@ -118,7 +118,7 @@ const MeetingNoteAssociation: React.FunctionComponent<AssociatedItemProps> = ({
               <Avatar
                 shape={"circle"}
                 size={"small"}
-                src={`https://cdn.ncfritz.net/amzn/avatar/${meeting.organizer.alias}.jpg`}
+                src={`https://cdn.internal.ncfritz.net/amzn/avatar/${meeting.organizer.alias}.jpg`}
               />
             </Space>
           </Space>

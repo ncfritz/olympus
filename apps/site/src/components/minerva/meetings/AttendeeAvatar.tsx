@@ -8,7 +8,7 @@ export interface AttendeeAvatarProps {
 const AttendeeAvatar: React.FunctionComponent<AttendeeAvatarProps> = ({
   attendee,
 }: AttendeeAvatarProps) => {
-  let avatarSrc = `https://cdn.ncfritz.net/amzn/avatar/${attendee.alias}.jpg`;
+  let avatarSrc = `https://cdn.internal.ncfritz.net/amzn/avatar/${attendee.alias}.jpg`;
 
   if (attendee.type === "PublicDL") {
     avatarSrc = "/assets/images/avatar/exchdl.png";

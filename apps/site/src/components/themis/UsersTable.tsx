@@ -34,7 +34,7 @@ const UsersTable: React.FunctionComponent<UsersTableProps> = ({
           <Space direction={"horizontal"} size={8} align={"center"}>
             <Avatar
               size={"small"}
-              src={`https://cdn.ncfritz.net/amzn/avatar/${record.username}.jpg`}
+              src={`https://cdn.internal.ncfritz.net/amzn/avatar/${record.username}.jpg`}
             />
             <Link href={`/themis/user/${record.username}`}>
               <Typography>{record.username}</Typography>
