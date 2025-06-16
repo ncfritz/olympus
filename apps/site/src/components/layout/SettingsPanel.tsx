@@ -33,7 +33,12 @@ const SettingsPanel: React.FunctionComponent<
     <Flex vertical={true} style={{ height: "100%" }}>
       <Space
         direction={"horizontal"}
-        style={{ width: "100%", alignItems: "flex-start", padding: 16, borderBottom: "1px solid #efefef" }}
+        style={{
+          width: "100%",
+          alignItems: "flex-start",
+          padding: 16,
+          borderBottom: "1px solid #efefef",
+        }}
       >
         <Avatar size={96} src={session.data?.user?.image} shape={"square"} />
         <Space

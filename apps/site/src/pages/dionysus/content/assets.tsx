@@ -3,6 +3,7 @@ import {
   ExperimentOutlined,
   HomeOutlined,
   InfoCircleOutlined,
+  SearchOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
 import {
@@ -12,6 +13,7 @@ import {
   Drawer,
   notification,
   Space,
+  Splitter,
   Table,
   type TableProps,
   Typography,
@@ -25,12 +27,14 @@ import React, { type ReactNode, useEffect, useState } from "react";
 import contentApi, { type SortOptions } from "../../../api/contentApi";
 import ContentAssetDetailsPanel from "../../../components/content/ContentAssetDetailsPanel";
 import ContentAssetExpanderRow from "../../../components/content/ContentAssetExpanderRow";
+import ContentAssetFilterPanel from "../../../components/content/ContentAssetFilterPanel";
 import ContentAssetRating from "../../../components/content/ContentAssetRating";
 import ContentAssetSizeDisplay from "../../../components/content/ContentAssetSizeDisplay";
 import ContentAssetStatistics from "../../../components/content/ContentAssetStatistics";
 import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
 import Timestamp from "../../../components/data/Timestamp";
 import { useAppSelector } from "../../../redux/hooks";
+import type { ContentAssetTag as ContentAssetTagType } from "../../../pages/dionysus/content/assets";
 
 export interface ContentAssetTag {
   id: string;
@@ -81,6 +85,8 @@ const ContentAssetsPage: React.FunctionComponent = () => {
   const [assetPanelTarget, setAssetPanelTarget] = useState<string | undefined>(
     undefined,
   );
+  const [filterPanelSize, setFilterPanelSize] = useState(300);
+  const [filters, setFilters] = useState<string[]>([]);
 
   const openNotificationWithIcon = (
     type: NotificationType,
@@ -114,6 +120,37 @@ const ContentAssetsPage: React.FunctionComponent = () => {
     }
   };
 
+  const addFilter = async (tag: ContentAssetTagType) => {
+    const key = `${tag.type}:${tag.name}`;
+
+    if (!filters.includes(key)) {
+      const newFilters = [...filters];
+      newFilters.push(key);
+
+      setFilters(newFilters);
+    }
+  };
+
+  const removeFilter = async (tag: ContentAssetTagType) => {
+    const key = `${tag.type}:${tag.name}`;
+
+    if (filters.includes(key)) {
+      const newFilters = [...filters].filter((value) => {
+        return value !== key;
+      });
+
+      setFilters(newFilters);
+    }
+  };
+
+  const toggleFilters = () => {
+    setFilterPanelSize(filterPanelSize <= 0 ? 300 : 0);
+  };
+
+  useEffect(() => {
+    console.log(filters);
+  }, [filters]);
+
   useEffect(() => {
     setAssetsPage(0);
   }, [blackCurtainEnabled]);
@@ -135,15 +172,7 @@ const ContentAssetsPage: React.FunctionComponent = () => {
             <Space direction={"vertical"} size={2}>
               <Typography.Link
                 copyable={true}
-                onClick={() => {
-                  router.push(
-                    `/dionysus/content/asset/${record.id}`,
-                    `/dionysus/content/asset/${record.id}`,
-                    {
-                      shallow: true,
-                    },
-                  );
-                }}
+                href={`/dionysus/content/asset/${record.id}`}
               >
                 {value}
               </Typography.Link>
@@ -317,64 +346,95 @@ const ContentAssetsPage: React.FunctionComponent = () => {
           }}
         >
           <ContentAssetStatistics />
-          <Table
-            style={{ width: "100%" }}
-            rowKey={"id"}
-            columns={columns}
-            dataSource={assets}
-            size={"middle"}
-            loading={assetsLoading}
-            pagination={{
-              style: {
-                marginLeft: 16,
-              },
-              position: ["bottomLeft"],
-              pageSize: 15,
-              size: "small",
-              total: assetsCount,
-              showSizeChanger: false,
-              showQuickJumper: true,
-              showTotal: (total, range) => {
-                return `${range[0]} to ${range[1]} of ${total}`;
-              },
+          <Splitter
+            onResize={(sizes) => {
+              setFilterPanelSize(filterPanelSize <= 0 ? 300 : 0);
             }}
-            onChange={(pagination, filters, sorter, extra) => {
-              const s = sorter as Sorts;
+          >
+            <Splitter.Panel
+              min={0}
+              max={300}
+              size={filterPanelSize}
+              resizable={false}
+              collapsible={true}
+            >
+              <ContentAssetFilterPanel
+                togglePanel={toggleFilters}
+                onSelectTag={addFilter}
+                onRemoveTag={removeFilter}
+              />
+            </Splitter.Panel>
+            <Splitter.Panel>
+              <Table
+                style={{ width: "100%" }}
+                rowKey={"id"}
+                columns={columns}
+                dataSource={assets}
+                size={"middle"}
+                loading={assetsLoading}
+                pagination={{
+                  style: {
+                    marginLeft: 16,
+                  },
+                  position: ["bottomLeft"],
+                  pageSize: 15,
+                  size: "small",
+                  total: assetsCount,
+                  showSizeChanger: false,
+                  showQuickJumper: true,
+                  showTotal: (total, range) => {
+                    return `${range[0]} to ${range[1]} of ${total}`;
+                  },
+                }}
+                onChange={(pagination, filters, sorter, extra) => {
+                  const s = sorter as Sorts;
 
-              switch (extra.action) {
-                case "paginate":
-                  setAssetsPage(pagination.current! - 1);
-                  break;
-                case "sort":
-                  setAssetsSort({
-                    field: s.columnKey?.toString() || "",
-                    order: s.order === "ascend" ? "asc" : "desc",
-                  });
-                  break;
-                case "filter":
-                  break;
-              }
-            }}
-            expandable={{
-              expandIcon: ({ expanded, onExpand, record }) => (
-                <Space
-                  style={{ margin: 0, padding: 0 }}
-                  onClick={(e) => onExpand(record, e)}
-                >
-                  <Avatar
-                    shape={"square"}
-                    src={`https://content-cdn.sea.ncfritz.net:9443/assets/${record.id}/thumbnails/8.png`}
-                  />
-                </Space>
-              ),
-              expandedRowRender: (record) => (
-                <ContentAssetExpanderRow
-                  record={record}
-                  reloadAssets={fetchAssets}
-                />
-              ),
-            }}
-          />
+                  switch (extra.action) {
+                    case "paginate":
+                      setAssetsPage(pagination.current! - 1);
+                      break;
+                    case "sort":
+                      setAssetsSort({
+                        field: s.columnKey?.toString() || "",
+                        order: s.order === "ascend" ? "asc" : "desc",
+                      });
+                      break;
+                    case "filter":
+                      break;
+                  }
+                }}
+                expandable={{
+                  expandIcon: ({ expanded, onExpand, record }) => (
+                    <Space
+                      style={{ margin: 0, padding: 0 }}
+                      onClick={(e) => onExpand(record, e)}
+                    >
+                      <Avatar
+                        shape={"square"}
+                        src={`https://content-cdn.sea.ncfritz.net:9443/assets/${record.id}/thumbnails/8.png`}
+                      />
+                    </Space>
+                  ),
+                  expandedRowRender: (record) => (
+                    <ContentAssetExpanderRow
+                      record={record}
+                      reloadAssets={fetchAssets}
+                    />
+                  ),
+                  columnTitle:
+                    filterPanelSize <= 0 ? (
+                      <Button
+                        type={"text"}
+                        size={"small"}
+                        onClick={toggleFilters}
+                      >
+                        <SearchOutlined />
+                      </Button>
+                    ) : undefined,
+                }}
+              />
+            </Splitter.Panel>
+          </Splitter>
           <Drawer
             title={"Asset Details"}
             width={750}

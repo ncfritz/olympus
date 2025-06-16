@@ -4,13 +4,18 @@ import {
   InboxOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
-import { Breadcrumb, Form, Input, Space, Typography } from "antd";
+import { Breadcrumb, Space, Typography, type UploadFile } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Dragger from "antd/lib/upload/Dragger";
 import Link from "next/link";
+import { useState } from "react";
+import { flushSync } from "react-dom";
 import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
 
 const AssetUploadPage: React.FunctionComponent = () => {
+  const [files, setFiles] = useState<Record<string, UploadFile>>({});
+  const [uploads, setUploads] = useState<UploadFile[]>([]);
+
   return (
     <ContentAuthWrapper>
       <Content>
@@ -98,10 +103,26 @@ const AssetUploadPage: React.FunctionComponent = () => {
                   action={"/api/v1/content/upload"}
                   name={"files"}
                   showUploadList={true}
-                  maxCount={1}
+                  listType={"text"}
+                  maxCount={100}
+                  fileList={uploads}
                   multiple={true}
                   beforeUpload={async (file) => {
                     return file;
+                  }}
+                  onChange={(info) => {
+                    let newFiles = info.fileList;
+
+                    if (info.file.status === "done") {
+                      console.log("Removing");
+                      newFiles = info.fileList.filter((obj) => {
+                        return obj.uid !== info.file.uid;
+                      });
+                    }
+
+                    flushSync(() => {
+                      setUploads(newFiles);
+                    });
                   }}
                 >
                   <p className="ant-upload-drag-icon">

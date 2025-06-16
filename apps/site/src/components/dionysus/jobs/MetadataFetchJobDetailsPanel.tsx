@@ -7,18 +7,18 @@ import {
 import {
   Button,
   Card,
-  Col,
+  Col, Empty,
   Form,
   Row,
   Select,
   Slider,
   Space,
   Statistic,
-  Typography,
+  Typography
 } from "antd";
 import { type SubmitHandler, Controller, useForm } from "react-hook-form";
 import metadataApi from "../../../api/metadataApi";
-import type { MetadataFetchjob } from "../../../pages/dionysus/jobs/metadata";
+import type { MetadataFetchJob } from "../../../pages/dionysus/jobs/metadata";
 import Timestamp from "../../data/Timestamp";
 import { getMetadataJobStatusIndicator } from "./utils";
 
@@ -27,10 +27,11 @@ interface FormInput {
   jitter: number;
   status: string;
   republish: boolean;
+  bypassCache: boolean;
 }
 
 export interface MetadataFetchJobDetailsPanelProps {
-  job: MetadataFetchjob;
+  job: MetadataFetchJob;
   close: () => void;
   postUpdate: () => Promise<void>;
 }
@@ -39,7 +40,7 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
   MetadataFetchJobDetailsPanelProps
 > = ({ job, close, postUpdate }: MetadataFetchJobDetailsPanelProps) => {
   if (!job) {
-    return <></>;
+    return <Empty description={"No Metadata Fetch Job Found"} />;
   }
 
   const {
@@ -54,6 +55,7 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
       jitter: job.jitter,
       status: job.status,
       republish: false,
+      bypassCache: false,
     },
     mode: "onChange",
     reValidateMode: "onChange",
@@ -71,6 +73,7 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
           jitter: data.jitter,
         },
         data.republish,
+        true,
       );
 
       await postUpdate();

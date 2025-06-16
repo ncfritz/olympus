@@ -1,28 +1,16 @@
-import {
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  CloseCircleOutlined,
-  MinusCircleOutlined,
-  QuestionCircleOutlined,
-  ReloadOutlined,
-  SaveOutlined,
-  SyncOutlined,
-} from "@ant-design/icons";
+import { DeleteOutlined, PlusOutlined, ReloadOutlined, SaveOutlined } from "@ant-design/icons";
 import {
   Button,
   Col,
-  Form,
-  InputNumber,
   notification,
   Progress,
   Row,
   Space,
   Spin,
-  Switch,
+  Statistic,
   Table,
   type TableProps,
-  Tag,
-  Typography,
+  Typography
 } from "antd";
 import { type ColumnsType } from "antd/es/table";
 import type { FilterValue } from "antd/es/table/interface";
@@ -31,53 +19,31 @@ import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import { DateTime } from "luxon";
 import prettyMilliseconds from "pretty-ms";
-import React, { useEffect, useState } from "react";
+import React, { type ReactNode, useEffect, useState } from "react";
+import { type SubmitHandler, useForm } from "react-hook-form";
 import batchJobApi from "../../../api/batchJobApi";
 import type { SortOptions } from "../../../api/contentApi";
+import {
+  type BatchJobRecord,
+  JobStatus,
+  type JobType,
+} from "../../../types/dionysus";
 import Timestamp from "../../data/Timestamp";
+import BatchJobStatusSelect from "../../dionysus/jobs/BatchJobStatusSelect";
+import CreateBatchJobModal from "../../dionysus/jobs/CreateBatchJobModal";
+import CreateMetadataJobModal from "../../dionysus/jobs/CreateMetadataJobModal";
+import { getBatchJobStatusIndicator } from "../../dionysus/jobs/utils";
 
-export enum JobStatus {
-  CREATED = "created",
-  STARTED = "started",
-  CANCELLED = "cancelled",
-  SUCCESS = "success",
-  FAILED = "failed",
-}
-
-export enum JobType {
-  ALL = "all",
-  MOVIES = "movies",
-  TV_SERIES = "tv_series",
-  PEOPLE = "people",
-  COLLECTIONS = "collections",
-  TV_NETWORKS = "tv_networks",
-  KEYWORDS = "keywords",
-  PRODUCTION_COMPANIES = "production_companies",
-  CERTIFICATIONS = "certifications",
-  COUNTRIES = "countries",
-  GENRES = "genres",
-  LANGUAGES = "languages",
-}
-
-export interface BatchJobRecord {
-  id: string;
-  createdTime: string;
-  lastUpdatedTime?: string;
-  startedTime?: string;
-  finishedTime?: string;
-  totalRecords?: number;
-  duplicateRecords?: number;
-  noOpRecords?: number;
-  newRecords?: number;
-  expiredRecords?: number;
-  processedRecords?: number;
-  skippedRecords?: number;
-  status: JobStatus;
+interface FormInput {
+  publishNotifications: boolean;
+  offset: number;
 }
 
 export interface BatchJobsPanelProps {
   type: JobType;
   onSelect: (value: BatchJobRecord) => void;
+  showPublish?: boolean;
+  showStats?: boolean;
 }
 
 type OnChange = NonNullable<TableProps<BatchJobRecord>["onChange"]>;
@@ -87,8 +53,25 @@ type Sorts = GetSingle<Parameters<OnChange>[2]>;
 const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
   type,
   onSelect,
+  showPublish = true,
+  showStats = true,
 }) => {
   const [api, contextHolder] = notification.useNotification();
+
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { isValid, isDirty, isSubmitting },
+  } = useForm<FormInput>({
+    defaultValues: {
+      type: type,
+      publishNotifications: true,
+      offset: 0,
+    },
+    mode: "onChange",
+    reValidateMode: "onChange",
+  });
 
   const [jobs, setJobs] = useState<any>();
   const [jobsRequested, setJobsRequested] = useState("");
@@ -114,11 +97,22 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
     failed: 0,
     total: 0,
   });
-  const [targetStatus, setTargetStatus] = useState("queued");
-
   const [jobStats, setJobStats] = useState<any>();
   const [jobStatsLoading, setJobStatsLoading] = useState<any>(true);
   const [jobStatsError, setJobStatsError] = useState<any>();
+  const [targetStatus, setTargetStatus] = useState(JobStatus.CREATED);
+  const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
+
+  const onSubmit: SubmitHandler<FormInput> = async (data) => {
+    await batchJobApi.createBatchJob(
+      type,
+      data.publishNotifications,
+      data.offset,
+    );
+    await fetchJobs(true);
+
+    reset();
+  };
 
   const fetchJobs = async (quiet = false) => {
     if (!quiet) {
@@ -136,8 +130,10 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
     }
   };
 
-  const fetchStatistics = async () => {
-    setJobStatsLoading(true);
+  const fetchStatistics = async (quiet = false) => {
+    if (!quiet) {
+      setJobStatsLoading(true);
+    }
     setJobStatsError(undefined);
 
     try {
@@ -174,6 +170,65 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
     setSelectedRows(newSelectedRows);
   };
 
+  const deleteSelectedJobs = async () => {
+    await processRows(async (job) => {
+      await batchJobApi.deleteBatchJob(job.id);
+    });
+  };
+
+  const updateSelectedJobs = async () => {
+    await processRows(async (job) => {
+      const updates = {
+        status: targetStatus,
+      };
+
+      await batchJobApi.updateBatchJob(job.id, updates);
+    });
+
+    setTargetStatus(JobStatus.CREATED);
+  };
+
+  const processRows = async (
+    process: (job: BatchJobRecord) => Promise<void>,
+  ) => {
+    setProcessingRows(true);
+
+    try {
+      const currentStatus = {
+        total: 0,
+        failed: 0,
+        pending: 0,
+        skipped: 0,
+        success: 0,
+      };
+
+      for (const value of selectedRows) {
+        try {
+          await process(value);
+
+          currentStatus.success++;
+        } catch (e) {
+          currentStatus.failed++;
+        }
+
+        currentStatus.total++;
+        setProcessingStatus({ ...currentStatus });
+      }
+    } finally {
+      await fetchJobs(true);
+      await fetchStatistics(true);
+      setSelectedRowKeys([]);
+      setProcessingRows(false);
+      setProcessingStatus({
+        total: 0,
+        failed: 0,
+        pending: 0,
+        skipped: 0,
+        success: 0,
+      });
+    }
+  };
+
   const columns: ColumnsType<BatchJobRecord> = [
     {
       title: "ID",
@@ -198,64 +253,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       title: "Status",
       dataIndex: "status",
       render: (value) => {
-        switch (value) {
-          case JobStatus.CREATED:
-            return (
-              <Tag
-                color={"#003f5c"}
-                icon={<ClockCircleOutlined />}
-                style={{ minWidth: 120 }}
-              >
-                Created
-              </Tag>
-            );
-          case JobStatus.STARTED:
-            return (
-              <Tag
-                color={"#58508d"}
-                icon={<SyncOutlined spin={true} />}
-                style={{ minWidth: 120 }}
-              >
-                Running
-              </Tag>
-            );
-          case JobStatus.CANCELLED:
-            return (
-              <Tag
-                color={"#ffa600"}
-                icon={<MinusCircleOutlined />}
-                style={{ minWidth: 120 }}
-              >
-                Cancelled
-              </Tag>
-            );
-          case JobStatus.SUCCESS:
-            return (
-              <Tag
-                color={"#bc5090"}
-                icon={<CheckCircleOutlined />}
-                style={{ minWidth: 120 }}
-              >
-                Success
-              </Tag>
-            );
-          case JobStatus.FAILED:
-            return (
-              <Tag
-                color={"#ff6361"}
-                icon={<CloseCircleOutlined />}
-                style={{ minWidth: 120 }}
-              >
-                Failed
-              </Tag>
-            );
-          default:
-            return (
-              <Tag icon={<QuestionCircleOutlined />} style={{ minWidth: 120 }}>
-                Unknown
-              </Tag>
-            );
-        }
+        return getBatchJobStatusIndicator(value);
       },
       filters: [
         {
@@ -431,12 +429,24 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
           </Typography.Text>
         );
       },
+      width: 75,
+    },
+    {
+      title: "Skipped",
+      dataIndex: "skippedRecords",
+      render: (value, record) => {
+        return (
+          <Typography.Text style={{ fontSize: "12px" }}>
+            {record.skippedRecords}
+          </Typography.Text>
+        );
+      },
     },
     {
       title: "Created",
       dataIndex: "createdTime",
       render: (value) => {
-        return <Timestamp value={value} />;
+        return <Timestamp value={value} showTime={true} />;
       },
       width: 150,
     },
@@ -444,7 +454,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       title: "Started",
       dataIndex: "startedTime",
       render: (value) => {
-        return <Timestamp value={value} />;
+        return <Timestamp value={value} showTime={true} />;
       },
       width: 150,
     },
@@ -452,7 +462,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       title: "Finished",
       dataIndex: "finishedTime",
       render: (value) => {
-        return <Timestamp value={value} />;
+        return <Timestamp value={value} showTime={true} />;
       },
       width: 150,
     },
@@ -478,6 +488,9 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
           width: "100%",
           chart: {
             height: 250,
+          },
+          tooltip: {
+            shared: true,
           },
           plotOptions: {
             spline: {
@@ -537,11 +550,18 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
             height: 250,
             type: "column",
           },
+          tooltip: {
+            shared: true,
+          },
           plotOptions: {
-            column: {
+            series: {
               stacking: "normal",
             },
+            column: {
+              pointWidth: 8,
+            },
             spline: {
+              stacking: undefined,
               marker: {
                 symbol: "square",
                 radius: 2,
@@ -574,22 +594,33 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
               name: "Total",
               type: "spline",
               data: jobStats.series.records.total,
-              color: "#000000",
+              color: "#003f5c",
             },
             {
-              name: "Removed",
-              data: jobStats.series.records.removed,
-              color: "#ff6361",
+              name: "Processed",
+              type: "spline",
+              data: jobStats.series.records.processed,
+              color: "#bc5090",
             },
             {
               name: "New",
               data: jobStats.series.records.new,
-              color: "#bc5090",
+              color: "#003f5c",
             },
             {
-              name: "Duplicates",
-              data: jobStats.series.records.duplicate,
-              color: "#003f5c",
+              name: "Expired",
+              data: jobStats.series.records.expired,
+              color: "#7a5195",
+            },
+            {
+              name: "No-op",
+              data: jobStats.series.records.noop,
+              color: "#ef5675",
+            },
+            {
+              name: "Skipped",
+              data: jobStats.series.records.skipped,
+              color: "#ffa600",
             },
           ],
           credits: {
@@ -600,71 +631,157 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
     );
   }
 
+  const tools: ReactNode[] = [];
+
+  tools.push(
+    <Space
+      direction={"horizontal"}
+      size={8}
+      style={{
+        alignItems: "center",
+        borderRight: "1px solid #f3f3f3",
+        padding: 16,
+      }}
+    >
+      <Typography.Text strong={true}>Status: </Typography.Text>
+      <BatchJobStatusSelect
+        value={targetStatus}
+        onChange={(value) => {
+          setTargetStatus(value);
+        }}
+      />
+      <Button
+        type={"primary"}
+        icon={<SaveOutlined />}
+        disabled={selectedRows.length <= 0 || processingRows || jobsLoading}
+        onClick={async () => {
+          await updateSelectedJobs();
+        }}
+      >
+        Set Status
+      </Button>
+    </Space>,
+  );
+
+  tools.push(
+    <Space
+      direction={"horizontal"}
+      size={8}
+      style={{
+        alignItems: "center",
+        borderRight: "1px solid #f3f3f3",
+        padding: 16,
+      }}
+    >
+      <Typography.Text strong={true}>Delete: </Typography.Text>
+      <Button
+        type={"primary"}
+        icon={<DeleteOutlined />}
+        danger={true}
+        disabled={selectedRows.length <= 0 || processingRows || jobsLoading}
+        onClick={async () => {
+          await deleteSelectedJobs();
+        }}
+      >
+        Delete Selected
+      </Button>
+    </Space>,
+  );
+
+  let actionsContent = (
+    <Col span={24} style={{ justifyContent: "space-between", display: "flex" }}>
+      <Space
+        direction={"horizontal"}
+        style={{
+          padding: 0,
+          marginLeft: showPublish ? 16 : 0,
+          marginRight: 16,
+        }}
+      >
+        {tools}
+      </Space>
+      <Space style={{ marginRight: 16 }}>
+        {showPublish && (
+          <Button
+            variant={"solid"}
+            color={"cyan"}
+            icon={<PlusOutlined />}
+            onClick={async () => {
+              setCreateJobModalOpen(true);
+            }}
+          >
+            Create Metadata Job
+          </Button>
+        )}
+        <Button
+          type={"text"}
+          disabled={processingRows || jobsLoading}
+          icon={<ReloadOutlined />}
+          onClick={async () => {
+            await fetchJobs(true);
+            await fetchStatistics(true);
+          }}
+        />
+      </Space>
+    </Col>
+  );
+
+  if (processingRows) {
+    actionsContent = (
+      <Col span={24} style={{ padding: 16 }}>
+        <Space
+          direction={"vertical"}
+          size={16}
+          style={{ marginLeft: 16, marginRight: 16, width: "100%" }}
+        >
+          <Progress
+            size={"default"}
+            percent={(processingStatus.total / selectedRowKeys.length) * 100}
+            style={{ paddingRight: 32 }}
+            format={(percent, successPercent) => {
+              return `${percent?.toFixed(0)}%`;
+            }}
+          />
+          <Space direction={"horizontal"} size={64}>
+            <Statistic title={"To Publish"} value={selectedRows.length} />
+            <Statistic title={"Success"} value={processingStatus.success} />
+            <Statistic title={"Skipped"} value={processingStatus.skipped} />
+            <Statistic title={"Pending"} value={processingStatus.pending} />
+            <Statistic title={"Failed"} value={processingStatus.failed} />
+            <Statistic title={"Total"} value={processingStatus.total} />
+          </Space>
+        </Space>
+      </Col>
+    );
+  }
+
   return (
-    <Space direction={"vertical"} style={{ width: "100%" }}>
-      <Row gutter={8}>
-        <Col span={12}>{timingChart}</Col>
-        <Col span={12}>{recordsChart}</Col>
-      </Row>
+    <Space
+      direction={"vertical"}
+      style={{ width: "100%", marginTop: showStats ? 8 : 0 }}
+      size={0}
+    >
+      {showStats && (
+        <Row gutter={8}>
+          <Col span={12}>{timingChart}</Col>
+          <Col span={12}>{recordsChart}</Col>
+        </Row>
+      )}
       <Row
         gutter={16}
         style={{
-          borderTop: "1px solid #f3f3f3",
+          borderTop: showStats ? "1px solid #f3f3f3" : "none",
           borderBottom: "1px solid #f3f3f3",
         }}
       >
-        <Col
-          span={24}
-          style={{ justifyContent: "space-between", display: "flex" }}
-        >
-          <Space
-            direction={"horizontal"}
-            style={{ padding: 0, marginLeft: 16, marginRight: 16 }}
-          >
-            <Space
-              direction={"horizontal"}
-              size={8}
-              style={{
-                alignItems: "center",
-                borderRight: "1px solid #f3f3f3",
-                padding: 16,
-              }}
-            >
-              <Form layout={"inline"}>
-                <Form.Item label={"Skip Records"}>
-                  <InputNumber min={0} defaultValue={0} />
-                </Form.Item>
-                <Form.Item label={"Publish Message"}>
-                  <Switch />
-                </Form.Item>
-                <Button
-                  type={"primary"}
-                  icon={<SaveOutlined />}
-                  onClick={async () => {
-                    await batchJobApi.createBatchJob(type, true, 0);
-                    await fetchJobs(true);
-                  }}
-                >
-                  Submit
-                </Button>
-              </Form>
-            </Space>
-          </Space>
-          <Space style={{ marginRight: 16 }}>
-            <Button
-              type={"text"}
-              disabled={jobsLoading}
-              icon={<ReloadOutlined />}
-              onClick={async () => {
-                await fetchJobs(true);
-              }}
-            />
-          </Space>
-        </Col>
+        {actionsContent}
       </Row>
       <Table
         rowKey={"id"}
-        style={{ width: "100%" }}
+        style={{
+          width: "100%",
+          borderTop: !showPublish ? "1px solid #f3f3f3" : "none",
+        }}
         columns={columns}
         dataSource={jobs}
         size={"middle"}
@@ -711,6 +828,17 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
         rowSelection={{
           selectedRowKeys,
           onChange: onSelectChange,
+        }}
+      />
+      <CreateBatchJobModal
+        type={type}
+        postCreate={async () => {
+          await fetchJobs();
+          await fetchStatistics();
+        }}
+        open={createJobModalOpen}
+        onClose={() => {
+          setCreateJobModalOpen(false);
         }}
       />
     </Space>

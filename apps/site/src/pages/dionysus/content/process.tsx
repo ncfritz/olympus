@@ -297,11 +297,11 @@ const ContentProcessingPage: React.FunctionComponent = () => {
         {Object.keys(processedTags).map((key) => {
           return (
             <ContentAssetTagSelector
-              assetId={asset.id}
               title={key.charAt(0).toUpperCase() + key.slice(1)}
               type={key}
               tags={processedTags[key]}
               allowAdd={true}
+              allowFilter={true}
               onSelectTag={async (tag) => {
                 if (!selectedTags.includes(tag)) {
                   setSelectedTags([...selectedTags, tag]);
@@ -315,7 +315,6 @@ const ContentProcessingPage: React.FunctionComponent = () => {
         })}
         <div style={{ paddingLeft: 32 }}>
           <ContentAssetTagSelector
-            assetId={asset.id}
             title={"Selected"}
             type={"selected"}
             tags={selectedTags}

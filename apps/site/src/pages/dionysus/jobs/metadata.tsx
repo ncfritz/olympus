@@ -1,6 +1,8 @@
 import {
   DeleteOutlined,
   HomeOutlined,
+  LoginOutlined,
+  PlusOutlined,
   ReloadOutlined,
   SaveOutlined,
   SendOutlined,
@@ -10,10 +12,10 @@ import {
   Button,
   Col,
   Drawer,
+  Layout,
   notification,
   Progress,
   Row,
-  Select,
   Space,
   Spin,
   Statistic,
@@ -24,8 +26,6 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import type { FilterValue } from "antd/es/table/interface";
 import { Content } from "antd/lib/layout/layout";
-import Highcharts from "highcharts";
-import HighchartsReact from "highcharts-react-official";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import prettyMilliseconds from "pretty-ms";
@@ -33,12 +33,17 @@ import React, { type ReactNode, useEffect, useState } from "react";
 import { type SortOptions } from "../../../api/contentApi";
 import metadataApi from "../../../api/metadataApi";
 import Timestamp from "../../../components/data/Timestamp";
+import CreateMetadataJobModal from "../../../components/dionysus/jobs/CreateMetadataJobModal";
+import MetadataFetchJobExpirationChart from "../../../components/dionysus/jobs/graphs/MetadataFetchJobExpirationChart";
+import MetadataFetchJobStatusChart from "../../../components/dionysus/jobs/graphs/MetadataFetchJobStatusChart";
 import MetadataFetchJobDetailsPanel from "../../../components/dionysus/jobs/MetadataFetchJobDetailsPanel";
+import MetadataJobStatusSelect from "../../../components/dionysus/jobs/MetadataJobStatusSelect";
+import RedriveModal from "../../../components/dionysus/jobs/RedriveModal";
 import { getMetadataJobStatusIndicator } from "../../../components/dionysus/jobs/utils";
 import RefreshTimer from "../../../components/common/RefreshTimer";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
 
-export interface MetadataFetchjob {
+export interface MetadataFetchJob {
   id: string;
   type: string;
   status: string;
@@ -49,28 +54,28 @@ export interface MetadataFetchjob {
   jitter: number;
 }
 
-type OnChange = NonNullable<TableProps<MetadataFetchjob>["onChange"]>;
+type OnChange = NonNullable<TableProps<MetadataFetchJob>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
 type NotificationType = "success" | "info" | "warning" | "error";
 
 const MetadataFetchJobsPage: React.FunctionComponent = () => {
-  const [api, contextHolder] = notification.useNotification();
+  const [api] = notification.useNotification();
 
-  const [selectedJob, setSelectedJob] = useState<MetadataFetchjob | undefined>(
+  const [selectedJob, setSelectedJob] = useState<MetadataFetchJob | undefined>(
     undefined,
   );
   const [jobStats, setJobStats] = useState<any>();
   const [jobStatsLoading, setJobStatsLoading] = useState<any>(true);
-  const [jobStatsError, setJobStatsError] = useState<any>();
+  const [, setJobStatsError] = useState<any>();
 
   const [metadataFetchJobs, setMetadataFetchJobs] = useState<any>();
   const [metadataFetchJobRequested, setMetadataFetchJobRequested] =
     useState("");
   const [metadataFetchJobsLoading, setMetadataFetchJobsLoading] =
-    useState<any>(true);
-  const [metadataFetchJobsError, setMetadataFetchJobsError] = useState<any>();
+    useState(true);
+  const [, setMetadataFetchJobsError] = useState<any>();
   const [metadataFetchJobsCount, setMetadataFetchJobsCount] = useState(0);
   const [metadataFetchJobsPage, setMetadataFetchJobsPage] = useState(0);
   const [metadataFetchJobsPageSize, setMetadataFetchJobsPageSize] =
@@ -84,7 +89,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
     Record<string, FilterValue | null>
   >({});
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [selectedRows, setSelectedRows] = useState<MetadataFetchjob[]>([]);
+  const [selectedRows, setSelectedRows] = useState<MetadataFetchJob[]>([]);
   const [processingRows, setProcessingRows] = useState(false);
   const [processingStatus, setProcessingStatus] = useState({
     pending: 0,
@@ -94,6 +99,8 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
     total: 0,
   });
   const [targetStatus, setTargetStatus] = useState("queued");
+  const [redriveModalOpen, setRedriveModalOpen] = useState(false);
+  const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
 
   const openNotificationWithIcon = (
     type: NotificationType,
@@ -166,7 +173,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
 
   const onSelectChange = (
     newSelectedRowKeys: React.Key[],
-    newSelectedRows: MetadataFetchjob[],
+    newSelectedRows: MetadataFetchJob[],
   ) => {
     setSelectedRowKeys(newSelectedRowKeys);
     setSelectedRows(newSelectedRows);
@@ -191,6 +198,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
           jitter: job.jitter,
         },
         republish,
+        true,
       );
     });
   };
@@ -202,7 +210,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
   };
 
   const processRows = async (
-    process: (job: MetadataFetchjob) => Promise<void>,
+    process: (job: MetadataFetchJob) => Promise<void>,
   ) => {
     setProcessingRows(true);
 
@@ -221,6 +229,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
 
           currentStatus.success++;
         } catch (e) {
+          console.error(`Unable to process MetadataFetchJob ${value.id}`, e);
           currentStatus.failed++;
         }
 
@@ -255,173 +264,16 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
   );
 
   if (!jobStatsLoading) {
-    statusChart = (
-      <HighchartsReact
-        highcharts={Highcharts}
-        options={{
-          width: "100%",
-          chart: {
-            height: 300,
-            type: "column",
-          },
-          tooltip: {
-            shared: true,
-          },
-          plotOptions: {
-            series: {
-              stacking: "percent",
-            },
-            column: {
-              pointWidth: 15,
-            },
-          },
-          title: {
-            text: "Job Statuses",
-            style: { fontSize: 10 },
-          },
-          xAxis: {
-            categories: [
-              "Movies",
-              "TV Series",
-              "TV Seasons",
-              "TV Episodes",
-              "People",
-              "Collections",
-              "TV Networks",
-              "Keywords",
-              "Production Companies",
-              "Certifications",
-              "Genres",
-              "Countries",
-              "Languages",
-            ],
-            lineWidth: 0,
-          },
-          legend: {
-            layout: "vertical",
-            align: "right",
-            verticalAlign: "top",
-          },
-          series: [
-            {
-              name: "Queued",
-              data: jobStats.status.series.queued,
-              color: "#ffa600",
-            },
-            {
-              name: "Invalidated",
-              data: jobStats.status.series.invalidated,
-              color: "#7a5195",
-            },
-            {
-              name: "Fetching",
-              data: jobStats.status.series.fetching,
-              color: "#bc5090",
-            },
-            {
-              name: "Cancelled",
-              data: jobStats.status.series.cancelled,
-              color: "#ff764a",
-            },
-            {
-              name: "Fetched",
-              data: jobStats.status.series.fetched,
-              color: "#374c80",
-            },
-            {
-              name: "Failed",
-              data: jobStats.status.series.failed,
-              color: "#ef5675",
-            },
-            {
-              name: "Not Found",
-              data: jobStats.status.series.not_found,
-              color: "#003f5c",
-            },
-          ],
-          credits: {
-            enabled: false,
-          },
-        }}
-      />
-    );
-
-    expirationChart = (
-      <HighchartsReact
-        highcharts={Highcharts}
-        options={{
-          width: "100%",
-          chart: {
-            height: 300,
-            type: "column",
-          },
-          colors: [
-            "#003f5c",
-            "#19476f",
-            "#374c80",
-            "#58508d",
-            "#7a5195",
-            "#9c5196",
-            "#bc5090",
-            "#d85085",
-            "#ef5675",
-            "#ff6361",
-            "#ff764a",
-            "#ff8d2f",
-            "#ffa600",
-          ],
-          xAxis: {
-            lineWidth: 0,
-          },
-          tooltip: {
-            shared: true,
-          },
-          plotOptions: {
-            series: {
-              stacking: "normal",
-            },
-            column: {
-              colors: [
-                "#003f5c",
-                "#19476f",
-                "#374c80",
-                "#58508d",
-                "#7a5195",
-                "#9c5196",
-                "#bc5090",
-                "#d85085",
-                "#ef5675",
-                "#ff6361",
-                "#ff764a",
-                "#ff8d2f",
-                "#ffa600",
-              ],
-            },
-          },
-          title: {
-            text: "Expiration Distribution (Weeks)",
-            style: { fontSize: 10 },
-          },
-          legend: {
-            layout: "vertical",
-            align: "right",
-            verticalAlign: "top",
-          },
-          series: jobStats.expiration.series,
-          credits: {
-            enabled: false,
-          },
-        }}
-      />
-    );
+    statusChart = <MetadataFetchJobStatusChart jobStats={jobStats} />;
+    expirationChart = <MetadataFetchJobExpirationChart jobStats={jobStats} />;
   }
 
-  const columns: ColumnsType<MetadataFetchjob> = [
+  const columns: ColumnsType<MetadataFetchJob> = [
     {
       key: "id",
       title: "ID",
       dataIndex: "id",
-      render: (value, record, index) => {
+      render: (_value, record) => {
         return (
           <Typography.Link
             onClick={() => {
@@ -493,7 +345,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
           value: "languages",
         },
       ],
-      render: (value, record, index) => {
+      render: (_value, record) => {
         return <Typography.Text>{record.type}</Typography.Text>;
       },
       sorter: true,
@@ -529,7 +381,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
           value: "failed",
         },
       ],
-      render: (value, record, index) => {
+      render: (value) => {
         return getMetadataJobStatusIndicator(value);
       },
       sorter: true,
@@ -539,8 +391,8 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
       key: "ttl",
       title: "TTL",
       dataIndex: "ttl",
-      render: (value, record, index) => {
-        return <Typography.Text>{record.ttl}</Typography.Text>;
+      render: (value, record) => {
+        return <Typography.Text>{record.ttl}d</Typography.Text>;
       },
       sorter: true,
       width: 100,
@@ -549,7 +401,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
       key: "jitter",
       title: "Jitter",
       dataIndex: "jitter",
-      render: (value, record, index) => {
+      render: (value, record) => {
         return <Typography.Text>{record.jitter}</Typography.Text>;
       },
       sorter: true,
@@ -559,7 +411,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
       key: "expiration",
       title: "Expiration",
       dataIndex: "expiration",
-      render: (value, record, index) => {
+      render: (value, record) => {
         if (record.lastFetchedTime) {
           const now = DateTime.utc();
           const lastFetched = DateTime.fromISO(record.lastFetchedTime);
@@ -607,8 +459,8 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
       key: "createdTime",
       title: "Created",
       dataIndex: "createdTime",
-      render: (value, record, index) => {
-        return <Timestamp value={value} />;
+      render: (value) => {
+        return <Timestamp value={value} showTime={true} />;
       },
       sorter: true,
       width: 200,
@@ -617,8 +469,8 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
       key: "lastUpdatedTime",
       title: "Last Updated",
       dataIndex: "lastUpdatedTime",
-      render: (value, record, index) => {
-        return <Timestamp value={value} />;
+      render: (value) => {
+        return <Timestamp value={value} showTime={true} />;
       },
       sorter: true,
       width: 200,
@@ -627,8 +479,8 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
       key: "lastFetchedTime",
       title: "Last Fetched",
       dataIndex: "lastFetchedTime",
-      render: (value, record, index) => {
-        return <Timestamp value={value} />;
+      render: (value) => {
+        return <Timestamp value={value} showTime={true} />;
       },
       sorter: true,
       width: 200,
@@ -672,39 +524,11 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
           }}
         >
           <Typography.Text strong={true}>Status: </Typography.Text>
-          <Select
+          <MetadataJobStatusSelect
             value={targetStatus}
             onChange={(value) => {
               setTargetStatus(value);
             }}
-            style={{ width: 200 }}
-            bordered={false}
-            options={[
-              {
-                value: "queued",
-                label: getMetadataJobStatusIndicator("queued", true),
-              },
-              {
-                value: "invalidated",
-                label: getMetadataJobStatusIndicator("invalidated", true),
-              },
-              {
-                value: "fetching",
-                label: getMetadataJobStatusIndicator("fetching", true),
-              },
-              {
-                value: "cancelled",
-                label: getMetadataJobStatusIndicator("cancelled", true),
-              },
-              {
-                value: "fetched",
-                label: getMetadataJobStatusIndicator("fetched", true),
-              },
-              {
-                value: "failed",
-                label: getMetadataJobStatusIndicator("failed", true),
-              },
-            ]}
           />
           <Button
             type={"primary"}
@@ -738,11 +562,41 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
               await deleteSelectedJobs();
             }}
           >
-            Delete
+            Delete Selected
           </Button>
         </Space>
       </Space>
       <Space style={{ marginRight: 16 }}>
+        <Space
+          direction={"horizontal"}
+          size={8}
+          style={{
+            alignItems: "center",
+            borderRight: "1px solid #f3f3f3",
+            padding: 16,
+          }}
+        >
+          <Button
+            variant={"solid"}
+            color={"pink"}
+            icon={<LoginOutlined />}
+            onClick={async () => {
+              setRedriveModalOpen(true);
+            }}
+          >
+            Create Re-drive
+          </Button>
+          <Button
+            variant={"solid"}
+            color={"cyan"}
+            icon={<PlusOutlined />}
+            onClick={async () => {
+              setCreateJobModalOpen(true);
+            }}
+          >
+            Create Metadata Job
+          </Button>
+        </Space>
         <Button
           type={"text"}
           disabled={processingRows || metadataFetchJobsLoading}
@@ -768,7 +622,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
             size={"default"}
             percent={(processingStatus.total / selectedRowKeys.length) * 100}
             style={{ paddingRight: 32 }}
-            format={(percent, successPercent) => {
+            format={(percent) => {
               return `${percent?.toFixed(0)}%`;
             }}
           />
@@ -786,7 +640,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
   }
 
   return (
-    <>
+    <div>
       <Breadcrumb
         style={{ padding: 8, background: "#f6f6f6" }}
         items={[
@@ -818,17 +672,18 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
           },
         ]}
       />
-      <Content
+      <Layout
         style={{
-          background: "#fff",
-          marginTop: 16,
+          position: "fixed",
+          background: "#ffffff",
+          gap: 16,
+          top: 102,
+          overflowX: "hidden",
+          overflowY: "auto",
+          height: "calc(100vh - 102px)",
         }}
       >
-        <Content
-          style={{
-            marginBottom: 16,
-          }}
-        >
+        <Content style={{ width: "calc(100vw - 384px)" }}>
           <Row gutter={16} style={{ marginBottom: 16 }}>
             <Col span={16}>{expirationChart}</Col>
             <Col span={8}>{statusChart}</Col>
@@ -922,9 +777,22 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
               }}
             />
           </Drawer>
+          <RedriveModal
+            open={redriveModalOpen}
+            onClose={() => {
+              setRedriveModalOpen(false);
+            }}
+            statistics={jobStats}
+          />
+          <CreateMetadataJobModal
+            open={createJobModalOpen}
+            onClose={() => {
+              setCreateJobModalOpen(false);
+            }}
+          />
         </Content>
-      </Content>
-    </>
+      </Layout>
+    </div>
   );
 };
 

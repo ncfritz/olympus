@@ -4,6 +4,7 @@ import {
   Breadcrumb,
   Col,
   Drawer,
+  Layout,
   Row,
   Space,
   Spin,
@@ -12,18 +13,17 @@ import {
 } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import axios from "axios";
-import Highcharts from "highcharts";
-import HighchartsReact from "highcharts-react-official";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import BatchJobDetailsPanel from "../../../components/dionysus/jobs/BatchJobDetailsPanel";
-import BatchJobPanel, {
-  type BatchJobRecord,
-  JobType,
-} from "../../../components/layout/jobs/BatchJobPanel";
+import BatchJobQueueTimeChart from "../../../components/dionysus/jobs/graphs/BatchJobQueueTimeChart";
+import BatchJobRuntimeChart from "../../../components/dionysus/jobs/graphs/BatchJobRuntimeChart";
+import BatchJobStatusChart from "../../../components/dionysus/jobs/graphs/BatchJobStatusChart";
+import BatchJobPanel from "../../../components/layout/jobs/BatchJobPanel";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
+import { type BatchJobRecord, JobType } from "../../../types/dionysus";
 
 const BatchJobsPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -65,7 +65,17 @@ const BatchJobsPage: React.FunctionComponent = () => {
     {
       key: "t-bj-all",
       label: "All",
-      children: <BatchJobPanel type={JobType.ALL} onSelect={setSelectedJob} />,
+      children: (
+        <BatchJobPanel
+          type={JobType.ALL}
+          onSelect={setSelectedJob}
+          showPublish={false}
+          showStats={false}
+        />
+      ),
+      style: {
+        marginTop: -16,
+      },
     },
     {
       key: "t-bj-movies",
@@ -150,6 +160,17 @@ const BatchJobsPage: React.FunctionComponent = () => {
         <BatchJobPanel type={JobType.LANGUAGES} onSelect={setSelectedJob} />
       ),
     },
+    {
+      key: "t-bj-redrive",
+      label: "Redrive Jobs",
+      children: (
+        <BatchJobPanel
+          type={JobType.REDRIVE}
+          onSelect={setSelectedJob}
+          showPublish={false}
+        />
+      ),
+    },
   ];
 
   let queueTimeChart = (
@@ -171,254 +192,9 @@ const BatchJobsPage: React.FunctionComponent = () => {
   );
 
   if (!jobStatsLoading) {
-    queueTimeChart = (
-      <HighchartsReact
-        highcharts={Highcharts}
-        options={{
-          width: "100%",
-          chart: {
-            height: 250,
-          },
-          tooltip: {
-            shared: true,
-          },
-          plotOptions: {
-            spline: {
-              marker: {
-                symbol: "square",
-                radius: 2,
-              },
-              lineWidth: 1,
-            },
-          },
-          title: {
-            text: "Queue Latency",
-            style: { fontSize: 10 },
-          },
-          xAxis: {
-            type: "datetime",
-            labels: {
-              format: "{value:%m-%d}",
-            },
-            lineWidth: 0,
-          },
-          yAxis: {
-            title: {
-              text: "ms",
-            },
-            type: "logarithmic",
-          },
-          legend: {
-            align: "left",
-          },
-          series: [
-            {
-              type: "spline",
-              name: "Movies",
-              data: jobStats.series.timing.queueTime.movies,
-              color: "#003f5c",
-            },
-            {
-              type: "spline",
-              name: "TV Series",
-              data: jobStats.series.timing.queueTime.tv_series,
-              color: "#bc5090",
-            },
-            {
-              type: "spline",
-              name: "People",
-              data: jobStats.series.timing.queueTime.people,
-              color: "#7a5195",
-            },
-            {
-              type: "spline",
-              name: "Collections",
-              data: jobStats.series.timing.queueTime.collections,
-              color: "#bc5090",
-            },
-            {
-              type: "spline",
-              name: "TV Networks",
-              data: jobStats.series.timing.queueTime.tv_networks,
-              color: "#ef5675",
-            },
-            {
-              type: "spline",
-              name: "Keywords",
-              data: jobStats.series.timing.queueTime.keywords,
-              color: "#ff764a",
-            },
-            {
-              type: "spline",
-              name: "Production Companies",
-              data: jobStats.series.timing.queueTime.production_companies,
-              color: "#ffa600",
-            },
-          ],
-          credits: {
-            enabled: false,
-          },
-        }}
-      />
-    );
-
-    runtimeChart = (
-      <HighchartsReact
-        highcharts={Highcharts}
-        options={{
-          width: "100%",
-          chart: {
-            height: 250,
-          },
-          tooltip: {
-            shared: true,
-          },
-          plotOptions: {
-            spline: {
-              marker: {
-                symbol: "square",
-                radius: 2,
-              },
-              lineWidth: 1,
-            },
-          },
-          title: {
-            text: "Runtime",
-            style: { fontSize: 10 },
-          },
-          xAxis: {
-            type: "datetime",
-            labels: {
-              format: "{value:%m-%d}",
-            },
-            lineWidth: 0,
-          },
-          yAxis: {
-            title: {
-              text: "ms",
-            },
-            type: "logarithmic",
-          },
-          legend: {
-            align: "left",
-          },
-          series: [
-            {
-              type: "spline",
-              name: "Movies",
-              data: jobStats.series.timing.runtime.movies,
-              color: "#003f5c",
-            },
-            {
-              type: "spline",
-              name: "TV Series",
-              data: jobStats.series.timing.runtime.tv_series,
-              color: "#bc5090",
-            },
-            {
-              type: "spline",
-              name: "People",
-              data: jobStats.series.timing.runtime.people,
-              color: "#7a5195",
-            },
-            {
-              type: "spline",
-              name: "Collections",
-              data: jobStats.series.timing.runtime.collections,
-              color: "#bc5090",
-            },
-            {
-              type: "spline",
-              name: "TV Networks",
-              data: jobStats.series.timing.runtime.tv_networks,
-              color: "#ef5675",
-            },
-            {
-              type: "spline",
-              name: "Keywords",
-              data: jobStats.series.timing.runtime.keywords,
-              color: "#ff764a",
-            },
-            {
-              type: "spline",
-              name: "Production Companies",
-              data: jobStats.series.timing.runtime.production_companies,
-              color: "#ffa600",
-            },
-          ],
-          credits: {
-            enabled: false,
-          },
-        }}
-      />
-    );
-
-    statusChart = (
-      <HighchartsReact
-        highcharts={Highcharts}
-        options={{
-          width: "100%",
-          chart: {
-            height: 250,
-            type: "column",
-          },
-          tooltip: {
-            shared: true,
-          },
-          plotOptions: {
-            series: {
-              stacking: "normal",
-            },
-            column: {
-              pointWidth: 15,
-            },
-          },
-          title: {
-            text: "Job Statuses",
-            style: { fontSize: 10 },
-          },
-          xAxis: {
-            categories: jobStats.categories.status,
-            lineWidth: 0,
-          },
-          legend: {
-            layout: "vertical",
-            align: "right",
-            verticalAlign: "top",
-          },
-          series: [
-            {
-              name: "Cancelled",
-              data: jobStats.series.status.cancelled,
-              color: "#ffa600",
-            },
-            {
-              name: "Failed",
-              data: jobStats.series.status.failed,
-              color: "#ff6361",
-            },
-            {
-              name: "Success",
-              data: jobStats.series.status.success,
-              color: "#bc5090",
-            },
-            {
-              name: "Started",
-              data: jobStats.series.status.started,
-              color: "#58508d",
-            },
-            {
-              name: "Created",
-              data: jobStats.series.status.created,
-              color: "#003f5c",
-            },
-          ],
-          credits: {
-            enabled: false,
-          },
-        }}
-      />
-    );
+    queueTimeChart = <BatchJobQueueTimeChart jobStats={jobStats} />;
+    runtimeChart = <BatchJobRuntimeChart jobStats={jobStats} />;
+    statusChart = <BatchJobStatusChart jobStats={jobStats} />;
   }
 
   return (
@@ -456,17 +232,18 @@ const BatchJobsPage: React.FunctionComponent = () => {
           ]}
         />
       </Affix>
-      <Content
+      <Layout
         style={{
-          background: "#fff",
-          marginTop: 16,
+          position: "fixed",
+          background: "#ffffff",
+          gap: 16,
+          top: 102,
+          overflowX: "hidden",
+          overflowY: "auto",
+          height: "calc(100vh - 102px)",
         }}
       >
-        <Content
-          style={{
-            marginBottom: 16,
-          }}
-        >
+        <Content style={{ width: "calc(100vw - 384px)" }}>
           <Row gutter={16} style={{ marginBottom: 36 }}>
             <Col span={8}>{statusChart}</Col>
             <Col span={8}>{queueTimeChart}</Col>
@@ -488,6 +265,9 @@ const BatchJobsPage: React.FunctionComponent = () => {
                 { shallow: true },
               );
             }}
+            tabBarStyle={{
+              marginBottom: 0,
+            }}
           />
           <Drawer
             title="Batch Job Details"
@@ -505,7 +285,7 @@ const BatchJobsPage: React.FunctionComponent = () => {
             />
           </Drawer>
         </Content>
-      </Content>
+      </Layout>
     </>
   );
 };

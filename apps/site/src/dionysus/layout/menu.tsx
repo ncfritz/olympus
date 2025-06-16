@@ -1,9 +1,13 @@
 import {
   ApiOutlined,
+  AppstoreOutlined,
+  BarcodeOutlined,
   ExperimentOutlined,
   GroupOutlined,
-  HomeOutlined, UploadOutlined,
-  VideoCameraOutlined,
+  HomeOutlined,
+  KubernetesOutlined, SearchOutlined,
+  UploadOutlined,
+  VideoCameraOutlined
 } from "@ant-design/icons";
 import { Menu } from "antd";
 import { useRouter } from "next/router";
@@ -167,6 +171,52 @@ const DionysysMenu: React.FunctionComponent = () => {
           ],
         },
         {
+          key: "jobs_container",
+          icon: <WorkQueueIcon />,
+          label: "Metadata Jobs",
+          onTitleClick: updateSubMenus,
+          children: [
+            {
+              key: `/${BASE_PATH}/jobs/workflow`,
+              icon: <KubernetesOutlined />,
+              label: "Metadata Workflows",
+            },
+            {
+              key: `/${BASE_PATH}/jobs/batch`,
+              icon: <BatchJobIcon />,
+              label: "Batch Jobs",
+            },
+            {
+              key: `/${BASE_PATH}/jobs/metadata`,
+              icon: <MetadataOutlinedIcon />,
+              label: "Metadata Jobs",
+            },
+          ],
+        },
+        {
+          key: "fetch_jobs_container",
+          icon: <WorkQueueIcon />,
+          label: "Asset Fetch Jobs",
+          onTitleClick: updateSubMenus,
+          children: [
+            {
+              key: `/${BASE_PATH}/jobs/download`,
+              icon: <SearchOutlined />,
+              label: "NZB Search Jobs",
+            },
+            {
+              key: `/${BASE_PATH}/jobs/download`,
+              icon: <DownloadsIcon />,
+              label: "Download Jobs",
+            },
+            {
+              key: `/${BASE_PATH}/jobs/transcode`,
+              icon: <TranscodeIcon />,
+              label: "Transcode Jobs",
+            },
+          ],
+        },
+        {
           key: "content-container",
           icon: <ExperimentOutlined />,
           label: "Content",
@@ -178,16 +228,6 @@ const DionysysMenu: React.FunctionComponent = () => {
               label: "Main",
             },
             {
-              key: `/${BASE_PATH}/content/upload`,
-              icon: <UploadOutlined />,
-              label: "Asset Upload",
-            },
-            {
-              key: `/${BASE_PATH}/content/process`,
-              icon: <VideoCameraOutlined />,
-              label: "New Asset Ingest",
-            },
-            {
               key: `/${BASE_PATH}/content/assets`,
               icon: <VideoCameraOutlined />,
               label: "Assets",
@@ -197,33 +237,20 @@ const DionysysMenu: React.FunctionComponent = () => {
               icon: <GroupOutlined />,
               label: "Channels",
             },
-          ],
-        },
-        {
-          key: "jobs_container",
-          icon: <WorkQueueIcon />,
-          label: "Jobs",
-          onTitleClick: updateSubMenus,
-          children: [
             {
-              key: `/${BASE_PATH}/jobs/batch`,
-              icon: <BatchJobIcon />,
-              label: "Batch Jobs",
+              key: `/${BASE_PATH}/content/upload`,
+              icon: <UploadOutlined />,
+              label: "Asset Upload",
             },
             {
-              key: `/${BASE_PATH}/jobs/metadata`,
-              icon: <MetadataOutlinedIcon />,
-              label: "Metadata Jobs",
+              key: `/${BASE_PATH}/content/process`,
+              icon: <BarcodeOutlined />,
+              label: "New Asset Ingest",
             },
             {
-              key: `/${BASE_PATH}/jobs/download`,
-              icon: <DownloadsIcon />,
-              label: "Download Jobs",
-            },
-            {
-              key: `/${BASE_PATH}/jobs/transcode`,
-              icon: <TranscodeIcon />,
-              label: "Transcode Jobs",
+              key: `/${BASE_PATH}/content/duplicates`,
+              icon: <AppstoreOutlined />,
+              label: "Duplicates",
             },
           ],
         },

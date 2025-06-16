@@ -20,7 +20,8 @@ import { Content } from "antd/lib/layout/layout";
 import Hls from "hls.js";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import Plyr from "plyr";
+import dynamic from "next/dynamic";
+const Plyr = dynamic(() => import("plyr-react"), { ssr: false });
 import prettyMilliseconds from "pretty-ms";
 import React, { useEffect, useRef, useState } from "react";
 import contentApi from "../../../../api/contentApi";
@@ -107,32 +108,34 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
       enabled: true,
     };
 
-    if (hlsEnabled) {
-      const hls = new Hls();
-      const plyr = new Plyr(player, playerOptions);
-      plyr.source = videoSource;
+    if (playerRef.current && typeof window !== "undefined") {
+      const plyr = playerRef.current.get("plyr");
 
-      hls.loadSource(
-        `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/playlist.m3u8`,
-      );
-      hls.attachMedia(player);
-    } else {
-      videoSource.sources = [
-        {
-          src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/asset.mp4?start=0`,
-          type: "video/mp4",
-        },
-      ];
-      const plyr = new Plyr(player, playerOptions);
-      plyr.source = videoSource;
+      if (hlsEnabled) {
+        const hls = new Hls();
+        plyr.source = videoSource;
+
+        hls.loadSource(
+          `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/playlist.m3u8`,
+        );
+        hls.attachMedia(player);
+      } else {
+        videoSource.sources = [
+          {
+            src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/asset.mp4?start=0`,
+            type: "video/mp4",
+          },
+        ];
+        plyr.source = videoSource;
+      }
     }
   }, [asset]);
 
-  const actionRquired = !(thumbsGenerated && hlsEnabled);
+  const actionRequired = !(thumbsGenerated && hlsEnabled);
 
   let playerContent = undefined;
   let content = <Spin spinning={true} />;
-  let contentOffset = actionRquired ? 100 : 0;
+  let contentOffset = actionRequired ? 100 : 0;
 
   if (assetError) {
     content = (
@@ -212,7 +215,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
             />
           </Space>
         </Row>
-        {actionRquired && (
+        {actionRequired && (
           <Row style={{ padding: 16, background: "#ffcc33", height: 100 }}>
             <Space size={16} direction={"horizontal"}>
               <Space

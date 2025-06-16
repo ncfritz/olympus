@@ -1,15 +1,8 @@
-import { Col, Row, Space, Statistic, Typography } from "antd";
-import { type SubmitHandler, useForm } from "react-hook-form";
+import { Col, Empty, Row, Space, Statistic, Typography } from "antd";
+import type { BatchJobRecord } from "../../../types/dionysus";
 import Timestamp from "../../data/Timestamp";
-import type { BatchJobRecord } from "../../layout/jobs/BatchJobPanel";
-import { getMetadataJobStatusIndicator } from "./utils";
 
-interface FormInput {
-  ttl: number;
-  jitter: number;
-  status: string;
-  republish: boolean;
-}
+import { getBatchJobStatusIndicator } from "./utils";
 
 export interface BatchJobDetailsPanelProps {
   job: BatchJobRecord;
@@ -21,26 +14,8 @@ const BatchJobDetailsPanel: React.FunctionComponent<
   BatchJobDetailsPanelProps
 > = ({ job, close, postUpdate }: BatchJobDetailsPanelProps) => {
   if (!job) {
-    return <></>;
+    return <Empty description={"No Batch Job Found"} />;
   }
-
-  const {
-    handleSubmit,
-    control,
-    formState: { isValid, isDirty, isSubmitting },
-    setValue,
-    register,
-  } = useForm<FormInput>({
-    mode: "onChange",
-    reValidateMode: "onChange",
-  });
-
-  const onSubmit: SubmitHandler<FormInput> = async (data) => {
-    try {
-      await postUpdate();
-      close();
-    } catch (e) {}
-  };
 
   return (
     <Space style={{ width: "100%" }} direction={"vertical"} size={8}>
@@ -61,7 +36,7 @@ const BatchJobDetailsPanel: React.FunctionComponent<
               title={"status"}
               value={job.status}
               formatter={(value: string) => {
-                return getMetadataJobStatusIndicator(value);
+                return getBatchJobStatusIndicator(value);
               }}
               valueStyle={{ fontSize: "inherit" }}
             />
