@@ -1,7 +1,7 @@
 {
   "name": "@ncfritz/olympus-api",
   "description": "REST API for Olympus",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
   "repository": {
     "type": "git",
@@ -21,7 +21,6 @@
     "start:prod": "node dist/main",
     "dev": "NODE_ENV=dev nest start --watch",
     "dev:local": "NODE_ENV=local nest start --watch"
-
   },
   "dependencies": {
     "@apollo/server": "^4.12.1",
