@@ -3,7 +3,6 @@ import { Tag } from "antd";
 import type { ContentAssetTag } from "../../pages/dionysus/content/assets";
 
 export interface ContentAssetTagElementProps {
-  assetId: string;
   tag: ContentAssetTag;
   onRemove?: (tag: ContentAssetTag) => Promise<void>;
   onSelectTag?: (tag: ContentAssetTag) => Promise<void>;
@@ -19,7 +18,7 @@ const TYPE_COLORS = {
 
 const ContentAssetTagElement: React.FunctionComponent<
   ContentAssetTagElementProps
-> = ({ assetId, tag, onRemove, onSelectTag }: ContentAssetTagElementProps) => {
+> = ({ tag, onRemove, onSelectTag }: ContentAssetTagElementProps) => {
   return (
     <Tag
       closable={onRemove !== undefined}

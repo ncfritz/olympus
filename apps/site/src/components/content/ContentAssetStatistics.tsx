@@ -63,14 +63,6 @@ const ContentAssetStatistics: React.FunctionComponent<
         <Col span={6}>
           <ContentDimensionGraph
             loading={loading}
-            title={"Height"}
-            data={heightStatistics}
-            height={200}
-          />
-        </Col>
-        <Col span={6}>
-          <ContentDimensionGraph
-            loading={loading}
             title={"Duration"}
             data={durationStatistics}
             height={200}
@@ -79,16 +71,24 @@ const ContentAssetStatistics: React.FunctionComponent<
         <Col span={6}>
           <ContentDimensionGraph
             loading={loading}
-            title={"Width"}
-            data={widthStatistics}
+            title={"Size"}
+            data={sizeStatistics}
             height={200}
           />
         </Col>
         <Col span={6}>
           <ContentDimensionGraph
             loading={loading}
-            title={"Size"}
-            data={sizeStatistics}
+            title={"Height"}
+            data={heightStatistics}
+            height={200}
+          />
+        </Col>
+        <Col span={6}>
+          <ContentDimensionGraph
+            loading={loading}
+            title={"Width"}
+            data={widthStatistics}
             height={200}
           />
         </Col>

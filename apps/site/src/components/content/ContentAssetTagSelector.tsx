@@ -1,13 +1,18 @@
-import { PlusOutlined } from "@ant-design/icons";
+import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { Button, Empty, Input, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 import contentApi from "../../api/contentApi";
 import ContentAssetTag from "./ContentAssetTag";
 import type { ContentAssetTag as ContentAssetTagType } from "../../pages/dionysus/content/assets";
 
+export type TagRenderer = (
+  tag: ContentAssetTagType,
+  onSelectTag?: (tag: ContentAssetTagType) => Promise<void>,
+  onRemove?: (tag: ContentAssetTagType) => Promise<void>,
+) => React.ReactNode;
+
 export interface ContentAssetTagSelectorProps {
-  assetId: string;
-  title: string;
+  title?: string;
   type: string;
   tags: ContentAssetTagType[];
   onSelectTag?: (tag: ContentAssetTagType) => Promise<void>;
@@ -15,12 +20,19 @@ export interface ContentAssetTagSelectorProps {
   allowFilter?: boolean;
   allowAdd?: boolean;
   afterAdd?: (tag: ContentAssetTagType) => Promise<void>;
+  width?: number | string;
+  tagRenderer?: TagRenderer;
 }
+
+const DefaultTagRenderer: TagRenderer = (tag, onSelectTag, onRemove) => {
+  return (
+    <ContentAssetTag tag={tag} onSelectTag={onSelectTag} onRemove={onRemove} />
+  );
+};
 
 const ContentAssetTagSelector: React.FunctionComponent<
   ContentAssetTagSelectorProps
 > = ({
-  assetId,
   title,
   type,
   tags,
@@ -29,6 +41,8 @@ const ContentAssetTagSelector: React.FunctionComponent<
   allowAdd = false,
   allowFilter = false,
   afterAdd,
+  width = 200,
+  tagRenderer = DefaultTagRenderer,
 }: ContentAssetTagSelectorProps) => {
   const [filter, setFilter] = useState<string | undefined>(undefined);
   const [filteredTags, setFilteredTags] = useState(tags);
@@ -78,8 +92,8 @@ const ContentAssetTagSelector: React.FunctionComponent<
               marginBottom: 8,
             }}
           >
-            {allowAdd && (
-              <Space.Compact>
+            {allowFilter && (
+              <Space.Compact style={{ width: "100%" }}>
                 <Input
                   size={"small"}
                   value={filter}
@@ -88,6 +102,7 @@ const ContentAssetTagSelector: React.FunctionComponent<
                   onChange={(e) => {
                     setFilter(e.target.value);
                   }}
+                  prefix={<SearchOutlined />}
                   onPressEnter={async () => {
                     if (filter && filter.length > 0) {
                       await addTag(type, filter);
@@ -96,15 +111,17 @@ const ContentAssetTagSelector: React.FunctionComponent<
                   }}
                   name={"filter"}
                 />
-                <Button
-                  icon={<PlusOutlined />}
-                  size={"small"}
-                  onClick={async () => {
-                    if (filter && filter.length > 0) {
-                      await addTag(type, filter);
-                    }
-                  }}
-                />
+                {allowAdd && (
+                  <Button
+                    icon={<PlusOutlined />}
+                    size={"small"}
+                    onClick={async () => {
+                      if (filter && filter.length > 0) {
+                        await addTag(type, filter);
+                      }
+                    }}
+                  />
+                )}
               </Space.Compact>
             )}
           </div>
@@ -119,14 +136,7 @@ const ContentAssetTagSelector: React.FunctionComponent<
           }}
         >
           {filteredTags.map((tag) => {
-            return (
-              <ContentAssetTag
-                assetId={assetId}
-                tag={tag}
-                onSelectTag={onSelectTag}
-                onRemove={onRemove}
-              />
-            );
+            return tagRenderer(tag, onSelectTag, onRemove);
           })}
         </div>
       </>
@@ -134,8 +144,8 @@ const ContentAssetTagSelector: React.FunctionComponent<
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: 200 }}>
-      <Typography.Title level={5}>{title}</Typography.Title>
+    <div style={{ display: "flex", flexDirection: "column", width: width }}>
+      {title && <Typography.Title level={5}>{title}</Typography.Title>}
       {content}
     </div>
   );
