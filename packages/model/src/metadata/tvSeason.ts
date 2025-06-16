@@ -1,15 +1,23 @@
-import { ApiProperty, OmitType } from "@nestjs/swagger";
+import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment";
-import { Episode, PartialEpisode } from "./tvEpisode";
-import { TVSeries, TVSeriesVideo } from "./tvSeries";
+import { Episode } from "./tvEpisode";
+import {
+  PartialTVSeriesCastMember,
+  PartialTVSeriesCrewMember,
+  PartialTVSeriesExternalId,
+  PartialTVSeriesImage,
+  PartialTVSeriesVideo,
+  TVSeriesCastMember,
+  TVSeriesCrewMember,
+  TVSeriesExternalId,
+  TVSeriesImage,
+  TVSeriesVideo,
+} from "./tvSeries";
 
 export class BaseSeason {
   @ApiProperty({ type: Number })
   id: number;
-
-  @ApiProperty({ type: Number })
-  alternateId: number;
 
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
@@ -22,15 +30,10 @@ export class BaseSeason {
   overview: string;
 
   @ApiProperty({ type: String })
-  posterPath: string;
+  posterPath?: string;
 
   @ApiProperty({ type: Number })
   seasonNumber: number;
-
-  @ApiProperty({
-    type: () => TVSeriesVideo,
-  })
-  series: TVSeries;
 }
 
 export class Season extends BaseSeason {
@@ -43,10 +46,33 @@ export class Season extends BaseSeason {
   lastUpdatedTime: Moment;
 
   @ApiProperty({
-    type: () => TVSeasonExternalId,
+    type: () => TVSeriesCastMember,
     isArray: true,
   })
-  externalIds: TVSeasonExternalId[];
+  cast: TVSeriesCastMember[];
+
+  @ApiProperty({
+    type: () => TVSeriesCrewMember,
+    isArray: true,
+  })
+  crew: TVSeriesCrewMember[];
+
+  @ApiProperty({
+    type: () => TVSeriesImage,
+    isArray: true,
+  })
+  images: TVSeriesImage[];
+
+  @ApiProperty({
+    type: () => TVSeriesVideo,
+  })
+  videos: TVSeriesVideo;
+
+  @ApiProperty({
+    type: () => TVSeriesExternalId,
+    isArray: true,
+  })
+  externalIds: TVSeriesExternalId[];
 
   @ApiProperty({
     type: () => Episode,
@@ -57,35 +83,46 @@ export class Season extends BaseSeason {
 
 export class PartialSeason extends BaseSeason {
   @ApiProperty({
-    type: () => PartialTVSeasonExternalId,
+    type: () => PartialTVSeriesCastMember,
     isArray: true,
   })
-  externalIds: PartialTVSeasonExternalId[];
+  cast: PartialTVSeriesCastMember[];
 
   @ApiProperty({
-    type: () => PartialEpisode,
+    type: () => PartialTVSeriesCrewMember,
     isArray: true,
   })
-  episodes: PartialEpisode[];
+  crew: PartialTVSeriesCrewMember[];
+
+  @ApiProperty({
+    type: () => PartialTVSeriesExternalId,
+    isArray: true,
+  })
+  externalIds: PartialTVSeriesExternalId[];
+
+  @ApiProperty({
+    type: () => PartialTVSeriesImage,
+    isArray: true,
+  })
+  images: PartialTVSeriesImage[];
+
+  @ApiProperty({
+    type: () => PartialTVSeriesVideo,
+    isArray: true,
+  })
+  videos: PartialTVSeriesVideo[];
 }
 
-export class TVSeasonExternalId {
-  @ApiProperty({ type: String })
-  type: string;
-
-  @ApiProperty({ type: String })
-  externalId: string;
-
-  @ApiProperty({ type: String })
-  @Transform(({ value }) => value.toISOString())
-  createdTime: Moment;
-
-  @ApiProperty({ type: String })
-  @Transform(({ value }) => value.toISOString())
-  lastUpdatedTime: Moment;
+export class CreateTVSeasonRequest {
+  @ApiProperty({
+    type: () => PartialSeason,
+  })
+  season: PartialSeason;
 }
 
-export class PartialTVSeasonExternalId extends OmitType(TVSeasonExternalId, [
-  "createdTime",
-  "lastUpdatedTime",
-]) {}
+export class CreateTVSeasonResponse {
+  @ApiProperty({
+    type: () => Season,
+  })
+  season: Season;
+}

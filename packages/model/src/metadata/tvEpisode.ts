@@ -5,17 +5,10 @@ import { Country } from "./countries";
 import { Language } from "./languages";
 import { Person } from "./people";
 import { Season } from "./tvSeason";
-import { TVSeries } from "./tvSeries";
 
 export class BaseEpisode {
   @ApiProperty({ type: Number })
   id: number;
-
-  @ApiProperty({ type: TVSeries })
-  series: TVSeries;
-
-  @ApiProperty({ type: Season })
-  season: Season;
 
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
@@ -40,10 +33,13 @@ export class BaseEpisode {
   seasonNumber: number;
 
   @ApiProperty({ type: String })
-  stillPath: string;
+  stillPath?: string;
 }
 
 export class Episode extends BaseEpisode {
+  @ApiProperty({ type: Season })
+  season: Season;
+
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
@@ -53,16 +49,28 @@ export class Episode extends BaseEpisode {
   lastUpdatedTime: Moment;
 
   @ApiProperty({
+    type: () => TVEpisodeCastMember,
+    isArray: true,
+  })
+  cast: TVEpisodeCastMember[];
+
+  @ApiProperty({
+    type: () => TVEpisodeCrewMember,
+    isArray: true,
+  })
+  crew: TVEpisodeCrewMember[];
+
+  @ApiProperty({
     type: () => TVEpisodeExternalId,
     isArray: true,
   })
   externalIds: TVEpisodeExternalId[];
 
   @ApiProperty({
-    type: () => TVEpisodeGuestStar,
+    type: () => TVEpisodeCastMember,
     isArray: true,
   })
-  guestStars: TVEpisodeGuestStar[];
+  guestStars: TVEpisodeCastMember[];
 
   @ApiProperty({
     type: () => TVEpisodeImage,
@@ -78,6 +86,21 @@ export class Episode extends BaseEpisode {
 }
 
 export class PartialEpisode extends BaseEpisode {
+  @ApiProperty({ type: Number })
+  seasonId: number;
+
+  @ApiProperty({
+    type: () => PartialTVEpisodeCastMember,
+    isArray: true,
+  })
+  cast: PartialTVEpisodeCastMember[];
+
+  @ApiProperty({
+    type: () => PartialTVEpisodeCrewMember,
+    isArray: true,
+  })
+  crew: PartialTVEpisodeCrewMember[];
+
   @ApiProperty({
     type: () => PartialTVEpisodeExternalId,
     isArray: true,
@@ -85,10 +108,10 @@ export class PartialEpisode extends BaseEpisode {
   externalIds: PartialTVEpisodeExternalId[];
 
   @ApiProperty({
-    type: () => PartialTVEpisodeGuestStar,
+    type: () => PartialTVEpisodeCastMember,
     isArray: true,
   })
-  guestStars: PartialTVEpisodeGuestStar[];
+  guestStars: PartialTVEpisodeCastMember[];
 
   @ApiProperty({
     type: () => PartialTVEpisodeImage,
@@ -124,21 +147,21 @@ export class PartialTVEpisodeExternalId extends OmitType(TVEpisodeExternalId, [
   "lastUpdatedTime",
 ]) {}
 
-export class TVEpisodeGuestStar {
+export class TVEpisodeCrewMember {
   @ApiProperty({ type: String })
   creditId: string;
+
+  @ApiProperty({ type: String })
+  job: string;
+
+  @ApiProperty({ type: String })
+  department: string;
 
   @ApiProperty({ type: Person })
   person: Person;
 
   @ApiProperty({ type: String })
   originalName: string;
-
-  @ApiProperty({ type: String })
-  character: string;
-
-  @ApiProperty({ type: Number })
-  order: number;
 
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
@@ -149,7 +172,41 @@ export class TVEpisodeGuestStar {
   lastUpdatedTime: Moment;
 }
 
-export class PartialTVEpisodeGuestStar extends OmitType(TVEpisodeGuestStar, [
+export class PartialTVEpisodeCrewMember extends OmitType(TVEpisodeCrewMember, [
+  "createdTime",
+  "lastUpdatedTime",
+  "person",
+]) {
+  @ApiProperty({ type: Number })
+  personId: number;
+}
+
+export class TVEpisodeCastMember {
+  @ApiProperty({ type: String })
+  character: string;
+
+  @ApiProperty({ type: String })
+  creditId: string;
+
+  @ApiProperty({ type: Number })
+  order: number;
+
+  @ApiProperty({ type: Person })
+  person: Person;
+
+  @ApiProperty({ type: String })
+  originalName: string;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  createdTime: Moment;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  lastUpdatedTime: Moment;
+}
+
+export class PartialTVEpisodeCastMember extends OmitType(TVEpisodeCastMember, [
   "createdTime",
   "lastUpdatedTime",
   "person",
@@ -221,15 +278,6 @@ export class TVEpisodeVideo {
   size: number;
 
   @ApiProperty({ type: String })
-  filePath: string;
-
-  @ApiProperty({ type: Number })
-  width: number;
-
-  @ApiProperty({ type: Number })
-  height: number;
-
-  @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
   publishedTime: Moment;
 
@@ -249,8 +297,22 @@ export class PartialTVEpisodeVideo extends OmitType(TVEpisodeVideo, [
   "country",
 ]) {
   @ApiProperty({ type: String })
-  countryId: string;
+  countryCode: string;
 
   @ApiProperty({ type: String })
-  languageId: string;
+  languageCode: string;
+}
+
+export class CreateTVEpisodeRequest {
+  @ApiProperty({
+    type: () => PartialEpisode,
+  })
+  episode: PartialEpisode;
+}
+
+export class CreateTVEpisodeResponse {
+  @ApiProperty({
+    type: () => Episode,
+  })
+  episode: Episode;
 }

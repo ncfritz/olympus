@@ -9,6 +9,7 @@ export * from "./movies";
 export * from "./networks";
 export * from "./people";
 export * from "./propductionCompanies";
+export * from "./tvBase";
 export * from "./tvSeries";
 export * from "./tvSeason";
 export * from "./tvEpisode";
