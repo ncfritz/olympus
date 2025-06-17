@@ -79,7 +79,7 @@ export class ProductionCompanyAlternativeName {
 
 export class PartialProductionCompanyAlternativeName extends OmitType(
   ProductionCompanyAlternativeName,
-  ["createdTime", "lastUpdatedTime"]
+  ["createdTime", "lastUpdatedTime"],
 ) {}
 
 export class ProductionCompanyLogo {
@@ -112,7 +112,7 @@ export class ProductionCompanyLogo {
 
 export class PartialProductionCompanyLogo extends OmitType(
   ProductionCompanyLogo,
-  ["createdTime", "lastUpdatedTime"]
+  ["createdTime", "lastUpdatedTime"],
 ) {}
 
 export class CreateProductionCompanyRequest {

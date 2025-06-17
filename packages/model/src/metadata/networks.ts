@@ -73,7 +73,7 @@ export class NetworkAlternativeName {
 
 export class PartialNetworkAlternativeName extends OmitType(
   NetworkAlternativeName,
-  ["createdTime", "lastUpdatedTime"]
+  ["createdTime", "lastUpdatedTime"],
 ) {}
 
 export class NetworkImage {

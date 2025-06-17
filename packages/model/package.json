@@ -33,6 +33,7 @@
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
+    "@eslint/js": "^9.29.0",
     "@nestjs/cli": "^11.0.2",
     "@nestjs/schematics": "^11.0.0",
     "@semantic-release/git": "^10.0.1",
@@ -46,6 +47,7 @@
     "eslint": "^9.19.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.3",
+    "globals": "^16.2.0",
     "husky": "^9.1.7",
     "is-ci": "^4.1.0",
     "prettier": "^3.4.2",
@@ -56,25 +58,11 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.34.1"
   },
   "peerDependencies": {
-    "nodemailer": "^6.10.0"
-  },
-  "eslintConfig": {
-    "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint"
-    ],
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended",
-      "prettier",
-      "plugin:prettier/recommended"
-    ],
-    "env": {
-      "node": true
-    }
+    "nodemailer": "^7.0.3"
   },
   "config": {
     "commitizen": {
