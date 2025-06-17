@@ -1,9 +1,17 @@
 {
   "name": "@ncfritz/dionysus-metadata-agents",
   "version": "1.0.0",
-  "type": "module",
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ncfritz/dionysus-metadata-agents.git"
+  },
+  "readmeFilename": "README.md",
+  "license": "Apache-2.0",
   "main": "build/dist/main.js",
   "scripts": {
+    "prepare": "is-ci || husky install",
+    "clean": "rm -rf ./dist",
     "prebuild": "rimraf dist",
     "build": "nest build",
     "lint": "eslint ./src",
@@ -11,8 +19,7 @@
     "start": "NODE_ENV=local NODE_EXTRA_CA_CERTS=./ca_roots.pem nest start",
     "start:prod": "NODE_ENV=dev NODE_EXTRA_CA_CERTS=./ca_roots.pem node build/dist/main",
     "dev": "NODE_ENV=dev NODE_EXTRA_CA_CERTS=./ca_roots.pem nest start --watch",
-    "dev:local": "NODE_ENV=local NODE_EXTRA_CA_CERTS=./ca_roots.pem nest start --watch",
-    "prepare": "husky"
+    "dev:local": "NODE_ENV=local NODE_EXTRA_CA_CERTS=./ca_roots.pem nest start --watch"
   },
   "dependencies": {
     "@golevelup/nestjs-graphql-request": "^0.2.5",
