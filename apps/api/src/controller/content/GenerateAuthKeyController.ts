@@ -1,10 +1,6 @@
 import { EmptyResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiProduces,
-} from "@nestjs/swagger";
+import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import * as speakeasy from "speakeasy";
 import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";

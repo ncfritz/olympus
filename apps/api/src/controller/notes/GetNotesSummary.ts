@@ -1,4 +1,3 @@
-
 import { GetSummaryResponse, NoteTypeCounts } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
 import {

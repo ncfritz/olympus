@@ -40,8 +40,8 @@ export class CreateCollectionController {
     summary: "Upserts a collection",
     description: "Creates or updates a collection.",
     operationId: "CreateCollection",
-tags: ["Metadata"], })
-
+    tags: ["Metadata"],
+  })
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiBody({

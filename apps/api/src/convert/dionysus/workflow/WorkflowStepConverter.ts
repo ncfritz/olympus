@@ -11,5 +11,5 @@ export const toDomainObject = (input: GraphQlWorkflowStep): WorkflowStep => {
     createdTime: moment(input.createdTime),
     lastUpdatedTime: moment(input.lastUpdatedTime),
     job: input.job ? toBatchJobDomainObject(input.job) : undefined,
-  }
-}
+  };
+};

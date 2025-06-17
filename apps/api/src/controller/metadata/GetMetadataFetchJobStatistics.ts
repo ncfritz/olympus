@@ -5,11 +5,7 @@ import {
   Series,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiProduces,
-} from "@nestjs/swagger";
+import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { METADATA_CATEGORY_MAP } from "../../utils/constants";

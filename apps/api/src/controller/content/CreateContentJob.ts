@@ -1,8 +1,5 @@
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
-import {
-  CreateContentJobRequest,
-  EmptyResponse,
-} from "@ncfritz/olympus-model";
+import { CreateContentJobRequest, EmptyResponse } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Param, Post, Res } from "@nestjs/common";
 import {
   ApiBody,

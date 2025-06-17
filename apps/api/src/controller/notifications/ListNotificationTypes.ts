@@ -3,16 +3,10 @@ import {
   ListNotificationTypesResponse,
 } from "@ncfritz/olympus-model/dist/notifications";
 import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiProduces,
-} from "@nestjs/swagger";
+import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import {
-  toFullDomainObject,
-} from "../../convert/notifications/NotificationTypeConverter";
+import { toFullDomainObject } from "../../convert/notifications/NotificationTypeConverter";
 import { GraphQlFullNotificationType } from "../../convert/notifications/NotificationTypeConverter";
 import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
 

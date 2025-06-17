@@ -9,7 +9,10 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { GraphQlNote, toDomainObject } from "../../convert/minerva/NoteConverter";
+import {
+  GraphQlNote,
+  toDomainObject,
+} from "../../convert/minerva/NoteConverter";
 import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
 
 type GraphQlRestoreNoteResponse = {

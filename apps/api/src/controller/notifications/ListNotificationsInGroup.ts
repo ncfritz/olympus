@@ -1,4 +1,4 @@
-import {SortDirection} from "@ncfritz/olympus-model";
+import { SortDirection } from "@ncfritz/olympus-model";
 import {
   Notification,
   ListNotificationsInGroupResponse,
