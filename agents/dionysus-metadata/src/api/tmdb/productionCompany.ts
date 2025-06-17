@@ -14,19 +14,19 @@ export class ProductionCompaniesEndpoint extends BaseEndpoint {
 
   async details(companyId: number): Promise<ProductionCompany> {
     return await this.api.get<ProductionCompany>(
-      `${BASE_PRODUCTION_COMPANIES}/${companyId}`
+      `${BASE_PRODUCTION_COMPANIES}/${companyId}`,
     );
   }
 
   async images(companyId: number): Promise<Images> {
     return await this.api.get<Images>(
-      `${BASE_PRODUCTION_COMPANIES}/${companyId}/images`
+      `${BASE_PRODUCTION_COMPANIES}/${companyId}/images`,
     );
   }
 
   async alternativeNames(companyId: number): Promise<AlternativeNames> {
     return await this.api.get<AlternativeNames>(
-      `${BASE_PRODUCTION_COMPANIES}/${companyId}/alternative_names`
+      `${BASE_PRODUCTION_COMPANIES}/${companyId}/alternative_names`,
     );
   }
 }

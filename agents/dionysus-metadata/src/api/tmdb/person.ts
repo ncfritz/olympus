@@ -11,7 +11,7 @@ export class PersonEndpoint extends BaseEndpoint {
 
   async details<T extends AppendToResponsePersonKey[] | undefined>(
     id: number,
-    appendToResponse?: T
+    appendToResponse?: T,
   ) {
     const options = {
       append_to_response: appendToResponse
@@ -20,7 +20,7 @@ export class PersonEndpoint extends BaseEndpoint {
     };
     return await this.api.get<AppendToResponse<Person, T, "person">>(
       `${BASE_PERSON}/${id}`,
-      options
+      options,
     );
   }
 }

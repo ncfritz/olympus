@@ -5,7 +5,6 @@ import fs from "fs";
 import { WinstonModule } from "nest-winston";
 import { AppModule } from "./module/AppModule";
 import { logger } from "./util/logger";
-import * as v8 from "v8";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -16,7 +15,11 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   app.use(cookieParser());
   app.enableCors({
-    origin: ["http://localhost:3000", "https://dionysus.dev.ncfritz.net"],
+    origin: [
+      "http://localhost:3000",
+      "https://olympus.dev.ncfritz.net",
+      "https://olympus.internal.ncfritz.net",
+    ],
     credentials: true,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   });
@@ -27,7 +30,6 @@ async function bootstrap() {
 bootstrap()
   .then(() => {
     logger.info("🔥🔥🔥 Olympus Metadata Agent bootstrap complete.");
-    logger.info(JSON.stringify(v8.getHeapStatistics(), null, 2));
   })
   .catch((e) => {
     logger.error("🤯🤯🤯 Error during bootstrap!", e);

@@ -53,6 +53,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
     },
     errorBehavior: MessageHandlerErrorBehavior.ACK,
   })
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async handle(msg: MetadataJobMessage, amqpMsg: ConsumeMessage) {
     await this.doFetch(msg);
@@ -115,7 +116,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
     const cast: UniqueSet<PartialTVSeriesCastMember> = new UniqueSet();
 
     // @ts-expect-error - expected per API - TS bindings are incorrect
-    seriesResponse.aggregate_credits.cast.forEach((value: AggregateCast, i) => {
+    seriesResponse.aggregate_credits.cast.forEach((value: AggregateCast) => {
       cast.add({
         personId: value.id,
         order: value.order,

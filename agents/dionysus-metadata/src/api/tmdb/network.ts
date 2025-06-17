@@ -18,7 +18,7 @@ export class NetworksEndpoint extends BaseEndpoint {
 
   async alternativeNames(networkId: number): Promise<AlternativeNames> {
     return await this.api.get<AlternativeNames>(
-      `${BASE_NETWORKS}/${networkId}/alternative_names`
+      `${BASE_NETWORKS}/${networkId}/alternative_names`,
     );
   }
 }

@@ -77,7 +77,10 @@ export abstract class BaseMetadataHandler<T, C> {
           entityId: entityId,
         });
 
-        const [metadata, context] = await this.doFetchMetadata(entityId, metadataFetchJob);
+        const [metadata, context] = await this.doFetchMetadata(
+          entityId,
+          metadataFetchJob,
+        );
         ttl = this.getTtl(metadata, context);
         jitter = this.getJitter(metadata, context);
         finishedTIme = moment.utc();
@@ -111,7 +114,8 @@ export abstract class BaseMetadataHandler<T, C> {
           `[${metadataFetchJob.id}]: Cleaning up... final status ${finalStatus}`,
           {
             entityId: metadataFetchJob.id,
-        });
+          },
+        );
         await this.cleanup();
 
         await this.sleep(this.randomValue(500, 2500));
@@ -129,10 +133,12 @@ export abstract class BaseMetadataHandler<T, C> {
   ): Promise<[T, C]>;
   protected abstract cleanup(): Promise<void>;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected getTtl(metadata: T, context: C): number {
     return 14;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected getJitter(metadata: T, context: C): number {
     return Math.floor(Math.random() * 3 * 24 * 60);
   }
