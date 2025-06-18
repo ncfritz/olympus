@@ -73,6 +73,7 @@
     "highcharts-react-official": "^3.2.2",
     "hls.js": "^1.5.20",
     "humanize-duration": "^3.32.1",
+    "husky": "^9.1.7",
     "is-ci": "^3.0.1",
     "luxon": "^3.4.4",
     "mobx": "^6.12.5",
