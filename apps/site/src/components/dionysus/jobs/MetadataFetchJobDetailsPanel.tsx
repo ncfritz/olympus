@@ -7,14 +7,15 @@ import {
 import {
   Button,
   Card,
-  Col, Empty,
+  Col,
+  Empty,
   Form,
   Row,
   Select,
   Slider,
   Space,
   Statistic,
-  Typography
+  Typography,
 } from "antd";
 import { type SubmitHandler, Controller, useForm } from "react-hook-form";
 import metadataApi from "../../../api/metadataApi";

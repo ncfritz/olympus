@@ -5,7 +5,8 @@ import notificationsApi from "../../api/notificationsApi";
 import { subscribe, unsubscribe } from "../../utils/events";
 import type {
   NotificationEvent,
-  NotificationFormatter, NotificationPayload
+  NotificationFormatter,
+  NotificationPayload,
 } from "../notifications/formatters/interfaces";
 import { getFormatterForMeaageType } from "../notifications/formatters/NotificationRegistry";
 

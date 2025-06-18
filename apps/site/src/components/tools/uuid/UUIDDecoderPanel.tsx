@@ -16,11 +16,18 @@ import {
   RANDOM,
   TIME_HIGH,
   TIME_LOW,
-  TIME_MID, UNIX_TS_MS,
+  TIME_MID,
+  UNIX_TS_MS,
   VARIANT,
-  VERSION
+  VERSION,
 } from "./constants";
-import { getByteString, getDefinitionForVersion, getVariant, v1time, v6time } from "./utils";
+import {
+  getByteString,
+  getDefinitionForVersion,
+  getVariant,
+  v1time,
+  v6time,
+} from "./utils";
 import UUIDDigit from "./UUIDDigit";
 import UUIDPartRow from "./UUIDPartRow";
 
@@ -246,7 +253,6 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
       );
     } else if (version === 3 || version === 5) {
       const hash = [];
-
 
       versionInfoPanel = (
         <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>

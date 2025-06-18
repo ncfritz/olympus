@@ -6,7 +6,10 @@ export interface SettingsDrawerProps {
   onClose: () => void;
 }
 
-const SettingsDrawer: React.FunctionComponent<SettingsDrawerProps> = ({ open, onClose }: SettingsDrawerProps) => {
+const SettingsDrawer: React.FunctionComponent<SettingsDrawerProps> = ({
+  open,
+  onClose,
+}: SettingsDrawerProps) => {
   return (
     <Drawer
       title={"Settings"}

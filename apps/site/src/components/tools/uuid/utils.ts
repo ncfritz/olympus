@@ -103,25 +103,24 @@ export const getVariant = (rawUuid: number[]) => {
   }
 };
 
-// **`parse()` - Parse a UUID into it's component bytes**
-const parseUuid = (s, buf?, offset?)=>  {
+const parseUuid = (s: any, buf?: any[], offset?: number) => {
   let i;
-  const _byteToHex = [];
-  const _hexToByte = {};
+  const byteToHex: string[] = [];
+  const hexToByte: Record<string, number> = {};
 
   for (i = 0; i < 256; i++) {
-    _byteToHex[i] = (i + 0x100).toString(16).substr(1);
-    _hexToByte[_byteToHex[i]] = i;
+    byteToHex[i] = (i + 0x100).toString(16).substring(1);
+    hexToByte[byteToHex[i]] = i;
   }
 
   i = (buf && offset) || 0;
   let ii = 0;
 
   buf = buf || [];
-  s.toLowerCase().replace(/[0-9a-f]{2}/g, function (oct) {
+  s.toLowerCase().replace(/[0-9a-f]{2}/g, function (oct: any) {
     if (ii < 16) {
       // Don't overflow!
-      buf[i + ii++] = _hexToByte[oct];
+      buf[i + ii++] = hexToByte[oct];
     }
   });
 
@@ -133,7 +132,7 @@ const parseUuid = (s, buf?, offset?)=>  {
   return buf;
 };
 
-export const v1time = (buf, offset?) => {
+export const v1time = (buf: any, offset?: number) => {
   if (typeof buf === "string") {
     if (offset) {
       throw new Error("Offset in string v1 uuid not valid.");
@@ -183,7 +182,7 @@ export const v1time = (buf, offset?) => {
   return msec;
 };
 
-export const v6time = (buf, offset?) => {
+export const v6time = (buf: any, offset?: number) => {
   if (typeof buf === "string") {
     if (offset) {
       throw new Error("Offset in string v1 uuid not valid.");

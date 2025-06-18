@@ -1,6 +1,8 @@
+"use client";
+
 import { Space, Spin } from "antd";
-import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
+import Highcharts from "highcharts";
 
 interface ContentDimensionGraphProps {
   loading: boolean;

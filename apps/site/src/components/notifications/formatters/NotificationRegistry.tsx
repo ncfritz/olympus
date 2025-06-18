@@ -7,4 +7,4 @@ export const getFormatterForMeaageType = (notificationType: string) => {
     default:
       return undefined;
   }
-}
+};

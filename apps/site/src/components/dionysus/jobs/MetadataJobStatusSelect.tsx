@@ -3,7 +3,7 @@ import React, { type CSSProperties } from "react";
 import { getMetadataJobStatusIndicator } from "./utils";
 
 export interface MetadataJobStatusSelectProps {
-  value: string;
+  value: string | undefined;
   onChange: (value: string) => void;
   style?: CSSProperties;
   bordered?: boolean;

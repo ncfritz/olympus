@@ -1,21 +1,16 @@
 import axios from "axios";
-import type {
-  SendNotificationRequest,
-  SendNotificationResponse,
-} from "@ncfritz/olympus-types/dist/notifications";
 
-const sendNotification = async (
-  notification: SendNotificationRequest,
-): Promise<SendNotificationResponse> => {
+const sendNotification = async (notification: any): Promise<any> => {
   try {
-    const sendNotificationsResponse = await axios.post<
-      SendNotificationRequest,
-      SendNotificationResponse
-    >(`/api/v1/notifications/publish`, notification, {
-      validateStatus: (status) => {
-        return status === 202 || status === 306;
+    const sendNotificationsResponse = await axios.post(
+      `/api/v1/notifications/publish`,
+      notification,
+      {
+        validateStatus: (status) => {
+          return status === 202 || status === 306;
+        },
       },
-    });
+    );
 
     return sendNotificationsResponse;
   } catch (e) {
@@ -40,9 +35,7 @@ const getUnreadNotificationsCount = async (): Promise<any> => {
   }
 };
 
-const listNotifications = async (
-  count: number = 5,
-): Promise<any> => {
+const listNotifications = async (count: number = 5): Promise<any> => {
   try {
     const listNotificationsResponse = await axios.get(
       `/api/v1/notifications?count=${count}`,
@@ -157,9 +150,7 @@ const acknowledgeNotification = async (
   }
 };
 
-const deleteNotification = async (
-  notificationId: string,
-): Promise<any> => {
+const deleteNotification = async (notificationId: string): Promise<any> => {
   try {
     const listNotificzationsResponse = await axios.delete(
       `/api/v1/notification/${notificationId}`,

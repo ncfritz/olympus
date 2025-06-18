@@ -16,7 +16,7 @@ const NoteHtmlDisplay: React.FunctionComponent<NoteHtmlDisplayProps> = ({
         transform: (node, index) => {
           let language = undefined;
 
-          if (node.parent?.attribs["class"]) {
+          if (node.parent?.attribs!["class"]) {
             const classes = node.parent?.attribs["class"].split("\\s+");
 
             for (const cls of classes) {
@@ -40,7 +40,7 @@ const NoteHtmlDisplay: React.FunctionComponent<NoteHtmlDisplayProps> = ({
                 showLineNumbers={true}
                 style={vs}
               >
-                {node.children[0].data}
+                {node.children![0].data}
               </SyntaxHighlighter>
             );
           }

@@ -1,5 +1,5 @@
 import { SearchOutlined } from "@ant-design/icons";
-import { Button, Checkbox, Collapse, Empty, Space, Spin, Typography } from "antd";
+import { Button, Collapse, Empty, Space, Spin, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import contentApi from "../../api/contentApi";
 import type { ContentAssetTag as ContentAssetTagType } from "../../pages/dionysus/content/assets";
@@ -14,7 +14,11 @@ export interface ContentAssetFilterPanelProps {
   onRemoveTag: (tag: ContentAssetTagType) => Promise<void>;
 }
 
-const CheckboxTagRenderer: TagRenderer = (tag, onSelectTag, onRemoveTag) => {
+const CheckboxTagRenderer: TagRenderer = (
+  tag: ContentAssetTagType,
+  onSelectTag: (tag: ContentAssetTagType) => Promise<void>,
+  onRemoveTag: (tag: ContentAssetTagType) => Promise<void>,
+) => {
   return (
     <ContentTagCheckbox
       tag={tag}
@@ -26,7 +30,11 @@ const CheckboxTagRenderer: TagRenderer = (tag, onSelectTag, onRemoveTag) => {
 
 const ContentAssetFilterPanel: React.FunctionComponent<
   ContentAssetFilterPanelProps
-> = ({ togglePanel, onSelectTag, onRemoveTag }: ContentAssetFilterPanelProps) => {
+> = ({
+  togglePanel,
+  onSelectTag,
+  onRemoveTag,
+}: ContentAssetFilterPanelProps) => {
   const [tags, setTags] = useState<Record<string, any[]>>({});
   const [tagsLoading, setTagsLoading] = useState<boolean>(false);
   const [tagsError, setTagsError] = useState<any>(false);
@@ -41,7 +49,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
       const listTagsResponse = await contentApi.listTags();
       const tagGroups: Record<string, any[]> = {};
 
-      listTagsResponse.data.tags.forEach((tag) => {
+      listTagsResponse.data.tags.forEach((tag: any) => {
         if (!(tag.type in tagGroups)) {
           tagGroups[tag.type] = [];
         }

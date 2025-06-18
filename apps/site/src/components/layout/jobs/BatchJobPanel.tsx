@@ -1,8 +1,14 @@
-import { DeleteOutlined, PlusOutlined, ReloadOutlined, SaveOutlined } from "@ant-design/icons";
+"use client";
+
+import {
+  DeleteOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  SaveOutlined,
+} from "@ant-design/icons";
 import {
   Button,
   Col,
-  notification,
   Progress,
   Row,
   Space,
@@ -10,13 +16,13 @@ import {
   Statistic,
   Table,
   type TableProps,
-  Typography
+  Typography,
 } from "antd";
 import { type ColumnsType } from "antd/es/table";
 import type { FilterValue } from "antd/es/table/interface";
 import axios from "axios";
-import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
+import Highcharts from "highcharts";
 import { DateTime } from "luxon";
 import prettyMilliseconds from "pretty-ms";
 import React, { type ReactNode, useEffect, useState } from "react";
@@ -31,10 +37,10 @@ import {
 import Timestamp from "../../data/Timestamp";
 import BatchJobStatusSelect from "../../dionysus/jobs/BatchJobStatusSelect";
 import CreateBatchJobModal from "../../dionysus/jobs/CreateBatchJobModal";
-import CreateMetadataJobModal from "../../dionysus/jobs/CreateMetadataJobModal";
 import { getBatchJobStatusIndicator } from "../../dionysus/jobs/utils";
 
 interface FormInput {
+  type: JobType;
   publishNotifications: boolean;
   offset: number;
 }
@@ -56,8 +62,6 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
   showPublish = true,
   showStats = true,
 }) => {
-  const [api, contextHolder] = notification.useNotification();
-
   const {
     handleSubmit,
     control,
@@ -738,7 +742,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
             size={"default"}
             percent={(processingStatus.total / selectedRowKeys.length) * 100}
             style={{ paddingRight: 32 }}
-            format={(percent, successPercent) => {
+            format={(percent) => {
               return `${percent?.toFixed(0)}%`;
             }}
           />

@@ -31,7 +31,6 @@ import EmailDestinationForm from "./destination/EmailDestinationForm";
 import SynologyChatDestinationForm from "./destination/SynologyChatDestinationForm";
 import WebSocketDestinationForm from "./destination/WebSocketDestinationForm";
 import { v4 as uuid4 } from "uuid";
-import { type SendNotificationRequest } from "@ncfritz/olympus-types/dist/notifications";
 
 const panelStyles: Record<"header" | "body", CSSProperties> = {
   header: {
@@ -197,7 +196,7 @@ const NotificationForm: React.FunctionComponent = () => {
     });
 
   const onSubmit = async (data: NotificationFormData) => {
-    const notificationRequest: SendNotificationRequest = {
+    const notificationRequest: any = {
       type: data.type,
       context: data.context,
       expirationTime: data.expirationTime,
@@ -314,7 +313,7 @@ const NotificationForm: React.FunctionComponent = () => {
               }) => (
                 <Select
                   {...field}
-                  onSelect={(value, option) => {
+                  onSelect={(value) => {
                     setSelectedNotificationType(
                       notificationTypes.find((item) => {
                         return item.id === value;
@@ -413,6 +412,7 @@ const NotificationForm: React.FunctionComponent = () => {
             ghost={true}
             activeKey={activeDestinations}
             expandIcon={(panelProps) => {
+              // @ts-expect-error known situation
               const panelKey = panelProps.panelKey as string;
               const id = panelKey.substring(panelKey.lastIndexOf("-") + 1);
               const objectKey = `supports${id.charAt(0).toUpperCase()}${id.slice(1)}`;

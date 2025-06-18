@@ -36,4 +36,4 @@ export interface BatchJobRecord {
   processedRecords?: number;
   skippedRecords?: number;
   status: JobStatus;
-};
+}

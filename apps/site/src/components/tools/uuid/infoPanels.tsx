@@ -9,7 +9,8 @@ import {
   RANDOM,
   TIME_HIGH,
   TIME_LOW,
-  TIME_MID, UNIX_TS_MS,
+  TIME_MID,
+  UNIX_TS_MS,
   VARIANT,
   VERSION,
 } from "./constants";

@@ -6,17 +6,14 @@ import {
 } from "@ant-design/icons";
 import { Radio, Space } from "antd";
 import React from "react";
-import type { WebSocketNotificationLevel } from "@ncfritz/olympus-types/dist/notifications";
 
 export interface WebSocketLevelButtonProps {
-  level: WebSocketNotificationLevel;
-  selectedLevel: WebSocketNotificationLevel;
+  level: any;
+  selectedLevel: any;
   label: string;
 }
 
-const getColorAndIconForLevel = (
-  level: WebSocketNotificationLevel,
-): [string, any] => {
+const getColorAndIconForLevel = (level: any): [string, any] => {
   switch (level) {
     case "success":
       return ["#52c41a", <CheckCircleFilled />];

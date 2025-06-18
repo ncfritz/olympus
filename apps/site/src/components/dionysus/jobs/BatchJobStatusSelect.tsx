@@ -5,7 +5,7 @@ import { getBatchJobStatusIndicator } from "./utils";
 
 export interface BatchJobStatusSelectProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: JobStatus) => void;
   style?: CSSProperties;
   bordered?: boolean;
 }

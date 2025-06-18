@@ -14,7 +14,6 @@ import { type ReactNode, useEffect, useState } from "react";
 import styled from "styled-components";
 import DionysysMenu from "../../dionysus/layout/menu";
 import MinervaMenu from "../minerva/layout/menu";
-import ThemisMenu from "../themis/layout/menu";
 import ToolsMenu from "../tools/layout/menu";
 import AuthHeader from "./AuthHeader";
 
@@ -66,9 +65,6 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
       case "minerva":
         setApplicationMenu(<MinervaMenu />);
         break;
-      case "themis":
-        setApplicationMenu(<ThemisMenu />);
-        break;
       default:
         setApplicationMenu(undefined);
     }
@@ -110,11 +106,6 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
                 key: "/minerva",
                 icon: <EditOutlined />,
                 label: "Minerva",
-              },
-              {
-                key: "/themis",
-                icon: <AmazonOutlined />,
-                label: "Themis",
               },
               {
                 key: "/dionysus",

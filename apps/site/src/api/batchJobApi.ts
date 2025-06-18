@@ -20,9 +20,7 @@ const createBatchJob = async (
   }
 };
 
-const deleteBatchJob = async (
-  id: string,
-) => {
+const deleteBatchJob = async (id: string) => {
   try {
     const deleteBatchJobResponse = await axios.delete(
       `/api/v1/job/batch/${id}`,
@@ -57,10 +55,7 @@ const createBatchRedriveJob = async (
   }
 };
 
-const updateBatchJob = async (
-  id: string,
-  job: Record<string, string>,
-) => {
+const updateBatchJob = async (id: string, job: Record<string, string>) => {
   try {
     const updateBatchRedriveJobResponse = await axios.put(
       `/api/v1/job/batch/${id}`,

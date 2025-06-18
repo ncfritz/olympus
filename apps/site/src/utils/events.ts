@@ -1,3 +1,5 @@
+"use client";
+
 export const subscribe = (
   eventName: string,
   listener: EventListenerOrEventListenerObject,

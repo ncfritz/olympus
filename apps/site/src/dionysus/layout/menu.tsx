@@ -5,9 +5,10 @@ import {
   ExperimentOutlined,
   GroupOutlined,
   HomeOutlined,
-  KubernetesOutlined, SearchOutlined,
+  KubernetesOutlined,
+  SearchOutlined,
   UploadOutlined,
-  VideoCameraOutlined
+  VideoCameraOutlined,
 } from "@ant-design/icons";
 import { Menu } from "antd";
 import { useRouter } from "next/router";

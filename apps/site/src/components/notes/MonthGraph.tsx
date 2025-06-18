@@ -1,8 +1,10 @@
+"use client";
+
 import { Space, Spin } from "antd";
 import { DateTime } from "luxon";
 import * as React from "react";
-import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
+import Highcharts from "highcharts";
 import { config } from "../../utils/notes";
 
 interface MonthGraphProps {

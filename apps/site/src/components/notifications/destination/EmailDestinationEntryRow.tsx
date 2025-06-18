@@ -44,6 +44,7 @@ const EmailDestinationEntryRow: React.FunctionComponent<
       className={"flex-first-item"}
     >
       <Controller
+        // @ts-expect-error known situation
         name={`${formPathPrefix}.${fieldName}.${index}.value`}
         control={control}
         rules={emailValidationRules(required)}

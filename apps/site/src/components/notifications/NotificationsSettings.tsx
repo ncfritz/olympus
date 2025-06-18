@@ -140,7 +140,7 @@ const NotificationSettings: React.FunctionComponent<
                 verticalAlign: "bottom",
                 textAlign: "left",
                 borderBottom: "1px solid #f0f0f0",
-                paddingLeft: 16
+                paddingLeft: 16,
               }}
             >
               Notification

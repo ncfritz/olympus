@@ -1,9 +1,10 @@
+"use client";
+
 import { Space, Spin } from "antd";
 import { DateTime } from "luxon";
 import * as React from "react";
-
-import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
+import Highcharts from "highcharts";
 import { MeetingStatusTypes } from "../../../utils/meetings";
 
 interface MeetingsHourOfDayGraphProps {
@@ -25,7 +26,12 @@ const LABELS: Record<string, string> = {
 
 const MeetingsDayOfWeekGraph: React.FunctionComponent<
   MeetingsHourOfDayGraphProps
-> = ({ date, summaryLoading, summary, width=350 }: MeetingsHourOfDayGraphProps) => {
+> = ({
+  date,
+  summaryLoading,
+  summary,
+  width = 350,
+}: MeetingsHourOfDayGraphProps) => {
   const start = date.startOf("week");
   const end = date.endOf("week");
 

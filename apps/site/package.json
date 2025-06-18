@@ -2,14 +2,22 @@
   "name": "@ncfritz/olympus-site",
   "type": "module",
   "version": "1.17.2",
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ncfritz/olympus-site.git"
+  },
+  "readmeFilename": "README.md",
+  "license": "Apache-2.0",
   "scripts": {
-    "start": "next start",
-    "app": "electron .",
+    "prepare": "is-ci || husky install",
     "clean": "rm -rf .next",
     "prebuild": "npm run clean",
     "build": "next build",
-    "lint": "next lint",
-    "lintfix": "next lint --fix",
+    "lint": "eslint ./src",
+    "lintfix": "eslint ./src --fix",
+    "start": "next start",
+    "app": "electron .",
     "dev": "env-cmd -f .env.dev next dev",
     "dev:local": "env-cmd -f .env.local next dev"
   },
@@ -19,12 +27,14 @@
     "@deck.gl/google-maps": "^9.1.0",
     "@deck.gl/layers": "^9.1.0",
     "@deck.gl/react": "^9.1.0",
+    "@eslint/js": "^9.29.0",
     "@fullcalendar/core": "^6.1.15",
     "@fullcalendar/daygrid": "^6.1.15",
     "@fullcalendar/interaction": "^6.1.15",
     "@fullcalendar/list": "^6.1.15",
     "@fullcalendar/react": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.15",
+    "@next/eslint-plugin-next": "^15.3.3",
     "@reduxjs/toolkit": "^2.5.1",
     "@semantic-release/git": "^10.0.1",
     "@svgr/webpack": "^8.1.0",
@@ -56,10 +66,11 @@
     "cz-conventional-changelog": "^3.3.0",
     "env-cmd": "^10.1.0",
     "eslint": "^8.57.0",
-    "eslint-config-next": "^15.1.6",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.3",
-    "highcharts-react-official": "^3.2.1",
+    "globals": "^16.2.0",
+    "highcharts": "12.0.1",
+    "highcharts-react-official": "^3.2.2",
     "hls.js": "^1.5.20",
     "humanize-duration": "^3.32.1",
     "is-ci": "^3.0.1",
@@ -99,26 +110,12 @@
     "styled-components": "^6.1.14",
     "tinymce": "^7.6.1",
     "typescript": "^5.4.5",
+    "typescript-eslint": "^8.34.1",
     "usehooks-ts": "^3.1.0",
     "uuid": "^11.0.5",
     "uuid-time": "^1.0.0",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-dev-server": "^5.2.0"
-  },
-  "eslintConfig": {
-    "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint"
-    ],
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended",
-      "prettier",
-      "plugin:prettier/recommended"
-    ],
-    "env": {
-      "node": true
-    }
   },
   "msw": {
     "workerDirectory": "public"
