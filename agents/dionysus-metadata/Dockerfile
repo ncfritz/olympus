@@ -49,7 +49,9 @@ RUN npm ci --only=production --ignore-scripts && npm cache clean --force
 
 USER nestjs
 
-EXPOSE 3101
+ENV NODE_EXTRA_CA_CERTS=./ca_roots.pem
+
+EXPOSE 3100
 
 CMD node dist/main.js 
 

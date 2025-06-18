@@ -2,7 +2,7 @@
   "compilerOptions": {
     "experimentalDecorators": true,
     "baseUrl": ".",
-    "outDir": "build/dist",
+    "outDir": "dist",
     "module": "commonjs",
     "target": "es6",
     "lib": [

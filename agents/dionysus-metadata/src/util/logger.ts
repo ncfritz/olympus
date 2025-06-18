@@ -7,7 +7,7 @@ export const logger = winston.createLogger({
   defaultMeta: { service: "dionysus-md-agent" },
   transports: [
     new LokiTransport({
-      host: process.env.LOKI_URL,
+      host: process.env.LOKI_URL || "http://localhost:4100",
       labels: {
         app: "dionysus-md-agents",
       },
