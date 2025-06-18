@@ -24,7 +24,7 @@ async function bootstrap() {
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   });
 
-  await app.listen(3100);
+  await app.listen(process.env.LISTEN_PORT);
 }
 
 bootstrap()
