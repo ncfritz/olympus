@@ -17,6 +17,7 @@ import { ConsumeMessage } from "amqplib";
 import moment from "moment/moment";
 import { TvEpisodesEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
+import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { MetadataJobMessage } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
@@ -48,6 +49,8 @@ export class TVEpisodeMetadataHandler extends BaseMetadataHandler<
   async doFetchMetadata(
     entityId: string,
     metadataFetchJob: MetadataFetchJob,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialEpisode, undefined]> {
     const endpoint = new TvEpisodesEndpoint(
       this.configService.get<string>("TMDB_API_KEY")!,

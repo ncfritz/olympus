@@ -19,12 +19,14 @@ import moment from "moment/moment";
 import { AggregateCast, AggregateCrew } from "tmdb-ts";
 import { TvSeasonsEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
+import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { MetadataJobMessage, TVSeasonContext } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
   METADATA_JOB_PREFIX,
   TRIGGER_SUFFIX,
 } from "../../util/constants";
+import { logger } from "../../util/logger";
 import { UniqueSet } from "../../util/UniqueSet";
 import { BaseMetadataHandler } from "./BaseMetadataHandler";
 
@@ -49,8 +51,8 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
 
   async doFetchMetadata(
     entityId: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     metadataFetchJob: MetadataFetchJob,
+    metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialSeason, TVSeasonContext]> {
     const endpoint = new TvSeasonsEndpoint(
       this.configService.get<string>("TMDB_API_KEY")!,
@@ -194,15 +196,38 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
     let lastEpisodeAirDate = undefined;
 
     for (const episode of seasonResponse.episodes) {
-      const ttl = 7;
-      const jitter = Math.floor(Math.random() * 3 * 24 * 60);
-
       if (!lastEpisodeAirDate || episode.air_date > lastEpisodeAirDate) {
         lastEpisodeAirDate = episode.air_date;
       }
 
-      await metadataApi.createMetadataFetchJob(
-        `${seriesId}-${seasonNumber}-${episode.episode_number}`,
+      const episodeKey = `${seriesId}-${seasonNumber}-${episode.episode_number}`;
+      const episodeFetchJob = await metadataManager.getMetadataFetchJob(
+        episodeKey,
+        JobType.TV_EPISODES,
+        false,
+      );
+
+      if (episodeFetchJob) {
+        const now = moment.utc();
+        const expirationTime = moment(episodeFetchJob.lastFetchedTime)
+          .add(metadataFetchJob.ttl, "days")
+          .add(metadataFetchJob.jitter, "minutes");
+
+        if (expirationTime.isAfter(now)) {
+          logger.debug(
+            `Episode ${episodeKey} is fresh... expiration time ${expirationTime.toISOString()}...skipping`,
+          );
+          continue;
+        } else {
+          logger.info(`Episode ${episodeKey} is expired... re-processing`);
+        }
+      }
+
+      const ttl = 7;
+      const jitter = Math.floor(Math.random() * 3 * 24 * 60);
+
+      await metadataManager.createMetadataFetchJob(
+        episodeKey,
         JobType.TV_EPISODES,
         ttl,
         jitter,

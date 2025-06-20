@@ -14,6 +14,7 @@ import { Injectable } from "@nestjs/common";
 import { ConsumeMessage } from "amqplib";
 import metadataApi from "../../api/metadataApi";
 import { PersonEndpoint } from "../../api/tmdb/person";
+import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { MetadataJobMessage } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
@@ -46,6 +47,8 @@ export class PersonMetadataHandler extends BaseMetadataHandler<
     entityId: string,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     metadataFetchJob: MetadataFetchJob,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialPerson, undefined]> {
     const endpoint = new PersonEndpoint(
       this.configService.get<string>("TMDB_API_KEY", ""),

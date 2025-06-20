@@ -13,6 +13,7 @@ import { Injectable } from "@nestjs/common";
 import { ConsumeMessage } from "amqplib";
 import { CollectionsEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
+import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { MetadataJobMessage } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
@@ -44,6 +45,8 @@ export class CollectionsMetadataHandler extends BaseMetadataHandler<
     entityId: string,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     metadataFetchJob: MetadataFetchJob,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialCollection, undefined]> {
     const endpoint = new CollectionsEndpoint(
       this.configService.get<string>("TMDB_API_KEY")!,

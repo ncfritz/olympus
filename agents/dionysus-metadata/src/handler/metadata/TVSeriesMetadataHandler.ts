@@ -30,12 +30,14 @@ import moment from "moment/moment";
 import { AggregateCast, AggregateCrew } from "tmdb-ts";
 import { TvShowsEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
+import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { MetadataJobMessage } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
   METADATA_JOB_PREFIX,
   TRIGGER_SUFFIX,
 } from "../../util/constants";
+import { logger } from "../../util/logger";
 import { UniqueSet } from "../../util/UniqueSet";
 import { BaseMetadataHandler } from "./BaseMetadataHandler";
 
@@ -61,8 +63,8 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
 
   async doFetchMetadata(
     entityId: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     metadataFetchJob: MetadataFetchJob,
+    metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialTVSeries, undefined]> {
     const endpoint = new TvShowsEndpoint(
       this.configService.get<string>("TMDB_API_KEY")!,
@@ -348,11 +350,34 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
     await metadataApi.createTVSeries(series);
 
     for (const season of seriesResponse.seasons) {
+      const seasonKey = `${seriesResponse.id}-${season.season_number}`;
+      const seasonFetchJob = await metadataManager.getMetadataFetchJob(
+        seasonKey,
+        JobType.TV_SEASONS,
+        false,
+      );
+
+      if (seasonFetchJob) {
+        const now = moment.utc();
+        const expirationTime = moment(seasonFetchJob.lastFetchedTime)
+          .add(metadataFetchJob.ttl, "days")
+          .add(metadataFetchJob.jitter, "minutes");
+
+        if (expirationTime.isAfter(now)) {
+          logger.debug(
+            `Season ${seasonKey} is fresh... expiration time ${expirationTime.toISOString()}...skipping`,
+          );
+          continue;
+        } else {
+          logger.info(`Season ${seasonKey} is expired... re-processing`);
+        }
+      }
+
       const ttl = 7;
       const jitter = Math.floor(Math.random() * 3 * 24 * 60);
 
-      await metadataApi.createMetadataFetchJob(
-        `${seriesResponse.id}-${season.season_number}`,
+      await metadataManager.createMetadataFetchJob(
+        seasonKey,
         JobType.TV_SEASONS,
         ttl,
         jitter,

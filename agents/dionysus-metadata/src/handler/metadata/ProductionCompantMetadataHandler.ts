@@ -13,6 +13,7 @@ import { Injectable } from "@nestjs/common";
 import { ConsumeMessage } from "amqplib";
 import metadataApi from "../../api/metadataApi";
 import { ProductionCompaniesEndpoint } from "../../api/tmdb/productionCompany";
+import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { MetadataJobMessage } from "../../types/message";
 
 import {
@@ -45,6 +46,8 @@ export class ProductionCompanyMetadataHandler extends BaseMetadataHandler<
     entityId: string,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     metadataFetchJob: MetadataFetchJob,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialProductionCompany, undefined]> {
     const endpoint = new ProductionCompaniesEndpoint(
       this.configService.get<string>("TMDB_API_KEY")!,

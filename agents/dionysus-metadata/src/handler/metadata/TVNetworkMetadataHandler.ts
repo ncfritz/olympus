@@ -13,6 +13,7 @@ import { Injectable } from "@nestjs/common";
 import { ConsumeMessage } from "amqplib";
 import metadataApi from "../../api/metadataApi";
 import { NetworksEndpoint } from "../../api/tmdb/network";
+import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { MetadataJobMessage } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
@@ -44,6 +45,8 @@ export class TVNetworkMetadataHandler extends BaseMetadataHandler<
     entityId: string,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     metadataFetchJob: MetadataFetchJob,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialNetwork, undefined]> {
     const endpoint = new NetworksEndpoint(
       this.configService.get<string>("TMDB_API_KEY")!,

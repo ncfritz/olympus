@@ -80,6 +80,7 @@ export abstract class BaseMetadataHandler<T, C> {
         const [metadata, context] = await this.doFetchMetadata(
           entityId,
           metadataFetchJob,
+          metadataManager,
         );
         ttl = this.getTtl(metadata, context);
         jitter = this.getJitter(metadata, context);
@@ -130,6 +131,7 @@ export abstract class BaseMetadataHandler<T, C> {
   protected abstract doFetchMetadata(
     entityId: string,
     metadataFetchJob: MetadataFetchJob,
+    metadataManager: MetadataFetchJobManager,
   ): Promise<[T, C]>;
   protected abstract cleanup(): Promise<void>;
 
