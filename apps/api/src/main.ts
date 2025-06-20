@@ -4,7 +4,9 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import cookieParser from "cookie-parser";
 import * as bodyParser from "body-parser";
 import * as fs from "fs";
+import { WinstonModule } from "nest-winston";
 import { AppModule } from "./module/AppModule";
+import { logger } from "./utils/logger";
 
 async function bootstrap() {
   const enableApiExplorer =
@@ -14,6 +16,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     snapshot: true,
     abortOnError: false,
+    logger: WinstonModule.createLogger({
+      instance: logger,
+    }),
   });
   app.useGlobalPipes(new ValidationPipe());
   app.use(cookieParser());
@@ -45,10 +50,10 @@ async function bootstrap() {
 
 bootstrap()
   .then(() => {
-    console.log("🔥🔥🔥 Olympus API bootstrap complete.");
+    logger.info("🔥🔥🔥 Olympus API bootstrap complete.");
   })
   .catch((e) => {
-    console.error(e);
+    logger.error("🤯🤯🤯 Error during bootstrap!", e);
     fs.writeFileSync("graph.json", PartialGraphHost.toString() ?? "");
     process.exit(1);
   });

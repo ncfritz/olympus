@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { DevtoolsModule } from "@nestjs/devtools-integration";
+import { PrometheusModule } from "@willsoto/nestjs-prometheus";
 import { PingController } from "../controller/PingController";
 import { LoggerMiddleware } from "../middleware/LoggerMiddleware";
 import { BatchJobApiModule } from "./BatchJobApiModule";
@@ -23,6 +24,12 @@ import { WorkflowApiModule } from "./WorkflowApiModule";
     ConfigModule.forRoot({
       envFilePath: `${process.env.NODE_ENV}.env`,
       isGlobal: true,
+    }),
+    PrometheusModule.register({
+      defaultLabels: {
+        app: "olympus-api",
+      },
+      path: "/api/metrics",
     }),
     RabbitModule,
     GraphQLClientModule,
