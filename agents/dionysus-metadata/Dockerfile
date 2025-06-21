@@ -53,5 +53,5 @@ ENV NODE_EXTRA_CA_CERTS=./ca_roots.pem
 
 EXPOSE 3100
 
-CMD node dist/main.js 
+CMD node --env-file=production.env dist/main.js
 

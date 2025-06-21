@@ -1,32 +1,42 @@
+import fs from "fs";
 import winston from "winston";
 import LokiTransport from "winston-loki";
 
-export const logger = winston.createLogger({
-  level: "debug",
-  format: winston.format.json(),
-  defaultMeta: { service: "dionysus-md-agent" },
-  transports: [
+const isProd = process.env.NODE_ENV === "production";
+
+export const appName =
+  process.env.APP_NAME ||
+  `dionysus-metadata-agents${isProd ? "" : `-${process.env.NODE_ENV}`}`;
+
+const consoleLoggingEnabled =
+  !isProd || process.env.ENABLE_CONSOLE_LOGGING === "true";
+const consoleLoggingLevel = process.env.CONSOLE_LOGGING_LEVEL || "info";
+const lokiLoggingEnabled = process.env.LOKI_URL;
+const lokiLoggingLevel = process.env.CONSOLE_LOGGING_LEVEL || "info";
+
+const transports = [];
+
+if (lokiLoggingEnabled) {
+  transports.push(
     new LokiTransport({
-      host: process.env.LOKI_URL || "http://localhost:4100",
+      host: process.env.LOKI_URL!,
+      level: lokiLoggingLevel,
       labels: {
-        app: "dionysus-md-agents",
+        app: appName,
       },
       json: true,
       format: winston.format.json(),
       replaceTimestamp: true,
       clearOnError: true,
+      onConnectionError: (e) => console.log(e),
     }),
-  ],
-});
+  );
+}
 
-//
-// If we're not in production then log to the `console` with the format:
-// `${info.level}: ${info.message} JSON.stringify({ ...rest }) `
-//
-if (process.env.NODE_ENV !== "production") {
-  logger.add(
+if (consoleLoggingEnabled) {
+  transports.push(
     new winston.transports.Console({
-      level: "debug",
+      level: consoleLoggingLevel,
       format: winston.format.combine(
         winston.format.colorize(),
         winston.format.timestamp(),
@@ -38,3 +48,25 @@ if (process.env.NODE_ENV !== "production") {
     }),
   );
 }
+
+if (transports.length <= 0) {
+  transports.push(
+    new winston.transports.Stream({
+      stream: fs.createWriteStream("/dev/null"),
+    }),
+  );
+}
+
+export const logger = winston.createLogger({
+  level: process.env.LOKI_LEVEL || "debug",
+  format: winston.format.json(),
+  defaultMeta: { service: appName },
+  transports: transports,
+});
+
+logger.info(
+  `Console logging ${consoleLoggingEnabled ? "enabled" : "disabled"} - level "${consoleLoggingLevel}"`,
+);
+logger.info(
+  `Loki logging ${lokiLoggingEnabled ? "enabled" : "disabled"} - level "${lokiLoggingLevel}" - to ${process.env.LOKI_URL}`,
+);

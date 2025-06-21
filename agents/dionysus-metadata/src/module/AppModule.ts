@@ -1,3 +1,4 @@
+import { appName } from "../util/logger";
 import { Logger, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { PrometheusModule } from "@willsoto/nestjs-prometheus";
@@ -33,7 +34,7 @@ import { RabbitModule } from "./RabbitModule";
     }),
     PrometheusModule.register({
       defaultLabels: {
-        app: "dionysus-metadata-agent",
+        app: appName,
       },
     }),
     RabbitModule,

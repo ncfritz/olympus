@@ -5,6 +5,7 @@ import fs from "fs";
 import { WinstonModule } from "nest-winston";
 import { AppModule } from "./module/AppModule";
 import { logger } from "./util/logger";
+import "dotenv/config";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
