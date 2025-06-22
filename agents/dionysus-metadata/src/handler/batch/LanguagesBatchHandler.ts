@@ -55,7 +55,7 @@ export class LanguagesBatchHandler extends BaseBatchHandler {
     }
   }
 
-  private async createCertification(
+  private async createLanguage(
     line: PartialLanguage,
   ): Promise<MetadataFetchJobStatus> {
     try {
@@ -83,15 +83,16 @@ export class LanguagesBatchHandler extends BaseBatchHandler {
     type: string,
     line: any,
   ): Promise<MetadataFetchJobStatus> {
-    return await this.createCertification(line);
+    return await this.createLanguage(line);
   }
 
   protected async preUpdateMetadataFetchJob(
     id: string,
     type: string,
+    currentStatus: MetadataFetchJobStatus,
     line: any,
   ): Promise<MetadataFetchJobStatus> {
-    return await this.createCertification(line);
+    return await this.createLanguage(line);
   }
 
   protected async cleanup() {

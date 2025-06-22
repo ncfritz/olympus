@@ -54,7 +54,7 @@ export class CountriesBatchHandler extends BaseBatchHandler {
     }
   }
 
-  private async createCertification(
+  private async createCountry(
     line: PartialCountry,
   ): Promise<MetadataFetchJobStatus> {
     try {
@@ -82,15 +82,16 @@ export class CountriesBatchHandler extends BaseBatchHandler {
     type: string,
     line: any,
   ): Promise<MetadataFetchJobStatus> {
-    return await this.createCertification(line);
+    return await this.createCountry(line);
   }
 
   protected async preUpdateMetadataFetchJob(
     id: string,
     type: string,
+    currentStatus: MetadataFetchJobStatus,
     line: any,
   ): Promise<MetadataFetchJobStatus> {
-    return await this.createCertification(line);
+    return await this.createCountry(line);
   }
 
   protected async cleanup() {

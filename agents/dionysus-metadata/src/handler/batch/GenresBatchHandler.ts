@@ -96,6 +96,7 @@ export class GenresBatchHandler extends BaseBatchHandler {
   protected async preUpdateMetadataFetchJob(
     id: string,
     type: string,
+    currentStatus: MetadataFetchJobStatus,
     line: any,
   ): Promise<MetadataFetchJobStatus> {
     return await this.createGenre(line);
