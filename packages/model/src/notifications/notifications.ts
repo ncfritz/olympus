@@ -300,8 +300,8 @@ export class SendNotificationRequest {
     description:
       "An ISO-8601 formatted string indicating when a message should expire and subsequently be dropped from delivery.",
   })
-  @Transform(({ value }) => value.toISOString())
-  expirationTime?: string;
+  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  expirationTime?: Moment;
 
   @ApiProperty({
     type: () => NotificationContext,
