@@ -99,7 +99,7 @@ export class WebSocketHandler extends BaseHandler<
         };
 
         await axios.post(
-          `${apiHost}/api/v1/notifications`,
+          `${apiHost}/v1/notifications`,
           createNotificationRequest,
         );
       }
