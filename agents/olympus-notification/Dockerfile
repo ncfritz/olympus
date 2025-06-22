@@ -1,5 +1,5 @@
 # Install dependencies only when needed
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 
 # Set up build to allow pulling from GitHub NPM repos
 ARG github_token
@@ -8,11 +8,6 @@ ENV GITHUB_TOKEN=$github_token
 RUN echo registry=https://registry.npmjs.org/ >> ~/.npmrc
 RUN echo @ncfritz:registry=https://npm.pkg.github.com/ >> ~/.npmrc
 RUN echo //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN >> ~/.npmrc
-
-# Install FFMPEG
-RUN apk update
-RUN apk upgrade
-RUN apk add --no-cache ffmpeg
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -56,5 +51,4 @@ USER nestjs
 
 EXPOSE 3100
 
-CMD node dist/main.js 
-
+CMD node --env-file=production.env dist/main.js
