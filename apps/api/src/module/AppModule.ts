@@ -14,6 +14,7 @@ import { RabbitModule } from "./RabbitModule";
 import { ConfigModule } from "@nestjs/config";
 import { WebSocketModule } from "./WebSocketModule";
 import { WorkflowApiModule } from "./WorkflowApiModule";
+import { appName } from "../utils/logger";
 
 @Module({
   imports: [
@@ -27,9 +28,8 @@ import { WorkflowApiModule } from "./WorkflowApiModule";
     }),
     PrometheusModule.register({
       defaultLabels: {
-        app: "olympus-api",
+        app: appName,
       },
-      path: "/api/metrics",
     }),
     RabbitModule,
     GraphQLClientModule,
