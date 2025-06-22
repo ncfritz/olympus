@@ -9,13 +9,19 @@ RUN echo registry=https://registry.npmjs.org/ >> ~/.npmrc
 RUN echo @ncfritz:registry=https://npm.pkg.github.com/ >> ~/.npmrc
 RUN echo //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN >> ~/.npmrc
 
+# Install Sqlite3
+RUN apk update
+RUN apk upgrade
+RUN apk add --no-cache pnpm
+RUN apk add --no-cache python3 make gcc libc-dev g++ make py3-pip
+
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
-RUN npm ci --ignore-scripts
+RUN npm ci
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -45,9 +51,10 @@ RUN npm run build
 # Running `npm ci` removes the existing node_modules directory and passing in
 # --only=production ensures that only the production dependencies are installed.
 # This ensures that the node_modules directory is as optimized as possible
-RUN npm ci --only=production --ignore-scripts && npm cache clean --force
+RUN npm ci --only=production && npm cache clean --force
+#RUN pnpm install better-sqlite3
 
-USER nestjs
+USER root
 
 ENV NODE_EXTRA_CA_CERTS=./ca_roots.pem
 
