@@ -9,7 +9,10 @@ RUN echo registry=https://registry.npmjs.org/ >> ~/.npmrc
 RUN echo @ncfritz:registry=https://npm.pkg.github.com/ >> ~/.npmrc
 RUN echo //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN >> ~/.npmrc
 
-# Install Sqlite3
+# Install dependencies needed for a full build of the dependencies.
+# We need to allow the postinstall scripts to run so native bindings are
+# generated for better-sqlite3 (among others) and Alpine doesn't have the
+# needed requirements by default.
 RUN apk update
 RUN apk upgrade
 RUN apk add --no-cache pnpm
@@ -52,7 +55,6 @@ RUN npm run build
 # --only=production ensures that only the production dependencies are installed.
 # This ensures that the node_modules directory is as optimized as possible
 RUN npm ci --only=production && npm cache clean --force
-#RUN pnpm install better-sqlite3
 
 USER root
 
