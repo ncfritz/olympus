@@ -1,0 +1,14 @@
+{
+  "attachments": [
+    {
+      "filename": "olympus_header.png",
+      "path": "templates/images/olympus_header.png",
+      "cid": "t_olympus_header"
+    },
+    {
+      "filename": "olympus_footer_logo.png",
+      "path": "templates/images/olympus_footer_logo.png",
+      "cid": "t_olympus_footer_logo"
+    }
+  ]
+}
