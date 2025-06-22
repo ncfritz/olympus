@@ -13,7 +13,7 @@ import { logger } from "../util/logger";
         const amqpPort = config.get<string>("AMQP_PORT", "5672");
         const amqpUser = config.get<string>("AMQP_USER", "admin");
         const amqpPassword = config.get<string>("AMQP_PASSWORD", "admin");
-        const amqpVhost = config.get<string>("AMQP_VHOST", "/dionysus");
+        const amqpVhost = config.get<string>("AMQP_VHOST", "/dionysus-dev");
 
         const amqpEndpoint = `${amqpProtocol}://${amqpUser}:${amqpPassword}@${amqpHost}:${amqpPort}/${encodeURIComponent(
           amqpVhost,
