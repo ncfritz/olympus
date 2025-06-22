@@ -204,6 +204,7 @@ export class SendNotificationController {
     }
 
     const eventId = uuidv4();
+    const now = moment.utc();
     const deliveryStatus: DeliveryStatus = {
       eventId: eventId,
       status: DeliveryState.UNKNOWN,
@@ -218,7 +219,7 @@ export class SendNotificationController {
           notificationId: notificationId,
           notificationType: request.type,
           expirationTime: request.expirationTime,
-          publishTime: moment().utc().toISOString(),
+          publishTime: now.toISOString(),
           level: request.webSocketDestination.level,
           durable: request.webSocketDestination.durable,
           closable: request.webSocketDestination.closable,

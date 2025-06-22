@@ -25,7 +25,7 @@
   "dependencies": {
     "@apollo/server": "^4.12.1",
     "@golevelup/nestjs-rabbitmq": "^6.0.1",
-    "@ncfritz/olympus-model": "^1.5.0",
+    "@ncfritz/olympus-model": "latest",
     "@nestjs/apollo": "^13.1.0",
     "@nestjs/common": "^11.1.2",
     "@nestjs/config": "^4.0.2",
