@@ -56,7 +56,7 @@ const fetchMetadataWorkflows = async (
   }
 };
 
-const fetcMetadataWorkflowSteps = async (id: string) => {
+const fetchMetadataWorkflowSteps = async (id: string) => {
   try {
     const listWorkflowStepsResponse = await axios.get(
       `/api/v1/metadata/workflow/${id}/steps`,
@@ -73,10 +73,28 @@ const fetcMetadataWorkflowSteps = async (id: string) => {
   }
 };
 
+const fetchMetadataWorkflowStatistics = async () => {
+  try {
+    const getWorkflowStatisticsResponse = await axios.get(
+      `/api/v1/metadata/workflow/stats`,
+      {
+        validateStatus: (status) => {
+          return status === 200;
+        },
+      },
+    );
+
+    return getWorkflowStatisticsResponse;
+  } catch (e) {
+    throw e;
+  }
+};
+
 const workflowApi = {
   createWorkflow: createWorkflow,
+  getWorkflowStatistics: fetchMetadataWorkflowStatistics,
   listMetadataWorkflows: fetchMetadataWorkflows,
-  listMetadataWorkflowSteps: fetcMetadataWorkflowSteps,
+  listMetadataWorkflowSteps: fetchMetadataWorkflowSteps,
 };
 
 export default workflowApi;

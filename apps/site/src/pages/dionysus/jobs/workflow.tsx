@@ -1,7 +1,6 @@
 import {
   HomeOutlined,
   KubernetesOutlined,
-  LoginOutlined,
   PlusOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
@@ -14,6 +13,7 @@ import {
   notification,
   Row,
   Space,
+  Spin,
   Table,
   type TableProps,
   Typography,
@@ -27,6 +27,9 @@ import type { SortOptions } from "../../../api/contentApi";
 import workflowApi from "../../../api/workflowApi";
 import RefreshTimer from "../../../components/common/RefreshTimer";
 import Timestamp from "../../../components/data/Timestamp";
+import WorkflowQueueTimeChart from "../../../components/dionysus/jobs/graphs/WorkflowQueueTimeChart";
+import WorkflowRuntimeChart from "../../../components/dionysus/jobs/graphs/WorkflowRuntimeChart";
+import WorkflowStatusChart from "../../../components/dionysus/jobs/graphs/WorkflowStatusChart";
 import {
   getMetadataJobStatusIndicator,
   getMetadataWorkflowStatusIndicator,
@@ -52,6 +55,10 @@ type Sorts = GetSingle<Parameters<OnChange>[2]>;
 const MetadataWorkflowsPage: React.FunctionComponent = () => {
   const [api] = notification.useNotification();
 
+  const [metadataWorkflowStats, setMetadataWorkflowStats] = useState<any>();
+  const [metadataWorkflowStatsLoading, setMetadataWorkflowStatsLoading] =
+    useState<any>(true);
+  const [, setJobStatsError] = useState<any>();
   const [metadataWorkflows, setMetadataWorkflows] = useState<any>();
   const [metadataWorkflowRequested, setMetadataWorkflowRequested] =
     useState("");
@@ -65,7 +72,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
   const [metadataWorkflowsSort, setMetadataWorkflowsSort] =
     useState<SortOptions>({
       field: "createdTime",
-      order: "asc",
+      order: "desc",
     });
   const [metadataWorkflowFilters, setMetadataWorkflowFilters] = useState<
     Record<string, FilterValue | null>
@@ -73,6 +80,23 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
   const [selectedWorkflow, setSelectedWorkflow] = useState<
     MetadataWorkflow | undefined
   >(undefined);
+
+  const fetchWorkflowStatistics = async (quiet = false) => {
+    if (!quiet) {
+      setMetadataWorkflowStatsLoading(true);
+    }
+    setJobStatsError(undefined);
+
+    try {
+      const getWorkflowStatsResponse =
+        await workflowApi.getWorkflowStatistics();
+      setMetadataWorkflowStats(getWorkflowStatsResponse.data);
+    } catch (e) {
+      setJobStatsError(e);
+    } finally {
+      setMetadataWorkflowStatsLoading(false);
+    }
+  };
 
   const fetchMetadataWorkflows = async (quiet = false) => {
     if (!quiet) {
@@ -111,6 +135,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
   useEffect(() => {
     (async () => {
       await fetchMetadataWorkflows();
+      await fetchWorkflowStatistics();
     })();
   }, []);
 
@@ -123,6 +148,28 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
   const closeDrawer = () => {
     setSelectedWorkflow(undefined);
   };
+
+  let statusChart = (
+    <Space style={{ height: 300, display: "flex", justifyContent: "center" }}>
+      <Spin />
+    </Space>
+  );
+  let queueTimingChart = (
+    <Space style={{ height: 300, display: "flex", justifyContent: "center" }}>
+      <Spin />
+    </Space>
+  );
+  let runTimingChart = (
+    <Space style={{ height: 300, display: "flex", justifyContent: "center" }}>
+      <Spin />
+    </Space>
+  );
+
+  if (!metadataWorkflowStatsLoading) {
+    statusChart = <WorkflowStatusChart stats={metadataWorkflowStats} />;
+    queueTimingChart = <WorkflowQueueTimeChart stats={metadataWorkflowStats} />;
+    runTimingChart = <WorkflowRuntimeChart stats={metadataWorkflowStats} />;
+  }
 
   const columns: ColumnsType<MetadataWorkflow> = [
     {
@@ -312,8 +359,9 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
       >
         <Content style={{ width: "calc(100vw - 384px)" }}>
           <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={16}>chart 1</Col>
-            <Col span={8}>chart 2</Col>
+            <Col span={8}>{statusChart}</Col>
+            <Col span={8}>{queueTimingChart}</Col>
+            <Col span={8}>{runTimingChart}</Col>
           </Row>
           <Row>
             <Col span={24}>
