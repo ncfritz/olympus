@@ -264,8 +264,8 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
   );
 
   if (!jobStatsLoading) {
-    statusChart = <MetadataFetchJobStatusChart jobStats={jobStats} />;
-    expirationChart = <MetadataFetchJobExpirationChart jobStats={jobStats} />;
+    statusChart = <MetadataFetchJobStatusChart stats={jobStats} />;
+    expirationChart = <MetadataFetchJobExpirationChart stats={jobStats} />;
   }
 
   const columns: ColumnsType<MetadataFetchJob> = [

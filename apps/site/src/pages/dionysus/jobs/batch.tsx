@@ -192,9 +192,9 @@ const BatchJobsPage: React.FunctionComponent = () => {
   );
 
   if (!jobStatsLoading) {
-    queueTimeChart = <BatchJobQueueTimeChart jobStats={jobStats} />;
-    runtimeChart = <BatchJobRuntimeChart jobStats={jobStats} />;
-    statusChart = <BatchJobStatusChart jobStats={jobStats} />;
+    queueTimeChart = <BatchJobQueueTimeChart stats={jobStats} />;
+    runtimeChart = <BatchJobRuntimeChart stats={jobStats} />;
+    statusChart = <BatchJobStatusChart stats={jobStats} />;
   }
 
   return (
