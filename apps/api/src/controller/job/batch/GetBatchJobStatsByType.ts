@@ -14,10 +14,7 @@ import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment, { Moment } from "moment/moment";
 import { GraphQlBulkLoadJobStat } from "../../../types/batchJobs";
-import {
-  BATCH_JOB_STATUSES_MAP,
-  METADATA_CATEGORY_MAP,
-} from "../../../utils/constants";
+import { METADATA_CATEGORY_MAP } from "../../../utils/constants";
 
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
@@ -81,28 +78,21 @@ export class GetBatchJobStatsByTypeController {
         { type: type },
       );
 
-    const statusCategories: string[] = Object.keys(BATCH_JOB_STATUSES_MAP);
-    const recordSeries: Record<string, number[][]> = {
-      total: [],
-      new: [],
-      expired: [],
-      noop: [],
-      skipped: [],
-      processed: [],
-    };
-
     const now = moment
       .utc()
       .set({ milliseconds: 0, seconds: 0, minutes: 0, hours: 0 });
 
-    const queueTimeSeries: number[][] = this.emptyTimingMap(
-      statusCategories.length,
-      moment(now),
-    );
-    const runtimeSeries: number[][] = this.emptyTimingMap(
-      statusCategories.length,
-      moment(now),
-    );
+    const recordSeries: Record<string, number[][]> = {
+      total: this.emptyTimingMap(moment(now)),
+      new: this.emptyTimingMap(moment(now)),
+      expired: this.emptyTimingMap(moment(now)),
+      noop: this.emptyTimingMap(moment(now)),
+      skipped: this.emptyTimingMap(moment(now)),
+      processed: this.emptyTimingMap(moment(now)),
+    };
+
+    const queueTimeSeries: number[][] = this.emptyTimingMap(moment(now));
+    const runtimeSeries: number[][] = this.emptyTimingMap(moment(now));
 
     fetchResponse.dionysus_bulk_load_jobs_statistics.forEach((data) => {
       const dataTime = moment.utc(data.created_date);
@@ -119,21 +109,27 @@ export class GetBatchJobStatsByTypeController {
           dataTime.valueOf(),
           data.run_time as number,
         ];
-        recordSeries["total"].push([dataTime.valueOf(), data.total_records]);
-        recordSeries["new"].push([dataTime.valueOf(), data.new_records]);
-        recordSeries["expired"].push([
+        recordSeries["total"][dateIndex] = [
+          dataTime.valueOf(),
+          data.total_records,
+        ];
+        recordSeries["new"][dateIndex] = [dataTime.valueOf(), data.new_records];
+        recordSeries["expired"][dateIndex] = [
           dataTime.valueOf(),
           data.expired_records,
-        ]);
-        recordSeries["noop"].push([dataTime.valueOf(), data.noop_records]);
-        recordSeries["skipped"].push([
+        ];
+        recordSeries["noop"][dateIndex] = [
+          dataTime.valueOf(),
+          data.noop_records,
+        ];
+        recordSeries["skipped"][dateIndex] = [
           dataTime.valueOf(),
           data.skipped_records,
-        ]);
-        recordSeries["processed"].push([
+        ];
+        recordSeries["processed"][dateIndex] = [
           dataTime.valueOf(),
           data.processed_records,
-        ]);
+        ];
       }
     });
 
@@ -150,7 +146,7 @@ export class GetBatchJobStatsByTypeController {
     response.status(HttpStatus.OK).json(responseBody);
   }
 
-  emptyTimingMap(length: number, now: Moment): number[][] {
+  emptyTimingMap(now: Moment): number[][] {
     const valuesTemplate = [];
 
     for (let i = 30; i > 0; i--) {
