@@ -1,1 +1,765 @@
-!function(){"use strict";let e,r,t;var i,n=tinymce.util.Tools.resolve("tinymce.PluginManager");let s=(e=void 0,r=>e===r),o=e=>null==e,a=e=>!o(e),l=e=>()=>e,u=l(!1);class h{constructor(e,r){this.tag=e,this.value=r}static some(e){return new h(!0,e)}static none(){return h.singletonNone}fold(e,r){return this.tag?r(this.value):e()}isSome(){return this.tag}isNone(){return!this.tag}map(e){return this.tag?h.some(e(this.value)):h.none()}bind(e){return this.tag?e(this.value):h.none()}exists(e){return this.tag&&e(this.value)}forall(e){return!this.tag||e(this.value)}filter(e){return!this.tag||e(this.value)?this:h.none()}getOr(e){return this.tag?this.value:e}or(e){return this.tag?this:e}getOrThunk(e){return this.tag?this.value:e()}orThunk(e){return this.tag?this:e()}getOrDie(e){if(this.tag)return this.value;throw Error(null!=e?e:"Called getOrDie on None")}static from(e){return a(e)?h.some(e):h.none()}getOrNull(){return this.tag?this.value:null}getOrUndefined(){return this.value}each(e){this.tag&&e(this.value)}toArray(){return this.tag?[this.value]:[]}toString(){return this.tag?`some(${this.value})`:"none()"}}h.singletonNone=new h(!1);let c=(e,r,t)=>{for(let i=0,n=e.length;i<n;i++){let n=e[i];if(r(n,i))return h.some(n);if(t(n,i))break}return h.none()},d=(e,r)=>c(e,r,u),m=(e,r)=>{for(let t=0;t<e.length;t++){let i=r(e[t],t);if(i.isSome())return i}return h.none()},g=(e,r,t=0,i)=>{let n=e.indexOf(r,t);return -1!==n&&(!!s(i)||n+r.length<=i)},v=(e,r,t,i)=>{let n=e.isiOS()&&!0===/ipad/i.test(t),s=e.isiOS()&&!n,o=e.isiOS()||e.isAndroid(),a=o||i("(pointer:coarse)"),u=n||!s&&o&&i("(min-device-width:768px)"),h=s||o&&!u,c=r.isSafari()&&e.isiOS()&&!1===/safari/i.test(t);return{isiPad:l(n),isiPhone:l(s),isTablet:l(u),isPhone:l(h),isTouch:l(a),isAndroid:e.isAndroid,isiOS:e.isiOS,isWebView:l(c),isDesktop:l(!h&&!u&&!c)}},p=(e,r)=>{for(let t=0;t<e.length;t++){let i=e[t];if(i.test(r))return i}},f=(e,r)=>{let t=p(e,r);if(!t)return{major:0,minor:0};let i=e=>Number(r.replace(t,"$"+e));return x(i(1),i(2))},w=()=>x(0,0),x=(e,r)=>({major:e,minor:r}),S=(e,r)=>{let t=String(r).toLowerCase();return 0===e.length?w():f(e,t)},y=(e,r)=>m(r.brands,r=>{let t=r.brand.toLowerCase();return d(e,e=>{var r;return t===(null==(r=e.brand)?void 0:r.toLowerCase())}).map(e=>({current:e.name,version:x(parseInt(r.version,10),0)}))}),b=(e,r)=>{let t=String(r).toLowerCase();return d(e,e=>e.search(t))},O=(e,r)=>b(e,r).map(e=>{let t=S(e.versionRegexes,r);return{current:e.name,version:t}}),R=(e,r)=>b(e,r).map(e=>{let t=S(e.versionRegexes,r);return{current:e.name,version:t}}),C=/.*?version\/\ ?([0-9]+)\.([0-9]+).*/,k=e=>r=>g(r,e),A=[{name:"Edge",versionRegexes:[/.*?edge\/ ?([0-9]+)\.([0-9]+)$/],search:e=>g(e,"edge/")&&g(e,"chrome")&&g(e,"safari")&&g(e,"applewebkit")},{name:"Chromium",brand:"Chromium",versionRegexes:[/.*?chrome\/([0-9]+)\.([0-9]+).*/,C],search:e=>g(e,"chrome")&&!g(e,"chromeframe")},{name:"IE",versionRegexes:[/.*?msie\ ?([0-9]+)\.([0-9]+).*/,/.*?rv:([0-9]+)\.([0-9]+).*/],search:e=>g(e,"msie")||g(e,"trident")},{name:"Opera",versionRegexes:[C,/.*?opera\/([0-9]+)\.([0-9]+).*/],search:k("opera")},{name:"Firefox",versionRegexes:[/.*?firefox\/\ ?([0-9]+)\.([0-9]+).*/],search:k("firefox")},{name:"Safari",versionRegexes:[C,/.*?cpu os ([0-9]+)_([0-9]+).*/],search:e=>(g(e,"safari")||g(e,"mobile/"))&&g(e,"applewebkit")}],D=[{name:"Windows",search:k("win"),versionRegexes:[/.*?windows\ nt\ ?([0-9]+)\.([0-9]+).*/]},{name:"iOS",search:e=>g(e,"iphone")||g(e,"ipad"),versionRegexes:[/.*?version\/\ ?([0-9]+)\.([0-9]+).*/,/.*cpu os ([0-9]+)_([0-9]+).*/,/.*cpu iphone os ([0-9]+)_([0-9]+).*/]},{name:"Android",search:k("android"),versionRegexes:[/.*?android\ ?([0-9]+)\.([0-9]+).*/]},{name:"macOS",search:k("mac os x"),versionRegexes:[/.*?mac\ os\ x\ ?([0-9]+)_([0-9]+).*/]},{name:"Linux",search:k("linux"),versionRegexes:[]},{name:"Solaris",search:k("sunos"),versionRegexes:[]},{name:"FreeBSD",search:k("freebsd"),versionRegexes:[]},{name:"ChromeOS",search:k("cros"),versionRegexes:[/.*?chrome\/([0-9]+)\.([0-9]+).*/]}],E={browsers:l(A),oses:l(D)},I="Edge",P="Chromium",T="Opera",_="Firefox",B="Safari",L=e=>{let r=e.current,t=e.version,i=e=>()=>r===e;return{current:r,version:t,isEdge:i(I),isChromium:i(P),isIE:i("IE"),isOpera:i(T),isFirefox:i(_),isSafari:i(B)}},N={unknown:()=>L({current:void 0,version:w()}),nu:L,edge:l(I),chromium:l(P),ie:l("IE"),opera:l(T),firefox:l(_),safari:l(B)},F="Windows",M="Android",$="Linux",W="macOS",U="Solaris",K="FreeBSD",V="ChromeOS",j=e=>{let r=e.current,t=e.version,i=e=>()=>r===e;return{current:r,version:t,isWindows:i(F),isiOS:i("iOS"),isAndroid:i(M),isMacOS:i(W),isLinux:i($),isSolaris:i(U),isFreeBSD:i(K),isChromeOS:i(V)}},z={unknown:()=>j({current:void 0,version:w()}),nu:j,windows:l(F),ios:l("iOS"),android:l(M),linux:l($),macos:l(W),solaris:l(U),freebsd:l(K),chromeos:l(V)},Y=(e,r,t)=>{let i=E.browsers(),n=E.oses(),s=r.bind(e=>y(i,e)).orThunk(()=>O(i,e)).fold(N.unknown,N.nu),o=R(n,e).fold(z.unknown,z.nu),a=v(o,s,e,t);return{browser:s,os:o,deviceType:a}},q=e=>window.matchMedia(e).matches,G=(i=()=>Y(window.navigator.userAgent,h.from(window.navigator.userAgentData),q),t=!1,(...e)=>(t||(t=!0,r=i.apply(null,e)),r)),H=()=>G(),J=()=>H().os.isMacOS(),Q=()=>H().os.isiOS(),X=()=>{let e=J()||Q();return`<script>(${(e=>{document.addEventListener("click",r=>{for(let t=r.target;t;t=t.parentNode)if("A"===t.nodeName){let i=t.getAttribute("href");if(i&&i.startsWith("#")){r.preventDefault();let e=document.getElementById(i.substring(1));e&&e.scrollIntoView({behavior:"smooth"});return}(e?r.metaKey:r.ctrlKey&&!r.altKey)||r.preventDefault()}},!1)}).toString()})(${e})</script>`};var Z=tinymce.util.Tools.resolve("tinymce.util.Tools");let ee=e=>r=>r.options.get(e),er=ee("content_style"),et=ee("content_css_cors"),ei=ee("body_class"),en=ee("body_id"),es=e=>{var r;let t="",i=e.dom.encode,n=null!=(r=er(e))?r:"";t+=`<base href="${i(e.documentBaseURI.getURI())}">`;let s=et(e)?' crossorigin="anonymous"':"";Z.each(e.contentCSS,r=>{t+='<link type="text/css" rel="stylesheet" href="'+i(e.documentBaseURI.toAbsolute(r))+'"'+s+">"}),n&&(t+='<style type="text/css">'+n+"</style>");let o=en(e),a=ei(e),l=e.getBody().dir,u=l?' dir="'+i(l)+'"':"";return"<!DOCTYPE html><html><head>"+t+'</head><body id="'+i(o)+'" class="mce-content-body '+i(a)+'"'+u+">"+e.getContent()+X()+"</body></html>"},eo=e=>{let r=es(e);e.windowManager.open({title:"Preview",size:"large",body:{type:"panel",items:[{name:"preview",type:"iframe",sandboxed:!0,transparent:!1}]},buttons:[{type:"cancel",name:"close",text:"Close",primary:!0}],initialData:{preview:r}}).focus("close")},ea=e=>{e.addCommand("mcePreview",()=>{eo(e)})},el=e=>{let r=()=>e.execCommand("mcePreview");e.ui.registry.addButton("preview",{icon:"preview",tooltip:"Preview",onAction:r,context:"any"}),e.ui.registry.addMenuItem("preview",{icon:"preview",text:"Preview",onAction:r,context:"any"})};n.add("preview",e=>{ea(e),el(e)})}();
+/**
+ * TinyMCE version 7.9.1 (2025-05-29)
+ */
+
+(function () {
+    'use strict';
+
+    var global$1 = tinymce.util.Tools.resolve('tinymce.PluginManager');
+
+    /* eslint-disable @typescript-eslint/no-wrapper-object-types */
+    const eq = (t) => (a) => t === a;
+    const isUndefined = eq(undefined);
+    const isNullable = (a) => a === null || a === undefined;
+    const isNonNullable = (a) => !isNullable(a);
+
+    const constant = (value) => {
+        return () => {
+            return value;
+        };
+    };
+    const never = constant(false);
+
+    /**
+     * The `Optional` type represents a value (of any type) that potentially does
+     * not exist. Any `Optional<T>` can either be a `Some<T>` (in which case the
+     * value does exist) or a `None` (in which case the value does not exist). This
+     * module defines a whole lot of FP-inspired utility functions for dealing with
+     * `Optional` objects.
+     *
+     * Comparison with null or undefined:
+     * - We don't get fancy null coalescing operators with `Optional`
+     * - We do get fancy helper functions with `Optional`
+     * - `Optional` support nesting, and allow for the type to still be nullable (or
+     * another `Optional`)
+     * - There is no option to turn off strict-optional-checks like there is for
+     * strict-null-checks
+     */
+    class Optional {
+        // The internal representation has a `tag` and a `value`, but both are
+        // private: able to be console.logged, but not able to be accessed by code
+        constructor(tag, value) {
+            this.tag = tag;
+            this.value = value;
+        }
+        // --- Identities ---
+        /**
+         * Creates a new `Optional<T>` that **does** contain a value.
+         */
+        static some(value) {
+            return new Optional(true, value);
+        }
+        /**
+         * Create a new `Optional<T>` that **does not** contain a value. `T` can be
+         * any type because we don't actually have a `T`.
+         */
+        static none() {
+            return Optional.singletonNone;
+        }
+        /**
+         * Perform a transform on an `Optional` type. Regardless of whether this
+         * `Optional` contains a value or not, `fold` will return a value of type `U`.
+         * If this `Optional` does not contain a value, the `U` will be created by
+         * calling `onNone`. If this `Optional` does contain a value, the `U` will be
+         * created by calling `onSome`.
+         *
+         * For the FP enthusiasts in the room, this function:
+         * 1. Could be used to implement all of the functions below
+         * 2. Forms a catamorphism
+         */
+        fold(onNone, onSome) {
+            if (this.tag) {
+                return onSome(this.value);
+            }
+            else {
+                return onNone();
+            }
+        }
+        /**
+         * Determine if this `Optional` object contains a value.
+         */
+        isSome() {
+            return this.tag;
+        }
+        /**
+         * Determine if this `Optional` object **does not** contain a value.
+         */
+        isNone() {
+            return !this.tag;
+        }
+        // --- Functor (name stolen from Haskell / maths) ---
+        /**
+         * Perform a transform on an `Optional` object, **if** there is a value. If
+         * you provide a function to turn a T into a U, this is the function you use
+         * to turn an `Optional<T>` into an `Optional<U>`. If this **does** contain
+         * a value then the output will also contain a value (that value being the
+         * output of `mapper(this.value)`), and if this **does not** contain a value
+         * then neither will the output.
+         */
+        map(mapper) {
+            if (this.tag) {
+                return Optional.some(mapper(this.value));
+            }
+            else {
+                return Optional.none();
+            }
+        }
+        // --- Monad (name stolen from Haskell / maths) ---
+        /**
+         * Perform a transform on an `Optional` object, **if** there is a value.
+         * Unlike `map`, here the transform itself also returns an `Optional`.
+         */
+        bind(binder) {
+            if (this.tag) {
+                return binder(this.value);
+            }
+            else {
+                return Optional.none();
+            }
+        }
+        // --- Traversable (name stolen from Haskell / maths) ---
+        /**
+         * For a given predicate, this function finds out if there **exists** a value
+         * inside this `Optional` object that meets the predicate. In practice, this
+         * means that for `Optional`s that do not contain a value it returns false (as
+         * no predicate-meeting value exists).
+         */
+        exists(predicate) {
+            return this.tag && predicate(this.value);
+        }
+        /**
+         * For a given predicate, this function finds out if **all** the values inside
+         * this `Optional` object meet the predicate. In practice, this means that
+         * for `Optional`s that do not contain a value it returns true (as all 0
+         * objects do meet the predicate).
+         */
+        forall(predicate) {
+            return !this.tag || predicate(this.value);
+        }
+        filter(predicate) {
+            if (!this.tag || predicate(this.value)) {
+                return this;
+            }
+            else {
+                return Optional.none();
+            }
+        }
+        // --- Getters ---
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided `Optional` object does not contain a
+         * value.
+         */
+        getOr(replacement) {
+            return this.tag ? this.value : replacement;
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided `Optional` object does not contain a
+         * value.  Unlike `getOr`, in this method the `replacement` object is also
+         * `Optional` - meaning that this method will always return an `Optional`.
+         */
+        or(replacement) {
+            return this.tag ? this : replacement;
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided `Optional` object does not contain a
+         * value. Unlike `getOr`, in this method the `replacement` value is
+         * "thunked" - that is to say that you don't pass a value to `getOrThunk`, you
+         * pass a function which (if called) will **return** the `value` you want to
+         * use.
+         */
+        getOrThunk(thunk) {
+            return this.tag ? this.value : thunk();
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided Optional object does not contain a
+         * value.
+         *
+         * Unlike `or`, in this method the `replacement` value is "thunked" - that is
+         * to say that you don't pass a value to `orThunk`, you pass a function which
+         * (if called) will **return** the `value` you want to use.
+         *
+         * Unlike `getOrThunk`, in this method the `replacement` value is also
+         * `Optional`, meaning that this method will always return an `Optional`.
+         */
+        orThunk(thunk) {
+            return this.tag ? this : thunk();
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, throwing an
+         * exception if the provided `Optional` object does not contain a value.
+         *
+         * WARNING:
+         * You should only be using this function if you know that the `Optional`
+         * object **is not** empty (otherwise you're throwing exceptions in production
+         * code, which is bad).
+         *
+         * In tests this is more acceptable.
+         *
+         * Prefer other methods to this, such as `.each`.
+         */
+        getOrDie(message) {
+            if (!this.tag) {
+                throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+            }
+            else {
+                return this.value;
+            }
+        }
+        // --- Interop with null and undefined ---
+        /**
+         * Creates an `Optional` value from a nullable (or undefined-able) input.
+         * Null, or undefined, is converted to `None`, and anything else is converted
+         * to `Some`.
+         */
+        static from(value) {
+            return isNonNullable(value) ? Optional.some(value) : Optional.none();
+        }
+        /**
+         * Converts an `Optional` to a nullable type, by getting the value if it
+         * exists, or returning `null` if it does not.
+         */
+        getOrNull() {
+            return this.tag ? this.value : null;
+        }
+        /**
+         * Converts an `Optional` to an undefined-able type, by getting the value if
+         * it exists, or returning `undefined` if it does not.
+         */
+        getOrUndefined() {
+            return this.value;
+        }
+        // --- Utilities ---
+        /**
+         * If the `Optional` contains a value, perform an action on that value.
+         * Unlike the rest of the methods on this type, `.each` has side-effects. If
+         * you want to transform an `Optional<T>` **into** something, then this is not
+         * the method for you. If you want to use an `Optional<T>` to **do**
+         * something, then this is the method for you - provided you're okay with not
+         * doing anything in the case where the `Optional` doesn't have a value inside
+         * it. If you're not sure whether your use-case fits into transforming
+         * **into** something or **doing** something, check whether it has a return
+         * value. If it does, you should be performing a transform.
+         */
+        each(worker) {
+            if (this.tag) {
+                worker(this.value);
+            }
+        }
+        /**
+         * Turn the `Optional` object into an array that contains all of the values
+         * stored inside the `Optional`. In practice, this means the output will have
+         * either 0 or 1 elements.
+         */
+        toArray() {
+            return this.tag ? [this.value] : [];
+        }
+        /**
+         * Turn the `Optional` object into a string for debugging or printing. Not
+         * recommended for production code, but good for debugging. Also note that
+         * these days an `Optional` object can be logged to the console directly, and
+         * its inner value (if it exists) will be visible.
+         */
+        toString() {
+            return this.tag ? `some(${this.value})` : 'none()';
+        }
+    }
+    // Sneaky optimisation: every instance of Optional.none is identical, so just
+    // reuse the same object
+    Optional.singletonNone = new Optional(false);
+
+    const findUntil = (xs, pred, until) => {
+        for (let i = 0, len = xs.length; i < len; i++) {
+            const x = xs[i];
+            if (pred(x, i)) {
+                return Optional.some(x);
+            }
+            else if (until(x, i)) {
+                break;
+            }
+        }
+        return Optional.none();
+    };
+    const find$1 = (xs, pred) => {
+        return findUntil(xs, pred, never);
+    };
+    const findMap = (arr, f) => {
+        for (let i = 0; i < arr.length; i++) {
+            const r = f(arr[i], i);
+            if (r.isSome()) {
+                return r;
+            }
+        }
+        return Optional.none();
+    };
+
+    const contains = (str, substr, start = 0, end) => {
+        const idx = str.indexOf(substr, start);
+        if (idx !== -1) {
+            return isUndefined(end) ? true : idx + substr.length <= end;
+        }
+        else {
+            return false;
+        }
+    };
+
+    const cached = (f) => {
+        let called = false;
+        let r;
+        return (...args) => {
+            if (!called) {
+                called = true;
+                r = f.apply(null, args);
+            }
+            return r;
+        };
+    };
+
+    const DeviceType = (os, browser, userAgent, mediaMatch) => {
+        const isiPad = os.isiOS() && /ipad/i.test(userAgent) === true;
+        const isiPhone = os.isiOS() && !isiPad;
+        const isMobile = os.isiOS() || os.isAndroid();
+        const isTouch = isMobile || mediaMatch('(pointer:coarse)');
+        const isTablet = isiPad || !isiPhone && isMobile && mediaMatch('(min-device-width:768px)');
+        const isPhone = isiPhone || isMobile && !isTablet;
+        const iOSwebview = browser.isSafari() && os.isiOS() && /safari/i.test(userAgent) === false;
+        const isDesktop = !isPhone && !isTablet && !iOSwebview;
+        return {
+            isiPad: constant(isiPad),
+            isiPhone: constant(isiPhone),
+            isTablet: constant(isTablet),
+            isPhone: constant(isPhone),
+            isTouch: constant(isTouch),
+            isAndroid: os.isAndroid,
+            isiOS: os.isiOS,
+            isWebView: constant(iOSwebview),
+            isDesktop: constant(isDesktop)
+        };
+    };
+
+    const firstMatch = (regexes, s) => {
+        for (let i = 0; i < regexes.length; i++) {
+            const x = regexes[i];
+            if (x.test(s)) {
+                return x;
+            }
+        }
+        return undefined;
+    };
+    const find = (regexes, agent) => {
+        const r = firstMatch(regexes, agent);
+        if (!r) {
+            return { major: 0, minor: 0 };
+        }
+        const group = (i) => {
+            return Number(agent.replace(r, '$' + i));
+        };
+        return nu$2(group(1), group(2));
+    };
+    const detect$3 = (versionRegexes, agent) => {
+        const cleanedAgent = String(agent).toLowerCase();
+        if (versionRegexes.length === 0) {
+            return unknown$2();
+        }
+        return find(versionRegexes, cleanedAgent);
+    };
+    const unknown$2 = () => {
+        return nu$2(0, 0);
+    };
+    const nu$2 = (major, minor) => {
+        return { major, minor };
+    };
+    const Version = {
+        nu: nu$2,
+        detect: detect$3,
+        unknown: unknown$2
+    };
+
+    const detectBrowser$1 = (browsers, userAgentData) => {
+        return findMap(userAgentData.brands, (uaBrand) => {
+            const lcBrand = uaBrand.brand.toLowerCase();
+            return find$1(browsers, (browser) => { var _a; return lcBrand === ((_a = browser.brand) === null || _a === void 0 ? void 0 : _a.toLowerCase()); })
+                .map((info) => ({
+                current: info.name,
+                version: Version.nu(parseInt(uaBrand.version, 10), 0)
+            }));
+        });
+    };
+
+    const detect$2 = (candidates, userAgent) => {
+        const agent = String(userAgent).toLowerCase();
+        return find$1(candidates, (candidate) => {
+            return candidate.search(agent);
+        });
+    };
+    // They (browser and os) are the same at the moment, but they might
+    // not stay that way.
+    const detectBrowser = (browsers, userAgent) => {
+        return detect$2(browsers, userAgent).map((browser) => {
+            const version = Version.detect(browser.versionRegexes, userAgent);
+            return {
+                current: browser.name,
+                version
+            };
+        });
+    };
+    const detectOs = (oses, userAgent) => {
+        return detect$2(oses, userAgent).map((os) => {
+            const version = Version.detect(os.versionRegexes, userAgent);
+            return {
+                current: os.name,
+                version
+            };
+        });
+    };
+
+    const normalVersionRegex = /.*?version\/\ ?([0-9]+)\.([0-9]+).*/;
+    const checkContains = (target) => {
+        return (uastring) => {
+            return contains(uastring, target);
+        };
+    };
+    const browsers = [
+        // This is legacy Edge
+        {
+            name: 'Edge',
+            versionRegexes: [/.*?edge\/ ?([0-9]+)\.([0-9]+)$/],
+            search: (uastring) => {
+                return contains(uastring, 'edge/') && contains(uastring, 'chrome') && contains(uastring, 'safari') && contains(uastring, 'applewebkit');
+            }
+        },
+        // This is Google Chrome and Chromium Edge
+        {
+            name: 'Chromium',
+            brand: 'Chromium',
+            versionRegexes: [/.*?chrome\/([0-9]+)\.([0-9]+).*/, normalVersionRegex],
+            search: (uastring) => {
+                return contains(uastring, 'chrome') && !contains(uastring, 'chromeframe');
+            }
+        },
+        {
+            name: 'IE',
+            versionRegexes: [/.*?msie\ ?([0-9]+)\.([0-9]+).*/, /.*?rv:([0-9]+)\.([0-9]+).*/],
+            search: (uastring) => {
+                return contains(uastring, 'msie') || contains(uastring, 'trident');
+            }
+        },
+        // INVESTIGATE: Is this still the Opera user agent?
+        {
+            name: 'Opera',
+            versionRegexes: [normalVersionRegex, /.*?opera\/([0-9]+)\.([0-9]+).*/],
+            search: checkContains('opera')
+        },
+        {
+            name: 'Firefox',
+            versionRegexes: [/.*?firefox\/\ ?([0-9]+)\.([0-9]+).*/],
+            search: checkContains('firefox')
+        },
+        {
+            name: 'Safari',
+            versionRegexes: [normalVersionRegex, /.*?cpu os ([0-9]+)_([0-9]+).*/],
+            search: (uastring) => {
+                return (contains(uastring, 'safari') || contains(uastring, 'mobile/')) && contains(uastring, 'applewebkit');
+            }
+        }
+    ];
+    const oses = [
+        {
+            name: 'Windows',
+            search: checkContains('win'),
+            versionRegexes: [/.*?windows\ nt\ ?([0-9]+)\.([0-9]+).*/]
+        },
+        {
+            name: 'iOS',
+            search: (uastring) => {
+                return contains(uastring, 'iphone') || contains(uastring, 'ipad');
+            },
+            versionRegexes: [/.*?version\/\ ?([0-9]+)\.([0-9]+).*/, /.*cpu os ([0-9]+)_([0-9]+).*/, /.*cpu iphone os ([0-9]+)_([0-9]+).*/]
+        },
+        {
+            name: 'Android',
+            search: checkContains('android'),
+            versionRegexes: [/.*?android\ ?([0-9]+)\.([0-9]+).*/]
+        },
+        {
+            name: 'macOS',
+            search: checkContains('mac os x'),
+            versionRegexes: [/.*?mac\ os\ x\ ?([0-9]+)_([0-9]+).*/]
+        },
+        {
+            name: 'Linux',
+            search: checkContains('linux'),
+            versionRegexes: []
+        },
+        { name: 'Solaris',
+            search: checkContains('sunos'),
+            versionRegexes: []
+        },
+        {
+            name: 'FreeBSD',
+            search: checkContains('freebsd'),
+            versionRegexes: []
+        },
+        {
+            name: 'ChromeOS',
+            search: checkContains('cros'),
+            versionRegexes: [/.*?chrome\/([0-9]+)\.([0-9]+).*/]
+        }
+    ];
+    const PlatformInfo = {
+        browsers: constant(browsers),
+        oses: constant(oses)
+    };
+
+    const edge = 'Edge';
+    const chromium = 'Chromium';
+    const ie = 'IE';
+    const opera = 'Opera';
+    const firefox = 'Firefox';
+    const safari = 'Safari';
+    const unknown$1 = () => {
+        return nu$1({
+            current: undefined,
+            version: Version.unknown()
+        });
+    };
+    const nu$1 = (info) => {
+        const current = info.current;
+        const version = info.version;
+        const isBrowser = (name) => () => current === name;
+        return {
+            current,
+            version,
+            isEdge: isBrowser(edge),
+            isChromium: isBrowser(chromium),
+            // NOTE: isIe just looks too weird
+            isIE: isBrowser(ie),
+            isOpera: isBrowser(opera),
+            isFirefox: isBrowser(firefox),
+            isSafari: isBrowser(safari)
+        };
+    };
+    const Browser = {
+        unknown: unknown$1,
+        nu: nu$1,
+        edge: constant(edge),
+        chromium: constant(chromium),
+        ie: constant(ie),
+        opera: constant(opera),
+        firefox: constant(firefox),
+        safari: constant(safari)
+    };
+
+    const windows = 'Windows';
+    const ios = 'iOS';
+    const android = 'Android';
+    const linux = 'Linux';
+    const macos = 'macOS';
+    const solaris = 'Solaris';
+    const freebsd = 'FreeBSD';
+    const chromeos = 'ChromeOS';
+    // Though there is a bit of dupe with this and Browser, trying to
+    // reuse code makes it much harder to follow and change.
+    const unknown = () => {
+        return nu({
+            current: undefined,
+            version: Version.unknown()
+        });
+    };
+    const nu = (info) => {
+        const current = info.current;
+        const version = info.version;
+        const isOS = (name) => () => current === name;
+        return {
+            current,
+            version,
+            isWindows: isOS(windows),
+            // TODO: Fix capitalisation
+            isiOS: isOS(ios),
+            isAndroid: isOS(android),
+            isMacOS: isOS(macos),
+            isLinux: isOS(linux),
+            isSolaris: isOS(solaris),
+            isFreeBSD: isOS(freebsd),
+            isChromeOS: isOS(chromeos)
+        };
+    };
+    const OperatingSystem = {
+        unknown,
+        nu,
+        windows: constant(windows),
+        ios: constant(ios),
+        android: constant(android),
+        linux: constant(linux),
+        macos: constant(macos),
+        solaris: constant(solaris),
+        freebsd: constant(freebsd),
+        chromeos: constant(chromeos)
+    };
+
+    const detect$1 = (userAgent, userAgentDataOpt, mediaMatch) => {
+        const browsers = PlatformInfo.browsers();
+        const oses = PlatformInfo.oses();
+        const browser = userAgentDataOpt.bind((userAgentData) => detectBrowser$1(browsers, userAgentData))
+            .orThunk(() => detectBrowser(browsers, userAgent))
+            .fold(Browser.unknown, Browser.nu);
+        const os = detectOs(oses, userAgent).fold(OperatingSystem.unknown, OperatingSystem.nu);
+        const deviceType = DeviceType(os, browser, userAgent, mediaMatch);
+        return {
+            browser,
+            os,
+            deviceType
+        };
+    };
+    const PlatformDetection = {
+        detect: detect$1
+    };
+
+    const mediaMatch = (query) => window.matchMedia(query).matches;
+    // IMPORTANT: Must be in a thunk, otherwise rollup thinks calling this immediately
+    // causes side effects and won't tree shake this away
+    // Note: navigator.userAgentData is not part of the native typescript types yet
+    let platform = cached(() => PlatformDetection.detect(window.navigator.userAgent, Optional.from((window.navigator.userAgentData)), mediaMatch));
+    const detect = () => platform();
+
+    const isMacOS = () => detect().os.isMacOS();
+    const isiOS = () => detect().os.isiOS();
+
+    const getPreventClicksOnLinksScript = () => {
+        const isMacOSOrIOS = isMacOS() || isiOS();
+        const fn = (isMacOSOrIOS) => {
+            document.addEventListener('click', (e) => {
+                for (let elm = e.target; elm; elm = elm.parentNode) {
+                    if (elm.nodeName === 'A') {
+                        const anchor = elm;
+                        const href = anchor.getAttribute('href');
+                        if (href && href.startsWith('#')) {
+                            e.preventDefault();
+                            const targetElement = document.getElementById(href.substring(1));
+                            if (targetElement) {
+                                targetElement.scrollIntoView({ behavior: 'smooth' });
+                            }
+                            return;
+                        }
+                        const isMetaKeyPressed = isMacOSOrIOS ? e.metaKey : e.ctrlKey && !e.altKey;
+                        if (!isMetaKeyPressed) {
+                            e.preventDefault();
+                        }
+                    }
+                }
+            }, false);
+        };
+        return `<script>(${fn.toString()})(${isMacOSOrIOS})</script>`;
+    };
+
+    var global = tinymce.util.Tools.resolve('tinymce.util.Tools');
+
+    const option = (name) => (editor) => editor.options.get(name);
+    const getContentStyle = option('content_style');
+    const shouldUseContentCssCors = option('content_css_cors');
+    const getBodyClass = option('body_class');
+    const getBodyId = option('body_id');
+
+    const getPreviewHtml = (editor) => {
+        var _a;
+        let headHtml = '';
+        const encode = editor.dom.encode;
+        const contentStyle = (_a = getContentStyle(editor)) !== null && _a !== void 0 ? _a : '';
+        headHtml += `<base href="${encode(editor.documentBaseURI.getURI())}">`;
+        const cors = shouldUseContentCssCors(editor) ? ' crossorigin="anonymous"' : '';
+        global.each(editor.contentCSS, (url) => {
+            headHtml += '<link type="text/css" rel="stylesheet" href="' + encode(editor.documentBaseURI.toAbsolute(url)) + '"' + cors + '>';
+        });
+        if (contentStyle) {
+            headHtml += '<style type="text/css">' + contentStyle + '</style>';
+        }
+        const bodyId = getBodyId(editor);
+        const bodyClass = getBodyClass(editor);
+        const directionality = editor.getBody().dir;
+        const dirAttr = directionality ? ' dir="' + encode(directionality) + '"' : '';
+        const previewHtml = ('<!DOCTYPE html>' +
+            '<html>' +
+            '<head>' +
+            headHtml +
+            '</head>' +
+            '<body id="' + encode(bodyId) + '" class="mce-content-body ' + encode(bodyClass) + '"' + dirAttr + '>' +
+            editor.getContent() +
+            getPreventClicksOnLinksScript() +
+            '</body>' +
+            '</html>');
+        return previewHtml;
+    };
+
+    const open = (editor) => {
+        const content = getPreviewHtml(editor);
+        const dataApi = editor.windowManager.open({
+            title: 'Preview',
+            size: 'large',
+            body: {
+                type: 'panel',
+                items: [
+                    {
+                        name: 'preview',
+                        type: 'iframe',
+                        sandboxed: true,
+                        transparent: false
+                    }
+                ]
+            },
+            buttons: [
+                {
+                    type: 'cancel',
+                    name: 'close',
+                    text: 'Close',
+                    primary: true
+                }
+            ],
+            initialData: {
+                preview: content
+            }
+        });
+        // Focus the close button, as by default the first element in the body is selected
+        // which we don't want to happen here since the body only has the iframe content
+        dataApi.focus('close');
+    };
+
+    const register$1 = (editor) => {
+        editor.addCommand('mcePreview', () => {
+            open(editor);
+        });
+    };
+
+    const register = (editor) => {
+        const onAction = () => editor.execCommand('mcePreview');
+        editor.ui.registry.addButton('preview', {
+            icon: 'preview',
+            tooltip: 'Preview',
+            onAction,
+            context: 'any'
+        });
+        editor.ui.registry.addMenuItem('preview', {
+            icon: 'preview',
+            text: 'Preview',
+            onAction,
+            context: 'any'
+        });
+    };
+
+    var Plugin = () => {
+        global$1.add('preview', (editor) => {
+            register$1(editor);
+            register(editor);
+        });
+    };
+
+    Plugin();
+    /** *****
+     * DO NOT EXPORT ANYTHING
+     *
+     * IF YOU DO ROLLUP WILL LEAVE A GLOBAL ON THE PAGE
+     *******/
+
+})();

@@ -1,1 +1,1609 @@
-!function(){"use strict";let e,t,r,n=(e,t,r)=>{var n;return!!r(e,t.prototype)||(null==(n=e.constructor)?void 0:n.name)===t.name},o=e=>{let t=typeof e;return null===e?"null":"object"===t&&Array.isArray(e)?"array":"object"===t&&n(e,String,(e,t)=>t.isPrototypeOf(e))?"string":t},i=e=>t=>o(t)===e,l=e=>t=>typeof t===e,s=e=>t=>e===t,a=i("string"),u=i("object"),m=i("array"),d=s(null),c=l("boolean"),h=s(void 0),f=e=>null==e,g=e=>!f(e),p=l("function"),v=l("number"),w=()=>{},y=(e,t)=>(...r)=>e(t.apply(null,r)),b=(e,t)=>r=>e(t(r)),S=e=>()=>e,x=S(!1),E=S(!0);class F{constructor(e,t){this.tag=e,this.value=t}static some(e){return new F(!0,e)}static none(){return F.singletonNone}fold(e,t){return this.tag?t(this.value):e()}isSome(){return this.tag}isNone(){return!this.tag}map(e){return this.tag?F.some(e(this.value)):F.none()}bind(e){return this.tag?e(this.value):F.none()}exists(e){return this.tag&&e(this.value)}forall(e){return!this.tag||e(this.value)}filter(e){return!this.tag||e(this.value)?this:F.none()}getOr(e){return this.tag?this.value:e}or(e){return this.tag?this:e}getOrThunk(e){return this.tag?this.value:e()}orThunk(e){return this.tag?this:e()}getOrDie(e){if(this.tag)return this.value;throw Error(null!=e?e:"Called getOrDie on None")}static from(e){return g(e)?F.some(e):F.none()}getOrNull(){return this.tag?this.value:null}getOrUndefined(){return this.value}each(e){this.tag&&e(this.value)}toArray(){return this.tag?[this.value]:[]}toString(){return this.tag?`some(${this.value})`:"none()"}}F.singletonNone=new F(!1);let O=Array.prototype.push,k=(e,t)=>{let r=e.length,n=Array(r);for(let o=0;o<r;o++){let r=e[o];n[o]=t(r,o)}return n},D=(e,t)=>{for(let r=0,n=e.length;r<n;r++)t(e[r],r)},T=(e,t)=>{let r=[];for(let n=0,o=e.length;n<o;n++){let o=e[n];t(o,n)&&r.push(o)}return r},C=(e,t,r)=>{for(let n=0,o=e.length;n<o;n++){let o=e[n];if(t(o,n))return F.some(o);if(r(o,n))break}return F.none()},A=(e,t)=>C(e,t,x),R=e=>{let t=[];for(let r=0,n=e.length;r<n;++r){if(!m(e[r]))throw Error("Arr.flatten item "+r+" was not an array, input: "+e);O.apply(t,e[r])}return t},L=(e,t)=>R(k(e,t)),M=(e,t)=>t>=0&&t<e.length?F.some(e[t]):F.none(),P=e=>M(e,0),N=(e,t)=>{for(let r=0;r<e.length;r++){let n=t(e[r],r);if(n.isSome())return n}return F.none()},H=Object.keys,V=(e,t)=>{let r=H(e);for(let n=0,o=r.length;n<o;n++){let o=r[n];t(e[o],o)}},W=e=>{let t=e;return{get:()=>t,set:e=>{t=e}}},q="undefined"!=typeof window?window:Function("return this;")(),B=(e,t,r)=>e.isSome()&&t.isSome()?F.some(r(e.getOrDie(),t.getOrDie())):F.none(),I=(e,t)=>{let r=null!=t?t:q;for(let t=0;t<e.length&&null!=r;++t)r=r[e[t]];return r},j=(e,t)=>I(e.split("."),t),_=e=>{let t=W(F.none()),r=()=>t.get().each(e);return{clear:()=>{r(),t.set(F.none())},isSet:()=>t.get().isSome(),get:()=>t.get(),set:e=>{r(),t.set(F.some(e))}}},z=()=>_(e=>e.unbind()),K=()=>{let e=_(w);return{...e,on:t=>e.get().each(t)}},$=(e,t,r=0,n)=>{let o=e.indexOf(t,r);return -1!==o&&(!!h(n)||o+t.length<=n)},U=(e,t)=>{let r=null;return{cancel:()=>{d(r)||(clearTimeout(r),r=null)},throttle:(...n)=>{d(r)&&(r=setTimeout(()=>{r=null,e.apply(null,n)},t))}}};var X,Y=tinymce.util.Tools.resolve("tinymce.PluginManager");let G=e=>({isFullscreen:()=>null!==e.get()}),J={fromDom:e=>{if(null==e)throw Error("Node cannot be null or undefined");return{dom:e}}},Q=(e,t)=>{let r=e.dom;if(1!==r.nodeType)return!1;if(void 0!==r.matches)return r.matches(t);if(void 0!==r.msMatchesSelector)return r.msMatchesSelector(t);if(void 0!==r.webkitMatchesSelector)return r.webkitMatchesSelector(t);if(void 0!==r.mozMatchesSelector)return r.mozMatchesSelector(t);else throw Error("Browser lacks native selectors")},Z=e=>1!==e.nodeType&&9!==e.nodeType&&11!==e.nodeType||0===e.childElementCount,ee=(e,t)=>{let r=void 0===t?document:t.dom;return Z(r)?[]:k(r.querySelectorAll(e),J.fromDom)},et=(e,t)=>e.dom===t.dom,er=(e,t,r,n)=>{let o=e.isiOS()&&!0===/ipad/i.test(r),i=e.isiOS()&&!o,l=e.isiOS()||e.isAndroid(),s=l||n("(pointer:coarse)"),a=o||!i&&l&&n("(min-device-width:768px)"),u=i||l&&!a,m=t.isSafari()&&e.isiOS()&&!1===/safari/i.test(r);return{isiPad:S(o),isiPhone:S(i),isTablet:S(a),isPhone:S(u),isTouch:S(s),isAndroid:e.isAndroid,isiOS:e.isiOS,isWebView:S(m),isDesktop:S(!u&&!a&&!m)}},en=(e,t)=>{for(let r=0;r<e.length;r++){let n=e[r];if(n.test(t))return n}},eo=(e,t)=>{let r=en(e,t);if(!r)return{major:0,minor:0};let n=e=>Number(t.replace(r,"$"+e));return el(n(1),n(2))},ei=()=>el(0,0),el=(e,t)=>({major:e,minor:t}),es=(e,t)=>{let r=String(t).toLowerCase();return 0===e.length?ei():eo(e,r)},ea=(e,t)=>N(t.brands,t=>{let r=t.brand.toLowerCase();return A(e,e=>{var t;return r===(null==(t=e.brand)?void 0:t.toLowerCase())}).map(e=>({current:e.name,version:el(parseInt(t.version,10),0)}))}),eu=(e,t)=>{let r=String(t).toLowerCase();return A(e,e=>e.search(r))},em=(e,t)=>eu(e,t).map(e=>{let r=es(e.versionRegexes,t);return{current:e.name,version:r}}),ed=(e,t)=>eu(e,t).map(e=>{let r=es(e.versionRegexes,t);return{current:e.name,version:r}}),ec=/.*?version\/\ ?([0-9]+)\.([0-9]+).*/,eh=e=>t=>$(t,e),ef=[{name:"Edge",versionRegexes:[/.*?edge\/ ?([0-9]+)\.([0-9]+)$/],search:e=>$(e,"edge/")&&$(e,"chrome")&&$(e,"safari")&&$(e,"applewebkit")},{name:"Chromium",brand:"Chromium",versionRegexes:[/.*?chrome\/([0-9]+)\.([0-9]+).*/,ec],search:e=>$(e,"chrome")&&!$(e,"chromeframe")},{name:"IE",versionRegexes:[/.*?msie\ ?([0-9]+)\.([0-9]+).*/,/.*?rv:([0-9]+)\.([0-9]+).*/],search:e=>$(e,"msie")||$(e,"trident")},{name:"Opera",versionRegexes:[ec,/.*?opera\/([0-9]+)\.([0-9]+).*/],search:eh("opera")},{name:"Firefox",versionRegexes:[/.*?firefox\/\ ?([0-9]+)\.([0-9]+).*/],search:eh("firefox")},{name:"Safari",versionRegexes:[ec,/.*?cpu os ([0-9]+)_([0-9]+).*/],search:e=>($(e,"safari")||$(e,"mobile/"))&&$(e,"applewebkit")}],eg=[{name:"Windows",search:eh("win"),versionRegexes:[/.*?windows\ nt\ ?([0-9]+)\.([0-9]+).*/]},{name:"iOS",search:e=>$(e,"iphone")||$(e,"ipad"),versionRegexes:[/.*?version\/\ ?([0-9]+)\.([0-9]+).*/,/.*cpu os ([0-9]+)_([0-9]+).*/,/.*cpu iphone os ([0-9]+)_([0-9]+).*/]},{name:"Android",search:eh("android"),versionRegexes:[/.*?android\ ?([0-9]+)\.([0-9]+).*/]},{name:"macOS",search:eh("mac os x"),versionRegexes:[/.*?mac\ os\ x\ ?([0-9]+)_([0-9]+).*/]},{name:"Linux",search:eh("linux"),versionRegexes:[]},{name:"Solaris",search:eh("sunos"),versionRegexes:[]},{name:"FreeBSD",search:eh("freebsd"),versionRegexes:[]},{name:"ChromeOS",search:eh("cros"),versionRegexes:[/.*?chrome\/([0-9]+)\.([0-9]+).*/]}],ep={browsers:S(ef),oses:S(eg)},ev="Edge",ew="Chromium",ey="Opera",eb="Firefox",eS="Safari",ex=e=>{let t=e.current,r=e.version,n=e=>()=>t===e;return{current:t,version:r,isEdge:n(ev),isChromium:n(ew),isIE:n("IE"),isOpera:n(ey),isFirefox:n(eb),isSafari:n(eS)}},eE={unknown:()=>ex({current:void 0,version:ei()}),nu:ex,edge:S(ev),chromium:S(ew),ie:S("IE"),opera:S(ey),firefox:S(eb),safari:S(eS)},eF="Windows",eO="Android",ek="Linux",eD="macOS",eT="Solaris",eC="FreeBSD",eA="ChromeOS",eR=e=>{let t=e.current,r=e.version,n=e=>()=>t===e;return{current:t,version:r,isWindows:n(eF),isiOS:n("iOS"),isAndroid:n(eO),isMacOS:n(eD),isLinux:n(ek),isSolaris:n(eT),isFreeBSD:n(eC),isChromeOS:n(eA)}},eL={unknown:()=>eR({current:void 0,version:ei()}),nu:eR,windows:S(eF),ios:S("iOS"),android:S(eO),linux:S(ek),macos:S(eD),solaris:S(eT),freebsd:S(eC),chromeos:S(eA)},eM=(e,t,r)=>{let n=ep.browsers(),o=ep.oses(),i=t.bind(e=>ea(n,e)).orThunk(()=>em(n,e)).fold(eE.unknown,eE.nu),l=ed(o,e).fold(eL.unknown,eL.nu),s=er(l,i,e,r);return{browser:i,os:l,deviceType:s}},eP=e=>window.matchMedia(e).matches,eN=(X=()=>eM(window.navigator.userAgent,F.from(window.navigator.userAgentData),eP),t=!1,(...r)=>(t||(t=!0,e=X.apply(null,r)),e)),eH=()=>eN(),eV=(e,t)=>j(e,t),eW=(e,t)=>{let r=eV(e,t);if(null==r)throw Error(e+" not available on this browser");return r},eq=Object.getPrototypeOf,eB=e=>eW("HTMLElement",e),eI=e=>{let t=j("ownerDocument.defaultView",e);return u(e)&&(eB(t).prototype.isPrototypeOf(e)||/^HTML\w*Element$/.test(eq(e).constructor.name))},ej=e=>e.dom.nodeType,e_=e=>t=>ej(t)===e,ez=e=>eK(e)&&eI(e.dom),eK=e_(1),e$=e_(3),eU=e_(11),eX=e=>J.fromDom(e.dom.ownerDocument),eY=e=>F.from(e.dom.parentNode).map(J.fromDom),eG=(e,t)=>{let r=p(t)?t:x,n=e.dom,o=[];for(;null!==n.parentNode&&void 0!==n.parentNode;){let e=n.parentNode,t=J.fromDom(e);if(o.push(t),!0===r(t))break;n=e}return o},eJ=e=>eY(e).map(eZ).map(t=>T(t,t=>!et(e,t))).getOr([]),eQ=e=>F.from(e.dom.nextSibling).map(J.fromDom),eZ=e=>k(e.dom.childNodes,J.fromDom),e0=e=>eU(e)&&g(e.dom.host),e9=e=>J.fromDom(e.dom.getRootNode()),e1=e=>{let t=e9(e);return e0(t)?F.some(t):F.none()},e5=e=>J.fromDom(e.dom.host),e2=e=>{if(g(e.target)){let t=J.fromDom(e.target);if(eK(t)&&e3(t)&&e.composed&&e.composedPath){let t=e.composedPath();if(t)return P(t)}}return F.from(e.target)},e3=e=>g(e.dom.shadowRoot),e6=(e,t,r,n,o,i,l)=>({target:e,x:t,y:r,stop:n,prevent:o,kill:i,raw:l}),e7=e=>{let t=J.fromDom(e2(e).getOr(e.target)),r=()=>e.stopPropagation(),n=()=>e.preventDefault(),o=y(n,r);return e6(t,e.clientX,e.clientY,r,n,o,e)},e8=(e,t)=>r=>{e(r)&&t(e7(r))},e4=(e,t,r,n,o)=>{let i=e8(r,n);return e.dom.addEventListener(t,i,o),{unbind:function(e,...t){return(...r)=>{let n=t.concat(r);return e.apply(null,n)}}(tt,e,t,i,o)}},te=(e,t,r,n)=>e4(e,t,r,n,!1),tt=(e,t,r,n)=>{e.dom.removeEventListener(t,r,n)},tr=(e,t,r)=>te(e,t,E,r),tn=(e,t,r)=>{if(a(r)||c(r)||v(r))e.setAttribute(t,r+"");else throw console.error("Invalid call to Attribute.set. Key ",t,":: Value ",r,":: Element ",e),Error("Attribute value was not simple")},to=(e,t,r)=>{tn(e.dom,t,r)},ti=(e,t)=>{let r=e.dom.getAttribute(t);return null===r?void 0:r},tl=(e,t)=>{e.dom.removeAttribute(t)},ts=e=>void 0!==e.style&&p(e.style.getPropertyValue),ta=e=>{let t=e$(e)?e.dom.parentNode:e.dom;if(null==t||null===t.ownerDocument)return!1;let r=t.ownerDocument;return e1(J.fromDom(t)).fold(()=>r.body.contains(t),b(ta,e5))},tu=e=>{let t=e.dom.body;if(null==t)throw Error("Body is not available yet");return J.fromDom(t)},tm=(e,t,r)=>{if(!a(r))throw console.error("Invalid call to CSS.set. Property ",t,":: Value ",r,":: Element ",e),Error("CSS value must be a string: "+r);ts(e)&&e.style.setProperty(t,r)},td=(e,t,r)=>{tm(e.dom,t,r)},tc=(e,t)=>{let r=e.dom;V(t,(e,t)=>{tm(r,t,e)})},th=(e,t)=>{let r=e.dom,n=window.getComputedStyle(r).getPropertyValue(t);return""!==n||ta(e)?n:tf(r,t)},tf=(e,t)=>ts(e)?e.style.getPropertyValue(t):"",tg=(e,t)=>({left:e,top:t,translate:(r,n)=>tg(e+r,t+n)}),tp=e=>{let t=void 0!==e?e.dom:document;return tg(t.body.scrollLeft||t.documentElement.scrollLeft,t.body.scrollTop||t.documentElement.scrollTop)},tv=e=>void 0!==e.dom.classList,tw=(e,t)=>tv(e)&&e.dom.classList.contains(t),ty=(e,t,r)=>T(eG(e,r),t),tb=(e,t)=>T(eJ(e),t),tS=e=>ee(e),tx=(e,t,r)=>ty(e,e=>Q(e,t),r),tE=(e,t)=>tb(e,e=>Q(e,t)),tF=e=>{let t=void 0===e?window:e;return eH().browser.isFirefox()?F.none():F.from(t.visualViewport)},tO=(e,t,r,n)=>({x:e,y:t,width:r,height:n,right:e+r,bottom:t+n}),tk=e=>{let t=void 0===e?window:e,r=t.document,n=tp(J.fromDom(r));return tF(t).fold(()=>{let e=t.document.documentElement,r=e.clientWidth,o=e.clientHeight;return tO(n.left,n.top,r,o)},e=>tO(Math.max(e.pageLeft,n.left),Math.max(e.pageTop,n.top),e.width,e.height))},tD=(e,t,r)=>tF(r).map(r=>{let n=e=>t(e7(e));return r.addEventListener(e,n),{unbind:()=>r.removeEventListener(e,n)}}).getOrThunk(()=>({unbind:w}));var tT=tinymce.util.Tools.resolve("tinymce.dom.DOMUtils"),tC=tinymce.util.Tools.resolve("tinymce.Env");let tA=(e,t)=>{e.dispatch("FullscreenStateChanged",{state:t}),e.dispatch("ResizeEditor")},tR=e=>{(0,e.options.register)("fullscreen_native",{processor:"boolean",default:!1})},tL=(r="fullscreen_native",e=>e.options.get(r)),tM=e=>{let t=J.fromDom(e.getElement());return e1(t).map(e5).getOrThunk(()=>tu(eX(t)))},tP=e=>void 0!==e.fullscreenElement?e.fullscreenElement:void 0!==e.msFullscreenElement?e.msFullscreenElement:void 0!==e.webkitFullscreenElement?e.webkitFullscreenElement:null,tN=()=>void 0!==document.fullscreenElement?"fullscreenchange":void 0!==document.msFullscreenElement?"MSFullscreenChange":void 0!==document.webkitFullscreenElement?"webkitfullscreenchange":"fullscreenchange",tH=e=>{let t=e.dom;t.requestFullscreen?t.requestFullscreen():t.msRequestFullscreen?t.msRequestFullscreen():t.webkitRequestFullScreen&&t.webkitRequestFullScreen()},tV=e=>{let t=e.dom;t.exitFullscreen?t.exitFullscreen():t.msExitFullscreen?t.msExitFullscreen():t.webkitCancelFullScreen&&t.webkitCancelFullScreen()},tW=e=>e.dom===tP(eX(e).dom),tq="data-ephox-mobile-fullscreen-style",tB="position:absolute!important;",tI="top:0!important;left:0!important;margin:0!important;padding:0!important;width:100%!important;height:100%!important;overflow:visible!important;",tj=tC.os.isAndroid(),t_=e=>{let t=th(e,"background-color");return void 0!==t&&""!==t?"background-color:"+t+"!important":"background-color:rgb(255,255,255)!important;"},tz=(e,t,r)=>{let n=t=>r=>{let n=ti(r,"style"),o=void 0===n?"no-styles":n.trim();o!==t&&(to(r,tq,o),tc(r,e.parseStyle(t)))},o=tx(t,"*"),i=L(o,e=>tE(e,"*:not(.tox-silver-sink)")),l=t_(r);D(i,n("display:none!important;")),D(o,n(tB+tI+l)),n((!0===tj?"":tB)+tI+l)(t)},tK=e=>{D(tS("["+tq+"]"),t=>{let r=ti(t,tq);r&&"no-styles"!==r?tc(t,e.parseStyle(r)):tl(t,"style"),tl(t,tq)})},t$=tT.DOM,tU=()=>tk(window),tX=e=>window.scrollTo(e.x,e.y),tY=tF().fold(()=>({bind:w,unbind:w}),e=>{let t=K(),r=z(),n=z(),o=()=>{document.body.scrollTop=0,document.documentElement.scrollTop=0},i=()=>{window.requestAnimationFrame(()=>{t.on(t=>tc(t,{top:e.offsetTop+"px",left:e.offsetLeft+"px",height:e.height+"px",width:e.width+"px"}))})},l=U(()=>{o(),i()},50);return{bind:e=>{t.set(e),l.throttle(),r.set(tD("resize",l.throttle)),n.set(tD("scroll",l.throttle))},unbind:()=>{t.on(()=>{r.clear(),n.clear()}),t.clear()}}}),tG=(e,t)=>{let r=document.body,n=document.documentElement,o=e.getContainer(),i=J.fromDom(o),l=eQ(i).filter(e=>ez(e)&&tw(e,"tox-silver-sink")),s=tM(e),a=t.get(),u=J.fromDom(e.getBody()),m=tC.deviceType.isTouch(),d=o.style,c=e.iframeElement,h=null==c?void 0:c.style,f=e=>{e(r,"tox-fullscreen"),e(n,"tox-fullscreen"),e(o,"tox-fullscreen"),e1(i).map(e=>e5(e).dom).each(t=>{e(t,"tox-fullscreen"),e(t,"tox-shadowhost")})},g=()=>{m&&tK(e.dom),f(t$.removeClass),tY.unbind(),F.from(t.get()).each(e=>e.fullscreenChangeHandler.unbind())};if(a)a.fullscreenChangeHandler.unbind(),tL(e)&&tW(s)&&tV(eX(s)),h.width=a.iframeWidth,h.height=a.iframeHeight,d.width=a.containerWidth,d.height=a.containerHeight,d.top=a.containerTop,d.left=a.containerLeft,B(l,a.sinkCssPosition,(e,t)=>{td(e,"position",t)}),g(),tX(a.scrollPos),t.set(null),tA(e,!1),e.off("remove",g);else{let r=tr(eX(s),tN(),r=>{tL(e)&&!tW(s)&&null!==t.get()&&tG(e,t)}),n={scrollPos:tU(),containerWidth:d.width,containerHeight:d.height,containerTop:d.top,containerLeft:d.left,iframeWidth:h.width,iframeHeight:h.height,fullscreenChangeHandler:r,sinkCssPosition:l.map(e=>th(e,"position"))};m&&tz(e.dom,i,u),h.width=h.height="100%",d.width=d.height="",f(t$.addClass),l.each(e=>{td(e,"position","fixed")}),tY.bind(i),e.on("remove",g),t.set(n),tL(e)&&tH(s),tA(e,!0)}},tJ=(e,t)=>{e.addCommand("mceFullScreen",()=>{tG(e,t)})};var tQ=tinymce.util.Tools.resolve("tinymce.util.VK");let tZ=(e,t)=>{e.on("init",()=>{e.on("keydown",e=>{e.keyCode===tQ.TAB&&!(e.metaKey||e.ctrlKey)&&t.get()&&e.preventDefault()})})},t0=(e,t)=>r=>{r.setActive(null!==t.get());let n=e=>r.setActive(e.state);return e.on("FullscreenStateChanged",n),()=>e.off("FullscreenStateChanged",n)},t9=(e,t)=>{let r=()=>e.execCommand("mceFullScreen");e.ui.registry.addToggleMenuItem("fullscreen",{text:"Fullscreen",icon:"fullscreen",shortcut:"Meta+Shift+F",onAction:r,onSetup:t0(e,t),context:"any"}),e.ui.registry.addToggleButton("fullscreen",{tooltip:"Fullscreen",icon:"fullscreen",onAction:r,onSetup:t0(e,t),shortcut:"Meta+Shift+F",context:"any"})};Y.add("fullscreen",e=>{let t=W(null);return e.inline||(tR(e),tJ(e,t),t9(e,t),tZ(e,t),e.addShortcut("Meta+Shift+F","","mceFullScreen")),G(t)})}();
+/**
+ * TinyMCE version 7.9.1 (2025-05-29)
+ */
+
+(function () {
+    'use strict';
+
+    /* eslint-disable @typescript-eslint/no-wrapper-object-types */
+    const hasProto = (v, constructor, predicate) => {
+        var _a;
+        if (predicate(v, constructor.prototype)) {
+            return true;
+        }
+        else {
+            // String-based fallback time
+            return ((_a = v.constructor) === null || _a === void 0 ? void 0 : _a.name) === constructor.name;
+        }
+    };
+    const typeOf = (x) => {
+        const t = typeof x;
+        if (x === null) {
+            return 'null';
+        }
+        else if (t === 'object' && Array.isArray(x)) {
+            return 'array';
+        }
+        else if (t === 'object' && hasProto(x, String, (o, proto) => proto.isPrototypeOf(o))) {
+            return 'string';
+        }
+        else {
+            return t;
+        }
+    };
+    const isType$1 = (type) => (value) => typeOf(value) === type;
+    const isSimpleType = (type) => (value) => typeof value === type;
+    const eq$1 = (t) => (a) => t === a;
+    const isString = isType$1('string');
+    const isObject = isType$1('object');
+    const isArray = isType$1('array');
+    const isNull = eq$1(null);
+    const isBoolean = isSimpleType('boolean');
+    const isUndefined = eq$1(undefined);
+    const isNullable = (a) => a === null || a === undefined;
+    const isNonNullable = (a) => !isNullable(a);
+    const isFunction = isSimpleType('function');
+    const isNumber = isSimpleType('number');
+
+    const noop = () => { };
+    /** Compose a unary function with an n-ary function */
+    const compose = (fa, fb) => {
+        return (...args) => {
+            return fa(fb.apply(null, args));
+        };
+    };
+    /** Compose two unary functions. Similar to compose, but avoids using Function.prototype.apply. */
+    const compose1 = (fbc, fab) => (a) => fbc(fab(a));
+    const constant = (value) => {
+        return () => {
+            return value;
+        };
+    };
+    // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
+    function curry(fn, ...initialArgs) {
+        return (...restArgs) => {
+            const all = initialArgs.concat(restArgs);
+            return fn.apply(null, all);
+        };
+    }
+    const never = constant(false);
+    const always = constant(true);
+
+    /**
+     * The `Optional` type represents a value (of any type) that potentially does
+     * not exist. Any `Optional<T>` can either be a `Some<T>` (in which case the
+     * value does exist) or a `None` (in which case the value does not exist). This
+     * module defines a whole lot of FP-inspired utility functions for dealing with
+     * `Optional` objects.
+     *
+     * Comparison with null or undefined:
+     * - We don't get fancy null coalescing operators with `Optional`
+     * - We do get fancy helper functions with `Optional`
+     * - `Optional` support nesting, and allow for the type to still be nullable (or
+     * another `Optional`)
+     * - There is no option to turn off strict-optional-checks like there is for
+     * strict-null-checks
+     */
+    class Optional {
+        // The internal representation has a `tag` and a `value`, but both are
+        // private: able to be console.logged, but not able to be accessed by code
+        constructor(tag, value) {
+            this.tag = tag;
+            this.value = value;
+        }
+        // --- Identities ---
+        /**
+         * Creates a new `Optional<T>` that **does** contain a value.
+         */
+        static some(value) {
+            return new Optional(true, value);
+        }
+        /**
+         * Create a new `Optional<T>` that **does not** contain a value. `T` can be
+         * any type because we don't actually have a `T`.
+         */
+        static none() {
+            return Optional.singletonNone;
+        }
+        /**
+         * Perform a transform on an `Optional` type. Regardless of whether this
+         * `Optional` contains a value or not, `fold` will return a value of type `U`.
+         * If this `Optional` does not contain a value, the `U` will be created by
+         * calling `onNone`. If this `Optional` does contain a value, the `U` will be
+         * created by calling `onSome`.
+         *
+         * For the FP enthusiasts in the room, this function:
+         * 1. Could be used to implement all of the functions below
+         * 2. Forms a catamorphism
+         */
+        fold(onNone, onSome) {
+            if (this.tag) {
+                return onSome(this.value);
+            }
+            else {
+                return onNone();
+            }
+        }
+        /**
+         * Determine if this `Optional` object contains a value.
+         */
+        isSome() {
+            return this.tag;
+        }
+        /**
+         * Determine if this `Optional` object **does not** contain a value.
+         */
+        isNone() {
+            return !this.tag;
+        }
+        // --- Functor (name stolen from Haskell / maths) ---
+        /**
+         * Perform a transform on an `Optional` object, **if** there is a value. If
+         * you provide a function to turn a T into a U, this is the function you use
+         * to turn an `Optional<T>` into an `Optional<U>`. If this **does** contain
+         * a value then the output will also contain a value (that value being the
+         * output of `mapper(this.value)`), and if this **does not** contain a value
+         * then neither will the output.
+         */
+        map(mapper) {
+            if (this.tag) {
+                return Optional.some(mapper(this.value));
+            }
+            else {
+                return Optional.none();
+            }
+        }
+        // --- Monad (name stolen from Haskell / maths) ---
+        /**
+         * Perform a transform on an `Optional` object, **if** there is a value.
+         * Unlike `map`, here the transform itself also returns an `Optional`.
+         */
+        bind(binder) {
+            if (this.tag) {
+                return binder(this.value);
+            }
+            else {
+                return Optional.none();
+            }
+        }
+        // --- Traversable (name stolen from Haskell / maths) ---
+        /**
+         * For a given predicate, this function finds out if there **exists** a value
+         * inside this `Optional` object that meets the predicate. In practice, this
+         * means that for `Optional`s that do not contain a value it returns false (as
+         * no predicate-meeting value exists).
+         */
+        exists(predicate) {
+            return this.tag && predicate(this.value);
+        }
+        /**
+         * For a given predicate, this function finds out if **all** the values inside
+         * this `Optional` object meet the predicate. In practice, this means that
+         * for `Optional`s that do not contain a value it returns true (as all 0
+         * objects do meet the predicate).
+         */
+        forall(predicate) {
+            return !this.tag || predicate(this.value);
+        }
+        filter(predicate) {
+            if (!this.tag || predicate(this.value)) {
+                return this;
+            }
+            else {
+                return Optional.none();
+            }
+        }
+        // --- Getters ---
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided `Optional` object does not contain a
+         * value.
+         */
+        getOr(replacement) {
+            return this.tag ? this.value : replacement;
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided `Optional` object does not contain a
+         * value.  Unlike `getOr`, in this method the `replacement` object is also
+         * `Optional` - meaning that this method will always return an `Optional`.
+         */
+        or(replacement) {
+            return this.tag ? this : replacement;
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided `Optional` object does not contain a
+         * value. Unlike `getOr`, in this method the `replacement` value is
+         * "thunked" - that is to say that you don't pass a value to `getOrThunk`, you
+         * pass a function which (if called) will **return** the `value` you want to
+         * use.
+         */
+        getOrThunk(thunk) {
+            return this.tag ? this.value : thunk();
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided Optional object does not contain a
+         * value.
+         *
+         * Unlike `or`, in this method the `replacement` value is "thunked" - that is
+         * to say that you don't pass a value to `orThunk`, you pass a function which
+         * (if called) will **return** the `value` you want to use.
+         *
+         * Unlike `getOrThunk`, in this method the `replacement` value is also
+         * `Optional`, meaning that this method will always return an `Optional`.
+         */
+        orThunk(thunk) {
+            return this.tag ? this : thunk();
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, throwing an
+         * exception if the provided `Optional` object does not contain a value.
+         *
+         * WARNING:
+         * You should only be using this function if you know that the `Optional`
+         * object **is not** empty (otherwise you're throwing exceptions in production
+         * code, which is bad).
+         *
+         * In tests this is more acceptable.
+         *
+         * Prefer other methods to this, such as `.each`.
+         */
+        getOrDie(message) {
+            if (!this.tag) {
+                throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+            }
+            else {
+                return this.value;
+            }
+        }
+        // --- Interop with null and undefined ---
+        /**
+         * Creates an `Optional` value from a nullable (or undefined-able) input.
+         * Null, or undefined, is converted to `None`, and anything else is converted
+         * to `Some`.
+         */
+        static from(value) {
+            return isNonNullable(value) ? Optional.some(value) : Optional.none();
+        }
+        /**
+         * Converts an `Optional` to a nullable type, by getting the value if it
+         * exists, or returning `null` if it does not.
+         */
+        getOrNull() {
+            return this.tag ? this.value : null;
+        }
+        /**
+         * Converts an `Optional` to an undefined-able type, by getting the value if
+         * it exists, or returning `undefined` if it does not.
+         */
+        getOrUndefined() {
+            return this.value;
+        }
+        // --- Utilities ---
+        /**
+         * If the `Optional` contains a value, perform an action on that value.
+         * Unlike the rest of the methods on this type, `.each` has side-effects. If
+         * you want to transform an `Optional<T>` **into** something, then this is not
+         * the method for you. If you want to use an `Optional<T>` to **do**
+         * something, then this is the method for you - provided you're okay with not
+         * doing anything in the case where the `Optional` doesn't have a value inside
+         * it. If you're not sure whether your use-case fits into transforming
+         * **into** something or **doing** something, check whether it has a return
+         * value. If it does, you should be performing a transform.
+         */
+        each(worker) {
+            if (this.tag) {
+                worker(this.value);
+            }
+        }
+        /**
+         * Turn the `Optional` object into an array that contains all of the values
+         * stored inside the `Optional`. In practice, this means the output will have
+         * either 0 or 1 elements.
+         */
+        toArray() {
+            return this.tag ? [this.value] : [];
+        }
+        /**
+         * Turn the `Optional` object into a string for debugging or printing. Not
+         * recommended for production code, but good for debugging. Also note that
+         * these days an `Optional` object can be logged to the console directly, and
+         * its inner value (if it exists) will be visible.
+         */
+        toString() {
+            return this.tag ? `some(${this.value})` : 'none()';
+        }
+    }
+    // Sneaky optimisation: every instance of Optional.none is identical, so just
+    // reuse the same object
+    Optional.singletonNone = new Optional(false);
+
+    const nativePush = Array.prototype.push;
+    const map = (xs, f) => {
+        // pre-allocating array size when it's guaranteed to be known
+        // http://jsperf.com/push-allocated-vs-dynamic/22
+        const len = xs.length;
+        const r = new Array(len);
+        for (let i = 0; i < len; i++) {
+            const x = xs[i];
+            r[i] = f(x, i);
+        }
+        return r;
+    };
+    // Unwound implementing other functions in terms of each.
+    // The code size is roughly the same, and it should allow for better optimisation.
+    // const each = function<T, U>(xs: T[], f: (x: T, i?: number, xs?: T[]) => void): void {
+    const each$1 = (xs, f) => {
+        for (let i = 0, len = xs.length; i < len; i++) {
+            const x = xs[i];
+            f(x, i);
+        }
+    };
+    const filter$1 = (xs, pred) => {
+        const r = [];
+        for (let i = 0, len = xs.length; i < len; i++) {
+            const x = xs[i];
+            if (pred(x, i)) {
+                r.push(x);
+            }
+        }
+        return r;
+    };
+    const findUntil = (xs, pred, until) => {
+        for (let i = 0, len = xs.length; i < len; i++) {
+            const x = xs[i];
+            if (pred(x, i)) {
+                return Optional.some(x);
+            }
+            else if (until(x, i)) {
+                break;
+            }
+        }
+        return Optional.none();
+    };
+    const find$1 = (xs, pred) => {
+        return findUntil(xs, pred, never);
+    };
+    const flatten = (xs) => {
+        // Note, this is possible because push supports multiple arguments:
+        // http://jsperf.com/concat-push/6
+        // Note that in the past, concat() would silently work (very slowly) for array-like objects.
+        // With this change it will throw an error.
+        const r = [];
+        for (let i = 0, len = xs.length; i < len; ++i) {
+            // Ensure that each value is an array itself
+            if (!isArray(xs[i])) {
+                throw new Error('Arr.flatten item ' + i + ' was not an array, input: ' + xs);
+            }
+            nativePush.apply(r, xs[i]);
+        }
+        return r;
+    };
+    const bind$3 = (xs, f) => flatten(map(xs, f));
+    const get$5 = (xs, i) => i >= 0 && i < xs.length ? Optional.some(xs[i]) : Optional.none();
+    const head = (xs) => get$5(xs, 0);
+    const findMap = (arr, f) => {
+        for (let i = 0; i < arr.length; i++) {
+            const r = f(arr[i], i);
+            if (r.isSome()) {
+                return r;
+            }
+        }
+        return Optional.none();
+    };
+
+    // There are many variations of Object iteration that are faster than the 'for-in' style:
+    // http://jsperf.com/object-keys-iteration/107
+    //
+    // Use the native keys if it is available (IE9+), otherwise fall back to manually filtering
+    const keys = Object.keys;
+    const each = (obj, f) => {
+        const props = keys(obj);
+        for (let k = 0, len = props.length; k < len; k++) {
+            const i = props[k];
+            const x = obj[i];
+            f(x, i);
+        }
+    };
+
+    const Cell = (initial) => {
+        let value = initial;
+        const get = () => {
+            return value;
+        };
+        const set = (v) => {
+            value = v;
+        };
+        return {
+            get,
+            set
+        };
+    };
+
+    // Use window object as the global if it's available since CSP will block script evals
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    const Global = typeof window !== 'undefined' ? window : Function('return this;')();
+
+    /*
+    Notes on the lift functions:
+    - We used to have a generic liftN, but we were concerned about its type-safety, and the below variants were faster in microbenchmarks.
+    - The getOrDie calls are partial functions, but are checked beforehand. This is faster and more convenient (but less safe) than folds.
+    - && is used instead of a loop for simplicity and performance.
+    */
+    const lift2 = (oa, ob, f) => oa.isSome() && ob.isSome() ? Optional.some(f(oa.getOrDie(), ob.getOrDie())) : Optional.none();
+
+    /** path :: ([String], JsObj?) -> JsObj */
+    const path = (parts, scope) => {
+        let o = scope !== undefined && scope !== null ? scope : Global;
+        for (let i = 0; i < parts.length && o !== undefined && o !== null; ++i) {
+            o = o[parts[i]];
+        }
+        return o;
+    };
+    /** resolve :: (String, JsObj?) -> JsObj */
+    const resolve = (p, scope) => {
+        const parts = p.split('.');
+        return path(parts, scope);
+    };
+
+    const singleton = (doRevoke) => {
+        const subject = Cell(Optional.none());
+        const revoke = () => subject.get().each(doRevoke);
+        const clear = () => {
+            revoke();
+            subject.set(Optional.none());
+        };
+        const isSet = () => subject.get().isSome();
+        const get = () => subject.get();
+        const set = (s) => {
+            revoke();
+            subject.set(Optional.some(s));
+        };
+        return {
+            clear,
+            isSet,
+            get,
+            set
+        };
+    };
+    const unbindable = () => singleton((s) => s.unbind());
+    const value = () => {
+        const subject = singleton(noop);
+        const on = (f) => subject.get().each(f);
+        return {
+            ...subject,
+            on
+        };
+    };
+
+    const contains = (str, substr, start = 0, end) => {
+        const idx = str.indexOf(substr, start);
+        if (idx !== -1) {
+            return isUndefined(end) ? true : idx + substr.length <= end;
+        }
+        else {
+            return false;
+        }
+    };
+
+    // Run a function fn after rate ms. If another invocation occurs
+    // during the time it is waiting, ignore it completely.
+    const first = (fn, rate) => {
+        let timer = null;
+        const cancel = () => {
+            if (!isNull(timer)) {
+                clearTimeout(timer);
+                timer = null;
+            }
+        };
+        const throttle = (...args) => {
+            if (isNull(timer)) {
+                timer = setTimeout(() => {
+                    timer = null;
+                    fn.apply(null, args);
+                }, rate);
+            }
+        };
+        return {
+            cancel,
+            throttle
+        };
+    };
+
+    const cached = (f) => {
+        let called = false;
+        let r;
+        return (...args) => {
+            if (!called) {
+                called = true;
+                r = f.apply(null, args);
+            }
+            return r;
+        };
+    };
+
+    var global$3 = tinymce.util.Tools.resolve('tinymce.PluginManager');
+
+    const get$4 = (fullscreenState) => ({
+        isFullscreen: () => fullscreenState.get() !== null
+    });
+
+    const fromHtml = (html, scope) => {
+        const doc = scope || document;
+        const div = doc.createElement('div');
+        div.innerHTML = html;
+        if (!div.hasChildNodes() || div.childNodes.length > 1) {
+            const message = 'HTML does not have a single root node';
+            // eslint-disable-next-line no-console
+            console.error(message, html);
+            throw new Error(message);
+        }
+        return fromDom(div.childNodes[0]);
+    };
+    const fromTag = (tag, scope) => {
+        const doc = scope || document;
+        const node = doc.createElement(tag);
+        return fromDom(node);
+    };
+    const fromText = (text, scope) => {
+        const doc = scope || document;
+        const node = doc.createTextNode(text);
+        return fromDom(node);
+    };
+    const fromDom = (node) => {
+        // TODO: Consider removing this check, but left atm for safety
+        if (node === null || node === undefined) {
+            throw new Error('Node cannot be null or undefined');
+        }
+        return {
+            dom: node
+        };
+    };
+    const fromPoint = (docElm, x, y) => Optional.from(docElm.dom.elementFromPoint(x, y)).map(fromDom);
+    // tslint:disable-next-line:variable-name
+    const SugarElement = {
+        fromHtml,
+        fromTag,
+        fromText,
+        fromDom,
+        fromPoint
+    };
+
+    const DOCUMENT = 9;
+    const DOCUMENT_FRAGMENT = 11;
+    const ELEMENT = 1;
+    const TEXT = 3;
+
+    const is = (element, selector) => {
+        const dom = element.dom;
+        if (dom.nodeType !== ELEMENT) {
+            return false;
+        }
+        else {
+            const elem = dom;
+            if (elem.matches !== undefined) {
+                return elem.matches(selector);
+            }
+            else if (elem.msMatchesSelector !== undefined) {
+                return elem.msMatchesSelector(selector);
+            }
+            else if (elem.webkitMatchesSelector !== undefined) {
+                return elem.webkitMatchesSelector(selector);
+            }
+            else if (elem.mozMatchesSelector !== undefined) {
+                // cast to any as mozMatchesSelector doesn't exist in TS DOM lib
+                return elem.mozMatchesSelector(selector);
+            }
+            else {
+                throw new Error('Browser lacks native selectors');
+            } // unfortunately we can't throw this on startup :(
+        }
+    };
+    const bypassSelector = (dom) => 
+    // Only elements, documents and shadow roots support querySelector
+    // shadow root element type is DOCUMENT_FRAGMENT
+    dom.nodeType !== ELEMENT && dom.nodeType !== DOCUMENT && dom.nodeType !== DOCUMENT_FRAGMENT ||
+        // IE fix for complex queries on empty nodes: http://jsfiddle.net/spyder/fv9ptr5L/
+        dom.childElementCount === 0;
+    const all$1 = (selector, scope) => {
+        const base = scope === undefined ? document : scope.dom;
+        return bypassSelector(base) ? [] : map(base.querySelectorAll(selector), SugarElement.fromDom);
+    };
+
+    const eq = (e1, e2) => e1.dom === e2.dom;
+
+    const DeviceType = (os, browser, userAgent, mediaMatch) => {
+        const isiPad = os.isiOS() && /ipad/i.test(userAgent) === true;
+        const isiPhone = os.isiOS() && !isiPad;
+        const isMobile = os.isiOS() || os.isAndroid();
+        const isTouch = isMobile || mediaMatch('(pointer:coarse)');
+        const isTablet = isiPad || !isiPhone && isMobile && mediaMatch('(min-device-width:768px)');
+        const isPhone = isiPhone || isMobile && !isTablet;
+        const iOSwebview = browser.isSafari() && os.isiOS() && /safari/i.test(userAgent) === false;
+        const isDesktop = !isPhone && !isTablet && !iOSwebview;
+        return {
+            isiPad: constant(isiPad),
+            isiPhone: constant(isiPhone),
+            isTablet: constant(isTablet),
+            isPhone: constant(isPhone),
+            isTouch: constant(isTouch),
+            isAndroid: os.isAndroid,
+            isiOS: os.isiOS,
+            isWebView: constant(iOSwebview),
+            isDesktop: constant(isDesktop)
+        };
+    };
+
+    const firstMatch = (regexes, s) => {
+        for (let i = 0; i < regexes.length; i++) {
+            const x = regexes[i];
+            if (x.test(s)) {
+                return x;
+            }
+        }
+        return undefined;
+    };
+    const find = (regexes, agent) => {
+        const r = firstMatch(regexes, agent);
+        if (!r) {
+            return { major: 0, minor: 0 };
+        }
+        const group = (i) => {
+            return Number(agent.replace(r, '$' + i));
+        };
+        return nu$2(group(1), group(2));
+    };
+    const detect$3 = (versionRegexes, agent) => {
+        const cleanedAgent = String(agent).toLowerCase();
+        if (versionRegexes.length === 0) {
+            return unknown$2();
+        }
+        return find(versionRegexes, cleanedAgent);
+    };
+    const unknown$2 = () => {
+        return nu$2(0, 0);
+    };
+    const nu$2 = (major, minor) => {
+        return { major, minor };
+    };
+    const Version = {
+        nu: nu$2,
+        detect: detect$3,
+        unknown: unknown$2
+    };
+
+    const detectBrowser$1 = (browsers, userAgentData) => {
+        return findMap(userAgentData.brands, (uaBrand) => {
+            const lcBrand = uaBrand.brand.toLowerCase();
+            return find$1(browsers, (browser) => { var _a; return lcBrand === ((_a = browser.brand) === null || _a === void 0 ? void 0 : _a.toLowerCase()); })
+                .map((info) => ({
+                current: info.name,
+                version: Version.nu(parseInt(uaBrand.version, 10), 0)
+            }));
+        });
+    };
+
+    const detect$2 = (candidates, userAgent) => {
+        const agent = String(userAgent).toLowerCase();
+        return find$1(candidates, (candidate) => {
+            return candidate.search(agent);
+        });
+    };
+    // They (browser and os) are the same at the moment, but they might
+    // not stay that way.
+    const detectBrowser = (browsers, userAgent) => {
+        return detect$2(browsers, userAgent).map((browser) => {
+            const version = Version.detect(browser.versionRegexes, userAgent);
+            return {
+                current: browser.name,
+                version
+            };
+        });
+    };
+    const detectOs = (oses, userAgent) => {
+        return detect$2(oses, userAgent).map((os) => {
+            const version = Version.detect(os.versionRegexes, userAgent);
+            return {
+                current: os.name,
+                version
+            };
+        });
+    };
+
+    const normalVersionRegex = /.*?version\/\ ?([0-9]+)\.([0-9]+).*/;
+    const checkContains = (target) => {
+        return (uastring) => {
+            return contains(uastring, target);
+        };
+    };
+    const browsers = [
+        // This is legacy Edge
+        {
+            name: 'Edge',
+            versionRegexes: [/.*?edge\/ ?([0-9]+)\.([0-9]+)$/],
+            search: (uastring) => {
+                return contains(uastring, 'edge/') && contains(uastring, 'chrome') && contains(uastring, 'safari') && contains(uastring, 'applewebkit');
+            }
+        },
+        // This is Google Chrome and Chromium Edge
+        {
+            name: 'Chromium',
+            brand: 'Chromium',
+            versionRegexes: [/.*?chrome\/([0-9]+)\.([0-9]+).*/, normalVersionRegex],
+            search: (uastring) => {
+                return contains(uastring, 'chrome') && !contains(uastring, 'chromeframe');
+            }
+        },
+        {
+            name: 'IE',
+            versionRegexes: [/.*?msie\ ?([0-9]+)\.([0-9]+).*/, /.*?rv:([0-9]+)\.([0-9]+).*/],
+            search: (uastring) => {
+                return contains(uastring, 'msie') || contains(uastring, 'trident');
+            }
+        },
+        // INVESTIGATE: Is this still the Opera user agent?
+        {
+            name: 'Opera',
+            versionRegexes: [normalVersionRegex, /.*?opera\/([0-9]+)\.([0-9]+).*/],
+            search: checkContains('opera')
+        },
+        {
+            name: 'Firefox',
+            versionRegexes: [/.*?firefox\/\ ?([0-9]+)\.([0-9]+).*/],
+            search: checkContains('firefox')
+        },
+        {
+            name: 'Safari',
+            versionRegexes: [normalVersionRegex, /.*?cpu os ([0-9]+)_([0-9]+).*/],
+            search: (uastring) => {
+                return (contains(uastring, 'safari') || contains(uastring, 'mobile/')) && contains(uastring, 'applewebkit');
+            }
+        }
+    ];
+    const oses = [
+        {
+            name: 'Windows',
+            search: checkContains('win'),
+            versionRegexes: [/.*?windows\ nt\ ?([0-9]+)\.([0-9]+).*/]
+        },
+        {
+            name: 'iOS',
+            search: (uastring) => {
+                return contains(uastring, 'iphone') || contains(uastring, 'ipad');
+            },
+            versionRegexes: [/.*?version\/\ ?([0-9]+)\.([0-9]+).*/, /.*cpu os ([0-9]+)_([0-9]+).*/, /.*cpu iphone os ([0-9]+)_([0-9]+).*/]
+        },
+        {
+            name: 'Android',
+            search: checkContains('android'),
+            versionRegexes: [/.*?android\ ?([0-9]+)\.([0-9]+).*/]
+        },
+        {
+            name: 'macOS',
+            search: checkContains('mac os x'),
+            versionRegexes: [/.*?mac\ os\ x\ ?([0-9]+)_([0-9]+).*/]
+        },
+        {
+            name: 'Linux',
+            search: checkContains('linux'),
+            versionRegexes: []
+        },
+        { name: 'Solaris',
+            search: checkContains('sunos'),
+            versionRegexes: []
+        },
+        {
+            name: 'FreeBSD',
+            search: checkContains('freebsd'),
+            versionRegexes: []
+        },
+        {
+            name: 'ChromeOS',
+            search: checkContains('cros'),
+            versionRegexes: [/.*?chrome\/([0-9]+)\.([0-9]+).*/]
+        }
+    ];
+    const PlatformInfo = {
+        browsers: constant(browsers),
+        oses: constant(oses)
+    };
+
+    const edge = 'Edge';
+    const chromium = 'Chromium';
+    const ie = 'IE';
+    const opera = 'Opera';
+    const firefox = 'Firefox';
+    const safari = 'Safari';
+    const unknown$1 = () => {
+        return nu$1({
+            current: undefined,
+            version: Version.unknown()
+        });
+    };
+    const nu$1 = (info) => {
+        const current = info.current;
+        const version = info.version;
+        const isBrowser = (name) => () => current === name;
+        return {
+            current,
+            version,
+            isEdge: isBrowser(edge),
+            isChromium: isBrowser(chromium),
+            // NOTE: isIe just looks too weird
+            isIE: isBrowser(ie),
+            isOpera: isBrowser(opera),
+            isFirefox: isBrowser(firefox),
+            isSafari: isBrowser(safari)
+        };
+    };
+    const Browser = {
+        unknown: unknown$1,
+        nu: nu$1,
+        edge: constant(edge),
+        chromium: constant(chromium),
+        ie: constant(ie),
+        opera: constant(opera),
+        firefox: constant(firefox),
+        safari: constant(safari)
+    };
+
+    const windows = 'Windows';
+    const ios = 'iOS';
+    const android = 'Android';
+    const linux = 'Linux';
+    const macos = 'macOS';
+    const solaris = 'Solaris';
+    const freebsd = 'FreeBSD';
+    const chromeos = 'ChromeOS';
+    // Though there is a bit of dupe with this and Browser, trying to
+    // reuse code makes it much harder to follow and change.
+    const unknown = () => {
+        return nu({
+            current: undefined,
+            version: Version.unknown()
+        });
+    };
+    const nu = (info) => {
+        const current = info.current;
+        const version = info.version;
+        const isOS = (name) => () => current === name;
+        return {
+            current,
+            version,
+            isWindows: isOS(windows),
+            // TODO: Fix capitalisation
+            isiOS: isOS(ios),
+            isAndroid: isOS(android),
+            isMacOS: isOS(macos),
+            isLinux: isOS(linux),
+            isSolaris: isOS(solaris),
+            isFreeBSD: isOS(freebsd),
+            isChromeOS: isOS(chromeos)
+        };
+    };
+    const OperatingSystem = {
+        unknown,
+        nu,
+        windows: constant(windows),
+        ios: constant(ios),
+        android: constant(android),
+        linux: constant(linux),
+        macos: constant(macos),
+        solaris: constant(solaris),
+        freebsd: constant(freebsd),
+        chromeos: constant(chromeos)
+    };
+
+    const detect$1 = (userAgent, userAgentDataOpt, mediaMatch) => {
+        const browsers = PlatformInfo.browsers();
+        const oses = PlatformInfo.oses();
+        const browser = userAgentDataOpt.bind((userAgentData) => detectBrowser$1(browsers, userAgentData))
+            .orThunk(() => detectBrowser(browsers, userAgent))
+            .fold(Browser.unknown, Browser.nu);
+        const os = detectOs(oses, userAgent).fold(OperatingSystem.unknown, OperatingSystem.nu);
+        const deviceType = DeviceType(os, browser, userAgent, mediaMatch);
+        return {
+            browser,
+            os,
+            deviceType
+        };
+    };
+    const PlatformDetection = {
+        detect: detect$1
+    };
+
+    const mediaMatch = (query) => window.matchMedia(query).matches;
+    // IMPORTANT: Must be in a thunk, otherwise rollup thinks calling this immediately
+    // causes side effects and won't tree shake this away
+    // Note: navigator.userAgentData is not part of the native typescript types yet
+    let platform = cached(() => PlatformDetection.detect(window.navigator.userAgent, Optional.from((window.navigator.userAgentData)), mediaMatch));
+    const detect = () => platform();
+
+    const unsafe = (name, scope) => {
+        return resolve(name, scope);
+    };
+    const getOrDie = (name, scope) => {
+        const actual = unsafe(name, scope);
+        if (actual === undefined || actual === null) {
+            throw new Error(name + ' not available on this browser');
+        }
+        return actual;
+    };
+
+    const getPrototypeOf = Object.getPrototypeOf;
+    /*
+     * IE9 and above
+     *
+     * MDN no use on this one, but here's the link anyway:
+     * https://developer.mozilla.org/en/docs/Web/API/HTMLElement
+     */
+    const sandHTMLElement = (scope) => {
+        return getOrDie('HTMLElement', scope);
+    };
+    const isPrototypeOf = (x) => {
+        // use Resolve to get the window object for x and just return undefined if it can't find it.
+        // undefined scope later triggers using the global window.
+        const scope = resolve('ownerDocument.defaultView', x);
+        // TINY-7374: We can't rely on looking at the owner window HTMLElement as the element may have
+        // been constructed in a different window and then appended to the current window document.
+        return isObject(x) && (sandHTMLElement(scope).prototype.isPrototypeOf(x) || /^HTML\w*Element$/.test(getPrototypeOf(x).constructor.name));
+    };
+
+    const type = (element) => element.dom.nodeType;
+    const isType = (t) => (element) => type(element) === t;
+    const isHTMLElement = (element) => isElement(element) && isPrototypeOf(element.dom);
+    const isElement = isType(ELEMENT);
+    const isText = isType(TEXT);
+    const isDocumentFragment = isType(DOCUMENT_FRAGMENT);
+
+    /**
+     * The document associated with the current element
+     * NOTE: this will throw if the owner is null.
+     */
+    const owner = (element) => SugarElement.fromDom(element.dom.ownerDocument);
+    const parent = (element) => Optional.from(element.dom.parentNode).map(SugarElement.fromDom);
+    const parents = (element, isRoot) => {
+        const stop = isFunction(isRoot) ? isRoot : never;
+        // This is used a *lot* so it needs to be performant, not recursive
+        let dom = element.dom;
+        const ret = [];
+        while (dom.parentNode !== null && dom.parentNode !== undefined) {
+            const rawParent = dom.parentNode;
+            const p = SugarElement.fromDom(rawParent);
+            ret.push(p);
+            if (stop(p) === true) {
+                break;
+            }
+            else {
+                dom = rawParent;
+            }
+        }
+        return ret;
+    };
+    const siblings$2 = (element) => {
+        // TODO: Refactor out children so we can just not add self instead of filtering afterwards
+        const filterSelf = (elements) => filter$1(elements, (x) => !eq(element, x));
+        return parent(element).map(children).map(filterSelf).getOr([]);
+    };
+    const nextSibling = (element) => Optional.from(element.dom.nextSibling).map(SugarElement.fromDom);
+    const children = (element) => map(element.dom.childNodes, SugarElement.fromDom);
+
+    /**
+     * Is the element a ShadowRoot?
+     *
+     * Note: this is insufficient to test if any element is a shadow root, but it is sufficient to differentiate between
+     * a Document and a ShadowRoot.
+     */
+    const isShadowRoot = (dos) => isDocumentFragment(dos) && isNonNullable(dos.dom.host);
+    const getRootNode = (e) => SugarElement.fromDom(e.dom.getRootNode());
+    /** If this element is in a ShadowRoot, return it. */
+    const getShadowRoot = (e) => {
+        const r = getRootNode(e);
+        return isShadowRoot(r) ? Optional.some(r) : Optional.none();
+    };
+    /** Return the host of a ShadowRoot.
+     *
+     * This function will throw if Shadow DOM is unsupported in the browser, or if the host is null.
+     * If you actually have a ShadowRoot, this shouldn't happen.
+     */
+    const getShadowHost = (e) => SugarElement.fromDom(e.dom.host);
+    /**
+     * When Events bubble up through a ShadowRoot, the browser changes the target to be the shadow host.
+     * This function gets the "original" event target if possible.
+     * This only works if the shadow tree is open - if the shadow tree is closed, event.target is returned.
+     * See: https://developers.google.com/web/fundamentals/web-components/shadowdom#events
+     */
+    const getOriginalEventTarget = (event) => {
+        if (isNonNullable(event.target)) {
+            const el = SugarElement.fromDom(event.target);
+            if (isElement(el) && isOpenShadowHost(el)) {
+                // When target element is inside Shadow DOM we need to take first element from composedPath
+                // otherwise we'll get Shadow Root parent, not actual target element.
+                if (event.composed && event.composedPath) {
+                    const composedPath = event.composedPath();
+                    if (composedPath) {
+                        return head(composedPath);
+                    }
+                }
+            }
+        }
+        return Optional.from(event.target);
+    };
+    /** Return true if the element is a host of an open shadow root.
+     *  Return false if the element is a host of a closed shadow root, or if the element is not a host.
+     */
+    const isOpenShadowHost = (element) => isNonNullable(element.dom.shadowRoot);
+
+    const mkEvent = (target, x, y, stop, prevent, kill, raw) => ({
+        target,
+        x,
+        y,
+        stop,
+        prevent,
+        kill,
+        raw
+    });
+    /** Wraps an Event in an EventArgs structure.
+     * The returned EventArgs structure has its target set to the "original" target if possible.
+     * See SugarShadowDom.getOriginalEventTarget
+     */
+    const fromRawEvent = (rawEvent) => {
+        const target = SugarElement.fromDom(getOriginalEventTarget(rawEvent).getOr(rawEvent.target));
+        const stop = () => rawEvent.stopPropagation();
+        const prevent = () => rawEvent.preventDefault();
+        const kill = compose(prevent, stop); // more of a sequence than a compose, but same effect
+        // FIX: Don't just expose the raw event. Need to identify what needs standardisation.
+        return mkEvent(target, rawEvent.clientX, rawEvent.clientY, stop, prevent, kill, rawEvent);
+    };
+    const handle = (filter, handler) => (rawEvent) => {
+        if (filter(rawEvent)) {
+            handler(fromRawEvent(rawEvent));
+        }
+    };
+    const binder = (element, event, filter, handler, useCapture) => {
+        const wrapped = handle(filter, handler);
+        // IE9 minimum
+        element.dom.addEventListener(event, wrapped, useCapture);
+        return {
+            unbind: curry(unbind, element, event, wrapped, useCapture)
+        };
+    };
+    const bind$2 = (element, event, filter, handler) => binder(element, event, filter, handler, false);
+    const unbind = (element, event, handler, useCapture) => {
+        // IE9 minimum
+        element.dom.removeEventListener(event, handler, useCapture);
+    };
+
+    const filter = always; // no filter on plain DomEvents
+    const bind$1 = (element, event, handler) => bind$2(element, event, filter, handler);
+
+    const rawSet = (dom, key, value) => {
+        /*
+         * JQuery coerced everything to a string, and silently did nothing on text node/null/undefined.
+         *
+         * We fail on those invalid cases, only allowing numbers and booleans.
+         */
+        if (isString(value) || isBoolean(value) || isNumber(value)) {
+            dom.setAttribute(key, value + '');
+        }
+        else {
+            // eslint-disable-next-line no-console
+            console.error('Invalid call to Attribute.set. Key ', key, ':: Value ', value, ':: Element ', dom);
+            throw new Error('Attribute value was not simple');
+        }
+    };
+    const set$1 = (element, key, value) => {
+        rawSet(element.dom, key, value);
+    };
+    const get$3 = (element, key) => {
+        const v = element.dom.getAttribute(key);
+        // undefined is the more appropriate value for JS, and this matches JQuery
+        return v === null ? undefined : v;
+    };
+    const remove = (element, key) => {
+        element.dom.removeAttribute(key);
+    };
+
+    // some elements, such as mathml, don't have style attributes
+    // others, such as angular elements, have style attributes that aren't a CSSStyleDeclaration
+    const isSupported = (dom) => 
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    dom.style !== undefined && isFunction(dom.style.getPropertyValue);
+
+    // Node.contains() is very, very, very good performance
+    // http://jsperf.com/closest-vs-contains/5
+    const inBody = (element) => {
+        // Technically this is only required on IE, where contains() returns false for text nodes.
+        // But it's cheap enough to run everywhere and Sugar doesn't have platform detection (yet).
+        const dom = isText(element) ? element.dom.parentNode : element.dom;
+        // use ownerDocument.body to ensure this works inside iframes.
+        // Normally contains is bad because an element "contains" itself, but here we want that.
+        if (dom === undefined || dom === null || dom.ownerDocument === null) {
+            return false;
+        }
+        const doc = dom.ownerDocument;
+        return getShadowRoot(SugarElement.fromDom(dom)).fold(() => doc.body.contains(dom), compose1(inBody, getShadowHost));
+    };
+    const getBody = (doc) => {
+        const b = doc.dom.body;
+        if (b === null || b === undefined) {
+            throw new Error('Body is not available yet');
+        }
+        return SugarElement.fromDom(b);
+    };
+
+    const internalSet = (dom, property, value) => {
+        // This is going to hurt. Apologies.
+        // JQuery coerces numbers to pixels for certain property names, and other times lets numbers through.
+        // we're going to be explicit; strings only.
+        if (!isString(value)) {
+            // eslint-disable-next-line no-console
+            console.error('Invalid call to CSS.set. Property ', property, ':: Value ', value, ':: Element ', dom);
+            throw new Error('CSS value must be a string: ' + value);
+        }
+        // removed: support for dom().style[property] where prop is camel case instead of normal property name
+        if (isSupported(dom)) {
+            dom.style.setProperty(property, value);
+        }
+    };
+    const set = (element, property, value) => {
+        const dom = element.dom;
+        internalSet(dom, property, value);
+    };
+    const setAll = (element, css) => {
+        const dom = element.dom;
+        each(css, (v, k) => {
+            internalSet(dom, k, v);
+        });
+    };
+    /*
+     * NOTE: For certain properties, this returns the "used value" which is subtly different to the "computed value" (despite calling getComputedStyle).
+     * Blame CSS 2.0.
+     *
+     * https://developer.mozilla.org/en-US/docs/Web/CSS/used_value
+     */
+    const get$2 = (element, property) => {
+        const dom = element.dom;
+        /*
+         * IE9 and above per
+         * https://developer.mozilla.org/en/docs/Web/API/window.getComputedStyle
+         *
+         * Not in numerosity, because it doesn't memoize and looking this up dynamically in performance critical code would be horrendous.
+         *
+         * JQuery has some magic here for IE popups, but we don't really need that.
+         * It also uses element.ownerDocument.defaultView to handle iframes but that hasn't been required since FF 3.6.
+         */
+        const styles = window.getComputedStyle(dom);
+        const r = styles.getPropertyValue(property);
+        // jquery-ism: If r is an empty string, check that the element is not in a document. If it isn't, return the raw value.
+        // Turns out we do this a lot.
+        return (r === '' && !inBody(element)) ? getUnsafeProperty(dom, property) : r;
+    };
+    // removed: support for dom().style[property] where prop is camel case instead of normal property name
+    // empty string is what the browsers (IE11 and Chrome) return when the propertyValue doesn't exists.
+    const getUnsafeProperty = (dom, property) => isSupported(dom) ? dom.style.getPropertyValue(property) : '';
+
+    const r = (left, top) => {
+        const translate = (x, y) => r(left + x, top + y);
+        return {
+            left,
+            top,
+            translate
+        };
+    };
+    // tslint:disable-next-line:variable-name
+    const SugarPosition = r;
+
+    // get scroll position (x,y) relative to document _doc (or global if not supplied)
+    const get$1 = (_DOC) => {
+        const doc = _DOC !== undefined ? _DOC.dom : document;
+        // ASSUMPTION: This is for cross-browser support, body works for Safari & EDGE, and when we have an iframe body scroller
+        const x = doc.body.scrollLeft || doc.documentElement.scrollLeft;
+        const y = doc.body.scrollTop || doc.documentElement.scrollTop;
+        return SugarPosition(x, y);
+    };
+
+    // IE11 Can return undefined for a classList on elements such as math, so we make sure it's not undefined before attempting to use it.
+    const supports = (element) => element.dom.classList !== undefined;
+
+    const has = (element, clazz) => supports(element) && element.dom.classList.contains(clazz);
+
+    const ancestors$1 = (scope, predicate, isRoot) => filter$1(parents(scope, isRoot), predicate);
+    const siblings$1 = (scope, predicate) => filter$1(siblings$2(scope), predicate);
+
+    const all = (selector) => all$1(selector);
+    // For all of the following:
+    //
+    // jQuery does siblings of firstChild. IE9+ supports scope.dom.children (similar to Traverse.children but elements only).
+    // Traverse should also do this (but probably not by default).
+    //
+    const ancestors = (scope, selector, isRoot) => 
+    // It may surprise you to learn this is exactly what JQuery does
+    // TODO: Avoid all this wrapping and unwrapping
+    ancestors$1(scope, (e) => is(e, selector), isRoot);
+    const siblings = (scope, selector) => 
+    // It may surprise you to learn this is exactly what JQuery does
+    // TODO: Avoid all the wrapping and unwrapping
+    siblings$1(scope, (e) => is(e, selector));
+
+    const get = (_win) => {
+        const win = _win === undefined ? window : _win;
+        if (detect().browser.isFirefox()) {
+            // TINY-7984: Firefox 91 is returning incorrect values for visualViewport.pageTop, so disable it for now
+            return Optional.none();
+        }
+        else {
+            return Optional.from(win.visualViewport);
+        }
+    };
+    const bounds = (x, y, width, height) => ({
+        x,
+        y,
+        width,
+        height,
+        right: x + width,
+        bottom: y + height
+    });
+    const getBounds = (_win) => {
+        const win = _win === undefined ? window : _win;
+        const doc = win.document;
+        const scroll = get$1(SugarElement.fromDom(doc));
+        return get(win).fold(() => {
+            const html = win.document.documentElement;
+            // Don't use window.innerWidth/innerHeight here, as we don't want to include scrollbars
+            // since the right/bottom position is based on the edge of the scrollbar not the window
+            const width = html.clientWidth;
+            const height = html.clientHeight;
+            return bounds(scroll.left, scroll.top, width, height);
+        }, (visualViewport) => 
+        // iOS doesn't update the pageTop/pageLeft when element.scrollIntoView() is called, so we need to fallback to the
+        // scroll position which will always be less than the page top/left values when page top/left are accurate/correct.
+        bounds(Math.max(visualViewport.pageLeft, scroll.left), Math.max(visualViewport.pageTop, scroll.top), visualViewport.width, visualViewport.height));
+    };
+    const bind = (name, callback, _win) => get(_win).map((visualViewport) => {
+        const handler = (e) => callback(fromRawEvent(e));
+        visualViewport.addEventListener(name, handler);
+        return {
+            unbind: () => visualViewport.removeEventListener(name, handler)
+        };
+    }).getOrThunk(() => ({
+        unbind: noop
+    }));
+
+    var global$2 = tinymce.util.Tools.resolve('tinymce.dom.DOMUtils');
+
+    var global$1 = tinymce.util.Tools.resolve('tinymce.Env');
+
+    const fireFullscreenStateChanged = (editor, state) => {
+        editor.dispatch('FullscreenStateChanged', { state });
+        editor.dispatch('ResizeEditor');
+    };
+
+    const option = (name) => (editor) => editor.options.get(name);
+    const register$2 = (editor) => {
+        const registerOption = editor.options.register;
+        registerOption('fullscreen_native', {
+            processor: 'boolean',
+            default: false
+        });
+    };
+    const getFullscreenNative = option('fullscreen_native');
+
+    const getFullscreenRoot = (editor) => {
+        const elem = SugarElement.fromDom(editor.getElement());
+        return getShadowRoot(elem).map(getShadowHost)
+            .getOrThunk(() => getBody(owner(elem)));
+    };
+    const getFullscreenElement = (root) => {
+        if (root.fullscreenElement !== undefined) {
+            return root.fullscreenElement;
+        }
+        else if (root.msFullscreenElement !== undefined) {
+            return root.msFullscreenElement;
+        }
+        else if (root.webkitFullscreenElement !== undefined) {
+            return root.webkitFullscreenElement;
+        }
+        else {
+            return null;
+        }
+    };
+    const getFullscreenchangeEventName = () => {
+        if (document.fullscreenElement !== undefined) {
+            return 'fullscreenchange';
+        }
+        else if (document.msFullscreenElement !== undefined) {
+            return 'MSFullscreenChange'; // warning, seems to be case sensitive
+        }
+        else if (document.webkitFullscreenElement !== undefined) {
+            return 'webkitfullscreenchange';
+        }
+        else {
+            return 'fullscreenchange';
+        }
+    };
+    const requestFullscreen = (sugarElem) => {
+        const elem = sugarElem.dom;
+        if (elem.requestFullscreen) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            elem.requestFullscreen();
+        }
+        else if (elem.msRequestFullscreen) {
+            elem.msRequestFullscreen();
+        }
+        else if (elem.webkitRequestFullScreen) {
+            elem.webkitRequestFullScreen();
+        }
+    };
+    const exitFullscreen = (sugarDoc) => {
+        const doc = sugarDoc.dom;
+        if (doc.exitFullscreen) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            doc.exitFullscreen();
+        }
+        else if (doc.msExitFullscreen) {
+            doc.msExitFullscreen();
+        }
+        else if (doc.webkitCancelFullScreen) {
+            doc.webkitCancelFullScreen();
+        }
+    };
+    const isFullscreenElement = (elem) => elem.dom === getFullscreenElement(owner(elem).dom);
+
+    const attr = 'data-ephox-mobile-fullscreen-style';
+    const siblingStyles = 'display:none!important;';
+    const ancestorPosition = 'position:absolute!important;';
+    // TINY-3407 ancestors need 'height:100%!important;overflow:visible!important;' to prevent collapsed ancestors hiding the editor
+    const ancestorStyles = 'top:0!important;left:0!important;margin:0!important;padding:0!important;width:100%!important;height:100%!important;overflow:visible!important;';
+    const bgFallback = 'background-color:rgb(255,255,255)!important;';
+    const isAndroid = global$1.os.isAndroid();
+    const matchColor = (editorBody) => {
+        // in iOS you can overscroll, sometimes when you overscroll you can reveal the bgcolor of an element beneath,
+        // by matching the bg color and clobbering ensures any reveals are 'camouflaged' the same color
+        const color = get$2(editorBody, 'background-color');
+        return (color !== undefined && color !== '') ? 'background-color:' + color + '!important' : bgFallback;
+    };
+    // We clobber all tags, direct ancestors to the editorBody get ancestorStyles, everything else gets siblingStyles
+    const clobberStyles = (dom, container, editorBody) => {
+        const gatherSiblings = (element) => {
+            return siblings(element, '*:not(.tox-silver-sink)');
+        };
+        const clobber = (clobberStyle) => (element) => {
+            const styles = get$3(element, 'style');
+            const backup = styles === undefined ? 'no-styles' : styles.trim();
+            if (backup === clobberStyle) {
+                return;
+            }
+            else {
+                set$1(element, attr, backup);
+                setAll(element, dom.parseStyle(clobberStyle));
+            }
+        };
+        const ancestors$1 = ancestors(container, '*');
+        const siblings$1 = bind$3(ancestors$1, gatherSiblings);
+        const bgColor = matchColor(editorBody);
+        /* NOTE: This assumes that container has no siblings itself */
+        each$1(siblings$1, clobber(siblingStyles));
+        each$1(ancestors$1, clobber(ancestorPosition + ancestorStyles + bgColor));
+        // position absolute on the outer-container breaks Android flex layout
+        const containerStyles = isAndroid === true ? '' : ancestorPosition;
+        clobber(containerStyles + ancestorStyles + bgColor)(container);
+    };
+    const restoreStyles = (dom) => {
+        const clobberedEls = all('[' + attr + ']');
+        each$1(clobberedEls, (element) => {
+            const restore = get$3(element, attr);
+            if (restore && restore !== 'no-styles') {
+                setAll(element, dom.parseStyle(restore));
+            }
+            else {
+                remove(element, 'style');
+            }
+            remove(element, attr);
+        });
+    };
+
+    const DOM = global$2.DOM;
+    const getScrollPos = () => getBounds(window);
+    const setScrollPos = (pos) => window.scrollTo(pos.x, pos.y);
+    const viewportUpdate = get().fold(() => ({ bind: noop, unbind: noop }), (visualViewport) => {
+        const editorContainer = value();
+        const resizeBinder = unbindable();
+        const scrollBinder = unbindable();
+        const refreshScroll = () => {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        };
+        const refreshVisualViewport = () => {
+            window.requestAnimationFrame(() => {
+                editorContainer.on((container) => setAll(container, {
+                    top: visualViewport.offsetTop + 'px',
+                    left: visualViewport.offsetLeft + 'px',
+                    height: visualViewport.height + 'px',
+                    width: visualViewport.width + 'px'
+                }));
+            });
+        };
+        const update = first(() => {
+            refreshScroll();
+            refreshVisualViewport();
+        }, 50);
+        const bind$1 = (element) => {
+            editorContainer.set(element);
+            update.throttle();
+            resizeBinder.set(bind('resize', update.throttle));
+            scrollBinder.set(bind('scroll', update.throttle));
+        };
+        const unbind = () => {
+            editorContainer.on(() => {
+                resizeBinder.clear();
+                scrollBinder.clear();
+            });
+            editorContainer.clear();
+        };
+        return {
+            bind: bind$1,
+            unbind
+        };
+    });
+    const toggleFullscreen = (editor, fullscreenState) => {
+        const body = document.body;
+        const documentElement = document.documentElement;
+        const editorContainer = editor.getContainer();
+        const editorContainerS = SugarElement.fromDom(editorContainer);
+        const sinkContainerS = nextSibling(editorContainerS)
+            .filter((elm) => isHTMLElement(elm) && has(elm, 'tox-silver-sink'));
+        const fullscreenRoot = getFullscreenRoot(editor);
+        const fullscreenInfo = fullscreenState.get();
+        const editorBody = SugarElement.fromDom(editor.getBody());
+        const isTouch = global$1.deviceType.isTouch();
+        const editorContainerStyle = editorContainer.style;
+        const iframe = editor.iframeElement;
+        const iframeStyle = iframe === null || iframe === void 0 ? void 0 : iframe.style;
+        const handleClasses = (handler) => {
+            handler(body, 'tox-fullscreen');
+            handler(documentElement, 'tox-fullscreen');
+            handler(editorContainer, 'tox-fullscreen');
+            getShadowRoot(editorContainerS)
+                .map((root) => getShadowHost(root).dom)
+                .each((host) => {
+                handler(host, 'tox-fullscreen');
+                handler(host, 'tox-shadowhost');
+            });
+        };
+        const cleanup = () => {
+            if (isTouch) {
+                restoreStyles(editor.dom);
+            }
+            handleClasses(DOM.removeClass);
+            viewportUpdate.unbind();
+            Optional.from(fullscreenState.get()).each((info) => info.fullscreenChangeHandler.unbind());
+        };
+        if (!fullscreenInfo) {
+            const fullscreenChangeHandler = bind$1(owner(fullscreenRoot), getFullscreenchangeEventName(), (_evt) => {
+                if (getFullscreenNative(editor)) {
+                    // if we have exited browser fullscreen with Escape then exit editor fullscreen too
+                    if (!isFullscreenElement(fullscreenRoot) && fullscreenState.get() !== null) {
+                        toggleFullscreen(editor, fullscreenState);
+                    }
+                }
+            });
+            const newFullScreenInfo = {
+                scrollPos: getScrollPos(),
+                containerWidth: editorContainerStyle.width,
+                containerHeight: editorContainerStyle.height,
+                containerTop: editorContainerStyle.top,
+                containerLeft: editorContainerStyle.left,
+                iframeWidth: iframeStyle.width,
+                iframeHeight: iframeStyle.height,
+                fullscreenChangeHandler,
+                sinkCssPosition: sinkContainerS.map((elm) => get$2(elm, 'position'))
+            };
+            if (isTouch) {
+                clobberStyles(editor.dom, editorContainerS, editorBody);
+            }
+            iframeStyle.width = iframeStyle.height = '100%';
+            editorContainerStyle.width = editorContainerStyle.height = '';
+            handleClasses(DOM.addClass);
+            sinkContainerS.each((elm) => {
+                set(elm, 'position', 'fixed');
+            });
+            viewportUpdate.bind(editorContainerS);
+            editor.on('remove', cleanup);
+            fullscreenState.set(newFullScreenInfo);
+            if (getFullscreenNative(editor)) {
+                requestFullscreen(fullscreenRoot);
+            }
+            fireFullscreenStateChanged(editor, true);
+        }
+        else {
+            fullscreenInfo.fullscreenChangeHandler.unbind();
+            if (getFullscreenNative(editor) && isFullscreenElement(fullscreenRoot)) {
+                exitFullscreen(owner(fullscreenRoot));
+            }
+            iframeStyle.width = fullscreenInfo.iframeWidth;
+            iframeStyle.height = fullscreenInfo.iframeHeight;
+            editorContainerStyle.width = fullscreenInfo.containerWidth;
+            editorContainerStyle.height = fullscreenInfo.containerHeight;
+            editorContainerStyle.top = fullscreenInfo.containerTop;
+            editorContainerStyle.left = fullscreenInfo.containerLeft;
+            lift2(sinkContainerS, fullscreenInfo.sinkCssPosition, (elm, val) => {
+                set(elm, 'position', val);
+            });
+            cleanup();
+            setScrollPos(fullscreenInfo.scrollPos);
+            fullscreenState.set(null);
+            fireFullscreenStateChanged(editor, false);
+            editor.off('remove', cleanup);
+        }
+    };
+
+    const register$1 = (editor, fullscreenState) => {
+        editor.addCommand('mceFullScreen', () => {
+            toggleFullscreen(editor, fullscreenState);
+        });
+    };
+
+    var global = tinymce.util.Tools.resolve('tinymce.util.VK');
+
+    const setup = (editor, fullscreenState) => {
+        editor.on('init', () => {
+            editor.on('keydown', (e) => {
+                if (e.keyCode === global.TAB && !(e.metaKey || e.ctrlKey) && fullscreenState.get()) {
+                    e.preventDefault();
+                }
+            });
+        });
+    };
+
+    const makeSetupHandler = (editor, fullscreenState) => (api) => {
+        api.setActive(fullscreenState.get() !== null);
+        const editorEventCallback = (e) => api.setActive(e.state);
+        editor.on('FullscreenStateChanged', editorEventCallback);
+        return () => editor.off('FullscreenStateChanged', editorEventCallback);
+    };
+    const register = (editor, fullscreenState) => {
+        const onAction = () => editor.execCommand('mceFullScreen');
+        editor.ui.registry.addToggleMenuItem('fullscreen', {
+            text: 'Fullscreen',
+            icon: 'fullscreen',
+            shortcut: 'Meta+Shift+F',
+            onAction,
+            onSetup: makeSetupHandler(editor, fullscreenState),
+            context: 'any'
+        });
+        editor.ui.registry.addToggleButton('fullscreen', {
+            tooltip: 'Fullscreen',
+            icon: 'fullscreen',
+            onAction,
+            onSetup: makeSetupHandler(editor, fullscreenState),
+            shortcut: 'Meta+Shift+F',
+            context: 'any'
+        });
+    };
+
+    var Plugin = () => {
+        global$3.add('fullscreen', (editor) => {
+            const fullscreenState = Cell(null);
+            if (editor.inline) {
+                return get$4(fullscreenState);
+            }
+            register$2(editor);
+            register$1(editor, fullscreenState);
+            register(editor, fullscreenState);
+            setup(editor, fullscreenState);
+            editor.addShortcut('Meta+Shift+F', '', 'mceFullScreen');
+            return get$4(fullscreenState);
+        });
+    };
+
+    Plugin();
+    /** *****
+     * DO NOT EXPORT ANYTHING
+     *
+     * IF YOU DO ROLLUP WILL LEAVE A GLOBAL ON THE PAGE
+     *******/
+
+})();
