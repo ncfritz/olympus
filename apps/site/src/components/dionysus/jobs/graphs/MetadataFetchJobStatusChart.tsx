@@ -5,11 +5,11 @@ import Highcharts from "highcharts";
 import React from "react";
 
 export type MetadataFetchJobStatusChartProps = {
-  jobStats: any;
+  stats: any;
 };
 
 const MetadataFetchJobStatusChart = ({
-  jobStats,
+  stats,
 }: MetadataFetchJobStatusChartProps) => {
   return (
     <HighchartsReact
@@ -61,38 +61,38 @@ const MetadataFetchJobStatusChart = ({
         series: [
           {
             name: "Fetched",
-            data: jobStats.status.series.fetched,
+            data: stats.status.series.fetched,
             color: "#003f5c",
           },
           {
             name: "Fetching",
-            data: jobStats.status.series.fetching,
+            data: stats.status.series.fetching,
             color: "#374c80",
           },
           {
             name: "Invalidated",
-            data: jobStats.status.series.invalidated,
+            data: stats.status.series.invalidated,
 
             color: "#7a5195",
           },
           {
             name: "Failed",
-            data: jobStats.status.series.failed,
+            data: stats.status.series.failed,
             color: "#bc5090",
           },
           {
             name: "Not Found",
-            data: jobStats.status.series.not_found,
+            data: stats.status.series.not_found,
             color: "#ef5675",
           },
           {
             name: "Cancelled",
-            data: jobStats.status.series.cancelled,
+            data: stats.status.series.cancelled,
             color: "#ff764a",
           },
           {
             name: "Queued",
-            data: jobStats.status.series.queued,
+            data: stats.status.series.queued,
             color: "#ffa600",
           },
         ],

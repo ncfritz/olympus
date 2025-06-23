@@ -5,10 +5,10 @@ import Highcharts from "highcharts";
 import React from "react";
 
 export interface BatchJobRuntimeChartProps {
-  jobStats: any;
+  stats: any;
 }
 
-const BatchJobRuntimeChart = ({ jobStats }: BatchJobRuntimeChartProps) => {
+const BatchJobRuntimeChart = ({ stats }: BatchJobRuntimeChartProps) => {
   return (
     <HighchartsReact
       highcharts={Highcharts}
@@ -52,43 +52,43 @@ const BatchJobRuntimeChart = ({ jobStats }: BatchJobRuntimeChartProps) => {
           {
             type: "spline",
             name: "Movies",
-            data: jobStats.series.timing.runtime.movies,
+            data: stats.series.timing.runtime.movies,
             color: "#003f5c",
           },
           {
             type: "spline",
             name: "TV Series",
-            data: jobStats.series.timing.runtime.tv_series,
+            data: stats.series.timing.runtime.tv_series,
             color: "#bc5090",
           },
           {
             type: "spline",
             name: "People",
-            data: jobStats.series.timing.runtime.people,
+            data: stats.series.timing.runtime.people,
             color: "#7a5195",
           },
           {
             type: "spline",
             name: "Collections",
-            data: jobStats.series.timing.runtime.collections,
+            data: stats.series.timing.runtime.collections,
             color: "#bc5090",
           },
           {
             type: "spline",
             name: "TV Networks",
-            data: jobStats.series.timing.runtime.tv_networks,
+            data: stats.series.timing.runtime.tv_networks,
             color: "#ef5675",
           },
           {
             type: "spline",
             name: "Keywords",
-            data: jobStats.series.timing.runtime.keywords,
+            data: stats.series.timing.runtime.keywords,
             color: "#ff764a",
           },
           {
             type: "spline",
             name: "Production Companies",
-            data: jobStats.series.timing.runtime.production_companies,
+            data: stats.series.timing.runtime.production_companies,
             color: "#ffa600",
           },
         ],

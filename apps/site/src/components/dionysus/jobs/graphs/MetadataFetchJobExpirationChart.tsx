@@ -5,11 +5,11 @@ import Highcharts from "highcharts";
 import React from "react";
 
 export interface MetadataFetchJobExpirationChartProps {
-  jobStats: any;
+  stats: any;
 }
 
 const MetadataFetchJobExpirationChart = ({
-  jobStats,
+  stats,
 }: MetadataFetchJobExpirationChartProps) => {
   return (
     <HighchartsReact
@@ -72,7 +72,7 @@ const MetadataFetchJobExpirationChart = ({
           align: "right",
           verticalAlign: "top",
         },
-        series: jobStats.expiration.series,
+        series: stats.expiration.series,
         credits: {
           enabled: false,
         },

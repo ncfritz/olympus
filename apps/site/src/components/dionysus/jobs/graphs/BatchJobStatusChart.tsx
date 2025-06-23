@@ -5,10 +5,10 @@ import Highcharts from "highcharts";
 import React from "react";
 
 export interface BatchJobStatusChartProps {
-  jobStats: any;
+  stats: any;
 }
 
-const BatchJobStatusChart = ({ jobStats }: BatchJobStatusChartProps) => {
+const BatchJobStatusChart = ({ stats }: BatchJobStatusChartProps) => {
   return (
     <HighchartsReact
       highcharts={Highcharts}
@@ -34,7 +34,7 @@ const BatchJobStatusChart = ({ jobStats }: BatchJobStatusChartProps) => {
           style: { fontSize: 10 },
         },
         xAxis: {
-          categories: jobStats.categories.status,
+          categories: stats.categories.status,
           lineWidth: 0,
         },
         legend: {
@@ -45,27 +45,27 @@ const BatchJobStatusChart = ({ jobStats }: BatchJobStatusChartProps) => {
         series: [
           {
             name: "Cancelled",
-            data: jobStats.series.status.cancelled,
+            data: stats.series.status.cancelled,
             color: "#ffa600",
           },
           {
             name: "Failed",
-            data: jobStats.series.status.failed,
+            data: stats.series.status.failed,
             color: "#ff6361",
           },
           {
             name: "Success",
-            data: jobStats.series.status.success,
+            data: stats.series.status.success,
             color: "#bc5090",
           },
           {
             name: "Started",
-            data: jobStats.series.status.started,
+            data: stats.series.status.started,
             color: "#58508d",
           },
           {
             name: "Created",
-            data: jobStats.series.status.created,
+            data: stats.series.status.created,
             color: "#003f5c",
           },
         ],

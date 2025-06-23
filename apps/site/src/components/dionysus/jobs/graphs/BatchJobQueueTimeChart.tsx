@@ -5,10 +5,10 @@ import Highcharts from "highcharts";
 import React from "react";
 
 export interface BatchJobQueueTimeChartProps {
-  jobStats: any;
+  stats: any;
 }
 
-const BatchJobQueueTimeChart = ({ jobStats }: BatchJobQueueTimeChartProps) => {
+const BatchJobQueueTimeChart = ({ stats }: BatchJobQueueTimeChartProps) => {
   return (
     <HighchartsReact
       highcharts={Highcharts}
@@ -52,43 +52,43 @@ const BatchJobQueueTimeChart = ({ jobStats }: BatchJobQueueTimeChartProps) => {
           {
             type: "spline",
             name: "Movies",
-            data: jobStats.series.timing.queueTime.movies,
+            data: stats.series.timing.queueTime.movies,
             color: "#003f5c",
           },
           {
             type: "spline",
             name: "TV Series",
-            data: jobStats.series.timing.queueTime.tv_series,
+            data: stats.series.timing.queueTime.tv_series,
             color: "#bc5090",
           },
           {
             type: "spline",
             name: "People",
-            data: jobStats.series.timing.queueTime.people,
+            data: stats.series.timing.queueTime.people,
             color: "#7a5195",
           },
           {
             type: "spline",
             name: "Collections",
-            data: jobStats.series.timing.queueTime.collections,
+            data: stats.series.timing.queueTime.collections,
             color: "#bc5090",
           },
           {
             type: "spline",
             name: "TV Networks",
-            data: jobStats.series.timing.queueTime.tv_networks,
+            data: stats.series.timing.queueTime.tv_networks,
             color: "#ef5675",
           },
           {
             type: "spline",
             name: "Keywords",
-            data: jobStats.series.timing.queueTime.keywords,
+            data: stats.series.timing.queueTime.keywords,
             color: "#ff764a",
           },
           {
             type: "spline",
             name: "Production Companies",
-            data: jobStats.series.timing.queueTime.production_companies,
+            data: stats.series.timing.queueTime.production_companies,
             color: "#ffa600",
           },
         ],
