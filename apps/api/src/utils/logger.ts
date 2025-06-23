@@ -6,7 +6,7 @@ const isProd = process.env.NODE_ENV === "production";
 
 export const appName =
   process.env.APP_NAME ||
-  `dionysus-metadata-agents${isProd ? "" : `-${process.env.NODE_ENV}`}`;
+  `olympus-api${isProd ? "" : `-${process.env.NODE_ENV}`}`;
 
 const consoleLoggingEnabled =
   !isProd || process.env.ENABLE_CONSOLE_LOGGING === "true";
