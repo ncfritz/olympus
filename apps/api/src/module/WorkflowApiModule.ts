@@ -3,6 +3,7 @@ import { CreateMetadataWorkflowController } from "../controller/metadata/workflo
 import { CreateMetadataWorkflowStepController } from "../controller/metadata/workflow/CreateMetadataWorkflowStep";
 import { DescribeMetadataWorkflowController } from "../controller/metadata/workflow/DescribeMetadataWorkflow";
 import { DescribeMetadataWorkflowStepController } from "../controller/metadata/workflow/DescribeMetadataWorkflowStep";
+import { GetMetadataWorkflowStatisticsController } from "../controller/metadata/workflow/GetMetadataWorkflowStatistics";
 import { ListMetadataWorkflowsController } from "../controller/metadata/workflow/ListMetadataWorkflows";
 import { ListMetadataWorkflowStepsController } from "../controller/metadata/workflow/ListMetadataWorkflowSteps";
 import { UpdateWorkflowController } from "../controller/metadata/workflow/UpdateMetadataWorkflow";
@@ -14,6 +15,7 @@ import { RabbitModule } from "./RabbitModule";
   exports: [],
   providers: [],
   controllers: [
+    GetMetadataWorkflowStatisticsController,
     CreateMetadataWorkflowController,
     CreateMetadataWorkflowStepController,
     DescribeMetadataWorkflowController,
