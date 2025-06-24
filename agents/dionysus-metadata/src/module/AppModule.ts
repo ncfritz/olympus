@@ -1,7 +1,7 @@
+import { ReporterModule } from "nestjs-metrics-reporter";
 import { appName } from "../util/logger";
 import { Logger, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { PrometheusModule } from "@willsoto/nestjs-prometheus";
 import { CertificationsBatchHandler } from "../handler/batch/CertificationsBatchHandler";
 import { CollectionsBatchHandler } from "../handler/batch/CollectionsBatchHandler";
 import { CountriesBatchHandler } from "../handler/batch/CountiresBatchHandler";
@@ -32,10 +32,14 @@ import { RabbitModule } from "./RabbitModule";
       envFilePath: `${process.env.NODE_ENV}.env`,
       isGlobal: true,
     }),
-    PrometheusModule.register({
-      defaultLabels: {
-        app: appName,
-      },
+    ReporterModule.forRootAsync({
+      useFactory: () => ({
+        defaultMetricsEnabled: true,
+        defaultLabels: {
+          app: appName,
+          environment: process.env.NODE_ENV!,
+        },
+      }),
     }),
     RabbitModule,
   ],
