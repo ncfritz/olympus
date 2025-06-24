@@ -1,6 +1,6 @@
-import { Language } from "@ncfritz/olympus-model";
+import { Language, MovieSpokenLanguage } from "@ncfritz/olympus-model";
 import moment from "moment/moment";
-import { GraphQlLanguage } from "../../types/batchJobs";
+import { GraphQlLanguage, GraphQlLanguageWrapper } from "../../types/batchJobs";
 
 export const toDomainObject = (input: GraphQlLanguage): Language => {
   return {
@@ -9,5 +9,15 @@ export const toDomainObject = (input: GraphQlLanguage): Language => {
     nativeName: input.nativeName,
     createdTime: moment(input.createdTime),
     lastUpdatedTime: moment(input.lastUpdatedTime),
+  };
+};
+
+export const toMovieSpokenLanguageDomainObject = (
+  input: GraphQlLanguageWrapper,
+): MovieSpokenLanguage => {
+  return {
+    createdTime: moment(input.createdTime),
+    lastUpdatedTime: moment(input.lastUpdatedTime),
+    language: toDomainObject(input.language),
   };
 };

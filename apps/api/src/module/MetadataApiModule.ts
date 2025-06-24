@@ -6,9 +6,9 @@ import { CreateGenreController } from "../controller/metadata/CreateGenre";
 import { CreateKeywordController } from "../controller/metadata/CreateKeyword";
 import { CreateLanguageController } from "../controller/metadata/CreateLanguage";
 import { CreateMetadataFetchJobController } from "../controller/metadata/CreateMetadataFetchJob";
-import { CreateMovieController } from "../controller/metadata/CreateMovie";
+import { CreateMovieController } from "../controller/metadata/movie/CreateMovie";
 import { CreateNetworkController } from "../controller/metadata/CreateNetwork";
-import { CreatePersonController } from "../controller/metadata/CreatePerson";
+import { CreatePersonController } from "../controller/metadata/person/CreatePerson";
 import { CreateProductionCompanyController } from "../controller/metadata/CreateProductionCompany";
 import { CreateTVEpisodeController } from "../controller/metadata/CreateTVEpisode";
 import { CreateTVSeasonController } from "../controller/metadata/CreateTVSeason";
@@ -22,6 +22,8 @@ import { ListGenresController } from "../controller/metadata/ListGenres";
 import { ListKeywordsController } from "../controller/metadata/ListKeywords";
 import { ListLanguagesController } from "../controller/metadata/ListLanguages";
 import { ListMetadataFetchJobsController } from "../controller/metadata/ListMetadataFetchJobs";
+import { DescribeMovieController } from "../controller/metadata/movie/DescribeMovie";
+import { DescribePersonController } from "../controller/metadata/person/DescribePerson";
 import { ScrollMetadataFetchJobsController } from "../controller/metadata/ScrollMetadataFetchJobs";
 import { UpdateMetadataFetchJobController } from "../controller/metadata/UpdateMetadataFetchJob";
 import { GraphQLClientModule } from "./GraphQLClientModule";
@@ -48,6 +50,8 @@ import { RabbitModule } from "./RabbitModule";
     CreateTVSeriesController,
     DeleteMetadataFetchJobController,
     DescribeMetadataFetchJobController,
+    DescribeMovieController,
+    DescribePersonController,
     GetMetadataFetchJobStatisticsController,
     ListCertificationsController,
     ListCountriesController,
