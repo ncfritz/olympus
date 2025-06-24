@@ -134,6 +134,7 @@ const createMetadataFetchJob = async (
   ttl: number,
   jitter: number,
   publish: boolean,
+  bypassCache: boolean,
   context: Record<string, string>,
 ) => {
   try {
@@ -146,6 +147,7 @@ const createMetadataFetchJob = async (
         ttl: ttl,
         jitter: jitter,
         publishNotification: publish,
+        bypassCache: bypassCache,
         context: context,
       },
     );

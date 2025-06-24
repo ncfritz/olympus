@@ -21,6 +21,7 @@ interface FormInput {
   status: string;
   id: string;
   publish: boolean;
+  bypassCache: boolean;
   ttl: number;
   jitter: number;
   context: Record<any, any>;
@@ -51,6 +52,7 @@ const CreateMetadataJobModal: React.FunctionComponent<
       jitter: 1500,
       status: "queued",
       publish: true,
+      bypassCache: true,
     },
     mode: "onChange",
     reValidateMode: "onChange",
@@ -66,6 +68,7 @@ const CreateMetadataJobModal: React.FunctionComponent<
       data.ttl,
       data.jitter,
       data.publish,
+      data.bypassCache,
       data.context,
     );
 
@@ -291,6 +294,15 @@ const CreateMetadataJobModal: React.FunctionComponent<
             control={control}
             render={({ field, fieldState }) => (
               <Form.Item {...rowProps} label={"Publish"}>
+                <Switch {...field} />
+              </Form.Item>
+            )}
+          />
+          <Controller
+            name={"bypassCache"}
+            control={control}
+            render={({ field, fieldState }) => (
+              <Form.Item {...rowProps} label={"Bypass Cache"}>
                 <Switch {...field} />
               </Form.Item>
             )}
