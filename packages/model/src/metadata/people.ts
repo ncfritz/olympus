@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment";
-import { Country } from "./countries";
+import { Language } from "./languages";
 
 export enum Gender {
   UNKNOWN = 0,
@@ -24,13 +24,15 @@ export class BasePerson {
   biography: string;
 
   @ApiProperty({ type: String })
-  birthday: string;
+  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  birthday?: Moment;
 
   @ApiProperty({ type: String })
-  birthplace: string;
+  birthplace?: string;
 
   @ApiProperty({ type: String })
-  deathday: string;
+  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  deathday?: Moment;
 
   @ApiProperty({ enum: Gender })
   gender: Gender;
@@ -45,7 +47,7 @@ export class BasePerson {
   knownForDepartment: string;
 
   @ApiProperty({ type: String })
-  profilePath: string;
+  profilePath?: string;
 }
 
 export class Person extends BasePerson {
@@ -139,8 +141,8 @@ export class PersonImage {
   @ApiProperty({ type: Number })
   height: number;
 
-  @ApiProperty({ type: Country })
-  country: Country;
+  @ApiProperty({ type: Language })
+  language?: Language;
 
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
@@ -154,10 +156,10 @@ export class PersonImage {
 export class PartialPersonImage extends OmitType(PersonImage, [
   "createdTime",
   "lastUpdatedTime",
-  "country",
+  "language",
 ]) {
   @ApiProperty({ type: String })
-  countryCode: string;
+  languageCode: string;
 }
 
 export class CreatePersonRequest {
@@ -168,6 +170,13 @@ export class CreatePersonRequest {
 }
 
 export class CreatePersonResponse {
+  @ApiProperty({
+    type: () => Person,
+  })
+  person: Person;
+}
+
+export class DescribePersonResponse {
   @ApiProperty({
     type: () => Person,
   })

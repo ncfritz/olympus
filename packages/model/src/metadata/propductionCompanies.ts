@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
+import { Country } from "./countries";
 
 export class BaseProductionCompany {
   @ApiProperty({ type: Number })
@@ -22,7 +23,7 @@ export class BaseProductionCompany {
   logoPath: string;
 }
 
-export class ProductionCompany extends BaseProductionCompany {
+export class SparseProductionCompany extends BaseProductionCompany {
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
@@ -37,6 +38,11 @@ export class ProductionCompany extends BaseProductionCompany {
   })
   alternativeNames: ProductionCompanyAlternativeName[];
 
+  @ApiProperty({ type: () => Country, isArray: true })
+  originCountry?: Country;
+}
+
+export class ProductionCompany extends SparseProductionCompany {
   @ApiProperty({ type: () => ProductionCompanyLogo, isArray: true })
   logos: ProductionCompanyLogo[];
 }
@@ -59,9 +65,6 @@ export class PartialProductionCompany extends BaseProductionCompany {
 }
 
 export class ProductionCompanyAlternativeName {
-  @ApiProperty({ type: Number })
-  productionCompanyId: number;
-
   @ApiProperty({ type: String })
   name: string;
 
@@ -80,7 +83,10 @@ export class ProductionCompanyAlternativeName {
 export class PartialProductionCompanyAlternativeName extends OmitType(
   ProductionCompanyAlternativeName,
   ["createdTime", "lastUpdatedTime"],
-) {}
+) {
+  @ApiProperty({ type: Number })
+  productionCompanyId: number;
+}
 
 export class ProductionCompanyLogo {
   @ApiProperty({ type: Number })

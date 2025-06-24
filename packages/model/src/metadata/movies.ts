@@ -7,7 +7,7 @@ import { Genre } from "./genres";
 import { Keyword } from "./keywords";
 import { Language } from "./languages";
 import { Person } from "./people";
-import { ProductionCompany } from "./propductionCompanies";
+import { SparseProductionCompany } from "./propductionCompanies";
 
 export class BaseMovie {
   @ApiProperty({ type: Number })
@@ -17,7 +17,7 @@ export class BaseMovie {
   adult: boolean;
 
   @ApiProperty({ type: String })
-  backdropPath: string;
+  backdropPath?: string;
 
   @ApiProperty({ type: Number })
   budget: number;
@@ -26,7 +26,7 @@ export class BaseMovie {
   homepage: string;
 
   @ApiProperty({ type: String })
-  imdbId: string;
+  imdbId?: string;
 
   @ApiProperty({ type: Language })
   originalLanguage: Language;
@@ -41,8 +41,8 @@ export class BaseMovie {
   posterPath?: string;
 
   @ApiProperty({ type: String })
-  @Transform(({ value }) => value.toISOString())
-  releaseDate: Moment;
+  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  releaseDate?: Moment;
 
   @ApiProperty({ type: Number })
   revenue: number;
@@ -376,8 +376,8 @@ export class MovieImage {
   @ApiProperty({ type: Number })
   height: number;
 
-  @ApiProperty({ type: Country })
-  country: Country;
+  @ApiProperty({ type: Language })
+  language?: Language;
 
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
@@ -391,10 +391,10 @@ export class MovieImage {
 export class PartialMovieImage extends OmitType(MovieImage, [
   "createdTime",
   "lastUpdatedTime",
-  "country",
+  "language",
 ]) {
   @ApiProperty({ type: String })
-  countryCode: string;
+  languageCode: string;
 }
 
 export class MovieKeyword {
@@ -420,8 +420,8 @@ export class PartialMovieKeyword extends OmitType(MovieKeyword, [
 }
 
 export class MovieProductionCompany {
-  @ApiProperty({ type: ProductionCompany })
-  productionCompany: ProductionCompany;
+  @ApiProperty({ type: SparseProductionCompany })
+  productionCompany: SparseProductionCompany;
 
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
@@ -466,7 +466,7 @@ export class MovieReleaseDate {
   country: Country;
 
   @ApiProperty({ type: Language })
-  language: Language;
+  language?: Language;
 
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
@@ -479,7 +479,7 @@ export class MovieReleaseDate {
   note: string;
 
   @ApiProperty({ type: Certification })
-  certification: Certification;
+  certification?: Certification;
 
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
@@ -591,6 +591,13 @@ export class CreateMovieRequest {
 }
 
 export class CreateMovieResponse {
+  @ApiProperty({
+    type: () => Movie,
+  })
+  movie: Movie;
+}
+
+export class DescribeMovieResponse {
   @ApiProperty({
     type: () => Movie,
   })
