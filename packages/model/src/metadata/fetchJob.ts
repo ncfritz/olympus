@@ -127,6 +127,13 @@ export class CreateMetadataFetchJobRequest {
   publishNotification?: boolean;
 
   @ApiProperty({
+    type: Boolean,
+    required: false,
+    default: false,
+  })
+  bypassCache?: boolean;
+
+  @ApiProperty({
     type: () => FetchJobContext,
   })
   context: FetchJobContext<string, never>;
