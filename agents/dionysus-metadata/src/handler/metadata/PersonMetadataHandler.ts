@@ -12,6 +12,7 @@ import {
 } from "@ncfritz/olympus-model";
 import { Injectable } from "@nestjs/common";
 import { ConsumeMessage } from "amqplib";
+import moment from "moment";
 import metadataApi from "../../api/metadataApi";
 import { PersonEndpoint } from "../../api/tmdb/person";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
@@ -66,9 +67,13 @@ export class PersonMetadataHandler extends BaseMetadataHandler<
     person.name = personResponse.name;
     person.adult = personResponse.adult;
     person.biography = personResponse.biography;
-    person.birthday = personResponse.birthday;
+    person.birthday = personResponse.birthday
+      ? moment(personResponse.birthday)
+      : undefined;
     person.birthplace = personResponse.place_of_birth;
-    person.deathday = personResponse.deathday;
+    person.deathday = personResponse.deathday
+      ? moment(personResponse.deathday)
+      : undefined;
     person.gender = personResponse.gender;
     person.homepage = personResponse.homepage;
     person.imdbId = personResponse.imdb_id;
@@ -90,7 +95,7 @@ export class PersonMetadataHandler extends BaseMetadataHandler<
         filePath: value.file_path,
         width: value.width,
         height: value.height,
-        countryCode: value.iso_639_1,
+        languageCode: value.iso_639_1,
       });
     });
 

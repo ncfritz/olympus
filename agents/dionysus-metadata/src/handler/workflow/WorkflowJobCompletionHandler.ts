@@ -162,7 +162,7 @@ export class WorkflowJobCompletionHandler {
 
       await notificationsApi.sendNotification({
         type: "dionysus_metadata_workflow_completion",
-        expirationTime: moment().add(3, "hours").toISOString(),
+        expirationTime: moment().add(3, "hours"),
         webSocketDestination: {
           level: notificationStatus,
           visibleDuration: 15,

@@ -186,7 +186,7 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
         filePath: value.file_path,
         width: value.width,
         height: value.height,
-        countryCode: value.iso_639_1 || "en",
+        languageCode: value.iso_639_1 || "en",
       });
     });
 
@@ -196,7 +196,7 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
         filePath: value.file_path,
         width: value.width,
         height: value.height,
-        countryCode: value.iso_639_1 || "en",
+        languageCode: value.iso_639_1 || "en",
       });
     });
 
@@ -206,7 +206,7 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
         filePath: value.file_path,
         width: value.width,
         height: value.height,
-        countryCode: value.iso_639_1 || "en",
+        languageCode: value.iso_639_1 || "en",
       });
     });
 

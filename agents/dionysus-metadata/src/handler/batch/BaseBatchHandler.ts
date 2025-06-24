@@ -319,7 +319,7 @@ export abstract class BaseBatchHandler {
 
       await notificationsApi.sendNotification({
         type: "dionysus_batch_job_complete",
-        expirationTime: moment().add(3, "hours").toISOString(),
+        expirationTime: moment().add(3, "hours"),
         webSocketDestination: {
           level: notificationStatus,
           visibleDuration: 15,
