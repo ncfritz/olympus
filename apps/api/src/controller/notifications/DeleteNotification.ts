@@ -1,5 +1,12 @@
 import { DeleteNotificationResponse } from "@ncfritz/olympus-model/dist/notifications";
-import { Controller, Delete, HttpStatus, NotFoundException, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Delete,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Res,
+} from "@nestjs/common";
 import {
   ApiNoContentResponse,
   ApiOperation,

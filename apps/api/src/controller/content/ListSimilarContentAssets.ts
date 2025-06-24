@@ -10,7 +10,7 @@ import {
   HttpStatus,
   Param,
   Query,
-  Res
+  Res,
 } from "@nestjs/common";
 import {
   ApiHeader,

@@ -2,7 +2,14 @@ import {
   CreateNotificationRequest,
   CreateNotificationResponse,
 } from "@ncfritz/olympus-model/dist/notifications";
-import { Body, ConflictException, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import {
+  Body,
+  ConflictException,
+  Controller,
+  HttpStatus,
+  Post,
+  Res,
+} from "@nestjs/common";
 import {
   ApiBody,
   ApiConflictResponse,

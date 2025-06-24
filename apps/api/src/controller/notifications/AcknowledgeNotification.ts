@@ -2,7 +2,15 @@ import {
   AcknowledgeNotificationRequest,
   AcknowledgeNotificationResponse,
 } from "@ncfritz/olympus-model/dist/notifications";
-import { Body, Controller, HttpStatus, NotFoundException, Param, Put, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Put,
+  Res,
+} from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,

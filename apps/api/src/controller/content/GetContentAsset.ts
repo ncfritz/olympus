@@ -3,9 +3,10 @@ import {
   Controller,
   Get,
   Headers,
-  HttpStatus, NotFoundException,
+  HttpStatus,
+  NotFoundException,
   Param,
-  Res
+  Res,
 } from "@nestjs/common";
 import {
   ApiHeader,

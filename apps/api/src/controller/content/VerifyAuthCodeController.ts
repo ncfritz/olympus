@@ -1,5 +1,12 @@
 import { EmptyResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Query, Res, UnauthorizedException } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  Query,
+  Res,
+  UnauthorizedException,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,

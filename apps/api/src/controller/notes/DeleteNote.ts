@@ -1,5 +1,12 @@
 import { Note, SingleNoteResponse } from "@ncfritz/olympus-model";
-import { Controller, Delete, HttpStatus, NotFoundException, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Delete,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Res,
+} from "@nestjs/common";
 import {
   ApiConsumes,
   ApiNoContentResponse,

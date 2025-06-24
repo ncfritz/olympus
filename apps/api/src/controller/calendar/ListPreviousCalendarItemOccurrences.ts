@@ -2,12 +2,13 @@ import { ListCalendarItemsResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
-  HttpStatus, NotFoundException,
+  HttpStatus,
+  NotFoundException,
   Param,
   Query,
   Res,
   UsePipes,
-  ValidationPipe
+  ValidationPipe,
 } from "@nestjs/common";
 import {
   ApiOkResponse,

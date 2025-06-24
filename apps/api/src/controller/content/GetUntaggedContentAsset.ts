@@ -1,5 +1,13 @@
 import { GetContentAssetWithStatsResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, Headers, HttpStatus, NotFoundException, Res, UnauthorizedException } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Headers,
+  HttpStatus,
+  NotFoundException,
+  Res,
+  UnauthorizedException,
+} from "@nestjs/common";
 import {
   ApiHeader,
   ApiOkResponse,

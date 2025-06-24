@@ -5,7 +5,14 @@ import {
   SendNotificationRequest,
   SendNotificationResponse,
 } from "@ncfritz/olympus-model/dist/notifications";
-import { BadRequestException, Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  HttpStatus,
+  Post,
+  Res,
+} from "@nestjs/common";
 import {
   ApiAcceptedResponse,
   ApiBody,

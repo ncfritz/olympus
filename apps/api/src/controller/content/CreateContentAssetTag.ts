@@ -3,7 +3,14 @@ import {
   CreateContentAssetTagRequest,
   CreateContentAssetTagResponse,
 } from "@ncfritz/olympus-model";
-import { Body, ConflictException, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import {
+  Body,
+  ConflictException,
+  Controller,
+  HttpStatus,
+  Post,
+  Res,
+} from "@nestjs/common";
 import {
   ApiBody,
   ApiConflictResponse,
