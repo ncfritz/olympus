@@ -3,7 +3,7 @@ import {
   CreateContentAssetTagRequest,
   CreateContentAssetTagResponse,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { Body, ConflictException, Controller, HttpStatus, Post, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConflictResponse,
@@ -82,8 +82,9 @@ export class CreateContentAssetTagController {
       );
 
     if (!insertResponse.insert_dionysus_content_tags_one) {
-      response.status(HttpStatus.CONFLICT).end();
-      return;
+      throw new ConflictException(
+        "An existing tag with the specified tye and name already exists",
+      );
     }
 
     const createdContentAssetTag: ContentAssetTag = toDomainObject(

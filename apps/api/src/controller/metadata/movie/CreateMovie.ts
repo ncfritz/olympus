@@ -9,7 +9,7 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlCreateMovieResponse = {
   insert_dionysus_movies_one: {
@@ -151,7 +151,7 @@ export class CreateMovieController {
             images: {
               on_conflict: {
                 constraint: movie_images_pkey
-                update_columns: [width, height, countryCode]
+                update_columns: [width, height, languageCode]
               }
               data: $images
             }

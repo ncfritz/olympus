@@ -2,12 +2,12 @@ import { ListCalendarItemsResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
-  HttpStatus,
+  HttpStatus, NotFoundException,
   Param,
   Query,
   Res,
   UsePipes,
-  ValidationPipe,
+  ValidationPipe
 } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -22,7 +22,6 @@ import {
   GraphQlMeeting,
   toDomainObject,
 } from "../../convert/minerva/MeetingConverter";
-import { NotFoundClientError } from "../../error";
 import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
 
 type GraphQlGetMeetingStartTimeResponse = {
@@ -88,12 +87,13 @@ export class ListPreviousCalendarItemOccurrencesController {
       );
 
     if (!currentMeetingQueryResponse.minerva_meetings_by_pk?.uid) {
-      response.status(HttpStatus.NOT_FOUND).end();
-      return;
+      throw new NotFoundException(
+        `Calendar Item with id ${meetingId} not found`,
+      );
     }
 
     if (!currentMeetingQueryResponse.minerva_meetings_by_pk) {
-      throw new NotFoundClientError(
+      throw new NotFoundException(
         `Calendar Item with id ${meetingId} not found`,
       );
     }

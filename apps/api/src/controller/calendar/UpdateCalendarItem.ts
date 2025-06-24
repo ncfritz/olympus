@@ -3,7 +3,7 @@ import {
   UpdateCalendarItemRequest,
   SingleCalendarItemResponse,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Param, Put, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, NotFoundException, Param, Put, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -118,8 +118,9 @@ export class UpdateCalendarItemController {
       );
 
     if (updateResponse.update_minerva_meetings_by_pk === null) {
-      response.status(HttpStatus.NOT_FOUND).end();
-      return;
+      throw new NotFoundException(
+        `Calendar Item with id ${meetingId} not found`,
+      );
     }
 
     const updatedMeeting: Meeting = toDomainObject(

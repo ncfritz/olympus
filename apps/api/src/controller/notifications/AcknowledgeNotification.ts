@@ -2,7 +2,7 @@ import {
   AcknowledgeNotificationRequest,
   AcknowledgeNotificationResponse,
 } from "@ncfritz/olympus-model/dist/notifications";
-import { Body, Controller, HttpStatus, Param, Put, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, NotFoundException, Param, Put, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -124,8 +124,7 @@ export class AcknowledgeNotificationController extends BaseNotificationsControll
       queryResponse.olympus_notifications === null ||
       queryResponse.olympus_notifications.length <= 0
     ) {
-      response.status(HttpStatus.NOT_FOUND).end();
-      return;
+      throw new NotFoundException();
     }
 
     const target = toDomainObject(queryResponse.olympus_notifications[0]);

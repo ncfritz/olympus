@@ -1,5 +1,12 @@
 import { SingleNoteResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -12,7 +19,6 @@ import {
   GraphQlNote,
   toDomainObject,
 } from "../../convert/minerva/NoteConverter";
-import { NotFoundClientError } from "../../error";
 import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
 
 type GraphQlDescribeNoteResponse = {
@@ -76,12 +82,11 @@ export class DescribeNoteController {
       );
 
     if (queryResponse.minerva_notes_by_pk === null) {
-      response.status(HttpStatus.NOT_FOUND).end();
-      return;
+      throw new NotFoundException();
     }
 
     if (!queryResponse.minerva_notes_by_pk) {
-      throw new NotFoundClientError(`Note with id ${noteId} not found`);
+      throw new NotFoundException(`Note with id ${noteId} not found`);
     }
 
     const note = toDomainObject(queryResponse.minerva_notes_by_pk);

@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import { ApiQuery, ApiResponse } from "@nestjs/swagger";
 import { IncomingMessage } from "connect";
-import { ErrorResponse } from "../error";
+import { ErrorResponse } from "../types/error";
 
 const ERROR_DESCRIPTIONS: { [K in HttpStatus]?: string } = {
   [HttpStatus.BAD_REQUEST]: "The request presented was not valid",

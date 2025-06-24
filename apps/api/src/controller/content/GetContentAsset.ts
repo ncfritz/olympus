@@ -3,9 +3,9 @@ import {
   Controller,
   Get,
   Headers,
-  HttpStatus,
+  HttpStatus, NotFoundException,
   Param,
-  Res,
+  Res
 } from "@nestjs/common";
 import {
   ApiHeader,
@@ -100,8 +100,7 @@ export class GetContentAssetController {
       );
 
     if (fetchResponse.dionysus_content_assets.length <= 0) {
-      response.status(404).end();
-      return;
+      throw new NotFoundException(`Asset with ID ${assetId} not found`);
     }
 
     const responseBody: GetContentAssetResponse = {

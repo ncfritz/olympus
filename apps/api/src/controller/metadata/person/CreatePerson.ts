@@ -14,7 +14,7 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlCreatePersonResponse = {
   insert_dionysus_people_one: {
@@ -103,7 +103,7 @@ export class CreatePersonController {
             images: {
               on_conflict: {
                 constraint: person_images_pkey
-                update_columns: [filePath, width, height, countryCode]
+                update_columns: [filePath, width, height, languageCode]
               }
               data: $images
             }
@@ -152,7 +152,7 @@ export class CreatePersonController {
     request.person.images.forEach((value) => {
       images.push({
         filePath: value.filePath,
-        countryCode: value.countryCode,
+        languageCode: value.languageCode,
         width: value.width,
         height: value.height,
       });

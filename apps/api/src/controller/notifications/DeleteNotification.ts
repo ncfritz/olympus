@@ -1,5 +1,5 @@
 import { DeleteNotificationResponse } from "@ncfritz/olympus-model/dist/notifications";
-import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
+import { Controller, Delete, HttpStatus, NotFoundException, Param, Res } from "@nestjs/common";
 import {
   ApiNoContentResponse,
   ApiOperation,
@@ -100,8 +100,7 @@ export class DeleteNotificationController extends BaseNotificationsController {
       );
 
     if (deleteResponse.delete_olympus_notifications.returning.length <= 0) {
-      response.status(HttpStatus.NOT_FOUND).send();
-      return;
+      throw new NotFoundException();
     }
 
     const notification = toDomainObject(

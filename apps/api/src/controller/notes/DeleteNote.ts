@@ -1,5 +1,5 @@
 import { Note, SingleNoteResponse } from "@ncfritz/olympus-model";
-import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
+import { Controller, Delete, HttpStatus, NotFoundException, Param, Res } from "@nestjs/common";
 import {
   ApiConsumes,
   ApiNoContentResponse,
@@ -79,8 +79,7 @@ export class DeleteNoteController {
       );
 
     if (getDeletedTimeResponse.minerva_notes_by_pk === null) {
-      response.status(HttpStatus.NOT_FOUND).end();
-      return;
+      throw new NotFoundException();
     }
 
     if (getDeletedTimeResponse.minerva_notes_by_pk.deletedTime === null) {

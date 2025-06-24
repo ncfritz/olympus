@@ -2,7 +2,7 @@ import {
   MetadataFetchJob,
   DeleteMetadataFetchJobResponse,
 } from "@ncfritz/olympus-model";
-import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
+import { Controller, Delete, HttpStatus, NotFoundException, Param, Res } from "@nestjs/common";
 import {
   ApiNoContentResponse,
   ApiOperation,
@@ -78,8 +78,7 @@ export class DeleteMetadataFetchJobController {
       );
 
     if (!fetchResponse.delete_dionysus_metadata_fetch_status_by_pk) {
-      response.status(HttpStatus.NOT_FOUND).end();
-      return;
+      throw new NotFoundException();
     }
 
     const deletedJob: MetadataFetchJob = toDomainObject(

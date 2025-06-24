@@ -132,6 +132,7 @@ export class CreateMetadataFetchJobController {
         {
           entityId: createdJob.id,
           entityType: createdJob.type,
+          bypassCache: request.bypassCache,
         },
         {
           persistent: true,

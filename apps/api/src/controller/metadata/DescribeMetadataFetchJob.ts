@@ -2,7 +2,7 @@ import {
   MetadataFetchJob,
   DescribeMetadataFetchJobResponse,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, NotFoundException, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -77,8 +77,7 @@ export class DescribeMetadataFetchJobController {
       );
 
     if (!fetchResponse.dionysus_metadata_fetch_status_by_pk) {
-      response.status(HttpStatus.NOT_FOUND).end();
-      return;
+      throw new NotFoundException();
     }
 
     const fetchedJob: MetadataFetchJob = toDomainObject(

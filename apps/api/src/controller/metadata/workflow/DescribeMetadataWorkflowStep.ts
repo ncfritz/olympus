@@ -1,5 +1,5 @@
 import { DescribeWorkflowStepResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, NotFoundException, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -92,8 +92,7 @@ export class DescribeMetadataWorkflowStepController {
       );
 
     if (!fetchResponse.dionysus_metadata_workflow_step_by_pk) {
-      response.status(HttpStatus.NOT_FOUND).end();
-      return;
+      throw new NotFoundException();
     }
 
     const fetchedStep = toDomainObject(

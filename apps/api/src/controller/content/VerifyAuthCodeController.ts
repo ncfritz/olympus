@@ -1,5 +1,5 @@
 import { EmptyResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Query, Res, UnauthorizedException } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -68,8 +68,7 @@ export class VerifyAuthCodeController {
     });
 
     if (!verified) {
-      response.status(HttpStatus.UNAUTHORIZED).end();
-      return;
+      throw new UnauthorizedException();
     }
 
     const fetchJwtKeyRequest = gql`

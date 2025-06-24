@@ -1,5 +1,5 @@
 import { SingleCalendarItemResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, NotFoundException, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -8,11 +8,11 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
+import { NotFoundError } from "rxjs";
 import {
   GraphQlMeeting,
   toDomainObject,
 } from "../../convert/minerva/MeetingConverter";
-import { NotFoundClientError } from "../../error";
 import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
 
 type GraphQlGetMeetingStartTimeResponse = {
@@ -70,14 +70,13 @@ export class GetNextCalendarItemOccurrenceController {
       );
 
     if (!currentMeetingQueryResponse.minerva_meetings_by_pk?.uid) {
-      response.status(HttpStatus.NOT_FOUND).end();
-      return;
+      throw new NotFoundException(
+        `Calendar Item with id ${meetingId} not found`,
+      );
     }
 
     if (!currentMeetingQueryResponse.minerva_meetings_by_pk) {
-      throw new NotFoundClientError(
-        `Calendar Item with id ${meetingId} not found`,
-      );
+      throw new NotFoundError(`Calendar Item with id ${meetingId} not found`);
     }
 
     const queryRequest = gql`

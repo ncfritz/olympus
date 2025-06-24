@@ -5,7 +5,7 @@ import {
   SendNotificationRequest,
   SendNotificationResponse,
 } from "@ncfritz/olympus-model/dist/notifications";
-import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { BadRequestException, Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
 import {
   ApiAcceptedResponse,
   ApiBody,
@@ -117,8 +117,7 @@ export class SendNotificationController {
     console.log(settings);
 
     if (!settings) {
-      response.status(HttpStatus.BAD_REQUEST).end();
-      return;
+      throw new BadRequestException();
     }
 
     const enqueueTasks: Promise<void>[] = [];

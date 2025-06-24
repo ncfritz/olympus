@@ -23,11 +23,10 @@ export class PingController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    console.log(this.configService.get("hasura.host"));
-
     const responseBody: PingResponse = {
       config: {
         "hasura.host": this.configService.get<string>("HASURA_HOST")!,
+        "amqp.host": this.configService.get<string>("AMQP_HOST")!,
       },
     };
 

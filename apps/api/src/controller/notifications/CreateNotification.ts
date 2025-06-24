@@ -2,7 +2,7 @@ import {
   CreateNotificationRequest,
   CreateNotificationResponse,
 } from "@ncfritz/olympus-model/dist/notifications";
-import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { Body, ConflictException, Controller, HttpStatus, Post, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConflictResponse,
@@ -104,8 +104,7 @@ export class CreateNotificationController extends BaseNotificationsController {
     if (
       duplicateQueryResponse.olympus_notifications_aggregate.aggregate.count > 0
     ) {
-      response.status(HttpStatus.CONFLICT).end();
-      return;
+      throw new ConflictException();
     }
 
     const insertRequest = gql`

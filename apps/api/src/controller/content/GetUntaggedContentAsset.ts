@@ -1,5 +1,5 @@
 import { GetContentAssetWithStatsResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, Headers, HttpStatus, Res } from "@nestjs/common";
+import { Controller, Get, Headers, HttpStatus, NotFoundException, Res, UnauthorizedException } from "@nestjs/common";
 import {
   ApiHeader,
   ApiOkResponse,
@@ -44,8 +44,7 @@ export class GetUntaggedContentAssetController {
     @Res() response: Response,
   ): Promise<void> {
     if (blackCurtain === "true") {
-      response.status(HttpStatus.UNAUTHORIZED).end();
-      return;
+      throw new UnauthorizedException();
     }
 
     const fetchRequest = gql`
@@ -124,8 +123,7 @@ export class GetUntaggedContentAssetController {
       );
 
     if (fetchResponse.dionysus_content_assets.length <= 0) {
-      response.status(404).end();
-      return;
+      throw new NotFoundException(`No untagged content assets were found`);
     }
 
     const responseBody: GetContentAssetWithStatsResponse = {

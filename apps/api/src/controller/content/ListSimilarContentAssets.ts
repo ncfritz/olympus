@@ -3,13 +3,14 @@ import {
   ListSimilarContentAssetsResponse,
 } from "@ncfritz/olympus-model";
 import {
+  BadRequestException,
   Controller,
   Get,
   Headers,
   HttpStatus,
   Param,
   Query,
-  Res,
+  Res
 } from "@nestjs/common";
 import {
   ApiHeader,
@@ -84,13 +85,11 @@ export class ListSimilarContentAssetsController {
     const splitTagTypes = tagTypes.split(",");
 
     if (splitTagNames.length <= 0 || splitTagTypes.length <= 0) {
-      response.status(HttpStatus.BAD_REQUEST).end();
-      return;
+      throw new BadRequestException("Invalid tag specification");
     }
 
     if (splitTagNames.length !== splitTagTypes.length) {
-      response.status(HttpStatus.BAD_REQUEST).end();
-      return;
+      throw new BadRequestException("Invalid tag specification");
     }
 
     const tagFilters: string[] = [];

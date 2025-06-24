@@ -5,7 +5,16 @@ import {
   WorkflowStatus,
   WorkflowStep,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Param, Post, Res } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  HttpStatus,
+  InternalServerErrorException,
+  Param,
+  Post,
+  Res
+} from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -87,8 +96,7 @@ export class CreateMetadataWorkflowStepController {
       );
 
     if (!checkParentWorkflowResponse.dionysus_metadata_workflow_by_pk?.id) {
-      response.status(HttpStatus.BAD_REQUEST).end();
-      return;
+      throw new BadRequestException();
     }
 
     const insertRequest = gql`
@@ -151,8 +159,7 @@ export class CreateMetadataWorkflowStepController {
     const createdBatchJob = createdWorkflowStep.job;
 
     if (!createdBatchJob) {
-      response.status(HttpStatus.INTERNAL_SERVER_ERROR).end();
-      return;
+      throw new InternalServerErrorException();
     }
 
     await this.amqpConnection.publish(
