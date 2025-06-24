@@ -1,8 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { DevtoolsModule } from "@nestjs/devtools-integration";
-import { PrometheusModule } from "@willsoto/nestjs-prometheus";
+import { ReporterModule } from "nestjs-metrics-reporter";
 import { PingController } from "../controller/PingController";
-import { LoggerMiddleware } from "../middleware/LoggerMiddleware";
 import { BatchJobApiModule } from "./BatchJobApiModule";
 import { ContentApiModule } from "./ContentApiModule";
 import { GraphQLClientModule } from "./GraphQLClientModule";
@@ -26,10 +25,14 @@ import { appName } from "../utils/logger";
       envFilePath: `${process.env.NODE_ENV}.env`,
       isGlobal: true,
     }),
-    PrometheusModule.register({
-      defaultLabels: {
-        app: appName,
-      },
+    ReporterModule.forRootAsync({
+      useFactory: () => ({
+        defaultMetricsEnabled: true,
+        defaultLabels: {
+          app: appName,
+          environment: process.env.NODE_ENV!,
+        },
+      }),
     }),
     RabbitModule,
     GraphQLClientModule,
@@ -47,7 +50,5 @@ import { appName } from "../utils/logger";
   controllers: [PingController],
 })
 export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggerMiddleware).forRoutes("*");
-  }
+  configure(consumer: MiddlewareConsumer) {}
 }
