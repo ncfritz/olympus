@@ -3,6 +3,7 @@ import { NestFactory, PartialGraphHost } from "@nestjs/core";
 import cookieParser from "cookie-parser";
 import fs from "fs";
 import { WinstonModule } from "nest-winston";
+import { PrometheusMetricsInterceptor } from "./middleware/PrometheusMetricsInterceptor";
 import { AppModule } from "./module/AppModule";
 import { logger } from "./util/logger";
 
@@ -23,6 +24,7 @@ async function bootstrap() {
     credentials: true,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   });
+  app.useGlobalInterceptors(new PrometheusMetricsInterceptor());
 
   await app.listen(process.env.LISTEN_PORT || 3100);
 }
