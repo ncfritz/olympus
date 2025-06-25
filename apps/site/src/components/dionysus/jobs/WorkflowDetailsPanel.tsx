@@ -44,7 +44,10 @@ const WorkflowDetailsPanel = ({ workflow }: WorkflowDetailsPanelProps) => {
 
   const fetchMetadataWorkflowSteps = async (id: string, quiet = false) => {
     setWorkflowStepsError(undefined);
-    setWorkflowStepsLoading(true);
+
+    if (!quiet) {
+      setWorkflowStepsLoading(true);
+    }
 
     try {
       const listMetadataWorkflowStepsResponse =
@@ -81,7 +84,7 @@ const WorkflowDetailsPanel = ({ workflow }: WorkflowDetailsPanelProps) => {
     return <Empty description={"No Batch Job Found"} />;
   }
 
-  let stepsContent = <></>;
+  let stepsContent;
 
   if (workflowStepsLoading) {
     stepsContent = <Spin size={"large"} />;
@@ -110,7 +113,7 @@ const WorkflowDetailsPanel = ({ workflow }: WorkflowDetailsPanelProps) => {
               : 0;
 
           let status: "normal" | "success" | "exception" = "normal";
-          let timing = <></>;
+          let timing;
 
           if (step.job.status === JobStatus.SUCCESS) {
             status = "success";
