@@ -12,7 +12,7 @@ import { tap } from "rxjs/operators";
 import { ReporterService } from "nestjs-metrics-reporter";
 
 @Injectable()
-export class LoggingInterceptor implements NestInterceptor {
+export class PrometheusMetricsInterceptor implements NestInterceptor {
   constructor(private reflector: Reflector) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {

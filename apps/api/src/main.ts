@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 import * as bodyParser from "body-parser";
 import * as fs from "fs";
 import { WinstonModule } from "nest-winston";
-import { LoggingInterceptor } from "./middleware/PrometheusOperationMetricsInterceptor";
+import { PrometheusMetricsInterceptor } from "./middleware/PrometheusOperationMetricsInterceptor";
 import { AppModule } from "./module/AppModule";
 import { logger } from "./utils/logger";
 
@@ -32,7 +32,7 @@ async function bootstrap() {
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
   });
   app.getHttpServer().setTimeout(2 * 60 * 1000);
-  app.useGlobalInterceptors(new LoggingInterceptor(new Reflector()));
+  app.useGlobalInterceptors(new PrometheusMetricsInterceptor(new Reflector()));
 
   if (enableApiExplorer) {
     const config = new DocumentBuilder()
