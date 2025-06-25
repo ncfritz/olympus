@@ -207,8 +207,10 @@ const WorkflowDetailsPanel = ({ workflow }: WorkflowDetailsPanelProps) => {
                 style={{
                   width: "100%",
                   marginLeft: 28,
-                  marginTop: 16,
+                  marginTop: 0,
                   marginBottom: 16,
+                  paddingLeft: 16,
+                  borderLeft: "4px solid #ededed",
                 }}
               >
                 <Row>
