@@ -1,8 +1,13 @@
-import { ReloadOutlined } from "@ant-design/icons";
+import {
+  CheckCircleOutlined,
+  QuestionCircleOutlined,
+  ReloadOutlined,
+} from "@ant-design/icons";
 import {
   Alert,
   Button,
   Col,
+  Collapse,
   Empty,
   notification,
   Progress,
@@ -10,14 +15,16 @@ import {
   Space,
   Spin,
   Statistic,
-  Steps,
-  Timeline,
   Typography,
 } from "antd";
+import { DateTime } from "luxon";
+import prettyMilliseconds from "pretty-ms";
 import React, { useEffect, useState } from "react";
 import workflowApi from "../../../api/workflowApi";
 import type { MetadataWorkflow } from "../../../pages/dionysus/jobs/workflow";
+import { JobStatus } from "../../../types/dionysus";
 import { openNotificationWithIcon } from "../../../utils/notifications";
+import RefreshTimer from "../../common/RefreshTimer";
 import Timestamp from "../../data/Timestamp";
 import { getBatchJobStatusIndicator } from "./utils";
 
@@ -33,6 +40,7 @@ const WorkflowDetailsPanel = ({ workflow }: WorkflowDetailsPanelProps) => {
   );
   const [workflowStepsLoading, setWorkflowStepsLoading] = useState(false);
   const [workflowStepsError, setWorkflowStepsError] = useState<any>(undefined);
+  const [activeKeys, setActiveKeys] = useState<string[]>([]);
 
   const fetchMetadataWorkflowSteps = async (id: string, quiet = false) => {
     setWorkflowStepsError(undefined);
@@ -65,6 +73,10 @@ const WorkflowDetailsPanel = ({ workflow }: WorkflowDetailsPanelProps) => {
     })();
   }, [workflow]);
 
+  const updateActivePanels = (keys: string[]) => {
+    setActiveKeys(keys);
+  };
+
   if (!workflow) {
     return <Empty description={"No Batch Job Found"} />;
   }
@@ -86,35 +98,98 @@ const WorkflowDetailsPanel = ({ workflow }: WorkflowDetailsPanelProps) => {
     stepsContent = <Empty description={"No workflow steps found"} />;
   } else {
     stepsContent = (
-      <Steps
-        className={"workflowSteps"}
-        direction={"vertical"}
+      <Collapse
+        ghost={true}
         size={"small"}
-        progressDot={true}
-        current={workflowSteps.length}
+        activeKey={activeKeys}
+        onChange={updateActivePanels}
         items={workflowSteps.map((step) => {
+          const percent =
+            step.job.totalRecords && step.job.totalRecords > 0
+              ? (step.job.processedRecords! / step.job.totalRecords) * 100
+              : 0;
+
+          let status: "normal" | "success" | "exception" = "normal";
+          let timing = <></>;
+
+          if (step.job.status === JobStatus.SUCCESS) {
+            status = "success";
+          } else if (
+            step.job.status === JobStatus.CANCELLED ||
+            step.job.status === JobStatus.FAILED
+          ) {
+            status = "exception";
+          }
+
+          if (step.job.status === JobStatus.STARTED) {
+            const startTime = DateTime.fromISO(
+              step.job.startedTime as unknown as string,
+            );
+            const now = DateTime.utc();
+            const runningMs = now.diff(startTime).milliseconds;
+            const timePerRecord = runningMs / step.job.processedRecords!;
+            const remainingEst = Math.ceil(
+              (step.job.totalRecords! - step.job.processedRecords!) *
+                timePerRecord,
+            );
+
+            timing = (
+              <Space size={8}>
+                <ReloadOutlined spin={true} />
+                <Typography.Text style={{ fontSize: "11px" }}>
+                  {prettyMilliseconds(remainingEst, { unitCount: 2 })}
+                </Typography.Text>
+              </Space>
+            );
+          } else {
+            const startTime = DateTime.fromISO(
+              step.job.startedTime as unknown as string,
+            );
+
+            if (!step.job.finishedTime) {
+              timing = (
+                <Space size={8}>
+                  <QuestionCircleOutlined />
+                  <Typography.Text style={{ fontSize: "11px" }}>
+                    Unknown
+                  </Typography.Text>
+                </Space>
+              );
+            } else {
+              const endTime = DateTime.fromISO(
+                step.job.finishedTime as unknown as string,
+              );
+              const runtimeMs = endTime.diff(startTime).milliseconds;
+              timing = (
+                <Space size={8}>
+                  <CheckCircleOutlined />
+                  <Typography.Text style={{ fontSize: "11px" }}>
+                    {prettyMilliseconds(runtimeMs, { unitCount: 2 })}
+                  </Typography.Text>
+                </Space>
+              );
+            }
+          }
+
           return {
             style: { width: "100%" },
-            title: (
-              <Row gutter={16} style={{ alignItems: "center" }}>
-                <Col span={7}>{step.job.type}</Col>
-                <Col span={13}>
+            label: (
+              <Row
+                gutter={16}
+                style={{ alignItems: "center", marginBottom: 8 }}
+              >
+                <Col span={6}>{step.job.type}</Col>
+                <Col span={9}>
                   <Progress
-                    status={"normal"}
-                    percent={
-                      (step.job.processedRecords / step.job.totalRecords) * 100
-                    }
                     size={"small"}
-                    style={{ paddingRight: 30 }}
+                    percent={Math.abs(percent)}
                     format={(percent) => {
-                      return percent
-                        ? `${percent.toLocaleString(undefined, {
-                            maximumFractionDigits: 1,
-                          })}%`
-                        : "";
+                      return `${percent?.toFixed(2)}%`;
                     }}
+                    status={status}
                   />
                 </Col>
+                <Col span={5}>{timing}</Col>
                 <Col
                   span={4}
                   style={{ display: "flex", justifyContent: "end" }}
@@ -122,6 +197,113 @@ const WorkflowDetailsPanel = ({ workflow }: WorkflowDetailsPanelProps) => {
                   {getBatchJobStatusIndicator(step.job.status)}
                 </Col>
               </Row>
+            ),
+            children: (
+              <Space
+                direction={"vertical"}
+                style={{
+                  width: "100%",
+                  marginLeft: 28,
+                  marginTop: 16,
+                  marginBottom: 16,
+                }}
+              >
+                <Row>
+                  <Col span={6}>
+                    <Statistic
+                      title={"Created Time"}
+                      value={step.job.createdTime}
+                      formatter={(value: string) => {
+                        return <Timestamp value={value} />;
+                      }}
+                      valueStyle={{ fontSize: "inherit" }}
+                    />
+                  </Col>
+                  <Col span={6}>
+                    <Statistic
+                      title={"Last Updated Time"}
+                      value={step.job.lastUpdatedTime}
+                      formatter={(value: string) => {
+                        return <Timestamp value={value} />;
+                      }}
+                      valueStyle={{ fontSize: "inherit" }}
+                    />
+                  </Col>
+                  <Col span={6}>
+                    <Statistic
+                      title={"Started Time"}
+                      value={step.job.startedTime}
+                      formatter={(value: string) => {
+                        return <Timestamp value={value} />;
+                      }}
+                      valueStyle={{ fontSize: "inherit" }}
+                    />
+                  </Col>
+                  <Col span={6}>
+                    <Statistic
+                      title={"Finished Time"}
+                      value={step.job.finishedTime}
+                      formatter={(value: string) => {
+                        return <Timestamp value={value} />;
+                      }}
+                      valueStyle={{ fontSize: "inherit" }}
+                    />
+                  </Col>
+                </Row>
+                <Row>
+                  <Col span={6}>
+                    <Statistic
+                      title={"Total Records"}
+                      value={step.job.totalRecords}
+                      valueStyle={{ fontSize: "inherit" }}
+                    />
+                  </Col>
+                  <Col span={6}>
+                    <Statistic
+                      title={"Processed Records"}
+                      value={step.job.processedRecords}
+                      valueStyle={{ fontSize: "inherit" }}
+                    />
+                  </Col>
+                  <Col span={6}>
+                    <Statistic
+                      title={"Duplicate Records"}
+                      value={step.job.duplicateRecords}
+                      valueStyle={{ fontSize: "inherit" }}
+                    />
+                  </Col>
+                  <Col span={6}>
+                    <Statistic
+                      title={"New Records"}
+                      value={step.job.newRecords}
+                      valueStyle={{ fontSize: "inherit" }}
+                    />
+                  </Col>
+                </Row>
+                <Row>
+                  <Col span={6}>
+                    <Statistic
+                      title={"Expired Records"}
+                      value={step.job.expiredRecords}
+                      valueStyle={{ fontSize: "inherit" }}
+                    />
+                  </Col>
+                  <Col span={6}>
+                    <Statistic
+                      title={"No-Op Records"}
+                      value={step.job.noOpRecords}
+                      valueStyle={{ fontSize: "inherit" }}
+                    />
+                  </Col>
+                  <Col span={6}>
+                    <Statistic
+                      title={"Skipped Records"}
+                      value={step.job.skippedRecords}
+                      valueStyle={{ fontSize: "inherit" }}
+                    />
+                  </Col>
+                </Row>
+              </Space>
             ),
           };
         })}
@@ -216,7 +398,16 @@ const WorkflowDetailsPanel = ({ workflow }: WorkflowDetailsPanelProps) => {
           </Space>
         </Col>
         <Col span={24}>
-          <Space style={{ width: "100%" }} styles={{ item: { width: "100%" } }}>
+          <RefreshTimer
+            ttlMs={30 * 1000}
+            fetchFunction={async () => {
+              await fetchMetadataWorkflowSteps(workflow?.id, true);
+            }}
+          />
+          <Space
+            style={{ width: "100%", marginTop: 8 }}
+            styles={{ item: { width: "100%" } }}
+          >
             {stepsContent}
           </Space>
         </Col>
