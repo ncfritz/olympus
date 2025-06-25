@@ -403,6 +403,9 @@ const WorkflowDetailsPanel = ({ workflow }: WorkflowDetailsPanelProps) => {
             fetchFunction={async () => {
               await fetchMetadataWorkflowSteps(workflow?.id, true);
             }}
+            disabled={
+              workflow.status === "success" || workflow.status === "failed"
+            }
           />
           <Space
             style={{ width: "100%", marginTop: 8 }}

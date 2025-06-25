@@ -6,6 +6,7 @@ interface RefreshTimerProps {
   fetchFunction: () => Promise<void>;
   showProgress?: boolean;
   renderProgress?: (progress: number) => ReactNode;
+  disabled?: boolean;
 }
 
 const RefreshTimer: React.FunctionComponent<RefreshTimerProps> = ({
@@ -14,6 +15,7 @@ const RefreshTimer: React.FunctionComponent<RefreshTimerProps> = ({
   fetchFunction,
   showProgress = true,
   renderProgress,
+  disabled = false,
 }: RefreshTimerProps) => {
   const [percent, setPercent] = useState(100);
 
@@ -54,6 +56,10 @@ const RefreshTimer: React.FunctionComponent<RefreshTimerProps> = ({
   };
 
   useEffect(() => {
+    if (disabled) {
+      return;
+    }
+
     if (!timer) {
       timer = setInterval(handler, tickInterval);
       console.log(`RefreshTimer created interval ${timer}`);
@@ -69,7 +75,7 @@ const RefreshTimer: React.FunctionComponent<RefreshTimerProps> = ({
 
   let content: any = <></>;
 
-  if (showProgress) {
+  if (showProgress && !disabled) {
     if (renderProgress) {
       content = renderProgress(percent);
     } else {
