@@ -1,7 +1,7 @@
 {
   "name": "@ncfritz/olympus-notification-agent",
   "description": "Asynchronous agent for handling Olympus notifications",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
   "repository": {
     "type": "git",
