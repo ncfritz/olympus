@@ -1,5 +1,4 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
-import { DevtoolsModule } from "@nestjs/devtools-integration";
 import { ReporterModule } from "nestjs-metrics-reporter";
 import { PingController } from "../controller/PingController";
 import { BatchJobApiModule } from "./BatchJobApiModule";
@@ -17,10 +16,6 @@ import { appName } from "../utils/logger";
 
 @Module({
   imports: [
-    DevtoolsModule.register({
-      http: process.env.NODE_ENV !== "production",
-      port: 13000,
-    }),
     ConfigModule.forRoot({
       envFilePath: `${process.env.NODE_ENV}.env`,
       isGlobal: true,
