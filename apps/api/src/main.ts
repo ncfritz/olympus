@@ -40,7 +40,7 @@ async function bootstrap() {
       .setDescription("Olympus API")
       .setVersion("1.0")
       .setContact("Neil Fritz", "https://ncfritz.net", "ncfritz@ncfritz.net")
-      .addTag("Dionysus")
+      .addTag("Olympus")
       .build();
     const document = SwaggerModule.createDocument(app, config);
 
