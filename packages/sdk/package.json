@@ -1,6 +1,6 @@
 {
-  "name": "@ncfritz/olympus-types",
-  "description": "Contains the model and request/response types for Olympus",
+  "name": "@ncfritz/olympus-sdk",
+  "description": "Typescript client for the Olympus set of APIs.",
   "version": "1.0.0",
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
   "repository": {
@@ -11,21 +11,47 @@
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist/**/*.js",
-    "dist/**/*.d.ts"
-  ],
+  "exports": {
+    "./dionysus": {
+      "types": "./dist/dionysus/index.d.ts",
+      "default": "./dist/dionysus/index.js"
+    },
+    "./minerva": {
+      "types": "./dist/minerva/index.d.ts",
+      "default": "./dist/minerva/index.js"
+    },
+    "./olympus": {
+      "types": "./dist/olympus/index.d.ts",
+      "default": "./dist/olympus/index.js"
+    }
+  },
   "scripts": {
     "prepare": "is-ci || husky install",
-    "clean": "rimraf dist && rimraf tsconfig.tsbuildinfo",
-    "prebuild": "rimraf dist",
-    "build": "tsc --incremental false",
+    "clean": "rimraf dist && rimraf src && rimraf tsconfig.tsbuildinfo",
+    "gen-olympus": "openapi-ts -f config/olympus.ts",
+    "gen-dionysus": "openapi-ts -f config/dionysus.ts",
+    "gen-minerva": "openapi-ts -f config/minerva.ts",
+    "prebuild": "npm run clean && npm run gen-olympus && npm run gen-dionysus && npm run gen-minerva",
+    "build": "tsc",
     "lint": "eslint ./src",
     "lintfix": "eslint ./src --fix"
   },
-  "devDependencies": {
-    "@ncfritz/olympus-model": "^1.4.2",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "debug": "^4.4.1",
     "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "@hey-api/openapi-ts": "^0.80.1",
+    "@ncfritz/olympus-api": "latest",
+    "@typescript-eslint/eslint-plugin": "^8.22.0",
+    "@typescript-eslint/parser": "^8.22.0",
+    "eslint": "^9.19.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.34.1"
   },
   "config": {
     "commitizen": {

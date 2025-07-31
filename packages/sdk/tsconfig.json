@@ -3,13 +3,9 @@
     "experimentalDecorators": true,
     "baseUrl": "./",
     "rootDir": "./src",
-    "outDir": "./dist",
+    "outDir": "dist",
     "module": "commonjs",
-    "target": "es5",
-    "lib": [
-      "es6",
-      "dom"
-    ],
+    "target": "esnext",
     "sourceMap": true,
     "allowJs": true,
     "jsx": "preserve",
@@ -29,6 +25,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "declaration": true,
+    "downlevelIteration": true,
   },
   "exclude": [
     "node_modules",
@@ -38,6 +35,6 @@
     "jest"
   ],
   "include": [
-    "src/**/*.ts",
+    "./src/**/*.ts"
   ]
 }
