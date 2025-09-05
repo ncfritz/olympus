@@ -47,6 +47,7 @@ export function ApiPaginationParams() {
       name: "sort",
       description: "The sort order to apply to the results",
       enum: SortDirection,
+      enumName: "SortDirection",
       required: false,
     }),
     ApiQuery({
