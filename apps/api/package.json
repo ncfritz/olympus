@@ -12,7 +12,7 @@
   "main": "dist/main.js",
   "scripts": {
     "prepare": "is-ci || husky install",
-    "clean": "rm -rf ./dist",
+    "clean": "rm -rf ./dist && rimraf tsconfig.tsbuildinfo",
     "prebuild": "rimraf dist",
     "build": "nest build",
     "postbuild": "jest --silent --config jest.config.js apiSpecGenerator",
