@@ -13,19 +13,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/content/ContentAssetConverter";
-import { GraphQLContentAsset } from "../../types/content";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetConverter";
+import { GraphQLContentAsset } from "../../../types/content";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQLCreateContentAssetResponse = {
   insert_dionysus_content_assets_one: GraphQLContentAsset;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateContentAssetController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Post("/v1/content/assets")
+  @Post("/content/assets")
   @ApiOperation({
     summary: "Creates a new content asset",
     description:
@@ -123,7 +123,7 @@ export class CreateContentAssetController {
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/content/assets/${createdContentAsset.id}`,
+        `http://localhost:3000/api/content/assets/${createdContentAsset.id}`,
       )
       .send(responseBody);
   }

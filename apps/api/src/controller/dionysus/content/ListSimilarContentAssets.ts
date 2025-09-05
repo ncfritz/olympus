@@ -22,9 +22,9 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/content/ContentAssetConverter";
-import { GraphQLContentAsset } from "../../types/content";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetConverter";
+import { GraphQLContentAsset } from "../../../types/content";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlListSimilarContentAssetsInput = {
   content_id: string;
@@ -34,11 +34,11 @@ type GraphQlListSimilarContentAssetsResponse = {
   dionysus_content_assets: GraphQLContentAsset[];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListSimilarContentAssetsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/content/asset/:assetId/similar")
+  @Get("/content/asset/:assetId/similar")
   @ApiOperation({
     summary: "Lists similar content assets",
     description:

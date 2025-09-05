@@ -11,9 +11,9 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/content/ContentAssetTagConverter";
-import { GraphQlContentAssetTag } from "../../types/content";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetTagConverter";
+import { GraphQlContentAssetTag } from "../../../types/content";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQLListContentAssetTagsInput = {
   contentId: string;
@@ -23,11 +23,11 @@ type GraphQLListContentAssetTagsResponse = {
   dionysus_content_tags: GraphQlContentAssetTag[];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListContentAssetTagsForAssetController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/content/asset/:assetId/tags")
+  @Get("/content/asset/:assetId/tags")
   @ApiOperation({
     summary: "Lists the content asset tags for a content asset",
     description: "Lists the content asset tags associated with a content asset",
@@ -71,7 +71,7 @@ export class ListContentAssetTagsForAssetController {
     });
 
     const tags: ContentAssetTag[] = [];
-    3;
+
     queryResponse.dionysus_content_tags.forEach((responseTag) => {
       tags.push(toDomainObject(responseTag));
     });

@@ -17,19 +17,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/content/ContentAssetConverter";
-import { GraphQLContentAsset } from "../../types/content";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetConverter";
+import { GraphQLContentAsset } from "../../../types/content";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlGerContentAssetQueryResponse = {
   dionysus_content_assets: GraphQLContentAsset[];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class GetContentAssetController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/content/asset/:assetId")
+  @Get("/content/asset/:assetId")
   @ApiOperation({
     summary: "Get a single content asset",
     description: "Gets a single content asset by ID.",

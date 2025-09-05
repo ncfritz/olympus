@@ -9,13 +9,13 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
-@Controller()
+@Controller({ version: "1" })
 export class DeleteContentAssetTagFromAssetController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Delete("/v1/content/asset/:assetId/tag/:tagId")
+  @Delete("/content/asset/:assetId/tag/:tagId")
   @ApiOperation({
     summary: "Removes a content asset tag from a content asset",
     description: "Removes a content asset tag from a content asset",

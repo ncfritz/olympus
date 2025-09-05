@@ -8,22 +8,22 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { GraphQLContentAssetBucketStatistic } from "../../types/content";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { GraphQLContentAssetBucketStatistic } from "../../../types/content";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
-type GraphQlContentAssetHeightQueryResponse = {
-  dionysus_content_asset_height_statistics: GraphQLContentAssetBucketStatistic[];
+type GraphQlContentAssetWidthQueryResponse = {
+  dionysus_content_asset_width_statistics: GraphQLContentAssetBucketStatistic[];
 };
 
-@Controller()
-export class GetContentAssetHeightStatisticsController {
+@Controller({ version: "1" })
+export class GetContentAssetWidthStatisticsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/content/assets/statistics/height")
+  @Get("/content/assets/statistics/width")
   @ApiOperation({
     summary: "Gets height statistics",
-    description: "Gets statistics on the content heights.",
-    operationId: "GetContentAssetHeightStatistics",
+    description: "Gets statistics on the content widths.",
+    operationId: "GetContentAssetWidthStatistics",
     tags: ["Content"],
   })
   @ApiProduces("application/json")
@@ -32,7 +32,7 @@ export class GetContentAssetHeightStatisticsController {
     description: "Header indicating black curtain status",
   })
   @ApiOkResponse({
-    description: "Height statistics.",
+    description: "Width statistics.",
     type: () => ContentStatisticsResponse,
   })
   @ApiStandardErrorResponses()
@@ -41,8 +41,8 @@ export class GetContentAssetHeightStatisticsController {
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query GetContentAssetHeightStatistics {
-        dionysus_content_asset_height_statistics(order_by: { bucket: asc }) {
+      query GetContentAssetWidthStatistics {
+        dionysus_content_asset_width_statistics(order_by: { bucket: asc }) {
           bucket
           bucket_width
           count
@@ -51,13 +51,13 @@ export class GetContentAssetHeightStatisticsController {
     `;
 
     const fetchResponse =
-      await this.graphQLClient.request<GraphQlContentAssetHeightQueryResponse>(
+      await this.graphQLClient.request<GraphQlContentAssetWidthQueryResponse>(
         fetchRequest,
       );
     const categories: string[] = [];
     const data: number[] = [];
 
-    fetchResponse.dionysus_content_asset_height_statistics.forEach((entry) => {
+    fetchResponse.dionysus_content_asset_width_statistics.forEach((entry) => {
       categories.push(`${entry.bucket}px`);
       data.push(entry.count);
     });
@@ -66,7 +66,7 @@ export class GetContentAssetHeightStatisticsController {
       categories: categories,
       series: [
         {
-          name: "Height",
+          name: "Width",
           data: data,
         },
       ],

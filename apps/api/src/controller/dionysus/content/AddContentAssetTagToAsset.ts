@@ -14,7 +14,7 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type FindTagsQueryResponse = {
   dionysus_content_tags: [
@@ -40,11 +40,11 @@ type InputQueryResponse = {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class AddContentAssetTagToAssetController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/content/asset/:assetId/tags")
+  @Put("/content/asset/:assetId/tags")
   @ApiOperation({
     summary: "Adds a teg to a content asset",
     description:

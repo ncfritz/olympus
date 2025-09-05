@@ -10,13 +10,13 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { Response } from "express";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateContentJobController {
   constructor(private readonly amqpConnection: AmqpConnection) {}
 
-  @Post("/v1/content/asset/:assetId/jobs")
+  @Post("/content/asset/:assetId/jobs")
   @ApiOperation({
     summary: "Creates a new content processing job",
     description: "",

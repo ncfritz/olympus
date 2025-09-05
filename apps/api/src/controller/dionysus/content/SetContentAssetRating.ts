@@ -13,13 +13,13 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
-@Controller()
+@Controller({ version: "1" })
 export class SetContentAssetRatingController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/content/asset/:assetId/rating")
+  @Put("/content/asset/:assetId/rating")
   @ApiOperation({
     summary: "Sets the rating for a content asset",
     description: "Sets the rating for a content asset",

@@ -11,9 +11,9 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/content/ContentAssetConverter";
-import { GraphQLContentAsset } from "../../types/content";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetConverter";
+import { GraphQLContentAsset } from "../../../types/content";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlListDuplicateContentAssetsInput = {
   sha: string;
@@ -23,11 +23,11 @@ type GraphQlListDuplicateContentAssetsResponse = {
   dionysus_content_assets: GraphQLContentAsset[];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListDuplicateContentAssetsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/content/assets/duplicates")
+  @Get("/content/assets/duplicates")
   @ApiOperation({
     summary: "Lists duplicate content assets based on a SHA256 sum",
     description:

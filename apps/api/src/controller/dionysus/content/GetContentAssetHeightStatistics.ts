@@ -8,23 +8,22 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import prettyMilliseconds from "pretty-ms";
-import { GraphQLContentAssetBucketStatistic } from "../../types/content";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { GraphQLContentAssetBucketStatistic } from "../../../types/content";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
-type GraphQlContentAssetDurationQueryResponse = {
-  dionysus_content_asset_duration_statistics: GraphQLContentAssetBucketStatistic[];
+type GraphQlContentAssetHeightQueryResponse = {
+  dionysus_content_asset_height_statistics: GraphQLContentAssetBucketStatistic[];
 };
 
-@Controller()
-export class GetContentAssetDurationStatisticsController {
+@Controller({ version: "1" })
+export class GetContentAssetHeightStatisticsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/content/assets/statistics/duration")
+  @Get("/content/assets/statistics/height")
   @ApiOperation({
     summary: "Gets height statistics",
-    description: "Gets statistics on the content duration.",
-    operationId: "GetContentAssetDurationStatistics",
+    description: "Gets statistics on the content heights.",
+    operationId: "GetContentAssetHeightStatistics",
     tags: ["Content"],
   })
   @ApiProduces("application/json")
@@ -33,7 +32,7 @@ export class GetContentAssetDurationStatisticsController {
     description: "Header indicating black curtain status",
   })
   @ApiOkResponse({
-    description: "Duration statistics.",
+    description: "Height statistics.",
     type: () => ContentStatisticsResponse,
   })
   @ApiStandardErrorResponses()
@@ -42,8 +41,8 @@ export class GetContentAssetDurationStatisticsController {
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query GetContentAssetDurationStatistics {
-        dionysus_content_asset_duration_statistics(order_by: { bucket: asc }) {
+      query GetContentAssetHeightStatistics {
+        dionysus_content_asset_height_statistics(order_by: { bucket: asc }) {
           bucket
           bucket_width
           count
@@ -52,24 +51,22 @@ export class GetContentAssetDurationStatisticsController {
     `;
 
     const fetchResponse =
-      await this.graphQLClient.request<GraphQlContentAssetDurationQueryResponse>(
+      await this.graphQLClient.request<GraphQlContentAssetHeightQueryResponse>(
         fetchRequest,
       );
     const categories: string[] = [];
     const data: number[] = [];
 
-    fetchResponse.dionysus_content_asset_duration_statistics.forEach(
-      (entry) => {
-        categories.push(`${prettyMilliseconds(entry.bucket * 60 * 1000)}`);
-        data.push(entry.count);
-      },
-    );
+    fetchResponse.dionysus_content_asset_height_statistics.forEach((entry) => {
+      categories.push(`${entry.bucket}px`);
+      data.push(entry.count);
+    });
 
     const responseBody: ContentStatisticsResponse = {
       categories: categories,
       series: [
         {
-          name: "duration",
+          name: "Height",
           data: data,
         },
       ],

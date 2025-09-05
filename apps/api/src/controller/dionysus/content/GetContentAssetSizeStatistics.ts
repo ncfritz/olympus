@@ -8,22 +8,23 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { GraphQLContentAssetBucketStatistic } from "../../types/content";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import prettyBytes from "pretty-bytes";
+import { GraphQLContentAssetBucketStatistic } from "../../../types/content";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
-type GraphQlContentAssetWidthQueryResponse = {
-  dionysus_content_asset_width_statistics: GraphQLContentAssetBucketStatistic[];
+type GraphQlContentAssetSizeQueryResponse = {
+  dionysus_content_asset_size_statistics: GraphQLContentAssetBucketStatistic[];
 };
 
-@Controller()
-export class GetContentAssetWidthStatisticsController {
+@Controller({ version: "1" })
+export class GetContentAssetSizeStatisticsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/content/assets/statistics/width")
+  @Get("/content/assets/statistics/size")
   @ApiOperation({
-    summary: "Gets height statistics",
-    description: "Gets statistics on the content widths.",
-    operationId: "GetContentAssetWidthStatistics",
+    summary: "Gets size statistics",
+    description: "Gets statistics on the content size.",
+    operationId: "GetContentAssetSizeStatistics",
     tags: ["Content"],
   })
   @ApiProduces("application/json")
@@ -32,7 +33,7 @@ export class GetContentAssetWidthStatisticsController {
     description: "Header indicating black curtain status",
   })
   @ApiOkResponse({
-    description: "Width statistics.",
+    description: "Duration statistics.",
     type: () => ContentStatisticsResponse,
   })
   @ApiStandardErrorResponses()
@@ -41,8 +42,8 @@ export class GetContentAssetWidthStatisticsController {
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query GetContentAssetWidthStatistics {
-        dionysus_content_asset_width_statistics(order_by: { bucket: asc }) {
+      query GetContentAssetDurationStatistics {
+        dionysus_content_asset_size_statistics(order_by: { bucket: asc }) {
           bucket
           bucket_width
           count
@@ -51,14 +52,16 @@ export class GetContentAssetWidthStatisticsController {
     `;
 
     const fetchResponse =
-      await this.graphQLClient.request<GraphQlContentAssetWidthQueryResponse>(
+      await this.graphQLClient.request<GraphQlContentAssetSizeQueryResponse>(
         fetchRequest,
       );
     const categories: string[] = [];
     const data: number[] = [];
 
-    fetchResponse.dionysus_content_asset_width_statistics.forEach((entry) => {
-      categories.push(`${entry.bucket}px`);
+    fetchResponse.dionysus_content_asset_size_statistics.forEach((entry) => {
+      categories.push(
+        `${prettyBytes(entry.bucket, { maximumFractionDigits: 1 })}`,
+      );
       data.push(entry.count);
     });
 
@@ -66,7 +69,7 @@ export class GetContentAssetWidthStatisticsController {
       categories: categories,
       series: [
         {
-          name: "Width",
+          name: "Size",
           data: data,
         },
       ],

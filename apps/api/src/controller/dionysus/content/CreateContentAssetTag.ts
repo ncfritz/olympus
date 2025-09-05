@@ -21,19 +21,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/content/ContentAssetTagConverter";
-import { GraphQlContentAssetTag } from "../../types/content";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetTagConverter";
+import { GraphQlContentAssetTag } from "../../../types/content";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQLCreateContentAssetResponse = {
   insert_dionysus_content_tags_one: GraphQlContentAssetTag;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateContentAssetTagController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Post("/v1/content/assetTags")
+  @Post("/content/assetTags")
   @ApiOperation({
     summary: "Creates a new content asset",
     description:
@@ -106,7 +106,7 @@ export class CreateContentAssetTagController {
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/content/assetTag/${createdContentAssetTag.id}`,
+        `http://localhost:3000/api/content/assetTag/${createdContentAssetTag.id}`,
       )
       .send(responseBody);
   }

@@ -8,22 +8,22 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import prettyBytes from "pretty-bytes";
-import { GraphQLContentAssetBucketStatistic } from "../../types/content";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import prettyMilliseconds from "pretty-ms";
+import { GraphQLContentAssetBucketStatistic } from "../../../types/content";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
-type GraphQlContentAssetSizeQueryResponse = {
-  dionysus_content_asset_size_statistics: GraphQLContentAssetBucketStatistic[];
+type GraphQlContentAssetDurationQueryResponse = {
+  dionysus_content_asset_duration_statistics: GraphQLContentAssetBucketStatistic[];
 };
 
-@Controller()
-export class GetContentAssetSizeStatisticsController {
+@Controller({ version: "1" })
+export class GetContentAssetDurationStatisticsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/content/assets/statistics/size")
+  @Get("/content/assets/statistics/duration")
   @ApiOperation({
-    summary: "Gets size statistics",
-    description: "Gets statistics on the content size.",
+    summary: "Gets height statistics",
+    description: "Gets statistics on the content duration.",
     operationId: "GetContentAssetDurationStatistics",
     tags: ["Content"],
   })
@@ -43,7 +43,7 @@ export class GetContentAssetSizeStatisticsController {
   ): Promise<void> {
     const fetchRequest = gql`
       query GetContentAssetDurationStatistics {
-        dionysus_content_asset_size_statistics(order_by: { bucket: asc }) {
+        dionysus_content_asset_duration_statistics(order_by: { bucket: asc }) {
           bucket
           bucket_width
           count
@@ -52,24 +52,24 @@ export class GetContentAssetSizeStatisticsController {
     `;
 
     const fetchResponse =
-      await this.graphQLClient.request<GraphQlContentAssetSizeQueryResponse>(
+      await this.graphQLClient.request<GraphQlContentAssetDurationQueryResponse>(
         fetchRequest,
       );
     const categories: string[] = [];
     const data: number[] = [];
 
-    fetchResponse.dionysus_content_asset_size_statistics.forEach((entry) => {
-      categories.push(
-        `${prettyBytes(entry.bucket, { maximumFractionDigits: 1 })}`,
-      );
-      data.push(entry.count);
-    });
+    fetchResponse.dionysus_content_asset_duration_statistics.forEach(
+      (entry) => {
+        categories.push(`${prettyMilliseconds(entry.bucket * 60 * 1000)}`);
+        data.push(entry.count);
+      },
+    );
 
     const responseBody: ContentStatisticsResponse = {
       categories: categories,
       series: [
         {
-          name: "Size",
+          name: "duration",
           data: data,
         },
       ],

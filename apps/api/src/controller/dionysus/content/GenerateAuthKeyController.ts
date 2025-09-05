@@ -3,11 +3,11 @@ import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import * as speakeasy from "speakeasy";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
-@Controller()
+@Controller({ version: "1" })
 export class GenerateAuthKeyController {
-  @Get("/v1/content/auth/secret")
+  @Get("/content/auth/secret")
   @ApiOperation({
     summary: "Issues a JWT authorizing black curtain access",
     description: "",

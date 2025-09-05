@@ -4,7 +4,7 @@ import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response, Request } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import * as jose from "jose";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type FetchJwtQueryInput = Record<string, never>;
 
@@ -16,11 +16,11 @@ type FetchJwtQueryResponse = {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CheckAuthController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/content/auth/status")
+  @Get("/content/auth/status")
   @ApiOperation({
     summary: "Issues a JWT authorizing black curtain access",
     description: "",

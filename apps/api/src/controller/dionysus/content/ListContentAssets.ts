@@ -20,12 +20,12 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/content/ContentAssetConverter";
-import { GraphQLContentAsset } from "../../types/content";
+import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetConverter";
+import { GraphQLContentAsset } from "../../../types/content";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
-} from "../../utils/controllerDecorators";
+} from "../../../utils/controllerDecorators";
 
 type GraphQlListContentAssetsResponse = {
   dionysus_content_assets: GraphQLContentAsset[];
@@ -36,11 +36,11 @@ type GraphQlListContentAssetsResponse = {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListContentAssetsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/content/assets")
+  @Get("/content/assets")
   @ApiOperation({
     summary: "Lists content assets",
     description:

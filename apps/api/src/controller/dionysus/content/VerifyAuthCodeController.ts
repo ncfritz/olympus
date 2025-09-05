@@ -17,7 +17,7 @@ import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import * as speakeasy from "speakeasy";
 import * as jose from "jose";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlGetContentAuthResponse = {
   dionysus_content_auth_by_pk: {
@@ -27,11 +27,11 @@ type GraphQlGetContentAuthResponse = {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class VerifyAuthCodeController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/content/auth/verify")
+  @Get("/content/auth/verify")
   @ApiOperation({
     summary: "Issues a JWT authorizing black curtain access",
     description: "",

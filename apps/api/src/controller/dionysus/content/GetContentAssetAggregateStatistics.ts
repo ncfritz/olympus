@@ -8,7 +8,7 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlAssetAggregationStatsResponse = {
   dionysus_content_assets_aggregate: {
@@ -34,11 +34,11 @@ type GraphQlAssetAggregationStatsResponse = {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class GetContentAssetAggregateStatisticsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/content/assets/statistics/aggregate")
+  @Get("/content/assets/statistics/aggregate")
   @ApiOperation({
     summary: "Gets aggregated statistics",
     description:

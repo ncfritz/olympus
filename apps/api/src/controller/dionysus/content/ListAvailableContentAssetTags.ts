@@ -11,19 +11,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/content/ContentAssetTagConverter";
-import { GraphQlContentAssetTag } from "../../types/content";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetTagConverter";
+import { GraphQlContentAssetTag } from "../../../types/content";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQListContentAssetTagsResponse = {
   dionysus_content_tags: GraphQlContentAssetTag[];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListAvailableContentAssetTagsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/content/assetTags")
+  @Get("/content/assetTags")
   @ApiOperation({
     summary: "Lists the available content asset tags",
     description:

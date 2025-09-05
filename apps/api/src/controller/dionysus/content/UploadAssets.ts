@@ -14,9 +14,8 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { Request } from "express";
-import { GraphQLClient } from "graphql-request";
 import { diskStorage } from "multer";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 const destinationDir = (
   req: Request,
@@ -26,14 +25,11 @@ const destinationDir = (
   callback(null, process.env.DIONYSUS_UPLOAD_PATH!);
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class UploadAssetsController {
-  constructor(
-    private readonly graphQLClient: GraphQLClient,
-    private readonly amqpConnection: AmqpConnection,
-  ) {}
+  constructor(private readonly amqpConnection: AmqpConnection) {}
 
-  @Post("/v1/content/upload")
+  @Post("/content/upload")
   @ApiOperation({
     summary: "Issues a JWT authorizing black curtain access",
     description: "",
@@ -62,8 +58,6 @@ export class UploadAssetsController {
     }),
   )
   public async uploadFile(@UploadedFiles() files: Express.Multer.File[]) {
-    this.graphQLClient !== null;
-
     files.forEach((file) => {
       console.log(file);
 
