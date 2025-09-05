@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment";
-import { BatchJob, JobType } from "../jobs/batchJob";
+import { BatchJob, JobType } from "../jobs";
 
 export enum WorkflowStepType {
   JOB_EXECUTION = "job_execution",
