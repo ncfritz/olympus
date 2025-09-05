@@ -88,9 +88,9 @@ export class CreateCollectionRequest {
 
 export class CreateCollectionResponse {
   @ApiProperty({
-    type: () => Collection,
+    type: Number,
   })
-  collection: Collection;
+  id: number;
 }
 
 export class DescribeCollectionResponse {
