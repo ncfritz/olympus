@@ -1,6 +1,13 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
+import { RouterModule } from "@nestjs/core";
 import { ReporterModule } from "nestjs-metrics-reporter";
 import { PingController } from "../controller/PingController";
+import {
+  DionysusApiConfig,
+  MinervaApiConfig,
+  OlympusApiConfig,
+} from "../schema/schemas";
+import { Routes } from "../utils/routes";
 import { BatchJobApiModule } from "./BatchJobApiModule";
 import { ContentApiModule } from "./ContentApiModule";
 import { GraphQLClientModule } from "./GraphQLClientModule";
@@ -29,16 +36,24 @@ import { appName } from "../utils/logger";
         },
       }),
     }),
+    RouterModule.register([
+      { path: Routes.OLYMPUS, module: NotificationsApiModule },
+      { path: Routes.DIONYSUS, module: BatchJobApiModule },
+      { path: Routes.DIONYSUS, module: ContentApiModule },
+      { path: Routes.DIONYSUS, module: MetadataApiModule },
+      { path: Routes.DIONYSUS, module: WorkflowApiModule },
+      { path: Routes.MINERVA, module: NotesApiModule },
+      { path: Routes.MINERVA, module: MeetingApiModule },
+    ]),
+    // Infrastructure modules
     RabbitModule,
     GraphQLClientModule,
-    BatchJobApiModule,
-    ContentApiModule,
-    MetadataApiModule,
-    NotesApiModule,
-    NotificationsApiModule,
-    MeetingApiModule,
+    // WebSockets
     WebSocketModule,
-    WorkflowApiModule,
+    // API Modules
+    ...OlympusApiConfig.modules,
+    ...DionysusApiConfig.modules,
+    ...MinervaApiConfig.modules,
   ],
   exports: [],
   providers: [],
