@@ -1,6 +1,7 @@
 import {
   MetadataFetchJob,
-  DeleteMetadataFetchJobResponse, MetadataJobType
+  DeleteMetadataFetchJobResponse,
+  MetadataJobType,
 } from "@ncfritz/olympus-model";
 import {
   Controller,
