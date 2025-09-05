@@ -12,12 +12,12 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/LanguageConverter";
-import { GraphQlLanguage } from "../../types/batchJobs";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/LanguageConverter";
+import { GraphQlLanguage } from "../../../../types/dionysus/metadata/language";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
-} from "../../utils/controllerDecorators";
+} from "../../../../utils/controllerDecorators";
 
 type GraphQlListLanguagesResponse = {
   dionysus_languages: GraphQlLanguage[];
@@ -28,11 +28,11 @@ type GraphQlListLanguagesResponse = {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListLanguagesController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/metadata/languages")
+  @Get("/metadata/languages")
   @ApiOperation({
     summary: "Lists languages",
     description:
@@ -49,9 +49,9 @@ export class ListLanguagesController {
   })
   @ApiPaginationParams()
   @ApiOkResponse({
+    type: ListLanguagesResponse,
     description:
       "The list of languages.  If there are more languages to list, a pagination token will be present.",
-    type: () => ListLanguagesResponse,
   })
   @ApiStandardErrorResponses()
   async handle(

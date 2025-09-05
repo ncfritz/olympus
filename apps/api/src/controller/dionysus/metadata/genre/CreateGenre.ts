@@ -13,19 +13,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/GenreConverter";
-import { GraphQlGenre } from "../../types/batchJobs";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/GenreConverter";
+import { GraphQlGenre } from "../../../../types/dionysus/metadata/genre";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlCreateGenreResponse = {
   insert_dionysus_genres_one: GraphQlGenre;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateGenreController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/metadata/genres")
+  @Put("/metadata/genres")
   @ApiOperation({
     summary: "Upserts a Movie or TV genre",
     description: "Creates or updates a movie or TV genre.",
@@ -40,8 +40,8 @@ export class CreateGenreController {
     description: "Input for the CreateGenre operation",
   })
   @ApiCreatedResponse({
+    type: CreateGenreResponse,
     description: "The record has been successfully created.",
-    type: CreateGenreRequest,
     headers: {
       Location: {
         description: "The location of the created job",
@@ -90,7 +90,7 @@ export class CreateGenreController {
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/genre/${createdGenre.type}/${createdGenre.id}`,
+        `http://localhost:3000/api//metdata/genre/${createdGenre.type}/${createdGenre.id}`,
       )
       .send(responseBody);
   }

@@ -1,7 +1,8 @@
 import {
   CreateNetworkRequest,
-  PartialNetworkAlternativeName,
-  PartialNetworkImage,
+  CreateNetworkResponse,
+  PartialAlternativeName,
+  PartialIdentifiableImage,
 } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Put, Res } from "@nestjs/common";
 import {
@@ -13,19 +14,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/NetworkConverter";
+import { GraphQlNetwork } from "../../../../types/dionysus/metadata/tvNetworks";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlCreateNetworkResponse = {
-  insert_dionysus_networks_one: {
-    id: string;
-  };
+  insert_dionysus_networks_one: GraphQlNetwork;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateNetworkController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/metadata/networks")
+  @Put("/metadata/networks")
   @ApiOperation({
     summary: "Upserts a network",
     description: "Creates or updates a network.",
@@ -40,8 +41,8 @@ export class CreateNetworkController {
     description: "Input for the CreateNetwork operation",
   })
   @ApiCreatedResponse({
+    type: CreateNetworkResponse,
     description: "The record has been successfully created.",
-    type: CreateNetworkRequest,
     headers: {
       Location: {
         description: "The location of the created network",
@@ -92,13 +93,39 @@ export class CreateNetworkController {
             update_columns: [name, logo, homepage, headquarters, country_id]
           }
         ) {
+          country {
+            createdTime
+            lastUpdatedTime
+            name
+            id
+          }
+          alternativeNames {
+            createdTime
+            lastUpdatedTime
+            name
+            type
+          }
+          createdTime
+          headquarters
+          homepage
           id
+          logo
+          name
+          lastUpdatedTime
+          images {
+            createdTime
+            filePath
+            fileType
+            height
+            id
+            lastUpdatedTime
+            width
+          }
         }
       }
     `;
 
-    const alternativeNames: Omit<PartialNetworkAlternativeName, "networkId">[] =
-      [];
+    const alternativeNames: Omit<PartialAlternativeName, "networkId">[] = [];
 
     request.network.alternativeNames.forEach((value) => {
       alternativeNames.push({
@@ -107,9 +134,9 @@ export class CreateNetworkController {
       });
     });
 
-    const images: Omit<PartialNetworkImage, "networkId">[] = [];
+    const images: PartialIdentifiableImage[] = [];
 
-    request.network.logos.forEach((value) => {
+    request.network.images.forEach((value) => {
       images.push({
         id: value.id,
         fileType: value.fileType,
@@ -134,17 +161,15 @@ export class CreateNetworkController {
         },
       );
 
-    console.log(insertResponse);
-
-    const responseBody = {
-      id: insertResponse.insert_dionysus_networks_one.id,
+    const responseBody: CreateNetworkResponse = {
+      network: toDomainObject(insertResponse.insert_dionysus_networks_one),
     };
 
     response
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/network/${insertResponse.insert_dionysus_networks_one.id}`,
+        `http://localhost:3000/api//metdata/network/${insertResponse.insert_dionysus_networks_one.id}`,
       )
       .send(responseBody);
   }

@@ -12,12 +12,12 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/CountryConverter";
-import { GraphQlCountry } from "../../types/batchJobs";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/CountryConverter";
+import { GraphQlCountry } from "../../../../types/dionysus/metadata/country";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
-} from "../../utils/controllerDecorators";
+} from "../../../../utils/controllerDecorators";
 
 type GraphQlListCountriesResponse = {
   dionysus_countries: GraphQlCountry[];
@@ -28,11 +28,11 @@ type GraphQlListCountriesResponse = {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListCountriesController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/metadata/countries")
+  @Get("/metadata/countries")
   @ApiOperation({
     summary: "Lists countries",
     description:
@@ -49,9 +49,9 @@ export class ListCountriesController {
   })
   @ApiPaginationParams()
   @ApiOkResponse({
+    type: ListCountriesResponse,
     description:
       "The list of countries.  If there are more countries to list, a pagination token will be present.",
-    type: () => ListCountriesResponse,
   })
   @ApiStandardErrorResponses()
   async handle(

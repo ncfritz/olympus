@@ -1,7 +1,7 @@
 import {
   Language,
-  CreateCountryResponse,
   CreateLanguageRequest,
+  CreateLanguageResponse,
 } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Put, Res } from "@nestjs/common";
 import {
@@ -13,19 +13,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/LanguageConverter";
-import { GraphQlLanguage } from "../../types/batchJobs";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/LanguageConverter";
+import { GraphQlLanguage } from "../../../../types/dionysus/metadata/language";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlCreateLanguageResponse = {
   insert_dionysus_languages_one: GraphQlLanguage;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateLanguageController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/metadata/languages")
+  @Put("/metadata/languages")
   @ApiOperation({
     summary: "Upserts a language",
     description: "Creates or updates a language.",
@@ -40,8 +40,8 @@ export class CreateLanguageController {
     description: "Input for the CreateCLanguage operation",
   })
   @ApiCreatedResponse({
+    type: CreateLanguageResponse,
     description: "The record has been successfully created.",
-    type: CreateLanguageRequest,
     headers: {
       Location: {
         description: "The location of the created job",
@@ -89,15 +89,15 @@ export class CreateLanguageController {
       insertResponse.insert_dionysus_languages_one,
     );
 
-    const responseBody: CreateCountryResponse = {
-      country: createdLanguage,
+    const responseBody: CreateLanguageResponse = {
+      language: createdLanguage,
     };
 
     response
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/language/${createdLanguage.id}`,
+        `http://localhost:3000/api//metdata/language/${createdLanguage.id}`,
       )
       .send(responseBody);
   }

@@ -1,7 +1,8 @@
 import {
   CreateProductionCompanyRequest,
-  PartialProductionCompanyAlternativeName,
-  PartialProductionCompanyLogo,
+  CreateProductionCompanyResponse,
+  PartialAlternativeName,
+  PartialIdentifiableImage,
 } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Put, Res } from "@nestjs/common";
 import {
@@ -13,19 +14,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toSparseDomainObject as toSparseProductionCompanyDomainObject } from "../../../../convert/dionysus/metadata/ProductionCompanyConverter";
+import { GraphQlSparseProductionCompany } from "../../../../types/dionysus/metadata/productionCompany";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlCreateProductionCompanyResponse = {
-  insert_dionysus_production_companies_one: {
-    id: string;
-  };
+  insert_dionysus_production_companies_one: GraphQlSparseProductionCompany;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateProductionCompanyController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/metadata/productionCompanies")
+  @Put("/metadata/productionCompanies")
   @ApiOperation({
     summary: "Upserts a production company",
     description: "Creates or updates a production company.",
@@ -40,8 +41,8 @@ export class CreateProductionCompanyController {
     description: "Input for the CreateProductionCompany operation",
   })
   @ApiCreatedResponse({
+    type: CreateProductionCompanyResponse,
     description: "The record has been successfully created.",
-    type: CreateProductionCompanyRequest,
     headers: {
       Location: {
         description: "The location of the created production company1",
@@ -104,15 +105,31 @@ export class CreateProductionCompanyController {
             ]
           }
         ) {
+          alternativeNames {
+            createdTime
+            lastUpdatedTime
+            name
+            type
+          }
+          country {
+            createdTime
+            id
+            lastUpdatedTime
+            name
+          }
+          createdTime
+          description
+          headquarters
+          homepage
           id
+          lastUpdatedTime
+          logo
+          name
         }
       }
     `;
 
-    const alternativeNames: Omit<
-      PartialProductionCompanyAlternativeName,
-      "productionCompanyId"
-    >[] = [];
+    const alternativeNames: PartialAlternativeName[] = [];
 
     request.company.alternativeNames.forEach((value) => {
       alternativeNames.push({
@@ -121,8 +138,7 @@ export class CreateProductionCompanyController {
       });
     });
 
-    const logos: Omit<PartialProductionCompanyLogo, "productionCompanyId">[] =
-      [];
+    const logos: PartialIdentifiableImage[] = [];
 
     request.company.logos.forEach((value) => {
       logos.push({
@@ -151,17 +167,17 @@ export class CreateProductionCompanyController {
         },
       );
 
-    console.log(insertResponse);
-
-    const responseBody = {
-      id: insertResponse.insert_dionysus_production_companies_one.id,
+    const responseBody: CreateProductionCompanyResponse = {
+      company: toSparseProductionCompanyDomainObject(
+        insertResponse.insert_dionysus_production_companies_one,
+      ),
     };
 
     response
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/productionCompanies/${insertResponse.insert_dionysus_production_companies_one.id}`,
+        `http://localhost:3000/api//metdata/productionCompanies/${insertResponse.insert_dionysus_production_companies_one.id}`,
       )
       .send(responseBody);
   }

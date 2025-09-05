@@ -1,7 +1,8 @@
 import {
   CreateCollectionRequest,
-  PartialCollectionImage,
+  CreateCollectionResponse,
   PartialCollectionPart,
+  PartialTypedImage,
 } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Put, Res } from "@nestjs/common";
 import {
@@ -13,7 +14,9 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/CollectionConverter";
+import { GraphQlCollection } from "../../../../types/dionysus/metadata";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlCreateCollectionInput = {
   id: number;
@@ -22,20 +25,18 @@ type GraphQlCreateCollectionInput = {
   posterPath: string;
   backdropPath: string;
   parts: PartialCollectionPart[];
-  images: PartialCollectionImage[];
+  images: PartialTypedImage[];
 };
 
 type GraphQlCreateCollectionResponse = {
-  insert_dionysus_collections_one: {
-    id: string;
-  };
+  insert_dionysus_collections_one: GraphQlCollection;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateCollectionController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/metadata/collections")
+  @Put("/metadata/collections")
   @ApiOperation({
     summary: "Upserts a collection",
     description: "Creates or updates a collection.",
@@ -50,8 +51,8 @@ export class CreateCollectionController {
     description: "Input for the CreateCollection operation",
   })
   @ApiCreatedResponse({
+    type: CreateCollectionResponse,
     description: "The record has been successfully created.",
-    type: CreateCollectionRequest,
     headers: {
       Location: {
         description: "The location of the created collection",
@@ -90,7 +91,7 @@ export class CreateCollectionController {
             images: {
               on_conflict: {
                 constraint: collection_images_pkey
-                update_columns: [width, height, countryCode]
+                update_columns: [width, height, languageCode]
               }
               data: $images
             }
@@ -100,7 +101,53 @@ export class CreateCollectionController {
             update_columns: [name, overview, posterPath, backdropPath]
           }
         ) {
+          backdropPath
+          createdTime
           id
+          images {
+            languageCode
+            createdTime
+            filePath
+            height
+            language {
+              createdTime
+              lastUpdatedTime
+              name
+              nativeName
+            }
+            lastUpdatedTime
+            type
+            width
+          }
+          lastUpdatedTime
+          name
+          overview
+          parts {
+            createdTime
+            lastUpdatedTime
+            movie {
+              adult
+              backdropPath
+              budget
+              createdTime
+              homepage
+              id
+              imdbId
+              lastUpdatedTime
+              originalLanguageCode
+              originalTitle
+              overview
+              posterPath
+              releaseDate
+              revenue
+              runtime
+              status
+              tagline
+              title
+              video
+            }
+          }
+          posterPath
         }
       }
     `;
@@ -118,17 +165,17 @@ export class CreateCollectionController {
       images: request.collection.images,
     });
 
-    console.log(insertResponse);
-
-    const responseBody = {
-      id: insertResponse.insert_dionysus_collections_one.id,
+    const responseBody: CreateCollectionResponse = {
+      collection: toDomainObject(
+        insertResponse.insert_dionysus_collections_one,
+      ),
     };
 
     response
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/collection/${insertResponse.insert_dionysus_collections_one.id}`,
+        `http://localhost:3000/api//metdata/collection/${insertResponse.insert_dionysus_collections_one.id}`,
       )
       .send(responseBody);
   }

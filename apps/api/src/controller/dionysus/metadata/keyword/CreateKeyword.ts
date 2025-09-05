@@ -13,19 +13,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/KeywordConverter";
-import { GraphQlKeyword } from "../../types/batchJobs";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/KeywordConverter";
+import { GraphQlKeyword } from "../../../../types/dionysus/metadata/keyword";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlCreateKeywordResponse = {
   insert_dionysus_keywords_one: GraphQlKeyword;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateKeywordController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/metadata/keywords")
+  @Put("/metadata/keywords")
   @ApiOperation({
     summary: "Upserts a Movie or TV keyword",
     description: "Creates or updates a movie or TV keyword.",
@@ -40,8 +40,8 @@ export class CreateKeywordController {
     description: "Input for the CreateKeyword operation",
   })
   @ApiCreatedResponse({
+    type: CreateKeywordResponse,
     description: "The record has been successfully created.",
-    type: CreateKeywordRequest,
     headers: {
       Location: {
         description: "The location of the created job",
@@ -88,7 +88,7 @@ export class CreateKeywordController {
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/keyword/${createdKeyword.id}`,
+        `http://localhost:3000/api//metdata/keyword/${createdKeyword.id}`,
       )
       .send(responseBody);
   }

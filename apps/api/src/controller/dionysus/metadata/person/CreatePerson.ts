@@ -1,8 +1,9 @@
 import {
   CreatePersonRequest,
+  CreatePersonResponse,
   PartialPersonAlsoKnownAs,
-  PartialPersonExternalId,
-  PartialPersonImage,
+  PartialExternalId,
+  PartialBaseImage,
 } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Put, Res } from "@nestjs/common";
 import {
@@ -14,19 +15,17 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlCreatePersonResponse = {
-  insert_dionysus_people_one: {
-    id: string;
-  };
+  insert_dionysus_people_one: { id: number };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreatePersonController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/metadata/people")
+  @Put("/metadata/people")
   @ApiOperation({
     summary: "Upserts a person",
     description: "Creates or updates a person.",
@@ -42,7 +41,7 @@ export class CreatePersonController {
   })
   @ApiCreatedResponse({
     description: "The record has been successfully created.",
-    type: CreatePersonRequest,
+    type: CreatePersonResponse,
     headers: {
       Location: {
         description: "The location of the created person",
@@ -68,6 +67,7 @@ export class CreatePersonController {
         $imdbId: String
         $knownForDepartment: String
         $profilePath: String
+        $popularity: numeric
         $externalIds: [dionysus_person_external_ids_insert_input!]!
         $alsoKnownAs: [dionysus_person_aka_insert_input!]!
         $images: [dionysus_person_images_insert_input!]!
@@ -86,6 +86,7 @@ export class CreatePersonController {
             imdbId: $imdbId
             knownForDepartment: $knownForDepartment
             profilePath: $profilePath
+            popularity: $popularity
             externalIds: {
               on_conflict: {
                 constraint: person_external_ids_pkey
@@ -122,6 +123,7 @@ export class CreatePersonController {
               imdbId
               knownForDepartment
               profilePath
+              popularity
             ]
           }
         ) {
@@ -130,7 +132,7 @@ export class CreatePersonController {
       }
     `;
 
-    const externalIds: PartialPersonExternalId[] = [];
+    const externalIds: PartialExternalId[] = [];
 
     request.person.externalIds.forEach((value) => {
       externalIds.push({
@@ -147,7 +149,7 @@ export class CreatePersonController {
       });
     });
 
-    const images: PartialPersonImage[] = [];
+    const images: PartialBaseImage[] = [];
 
     request.person.images.forEach((value) => {
       images.push({
@@ -174,15 +176,14 @@ export class CreatePersonController {
           imdbId: request.person.imdbId,
           knownForDepartment: request.person.knownForDepartment,
           profilePath: request.person.profilePath,
+          popularity: request.person.popularity,
           externalIds: externalIds,
           alsoKnownAs: alsoKnownAs,
           images: images,
         },
       );
 
-    console.log(insertResponse);
-
-    const responseBody = {
+    const responseBody: CreatePersonResponse = {
       id: insertResponse.insert_dionysus_people_one.id,
     };
 
@@ -190,7 +191,7 @@ export class CreatePersonController {
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/person/${insertResponse.insert_dionysus_people_one.id}`,
+        `http://localhost:3000/api//metdata/person/${insertResponse.insert_dionysus_people_one.id}`,
       )
       .send(responseBody);
   }

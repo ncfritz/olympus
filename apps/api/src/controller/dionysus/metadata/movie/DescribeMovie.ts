@@ -15,19 +15,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { GraphQlMovie } from "../../../types/dionysus/metadata";
-import { toDomainObject } from "../../../convert/metadata/MovieConverter";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { GraphQlMovie } from "../../../../types/dionysus/metadata/movie";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/MovieConverter";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlGetMovieResponse = {
   dionysus_movies_by_pk: GraphQlMovie;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class DescribeMovieController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/dionysus/movie/:movieId")
+  @Get("/metadata/movie/:movieId")
   @ApiOperation({
     summary: "Describes a movie in Dionysus",
     description: "Retrieves the details of a movie in Dionysus.",
@@ -36,15 +36,10 @@ export class DescribeMovieController {
   })
   @ApiProduces("application/json")
   @ApiParam({
-    name: "entityId",
-    description: "The ID of the movie to describe",
-    type: String,
-    required: true,
-  })
-  @ApiParam({
     name: "movieId",
     description: "The ID of the movie to describe",
-    type: String,
+    type: Number,
+    required: true,
   })
   @ApiOkResponse({
     description: "The record has been successfully fetched.",
@@ -52,7 +47,7 @@ export class DescribeMovieController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("movieId") movieId: string,
+    @Param("movieId") movieId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
@@ -68,6 +63,7 @@ export class DescribeMovieController {
           lastUpdatedTime
           originalTitle
           overview
+          popularity
           posterPath
           releaseDate
           revenue
@@ -75,6 +71,8 @@ export class DescribeMovieController {
           status
           tagline
           title
+          voteAverage
+          voteCount
           video
           alternativeTitles {
             country {
@@ -87,108 +85,6 @@ export class DescribeMovieController {
             lastUpdatedTime
             title
             type
-          }
-          cast {
-            character
-            createdTime
-            creditId
-            lastUpdatedTime
-            order
-            originalName
-            castId
-            person {
-              adult
-              alsoKnownAs {
-                createdTime
-                lastUpdatedTime
-                name
-              }
-              biography
-              birthday
-              birthplace
-              createdTime
-              deathday
-              gender
-              homepage
-              id
-              imdbId
-              knownForDepartment
-              lastUpdatedTime
-              name
-              profilePath
-              externalIds {
-                createdTime
-                externalId
-                lastUpdatedTime
-                type
-              }
-              images {
-                createdTime
-                filePath
-                height
-                id
-                lastUpdatedTime
-                width
-                language {
-                  createdTime
-                  lastUpdatedTime
-                  name
-                  nativeName
-                  id
-                }
-              }
-            }
-          }
-          crew {
-            createdTime
-            creditId
-            department
-            job
-            lastUpdatedTime
-            originalName
-            person {
-              adult
-              biography
-              alsoKnownAs {
-                createdTime
-                lastUpdatedTime
-                name
-              }
-              birthday
-              birthplace
-              createdTime
-              deathday
-              externalIds {
-                createdTime
-                externalId
-                id
-                lastUpdatedTime
-                type
-              }
-              gender
-              homepage
-              id
-              images {
-                language {
-                  createdTime
-                  lastUpdatedTime
-                  name
-                  nativeName
-                  id
-                }
-                createdTime
-                filePath
-                height
-                id
-                lastUpdatedTime
-                width
-              }
-              imdbId
-              knownForDepartment
-              lastUpdatedTime
-              name
-              profilePath
-            }
           }
           externalIds {
             createdTime

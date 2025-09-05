@@ -13,19 +13,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/CountryConverter";
-import { GraphQlCountry } from "../../types/batchJobs";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/CountryConverter";
+import { GraphQlCountry } from "../../../../types/dionysus/metadata/country";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
-type GraphQlCreateCoountryResponse = {
+type GraphQlCreateCountryResponse = {
   insert_dionysus_countries_one: GraphQlCountry;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateCountryController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/metadata/countries")
+  @Put("/metadata/countries")
   @ApiOperation({
     summary: "Upserts a country",
     description: "Creates or updates a country.",
@@ -40,8 +40,8 @@ export class CreateCountryController {
     description: "Input for the CreateCertification operation",
   })
   @ApiCreatedResponse({
+    type: CreateCountryResponse,
     description: "The record has been successfully created.",
-    type: CreateCountryRequest,
     headers: {
       Location: {
         description: "The location of the created job",
@@ -68,7 +68,7 @@ export class CreateCountryController {
     `;
 
     const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateCoountryResponse>(
+      await this.graphQLClient.request<GraphQlCreateCountryResponse>(
         insertRequest,
         {
           id: request.country.id,
@@ -88,7 +88,7 @@ export class CreateCountryController {
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/contry/${createdCountry.id}`,
+        `http://localhost:3000/api//metdata/contry/${createdCountry.id}`,
       )
       .send(responseBody);
   }

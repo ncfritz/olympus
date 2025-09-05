@@ -1,4 +1,7 @@
-import { CreateMovieRequest } from "@ncfritz/olympus-model";
+import {
+  CreateMovieRequest,
+  CreateMovieResponse,
+} from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Put, Res } from "@nestjs/common";
 import {
   ApiBody,
@@ -9,19 +12,18 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { GraphQlSparseMovie } from "../../../../types/dionysus/metadata/movie";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlCreateMovieResponse = {
-  insert_dionysus_movies_one: {
-    id: string;
-  };
+  insert_dionysus_movies_one: GraphQlSparseMovie;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateMovieController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/metadata/movies")
+  @Put("/metadata/movies")
   @ApiOperation({
     summary: "Upserts a movie",
     description: "Creates or updates a movie.",
@@ -37,7 +39,7 @@ export class CreateMovieController {
   })
   @ApiCreatedResponse({
     description: "The record has been successfully created.",
-    type: CreateMovieRequest,
+    type: CreateMovieResponse,
     headers: {
       Location: {
         description: "The location of the created movie1",
@@ -60,6 +62,7 @@ export class CreateMovieController {
         $originalLanguageCode: String!
         $originalTitle: String!
         $overview: String!
+        $popularity: numeric
         $posterPath: String
         $releaseDate: String
         $revenue: numeric!
@@ -67,6 +70,8 @@ export class CreateMovieController {
         $status: String!
         $tagline: String!
         $title: String!
+        $voteAverage: numeric
+        $voteCount: numeric
         $video: Boolean!
         $alternativeTitles: [dionysus_movie_alternative_titles_insert_input!]!
         $cast: [dionysus_movie_cast_insert_input!]!
@@ -77,6 +82,7 @@ export class CreateMovieController {
         $keywords: [dionysus_movie_keywords_insert_input!]!
         $productionCompanies: [dionysus_movie_production_companies_insert_input!]!
         $productionCountries: [dionysus_movie_production_countries_insert_input!]!
+        $recommendations: [dionysus_movie_recommendations_insert_input!]!
         $releaseDates: [dionysus_movie_release_dates_insert_input!]!
         $spokenLanguages: [dionysus_movie_spoken_languages_insert_input!]!
         $videos: [dionysus_movie_videos_insert_input!]!
@@ -92,6 +98,7 @@ export class CreateMovieController {
             originalLanguageCode: $originalLanguageCode
             originalTitle: $originalTitle
             overview: $overview
+            popularity: $popularity
             posterPath: $posterPath
             releaseDate: $releaseDate
             revenue: $revenue
@@ -99,6 +106,8 @@ export class CreateMovieController {
             status: $status
             tagline: $tagline
             title: $title
+            voteAverage: $voteAverage
+            voteCount: $voteCount
             video: $video
             alternativeTitles: {
               on_conflict: {
@@ -172,21 +181,22 @@ export class CreateMovieController {
             productionCountries: {
               on_conflict: {
                 constraint: movie_production_countries_pkey
-                update_columns: [countryId]
+                update_columns: [countryCode]
               }
               data: $productionCountries
             }
+            recommendations: { data: $recommendations }
             releaseDates: {
               on_conflict: {
                 constraint: movie_release_dates_pkey
-                update_columns: [type, note, languageId, certificationId]
+                update_columns: [type, note, languageCode, certificationId]
               }
               data: $releaseDates
             }
             spokenLanguages: {
               on_conflict: {
                 constraint: movie_spoken_languages_pkey
-                update_columns: [languageId]
+                update_columns: [languageCode]
               }
               data: $spokenLanguages
             }
@@ -194,8 +204,8 @@ export class CreateMovieController {
               on_conflict: {
                 constraint: movie_videos_pkey
                 update_columns: [
-                  languageId
-                  countryId
+                  languageCode
+                  countryCode
                   name
                   key
                   site
@@ -219,6 +229,7 @@ export class CreateMovieController {
               originalLanguageCode
               originalTitle
               overview
+              popularity
               posterPath
               releaseDate
               revenue
@@ -226,11 +237,34 @@ export class CreateMovieController {
               status
               tagline
               title
+              voteAverage
+              voteCount
               video
             ]
           }
         ) {
+          adult
+          backdropPath
+          budget
+          createdTime
+          homepage
           id
+          imdbId
+          lastUpdatedTime
+          originalLanguageCode
+          originalTitle
+          overview
+          popularity
+          posterPath
+          releaseDate
+          revenue
+          runtime
+          status
+          tagline
+          title
+          voteCount
+          voteAverage
+          video
         }
       }
     `;
@@ -245,6 +279,7 @@ export class CreateMovieController {
       originalLanguageCode: request.movie.originalLanguageCode,
       originalTitle: request.movie.originalTitle,
       overview: request.movie.overview,
+      popularity: request.movie.popularity,
       posterPath: request.movie.posterPath,
       releaseDate: request.movie.releaseDate,
       revenue: request.movie.revenue,
@@ -252,6 +287,8 @@ export class CreateMovieController {
       status: request.movie.status,
       tagline: request.movie.tagline,
       title: request.movie.title,
+      voteAverage: request.movie.voteAverage,
+      voteCount: request.movie.voteAverage,
       video: request.movie.video,
       alternativeTitles: request.movie.alternativeTitles,
       cast: request.movie.cast,
@@ -262,6 +299,7 @@ export class CreateMovieController {
       keywords: request.movie.keywords,
       productionCompanies: request.movie.productionCompanies,
       productionCountries: request.movie.productionCountries,
+      recommendations: request.movie.recommendations,
       releaseDates: request.movie.releaseDates,
       spokenLanguages: request.movie.spokenLanguages,
       videos: request.movie.videos,
@@ -281,7 +319,7 @@ export class CreateMovieController {
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/movies/${insertResponse.insert_dionysus_movies_one.id}`,
+        `http://localhost:3000/api//metdata/movies/${insertResponse.insert_dionysus_movies_one.id}`,
       )
       .send(responseBody);
   }

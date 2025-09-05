@@ -12,12 +12,12 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/GenreConverter";
-import { GraphQlGenre } from "../../types/batchJobs";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/GenreConverter";
+import { GraphQlGenre } from "../../../../types/dionysus/metadata/genre";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
-} from "../../utils/controllerDecorators";
+} from "../../../../utils/controllerDecorators";
 
 type GraphQlListGenresResponse = {
   dionysus_genres: GraphQlGenre[];
@@ -28,11 +28,11 @@ type GraphQlListGenresResponse = {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListGenresController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/metadata/genres")
+  @Get("/metadata/genres")
   @ApiOperation({
     summary: "Lists genres",
     description:
@@ -49,9 +49,9 @@ export class ListGenresController {
   })
   @ApiPaginationParams()
   @ApiOkResponse({
+    type: ListGenresResponse,
     description:
       "The list of genres.  If there are more genres to list, a pagination token will be present.",
-    type: () => ListGenresResponse,
   })
   @ApiStandardErrorResponses()
   async handle(

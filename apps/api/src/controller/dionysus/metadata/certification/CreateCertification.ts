@@ -13,19 +13,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/CertificationConverter";
-import { GraphQlCertification } from "../../types/batchJobs";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/CertificationConverter";
+import { GraphQlCertification } from "../../../../types/dionysus/metadata/certification";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlCreateCertificationResponse = {
   insert_dionysus_certifications_one: GraphQlCertification;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateCertificationController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/metadata/certifications")
+  @Put("/metadata/certifications")
   @ApiOperation({
     summary: "Upserts a Movie or TV certification",
     description: "Creates or updates a movie or TV certification.",
@@ -40,8 +40,8 @@ export class CreateCertificationController {
     description: "Input for the CreateCertification operation",
   })
   @ApiCreatedResponse({
+    type: CreateCertificationResponse,
     description: "The record has been successfully created.",
-    type: CreateCertificationRequest,
     headers: {
       Location: {
         description: "The location of the created job",
@@ -109,7 +109,7 @@ export class CreateCertificationController {
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/certification/${
+        `http://localhost:3000/api//metdata/certification/${
           createdCertification.country
         }/${createdCertification.type}/${encodeURIComponent(
           createdCertification.certification,

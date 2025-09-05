@@ -14,19 +14,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlCreateTVSeriesResponse = {
   insert_dionysus_tv_series_one: {
-    id: string;
+    id: number;
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateTVSeriesController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/metadata/tvSeries")
+  @Put("/metadata/tvSeries")
   @ApiOperation({
     summary: "Upserts a TV series",
     description: "Creates or updates a TV series.",
@@ -41,8 +41,8 @@ export class CreateTVSeriesController {
     description: "Input for the CreateTVSeries operation",
   })
   @ApiCreatedResponse({
-    description: "The record has been successfully created.",
     type: CreateTVSeriesResponse,
+    description: "The record has been successfully created.",
     headers: {
       Location: {
         description: "The location of the created TV series",
@@ -65,17 +65,22 @@ export class CreateTVSeriesController {
         $lastAirDate: String
         $lastEpisodeToAirId: numeric
         $name: String!
+        $nextEpisodeToAirId: numeric
         $numberOfEpisodes: numeric
         $numberOfSeasons: numeric
         $originalName: String!
         $original_language: String!
         $overview: String
+        $popularity: numeric
         $posterPath: String
         $status: String!
         $tagline: String
         $type: String!
+        $voteAverage: numeric
+        $voteCount: numeric
         $alternativeTitles: [dionysus_tv_series_alternative_titles_insert_input!]!
         $cast: [dionysus_tv_series_cast_insert_input!]!
+        $createdBy: [dionysus_tv_series_created_by_insert_input!]!
         $certifications: [dionysus_tv_series_content_ratings_insert_input!]!
         $crew: [dionysus_tv_series_crew_insert_input!]!
         $episodeRunTimes: [dionysus_tv_series_episode_run_times_insert_input!]!
@@ -88,6 +93,7 @@ export class CreateTVSeriesController {
         $originCountries: [dionysus_tv_series_origin_countries_insert_input!]!
         $productionCompanies: [dionysus_tv_series_production_companies_insert_input!]!
         $productionCountries: [dionysus_tv_series_production_countries_insert_input!]!
+        $recommendations: [dionysus_tv_series_recommendations_insert_input!]!
         $spokenLanguages: [dionysus_tv_series_spoken_languages_insert_input!]!
         $videos: [dionysus_tv_series_videos_insert_input!]!
         $castRoles: [dionysus_tv_series_cast_roles_insert_input!]!
@@ -104,15 +110,19 @@ export class CreateTVSeriesController {
             lastAirDate: $lastAirDate
             lastEpisodeToAirId: $lastEpisodeToAirId
             name: $name
+            nextEpisodeToAirId: $nextEpisodeToAirId
             numberOfEpisodes: $numberOfEpisodes
             numberOfSeasons: $numberOfSeasons
             originalName: $originalName
             original_language: $original_language
             overview: $overview
+            popularity: $popularity
             posterPath: $posterPath
             status: $status
             tagline: $tagline
             type: $type
+            voteAverage: $voteAverage
+            voteCount: $voteCount
             alternativeTitles: {
               on_conflict: {
                 constraint: tv_series_alternative_titles_pkey
@@ -133,6 +143,13 @@ export class CreateTVSeriesController {
                 update_columns: [seriesId]
               }
               data: $certifications
+            }
+            createdBy: {
+              on_conflict: {
+                constraint: tv_series_created_by_pkey
+                update_columns: [seriesId]
+              }
+              data: $createdBy
             }
             crew: {
               on_conflict: {
@@ -165,7 +182,7 @@ export class CreateTVSeriesController {
             images: {
               on_conflict: {
                 constraint: tv_series_images_pkey
-                update_columns: [width, height, countryCode]
+                update_columns: [width, height, languageCode]
               }
               data: $images
             }
@@ -211,6 +228,7 @@ export class CreateTVSeriesController {
               }
               data: $productionCountries
             }
+            recommendations: { data: $recommendations }
             spokenLanguages: {
               on_conflict: {
                 constraint: tv_series_spoken_languages_pkey
@@ -246,16 +264,20 @@ export class CreateTVSeriesController {
               inProduction
               lastAirDate
               lastEpisodeToAirId
+              nextEpisodeToAirId
               name
               numberOfEpisodes
               numberOfSeasons
               originalName
               original_language
               overview
+              popularity
               posterPath
               status
               tagline
               type
+              voteAverage
+              voteCount
             ]
           }
         ) {
@@ -322,19 +344,24 @@ export class CreateTVSeriesController {
       homepage: request.tvSeries.homepage,
       inProduction: request.tvSeries.inProduction,
       lastAirDate: request.tvSeries.lastAirDate,
+      lastEpisodeToAirId: request.tvSeries.lastEpisodeToAirId,
       name: request.tvSeries.name,
       numberOfEpisodes: request.tvSeries.numberOfEpisodes || 0,
       numberOfSeasons: request.tvSeries.numberOfSeasons || 0,
       originalName: request.tvSeries.originalName,
       original_language: request.tvSeries.originalLanguageCode,
       overview: request.tvSeries.overview,
+      popularity: request.tvSeries.popularity,
       posterPath: request.tvSeries.posterPath,
       status: request.tvSeries.status,
       tagline: request.tvSeries.tagline,
       type: request.tvSeries.type,
+      voteAverage: request.tvSeries.voteAverage,
+      voteCount: request.tvSeries.voteCount,
       alternativeTitles: request.tvSeries.alternativeTitles,
       cast: cast,
       certifications: request.tvSeries.certifications,
+      createdBy: request.tvSeries.createdBy,
       crew: crew,
       episodeRunTimes: request.tvSeries.runtimes,
       externalIds: request.tvSeries.externalIds,
@@ -346,15 +373,12 @@ export class CreateTVSeriesController {
       originCountries: request.tvSeries.originCountries,
       productionCompanies: request.tvSeries.productionCompanies,
       productionCountries: request.tvSeries.productionCountries,
+      recommendations: request.tvSeries.recommendations,
       spokenLanguages: request.tvSeries.spokenLanguages,
       videos: request.tvSeries.videos,
       castRoles: [...castRoles],
       crewJobs: [...crewJobs],
     };
-
-    //console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    //console.log(JSON.stringify(variables, null, 2));
-    //console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
     const insertResponse =
       await this.graphQLClient.request<GraphQlCreateTVSeriesResponse>(
@@ -362,15 +386,15 @@ export class CreateTVSeriesController {
         variables,
       );
 
-    const responseBody = {
-      id: insertResponse.insert_dionysus_tv_series_one.id,
+    const responseBody: CreateTVSeriesResponse = {
+      seriesId: insertResponse.insert_dionysus_tv_series_one.id,
     };
 
     response
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/tvSeries/${insertResponse.insert_dionysus_tv_series_one.id}`,
+        `http://localhost:3000/api//metdata/tvSeries/${insertResponse.insert_dionysus_tv_series_one.id}`,
       )
       .send(responseBody);
   }

@@ -15,19 +15,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { GraphQlPerson } from "../../../types/dionysus/metadata";
-import { toDomainObject } from "../../../convert/metadata/PersonConverter";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { GraphQlPerson } from "../../../../types/dionysus/metadata/person";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/PersonConverter";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlGetPersonResponse = {
   dionysus_people_by_pk: GraphQlPerson;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class DescribePersonController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/dionysus/person/:personId")
+  @Get("/metadata/person/:personId")
   @ApiOperation({
     summary: "Describes a person in Dionysus",
     description: "Retrieves the details of a person in Dionysus.",
@@ -36,15 +36,9 @@ export class DescribePersonController {
   })
   @ApiProduces("application/json")
   @ApiParam({
-    name: "entityId",
-    description: "The ID of the person to describe",
-    type: String,
-    required: true,
-  })
-  @ApiParam({
     name: "personId",
     description: "The ID of the person to describe",
-    type: String,
+    type: Number,
   })
   @ApiOkResponse({
     description: "The record has been successfully fetched.",
@@ -52,7 +46,7 @@ export class DescribePersonController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("personId") personId: string,
+    @Param("personId") personId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
@@ -70,6 +64,7 @@ export class DescribePersonController {
           birthplace
           createdTime
           deathday
+          popularity
           externalIds {
             createdTime
             externalId

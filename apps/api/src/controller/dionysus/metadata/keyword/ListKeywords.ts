@@ -12,12 +12,12 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/KeywordConverter";
-import { GraphQlKeyword } from "../../types/batchJobs";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/KeywordConverter";
+import { GraphQlKeyword } from "../../../../types/dionysus/metadata/keyword";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
-} from "../../utils/controllerDecorators";
+} from "../../../../utils/controllerDecorators";
 
 type GraphQlListKeywordsResponse = {
   dionysus_keywords: GraphQlKeyword[];
@@ -28,11 +28,11 @@ type GraphQlListKeywordsResponse = {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListKeywordsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/metadata/keywords")
+  @Get("/metadata/keywords")
   @ApiOperation({
     summary: "Lists keywords",
     description:
@@ -49,9 +49,9 @@ export class ListKeywordsController {
   })
   @ApiPaginationParams()
   @ApiOkResponse({
+    type: ListKeywordsResponse,
     description:
       "The list of keywords.  If there are more keywords to list, a pagination token will be present.",
-    type: () => ListKeywordsResponse,
   })
   @ApiStandardErrorResponses()
   async handle(

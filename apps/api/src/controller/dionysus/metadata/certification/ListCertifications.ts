@@ -12,12 +12,12 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/CertificationConverter";
-import { GraphQlCertification } from "../../types/batchJobs";
+import { toDomainObject } from "../../../../convert/dionysus/metadata/CertificationConverter";
+import { GraphQlCertification } from "../../../../types/dionysus/metadata/certification";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
-} from "../../utils/controllerDecorators";
+} from "../../../../utils/controllerDecorators";
 
 type GraphQlListCertificationsResponse = {
   dionysus_certifications: GraphQlCertification[];
@@ -28,11 +28,11 @@ type GraphQlListCertificationsResponse = {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListCertificationsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/metadata/certifications")
+  @Get("/metadata/certifications")
   @ApiOperation({
     summary: "Lists certifications",
     description:
@@ -49,9 +49,9 @@ export class ListCertificationsController {
   })
   @ApiPaginationParams()
   @ApiOkResponse({
+    type: ListCertificationsResponse,
     description:
       "The list of certifications.  If there are more certifications to list, a pagination token will be present.",
-    type: () => ListCertificationsResponse,
   })
   @ApiStandardErrorResponses()
   async handle(

@@ -12,19 +12,23 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlCreateTVEpisodeResponse = {
   insert_dionysus_tv_episodes_one: {
-    id: string;
+    id: number;
+    episodeNumber: number;
+    seasonId: number;
+    seasonNumber: number;
+    seriesId: number;
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateTVEpisodeController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/metadata/tvSeries/:seriesId/season/:seasonNumber/episodes")
+  @Put("/metadata/tvSeries/:seriesId/season/:seasonNumber/episodes")
   @ApiOperation({
     summary: "Upserts a TV series episode",
     description: "Creates or updates a TV series episode.",
@@ -39,8 +43,8 @@ export class CreateTVEpisodeController {
     description: "Input for the CreateTVSeriesEpisode operation",
   })
   @ApiCreatedResponse({
-    description: "The record has been successfully created.",
     type: CreateTVEpisodeResponse,
+    description: "The record has been successfully created.",
     headers: {
       Location: {
         description: "The location of the created TV episode",
@@ -67,6 +71,8 @@ export class CreateTVEpisodeController {
         $seasonNumber: numeric!
         $runtime: numeric
         $stillPath: String
+        $voteCount: numeric
+        $voteAverage: numeric
         $cast: [dionysus_tv_episode_cast_insert_input!]!
         $crew: [dionysus_tv_episode_crew_insert_input!]!
         $externalIds: [dionysus_tv_episode_external_ids_insert_input!]!
@@ -87,6 +93,8 @@ export class CreateTVEpisodeController {
             runtime: $runtime
             seasonNumber: $seasonNumber
             stillPath: $stillPath
+            voteCount: $voteCount
+            voteAverage: $voteAverage
             cast: {
               on_conflict: {
                 constraint: tv_episode_cast_pkey
@@ -124,7 +132,7 @@ export class CreateTVEpisodeController {
             images: {
               on_conflict: {
                 constraint: tv_episode_images_pkey
-                update_columns: [width, height, countryCode]
+                update_columns: [width, height, languageCode]
               }
               data: $images
             }
@@ -155,10 +163,16 @@ export class CreateTVEpisodeController {
               overview
               stillPath
               seasonNumber
+              voteCount
+              voteAverage
             ]
           }
         ) {
           id
+          episodeNumber
+          seasonId
+          seasonNumber
+          seriesId
         }
       }
     `;
@@ -180,11 +194,9 @@ export class CreateTVEpisodeController {
       guestStars: request.episode.guestStars,
       videos: request.episode.videos,
       externalIds: request.episode.externalIds,
+      voteCount: request.episode.voteCount,
+      voteAverage: request.episode.voteAverage,
     };
-
-    //console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    //console.log(JSON.stringify(variables, null, 2));
-    //console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
     const insertResponse =
       await this.graphQLClient.request<GraphQlCreateTVEpisodeResponse>(
@@ -192,15 +204,20 @@ export class CreateTVEpisodeController {
         variables,
       );
 
-    const responseBody = {
-      id: insertResponse.insert_dionysus_tv_episodes_one.id,
+    const responseBody: CreateTVEpisodeResponse = {
+      episodeId: insertResponse.insert_dionysus_tv_episodes_one.id,
+      episodeNumber:
+        insertResponse.insert_dionysus_tv_episodes_one.episodeNumber,
+      seasonId: insertResponse.insert_dionysus_tv_episodes_one.seasonId,
+      seasonNumber: insertResponse.insert_dionysus_tv_episodes_one.seasonNumber,
+      seriesId: insertResponse.insert_dionysus_tv_episodes_one.seriesId,
     };
 
     response
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/tvSeries/${seriesId}/season/${seasonNumber}/episodes/${request.episode.episodeNumber}`,
+        `http://localhost:3000/api//metdata/tvSeries/${seriesId}/season/${seasonNumber}/episodes/${request.episode.episodeNumber}`,
       )
       .send(responseBody);
   }
