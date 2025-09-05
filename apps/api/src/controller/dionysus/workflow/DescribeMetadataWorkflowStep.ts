@@ -23,11 +23,11 @@ type GraphQlGetMetadataWorkflowStepResponse = {
   dionysus_metadata_workflow_step_by_pk: GraphQlWorkflowStep;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class DescribeMetadataWorkflowStepController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/metadata/workflow/:workflowId/step/:stepId")
+  @Get("/workflow/:workflowId/step/:stepId")
   @ApiOperation({
     summary: "Describes an existing metadate workflow",
     description: "Retrieves the details of a metadata workflow.",

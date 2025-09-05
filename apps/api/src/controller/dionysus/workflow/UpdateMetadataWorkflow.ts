@@ -30,11 +30,11 @@ type GraphQlUpdateMetadataWorkflowResponse = {
   update_dionysus_metadata_workflow_by_pk: GraphQLWorkflow;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class UpdateWorkflowController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/metadata/workflow/:workflowId")
+  @Put("/workflow/:workflowId")
   @ApiOperation({
     summary: "Updates an existing metadata workflow",
     description: "Description",

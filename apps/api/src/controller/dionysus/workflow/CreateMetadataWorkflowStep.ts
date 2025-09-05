@@ -39,14 +39,14 @@ type GraphQlCreateMetadataWorkflowStepResponse = {
   insert_dionysus_metadata_workflow_step_one: GraphQlWorkflowStep;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateMetadataWorkflowStepController {
   constructor(
     private readonly graphQLClient: GraphQLClient,
     private readonly amqpConnection: AmqpConnection,
   ) {}
 
-  @Post("/v1/metadata/workflow/:workflowId/steps")
+  @Post("/workflow/:workflowId/steps")
   @ApiOperation({
     summary: "Creates a new metadata workflow step",
     description: "Creates a new metadata workflow step.",
@@ -183,7 +183,7 @@ export class CreateMetadataWorkflowStepController {
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/workflow/${workflowId}/step/${createdWorkflowStep.id}`,
+        `http://localhost:3000/api/metdata/workflow/${workflowId}/step/${createdWorkflowStep.id}`,
       )
       .send(responseBody);
   }

@@ -23,11 +23,11 @@ type GraphQlGetMetadataWorkflowResponse = {
   dionysus_metadata_workflow_by_pk: GraphQLWorkflow;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class DescribeMetadataWorkflowController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/metadata/workflow/:workflowId")
+  @Get("/workflow/:workflowId")
   @ApiOperation({
     summary: "Describes an existing metadate workflow",
     description: "Retrieves the details of a metadata workflow.",

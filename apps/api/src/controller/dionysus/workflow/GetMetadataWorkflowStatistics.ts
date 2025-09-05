@@ -18,11 +18,11 @@ type GraphQlGetMetadataWorkflowStats = {
   ];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class GetMetadataWorkflowStatisticsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/metadata/workflow/stats")
+  @Get("/workflow/stats")
   @ApiOperation({
     summary: "Get workflow status counts and timing statistics",
     description:

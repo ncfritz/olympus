@@ -23,14 +23,14 @@ type GraphQlCreateMetadataWorkflowResponse = {
   insert_dionysus_metadata_workflow_one: GraphQLWorkflow;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateMetadataWorkflowController {
   constructor(
     private readonly graphQLClient: GraphQLClient,
     private readonly amqpConnection: AmqpConnection,
   ) {}
 
-  @Post("/v1/metadata/workflows")
+  @Post("/workflows")
   @ApiOperation({
     summary: "Creates a new metadata workflow",
     description: "Creates a new metadata workflow.",
@@ -110,7 +110,7 @@ export class CreateMetadataWorkflowController {
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/workflow/${encodeURIComponent(
+        `http://localhost:3000/api/metdata/workflow/${encodeURIComponent(
           createdWorkflow.id,
         )}`,
       )

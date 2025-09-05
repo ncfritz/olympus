@@ -28,11 +28,11 @@ type GraphQLListMetadataWorkflowsResponse = {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListMetadataWorkflowsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/metadata/workflows")
+  @Get("/workflows")
   @ApiOperation({
     summary: "Lists metadata workflows",
     description:
@@ -44,8 +44,9 @@ export class ListMetadataWorkflowsController {
   })
   @ApiProduces("application/json")
   @ApiQuery({
-    name: "pageSize",
-    type: Number,
+    name: "filters",
+    type: String,
+    required: false,
   })
   @ApiPaginationParams()
   @ApiOkResponse({
@@ -59,6 +60,7 @@ export class ListMetadataWorkflowsController {
     @Query("startPage") startPage = 0,
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
     @Query("sortBy") sortField = "createdTime",
+    @Query("filters") filters: string | undefined,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
