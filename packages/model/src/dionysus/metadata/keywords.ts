@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
-import { PaginatedResults } from "../ModelCommon";
+import { PaginatedResults } from "../../common";
 
 export class Keyword {
   @ApiProperty({ type: String })
@@ -23,6 +23,28 @@ export class PartialKeyword extends OmitType(Keyword, [
   "createdTime",
   "lastUpdatedTime",
 ]) {}
+
+export class KeywordAssociation {
+  @ApiProperty({ type: Keyword })
+  keyword: Keyword;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  createdTime: Moment;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  lastUpdatedTime: Moment;
+}
+
+export class PartialKeywordAssociation extends OmitType(KeywordAssociation, [
+  "createdTime",
+  "lastUpdatedTime",
+  "keyword",
+]) {
+  @ApiProperty({ type: Number })
+  keywordId: number;
+}
 
 export class CreateKeywordRequest {
   @ApiProperty({

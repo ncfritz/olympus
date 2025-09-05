@@ -1,8 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
-import { PaginatedResults } from "../ModelCommon";
-import { Language } from "./languages";
+import { PaginatedResults } from "../../common";
 
 export enum GenreType {
   TV = "TV",
@@ -13,7 +12,7 @@ export class Genre {
   @ApiProperty({ type: Number })
   id: number;
 
-  @ApiProperty({ enum: GenreType })
+  @ApiProperty({ enum: () => GenreType, enumName: "GenreType" })
   type: GenreType;
 
   @ApiProperty({ type: String })
@@ -33,9 +32,31 @@ export class PartialGenre extends OmitType(Genre, [
   "lastUpdatedTime",
 ]) {}
 
+export class GenreAssociation {
+  @ApiProperty({ type: Genre })
+  genre: Genre;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  createdTime: Moment;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  lastUpdatedTime: Moment;
+}
+
+export class PartialGenreAssociation extends OmitType(GenreAssociation, [
+  "createdTime",
+  "lastUpdatedTime",
+  "genre",
+]) {
+  @ApiProperty({ type: Number })
+  genreId: number;
+}
+
 export class CreateGenreRequest {
   @ApiProperty({
-    type: () => Language,
+    type: () => PartialGenre,
   })
   genre: PartialGenre;
 }

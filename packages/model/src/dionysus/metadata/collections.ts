@@ -1,8 +1,8 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment";
-import { Country } from "./countries";
-import { Movie } from "./movies";
+import { PartialTypedImage, TypedImage } from "./common";
+import { SparseMovie } from "./movies";
 
 export class BaseCollection {
   @ApiProperty({ type: Number })
@@ -37,10 +37,10 @@ export class Collection extends BaseCollection {
   parts: CollectionPart[];
 
   @ApiProperty({
-    type: () => CollectionImage,
+    type: () => TypedImage,
     isArray: true,
   })
-  images: CollectionImage[];
+  images: TypedImage[];
 }
 
 export class PartialCollection extends BaseCollection {
@@ -51,15 +51,15 @@ export class PartialCollection extends BaseCollection {
   parts: PartialCollectionPart[];
 
   @ApiProperty({
-    type: () => PartialCollectionImage,
+    type: () => PartialTypedImage,
     isArray: true,
   })
-  images: PartialCollectionImage[];
+  images: PartialTypedImage[];
 }
 
 export class CollectionPart {
-  @ApiProperty({ type: Movie })
-  movie: Movie;
+  @ApiProperty({ type: SparseMovie })
+  movie: SparseMovie;
 
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
@@ -75,42 +75,8 @@ export class PartialCollectionPart extends OmitType(CollectionPart, [
   "lastUpdatedTime",
   "movie",
 ]) {
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: Number })
   movieId: number;
-}
-
-export class CollectionImage {
-  @ApiProperty({ type: String })
-  type: string;
-
-  @ApiProperty({ type: String })
-  filePath: string;
-
-  @ApiProperty({ type: Number })
-  width: number;
-
-  @ApiProperty({ type: Number })
-  height: number;
-
-  @ApiProperty({ type: Country })
-  country: Country;
-
-  @ApiProperty({ type: String })
-  @Transform(({ value }) => value.toISOString())
-  createdTime: Moment;
-
-  @ApiProperty({ type: String })
-  @Transform(({ value }) => value.toISOString())
-  lastUpdatedTime: Moment;
-}
-
-export class PartialCollectionImage extends OmitType(CollectionImage, [
-  "createdTime",
-  "lastUpdatedTime",
-  "country",
-]) {
-  @ApiProperty({ type: String })
-  countryCode: string;
 }
 
 export class CreateCollectionRequest {
@@ -121,6 +87,13 @@ export class CreateCollectionRequest {
 }
 
 export class CreateCollectionResponse {
+  @ApiProperty({
+    type: () => Collection,
+  })
+  collection: Collection;
+}
+
+export class DescribeCollectionResponse {
   @ApiProperty({
     type: () => Collection,
   })

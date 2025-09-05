@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
-import { PaginatedResults } from "../ModelCommon";
+import { PaginatedResults } from "../../common";
 
 export class Country {
   @ApiProperty({ type: String })
@@ -26,9 +26,31 @@ export class PartialCountry extends OmitType(Country, [
 
 export class CreateCountryRequest {
   @ApiProperty({
-    type: () => Country,
+    type: () => PartialCountry,
   })
   country: PartialCountry;
+}
+
+export class CountryAssociation {
+  @ApiProperty({ type: Country })
+  country: Country;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  createdTime: Moment;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  lastUpdatedTime: Moment;
+}
+
+export class PartialCountryAssociation extends OmitType(CountryAssociation, [
+  "createdTime",
+  "lastUpdatedTime",
+  "country",
+]) {
+  @ApiProperty({ type: String })
+  countryCode: string;
 }
 
 export class CreateCountryResponse {

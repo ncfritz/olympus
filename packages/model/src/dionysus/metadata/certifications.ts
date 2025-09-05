@@ -1,7 +1,8 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
-import { PaginatedResults } from "../ModelCommon";
+import { PaginatedResults } from "../../common";
+import { Language } from "./languages";
 
 export enum CertificationType {
   TV = "TV",
@@ -15,7 +16,7 @@ export class Certification {
   @ApiProperty({ type: String })
   certification: string;
 
-  @ApiProperty({ enum: CertificationType })
+  @ApiProperty({ enum: () => CertificationType, enumName: "CertificationType" })
   type: CertificationType;
 
   @ApiProperty({ type: Number })
@@ -38,9 +39,22 @@ export class PartialCertification extends OmitType(Certification, [
   "lastUpdatedTime",
 ]) {}
 
+export class CertificationAssociation {
+  @ApiProperty({ type: Language })
+  certification: Certification;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  createdTime: Moment;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  lastUpdatedTime: Moment;
+}
+
 export class CreateCertificationRequest {
   @ApiProperty({
-    type: () => Certification,
+    type: () => PartialCertification,
   })
   certification: PartialCertification;
 }

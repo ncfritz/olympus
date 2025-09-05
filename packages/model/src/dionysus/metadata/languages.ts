@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
-import { PaginatedResults } from "../ModelCommon";
+import { PaginatedResults } from "../../common";
 
 export class Language {
   @ApiProperty({ type: String })
@@ -27,9 +27,31 @@ export class PartialLanguage extends OmitType(Language, [
   "lastUpdatedTime",
 ]) {}
 
+export class LanguageAssociation {
+  @ApiProperty({ type: Language })
+  language: Language;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  createdTime: Moment;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  lastUpdatedTime: Moment;
+}
+
+export class PartialLanguageAssociation extends OmitType(LanguageAssociation, [
+  "createdTime",
+  "lastUpdatedTime",
+  "language",
+]) {
+  @ApiProperty({ type: String })
+  languageCode: string;
+}
+
 export class CreateLanguageRequest {
   @ApiProperty({
-    type: () => Language,
+    type: () => PartialLanguage,
   })
   language: PartialLanguage;
 }
