@@ -2,7 +2,12 @@ import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
 import { PaginatedResults } from "../../common";
-import { AlternativeName, IdentifiableImage, PartialAlternativeName, PartialIdentifiableImage } from "./common";
+import {
+  AlternativeName,
+  IdentifiableImage,
+  PartialAlternativeName,
+  PartialIdentifiableImage,
+} from "./common";
 import { Country } from "./countries";
 import { BaseTVSeries } from "./tvSeries";
 
