@@ -1,7 +1,7 @@
-import { ApiProperty, OmitType } from "@nestjs/swagger";
+import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import moment, { Moment } from "moment";
-import { PaginatedResults } from "../ModelCommon";
+import { PaginatedResults } from "../../common";
 
 export enum MetadataFetchJobStatus {
   QUEUED = "queued",
@@ -36,10 +36,13 @@ export class MetadataFetchJob {
   @ApiProperty({ type: String })
   id: string;
 
-  @ApiProperty({ enum: MetadataJobType })
+  @ApiProperty({ enum: () => MetadataJobType, enumName: "MetadataJobType" })
   type: MetadataJobType;
 
-  @ApiProperty({ enum: MetadataFetchJobStatus })
+  @ApiProperty({
+    enum: () => MetadataFetchJobStatus,
+    enumName: "MetadataFetchJobStatus",
+  })
   status: MetadataFetchJobStatus;
 
   @ApiProperty({ type: String })
@@ -72,22 +75,21 @@ export class PartialMetadataFetchJob extends OmitType(MetadataFetchJob, [
   "createdTime",
   "lastUpdatedTime",
 ]) {}
-
-export class PartialMetadataFetchJobWithoutContext extends OmitType(
+export class MetadatFetchJobUpdate extends PartialType(
   PartialMetadataFetchJob,
-  ["context"],
 ) {}
 
 export class CreateMetadataFetchJobRequest {
   @ApiProperty({
-    type: Number,
+    type: String,
     description: "The id of the TMDB entity to create a job for",
     required: true,
   })
-  id: number;
+  id: string;
 
   @ApiProperty({
-    enum: MetadataJobType,
+    enum: () => MetadataJobType,
+    enumName: "MetadataJobType",
     description: "The type of metadata fetch job to create",
     required: true,
   })
@@ -108,7 +110,8 @@ export class CreateMetadataFetchJobRequest {
   jitter?: number;
 
   @ApiProperty({
-    enum: MetadataFetchJobStatus,
+    enum: () => MetadataFetchJobStatus,
+    enumName: "MetadataFetchJobStatus",
     description: "The initial status of the job",
     required: false,
     default: MetadataFetchJobStatus.QUEUED,
@@ -135,6 +138,7 @@ export class CreateMetadataFetchJobRequest {
 
   @ApiProperty({
     type: () => FetchJobContext,
+    required: false,
   })
   context: FetchJobContext<string, never>;
 }
@@ -162,9 +166,9 @@ export class DeleteMetadataFetchJobResponse {
 
 export class UpdateMetadataFetchJobRequest {
   @ApiProperty({
-    type: () => PartialMetadataFetchJob,
+    type: () => MetadatFetchJobUpdate,
   })
-  job: PartialMetadataFetchJobWithoutContext;
+  job: MetadatFetchJobUpdate;
 
   @ApiProperty({
     type: Boolean,

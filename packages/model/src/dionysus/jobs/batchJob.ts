@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
-import { LogLine, MetadataFetchJobStatus, MetadataJobType } from "./index";
+import { MetadataFetchJobStatus, MetadataJobType } from "./fetchJob";
 
 export enum JobType {
   MOVIES = "movies",
@@ -30,7 +30,8 @@ export enum JobStatus {
 
 export class CreateBatchJobRequest {
   @ApiProperty({
-    enum: JobType,
+    enum: () => JobType,
+    enumName: "JobType",
     description: "The type of batch job to create",
     required: true,
   })
@@ -64,21 +65,24 @@ export class CreateBatchJobRequest {
 
 export class CreateRedriveJobRequest {
   @ApiProperty({
-    enum: MetadataJobType,
-    description: "The status of the records to re-drive",
+    enum: () => MetadataJobType,
+    enumName: "MetadataJobType",
+    description: "The type of entity to re-drive",
     required: true,
   })
-  metadataType?: MetadataJobType;
+  metadataType: MetadataJobType;
 
   @ApiProperty({
-    enum: MetadataFetchJobStatus,
+    enum: () => MetadataFetchJobStatus,
+    enumName: "MetadataFetchJobStatus",
     description: "The status of the records to re-drive",
     required: true,
   })
   status?: MetadataFetchJobStatus;
 
   @ApiProperty({
-    enum: MetadataFetchJobStatus,
+    enum: () => MetadataFetchJobStatus,
+    enumName: "MetadataFetchJobStatus",
     description: "The status of the records after they have been re-driven",
     required: true,
   })
@@ -108,18 +112,6 @@ export class DescribeBatchJobResponse {
     type: () => BatchJob,
   })
   job: BatchJob;
-}
-
-export class GetBatchJobLogsResponse {
-  @ApiProperty({ type: String })
-  jobId: string;
-
-  @ApiProperty({ type: String })
-  @Transform(({ value }) => value.toISOString())
-  lastEventTimestamp: Moment;
-
-  @ApiProperty({ type: () => LogLine, isArray: true })
-  logs: LogLine[];
 }
 
 export class GetBatchJobStatsResponse {
@@ -187,10 +179,10 @@ export class BatchJob {
   @ApiProperty({ type: String })
   id: string;
 
-  @ApiProperty({ enum: JobType })
+  @ApiProperty({ enum: () => JobType, enumName: "JobType" })
   type: JobType;
 
-  @ApiProperty({ enum: JobStatus })
+  @ApiProperty({ enum: () => JobStatus, enumName: "JobStatus" })
   status: JobStatus;
 
   @ApiProperty({ type: String })
@@ -201,37 +193,37 @@ export class BatchJob {
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: String, required: false })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   startedTime?: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: String, required: false })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   finishedTime?: Moment;
 
-  @ApiProperty({ type: Number })
-  totalRecords: number;
+  @ApiProperty({ type: Number, required: false })
+  totalRecords?: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ type: Number, required: false })
   maxRecordsToProcess?: number;
 
-  @ApiProperty({ type: Number })
-  skippedRecords: number;
+  @ApiProperty({ type: Number, required: false })
+  skippedRecords?: number;
 
-  @ApiProperty({ type: Number })
-  processedRecords: number;
+  @ApiProperty({ type: Number, required: false })
+  processedRecords?: number;
 
-  @ApiProperty({ type: Number })
-  duplicateRecords: number;
+  @ApiProperty({ type: Number, required: false })
+  duplicateRecords?: number;
 
-  @ApiProperty({ type: Number })
-  noOpRecords: number;
+  @ApiProperty({ type: Number, required: false })
+  noOpRecords?: number;
 
-  @ApiProperty({ type: Number })
-  newRecords: number;
+  @ApiProperty({ type: Number, required: false })
+  newRecords?: number;
 
-  @ApiProperty({ type: Number })
-  expiredRecords: number;
+  @ApiProperty({ type: Number, required: false })
+  expiredRecords?: number;
 }
 
 export class PartialBatchJob extends OmitType(BatchJob, [
@@ -242,7 +234,7 @@ export class PartialBatchJob extends OmitType(BatchJob, [
 ]) {}
 
 export class BatchJobStats {
-  @ApiProperty({ enum: JobStatus })
+  @ApiProperty({ enum: () => JobStatus, enumName: "JobStatus" })
   status: JobStatus;
 
   @ApiProperty({ type: Number })
