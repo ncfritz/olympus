@@ -5,8 +5,8 @@ import { GoogleMailHandler } from "../handler/gmailHandler";
 import { SynologyChatHandler } from "../handler/synologyChatHandler";
 import { SynologyEmailHandler } from "../handler/synologyEmailHandler";
 import { WebSocketHandler } from "../handler/websocketHandler";
-import { RabbitModule } from "./RabbitModule";
 import { appName } from "../util/logger";
+import { RabbitModule } from "./RabbitModule";
 
 @Module({
   imports: [

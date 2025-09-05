@@ -1,8 +1,6 @@
-import {
-  BaseDestinationEvent,
-  NotificationContext,
-  WebSocketPayload,
-} from "@ncfritz/olympus-model/dist/notifications";
+import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
+import { BaseDestinationEvent } from "../types/destinations";
+import { WebSocketPayload } from "../types/payloads";
 import { NotificationFormatter } from "./formatter";
 
 export class WebSocketStaticStringFormatter<
@@ -24,9 +22,7 @@ export class WebSocketStaticStringFormatter<
     return {
       type: "plain",
       value: {
-        // @ts-expect-error expected
         title: notification.context["title"] || this.title,
-        // @ts-expect-error expected
         message: notification.context["message"] || this.message,
       },
     };

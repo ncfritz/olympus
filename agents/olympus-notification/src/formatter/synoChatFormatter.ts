@@ -1,8 +1,6 @@
-import {
-  BaseDestinationEvent,
-  NotificationContext,
-  SynoChatPayload,
-} from "@ncfritz/olympus-model/dist/notifications";
+import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
+import { BaseDestinationEvent } from "../types/destinations";
+import { SynoChatPayload } from "../types/payloads";
 import { NotificationFormatter } from "./formatter";
 
 export class SynoChatStaticStringFormatter<

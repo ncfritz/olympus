@@ -1,15 +1,12 @@
 import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
-import {
-  NotificationContext,
-  SynoChatDestinationEvent,
-  SynoChatDestinationType,
-  SynoChatPayload,
-} from "@ncfritz/olympus-model/dist/notifications";
+import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import axios from "axios";
 import { NotificationFormatter } from "../formatter/formatter";
 import { SynoChatStaticStringFormatter } from "../formatter/synoChatFormatter";
+import { type SynoChatDestinationEvent } from "../types/destinations";
+import { SynoChatPayload } from "../types/payloads";
 import {
   DESTINATION_SYNOCHAT_SUFFIX,
   NOTIFICATIONS_EXCHANGE,
@@ -60,7 +57,7 @@ export class SynologyChatHandler<
     const data = { ...payload };
     let endpoint = undefined;
 
-    if (msg.destinationType === SynoChatDestinationType.BOT) {
+    if (msg.destinationType === "bot") {
       data.user_ids = msg.users;
 
       if (!Object.keys(SYNO_ENDPOINTS.bot).includes(msg.destination)) {

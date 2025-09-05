@@ -1,9 +1,9 @@
 import {
   BaseDestinationEvent,
   WebSocketDestinationEvent,
-  WebSocketPayload,
-} from "@ncfritz/olympus-model/dist/notifications";
+} from "../../types/destinations";
 import { DionysusBatchJobContext } from "../../types/dionysus";
+import { WebSocketPayload } from "../../types/payloads";
 import { NotificationFormatter } from "../formatter";
 
 export class BatchJobCompleteWebsocketFormatter extends NotificationFormatter<

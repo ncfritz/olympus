@@ -2,12 +2,11 @@ import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
 import {
   CreateNotificationRequest,
   NotificationContext,
-  WebSocketDestinationEvent,
-  WebSocketPayload,
-} from "@ncfritz/olympus-model/dist/notifications";
+  NotificationPayload,
+} from "@ncfritz/olympus-sdk/olympus";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import axios from "axios";
 import moment from "moment";
 import { io } from "socket.io-client";
@@ -15,6 +14,8 @@ import { v4 as uuidv4 } from "uuid";
 import { BatchJobCompleteWebsocketFormatter } from "../formatter/external/dionysusNotificationFormatter";
 import { NotificationFormatter } from "../formatter/formatter";
 import { WebSocketStaticStringFormatter } from "../formatter/staticStringFormatter";
+import { type WebSocketDestinationEvent } from "../types/destinations";
+import { WebSocketPayload } from "../types/payloads";
 import {
   DESTINATION_WEBSOCKET_SUFFIX,
   NOTIFICATIONS_EXCHANGE,
@@ -91,7 +92,7 @@ export class WebSocketHandler extends BaseHandler<
             notificationId: msg.notificationId,
             notificationType: msg.notificationType,
             level: msg.level,
-            payload: payload,
+            payload: payload as unknown as NotificationPayload,
             eventId: msg.eventId,
             group: msg.group,
             ttl: msg.ttl,

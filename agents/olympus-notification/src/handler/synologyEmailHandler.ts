@@ -1,12 +1,10 @@
-import {
-  NotificationContext,
-  SMTPDestinationEvent,
-} from "@ncfritz/olympus-model/dist/notifications";
-import * as nodemailer from "nodemailer";
 import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
+import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
+import * as nodemailer from "nodemailer";
 import { Transporter } from "nodemailer";
+import { type SMTPDestinationEvent } from "../types/destinations";
 import {
   DESTINATION_SYNOMAIL_SUFFIX,
   NOTIFICATIONS_EXCHANGE,
@@ -34,11 +32,11 @@ export class SynologyEmailHandler<
 
   getTransport(): Transporter {
     return nodemailer.createTransport({
-      host: "192.168.15.38",
+      host: this.configService.get<string>("SYNO_SMTP_HOST", "192.168.15.38"),
       secure: true,
       auth: {
-        user: "ncfritz",
-        pass: "REDACTED",
+        user: this.configService.get<string>("SYNO_SMTP_USER", "ncfritz"),
+        pass: this.configService.get<string>("SYNO_SMTP_PASSWORD"),
       },
       tls: {
         rejectUnauthorized: false,

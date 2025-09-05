@@ -1,15 +1,13 @@
-import {
-  NotificationContext,
-  SMTPDestinationEvent,
-  SMTPPayload,
-} from "@ncfritz/olympus-model/dist/notifications";
+import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
 import * as handlebars from "handlebars";
+import Handlebars from "handlebars";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { Attachment } from "nodemailer/lib/mailer";
+import { SMTPDestinationEvent } from "../types/destinations";
+import { SMTPPayload } from "../types/payloads";
 import { logger } from "../util/logger";
 import { NotificationFormatter } from "./formatter";
-import Handlebars from "handlebars";
 
 export interface SMTPHandleBarsFormatterOptions {
   subjectTemplate?: string;

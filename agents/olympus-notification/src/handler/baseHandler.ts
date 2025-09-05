@@ -1,17 +1,18 @@
 import { ConsumeMessage } from "amqplib";
-import { BaseDestinationEvent } from "@ncfritz/olympus-model/dist/notifications";
 import moment from "moment";
 import { NotificationFormatter } from "../formatter/formatter";
+import { BaseDestinationEvent } from "../types/destinations";
 import { logger } from "../util/logger";
 
+// @ts-expect-error it's okay
 export abstract class BaseHandler<T extends BaseDestinationEvent<T>, P> {
   abstract getChannelName(): string;
   abstract handle(msg: T, amqpMsg: ConsumeMessage): Promise<void>;
   abstract transact(msg: T, payload: P): Promise<void>;
 
-  abstract getFormatterForType(
-    type: string,
-  ): NotificationFormatter<T, P> | undefined;
+  // prettier-ignore
+  // @ts-expect-error its okay
+  abstract getFormatterForType(type: string): NotificationFormatter<T, P> | undefined;
 
   protected async processNotification(notification: T): Promise<void> {
     logger.info(

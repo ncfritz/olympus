@@ -1,5 +1,5 @@
-import { NotificationContext } from "@ncfritz/olympus-model/dist/notifications";
-import { JobStatus, JobType } from "@ncfritz/olympus-model";
+import { JobStatus, JobType } from "@ncfritz/olympus-sdk/dionysus";
+import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
 
 export interface DionysusBatchJobContext extends NotificationContext {
   jobId: string;

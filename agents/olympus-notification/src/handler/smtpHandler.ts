@@ -1,19 +1,21 @@
-import {
-  NotificationContext,
-  SMTPDestinationEvent,
-  SMTPPayload,
-  SMTPPriority,
-} from "@ncfritz/olympus-model/dist/notifications";
+import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
+import { ConfigService } from "@nestjs/config";
 import { Transporter } from "nodemailer";
 import Mail from "nodemailer/lib/mailer";
 import { NotificationFormatter } from "../formatter/formatter";
 import { SMTPHandleBarsFormatter } from "../formatter/smtpHandlebarsFormatter";
+import { SMTPDestinationEvent } from "../types/destinations";
+import { SMTPPayload } from "../types/payloads";
 import { logger } from "../util/logger";
 import { BaseHandler } from "./baseHandler";
 
 export abstract class SMTPHandler<
   T extends NotificationContext,
 > extends BaseHandler<SMTPDestinationEvent<any>, SMTPPayload> {
+  constructor(protected readonly configService: ConfigService) {
+    super();
+  }
+
   abstract getTransport(): Transporter;
 
   async transact(msg: SMTPDestinationEvent<T>, payload: SMTPPayload) {
@@ -26,7 +28,7 @@ export abstract class SMTPHandler<
       text: payload.plaintextPart,
       html: payload.htmlPart,
       headers: {
-        "x-priority": msg.priority || SMTPPriority.Normal,
+        "x-priority": msg.priority || "3",
       },
     };
 

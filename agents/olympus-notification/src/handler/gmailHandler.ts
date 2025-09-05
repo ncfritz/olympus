@@ -1,12 +1,10 @@
-import {
-  NotificationContext,
-  SMTPDestinationEvent,
-} from "@ncfritz/olympus-model/dist/notifications";
-import * as nodemailer from "nodemailer";
 import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
+import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
+import * as nodemailer from "nodemailer";
 import { Transporter } from "nodemailer";
+import { type SMTPDestinationEvent } from "../types/destinations";
 import {
   DESTINATION_GMAIL_SUFFIX,
   NOTIFICATIONS_EXCHANGE,

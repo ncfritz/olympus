@@ -1,7 +1,5 @@
-import {
-  BaseDestinationEvent,
-  NotificationContext,
-} from "@ncfritz/olympus-model/dist/notifications";
+import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
+import { BaseDestinationEvent } from "../types/destinations";
 
 export abstract class NotificationFormatter<
   I extends BaseDestinationEvent<NotificationContext>,
