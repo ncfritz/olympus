@@ -49,13 +49,22 @@ export class Meeting {
   @ApiProperty({ type: String })
   subject: string;
 
-  @ApiProperty({ enum: MeetingSensitivity })
+  @ApiProperty({
+    enum: () => MeetingSensitivity,
+    enumName: "MeetingSensitivity",
+  })
   sensitivity: MeetingSensitivity;
 
-  @ApiProperty({ enum: MeetingImportance })
+  @ApiProperty({
+    enum: () => MeetingImportance,
+    enumName: "MeetingImportance",
+  })
   importance: MeetingImportance;
 
-  @ApiProperty({ enum: MeetingOccurrenceType })
+  @ApiProperty({
+    enum: () => MeetingOccurrenceType,
+    enumName: "MeetingOccurrenceType",
+  })
   occurrenceType: MeetingOccurrenceType;
 
   @ApiProperty({ type: String })
@@ -84,10 +93,10 @@ export class Meeting {
   @ApiProperty({ type: Boolean })
   isDeleted: boolean;
 
-  @ApiProperty({ enum: MeetingSource })
+  @ApiProperty({ enum: () => MeetingSource, enumName: "MeetingSource" })
   source: MeetingSource;
 
-  @ApiProperty({ enum: MeetingStatus })
+  @ApiProperty({ enum: () => MeetingStatus, enumName: "MeetingStatus" })
   status: MeetingStatus;
 
   @ApiProperty({ type: String })
