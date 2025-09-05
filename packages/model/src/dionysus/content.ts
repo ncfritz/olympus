@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment";
-import { PaginatedResults } from "./ModelCommon";
+import { PaginatedResults } from "../common";
 
 export enum ContentTagType {
   SOURCE = "source",
@@ -134,7 +134,7 @@ export class BaseContentAssetTag {
   @ApiProperty({ type: String })
   name: string;
 
-  @ApiProperty({ enum: ContentTagType })
+  @ApiProperty({ enum: () => ContentTagType, enumName: "ContentTagType" })
   type: ContentTagType;
 }
 
@@ -194,7 +194,8 @@ export class ContentAggregateStatisticsResponse {
 
 export class CreateContentJobRequest {
   @ApiProperty({
-    enum: ContentJobType,
+    enum: () => ContentJobType,
+    enumName: "ContentJobType",
     description: "The type of content job to create",
     required: true,
   })
