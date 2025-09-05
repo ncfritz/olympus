@@ -15,33 +15,25 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { NotFoundError } from "rxjs";
 import {
   GraphQlMeeting,
   toDomainObject,
-} from "../../convert/minerva/MeetingConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
-
-type GraphQlGetMeetingStartTimeResponse = {
-  minerva_meetings_by_pk: {
-    start_time: string;
-    uid?: string;
-  };
-};
+} from "../../../convert/minerva/MeetingConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlDescribeCalendarItemResponse = {
-  minerva_meetings: GraphQlMeeting[];
+  minerva_meetings_by_pk: GraphQlMeeting;
 };
 
 @Controller()
-export class GetNextCalendarItemOccurrenceController {
+export class DescribeCalendarItemController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/meeting/:meetingId/next")
+  @Get("/v1/meeting/:meetingId")
   @ApiOperation({
-    summary: "Gets the next occurrence of a meeting in a series",
-    description: "Gets the next occurrence of a meeting in a series",
-    operationId: "GetNextCalendarItemOccurrence",
+    summary: "Gets a single calendar item by ID",
+    description: "Gets a single calendar item by ID",
+    operationId: "DescribeCalendarItem",
     tags: ["Meetings"],
   })
   @ApiProduces("application/json")
@@ -59,48 +51,9 @@ export class GetNextCalendarItemOccurrenceController {
     @Param("meetingId") meetingId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const currentMeetingQueryRequest = gql`
+    const queryRequest = gql`
       query DescribeCalendarItem($id: String!) {
         minerva_meetings_by_pk(id: $id) {
-          start_time
-          uid
-        }
-      }
-    `;
-
-    const currentMeetingQueryResponse =
-      await this.graphQLClient.request<GraphQlGetMeetingStartTimeResponse>(
-        currentMeetingQueryRequest,
-        {
-          id: meetingId,
-        },
-      );
-
-    if (!currentMeetingQueryResponse.minerva_meetings_by_pk?.uid) {
-      throw new NotFoundException(
-        `Calendar Item with id ${meetingId} not found`,
-      );
-    }
-
-    if (!currentMeetingQueryResponse.minerva_meetings_by_pk) {
-      throw new NotFoundError(`Calendar Item with id ${meetingId} not found`);
-    }
-
-    const queryRequest = gql`
-      query DescribeCalendarItem(
-        $uid: String!
-        $current_start_time: timestamptz!
-      ) {
-        minerva_meetings(
-          where: {
-            _and: {
-              uid: { _eq: $uid }
-              start_time: { _gt: $current_start_time }
-            }
-          }
-          limit: 1
-          order_by: { start_time: asc }
-        ) {
           all_day
           type
           subject
@@ -146,16 +99,23 @@ export class GetNextCalendarItemOccurrenceController {
       await this.graphQLClient.request<GraphQlDescribeCalendarItemResponse>(
         queryRequest,
         {
-          uid: currentMeetingQueryResponse.minerva_meetings_by_pk.uid,
-          current_start_time:
-            currentMeetingQueryResponse.minerva_meetings_by_pk.start_time,
+          id: meetingId,
         },
       );
 
-    const meeting =
-      queryResponse.minerva_meetings.length > 0
-        ? toDomainObject(queryResponse.minerva_meetings[0])
-        : undefined;
+    if (queryResponse.minerva_meetings_by_pk === null) {
+      throw new NotFoundException(
+        `Calendar Item with id ${meetingId} not found`,
+      );
+    }
+
+    if (!queryResponse.minerva_meetings_by_pk) {
+      throw new NotFoundException(
+        `Calendar Item with id ${meetingId} not found`,
+      );
+    }
+
+    const meeting = toDomainObject(queryResponse.minerva_meetings_by_pk);
     const responseBody: SingleCalendarItemResponse = {
       item: meeting,
     };

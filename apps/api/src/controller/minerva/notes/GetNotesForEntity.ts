@@ -11,8 +11,8 @@ import { gql, GraphQLClient } from "graphql-request";
 import {
   GraphQlNote,
   toDomainObject,
-} from "../../convert/minerva/NoteConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+} from "../../../convert/minerva/NoteConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlListNotesResponse = {
   minerva_note_associations: {

@@ -13,8 +13,8 @@ import moment from "moment";
 import {
   GraphQlMeeting,
   toDomainObject,
-} from "../../convert/minerva/MeetingConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+} from "../../../convert/minerva/MeetingConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlListCalendarItemsResponse = {
   minerva_meetings: GraphQlMeeting[];

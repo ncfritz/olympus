@@ -1,7 +1,7 @@
 import {
   Meeting,
-  UpdateCalendarItemRequest,
   SingleCalendarItemResponse,
+  UpdateCalendarItemRequest,
 } from "@ncfritz/olympus-model";
 import {
   Body,
@@ -25,8 +25,8 @@ import { gql, GraphQLClient } from "graphql-request";
 import {
   GraphQlMeeting,
   toDomainObject,
-} from "../../convert/minerva/MeetingConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+} from "../../../convert/minerva/MeetingConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlUpdateMeetingResponse = {
   update_minerva_meetings_by_pk: GraphQlMeeting;
@@ -40,7 +40,7 @@ export class UpdateCalendarItemController {
   @ApiOperation({
     summary: "Updates an existing note",
     description: "CUpdates an existing node.",
-    operationId: "UpdateNote",
+    operationId: "UpdateCalendarItem",
     tags: ["Meetings"],
   })
   @ApiConsumes("application/json")

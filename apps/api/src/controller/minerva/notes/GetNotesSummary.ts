@@ -14,7 +14,7 @@ import moment from "moment-timezone";
 import {
   ApiStandardErrorResponses,
   HeaderTimezone,
-} from "../../utils/controllerDecorators";
+} from "../../../utils/controllerDecorators";
 
 type GraphQlGetMonthlyCountsResponse = {
   minerva_notes_type_statistics: [

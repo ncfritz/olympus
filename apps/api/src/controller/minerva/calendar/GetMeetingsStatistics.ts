@@ -1,5 +1,5 @@
 import {
-  GetMeetingSummaryResponse,
+  GetMeetingStatisticsResponse,
   MeetingStatus,
   MeetingStatusStatistics,
 } from "@ncfritz/olympus-model";
@@ -18,14 +18,22 @@ import moment from "moment-timezone";
 import {
   ApiStandardErrorResponses,
   HeaderTimezone,
-} from "../../utils/controllerDecorators";
+} from "../../../utils/controllerDecorators";
 
 type GraphQlGetMonthlyCountsResponse = {
-  minerva_meeting_status_statistics: [
+  minerva_meeting_hour_statistics: [
     {
       count: number;
       duration: number;
-      start_date: string;
+      hour: string;
+      status: MeetingStatus;
+    },
+  ];
+  minerva_meeting_day_statistics: [
+    {
+      count: number;
+      duration: number;
+      day: string;
       status: MeetingStatus;
     },
   ];
@@ -43,14 +51,14 @@ const EMPTY_COUNTS = (): MeetingStatusStatistics => {
 };
 
 @Controller()
-export class GetMeetingsSummaryController {
+export class GetMeetingsStatisticsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/meetings/summary/:start")
+  @Get("/v1/meetings/statistics/:start")
   @ApiOperation({
     summary: "Gets the monthly summary for meetings",
     description: "Gets monthly summary for meetings",
-    operationId: "GetMeetingsSummaryController",
+    operationId: "GetMeetingsStatisticsController",
     tags: ["Meetings"],
   })
   @ApiProduces("application/json")
@@ -70,7 +78,7 @@ export class GetMeetingsSummaryController {
   })
   @ApiOkResponse({
     description: "Monthly summary fetched.",
-    type: GetMeetingSummaryResponse,
+    type: GetMeetingStatisticsResponse,
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -80,16 +88,24 @@ export class GetMeetingsSummaryController {
     @Res() response: Response,
   ): Promise<void> {
     const startDate = moment(start);
-    const endDate = moment(startDate).add(days + 1, "days");
+    const endDate = moment(startDate)
+      .add(days + 1, "days")
+      .subtract(1, "second");
     const queryInput = {
       start: startDate,
       end: endDate,
       tz: tz,
     };
-    const statusStatistics: Record<string, MeetingStatusStatistics> = {};
 
-    for (let m = moment(startDate), i = 0; i <= days; m.add(1, "days"), i++) {
-      statusStatistics[m.format("YYYY-MM-DD")] = EMPTY_COUNTS();
+    const hourOfDayStatistics: Record<string, MeetingStatusStatistics> = {};
+    const dayOfWeekStatistics: Record<string, MeetingStatusStatistics> = {};
+
+    for (let i = 0; i < 24; i++) {
+      hourOfDayStatistics[i.toString().padStart(2, "0")] = EMPTY_COUNTS();
+    }
+
+    for (let i = 1; i <= 7; i++) {
+      dayOfWeekStatistics[i.toString()] = EMPTY_COUNTS();
     }
 
     const statisticsRequest = gql`
@@ -98,13 +114,21 @@ export class GetMeetingsSummaryController {
         $start: timestamptz!
         $end: timestamptz!
       ) {
-        minerva_meeting_status_statistics(
+        minerva_meeting_hour_statistics(
           args: { start_date: $start, end_date: $end, tz: $tz }
         ) {
           count
           duration
+          hour
           status
-          start_date
+        }
+        minerva_meeting_day_statistics(
+          args: { start_date: $start, end_date: $end, tz: $tz }
+        ) {
+          count
+          day
+          duration
+          status
         }
       }
     `;
@@ -115,18 +139,21 @@ export class GetMeetingsSummaryController {
         queryInput,
       );
 
-    statisticsResponse.minerva_meeting_status_statistics.forEach((entry) => {
-      if (!(entry.start_date in statusStatistics)) {
-        return;
-      }
-
-      statusStatistics[entry.start_date][entry.status].count += entry.count;
-      statusStatistics[entry.start_date][entry.status].totalDurationMin +=
+    statisticsResponse.minerva_meeting_hour_statistics.forEach((entry) => {
+      hourOfDayStatistics[entry.hour][entry.status].count += entry.count;
+      hourOfDayStatistics[entry.hour][entry.status].totalDurationMin +=
         entry.duration;
     });
 
-    const responseBody: GetMeetingSummaryResponse = {
-      statusStatistics: statusStatistics,
+    statisticsResponse.minerva_meeting_day_statistics.forEach((entry) => {
+      dayOfWeekStatistics[entry.day][entry.status].count += entry.count;
+      dayOfWeekStatistics[entry.day][entry.status].totalDurationMin +=
+        entry.duration;
+    });
+
+    const responseBody: GetMeetingStatisticsResponse = {
+      hourOfDayStatistics: hourOfDayStatistics,
+      dayOfWeekStatistics: dayOfWeekStatistics,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

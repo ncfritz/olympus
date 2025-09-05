@@ -1,7 +1,7 @@
 import {
   CreateCalendarItemRequest,
-  SingleCalendarItemResponse,
   Meeting,
+  SingleCalendarItemResponse,
 } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
 import {
@@ -16,8 +16,8 @@ import { gql, GraphQLClient } from "graphql-request";
 import {
   GraphQlMeeting,
   toDomainObject,
-} from "../../convert/minerva/MeetingConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+} from "../../../convert/minerva/MeetingConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlCreateCalendarItemResponse = {
   insert_minerva_meetings_one: GraphQlMeeting;

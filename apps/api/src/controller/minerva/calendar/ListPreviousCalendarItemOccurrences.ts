@@ -22,8 +22,8 @@ import { gql, GraphQLClient } from "graphql-request";
 import {
   GraphQlMeeting,
   toDomainObject,
-} from "../../convert/minerva/MeetingConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+} from "../../../convert/minerva/MeetingConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlGetMeetingStartTimeResponse = {
   minerva_meetings_by_pk: {

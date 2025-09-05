@@ -13,8 +13,8 @@ import moment from "moment";
 import {
   GraphQlNote,
   toDomainObject,
-} from "../../convert/minerva/NoteConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+} from "../../../convert/minerva/NoteConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlListNotesResponse = {
   minerva_notes: GraphQlNote[];

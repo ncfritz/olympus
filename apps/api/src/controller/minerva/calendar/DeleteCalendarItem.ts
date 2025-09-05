@@ -1,4 +1,4 @@
-import { SingleCalendarItemResponse, Meeting } from "@ncfritz/olympus-model";
+import { Meeting, SingleCalendarItemResponse } from "@ncfritz/olympus-model";
 import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -11,8 +11,8 @@ import { gql, GraphQLClient } from "graphql-request";
 import {
   GraphQlMeeting,
   toDomainObject,
-} from "../../convert/minerva/MeetingConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+} from "../../../convert/minerva/MeetingConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlDeleteCalendarItemResponse = {
   update_minerva_meetings_by_pk: GraphQlMeeting;
