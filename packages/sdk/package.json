@@ -5,7 +5,7 @@
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ncfritz/olympus-types.git"
+    "url": "git+https://github.com/ncfritz/olympus-sdk.git"
   },
   "readmeFilename": "README.md",
   "license": "Apache-2.0",
