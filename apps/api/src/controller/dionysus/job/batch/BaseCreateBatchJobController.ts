@@ -7,8 +7,8 @@ import {
 import { Body, HttpStatus, Res } from "@nestjs/common";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../../convert/batch/BatchJobConverter";
-import { GraphQlBatchJob } from "../../../types/batchJobs";
+import { toDomainObject } from "../../../../convert/dionysus/job/BatchJobConverter";
+import { GraphQlBatchJob } from "../../../../types/batchJobs";
 
 type GraphQlCreateBatchJobResponse = {
   insert_dionysus_bulk_load_jobs_one: GraphQlBatchJob;
@@ -88,7 +88,7 @@ export abstract class BaseCreateBatchJobController<I> {
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/job/batch/${createdJob.id}`,
+        `http://localhost:3000/api/job/batch/${createdJob.id}`,
       )
       .send(responseBody);
   }

@@ -13,20 +13,20 @@ import {
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment, { Moment } from "moment/moment";
-import { GraphQlBulkLoadJobStat } from "../../../types/batchJobs";
-import { METADATA_CATEGORY_MAP } from "../../../utils/constants";
+import { GraphQlBulkLoadJobStat } from "../../../../types/batchJobs";
+import { METADATA_CATEGORY_MAP } from "../../../../utils/constants";
 
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 export type GraphQlBatchJobStatisticsResponse = {
   dionysus_bulk_load_jobs_statistics: GraphQlBulkLoadJobStat[];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class GetBatchJobStatsByTypeController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/jobs/batch/:jobType/stats")
+  @Get("/jobs/batch/:jobType/stats")
   @ApiOperation({
     summary: "Gets stats for a specific batch job type",
     description:
@@ -40,6 +40,7 @@ export class GetBatchJobStatsByTypeController {
     name: "jobType",
     description: "The type of batch job to get statistics for.",
     enum: JobType,
+    enumName: "JobType",
   })
   @ApiOkResponse({
     description: "The record has been successfully created.",

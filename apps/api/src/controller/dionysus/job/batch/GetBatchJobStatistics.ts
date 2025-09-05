@@ -17,24 +17,24 @@ import moment, { Moment } from "moment";
 import {
   GraphQlBulkLoadJobStat,
   GraphQlBulkLoadJobStatusStat,
-} from "../../../types/batchJobs";
+} from "../../../../types/batchJobs";
 import {
   BATCH_JOB_STATUSES_MAP,
   METADATA_CATEGORY_MAP,
-} from "../../../utils/constants";
+} from "../../../../utils/constants";
 
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlBatchJobStatisticsResponse = {
   dionysus_bulk_load_jobs_statistics: GraphQlBulkLoadJobStat[];
   dionysus_bulk_load_jobs_status_statistics: GraphQlBulkLoadJobStatusStat[];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class GetBatchJobStatisticsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/jobs/batch/stats")
+  @Get("/jobs/batch/stats")
   @ApiOperation({
     summary: "Gets stats for Dionysus batch jobs.",
     description:

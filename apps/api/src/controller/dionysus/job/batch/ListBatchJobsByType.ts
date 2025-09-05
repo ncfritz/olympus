@@ -7,12 +7,12 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../../convert/batch/BatchJobConverter";
-import { GraphQlListBatchJobsResponse } from "../../../types/batchJobs";
+import { toDomainObject } from "../../../../convert/dionysus/job/BatchJobConverter";
+import { GraphQlListBatchJobsResponse } from "../../../../types/batchJobs";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
-} from "../../../utils/controllerDecorators";
+} from "../../../../utils/controllerDecorators";
 import {
   BatchJob,
   JobType,
@@ -24,11 +24,11 @@ type GraphQlListBatchJobsByTypeInput = {
   type: JobType;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListBatchJobsByTypeController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/jobs/batch/:jobType")
+  @Get("/jobs/batch/:jobType")
   @ApiOperation({
     summary: "Lists batch jobs by job type",
     description:
@@ -43,6 +43,7 @@ export class ListBatchJobsByTypeController {
     name: "jobType",
     description: "The type of batch job to get statistics for.",
     enum: JobType,
+    enumName: "JobType",
   })
   @ApiPaginationParams()
   @ApiOkResponse({

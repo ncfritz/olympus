@@ -15,23 +15,23 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../../convert/batch/BatchJobConverter";
-import { GraphQlBatchJob } from "../../../types/batchJobs";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/job/BatchJobConverter";
+import { GraphQlBatchJob } from "../../../../types/batchJobs";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlGetBatchJobResponse = {
   dionysus_bulk_load_jobs_by_pk: GraphQlBatchJob;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class DescribeBatchJobController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/job/batch/:jobId")
+  @Get("/job/batch/:jobId")
   @ApiOperation({
     summary: "Describes an existing batch job",
     description: "Retrieves the details of a batch job.",
-    operationId: "DescriberBatchJob",
+    operationId: "DescribeBatchJob",
     tags: ["Batch"],
   })
   @ApiProduces("application/json")
@@ -43,6 +43,7 @@ export class DescribeBatchJobController {
   })
   @ApiOkResponse({
     description: "The record has been successfully created.",
+    type: DescribeBatchJobResponse,
   })
   @ApiStandardErrorResponses()
   async handle(

@@ -15,22 +15,22 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/MetadataFetchJobConverter";
-import { GraphQlMetadataFetchJob } from "../../types/batchJobs";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/job/MetadataFetchJobConverter";
+import { GraphQlMetadataFetchJob } from "../../../../types/batchJobs";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlCreateMetadataFetchJobRespons = {
   insert_dionysus_metadata_fetch_status_one: GraphQlMetadataFetchJob;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateMetadataFetchJobController {
   constructor(
     private readonly graphQLClient: GraphQLClient,
     private readonly amqpConnection: AmqpConnection,
   ) {}
 
-  @Post("/v1/metadata/fetchJobs")
+  @Post("/metadata/fetchJobs")
   @ApiOperation({
     summary: "Creates a new metadata fetch job",
     description:
@@ -47,8 +47,8 @@ export class CreateMetadataFetchJobController {
     description: "Input for the CreateMetadataFetchJob operation",
   })
   @ApiCreatedResponse({
-    description: "The record has been successfully created.",
     type: CreateMetadataFetchJobResponse,
+    description: "The record has been successfully created.",
     headers: {
       Location: {
         description: "The location of the created job",
@@ -151,7 +151,7 @@ export class CreateMetadataFetchJobController {
       .status(HttpStatus.CREATED)
       .setHeader(
         "Location",
-        `http://localhost:3000/api/v1/metdata/fetchJob/${encodeURIComponent(
+        `http://localhost:3000/api//metdata/fetchJob/${encodeURIComponent(
           createdJob.id,
         )}/${createdJob.type}`,
       )

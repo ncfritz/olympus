@@ -8,8 +8,8 @@ import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { METADATA_CATEGORY_MAP } from "../../utils/constants";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { METADATA_CATEGORY_MAP } from "../../../../utils/constants";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlGetMetadataJobStats = {
   dionysus_metadata_fetch_status_statistics: [
@@ -20,11 +20,11 @@ type GraphQlGetMetadataJobStats = {
   ];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class GetMetadataFetchJobStatisticsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/job/metadata/stats")
+  @Get("/job/metadata/stats")
   @ApiOperation({
     summary: "Get job status counts for metadata fetch jobs",
     description:
@@ -34,8 +34,8 @@ export class GetMetadataFetchJobStatisticsController {
   })
   @ApiProduces("application/json")
   @ApiOkResponse({
+    type: GetMetadataFetchJobStatusStatisticsResponse,
     description: "The statistics were successfully fetched.",
-    type: () => GetMetadataFetchJobStatusStatisticsResponse,
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {

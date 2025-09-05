@@ -1,6 +1,7 @@
 import {
   MetadataFetchJob,
   DescribeMetadataFetchJobResponse,
+  MetadataJobType,
 } from "@ncfritz/olympus-model";
 import {
   Controller,
@@ -18,19 +19,19 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/MetadataFetchJobConverter";
-import { GraphQlMetadataFetchJob } from "../../types/batchJobs";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/job/MetadataFetchJobConverter";
+import { GraphQlMetadataFetchJob } from "../../../../types/batchJobs";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlGetMetadataFetchJobResponse = {
   dionysus_metadata_fetch_status_by_pk: GraphQlMetadataFetchJob;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class DescribeMetadataFetchJobController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/metadata/fetchJob/:entityId/:entityType")
+  @Get("/metadata/fetchJob/:entityId/:entityType")
   @ApiOperation({
     summary: "Describes an existing metadate fetch job",
     description: "Retrieves the details of a metadata fetch job.",
@@ -47,15 +48,17 @@ export class DescribeMetadataFetchJobController {
   @ApiParam({
     name: "entityType",
     description: "The type of the job to describe",
-    type: String,
+    enum: MetadataJobType,
+    enumName: "MetadataJobType",
   })
   @ApiOkResponse({
+    type: DescribeMetadataFetchJobResponse,
     description: "The record has been successfully fetched.",
   })
   @ApiStandardErrorResponses()
   async handle(
     @Param("entityId") entityId: string,
-    @Param("entityType") entityType: string,
+    @Param("entityType") entityType: MetadataJobType,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`

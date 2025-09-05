@@ -1,6 +1,5 @@
 import {
   BatchJob,
-  PartialBatchJob,
   UpdateBatchJobRequest,
   UpdateBatchJobResponse,
 } from "@ncfritz/olympus-model";
@@ -24,23 +23,23 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../../convert/batch/BatchJobConverter";
-import { GraphQlBatchJob } from "../../../types/batchJobs";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/job/BatchJobConverter";
+import { GraphQlBatchJob } from "../../../../types/batchJobs";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlUpdateMetadataFetchJobResponse = {
   update_dionysus_bulk_load_jobs_by_pk: GraphQlBatchJob;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class UpdateBatchJobController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/job/batch/:jobId")
+  @Put("/job/batch/:jobId")
   @ApiOperation({
     summary: "Updates an existing batch job",
     description: "Description",
-    operationId: "DescriberJob",
+    operationId: "UpdateBatchJob",
     tags: ["Batch"],
   })
   @ApiProduces("application/json")
@@ -62,7 +61,7 @@ export class UpdateBatchJobController {
   @UseInterceptors(ClassSerializerInterceptor)
   async handle(
     @Param("jobId") jobId: string,
-    @Body() request: Partial<PartialBatchJob>,
+    @Body() request: UpdateBatchJobRequest,
     @Res() response: Response,
   ): Promise<void> {
     const updateRequest = gql`
@@ -97,7 +96,7 @@ export class UpdateBatchJobController {
         updateRequest,
         {
           id: jobId,
-          changes: request,
+          changes: request.job,
         },
       );
 

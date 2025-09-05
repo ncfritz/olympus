@@ -1,6 +1,6 @@
 import {
   MetadataFetchJob,
-  DeleteMetadataFetchJobResponse,
+  DeleteMetadataFetchJobResponse, MetadataJobType
 } from "@ncfritz/olympus-model";
 import {
   Controller,
@@ -11,26 +11,26 @@ import {
   Res,
 } from "@nestjs/common";
 import {
-  ApiNoContentResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/MetadataFetchJobConverter";
-import { GraphQlMetadataFetchJob } from "../../types/batchJobs";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/job/MetadataFetchJobConverter";
+import { GraphQlMetadataFetchJob } from "../../../../types/batchJobs";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlDeleteMetadataFetchJobRespons = {
   delete_dionysus_metadata_fetch_status_by_pk: GraphQlMetadataFetchJob;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class DeleteMetadataFetchJobController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Delete("/v1/metadata/fetchJob/:entityId/:entityType")
+  @Delete("/metadata/fetchJob/:entityId/:entityType")
   @ApiOperation({
     summary: "Deleted an existing metadate fetch job",
     description: "Deletes the specified fetch job.",
@@ -46,10 +46,12 @@ export class DeleteMetadataFetchJobController {
   })
   @ApiParam({
     name: "entityType",
-    description: "The type of the job to delete",
-    type: String,
+    description: "The type the job to delete",
+    enum: MetadataJobType,
+    enumName: "MetadataJobType",
   })
-  @ApiNoContentResponse({
+  @ApiOkResponse({
+    type: DeleteMetadataFetchJobResponse,
     description: "The record has been successfully deleted.",
   })
   @ApiStandardErrorResponses()

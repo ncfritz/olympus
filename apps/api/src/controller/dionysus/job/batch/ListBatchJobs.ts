@@ -12,18 +12,18 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../../convert/batch/BatchJobConverter";
-import { GraphQlListBatchJobsResponse } from "../../../types/batchJobs";
+import { toDomainObject } from "../../../../convert/dionysus/job/BatchJobConverter";
+import { GraphQlListBatchJobsResponse } from "../../../../types/batchJobs";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
-} from "../../../utils/controllerDecorators";
+} from "../../../../utils/controllerDecorators";
 
-@Controller()
+@Controller({ version: "1" })
 export class ListBatchJobsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/jobs/batch")
+  @Get("/jobs/batch")
   @ApiOperation({
     summary: "Lists batch jobs",
     description:

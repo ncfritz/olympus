@@ -2,6 +2,7 @@ import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   MetadataFetchJob,
   MetadataFetchJobStatus,
+  MetadataJobType,
   UpdateMetadataFetchJobRequest,
   UpdateMetadataFetchJobResponse,
 } from "@ncfritz/olympus-model";
@@ -25,26 +26,26 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/metadata/MetadataFetchJobConverter";
-import { GraphQlMetadataFetchJob } from "../../types/batchJobs";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/job/MetadataFetchJobConverter";
+import { GraphQlMetadataFetchJob } from "../../../../types/batchJobs";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlUpdateMetadataFetchJobResponse = {
   update_dionysus_metadata_fetch_status_by_pk: GraphQlMetadataFetchJob;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class UpdateMetadataFetchJobController {
   constructor(
     private readonly graphQLClient: GraphQLClient,
     private readonly amqpConnection: AmqpConnection,
   ) {}
 
-  @Put("/v1/metadata/fetchJob/:entityId/:entityType")
+  @Put("/metadata/fetchJob/:entityId/:entityType")
   @ApiOperation({
     summary: "Updates an existing metadata fetch job",
     description: "Description",
-    operationId: "DescriberJob",
+    operationId: "UpdateMetadataFetchJob",
     tags: ["Metadata"],
   })
   @ApiProduces("application/json")
@@ -61,17 +62,18 @@ export class UpdateMetadataFetchJobController {
   @ApiParam({
     name: "entityType",
     description: "The type the job to update",
-    type: String,
+    enum: MetadataJobType,
+    enumName: "MetadataJobType",
   })
   @ApiOkResponse({
-    description: "The record has been successfully updated.",
     type: UpdateMetadataFetchJobResponse,
+    description: "The record has been successfully updated.",
   })
   @ApiStandardErrorResponses()
   @UseInterceptors(ClassSerializerInterceptor)
   async handle(
     @Param("entityId") entityId: number,
-    @Param("entityType") entityType: string,
+    @Param("entityType") entityType: MetadataJobType,
     @Body() request: Partial<UpdateMetadataFetchJobRequest>,
     @Res() response: Response,
   ): Promise<void> {

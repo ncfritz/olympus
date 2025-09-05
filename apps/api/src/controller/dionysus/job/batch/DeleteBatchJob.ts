@@ -8,13 +8,13 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
-@Controller()
+@Controller({ version: "1" })
 export class DeleteBatchJobController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Delete("/v1/job/batch/:jobId")
+  @Delete("/job/batch/:jobId")
   @ApiOperation({
     summary: "Deletes an existing job",
     description:

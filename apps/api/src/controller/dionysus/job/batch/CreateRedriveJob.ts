@@ -1,8 +1,8 @@
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   BatchJob,
-  CreateBatchJobRequest,
   CreateBatchJobResponse,
+  CreateRedriveJobRequest,
   JobType,
 } from "@ncfritz/olympus-model";
 import { Body, Controller, Post, Res } from "@nestjs/common";
@@ -15,11 +15,11 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { BaseCreateBatchJobController } from "./BaseCreateBatchJobController";
 
-@Controller()
-export class CreateBatchJobController extends BaseCreateBatchJobController<CreateBatchJobRequest> {
+@Controller({ version: "1" })
+export class CreateRedriveJobController extends BaseCreateBatchJobController<CreateRedriveJobRequest> {
   constructor(
     protected readonly graphQLClient: GraphQLClient,
     protected readonly amqpConnection: AmqpConnection,
@@ -27,22 +27,22 @@ export class CreateBatchJobController extends BaseCreateBatchJobController<Creat
     super(graphQLClient, amqpConnection);
   }
 
-  @Post("/v1/jobs/batch")
+  @Post("/jobs/batch/redrive")
   @ApiOperation({
     summary: "Creates a new batch job",
     description:
-      "Creates a new batch processing job to download TMDB's nightly ID files for processing.  " +
-      "This API will create a new job entity to track progress and enqueue a request to be " +
-      "processed asynchronously.",
-    operationId: "CreateBatchJob",
+      "Creates a batch re-drive job.  The re-drive processor will query for all fetch jobs of the specified type " +
+      "that are in the requested status and update their status in the database.  If `publishNotification` is set " +
+      "to `true`, a notification to re-process each fetch job identified will be published.",
+    operationId: "CreateRedriveJob",
     tags: ["Batch"],
   })
   @ApiConsumes("application/json")
   @ApiProduces("application/json")
   @ApiBody({
-    type: CreateBatchJobRequest,
+    type: CreateRedriveJobRequest,
     required: true,
-    description: "Input for the CreateBatchJob operation",
+    description: "Input for the CreateRedriveJob operation",
   })
   @ApiCreatedResponse({
     description: "The record has been successfully created.",
@@ -55,29 +55,30 @@ export class CreateBatchJobController extends BaseCreateBatchJobController<Creat
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Body() request: CreateBatchJobRequest,
+    @Body() request: CreateRedriveJobRequest,
     @Res() response: Response,
   ): Promise<void> {
-    console.log(request);
     await this.processRequest(request, response);
   }
 
-  protected buildMessage(request: CreateBatchJobRequest, job: BatchJob): any {
+  protected buildMessage(request: CreateRedriveJobRequest, job: BatchJob): any {
     return {
-      jobType: job.type,
       jobId: job.id,
-      offset: request.offset,
-      max: request.maxRecordsToProcess,
+      jobType: request.metadataType,
+      status: request.status,
+      targetStatus: request.targetStatus,
+      republish: request.publishNotification,
+      offset: 0,
     };
   }
 
-  protected getJobType(request: CreateBatchJobRequest): JobType {
-    return request.type;
+  protected getJobType(request: CreateRedriveJobRequest): JobType {
+    return JobType.REDRIVE;
   }
 
   protected shouldPublishMessage(
-    request: CreateBatchJobRequest,
+    request: CreateRedriveJobRequest,
   ): boolean | undefined {
-    return request.publishNotification;
+    return true;
   }
 }
