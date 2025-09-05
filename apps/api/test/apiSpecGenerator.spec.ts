@@ -2,11 +2,16 @@ import { beforeAll, describe, afterAll, it } from "@jest/globals";
 import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { HttpModule } from "@nestjs/axios";
-import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import * as fs from "fs";
 import { AppModule } from "../src/module/AppModule";
 
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
+import { buildOpenApiDocument } from "../src/schema/documentBuilder";
+import {
+  DionysusApiConfig,
+  MinervaApiConfig,
+  OlympusApiConfig,
+} from "../src/schema/schemas";
 
 AmqpConnection.prototype.init = jest.fn();
 AmqpConnection.prototype.close = jest.fn();
@@ -27,16 +32,27 @@ describe("OpenAPI spec generator", () => {
     await app.close();
   });
 
-  it("should generate swagger spec", async () => {
-    const config = new DocumentBuilder()
-      .setTitle("olympus-api")
-      .setDescription("Olympus API")
-      .setVersion("1.0")
-      .setContact("Neil Fritz", "https://ncfritz.net", "ncfritz@ncfritz.net")
-      .addTag("Olympus")
-      .build();
+  it("generates Olympus swagger spec", async () => {
+    const document = buildOpenApiDocument(app, OlympusApiConfig, false);
+    fs.writeFileSync(
+      "./dist/olympus-openapi-spec.json",
+      JSON.stringify(document, null, 2),
+    );
+  });
 
-    const document = SwaggerModule.createDocument(app, config);
-    fs.writeFileSync("./dist/openapi-spec.json", JSON.stringify(document));
+  it("generates Dionysus swagger spec", async () => {
+    const document = buildOpenApiDocument(app, DionysusApiConfig, false);
+    fs.writeFileSync(
+      "./dist/dionysus-openapi-spec.json",
+      JSON.stringify(document, null, 2),
+    );
+  });
+
+  it("generates Minerva swagger spec", async () => {
+    const document = buildOpenApiDocument(app, MinervaApiConfig, false);
+    fs.writeFileSync(
+      "./dist/minerva-openapi-spec.json",
+      JSON.stringify(document, null, 2),
+    );
   });
 });
