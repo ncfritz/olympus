@@ -1,6 +1,9 @@
-import { Country, MovieProductionCountry } from "@ncfritz/olympus-model";
+import { Country, CountryAssociation } from "@ncfritz/olympus-model";
 import moment from "moment/moment";
-import { GraphQlCountry, GraphQlCountryWrapper } from "../../types/batchJobs";
+import {
+  GraphQlCountry,
+  GraphQlCountryWrapper,
+} from "../../../types/dionysus/metadata/country";
 
 export const toDomainObject = (input: GraphQlCountry): Country => {
   return {
@@ -11,9 +14,9 @@ export const toDomainObject = (input: GraphQlCountry): Country => {
   };
 };
 
-export const toMovieCountryDomainObject = (
+export const toCountryAssociationDomainObject = (
   input: GraphQlCountryWrapper,
-): MovieProductionCountry => {
+): CountryAssociation => {
   return {
     createdTime: moment(input.createdTime),
     lastUpdatedTime: moment(input.lastUpdatedTime),

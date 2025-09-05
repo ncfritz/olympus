@@ -1,6 +1,6 @@
 import { ContentAssetTag } from "@ncfritz/olympus-model";
 import moment from "moment/moment";
-import { GraphQlContentAssetTag } from "../../types/content";
+import { GraphQlContentAssetTag } from "../../../types/content";
 
 export const toDomainObject = (
   input: GraphQlContentAssetTag,

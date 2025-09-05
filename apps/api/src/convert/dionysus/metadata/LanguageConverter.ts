@@ -1,6 +1,9 @@
-import { Language, MovieSpokenLanguage } from "@ncfritz/olympus-model";
+import { Language, LanguageAssociation } from "@ncfritz/olympus-model";
 import moment from "moment/moment";
-import { GraphQlLanguage, GraphQlLanguageWrapper } from "../../types/batchJobs";
+import {
+  GraphQlLanguage,
+  GraphQlLanguageWrapper,
+} from "../../../types/dionysus/metadata/language";
 
 export const toDomainObject = (input: GraphQlLanguage): Language => {
   return {
@@ -12,9 +15,9 @@ export const toDomainObject = (input: GraphQlLanguage): Language => {
   };
 };
 
-export const toMovieSpokenLanguageDomainObject = (
+export const toLanguageAssociationDomainObject = (
   input: GraphQlLanguageWrapper,
-): MovieSpokenLanguage => {
+): LanguageAssociation => {
   return {
     createdTime: moment(input.createdTime),
     lastUpdatedTime: moment(input.lastUpdatedTime),

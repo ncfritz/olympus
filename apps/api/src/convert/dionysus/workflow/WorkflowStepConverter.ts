@@ -1,7 +1,7 @@
 import { WorkflowStep } from "@ncfritz/olympus-model";
 import moment from "moment";
 import { GraphQlWorkflowStep } from "../../../types/workflow";
-import { toDomainObject as toBatchJobDomainObject } from "../../batch/BatchJobConverter";
+import { toDomainObject as toBatchJobDomainObject } from "../job/BatchJobConverter";
 
 export const toDomainObject = (input: GraphQlWorkflowStep): WorkflowStep => {
   return {

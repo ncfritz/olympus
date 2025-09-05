@@ -1,7 +1,7 @@
 import {
   NotificationTypeWithProtocols,
   NotificationType,
-} from "@ncfritz/olympus-model/dist/notifications";
+} from "@ncfritz/olympus-model";
 import moment from "moment/moment";
 import { GraphQlNotificationGroup } from "./NotificationGroupConverter";
 import { toDomainObject as toNotificationGroupDomainObject } from "./NotificationGroupConverter";

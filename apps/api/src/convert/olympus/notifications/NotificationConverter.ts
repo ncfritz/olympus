@@ -2,7 +2,7 @@ import {
   Notification,
   NotificationType,
   WebSocketNotificationLevel,
-} from "@ncfritz/olympus-model/dist/notifications";
+} from "@ncfritz/olympus-model";
 import {
   GraphQlNotificationGroup,
   toDomainObject as notificationGroupToDomainObject,

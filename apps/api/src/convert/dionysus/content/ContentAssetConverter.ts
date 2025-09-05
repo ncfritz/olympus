@@ -1,6 +1,6 @@
 import { ContentAsset } from "@ncfritz/olympus-model";
 import moment from "moment/moment";
-import { GraphQLContentAsset } from "../../types/content";
+import { GraphQLContentAsset } from "../../../types/content";
 import { toDomainObject as toTagDomainObject } from "./ContentAssetTagConverter";
 
 export const toDomainObject = (input: GraphQLContentAsset): ContentAsset => {

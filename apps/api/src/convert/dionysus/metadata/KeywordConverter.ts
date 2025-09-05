@@ -1,6 +1,9 @@
-import { Keyword, MovieKeyword } from "@ncfritz/olympus-model";
+import { Keyword, KeywordAssociation } from "@ncfritz/olympus-model";
 import moment from "moment/moment";
-import { GraphQlKeyword, GraphQlKeywordWrapper } from "../../types/batchJobs";
+import {
+  GraphQlKeyword,
+  GraphQlKeywordWrapper,
+} from "../../../types/dionysus/metadata/keyword";
 
 export const toDomainObject = (input: GraphQlKeyword): Keyword => {
   return {
@@ -11,9 +14,9 @@ export const toDomainObject = (input: GraphQlKeyword): Keyword => {
   };
 };
 
-export const toMovieKeywordDomainObject = (
+export const toKeywordAssociationDomainObject = (
   input: GraphQlKeywordWrapper,
-): MovieKeyword => {
+): KeywordAssociation => {
   return {
     createdTime: moment(input.createdTime),
     lastUpdatedTime: moment(input.lastUpdatedTime),

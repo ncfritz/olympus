@@ -1,6 +1,9 @@
-import { Genre, MovieGenre } from "@ncfritz/olympus-model";
+import { Genre, GenreAssociation } from "@ncfritz/olympus-model";
 import moment from "moment/moment";
-import { GraphQlGenre, GraphQlGenreWrapper } from "../../types/batchJobs";
+import {
+  GraphQlGenre,
+  GraphQlGenreWrapper,
+} from "../../../types/dionysus/metadata/genre";
 
 export const toDomainObject = (input: GraphQlGenre): Genre => {
   return {
@@ -12,9 +15,9 @@ export const toDomainObject = (input: GraphQlGenre): Genre => {
   };
 };
 
-export const toMovieGenreDomainObject = (
+export const toGenreAssociationDomainObject = (
   input: GraphQlGenreWrapper,
-): MovieGenre => {
+): GenreAssociation => {
   return {
     createdTime: moment(input.createdTime),
     lastUpdatedTime: moment(input.lastUpdatedTime),

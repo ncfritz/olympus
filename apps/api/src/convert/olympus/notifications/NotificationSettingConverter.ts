@@ -1,4 +1,4 @@
-import { NotificationSetting } from "@ncfritz/olympus-model/dist/notifications";
+import { NotificationSetting } from "@ncfritz/olympus-model";
 import moment from "moment/moment";
 import { toFullDomainObject as toNotificationTypeDomainObject } from "./NotificationTypeConverter";
 import { GraphQlFullNotificationType } from "./NotificationTypeConverter";
