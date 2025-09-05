@@ -1,7 +1,7 @@
 import {
   ListNotificationGroupsResponse,
   NotificationGroup,
-} from "@ncfritz/olympus-model/dist/notifications";
+} from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -14,23 +14,24 @@ import { gql, GraphQLClient } from "graphql-request";
 import {
   GraphQlNotificationGroup,
   toDomainObject,
-} from "../../convert/notifications/NotificationGroupConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+} from "../../../convert/olympus/notifications/NotificationGroupConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlListNotificationGroupsResponse = {
   olympus_notification_groups: GraphQlNotificationGroup[];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListNotificationGroupsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/notifications/groups")
+  @Get("/notifications/groups")
   @ApiOperation({
     summary: "Lists current notification groups",
     description:
       "Lists all available notification groups.  This API does not enumerate or provide any information about the " +
       "number of notifications or notification status for the groups.",
+    operationId: "ListNotificationGroups",
     tags: ["Notifications"],
   })
   @ApiQuery({
@@ -42,8 +43,8 @@ export class ListNotificationGroupsController {
   })
   @ApiProduces("application/json")
   @ApiOkResponse({
-    description: "The notification group list has been fetched successfully.",
     type: ListNotificationGroupsResponse,
+    description: "The notification group list has been fetched successfully.",
   })
   @ApiStandardErrorResponses()
   async handle(

@@ -2,9 +2,10 @@ import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   DeliveryState,
   DeliveryStatus,
+  EmailValueField,
   SendNotificationRequest,
   SendNotificationResponse,
-} from "@ncfritz/olympus-model/dist/notifications";
+} from "@ncfritz/olympus-model";
 import {
   BadRequestException,
   Body,
@@ -25,7 +26,8 @@ import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { v4 as uuidv4 } from "uuid";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { logger } from "../../../utils/logger";
 
 type GraphQlNotificationSetting = {
   olympus_notification_settings_by_pk: {
@@ -55,14 +57,14 @@ type NotificationHint = {
 
 const NOTIFICATION_TRIGGER_EXCHANGE = "notifications.trigger";
 
-@Controller()
+@Controller({ version: "1" })
 export class SendNotificationController {
   constructor(
     private readonly amqpConnection: AmqpConnection,
     private readonly graphQLClient: GraphQLClient,
   ) {}
 
-  @Post("/v1/notifications/publish")
+  @Post("/notifications/publish")
   @ApiOperation({
     summary: "Sends a notification to one or more destinations",
     description:
@@ -88,14 +90,14 @@ export class SendNotificationController {
     description: "Input for the SendNotification operation",
   })
   @ApiAcceptedResponse({
+    type: SendNotificationResponse,
     description:
       "The notification was successfully enqueued to all destinations.",
-    type: SendNotificationResponse,
   })
   @ApiResponse({
+    type: SendNotificationResponse,
     status: 207,
     description: "Enqueuing with some or all notification destinations failed.",
-    type: SendNotificationResponse,
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -116,12 +118,11 @@ export class SendNotificationController {
       }
     }
 
+    // TODO: Plumb in username when it is available
     const settings = await this.loadNotificationSetting(
       "ncfritz",
       request.type,
     );
-
-    console.log(settings);
 
     if (!settings) {
       throw new BadRequestException();
@@ -139,7 +140,7 @@ export class SendNotificationController {
           ),
         );
       } else {
-        console.log(
+        logger.info(
           `Notification type "${notificationId}" does not support the WebSocket channel or the user has disabled the WebSocket channel for this notification type.`,
         );
       }
@@ -155,7 +156,7 @@ export class SendNotificationController {
           ),
         );
       } else {
-        console.log(
+        logger.info(
           `Notification type "${notificationId}" does not support the SynoChat channel or the user has disabled the SynoChat channel for this notification type.`,
         );
       }
@@ -172,7 +173,7 @@ export class SendNotificationController {
           ),
         );
       } else {
-        console.log(
+        logger.info(
           `Notification type "${notificationId}" does not support the SynoMail channel or the user has disabled the SynoMail channel for this notification type.`,
         );
       }
@@ -189,7 +190,7 @@ export class SendNotificationController {
           ),
         );
       } else {
-        console.log(
+        logger.info(
           `Notification type "${notificationId}" does not support the Email channel or the user has disabled the Email channel for this notification type.`,
         );
       }
@@ -241,7 +242,7 @@ export class SendNotificationController {
     } catch (e) {
       deliveryStatus.status = DeliveryState.FAILURE;
 
-      console.error(
+      logger.error(
         `Failed to enqueue notification ${notificationId} with AMQP exchange ${NOTIFICATION_TRIGGER_EXCHANGE}`,
         e,
       );
@@ -285,7 +286,7 @@ export class SendNotificationController {
     } catch (e) {
       deliveryStatus.status = DeliveryState.FAILURE;
 
-      console.error(
+      logger.error(
         `Failed to enqueue notification ${notificationId} with AMQP exchange ${NOTIFICATION_TRIGGER_EXCHANGE}`,
         e,
       );
@@ -326,9 +327,13 @@ export class SendNotificationController {
           expirationTime: request.expirationTime,
           priority: smtpDestination.priority,
           from: smtpDestination.from,
-          to: smtpDestination.to.map((item) => item.value),
-          cc: smtpDestination.cc?.map((item) => item.value),
-          bcc: smtpDestination.bcc?.map((item) => item.value),
+          to: smtpDestination.to.map((item) => (item as EmailValueField).value),
+          cc: smtpDestination.cc?.map(
+            (item) => (item as EmailValueField).value,
+          ),
+          bcc: smtpDestination.bcc?.map(
+            (item) => (item as EmailValueField).value,
+          ),
           context: request.context,
         },
       );
@@ -337,7 +342,7 @@ export class SendNotificationController {
     } catch (e) {
       deliveryStatus.status = DeliveryState.FAILURE;
 
-      console.error(
+      logger.error(
         `Failed to enqueue notification ${notificationId} with AMQP exchange ${NOTIFICATION_TRIGGER_EXCHANGE}`,
         e,
       );
@@ -393,8 +398,6 @@ export class SendNotificationController {
     if (!queryResponse.olympus_notification_type_by_pk) {
       return undefined;
     }
-
-    console.log(notificationType);
 
     return {
       webSocket:

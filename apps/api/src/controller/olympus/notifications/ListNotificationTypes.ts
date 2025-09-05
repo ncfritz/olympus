@@ -1,41 +1,41 @@
 import {
   NotificationTypeWithProtocols,
   ListNotificationTypesResponse,
-} from "@ncfritz/olympus-model/dist/notifications";
-import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
+} from "@ncfritz/olympus-model";
+import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toFullDomainObject } from "../../convert/notifications/NotificationTypeConverter";
-import { GraphQlFullNotificationType } from "../../convert/notifications/NotificationTypeConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import {
+  GraphQlFullNotificationType,
+  toFullDomainObject,
+} from "../../../convert/olympus/notifications/NotificationTypeConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlListNotificationTypesResponse = {
   olympus_notification_type: GraphQlFullNotificationType[];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListNotificationTypesController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/notifications/types")
+  @Get("/notifications/types")
   @ApiOperation({
     summary: "Lists notifications types",
-    description: "Lists currently supported notification types.",
+    description:
+      "Lists currently supported notification types.  This API returns the full set of notifications supported " +
+      "and the supported, and default enabled, notification channels for each.",
     operationId: "ListNotificationsTypes",
     tags: ["Notifications"],
   })
   @ApiProduces("application/json")
   @ApiOkResponse({
-    description: "The notification type list has been fetched successfully.",
     type: ListNotificationTypesResponse,
+    description: "The notification type list has been fetched successfully.",
   })
   @ApiStandardErrorResponses()
-  async handle(
-    @Param("groupId") groupId: string,
-    @Query("count") count = 10,
-    @Res() response: Response,
-  ): Promise<void> {
+  async handle(@Res() response: Response): Promise<void> {
     const queryRequest = gql`
       query ListNotificationTypes {
         olympus_notification_type {

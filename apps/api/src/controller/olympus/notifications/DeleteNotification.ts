@@ -1,4 +1,4 @@
-import { DeleteNotificationResponse } from "@ncfritz/olympus-model/dist/notifications";
+import { DeleteNotificationResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Delete,
@@ -8,7 +8,7 @@ import {
   Res,
 } from "@nestjs/common";
 import {
-  ApiNoContentResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiProduces,
@@ -18,9 +18,9 @@ import { gql, GraphQLClient } from "graphql-request";
 import {
   GraphQlNotification,
   toDomainObject,
-} from "../../convert/notifications/NotificationConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
-import { NotificationsGateway } from "../../ws/gateway/NotificationsGateway";
+} from "../../../convert/olympus/notifications/NotificationConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { NotificationsGateway } from "../../../ws/gateway/NotificationsGateway";
 import { BaseNotificationsController } from "./BaseNotificationsController";
 
 type GraphQlDeleteNotificationResponse = {
@@ -29,7 +29,7 @@ type GraphQlDeleteNotificationResponse = {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class DeleteNotificationController extends BaseNotificationsController {
   constructor(
     private readonly graphQLClient: GraphQLClient,
@@ -38,7 +38,7 @@ export class DeleteNotificationController extends BaseNotificationsController {
     super();
   }
 
-  @Delete("/v1/notification/:notificationId")
+  @Delete("/notification/:notificationId")
   @ApiOperation({
     summary: "Deletes a notification",
     description:
@@ -54,9 +54,9 @@ export class DeleteNotificationController extends BaseNotificationsController {
     description: "The ID of the notification to delete",
     type: String,
   })
-  @ApiNoContentResponse({
-    description: "The notification has been successfully deleted.",
+  @ApiOkResponse({
     type: DeleteNotificationResponse,
+    description: "The notification has been successfully deleted.",
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -125,6 +125,9 @@ export class DeleteNotificationController extends BaseNotificationsController {
       notification: notification,
     };
 
-    response.status(HttpStatus.NO_CONTENT).send(responseBody);
+    // We don't send a 204 here as the framework, or Axios strips the response body when a 204 is encountered.
+    // Sending a 200 allows the body to be returned on a DELETE, even though the RFC there is a bit unclear on
+    // the expected behavior.
+    response.status(HttpStatus.OK).send(responseBody);
   }
 }

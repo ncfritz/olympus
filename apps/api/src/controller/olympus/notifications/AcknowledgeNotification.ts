@@ -1,7 +1,7 @@
 import {
   AcknowledgeNotificationRequest,
   AcknowledgeNotificationResponse,
-} from "@ncfritz/olympus-model/dist/notifications";
+} from "@ncfritz/olympus-model";
 import {
   Body,
   Controller,
@@ -26,9 +26,9 @@ import moment, { Moment } from "moment";
 import {
   GraphQlNotification,
   toDomainObject,
-} from "../../convert/notifications/NotificationConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
-import { NotificationsGateway } from "../../ws/gateway/NotificationsGateway";
+} from "../../../convert/olympus/notifications/NotificationConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { NotificationsGateway } from "../../../ws/gateway/NotificationsGateway";
 import { BaseNotificationsController } from "./BaseNotificationsController";
 
 type GraphQlDescribeNotificationResponse = {
@@ -38,7 +38,7 @@ type GraphQlUpdateNotificationResponse = {
   update_olympus_notifications_by_pk: GraphQlNotification;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class AcknowledgeNotificationController extends BaseNotificationsController {
   constructor(
     private readonly graphQLClient: GraphQLClient,
@@ -47,7 +47,7 @@ export class AcknowledgeNotificationController extends BaseNotificationsControll
     super();
   }
 
-  @Put("/v1/notification/:notificationId/acknowledge")
+  @Put("/notification/:notificationId/acknowledge")
   @ApiOperation({
     summary: "Sets a notification's ACK status",
     description:
@@ -71,9 +71,9 @@ export class AcknowledgeNotificationController extends BaseNotificationsControll
     description: "Input for the SendNotification operation",
   })
   @ApiOkResponse({
+    type: AcknowledgeNotificationResponse,
     description:
       "The notification's acknowledge state has been updated successfully.",
-    type: AcknowledgeNotificationResponse,
   })
   @ApiNotModifiedResponse({
     description:
@@ -148,8 +148,11 @@ export class AcknowledgeNotificationController extends BaseNotificationsControll
     let deletionTime: Moment | undefined = undefined;
     let expirationTime: Moment | undefined = undefined;
 
+    // If the notification is being acknowledged, set the expiration according to the TTL.  The final deletion time
+    // is system enforced at seven days.  If the notification is being un-acknowledged, use the stamped deletionTime
+    // to back off the seven-day soft deletion period.
     if (request.acknowledged) {
-      expirationTime = now.add(3, "days");
+      expirationTime = now.add(moment.duration(request.ttl));
       deletionTime = expirationTime.add(7, "days");
     } else if (target.deletionTime) {
       expirationTime = target.deletionTime.subtract(7, "days");

@@ -1,7 +1,7 @@
 import {
   UpdateNotificationSettingRequest,
   UpdateNotificationSettingResponse,
-} from "@ncfritz/olympus-model/dist/notifications";
+} from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Param, Put, Res } from "@nestjs/common";
 import {
   ApiBody,
@@ -13,25 +13,27 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../convert/notifications/NotificationSettingConverter";
-import { GraphQlNotificationSetting } from "../../convert/notifications/NotificationSettingConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import {
+  GraphQlNotificationSetting,
+  toDomainObject,
+} from "../../../convert/olympus/notifications/NotificationSettingConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlInsertNotificationResponse = {
   insert_olympus_notification_settings_one: GraphQlNotificationSetting;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class UpdateNotificationSettingController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/notifications/settings/:notificationType")
+  @Put("/notifications/settings/:notificationType")
   @ApiOperation({
     summary: "Creates or updates a single notification setting",
     description:
       "Creates or updates a single notification setting for a user.  This API will update the notification settings " +
       "for all notification channels supported by the notification settings.",
-    operationId: "UpdateNotificationSettings",
+    operationId: "UpdateNotificationSetting",
     tags: ["Notifications"],
   })
   @ApiConsumes("application/json")
@@ -47,8 +49,8 @@ export class UpdateNotificationSettingController {
     description: "Input for the CreateNotification operation",
   })
   @ApiOkResponse({
-    description: "The notification settings were successfully updated.",
     type: UpdateNotificationSettingResponse,
+    description: "The notification settings were successfully updated.",
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -110,6 +112,7 @@ export class UpdateNotificationSettingController {
       }
     `;
 
+    // TODO: Plumb in username when available
     const variables = {
       notificationTypeId: notificationTypeId,
       username: "ncfritz",

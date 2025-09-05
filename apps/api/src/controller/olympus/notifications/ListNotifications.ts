@@ -1,7 +1,8 @@
 import {
   Notification,
   ListNotificationsResponse,
-} from "@ncfritz/olympus-model/dist/notifications";
+  NotificationStatistics,
+} from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -14,19 +15,26 @@ import { gql, GraphQLClient } from "graphql-request";
 import {
   GraphQlNotification,
   toDomainObject,
-} from "../../convert/notifications/NotificationConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+} from "../../../convert/olympus/notifications/NotificationConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+
+type GraphQlNotificationStatistic = {
+  acknowledged: boolean;
+  count: number;
+  group: string;
+  level: string;
+};
 
 type GraphQlDescribeNotificationResponse = {
   olympus_notifications: GraphQlNotification[];
-  olympus_notification_statistics: any[];
+  olympus_notification_statistics: GraphQlNotificationStatistic[];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListNotificationsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/notifications")
+  @Get("/notifications")
   @ApiOperation({
     summary: "Lists current notifications and statistics",
     description:
@@ -45,14 +53,15 @@ export class ListNotificationsController {
     default: 10,
   })
   @ApiOkResponse({
-    description: "The notification list has been fetched successfully.",
     type: ListNotificationsResponse,
+    description: "The notification list has been fetched successfully.",
   })
   @ApiStandardErrorResponses()
   async handle(
     @Query("count") count = 10,
     @Res() response: Response,
   ): Promise<void> {
+    // TODO: Filter by username once plumbed in
     const queryRequest = gql`
       query ListNotifications {
         olympus_notifications(
@@ -98,7 +107,7 @@ export class ListNotificationsController {
       );
 
     const notifications: Notification[] = [];
-    const statistics: Record<string, any> = {};
+    const statistics: Record<string, NotificationStatistics> = {};
 
     queryResponse.olympus_notification_statistics.forEach((statistic) => {
       if (!(statistic.group in statistics)) {
@@ -112,7 +121,9 @@ export class ListNotificationsController {
         };
       }
 
-      statistics[statistic.group][statistic.level] += statistic.count;
+      statistics[statistic.group][
+        statistic.level as keyof NotificationStatistics
+      ] += statistic.count;
 
       if (!statistic.acknowledged) {
         statistics[statistic.group].unread += statistic.count;

@@ -1,7 +1,7 @@
 import {
   CreateNotificationRequest,
   CreateNotificationResponse,
-} from "@ncfritz/olympus-model/dist/notifications";
+} from "@ncfritz/olympus-model";
 import {
   Body,
   ConflictException,
@@ -24,9 +24,9 @@ import moment, { Moment } from "moment";
 import {
   GraphQlNotification,
   toDomainObject,
-} from "../../convert/notifications/NotificationConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
-import { NotificationsGateway } from "../../ws/gateway/NotificationsGateway";
+} from "../../../convert/olympus/notifications/NotificationConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { NotificationsGateway } from "../../../ws/gateway/NotificationsGateway";
 import { BaseNotificationsController } from "./BaseNotificationsController";
 
 type GraphQlDuplicateNotificationsResponse = {
@@ -45,7 +45,7 @@ type GraphQlGetDefaultGroupResponse = {
   olympus_notification_type: [{ defaultGroupId: string }];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateNotificationController extends BaseNotificationsController {
   constructor(
     private readonly graphQLClient: GraphQLClient,
@@ -54,7 +54,7 @@ export class CreateNotificationController extends BaseNotificationsController {
     super();
   }
 
-  @Post("/v1/notifications")
+  @Post("/notifications")
   @ApiOperation({
     summary: "Creates a persistent notification",
     description:
@@ -70,8 +70,8 @@ export class CreateNotificationController extends BaseNotificationsController {
     description: "Input for the CreateNotification operation",
   })
   @ApiCreatedResponse({
-    description: "The notification was created successfully.",
     type: CreateNotificationResponse,
+    description: "The notification was created successfully.",
   })
   @ApiConflictResponse({
     description:
@@ -177,7 +177,6 @@ export class CreateNotificationController extends BaseNotificationsController {
 
     if (request.notification.ttl) {
       const ttlDuration = moment.duration(request.notification.ttl);
-
       expirationTime = now.add(ttlDuration);
       deletionTime = expirationTime.add(7, "days");
     }
@@ -188,6 +187,10 @@ export class CreateNotificationController extends BaseNotificationsController {
       request.notification.group &&
       request.notification.group.trim() !== ""
     ) {
+      // There is no check to ensure that the group is valid in the system.  This could be added at the cost of an
+      // additional request to the database.  If the group is invalid, we can still persist the notification, it will
+      // just be grouped under the "recent" section until acknowledged, when it will effectively be detached from the
+      // UI as there is no group to display it under.
       group = request.notification.group;
     } else {
       const groupQuery = gql`
@@ -198,7 +201,7 @@ export class CreateNotificationController extends BaseNotificationsController {
         }
       `;
 
-      const groupRespone =
+      const groupResponse =
         await this.graphQLClient.request<GraphQlGetDefaultGroupResponse>(
           groupQuery,
           {
@@ -206,8 +209,8 @@ export class CreateNotificationController extends BaseNotificationsController {
           },
         );
 
-      if (groupRespone.olympus_notification_type.length > 0) {
-        group = groupRespone.olympus_notification_type[0].defaultGroupId;
+      if (groupResponse.olympus_notification_type.length > 0) {
+        group = groupResponse.olympus_notification_type[0].defaultGroupId;
       }
     }
 

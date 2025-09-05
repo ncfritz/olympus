@@ -1,28 +1,28 @@
 import {
   LiatNotificationSettingsResponse,
   NotificationSetting,
-} from "@ncfritz/olympus-model/dist/notifications";
+} from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
-import { toFullDomainObject as toNotificationTypeDomainObject } from "../../convert/notifications/NotificationTypeConverter";
-import { toDomainObject as toNotificationSettingDomainObject } from "../../convert/notifications/NotificationSettingConverter";
-import { GraphQlNotificationSetting } from "../../convert/notifications/NotificationSettingConverter";
-import { GraphQlFullNotificationType } from "../../convert/notifications/NotificationTypeConverter";
-import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { toFullDomainObject as toNotificationTypeDomainObject } from "../../../convert/olympus/notifications/NotificationTypeConverter";
+import { toDomainObject as toNotificationSettingDomainObject } from "../../../convert/olympus/notifications/NotificationSettingConverter";
+import { GraphQlNotificationSetting } from "../../../convert/olympus/notifications/NotificationSettingConverter";
+import { GraphQlFullNotificationType } from "../../../convert/olympus/notifications/NotificationTypeConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlListNotificationSettingsResponse = {
   olympus_notification_type: GraphQlFullNotificationType[];
   olympus_notification_settings: GraphQlNotificationSetting[];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListNotificationSettingsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/notifications/settings")
+  @Get("/notifications/settings")
   @ApiOperation({
     summary: "Lists notification settings for a user",
     description:
@@ -33,8 +33,8 @@ export class ListNotificationSettingsController {
   })
   @ApiProduces("application/json")
   @ApiOkResponse({
-    description: "The notification settings were successfully fetched.",
     type: LiatNotificationSettingsResponse,
+    description: "The notification settings were successfully fetched.",
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
@@ -96,6 +96,7 @@ export class ListNotificationSettingsController {
     const queryResponse =
       await this.graphQLClient.request<GraphQlListNotificationSettingsResponse>(
         queryRequest,
+        // TODO: Replace with authenticated username once plumbed in
         { username: "ncfritz" },
       );
 

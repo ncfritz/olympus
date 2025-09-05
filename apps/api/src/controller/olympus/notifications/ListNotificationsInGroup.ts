@@ -2,7 +2,7 @@ import { SortDirection } from "@ncfritz/olympus-model";
 import {
   Notification,
   ListNotificationsInGroupResponse,
-} from "@ncfritz/olympus-model/dist/notifications";
+} from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -15,11 +15,11 @@ import { gql, GraphQLClient } from "graphql-request";
 import {
   GraphQlNotification,
   toDomainObject,
-} from "../../convert/notifications/NotificationConverter";
+} from "../../../convert/olympus/notifications/NotificationConverter";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
-} from "../../utils/controllerDecorators";
+} from "../../../utils/controllerDecorators";
 
 type GraphQlListNotificationsInGroupResponse = {
   olympus_notifications: GraphQlNotification[];
@@ -30,11 +30,11 @@ type GraphQlListNotificationsInGroupResponse = {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class ListNotificationInGroupController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/notifications/group/:groupId/notifications")
+  @Get("/notifications/group/:groupId/notifications")
   @ApiOperation({
     summary: "Lists current notifications and statistics",
     description:
@@ -51,8 +51,8 @@ export class ListNotificationInGroupController {
   })
   @ApiPaginationParams()
   @ApiOkResponse({
-    description: "The notification list has been fetched successfully.",
     type: ListNotificationsInGroupResponse,
+    description: "The notification list has been fetched successfully.",
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -63,6 +63,7 @@ export class ListNotificationInGroupController {
     @Query("sortBy") sortField = "createdTime",
     @Res() response: Response,
   ): Promise<void> {
+    // TODO: Filter based on username when this is plumbed in
     const queryRequest = gql`
       query ListNotificationsInGroup($group: String!) {
         olympus_notifications(

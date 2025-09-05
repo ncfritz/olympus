@@ -1,6 +1,6 @@
 import { gql, GraphQLClient } from "graphql-request";
-import { Notification } from "@ncfritz/olympus-model/dist/notifications";
-import { NotificationsGateway } from "../../ws/gateway/NotificationsGateway";
+import { Notification } from "@ncfritz/olympus-model";
+import { NotificationsGateway } from "../../../ws/gateway/NotificationsGateway";
 
 type GraphQlGetUnreadCountResponse = {
   olympus_notifications_aggregate: {
@@ -11,11 +11,10 @@ type GraphQlGetUnreadCountResponse = {
 };
 
 export abstract class BaseNotificationsController {
-  constructor() {}
-
   protected async getUnreadNotificationsCount(
     client: GraphQLClient,
   ): Promise<number> {
+    // TODO: Filter based on the username
     const queryRequest = gql`
       query GetUnreadCount {
         olympus_notifications_aggregate(
