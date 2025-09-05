@@ -14,8 +14,6 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../../../convert/dionysus/metadata/CollectionConverter";
-import { GraphQlCollection } from "../../../../types/dionysus/metadata";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlCreateCollectionInput = {
@@ -29,7 +27,9 @@ type GraphQlCreateCollectionInput = {
 };
 
 type GraphQlCreateCollectionResponse = {
-  insert_dionysus_collections_one: GraphQlCollection;
+  insert_dionysus_collections_one: {
+    id: number;
+  };
 };
 
 @Controller({ version: "1" })
@@ -101,53 +101,7 @@ export class CreateCollectionController {
             update_columns: [name, overview, posterPath, backdropPath]
           }
         ) {
-          backdropPath
-          createdTime
           id
-          images {
-            languageCode
-            createdTime
-            filePath
-            height
-            language {
-              createdTime
-              lastUpdatedTime
-              name
-              nativeName
-            }
-            lastUpdatedTime
-            type
-            width
-          }
-          lastUpdatedTime
-          name
-          overview
-          parts {
-            createdTime
-            lastUpdatedTime
-            movie {
-              adult
-              backdropPath
-              budget
-              createdTime
-              homepage
-              id
-              imdbId
-              lastUpdatedTime
-              originalLanguageCode
-              originalTitle
-              overview
-              posterPath
-              releaseDate
-              revenue
-              runtime
-              status
-              tagline
-              title
-              video
-            }
-          }
-          posterPath
         }
       }
     `;
@@ -166,9 +120,7 @@ export class CreateCollectionController {
     });
 
     const responseBody: CreateCollectionResponse = {
-      collection: toDomainObject(
-        insertResponse.insert_dionysus_collections_one,
-      ),
+      id: insertResponse.insert_dionysus_collections_one.id,
     };
 
     response
