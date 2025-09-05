@@ -1,46 +1,8 @@
-import {
-  GraphQlCertification,
-  GraphQlCountry,
-  GraphQlCountryWrapper,
-  GraphQlGenreWrapper,
-  GraphQlKeywordWrapper,
-  GraphQlLanguage,
-  GraphQlLanguageWrapper,
-} from "../batchJobs";
-
-export type GraphQlMovie = {
-  adult: boolean;
-  backdropPath?: string;
-  budget: number;
-  createdTime: string;
-  homepage: string;
-  id: number;
-  imdbId?: string;
-  lastUpdatedTime: string;
-  originalTitle: string;
-  overview: string;
-  posterPath?: string;
-  releaseDate?: string;
-  revenue: number;
-  runtime: number;
-  status: string;
-  tagline: string;
-  title: string;
-  video: boolean;
-  alternativeTitles: GraphQlAlternativeTitle[];
-  cast: GraphQlMovieCastMember[];
-  crew: GraphQlMovieCrewMember[];
-  externalIds: GraphQlExternalId[];
-  genres: GraphQlGenreWrapper[];
-  images: GraphQlMovieImage[];
-  keywords: GraphQlKeywordWrapper[];
-  productionCountries: GraphQlCountryWrapper[];
-  productionCompanies: GraphQlMovieProductionCompanyWrapper[];
-  originalLanguage: GraphQlLanguage;
-  releaseDates: GraphQlReleaseDate[];
-  spokenLanguages: GraphQlLanguageWrapper[];
-  videos: GraphQlMovieVideo[];
-};
+import { GraphQlCertification } from "./metadata/certification";
+import { GraphQlCountry } from "./metadata/country";
+import { GraphQlLanguage } from "./metadata/language";
+import { GraphQlSparseMovie } from "./metadata/movie";
+import { GraphQlBasePerson } from "./metadata/person";
 
 export type GraphQlAlternativeTitle = Timestamped & {
   country: GraphQlCountry;
@@ -56,7 +18,6 @@ export type GraphQlAlternativeName = Timestamped & {
 export type GraphQlBaseCastOrCrewMember = Timestamped & {
   creditId: string;
   originalName: string;
-  person: GraphQlPerson;
 };
 
 export type GraphQlBaseCastMember = GraphQlBaseCastOrCrewMember & {
@@ -64,34 +25,16 @@ export type GraphQlBaseCastMember = GraphQlBaseCastOrCrewMember & {
   character: string;
   order: number;
 };
-export type GraphQlMovieCastMember = GraphQlBaseCastMember & {};
+export type GraphQlMovieCastMember = GraphQlBaseCastMember & {
+  person: GraphQlBasePerson;
+};
 
 export type GraphQlBaseCrewMember = GraphQlBaseCastOrCrewMember & {
   job: string;
   department: string;
 };
-export type GraphQlMovieCrewMember = GraphQlBaseCrewMember & {};
-
-export type GraphQlPerson = Timestamped & {
-  adult: boolean;
-  alsoKnownAs: GraphQlAlsoKnownAs[];
-  biography: string;
-  birthday?: string;
-  birthplace?: string;
-  deathday?: string;
-  externalIds: GraphQlExternalId[];
-  gender: number;
-  homepage: string;
-  id: number;
-  images: GraphQlImage[];
-  imdbId: string;
-  knownForDepartment: string;
-  name: string;
-  profilePath?: string;
-};
-
-export type GraphQlAlsoKnownAs = Timestamped & {
-  name: string;
+export type GraphQlMovieCrewMember = GraphQlBaseCrewMember & {
+  person: GraphQlBasePerson;
 };
 
 export type GraphQlExternalId = Timestamped & {
@@ -103,11 +46,16 @@ export type GraphQlImage = Timestamped & {
   filePath: string;
   height: number;
   width: number;
+};
+
+export type GraphQlTypedImage = GraphQlImage & {
+  type: string;
   language: GraphQlLanguage;
 };
 
-export type GraphQlMovieImage = GraphQlImage & {
-  type: string;
+export type GraphQlIdentifiableImage = GraphQlImage & {
+  id: string;
+  fileType: string;
 };
 
 export type GraphQlReleaseDate = Timestamped & {
@@ -119,7 +67,7 @@ export type GraphQlReleaseDate = Timestamped & {
   type: number;
 };
 
-export type GraphQlMovieVideo = Timestamped & {
+export type GraphQlVideo = Timestamped & {
   country: GraphQlCountry;
   id: string;
   key: string;
@@ -132,15 +80,26 @@ export type GraphQlMovieVideo = Timestamped & {
   type: string;
 };
 
-export type GraphQlProductionCompanyBase = Timestamped & {
-  alternativeNames: GraphQlAlternativeName[];
-  country: GraphQlCountry;
-  description: string;
-  headquarters: string;
-  homepage: string;
+export type GraphQlCollection = Timestamped & {
+  backdropPath: string;
   id: number;
-  logo: string;
   name: string;
+  overview: string;
+  posterPath: string;
+  images: GraphQlTypedImage[];
+  parts: GraphQlCollectionPart[];
+};
+
+export type GraphQlCollectionPart = Timestamped & {
+  movie: GraphQlSparseMovie;
+};
+
+export type GraphQlPersonMovieCastCredit = GraphQlBaseCastMember & {
+  movie: GraphQlSparseMovie;
+};
+
+export type GraphQlPersonMovieCrewCredit = GraphQlBaseCrewMember & {
+  movie: GraphQlSparseMovie;
 };
 
 export type Timestamped = {
@@ -151,6 +110,3 @@ export type Timestamped = {
 export type Wrapped<T, PropertyName extends string> = {
   [P in PropertyName]: T;
 };
-
-export type GraphQlMovieProductionCompanyWrapper = Timestamped &
-  Wrapped<GraphQlProductionCompanyBase, "productionCompany">;

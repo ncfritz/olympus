@@ -1,6 +1,4 @@
 import {
-  CertificationType,
-  GenreType,
   JobStatus,
   JobType,
   MetadataFetchJobStatus,
@@ -27,70 +25,6 @@ export type GraphQlBatchJob = {
 
 export type GraphQlListBatchJobsResponse = {
   dionysus_bulk_load_jobs: GraphQlBatchJob[];
-};
-
-export type GraphQlCertification = {
-  certification: string;
-  country: string;
-  createdTime: string;
-  lastUpdatedTime: string;
-  meaning: string;
-  order: number;
-  type: CertificationType;
-};
-
-export type GraphQlCountry = {
-  createdTime: string;
-  id: string;
-  lastUpdatedTime: string;
-  name: string;
-};
-
-export type GraphQlCountryWrapper = {
-  createdTime: string;
-  lastUpdatedTime: string;
-  country: GraphQlCountry;
-};
-
-export type GraphQlGenre = {
-  id: number;
-  type: GenreType;
-  name: string;
-  createdTime: string;
-  lastUpdatedTime: string;
-};
-
-export type GraphQlGenreWrapper = {
-  createdTime: string;
-  lastUpdatedTime: string;
-  genre: GraphQlGenre;
-};
-
-export type GraphQlKeyword = {
-  id: string;
-  value: string;
-  createdTime: string;
-  lastUpdatedTime: string;
-};
-
-export type GraphQlKeywordWrapper = {
-  createdTime: string;
-  lastUpdatedTime: string;
-  keyword: GraphQlKeyword;
-};
-
-export type GraphQlLanguage = {
-  id: string;
-  name: string;
-  nativeName: string;
-  createdTime: string;
-  lastUpdatedTime: string;
-};
-
-export type GraphQlLanguageWrapper = {
-  createdTime: string;
-  language: GraphQlLanguage;
-  lastUpdatedTime: string;
 };
 
 export type GraphQlMetadataFetchJob = {
