@@ -5,13 +5,14 @@ import {
   IdentifiableImage,
   Person,
   PersonAlsoKnownAs,
-  PersonAssociation
+  PersonAssociation,
 } from "@ncfritz/olympus-model";
 import moment from "moment";
 import {
-  GraphQlAlsoKnownAs, GraphQlBasePerson,
+  GraphQlAlsoKnownAs,
+  GraphQlBasePerson,
   GraphQlPerson,
-  GraphQlPersonWrapper
+  GraphQlPersonWrapper,
 } from "../../../types/dionysus/metadata/person";
 import {
   toExternalIdDomainObject,
