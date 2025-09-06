@@ -18,6 +18,10 @@ import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
+import {
+  buildFilterExpression,
+  buildPaginationExpression,
+} from "../../../../utils/filterUtil";
 
 type GraphQlListMetadataJobsResponse = {
   dionysus_metadata_fetch_status: GraphQlMetadataFetchJob[];
@@ -63,38 +67,17 @@ export class ListMetadataFetchJobsController {
     @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const queryParams = [
-      `limit: ${pageSize}, offset: ${
-        pageSize * startPage
-      }, order_by: {${sortField}: ${sortDirection}}`,
-    ];
-    let where = undefined;
-
-    if (filters) {
-      const decodedOptions = JSON.parse(
-        Buffer.from(filters, "base64").toString("utf-8"),
-      );
-      console.log(decodedOptions);
-
-      const filterOptions = [];
-
-      for (const key in decodedOptions) {
-        if (decodedOptions[key] && decodedOptions[key].length > 0) {
-          const values = decodedOptions[key].map((value: string) => {
-            return `"${value}"`;
-          });
-
-          filterOptions.push(`${key}: { _in: [${values.join(", ")}]}`);
-        }
-      }
-
-      where = `where: {_and: {${filterOptions.join(", ")}}}`;
-      queryParams.push(where);
-    }
+    const whereExpression = buildFilterExpression(filters);
+    const paginationExpression = buildPaginationExpression({
+      pageSize: pageSize,
+      startPage: startPage,
+      sortDirection: sortDirection,
+      sortField: sortField,
+    });
 
     const fetchRequest = gql`
       query ListMetadataFetchJobs {
-      dionysus_metadata_fetch_status(${queryParams.join(", ")}) {
+      dionysus_metadata_fetch_status(${[paginationExpression, whereExpression].join(", ")}) {
         createdTime
         id
         jitter
@@ -104,7 +87,7 @@ export class ListMetadataFetchJobsController {
         ttl
         type
       }
-      dionysus_metadata_fetch_status_aggregate${where ? `(${where})` : ""} {
+      dionysus_metadata_fetch_status_aggregate${whereExpression ? `(${whereExpression})` : ""} {
         aggregate {
           count
         }
