@@ -1,5 +1,8 @@
 # olympus-api
-The Olympis REST API
+
+[![Release](https://github.com/ncfritz/olympus-api/actions/workflows/release.yml/badge.svg)](https://github.com/ncfritz/olympus-api/actions/workflows/release.yml)
+
+The Olympus REST API
 
 ## Docker Image
 The API can be run as a Docker container and will expose port 3000.
