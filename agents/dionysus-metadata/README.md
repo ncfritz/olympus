@@ -1,4 +1,7 @@
 # dionysus-metadata-agents
+
+[![Release](https://github.com/ncfritz/dionysus-metadata-agents/actions/workflows/release.yml/badge.svg)](https://github.com/ncfritz/dionysus-metadata-agents/actions/workflows/release.yml)
+
 Asynchronous agents for fetching TMDB metadata and pushing it to Dionysus.  These agents use a multi-phase process for
 queueing metadata sets and fetching metadata for individual TMDB entities.
 
