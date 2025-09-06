@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { GraphQLClient } from "graphql-request";
+import { logger } from "../utils/logger";
 
 @Module({
   imports: [],
@@ -17,7 +18,7 @@ import { GraphQLClient } from "graphql-request";
 
         const hasuraEndpoint = `${hasuraProtocol}://${hasuraHost}:${hasuraPort}/v1/graphql`;
 
-        console.info(`Starting GraphQLClientModule - ${hasuraEndpoint}`);
+        logger.info(`Starting GraphQLClientModule - ${hasuraEndpoint}`);
 
         return new GraphQLClient(hasuraEndpoint, {
           headers: {

@@ -58,7 +58,6 @@ export class CreateBatchJobController extends BaseCreateBatchJobController<Creat
     @Body() request: CreateBatchJobRequest,
     @Res() response: Response,
   ): Promise<void> {
-    console.log(request);
     await this.processRequest(request, response);
   }
 

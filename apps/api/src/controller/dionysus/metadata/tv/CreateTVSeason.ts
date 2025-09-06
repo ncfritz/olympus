@@ -57,8 +57,6 @@ export class CreateTVSeasonController {
     @Body() request: CreateTVSeasonRequest,
     @Res() response: Response,
   ): Promise<void> {
-    console.log(seriesId);
-
     const insertRequest = gql`
       mutation CreateTVSeason(
         $id: numeric!

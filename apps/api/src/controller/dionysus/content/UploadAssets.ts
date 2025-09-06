@@ -59,8 +59,6 @@ export class UploadAssetsController {
   )
   public async uploadFile(@UploadedFiles() files: Express.Multer.File[]) {
     files.forEach((file) => {
-      console.log(file);
-
       this.amqpConnection.publish("content.trigger", "jobType.rawIngest", {
         assetLocation: `${process.env.DIONYSUS_PUBLISH_PATH}/${file.filename}`,
         originalFilename: file.originalname,

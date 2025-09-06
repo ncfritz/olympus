@@ -87,7 +87,6 @@ export class GetNotesForEntityController {
         entityType: entityType,
         entityId: entityId,
       });
-    console.log(queryResponse);
 
     const notes: Note[] = [];
     queryResponse.minerva_note_associations.forEach((associatedNote) => {

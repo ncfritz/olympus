@@ -9,6 +9,7 @@ import {
   WebSocketServer,
 } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
+import { logger } from "../../utils/logger";
 
 @WebSocketGateway({
   cors: {
@@ -24,15 +25,15 @@ export class NotificationsGateway
 
   handleConnection(client: any, ...args: any[]): any {
     client.emit("message", "Welcome to the server!");
-    console.log(`Client connected...${client.id}`);
+    logger.info(`Client connected...${client.id}`);
   }
 
   afterInit(server: Server): any {
-    console.log("Init complete...");
+    logger.info("Init complete...");
   }
 
   handleDisconnect(client: any): any {
-    console.log(`Client disconnect...${client.id}`);
+    logger.info(`Client disconnect...${client.id}`);
   }
 
   @SubscribeMessage("notification.proxy_to_frontend")
@@ -52,7 +53,7 @@ export class NotificationsGateway
   }
 
   send(messageName: string, message: any) {
-    console.info(`Sending "${messageName}" message via WebSocketGateway`);
+    logger.debug(`Sending "${messageName}" message via WebSocketGateway`);
 
     this.server.emit(messageName, message);
   }

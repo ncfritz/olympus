@@ -61,8 +61,6 @@ export class DeleteMetadataFetchJobController {
     @Param("entityType") entityType: string,
     @Res() response: Response,
   ): Promise<void> {
-    console.log(entityId);
-
     const deleteRequest = gql`
       mutation DeleteFetchJob($id: String!, $type: String!) {
         delete_dionysus_metadata_fetch_status_by_pk(id: $id, type: $type) {

@@ -108,8 +108,6 @@ export class ListAvailableContentAssetTagsController {
       }
     `;
 
-    console.log(queryRequest);
-
     const queryResponse = await this.graphQLClient.request<
       GraphQListContentAssetTagsResponse,
       Record<string, string>

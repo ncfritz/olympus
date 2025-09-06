@@ -55,7 +55,6 @@ export class CreateNoteController {
     @Body() request: CreateNoteRequest,
     @Res() response: Response,
   ): Promise<void> {
-    console.log(JSON.stringify(request, null, 2));
     const insertRequest = gql`
       mutation CreateNote(
         $author: String!

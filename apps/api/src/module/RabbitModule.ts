@@ -1,6 +1,7 @@
 import { RabbitMQConfig, RabbitMQModule } from "@golevelup/nestjs-rabbitmq";
 import { Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { logger } from "../utils/logger";
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { ConfigService } from "@nestjs/config";
           amqpVhost,
         )}`;
 
-        console.log(`Attempting to connect to: ${amqpEndpoint}`);
+        logger.info(`Attempting to connect to: ${amqpEndpoint}`);
 
         return {
           exchanges: [

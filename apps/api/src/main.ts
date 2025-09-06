@@ -1,4 +1,4 @@
-import { ValidationPipe, VersioningType } from "@nestjs/common";
+import { VersioningType } from "@nestjs/common";
 import { NestFactory, PartialGraphHost, Reflector } from "@nestjs/core";
 import cookieParser from "cookie-parser";
 import * as bodyParser from "body-parser";
@@ -26,7 +26,7 @@ async function bootstrap() {
       instance: logger,
     }),
   });
-  app.useGlobalPipes(new ValidationPipe());
+  //app.useGlobalPipes(new ValidationPipe());
   app.use(cookieParser());
   // Allow larger body size
   app.use(bodyParser.json({ limit: 1024 * 1024 * 10, inflate: true }));

@@ -1,5 +1,6 @@
 import { gql, GraphQLClient } from "graphql-request";
 import { Notification } from "@ncfritz/olympus-model";
+import { logger } from "../../../utils/logger";
 import { NotificationsGateway } from "../../../ws/gateway/NotificationsGateway";
 
 type GraphQlGetUnreadCountResponse = {
@@ -44,7 +45,7 @@ export abstract class BaseNotificationsController {
         unreadCount: await this.getUnreadNotificationsCount(client),
       });
     } catch (e) {
-      console.warn(
+      logger.warn(
         `Unable to send WS notification for notificationId ${notification.notificationId} delete operation`,
         e,
       );

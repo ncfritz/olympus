@@ -71,8 +71,6 @@ export class GetMetadataWorkflowStatisticsController {
     const queueTimeSeries: number[][] = this.emptyTimingMap(moment(now));
     const runtimeSeries: number[][] = this.emptyTimingMap(moment(now));
 
-    console.log(fetchResponse);
-
     fetchResponse.dionysus_metadata_workflow_statistics.forEach((data) => {
       const dataTime = moment.utc(data.createdTime);
       const dateIndex = 30 - now.diff(dataTime, "days");
