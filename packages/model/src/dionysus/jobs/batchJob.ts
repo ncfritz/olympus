@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
+import { PaginatedResults } from "../../common";
 import { MetadataFetchJobStatus, MetadataJobType } from "./fetchJob";
 
 export enum JobType {
@@ -151,12 +152,12 @@ export class GetBatchJobStatsByTypeResponse {
   };
 }
 
-export class ListBatchJobsResponse {
+export class ListBatchJobsResponse extends PaginatedResults {
   @ApiProperty({ type: () => BatchJob, isArray: true })
   jobs: BatchJob[];
 }
 
-export class ListBatchJobsByTypeResponse {
+export class ListBatchJobsByTypeResponse extends PaginatedResults {
   @ApiProperty({ type: () => BatchJob, isArray: true })
   jobs: BatchJob[];
 }
