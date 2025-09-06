@@ -18,6 +18,10 @@ import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
+import {
+  buildFilterExpression,
+  buildPaginationExpression,
+} from "../../../../utils/filterUtil";
 
 @Controller({ version: "1" })
 export class ListBatchJobsController {
@@ -35,8 +39,9 @@ export class ListBatchJobsController {
   })
   @ApiProduces("application/json")
   @ApiQuery({
-    name: "pageSize",
-    type: Number,
+    name: "filters",
+    type: String,
+    required: false,
   })
   @ApiPaginationParams()
   @ApiOkResponse({
@@ -50,13 +55,20 @@ export class ListBatchJobsController {
     @Query("startPage") startPage = 0,
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
     @Query("sortBy") sortField = "createdTime",
+    @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
+    const whereExpression = buildFilterExpression(filters);
+    const paginationExpression = buildPaginationExpression({
+      pageSize: pageSize,
+      startPage: startPage,
+      sortDirection: sortDirection,
+      sortField: sortField,
+    });
+
     const fetchRequest = gql`
       query ListBatchJobs {
-      dionysus_bulk_load_jobs(limit: ${pageSize}, offset: ${
-        pageSize * startPage
-      }, order_by: {${sortField}: ${sortDirection}}) {
+      dionysus_bulk_load_jobs(${[paginationExpression, whereExpression].join(", ")}) {
         id
         type
         status
@@ -71,6 +83,11 @@ export class ListBatchJobsController {
         expiredRecords
         skippedRecords
         processedRecords
+      }
+      dionysus_bulk_load_jobs_aggregate${whereExpression ? `(${whereExpression})` : ""} {
+        aggregate {
+          count
+        }
       }
     }
     `;
@@ -87,6 +104,7 @@ export class ListBatchJobsController {
 
     const responseBody: ListBatchJobsResponse = {
       jobs: fetchedJobs,
+      count: fetchResponse.dionysus_bulk_load_jobs_aggregate.aggregate.count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

@@ -25,6 +25,11 @@ export type GraphQlBatchJob = {
 
 export type GraphQlListBatchJobsResponse = {
   dionysus_bulk_load_jobs: GraphQlBatchJob[];
+  dionysus_bulk_load_jobs_aggregate: {
+    aggregate: {
+      count: number;
+    };
+  };
 };
 
 export type GraphQlMetadataFetchJob = {

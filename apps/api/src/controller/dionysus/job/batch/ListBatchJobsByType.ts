@@ -4,6 +4,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
+  ApiQuery,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -19,10 +20,10 @@ import {
   ListBatchJobsByTypeResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
-
-type GraphQlListBatchJobsByTypeInput = {
-  type: JobType;
-};
+import {
+  buildFilterExpression,
+  buildPaginationExpression,
+} from "../../../../utils/filterUtil";
 
 @Controller({ version: "1" })
 export class ListBatchJobsByTypeController {
@@ -45,6 +46,11 @@ export class ListBatchJobsByTypeController {
     enum: JobType,
     enumName: "JobType",
   })
+  @ApiQuery({
+    name: "filters",
+    type: String,
+    required: false,
+  })
   @ApiPaginationParams()
   @ApiOkResponse({
     description:
@@ -58,13 +64,21 @@ export class ListBatchJobsByTypeController {
     @Query("startPage") startPage = 0,
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
     @Query("sortBy") sortField = "createdTime",
+    @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
+    const typeExpression = `type: {_eq: $type}`;
+    const whereExpression = buildFilterExpression(filters, [typeExpression]);
+    const paginationExpression = buildPaginationExpression({
+      pageSize: pageSize,
+      startPage: startPage,
+      sortDirection: sortDirection,
+      sortField: sortField,
+    });
+
     const fetchRequest = gql`
-      query ListBatchJobs($type: String) {
-      dionysus_bulk_load_jobs(limit: ${pageSize}, offset: ${
-        pageSize * startPage
-      }, order_by: {${sortField}: ${sortDirection}}, where: {type: {_eq: $type}}) {
+      query ListBatchJobs($type: String!) {
+      dionysus_bulk_load_jobs(${[paginationExpression, whereExpression].join(", ")}) {
         id
         type
         status
@@ -80,15 +94,19 @@ export class ListBatchJobsByTypeController {
         skippedRecords
         processedRecords
       }
+      dionysus_bulk_load_jobs_aggregate${whereExpression ? `(${whereExpression})` : ""} {
+        aggregate {
+          count
+        }
+      }
     }
     `;
 
-    const fetchResponse = await this.graphQLClient.request<
-      GraphQlListBatchJobsResponse,
-      GraphQlListBatchJobsByTypeInput
-    >(fetchRequest, {
-      type: type,
-    });
+    const fetchResponse =
+      await this.graphQLClient.request<GraphQlListBatchJobsResponse>(
+        fetchRequest,
+        { type: type },
+      );
     const fetchedJobs: BatchJob[] = [];
 
     fetchResponse.dionysus_bulk_load_jobs.forEach((result) => {
@@ -97,6 +115,7 @@ export class ListBatchJobsByTypeController {
 
     const responseBody: ListBatchJobsByTypeResponse = {
       jobs: fetchedJobs,
+      count: fetchResponse.dionysus_bulk_load_jobs_aggregate.aggregate.count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);
