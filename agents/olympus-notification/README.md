@@ -1,4 +1,7 @@
 # olympus-notification-agent
+
+[![Release](https://github.com/ncfritz/olympus-notification-agent/actions/workflows/release.yml/badge.svg)](https://github.com/ncfritz/olympus-notification-agent/actions/workflows/release.yml)
+
 Asynchronous agent to process notifications sent by Olympus and Olympus-adjacent
 processes and handle delivery to various messaging channels.  This agent supports pushing notifications to the
 following endpoint types:
