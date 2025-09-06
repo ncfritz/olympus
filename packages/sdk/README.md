@@ -1,4 +1,7 @@
 # olympus-sdk
+
+[![Release](https://github.com/ncfritz/olympus-sdk/actions/workflows/release.yml/badge.svg)](https://github.com/ncfritz/olympus-sdk/actions/workflows/release.yml)
+
 A TypeScript compatible SDK based on the `@ncfritz/olympus-model` and `@ncfritz/olympus-api` packages.
 
 ## Motivation
