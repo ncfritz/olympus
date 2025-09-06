@@ -2,10 +2,9 @@ import {
   MessageHandlerErrorBehavior,
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
-import { JobType } from "@ncfritz/olympus-model";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
-import { BatchJobMessage } from "../../types/message";
+import { type ConsumeMessage } from "amqplib";
+import { type BatchJobMessage } from "../../types/message";
 import {
   BATCH_JOB_PREFIX,
   JOB_TYPE_PREFIX,
@@ -17,12 +16,12 @@ import { BaseExportBatchHandler } from "./BaseExportBatchHandler";
 export class MovieBatchHandler extends BaseExportBatchHandler {
   @RabbitSubscribe({
     exchange: `${BATCH_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${BATCH_JOB_PREFIX}.${JobType.MOVIES}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.MOVIES}`,
+    queue: `${BATCH_JOB_PREFIX}.movies.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.movies`,
     queueOptions: {
       channel: "batchJobsChannel",
       arguments: {
-        "x-consumer-timeout": 1 * 60 * 60 * 1000, // 1h in ms
+        "x-consumer-timeout": 4 * 60 * 60 * 1000, // 1h in ms
       },
     },
     errorBehavior: MessageHandlerErrorBehavior.NACK,

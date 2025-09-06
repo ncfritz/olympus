@@ -1,4 +1,4 @@
-import { MetadataFetchJob } from "@ncfritz/olympus-model";
+import { MetadataFetchJob } from "@ncfritz/olympus-sdk/dionysus";
 
 export interface CacheManager {
   init(): Promise<void>;

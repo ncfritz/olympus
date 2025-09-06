@@ -2,11 +2,11 @@ import {
   MessageHandlerErrorBehavior,
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
-import { JobType, MetadataFetchJobStatus } from "@ncfritz/olympus-model";
+import { MetadataFetchJobStatus } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import metadataApi from "../../api/metadataApi";
-import { BatchJobMessage } from "../../types/message";
+import { type BatchJobMessage } from "../../types/message";
 import {
   BATCH_JOB_PREFIX,
   JOB_TYPE_PREFIX,
@@ -18,8 +18,8 @@ import { BaseExportBatchHandler } from "./BaseExportBatchHandler";
 export class KeywordsBatchHandler extends BaseExportBatchHandler {
   @RabbitSubscribe({
     exchange: `${BATCH_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${BATCH_JOB_PREFIX}.${JobType.KEYWORDS}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.KEYWORDS}`,
+    queue: `${BATCH_JOB_PREFIX}.keywords.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.keywords`,
     queueOptions: {
       channel: "batchJobsChannel",
     },
@@ -70,9 +70,9 @@ export class KeywordsBatchHandler extends BaseExportBatchHandler {
         id: line.id,
         value: line.name,
       });
-      return MetadataFetchJobStatus.FETCHED;
+      return "fetched";
     } catch (e) {
-      return MetadataFetchJobStatus.FAILED;
+      return "failed";
     }
   }
 }

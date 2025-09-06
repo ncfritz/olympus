@@ -3,16 +3,15 @@ import {
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
 import {
-  JobType,
   MetadataFetchJobStatus,
   PartialLanguage,
-} from "@ncfritz/olympus-model";
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import { Moment } from "moment/moment";
 import metadataApi from "../../api/metadataApi";
 import { ConfigurationEndpoint } from "../../api/tmdb/configuration";
-import { BatchJobMessage } from "../../types/message";
+import { type BatchJobMessage } from "../../types/message";
 import {
   BATCH_JOB_PREFIX,
   JOB_TYPE_PREFIX,
@@ -27,8 +26,8 @@ export class LanguagesBatchHandler extends BaseBatchHandler {
 
   @RabbitSubscribe({
     exchange: `${BATCH_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${BATCH_JOB_PREFIX}.${JobType.LANGUAGES}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.LANGUAGES}`,
+    queue: `${BATCH_JOB_PREFIX}.languages.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.languages`,
     queueOptions: {
       channel: "batchJobsChannel",
     },
@@ -60,9 +59,9 @@ export class LanguagesBatchHandler extends BaseBatchHandler {
   ): Promise<MetadataFetchJobStatus> {
     try {
       await metadataApi.createLanguage(line);
-      return MetadataFetchJobStatus.FETCHED;
+      return "fetched";
     } catch (e) {
-      return MetadataFetchJobStatus.FAILED;
+      return "failed";
     }
   }
 

@@ -3,20 +3,20 @@ import {
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
 import {
-  JobType,
+  Gender,
   MetadataFetchJob,
+  PartialBaseImage,
+  PartialExternalId,
   PartialPerson,
   PartialPersonAlsoKnownAs,
-  PartialPersonExternalId,
-  PartialPersonImage,
-} from "@ncfritz/olympus-model";
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import moment from "moment";
 import metadataApi from "../../api/metadataApi";
 import { PersonEndpoint } from "../../api/tmdb/person";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
-import { MetadataJobMessage } from "../../types/message";
+import { type MetadataJobMessage } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
   METADATA_JOB_PREFIX,
@@ -32,8 +32,8 @@ export class PersonMetadataHandler extends BaseMetadataHandler<
 > {
   @RabbitSubscribe({
     exchange: `${METADATA_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${METADATA_JOB_PREFIX}.${JobType.PEOPLE}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.PEOPLE}`,
+    queue: `${METADATA_JOB_PREFIX}.people.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.people`,
     queueOptions: {
       channel: "metadataChannel",
     },
@@ -62,24 +62,6 @@ export class PersonMetadataHandler extends BaseMetadataHandler<
       "external_ids",
     ]);
 
-    const person = new PartialPerson();
-    person.id = personResponse.id;
-    person.name = personResponse.name;
-    person.adult = personResponse.adult;
-    person.biography = personResponse.biography;
-    person.birthday = personResponse.birthday
-      ? moment(personResponse.birthday)
-      : undefined;
-    person.birthplace = personResponse.place_of_birth;
-    person.deathday = personResponse.deathday
-      ? moment(personResponse.deathday)
-      : undefined;
-    person.gender = personResponse.gender;
-    person.homepage = personResponse.homepage;
-    person.imdbId = personResponse.imdb_id;
-    person.knownForDepartment = personResponse.known_for_department;
-    person.profilePath = personResponse.profile_path;
-
     const alsoKnownAs: UniqueSet<PartialPersonAlsoKnownAs> = new UniqueSet();
 
     personResponse.also_known_as.forEach((value) => {
@@ -88,7 +70,7 @@ export class PersonMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const images: UniqueSet<PartialPersonImage> = new UniqueSet();
+    const images: UniqueSet<PartialBaseImage> = new UniqueSet();
 
     personResponse.images.profiles.forEach((value) => {
       images.add({
@@ -99,7 +81,7 @@ export class PersonMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const externalIds: UniqueSet<PartialPersonExternalId> = new UniqueSet();
+    const externalIds: UniqueSet<PartialExternalId> = new UniqueSet();
 
     if (personResponse.external_ids) {
       if (personResponse.external_ids.freebase_mid) {
@@ -173,9 +155,28 @@ export class PersonMetadataHandler extends BaseMetadataHandler<
       }
     }
 
-    person.alsoKnownAs = [...alsoKnownAs];
-    person.images = [...images];
-    person.externalIds = [...externalIds];
+    const person: PartialPerson = {
+      id: personResponse.id,
+      name: personResponse.name,
+      adult: personResponse.adult,
+      biography: personResponse.biography,
+      birthday: personResponse.birthday
+        ? moment(personResponse.birthday).toISOString()
+        : undefined,
+      birthplace: personResponse.place_of_birth,
+      deathday: personResponse.deathday
+        ? moment(personResponse.deathday).toISOString()
+        : undefined,
+      gender: personResponse.gender as Gender,
+      homepage: personResponse.homepage,
+      imdbId: personResponse.imdb_id,
+      knownForDepartment: personResponse.known_for_department,
+      profilePath: personResponse.profile_path,
+      popularity: personResponse.popularity,
+      alsoKnownAs: [...alsoKnownAs],
+      images: [...images],
+      externalIds: [...externalIds],
+    };
 
     await metadataApi.createPerson(person);
 

@@ -3,22 +3,21 @@ import {
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
 import {
-  JobType,
   MetadataFetchJob,
   PartialEpisode,
-  PartialTVEpisodeCastMember,
-  PartialTVEpisodeCrewMember,
-  PartialTVEpisodeImage,
-  PartialTVEpisodeVideo,
-  PartialTVSeriesExternalId,
-} from "@ncfritz/olympus-model";
+  PartialExternalId,
+  PartialTvEpisodeCastMember,
+  PartialTvEpisodeCrewMember,
+  PartialTypedImage,
+  PartialVideo,
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import moment from "moment/moment";
 import { TvEpisodesEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
-import { MetadataJobMessage } from "../../types/message";
+import { type MetadataJobMessage } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
   METADATA_JOB_PREFIX,
@@ -34,8 +33,8 @@ export class TVEpisodeMetadataHandler extends BaseMetadataHandler<
 > {
   @RabbitSubscribe({
     exchange: `${METADATA_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${METADATA_JOB_PREFIX}.${JobType.TV_EPISODES}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.TV_EPISODES}`,
+    queue: `${METADATA_JOB_PREFIX}.tv_episodes.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.tv_episodes`,
     queueOptions: {
       channel: "tvEpisodesChannel",
     },
@@ -69,21 +68,7 @@ export class TVEpisodeMetadataHandler extends BaseMetadataHandler<
       ["external_ids", "images", "credits", "videos"],
     );
 
-    const episode = new PartialEpisode();
-    episode.id = episodeResponse.id;
-    // @ts-expect-error this is a known key in this instance
-    episode.seasonId = parseInt(metadataFetchJob.context["seasonId"]);
-    episode.airDate = moment(episodeResponse.air_date);
-    episode.name = episodeResponse.name;
-    episode.overview = episodeResponse.overview;
-    episode.stillPath = episodeResponse.still_path
-      ? episodeResponse.still_path
-      : undefined;
-    episode.seasonNumber = episodeResponse.season_number;
-    episode.productionCode = episodeResponse.production_code;
-    episode.episodeNumber = episodeResponse.episode_number;
-
-    const cast: UniqueSet<PartialTVEpisodeCastMember> = new UniqueSet();
+    const cast: UniqueSet<PartialTvEpisodeCastMember> = new UniqueSet();
 
     episodeResponse.credits.cast.forEach((value) => {
       cast.add({
@@ -95,7 +80,7 @@ export class TVEpisodeMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const crew: UniqueSet<PartialTVEpisodeCrewMember> = new UniqueSet();
+    const crew: UniqueSet<PartialTvEpisodeCrewMember> = new UniqueSet();
 
     episodeResponse.credits.crew.forEach((value) => {
       crew.add({
@@ -107,7 +92,7 @@ export class TVEpisodeMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const externalIds: UniqueSet<PartialTVSeriesExternalId> = new UniqueSet();
+    const externalIds: UniqueSet<PartialExternalId> = new UniqueSet();
 
     if (episodeResponse.external_ids) {
       if (episodeResponse.external_ids.imdb_id) {
@@ -146,7 +131,7 @@ export class TVEpisodeMetadataHandler extends BaseMetadataHandler<
       }
     }
 
-    const guestStars: UniqueSet<PartialTVEpisodeCastMember> = new UniqueSet();
+    const guestStars: UniqueSet<PartialTvEpisodeCastMember> = new UniqueSet();
 
     episodeResponse.credits.guest_stars.forEach((value) => {
       guestStars.add({
@@ -158,7 +143,7 @@ export class TVEpisodeMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const images: UniqueSet<PartialTVEpisodeImage> = new UniqueSet();
+    const images: UniqueSet<PartialTypedImage> = new UniqueSet();
 
     // @ts-expect-error API incorrectly modelled
     episodeResponse.images["stills"].forEach((value) => {
@@ -167,11 +152,11 @@ export class TVEpisodeMetadataHandler extends BaseMetadataHandler<
         filePath: value.file_path,
         width: value.width,
         height: value.height,
-        countryCode: value.iso_639_1 || "en",
+        languageCode: value.iso_639_1 || "en",
       });
     });
 
-    const videos: UniqueSet<PartialTVEpisodeVideo> = new UniqueSet();
+    const videos: UniqueSet<PartialVideo> = new UniqueSet();
 
     episodeResponse.videos.results.forEach((value) => {
       videos.add({
@@ -192,12 +177,31 @@ export class TVEpisodeMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    episode.cast = [...cast];
-    episode.crew = [...crew];
-    episode.externalIds = [...externalIds];
-    episode.guestStars = [...guestStars];
-    episode.images = [...images];
-    episode.videos = [...videos];
+    const episode: PartialEpisode = {
+      id: episodeResponse.id,
+      // @ts-expect-error this is a known key in this instance
+      seasonId: parseInt(metadataFetchJob.context["seasonId"]),
+      airDate: episodeResponse.air_date
+        ? moment(episodeResponse.air_date).toISOString()
+        : undefined,
+      name: episodeResponse.name,
+      overview: episodeResponse.overview,
+      stillPath: episodeResponse.still_path
+        ? episodeResponse.still_path
+        : undefined,
+      runtime: episodeResponse.runtime,
+      seasonNumber: episodeResponse.season_number,
+      productionCode: episodeResponse.production_code,
+      episodeNumber: episodeResponse.episode_number,
+      voteCount: episodeResponse.vote_count,
+      voteAverage: episodeResponse.vote_average,
+      cast: [...cast],
+      crew: [...crew],
+      externalIds: [...externalIds],
+      guestStars: [...guestStars],
+      images: [...images],
+      videos: [...videos],
+    };
 
     await metadataApi.createTVEpisode(seriesId, seasonNumber, episode);
 

@@ -2,10 +2,9 @@ import {
   MessageHandlerErrorBehavior,
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
-import { JobType } from "@ncfritz/olympus-model";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
-import { BatchJobMessage } from "../../types/message";
+import { type ConsumeMessage } from "amqplib";
+import { type BatchJobMessage } from "../../types/message";
 import {
   BATCH_JOB_PREFIX,
   JOB_TYPE_PREFIX,
@@ -17,12 +16,12 @@ import { BaseExportBatchHandler } from "./BaseExportBatchHandler";
 export class PeopleBatchHandler extends BaseExportBatchHandler {
   @RabbitSubscribe({
     exchange: `${BATCH_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${BATCH_JOB_PREFIX}.${JobType.PEOPLE}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.PEOPLE}`,
+    queue: `${BATCH_JOB_PREFIX}.people.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.people`,
     queueOptions: {
       channel: "batchJobsChannel",
       arguments: {
-        "x-consumer-timeout": 6 * 60 * 60 * 1000, // 6h in ms
+        "x-consumer-timeout": 12 * 60 * 60 * 1000, // 6h in ms
       },
     },
     errorBehavior: MessageHandlerErrorBehavior.NACK,

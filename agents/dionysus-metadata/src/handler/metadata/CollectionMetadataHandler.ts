@@ -3,18 +3,17 @@ import {
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
 import {
-  JobType,
   MetadataFetchJob,
   PartialCollection,
-  PartialCollectionImage,
   PartialCollectionPart,
-} from "@ncfritz/olympus-model";
+  PartialTypedImage,
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import { CollectionsEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
-import { MetadataJobMessage } from "../../types/message";
+import { type MetadataJobMessage } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
   METADATA_JOB_PREFIX,
@@ -29,8 +28,8 @@ export class CollectionsMetadataHandler extends BaseMetadataHandler<
 > {
   @RabbitSubscribe({
     exchange: `${METADATA_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${METADATA_JOB_PREFIX}.${JobType.COLLECTIONS}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.COLLECTIONS}`,
+    queue: `${METADATA_JOB_PREFIX}.collections.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.collections`,
     queueOptions: {
       channel: "metadataChannel",
     },
@@ -56,13 +55,6 @@ export class CollectionsMetadataHandler extends BaseMetadataHandler<
     const collectionResponse = await endpoint.details(collectionId);
     const collectionImagesResponse = await endpoint.images(collectionId);
 
-    const collection = new PartialCollection();
-    collection.id = collectionResponse.id;
-    collection.name = collectionResponse.name;
-    collection.overview = collectionResponse.overview;
-    collection.posterPath = collectionResponse.poster_path;
-    collection.backdropPath = collectionResponse.backdrop_path;
-
     const parts: PartialCollectionPart[] = [];
 
     collectionResponse.parts.forEach((value) => {
@@ -73,7 +65,7 @@ export class CollectionsMetadataHandler extends BaseMetadataHandler<
       }
     });
 
-    const images: PartialCollectionImage[] = [];
+    const images: PartialTypedImage[] = [];
 
     collectionImagesResponse.posters.forEach((value) => {
       const candidate = {
@@ -81,20 +73,30 @@ export class CollectionsMetadataHandler extends BaseMetadataHandler<
         filePath: value.file_path,
         width: value.width,
         height: value.height,
-        countryCode: value.iso_639_1 || "en",
+        languageCode: value.iso_639_1 || "en",
       };
 
       if (
         !images.some(
           (e) =>
             e.type === "poster" &&
-            e.countryCode === candidate.countryCode &&
+            e.languageCode === candidate.languageCode &&
             e.filePath === value.file_path,
         )
       ) {
         images.push(candidate);
       }
     });
+
+    const collection: PartialCollection = {
+      id: collectionResponse.id,
+      name: collectionResponse.name,
+      overview: collectionResponse.overview,
+      posterPath: collectionResponse.poster_path,
+      backdropPath: collectionResponse.backdrop_path,
+      parts: parts,
+      images: images,
+    };
 
     collectionImagesResponse.backdrops.forEach((value) => {
       const candidate = {
@@ -102,23 +104,20 @@ export class CollectionsMetadataHandler extends BaseMetadataHandler<
         filePath: value.file_path,
         width: value.width,
         height: value.height,
-        countryCode: value.iso_639_1 || "en",
+        languageCode: value.iso_639_1 || "en",
       };
 
       if (
         !images.some(
           (e) =>
             e.type === "backdrop" &&
-            e.countryCode === candidate.countryCode &&
+            e.languageCode === candidate.languageCode &&
             e.filePath === value.file_path,
         )
       ) {
         images.push(candidate);
       }
     });
-
-    collection.parts = parts;
-    collection.images = images;
 
     await metadataApi.createCollection(collection);
 

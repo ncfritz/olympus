@@ -3,8 +3,8 @@
     "experimentalDecorators": true,
     "baseUrl": ".",
     "outDir": "dist",
-    "module": "commonjs",
-    "target": "es6",
+    "module": "node16",
+    "target": "esnext",
     "lib": [
       "es6",
       "dom"
@@ -12,7 +12,7 @@
     "sourceMap": true,
     "allowJs": true,
     "jsx": "preserve",
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
     "rootDir": "src",
     "forceConsistentCasingInFileNames": true,
     "emitDecoratorMetadata": true,

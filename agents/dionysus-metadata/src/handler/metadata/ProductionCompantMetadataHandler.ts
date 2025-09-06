@@ -3,18 +3,17 @@ import {
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
 import {
-  JobType,
   MetadataFetchJob,
+  PartialAlternativeName,
+  PartialIdentifiableImage,
   PartialProductionCompany,
-  PartialProductionCompanyAlternativeName,
-  PartialProductionCompanyLogo,
-} from "@ncfritz/olympus-model";
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import metadataApi from "../../api/metadataApi";
 import { ProductionCompaniesEndpoint } from "../../api/tmdb/productionCompany";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
-import { MetadataJobMessage } from "../../types/message";
+import { type MetadataJobMessage } from "../../types/message";
 
 import {
   JOB_TYPE_PREFIX,
@@ -30,8 +29,8 @@ export class ProductionCompanyMetadataHandler extends BaseMetadataHandler<
 > {
   @RabbitSubscribe({
     exchange: `${METADATA_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${METADATA_JOB_PREFIX}.${JobType.PRODUCTION_COMPANIES}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.PRODUCTION_COMPANIES}`,
+    queue: `${METADATA_JOB_PREFIX}.production_companies.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.production_companies`,
     queueOptions: {
       channel: "metadataChannel",
     },
@@ -58,24 +57,10 @@ export class ProductionCompanyMetadataHandler extends BaseMetadataHandler<
     const alternativeNamesResponse = await endpoint.alternativeNames(companyId);
     const imagesResponse = await endpoint.images(companyId);
 
-    const company = new PartialProductionCompany();
-    company.id = companyResponse.id;
-    company.name = companyResponse.name;
-    company.description = companyResponse.description;
-    company.headquarters = companyResponse.headquarters;
-    company.homepage = companyResponse.homepage;
-    company.logoPath = companyResponse.logo_path;
-    company.originCountry = companyResponse.origin_country;
-
-    if (companyResponse.parent_company) {
-      company.parentCompanyId = companyResponse.parent_company.id;
-    }
-
-    const alternativeNames: PartialProductionCompanyAlternativeName[] = [];
+    const alternativeNames: PartialAlternativeName[] = [];
 
     alternativeNamesResponse.results.forEach((value) => {
       const candidate = {
-        productionCompanyId: companyResponse.id,
         name: value.name,
         type: value.type,
       };
@@ -89,11 +74,11 @@ export class ProductionCompanyMetadataHandler extends BaseMetadataHandler<
       }
     });
 
-    const logos: PartialProductionCompanyLogo[] = [];
+    const logos: PartialIdentifiableImage[] = [];
 
     imagesResponse.logos.forEach((value) => {
       logos.push({
-        productionCompanyId: companyResponse.id,
+        //productionCompanyId: companyResponse.id,
         id: value.id,
         fileType: value.file_type,
         filePath: value.file_path,
@@ -102,8 +87,24 @@ export class ProductionCompanyMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    company.alternativeNames = alternativeNames;
-    company.logos = logos;
+    let parentCompanyId: number | undefined = undefined;
+
+    if (companyResponse.parent_company) {
+      parentCompanyId = companyResponse.parent_company.id;
+    }
+
+    const company: PartialProductionCompany = {
+      id: companyResponse.id,
+      name: companyResponse.name,
+      description: companyResponse.description,
+      headquarters: companyResponse.headquarters,
+      homepage: companyResponse.homepage,
+      logoPath: companyResponse.logo_path,
+      originCountry: companyResponse.origin_country,
+      parentCompanyId: parentCompanyId,
+      alternativeNames: alternativeNames,
+      logos: logos,
+    };
 
     await metadataApi.createProductionCompany(company);
 

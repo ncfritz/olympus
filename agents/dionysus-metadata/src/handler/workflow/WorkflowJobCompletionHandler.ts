@@ -2,21 +2,15 @@ import {
   MessageHandlerErrorBehavior,
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
-import {
-  JobStatus,
-  JobType,
-  Workflow,
-  WorkflowStatus,
-  WorkflowStepType,
-} from "@ncfritz/olympus-model";
-import { WebSocketNotificationLevel } from "@ncfritz/olympus-model/dist/notifications";
+import { JobType, Workflow } from "@ncfritz/olympus-sdk/dionysus";
+import { WebSocketNotificationLevel } from "@ncfritz/olympus-sdk/olympus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import moment from "moment";
 import batchJobApi from "../../api/batchJobApi";
 import notificationsApi from "../../api/notificationsApi";
 import workflowApi from "../../api/workflowApi";
-import { BatchJobWorkflowMessage } from "../../types/message";
+import { type BatchJobWorkflowMessage } from "../../types/message";
 
 import {
   BATCH_JOB_WORKFLOW_EXCHANGE,
@@ -49,90 +43,88 @@ export class WorkflowJobCompletionHandler {
       `Workflow notification for job ${msg.jobId} - ${msg.jobType} in status ${msg.status}. Workflow: ${msg.workflowId}, Step: ${msg.stepId}`,
     );
 
-    if (msg.status === JobStatus.SUCCESS) {
+    if (msg.status === "success") {
       let nextJobType: JobType | undefined = undefined;
 
       switch (msg.jobType) {
-        case JobType.LANGUAGES:
-          nextJobType = JobType.COUNTRIES;
+        case "languages":
+          nextJobType = "countries";
           break;
-        case JobType.COUNTRIES:
-          nextJobType = JobType.CERTIFICATIONS;
+        case "countries":
+          nextJobType = "certifications";
           break;
-        case JobType.CERTIFICATIONS:
-          nextJobType = JobType.GENRES;
+        case "certifications":
+          nextJobType = "genres";
           break;
-        case JobType.GENRES:
-          nextJobType = JobType.PRODUCTION_COMPANIES;
+        case "genres":
+          nextJobType = "production_companies";
           break;
-        case JobType.PRODUCTION_COMPANIES:
-          nextJobType = JobType.KEYWORDS;
+        case "production_companies":
+          nextJobType = "keywords";
           break;
-        case JobType.KEYWORDS:
-          nextJobType = JobType.TV_NETWORKS;
+        case "keywords":
+          nextJobType = "tv_networks";
           break;
-        case JobType.TV_NETWORKS:
-          nextJobType = JobType.COLLECTIONS;
+        case "tv_networks":
+          nextJobType = "collections";
           break;
-        case JobType.COLLECTIONS:
-          nextJobType = JobType.PEOPLE;
+        case "collections":
+          nextJobType = "people";
           break;
-        case JobType.PEOPLE:
-          nextJobType = JobType.TV_SERIES;
+        case "people":
+          nextJobType = "tv_series";
           break;
-        case JobType.TV_SERIES:
-          nextJobType = JobType.MOVIES;
+        case "tv_series":
+          nextJobType = "movies";
           break;
-        case JobType.MOVIES:
+        case "movies":
           // End of the workflow
           break;
       }
 
       if (nextJobType) {
         logger.info(`Creating next BatchJob in workflow: ${nextJobType}`);
-        await workflowApi.createWorkflowStep(
-          msg.workflowId,
-          WorkflowStepType.JOB_EXECUTION,
-          nextJobType,
-        );
+        await workflowApi.createWorkflowStep(msg.workflowId, {
+          type: "job_execution",
+          jobType: nextJobType,
+          attempt: 0,
+          offset: 0,
+        });
       } else {
         // The workflow has ended, mark the workflow as success. If any job has failed, retry logic will have kicked
         // in to attempt successful completion of the job. If the job has exhausted all retry attempts, the job will
         // fail and the workflow will also fail.
         const workflow = await workflowApi.updateWorkflow(msg.workflowId, {
-          status: WorkflowStatus.SUCCESS,
-          finishedTime: moment.utc(),
+          status: "success",
+          finishedTime: moment.utc().toISOString(),
         });
         await this.notify(workflow, msg);
       }
-    } else if (msg.status === JobStatus.FAILED) {
+    } else if (msg.status === "failed") {
       // If the current attempt is at the retry threshold, we're done, fail the workflow.  If there are still retries
       // that can be attempted, mark the current job as cancelled and create a new step.  The new step should skip
       // the number of records processed so far and increment the attempt.
       if (msg.attempt >= 3) {
         await workflowApi.updateWorkflow(msg.workflowId, {
-          status: WorkflowStatus.FAILED,
-          finishedTime: moment.utc(),
+          status: "failed",
+          finishedTime: moment.utc().toISOString(),
         });
       } else {
         await batchJobApi.updateBatchJob(msg.jobId, {
-          status: JobStatus.CANCELLED,
-          finishedTime: moment.utc(),
+          status: "cancelled",
+          finishedTime: moment.utc().toISOString(),
         });
-        await workflowApi.createWorkflowStep(
-          msg.workflowId,
-          WorkflowStepType.RETRY,
-          msg.jobType,
-          {
-            attempt: msg.attempt + 1,
-            offset: msg.recordsProcessed,
-          },
-        );
+        await workflowApi.createWorkflowStep(msg.workflowId, {
+          type: "retry",
+          jobType: msg.jobType,
+          attempt: msg.attempt + 1,
+          offset: msg.recordsProcessed,
+        });
       }
     } else {
       const workflow = await workflowApi.updateWorkflow(msg.workflowId, {
-        status: WorkflowStatus.FAILED,
-        finishedTime: moment.utc(),
+        status: "failed",
+        finishedTime: moment.utc().toISOString(),
       });
       await this.notify(workflow, msg);
     }
@@ -144,29 +136,29 @@ export class WorkflowJobCompletionHandler {
     msg: BatchJobWorkflowMessage,
   ): Promise<void> {
     try {
-      let notificationStatus: WebSocketNotificationLevel =
-        WebSocketNotificationLevel.INFO;
+      let notificationStatus: WebSocketNotificationLevel = "info";
 
       switch (workflow.status) {
-        case WorkflowStatus.SUCCESS:
-          notificationStatus = WebSocketNotificationLevel.SUCCESS;
+        case "success":
+          notificationStatus = "success";
           break;
-        case WorkflowStatus.FAILED:
-          notificationStatus = WebSocketNotificationLevel.ERROR;
+        case "failed":
+          notificationStatus = "error";
           break;
         // CREATED and STARTED are non-terminal states, so just ignore the notification here.
-        case WorkflowStatus.CREATED:
-        case WorkflowStatus.STARTED:
+        case "created":
+        case "started":
           return;
       }
 
       await notificationsApi.sendNotification({
         type: "dionysus_metadata_workflow_completion",
-        expirationTime: moment().add(3, "hours"),
+        expirationTime: moment().add(3, "hours").toISOString(),
         webSocketDestination: {
           level: notificationStatus,
           visibleDuration: 15,
           ghost: false,
+          group: "dionysus",
           durable: true,
           ttl: "P7D",
           closable: true,

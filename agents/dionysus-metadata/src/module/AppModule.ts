@@ -1,7 +1,6 @@
-import { ReporterModule } from "nestjs-metrics-reporter";
-import { appName } from "../util/logger";
 import { Logger, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { ReporterModule } from "nestjs-metrics-reporter";
 import { CertificationsBatchHandler } from "../handler/batch/CertificationsBatchHandler";
 import { CollectionsBatchHandler } from "../handler/batch/CollectionsBatchHandler";
 import { CountriesBatchHandler } from "../handler/batch/CountiresBatchHandler";
@@ -24,6 +23,7 @@ import { TVSeasonMetadataHandler } from "../handler/metadata/TVSeasonMetadataHan
 import { TVSeriesMetadataHandler } from "../handler/metadata/TVSeriesMetadataHandler";
 import { StartWorkflowHandler } from "../handler/workflow/StartWorkflowHandler";
 import { WorkflowJobCompletionHandler } from "../handler/workflow/WorkflowJobCompletionHandler";
+import { appName } from "../util/logger";
 import { RabbitModule } from "./RabbitModule";
 
 @Module({

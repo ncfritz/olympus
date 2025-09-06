@@ -6,12 +6,12 @@ import {
   MetadataFetchJob,
   MetadataFetchJobStatus,
   MetadataJobType,
-} from "@ncfritz/olympus-model";
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import moment from "moment";
 import metadataApi from "../../api/metadataApi";
-import { RedriveJobMessage } from "../../types/message";
+import { type RedriveJobMessage } from "../../types/message";
 import {
   BATCH_JOB_PREFIX,
   JOB_TYPE_PREFIX,
@@ -34,8 +34,8 @@ export class RedriveBatchHandler extends BaseBatchHandler {
 
   @RabbitSubscribe({
     exchange: `${BATCH_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${BATCH_JOB_PREFIX}.${JobType.REDRIVE}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.REDRIVE}`,
+    queue: `${BATCH_JOB_PREFIX}.redrive.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.redrive`,
     queueOptions: {
       channel: "batchJobsChannel",
       arguments: {
@@ -45,7 +45,7 @@ export class RedriveBatchHandler extends BaseBatchHandler {
   })
   public async handle(message: RedriveJobMessage, amqpMessage: ConsumeMessage) {
     this.metadataType = message.jobType;
-    this.status = message.status || JobStatus.FAILED;
+    this.status = message.status || "failed";
     this.targetStatus = message.targetStatus;
     this.republish = message.republish || false;
 
@@ -149,7 +149,7 @@ export class RedriveBatchHandler extends BaseBatchHandler {
 
   private async fetchJobs(): Promise<ListMetadataFetchJobsResponse> {
     const listResponse = await metadataApi.scrollMetadataFetchJobs(
-      this.metadataType as unknown as MetadataJobType,
+      this.metadataType as MetadataJobType,
       this.status,
       this.lastSeenId,
     );

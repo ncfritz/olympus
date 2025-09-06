@@ -2,10 +2,9 @@ import {
   MessageHandlerErrorBehavior,
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
-import { JobType } from "@ncfritz/olympus-model";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
-import { BatchJobMessage } from "../../types/message";
+import { type ConsumeMessage } from "amqplib";
+import { type BatchJobMessage } from "../../types/message";
 import {
   BATCH_JOB_PREFIX,
   JOB_TYPE_PREFIX,
@@ -17,8 +16,8 @@ import { BaseExportBatchHandler } from "./BaseExportBatchHandler";
 export class TVNetworksBatchHandler extends BaseExportBatchHandler {
   @RabbitSubscribe({
     exchange: `${BATCH_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${BATCH_JOB_PREFIX}.${JobType.TV_NETWORKS}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.TV_NETWORKS}`,
+    queue: `${BATCH_JOB_PREFIX}.tv_networks.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.tv_networks`,
     queueOptions: {
       channel: "batchJobsChannel",
     },

@@ -4,17 +4,16 @@ import {
 } from "@golevelup/nestjs-rabbitmq";
 import {
   CertificationType,
-  JobType,
   MetadataFetchJobStatus,
   PartialCertification,
-} from "@ncfritz/olympus-model";
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import { Moment } from "moment/moment";
 import { Certifications } from "tmdb-ts";
 import { CertificationEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
-import { BatchJobMessage } from "../../types/message";
+import { type BatchJobMessage } from "../../types/message";
 import {
   BATCH_JOB_PREFIX,
   JOB_TYPE_PREFIX,
@@ -29,8 +28,8 @@ export class CertificationsBatchHandler extends BaseBatchHandler {
 
   @RabbitSubscribe({
     exchange: `${BATCH_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${BATCH_JOB_PREFIX}.${JobType.CERTIFICATIONS}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.CERTIFICATIONS}`,
+    queue: `${BATCH_JOB_PREFIX}.certifications.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.certifications`,
     queueOptions: {
       channel: "batchJobsChannel",
     },
@@ -48,17 +47,11 @@ export class CertificationsBatchHandler extends BaseBatchHandler {
 
     const tvCertificationsResponse = await endpoint.tvShows();
 
-    this.processCertificationsResponse(
-      tvCertificationsResponse,
-      CertificationType.TV,
-    );
+    this.processCertificationsResponse(tvCertificationsResponse, "TV");
 
     const movieCertificationsResponse = await endpoint.movies();
 
-    this.processCertificationsResponse(
-      movieCertificationsResponse,
-      CertificationType.MOVIE,
-    );
+    this.processCertificationsResponse(movieCertificationsResponse, "Movie");
   }
 
   private processCertificationsResponse(
@@ -84,9 +77,9 @@ export class CertificationsBatchHandler extends BaseBatchHandler {
   ): Promise<MetadataFetchJobStatus> {
     try {
       await metadataApi.createCertification(line);
-      return MetadataFetchJobStatus.FETCHED;
+      return "fetched";
     } catch (e) {
-      return MetadataFetchJobStatus.FAILED;
+      return "failed";
     }
   }
 

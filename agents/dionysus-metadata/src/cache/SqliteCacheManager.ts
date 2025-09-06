@@ -1,8 +1,8 @@
-import { MetadataFetchJob } from "@ncfritz/olympus-model";
+import { MetadataFetchJob } from "@ncfritz/olympus-sdk/dionysus";
+import DatabaseConstructor, { Database, Statement } from "better-sqlite3";
 import fs from "node:fs";
 import { logger } from "../util/logger";
 import { CacheManager } from "./CacheManager";
-import DatabaseConstructor, { Database, Statement } from "better-sqlite3";
 
 export interface SqliteCacheManagerProps {
   cacheLocation: string;

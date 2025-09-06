@@ -3,35 +3,33 @@ import {
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
 import {
-  CertificationType,
-  JobType,
   MetadataFetchJob,
-  MetadataFetchJobStatus,
-  PartialTVSeries,
-  PartialTVSeriesAlternativeTitle,
-  PartialTVSeriesCastMember,
-  PartialTVSeriesCertification,
-  PartialTVSeriesCountry,
-  PartialTVSeriesCrewMember,
-  PartialTVSeriesExternalId,
-  PartialTVSeriesGenre,
-  PartialTVSeriesImage,
-  PartialTVSeriesKeyword,
-  PartialTVSeriesLanguage,
-  PartialTVSeriesNetwork,
-  PartialTVSeriesProductionCompany,
-  PartialTVSeriesRuntime,
-  PartialTVSeriesSpokenLanguage,
-  PartialTVSeriesVideo,
-} from "@ncfritz/olympus-model";
+  PartialAlternativeTitle,
+  PartialCountryAssociation,
+  PartialExternalId,
+  PartialGenreAssociation,
+  PartialKeywordAssociation,
+  PartialLanguageAssociation,
+  PartialNetworkAssociation,
+  PartialProductionCompanyAssociation,
+  PartialTvSeries,
+  PartialTvSeriesCastMember,
+  PartialTvSeriesCertification,
+  PartialTvSeriesCreatedBy,
+  PartialTvSeriesCrewMember,
+  PartialTvSeriesRecommendation,
+  PartialTvSeriesRuntime,
+  PartialTypedImage,
+  PartialVideo
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import moment from "moment/moment";
 import { AggregateCast, AggregateCrew } from "tmdb-ts";
 import { TvShowsEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
-import { MetadataJobMessage } from "../../types/message";
+import { type MetadataJobMessage } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
   METADATA_JOB_PREFIX,
@@ -43,13 +41,13 @@ import { BaseMetadataHandler } from "./BaseMetadataHandler";
 
 @Injectable()
 export class TVSeriesMetadataHandler extends BaseMetadataHandler<
-  PartialTVSeries,
+  PartialTvSeries,
   undefined
 > {
   @RabbitSubscribe({
     exchange: `${METADATA_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${METADATA_JOB_PREFIX}.${JobType.TV_SERIES}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.TV_SERIES}`,
+    queue: `${METADATA_JOB_PREFIX}.tv_series.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.tv_series`,
     queueOptions: {
       channel: "tvSeriesChannel",
     },
@@ -65,7 +63,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
     entityId: string,
     metadataFetchJob: MetadataFetchJob,
     metadataManager: MetadataFetchJobManager,
-  ): Promise<[PartialTVSeries, undefined]> {
+  ): Promise<[PartialTvSeries, undefined]> {
     const endpoint = new TvShowsEndpoint(
       this.configService.get<string>("TMDB_API_KEY")!,
     );
@@ -82,28 +80,21 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       "videos",
     ]);
 
-    const series = new PartialTVSeries();
-    series.id = seriesResponse.id;
-    // @ts-expect-error not present in provided type
-    series.adult = seriesResponse["adult"] as boolean;
-    series.backdropPath = seriesResponse.backdrop_path;
-    series.firstAirDate = moment(seriesResponse.first_air_date);
-    series.homepage = seriesResponse.homepage;
-    series.inProduction = seriesResponse.in_production;
-    series.lastAirDate = moment(seriesResponse.last_air_date);
-    // last episode to air
-    series.name = seriesResponse.name;
-    series.numberOfEpisodes = seriesResponse.number_of_episodes;
-    series.numberOfSeasons = seriesResponse.number_of_seasons;
-    series.originalName = seriesResponse.original_name;
-    series.originalLanguageCode = seriesResponse.original_language;
-    series.overview = seriesResponse.overview;
-    series.posterPath = seriesResponse.poster_path;
-    series.status = seriesResponse.status;
-    series.tagline = seriesResponse.tagline;
-    series.type = seriesResponse.type;
+    const recommendationsResponse = await endpoint.recommendations(seriesId, {
+      language: "en-US",
+      page: 1,
+    });
 
-    const alternativeTitles: UniqueSet<PartialTVSeriesAlternativeTitle> =
+    const recommendations: UniqueSet<PartialTvSeriesRecommendation> =
+      new UniqueSet();
+
+    recommendationsResponse.results.forEach((value) => {
+      recommendations.add({
+        recommendationId: value.id,
+      });
+    });
+
+    const alternativeTitles: UniqueSet<PartialAlternativeTitle> =
       new UniqueSet();
 
     // @ts-expect-error API bindings incorrect
@@ -115,7 +106,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const cast: UniqueSet<PartialTVSeriesCastMember> = new UniqueSet();
+    const cast: UniqueSet<PartialTvSeriesCastMember> = new UniqueSet();
 
     // @ts-expect-error - expected per API - TS bindings are incorrect
     seriesResponse.aggregate_credits.cast.forEach((value: AggregateCast) => {
@@ -134,18 +125,18 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const certifications: UniqueSet<PartialTVSeriesCertification> =
+    const certifications: UniqueSet<PartialTvSeriesCertification> =
       new UniqueSet();
 
     seriesResponse.content_ratings.results.forEach((value) => {
       certifications.add({
-        certification: value.rating,
-        type: CertificationType.TV,
+        rating: value.rating,
+        type: "TV",
         country: value.iso_3166_1,
       });
     });
 
-    const crew: UniqueSet<PartialTVSeriesCrewMember> = new UniqueSet();
+    const crew: UniqueSet<PartialTvSeriesCrewMember> = new UniqueSet();
 
     // @ts-expect-error - expected per API - TS bindings are incorrect
     seriesResponse.aggregate_credits.crew.forEach((value: AggregateCrew) => {
@@ -164,7 +155,16 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const episodeRunTimes: UniqueSet<PartialTVSeriesRuntime> = new UniqueSet();
+    const createdBy: UniqueSet<PartialTvSeriesCreatedBy> = new UniqueSet();
+
+    seriesResponse.created_by.forEach((value) => {
+      createdBy.add({
+        personId: value.id,
+        creditId: value.credit_id,
+      });
+    });
+
+    const episodeRunTimes: UniqueSet<PartialTvSeriesRuntime> = new UniqueSet();
 
     seriesResponse.episode_run_time.forEach((value) => {
       episodeRunTimes.add({
@@ -172,7 +172,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const externalIds: UniqueSet<PartialTVSeriesExternalId> = new UniqueSet();
+    const externalIds: UniqueSet<PartialExternalId> = new UniqueSet();
 
     if (seriesResponse.external_ids) {
       if (seriesResponse.external_ids.imdb_id) {
@@ -211,7 +211,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       }
     }
 
-    const genres: UniqueSet<PartialTVSeriesGenre> = new UniqueSet();
+    const genres: UniqueSet<PartialGenreAssociation> = new UniqueSet();
 
     seriesResponse.genres.forEach((value) => {
       genres.add({
@@ -219,7 +219,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const images: UniqueSet<PartialTVSeriesImage> = new UniqueSet();
+    const images: UniqueSet<PartialTypedImage> = new UniqueSet();
 
     seriesResponse.images.logos.forEach((value) => {
       images.add({
@@ -227,7 +227,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
         filePath: value.file_path,
         width: value.width,
         height: value.height,
-        countryCode: value.iso_639_1 || "en",
+        languageCode: value.iso_639_1 || "en",
       });
     });
 
@@ -237,7 +237,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
         filePath: value.file_path,
         width: value.width,
         height: value.height,
-        countryCode: value.iso_639_1 || "en",
+        languageCode: value.iso_639_1 || "en",
       });
     });
 
@@ -247,11 +247,11 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
         filePath: value.file_path,
         width: value.width,
         height: value.height,
-        countryCode: value.iso_639_1 || "en",
+        languageCode: value.iso_639_1 || "en",
       });
     });
 
-    const keywords: UniqueSet<PartialTVSeriesKeyword> = new UniqueSet();
+    const keywords: UniqueSet<PartialKeywordAssociation> = new UniqueSet();
 
     // @ts-expect-error - expected per API - TS bindings are incorrect
     seriesResponse.keywords.results.forEach((value) => {
@@ -260,7 +260,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const languages: UniqueSet<PartialTVSeriesLanguage> = new UniqueSet();
+    const languages: UniqueSet<PartialLanguageAssociation> = new UniqueSet();
 
     seriesResponse.languages.forEach((value) => {
       languages.add({
@@ -268,7 +268,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const networks: UniqueSet<PartialTVSeriesNetwork> = new UniqueSet();
+    const networks: UniqueSet<PartialNetworkAssociation> = new UniqueSet();
 
     seriesResponse.networks.forEach((value) => {
       networks.add({
@@ -276,7 +276,8 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const originCountries: UniqueSet<PartialTVSeriesCountry> = new UniqueSet();
+    const originCountries: UniqueSet<PartialCountryAssociation> =
+      new UniqueSet();
 
     seriesResponse.origin_country.forEach((value) => {
       originCountries.add({
@@ -284,7 +285,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const productionCompanies: UniqueSet<PartialTVSeriesProductionCompany> =
+    const productionCompanies: UniqueSet<PartialProductionCompanyAssociation> =
       new UniqueSet();
 
     seriesResponse.production_companies.forEach((value) => {
@@ -293,7 +294,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const productionCountries: UniqueSet<PartialTVSeriesCountry> =
+    const productionCountries: UniqueSet<PartialCountryAssociation> =
       new UniqueSet();
 
     seriesResponse.production_countries.forEach((value) => {
@@ -302,7 +303,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const spokenLanguages: UniqueSet<PartialTVSeriesSpokenLanguage> =
+    const spokenLanguages: UniqueSet<PartialLanguageAssociation> =
       new UniqueSet();
 
     seriesResponse.spoken_languages.forEach((value) => {
@@ -311,7 +312,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const videos: UniqueSet<PartialTVSeriesVideo> = new UniqueSet();
+    const videos: UniqueSet<PartialVideo> = new UniqueSet();
 
     seriesResponse.videos.results.forEach((value) => {
       videos.add({
@@ -330,22 +331,51 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    series.alternativeTitles = [...alternativeTitles];
-    series.cast = [...cast];
-    series.certifications = [...certifications];
-    series.crew = [...crew];
-    series.runtimes = [...episodeRunTimes];
-    series.externalIds = [...externalIds];
-    series.genres = [...genres];
-    series.images = [...images];
-    series.keywords = [...keywords];
-    series.languages = [...languages];
-    series.networks = [...networks];
-    series.originCountries = [...originCountries];
-    series.productionCompanies = [...productionCompanies];
-    series.productionCountries = [...productionCountries];
-    series.spokenLanguages = [...spokenLanguages];
-    series.videos = [...videos];
+    const series: PartialTvSeries = {
+      id: seriesResponse.id,
+      // @ts-expect-error not present in provided type
+      adult: seriesResponse["adult"] as boolean,
+      backdropPath: seriesResponse.backdrop_path,
+      firstAirDate: moment(seriesResponse.first_air_date).toISOString(),
+      homepage: seriesResponse.homepage,
+      inProduction: seriesResponse.in_production,
+      lastAirDate: seriesResponse.last_air_date
+        ? moment(seriesResponse.last_air_date).toISOString()
+        : undefined,
+      lastEpisodeToAirId: seriesResponse.last_episode_to_air.id,
+      name: seriesResponse.name,
+      nextEpisodeToAirId: seriesResponse.next_episode_to_air?.id,
+      numberOfEpisodes: seriesResponse.number_of_episodes,
+      numberOfSeasons: seriesResponse.number_of_seasons,
+      originalName: seriesResponse.original_name,
+      originalLanguageCode: seriesResponse.original_language,
+      overview: seriesResponse.overview,
+      popularity: seriesResponse.popularity,
+      posterPath: seriesResponse.poster_path,
+      status: seriesResponse.status,
+      tagline: seriesResponse.tagline,
+      type: seriesResponse.type,
+      voteAverage: seriesResponse.vote_average,
+      voteCount: seriesResponse.vote_count,
+      alternativeTitles: [...alternativeTitles],
+      cast: [...cast],
+      certifications: [...certifications],
+      createdBy: [...createdBy],
+      crew: [...crew],
+      runtimes: [...episodeRunTimes],
+      externalIds: [...externalIds],
+      genres: [...genres],
+      images: [...images],
+      keywords: [...keywords],
+      languages: [...languages],
+      networks: [...networks],
+      originCountries: [...originCountries],
+      productionCompanies: [...productionCompanies],
+      productionCountries: [...productionCountries],
+      recommendations: [...recommendations],
+      spokenLanguages: [...spokenLanguages],
+      videos: [...videos],
+    };
 
     await metadataApi.createTVSeries(series);
 
@@ -353,7 +383,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       const seasonKey = `${seriesResponse.id}-${season.season_number}`;
       const seasonFetchJob = await metadataManager.getMetadataFetchJob(
         seasonKey,
-        JobType.TV_SEASONS,
+        "tv_seasons",
         false,
       );
 
@@ -378,10 +408,10 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
 
       await metadataManager.createMetadataFetchJob(
         seasonKey,
-        JobType.TV_SEASONS,
+        "tv_seasons",
         ttl,
         jitter,
-        MetadataFetchJobStatus.QUEUED,
+        "queued",
         true,
         { seasons: seriesResponse.seasons.length },
       );
@@ -390,7 +420,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
     return [series, undefined];
   }
 
-  protected getTtl(metadata: PartialTVSeries): number {
+  protected getTtl(metadata: PartialTvSeries): number {
     if (metadata.lastAirDate) {
       const now = moment.utc();
       // Positive values indicate the episode has aired in the past, negative values indicate the episode is yet
@@ -414,7 +444,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
     return Math.max(60, Math.floor(Math.random() * 75));
   }
 
-  protected getJitter(metadata: PartialTVSeries): number {
+  protected getJitter(metadata: PartialTvSeries): number {
     if (metadata.lastAirDate) {
       const now = moment.utc();
       const delta = now.diff(metadata.lastAirDate, "days");

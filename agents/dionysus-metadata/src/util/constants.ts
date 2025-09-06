@@ -1,4 +1,4 @@
-import { MetadataFetchJobStatus } from "@ncfritz/olympus-model";
+import { MetadataFetchJobStatus } from "@ncfritz/olympus-sdk/dionysus";
 
 export const BATCH_JOB_PREFIX = "batchJob";
 export const METADATA_JOB_PREFIX = "metadataJob";
@@ -10,9 +10,9 @@ export const BATCH_JOB_TRIGGER_EXCHANGE = `${BATCH_JOB_PREFIX}.${TRIGGER_SUFFIX}
 export const BATCH_JOB_WORKFLOW_EXCHANGE = `${BATCH_JOB_PREFIX}.${WORKFLOW_SUFFIX}`;
 export const METADATA_JOB_TRIGGER_EXCHANGE = `${METADATA_JOB_PREFIX}.${TRIGGER_SUFFIX}`;
 
-export const TERMINAL_STATUSES = [
-  MetadataFetchJobStatus.FAILED,
-  MetadataFetchJobStatus.INVALIDATED,
-  MetadataFetchJobStatus.FETCHED,
-  MetadataFetchJobStatus.CANCELLED,
+export const TERMINAL_STATUSES: MetadataFetchJobStatus[] = [
+  "failed",
+  "invalidated",
+  "fetched",
+  "cancelled",
 ];

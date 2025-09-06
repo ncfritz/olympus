@@ -2,12 +2,13 @@ import {
   JobStatus,
   JobType,
   MetadataFetchJobStatus,
-} from "@ncfritz/olympus-model";
+  MetadataJobType,
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Moment } from "moment";
 
 export type BatchJobMessage = {
   jobId: string;
-  jobType: JobType;
+  jobType: MetadataJobType;
   workflowId?: string;
   stepId?: string;
   bypassCache: boolean;
@@ -24,7 +25,7 @@ export type RedriveJobMessage = BatchJobMessage & {
 
 export type MetadataJobMessage = {
   entityId: string;
-  entityType: JobType;
+  entityType: MetadataJobType;
   bypassCache: boolean;
 };
 

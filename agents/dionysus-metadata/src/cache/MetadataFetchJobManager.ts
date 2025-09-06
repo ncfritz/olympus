@@ -1,9 +1,9 @@
 import {
-  JobType,
   MetadataFetchJob,
   MetadataFetchJobStatus,
-  PartialMetadataFetchJob,
-} from "@ncfritz/olympus-model";
+  MetadataJobType,
+  MetadatFetchJobUpdate,
+} from "@ncfritz/olympus-sdk/dionysus";
 import metadataApi from "../api/metadataApi";
 import { CacheManager } from "./CacheManager";
 
@@ -32,7 +32,7 @@ export class MetadataFetchJobManager {
 
   async getMetadataFetchJob(
     entityId: string,
-    jobType: JobType,
+    jobType: MetadataJobType,
     bypassCache: boolean,
   ): Promise<MetadataFetchJob | undefined> {
     let metadataFetchJob: MetadataFetchJob | undefined;
@@ -58,7 +58,7 @@ export class MetadataFetchJobManager {
 
   async createMetadataFetchJob(
     entityId: string,
-    jobType: string,
+    jobType: MetadataJobType,
     ttl: number,
     jitter: number,
     status: MetadataFetchJobStatus,
@@ -85,8 +85,8 @@ export class MetadataFetchJobManager {
 
   async updateMetadataFetchJob(
     entityId: string,
-    jobType: string,
-    updates: Partial<PartialMetadataFetchJob>,
+    jobType: MetadataJobType,
+    updates: MetadatFetchJobUpdate,
     publishNotification: boolean,
     bypassCache?: boolean,
   ): Promise<MetadataFetchJob> {

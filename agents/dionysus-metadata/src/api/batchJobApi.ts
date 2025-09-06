@@ -1,57 +1,57 @@
 import {
-  DescribeBatchJobResponse,
-  PartialBatchJob,
-  BatchJob,
-  UpdateBatchJobResponse,
-  CreateBatchJobResponse,
-} from "@ncfritz/olympus-model";
-import { BASE_URL, executeRequest } from "./apiBase";
+  type BatchJob,
+  client,
+  createBatchJob,
+  describeBatchJob,
+  type JobType,
+  type PartialBatchJob,
+  updateBatchJob,
+} from "@ncfritz/olympus-sdk/dionysus";
+import { BASE_URL } from "./apiBase";
+import { ExecuteWithMetrics } from "./executeDecorators";
 
-const getBatchJob = async (id: string): Promise<BatchJob> => {
-  const response: DescribeBatchJobResponse = await executeRequest({
-    url: `${BASE_URL}/v1/job/batch/${id}`,
-    method: "GET",
-    successStatusCodes: [200],
-  });
+class BatchJobApi {
+  constructor() {
+    client.setConfig({
+      baseURL: BASE_URL,
+      throwOnError: true,
+    });
+  }
 
-  return response.job;
-};
+  @ExecuteWithMetrics("DescribeBatchJob")
+  async getBatchJob(id: string) {
+    const response = await describeBatchJob({
+      path: { jobId: id },
+    });
 
-const createBatchJob = async (
-  type: string,
-  publishNotification: boolean,
-): Promise<BatchJob> => {
-  const response: CreateBatchJobResponse = await executeRequest({
-    url: `${BASE_URL}/v1/jobs/batch`,
-    method: "POST",
-    data: {
-      type: type,
-      publishNotification: publishNotification,
-    },
-    successStatusCodes: [200, 201],
-  });
+    return response.data!.job;
+  }
 
-  return response.job;
-};
+  @ExecuteWithMetrics("CreateBatchJob")
+  async createBatchJob(
+    type: JobType,
+    publishNotification: boolean,
+  ): Promise<BatchJob> {
+    const response = await createBatchJob({
+      body: {
+        type: type,
+        publishNotification: publishNotification,
+      },
+    });
 
-const updateBatchJob = async (
-  id: string,
-  job: Partial<PartialBatchJob>,
-): Promise<BatchJob> => {
-  const response: UpdateBatchJobResponse = await executeRequest({
-    url: `${BASE_URL}/v1/job/batch/${id}`,
-    method: "PUT",
-    data: job,
-    successStatusCodes: [200],
-  });
+    return response.data!.job;
+  }
 
-  return response.job;
-};
+  @ExecuteWithMetrics("UpdateBatchJob")
+  async updateBatchJob(id: string, job: PartialBatchJob): Promise<BatchJob> {
+    const response = await updateBatchJob({
+      path: { jobId: id },
+      body: { job: job },
+    });
 
-const batchJobApi = {
-  createBatchJob: createBatchJob,
-  getBatchJob: getBatchJob,
-  updateBatchJob: updateBatchJob,
-};
+    return response.data!.job;
+  }
+}
 
+const batchJobApi = new BatchJobApi();
 export default batchJobApi;

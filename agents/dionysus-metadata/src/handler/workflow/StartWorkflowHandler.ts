@@ -2,16 +2,11 @@ import {
   MessageHandlerErrorBehavior,
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
-import {
-  JobType,
-  WorkflowStatus,
-  WorkflowStepType,
-} from "@ncfritz/olympus-model";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import moment from "moment";
 import workflowApi from "../../api/workflowApi";
-import { StartWorkflowMessage } from "../../types/message";
+import { type StartWorkflowMessage } from "../../types/message";
 import {
   BATCH_JOB_WORKFLOW_EXCHANGE,
   METADATA_JOB_PREFIX,
@@ -36,17 +31,17 @@ export class StartWorkflowHandler {
     logger.debug(`Starting workflow ${msg.workflowId}`, msg);
 
     await workflowApi.updateWorkflow(msg.workflowId, {
-      status: WorkflowStatus.STARTED,
-      startedTime: moment.utc(),
+      status: "started",
+      startedTime: moment.utc().toISOString(),
     });
 
     // The API will take care of sending the job notification message.  Once the job completes the
     // WorkflowJobCompletionHandler will take care of running the next stage of the workflow.
-    await workflowApi.createWorkflowStep(
-      msg.workflowId,
-      WorkflowStepType.JOB_EXECUTION,
-      JobType.LANGUAGES,
-      { attempt: 0, offset: 0 },
-    );
+    await workflowApi.createWorkflowStep(msg.workflowId, {
+      type: "job_execution",
+      jobType: "languages",
+      attempt: 0,
+      offset: 0,
+    });
   }
 }

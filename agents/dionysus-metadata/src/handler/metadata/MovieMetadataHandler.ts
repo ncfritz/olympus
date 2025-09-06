@@ -3,29 +3,29 @@ import {
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
 import {
-  JobType,
   MetadataFetchJob,
+  PartialAlternativeTitle,
+  PartialCountryAssociation,
+  PartialExternalId,
+  PartialGenreAssociation,
+  PartialKeywordAssociation,
+  PartialLanguageAssociation,
   PartialMovie,
-  PartialMovieAlternativeTitle,
   PartialMovieCastMember,
   PartialMovieCrewMember,
-  PartialMovieExternalId,
-  PartialMovieGenre,
-  PartialMovieImage,
-  PartialMovieKeyword,
-  PartialMovieProductionCompany,
-  PartialMovieProductionCountry,
   PartialMovieReleaseDate,
-  PartialMovieSpokenLanguage,
-  PartialMovieVideo,
-} from "@ncfritz/olympus-model";
+  PartialProductionCompanyAssociation,
+  PartialTypedImage,
+  PartialVideo,
+  PartialMovieRecommendation,
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import moment from "moment";
 import { MoviesEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
-import { MetadataJobMessage } from "../../types/message";
+import { type MetadataJobMessage } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
   METADATA_JOB_PREFIX,
@@ -41,8 +41,8 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
 > {
   @RabbitSubscribe({
     exchange: `${METADATA_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${METADATA_JOB_PREFIX}.${JobType.MOVIES}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.MOVIES}`,
+    queue: `${METADATA_JOB_PREFIX}.movies.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.movies`,
     queueOptions: {
       channel: "metadataChannel",
     },
@@ -76,26 +76,21 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
       "videos",
     ]);
 
-    const movie = new PartialMovie();
-    movie.id = movieResponse.id;
-    movie.adult = movieResponse.adult;
-    movie.backdropPath = movieResponse.backdrop_path;
-    movie.budget = movieResponse.budget;
-    movie.homepage = movieResponse.homepage;
-    movie.imdbId = movieResponse.imdb_id;
-    movie.originalLanguageCode = movieResponse.original_language;
-    movie.originalTitle = movieResponse.original_title;
-    movie.overview = movieResponse.overview;
-    movie.posterPath = movieResponse.poster_path;
-    movie.releaseDate = moment(movieResponse.release_date);
-    movie.revenue = movieResponse.revenue;
-    movie.runtime = movieResponse.runtime;
-    movie.status = movieResponse.status;
-    movie.tagline = movieResponse.tagline;
-    movie.title = movieResponse.title;
-    movie.video = movieResponse.video;
+    const recommendationsResponse = await endpoint.recommendations(movieId, {
+      language: "en-US",
+      page: 1,
+    });
 
-    const alternativeTitles: UniqueSet<PartialMovieAlternativeTitle> =
+    const recommendations: UniqueSet<PartialMovieRecommendation> =
+      new UniqueSet();
+
+    recommendationsResponse.results.forEach((value) => {
+      recommendations.add({
+        recommendationId: value.id,
+      });
+    });
+
+    const alternativeTitles: UniqueSet<PartialAlternativeTitle> =
       new UniqueSet();
 
     movieResponse.alternative_titles.titles.forEach((value) => {
@@ -131,7 +126,7 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const externalIds: UniqueSet<PartialMovieExternalId> = new UniqueSet();
+    const externalIds: UniqueSet<PartialExternalId> = new UniqueSet();
 
     if (movieResponse.external_ids) {
       if (movieResponse.external_ids.imdb_id) {
@@ -170,7 +165,7 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
       }
     }
 
-    const genres: UniqueSet<PartialMovieGenre> = new UniqueSet();
+    const genres: UniqueSet<PartialGenreAssociation> = new UniqueSet();
 
     movieResponse.genres.forEach((value) => {
       genres.add({
@@ -178,7 +173,7 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const images: UniqueSet<PartialMovieImage> = new UniqueSet();
+    const images: UniqueSet<PartialTypedImage> = new UniqueSet();
 
     movieResponse.images.logos.forEach((value) => {
       images.add({
@@ -210,7 +205,7 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const keywords: UniqueSet<PartialMovieKeyword> = new UniqueSet();
+    const keywords: UniqueSet<PartialKeywordAssociation> = new UniqueSet();
 
     movieResponse.keywords.keywords.forEach((value) => {
       keywords.add({
@@ -218,7 +213,7 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const productionCompanies: UniqueSet<PartialMovieProductionCompany> =
+    const productionCompanies: UniqueSet<PartialProductionCompanyAssociation> =
       new UniqueSet();
 
     movieResponse.production_companies.forEach((value) => {
@@ -227,12 +222,12 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const productionCountries: UniqueSet<PartialMovieProductionCountry> =
+    const productionCountries: UniqueSet<PartialCountryAssociation> =
       new UniqueSet();
 
     movieResponse.production_countries.forEach((value) => {
       productionCountries.add({
-        countryId: value.iso_3166_1,
+        countryCode: value.iso_3166_1,
       });
     });
 
@@ -244,31 +239,31 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
       wrapper.release_dates.forEach((value) => {
         releaseDates.add({
           type: value.type,
-          countryId: countryCode,
-          releaseDate: moment(value.release_date),
-          languageId: value.iso_639_1,
+          countryCode: countryCode,
+          releaseDate: moment(value.release_date).toISOString(),
+          languageCode: value.iso_639_1,
           certificationId: value.certification,
           note: value.note,
         });
       });
     });
 
-    const spokenLanguages: UniqueSet<PartialMovieSpokenLanguage> =
+    const spokenLanguages: UniqueSet<PartialLanguageAssociation> =
       new UniqueSet();
 
     movieResponse.spoken_languages.forEach((value) => {
       spokenLanguages.add({
-        languageId: value.iso_639_1,
+        languageCode: value.iso_639_1,
       });
     });
 
-    const videos: UniqueSet<PartialMovieVideo> = new UniqueSet();
+    const videos: UniqueSet<PartialVideo> = new UniqueSet();
 
     movieResponse.videos.results.forEach((value) => {
       videos.add({
         type: value.type,
-        countryId: value.iso_3166_1,
-        languageId: value.iso_639_1,
+        countryCode: value.iso_3166_1,
+        languageCode: value.iso_639_1,
         name: value.name,
         id: value.id,
         key: value.key,
@@ -281,18 +276,41 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    movie.alternativeTitles = [...alternativeTitles];
-    movie.cast = [...cast];
-    movie.crew = [...crew];
-    movie.externalIds = [...externalIds];
-    movie.genres = [...genres];
-    movie.images = [...images];
-    movie.keywords = [...keywords];
-    movie.productionCompanies = [...productionCompanies];
-    movie.productionCountries = [...productionCountries];
-    movie.releaseDates = [...releaseDates];
-    movie.spokenLanguages = [...spokenLanguages];
-    movie.videos = [...videos];
+    const movie: PartialMovie = {
+      id: movieResponse.id,
+      adult: movieResponse.adult,
+      backdropPath: movieResponse.backdrop_path,
+      budget: movieResponse.budget,
+      homepage: movieResponse.homepage,
+      imdbId: movieResponse.imdb_id || undefined,
+      originalLanguageCode: movieResponse.original_language,
+      originalTitle: movieResponse.original_title,
+      overview: movieResponse.overview,
+      popularity: movieResponse.popularity,
+      posterPath: movieResponse.poster_path,
+      releaseDate: moment(movieResponse.release_date).toISOString(),
+      revenue: movieResponse.revenue,
+      runtime: movieResponse.runtime,
+      status: movieResponse.status,
+      tagline: movieResponse.tagline,
+      title: movieResponse.title,
+      video: movieResponse.video,
+      voteAverage: movieResponse.vote_average,
+      voteCount: movieResponse.vote_count,
+      alternativeTitles: [...alternativeTitles],
+      cast: [...cast],
+      crew: [...crew],
+      externalIds: [...externalIds],
+      genres: [...genres],
+      images: [...images],
+      keywords: [...keywords],
+      productionCompanies: [...productionCompanies],
+      productionCountries: [...productionCountries],
+      recommendations: [...recommendations],
+      releaseDates: [...releaseDates],
+      spokenLanguages: [...spokenLanguages],
+      videos: [...videos],
+    };
 
     await metadataApi.createMovie(movie);
 

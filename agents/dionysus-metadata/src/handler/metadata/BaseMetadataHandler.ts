@@ -1,15 +1,15 @@
 import {
   MetadataFetchJob,
   MetadataFetchJobStatus,
-} from "@ncfritz/olympus-model";
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import moment, { Moment } from "moment";
+import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { SqliteCacheManager } from "../../cache/SqliteCacheManager";
 import { MetadataJobMessage } from "../../types/message";
 import { TERMINAL_STATUSES } from "../../util/constants";
 import { logger } from "../../util/logger";
-import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 
 @Injectable()
 export abstract class BaseMetadataHandler<T, C> {
@@ -31,7 +31,7 @@ export abstract class BaseMetadataHandler<T, C> {
     );
     await metadataManager.init();
 
-    let finalStatus = MetadataFetchJobStatus.FAILED;
+    let finalStatus: MetadataFetchJobStatus = "failed";
     let ttl: number | undefined = undefined;
     let jitter: number | undefined = undefined;
     let finishedTIme: Moment | undefined = undefined;
@@ -68,7 +68,7 @@ export abstract class BaseMetadataHandler<T, C> {
           metadataFetchJob.id,
           metadataFetchJob.type,
           {
-            status: MetadataFetchJobStatus.FETCHING,
+            status: "fetching",
           },
           false,
         );
@@ -85,15 +85,17 @@ export abstract class BaseMetadataHandler<T, C> {
         ttl = this.getTtl(metadata, context);
         jitter = this.getJitter(metadata, context);
         finishedTIme = moment.utc();
-        finalStatus = MetadataFetchJobStatus.FETCHED;
+        finalStatus = "fetched";
       } catch (e) {
         logger.error(`[${metadataFetchJob.id}]: Job failed...`, e);
 
         if (e === "NotFound" || e.status_code === 34) {
-          finalStatus = MetadataFetchJobStatus.NOT_FOUND;
+          finalStatus = "not_found";
         } else {
-          finalStatus = MetadataFetchJobStatus.FAILED;
+          finalStatus = "failed";
         }
+
+        finishedTIme = moment.utc();
       } finally {
         logger.info(`[${metadataFetchJob.id}]: Updating MetadataFetchJob`, {
           entityId: metadataFetchJob.id,
@@ -104,9 +106,9 @@ export abstract class BaseMetadataHandler<T, C> {
           metadataFetchJob.type,
           {
             status: finalStatus,
-            ttl: ttl,
-            jitter: jitter,
-            lastFetchedTime: finishedTIme,
+            ttl: ttl!,
+            jitter: jitter!,
+            lastFetchedTime: finishedTIme!.toISOString(),
           },
           false,
         );

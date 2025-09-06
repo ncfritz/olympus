@@ -1,364 +1,303 @@
 import {
   Certification,
-  Collection,
+  client,
   Country,
-  CreateCertificationResponse,
-  CreateCollectionResponse,
-  CreateCountryResponse,
-  CreateGenreResponse,
-  CreateKeywordResponse,
-  CreateMetadataFetchJobResponse,
-  CreateMovieResponse,
-  CreateNetworkResponse,
+  createCertification,
+  createCollection,
+  createCountry,
+  createGenre,
+  createKeyword,
+  createLanguage,
+  createMetadataFetchJob,
+  createMovie,
+  createNetwork,
+  createPerson,
   CreatePersonResponse,
-  CreateProductionCompanyResponse,
-  CreateTVEpisodeResponse,
-  CreateTVSeasonResponse,
-  CreateTVSeriesResponse,
-  DescribeMetadataFetchJobResponse,
-  Episode,
+  createProductionCompany,
+  CreateTvEpisodeResponse,
+  CreateTvSeasonResponse,
+  createTvSeries,
+  createTvSeriesEpisode,
+  CreateTvSeriesResponse,
+  createTvSeriesSeason,
+  describeMetadataFetchJob,
   Genre,
   JobStatus,
   Keyword,
+  Language,
   ListMetadataFetchJobsResponse,
   MetadataFetchJob,
   MetadataFetchJobStatus,
-  MetadataJobType,
-  Movie,
+  type MetadataJobType,
+  MetadatFetchJobUpdate,
   Network,
   PartialCertification,
+  PartialCollection,
   PartialCountry,
   PartialEpisode,
   PartialGenre,
   PartialKeyword,
   PartialLanguage,
-  PartialMetadataFetchJob,
   PartialMovie,
   PartialNetwork,
   PartialPerson,
   PartialProductionCompany,
   PartialSeason,
-  PartialTVSeries,
-  Person,
-  ProductionCompany,
-  Season,
-  TVSeries,
-  UpdateMetadataFetchJobResponse,
-} from "@ncfritz/olympus-model";
-import { PartialCollection } from "@ncfritz/olympus-model";
+  PartialTvSeries,
+  scrollMetadataFetchJobs,
+  SparseMovie,
+  SparseProductionCompany,
+  updateMetadataFetchJob,
+} from "@ncfritz/olympus-sdk/dionysus";
 import moment from "moment";
-import { BASE_URL, executeRequest } from "./apiBase";
+import { BASE_URL } from "./apiBase";
+import { ExecuteWithMetrics } from "./executeDecorators";
 
-const createMetadataFetchJob = async (
-  id: string,
-  type: string,
-  ttl: number,
-  jitter: number,
-  status: MetadataFetchJobStatus,
-  publishNotification: boolean,
-  context?: Record<string, any>,
-): Promise<MetadataFetchJob> => {
-  const response: CreateMetadataFetchJobResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/fetchJobs`,
-    method: "POST",
-    successStatusCodes: [201],
-    data: {
-      id: id,
-      type: type,
-      ttl: ttl,
-      jitter: jitter,
-      status: status,
-      lastFetchedTime:
-        status === MetadataFetchJobStatus.FETCHED ? moment.utc() : undefined,
-      publishNotification: publishNotification,
-      context: context,
-    },
-  });
-
-  return response.job;
-};
-
-const getMetadataFetchJob = async (
-  id: string,
-  type: string,
-): Promise<MetadataFetchJob> => {
-  const response: DescribeMetadataFetchJobResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/fetchJob/${encodeURIComponent(id)}/${type}`,
-    method: "GET",
-    successStatusCodes: [200],
-  });
-
-  return response.job;
-};
-
-const updateMetadataFetchJob = async (
-  id: string,
-  type: string,
-  job: Partial<PartialMetadataFetchJob>,
-  publishNotification: boolean,
-  bypassCache: boolean,
-): Promise<MetadataFetchJob> => {
-  const response: UpdateMetadataFetchJobResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/fetchJob/${encodeURIComponent(id)}/${type}`,
-    method: "PUT",
-    data: {
-      job: job,
-      publishNotification: publishNotification,
-      bypassCache: bypassCache,
-    },
-    successStatusCodes: [200],
-  });
-
-  return response.job;
-};
-
-const createCertification = async (
-  certification: PartialCertification,
-): Promise<Certification> => {
-  const response: CreateCertificationResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/certifications`,
-    method: "PUT",
-    data: {
-      certification: certification,
-    },
-    successStatusCodes: [200, 201],
-  });
-
-  return response.certification;
-};
-
-const createCollection = async (
-  collection: PartialCollection,
-): Promise<Collection> => {
-  const response: CreateCollectionResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/collections`,
-    method: "PUT",
-    data: {
-      collection: collection,
-    },
-    successStatusCodes: [200, 201],
-  });
-
-  return response.collection;
-};
-
-const createCountry = async (country: PartialCountry): Promise<Country> => {
-  const response: CreateCountryResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/countries`,
-    method: "PUT",
-    data: {
-      country: country,
-    },
-    successStatusCodes: [200, 201],
-  });
-
-  return response.country;
-};
-
-const createLanguage = async (language: PartialLanguage): Promise<Country> => {
-  const response: CreateCountryResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/languages`,
-    method: "PUT",
-    data: {
-      language: language,
-    },
-    successStatusCodes: [200, 201],
-  });
-
-  return response.country;
-};
-
-const createGenre = async (genre: PartialGenre): Promise<Genre> => {
-  const response: CreateGenreResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/genres`,
-    method: "PUT",
-    data: {
-      genre: genre,
-    },
-    successStatusCodes: [200, 201],
-  });
-
-  return response.genre;
-};
-
-const createKeyword = async (keyword: PartialKeyword): Promise<Keyword> => {
-  const response: CreateKeywordResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/keywords`,
-    method: "PUT",
-    data: {
-      keyword: keyword,
-    },
-    successStatusCodes: [200, 201],
-  });
-
-  return response.keyword;
-};
-
-const createProductionCompany = async (
-  company: PartialProductionCompany,
-): Promise<ProductionCompany> => {
-  const response: CreateProductionCompanyResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/productionCompanies`,
-    method: "PUT",
-    data: {
-      company: company,
-    },
-    successStatusCodes: [200, 201],
-  });
-
-  return response.company;
-};
-
-const createMovie = async (movie: PartialMovie): Promise<Movie> => {
-  const response: CreateMovieResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/movies`,
-    method: "PUT",
-    data: {
-      movie: movie,
-    },
-    successStatusCodes: [200, 201],
-  });
-
-  return response.movie;
-};
-
-const createNetwork = async (network: PartialNetwork): Promise<Network> => {
-  const response: CreateNetworkResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/networks`,
-    method: "PUT",
-    data: {
-      network: network,
-    },
-    successStatusCodes: [200, 201],
-  });
-
-  return response.network;
-};
-
-const createPerson = async (person: PartialPerson): Promise<Person> => {
-  const response: CreatePersonResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/people`,
-    method: "PUT",
-    data: {
-      person: person,
-    },
-    successStatusCodes: [200, 201],
-  });
-
-  return response.person;
-};
-
-const createTVSeries = async (series: PartialTVSeries): Promise<TVSeries> => {
-  const response: CreateTVSeriesResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/tvSeries`,
-    method: "PUT",
-    data: {
-      tvSeries: series,
-    },
-    successStatusCodes: [200, 201],
-  });
-
-  return response.tvSeries;
-};
-
-const createTVSeason = async (
-  seriesId: number,
-  season: PartialSeason,
-): Promise<Season> => {
-  const response: CreateTVSeasonResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/tvSeries/${seriesId}/seasons`,
-    method: "PUT",
-    data: {
-      season: season,
-    },
-    successStatusCodes: [200, 201],
-  });
-
-  return response.season;
-};
-
-const createTVEpisode = async (
-  seriesId: number,
-  seasonNumber: number,
-  episode: PartialEpisode,
-): Promise<Episode> => {
-  const response: CreateTVEpisodeResponse = await executeRequest({
-    url: `${BASE_URL}/v1/metadata/tvSeries/${seriesId}/season/${seasonNumber}/episodes`,
-    method: "PUT",
-    data: {
-      episode: episode,
-    },
-    successStatusCodes: [200, 201],
-  });
-
-  return response.episode;
-};
-
-const listMetadataFetchJobs = async (
-  type: MetadataJobType,
-  status: JobStatus,
-  page = 0,
-): Promise<ListMetadataFetchJobsResponse> => {
-  const filters = {
-    type: [type],
-    status: [status],
-  };
-  const encodedFilters = Buffer.from(JSON.stringify(filters)).toString(
-    "base64",
-  );
-
-  return await executeRequest({
-    url: `${BASE_URL}/v1/jobs/metadata?pageSize=500&startPage=${page}&sortBy=id&sort=asc&filters=${encodedFilters}`,
-    method: "GET",
-    successStatusCodes: [200],
-  });
-};
-
-const scrollMetadataFetchJobs = async (
-  type: MetadataJobType,
-  status: JobStatus,
-  lastSeenId?: string,
-): Promise<ListMetadataFetchJobsResponse> => {
-  const filters = {
-    type: [type],
-    status: [status],
-  };
-  const encodedFilters = Buffer.from(JSON.stringify(filters)).toString(
-    "base64",
-  );
-
-  const queryString = ["pageSize=500", `filters=${encodedFilters}`];
-
-  if (lastSeenId) {
-    queryString.push(`lastSeenId=${lastSeenId}`);
+class MetadataApi {
+  constructor() {
+    client.setConfig({
+      baseURL: BASE_URL,
+      throwOnError: true,
+    });
   }
 
-  return await executeRequest({
-    url: `${BASE_URL}/v1/jobs/metadata/scroll?${queryString.join("&")}`,
-    method: "GET",
-    successStatusCodes: [200],
-  });
-};
+  async createMetadataFetchJob(
+    id: string,
+    type: MetadataJobType,
+    ttl: number,
+    jitter: number,
+    status: MetadataFetchJobStatus,
+    publishNotification: boolean,
+    context?: Record<string, any>,
+  ): Promise<MetadataFetchJob> {
+    const response = await createMetadataFetchJob({
+      body: {
+        id: id,
+        type: type,
+        ttl: ttl,
+        jitter: jitter,
+        status: status,
+        lastFetchedTime:
+          status === "fetched" ? moment.utc().toISOString() : undefined,
+        publishNotification: publishNotification,
+        context: context,
+      },
+    });
 
-const metadataApi = {
-  createCertification: createCertification,
-  createCollection: createCollection,
-  createCountry: createCountry,
-  createGenre: createGenre,
-  createKeyword: createKeyword,
-  createLanguage: createLanguage,
-  createNetwork: createNetwork,
-  createMovie: createMovie,
-  createPerson: createPerson,
-  createTVSeries: createTVSeries,
-  createTVSeason: createTVSeason,
-  createTVEpisode: createTVEpisode,
-  createProductionCompany: createProductionCompany,
-  createMetadataFetchJob: createMetadataFetchJob,
-  getMetadataFetchJob: getMetadataFetchJob,
-  listMetadataFetchJobs: listMetadataFetchJobs,
-  scrollMetadataFetchJobs: scrollMetadataFetchJobs,
-  updateMetadataFetchJob: updateMetadataFetchJob,
-};
+    return response.data!.job;
+  }
 
+  @ExecuteWithMetrics("DescribeMetadataFetchJob")
+  async getMetadataFetchJob(
+    id: string,
+    type: MetadataJobType,
+  ): Promise<MetadataFetchJob> {
+    const response = await describeMetadataFetchJob({
+      path: {
+        entityId: id,
+        entityType: type,
+      },
+    });
+
+    return response.data!.job;
+  }
+
+  async updateMetadataFetchJob(
+    id: string,
+    type: MetadataJobType,
+    job: MetadatFetchJobUpdate,
+    publishNotification: boolean,
+    bypassCache: boolean,
+  ): Promise<MetadataFetchJob> {
+    const response = await updateMetadataFetchJob({
+      path: {
+        entityId: id,
+        entityType: type,
+      },
+      body: {
+        job: job,
+        publishNotification: publishNotification,
+        bypassCache: bypassCache,
+      },
+    });
+
+    return response.data!.job;
+  }
+
+  async scrollMetadataFetchJobs(
+    type: MetadataJobType,
+    status: JobStatus,
+    lastSeenId?: string,
+  ): Promise<ListMetadataFetchJobsResponse> {
+    const filters = {
+      type: [type],
+      status: [status],
+    };
+    const encodedFilters = Buffer.from(JSON.stringify(filters)).toString(
+      "base64",
+    );
+
+    const response = await scrollMetadataFetchJobs({
+      query: {
+        lastSeenId: lastSeenId,
+        pageSize: 500,
+        filters: encodedFilters,
+      },
+    });
+
+    return response.data!;
+  }
+
+  async createCertification(
+    certification: PartialCertification,
+  ): Promise<Certification> {
+    const response = await createCertification({
+      body: {
+        certification: certification,
+      },
+    });
+
+    return response.data!.certification;
+  }
+
+  async createCollection(collection: PartialCollection): Promise<number> {
+    const response = await createCollection({
+      body: {
+        collection: collection,
+      },
+    });
+
+    return response.data!.id;
+  }
+
+  async createCountry(country: PartialCountry): Promise<Country> {
+    const response = await createCountry({
+      body: {
+        country: country,
+      },
+    });
+
+    return response.data!.country;
+  }
+
+  async createLanguage(language: PartialLanguage): Promise<Language> {
+    const response = await createLanguage({
+      body: {
+        language: language,
+      },
+    });
+
+    return response.data!.language;
+  }
+
+  async createGenre(genre: PartialGenre): Promise<Genre> {
+    const response = await createGenre({
+      body: {
+        genre: genre,
+      },
+    });
+
+    return response.data!.genre;
+  }
+
+  async createKeyword(keyword: PartialKeyword): Promise<Keyword> {
+    const response = await createKeyword({
+      body: {
+        keyword: keyword,
+      },
+    });
+
+    return response.data!.keyword;
+  }
+
+  async createMovie(movie: PartialMovie): Promise<SparseMovie> {
+    const response = await createMovie({
+      body: {
+        movie: movie,
+      },
+    });
+
+    return response.data!.movie;
+  }
+
+  async createNetwork(network: PartialNetwork): Promise<Network> {
+    const response = await createNetwork({
+      body: {
+        network: network,
+      },
+    });
+
+    return response.data!.network;
+  }
+
+  async createPerson(person: PartialPerson): Promise<CreatePersonResponse> {
+    const response = await createPerson({
+      body: {
+        person: person,
+      },
+    });
+
+    return response.data!;
+  }
+
+  async createProductionCompany(
+    company: PartialProductionCompany,
+  ): Promise<SparseProductionCompany> {
+    const response = await createProductionCompany({
+      body: {
+        company: company,
+      },
+    });
+
+    return response.data!.company;
+  }
+
+  async createTVSeries(
+    series: PartialTvSeries,
+  ): Promise<CreateTvSeriesResponse> {
+    const response = await createTvSeries({
+      body: {
+        tvSeries: series,
+      },
+    });
+
+    return response.data!;
+  }
+
+  async createTVSeason(
+    seriesId: number,
+    season: PartialSeason,
+  ): Promise<CreateTvSeasonResponse> {
+    const response = await createTvSeriesSeason({
+      path: {
+        seriesId: seriesId,
+      },
+      body: {
+        season: season,
+      },
+    });
+
+    return response.data!;
+  }
+
+  async createTVEpisode(
+    seriesId: number,
+    seasonNumber: number,
+    episode: PartialEpisode,
+  ): Promise<CreateTvEpisodeResponse> {
+    const response = await createTvSeriesEpisode({
+      path: {
+        seriesId: seriesId,
+        seasonNumber: seasonNumber,
+      },
+      body: {
+        episode: episode,
+      },
+    });
+
+    return response.data!;
+  }
+}
+
+const metadataApi = new MetadataApi();
 export default metadataApi;

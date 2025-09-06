@@ -1,4 +1,4 @@
-import { MetadataFetchJob } from "@ncfritz/olympus-model";
+import { MetadataFetchJob } from "@ncfritz/olympus-sdk/dionysus";
 import lmdb, { Dbi, Env } from "node-lmdb";
 import fs from "node:fs";
 import { logger } from "../util/logger";

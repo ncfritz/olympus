@@ -1,18 +1,18 @@
 import { AmqpConnection, SubscribeResponse } from "@golevelup/nestjs-rabbitmq";
 import {
   BatchJob,
-  JobStatus,
   MetadataFetchJob,
   MetadataFetchJobStatus,
-  PartialMetadataFetchJob,
-} from "@ncfritz/olympus-model";
-import { WebSocketNotificationLevel } from "@ncfritz/olympus-model/dist/notifications";
+  MetadatFetchJobUpdate,
+} from "@ncfritz/olympus-sdk/dionysus";
+import { WebSocketNotificationLevel } from "@ncfritz/olympus-sdk/olympus";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Message } from "amqplib";
 import moment, { Moment } from "moment";
 import batchJobApi from "../../api/batchJobApi";
 import notificationsApi from "../../api/notificationsApi";
+import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { SqliteCacheManager } from "../../cache/SqliteCacheManager";
 import { BatchJobMessage } from "../../types/message";
 import {
@@ -20,7 +20,6 @@ import {
   TERMINAL_STATUSES,
 } from "../../util/constants";
 import { logger } from "../../util/logger";
-import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 
 const DEFAULT_TTL = 30;
 
@@ -45,7 +44,7 @@ export abstract class BaseBatchHandler {
       return;
     }
 
-    if (job.status !== JobStatus.CREATED) {
+    if (job.status !== "created") {
       logger.info(
         `Found existing job in non-CREATED state - ${job.status}, bailing...`,
       );
@@ -81,9 +80,9 @@ export abstract class BaseBatchHandler {
       const now = moment.utc().subtract(8, "hours");
       await this.init(now);
 
-      job.status = JobStatus.STARTED;
+      job.status = "started";
       job.totalRecords = this.getRecordCount();
-      job.startedTime = moment.utc();
+      job.startedTime = moment.utc().toISOString();
 
       job = await batchJobApi.updateBatchJob(job.id, job);
       let lastCheckpointTime = moment.utc();
@@ -168,18 +167,16 @@ export abstract class BaseBatchHandler {
                 `[${count}]: Record status will be set to ${jobStatus}`,
               );
 
-              const jobUpdates: Partial<PartialMetadataFetchJob> = {
+              const jobUpdates: MetadatFetchJobUpdate = {
                 status: jobStatus,
               };
 
-              if (jobStatus === MetadataFetchJobStatus.FETCHED) {
-                jobUpdates.lastFetchedTime = moment.utc();
+              if (jobStatus === "fetched") {
+                jobUpdates.lastFetchedTime = moment.utc().toISOString();
               }
 
               // Update the TTL and jitter only when the record is invalidated
-              if (
-                metadataFetchJob.status === MetadataFetchJobStatus.INVALIDATED
-              ) {
+              if (metadataFetchJob.status === "invalidated") {
                 jobUpdates.ttl = this.getTtl();
                 jobUpdates.jitter = this.getJitter();
               }
@@ -256,10 +253,10 @@ export abstract class BaseBatchHandler {
         await this.sleep(this.getBackoff());
       }
 
-      job.status = JobStatus.SUCCESS;
+      job.status = "success";
     } catch (e) {
       logger.error(`Processing failed...`, e);
-      job.status = JobStatus.FAILED;
+      job.status = "failed";
     } finally {
       job.processedRecords = processedRecordsCount;
       job.newRecords = newRecordCount;
@@ -267,7 +264,7 @@ export abstract class BaseBatchHandler {
       job.duplicateRecords = duplicateRecordCount;
       job.expiredRecords = expiredRecordCount;
       job.skippedRecords = skippedRecordCount;
-      job.finishedTime = moment.utc();
+      job.finishedTime = moment.utc().toISOString();
 
       logger.info(`Finalizing job ${job.id}`);
       logger.info("Final job statistics:", {
@@ -298,32 +295,32 @@ export abstract class BaseBatchHandler {
     }
 
     try {
-      let notificationStatus: WebSocketNotificationLevel =
-        WebSocketNotificationLevel.INFO;
+      let notificationStatus: WebSocketNotificationLevel = "info";
 
       switch (job.status) {
-        case JobStatus.SUCCESS:
-          notificationStatus = WebSocketNotificationLevel.SUCCESS;
+        case "success":
+          notificationStatus = "success";
           break;
-        case JobStatus.FAILED:
-          notificationStatus = WebSocketNotificationLevel.ERROR;
+        case "failed":
+          notificationStatus = "error";
           break;
-        case JobStatus.CANCELLED:
-          notificationStatus = WebSocketNotificationLevel.WARNING;
+        case "cancelled":
+          notificationStatus = "warning";
           break;
         // CREATED and STARTED are non-terminal states, so just ignore the notification here.
-        case JobStatus.CREATED:
-        case JobStatus.STARTED:
+        case "created":
+        case "started":
           return;
       }
 
       await notificationsApi.sendNotification({
         type: "dionysus_batch_job_complete",
-        expirationTime: moment().add(3, "hours"),
+        expirationTime: moment().add(3, "hours").toISOString(),
         webSocketDestination: {
           level: notificationStatus,
           visibleDuration: 15,
           ghost: false,
+          group: "dionysus",
           durable: true,
           ttl: "P7D",
           closable: true,
@@ -449,10 +446,10 @@ export abstract class BaseBatchHandler {
     line: any,
   ): Promise<MetadataFetchJobStatus> {
     switch (currentStatus) {
-      case MetadataFetchJobStatus.INVALIDATED:
-        return MetadataFetchJobStatus.QUEUED;
+      case "invalidated":
+        return "queued";
       default:
-        return MetadataFetchJobStatus.INVALIDATED;
+        return "invalidated";
     }
   }
 
@@ -470,7 +467,7 @@ export abstract class BaseBatchHandler {
     type: string,
     line: any,
   ): Promise<MetadataFetchJobStatus> {
-    return MetadataFetchJobStatus.QUEUED;
+    return "queued";
   }
 
   protected async postCreateMetadataFetchJob(

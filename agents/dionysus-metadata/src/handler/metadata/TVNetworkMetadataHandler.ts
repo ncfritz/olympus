@@ -3,18 +3,17 @@ import {
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
 import {
-  JobType,
   MetadataFetchJob,
+  PartialAlternativeName,
+  PartialIdentifiableImage,
   PartialNetwork,
-  PartialNetworkAlternativeName,
-  PartialNetworkImage,
-} from "@ncfritz/olympus-model";
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import metadataApi from "../../api/metadataApi";
 import { NetworksEndpoint } from "../../api/tmdb/network";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
-import { MetadataJobMessage } from "../../types/message";
+import { type MetadataJobMessage } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
   METADATA_JOB_PREFIX,
@@ -29,8 +28,8 @@ export class TVNetworkMetadataHandler extends BaseMetadataHandler<
 > {
   @RabbitSubscribe({
     exchange: `${METADATA_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${METADATA_JOB_PREFIX}.${JobType.TV_NETWORKS}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.TV_NETWORKS}`,
+    queue: `${METADATA_JOB_PREFIX}.tv_networks.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.tv_networks`,
     queueOptions: {
       channel: "metadataChannel",
     },
@@ -57,29 +56,19 @@ export class TVNetworkMetadataHandler extends BaseMetadataHandler<
     const alternativeNamesResponse = await endpoint.alternativeNames(networkId);
     const imagesResponse = await endpoint.images(networkId);
 
-    const network = new PartialNetwork();
-    network.id = networkResponse.id;
-    network.name = networkResponse.name;
-    network.headquarters = networkResponse.headquarters;
-    network.homepage = networkResponse.homepage;
-    network.logoPath = networkResponse.logo_path;
-    network.originCountry = networkResponse.origin_country;
-
-    const alternativeNames: PartialNetworkAlternativeName[] = [];
+    const alternativeNames: PartialAlternativeName[] = [];
 
     alternativeNamesResponse.results.forEach((value) => {
       alternativeNames.push({
-        networkId: networkResponse.id,
         name: value.name,
         type: value.type,
       });
     });
 
-    const logos: PartialNetworkImage[] = [];
+    const images: PartialIdentifiableImage[] = [];
 
     imagesResponse.logos.forEach((value) => {
-      logos.push({
-        networkId: networkResponse.id,
+      images.push({
         id: value.id,
         fileType: value.file_type,
         filePath: value.file_path,
@@ -88,8 +77,16 @@ export class TVNetworkMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    network.alternativeNames = alternativeNames;
-    network.logos = logos;
+    const network: PartialNetwork = {
+      id: networkResponse.id,
+      name: networkResponse.name,
+      headquarters: networkResponse.headquarters,
+      homepage: networkResponse.homepage,
+      logoPath: networkResponse.logo_path,
+      originCountry: networkResponse.origin_country,
+      alternativeNames: alternativeNames,
+      images: images,
+    };
 
     await metadataApi.createNetwork(network);
 

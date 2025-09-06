@@ -3,24 +3,22 @@ import {
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
 import {
-  JobType,
   MetadataFetchJob,
-  MetadataFetchJobStatus,
+  PartialExternalId,
   PartialSeason,
-  PartialTVSeriesCastMember,
-  PartialTVSeriesCrewMember,
-  PartialTVSeriesExternalId,
-  PartialTVSeriesImage,
-  PartialTVSeriesVideo,
-} from "@ncfritz/olympus-model";
+  PartialTvSeriesCastMember,
+  PartialTvSeriesCrewMember,
+  PartialTypedImage,
+  PartialVideo,
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import moment from "moment/moment";
 import { AggregateCast, AggregateCrew } from "tmdb-ts";
 import { TvSeasonsEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
-import { MetadataJobMessage, TVSeasonContext } from "../../types/message";
+import { type MetadataJobMessage, TVSeasonContext } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
   METADATA_JOB_PREFIX,
@@ -37,8 +35,8 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
 > {
   @RabbitSubscribe({
     exchange: `${METADATA_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${METADATA_JOB_PREFIX}.${JobType.TV_SEASONS}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.TV_SEASONS}`,
+    queue: `${METADATA_JOB_PREFIX}.tv_seasons.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.tv_seasons`,
     queueOptions: {
       channel: "tvSeasonsChannel",
     },
@@ -67,17 +65,7 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
       ["external_ids", "images", "aggregate_credits", "videos"],
     );
 
-    const season = new PartialSeason();
-    season.id = seasonResponse.id;
-    season.airDate = moment(seasonResponse.air_date);
-    season.name = seasonResponse.name;
-    season.overview = seasonResponse.overview;
-    season.posterPath = seasonResponse.poster_path
-      ? seasonResponse.poster_path
-      : undefined;
-    season.seasonNumber = seasonResponse.season_number;
-
-    const cast: UniqueSet<PartialTVSeriesCastMember> = new UniqueSet();
+    const cast: UniqueSet<PartialTvSeriesCastMember> = new UniqueSet();
 
     // @ts-expect-error - expected per API - TS bindings are incorrect
     seasonResponse.aggregate_credits.cast.forEach((value: AggregateCast) => {
@@ -96,7 +84,7 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const crew: UniqueSet<PartialTVSeriesCrewMember> = new UniqueSet();
+    const crew: UniqueSet<PartialTvSeriesCrewMember> = new UniqueSet();
 
     // @ts-expect-error - expected per API - TS bindings are incorrect
     seasonResponse.aggregate_credits.crew.forEach((value: AggregateCrew) => {
@@ -115,7 +103,7 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    const externalIds: UniqueSet<PartialTVSeriesExternalId> = new UniqueSet();
+    const externalIds: UniqueSet<PartialExternalId> = new UniqueSet();
 
     if (seasonResponse.external_ids) {
       if (seasonResponse.external_ids.imdb_id) {
@@ -154,7 +142,7 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
       }
     }
 
-    const images: UniqueSet<PartialTVSeriesImage> = new UniqueSet();
+    const images: UniqueSet<PartialTypedImage> = new UniqueSet();
 
     seasonResponse.images.posters.forEach((value) => {
       images.add({
@@ -162,11 +150,11 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
         filePath: value.file_path,
         width: value.width,
         height: value.height,
-        countryCode: value.iso_639_1 || "en",
+        languageCode: value.iso_639_1 || "en",
       });
     });
 
-    const videos: UniqueSet<PartialTVSeriesVideo> = new UniqueSet();
+    const videos: UniqueSet<PartialVideo> = new UniqueSet();
 
     seasonResponse.videos.results.forEach((value) => {
       videos.add({
@@ -185,11 +173,25 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
       });
     });
 
-    season.cast = [...cast];
-    season.crew = [...crew];
-    season.externalIds = [...externalIds];
-    season.images = [...images];
-    season.videos = [...videos];
+    const season: PartialSeason = {
+      id: seasonResponse.id,
+      airDate: seasonResponse.air_date
+        ? moment(seasonResponse.air_date).toISOString()
+        : undefined,
+      name: seasonResponse.name,
+      overview: seasonResponse.overview,
+      posterPath: seasonResponse.poster_path
+        ? seasonResponse.poster_path
+        : undefined,
+      seasonNumber: seasonResponse.season_number,
+      // @ts-expect-error external api
+      voteAverage: seasonResponse["vote_average"] as number,
+      cast: [...cast],
+      crew: [...crew],
+      externalIds: [...externalIds],
+      images: [...images],
+      videos: [...videos],
+    };
 
     await metadataApi.createTVSeason(seriesId, season);
 
@@ -203,7 +205,7 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
       const episodeKey = `${seriesId}-${seasonNumber}-${episode.episode_number}`;
       const episodeFetchJob = await metadataManager.getMetadataFetchJob(
         episodeKey,
-        JobType.TV_EPISODES,
+        "tv_episodes",
         false,
       );
 
@@ -228,10 +230,10 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
 
       await metadataManager.createMetadataFetchJob(
         episodeKey,
-        JobType.TV_EPISODES,
+        "tv_episodes",
         ttl,
         jitter,
-        MetadataFetchJobStatus.QUEUED,
+        "queued",
         true,
         { seasonId: season.id },
       );

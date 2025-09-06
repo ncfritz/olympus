@@ -1,27 +1,31 @@
-import axios from "axios";
-import type {
-  SendNotificationRequest,
-  SendNotificationResponse,
-} from "@ncfritz/olympus-model/dist/notifications";
+import {
+  client,
+  sendNotification,
+  type SendNotificationRequest,
+  type SendNotificationResponse,
+} from "@ncfritz/olympus-sdk/olympus";
 import { BASE_URL } from "./apiBase";
+import { ExecuteWithMetrics } from "./executeDecorators";
 
-const sendNotification = async (
-  notification: SendNotificationRequest,
-): Promise<SendNotificationResponse> => {
-  const sendNotificationsResponse = await axios.post<
-    SendNotificationRequest,
-    SendNotificationResponse
-  >(`${BASE_URL}/v1/notifications/publish`, notification, {
-    validateStatus: (status) => {
-      return status === 202 || status === 306;
-    },
-  });
+class NotificationsApi {
+  constructor() {
+    client.setConfig({
+      baseURL: BASE_URL,
+      throwOnError: true,
+    });
+  }
 
-  return sendNotificationsResponse;
-};
+  @ExecuteWithMetrics("SendNotification")
+  async sendNotification(
+    notification: SendNotificationRequest,
+  ): Promise<SendNotificationResponse> {
+    const response = await sendNotification({
+      body: notification,
+    });
 
-const notificationsApi = {
-  sendNotification: sendNotification,
-};
+    return response.data!;
+  }
+}
 
+const notificationsApi = new NotificationsApi();
 export default notificationsApi;

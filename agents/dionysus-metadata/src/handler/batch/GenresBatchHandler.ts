@@ -4,16 +4,15 @@ import {
 } from "@golevelup/nestjs-rabbitmq";
 import {
   GenreType,
-  JobType,
   MetadataFetchJobStatus,
   PartialGenre,
-} from "@ncfritz/olympus-model";
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import { type ConsumeMessage } from "amqplib";
 import { Moment } from "moment/moment";
 import { GenreEndpoint, Genres } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
-import { BatchJobMessage } from "../../types/message";
+import { type BatchJobMessage } from "../../types/message";
 import {
   BATCH_JOB_PREFIX,
   JOB_TYPE_PREFIX,
@@ -28,8 +27,8 @@ export class GenresBatchHandler extends BaseBatchHandler {
 
   @RabbitSubscribe({
     exchange: `${BATCH_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${BATCH_JOB_PREFIX}.${JobType.GENRES}.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.${JobType.GENRES}`,
+    queue: `${BATCH_JOB_PREFIX}.genres.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.genres`,
     queueOptions: {
       channel: "batchJobsChannel",
     },
@@ -46,10 +45,10 @@ export class GenresBatchHandler extends BaseBatchHandler {
     );
 
     const tvGenresResponse = await endpoint.tvShows();
-    this.processGenresResponse(tvGenresResponse, GenreType.TV);
+    this.processGenresResponse(tvGenresResponse, "TV");
 
     const movieGenresResponse = await endpoint.movies();
-    this.processGenresResponse(movieGenresResponse, GenreType.MOVIE);
+    this.processGenresResponse(movieGenresResponse, "Movie");
   }
 
   private processGenresResponse(response: Genres, type: GenreType) {
@@ -67,9 +66,9 @@ export class GenresBatchHandler extends BaseBatchHandler {
   ): Promise<MetadataFetchJobStatus> {
     try {
       await metadataApi.createGenre(line);
-      return MetadataFetchJobStatus.FETCHED;
+      return "fetched";
     } catch (e) {
-      return MetadataFetchJobStatus.FAILED;
+      return "failed";
     }
   }
 
