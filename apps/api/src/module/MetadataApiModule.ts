@@ -30,6 +30,11 @@ import { ListNetworksController } from "../controller/dionysus/metadata/network/
 import { ListNetworkTvSeriesController } from "../controller/dionysus/metadata/network/ListNetworkTvSeries";
 import { CreatePersonController } from "../controller/dionysus/metadata/person/CreatePerson";
 import { DescribePersonController } from "../controller/dionysus/metadata/person/DescribePerson";
+import { GetPeopleBirthdayStatisticsController } from "../controller/dionysus/metadata/person/GetPersonBirthdayStatistics";
+import { GetPeopleDeathdayStatisticsController } from "../controller/dionysus/metadata/person/GetPersonDeathdayStatistics";
+import {
+  GetPeopleDepartmentStatisticsController
+} from "../controller/dionysus/metadata/person/GetPersonDepartmentStatistics";
 import { ListMovieCastRolesForPersonController } from "../controller/dionysus/metadata/person/ListMovieCastRolesForPerson";
 import { ListMovieCrewJobsForPersonController } from "../controller/dionysus/metadata/person/ListMovieCrewJobsForPerson";
 import { CreateProductionCompanyController } from "../controller/dionysus/metadata/productionCompany/CreateProductionCompany";
@@ -84,6 +89,9 @@ import { RabbitModule } from "./RabbitModule";
     DescribeTvSeasonController,
     DescribeTvSeriesController,
     GetMetadataFetchJobStatisticsController,
+    GetPeopleBirthdayStatisticsController,
+    GetPeopleDeathdayStatisticsController,
+    GetPeopleDepartmentStatisticsController,
     ListCertificationsController,
     ListCountriesController,
     ListGenresController,
