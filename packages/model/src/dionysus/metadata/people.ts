@@ -174,6 +174,22 @@ export class PersonAssociation {
   lastUpdatedTime: Moment;
 }
 
+export class PersonLifeStatistic {
+  @ApiProperty({ type: Number })
+  year: number;
+
+  @ApiProperty({ type: Number })
+  count: number;
+}
+
+export class PersonDepartmentStatistic {
+  @ApiProperty({ type: String })
+  department: string;
+
+  @ApiProperty({ type: Number })
+  count: number;
+}
+
 export class PartialPersonAssociation extends OmitType(PersonAssociation, [
   "createdTime",
   "lastUpdatedTime",
@@ -218,4 +234,22 @@ export class ListMovieCrewJobsForPersonResponse {
     required: true,
   })
   credits: PersonMovieCrewCredit[];
+}
+
+export class GetPersonLifeStaticsResponse {
+  @ApiProperty({
+    type: () => PersonLifeStatistic,
+    isArray: true,
+    required: true,
+  })
+  statistics: PersonLifeStatistic[];
+}
+
+export class GetPersonDepartmentStaticsResponse {
+  @ApiProperty({
+    type: () => PersonDepartmentStatistic,
+    isArray: true,
+    required: true,
+  })
+  statistics: PersonDepartmentStatistic[];
 }
