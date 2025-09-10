@@ -16,8 +16,8 @@ import { BaseExportBatchHandler } from "./BaseExportBatchHandler";
 export class TVSeriesBatchHandler extends BaseExportBatchHandler {
   @RabbitSubscribe({
     exchange: `${BATCH_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
-    queue: `${BATCH_JOB_PREFIX}.production_companies.${TRIGGER_SUFFIX}`,
-    routingKey: `${JOB_TYPE_PREFIX}.production_companies`,
+    queue: `${BATCH_JOB_PREFIX}.tv_series.${TRIGGER_SUFFIX}`,
+    routingKey: `${JOB_TYPE_PREFIX}.tv_series`,
     queueOptions: {
       channel: "batchJobsChannel",
     },
