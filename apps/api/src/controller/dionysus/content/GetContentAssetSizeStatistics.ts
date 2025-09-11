@@ -31,6 +31,7 @@ export class GetContentAssetSizeStatisticsController {
   @ApiHeader({
     name: "x-dionysus-content-bc",
     description: "Header indicating black curtain status",
+    required: false,
   })
   @ApiOkResponse({
     description: "Duration statistics.",
@@ -38,7 +39,7 @@ export class GetContentAssetSizeStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Headers("x-dionysus-content-bc") blackCurtain: string,
+    @Headers("x-dionysus-content-bc") blackCurtain: string = "true",
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`

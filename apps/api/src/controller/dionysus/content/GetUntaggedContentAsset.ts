@@ -41,6 +41,7 @@ export class GetUntaggedContentAssetController {
   @ApiHeader({
     name: "x-dionysus-content-bc",
     description: "Header indicating black curtain status",
+    required: false,
   })
   @ApiOkResponse({
     description: "The content asset.",
@@ -48,7 +49,7 @@ export class GetUntaggedContentAssetController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Headers("x-dionysus-content-bc") blackCurtain: string,
+    @Headers("x-dionysus-content-bc") blackCurtain: string = "true",
     @Res() response: Response,
   ): Promise<void> {
     if (blackCurtain === "true") {

@@ -45,6 +45,7 @@ export class GetContentAssetController {
   @ApiHeader({
     name: "x-dionysus-content-bc",
     description: "Header indicating black curtain status",
+    required: false,
   })
   @ApiOkResponse({
     description: "The content asset.",
@@ -53,7 +54,7 @@ export class GetContentAssetController {
   @ApiStandardErrorResponses()
   async handle(
     @Param("assetId") assetId: string,
-    @Headers("x-dionysus-content-bc") blackCurtain: string,
+    @Headers("x-dionysus-content-bc") blackCurtain: string = "true",
     @Res() response: Response,
   ): Promise<void> {
     let blackCurtainClause = "";

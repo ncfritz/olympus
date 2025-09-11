@@ -68,6 +68,7 @@ export class ListSimilarContentAssetsController {
   @ApiHeader({
     name: "x-dionysus-content-bc",
     description: "Header indicating black curtain status",
+    required: false,
   })
   @ApiOkResponse({
     description: "The list of similar assets capped at 25 items",
@@ -78,7 +79,7 @@ export class ListSimilarContentAssetsController {
     @Param("assetId") assetId: string,
     @Query("tagType") tagTypes: string,
     @Query("tagName") tagNames: string,
-    @Headers("x-dionysus-content-bc") blackCurtain: string,
+    @Headers("x-dionysus-content-bc") blackCurtain: string = "true",
     @Res() response: Response,
   ): Promise<void> {
     const splitTagNames = tagNames.split(",");
