@@ -58,7 +58,7 @@ export class GetMeetingsStatisticsController {
   @ApiOperation({
     summary: "Gets the monthly summary for meetings",
     description: "Gets monthly summary for meetings",
-    operationId: "GetMeetingsStatisticsController",
+    operationId: "GetMeetingsStatistics",
     tags: ["Meetings"],
   })
   @ApiProduces("application/json")

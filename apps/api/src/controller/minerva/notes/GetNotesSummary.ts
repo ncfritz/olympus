@@ -73,7 +73,7 @@ export class GetMonthlySummaryController {
   @ApiOperation({
     summary: "Gets the monthly summary for notes",
     description: "Gets monthly summary for notes",
-    operationId: "GetNotesSummaryController",
+    operationId: "GetNotesSummary",
     tags: ["Notes"],
   })
   @ApiProduces("application/json")
