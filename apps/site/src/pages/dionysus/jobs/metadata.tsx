@@ -7,6 +7,10 @@ import {
   SaveOutlined,
   SendOutlined,
 } from "@ant-design/icons";
+import type {
+  MetadataFetchJob,
+  MetadataFetchJobStatus,
+} from "@ncfritz/olympus-sdk/dionysus";
 import {
   Breadcrumb,
   Button,
@@ -30,7 +34,7 @@ import { DateTime } from "luxon";
 import Link from "next/link";
 import prettyMilliseconds from "pretty-ms";
 import React, { type ReactNode, useEffect, useState } from "react";
-import { type SortOptions } from "../../../api/contentApi";
+import type { SortOptions } from "../../../api/common";
 import metadataApi from "../../../api/metadataApi";
 import Timestamp from "../../../components/data/Timestamp";
 import CreateMetadataJobModal from "../../../components/dionysus/jobs/CreateMetadataJobModal";
@@ -42,23 +46,11 @@ import RedriveModal from "../../../components/dionysus/jobs/RedriveModal";
 import { getMetadataJobStatusIndicator } from "../../../components/dionysus/jobs/utils";
 import RefreshTimer from "../../../components/common/RefreshTimer";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
-
-export interface MetadataFetchJob {
-  id: string;
-  type: string;
-  status: string;
-  createdTime: string;
-  lastUpdatedTime: string;
-  lastFetchedTime: string;
-  ttl: number;
-  jitter: number;
-}
+import type { NotificationType } from "../../../utils/notifications";
 
 type OnChange = NonNullable<TableProps<MetadataFetchJob>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
-
-type NotificationType = "success" | "info" | "warning" | "error";
 
 const MetadataFetchJobsPage: React.FunctionComponent = () => {
   const [api] = notification.useNotification();
@@ -98,7 +90,8 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
     failed: 0,
     total: 0,
   });
-  const [targetStatus, setTargetStatus] = useState("queued");
+  const [targetStatus, setTargetStatus] =
+    useState<MetadataFetchJobStatus>("queued");
   const [redriveModalOpen, setRedriveModalOpen] = useState(false);
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
 

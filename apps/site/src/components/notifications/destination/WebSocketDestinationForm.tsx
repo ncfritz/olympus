@@ -178,7 +178,6 @@ const WebSocketDestinationForm: React.FunctionComponent<
           control={control}
           rules={{
             validate: (value) => {
-              console.log(value);
               return (
                 value === undefined ||
                 value.trim() === "" ||

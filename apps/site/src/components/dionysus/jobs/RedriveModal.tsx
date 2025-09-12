@@ -1,3 +1,7 @@
+import type {
+  MetadataFetchJobStatus,
+  MetadataJobType,
+} from "@ncfritz/olympus-sdk/dionysus";
 import {
   Button,
   Col,
@@ -32,17 +36,22 @@ const RedriveModal: React.FunctionComponent<RedriveModalProps> = ({
   onClose,
   statistics,
 }: RedriveModalProps) => {
-  const [queryJobType, setQueryJobType] = useState<string | undefined>(
+  const [queryJobType, setQueryJobType] = useState<MetadataJobType | undefined>(
     undefined,
   );
-  const [queryStatus, setQueryStatus] = useState<string | undefined>(undefined);
-  const [targetJobStatus, setTargetJobStatus] = useState<string | undefined>(
-    undefined,
-  );
+  const [queryStatus, setQueryStatus] = useState<
+    MetadataFetchJobStatus | undefined
+  >(undefined);
+  const [targetJobStatus, setTargetJobStatus] = useState<
+    MetadataFetchJobStatus | undefined
+  >(undefined);
   const [republish, setRepublish] = useState<boolean>(false);
   const [step, setStep] = useState<number>(0);
 
-  const handleSetSearchCriteria = (type?: string, status?: string) => {
+  const handleSetSearchCriteria = (
+    type?: MetadataJobType,
+    status?: MetadataFetchJobStatus,
+  ) => {
     if (type) {
       setQueryJobType(type);
     }

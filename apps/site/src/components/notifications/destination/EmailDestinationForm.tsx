@@ -105,23 +105,28 @@ const EmailDestinationForm: React.FunctionComponent<
         }: {
           field: ControllerRenderProps<NotificationFormData>;
           fieldState: ControllerFieldState;
-        }) => (
-          <Form.Item
-            label={"From Address"}
-            tooltip={
-              "The address to send the email as, this can be specified as a simple user@email.com or " +
-              "RFC 2822 angle address specification"
-            }
-            validateStatus={fieldState.error ? "error" : undefined}
-            help={
-              fieldState.error
-                ? "Email is empty or format is invalid"
-                : undefined
-            }
-          >
-            <Input {...field} />
-          </Form.Item>
-        )}
+        }) => {
+          // @ts-expect-error okay
+          const input = <Input {...field} />;
+
+          return (
+            <Form.Item
+              label={"From Address"}
+              tooltip={
+                "The address to send the email as, this can be specified as a simple user@email.com or " +
+                "RFC 2822 angle address specification"
+              }
+              validateStatus={fieldState.error ? "error" : undefined}
+              help={
+                fieldState.error
+                  ? "Email is empty or format is invalid"
+                  : undefined
+              }
+            >
+              {input}
+            </Form.Item>
+          );
+        }}
       />
       <Form.Item
         label={"Recipient/s"}

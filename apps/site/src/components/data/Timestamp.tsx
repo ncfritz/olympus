@@ -1,4 +1,5 @@
 import { CalendarOutlined } from "@ant-design/icons";
+import type { IconProps } from "@ant-design/icons/es/components/IconBase";
 import { Col, Popover, Row, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 
@@ -6,12 +7,18 @@ export interface TimestampProps {
   value: string;
   unknownValue?: string;
   showTime?: boolean;
+  showIcon?: boolean;
+  icon?: React.ReactNode;
+  direction?: "vertical" | "horizontal";
 }
 
 const Timestamp: React.FunctionComponent<TimestampProps> = ({
   value,
   unknownValue = "--",
   showTime = false,
+  showIcon = true,
+  icon = <CalendarOutlined />,
+  direction = "vertical",
 }: TimestampProps) => {
   const time = DateTime.fromISO(value).toUTC();
 
@@ -56,9 +63,9 @@ const Timestamp: React.FunctionComponent<TimestampProps> = ({
         placement={"bottomLeft"}
       >
         <Space direction={"horizontal"} size={8} align={"center"}>
-          <CalendarOutlined />
+          {showIcon && icon}
           <Space
-            direction={"vertical"}
+            direction={direction}
             size={0}
             align={"start"}
             styles={{
@@ -77,6 +84,7 @@ const Timestamp: React.FunctionComponent<TimestampProps> = ({
             </Typography.Text>
             {showTime && (
               <Typography.Text style={{ fontSize: "11px", lineHeight: "12px" }}>
+                {direction === "horizontal" && "\u00A0"}
                 {time.toFormat("hh:mm:ss a")}
               </Typography.Text>
             )}

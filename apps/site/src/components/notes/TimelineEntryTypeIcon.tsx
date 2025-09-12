@@ -46,7 +46,7 @@ const NotesTimelineEntryType: React.FunctionComponent<
     if (afterDelete) {
       if (response.status === 204) {
         await afterDelete(entry, true);
-      } else {
+      } else if (response.data?.note) {
         await afterDelete(response.data.note, false);
       }
     }

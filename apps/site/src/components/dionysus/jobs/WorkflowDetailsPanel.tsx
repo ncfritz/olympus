@@ -167,7 +167,9 @@ const WorkflowDetailsPanel = ({ workflow }: WorkflowDetailsPanelProps) => {
                 <Space size={8}>
                   <CheckCircleOutlined />
                   <Typography.Text style={{ fontSize: "11px" }}>
-                    {prettyMilliseconds(runtimeMs, { unitCount: 2 })}
+                    {isNaN(runtimeMs)
+                      ? "Unknown"
+                      : prettyMilliseconds(runtimeMs, { unitCount: 2 })}
                   </Typography.Text>
                 </Space>
               );

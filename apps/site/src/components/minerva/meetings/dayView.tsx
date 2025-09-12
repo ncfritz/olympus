@@ -1,5 +1,4 @@
 import {
-  CalendarOutlined,
   CaretDownOutlined,
   CaretRightOutlined,
   HomeOutlined,
@@ -35,7 +34,6 @@ import { v4 as uuidv4 } from "uuid";
 import meetingsApi from "../../../api/meetingsApi";
 import notesApi from "../../../api/notestApi";
 import { publish } from "../../../utils/events";
-import type { Note } from "../../../utils/notes";
 import { PUBLISH_EVENT } from "../../common/NotificationSink";
 import Day from "./DayDoughnut";
 import NotesEditorForm, {
@@ -47,6 +45,7 @@ import DayStatisticsPanel from "./DayStatisticsPanel";
 import EventChip from "./EventChip";
 import MeetingStatisticsPanel from "./MeetingsStatisticsPanel";
 import PreviousMeeting from "./PreviousMeeting";
+import { type Note } from "@ncfritz/olympus-sdk/minerva";
 
 const { Sider, Content } = Layout;
 
@@ -79,7 +78,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   const [previousEventsInSeries, setPreviousEventsInSeries] = useState<any[]>(
     [],
   );
-  const [eventNotes, setEventNotes] = useState([]);
+  const [eventNotes, setEventNotes] = useState<Note[]>([]);
   const [eventLoading, setEventLoading] = useState(false);
   const [eventError, setEventError] = useState(false);
   const [summary, setSummary] = useState<any>(undefined);

@@ -1,10 +1,11 @@
+import type { MetadataFetchJobStatus } from "@ncfritz/olympus-sdk/dionysus";
 import { Select } from "antd";
 import React, { type CSSProperties } from "react";
 import { getMetadataJobStatusIndicator } from "./utils";
 
 export interface MetadataJobStatusSelectProps {
   value: string | undefined;
-  onChange: (value: string) => void;
+  onChange: (value: MetadataFetchJobStatus) => void;
   style?: CSSProperties;
   bordered?: boolean;
 }

@@ -1,4 +1,5 @@
 import { HomeOutlined } from "@ant-design/icons";
+import type { GenreType } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Breadcrumb,
   notification,
@@ -11,7 +12,8 @@ import { type ColumnsType } from "antd/es/table";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React, { type ReactNode, useEffect, useState } from "react";
-import metadataApi, { type SortOptions } from "../../../api/metadataApi";
+import type { SortOptions } from "../../../api/common";
+import metadataApi from "../../../api/metadataApi";
 import Timestamp from "../../../components/data/Timestamp";
 import {
   CertificationOutlined,
@@ -19,6 +21,7 @@ import {
   MovieIcon,
   TvIcon,
 } from "../../../icons";
+import type { NotificationType } from "../../../utils/notifications";
 
 export interface Genre {
   id: string;
@@ -31,9 +34,6 @@ export interface Genre {
 type OnChange = NonNullable<TableProps<Genre>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
-
-type GenreType = "TV" | "Movie";
-type NotificationType = "success" | "info" | "warning" | "error";
 
 const MetadataGenresPage: React.FunctionComponent = () => {
   const [api, contextHolder] = notification.useNotification();

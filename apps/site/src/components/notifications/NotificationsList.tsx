@@ -1,7 +1,11 @@
-import { ClockCircleFilled, DatabaseOutlined } from "@ant-design/icons";
+import { ClockCircleFilled } from "@ant-design/icons";
+import type {
+  NotificationGroup,
+  Notification,
+  NotificationStatistics,
+} from "@ncfritz/olympus-sdk/olympus";
 import {
   Alert,
-  Badge,
   Button,
   Collapse,
   Empty,
@@ -10,7 +14,7 @@ import {
   Spin,
   Typography,
 } from "antd";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import notificationsApi from "../../api/notificationsApi";
 import { subscribe, unsubscribe } from "../../utils/events";
 import { REFRESH_EVENT } from "../common/NotificationSink";
@@ -21,14 +25,17 @@ import { v4 as uuid } from "uuid";
 
 const NotificationsList: React.FunctionComponent = () => {
   const [activeGroups, setActiveGroups] = useState<string[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notificationStatistics, setNotificationStatistics] = useState<
-    Record<string, any>
+    Record<string, NotificationStatistics>
   >({});
-  const [notificationGroups, setNotificationGroups] = useState<any[]>([]);
+  const [notificationGroups, setNotificationGroups] = useState<
+    NotificationGroup[]
+  >([]);
   const [notificationsLoading, setNotificationsLoading] =
     useState<boolean>(false);
-  const [notificationsError, setNotificationsError] = useState<any>(undefined);
+  const [notificationsError, setNotificationsError] =
+    useState<unknown>(undefined);
 
   useEffect(() => {
     subscribe(REFRESH_EVENT, onRefreshEvent);
@@ -48,13 +55,16 @@ const NotificationsList: React.FunctionComponent = () => {
     try {
       const listNotificationsResponse =
         await notificationsApi.listNotifications();
-      setNotifications(listNotificationsResponse.data.recent);
-      setNotificationStatistics(listNotificationsResponse.data.statistics);
+      setNotifications(listNotificationsResponse.data?.recent || []);
+      setNotificationStatistics(
+        listNotificationsResponse.data?.statistics || {},
+      );
 
       const listNotificationGroupsResponse =
         await notificationsApi.listNotificationGroups();
-      setNotificationGroups(listNotificationGroupsResponse.data.groups);
+      setNotificationGroups(listNotificationGroupsResponse.data?.groups || []);
     } catch (e) {
+      console.log(e);
       setNotificationsError(e);
     } finally {
       setNotificationsLoading(false);
@@ -67,13 +77,13 @@ const NotificationsList: React.FunctionComponent = () => {
     })();
   }, []);
 
-  const onRefreshEvent = (e: CustomEvent) => {
+  const onRefreshEvent = () => {
     (async () => {
       await fetchNotificationsList(true);
     })();
   };
 
-  const content: any[] = [];
+  const content: ReactNode[] = [];
 
   if (notificationsLoading) {
     content.push(
@@ -92,6 +102,7 @@ const NotificationsList: React.FunctionComponent = () => {
   } else if (notificationsError) {
     content.push(
       <Alert
+        style={{ margin: 16 }}
         key={uuid()}
         type={"error"}
         showIcon={true}
@@ -133,7 +144,7 @@ const NotificationsList: React.FunctionComponent = () => {
         }
         size={"small"}
         dataSource={notifications}
-        renderItem={(item, index) => {
+        renderItem={(item) => {
           return (
             <NotificationListEntry
               notification={item}

@@ -1,140 +1,105 @@
-import axios, { type AxiosResponse } from "axios";
+import {
+  type BaseNoteWithAssociations,
+  client,
+  createNote,
+  deleteNote,
+  getNotesForEntity,
+  getNotesSummary,
+  listNotesForDay,
+  type PartialNote,
+  restoreNote,
+  updateNote,
+} from "@ncfritz/olympus-sdk/minerva";
 import { DateTime } from "luxon";
-import { type UpdateNoteResponse } from "../utils/notes";
 
-const createNote = async (note: any) => {
-  try {
-    const createNoteResponse = await axios.post(
-      `/api/v1/notes`,
-      { note: note },
-      {
-        validateStatus: (status) => {
-          return status === 201;
-        },
+class NotesApi {
+  constructor() {
+    client.setConfig({
+      baseURL: "/api/v1",
+      throwOnError: true,
+    });
+  }
+
+  private buildHeaders(existing?: Record<string, string>) {
+    return {
+      headers: {
+        ...existing,
+        "x-ncfritz-tz": Intl.DateTimeFormat().resolvedOptions().timeZone,      },
+    };
+  }
+
+  async createNote(note: BaseNoteWithAssociations) {
+    return await createNote({
+      body: {
+        note: note,
       },
-    );
-
-    return createNoteResponse;
-  } catch (e) {
-    throw e;
+      ...this.buildHeaders(),
+    });
   }
-};
-
-const updateNote = async (id: string, update: any) => {
-  try {
-    const updateNoteResponse: AxiosResponse<UpdateNoteResponse> =
-      await axios.put(
-        `/api/v1/note/${id}`,
-        { note: update },
-        {
-          validateStatus: (status) => {
-            return status === 200;
-          },
-        },
-      );
-
-    return updateNoteResponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const deleteNote = async (id: string) => {
-  try {
-    const deleteNoteResponse: AxiosResponse<UpdateNoteResponse> =
-      await axios.delete(`/api/v1/note/${id}`, {
-        validateStatus: (status) => {
-          return status === 200 || status === 204;
-        },
-      });
-
-    return deleteNoteResponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const restoreNote = async (id: string) => {
-  try {
-    const restoreNoteResponse: AxiosResponse<UpdateNoteResponse> =
-      await axios.patch(
-        `/api/v1/note/${id}`,
-        {},
-        {
-          validateStatus: (status) => {
-            return status === 200;
-          },
-        },
-      );
-
-    return restoreNoteResponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const getNotes = async (date: DateTime, count = 1) => {
-  try {
-    const getNotesResponse = await axios.get(
-      `/api/v1/notes/${date.toISO()}?count=${count}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async updateNote(id: string, update: PartialNote) {
+    return await updateNote({
+      path: {
+        noteId: id,
       },
-    );
-
-    return getNotesResponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const getNotesForEntity = async (entityType: string, entityId: string) => {
-  try {
-    const getNotesResponse = await axios.get(
-      `/api/v1/notes/entity/${entityType}/${encodeURIComponent(entityId)}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+      body: {
+        note: update,
       },
-    );
-
-    return getNotesResponse;
-  } catch (e) {
-    throw e;
+      ...this.buildHeaders(),
+    });
   }
-};
 
-const getSummary = async (start: DateTime, days: number = 30) => {
-  try {
-    const getSummaryResponse = await axios.get(
-      `/api/v1/notes/summary/${start.toISODate()}?days=${days}`,
-      {
-        headers: {
-          "x-ncfritz-tz": Intl.DateTimeFormat().resolvedOptions().timeZone,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async deleteNote(id: string) {
+    return await deleteNote({
+      path: {
+        noteId: id,
       },
-    );
-
-    return getSummaryResponse;
-  } catch (e) {
-    throw e;
+      ...this.buildHeaders(),
+    });
   }
-};
 
-const notesApi = {
-  createNote: createNote,
-  deleteNote: deleteNote,
-  getNotes: getNotes,
-  getNotesForEntity: getNotesForEntity,
-  getSummary: getSummary,
-  restoreNote: restoreNote,
-  updateNote: updateNote,
-};
+  async restoreNote(id: string) {
+    return await restoreNote({
+      path: {
+        noteId: id,
+      },
+      ...this.buildHeaders(),
+    });
+  }
 
+  async getNotes(start: DateTime, days = 1) {
+    return await listNotesForDay({
+      path: {
+        start: start.toISO()!,
+      },
+      query: {
+        days: days,
+      },
+      ...this.buildHeaders(),
+    });
+  }
+
+  async getNotesForEntity(entityType: string, entityId: string) {
+    return await getNotesForEntity({
+      path: {
+        entityId: encodeURIComponent(entityId),
+        entityType: entityType,
+      },
+      ...this.buildHeaders(),
+    });
+  }
+
+  async getSummary(start: DateTime, days = 30) {
+    return await getNotesSummary({
+      path: {
+        start: start.toISO()!,
+      },
+      query: {
+        days: days,
+      },
+      ...this.buildHeaders(),
+    });
+  }
+}
+
+const notesApi = new NotesApi();
 export default notesApi;

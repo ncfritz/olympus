@@ -1,5 +1,5 @@
 import {
-  AmazonOutlined,
+  ApiOutlined,
   EditOutlined,
   HeartOutlined,
   HomeOutlined,
@@ -127,6 +127,14 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
                 icon: <MoneyCollectOutlined />,
                 label: "Finance",
               },
+              {
+                type: "divider",
+              },
+              {
+                key: `/docs`,
+                icon: <ApiOutlined />,
+                label: "API Documentation",
+              },
             ]}
           />
           <Space
@@ -145,7 +153,7 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
                 fontSize: 10,
               }}
             >
-              v{process.env.version || "U.know.n"}
+              v{process.env.version || "Un.know.n"}
             </Typography.Text>
           </Space>
         </Sider>

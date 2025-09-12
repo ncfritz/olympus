@@ -1,7 +1,7 @@
 import { GithubOutlined } from "@ant-design/icons";
 import { Button, Card, Space, Spin } from "antd";
 import { Content } from "antd/lib/layout/layout";
-import { type BuiltInProviderType } from "next-auth/providers";
+import type { BuiltInProviderType } from "next-auth/providers/index";
 import {
   type ClientSafeProvider,
   getProviders,

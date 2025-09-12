@@ -1,0 +1,557 @@
+import {
+  BookOutlined,
+  CalendarOutlined,
+  CloudDownloadOutlined,
+  HeartOutlined,
+  HomeOutlined,
+  QrcodeOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
+import type {
+  Season,
+  TvSeriesCastMember,
+  TvSeriesCrewMember,
+} from "@ncfritz/olympus-sdk/dionysus";
+import {
+  Breadcrumb,
+  Layout,
+  Space,
+  Spin,
+  Typography,
+  Splitter,
+  Tabs,
+  Button,
+  Progress,
+  Image,
+  QRCode,
+} from "antd";
+import { Content } from "antd/lib/layout/layout";
+import { DateTime } from "luxon";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import React, { useState } from "react";
+import metadataApi from "../../../../../../api/metadataApi";
+import Description from "../../../../../../components/common/Description";
+import LoadingWrapper from "../../../../../../components/common/LoadingWrapper";
+import MetadataFetchJobPanel from "../../../../../../components/dionysus/metadata/MetadataFetchJobPanel";
+import MovieImagesPanel from "../../../../../../components/dionysus/metadata/MovieImagesPanel";
+import MovieVideoPanel from "../../../../../../components/dionysus/metadata/MovieVideoPanel";
+import SeasonEpisodeCalendar from "../../../../../../components/dionysus/metadata/SeasonEpisodeCalendar";
+import TvEpisodeSummaryCard from "../../../../../../components/dionysus/metadata/TvEpisodeSummaryCard";
+import TvSeriesCastList from "../../../../../../components/dionysus/metadata/TvSeriesCastList";
+import TvSeriesCrewList from "../../../../../../components/dionysus/metadata/TvSeriesCrewList";
+import {
+  getExternalIdIcon,
+  getProgressColor,
+} from "../../../../../../components/dionysus/metadata/util";
+import { useFetch } from "../../../../../../hooks/useFetch";
+import { MetadataOutlinedIcon } from "../../../../../../icons";
+
+interface SeasonId {
+  seriesId: number;
+  seasonNumber: number;
+}
+
+const topOffset = 301;
+
+const TvSeriesDetailPage: React.FunctionComponent = () => {
+  const router = useRouter();
+  const { id } = router.query;
+  const { seasonNumber } = router.query;
+
+  const [activeTab, setActiveTab] = useState("t-main-general");
+
+  const [tvSeason, tvSeasonLoading, tvSeasonError] = useFetch<SeasonId, Season>(
+    {
+      dataType: "TV season details",
+      watch: [id, seasonNumber],
+      params: {
+        seriesId: id as unknown as number,
+        seasonNumber: seasonNumber as unknown as number,
+      },
+      fetchFunction: async (o) =>
+        (await metadataApi.describeTvSeason(o.seriesId, o.seasonNumber)).data
+          .season,
+    },
+  );
+
+  const [cast, castLoading, castError] = useFetch<
+    SeasonId,
+    TvSeriesCastMember[]
+  >({
+    dataType: "TV series cast",
+    watch: [id, seasonNumber],
+    params: {
+      seriesId: id as unknown as number,
+      seasonNumber: seasonNumber as unknown as number,
+    },
+    fetchFunction: async (o) =>
+      (await metadataApi.listTvSeasonCast(o.seriesId, o.seasonNumber)).data
+        .cast,
+  });
+
+  const [crew, crewLoading, crewError] = useFetch<
+    SeasonId,
+    TvSeriesCrewMember[]
+  >({
+    dataType: "TV series crew",
+    watch: [id, seasonNumber],
+    params: {
+      seriesId: id as unknown as number,
+      seasonNumber: seasonNumber as unknown as number,
+    },
+    fetchFunction: async (o) =>
+      (await metadataApi.listTvSeasonCrew(o.seriesId, o.seasonNumber)).data
+        .crew,
+  });
+
+  let content = (
+    <Space style={{ margin: 16 }}>
+      <Spin size={"large"} />
+    </Space>
+  );
+
+  if (tvSeason) {
+    const headerBackgroundUrl = tvSeason?.series.backdropPath
+      ? `https://image.tmdb.org/t/p/w1280/${tvSeason.series.backdropPath}`
+      : "/section_header.png";
+    const airDate = tvSeason.airDate
+      ? DateTime.fromISO(tvSeason.airDate)
+      : undefined;
+
+    const overview = tvSeason.overview ? (
+      <Space direction={"vertical"} size={0} style={{ padding: 16 }}>
+        <Typography.Title
+          style={{ color: "#222222", marginBottom: 0 }}
+          level={4}
+        >
+          Overview
+        </Typography.Title>
+        <Typography.Text
+          style={{ color: "#333333", maxWidth: 1024, display: "flex" }}
+        >
+          {tvSeason?.overview}
+        </Typography.Text>
+      </Space>
+    ) : undefined;
+
+    content = (
+      <Space
+        direction={"vertical"}
+        size={0}
+        style={{ width: "100%", height: "100%" }}
+        styles={{ item: { width: "100%" } }}
+      >
+        <Space
+          size={0}
+          direction={"vertical"}
+          className={"movieHeader"}
+          style={{
+            minHeight: 200,
+            maxHeight: 200,
+            width: "100%",
+            backgroundColor: "#021629",
+            backgroundImage: `linear-gradient(90deg, rgba(0, 21, 41, 1) 10%, rgba(0, 0, 0, 0.4) 100%), url("${headerBackgroundUrl}")`,
+            backgroundPosition: "left 150px top",
+            backgroundSize: "cover",
+            backgroundRepeat: "no-repeat",
+            borderBottom: "1px solid #efefef",
+            alignItems: "start",
+            position: "relative",
+            top: 25,
+          }}
+          styles={{
+            item: { width: "100%", height: 200 },
+          }}
+        >
+          <Breadcrumb
+            className={"dark"}
+            style={{
+              padding: 8,
+              background: "#021629",
+              marginBottom: 32,
+              position: "fixed",
+              top: 64,
+              left: 380,
+              width: "100%",
+              zIndex: 100,
+            }}
+            items={[
+              {
+                title: (
+                  <Link href={"/"}>
+                    <Space size={4}>
+                      <HomeOutlined />
+                      <span>Home</span>
+                    </Space>
+                  </Link>
+                ),
+              },
+              {
+                title: (
+                  <Link href={"/dionysus"}>
+                    <Space size={4}>
+                      <MetadataOutlinedIcon />
+                      <span>Dionysus</span>
+                    </Space>
+                  </Link>
+                ),
+              },
+              {
+                title: (
+                  <Link href={"/dionysus/movies"}>
+                    <Space size={4}>
+                      <MetadataOutlinedIcon />
+                      <span>Movies</span>
+                    </Space>
+                  </Link>
+                ),
+              },
+              {
+                title: (
+                  <Space size={4}>
+                    <MetadataOutlinedIcon />
+                    <span>{tvSeason?.name ? tvSeason.name : "Loading..."}</span>
+                  </Space>
+                ),
+              },
+            ]}
+          />
+          <Space
+            direction={"horizontal"}
+            size={0}
+            style={{ display: "flex", alignItems: "center" }}
+            styles={{ item: { height: 200 } }}
+          >
+            <Link href={`/dionysus/tv/series/${tvSeason.series.id}`}>
+              <Image
+                preview={false}
+                style={{
+                  height: 150,
+                  width: 100,
+                  borderRadius: 8,
+                  border: "2px solid #efefef",
+                  margin: 24,
+                }}
+                src={`https://image.tmdb.org/t/p/w342/${tvSeason.series.posterPath}}`}
+                alt={"Poster"}
+              />
+            </Link>
+            <Space
+              direction={"vertical"}
+              size={8}
+              style={{ alignItems: "start", marginTop: 24 }}
+            >
+              <Link href={`/dionysus/tv/series/${tvSeason.series.id}`}>
+                <Typography.Title
+                  level={1}
+                  style={{ color: "#ffffffdd", marginBottom: 0 }}
+                >
+                  {tvSeason?.series.name}
+                </Typography.Title>
+              </Link>
+              <Link
+                href={`/dionysus/tv/series/${tvSeason.series.id}/season/${tvSeason.seasonNumber}`}
+              >
+                <Typography.Title
+                  level={4}
+                  style={{ color: "#ffffffcc", marginBottom: 3 }}
+                >
+                  Season {tvSeason?.seasonNumber}
+                </Typography.Title>
+              </Link>
+              <Space
+                direction={"horizontal"}
+                size={16}
+                style={{
+                  alignItems: "center",
+                  display: "flex",
+                }}
+              >
+                <Progress
+                  type={"circle"}
+                  strokeColor={getProgressColor(tvSeason.voteAverage * 10)}
+                  percent={tvSeason.voteAverage * 10}
+                  size={48}
+                  format={(percent) => {
+                    return (
+                      <Typography.Text
+                        style={{
+                          fontSize: "13px",
+                          color: "#efefef",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {percent}%
+                      </Typography.Text>
+                    );
+                  }}
+                  style={{
+                    backgroundColor: "#99999933",
+                    borderRadius: 48,
+                    padding: 6,
+                  }}
+                />
+                <Button
+                  className={"dionysus-action-button"}
+                  shape={"circle"}
+                  size={"large"}
+                  icon={<HeartOutlined />}
+                />
+                <Button
+                  className={"dionysus-action-button"}
+                  shape={"circle"}
+                  size={"large"}
+                  icon={<BookOutlined />}
+                />
+                <Button
+                  className={"dionysus-action-button"}
+                  shape={"circle"}
+                  size={"large"}
+                  icon={<SearchOutlined />}
+                />
+              </Space>
+            </Space>
+          </Space>
+        </Space>
+        <Space
+          direction={"horizontal"}
+          style={{ width: "100%", top: 24, position: "relative" }}
+          styles={{
+            item: {
+              width: "100%",
+              minHeight: `calc(100vh - ${topOffset}px)`,
+            },
+          }}
+        >
+          <Splitter
+            style={{
+              width: "100%",
+              minHeight: `calc(100vh - ${topOffset}px)`,
+            }}
+          >
+            <Splitter.Panel>
+              <Space
+                direction={"horizontal"}
+                className={"person-fix"}
+                size={0}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "start",
+                }}
+              >
+                <Space direction={"vertical"} style={{ padding: 16 }}>
+                  <Image
+                    src={`https://image.tmdb.org/t/p/w342/${tvSeason.posterPath}}`}
+                    width={275}
+                    style={{ borderRadius: 8 }}
+                  />
+                  <Description
+                    title={"Air Date"}
+                    value={
+                      airDate ? airDate.toFormat("yyyy / MM / dd") : undefined
+                    }
+                  />
+                  <Description
+                    title={"Episodes"}
+                    value={tvSeason.episodeCount}
+                  />
+                  <Space direction={"horizontal"}>
+                    {tvSeason.externalIds.map((item) => {
+                      return (
+                        <Button
+                          icon={getExternalIdIcon(item.type)}
+                          type={"text"}
+                          size={"large"}
+                        />
+                      );
+                    })}
+                  </Space>
+                </Space>
+                <Space
+                  direction={"vertical"}
+                  style={{
+                    width: "100%",
+                    height: `calc(100vh - ${topOffset - 16}px`,
+                    alignItems: "top",
+                    overflow: "scroll",
+                    scrollbarWidth: "none",
+                  }}
+                >
+                  {overview}
+                  <Tabs
+                    className={"fill compact"}
+                    activeKey={activeTab}
+                    onChange={(activeKey: string) => {
+                      setActiveTab(activeKey);
+                    }}
+                    tabPosition={"top"}
+                    size={"small"}
+                    items={[
+                      {
+                        key: "t-main-general",
+                        label: "Overview",
+                        children: (
+                          <Space
+                            direction={"vertical"}
+                            style={{
+                              width: "100%",
+                              padding: 16,
+                              alignItems: "start",
+                              justifyContent: "space-between",
+                              paddingRight: 48,
+                            }}
+                            styles={{ item: { width: "100%" } }}
+                            size={16}
+                          >
+                            {tvSeason.episodes.map((entry) => {
+                              return (
+                                <TvEpisodeSummaryCard
+                                  episode={entry}
+                                  seriesId={tvSeason.series.id}
+                                />
+                              );
+                            })}
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: "t-main-cast",
+                        label: "Cast",
+                        children: (
+                          <Space
+                            direction={"vertical"}
+                            style={{ width: "100%" }}
+                          >
+                            <LoadingWrapper
+                              loading={castLoading}
+                              error={castError}
+                              showError={true}
+                            >
+                              <TvSeriesCastList cast={cast} />
+                            </LoadingWrapper>
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: "t-main-crew",
+                        label: "Crew",
+                        children: (
+                          <Space
+                            direction={"vertical"}
+                            style={{ width: "100%", padding: 16 }}
+                          >
+                            <LoadingWrapper
+                              loading={crewLoading}
+                              error={crewError}
+                              showError={true}
+                            >
+                              <TvSeriesCrewList crew={crew} />
+                            </LoadingWrapper>
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: "t-main-images",
+                        label: "Images",
+                        children: (
+                          <MovieImagesPanel
+                            images={tvSeason.images}
+                            imageTypes={["poster"]}
+                          />
+                        ),
+                      },
+                      {
+                        key: "t-main-videos",
+                        label: "Videos",
+                        children: <MovieVideoPanel videos={tvSeason.videos} />,
+                      },
+                    ]}
+                  />
+                </Space>
+              </Space>
+            </Splitter.Panel>
+            <Splitter.Panel resizable={false} defaultSize={550}>
+              <Tabs
+                tabPosition={"right"}
+                className={"compact"}
+                items={[
+                  {
+                    key: "t-info-episodes",
+                    label: <CalendarOutlined />,
+                    children: (
+                      <Space
+                        direction={"vertical"}
+                        style={{ margin: 0, width: "100%" }}
+                      >
+                        <SeasonEpisodeCalendar episodes={tvSeason.episodes} />
+                      </Space>
+                    ),
+                  },
+                  {
+                    key: "m-info-qr",
+                    label: <QrcodeOutlined />,
+                    children: (
+                      <Space
+                        size={0}
+                        style={{
+                          width: "100%",
+                          padding: 16,
+                          alignItems: "center",
+                        }}
+                        direction={"vertical"}
+                      >
+                        <QRCode
+                          style={{ marginTop: 64 }}
+                          size={350}
+                          bordered={false}
+                          errorLevel={"H"}
+                          value={`https://dionysus.dev.ncfritz.net/dionysus/tv/series/${tvSeason.series.id}/season/${tvSeason.seasonNumber}`}
+                        />
+                      </Space>
+                    ),
+                  },
+                  {
+                    key: "m-info-fetchJob",
+                    label: <CloudDownloadOutlined />,
+                    children: (
+                      <Space
+                        size={0}
+                        style={{ width: "100%", padding: 16 }}
+                        direction={"vertical"}
+                      >
+                        <MetadataFetchJobPanel
+                          id={`${id}-${tvSeason.seasonNumber}`}
+                          type={"tv_seasons"}
+                        />
+                      </Space>
+                    ),
+                  },
+                ]}
+              />
+            </Splitter.Panel>
+          </Splitter>
+        </Space>
+      </Space>
+    );
+  }
+
+  return (
+    <Layout
+      style={{
+        position: "fixed",
+        background: "#ffffff",
+        gap: 16,
+        top: 64,
+        overflowX: "hidden",
+        overflowY: "auto",
+        height: "calc(100vh - 48px)",
+      }}
+    >
+      <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
+    </Layout>
+  );
+};
+
+export default TvSeriesDetailPage;

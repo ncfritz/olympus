@@ -1,25 +1,14 @@
 const DynamicReactJson = dynamic(import("react-json-view"), { ssr: false });
-import {
-  Button,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Slider,
-  Space,
-  Switch,
-} from "antd";
+import { Button, Form, Input, InputNumber, Modal, Space, Switch } from "antd";
 import dynamic from "next/dynamic";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 import batchJobApi from "../../../api/batchJobApi";
-import metadataApi from "../../../api/metadataApi";
 import { publish } from "../../../utils/events";
+import { type JobType } from "@ncfritz/olympus-sdk/dionysus";
 import { PUBLISH_EVENT } from "../../common/NotificationSink";
-import MetadataJobStatusSelect from "./MetadataJobStatusSelect";
 
 interface FormInput {
-  type: string;
+  type: JobType;
   publish: boolean;
   offset: number;
   limit: boolean;
@@ -27,7 +16,7 @@ interface FormInput {
 }
 
 export interface CreateBatchJobModalProps {
-  type: string;
+  type: JobType;
   open: boolean;
   postCreate: () => Promise<void>;
   onClose: () => void;
@@ -61,8 +50,6 @@ const CreateBatchJobModal: React.FunctionComponent<
   const limitWatch = watch("limit");
 
   const onSubmit: SubmitHandler<FormInput> = async (data) => {
-    console.log("data", data);
-
     await batchJobApi.createBatchJob(
       data.type,
       data.publish,

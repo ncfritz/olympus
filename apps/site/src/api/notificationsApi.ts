@@ -1,204 +1,110 @@
-import axios from "axios";
+import {
+  acknowledgeNotification,
+  deleteNotification,
+  getUnreadNotificationCount,
+  listNotifications,
+  listNotificationGroups,
+  listNotificationsTypes,
+  listNotificationSettings,
+  listNotificationsInGroup,
+  sendNotification,
+  updateNotificationSetting,
+  type SendNotificationRequest,
+  type UpdateNotificationSettingRequest,
+  client,
+} from "@ncfritz/olympus-sdk/olympus";
 
-const sendNotification = async (notification: any): Promise<any> => {
-  try {
-    const sendNotificationsResponse = await axios.post(
-      `/api/v1/notifications/publish`,
-      notification,
-      {
-        validateStatus: (status) => {
-          return status === 202 || status === 306;
-        },
-      },
-    );
-
-    return sendNotificationsResponse;
-  } catch (e) {
-    throw e;
+class NotificationsApi {
+  constructor() {
+    client.setConfig({
+      baseURL: "/api/v1",
+      throwOnError: true,
+    });
   }
-};
 
-const getUnreadNotificationsCount = async (): Promise<any> => {
-  try {
-    const getUnreadNotificationsCountResponse = await axios.get(
-      `/api/v1/notifications/unreadCount`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return getUnreadNotificationsCountResponse;
-  } catch (e) {
-    throw e;
+  async sendNotification(notification: SendNotificationRequest) {
+    return await sendNotification({
+      body: notification,
+    });
   }
-};
 
-const listNotifications = async (count: number = 5): Promise<any> => {
-  try {
-    const listNotificationsResponse = await axios.get(
-      `/api/v1/notifications?count=${count}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return listNotificationsResponse;
-  } catch (e) {
-    throw e;
+  async getUnreadNotificationsCount() {
+    return await getUnreadNotificationCount();
   }
-};
 
-const listNotificationSettings = async (): Promise<any> => {
-  try {
-    const listNotificationSettingsResponse = await axios.get(
-      `/api/v1/notifications/settings`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async listNotifications(count: number = 5) {
+    return await listNotifications({
+      query: {
+        count: count,
       },
-    );
-
-    return listNotificationSettingsResponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const listNotificationsInGroup = async (
-  groupId: string,
-  page: number,
-  pageSize = 10,
-): Promise<any> => {
-  try {
-    const listNotificationsInGroupResponse = await axios.get(
-      `/api/v1/notifications/group/${groupId}/notifications?pageSize=${pageSize}&startPage=${page}&sortBy=createdTime&sort=desc`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async listNotificationSettings() {
+    return await listNotificationSettings();
+  }
+
+  async listNotificationsInGroup(groupId: string, page: number, pageSize = 10) {
+    return await listNotificationsInGroup({
+      path: {
+        groupId: groupId,
       },
-    );
-
-    return listNotificationsInGroupResponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const listNotificationGroups = async (
-  includeNotificationTypes: boolean = false,
-): Promise<any> => {
-  try {
-    const listNotificationGroupsResponse = await axios.get(
-      `/api/v1/notifications/groups?includeNotificationTypes=${includeNotificationTypes}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+      query: {
+        pageSize: pageSize,
+        startPage: page,
+        sort: undefined,
+        sortBy: undefined,
       },
-    );
-
-    return listNotificationGroupsResponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const listNotificationTypes = async (): Promise<any> => {
-  try {
-    const listNotificatioTypesResponse = await axios.get(
-      `/api/v1/notifications/types`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async listNotificationGroups(includeNotificationTypes: boolean = false) {
+    return await listNotificationGroups({
+      query: {
+        includeNotificationTypes: includeNotificationTypes,
       },
-    );
-
-    return listNotificatioTypesResponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const acknowledgeNotification = async (
-  notificationId: string,
-  options: { acknowledged: boolean; ttl?: string } = {
-    acknowledged: true,
-    ttl: "P3D",
-  },
-): Promise<any> => {
-  try {
-    const acknowledgeNotificationResponse = await axios.put(
-      `/api/v1/notification/${notificationId}/acknowledge`,
-      options,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async listNotificationTypes() {
+    return await listNotificationsTypes();
+  }
+
+  async acknowledgeNotification(
+    notificationId: string,
+    options: { acknowledged: boolean; ttl?: string } = {
+      acknowledged: true,
+      ttl: "P3D",
+    },
+  ) {
+    return acknowledgeNotification({
+      path: { notificationId: notificationId },
+      body: {
+        acknowledged: options.acknowledged,
+        ttl: options.ttl || "P3D",
       },
-    );
-
-    return acknowledgeNotificationResponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const deleteNotification = async (notificationId: string): Promise<any> => {
-  try {
-    const listNotificzationsResponse = await axios.delete(
-      `/api/v1/notification/${notificationId}`,
-      {
-        validateStatus: (status) => {
-          return status === 204;
-        },
+  async deleteNotification(notificationId: string) {
+    return await deleteNotification({
+      path: { notificationId: notificationId },
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
-
-    return listNotificzationsResponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const updateNotificationSetting = async (
-  notificationTypeId: string,
-  notificationSetting: any,
-): Promise<any> => {
-  try {
-    const updateNotificationSettingResponse = await axios.put(
-      `/api/v1/notifications/settings/${notificationTypeId}`,
-      notificationSetting,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return updateNotificationSettingResponse;
-  } catch (e) {
-    throw e;
+  async updateNotificationSetting(
+    notificationType: string,
+    notificationSetting: UpdateNotificationSettingRequest,
+  ) {
+    return await updateNotificationSetting({
+      path: { notificationType: notificationType },
+      body: notificationSetting,
+    });
   }
-};
+}
 
-const notificationsApi = {
-  acknowledgeNotification: acknowledgeNotification,
-  getUnreadNotificationsCount: getUnreadNotificationsCount,
-  sendNotification: sendNotification,
-  deleteNotification: deleteNotification,
-  listNotifications: listNotifications,
-  listNotificationsInGroup: listNotificationsInGroup,
-  listNotificationGroups: listNotificationGroups,
-  listNotificationSettings: listNotificationSettings,
-  listNotificationTypes: listNotificationTypes,
-  updateNotificationSetting: updateNotificationSetting,
-};
-
+const notificationsApi = new NotificationsApi();
 export default notificationsApi;

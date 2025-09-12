@@ -6,6 +6,7 @@ import {
   SearchOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
+import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Avatar,
   Breadcrumb,
@@ -24,7 +25,8 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import prettyMilliseconds from "pretty-ms";
 import React, { type ReactNode, useEffect, useState } from "react";
-import contentApi, { type SortOptions } from "../../../api/contentApi";
+import type { SortOptions } from "../../../api/common";
+import contentApi from "../../../api/contentApi";
 import ContentAssetDetailsPanel from "../../../components/content/ContentAssetDetailsPanel";
 import ContentAssetExpanderRow from "../../../components/content/ContentAssetExpanderRow";
 import ContentAssetFilterPanel from "../../../components/content/ContentAssetFilterPanel";
@@ -34,14 +36,7 @@ import ContentAssetStatistics from "../../../components/content/ContentAssetStat
 import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
 import Timestamp from "../../../components/data/Timestamp";
 import { useAppSelector } from "../../../redux/hooks";
-import type { ContentAssetTag as ContentAssetTagType } from "../../../pages/dionysus/content/assets";
-
-export interface ContentAssetTag {
-  id: string;
-  createdTime: string;
-  name: string;
-  type: "type" | "source" | "system" | "user";
-}
+import type { NotificationType } from "../../../utils/notifications";
 
 export interface ContentAsset {
   id: string;
@@ -62,8 +57,6 @@ export interface ContentAsset {
 type OnChange = NonNullable<TableProps<ContentAsset>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
-
-type NotificationType = "success" | "info" | "warning" | "error";
 
 const ContentAssetsPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -120,7 +113,7 @@ const ContentAssetsPage: React.FunctionComponent = () => {
     }
   };
 
-  const addFilter = async (tag: ContentAssetTagType) => {
+  const addFilter = async (tag: ContentAssetTag) => {
     const key = `${tag.type}:${tag.name}`;
 
     if (!filters.includes(key)) {
@@ -131,7 +124,7 @@ const ContentAssetsPage: React.FunctionComponent = () => {
     }
   };
 
-  const removeFilter = async (tag: ContentAssetTagType) => {
+  const removeFilter = async (tag: ContentAssetTag) => {
     const key = `${tag.type}:${tag.name}`;
 
     if (filters.includes(key)) {

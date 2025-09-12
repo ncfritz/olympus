@@ -25,7 +25,7 @@ const { Header } = Layout;
 const AuthHeader: React.FunctionComponent = () => {
   const session = useSession();
   const dispatch = useDispatch();
-  const { socket, connected } = useSocket("/notifications");
+  const { socket } = useSocket("/notifications");
 
   const unreadNotificationsCount = useAppSelector(
     (state) => state.notifications.unreadCount,
@@ -52,11 +52,11 @@ const AuthHeader: React.FunctionComponent = () => {
 
   const fetchUnreadNotificationsCount = async () => {
     try {
-      const getUnreadNotificationsCountResponse =
-        await notificationsApi.getUnreadNotificationsCount();
-      dispatch(
-        setUnreadCount(getUnreadNotificationsCountResponse.data.unreadCount),
-      );
+      const response = await notificationsApi.getUnreadNotificationsCount();
+
+      if (response.data?.unreadCount) {
+        dispatch(setUnreadCount(response.data.unreadCount));
+      }
     } catch (e) {
       console.log("Unable to fetch unread notifications count", e);
     }

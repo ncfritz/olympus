@@ -5,6 +5,10 @@ import {
   SettingOutlined,
   UserOutlined,
 } from "@ant-design/icons";
+import type {
+  ContentAssetTag,
+  ContentTagType,
+} from "@ncfritz/olympus-sdk/dionysus";
 import {
   AutoComplete,
   Button,
@@ -17,18 +21,17 @@ import {
 } from "antd";
 import { type ReactElement, useEffect, useState } from "react";
 import contentApi from "../../api/contentApi";
-import ContentAssetTagElement from "./ContentAssetTag";
-import type { ContentAssetTag as ContentAssetTagType } from "../../pages/dionysus/content/assets";
+import ContentAssetTagElement from "./ContentAssetTagElement";
 
 export interface ContentAssetTagEditorProps {
   asset: any;
-  onTagRemoved?: (tag: ContentAssetTagType) => Promise<void>;
+  onTagRemoved?: (tag: ContentAssetTag) => Promise<void>;
 }
 
 const ContentAssetTagEditor: React.FunctionComponent<
   ContentAssetTagEditorProps
 > = ({ asset, onTagRemoved }: ContentAssetTagEditorProps) => {
-  const [tagType, setTagType] = useState("user");
+  const [tagType, setTagType] = useState<ContentTagType>("user");
   const [tagValue, setTagValue] = useState<string | undefined>(undefined);
   const [tagAddedLoading, setTagAddedLoading] = useState(false);
   const [tagsModified, setTagsModified] = useState(false);
@@ -95,7 +98,7 @@ const ContentAssetTagEditor: React.FunctionComponent<
     const targetTagType = tagType || "user";
     const options: { value: string; label: string }[] = [];
 
-    availableAssetTags.forEach((tag: ContentAssetTagType) => {
+    availableAssetTags.forEach((tag: ContentAssetTag) => {
       if (tag.type === targetTagType) {
         if (
           value.trim().length > 0 &&
@@ -109,7 +112,7 @@ const ContentAssetTagEditor: React.FunctionComponent<
     setTagOptions(options);
   };
 
-  const removeTag = async (tag: ContentAssetTagType) => {
+  const removeTag = async (tag: ContentAssetTag) => {
     await contentApi.removeTagFromAsset(asset.id, tag.id);
     await fetchAssetTags(true);
 
@@ -128,7 +131,7 @@ const ContentAssetTagEditor: React.FunctionComponent<
     const typeTags: ReactElement[] = [];
     const sourceTags: ReactElement[] = [];
 
-    assetTags.forEach((tag: ContentAssetTagType) => {
+    assetTags.forEach((tag: ContentAssetTag) => {
       switch (tag.type) {
         case "system":
           systemTags.push(

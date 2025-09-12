@@ -12,9 +12,11 @@ import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React, { type ReactNode, useEffect, useState } from "react";
 import ReactCountryFlag from "react-country-flag/src";
-import metadataApi, { type SortOptions } from "../../../api/metadataApi";
+import type { SortOptions } from "../../../api/common";
+import metadataApi from "../../../api/metadataApi";
 import Timestamp from "../../../components/data/Timestamp";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
+import type { NotificationType } from "../../../utils/notifications";
 
 export interface Language {
   id: string;
@@ -27,8 +29,6 @@ export interface Language {
 type OnChange = NonNullable<TableProps<Language>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
-
-type NotificationType = "success" | "info" | "warning" | "error";
 
 const MetadataLanguagesPage: React.FunctionComponent = () => {
   const [api, contextHolder] = notification.useNotification();

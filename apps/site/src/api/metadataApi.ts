@@ -1,146 +1,407 @@
+import {
+  client,
+  createMetadataFetchJob,
+  deleteMetadataFetchJob,
+  describeCollection,
+  describeMetadataFetchJob,
+  describeMovie,
+  describeNetwork,
+  describePerson,
+  describeProductionCompany,
+  describeTvEpisode,
+  describeTvSeason,
+  describeTvSeries,
+  getMetadataFetchJobStatistics,
+  getPeopleBirthdayStatistics,
+  getPeopleDeathdayStatistics, getPeopleDepartmentStatistics,
+  listCertifications,
+  listCountries,
+  listGenres,
+  listKeywords,
+  listLanguages,
+  listMetadataFetchJobs,
+  listMovieCast,
+  listMovieCastRolesForPerson,
+  listMovieCollections,
+  listMovieCrew,
+  listMovieCrewJobsForPerson,
+  listMovieRecommendations,
+  listNetworks,
+  listNetworkTvSeries,
+  listProductionCompanies,
+  listProductionCompanyMovies,
+  listProductionCompanyTvSeries,
+  listTvEpisodeCast,
+  listTvEpisodeCrew,
+  listTvEpisodeGuestStars,
+  listTvSeasonCast,
+  listTvSeasonCrew,
+  listTvSeriesCast,
+  listTvSeriesCrew,
+  listTvSeriesRecommendations,
+  type MetadataFetchJobStatus,
+  type MetadataJobType,
+  type MetadatFetchJobUpdate,
+  updateMetadataFetchJob
+} from "@ncfritz/olympus-sdk/dionysus";
 import type { FilterValue } from "antd/es/table/interface";
-import axios from "axios";
+import type { SortOptions } from "./common";
 
-export interface SortOptions {
-  field: string;
-  order: "asc" | "desc";
-}
-
-const fetchCertifications = async (page: number, sort: SortOptions) => {
-  try {
-    const listCertificationsResponse = await axios.get(
-      `/api/v1/metadata/certifications?sort=${sort.order}&sortBy=${sort.field}&pageSize=20&startPage=${page}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return listCertificationsResponse;
-  } catch (e) {
-    throw e;
+class MetadataApi {
+  constructor() {
+    client.setConfig({
+      baseURL: "/api/v1",
+      throwOnError: true,
+    });
   }
-};
 
-const fetchCountries = async (page: number, sort: SortOptions) => {
-  try {
-    const listCountriesResponse = await axios.get(
-      `/api/v1/metadata/countries?sort=${sort.order}&sortBy=${sort.field}&pageSize=20&startPage=${page}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async listCertifications(page: number, sort: SortOptions) {
+    return await listCertifications({
+      query: {
+        pageSize: 20,
+        startPage: page,
+        sort: sort.order,
+        sortBy: sort.field,
       },
-    );
-
-    return listCountriesResponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const fetchGenres = async (page: number, sort: SortOptions) => {
-  try {
-    const listGenresResponse = await axios.get(
-      `/api/v1/metadata/genres?sort=${sort.order}&sortBy=${sort.field}&pageSize=20&startPage=${page}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async listCountries(page: number, sort: SortOptions) {
+    return await listCountries({
+      query: {
+        pageSize: 20,
+        startPage: page,
+        sort: sort.order,
+        sortBy: sort.field,
       },
-    );
-
-    return listGenresResponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const fetchKeywords = async (page: number, sort: SortOptions) => {
-  try {
-    const listKeywords = await axios.get(
-      `/api/v1/metadata/keywords?sort=${sort.order}&sortBy=${sort.field}&pageSize=20&startPage=${page}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async listGenres(page: number, sort: SortOptions) {
+    return await listGenres({
+      query: {
+        pageSize: 20,
+        startPage: page,
+        sort: sort.order,
+        sortBy: sort.field,
       },
-    );
-
-    return listKeywords;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const fetchLanguages = async (page: number, sort: SortOptions) => {
-  try {
-    const listLanguagesResponse = await axios.get(
-      `/api/v1/metadata/languages?sort=${sort.order}&sortBy=${sort.field}&pageSize=20&startPage=${page}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async listKeywords(page: number, sort: SortOptions) {
+    return await listKeywords({
+      query: {
+        pageSize: 20,
+        startPage: page,
+        sort: sort.order,
+        sortBy: sort.field,
       },
-    );
-
-    return listLanguagesResponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const fetchMetadataFetchJobs = async (
-  page: number,
-  pageSize: number,
-  sort: SortOptions,
-  filters?: Record<string, FilterValue | null>,
-) => {
-  try {
-    const url = `/api/v1/jobs/metadata`;
-    const queryString = [
-      `sort=${sort.order}`,
-      `sortBy=${sort.field}`,
-      `pageSize=${pageSize}`,
-      `startPage=${page}`,
-    ];
-
-    if (filters) {
-      queryString.push(
-        `filters=${Buffer.from(JSON.stringify(filters)).toString("base64")}`,
-      );
-    }
-
-    const listMetadataFetchjobsresponse = await axios.get(
-      `${url}?${queryString.join("&")}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async listLanguages(page: number, sort: SortOptions) {
+    return await listLanguages({
+      query: {
+        pageSize: 20,
+        startPage: page,
+        sort: sort.order,
+        sortBy: sort.field,
       },
-    );
-
-    return listMetadataFetchjobsresponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const createMetadataFetchJob = async (
-  id: string,
-  type: string,
-  status: string,
-  ttl: number,
-  jitter: number,
-  publish: boolean,
-  bypassCache: boolean,
-  context: Record<string, string>,
-) => {
-  try {
-    const updateMetadataFetchJobResponse = await axios.post(
-      `/api/v1/metadata/fetchJobs`,
-      {
+  async describeCollection(id: number) {
+    return describeCollection({
+      path: {
+        collectionId: id,
+      },
+    });
+  }
+
+  async describeTvSeries(id: number) {
+    return describeTvSeries({
+      path: {
+        tvSeriesId: id,
+      },
+    });
+  }
+
+  async describeTvEpisode(
+    id: number,
+    seasonNumber: number,
+    episodeNumber: number,
+  ) {
+    return describeTvEpisode({
+      path: {
+        tvSeriesId: id,
+        seasonNumber: seasonNumber,
+        episodeNumber: episodeNumber,
+      },
+    });
+  }
+
+  async listTvEpisodeCrew(
+    id: number,
+    seasonNumber: number,
+    episodeNumber: number,
+  ) {
+    return listTvEpisodeCrew({
+      path: {
+        tvSeriesId: id,
+        seasonNumber: seasonNumber,
+        episodeNumber: episodeNumber,
+      },
+    });
+  }
+
+  async listTvEpisodeCast(
+    id: number,
+    seasonNumber: number,
+    episodeNumber: number,
+  ) {
+    return listTvEpisodeCast({
+      path: {
+        tvSeriesId: id,
+        seasonNumber: seasonNumber,
+        episodeNumber: episodeNumber,
+      },
+    });
+  }
+
+  async listTvEpisodeGuestStars(
+    id: number,
+    seasonNumber: number,
+    episodeNumber: number,
+  ) {
+    return listTvEpisodeGuestStars({
+      path: {
+        tvSeriesId: id,
+        seasonNumber: seasonNumber,
+        episodeNumber: episodeNumber,
+      },
+    });
+  }
+
+  async describeMovie(id: number) {
+    return describeMovie({
+      path: {
+        movieId: id,
+      },
+    });
+  }
+
+  async describeTvSeason(seriesId: number, seasonNumber: number) {
+    return describeTvSeason({
+      path: {
+        tvSeriesId: seriesId,
+        seasonNumber: seasonNumber,
+      },
+    });
+  }
+
+  async listMovieCrew(id: number) {
+    return listMovieCrew({
+      path: {
+        movieId: id,
+      },
+    });
+  }
+
+  async listMovieRecommendations(id: number) {
+    return listMovieRecommendations({
+      path: {
+        movieId: id,
+      },
+    });
+  }
+
+  async listMovieCollections(id: number) {
+    return listMovieCollections({
+      path: {
+        movieId: id,
+      },
+    });
+  }
+
+  async listMovieCast(id: number) {
+    return listMovieCast({
+      path: {
+        movieId: id,
+      },
+    });
+  }
+
+  async describePerson(id: number) {
+    return describePerson({
+      path: {
+        personId: id,
+      },
+    });
+  }
+
+  async listMovieCastRolesForPerson(id: number) {
+    return await listMovieCastRolesForPerson({
+      path: {
+        personId: id,
+      },
+    });
+  }
+
+  async getPeopleBirthdayStatistics() {
+    return await getPeopleBirthdayStatistics({});
+  }
+
+  async getPeopleDeathdayStatistics() {
+    return await getPeopleDeathdayStatistics({});
+  }
+
+  async getPeopleDepartmentStatistics() {
+    return await getPeopleDepartmentStatistics({});
+  }
+
+  async listMovieCrewJobsForPerson(id: number) {
+    return await listMovieCrewJobsForPerson({
+      path: {
+        personId: id,
+      },
+    });
+  }
+
+  async describeProductionCompany(id: number) {
+    return describeProductionCompany({
+      path: {
+        productionCompanyId: id,
+      },
+    });
+  }
+
+  async listProductionCompanies(page: number, sort: SortOptions) {
+    return await listProductionCompanies({
+      query: {
+        pageSize: 20,
+        startPage: page,
+        sort: sort.order,
+        sortBy: sort.field,
+      },
+    });
+  }
+
+  async describeNetwork(id: number) {
+    return await describeNetwork({
+      path: {
+        networkId: id,
+      },
+    });
+  }
+
+  async listNetworks(page: number, sort: SortOptions) {
+    return await listNetworks({
+      query: {
+        pageSize: 20,
+        startPage: page,
+        sort: sort.order,
+        sortBy: sort.field,
+      },
+    });
+  }
+
+  async listMoviesForProductionCompany(id: number) {
+    return await listProductionCompanyMovies({
+      path: {
+        productionCompanyId: id,
+      },
+    });
+  }
+
+  async listTvSeriesCast(id: number) {
+    return await listTvSeriesCast({
+      path: {
+        tvSeriesId: id,
+      },
+    });
+  }
+
+  async listTvSeriesRecommendations(id: number) {
+    return await listTvSeriesRecommendations({
+      path: {
+        tvSeriesId: id,
+      },
+    });
+  }
+
+  async listTvSeasonCast(id: number, seasonNumber: number) {
+    return await listTvSeasonCast({
+      path: {
+        tvSeriesId: id,
+        seasonNumber: seasonNumber,
+      },
+    });
+  }
+
+  async listTvSeriesCrew(id: number) {
+    return await listTvSeriesCrew({
+      path: {
+        tvSeriesId: id,
+      },
+    });
+  }
+
+  async listTvSeasonCrew(id: number, seasonNumber: number) {
+    return await listTvSeasonCrew({
+      path: {
+        tvSeriesId: id,
+        seasonNumber: seasonNumber,
+      },
+    });
+  }
+
+  async listTvSeriesForProductionCompany(id: number) {
+    return await listProductionCompanyTvSeries({
+      path: {
+        productionCompanyId: id,
+      },
+    });
+  }
+
+  async listTvSeriesForNetwork(id: number) {
+    return await listNetworkTvSeries({
+      path: {
+        networkId: id,
+      },
+    });
+  }
+
+  async listMetadataFetchJobs(
+    page: number,
+    pageSize: number,
+    sort: SortOptions,
+    filters?: Record<string, FilterValue | null>,
+  ) {
+    return await listMetadataFetchJobs({
+      query: {
+        pageSize: pageSize,
+        startPage: page,
+        sort: sort.order,
+        sortBy: sort.field,
+        filters: filters
+          ? `${Buffer.from(JSON.stringify(filters)).toString("base64")}`
+          : undefined,
+      },
+    });
+  }
+
+  async createMetadataFetchJob(
+    id: string,
+    type: MetadataJobType,
+    status: MetadataFetchJobStatus,
+    ttl: number,
+    jitter: number,
+    publish: boolean,
+    bypassCache: boolean,
+    context: Record<string, string>,
+  ) {
+    return await createMetadataFetchJob({
+      body: {
         id: id,
         type: type,
         status: status,
@@ -150,77 +411,51 @@ const createMetadataFetchJob = async (
         bypassCache: bypassCache,
         context: context,
       },
-    );
-
-    return updateMetadataFetchJobResponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const updateMetadataFetchJob = async (
-  id: string,
-  type: string,
-  data: any,
-  republish: boolean,
-  bypassCache?: boolean,
-) => {
-  try {
-    const updateMetadataFetchJobResponse = await axios.put(
-      `/api/v1/metadata/fetchJob/${encodeURIComponent(id)}/${type}`,
-      {
+  async updateMetadataFetchJob(
+    id: string,
+    type: MetadataJobType,
+    data: MetadatFetchJobUpdate,
+    republish: boolean,
+    bypassCache?: boolean,
+  ) {
+    await updateMetadataFetchJob({
+      path: {
+        entityId: id,
+        entityType: type,
+      },
+      body: {
         job: data,
         publishNotification: republish,
         bypassCache: bypassCache || false,
       },
-    );
-
-    return updateMetadataFetchJobResponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const deleteMetadataFetchJob = async (id: string, type: string) => {
-  try {
-    const deleteMetadataFetchJobResponse = await axios.delete(
-      `/api/v1/metadata/fetchJob/${encodeURIComponent(id)}/${type}`,
-    );
-
-    return deleteMetadataFetchJobResponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const fetchJobStatistics = async () => {
-  try {
-    const getStatisticsresponse = await axios.get(
-      `/api/v1/job/metadata/stats`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async describeMetadataFetchJob(id: string, type: MetadataJobType) {
+    return await describeMetadataFetchJob({
+      path: {
+        entityId: id,
+        entityType: type,
       },
-    );
-
-    return getStatisticsresponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const metadataApi = {
-  createMetadataFetchJob: createMetadataFetchJob,
-  deleteMetadataFetchJob: deleteMetadataFetchJob,
-  fetchJobStatistics: fetchJobStatistics,
-  listCertifications: fetchCertifications,
-  listCountries: fetchCountries,
-  listGenres: fetchGenres,
-  listKeywords: fetchKeywords,
-  listLanguages: fetchLanguages,
-  listMetadataFetchJobs: fetchMetadataFetchJobs,
-  updateMetadataFetchJob: updateMetadataFetchJob,
-};
+  async deleteMetadataFetchJob(id: string, type: MetadataJobType) {
+    return await deleteMetadataFetchJob({
+      path: {
+        entityId: id,
+        entityType: type,
+      },
+    });
+  }
 
+  async fetchJobStatistics() {
+    return await getMetadataFetchJobStatistics();
+  }
+}
+
+const metadataApi = new MetadataApi();
 export default metadataApi;

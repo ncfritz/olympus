@@ -6,6 +6,7 @@ import {
   HomeOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
+import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Breadcrumb,
   Button,
@@ -34,7 +35,6 @@ import SimilarContentAssetsScroller from "../../../../components/content/Similar
 import Timestamp from "../../../../components/data/Timestamp";
 import { useAppSelector } from "../../../../redux/hooks";
 import "react-horizontal-scrolling-menu/dist/styles.css";
-import type { ContentAssetTag } from "../assets";
 
 const ContentAssetDetailsPage: React.FunctionComponent = () => {
   const router = useRouter();

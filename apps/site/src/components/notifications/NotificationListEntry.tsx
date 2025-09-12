@@ -6,6 +6,7 @@ import {
   InfoCircleFilled,
   WarningFilled,
 } from "@ant-design/icons";
+import type { Notification } from "@ncfritz/olympus-sdk/olympus";
 import { Badge, Button, List, Space, Tag, Typography } from "antd";
 import { DateTime } from "luxon";
 import prettyMilliseconds from "pretty-ms";
@@ -16,12 +17,12 @@ import { PUBLISH_EVENT } from "../common/NotificationSink";
 import { getFormatterForMeaageType } from "./formatters/NotificationRegistry";
 
 export interface NotificationListEntryProps {
-  notification: any;
+  notification: Notification;
   showGroup: boolean;
   onSuccess: (quiet: boolean) => Promise<void>;
 }
 
-const getDecorationForNotificationLevel = (notification: any) => {
+const getDecorationForNotificationLevel = (notification: Notification) => {
   if (notification.acknowledged) {
     return { color: "#999999", icon: <CheckCircleFilled /> };
   }
@@ -57,6 +58,8 @@ const NotificationListEntry: React.FunctionComponent<
       });
       success = true;
     } catch (e) {
+      console.error(`Unable to acknowledge notification ${notificationId}`, e);
+
       publish(PUBLISH_EVENT, {
         type: "error",
         message: "Unable to acknowledge notification",
@@ -80,6 +83,8 @@ const NotificationListEntry: React.FunctionComponent<
       await notificationsApi.deleteNotification(notificationId);
       success = true;
     } catch (e) {
+      console.error(`Unable to delete notification ${notificationId}`, e);
+
       publish(PUBLISH_EVENT, {
         type: "error",
         message: "Unable to delete notification",
@@ -102,14 +107,16 @@ const NotificationListEntry: React.FunctionComponent<
     -notificationTime.diffNow("milliseconds").milliseconds;
   const formatter = getFormatterForMeaageType(notification.notificationType.id);
 
-  console.log(notification);
-
   let title: string | ReactNode = (
+    // @ts-expect-error okay
     <Typography.Text>{notification.payload.value.title}</Typography.Text>
   );
+
+  // @ts-expect-error okay
   let message: string | ReactNode = notification.payload.value.message;
 
   if (formatter) {
+    // @ts-expect-error okay
     [title, message] = formatter.format(notification.payload.value);
   }
 

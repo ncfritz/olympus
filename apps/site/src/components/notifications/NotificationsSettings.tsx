@@ -1,3 +1,7 @@
+import type {
+  NotificationGroup,
+  NotificationSetting,
+} from "@ncfritz/olympus-sdk/olympus";
 import { Alert, Button, Empty, Space, Spin, Typography } from "antd";
 import { type ReactNode, useEffect, useState } from "react";
 import { v4 as uuid } from "uuid";
@@ -5,18 +9,16 @@ import notificationsApi from "../../api/notificationsApi";
 import RotatedTableHeader from "../layout/RotatedTableHeader";
 import NotificationSettingsListEntry from "./NotificationSettingsListEntry";
 
-export interface NotificationSettingsProps {}
-
-const NotificationSettings: React.FunctionComponent<
-  NotificationSettingsProps
-> = ({}: NotificationSettingsProps) => {
-  const [notificationGroups, setNotificationGroups] = useState<any[]>([]);
+const NotificationSettings: React.FunctionComponent = () => {
+  const [notificationGroups, setNotificationGroups] = useState<
+    NotificationGroup[]
+  >([]);
   const [notificationSettings, setNotificationSettings] =
-    useState<Record<string, any>>();
+    useState<Record<string, NotificationSetting>>();
   const [notificationGroupsLoading, setNotificationGroupsLoading] =
     useState<boolean>(false);
   const [notificationGroupsError, setNotificationGroupsError] =
-    useState<any>(undefined);
+    useState<unknown>(undefined);
 
   const fetchNotificationGroupsList = async () => {
     setNotificationGroupsLoading(true);
@@ -25,12 +27,12 @@ const NotificationSettings: React.FunctionComponent<
     try {
       const listNotificationGroupsResponse =
         await notificationsApi.listNotificationGroups(true);
-      setNotificationGroups(listNotificationGroupsResponse.data.groups);
+      setNotificationGroups(listNotificationGroupsResponse.data?.groups || []);
 
       const listNotificationSettingsResponse =
         await notificationsApi.listNotificationSettings();
       setNotificationSettings(
-        listNotificationSettingsResponse.data.notificationSettings,
+        listNotificationSettingsResponse.data?.notificationSettings || {},
       );
     } catch (e) {
       setNotificationGroupsError(e);
@@ -40,13 +42,17 @@ const NotificationSettings: React.FunctionComponent<
   };
 
   const fetchNotificationSettings = async () => {
+    setNotificationGroupsError(undefined);
+
     try {
       const listNotificationSettingsResponse =
         await notificationsApi.listNotificationSettings();
       setNotificationSettings(
-        listNotificationSettingsResponse.data.notificationSettings,
+        listNotificationSettingsResponse.data?.notificationSettings || {},
       );
-    } catch (e) {}
+    } catch (e) {
+      setNotificationGroupsError(e);
+    }
   };
 
   useEffect(() => {
@@ -74,6 +80,7 @@ const NotificationSettings: React.FunctionComponent<
   } else if (notificationGroupsError) {
     content = (
       <Alert
+        style={{ margin: 16 }}
         key={uuid()}
         type={"error"}
         showIcon={true}
@@ -112,7 +119,7 @@ const NotificationSettings: React.FunctionComponent<
         </tr>,
       );
 
-      notificationGroup.notificationTypes.forEach((notificationType: any) => {
+      notificationGroup.notificationTypes!.forEach((notificationType) => {
         if (
           notificationSettings &&
           notificationType.id in notificationSettings

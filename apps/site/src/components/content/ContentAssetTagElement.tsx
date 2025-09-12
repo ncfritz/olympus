@@ -1,6 +1,6 @@
 import { CloseOutlined } from "@ant-design/icons";
+import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
 import { Tag } from "antd";
-import type { ContentAssetTag } from "../../pages/dionysus/content/assets";
 
 export interface ContentAssetTagElementProps {
   tag: ContentAssetTag;
@@ -8,7 +8,7 @@ export interface ContentAssetTagElementProps {
   onSelectTag?: (tag: ContentAssetTag) => Promise<void>;
 }
 
-const TYPE_COLORS = {
+const TYPE_COLORS: Record<string, string> = {
   type: "#aa0000",
   source: "#6b32a8",
   system: "#bf6c00",

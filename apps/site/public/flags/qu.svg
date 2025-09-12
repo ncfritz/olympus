@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" width="374pt" height="169pt" viewBox="0 0 374 169">
+  <path fill="red" stroke="red" stroke-width=".09375" d="M0 0h374v23H0V0Z"/>
+  <path fill="#ffcf00" stroke="#ffcf00" stroke-width=".09375" d="M0 23h374v23H0V23Z"/>
+  <path fill="#fff" stroke="#fff" stroke-width=".09375" d="M0 46h374v22H0V46Z"/>
+  <path fill="green" stroke="green" stroke-width=".09375" d="M0 68h374v30H0V68Z"/>
+  <path fill="#fff" stroke="#fff" stroke-width=".09375" d="M0 98h374v25H0V98Z"/>
+  <path fill="#00f" stroke="#00f" stroke-width=".09375" d="M0 123h374v23H0v-23Z"/>
+  <path fill="purple" stroke="purple" stroke-width=".09375" d="M0 146h374v23H0v-23Z"/>
+</svg>

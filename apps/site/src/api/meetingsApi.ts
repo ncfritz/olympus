@@ -1,134 +1,109 @@
 import type { EventInput } from "@fullcalendar/core";
-import axios from "axios";
+import {
+  client,
+  describeCalendarItem,
+  getMeetingsStatistics,
+  getMeetingsSummary,
+  getNextCalendarItemOccurrence,
+  listCalendarItems,
+  listPreviousCalendarItemOccurrences,
+} from "@ncfritz/olympus-sdk/minerva";
 import { DateTime } from "luxon";
 
-const getMeetings = async (startDate: DateTime, days: number) => {
-  try {
-    const getMeetingsResponse = await axios.get(
-      `/api/v1/meetings/${startDate.toISODate()}?days=${days}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return getMeetingsResponse;
-  } catch (e) {
-    throw e;
+class MeetingsApi {
+  constructor() {
+    client.setConfig({
+      baseURL: "/api/v1",
+      throwOnError: true,
+    });
   }
-};
 
-const getMeeting = async (id: string) => {
-  try {
-    const getMeetingRessponse = await axios.get(
-      `/api/v1/meeting/${encodeURIComponent(id)}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  private buildHeaders(existing?: Record<string, string>) {
+    return {
+      headers: {
+        ...existing,
+        "x-ncfritz-tz": Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
-    );
-
-    return getMeetingRessponse;
-  } catch (e) {
-    throw e;
+    };
   }
-};
 
-const getNextMeetingInSeries = async (id: string) => {
-  try {
-    const getNextMeetingRessponse = await axios.get(
-      `/api/v1/meeting/${encodeURIComponent(id)}/next`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async getMeetings(startDate: DateTime, days: number) {
+    return await listCalendarItems({
+      path: {
+        start: startDate.toISODate()!,
       },
-    );
-
-    return getNextMeetingRessponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const getPreviousMeetingInSeries = async (id: string, limit = 5) => {
-  try {
-    const getPreviousMeetingsInSeriesRessponse = await axios.get(
-      `/api/v1/meeting/${encodeURIComponent(id)}/previous?limit=${limit}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+      query: {
+        days: days,
       },
-    );
-
-    return getPreviousMeetingsInSeriesRessponse;
-  } catch (e) {
-    throw e;
+      ...this.buildHeaders(),
+    });
   }
-};
 
-const getSummary = async (start: DateTime, days: number = 30) => {
-  try {
-    const getSummaryResponse = await axios.get(
-      `/api/v1/meetings/summary/${start.toISODate()}?days=${days}`,
-      {
-        headers: {
-          "x-ncfritz-tz": Intl.DateTimeFormat().resolvedOptions().timeZone,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async getMeeting(id: string) {
+    return await describeCalendarItem({
+      path: {
+        meetingId: encodeURIComponent(id),
       },
-    );
-
-    return getSummaryResponse;
-  } catch (e) {
-    throw e;
+      ...this.buildHeaders(),
+    });
   }
-};
 
-const getStatistics = async (start: DateTime, days: number = 30) => {
-  try {
-    const getStatisticsResponse = await axios.get(
-      `/api/v1/meetings/statistics/${start.toISODate()}?days=${days}`,
-      {
-        headers: {
-          "x-ncfritz-tz": Intl.DateTimeFormat().resolvedOptions().timeZone,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async getNextMeetingInSeries(id: string) {
+    return await getNextCalendarItemOccurrence({
+      path: {
+        meetingId: encodeURIComponent(id),
       },
-    );
-
-    return getStatisticsResponse;
-  } catch (e) {
-    throw e;
+      ...this.buildHeaders(),
+    });
   }
-};
 
-const toEvent = (meeting: any): EventInput => {
-  return {
-    id: meeting.id,
-    allDay: meeting.isAllDay,
-    start: DateTime.fromISO(meeting.startTime).toJSDate(),
-    end: DateTime.fromISO(meeting.endTime).toJSDate(),
-    title: meeting.subject,
-    editable: false,
-    classNames: ["oa-event", `oa-status-${meeting.status.toLowerCase()}`],
-  };
-};
+  async getPreviousMeetingInSeries(id: string, limit = 5) {
+    return await listPreviousCalendarItemOccurrences({
+      path: {
+        meetingId: encodeURIComponent(id),
+      },
+      query: {
+        limit: limit,
+      },
+      ...this.buildHeaders(),
+    });
+  }
 
-const meetingsApi = {
-  getMeetings: getMeetings,
-  getMeeting: getMeeting,
-  getNextMeetingInSeries: getNextMeetingInSeries,
-  getPreviousMeetingInSeries: getPreviousMeetingInSeries,
-  getSummary: getSummary,
-  getStatistics: getStatistics,
-  toEvent: toEvent,
-};
+  async getSummary(start: DateTime, days: number = 30) {
+    return await getMeetingsSummary({
+      path: {
+        start: start.toISODate()!,
+      },
+      query: {
+        days: days,
+      },
+      ...this.buildHeaders(),
+    });
+  }
+
+  async getStatistics(start: DateTime, days: number = 30) {
+    return await getMeetingsStatistics({
+      path: {
+        start: start.toISODate()!,
+      },
+      query: {
+        days: days,
+      },
+    });
+  }
+
+  toEvent(meeting: any): EventInput {
+    return {
+      id: meeting.id,
+      allDay: meeting.isAllDay,
+      start: DateTime.fromISO(meeting.startTime).toJSDate(),
+      end: DateTime.fromISO(meeting.endTime).toJSDate(),
+      title: meeting.subject,
+      editable: false,
+      classNames: ["oa-event", `oa-status-${meeting.status.toLowerCase()}`],
+    };
+  }
+}
+
+const meetingsApi = new MeetingsApi();
 export default meetingsApi;

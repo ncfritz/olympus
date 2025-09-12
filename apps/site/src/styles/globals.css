@@ -233,6 +233,169 @@ img.electron-logo {
   padding-right: 0px;
 }
 
+.ant-descriptions.compact .ant-descriptions-item {
+  padding-bottom: 2px;
+}
+.ant-card.compact .ant-card-actions > li {
+  margin: 2px;
+}
+
+/*
+.movieHeader {
+  background: linear-gradient(163deg,rgba(0, 21, 41, 1) 0%, rgba(0, 0, 0, 0.7) 100%);
+}*/
+
+.ant-tabs.tabs-small .ant-tabs-tab {
+  padding: 4px 8px 4px 8px;
+  margin: 0px !important;
+}
+
+.ant-tabs.tabs-justify-right .ant-tabs-tab {
+  justify-content: end;
+}
+
+.ant-tabs.compact .ant-tabs-nav {
+  margin-bottom: 0px;
+}
+
+.ant-tabs.ant-tabs-left.compact .ant-tabs-tabpane {
+  padding-left: 0px;
+}
+.ant-tabs.ant-tabs-right.compact .ant-tabs-tabpane {
+  padding-right: 0px;
+}
+
+.left-rounded {
+  border-top-left-radius: inherit !important;
+  border-bottom-left-radius: inherit !important;
+  overflow: hidden;
+}
+
+.ant-breadcrumb.dark .ant-breadcrumb-link,
+.ant-breadcrumb.dark .ant-space-item,
+.ant-breadcrumb.dark .ant-breadcrumb-separator {
+  color: #999999;
+}
+
+.ant-timeline.person-timeline .ant-timeline-item-label {
+  width: 50px;
+  inset-block-start: -8px;
+  left: -14px;
+}
+.ant-timeline.person-timeline .ant-timeline-item-head {
+  inset-inline-start: 48px;
+}
+.ant-timeline.person-timeline .ant-timeline-item-tail {
+  inset-inline-start: 48px;
+}
+.ant-timeline.person-timeline .ant-timeline-item-content {
+  width: calc(100% - 36px) !important;
+  inset-inline-start: 36px !important;
+}
+
+.ant-space.person-fix>.ant-space-item:nth-of-type(2) {
+  width: 100%;
+}
+.ant-space.person-fix-header>.ant-space-item:nth-of-type(2) {
+  width: revert;
+}
+
+.ant-space.episode-fix>.ant-space-item:first-of-type {
+  width: 100%;
+}
+.ant-space.episode-fix>.ant-space-item:nth-of-type(2) {
+  width: revert;
+}
+
+.fc-theme-standard .dionysus-release-cal td {
+  border: none;
+  font-size: 12px;
+}
+
+.fc-theme-standard .dionysus-release-cal th {
+  border: none;
+  border-bottom: 1px solid #efefef;
+  font-weight: bold;
+  font-size: 12px;
+  text-align: center;
+}
+.dionysus-release-cal.fc-daygrid-day-number {
+  font-size: 11px;
+}
+
+.fc-multimonth.dionysus-release-cal {
+  border: none;
+}
+.dionysus-release-cal .fc-daygrid-day-frame {
+  aspect-ratio: 1;
+}
+
+.dionysus-release-cal .fc-event.episode,
+.dionysus-release-cal .fc-h-event.episode {
+  border-radius: 6px !important;
+  padding: 2px !important;
+  text-align: center !important;
+  margin: 8px !important;
+  border: none !important;
+  background-color: #023c53 !important;
+}
+.dionysus-release-cal .fc-event.episode:hover,
+.dionysus-release-cal .fc-h-event.episode:hover {
+
+  background-color: #023c53;
+}
+.dionysus-release-cal .fc-event.episode .fc-event-title,
+.dionysus-release-cal .fc-h-event.episode .fc-event-title {
+    color: #cccccc !important;
+}
+.dionysus-release-cal .fc-event.episode:hover .fc-event-title,
+.dionysus-release-cal .fc-h-event.episode:hover .fc-event-title {
+  color: #cccccc !important;
+}
+.dionysus-release-cal .fc-day-disabled { background: inherit !important; }
+.dionysus-release-cal .fc-multimonth-title {
+  font-size: 12px;
+  padding-top: 12px;
+}
+
+.dionysus-action-button {
+  color: #efefef;
+  background: #ffffff11;
+  border-color: #efefef33;
+}
+.dionysus-action-button:hover {
+  color: #ffffff !important;
+  background: #ffffff22 !important;
+  border-color: #efefef44 !important;
+}
+.dionysus-action-button:active {
+  color: #ffffff !important;
+  background: #ffffff44 !important;
+  border-color: #efefef66 !important;
+}
+
+
+.dionysus-filter-header .ant-radio-button-wrapper {
+  border-color: #dfdfdf;
+  color: #666666;
+  background-color: #f0f0f0;
+}
+.dionysus-filter-header .ant-radio-button-wrapper:hover {
+  border-color: #efefef;
+  color: #666666;
+  background-color: #ffffff;
+}
+.dionysus-filter-header .ant-radio-button-wrapper-checked,
+.dionysus-filter-header .ant-radio-button-wrapper-checked:hover {
+  border-color: #cccccc !important;
+  color: #666666;
+  background-color: #cccccc;
+}
+.dionysus-filter-header .ant-radio-button-wrapper-checked:before,
+.dionysus-filter-header .ant-radio-button-wrapper-checked:hover:before {
+  background-color: #cccccc;
+}
+
 
 @media(prefers-color-scheme: dark) {
     body {

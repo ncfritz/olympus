@@ -1,100 +1,60 @@
+import {
+  client,
+  createMetadataWorkflow,
+  getMetadataWorkflowStatistics,
+  listMetadataWorkflows,
+  listMetadataWorkflowSteps,
+} from "@ncfritz/olympus-sdk/dionysus";
 import type { FilterValue } from "antd/es/table/interface";
-import axios from "axios";
-import type { SortOptions } from "./metadataApi";
+import type { SortOptions } from "./common";
 
-const createWorkflow = async () => {
-  try {
-    const createWorkflowResponse = await axios.post(
-      `/api/v1/metadata/workflows`,
-      {},
-      {
-        validateStatus: (status) => {
-          return status === 201;
-        },
-      },
-    );
-
-    return createWorkflowResponse;
-  } catch (e) {
-    throw e;
+class WorkflowApi {
+  constructor() {
+    client.setConfig({
+      baseURL: "/api/v1",
+      throwOnError: true,
+    });
   }
-};
 
-const fetchMetadataWorkflows = async (
-  page: number,
-  pageSize: number,
-  sort: SortOptions,
-  filters?: Record<string, FilterValue | null>,
-) => {
-  try {
-    const url = `/api/v1/metadata/workflows`;
-    const queryString = [
-      `sort=${sort.order}`,
-      `sortBy=${sort.field}`,
-      `pageSize=${pageSize}`,
-      `startPage=${page}`,
-    ];
-
-    if (filters) {
-      queryString.push(
-        `filters=${Buffer.from(JSON.stringify(filters)).toString("base64")}`,
-      );
-    }
-
-    const listMetadataFWorkflowsResponse = await axios.get(
-      `${url}?${queryString.join("&")}`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return listMetadataFWorkflowsResponse;
-  } catch (e) {
-    throw e;
+  async createMetadataWorkflow() {
+    return await createMetadataWorkflow({
+      body: {},
+    });
   }
-};
 
-const fetchMetadataWorkflowSteps = async (id: string) => {
-  try {
-    const listWorkflowStepsResponse = await axios.get(
-      `/api/v1/metadata/workflow/${id}/steps`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async listMetadataWorkflows(
+    page: number,
+    pageSize: number,
+    sort: SortOptions,
+    filters?: Record<string, FilterValue | null>,
+  ) {
+    const encodedFilters = filters
+      ? Buffer.from(JSON.stringify(filters)).toString("base64")
+      : undefined;
+
+    return await listMetadataWorkflows({
+      query: {
+        pageSize: pageSize,
+        sort: sort.order,
+        sortBy: sort.field,
+        startPage: page,
+        filters: encodedFilters,
       },
-    );
-
-    return listWorkflowStepsResponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const fetchMetadataWorkflowStatistics = async () => {
-  try {
-    const getWorkflowStatisticsResponse = await axios.get(
-      `/api/v1/metadata/workflow/stats`,
-      {
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async listMetadataWorkflowSteps(id: string) {
+    return await listMetadataWorkflowSteps({
+      path: {
+        workflowId: id,
       },
-    );
-
-    return getWorkflowStatisticsResponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
 
-const workflowApi = {
-  createWorkflow: createWorkflow,
-  getWorkflowStatistics: fetchMetadataWorkflowStatistics,
-  listMetadataWorkflows: fetchMetadataWorkflows,
-  listMetadataWorkflowSteps: fetchMetadataWorkflowSteps,
-};
+  async getMetadataWorkflowStatistics() {
+    return await getMetadataWorkflowStatistics();
+  }
+}
 
+const workflowApi = new WorkflowApi();
 export default workflowApi;

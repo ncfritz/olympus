@@ -1,11 +1,11 @@
+import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
 import { Checkbox, Space } from "antd";
 import { useState } from "react";
-import type { ContentAssetTag as ContentAssetTagType } from "../../pages/dionysus/content/assets";
 
 export interface ContentTagCheckboxProps {
   tag: any;
-  onSelectTag: (tag: ContentAssetTagType) => Promise<void>;
-  onRemoveTag: (tag: ContentAssetTagType) => Promise<void>;
+  onSelectTag: (tag: ContentAssetTag) => Promise<void>;
+  onRemoveTag: (tag: ContentAssetTag) => Promise<void>;
 }
 
 const ContentTagCheckbox: React.FunctionComponent<ContentTagCheckboxProps> = ({

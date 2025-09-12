@@ -8,7 +8,7 @@ const DocsPage: React.FunctionComponent = () => {
         theme: {
           colors: { primary: { main: "#001529" } },
           rightPanel: {
-            backgroundColor: "#022d55",
+            backgroundColor: "#9aa4ae",
           },
         },
       }}

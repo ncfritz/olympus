@@ -12,11 +12,11 @@ import {
   type TabsProps,
 } from "antd";
 import { Content } from "antd/lib/layout/layout";
-import axios from "axios";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
+import batchJobApi from "../../../api/batchJobApi";
 import BatchJobDetailsPanel from "../../../components/dionysus/jobs/BatchJobDetailsPanel";
 import BatchJobQueueTimeChart from "../../../components/dionysus/jobs/graphs/BatchJobQueueTimeChart";
 import BatchJobRuntimeChart from "../../../components/dionysus/jobs/graphs/BatchJobRuntimeChart";
@@ -42,7 +42,7 @@ const BatchJobsPage: React.FunctionComponent = () => {
     setJobStatsError(undefined);
 
     try {
-      const getJobsStatsResponse = await axios.get(`/api/v1/jobs/batch/stats`);
+      const getJobsStatsResponse = await batchJobApi.getBatchJobStats();
       setJobStats(getJobsStatsResponse.data);
     } catch (e) {
       setJobStatsError(e);
@@ -62,21 +62,6 @@ const BatchJobsPage: React.FunctionComponent = () => {
   };
 
   const items: TabsProps["items"] = [
-    {
-      key: "t-bj-all",
-      label: "All",
-      children: (
-        <BatchJobPanel
-          type={JobType.ALL}
-          onSelect={setSelectedJob}
-          showPublish={false}
-          showStats={false}
-        />
-      ),
-      style: {
-        marginTop: -16,
-      },
-    },
     {
       key: "t-bj-movies",
       label: "Movies",

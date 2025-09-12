@@ -5,6 +5,14 @@ import {
   MinusCircleOutlined,
   SendOutlined,
 } from "@ant-design/icons";
+import type {
+  NotificationContext,
+  NotificationTypeWithProtocols,
+  SendNotificationRequest,
+  SmtpDestinationFormInput,
+  SynoChatDestination,
+  WebSocketDestination,
+} from "@ncfritz/olympus-sdk/olympus";
 import {
   Button,
   Checkbox,
@@ -68,48 +76,26 @@ const getIconForStatus = (status: string | undefined) => {
 
 export interface NotificationFormData {
   type: string;
-  context: Record<any, any>;
-  expirationTime?: string;
-  webSocketDestination?: {
-    durable: boolean;
-    closable: boolean;
-    deleteOnClose: boolean;
-    visibleDuration: number;
-    ghost?: boolean;
-    group?: string;
-    ttl?: string;
-    level: string;
-  };
-  synoChatDestination?: {
-    destinationType: string;
-    destination: string;
-    users?: [{ value: string }];
-  };
-  synoMailDestination?: {
-    priority: string;
-    from: string;
-    to: [{ value: string }];
-    cc?: [{ value: string }];
-    bcc?: [{ value: string }];
-  };
-  smtpDestination?: {
-    priority: string;
-    from: string;
-    to: [{ value: string }];
-    cc?: [{ value: string }];
-    bcc?: [{ value: string }];
-  };
+  context: NotificationContext;
+  expirationTime: string;
+  webSocketDestination?: WebSocketDestination;
+  synoChatDestination?: SynoChatDestination;
+  synoMailDestination?: SmtpDestinationFormInput;
+  smtpDestination?: SmtpDestinationFormInput;
 }
 
 const NotificationForm: React.FunctionComponent = () => {
   const [activeDestinations, setActiveDestinations] = useState<string[]>([]);
-  const [notificationTypes, setNotificationTypes] = useState<any[]>([]);
+  const [notificationTypes, setNotificationTypes] = useState<
+    NotificationTypeWithProtocols[]
+  >([]);
   const [notificationTypesLoading, setNotificationTypesLoading] =
     useState<boolean>(false);
   const [notificationTypesError, setNotificationTypesError] =
-    useState<any>(undefined);
-  const [selectedNotificationType, setSelectedNotificationType] =
-    useState<any>(undefined);
+    useState<unknown>(undefined);
+  const [notificationType, setNotificationType] = useState<
+    NotificationTypeWithProtocols | undefined
+  >(undefined);
 
   const fetchNotificationTypes = async () => {
     setNotificationTypesLoading(true);
@@ -119,14 +105,14 @@ const NotificationForm: React.FunctionComponent = () => {
       const listNotificationTypesResponse =
         await notificationsApi.listNotificationTypes();
       setNotificationTypes(
-        listNotificationTypesResponse.data.notificationTypes,
+        listNotificationTypesResponse.data!.notificationTypes || [],
       );
-      setSelectedNotificationType(
-        listNotificationTypesResponse.data.notificationTypes[0],
+      setNotificationType(
+        listNotificationTypesResponse.data!.notificationTypes[0],
       );
       setValue(
         "type",
-        listNotificationTypesResponse.data.notificationTypes[0].id,
+        listNotificationTypesResponse.data!.notificationTypes[0].id,
       );
     } catch (e) {
       setNotificationTypesError(e);
@@ -142,19 +128,22 @@ const NotificationForm: React.FunctionComponent = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedNotificationType) {
+    if (notificationType) {
       const newDestinations = activeDestinations.filter((key) => {
         const id = key.substring(key.lastIndexOf("-") + 1);
-        return selectedNotificationType
-          ? selectedNotificationType[
-              `supports${id.charAt(0).toUpperCase()}${id.slice(1)}`
-            ]
-          : false;
+        const objectKey = `supports${id.charAt(0).toUpperCase()}${id.slice(1)}`;
+
+        if (notificationType) {
+          // @ts-expect-error Property keys are know and follow convention
+          return notificationType[objectKey];
+        } else {
+          return false;
+        }
       });
 
       setActiveDestinations(newDestinations!);
     }
-  }, [selectedNotificationType]);
+  }, [notificationType]);
 
   const { control, handleSubmit, watch, setValue } =
     useForm<NotificationFormData>({
@@ -196,7 +185,7 @@ const NotificationForm: React.FunctionComponent = () => {
     });
 
   const onSubmit = async (data: NotificationFormData) => {
-    const notificationRequest: any = {
+    const notificationRequest: SendNotificationRequest = {
       type: data.type,
       context: data.context,
       expirationTime: data.expirationTime,
@@ -228,14 +217,14 @@ const NotificationForm: React.FunctionComponent = () => {
             <Col span={7}>Web Socket</Col>
             <Col span={2}>
               {getIconForStatus(
-                notificationResponse.data.webSocketDestination?.status,
+                notificationResponse.data?.webSocketDestination?.status,
               )}
             </Col>
             <Col span={6} />
             <Col span={7}>SynoChat</Col>
             <Col span={2}>
               {getIconForStatus(
-                notificationResponse.data.synoChatDestination?.status,
+                notificationResponse.data?.synoChatDestination?.status,
               )}
             </Col>
           </Row>
@@ -243,14 +232,14 @@ const NotificationForm: React.FunctionComponent = () => {
             <Col span={7}>Syno Mail</Col>
             <Col span={2}>
               {getIconForStatus(
-                notificationResponse.data.synoMailDestination?.status,
+                notificationResponse.data?.synoMailDestination?.status,
               )}
             </Col>
             <Col span={6} />
             <Col span={7}>Email</Col>
             <Col span={2}>
               {getIconForStatus(
-                notificationResponse.data.emailDestination?.status,
+                notificationResponse.data?.externalMailDestination?.status,
               )}
             </Col>
           </Row>
@@ -314,7 +303,7 @@ const NotificationForm: React.FunctionComponent = () => {
                 <Select
                   {...field}
                   onSelect={(value) => {
-                    setSelectedNotificationType(
+                    setNotificationType(
                       notificationTypes.find((item) => {
                         return item.id === value;
                       }),
@@ -416,9 +405,13 @@ const NotificationForm: React.FunctionComponent = () => {
               const panelKey = panelProps.panelKey as string;
               const id = panelKey.substring(panelKey.lastIndexOf("-") + 1);
               const objectKey = `supports${id.charAt(0).toUpperCase()}${id.slice(1)}`;
-              const enabled = selectedNotificationType
-                ? selectedNotificationType[objectKey]
-                : false;
+
+              let enabled = false;
+
+              // @ts-expect-error Object keys are known and conforms to standards
+              if (notificationType && notificationType[objectKey]) {
+                enabled = true;
+              }
 
               return (
                 <Checkbox
@@ -442,7 +435,7 @@ const NotificationForm: React.FunctionComponent = () => {
                   <WebSocketDestinationForm control={control} watch={watch} />
                 ),
                 styles: panelStyles,
-                collapsible: selectedNotificationType?.supportsWebSocket
+                collapsible: notificationType?.supportsWebSocket
                   ? "header"
                   : "disabled",
               },
@@ -455,7 +448,7 @@ const NotificationForm: React.FunctionComponent = () => {
                 ),
                 children: <SynologyChatDestinationForm control={control} />,
                 styles: panelStyles,
-                collapsible: selectedNotificationType?.supportsSynoChat
+                collapsible: notificationType?.supportsSynoChat
                   ? "header"
                   : "disabled",
               },
@@ -474,7 +467,7 @@ const NotificationForm: React.FunctionComponent = () => {
                   />
                 ),
                 styles: panelStyles,
-                collapsible: selectedNotificationType?.supportsSynoMail
+                collapsible: notificationType?.supportsSynoMail
                   ? "header"
                   : "disabled",
               },
@@ -493,7 +486,7 @@ const NotificationForm: React.FunctionComponent = () => {
                   />
                 ),
                 styles: panelStyles,
-                collapsible: selectedNotificationType?.supportsEmail
+                collapsible: notificationType?.supportsEmail
                   ? "header"
                   : "disabled",
               },

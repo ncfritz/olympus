@@ -20,7 +20,6 @@ import {
 } from "antd";
 import { type ColumnsType } from "antd/es/table";
 import type { FilterValue } from "antd/es/table/interface";
-import axios from "axios";
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts";
 import { DateTime } from "luxon";
@@ -28,16 +27,13 @@ import prettyMilliseconds from "pretty-ms";
 import React, { type ReactNode, useEffect, useState } from "react";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import batchJobApi from "../../../api/batchJobApi";
-import type { SortOptions } from "../../../api/contentApi";
-import {
-  type BatchJobRecord,
-  JobStatus,
-  type JobType,
-} from "../../../types/dionysus";
+import type { SortOptions } from "../../../api/common";
+import { type BatchJobRecord, JobStatus } from "../../../types/dionysus";
 import Timestamp from "../../data/Timestamp";
 import BatchJobStatusSelect from "../../dionysus/jobs/BatchJobStatusSelect";
 import CreateBatchJobModal from "../../dionysus/jobs/CreateBatchJobModal";
 import { getBatchJobStatusIndicator } from "../../dionysus/jobs/utils";
+import { type JobType } from "@ncfritz/olympus-sdk/dionysus";
 
 interface FormInput {
   type: JobType;
@@ -85,8 +81,8 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
   const [jobsPage, setJobsPage] = useState(0);
   const [jobsPageSize, setJobsPageSize] = useState(50);
   const [jobsSort, setJobsSort] = useState<SortOptions>({
-    field: "type",
-    order: "asc",
+    field: "createdTime",
+    order: "desc",
   });
   const [jobFilters, setJobFilters] = useState<
     Record<string, FilterValue | null>
@@ -125,7 +121,12 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
     setJobsError(undefined);
 
     try {
-      const listJobsResponse = await axios.get(`/api/v1/jobs/batch/${type}`);
+      const listJobsResponse = await batchJobApi.listBatchJobsByType(
+        type,
+        jobsPage,
+        jobsSort,
+        jobFilters,
+      );
       setJobs(listJobsResponse.data.jobs);
     } catch (e) {
       setJobsError(e);
@@ -141,9 +142,8 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
     setJobStatsError(undefined);
 
     try {
-      const getJobsStatsResponse = await axios.get(
-        `/api/v1/jobs/batch/${type}/stats`,
-      );
+      const getJobsStatsResponse =
+        await batchJobApi.getBatchJobStatsByType(type);
       setJobStats(getJobsStatsResponse.data);
     } catch (e) {
       setJobStatsError(e);
@@ -235,6 +235,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
 
   const columns: ColumnsType<BatchJobRecord> = [
     {
+      key: "id",
       title: "ID",
       dataIndex: "id",
       render: (value, record) => {
@@ -251,9 +252,10 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
         );
       },
       width: 350,
-      sorter: (a, b) => a.id.localeCompare(b.id),
+      sorter: true,
     },
     {
+      key: "status",
       title: "Status",
       dataIndex: "status",
       render: (value) => {
@@ -283,8 +285,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       ],
       filterMode: "tree",
       filterSearch: true,
-      onFilter: (value: string, record) => record.status === value,
-      sorter: (a, b) => a.status.localeCompare(b.status),
+      sorter: true,
       width: 200,
     },
     {
@@ -364,6 +365,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       width: 300,
     },
     {
+      key: "totalRecords",
       title: "Total",
       dataIndex: "totalRecords",
       render: (value, record) => {
@@ -376,6 +378,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       width: 75,
     },
     {
+      key: "processedRecords",
       title: "Processed",
       dataIndex: "processedRecords",
       render: (value, record) => {
@@ -388,6 +391,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       width: 100,
     },
     {
+      key: "duplicateRecords",
       title: "Duplicate",
       dataIndex: "duplicateRecords",
       render: (value, record) => {
@@ -400,6 +404,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       width: 85,
     },
     {
+      key: "newRecords",
       title: "New",
       dataIndex: "newRecords",
       render: (value, record) => {
@@ -412,6 +417,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       width: 75,
     },
     {
+      key: "expiredRecords",
       title: "Expired",
       dataIndex: "expiredRecords",
       render: (value, record) => {
@@ -424,6 +430,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       width: 75,
     },
     {
+      key: "noOpRecords",
       title: "No-Op",
       dataIndex: "noOpRecords",
       render: (value, record) => {
@@ -436,6 +443,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       width: 75,
     },
     {
+      key: "skippedRecords",
       title: "Skipped",
       dataIndex: "skippedRecords",
       render: (value, record) => {
@@ -447,28 +455,34 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       },
     },
     {
+      key: "createdTime",
       title: "Created",
       dataIndex: "createdTime",
       render: (value) => {
         return <Timestamp value={value} showTime={true} />;
       },
       width: 150,
+      sorter: true,
     },
     {
+      key: "startedTime",
       title: "Started",
       dataIndex: "startedTime",
       render: (value) => {
         return <Timestamp value={value} showTime={true} />;
       },
       width: 150,
+      sorter: true,
     },
     {
+      key: "finishedTime",
       title: "Finished",
       dataIndex: "finishedTime",
       render: (value) => {
         return <Timestamp value={value} showTime={true} />;
       },
       width: 150,
+      sorter: true,
     },
   ];
 

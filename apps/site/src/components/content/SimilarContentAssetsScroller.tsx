@@ -1,4 +1,5 @@
 import { StarFilled } from "@ant-design/icons";
+import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
 import { Card, Empty, Rate, Space, Spin, Typography } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -8,12 +9,11 @@ import contentApi from "../../api/contentApi";
 import useDrag from "../../hooks/useDrag";
 import type { ContentAsset } from "../../pages/dionysus/content/assets";
 import { useAppSelector } from "../../redux/hooks";
-import type { ContentAssetTag as ContentAssetTagType } from "../../pages/dionysus/content/assets";
 import { LeftArrow, RightArrow } from "./scroller/arrows";
 
 export interface SimilarContentAssetsScrollerProps {
   asset: ContentAsset;
-  tags: ContentAssetTagType[];
+  tags: ContentAssetTag[];
 }
 
 const SimilarContentAssetScroller: React.FunctionComponent<

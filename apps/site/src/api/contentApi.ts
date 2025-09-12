@@ -1,80 +1,73 @@
-import axios from "axios";
-import type {
-  ContentAsset,
-  ContentAssetTag,
-} from "../pages/dionysus/content/assets";
+import {
+  addContentAssetTagToAsset,
+  checkAuthorization,
+  client,
+  type ContentAsset,
+  type ContentAssetTag,
+  type ContentJobType,
+  type ContentTagType,
+  createContentAssetTag,
+  createContentJob,
+  deleteContentAssetTagFromAsset,
+  getContentAsset,
+  getContentAssetAggregateStatistics,
+  getContentAssetDurationStatistics,
+  getContentAssetHeightStatistics,
+  getContentAssetSizeStatistics,
+  getContentAssetWidthStatistics,
+  getUntaggedContentAsset,
+  listAvailableContentAssetTags,
+  listContentAssets,
+  listContentAssetTagsForAsset,
+  listSimilarContentAssets,
+  verifyAuthCode,
+} from "@ncfritz/olympus-sdk/dionysus";
 import { store } from "../redux/store";
+import type { SortOptions } from "./common";
 
-export interface SortOptions {
-  field: string;
-  order: "asc" | "desc";
-}
-
-const fetchAssets = async (page: number, sort: SortOptions) => {
-  try {
-    const listAssetsResponse = await axios.get(
-      `/api/v1/content/assets?sort=${sort.order}&sortBy=${sort.field}&pageSize=15&startPage=${page}`,
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return listAssetsResponse;
-  } catch (e) {
-    throw e;
+class ContentApi {
+  constructor() {
+    client.setConfig({
+      baseURL: "/api/v1",
+      throwOnError: true,
+    });
   }
-};
 
-const fetchAsset = async (assetId: string) => {
-  try {
-    const getContentAssetResponse = await axios.get(
-      `/api/v1/content/asset/${assetId}`,
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  private buildHeaders(existing?: Record<string, string>) {
+    return {
+      headers: {
+        ...existing,
+        "x-dionysus-content-bc": `${store.getState().blackCurtain.active || true}`,
       },
-    );
-
-    return getContentAssetResponse;
-  } catch (e) {
-    throw e;
+    };
   }
-};
 
-const fetchUntaggedAsset = async () => {
-  try {
-    const getContentAssetResponse = await axios.get(
-      `/api/v1/content/assets/untagged`,
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async listAssets(page: number, sort: SortOptions) {
+    return await listContentAssets({
+      query: {
+        startPage: page,
+        pageSize: 15,
+        sortBy: sort.field,
+        sort: sort.order,
       },
-    );
-
-    return getContentAssetResponse;
-  } catch (e) {
-    throw e;
+      ...this.buildHeaders(),
+    });
   }
-};
 
-const fetchSimilarAssets = async (
-  asset: ContentAsset,
-  tags: ContentAssetTag[],
-) => {
-  try {
+  async getAsset(assetId: string) {
+    return await getContentAsset({
+      path: {
+        assetId: assetId,
+      },
+      ...this.buildHeaders(),
+    });
+  }
+
+  async getUntaggedAsset() {
+    return await getUntaggedContentAsset({ ...this.buildHeaders() });
+  }
+
+  async listSimilarAssets(asset: ContentAsset, tags: ContentAssetTag[]) {
     const tagTypes: string[] = [];
     const tagNames: string[] = [];
 
@@ -83,332 +76,120 @@ const fetchSimilarAssets = async (
       tagNames.push(tag.name);
     });
 
-    const getContentAssetResponse = await axios.get(
-      `/api/v1/content/asset/${
-        asset.id
-      }/similar?tagType=${tagTypes.join(",")}&tagName=${tagNames.join(",")}`,
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
+    return await listSimilarContentAssets({
+      path: {
+        assetId: asset.id,
       },
-    );
-
-    return getContentAssetResponse;
-  } catch (e) {
-    throw e;
+      query: {
+        tagType: tagTypes,
+        tagName: tagNames,
+      },
+      ...this.buildHeaders(),
+    });
   }
-};
 
-const fetchTagsForAsset = async (assetId: string) => {
-  try {
-    const listAssetsTagsResponse = await axios.get(
-      `/api/v1/content/asset/${assetId}/tags`,
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return listAssetsTagsResponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const fetchAvailableTagsForAsset = async (assetId: string) => {
-  try {
-    const listAvailableTagsResponse = await axios.get(
-      `/api/v1/content/assetTags?assetId=${assetId}`,
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return listAvailableTagsResponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const getAssetAggregateStatistics = async () => {
-  try {
-    const getAssetAggregateStatisticsResponse = await axios.get(
-      `/api/v1/content/assets/statistics/aggregate`,
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return getAssetAggregateStatisticsResponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const getAssetDurationStatistics = async () => {
-  try {
-    const getAssetDurationStatisticsResponse = await axios.get(
-      `/api/v1/content/assets/statistics/duration`,
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return getAssetDurationStatisticsResponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const getAssetHeightStatistics = async () => {
-  try {
-    const getAssetHeightStatisticsResponse = await axios.get(
-      `/api/v1/content/assets/statistics/height`,
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return getAssetHeightStatisticsResponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const getAssetSizeStatistics = async () => {
-  try {
-    const getAssetSizeStatisticsResponse = await axios.get(
-      `/api/v1/content/assets/statistics/size`,
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return getAssetSizeStatisticsResponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const getAssetWidthStatistics = async () => {
-  try {
-    const getAssetWidthStatisticsResponse = await axios.get(
-      `/api/v1/content/assets/statistics/width`,
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return getAssetWidthStatisticsResponse;
-  } catch (e) {
-    throw e;
-  }
-};
-
-const listTags = async () => {
-  try {
-    const getTagsResponse = await axios.get(`/api/v1/content/assetTags`, {
-      headers: {
-        "x-dionysus-content-bc": store.getState().blackCurtain.active,
-      },
-      validateStatus: (status) => {
-        return status === 200;
+  async listAssetTags(assetId: string) {
+    return await listContentAssetTagsForAsset({
+      params: {
+        assetId: assetId,
       },
     });
-
-    return getTagsResponse;
-  } catch (e) {
-    throw e;
   }
-};
 
-const addTagToAsset = async (assetId: string, type: string, name: string) => {
-  try {
-    const addTagToAssetResponse = await axios.put(
-      `/api/v1/content/asset/${assetId}/tags`,
-      {
+  async listAvailableTagsForAsset(assetId: string) {
+    return await listAvailableContentAssetTags({
+      params: {
+        assetId: assetId,
+      },
+      ...this.buildHeaders(),
+    });
+  }
+
+  async getAssetAggregateStatistics() {
+    return await getContentAssetAggregateStatistics({ ...this.buildHeaders() });
+  }
+
+  async getAssetDurationStatistics() {
+    return await getContentAssetDurationStatistics({ ...this.buildHeaders() });
+  }
+
+  async getAssetHeightStatistics() {
+    return await getContentAssetHeightStatistics({ ...this.buildHeaders() });
+  }
+
+  async getAssetSizeStatistics() {
+    return await getContentAssetSizeStatistics({ ...this.buildHeaders() });
+  }
+
+  async getAssetWidthStatistics() {
+    return await getContentAssetWidthStatistics({ ...this.buildHeaders() });
+  }
+
+  async listTags() {
+    return await listAvailableContentAssetTags({ ...this.buildHeaders() });
+  }
+
+  async addTagToAsset(assetId: string, type: ContentTagType, name: string) {
+    await addContentAssetTagToAsset({
+      path: {
+        assetId: assetId,
+      },
+      body: {
         tag: {
           type: type,
           name: name,
         },
       },
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 200 || status === 304;
-        },
-      },
-    );
-
-    return addTagToAssetResponse;
-  } catch (e) {
-    throw e;
+      ...this.buildHeaders(),
+    });
   }
-};
 
-const createAssetTag = async (type: string, name: string) => {
-  try {
-    const createTagResponse = await axios.post(
-      `/api/v1/content/assetTags`,
-      {
+  async createAssetTag(type: ContentTagType, name: string) {
+    return await createContentAssetTag({
+      body: {
         tag: {
           type: type,
           name: name,
         },
       },
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 201 || status === 409;
-        },
-      },
-    );
-
-    return createTagResponse;
-  } catch (e) {
-    throw e;
+      ...this.buildHeaders(),
+    });
   }
-};
 
-const removeTagFromAsset = async (assetId: string, tagId: string) => {
-  try {
-    const addTagToAssetResponse = await axios.delete(
-      `/api/v1/content/asset/${assetId}/tag/${tagId}`,
-      {
-        headers: {
-          "x-dionysus-content-bc": store.getState().blackCurtain.active,
-        },
-        validateStatus: (status) => {
-          return status === 410;
-        },
+  async removeTagFromAsset(assetId: string, tagId: string) {
+    return await deleteContentAssetTagFromAsset({
+      path: {
+        assetId: assetId,
+        tagId: tagId,
       },
-    );
-
-    return addTagToAssetResponse;
-  } catch (e) {
-    throw e;
+      ...this.buildHeaders(),
+    });
   }
-};
 
-const queueContentTask = async (assetId: string, type: string) => {
-  try {
-    const createAssetJobResponse = await axios.put(
-      `/api/v1/content/asset/${assetId}/jobs`,
-      {
-        tag: {
-          type: type,
-        },
+  async queueContentTask(assetId: string, type: ContentJobType) {
+    return await createContentJob({
+      path: {
+        assetId: assetId,
       },
-      {
-        validateStatus: (status) => {
-          return status === 200 || status === 304;
-        },
+      body: {
+        type: type,
       },
-    );
-
-    return createAssetJobResponse;
-  } catch (e) {
-    throw e;
+      ...this.buildHeaders(),
+    });
   }
-};
 
-const checkAuthStatus = async () => {
-  try {
-    const checkAuthStatusResponse = await axios.get(
-      `/api/v1/content/auth/status`,
-      {
-        withCredentials: true,
-        validateStatus: (status) => {
-          return status === 200;
-        },
-      },
-    );
-
-    return checkAuthStatusResponse;
-  } catch (e) {
-    throw e;
+  async checkAuthStatus() {
+    return await checkAuthorization({});
   }
-};
 
-const verifyAuthCode = async (code: string) => {
-  try {
-    const verifyAuthCodeResponse = await axios.get(
-      `/api/v1/content/auth/verify?otp=${code}`,
-      {
-        withCredentials: true,
-        validateStatus: (status) => {
-          return status === 200;
-        },
+  async verifyAuthCode(code: string) {
+    return await verifyAuthCode({
+      query: {
+        otp: code,
       },
-    );
-
-    return verifyAuthCodeResponse;
-  } catch (e) {
-    throw e;
+    });
   }
-};
+}
 
-const contentApi = {
-  addTagToAsset: addTagToAsset,
-  checkAuthStatus: checkAuthStatus,
-  createAssetTag: createAssetTag,
-  getAsset: fetchAsset,
-  getUntaggedAsset: fetchUntaggedAsset,
-  getAssetAggregateStatistics: getAssetAggregateStatistics,
-  getAssetDurationStatistics: getAssetDurationStatistics,
-  getAssetHeightStatistics: getAssetHeightStatistics,
-  getAssetSizeStatistics: getAssetSizeStatistics,
-  getAssetWidthStatistics: getAssetWidthStatistics,
-  listAssets: fetchAssets,
-  listAssetTags: fetchTagsForAsset,
-  listTags: listTags,
-  listSimilarAssets: fetchSimilarAssets,
-  listAvailableTagsForAsset: fetchAvailableTagsForAsset,
-  queueContentTask: queueContentTask,
-  removeTagFromAsset: removeTagFromAsset,
-  verifyAuthCode: verifyAuthCode,
-};
-
+const contentApi = new ContentApi();
 export default contentApi;

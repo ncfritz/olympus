@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+<svg
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:cc="http://web.resource.org/cc/"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:svg="http://www.w3.org/2000/svg"
+    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+    xmlns:ns1="http://sozi.baierouge.fr"
+    id="Layer_1"
+    xml:space="preserve"
+    viewBox="0 0 900 600"
+    version="1.1"
+    x="0px"
+    y="0px"
+    enable-background="new 0 0 900 600"
+  >
+<g
+      id="Layer_3"
+    >
+	<rect
+        width="900"
+        fill="#fff"
+        height="600"
+    />
+</g
+  >
+<g
+      id="Layer_2"
+    >
+		<polygon
+        points="452.7 299.93 490.11 248.04 415.53 248.06"
+    />
+		<path
+        d="m698.87 291.93l-140.33-86.333h-51.347c-2.01-4.655-14.037-32.253-22.486-45.276-1.875-2.89-1.482-3.569-4.499-5.349-5.314-3.135-50.731-1.488-55.206-1.325-1.466 0.2-8.233 1.613-9.813 9.236-0.975 4.71 0.154 8.875 3.667 11.667-0.084-2.583 0.822-7.255 4.697-6.677 2.672 0.328 4.552 3.261 4.552 6.177 0 4.887-6.064 15.966-6.064 15.966s-3.789 8.469-7.413 15.581h-69.422l-144.08 87.03 23.328 30.331 42.005-0.034-13.627-18.905 5.17-3.453 15.886 22.125 35.566-0.064-26.704-38.576 5.019-3.35 29.686 41.592 35.666-0.031-41.095-57.75 5.353-3.573 42.813 61.092 30.202 0.032 3.665-4.586-50.41-74.075 5.251-3.504 55.607 77.127-59.609 81.134 40.599 0.134 39.105-53.398 9.335 12.947-65.777 89.088 161.69-0.032-59.333-88.302 10.263-14.855 35.517 51.896 39.11-0.164-56.175-78.445 53.225-77.053 4.942 3.253-49.356 74.191 3.18 4.588 29.327-0.039 43.223-61.385 4.041 2.66-40.548 58.124 36.164 0.032 29.726-41.479 4.38 2.883-27.002 38.731 35.667 0.064 16.207-22.428 5.129 3.375-14.008 19.087 42.005 0.034 0.775-1.104 22.55-28.63zm-243.09-127.3c2.862 0 5.185 2.321 5.185 5.185s-2.32 5.185-5.185 5.185-5.188-2.321-5.188-5.185c0.01-2.87 2.33-5.19 5.19-5.19zm11.9 258.43l-14.75-22.42-16.932 23.647-11.764-0.071 28.854-39.168 25.123 37.839-10.53 0.17zm-14.85-90.8l-63.633-99.333 125.67-0.167-62.04 99.5z"
+    />
+		<path
+        d="m424.83 153.65c-0.318 0.014-0.24 0.011 0.162-0.004 0.021-0.003 0.041-0.005 0.061-0.008-0.06 0-0.13 0.01-0.22 0.01z"
+    />
+		<path
+        d="m425.06 153.64c0.31-0.02 0.27-0.04 0 0z"
+    />
+</g
+  >
+<metadata
+    ><rdf:RDF
+      ><cc:Work
+        ><dc:format
+          >image/svg+xml</dc:format
+        ><dc:type
+            rdf:resource="http://purl.org/dc/dcmitype/StillImage"
+        /><cc:license
+            rdf:resource="http://creativecommons.org/licenses/publicdomain/"
+        /><dc:publisher
+          ><cc:Agent
+              rdf:about="http://openclipart.org/"
+            ><dc:title
+              >Openclipart</dc:title
+            ></cc:Agent
+          ></dc:publisher
+        ><dc:title
+          >Ashinaabe flag</dc:title
+        ><dc:date
+          >2013-10-30T12:09:33</dc:date
+        ><dc:description
+          >Emblem of the Ashinaabeg Nation uploaded on Wikimedia Commons by User:Shandris.&#xD;\nhttps://en.wikipedia.org/wiki/File:Anishinabe.svg</dc:description
+        ><dc:source
+          >https://openclipart.org/detail/186803/ashinaabe-flag-by-andy_gardner-186803</dc:source
+        ><dc:creator
+          ><cc:Agent
+            ><dc:title
+              >Andy_Gardner</dc:title
+            ></cc:Agent
+          ></dc:creator
+        ><dc:subject
+          ><rdf:Bag
+            ><rdf:li
+              >Ashinabe</rdf:li
+            ><rdf:li
+              >First Nation</rdf:li
+            ><rdf:li
+              >emblem</rdf:li
+            ><rdf:li
+              >flag</rdf:li
+            ></rdf:Bag
+          ></dc:subject
+        ></cc:Work
+      ><cc:License
+          rdf:about="http://creativecommons.org/licenses/publicdomain/"
+        ><cc:permits
+            rdf:resource="http://creativecommons.org/ns#Reproduction"
+        /><cc:permits
+            rdf:resource="http://creativecommons.org/ns#Distribution"
+        /><cc:permits
+            rdf:resource="http://creativecommons.org/ns#DerivativeWorks"
+        /></cc:License
+      ></rdf:RDF
+    ></metadata
+  ></svg
+>

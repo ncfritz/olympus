@@ -34,6 +34,7 @@
     "@fullcalendar/list": "^6.1.15",
     "@fullcalendar/react": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.15",
+    "@ncfritz/olympus-sdk": "file://../olympus-sdk",
     "@next/eslint-plugin-next": "^15.3.3",
     "@reduxjs/toolkit": "^2.5.1",
     "@semantic-release/git": "^10.0.1",
@@ -57,7 +58,7 @@
     "antd": "^5.23.3",
     "antd-css-utilities": "^2.1.0",
     "antd-mask-input": "^2.0.7",
-    "axios": "^1.9.0",
+    "axios": "^1.10.0",
     "commitizen": "^4.3.1",
     "conventional-changelog-conventionalcommits": "^7.0.2",
     "copy-webpack-plugin": "^12.0.2",
@@ -102,6 +103,7 @@
     "react-markdown": "^9.0.3",
     "react-markdown-editor-lite": "^1.3.4",
     "react-otp-input": "^3.1.1",
+    "react-player": "^3.3.1",
     "react-redux": "^9.2.0",
     "react-syntax-highlight": "^15.3.1",
     "react-syntax-highlighter": "^15.6.1",
@@ -120,5 +122,9 @@
   },
   "msw": {
     "workerDirectory": "public"
+  },
+  "dependencies": {
+    "@fullcalendar/multimonth": "^6.1.19",
+    "openapi-fetch": "^0.14.0"
   }
 }

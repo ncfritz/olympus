@@ -44,7 +44,6 @@ const EmailDestinationEntryRow: React.FunctionComponent<
       className={"flex-first-item"}
     >
       <Controller
-        // @ts-expect-error known situation
         name={`${formPathPrefix}.${fieldName}.${index}.value`}
         control={control}
         rules={emailValidationRules(required)}
@@ -56,6 +55,7 @@ const EmailDestinationEntryRow: React.FunctionComponent<
           fieldState: ControllerFieldState;
         }) => {
           return (
+            // @ts-expect-error okay
             <Input
               {...field}
               status={fieldState.error ? "error" : undefined}
@@ -66,7 +66,7 @@ const EmailDestinationEntryRow: React.FunctionComponent<
                     style={{ padding: 4, margin: 0 }}
                     type={"text"}
                     onClick={() => {
-                      append("");
+                      append({ value: "" });
                     }}
                     size={"small"}
                   >

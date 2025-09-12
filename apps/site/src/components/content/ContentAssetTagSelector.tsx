@@ -1,32 +1,39 @@
 import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import type {
+  ContentTagType,
+  ContentAssetTag,
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Button, Empty, Input, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 import contentApi from "../../api/contentApi";
-import ContentAssetTag from "./ContentAssetTag";
-import type { ContentAssetTag as ContentAssetTagType } from "../../pages/dionysus/content/assets";
+import ContentAssetTagElement from "./ContentAssetTagElement";
 
 export type TagRenderer = (
-  tag: ContentAssetTagType,
-  onSelectTag?: (tag: ContentAssetTagType) => Promise<void>,
-  onRemove?: (tag: ContentAssetTagType) => Promise<void>,
+  tag: ContentAssetTag,
+  onSelectTag?: (tag: ContentAssetTag) => Promise<void>,
+  onRemove?: (tag: ContentAssetTag) => Promise<void>,
 ) => React.ReactNode;
 
 export interface ContentAssetTagSelectorProps {
   title?: string;
-  type: string;
-  tags: ContentAssetTagType[];
-  onSelectTag?: (tag: ContentAssetTagType) => Promise<void>;
-  onRemove?: (tag: ContentAssetTagType) => Promise<void>;
+  type: ContentTagType | "selected";
+  tags: ContentAssetTag[];
+  onSelectTag?: (tag: ContentAssetTag) => Promise<void>;
+  onRemove?: (tag: ContentAssetTag) => Promise<void>;
   allowFilter?: boolean;
   allowAdd?: boolean;
-  afterAdd?: (tag: ContentAssetTagType) => Promise<void>;
+  afterAdd?: (tag: ContentAssetTag) => Promise<void>;
   width?: number | string;
   tagRenderer?: TagRenderer;
 }
 
 const DefaultTagRenderer: TagRenderer = (tag, onSelectTag, onRemove) => {
   return (
-    <ContentAssetTag tag={tag} onSelectTag={onSelectTag} onRemove={onRemove} />
+    <ContentAssetTagElement
+      tag={tag}
+      onSelectTag={onSelectTag}
+      onRemove={onRemove}
+    />
   );
 };
 
@@ -59,7 +66,11 @@ const ContentAssetTagSelector: React.FunctionComponent<
     setFilteredTags(newFilteredTags);
   }, [filter, tags]);
 
-  const addTag = async (type: string, name: string) => {
+  const addTag = async (type: ContentTagType | "selected", name: string) => {
+    if (type === "selected") {
+      return;
+    }
+
     const existingTag = tags.find((tag) => {
       return tag.name.toLowerCase() === name.toLowerCase();
     });

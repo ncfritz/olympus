@@ -13,6 +13,7 @@ const nextConfig = {
   env: {
     version: packageJson.version,
   },
+  allowedDevOrigins: ["olympus.dev.ncfritz.net", "olympus.local"],
   output: "standalone",
   reactStrictMode: true,
   eslint: {

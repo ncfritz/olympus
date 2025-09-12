@@ -1,5 +1,4 @@
 import {
-  ApiOutlined,
   AppstoreOutlined,
   BarcodeOutlined,
   ExperimentOutlined,
@@ -131,45 +130,12 @@ const DionysysMenu: React.FunctionComponent = () => {
           label: "TV Networks",
         },
         {
-          key: `/${BASE_PATH}/production`,
+          key: `/${BASE_PATH}/productionCompanies`,
           icon: <ProductionCompanyIcon />,
           label: "Production Companies",
         },
         {
           type: "divider",
-        },
-        {
-          key: "metadata-container",
-          icon: <MetadataOutlinedIcon />,
-          label: "Metadata",
-          onTitleClick: updateSubMenus,
-          children: [
-            {
-              key: `/${BASE_PATH}/metadata/certifications`,
-              icon: <CertificationsIcon />,
-              label: "Certifications",
-            },
-            {
-              key: `/${BASE_PATH}/metadata/countries`,
-              icon: <CountryIcon />,
-              label: "Countries",
-            },
-            {
-              key: `/${BASE_PATH}/metadata/genres`,
-              icon: <GenreIcon />,
-              label: "Genres",
-            },
-            {
-              key: `/${BASE_PATH}/metadata/keywords`,
-              icon: <KeywordIcon />,
-              label: "Keywords",
-            },
-            {
-              key: `/${BASE_PATH}/metadata/languages`,
-              icon: <LanguageIcon />,
-              label: "Languages",
-            },
-          ],
         },
         {
           key: "jobs_container",
@@ -197,11 +163,11 @@ const DionysysMenu: React.FunctionComponent = () => {
         {
           key: "fetch_jobs_container",
           icon: <WorkQueueIcon />,
-          label: "Asset Fetch Jobs",
+          label: "Media Fetch Jobs",
           onTitleClick: updateSubMenus,
           children: [
             {
-              key: `/${BASE_PATH}/jobs/download`,
+              key: `/${BASE_PATH}/jobs/nzb`,
               icon: <SearchOutlined />,
               label: "NZB Search Jobs",
             },
@@ -256,12 +222,37 @@ const DionysysMenu: React.FunctionComponent = () => {
           ],
         },
         {
-          type: "divider",
-        },
-        {
-          key: `/${BASE_PATH}/docs`,
-          icon: <ApiOutlined />,
-          label: "API Documentation",
+          key: "metadata-container",
+          icon: <MetadataOutlinedIcon />,
+          label: "Core Metadata",
+          onTitleClick: updateSubMenus,
+          children: [
+            {
+              key: `/${BASE_PATH}/metadata/certifications`,
+              icon: <CertificationsIcon />,
+              label: "Certifications",
+            },
+            {
+              key: `/${BASE_PATH}/metadata/countries`,
+              icon: <CountryIcon />,
+              label: "Countries",
+            },
+            {
+              key: `/${BASE_PATH}/metadata/genres`,
+              icon: <GenreIcon />,
+              label: "Genres",
+            },
+            {
+              key: `/${BASE_PATH}/metadata/keywords`,
+              icon: <KeywordIcon />,
+              label: "Keywords",
+            },
+            {
+              key: `/${BASE_PATH}/metadata/languages`,
+              icon: <LanguageIcon />,
+              label: "Languages",
+            },
+          ],
         },
       ]}
     />

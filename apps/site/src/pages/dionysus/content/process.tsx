@@ -4,6 +4,10 @@ import {
   HomeOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
+import type {
+  ContentAssetTag,
+  ContentTagType,
+} from "@ncfritz/olympus-sdk/dionysus";
 import {
   Breadcrumb,
   Button,
@@ -27,9 +31,7 @@ import ContentAssetTagSelector from "../../../components/content/ContentAssetTag
 import ContentAssetThumbnailGrid from "../../../components/content/ContentAssetThumbnailGrid";
 import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
 import { useAppSelector } from "../../../redux/hooks";
-import type { ContentAssetTag } from "./assets";
-
-type NotificationType = "success" | "info" | "warning" | "error";
+import type { NotificationType } from "../../../utils/notifications";
 
 const ContentProcessingPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -134,7 +136,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
   }, [blackCurtainEnabled]);
 
   useEffect(() => {
-    const sortedTags: Record<string, ContentAssetTag[]> = {
+    const sortedTags: Record<ContentTagType, ContentAssetTag[]> = {
       system: [],
       model: [],
       user: [],
@@ -150,7 +152,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
     });
 
     Object.keys(sortedTags).forEach((key) => {
-      sortedTags[key].sort((a, b) => {
+      sortedTags[key as ContentTagType].sort((a, b) => {
         const nameA = a.name.toUpperCase(); // ignore upper and lowercase
         const nameB = b.name.toUpperCase(); // ignore upper and lowercase
 
@@ -298,7 +300,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
           return (
             <ContentAssetTagSelector
               title={key.charAt(0).toUpperCase() + key.slice(1)}
-              type={key}
+              type={key as ContentTagType}
               tags={processedTags[key]}
               allowAdd={true}
               allowFilter={true}

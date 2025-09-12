@@ -1,4 +1,8 @@
 const DynamicReactJson = dynamic(import("react-json-view"), { ssr: false });
+import type {
+  MetadataFetchJobStatus,
+  MetadataJobType,
+} from "@ncfritz/olympus-sdk/dionysus";
 import {
   Button,
   Form,
@@ -17,8 +21,8 @@ import { PUBLISH_EVENT } from "../../common/NotificationSink";
 import MetadataJobStatusSelect from "./MetadataJobStatusSelect";
 
 interface FormInput {
-  type: string;
-  status: string;
+  type: MetadataJobType;
+  status: MetadataFetchJobStatus;
   id: string;
   publish: boolean;
   bypassCache: boolean;
@@ -59,8 +63,6 @@ const CreateMetadataJobModal: React.FunctionComponent<
   });
 
   const onSubmit: SubmitHandler<FormInput> = async (data) => {
-    console.log("data", data);
-
     await metadataApi.createMetadataFetchJob(
       data.id,
       data.type,

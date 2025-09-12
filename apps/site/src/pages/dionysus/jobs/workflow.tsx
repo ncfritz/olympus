@@ -23,7 +23,7 @@ import type { FilterValue } from "antd/es/table/interface";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import type { SortOptions } from "../../../api/contentApi";
+import type { SortOptions } from "../../../api/common";
 import workflowApi from "../../../api/workflowApi";
 import RefreshTimer from "../../../components/common/RefreshTimer";
 import Timestamp from "../../../components/data/Timestamp";
@@ -89,7 +89,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
 
     try {
       const getWorkflowStatsResponse =
-        await workflowApi.getWorkflowStatistics();
+        await workflowApi.getMetadataWorkflowStatistics();
       setMetadataWorkflowStats(getWorkflowStatsResponse.data);
     } catch (e) {
       setJobStatsError(e);
@@ -128,7 +128,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
   };
 
   const createWorkflow = async () => {
-    await workflowApi.createWorkflow();
+    await workflowApi.createMetadataWorkflow();
     await fetchMetadataWorkflows(true);
   };
 

@@ -1,3 +1,5 @@
+import type { SortOptions } from "../api/common";
+
 export enum JobStatus {
   CREATED = "created",
   STARTED = "started",
@@ -37,3 +39,8 @@ export interface BatchJobRecord {
   skippedRecords?: number;
   status: JobStatus;
 }
+
+export type PaginatedParams = {
+  page: number;
+  sort: SortOptions;
+};

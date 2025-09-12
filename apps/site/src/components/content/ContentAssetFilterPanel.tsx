@@ -1,8 +1,8 @@
 import { SearchOutlined } from "@ant-design/icons";
+import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
 import { Button, Collapse, Empty, Space, Spin, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import contentApi from "../../api/contentApi";
-import type { ContentAssetTag as ContentAssetTagType } from "../../pages/dionysus/content/assets";
 import ContentAssetTagSelector, {
   type TagRenderer,
 } from "./ContentAssetTagSelector";
@@ -10,14 +10,14 @@ import ContentTagCheckbox from "./ContentTagCheckbox";
 
 export interface ContentAssetFilterPanelProps {
   togglePanel: () => void;
-  onSelectTag: (tag: ContentAssetTagType) => Promise<void>;
-  onRemoveTag: (tag: ContentAssetTagType) => Promise<void>;
+  onSelectTag: (tag: ContentAssetTag) => Promise<void>;
+  onRemoveTag: (tag: ContentAssetTag) => Promise<void>;
 }
 
 const CheckboxTagRenderer: TagRenderer = (
-  tag: ContentAssetTagType,
-  onSelectTag: (tag: ContentAssetTagType) => Promise<void>,
-  onRemoveTag: (tag: ContentAssetTagType) => Promise<void>,
+  tag: ContentAssetTag,
+  onSelectTag: (tag: ContentAssetTag) => Promise<void>,
+  onRemoveTag: (tag: ContentAssetTag) => Promise<void>,
 ) => {
   return (
     <ContentTagCheckbox

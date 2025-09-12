@@ -19,14 +19,17 @@ import {
 } from "antd";
 import { type SubmitHandler, Controller, useForm } from "react-hook-form";
 import metadataApi from "../../../api/metadataApi";
-import type { MetadataFetchJob } from "../../../pages/dionysus/jobs/metadata";
 import Timestamp from "../../data/Timestamp";
 import { getMetadataJobStatusIndicator } from "./utils";
+import {
+  type MetadataFetchJob,
+  type MetadataFetchJobStatus,
+} from "@ncfritz/olympus-sdk/dionysus";
 
 interface FormInput {
   ttl: number;
   jitter: number;
-  status: string;
+  status: MetadataFetchJobStatus;
   republish: boolean;
   bypassCache: boolean;
 }
@@ -177,7 +180,7 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
                   Danger Zone
                 </Space>
               }
-              style={{ marginTop: 24 }}
+              style={{ marginTop: 24, width: "100%" }}
               actions={[
                 <Button
                   {...register("republish")}

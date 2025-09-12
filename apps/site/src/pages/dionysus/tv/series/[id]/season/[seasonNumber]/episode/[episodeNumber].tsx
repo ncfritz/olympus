@@ -1,0 +1,685 @@
+import {
+  BookOutlined,
+  CalendarOutlined,
+  CloudDownloadOutlined,
+  HeartOutlined,
+  HomeOutlined,
+  InfoCircleFilled,
+  QrcodeOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
+import type {
+  Episode,
+  TvEpisodeCastMember,
+  TvEpisodeCrewMember,
+} from "@ncfritz/olympus-sdk/dionysus";
+import {
+  Breadcrumb,
+  Layout,
+  Space,
+  Spin,
+  Typography,
+  Splitter,
+  Tabs,
+  Button,
+  Progress,
+  Image,
+  QRCode,
+} from "antd";
+import { Content } from "antd/lib/layout/layout";
+import { DateTime } from "luxon";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import React, { useState } from "react";
+import metadataApi from "../../../../../../../../api/metadataApi";
+import Description from "../../../../../../../../components/common/Description";
+import LoadingWrapper from "../../../../../../../../components/common/LoadingWrapper";
+import MetadataFetchJobPanel from "../../../../../../../../components/dionysus/metadata/MetadataFetchJobPanel";
+import MovieImagesPanel from "../../../../../../../../components/dionysus/metadata/MovieImagesPanel";
+import MovieVideoPanel from "../../../../../../../../components/dionysus/metadata/MovieVideoPanel";
+import TvEpisodeCastList from "../../../../../../../../components/dionysus/metadata/TvEpisodeCastList";
+import TvEpisodeCrewList from "../../../../../../../../components/dionysus/metadata/TvEpisodeCrewList";
+import TvSeasonSummaryCard from "../../../../../../../../components/dionysus/metadata/TvSeasonSummaryCard";
+import {
+  getExternalIdIcon,
+  getProgressColor,
+} from "../../../../../../../../components/dionysus/metadata/util";
+import { useFetch } from "../../../../../../../../hooks/useFetch";
+import { MetadataOutlinedIcon } from "../../../../../../../../icons";
+
+interface EpisodeId {
+  seriesId: number;
+  seasonNumber: number;
+  episodeNumber: number;
+}
+
+const topOffset = 301;
+
+const TvEpisodeDetailPage: React.FunctionComponent = () => {
+  const router = useRouter();
+  const { id } = router.query;
+  const { seasonNumber } = router.query;
+  const { episodeNumber } = router.query;
+
+  const [activeTab, setActiveTab] = useState("t-main-general");
+
+  const [episode, episodeLoading, episodeError] = useFetch<EpisodeId, Episode>({
+    dataType: "TV episode details",
+    watch: [id, seasonNumber, episodeNumber],
+    params: {
+      seriesId: id as unknown as number,
+      seasonNumber: seasonNumber as unknown as number,
+      episodeNumber: episodeNumber as unknown as number,
+    },
+    fetchFunction: async (o) =>
+      (
+        await metadataApi.describeTvEpisode(
+          o.seriesId,
+          o.seasonNumber,
+          o.episodeNumber,
+        )
+      ).data.episode,
+  });
+
+  const [crew, crewLoading, crewError] = useFetch<
+    EpisodeId,
+    TvEpisodeCrewMember[]
+  >({
+    dataType: "TV episode crew",
+    watch: [id, seasonNumber, episodeNumber],
+    params: {
+      seriesId: id as unknown as number,
+      seasonNumber: seasonNumber as unknown as number,
+      episodeNumber: episodeNumber as unknown as number,
+    },
+    fetchFunction: async (o) =>
+      (
+        await metadataApi.listTvEpisodeCrew(
+          o.seriesId,
+          o.seasonNumber,
+          o.episodeNumber,
+        )
+      ).data.crew,
+  });
+
+  const [cast, castLoading, castError] = useFetch<
+    EpisodeId,
+    TvEpisodeCastMember[]
+  >({
+    dataType: "TV episode cast",
+    watch: [id, seasonNumber, episodeNumber],
+    params: {
+      seriesId: id as unknown as number,
+      seasonNumber: seasonNumber as unknown as number,
+      episodeNumber: episodeNumber as unknown as number,
+    },
+    fetchFunction: async (o) =>
+      (
+        await metadataApi.listTvEpisodeCast(
+          o.seriesId,
+          o.seasonNumber,
+          o.episodeNumber,
+        )
+      ).data.cast,
+  });
+
+  const [guestStars, guestStarsLoading, guestStarsError] = useFetch<
+    EpisodeId,
+    TvEpisodeCastMember[]
+  >({
+    dataType: "TV episode guest stars",
+    watch: [id, seasonNumber, episodeNumber],
+    params: {
+      seriesId: id as unknown as number,
+      seasonNumber: seasonNumber as unknown as number,
+      episodeNumber: episodeNumber as unknown as number,
+    },
+    fetchFunction: async (o) =>
+      (
+        await metadataApi.listTvEpisodeGuestStars(
+          o.seriesId,
+          o.seasonNumber,
+          o.episodeNumber,
+        )
+      ).data.guestStars,
+  });
+
+  let content = (
+    <Space style={{ margin: 16 }}>
+      <Spin size={"large"} />
+    </Space>
+  );
+
+  if (episode) {
+    const headerBackgroundUrl = episode?.series.backdropPath
+      ? `https://image.tmdb.org/t/p/w1280/${episode.series.backdropPath}`
+      : "/section_header.png";
+    const airDate = episode.airDate
+      ? DateTime.fromISO(episode.airDate)
+      : undefined;
+
+    const overview = episode.overview ? (
+      <Space direction={"vertical"} size={0} style={{ padding: 16 }}>
+        <Typography.Title
+          style={{ color: "#222222", marginBottom: 0 }}
+          level={4}
+        >
+          Overview
+        </Typography.Title>
+        <Typography.Text
+          style={{ color: "#333333", maxWidth: 1024, display: "flex" }}
+        >
+          {episode?.overview}
+        </Typography.Text>
+      </Space>
+    ) : undefined;
+
+    content = (
+      <Space
+        direction={"vertical"}
+        size={0}
+        style={{ width: "100%", height: "100%" }}
+        styles={{ item: { width: "100%" } }}
+      >
+        <Space
+          size={0}
+          direction={"vertical"}
+          className={"movieHeader"}
+          style={{
+            minHeight: 200,
+            maxHeight: 200,
+            width: "100%",
+            backgroundColor: "#021629",
+            backgroundImage: `linear-gradient(90deg, rgba(0, 21, 41, 1) 10%, rgba(0, 0, 0, 0.4) 100%), url("${headerBackgroundUrl}")`,
+            backgroundPosition: "left 150px top",
+            backgroundSize: "cover",
+            backgroundRepeat: "no-repeat",
+            borderBottom: "1px solid #efefef",
+            alignItems: "start",
+            position: "relative",
+            top: 25,
+          }}
+          styles={{
+            item: { width: "100%", height: 200 },
+          }}
+        >
+          <Breadcrumb
+            className={"dark"}
+            style={{
+              padding: 8,
+              background: "#021629",
+              marginBottom: 32,
+              position: "fixed",
+              top: 64,
+              left: 380,
+              width: "100%",
+              zIndex: 100,
+            }}
+            items={[
+              {
+                title: (
+                  <Link href={"/"}>
+                    <Space size={4}>
+                      <HomeOutlined />
+                      <span>Home</span>
+                    </Space>
+                  </Link>
+                ),
+              },
+              {
+                title: (
+                  <Link href={"/dionysus"}>
+                    <Space size={4}>
+                      <MetadataOutlinedIcon />
+                      <span>Dionysus</span>
+                    </Space>
+                  </Link>
+                ),
+              },
+              {
+                title: (
+                  <Link href={"/dionysus/movies"}>
+                    <Space size={4}>
+                      <MetadataOutlinedIcon />
+                      <span>Movies</span>
+                    </Space>
+                  </Link>
+                ),
+              },
+              {
+                title: (
+                  <Space size={4}>
+                    <MetadataOutlinedIcon />
+                    <span>{episode?.name ? episode.name : "Loading..."}</span>
+                  </Space>
+                ),
+              },
+            ]}
+          />
+          <Space
+            direction={"horizontal"}
+            size={0}
+            style={{ display: "flex", alignItems: "center" }}
+            styles={{ item: { height: 200 } }}
+          >
+            <Link href={`/dionysus/tv/series/${episode.series.id}`}>
+              <Image
+                preview={false}
+                style={{
+                  height: 150,
+                  width: 100,
+                  borderRadius: 8,
+                  border: "2px solid #efefef",
+                  margin: 24,
+                }}
+                src={`https://image.tmdb.org/t/p/w342/${episode.series.posterPath}}`}
+                alt={"Poster"}
+              />
+            </Link>
+            <Space
+              direction={"vertical"}
+              size={8}
+              style={{ alignItems: "start", marginTop: 24 }}
+            >
+              <Link href={`/dionysus/tv/series/${episode.series.id}`}>
+                <Typography.Title
+                  level={1}
+                  style={{ color: "#ffffffdd", marginBottom: 0 }}
+                >
+                  {episode?.series.name}
+                </Typography.Title>
+              </Link>
+              <Link
+                href={`/dionysus/tv/series/${episode.series.id}/season/${episode.seasonNumber}`}
+              >
+                <Typography.Title
+                  level={4}
+                  style={{ color: "#ffffffcc", marginBottom: 3 }}
+                >
+                  Season {episode.season.seasonNumber}
+                </Typography.Title>
+              </Link>
+              <Space
+                direction={"horizontal"}
+                size={16}
+                style={{
+                  alignItems: "center",
+                  display: "flex",
+                }}
+              >
+                <Progress
+                  type={"circle"}
+                  strokeColor={getProgressColor(episode.voteAverage * 10)}
+                  percent={episode.voteAverage * 10}
+                  size={48}
+                  format={(percent) => {
+                    return (
+                      <Typography.Text
+                        style={{
+                          fontSize: "13px",
+                          color: "#efefef",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {percent?.toFixed(0)}%
+                      </Typography.Text>
+                    );
+                  }}
+                  style={{
+                    backgroundColor: "#99999933",
+                    borderRadius: 48,
+                    padding: 6,
+                  }}
+                />
+                <Button
+                  className={"dionysus-action-button"}
+                  shape={"circle"}
+                  size={"large"}
+                  icon={<HeartOutlined />}
+                />
+                <Button
+                  className={"dionysus-action-button"}
+                  shape={"circle"}
+                  size={"large"}
+                  icon={<BookOutlined />}
+                />
+                <Button
+                  className={"dionysus-action-button"}
+                  shape={"circle"}
+                  size={"large"}
+                  icon={<SearchOutlined />}
+                />
+              </Space>
+            </Space>
+          </Space>
+        </Space>
+        <Space
+          direction={"horizontal"}
+          style={{ width: "100%", top: 24, position: "relative" }}
+          styles={{
+            item: {
+              width: "100%",
+              minHeight: `calc(100vh - ${topOffset}px`,
+            },
+          }}
+        >
+          <Splitter
+            style={{
+              width: "100%",
+              minHeight: `calc(100vh - ${topOffset}px`,
+            }}
+          >
+            <Splitter.Panel>
+              <Space
+                direction={"horizontal"}
+                className={"person-fix"}
+                size={0}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "start",
+                }}
+              >
+                <Space direction={"vertical"} style={{ padding: 16 }}>
+                  <Image
+                    src={`https://image.tmdb.org/t/p/w342/${episode.stillPath}}`}
+                    width={275}
+                    style={{ borderRadius: 8 }}
+                  />
+                  <Description
+                    title={"Air Date"}
+                    value={
+                      airDate ? airDate.toFormat("yyyy / MM / dd") : undefined
+                    }
+                  />
+                </Space>
+                <Space
+                  direction={"vertical"}
+                  style={{
+                    width: "100%",
+                    height: `calc(100vh - ${topOffset - 16}px`,
+                    alignItems: "top",
+                    overflow: "scroll",
+                  }}
+                >
+                  {overview}
+                  <Tabs
+                    className={"fill"}
+                    activeKey={activeTab}
+                    onChange={(activeKey: string) => {
+                      setActiveTab(activeKey);
+                    }}
+                    tabPosition={"top"}
+                    size={"small"}
+                    items={[
+                      {
+                        key: "t-main-general",
+                        label: "Overview",
+                        children: (
+                          <Space
+                            direction={"vertical"}
+                            style={{ width: "100%", padding: 16 }}
+                            styles={{
+                              item: {
+                                width: "100%",
+                              },
+                            }}
+                          >
+                            <Space
+                              direction={"horizontal"}
+                              style={{
+                                width: "100%",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                marginBottom: 16,
+                              }}
+                              size={16}
+                            >
+                              <Typography.Title
+                                level={4}
+                                style={{ marginBottom: 0 }}
+                              >
+                                Top Billed Cast
+                              </Typography.Title>
+                              <Button
+                                size={"small"}
+                                ghost={true}
+                                type={"text"}
+                                onClick={() => {
+                                  setActiveTab("t-main-cast");
+                                }}
+                              >
+                                Full Cast List
+                              </Button>
+                            </Space>
+                            <LoadingWrapper
+                              loading={castLoading}
+                              error={castError}
+                              showError={true}
+                            >
+                              <TvEpisodeCastList
+                                cast={cast?.length > 0 ? cast.slice(0, 12) : []}
+                              />
+                            </LoadingWrapper>
+                            <Space
+                              direction={"horizontal"}
+                              style={{
+                                width: "100%",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                marginBottom: 16,
+                              }}
+                              size={16}
+                            >
+                              <Typography.Title
+                                level={4}
+                                style={{ marginBottom: 0 }}
+                              >
+                                Guest Stars
+                              </Typography.Title>
+                              <Button
+                                size={"small"}
+                                ghost={true}
+                                type={"text"}
+                                onClick={() => {
+                                  setActiveTab("t-main-guest-stars");
+                                }}
+                              >
+                                Full Guest Star List
+                              </Button>
+                            </Space>
+                            <LoadingWrapper
+                              loading={guestStarsLoading}
+                              error={guestStarsError}
+                              showError={true}
+                            >
+                              <TvEpisodeCastList
+                                cast={
+                                  guestStars?.length > 0
+                                    ? guestStars.slice(0, 12)
+                                    : []
+                                }
+                              />
+                            </LoadingWrapper>
+                            <TvSeasonSummaryCard
+                              seriesId={episode.series.id}
+                              season={episode.season}
+                            />
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: "t-main-cast",
+                        label: "Cast",
+                        children: (
+                          <Space
+                            direction={"vertical"}
+                            style={{ width: "100%", padding: 16 }}
+                          >
+                            <LoadingWrapper
+                              loading={castLoading}
+                              error={castError}
+                            >
+                              <TvEpisodeCastList cast={cast} />
+                            </LoadingWrapper>
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: "t-main-guest-stars",
+                        label: "Guest Stars",
+                        children: (
+                          <Space
+                            direction={"vertical"}
+                            style={{ width: "100%", padding: 16 }}
+                          >
+                            <LoadingWrapper
+                              loading={castLoading}
+                              error={castError}
+                            >
+                              <TvEpisodeCastList cast={guestStars} />
+                            </LoadingWrapper>
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: "t-main-crew",
+                        label: "Crew",
+                        children: (
+                          <Space
+                            direction={"vertical"}
+                            style={{ width: "100%", padding: 16 }}
+                          >
+                            <LoadingWrapper
+                              loading={crewLoading}
+                              error={crewError}
+                            >
+                              <TvEpisodeCrewList crew={crew} />
+                            </LoadingWrapper>
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: "t-main-images",
+                        label: "Images",
+                        children: (
+                          <MovieImagesPanel
+                            images={episode.images}
+                            imageTypes={["still"]}
+                          />
+                        ),
+                      },
+                      {
+                        key: "t-main-videos",
+                        label: "Videos",
+                        children: <MovieVideoPanel videos={episode.videos} />,
+                      },
+                    ]}
+                  />
+                </Space>
+              </Space>
+            </Splitter.Panel>
+            <Splitter.Panel resizable={false} defaultSize={550}>
+              <Tabs
+                tabPosition={"right"}
+                className={"compact"}
+                items={[
+                  {
+                    key: "t-info-general",
+                    label: <InfoCircleFilled />,
+                    children: (
+                      <Space
+                        direction={"vertical"}
+                        style={{ margin: 12, width: "100%" }}
+                      >
+                        <Space direction={"horizontal"}>
+                          {episode.externalIds.map((item) => {
+                            return (
+                              <Button
+                                icon={getExternalIdIcon(item.type)}
+                                type={"text"}
+                                size={"large"}
+                              />
+                            );
+                          })}
+                        </Space>
+                      </Space>
+                    ),
+                  },
+                  {
+                    key: "m-info-qr",
+                    label: <QrcodeOutlined />,
+                    children: (
+                      <Space
+                        size={0}
+                        style={{
+                          width: "100%",
+                          padding: 16,
+                          alignItems: "center",
+                        }}
+                        direction={"vertical"}
+                      >
+                        <QRCode
+                          style={{ marginTop: 64 }}
+                          size={350}
+                          bordered={false}
+                          errorLevel={"H"}
+                          value={`https://dionysus.dev.ncfritz.net/dionysus/tv/series/${episode.series.id}/season/${episode.seasonNumber}/episode/${episode.episodeNumber}`}
+                        />
+                      </Space>
+                    ),
+                  },
+                  {
+                    key: "t-info-releases",
+                    label: <CalendarOutlined />,
+                    children: (
+                      <Space
+                        size={0}
+                        style={{ width: "100%", padding: 16 }}
+                        direction={"vertical"}
+                      ></Space>
+                    ),
+                  },
+                  {
+                    key: "m-info-fetchJob",
+                    label: <CloudDownloadOutlined />,
+                    children: (
+                      <Space
+                        size={0}
+                        style={{ width: "100%", padding: 16 }}
+                        direction={"vertical"}
+                      >
+                        <MetadataFetchJobPanel
+                          id={`${id}-${episode.season.seasonNumber}-${episode.episodeNumber}`}
+                          type={"tv_episodes"}
+                        />
+                      </Space>
+                    ),
+                  },
+                ]}
+              />
+            </Splitter.Panel>
+          </Splitter>
+        </Space>
+      </Space>
+    );
+  }
+
+  return (
+    <Layout
+      style={{
+        position: "fixed",
+        background: "#ffffff",
+        gap: 16,
+        top: 64,
+        overflowX: "hidden",
+        overflowY: "auto",
+        height: "calc(100vh - 48px)",
+      }}
+    >
+      <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
+    </Layout>
+  );
+};
+
+export default TvEpisodeDetailPage;
