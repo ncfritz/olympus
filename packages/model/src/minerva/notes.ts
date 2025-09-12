@@ -30,10 +30,10 @@ export class BaseNote {
   @ApiProperty({ type: Boolean })
   flagged: boolean;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: String, required: false })
   title?: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: String, required: false })
   summary?: string;
 
   @ApiProperty({ type: String })
@@ -108,9 +108,9 @@ export class UpdateNoteRequest {
 
 export class SingleNoteResponse {
   @ApiProperty({
-    type: () => BaseNote,
+    type: () => Note,
   })
-  note: BaseNote;
+  note: Note;
 }
 
 export class ListNotesResponse {
