@@ -8,6 +8,7 @@ export enum ContentTagType {
   USER = "user",
   TYPE = "type",
   SYSTEM = "system",
+  MODEL = "model",
 }
 
 export enum ContentJobType {
@@ -210,4 +211,14 @@ export class CreateContentAssetTagRequest {
 export class CreateContentAssetTagResponse {
   @ApiProperty({ type: () => ContentAssetTag })
   tag: ContentAssetTag;
+}
+
+export class CheckAuthResponse {
+  @ApiProperty({ type: Boolean, required: true })
+  authorized: boolean;
+}
+
+export class VerifyAuthResponse {
+  @ApiProperty({ type: Boolean, required: true })
+  authorized: boolean;
 }
