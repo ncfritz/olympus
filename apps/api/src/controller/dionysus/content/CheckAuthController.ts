@@ -1,4 +1,4 @@
-import { EmptyResponse } from "@ncfritz/olympus-model";
+import { CheckAuthResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Req, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response, Request } from "express";
@@ -30,7 +30,7 @@ export class CheckAuthController {
   @ApiProduces("application/json")
   @ApiOkResponse({
     description: "If authentication was successful.",
-    type: () => EmptyResponse,
+    type: () => CheckAuthResponse,
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -67,6 +67,8 @@ export class CheckAuthController {
       maxTokenAge: "30m",
     });
 
-    response.status(HttpStatus.OK).send({ authorized: true });
+    const responseBody: CheckAuthResponse = { authorized: true };
+
+    response.status(HttpStatus.OK).send(responseBody);
   }
 }

@@ -1,4 +1,4 @@
-import { EmptyResponse } from "@ncfritz/olympus-model";
+import { VerifyAuthResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -46,7 +46,7 @@ export class VerifyAuthCodeController {
   })
   @ApiOkResponse({
     description: "If authentication was successful.",
-    type: () => EmptyResponse,
+    type: () => VerifyAuthResponse,
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -110,6 +110,9 @@ export class VerifyAuthCodeController {
       httpOnly: false,
       maxAge: 15 * 60 * 1000,
     });
-    response.status(HttpStatus.OK).send({ authorized: true });
+
+    const responseBody: VerifyAuthResponse = { authorized: true };
+
+    response.status(HttpStatus.OK).send(responseBody);
   }
 }
