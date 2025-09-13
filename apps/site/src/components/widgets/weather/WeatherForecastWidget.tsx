@@ -67,7 +67,6 @@ const WeatherForecastWidget: React.FunctionComponent = () => {
     maxZoom: 19,
     tileSize: 256,
     opacity: 0.33,
-
     renderSubLayers: (props) => {
       const { boundingBox } = props.tile;
 

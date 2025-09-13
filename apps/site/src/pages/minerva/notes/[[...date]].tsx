@@ -1,7 +1,6 @@
 import { EditOutlined } from "@ant-design/icons";
 import { Space } from "antd";
 import { DateTime, Interval } from "luxon";
-import type { Invalid, Valid } from "luxon/src/_util";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import React from "react";
@@ -10,10 +9,10 @@ import NotesPage from "../../../components/notes/NotesPage";
 const IndexPage: React.FunctionComponent = () => {
   const params = useParams<{ date: string[] }>();
 
-  let startDate: DateTime<Valid> | DateTime<Invalid> = DateTime.now().plus({
+  let startDate: DateTime = DateTime.now().plus({
     days: 1,
   });
-  let endDate: DateTime<Valid> | DateTime<Invalid> = startDate.minus({
+  let endDate: DateTime = startDate.minus({
     days: 30,
   });
   const breadcrumbs = [

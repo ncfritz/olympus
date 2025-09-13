@@ -5,7 +5,6 @@ import {
 } from "@ant-design/icons";
 import { Space } from "antd";
 import { DateTime } from "luxon";
-import type { Invalid, Valid } from "luxon/src/_util";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import React from "react";
@@ -16,10 +15,8 @@ import WeekView from "../../../components/minerva/meetings/weekView";
 const IndexPage: React.FunctionComponent = () => {
   const params = useParams<{ date: string[] }>();
 
-  let targetDate: DateTime<Valid> | DateTime<Invalid> =
-    DateTime.now().startOf("day");
-  let startDate: DateTime<Valid> | DateTime<Invalid> =
-    DateTime.now().startOf("day");
+  let targetDate: DateTime = DateTime.now().startOf("day");
+  let startDate: DateTime = DateTime.now().startOf("day");
 
   const breadcrumbs = [
     {
