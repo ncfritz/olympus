@@ -1,5 +1,7 @@
 import { MetadataFetchJobStatus } from "@ncfritz/olympus-sdk/dionysus";
 
+export const IS_PROD = process.env.NODE_ENV === "production";
+
 export const BATCH_JOB_PREFIX = "batchJob";
 export const METADATA_JOB_PREFIX = "metadataJob";
 export const JOB_TYPE_PREFIX = "jobType";
