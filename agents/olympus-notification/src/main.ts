@@ -5,10 +5,13 @@ import fs from "fs";
 import { WinstonModule } from "nest-winston";
 import { PrometheusMetricsInterceptor } from "./middleware/PrometheusMetricsInterceptor";
 import { AppModule } from "./module/AppModule";
+import { IS_PROD } from "./util/constants";
 import { logger } from "./util/logger";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
+    snapshot: true,
+    abortOnError: false,
     logger: WinstonModule.createLogger({
       instance: logger,
     }),
@@ -35,6 +38,10 @@ bootstrap()
   })
   .catch((e) => {
     logger.error("🤯🤯🤯 Error during bootstrap!", e);
-    fs.writeFileSync("graph.json", PartialGraphHost.toString() ?? "");
+
+    if (!IS_PROD) {
+      fs.writeFileSync("graph.json", PartialGraphHost.toString() ?? "");
+    }
+
     process.exit(1);
   });

@@ -1,3 +1,5 @@
+export const IS_PROD = process.env.NODE_ENV === "production";
+
 export const NOTIFICATIONS_PREFIX = "notifications";
 export const TRIGGER_SUFFIX = "trigger";
 export const DESTINATION_APP_SUFFIX = "app";
