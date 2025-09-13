@@ -1,15 +1,14 @@
 import fs from "fs";
 import winston from "winston";
 import LokiTransport from "winston-loki";
-
-const isProd = process.env.NODE_ENV === "production";
+import { IS_PROD } from "./constants";
 
 export const appName =
   process.env.APP_NAME ||
-  `olympus-api${isProd ? "" : `-${process.env.NODE_ENV}`}`;
+  `olympus-api${IS_PROD ? "" : `-${process.env.NODE_ENV}`}`;
 
 const consoleLoggingEnabled =
-  !isProd || process.env.ENABLE_CONSOLE_LOGGING === "true";
+  !IS_PROD || process.env.ENABLE_CONSOLE_LOGGING === "true";
 const consoleLoggingLevel = process.env.CONSOLE_LOGGING_LEVEL || "info";
 const lokiLoggingEnabled = process.env.LOKI_URL;
 const lokiLoggingLevel = process.env.CONSOLE_LOGGING_LEVEL || "info";

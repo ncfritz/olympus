@@ -12,12 +12,12 @@ import {
   MinervaApiConfig,
   OlympusApiConfig,
 } from "./schema/schemas";
+import { IS_PROD } from "./utils/constants";
 import { logger } from "./utils/logger";
 
 async function bootstrap() {
   const enableApiExplorer =
-    process.env.NODE_ENV !== "production" ||
-    process.env.ENABLE_API_EXPLORER === "true";
+    !IS_PROD || process.env.ENABLE_API_EXPLORER === "true";
 
   const app = await NestFactory.create(AppModule, {
     snapshot: true,
@@ -57,6 +57,10 @@ bootstrap()
   })
   .catch((e) => {
     logger.error("🤯🤯🤯 Error during bootstrap!", e);
-    fs.writeFileSync("graph.json", PartialGraphHost.toString() ?? "");
+
+    if (!IS_PROD) {
+      fs.writeFileSync("graph.json", PartialGraphHost.toString() ?? "");
+    }
+
     process.exit(1);
   });

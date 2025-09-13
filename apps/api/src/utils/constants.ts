@@ -1,5 +1,7 @@
 import { JobStatus, MetadataJobType } from "@ncfritz/olympus-model";
 
+export const IS_PROD = process.env.NODE_ENV === "production";
+
 export const METADATA_CATEGORY_MAP = {
   [MetadataJobType.MOVIES]: "Movies",
   [MetadataJobType.TV_SERIES]: "TV Series",
