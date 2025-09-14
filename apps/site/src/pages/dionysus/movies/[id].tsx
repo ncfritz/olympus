@@ -334,7 +334,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
                     backgroundColor: "#202f3e",
                     borderRadius: 48,
                     padding: 6,
-                    zIndex: 100,
+                    zIndex: 99,
                     position: "relative",
                   }}
                 />
@@ -350,7 +350,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
                     left: -48,
                     gap: 0,
                     justifyContent: "center",
-                    zIndex: 99,
+                    zIndex: 98,
                   }}
                 >
                   <Space direction={"horizontal"} size={8}>
