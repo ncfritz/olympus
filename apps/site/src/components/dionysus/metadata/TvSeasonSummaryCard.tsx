@@ -1,4 +1,4 @@
-import { StarFilled } from "@ant-design/icons";
+import { FileImageOutlined, StarFilled } from "@ant-design/icons";
 import type { SparseSeason } from "@ncfritz/olympus-sdk/dionysus";
 import { Badge, Card, Image, Space, Tag, Typography } from "antd";
 import { DateTime } from "luxon";
@@ -18,6 +18,40 @@ const TvSeasonSummaryCard: React.FunctionComponent<
     ? DateTime.fromISO(season.airDate).toFormat("MM/dd/yyyy")
     : "Unknown";
 
+  const coverImage = season.posterPath ? (
+    <Image
+      src={`https://image.tmdb.org/t/p/w300/${season.posterPath}`}
+      preview={false}
+      height={150}
+      width={100}
+      style={{
+        borderRadius: 8,
+        margin: 8,
+      }}
+    />
+  ) : (
+    <Space
+      style={{
+        width: 100,
+        height: 150,
+        backgroundColor: "#eeeeee",
+        borderRadius: 8,
+        margin: 8,
+      }}
+      styles={{
+        item: {
+          display: "flex",
+          alignContent: "center",
+          justifyContent: "center",
+          height: "100%",
+          width: "100%",
+        },
+      }}
+    >
+      <FileImageOutlined style={{ fontSize: "64px", color: "#dddddd" }} />
+    </Space>
+  );
+
   const cardContent = (
     <Card
       variant={"outlined"}
@@ -32,16 +66,7 @@ const TvSeasonSummaryCard: React.FunctionComponent<
         <Link
           href={`/dionysus/tv/series/${seriesId}/season/${season.seasonNumber}`}
         >
-          <Image
-            src={`https://image.tmdb.org/t/p/w300/${season.posterPath}`}
-            preview={false}
-            height={150}
-            width={100}
-            style={{
-              borderRadius: 8,
-              margin: 8,
-            }}
-          />
+          {coverImage}
         </Link>
         <Space direction={"vertical"} style={{ padding: 16 }} size={0}>
           <Space
