@@ -1,4 +1,4 @@
-import { StarFilled } from "@ant-design/icons";
+import { FileImageOutlined, StarFilled } from "@ant-design/icons";
 import type { SparseEpisode } from "@ncfritz/olympus-sdk/dionysus";
 import { Badge, Card, Image, Space, Typography } from "antd";
 import { DateTime } from "luxon";
@@ -6,17 +6,51 @@ import Link from "next/link";
 import Description from "../../common/Description";
 import { getProgressColor } from "./util";
 
-export interface TvEpispdeSummaryCardProps {
+export interface TvEpisodeSummaryCardProps {
   episode: SparseEpisode;
   seriesId: number;
 }
 
 const TvEpisodeSummaryCard: React.FunctionComponent<
-  TvEpispdeSummaryCardProps
-> = ({ episode, seriesId }: TvEpispdeSummaryCardProps) => {
+  TvEpisodeSummaryCardProps
+> = ({ episode, seriesId }: TvEpisodeSummaryCardProps) => {
   const airDate = episode.airDate
     ? DateTime.fromISO(episode.airDate).toFormat("MM/dd/yyyy")
     : "Unknown";
+
+  const stillImage = episode.stillPath ? (
+    <Image
+      src={`https://image.tmdb.org/t/p/w300/${episode.stillPath}`}
+      preview={false}
+      height={150}
+      width={150 * (16 / 9)}
+      style={{
+        borderTopRightRadius: 8,
+        borderBottomRightRadius: 8,
+      }}
+    />
+  ) : (
+    <Space
+      style={{
+        width: 150 * (16 / 9),
+        height: 150,
+        backgroundColor: "#eeeeee",
+        borderTopRightRadius: 8,
+        borderBottomRightRadius: 8,
+      }}
+      styles={{
+        item: {
+          display: "flex",
+          alignContent: "center",
+          justifyContent: "center",
+          height: "100%",
+          width: "100%",
+        },
+      }}
+    >
+      <FileImageOutlined style={{ fontSize: "64px", color: "#dddddd" }} />
+    </Space>
+  );
 
   const cardContent = (
     <Card
@@ -96,16 +130,7 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
         <Link
           href={`/dionysus/tv/series/${seriesId}/season/${episode.seasonNumber}/episode/${episode.episodeNumber}`}
         >
-          <Image
-            src={`https://image.tmdb.org/t/p/w300/${episode.stillPath}`}
-            preview={false}
-            height={150}
-            width={150 * (16 / 9)}
-            style={{
-              borderTopRightRadius: "8px",
-              borderBottomRightRadius: "8px",
-            }}
-          />
+          {stillImage}
         </Link>
       </Space>
     </Card>
