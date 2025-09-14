@@ -1,12 +1,12 @@
 import {
   BookOutlined,
   CalendarOutlined,
-  CloudDownloadOutlined,
+  CloudDownloadOutlined, FileImageOutlined,
   HeartOutlined,
   HomeOutlined,
   InfoCircleFilled,
   QrcodeOutlined,
-  SearchOutlined,
+  SearchOutlined
 } from "@ant-design/icons";
 import type {
   Episode,
@@ -157,6 +157,34 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
     const airDate = episode.airDate
       ? DateTime.fromISO(episode.airDate)
       : undefined;
+
+    const stillPath = episode.stillPath ? (
+      <Image
+        src={`https://image.tmdb.org/t/p/w342/${episode.stillPath}}`}
+        width={275}
+        style={{ borderRadius: 8 }}
+      />
+    ) : (
+      <Space
+        style={{
+          width: 150 * (16 / 9),
+          height: 150,
+          backgroundColor: "#eeeeee",
+          borderRadius: 8,
+        }}
+        styles={{
+          item: {
+            display: "flex",
+            alignContent: "center",
+            justifyContent: "center",
+            height: "100%",
+            width: "100%",
+          },
+        }}
+      >
+        <FileImageOutlined style={{ fontSize: "64px", color: "#dddddd" }} />
+      </Space>
+    );
 
     const overview = episode.overview ? (
       <Space direction={"vertical"} size={0} style={{ padding: 16 }}>
@@ -381,11 +409,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
                 }}
               >
                 <Space direction={"vertical"} style={{ padding: 16 }}>
-                  <Image
-                    src={`https://image.tmdb.org/t/p/w342/${episode.stillPath}}`}
-                    width={275}
-                    style={{ borderRadius: 8 }}
-                  />
+                  {stillPath}
                   <Description
                     title={"Air Date"}
                     value={
