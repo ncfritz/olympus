@@ -11,7 +11,7 @@ import axios from "axios";
 import moment from "moment";
 import { io } from "socket.io-client";
 import { v4 as uuidv4 } from "uuid";
-import { BatchJobCompleteWebsocketFormatter } from "../formatter/external/dionysusNotificationFormatter";
+import { BatchJobCompleteWebsocketFormatter } from "../formatter/dionysus/batchJobCompleteFormatter";
 import { NotificationFormatter } from "../formatter/formatter";
 import { WebSocketStaticStringFormatter } from "../formatter/staticStringFormatter";
 import { type WebSocketDestinationEvent } from "../types/destinations";
@@ -124,6 +124,8 @@ export class WebSocketHandler extends BaseHandler<
           "This is a test message",
         );
       case "dionysus_batch_job_complete":
+        return new BatchJobCompleteWebsocketFormatter();
+      case "dionysus_metadata_workflow_completion":
         return new BatchJobCompleteWebsocketFormatter();
       default:
         return undefined;

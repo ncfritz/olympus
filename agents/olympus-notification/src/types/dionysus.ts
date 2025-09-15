@@ -1,4 +1,4 @@
-import { JobStatus, JobType } from "@ncfritz/olympus-sdk/dionysus";
+import { JobStatus, JobType, WorkflowStatus } from "@ncfritz/olympus-sdk/dionysus";
 import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
 
 export interface DionysusBatchJobContext extends NotificationContext {
@@ -14,4 +14,9 @@ export interface DionysusBatchJobContext extends NotificationContext {
     noop: number;
     skipped: number;
   };
+}
+
+export interface DionysusWorkflowContext extends NotificationContext {
+  workflowId: string;
+  status: WorkflowStatus;
 }
