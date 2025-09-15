@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment";
+import { PaginatedResults } from "../../common";
 import {
   BaseImage,
   ExternalId,
@@ -216,6 +217,15 @@ export class DescribePersonResponse {
     type: () => Person,
   })
   person: Person;
+}
+
+export class ListPeopleResponse extends PaginatedResults {
+  @ApiProperty({
+    type: () => BasePerson,
+    isArray: true,
+    required: true,
+  })
+  people: BasePerson[];
 }
 
 export class ListMovieCastRolesForPersonResponse {
