@@ -13,7 +13,13 @@ export interface UseFetchOptions<O, T> {
 
 export const useFetch = <O, T>(
   options: UseFetchOptions<O, T>,
-): [T, boolean, Error | undefined, (quiet: boolean) => Promise<void>] => {
+): [
+  T,
+  boolean,
+  Error | undefined,
+  (quiet: boolean) => Promise<void>,
+  (value: T) => void,
+] => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<T | undefined>(options.default);
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -46,5 +52,5 @@ export const useFetch = <O, T>(
     })();
   }, options.watch || []);
 
-  return [data as T, loading, error, fetcher];
+  return [data as T, loading, error, fetcher, setData];
 };
