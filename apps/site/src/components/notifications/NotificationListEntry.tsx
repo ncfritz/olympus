@@ -14,7 +14,7 @@ import { type ReactNode, useState } from "react";
 import notificationsApi from "../../api/notificationsApi";
 import { publish } from "../../utils/events";
 import { PUBLISH_EVENT } from "../common/NotificationSink";
-import { getFormatterForMeaageType } from "./formatters/NotificationRegistry";
+import { getFormatterForMessageType } from "./formatters/NotificationRegistry";
 
 export interface NotificationListEntryProps {
   notification: Notification;
@@ -105,7 +105,7 @@ const NotificationListEntry: React.FunctionComponent<
   const notificationTime = DateTime.fromISO(notification.createdTime);
   const notificationAge =
     -notificationTime.diffNow("milliseconds").milliseconds;
-  const formatter = getFormatterForMeaageType(notification.notificationType.id);
+  const formatter = getFormatterForMessageType(notification.notificationType.id);
 
   let title: string | ReactNode = (
     // @ts-expect-error okay

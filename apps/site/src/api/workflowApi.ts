@@ -1,9 +1,9 @@
 import {
   client,
-  createMetadataWorkflow,
+  createMetadataWorkflow, describeMetadataWorkflow,
   getMetadataWorkflowStatistics,
   listMetadataWorkflows,
-  listMetadataWorkflowSteps,
+  listMetadataWorkflowSteps
 } from "@ncfritz/olympus-sdk/dionysus";
 import type { FilterValue } from "antd/es/table/interface";
 import type { SortOptions } from "./common";
@@ -19,6 +19,14 @@ class WorkflowApi {
   async createMetadataWorkflow() {
     return await createMetadataWorkflow({
       body: {},
+    });
+  }
+
+  async describeMetadataWorkflow(id: string) {
+    return await describeMetadataWorkflow({
+      path: {
+        workflowId: id,
+      },
     });
   }
 

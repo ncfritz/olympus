@@ -8,7 +8,7 @@ import type {
   NotificationFormatter,
   NotificationPayload,
 } from "../notifications/formatters/interfaces";
-import { getFormatterForMeaageType } from "../notifications/formatters/NotificationRegistry";
+import { getFormatterForMessageType } from "../notifications/formatters/NotificationRegistry";
 
 export const PUBLISH_EVENT = "notifications:publish";
 export const REFRESH_EVENT = "notifications:refresh";
@@ -53,7 +53,7 @@ const NotificationSink: React.FunctionComponent = () => {
         e.detail.payload?.value?.message ||
         "Error: The 'plain' type event did not contain a 'value.message' element";
     } else if (e.detail.messageType) {
-      formatter = getFormatterForMeaageType(e.detail.messageType);
+      formatter = getFormatterForMessageType(e.detail.messageType);
     }
 
     if (formatter) {

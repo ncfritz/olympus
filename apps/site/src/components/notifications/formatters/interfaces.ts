@@ -1,3 +1,4 @@
+import type { WorkflowStatus } from "@ncfritz/olympus-sdk/dionysus";
 import type { ReactNode } from "react";
 import { JobStatus, type JobType } from "../../../types/dionysus";
 
@@ -19,6 +20,11 @@ export type DionysiusBatchJobPayload = {
     total: number;
   };
   status: JobStatus;
+};
+
+export type DionysusWorkflowPayload = {
+  workflowId: string;
+  status: WorkflowStatus;
 };
 
 export type NotificationEvent<T> = {
