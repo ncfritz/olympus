@@ -10,7 +10,6 @@ import {
   Col,
   Drawer,
   Layout,
-  notification,
   Row,
   Space,
   Spin,
@@ -22,6 +21,7 @@ import type { ColumnsType } from "antd/es/table";
 import type { FilterValue } from "antd/es/table/interface";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import workflowApi from "../../../api/workflowApi";
@@ -35,8 +35,13 @@ import {
   getMetadataWorkflowStatusIndicator,
 } from "../../../components/dionysus/jobs/utils";
 import WorkflowDetailsPanel from "../../../components/dionysus/jobs/WorkflowDetailsPanel";
+import { useFetch } from "../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../icons";
-import { openNotificationWithIcon } from "../../../utils/notifications";
+import {
+  type GetMetadataWorkflowStatisticsResponse,
+  type ListWorkflowsResponse,
+  type Workflow,
+} from "@ncfritz/olympus-sdk/dionysus";
 
 export type MetadataWorkflow = {
   id: string;
@@ -53,100 +58,70 @@ type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
 const MetadataWorkflowsPage: React.FunctionComponent = () => {
-  const [api] = notification.useNotification();
+  const router = useRouter();
+  const { id } = router.query;
 
-  const [metadataWorkflowStats, setMetadataWorkflowStats] = useState<any>();
-  const [metadataWorkflowStatsLoading, setMetadataWorkflowStatsLoading] =
-    useState<any>(true);
-  const [, setJobStatsError] = useState<any>();
-  const [metadataWorkflows, setMetadataWorkflows] = useState<any>();
   const [metadataWorkflowRequested, setMetadataWorkflowRequested] =
     useState("");
-  const [metadataWorkflowsLoading, setMetadataWorkflowsLoading] =
-    useState(true);
-  const [, setMetadataWorkflowsError] = useState<any>();
-  const [metadataWorkflowsCount, setMetadataWorkflowsCount] = useState(0);
-  const [metadataWorkflowsPage, setMetadataWorkflowsPage] = useState(0);
-  const [metadataWorkflowsPageSize, setMetadataWorkflowsPageSize] =
-    useState(50);
-  const [metadataWorkflowsSort, setMetadataWorkflowsSort] =
-    useState<SortOptions>({
-      field: "createdTime",
-      order: "desc",
-    });
-  const [metadataWorkflowFilters, setMetadataWorkflowFilters] = useState<
+  const [workflowsPage, setWorkflowsPage] = useState(0);
+  const [workflowsPageSize, setWorkflowsPageSize] = useState(50);
+  const [workflowsSort, setWorkflowsSort] = useState<SortOptions>({
+    field: "createdTime",
+    order: "desc",
+  });
+  const [workflowFilters, setWorkflowFilters] = useState<
     Record<string, FilterValue | null>
   >({});
-  const [selectedWorkflow, setSelectedWorkflow] = useState<
-    MetadataWorkflow | undefined
-  >(undefined);
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<
+    string | undefined
+  >(id as string);
 
-  const fetchWorkflowStatistics = async (quiet = false) => {
-    if (!quiet) {
-      setMetadataWorkflowStatsLoading(true);
-    }
-    setJobStatsError(undefined);
+  const [
+    workflowStatistics,
+    workflowStatisticsLoading,
+    workflowStatisticsError,
+    fetchWorkflowStatistics,
+  ] = useFetch<undefined, GetMetadataWorkflowStatisticsResponse>({
+    dataType: "workflow statistics",
+    watch: [],
+    params: undefined,
+    fetchFunction: async () =>
+      (await workflowApi.getMetadataWorkflowStatistics()).data,
+  });
 
-    try {
-      const getWorkflowStatsResponse =
-        await workflowApi.getMetadataWorkflowStatistics();
-      setMetadataWorkflowStats(getWorkflowStatsResponse.data);
-    } catch (e) {
-      setJobStatsError(e);
-    } finally {
-      setMetadataWorkflowStatsLoading(false);
-    }
-  };
-
-  const fetchMetadataWorkflows = async (quiet = false) => {
-    if (!quiet) {
-      setMetadataWorkflowsLoading(true);
-    }
-    setMetadataWorkflowsError(undefined);
-
-    try {
-      const listMetadataWorkflowsResponse =
-        await workflowApi.listMetadataWorkflows(
-          metadataWorkflowsPage,
-          metadataWorkflowsPageSize,
-          metadataWorkflowsSort,
-          metadataWorkflowFilters,
-        );
-      setMetadataWorkflows(listMetadataWorkflowsResponse.data.workflows);
-      setMetadataWorkflowsCount(listMetadataWorkflowsResponse.data.count);
-    } catch (e) {
-      setMetadataWorkflowsError(e);
-      openNotificationWithIcon(
-        "error",
-        "Unable to load certifications list",
-        "Poop",
-        api,
-      );
-    } finally {
-      setMetadataWorkflowsLoading(false);
-    }
-  };
+  const [workflows, workflowsLoading, workflowsError, fetchWorkflows] =
+    useFetch<undefined, ListWorkflowsResponse>({
+      dataType: "workflows",
+      watch: [],
+      params: undefined,
+      fetchFunction: async () =>
+        (
+          await workflowApi.listMetadataWorkflows(
+            workflowsPage,
+            workflowsPageSize,
+            workflowsSort,
+            workflowFilters,
+          )
+        ).data,
+    });
 
   const createWorkflow = async () => {
     await workflowApi.createMetadataWorkflow();
-    await fetchMetadataWorkflows(true);
+    await fetchWorkflows(true);
   };
 
   useEffect(() => {
     (async () => {
-      await fetchMetadataWorkflows();
-      await fetchWorkflowStatistics();
-    })();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      await fetchMetadataWorkflows();
+      await fetchWorkflows(true);
+      await fetchWorkflowStatistics(true);
     })();
   }, [metadataWorkflowRequested]);
 
-  const closeDrawer = () => {
-    setSelectedWorkflow(undefined);
+  const closeDrawer = async () => {
+    setSelectedWorkflowId(undefined);
+    await router.push("/dionysus/jobs/workflow", "/dionysus/jobs/workflow", {
+      shallow: true,
+    });
   };
 
   let statusChart = (
@@ -165,13 +140,13 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
     </Space>
   );
 
-  if (!metadataWorkflowStatsLoading) {
-    statusChart = <WorkflowStatusChart stats={metadataWorkflowStats} />;
-    queueTimingChart = <WorkflowQueueTimeChart stats={metadataWorkflowStats} />;
-    runTimingChart = <WorkflowRuntimeChart stats={metadataWorkflowStats} />;
+  if (!workflowStatisticsLoading && workflowStatistics) {
+    statusChart = <WorkflowStatusChart stats={workflowStatistics} />;
+    queueTimingChart = <WorkflowQueueTimeChart stats={workflowStatistics} />;
+    runTimingChart = <WorkflowRuntimeChart stats={workflowStatistics} />;
   }
 
-  const columns: ColumnsType<MetadataWorkflow> = [
+  const columns: ColumnsType<Workflow> = [
     {
       key: "id",
       title: "ID",
@@ -179,8 +154,16 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
       render: (_value, record) => {
         return (
           <Typography.Link
-            onClick={() => {
-              setSelectedWorkflow(record);
+            style={{ marginLeft: 16 }}
+            onClick={async () => {
+              setSelectedWorkflowId(record.id);
+              await router.push(
+                `/dionysus/jobs/workflow?id=${record.id}`,
+                `/dionysus/jobs/workflow?id=${record.id}`,
+                {
+                  shallow: true,
+                },
+              );
             }}
           >
             {record.id}
@@ -303,10 +286,10 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
       <Space style={{ marginRight: 16 }}>
         <Button
           type={"text"}
-          disabled={metadataWorkflowsLoading}
+          disabled={workflowsLoading}
           icon={<ReloadOutlined />}
           onClick={async () => {
-            await fetchMetadataWorkflows();
+            await fetchWorkflows(true);
           }}
         />
       </Space>
@@ -368,7 +351,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
               <RefreshTimer
                 ttlMs={60000}
                 fetchFunction={async () => {
-                  await fetchMetadataWorkflows(true);
+                  await fetchWorkflows(true);
                 }}
               />
             </Col>
@@ -388,21 +371,21 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
               return `${record.id}`;
             }}
             columns={columns}
-            dataSource={metadataWorkflows}
+            dataSource={workflows?.workflows}
             size={"middle"}
-            loading={metadataWorkflowsLoading}
+            loading={workflowsLoading}
             pagination={{
               style: {
                 marginLeft: 16,
               },
               position: ["bottomLeft"],
-              pageSize: metadataWorkflowsPageSize,
+              pageSize: workflowsPageSize,
               size: "small",
-              total: metadataWorkflowsCount,
+              total: workflows?.count,
               showSizeChanger: true,
               pageSizeOptions: [25, 50, 100, 250, 500],
               onShowSizeChange: (current, size) => {
-                setMetadataWorkflowsPageSize(size);
+                setWorkflowsPageSize(size);
               },
               showQuickJumper: true,
               showTotal: (total, range) => {
@@ -414,17 +397,17 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
 
               switch (extra.action) {
                 case "paginate":
-                  setMetadataWorkflowsPage(pagination.current! - 1);
+                  setWorkflowsPage(pagination.current! - 1);
                   break;
                 case "sort":
-                  setMetadataWorkflowsSort({
+                  setWorkflowsSort({
                     field: s.columnKey?.toString() || "",
                     order: s.order === "ascend" ? "asc" : "desc",
                   });
                   break;
                 case "filter":
-                  setMetadataWorkflowsPage(0);
-                  setMetadataWorkflowFilters(filters);
+                  setWorkflowsPage(0);
+                  setWorkflowFilters(filters);
                   break;
               }
 
@@ -435,12 +418,12 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
             title="Workflow Details"
             width={750}
             placement="right"
-            onClose={() => {
-              closeDrawer();
+            onClose={async () => {
+              await closeDrawer();
             }}
-            open={selectedWorkflow !== undefined}
+            open={selectedWorkflowId !== undefined}
           >
-            <WorkflowDetailsPanel workflow={selectedWorkflow} />
+            <WorkflowDetailsPanel workflowId={selectedWorkflowId} />
           </Drawer>
         </Content>
       </Layout>
