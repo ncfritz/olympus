@@ -1,9 +1,10 @@
 import { HomeOutlined } from "@ant-design/icons";
 import type {
+  BasePerson,
   PersonDepartmentStatistic,
   PersonLifeStatistic,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Affix, Breadcrumb, Col, Layout, Row, Space } from "antd";
+import { Affix, Breadcrumb, Col, Layout, Row, Space, Typography } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React from "react";
@@ -11,6 +12,7 @@ import metadataApi from "../../api/metadataApi";
 import LoadingWrapper from "../../components/common/LoadingWrapper";
 import PersonDepartmentStatisticsChart from "../../components/dionysus/metadata/people/PersonDepartmentStatisticsChart";
 import PersonLifeStatisticsChart from "../../components/dionysus/metadata/people/PersonLifeStatisticsChart";
+import PersonList from "../../components/dionysus/metadata/PersonList";
 import { useFetch } from "../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../icons";
 
@@ -45,6 +47,54 @@ const PeopleIndexPage: React.FunctionComponent = () => {
       fetchFunction: async () =>
         (await metadataApi.getPeopleDepartmentStatistics()).data.statistics,
     });
+
+  const [topActors, topActorsLoading, topActorsError] = useFetch<
+    undefined,
+    BasePerson[]
+  >({
+    dataType: "top actors",
+    watch: [],
+    params: undefined,
+    fetchFunction: async () =>
+      (
+        await metadataApi.listPeople(
+          1,
+          32,
+          {
+            field: "popularity",
+            order: "desc",
+          },
+          {
+            knownForDepartment: ["Acting", "Actors"],
+          },
+        )
+      ).data.people,
+  });
+
+  const [topDirectors, topDirectorsLoading, topDirectorsError] = useFetch<
+    undefined,
+    BasePerson[]
+  >({
+    dataType: "top actors",
+    watch: [],
+    params: undefined,
+    fetchFunction: async () =>
+      (
+        await metadataApi.listPeople(
+          1,
+          16,
+          {
+            field: "popularity",
+            order: "desc",
+          },
+          {
+            knownForDepartment: ["Directing"],
+          },
+        )
+      ).data.people,
+  });
+
+  console.log(topActorsError);
 
   return (
     <>
@@ -127,6 +177,35 @@ const PeopleIndexPage: React.FunctionComponent = () => {
               </LoadingWrapper>
             </Col>
           </Row>
+          <Space
+            direction={"vertical"}
+            size={16}
+            style={{ width: "100%", padding: 16 }}
+          >
+            <Typography.Title level={4}>
+              Most popular actors/actresses...
+            </Typography.Title>
+            <LoadingWrapper loading={topActorsLoading} error={topActorsError}>
+              <PersonList
+                people={topActors}
+                loading={topActorsLoading}
+                columns={16}
+              />
+            </LoadingWrapper>
+            <Typography.Title level={4}>
+              Most popular directors...
+            </Typography.Title>
+            <LoadingWrapper
+              loading={topDirectorsLoading}
+              error={topDirectorsError}
+            >
+              <PersonList
+                people={topDirectors}
+                loading={topDirectorsLoading}
+                columns={16}
+              />
+            </LoadingWrapper>
+          </Space>
         </Content>
       </Layout>
     </>

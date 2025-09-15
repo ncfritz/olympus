@@ -13,7 +13,8 @@ import {
   describeTvSeries,
   getMetadataFetchJobStatistics,
   getPeopleBirthdayStatistics,
-  getPeopleDeathdayStatistics, getPeopleDepartmentStatistics,
+  getPeopleDeathdayStatistics,
+  getPeopleDepartmentStatistics,
   listCertifications,
   listCountries,
   listGenres,
@@ -28,6 +29,7 @@ import {
   listMovieRecommendations,
   listNetworks,
   listNetworkTvSeries,
+  listPeople,
   listProductionCompanies,
   listProductionCompanyMovies,
   listProductionCompanyTvSeries,
@@ -42,7 +44,7 @@ import {
   type MetadataFetchJobStatus,
   type MetadataJobType,
   type MetadatFetchJobUpdate,
-  updateMetadataFetchJob
+  updateMetadataFetchJob,
 } from "@ncfritz/olympus-sdk/dionysus";
 import type { FilterValue } from "antd/es/table/interface";
 import type { SortOptions } from "./common";
@@ -378,6 +380,25 @@ class MetadataApi {
     filters?: Record<string, FilterValue | null>,
   ) {
     return await listMetadataFetchJobs({
+      query: {
+        pageSize: pageSize,
+        startPage: page,
+        sort: sort.order,
+        sortBy: sort.field,
+        filters: filters
+          ? `${Buffer.from(JSON.stringify(filters)).toString("base64")}`
+          : undefined,
+      },
+    });
+  }
+
+  async listPeople(
+    page: number,
+    pageSize: number,
+    sort: SortOptions,
+    filters?: Record<string, FilterValue | null>,
+  ) {
+    return await listPeople({
       query: {
         pageSize: pageSize,
         startPage: page,
