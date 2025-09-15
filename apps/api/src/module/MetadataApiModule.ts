@@ -32,11 +32,10 @@ import { CreatePersonController } from "../controller/dionysus/metadata/person/C
 import { DescribePersonController } from "../controller/dionysus/metadata/person/DescribePerson";
 import { GetPeopleBirthdayStatisticsController } from "../controller/dionysus/metadata/person/GetPersonBirthdayStatistics";
 import { GetPeopleDeathdayStatisticsController } from "../controller/dionysus/metadata/person/GetPersonDeathdayStatistics";
-import {
-  GetPeopleDepartmentStatisticsController
-} from "../controller/dionysus/metadata/person/GetPersonDepartmentStatistics";
+import { GetPeopleDepartmentStatisticsController } from "../controller/dionysus/metadata/person/GetPersonDepartmentStatistics";
 import { ListMovieCastRolesForPersonController } from "../controller/dionysus/metadata/person/ListMovieCastRolesForPerson";
 import { ListMovieCrewJobsForPersonController } from "../controller/dionysus/metadata/person/ListMovieCrewJobsForPerson";
+import { ListPeopleController } from "../controller/dionysus/metadata/person/ListPeople";
 import { CreateProductionCompanyController } from "../controller/dionysus/metadata/productionCompany/CreateProductionCompany";
 import { DescribeProductionCompanyController } from "../controller/dionysus/metadata/productionCompany/DescribeProductionCompany";
 import { ListProductionCompaniesController } from "../controller/dionysus/metadata/productionCompany/ListProductionCompanies";
@@ -99,6 +98,7 @@ import { RabbitModule } from "./RabbitModule";
     ListLanguagesController,
     ListNetworksController,
     ListNetworkTvSeriesController,
+    ListPeopleController,
     ListProductionCompaniesController,
     ListProductionCompanyMoviesController,
     ListProductionCompanyTvSeriesController,
