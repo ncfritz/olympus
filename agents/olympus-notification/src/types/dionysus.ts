@@ -31,4 +31,3 @@ export interface DionysusWorkflowMessageContext {
   workflow: Workflow;
   steps: WorkflowStep[];
 }
-
