@@ -1,6 +1,7 @@
 import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
 import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
 import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { type ConsumeMessage } from "amqplib";
 import * as nodemailer from "nodemailer";
 import { Transporter } from "nodemailer";
@@ -16,6 +17,10 @@ import { SMTPHandler } from "./smtpHandler";
 export class SynologyEmailHandler<
   T extends NotificationContext,
 > extends SMTPHandler<T> {
+  constructor(protected readonly configService: ConfigService) {
+    super(configService);
+  }
+
   getChannelName(): string {
     return "SynoEmail";
   }
