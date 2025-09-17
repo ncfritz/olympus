@@ -5,14 +5,14 @@ import { BaseDestinationEvent } from "../types/destinations";
 import { logger } from "../util/logger";
 
 // @ts-expect-error it's okay
-export abstract class BaseHandler<T extends BaseDestinationEvent<T>, P> {
+export abstract class BaseHandler<T extends BaseDestinationEvent, P> {
   abstract getChannelName(): string;
   abstract handle(msg: T, amqpMsg: ConsumeMessage): Promise<void>;
   abstract transact(msg: T, payload: P): Promise<void>;
 
-  // prettier-ignore
-  // @ts-expect-error its okay
-  abstract getFormatterForType(type: string): NotificationFormatter<T, P> | undefined;
+  abstract getFormatterForType(
+    type: string,
+  ): NotificationFormatter<T, P> | undefined;
 
   protected async processNotification(notification: T): Promise<void> {
     logger.info(
