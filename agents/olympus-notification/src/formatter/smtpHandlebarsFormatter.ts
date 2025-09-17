@@ -8,17 +8,22 @@ import { SMTPDestinationEvent } from "../types/destinations";
 import { SMTPPayload } from "../types/payloads";
 import { logger } from "../util/logger";
 import { NotificationFormatter } from "./formatter";
+import helpers from "handlebars-helpers";
 
 export interface SMTPHandleBarsFormatterOptions {
   subjectTemplate?: string;
   htmlTemplate?: string;
+  cssTemplate?: string;
   plaintextTemplate?: string;
 }
 
-export class SMTPHandleBarsFormatter<T extends NotificationContext>
-  implements NotificationFormatter<SMTPDestinationEvent<T>, SMTPPayload>
+export abstract class SMTPHandleBarsFormatter<
+  T extends NotificationContext,
+  C extends object,
+> implements NotificationFormatter<SMTPDestinationEvent<T>, SMTPPayload>
 {
   private readonly htmlTemplate: string;
+  private readonly cssTemplate: string;
   private readonly plaintextTemplate: string;
   private readonly subjectTemplate: string;
 
@@ -31,6 +36,8 @@ export class SMTPHandleBarsFormatter<T extends NotificationContext>
   ) {
     this.htmlTemplate =
       options?.htmlTemplate || `email/${notificationType}/html.handlebars`;
+    this.cssTemplate =
+      options?.htmlTemplate || `email/${notificationType}/css.handlebars`;
     this.plaintextTemplate =
       options?.plaintextTemplate ||
       `email/${notificationType}/plaintext.handlebars`;
@@ -38,6 +45,8 @@ export class SMTPHandleBarsFormatter<T extends NotificationContext>
       options?.subjectTemplate ||
       `email/${notificationType}/subject.handlebars`;
   }
+
+  abstract buildContext(notification: T): Promise<C>;
 
   async formatNotification(
     notification: SMTPDestinationEvent<T>,
@@ -69,10 +78,19 @@ export class SMTPHandleBarsFormatter<T extends NotificationContext>
       }
     }
 
+    const context = await this.buildContext(notification.context);
+
     return {
-      subject: subjectRenderer[0](notification.context),
-      htmlPart: htmlRenderer[0](notification.context),
-      plaintextPart: plaintextRenderer[0](notification.context),
+      subject: subjectRenderer[0](context),
+      htmlPart: htmlRenderer[0](context, {
+        partials: {
+          templateCss: this.loadInternal(
+            `./templates/${this.cssTemplate}`,
+            true,
+          )[0],
+        },
+      }),
+      plaintextPart: plaintextRenderer[0](context),
       attachments: attachments,
     };
   }
@@ -87,9 +105,12 @@ export class SMTPHandleBarsFormatter<T extends NotificationContext>
     return this.loadInternal(templatePath);
   }
 
-  private loadInternal(p: string): [HandlebarsTemplateDelegate, Attachment[]] {
-    if (!fs.existsSync(p)) {
-      throw "fff";
+  private loadInternal(
+    p: string,
+    failSilently: boolean = false,
+  ): [HandlebarsTemplateDelegate, Attachment[]] {
+    if (!fs.existsSync(p) && !failSilently) {
+      throw `No template exists at ${p}`;
     }
 
     try {
@@ -125,6 +146,9 @@ export class SMTPHandleBarsFormatter<T extends NotificationContext>
 
       //return;
     }
+
+    logger.debug("Registering handlebars-helpers");
+    Handlebars.registerHelper(helpers());
 
     logger.debug("Loading partials...");
 
