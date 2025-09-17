@@ -2,8 +2,9 @@ import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
 import { ConfigService } from "@nestjs/config";
 import { Transporter } from "nodemailer";
 import Mail from "nodemailer/lib/mailer";
+import { MetadataWorkflowCompletionSmtpFormatter } from "../formatter/dionysus/metadataWorkflowCompleteFormatter";
 import { NotificationFormatter } from "../formatter/formatter";
-import { SMTPHandleBarsFormatter } from "../formatter/smtpHandlebarsFormatter";
+import { SystemTestSmtpFormatter } from "../formatter/olympus/systemTestFormatter";
 import { SMTPDestinationEvent } from "../types/destinations";
 import { SMTPPayload } from "../types/payloads";
 import { logger } from "../util/logger";
@@ -11,7 +12,7 @@ import { BaseHandler } from "./baseHandler";
 
 export abstract class SMTPHandler<
   T extends NotificationContext,
-> extends BaseHandler<SMTPDestinationEvent<any>, SMTPPayload> {
+> extends BaseHandler<SMTPDestinationEvent<T>, SMTPPayload> {
   constructor(protected readonly configService: ConfigService) {
     super();
   }
@@ -48,7 +49,10 @@ export abstract class SMTPHandler<
   ): NotificationFormatter<SMTPDestinationEvent<T>, SMTPPayload> | undefined {
     switch (type) {
       case "system_test":
-        return new SMTPHandleBarsFormatter("system_test");
+        return new SystemTestSmtpFormatter();
+      case "dionysus_metadata_workflow_completion":
+        // @ts-expect-error okay
+        return new MetadataWorkflowCompletionSmtpFormatter();
       default:
         return undefined;
     }
