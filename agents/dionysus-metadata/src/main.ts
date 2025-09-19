@@ -7,6 +7,7 @@ import { PrometheusMetricsInterceptor } from "./middleware/PrometheusMetricsInte
 import { AppModule } from "./module/AppModule";
 import { IS_PROD } from "./util/constants";
 import { logger } from "./util/logger";
+import SegfaultHandler from "segfault-handler";
 import "dotenv/config";
 
 async function bootstrap() {
@@ -29,6 +30,11 @@ async function bootstrap() {
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   });
   app.useGlobalInterceptors(new PrometheusMetricsInterceptor());
+
+  SegfaultHandler.registerHandler("segfault.log", (signal, address, stack) => {
+    logger.error(`SIGSEV: ${address}`);
+    logger.error(stack);
+  });
 
   await app.listen(process.env.LISTEN_PORT || 3100);
 }
