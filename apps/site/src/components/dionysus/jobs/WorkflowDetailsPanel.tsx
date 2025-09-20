@@ -128,11 +128,15 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
           (step.job.totalRecords! - step.job.processedRecords!) * timePerRecord,
         );
 
+        console.log(remainingEst);
+
         timing = (
           <Space size={8}>
             <ReloadOutlined spin={true} />
             <Typography.Text style={{ fontSize: "11px" }}>
-              {prettyMilliseconds(remainingEst, { unitCount: 2 })}
+              {remainingEst === Infinity
+                ? "∞ Unknown"
+                : prettyMilliseconds(remainingEst, { unitCount: 2 })}
             </Typography.Text>
           </Space>
         );
