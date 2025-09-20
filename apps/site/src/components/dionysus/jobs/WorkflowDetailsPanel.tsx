@@ -52,10 +52,12 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
     },
   });
 
-  const [workflowSteps, workflowStepsLoading, workflowStepsError, fetchWorkflowSteps] = useFetch<
-    Workflow | undefined,
-    WorkflowStep[] | undefined
-  >({
+  const [
+    workflowSteps,
+    workflowStepsLoading,
+    workflowStepsError,
+    fetchWorkflowSteps,
+  ] = useFetch<Workflow | undefined, WorkflowStep[] | undefined>({
     dataType: "metadata workflow steps",
     default: undefined,
     watch: [workflow],
