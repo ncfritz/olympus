@@ -20,7 +20,7 @@ import {
   PartialTvSeriesRecommendation,
   PartialTvSeriesRuntime,
   PartialTypedImage,
-  PartialVideo
+  PartialVideo,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
 import { type ConsumeMessage } from "amqplib";
@@ -342,7 +342,7 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       lastAirDate: seriesResponse.last_air_date
         ? moment(seriesResponse.last_air_date).toISOString()
         : undefined,
-      lastEpisodeToAirId: seriesResponse.last_episode_to_air.id,
+      lastEpisodeToAirId: seriesResponse.last_episode_to_air?.id,
       name: seriesResponse.name,
       nextEpisodeToAirId: seriesResponse.next_episode_to_air?.id,
       numberOfEpisodes: seriesResponse.number_of_episodes,
