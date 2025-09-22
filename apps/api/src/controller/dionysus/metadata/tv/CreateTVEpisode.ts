@@ -112,7 +112,7 @@ export class CreateTVEpisodeController {
             externalIds: {
               on_conflict: {
                 constraint: tv_episode_external_ids_pkey
-                update_columns: [externalId]
+                update_columns: [externalId, type]
               }
               data: $externalIds
             }

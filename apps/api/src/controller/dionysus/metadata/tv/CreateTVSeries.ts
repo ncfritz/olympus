@@ -228,7 +228,13 @@ export class CreateTVSeriesController {
               }
               data: $productionCountries
             }
-            recommendations: { data: $recommendations }
+            recommendations: {
+              on_conflict: {
+                constraint: tv_series_recommendations_pkey
+                update_columns: [id, recommendationId]
+              }
+              data: $recommendations
+            }
             spokenLanguages: {
               on_conflict: {
                 constraint: tv_series_spoken_languages_pkey
