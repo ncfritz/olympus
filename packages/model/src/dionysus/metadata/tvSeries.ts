@@ -103,7 +103,7 @@ export class BaseTVSeries {
 }
 
 export class SparseTvSeries extends BaseTVSeries {
-  @ApiProperty({ type: Language })
+  @ApiProperty({ type: () => Language })
   originalLanguage: Language;
 
   @ApiProperty({
@@ -192,7 +192,7 @@ export class TVSeries extends SparseTvSeries {
   })
   productionCountries: CountryAssociation[];
 
-  @ApiProperty({ type: SparseSeason, isArray: true })
+  @ApiProperty({ type: () => SparseSeason, isArray: true })
   seasons: SparseSeason[];
 
   @ApiProperty({ type: () => Video, isArray: true })
@@ -356,11 +356,8 @@ export class PartialTVSeriesCastMemberRole extends OmitType(
   ["createdTime", "lastUpdatedTime"],
 ) {}
 
-export class TVSeriesCastMember {
-  @ApiProperty({ type: BasePerson })
-  person: BasePerson;
-
-  @ApiProperty({ type: TVSeriesCastMemberRole, isArray: true })
+export class SparseTVSeriesCastMember {
+  @ApiProperty({ type: () => TVSeriesCastMemberRole, isArray: true })
   roles: TVSeriesCastMemberRole[];
 
   @ApiProperty({ type: Number })
@@ -381,6 +378,11 @@ export class TVSeriesCastMember {
   lastUpdatedTime: Moment;
 }
 
+export class TVSeriesCastMember extends SparseTVSeriesCastMember {
+  @ApiProperty({ type: () => BasePerson })
+  person: BasePerson;
+}
+
 export class PartialTVSeriesCastMember extends OmitType(TVSeriesCastMember, [
   "createdTime",
   "lastUpdatedTime",
@@ -390,7 +392,7 @@ export class PartialTVSeriesCastMember extends OmitType(TVSeriesCastMember, [
   @ApiProperty({ type: Number })
   personId: number;
 
-  @ApiProperty({ type: PartialTVSeriesCastMemberRole, isArray: true })
+  @ApiProperty({ type: () => PartialTVSeriesCastMemberRole, isArray: true })
   roles?: PartialTVSeriesCastMemberRole[];
 }
 
@@ -418,14 +420,11 @@ export class PartialTVSeriesCrewMemberJob extends OmitType(
   ["createdTime", "lastUpdatedTime"],
 ) {}
 
-export class TVSeriesCrewMember {
-  @ApiProperty({ type: BasePerson })
-  person: BasePerson;
-
+export class SparseTVSeriesCrewMember {
   @ApiProperty({ type: String })
   department: string;
 
-  @ApiProperty({ type: TVSeriesCrewMemberJob, isArray: true })
+  @ApiProperty({ type: () => TVSeriesCrewMemberJob, isArray: true })
   jobs: TVSeriesCrewMemberJob[];
 
   @ApiProperty({ type: String })
@@ -443,6 +442,11 @@ export class TVSeriesCrewMember {
   lastUpdatedTime: Moment;
 }
 
+export class TVSeriesCrewMember extends SparseTVSeriesCrewMember {
+  @ApiProperty({ type: () => BasePerson })
+  person: BasePerson;
+}
+
 export class PartialTVSeriesCrewMember extends OmitType(TVSeriesCrewMember, [
   "createdTime",
   "lastUpdatedTime",
@@ -452,7 +456,7 @@ export class PartialTVSeriesCrewMember extends OmitType(TVSeriesCrewMember, [
   @ApiProperty({ type: Number })
   personId: number;
 
-  @ApiProperty({ type: PartialTVSeriesCrewMemberJob, isArray: true })
+  @ApiProperty({ type: () => PartialTVSeriesCrewMemberJob, isArray: true })
   jobs?: PartialTVSeriesCrewMemberJob[];
 }
 
@@ -483,7 +487,7 @@ export class PartialTVSeriesCertification extends OmitType(
 }
 
 export class TvSeriesCreatedBy {
-  @ApiProperty({ type: BasePerson })
+  @ApiProperty({ type: () => BasePerson })
   person: BasePerson;
 
   @ApiProperty({ type: String, required: true })

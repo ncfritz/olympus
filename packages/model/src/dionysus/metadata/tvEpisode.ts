@@ -65,7 +65,7 @@ export class Episode extends SparseEpisode {
   })
   series: BaseTVSeries;
 
-  @ApiProperty({ type: SparseSeason })
+  @ApiProperty({ type: () => SparseSeason })
   season: SparseSeason;
 
   @ApiProperty({
@@ -138,7 +138,7 @@ export class TVEpisodeCrewMember {
   @ApiProperty({ type: String })
   department: string;
 
-  @ApiProperty({ type: BasePerson })
+  @ApiProperty({ type: () => BasePerson })
   person: BasePerson;
 
   @ApiProperty({ type: String })
@@ -162,7 +162,7 @@ export class PartialTVEpisodeCrewMember extends OmitType(TVEpisodeCrewMember, [
   personId: number;
 }
 
-export class TVEpisodeCastMember {
+export class SparseTVEpisodeCastMember {
   @ApiProperty({ type: String })
   character: string;
 
@@ -171,9 +171,6 @@ export class TVEpisodeCastMember {
 
   @ApiProperty({ type: Number })
   order: number;
-
-  @ApiProperty({ type: BasePerson })
-  person: BasePerson;
 
   @ApiProperty({ type: String })
   originalName: string;
@@ -185,6 +182,11 @@ export class TVEpisodeCastMember {
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
+}
+
+export class TVEpisodeCastMember extends SparseTVEpisodeCastMember {
+  @ApiProperty({ type: () => BasePerson })
+  person: BasePerson;
 }
 
 export class PartialTVEpisodeCastMember extends OmitType(TVEpisodeCastMember, [

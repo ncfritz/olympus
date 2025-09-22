@@ -13,6 +13,13 @@ import {
   SparseMovieCastMember,
   SparseMovieCrewMember,
 } from "./movies";
+import { SparseTVEpisodeCastMember } from "./tvEpisode";
+import { SparseSeason } from "./tvSeason";
+import {
+  BaseTVSeries,
+  SparseTVSeriesCastMember,
+  SparseTVSeriesCrewMember,
+} from "./tvSeries";
 
 export enum Gender {
   UNKNOWN = 0,
@@ -162,8 +169,61 @@ export class PersonMovieCrewCredit {
   jobs: SparseMovieCrewMember[];
 }
 
+export class PersonTvSeriesCastCredit {
+  @ApiProperty({
+    type: () => BaseTVSeries,
+    description: "The TV series that the credits are associated with",
+  })
+  tvSeries: BaseTVSeries;
+
+  @ApiProperty({
+    type: () => SparseTVSeriesCastMember,
+    description: "The set of roles played by the person",
+    isArray: true,
+    required: true,
+  })
+  roles: SparseTVSeriesCastMember[];
+}
+
+export class PersonTvSeriesCrewCredit {
+  @ApiProperty({
+    type: () => BaseTVSeries,
+    description: "The TV Series that the credits are associated with",
+  })
+  tvSeries: BaseTVSeries;
+
+  @ApiProperty({
+    type: () => SparseTVSeriesCrewMember,
+    description: "The set of crew jobs the person performed",
+    isArray: true,
+    required: true,
+  })
+  jobs: SparseTVSeriesCrewMember[];
+}
+
+export class PersonTvEpisodeGuestAppearance {
+  @ApiProperty({
+    type: () => BaseTVSeries,
+    description: "The TV series that the credits are associated with",
+  })
+  movie: BaseTVSeries;
+
+  @ApiProperty({
+    type: () => SparseSeason,
+    description: "The season that the credits are associated with",
+  })
+  season: SparseSeason;
+
+  @ApiProperty({
+    type: () => SparseTVEpisodeCastMember,
+    description: "The guest appearance",
+    required: true,
+  })
+  appearance: SparseTVEpisodeCastMember;
+}
+
 export class PersonAssociation {
-  @ApiProperty({ type: BasePerson })
+  @ApiProperty({ type: () => BasePerson })
   person: BasePerson;
 
   @ApiProperty({ type: String })
@@ -244,6 +304,33 @@ export class ListMovieCrewJobsForPersonResponse {
     required: true,
   })
   credits: PersonMovieCrewCredit[];
+}
+
+export class ListTvSeriesCastRolesForPersonResponse {
+  @ApiProperty({
+    type: () => PersonTvSeriesCastCredit,
+    isArray: true,
+    required: true,
+  })
+  credits: PersonTvSeriesCastCredit[];
+}
+
+export class ListTvGuestAppearancesForPersonResponse {
+  @ApiProperty({
+    type: () => PersonTvEpisodeGuestAppearance,
+    isArray: true,
+    required: true,
+  })
+  credits: PersonTvEpisodeGuestAppearance[];
+}
+
+export class ListTvSeriesCrewJobsForPersonResponse {
+  @ApiProperty({
+    type: () => PersonTvSeriesCrewCredit,
+    isArray: true,
+    required: true,
+  })
+  credits: PersonTvSeriesCrewCredit[];
 }
 
 export class GetPersonLifeStaticsResponse {
