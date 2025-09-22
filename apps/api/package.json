@@ -1,7 +1,7 @@
 {
   "name": "@ncfritz/olympus-api",
   "description": "REST API for Olympus",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
   "repository": {
     "type": "git",
