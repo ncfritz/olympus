@@ -206,7 +206,6 @@ export class SendNotificationController {
     notificationId: string,
     responseBody: SendNotificationResponse,
   ): Promise<void> {
-    console.log("Publishing WS");
     if (!request.webSocketDestination) {
       return;
     }
