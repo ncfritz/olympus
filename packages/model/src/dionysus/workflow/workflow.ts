@@ -9,6 +9,7 @@ export enum WorkflowStatus {
   STARTED = "started",
   SUCCESS = "success",
   FAILED = "failed",
+  CANCELLED = "cancelled",
 }
 
 export class Workflow {
