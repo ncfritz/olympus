@@ -1,11 +1,11 @@
 import { Col, Empty, Row, Space, Statistic, Typography } from "antd";
-import type { BatchJobRecord } from "../../../types/dionysus";
 import Timestamp from "../../data/Timestamp";
+import { type JobStatus, type BatchJob } from "@ncfritz/olympus-sdk/dionysus";
 
 import { getBatchJobStatusIndicator } from "./utils";
 
 export interface BatchJobDetailsPanelProps {
-  job: BatchJobRecord;
+  job: BatchJob;
   close: () => void;
   postUpdate: () => Promise<void>;
 }
@@ -35,7 +35,7 @@ const BatchJobDetailsPanel: React.FunctionComponent<
             <Statistic
               title={"status"}
               value={job.status}
-              formatter={(value: string) => {
+              formatter={(value: JobStatus) => {
                 return getBatchJobStatusIndicator(value);
               }}
               valueStyle={{ fontSize: "inherit" }}

@@ -11,7 +11,10 @@ import {
 } from "@ant-design/icons";
 import { Tag } from "antd";
 import React, { type CSSProperties } from "react";
-import { JobStatus } from "../../../types/dionysus";
+import {
+  type WorkflowStatus,
+  type JobStatus,
+} from "@ncfritz/olympus-sdk/dionysus";
 
 export const getMetadataJobStatusIndicator = (
   status: string,
@@ -80,7 +83,7 @@ export const getMetadataJobStatusIndicator = (
 };
 
 export const getBatchJobStatusIndicator = (
-  status: string,
+  status: JobStatus,
   fullWidth = false,
 ) => {
   const style: CSSProperties = { minWidth: 120 };
@@ -90,13 +93,13 @@ export const getBatchJobStatusIndicator = (
   }
 
   switch (status) {
-    case JobStatus.CREATED:
+    case "created":
       return (
         <Tag color={"#003f5c"} icon={<ClockCircleOutlined />} style={style}>
           Created
         </Tag>
       );
-    case JobStatus.STARTED:
+    case "started":
       return (
         <Tag
           color={"#58508d"}
@@ -106,19 +109,19 @@ export const getBatchJobStatusIndicator = (
           Running
         </Tag>
       );
-    case JobStatus.CANCELLED:
+    case "cancelled":
       return (
         <Tag color={"#ffa600"} icon={<MinusCircleOutlined />} style={style}>
           Cancelled
         </Tag>
       );
-    case JobStatus.SUCCESS:
+    case "success":
       return (
         <Tag color={"#bc5090"} icon={<CheckCircleOutlined />} style={style}>
           Success
         </Tag>
       );
-    case JobStatus.FAILED:
+    case "failed":
       return (
         <Tag color={"#ff6361"} icon={<CloseCircleOutlined />} style={style}>
           Failed
@@ -134,7 +137,7 @@ export const getBatchJobStatusIndicator = (
 };
 
 export const getMetadataWorkflowStatusIndicator = (
-  status: string,
+  status: WorkflowStatus,
   fullWidth = false,
 ) => {
   const style: CSSProperties = { minWidth: 120 };
@@ -144,13 +147,13 @@ export const getMetadataWorkflowStatusIndicator = (
   }
 
   switch (status) {
-    case JobStatus.CREATED:
+    case "created":
       return (
         <Tag color={"#003f5c"} icon={<ClockCircleOutlined />} style={style}>
           Created
         </Tag>
       );
-    case JobStatus.STARTED:
+    case "started":
       return (
         <Tag
           color={"#58508d"}
@@ -160,16 +163,22 @@ export const getMetadataWorkflowStatusIndicator = (
           Running
         </Tag>
       );
-    case JobStatus.SUCCESS:
+    case "success":
       return (
         <Tag color={"#bc5090"} icon={<CheckCircleOutlined />} style={style}>
           Success
         </Tag>
       );
-    case JobStatus.FAILED:
+    case "failed":
       return (
         <Tag color={"#ff6361"} icon={<CloseCircleOutlined />} style={style}>
           Failed
+        </Tag>
+      );
+    case "cancelled":
+      return (
+        <Tag color={"#ffa600"} icon={<MinusCircleOutlined />} style={style}>
+          Cancelled
         </Tag>
       );
     default:

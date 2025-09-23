@@ -48,13 +48,23 @@ class BatchJobApi {
     });
   }
 
-  async listBatchJobs(page: number, sort: SortOptions) {
+  async listBatchJobs(
+    page: number,
+    pageSize: number,
+    sort: SortOptions,
+    filters?: Record<string, FilterValue | null>,
+  ) {
+    const encodedFilters = filters
+      ? Buffer.from(JSON.stringify(filters)).toString("base64")
+      : undefined;
+
     return await listBatchJobs({
       query: {
-        pageSize: 20,
-        startPage: page,
+        pageSize: pageSize,
         sort: sort.order,
         sortBy: sort.field,
+        startPage: page,
+        filters: encodedFilters,
       },
     });
   }

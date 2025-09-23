@@ -21,9 +21,12 @@ import prettyMilliseconds from "pretty-ms";
 import type { ItemType } from "rc-collapse/es/interface";
 import React, { useState } from "react";
 import workflowApi from "../../../api/workflowApi";
-import type { Workflow, WorkflowStep } from "@ncfritz/olympus-sdk/dionysus";
+import type {
+  JobStatus,
+  Workflow,
+  WorkflowStep,
+} from "@ncfritz/olympus-sdk/dionysus";
 import { useFetch } from "../../../hooks/useFetch";
-import { JobStatus } from "../../../types/dionysus";
 import RefreshTimer from "../../common/RefreshTimer";
 import Timestamp from "../../data/Timestamp";
 import { getBatchJobStatusIndicator } from "./utils";
@@ -107,19 +110,19 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
           ? (step.job.processedRecords! / step.job.totalRecords) * 100
           : 0;
 
-      let status: "normal" | "success" | "exception" = "normal";
+      let status: "success" | "exception" | "normal" | "active" | undefined;
       let timing;
 
-      if (step.job.status === JobStatus.SUCCESS) {
+      if (step.job.status === "success") {
         status = "success";
       } else if (
-        step.job.status === JobStatus.CANCELLED ||
-        step.job.status === JobStatus.FAILED
+        step.job.status === "cancelled" ||
+        step.job.status === "failed"
       ) {
         status = "exception";
       }
 
-      if (step.job.status === JobStatus.STARTED) {
+      if (step.job.status === "started") {
         const startTime = DateTime.fromISO(
           step.job.startedTime as unknown as string,
         );
@@ -129,8 +132,6 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
         const remainingEst = Math.ceil(
           (step.job.totalRecords! - step.job.processedRecords!) * timePerRecord,
         );
-
-        console.log(remainingEst);
 
         timing = (
           <Space size={8}>
@@ -336,7 +337,7 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
             <Statistic
               title={"status"}
               value={workflow.status}
-              formatter={(value: string) => {
+              formatter={(value: JobStatus) => {
                 return getBatchJobStatusIndicator(value);
               }}
               valueStyle={{ fontSize: "inherit" }}
