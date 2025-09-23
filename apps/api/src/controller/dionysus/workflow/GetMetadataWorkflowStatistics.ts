@@ -67,6 +67,7 @@ export class GetMetadataWorkflowStatisticsController {
       [WorkflowStatus.STARTED]: this.emptyTimingMap(moment(now)),
       [WorkflowStatus.FAILED]: this.emptyTimingMap(moment(now)),
       [WorkflowStatus.SUCCESS]: this.emptyTimingMap(moment(now)),
+      [WorkflowStatus.CANCELLED]: this.emptyTimingMap(moment(now)),
     };
     const queueTimeSeries: number[][] = this.emptyTimingMap(moment(now));
     const runtimeSeries: number[][] = this.emptyTimingMap(moment(now));
