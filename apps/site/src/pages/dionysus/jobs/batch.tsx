@@ -22,38 +22,35 @@ import BatchJobQueueTimeChart from "../../../components/dionysus/jobs/graphs/Bat
 import BatchJobRuntimeChart from "../../../components/dionysus/jobs/graphs/BatchJobRuntimeChart";
 import BatchJobStatusChart from "../../../components/dionysus/jobs/graphs/BatchJobStatusChart";
 import BatchJobPanel from "../../../components/layout/jobs/BatchJobPanel";
+import { useFetch } from "../../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
-import { type BatchJobRecord, JobType } from "../../../types/dionysus";
+import type {
+  BatchJob,
+  GetBatchJobStatsResponse,
+} from "@ncfritz/olympus-sdk/dionysus";
 
 const BatchJobsPage: React.FunctionComponent = () => {
   const router = useRouter();
   const query = useSearchParams();
 
-  const [selectedJob, setSelectedJob] = useState<BatchJobRecord | undefined>(
+  const [selectedJob, setSelectedJob] = useState<BatchJob | undefined>(
     undefined,
   );
-  const [jobStats, setJobStats] = useState<any>();
-  const [jobStatsLoading, setJobStatsLoading] = useState<any>(true);
-  const [jobStatsError, setJobStatsError] = useState<any>();
   const [activeTab, setActiveTab] = useState(query.get("tab") || "movies");
 
-  const fetchStatistics = async () => {
-    setJobStatsLoading(true);
-    setJobStatsError(undefined);
-
-    try {
-      const getJobsStatsResponse = await batchJobApi.getBatchJobStats();
-      setJobStats(getJobsStatsResponse.data);
-    } catch (e) {
-      setJobStatsError(e);
-    } finally {
-      setJobStatsLoading(false);
-    }
-  };
+  const [jobStats, jobStatsLoading, jobStatsError, fetchStatistics] = useFetch<
+    undefined,
+    GetBatchJobStatsResponse
+  >({
+    dataType: "batch job statistics",
+    watch: [],
+    params: undefined,
+    fetchFunction: async () => (await batchJobApi.getBatchJobStats()).data,
+  });
 
   useEffect(() => {
     (async () => {
-      await fetchStatistics();
+      await fetchStatistics(false);
     })();
   }, []);
 
@@ -65,51 +62,43 @@ const BatchJobsPage: React.FunctionComponent = () => {
     {
       key: "t-bj-movies",
       label: "Movies",
-      children: (
-        <BatchJobPanel type={JobType.MOVIES} onSelect={setSelectedJob} />
-      ),
+      children: <BatchJobPanel type={"movies"} onSelect={setSelectedJob} />,
     },
     {
       key: "t-bj-tv-series",
       label: "TV Series",
-      children: (
-        <BatchJobPanel type={JobType.TV_SERIES} onSelect={setSelectedJob} />
-      ),
+      children: <BatchJobPanel type={"tv_series"} onSelect={setSelectedJob} />,
     },
     {
       key: "t-bj-people",
       label: "People",
-      children: (
-        <BatchJobPanel type={JobType.PEOPLE} onSelect={setSelectedJob} />
-      ),
+      children: <BatchJobPanel type={"people"} onSelect={setSelectedJob} />,
     },
     {
       key: "t-bj-collections",
       label: "Collections",
       children: (
-        <BatchJobPanel type={JobType.COLLECTIONS} onSelect={setSelectedJob} />
+        <BatchJobPanel type={"collections"} onSelect={setSelectedJob} />
       ),
     },
     {
       key: "t-bj-tv-networks",
       label: "TV Networks",
       children: (
-        <BatchJobPanel type={JobType.TV_NETWORKS} onSelect={setSelectedJob} />
+        <BatchJobPanel type={"tv_networks"} onSelect={setSelectedJob} />
       ),
     },
     {
       key: "t-bj-keywords",
       label: "Keywords",
-      children: (
-        <BatchJobPanel type={JobType.KEYWORDS} onSelect={setSelectedJob} />
-      ),
+      children: <BatchJobPanel type={"keywords"} onSelect={setSelectedJob} />,
     },
     {
       key: "t-bj-production-companies",
       label: "Production Companies",
       children: (
         <BatchJobPanel
-          type={JobType.PRODUCTION_COMPANIES}
+          type={"production_companies"}
           onSelect={setSelectedJob}
         />
       ),
@@ -117,40 +106,31 @@ const BatchJobsPage: React.FunctionComponent = () => {
     {
       key: "t-bj-genres",
       label: "Genres",
-      children: (
-        <BatchJobPanel type={JobType.GENRES} onSelect={setSelectedJob} />
-      ),
+      children: <BatchJobPanel type={"genres"} onSelect={setSelectedJob} />,
     },
     {
       key: "t-bj-certifications",
       label: "Certifications",
       children: (
-        <BatchJobPanel
-          type={JobType.CERTIFICATIONS}
-          onSelect={setSelectedJob}
-        />
+        <BatchJobPanel type={"certifications"} onSelect={setSelectedJob} />
       ),
     },
     {
       key: "t-bj-countries",
       label: "Countries",
-      children: (
-        <BatchJobPanel type={JobType.COUNTRIES} onSelect={setSelectedJob} />
-      ),
+      children: <BatchJobPanel type={"countries"} onSelect={setSelectedJob} />,
     },
     {
       key: "t-bj-languages",
       label: "Languages",
-      children: (
-        <BatchJobPanel type={JobType.LANGUAGES} onSelect={setSelectedJob} />
-      ),
+      children: <BatchJobPanel type={"languages"} onSelect={setSelectedJob} />,
     },
     {
       key: "t-bj-redrive",
       label: "Redrive Jobs",
       children: (
         <BatchJobPanel
-          type={JobType.REDRIVE}
+          type={"redrive"}
           onSelect={setSelectedJob}
           showPublish={false}
         />
