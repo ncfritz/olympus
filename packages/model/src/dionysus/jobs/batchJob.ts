@@ -29,6 +29,128 @@ export enum JobStatus {
   FAILED = "failed",
 }
 
+export class BatchJob {
+  @ApiProperty({ type: String })
+  id: string;
+
+  @ApiProperty({ enum: () => JobType, enumName: "JobType" })
+  type: JobType;
+
+  @ApiProperty({ enum: () => JobStatus, enumName: "JobStatus" })
+  status: JobStatus;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  createdTime: Moment;
+
+  @ApiProperty({ type: String })
+  @Transform(({ value }) => value.toISOString())
+  lastUpdatedTime: Moment;
+
+  @ApiProperty({ type: String, required: false })
+  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  startedTime?: Moment;
+
+  @ApiProperty({ type: String, required: false })
+  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  finishedTime?: Moment;
+
+  @ApiProperty({ type: Number, required: false })
+  totalRecords?: number;
+
+  @ApiProperty({ type: Number, required: false })
+  maxRecordsToProcess?: number;
+
+  @ApiProperty({ type: Number, required: false })
+  skippedRecords?: number;
+
+  @ApiProperty({ type: Number, required: false })
+  processedRecords?: number;
+
+  @ApiProperty({ type: Number, required: false })
+  duplicateRecords?: number;
+
+  @ApiProperty({ type: Number, required: false })
+  noOpRecords?: number;
+
+  @ApiProperty({ type: Number, required: false })
+  newRecords?: number;
+
+  @ApiProperty({ type: Number, required: false })
+  expiredRecords?: number;
+}
+
+export class PartialBatchJob extends OmitType(BatchJob, [
+  "id",
+  "type",
+  "createdTime",
+  "lastUpdatedTime",
+]) {}
+
+export class BatchJobTimingStatistics {
+  @ApiProperty({
+    type: "array",
+    items: { type: "array", items: { type: "number" } },
+  })
+  queueTime: number[][];
+
+  @ApiProperty({
+    type: "array",
+    items: { type: "array", items: { type: "number" } },
+  })
+  runtime: number[][];
+}
+
+export class BatchJobRecordStats {
+  @ApiProperty({
+    type: "array",
+    items: { type: "array", items: { type: "number" } },
+  })
+  total: number[][];
+
+  @ApiProperty({
+    type: "array",
+    items: { type: "array", items: { type: "number" } },
+  })
+  new: number[][];
+
+  @ApiProperty({
+    type: "array",
+    items: { type: "array", items: { type: "number" } },
+  })
+  expired: number[][];
+
+  @ApiProperty({
+    type: "array",
+    items: { type: "array", items: { type: "number" } },
+  })
+  noop: number[][];
+
+  @ApiProperty({
+    type: "array",
+    items: { type: "array", items: { type: "number" } },
+  })
+  skipped: number[][];
+
+  @ApiProperty({
+    type: "array",
+    items: { type: "array", items: { type: "number" } },
+  })
+  processed: number[][];
+}
+
+export class BatchJobStatsByTypeSeries {
+  @ApiProperty({
+    type: () => BatchJobRecordStats,
+  })
+  records: BatchJobRecordStats;
+
+  @ApiProperty({
+    type: () => BatchJobTimingStatistics,
+  })
+  timing: BatchJobTimingStatistics;
+}
+
 export class CreateBatchJobRequest {
   @ApiProperty({
     enum: () => JobType,
@@ -140,16 +262,9 @@ export class GetBatchJobStatsResponse {
 
 export class GetBatchJobStatsByTypeResponse {
   @ApiProperty({
-    type: Object,
-    additionalProperties: { type: "BatchJobStats" },
+    type: () => BatchJobStatsByTypeSeries,
   })
-  series: {
-    records: Record<string, number[][]>;
-    timing: {
-      queueTime: number[][];
-      runtime: number[][];
-    };
-  };
+  series: BatchJobStatsByTypeSeries;
 }
 
 export class ListBatchJobsResponse extends PaginatedResults {
@@ -174,82 +289,4 @@ export class UpdateBatchJobResponse {
     type: () => BatchJob,
   })
   job: BatchJob;
-}
-
-export class BatchJob {
-  @ApiProperty({ type: String })
-  id: string;
-
-  @ApiProperty({ enum: () => JobType, enumName: "JobType" })
-  type: JobType;
-
-  @ApiProperty({ enum: () => JobStatus, enumName: "JobStatus" })
-  status: JobStatus;
-
-  @ApiProperty({ type: String })
-  @Transform(({ value }) => value.toISOString())
-  createdTime: Moment;
-
-  @ApiProperty({ type: String })
-  @Transform(({ value }) => value.toISOString())
-  lastUpdatedTime: Moment;
-
-  @ApiProperty({ type: String, required: false })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
-  startedTime?: Moment;
-
-  @ApiProperty({ type: String, required: false })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
-  finishedTime?: Moment;
-
-  @ApiProperty({ type: Number, required: false })
-  totalRecords?: number;
-
-  @ApiProperty({ type: Number, required: false })
-  maxRecordsToProcess?: number;
-
-  @ApiProperty({ type: Number, required: false })
-  skippedRecords?: number;
-
-  @ApiProperty({ type: Number, required: false })
-  processedRecords?: number;
-
-  @ApiProperty({ type: Number, required: false })
-  duplicateRecords?: number;
-
-  @ApiProperty({ type: Number, required: false })
-  noOpRecords?: number;
-
-  @ApiProperty({ type: Number, required: false })
-  newRecords?: number;
-
-  @ApiProperty({ type: Number, required: false })
-  expiredRecords?: number;
-}
-
-export class PartialBatchJob extends OmitType(BatchJob, [
-  "id",
-  "type",
-  "createdTime",
-  "lastUpdatedTime",
-]) {}
-
-export class BatchJobStats {
-  @ApiProperty({ enum: () => JobStatus, enumName: "JobStatus" })
-  status: JobStatus;
-
-  @ApiProperty({ type: Number })
-  totalRecords: number;
-
-  @ApiProperty({ type: Number })
-  duplicateRecords: number;
-
-  @ApiProperty({ type: Number })
-  noOpRecords: number;
-
-  @ApiProperty({ type: Number })
-  newRecords: number;
-
-  @ApiProperty({ type: Number })
-  expiredRecords: number;
 }
