@@ -1,6 +1,6 @@
 import type { WorkflowStatus } from "@ncfritz/olympus-sdk/dionysus";
 import type { ReactNode } from "react";
-import { JobStatus, type JobType } from "../../../types/dionysus";
+import { type JobStatus, type JobType } from "@ncfritz/olympus-sdk/dionysus";
 
 export type NotificationPayload = {
   title: string;

@@ -3,12 +3,11 @@ import { Affix, Breadcrumb, Layout, Space, type TableProps } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React, { useState } from "react";
-import type { SortOptions } from "../../../../api/common";
+import type { PaginatedParams, SortOptions } from "../../../../api/common";
 import metadataApi from "../../../../api/metadataApi";
 import NetworksTable from "../../../../components/dionysus/metadata/NetworksTable";
 import { useFetch } from "../../../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../../icons";
-import type { PaginatedParams } from "../../../../types/dionysus";
 import type { Certification } from "../../metadata/certifications";
 import type { ListNetworksResponse } from "@ncfritz/olympus-sdk/dionysus";
 
