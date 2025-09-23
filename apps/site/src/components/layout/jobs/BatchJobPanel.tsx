@@ -25,30 +25,31 @@ import Highcharts from "highcharts";
 import { DateTime } from "luxon";
 import prettyMilliseconds from "pretty-ms";
 import React, { type ReactNode, useEffect, useState } from "react";
-import { type SubmitHandler, useForm } from "react-hook-form";
 import batchJobApi from "../../../api/batchJobApi";
 import type { SortOptions } from "../../../api/common";
-import { type BatchJobRecord, JobStatus } from "../../../types/dionysus";
+import { useFetch } from "../../../hooks/useFetch";
+import { MonoNumber } from "../../common/styledComponents";
 import Timestamp from "../../data/Timestamp";
 import BatchJobStatusSelect from "../../dionysus/jobs/BatchJobStatusSelect";
 import CreateBatchJobModal from "../../dionysus/jobs/CreateBatchJobModal";
 import { getBatchJobStatusIndicator } from "../../dionysus/jobs/utils";
-import { type JobType } from "@ncfritz/olympus-sdk/dionysus";
-
-interface FormInput {
-  type: JobType;
-  publishNotifications: boolean;
-  offset: number;
-}
+import {
+  type JobStatus,
+  type JobType,
+  type PartialBatchJob,
+  type BatchJob,
+  type ListBatchJobsResponse,
+  type GetBatchJobStatsByTypeResponse,
+} from "@ncfritz/olympus-sdk/dionysus";
 
 export interface BatchJobsPanelProps {
   type: JobType;
-  onSelect: (value: BatchJobRecord) => void;
+  onSelect: (value: BatchJob) => void;
   showPublish?: boolean;
   showStats?: boolean;
 }
 
-type OnChange = NonNullable<TableProps<BatchJobRecord>["onChange"]>;
+type OnChange = NonNullable<TableProps<BatchJob>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
@@ -58,26 +59,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
   showPublish = true,
   showStats = true,
 }) => {
-  const {
-    handleSubmit,
-    control,
-    reset,
-    formState: { isValid, isDirty, isSubmitting },
-  } = useForm<FormInput>({
-    defaultValues: {
-      type: type,
-      publishNotifications: true,
-      offset: 0,
-    },
-    mode: "onChange",
-    reValidateMode: "onChange",
-  });
-
-  const [jobs, setJobs] = useState<any>();
   const [jobsRequested, setJobsRequested] = useState("");
-  const [jobsLoading, setJobsLoading] = useState<any>(true);
-  const [jobsError, setJobsError] = useState<any>();
-  const [jobsCount, setjJobsCount] = useState(0);
   const [jobsPage, setJobsPage] = useState(0);
   const [jobsPageSize, setJobsPageSize] = useState(50);
   const [jobsSort, setJobsSort] = useState<SortOptions>({
@@ -88,7 +70,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
     Record<string, FilterValue | null>
   >({});
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [selectedRows, setSelectedRows] = useState<BatchJobRecord[]>([]);
+  const [selectedRows, setSelectedRows] = useState<BatchJob[]>([]);
   const [processingRows, setProcessingRows] = useState(false);
   const [processingStatus, setProcessingStatus] = useState({
     pending: 0,
@@ -97,78 +79,48 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
     failed: 0,
     total: 0,
   });
-  const [jobStats, setJobStats] = useState<any>();
-  const [jobStatsLoading, setJobStatsLoading] = useState<any>(true);
-  const [jobStatsError, setJobStatsError] = useState<any>();
-  const [targetStatus, setTargetStatus] = useState(JobStatus.CREATED);
+  const [targetStatus, setTargetStatus] = useState<JobStatus>("created");
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
 
-  const onSubmit: SubmitHandler<FormInput> = async (data) => {
-    await batchJobApi.createBatchJob(
-      type,
-      data.publishNotifications,
-      data.offset,
-    );
-    await fetchJobs(true);
+  const [jobs, jobsLoading, jobsError, fetchJobs] = useFetch<
+    undefined,
+    ListBatchJobsResponse
+  >({
+    dataType: "batch jobs",
+    watch: [],
+    params: undefined,
+    fetchFunction: async () =>
+      (
+        await batchJobApi.listBatchJobs(
+          jobsPage,
+          jobsPageSize,
+          jobsSort,
+          jobFilters,
+        )
+      ).data,
+  });
 
-    reset();
-  };
-
-  const fetchJobs = async (quiet = false) => {
-    if (!quiet) {
-      setJobsLoading(true);
-    }
-    setJobsError(undefined);
-
-    try {
-      const listJobsResponse = await batchJobApi.listBatchJobsByType(
-        type,
-        jobsPage,
-        jobsSort,
-        jobFilters,
-      );
-      setJobs(listJobsResponse.data.jobs);
-    } catch (e) {
-      setJobsError(e);
-    } finally {
-      setJobsLoading(false);
-    }
-  };
-
-  const fetchStatistics = async (quiet = false) => {
-    if (!quiet) {
-      setJobStatsLoading(true);
-    }
-    setJobStatsError(undefined);
-
-    try {
-      const getJobsStatsResponse =
-        await batchJobApi.getBatchJobStatsByType(type);
-      setJobStats(getJobsStatsResponse.data);
-    } catch (e) {
-      setJobStatsError(e);
-    } finally {
-      setJobStatsLoading(false);
-    }
-  };
+  const [jobStats, jobStatsLoading, jobStatsError, fetchStatistics] = useFetch<
+    undefined,
+    GetBatchJobStatsByTypeResponse
+  >({
+    dataType: "batch job statistics",
+    watch: [],
+    params: undefined,
+    fetchFunction: async () =>
+      (await batchJobApi.getBatchJobStatsByType(type)).data,
+  });
 
   useEffect(() => {
     (async () => {
-      await fetchJobs();
-      await fetchStatistics();
-    })();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      await fetchJobs();
+      await fetchJobs(false);
       setSelectedRowKeys([]);
     })();
   }, [jobsRequested]);
 
   const onSelectChange = (
     newSelectedRowKeys: React.Key[],
-    newSelectedRows: BatchJobRecord[],
+    newSelectedRows: BatchJob[],
   ) => {
     setSelectedRowKeys(newSelectedRowKeys);
     setSelectedRows(newSelectedRows);
@@ -182,19 +134,17 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
 
   const updateSelectedJobs = async () => {
     await processRows(async (job) => {
-      const updates = {
+      const updates: PartialBatchJob = {
         status: targetStatus,
       };
 
       await batchJobApi.updateBatchJob(job.id, updates);
     });
 
-    setTargetStatus(JobStatus.CREATED);
+    setTargetStatus("created");
   };
 
-  const processRows = async (
-    process: (job: BatchJobRecord) => Promise<void>,
-  ) => {
+  const processRows = async (process: (job: BatchJob) => Promise<void>) => {
     setProcessingRows(true);
 
     try {
@@ -233,7 +183,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
     }
   };
 
-  const columns: ColumnsType<BatchJobRecord> = [
+  const columns: ColumnsType<BatchJob> = [
     {
       key: "id",
       title: "ID",
@@ -300,18 +250,18 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
 
         let status: "normal" | "success" | "exception" = "normal";
 
-        if (record.status === JobStatus.SUCCESS) {
+        if (record.status === "success") {
           status = "success";
         } else if (
-          record.status === JobStatus.CANCELLED ||
-          record.status === JobStatus.FAILED
+          record.status === "cancelled" ||
+          record.status === "failed"
         ) {
           status = "exception";
         }
 
         let etaContent = <></>;
 
-        if (record.status === JobStatus.STARTED) {
+        if (record.status === "started") {
           const startTime = DateTime.fromISO(
             record.startedTime as unknown as string,
           );
@@ -369,24 +319,16 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       title: "Total",
       dataIndex: "totalRecords",
       render: (value, record) => {
-        return (
-          <Typography.Text style={{ fontSize: "12px" }}>
-            {record.totalRecords}
-          </Typography.Text>
-        );
+        return <MonoNumber value={record.totalRecords} />;
       },
-      width: 75,
+      width: 85,
     },
     {
       key: "processedRecords",
       title: "Processed",
       dataIndex: "processedRecords",
       render: (value, record) => {
-        return (
-          <Typography.Text style={{ fontSize: "12px" }}>
-            {record.processedRecords}
-          </Typography.Text>
-        );
+        return <MonoNumber value={record.processedRecords} />;
       },
       width: 100,
     },
@@ -395,11 +337,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       title: "Duplicate",
       dataIndex: "duplicateRecords",
       render: (value, record) => {
-        return (
-          <Typography.Text style={{ fontSize: "12px" }}>
-            {record.duplicateRecords}
-          </Typography.Text>
-        );
+        return <MonoNumber value={record.duplicateRecords} />;
       },
       width: 85,
     },
@@ -408,11 +346,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       title: "New",
       dataIndex: "newRecords",
       render: (value, record) => {
-        return (
-          <Typography.Text style={{ fontSize: "12px" }}>
-            {record.newRecords}
-          </Typography.Text>
-        );
+        return <MonoNumber value={record.newRecords} />;
       },
       width: 75,
     },
@@ -421,37 +355,25 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       title: "Expired",
       dataIndex: "expiredRecords",
       render: (value, record) => {
-        return (
-          <Typography.Text style={{ fontSize: "12px" }}>
-            {record.expiredRecords}
-          </Typography.Text>
-        );
+        return <MonoNumber value={record.expiredRecords} />;
       },
-      width: 75,
+      width: 85,
     },
     {
       key: "noOpRecords",
       title: "No-Op",
       dataIndex: "noOpRecords",
       render: (value, record) => {
-        return (
-          <Typography.Text style={{ fontSize: "12px" }}>
-            {record.noOpRecords}
-          </Typography.Text>
-        );
+        return <MonoNumber value={record.noOpRecords} />;
       },
-      width: 75,
+      width: 85,
     },
     {
       key: "skippedRecords",
       title: "Skipped",
       dataIndex: "skippedRecords",
       render: (value, record) => {
-        return (
-          <Typography.Text style={{ fontSize: "12px" }}>
-            {record.skippedRecords}
-          </Typography.Text>
-        );
+        return <MonoNumber value={record.skippedRecords} />;
       },
     },
     {
@@ -498,7 +420,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
     </Space>
   );
 
-  if (!jobStatsLoading) {
+  if (!jobStatsLoading && jobStats) {
     timingChart = (
       <HighchartsReact
         highcharts={Highcharts}
@@ -801,7 +723,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
           borderTop: !showPublish ? "1px solid #f3f3f3" : "none",
         }}
         columns={columns}
-        dataSource={jobs}
+        dataSource={jobs?.jobs}
         size={"middle"}
         loading={jobsLoading}
         pagination={{
@@ -811,7 +733,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
           position: ["bottomLeft"],
           pageSize: jobsPageSize,
           size: "small",
-          total: jobsCount,
+          total: jobs?.count,
           showSizeChanger: true,
           pageSizeOptions: [25, 50, 100, 250, 500],
           onShowSizeChange: (current, size) => {
@@ -851,8 +773,8 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       <CreateBatchJobModal
         type={type}
         postCreate={async () => {
-          await fetchJobs();
-          await fetchStatistics();
+          await fetchJobs(false);
+          await fetchStatistics(false);
         }}
         open={createJobModalOpen}
         onClose={() => {
