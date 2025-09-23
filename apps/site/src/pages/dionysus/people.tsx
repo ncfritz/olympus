@@ -48,54 +48,6 @@ const PeopleIndexPage: React.FunctionComponent = () => {
         (await metadataApi.getPeopleDepartmentStatistics()).data.statistics,
     });
 
-  const [topActors, topActorsLoading, topActorsError] = useFetch<
-    undefined,
-    BasePerson[]
-  >({
-    dataType: "top actors",
-    watch: [],
-    params: undefined,
-    fetchFunction: async () =>
-      (
-        await metadataApi.listPeople(
-          1,
-          32,
-          {
-            field: "popularity",
-            order: "desc",
-          },
-          {
-            knownForDepartment: ["Acting", "Actors"],
-          },
-        )
-      ).data.people,
-  });
-
-  const [topDirectors, topDirectorsLoading, topDirectorsError] = useFetch<
-    undefined,
-    BasePerson[]
-  >({
-    dataType: "top actors",
-    watch: [],
-    params: undefined,
-    fetchFunction: async () =>
-      (
-        await metadataApi.listPeople(
-          1,
-          16,
-          {
-            field: "popularity",
-            order: "desc",
-          },
-          {
-            knownForDepartment: ["Directing"],
-          },
-        )
-      ).data.people,
-  });
-
-  console.log(topActorsError);
-
   return (
     <>
       <Affix offsetTop={64}>
@@ -182,29 +134,31 @@ const PeopleIndexPage: React.FunctionComponent = () => {
             size={16}
             style={{ width: "100%", padding: 16 }}
           >
-            <Typography.Title level={4}>
-              Most popular actors/actresses...
-            </Typography.Title>
-            <LoadingWrapper loading={topActorsLoading} error={topActorsError}>
-              <PersonList
-                people={topActors}
-                loading={topActorsLoading}
-                columns={16}
-              />
-            </LoadingWrapper>
-            <Typography.Title level={4}>
-              Most popular directors...
-            </Typography.Title>
-            <LoadingWrapper
-              loading={topDirectorsLoading}
-              error={topDirectorsError}
-            >
-              <PersonList
-                people={topDirectors}
-                loading={topDirectorsLoading}
-                columns={16}
-              />
-            </LoadingWrapper>
+            <PersonList
+              title={"Actors"}
+              listType={"top actors"}
+              initialFilters={{
+                knownForDepartment: ["Acting", "Actors"],
+              }}
+              columns={16}
+              rows={2}
+            />
+            <PersonList
+              title={"Directors"}
+              listType={"top directors"}
+              initialFilters={{
+                knownForDepartment: ["Directing"],
+              }}
+              columns={16}
+            />
+            <PersonList
+              title={"Creators"}
+              listType={"top creators"}
+              initialFilters={{
+                knownForDepartment: ["Creator"],
+              }}
+              columns={16}
+            />
           </Space>
         </Content>
       </Layout>
