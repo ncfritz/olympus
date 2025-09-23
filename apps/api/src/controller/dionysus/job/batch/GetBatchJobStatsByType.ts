@@ -1,4 +1,5 @@
 import {
+  BatchJobRecordStats,
   GetBatchJobStatsByTypeResponse,
   JobType,
 } from "@ncfritz/olympus-model";
@@ -83,7 +84,7 @@ export class GetBatchJobStatsByTypeController {
       .utc()
       .set({ milliseconds: 0, seconds: 0, minutes: 0, hours: 0 });
 
-    const recordSeries: Record<string, number[][]> = {
+    const recordSeries: BatchJobRecordStats = {
       total: this.emptyTimingMap(moment(now)),
       new: this.emptyTimingMap(moment(now)),
       expired: this.emptyTimingMap(moment(now)),
