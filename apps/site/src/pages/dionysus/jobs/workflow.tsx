@@ -3,6 +3,7 @@ import {
   KubernetesOutlined,
   PlusOutlined,
   ReloadOutlined,
+  SaveOutlined,
 } from "@ant-design/icons";
 import {
   Breadcrumb,
@@ -10,9 +11,11 @@ import {
   Col,
   Drawer,
   Layout,
+  Progress,
   Row,
   Space,
   Spin,
+  Statistic,
   Table,
   type TableProps,
   Typography,
@@ -26,7 +29,9 @@ import React, { useEffect, useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import workflowApi from "../../../api/workflowApi";
 import RefreshTimer from "../../../components/common/RefreshTimer";
+import { MonoNumber } from "../../../components/common/styledComponents";
 import Timestamp from "../../../components/data/Timestamp";
+import WorkflowStatusSelect from "../../../components/dionysus/jobs/WorkflowStatusSelect";
 import WorkflowQueueTimeChart from "../../../components/dionysus/jobs/graphs/WorkflowQueueTimeChart";
 import WorkflowRuntimeChart from "../../../components/dionysus/jobs/graphs/WorkflowRuntimeChart";
 import WorkflowStatusChart from "../../../components/dionysus/jobs/graphs/WorkflowStatusChart";
@@ -40,20 +45,12 @@ import { MetadataOutlinedIcon } from "../../../icons";
 import {
   type GetMetadataWorkflowStatisticsResponse,
   type ListWorkflowsResponse,
+  type PartialWorkflow,
+  type WorkflowStatus,
   type Workflow,
 } from "@ncfritz/olympus-sdk/dionysus";
 
-export type MetadataWorkflow = {
-  id: string;
-  createdTime: string;
-  lastUpdatedTime: string;
-  startedTime: string;
-  finishedTime: string;
-  status: string;
-  stepCount: number;
-};
-
-type OnChange = NonNullable<TableProps<MetadataWorkflow>["onChange"]>;
+type OnChange = NonNullable<TableProps<Workflow>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
@@ -75,6 +72,17 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<
     string | undefined
   >(id as string);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [selectedRows, setSelectedRows] = useState<Workflow[]>([]);
+  const [processingRows, setProcessingRows] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState({
+    pending: 0,
+    skipped: 0,
+    success: 0,
+    failed: 0,
+    total: 0,
+  });
+  const [targetStatus, setTargetStatus] = useState<WorkflowStatus>("created");
 
   const [
     workflowStatistics,
@@ -124,6 +132,65 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
     });
   };
 
+  const onSelectChange = (
+    newSelectedRowKeys: React.Key[],
+    newSelectedRows: Workflow[],
+  ) => {
+    setSelectedRowKeys(newSelectedRowKeys);
+    setSelectedRows(newSelectedRows);
+  };
+
+  const updateSelectedWorkflows = async () => {
+    await processRows(async (job) => {
+      const updates: PartialWorkflow = {
+        status: targetStatus,
+      };
+
+      await workflowApi.updateWorkflow(job.id, updates);
+    });
+
+    setTargetStatus("created");
+  };
+
+  const processRows = async (process: (job: Workflow) => Promise<void>) => {
+    setProcessingRows(true);
+
+    try {
+      const currentStatus = {
+        total: 0,
+        failed: 0,
+        pending: 0,
+        skipped: 0,
+        success: 0,
+      };
+
+      for (const value of selectedRows) {
+        try {
+          await process(value);
+
+          currentStatus.success++;
+        } catch (e) {
+          currentStatus.failed++;
+        }
+
+        currentStatus.total++;
+        setProcessingStatus({ ...currentStatus });
+      }
+    } finally {
+      await fetchWorkflows(true);
+      await fetchWorkflowStatistics(true);
+      setSelectedRowKeys([]);
+      setProcessingRows(false);
+      setProcessingStatus({
+        total: 0,
+        failed: 0,
+        pending: 0,
+        skipped: 0,
+        success: 0,
+      });
+    }
+  };
+
   let statusChart = (
     <Space style={{ height: 300, display: "flex", justifyContent: "center" }}>
       <Spin />
@@ -154,7 +221,6 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
       render: (_value, record) => {
         return (
           <Typography.Link
-            style={{ marginLeft: 16 }}
             onClick={async () => {
               setSelectedWorkflowId(record.id);
               await router.push(
@@ -194,6 +260,10 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
           text: getMetadataJobStatusIndicator("failed"),
           value: "failed",
         },
+        {
+          text: getMetadataJobStatusIndicator("cancelled"),
+          value: "cancelled",
+        },
       ],
       render: (value) => {
         return getMetadataWorkflowStatusIndicator(value);
@@ -206,11 +276,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
       title: "Step Count",
       dataIndex: "stepCount",
       render: (value) => {
-        return (
-          <Typography.Text style={{ fontFamily: "monospace" }}>
-            {value}
-          </Typography.Text>
-        );
+        return <MonoNumber value={value} />;
       },
       sorter: false,
     },
@@ -256,7 +322,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
     },
   ];
 
-  const actionsContent = (
+  let actionsContent = (
     <Col span={24} style={{ justifyContent: "space-between", display: "flex" }}>
       <Space
         direction={"horizontal"}
@@ -271,30 +337,79 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
             padding: 16,
           }}
         >
-          <Typography.Text strong={true}>Create Workflow: </Typography.Text>
+          <Typography.Text strong={true}>Status: </Typography.Text>
+          <WorkflowStatusSelect
+            value={targetStatus}
+            onChange={(value) => {
+              setTargetStatus(value);
+            }}
+          />
           <Button
             type={"primary"}
-            icon={<PlusOutlined />}
+            icon={<SaveOutlined />}
+            disabled={
+              selectedRows.length <= 0 || processingRows || workflowsLoading
+            }
             onClick={async () => {
-              await createWorkflow();
+              await updateSelectedWorkflows();
             }}
           >
-            Start New Workflow
+            Set Status
           </Button>
         </Space>
+        ,
       </Space>
       <Space style={{ marginRight: 16 }}>
+        <Button
+          type={"primary"}
+          icon={<PlusOutlined />}
+          onClick={async () => {
+            await createWorkflow();
+          }}
+        >
+          Start New Workflow
+        </Button>
         <Button
           type={"text"}
           disabled={workflowsLoading}
           icon={<ReloadOutlined />}
           onClick={async () => {
+            await fetchWorkflowStatistics(true);
             await fetchWorkflows(true);
           }}
         />
       </Space>
     </Col>
   );
+
+  if (processingRows) {
+    actionsContent = (
+      <Col span={24} style={{ padding: 16 }}>
+        <Space
+          direction={"vertical"}
+          size={16}
+          style={{ marginLeft: 16, marginRight: 16, width: "100%" }}
+        >
+          <Progress
+            size={"default"}
+            percent={(processingStatus.total / selectedRowKeys.length) * 100}
+            style={{ paddingRight: 32 }}
+            format={(percent) => {
+              return `${percent?.toFixed(0)}%`;
+            }}
+          />
+          <Space direction={"horizontal"} size={64}>
+            <Statistic title={"To Publish"} value={selectedRows.length} />
+            <Statistic title={"Success"} value={processingStatus.success} />
+            <Statistic title={"Skipped"} value={processingStatus.skipped} />
+            <Statistic title={"Pending"} value={processingStatus.pending} />
+            <Statistic title={"Failed"} value={processingStatus.failed} />
+            <Statistic title={"Total"} value={processingStatus.total} />
+          </Space>
+        </Space>
+      </Col>
+    );
+  }
 
   return (
     <div>
@@ -412,6 +527,10 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
               }
 
               setMetadataWorkflowRequested(new Date().toISOString());
+            }}
+            rowSelection={{
+              selectedRowKeys,
+              onChange: onSelectChange,
             }}
           />
           <Drawer

@@ -1,9 +1,12 @@
 import {
   client,
-  createMetadataWorkflow, describeMetadataWorkflow,
+  createMetadataWorkflow,
+  describeMetadataWorkflow,
   getMetadataWorkflowStatistics,
   listMetadataWorkflows,
-  listMetadataWorkflowSteps
+  listMetadataWorkflowSteps,
+  updateMetadataWorkflow,
+  type PartialWorkflow,
 } from "@ncfritz/olympus-sdk/dionysus";
 import type { FilterValue } from "antd/es/table/interface";
 import type { SortOptions } from "./common";
@@ -55,6 +58,17 @@ class WorkflowApi {
     return await listMetadataWorkflowSteps({
       path: {
         workflowId: id,
+      },
+    });
+  }
+
+  async updateWorkflow(id: string, updates: PartialWorkflow) {
+    return await updateMetadataWorkflow({
+      path: {
+        workflowId: id,
+      },
+      body: {
+        workflow: updates,
       },
     });
   }
