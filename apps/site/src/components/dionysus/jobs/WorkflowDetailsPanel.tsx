@@ -13,7 +13,6 @@ import {
   Row,
   Space,
   Spin,
-  Statistic,
   Typography,
 } from "antd";
 import { DateTime } from "luxon";
@@ -21,12 +20,9 @@ import prettyMilliseconds from "pretty-ms";
 import type { ItemType } from "rc-collapse/es/interface";
 import React, { useState } from "react";
 import workflowApi from "../../../api/workflowApi";
-import type {
-  JobStatus,
-  Workflow,
-  WorkflowStep,
-} from "@ncfritz/olympus-sdk/dionysus";
+import type { Workflow, WorkflowStep } from "@ncfritz/olympus-sdk/dionysus";
 import { useFetch } from "../../../hooks/useFetch";
+import Description from "../../common/Description";
 import RefreshTimer from "../../common/RefreshTimer";
 import Timestamp from "../../data/Timestamp";
 import { getBatchJobStatusIndicator } from "./utils";
@@ -210,96 +206,117 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
           >
             <Row>
               <Col span={6}>
-                <Statistic
+                <Description
                   title={"Created Time"}
-                  value={step.job.createdTime}
-                  formatter={(value: string) => {
-                    return <Timestamp value={value} />;
-                  }}
+                  value={
+                    <Timestamp value={step.job.createdTime} showTime={true} />
+                  }
                   valueStyle={{ fontSize: "inherit" }}
+                  titleColor={"#666666"}
+                  titleFontSize={"13px"}
                 />
               </Col>
               <Col span={6}>
-                <Statistic
+                <Description
                   title={"Last Updated Time"}
-                  value={step.job.lastUpdatedTime}
-                  formatter={(value: string) => {
-                    return <Timestamp value={value} />;
-                  }}
+                  value={
+                    <Timestamp
+                      value={step.job.lastUpdatedTime}
+                      showTime={true}
+                    />
+                  }
                   valueStyle={{ fontSize: "inherit" }}
+                  titleColor={"#666666"}
+                  titleFontSize={"13px"}
                 />
               </Col>
               <Col span={6}>
-                <Statistic
+                <Description
                   title={"Started Time"}
-                  value={step.job.startedTime}
-                  formatter={(value: string) => {
-                    return <Timestamp value={value} />;
-                  }}
+                  value={
+                    <Timestamp value={step.job.startedTime} showTime={true} />
+                  }
                   valueStyle={{ fontSize: "inherit" }}
+                  titleColor={"#666666"}
+                  titleFontSize={"13px"}
                 />
               </Col>
               <Col span={6}>
-                <Statistic
+                <Description
                   title={"Finished Time"}
-                  value={step.job.finishedTime}
-                  formatter={(value: string) => {
-                    return <Timestamp value={value} />;
-                  }}
+                  value={
+                    <Timestamp value={step.job.finishedTime} showTime={true} />
+                  }
                   valueStyle={{ fontSize: "inherit" }}
+                  titleColor={"#666666"}
+                  titleFontSize={"13px"}
                 />
               </Col>
             </Row>
             <Row>
               <Col span={6}>
-                <Statistic
+                <Description
                   title={"Total Records"}
-                  value={step.job.totalRecords}
-                  valueStyle={{ fontSize: "inherit" }}
+                  value={step.job.totalRecords?.toLocaleString()}
+                  valueStyle={{ fontFamily: "monospace" }}
+                  titleColor={"#666666"}
+                  titleFontSize={"13px"}
                 />
               </Col>
               <Col span={6}>
-                <Statistic
+                <Description
                   title={"Processed Records"}
-                  value={step.job.processedRecords}
-                  valueStyle={{ fontSize: "inherit" }}
+                  value={step.job.processedRecords?.toLocaleString()}
+                  valueStyle={{ fontFamily: "monospace" }}
+                  titleColor={"#666666"}
+                  titleFontSize={"13px"}
                 />
               </Col>
               <Col span={6}>
-                <Statistic
+                <Description
                   title={"Duplicate Records"}
-                  value={step.job.duplicateRecords}
-                  valueStyle={{ fontSize: "inherit" }}
+                  value={step.job.duplicateRecords?.toLocaleString()}
+                  valueStyle={{ fontFamily: "monospace" }}
+                  titleColor={"#666666"}
+                  titleFontSize={"13px"}
                 />
               </Col>
               <Col span={6}>
-                <Statistic
+                <Description
                   title={"New Records"}
-                  value={step.job.newRecords}
-                  valueStyle={{ fontSize: "inherit" }}
+                  value={step.job.newRecords?.toLocaleString()}
+                  valueStyle={{ fontFamily: "monospace" }}
+                  titleColor={"#666666"}
+                  titleFontSize={"13px"}
                 />
               </Col>
             </Row>
             <Row>
               <Col span={6}>
-                <Statistic
+                <Description
                   title={"Expired Records"}
-                  value={step.job.expiredRecords}
-                  valueStyle={{ fontSize: "inherit" }}
+                  value={step.job.expiredRecords?.toLocaleString()}
+                  valueStyle={{ fontFamily: "monospace" }}
+                  titleColor={"#666666"}
+                  titleFontSize={"13px"}
                 />
               </Col>
               <Col span={6}>
-                <Statistic
+                <Description
                   title={"No-Op Records"}
-                  value={step.job.noOpRecords}
-                  valueStyle={{ fontSize: "inherit" }}
+                  value={step.job.noOpRecords?.toLocaleString()}
+                  valueStyle={{ fontFamily: "monospace" }}
+                  titleColor={"#666666"}
+                  titleFontSize={"13px"}
                 />
               </Col>
               <Col span={6}>
-                <Statistic
+                <Description
                   title={"Skipped Records"}
-                  value={step.job.skippedRecords}
-                  valueStyle={{ fontSize: "inherit" }}
+                  value={step.job.skippedRecords?.toLocaleString()}
+                  valueStyle={{ fontFamily: "monospace" }}
+                  titleColor={"#666666"}
+                  titleFontSize={"13px"}
                 />
               </Col>
             </Row>
@@ -326,21 +343,20 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
           <Typography.Title level={4}>Workflow Details</Typography.Title>
         </Col>
         <Col span={24}>
-          <Statistic
+          <Description
             title={"ID"}
             value={workflow.id}
             valueStyle={{ fontSize: "inherit" }}
+            titleColor={"#666666"}
           />
         </Col>
         <Col span={24}>
           <Col span={12}>
-            <Statistic
+            <Description
               title={"status"}
-              value={workflow.status}
-              formatter={(value: JobStatus) => {
-                return getBatchJobStatusIndicator(value);
-              }}
+              value={getBatchJobStatusIndicator(workflow.status)}
               valueStyle={{ fontSize: "inherit" }}
+              titleColor={"#666666"}
             />
           </Col>
         </Col>
@@ -348,43 +364,37 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
           <Typography.Title level={4}>Workflow Timing</Typography.Title>
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"Created Time"}
-            value={workflow.createdTime}
-            formatter={(value: string) => {
-              return <Timestamp value={value} />;
-            }}
+            value={<Timestamp value={workflow.createdTime} showTime={true} />}
             valueStyle={{ fontSize: "inherit" }}
+            titleColor={"#666666"}
           />
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"Last Updated Time"}
-            value={workflow.lastUpdatedTime}
-            formatter={(value: string) => {
-              return <Timestamp value={value} />;
-            }}
+            value={
+              <Timestamp value={workflow.lastUpdatedTime} showTime={true} />
+            }
             valueStyle={{ fontSize: "inherit" }}
+            titleColor={"#666666"}
           />
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"Started Time"}
-            value={workflow.startedTime}
-            formatter={(value: string) => {
-              return <Timestamp value={value} />;
-            }}
+            value={<Timestamp value={workflow.startedTime} showTime={true} />}
             valueStyle={{ fontSize: "inherit" }}
+            titleColor={"#666666"}
           />
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"Finished Time"}
-            value={workflow.finishedTime}
-            formatter={(value: string) => {
-              return <Timestamp value={value} />;
-            }}
+            value={<Timestamp value={workflow.finishedTime} showTime={true} />}
             valueStyle={{ fontSize: "inherit" }}
+            titleColor={"#666666"}
           />
         </Col>
       </Row>
