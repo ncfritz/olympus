@@ -91,7 +91,8 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
     params: undefined,
     fetchFunction: async () =>
       (
-        await batchJobApi.listBatchJobs(
+        await batchJobApi.listBatchJobsByType(
+          type,
           jobsPage,
           jobsPageSize,
           jobsSort,
