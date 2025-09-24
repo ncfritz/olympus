@@ -55,7 +55,7 @@ const Description: React.FunctionComponent<DescriptionProps> = ({
         style={{ fontSize: "12px", color: "#666666", ...valueStyle }}
         italic={!value}
       >
-        {value || emptyText}
+        {value || value === 0 ? value : emptyText}
       </Typography.Text>
     </Space>
   );
