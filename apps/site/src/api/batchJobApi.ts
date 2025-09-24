@@ -72,6 +72,7 @@ class BatchJobApi {
   async listBatchJobsByType(
     type: JobType,
     page: number,
+    pageSize: number,
     sort: SortOptions,
     filters?: Record<string, FilterValue | null>,
   ) {
@@ -80,7 +81,7 @@ class BatchJobApi {
         jobType: type,
       },
       query: {
-        pageSize: 20,
+        pageSize: pageSize,
         startPage: page,
         sort: sort.order,
         sortBy: sort.field,
