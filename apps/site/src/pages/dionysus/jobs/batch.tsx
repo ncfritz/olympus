@@ -243,11 +243,7 @@ const BatchJobsPage: React.FunctionComponent = () => {
             }}
             open={selectedJob !== undefined}
           >
-            <BatchJobDetailsPanel
-              job={selectedJob!}
-              close={closeDrawer}
-              postUpdate={async () => {}}
-            />
+            <BatchJobDetailsPanel job={selectedJob!} close={closeDrawer} />
           </Drawer>
         </Content>
       </Layout>

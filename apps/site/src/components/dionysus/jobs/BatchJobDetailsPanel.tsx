@@ -1,19 +1,18 @@
 import { Col, Empty, Row, Space, Typography } from "antd";
 import Description from "../../common/Description";
 import Timestamp from "../../data/Timestamp";
-import { type JobStatus, type BatchJob } from "@ncfritz/olympus-sdk/dionysus";
+import { type BatchJob } from "@ncfritz/olympus-sdk/dionysus";
 
 import { getBatchJobStatusIndicator } from "./utils";
 
 export interface BatchJobDetailsPanelProps {
   job: BatchJob;
   close: () => void;
-  postUpdate: () => Promise<void>;
 }
 
 const BatchJobDetailsPanel: React.FunctionComponent<
   BatchJobDetailsPanelProps
-> = ({ job, close, postUpdate }: BatchJobDetailsPanelProps) => {
+> = ({ job, close }: BatchJobDetailsPanelProps) => {
   if (!job) {
     return <Empty description={"No Batch Job Found"} />;
   }
