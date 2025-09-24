@@ -156,7 +156,7 @@ const BatchJobsPage: React.FunctionComponent = () => {
     </Space>
   );
 
-  if (!jobStatsLoading) {
+  if (jobStats && !jobStatsLoading) {
     queueTimeChart = <BatchJobQueueTimeChart stats={jobStats} />;
     runtimeChart = <BatchJobRuntimeChart stats={jobStats} />;
     statusChart = <BatchJobStatusChart stats={jobStats} />;
