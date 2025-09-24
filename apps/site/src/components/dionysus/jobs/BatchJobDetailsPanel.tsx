@@ -1,4 +1,5 @@
-import { Col, Empty, Row, Space, Statistic, Typography } from "antd";
+import { Col, Empty, Row, Space, Typography } from "antd";
+import Description from "../../common/Description";
 import Timestamp from "../../data/Timestamp";
 import { type JobStatus, type BatchJob } from "@ncfritz/olympus-sdk/dionysus";
 
@@ -24,7 +25,7 @@ const BatchJobDetailsPanel: React.FunctionComponent<
           <Typography.Title level={4}>Job Details</Typography.Title>
         </Col>
         <Col span={24}>
-          <Statistic
+          <Description
             title={"ID"}
             value={job.id}
             valueStyle={{ fontSize: "inherit" }}
@@ -32,12 +33,9 @@ const BatchJobDetailsPanel: React.FunctionComponent<
         </Col>
         <Col span={24}>
           <Col span={12}>
-            <Statistic
+            <Description
               title={"status"}
-              value={job.status}
-              formatter={(value: JobStatus) => {
-                return getBatchJobStatusIndicator(value);
-              }}
+              value={getBatchJobStatusIndicator(job.status)}
               valueStyle={{ fontSize: "inherit" }}
             />
           </Col>
@@ -46,88 +44,96 @@ const BatchJobDetailsPanel: React.FunctionComponent<
           <Typography.Title level={4}>Job Timing</Typography.Title>
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"Created Time"}
-            value={job.createdTime}
-            formatter={(value: string) => {
-              return <Timestamp value={value} />;
-            }}
+            value={<Timestamp value={job.createdTime} showTime={true} />}
             valueStyle={{ fontSize: "inherit" }}
+            titleColor={"#666666"}
+            titleFontSize={"13px"}
           />
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"Last Updated Time"}
-            value={job.lastUpdatedTime}
-            formatter={(value: string) => {
-              return <Timestamp value={value} />;
-            }}
+            value={<Timestamp value={job.lastUpdatedTime} showTime={true} />}
             valueStyle={{ fontSize: "inherit" }}
+            titleColor={"#666666"}
+            titleFontSize={"13px"}
           />
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"Started Time"}
-            value={job.startedTime}
-            formatter={(value: string) => {
-              return <Timestamp value={value} />;
-            }}
+            value={<Timestamp value={job.startedTime} showTime={true} />}
             valueStyle={{ fontSize: "inherit" }}
+            titleColor={"#666666"}
+            titleFontSize={"13px"}
           />
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"Finished Time"}
-            value={job.finishedTime}
-            formatter={(value: string) => {
-              return <Timestamp value={value} />;
-            }}
+            value={<Timestamp value={job.finishedTime} showTime={true} />}
             valueStyle={{ fontSize: "inherit" }}
+            titleColor={"#666666"}
+            titleFontSize={"13px"}
           />
         </Col>
         <Col span={24} style={{ marginTop: 24 }}>
           <Typography.Title level={4}>Records</Typography.Title>
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"Total Records"}
-            value={job.totalRecords}
-            valueStyle={{ fontSize: "inherit" }}
+            value={job.totalRecords?.toLocaleString()}
+            valueStyle={{ fontFamily: "monospace" }}
+            titleColor={"#666666"}
+            titleFontSize={"13px"}
           />
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"Processed Records"}
-            value={job.processedRecords}
-            valueStyle={{ fontSize: "inherit" }}
+            value={job.processedRecords?.toLocaleString()}
+            valueStyle={{ fontFamily: "monospace" }}
+            titleColor={"#666666"}
+            titleFontSize={"13px"}
           />
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"Duplicate Records"}
-            value={job.duplicateRecords}
-            valueStyle={{ fontSize: "inherit" }}
+            value={job.duplicateRecords?.toLocaleString()}
+            valueStyle={{ fontFamily: "monospace" }}
+            titleColor={"#666666"}
+            titleFontSize={"13px"}
           />
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"New Records"}
-            value={job.newRecords}
-            valueStyle={{ fontSize: "inherit" }}
+            value={job.newRecords?.toLocaleString()}
+            valueStyle={{ fontFamily: "monospace" }}
+            titleColor={"#666666"}
+            titleFontSize={"13px"}
           />
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"Expired Records"}
-            value={job.expiredRecords}
-            valueStyle={{ fontSize: "inherit" }}
+            value={job.expiredRecords?.toLocaleString()}
+            valueStyle={{ fontFamily: "monospace" }}
+            titleColor={"#666666"}
+            titleFontSize={"13px"}
           />
         </Col>
         <Col span={12}>
-          <Statistic
+          <Description
             title={"No-op Records"}
-            value={job.noOpRecords}
-            valueStyle={{ fontSize: "inherit" }}
+            value={job.noOpRecords?.toLocaleString()}
+            valueStyle={{ fontFamily: "monospace" }}
+            titleColor={"#666666"}
+            titleFontSize={"13px"}
           />
         </Col>
         <Col span={24}></Col>
