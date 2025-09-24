@@ -1,10 +1,9 @@
 import { CalendarOutlined } from "@ant-design/icons";
-import type { IconProps } from "@ant-design/icons/es/components/IconBase";
 import { Col, Popover, Row, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 
 export interface TimestampProps {
-  value: string;
+  value?: string;
   unknownValue?: string;
   showTime?: boolean;
   showIcon?: boolean;
@@ -20,7 +19,7 @@ const Timestamp: React.FunctionComponent<TimestampProps> = ({
   icon = <CalendarOutlined />,
   direction = "vertical",
 }: TimestampProps) => {
-  const time = DateTime.fromISO(value).toUTC();
+  const time = value ? DateTime.fromISO(value).toUTC() : undefined;
 
   if (!time || !time.isValid) {
     return <Typography.Text>{unknownValue}</Typography.Text>;
