@@ -3,6 +3,7 @@ import {
   CloseCircleFilled,
   CloudDownloadOutlined,
   HomeOutlined,
+  LinkOutlined,
   QrcodeOutlined,
 } from "@ant-design/icons";
 import type {
@@ -30,6 +31,7 @@ import { useRouter } from "next/router";
 import React, { useState } from "react";
 import metadataApi from "../../../api/metadataApi";
 import Description from "../../../components/common/Description";
+import ExternalIdsList from "../../../components/dionysus/metadata/ExternalIdsList";
 import MetadataFetchJobPanel from "../../../components/dionysus/metadata/MetadataFetchJobPanel";
 import MovieList from "../../../components/dionysus/metadata/MovieList";
 import PersonHistoryTimeline from "../../../components/dionysus/metadata/PersonHistoryTimeline";
@@ -444,6 +446,11 @@ const PersonDetailPage: React.FunctionComponent = () => {
                     />
                   </Space>
                 ),
+              },
+              {
+                key: "t-info-externalIds",
+                label: <LinkOutlined />,
+                children: <ExternalIdsList ids={person.externalIds} />,
               },
               {
                 key: "m-info-qr",

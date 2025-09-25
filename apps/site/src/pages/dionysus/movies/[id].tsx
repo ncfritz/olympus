@@ -28,6 +28,8 @@ import {
   Tag,
   Progress,
   QRCode,
+  Row,
+  Col,
 } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import { DateTime } from "luxon";
@@ -39,6 +41,7 @@ import ReactCountryFlag from "react-country-flag/src";
 import metadataApi from "../../../api/metadataApi";
 import Description from "../../../components/common/Description";
 import LoadingWrapper from "../../../components/common/LoadingWrapper";
+import ExternalIdsList from "../../../components/dionysus/metadata/ExternalIdsList";
 import MetadataFetchJobPanel from "../../../components/dionysus/metadata/MetadataFetchJobPanel";
 import MovieAlternativeTitlesList from "../../../components/dionysus/metadata/MovieAlternativeTitlesList";
 import MovieCastList from "../../../components/dionysus/metadata/MovieCastList";
@@ -654,17 +657,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
                         direction={"vertical"}
                         style={{ margin: 12, width: "100%" }}
                       >
-                        <Space direction={"horizontal"}>
-                          {movie.externalIds.map((item) => {
-                            return (
-                              <Button
-                                icon={getExternalIdIcon(item.type)}
-                                type={"text"}
-                                size={"large"}
-                              />
-                            );
-                          })}
-                        </Space>
+                        <ExternalIdsList ids={movie.externalIds} />
                         <Description
                           title={"Budget"}
                           value={

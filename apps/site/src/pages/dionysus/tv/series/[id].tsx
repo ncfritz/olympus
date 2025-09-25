@@ -38,6 +38,7 @@ import ReactCountryFlag from "react-country-flag/src";
 import metadataApi from "../../../../api/metadataApi";
 import Description from "../../../../components/common/Description";
 import LoadingWrapper from "../../../../components/common/LoadingWrapper";
+import ExternalIdsList from "../../../../components/dionysus/metadata/ExternalIdsList";
 import MetadataFetchJobPanel from "../../../../components/dionysus/metadata/MetadataFetchJobPanel";
 import MovieAlternativeTitlesList from "../../../../components/dionysus/metadata/MovieAlternativeTitlesList";
 import MovieImagesPanel from "../../../../components/dionysus/metadata/MovieImagesPanel";
@@ -50,10 +51,7 @@ import TvSeriesCastList from "../../../../components/dionysus/metadata/TvSeriesC
 import TvSeriesCrewList from "../../../../components/dionysus/metadata/TvSeriesCrewList";
 import TvSeriesList from "../../../../components/dionysus/metadata/TvSeriesList";
 import TvSeriesPosterCard from "../../../../components/dionysus/metadata/TvSeriesPosterCard";
-import {
-  getExternalIdIcon,
-  getProgressColor,
-} from "../../../../components/dionysus/metadata/util";
+import { getProgressColor } from "../../../../components/dionysus/metadata/util";
 import { useFetch } from "../../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../../icons";
 
@@ -721,17 +719,6 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                         direction={"vertical"}
                         style={{ margin: 12, width: "100%" }}
                       >
-                        <Space direction={"horizontal"}>
-                          {tvSeries.externalIds.map((item) => {
-                            return (
-                              <Button
-                                icon={getExternalIdIcon(item.type)}
-                                type={"text"}
-                                size={"large"}
-                              />
-                            );
-                          })}
-                        </Space>
                         <Space direction={"vertical"} style={{ width: "100%" }}>
                           <Description
                             title={"Networks"}
@@ -758,6 +745,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                             }
                           />
                         </Space>
+                        <ExternalIdsList ids={tvSeries.externalIds} />
                         <Description
                           title={"Origin Countries"}
                           value={

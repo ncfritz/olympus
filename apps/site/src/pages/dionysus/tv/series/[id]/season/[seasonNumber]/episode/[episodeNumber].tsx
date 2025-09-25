@@ -1,12 +1,13 @@
 import {
   BookOutlined,
   CalendarOutlined,
-  CloudDownloadOutlined, FileImageOutlined,
+  CloudDownloadOutlined,
+  FileImageOutlined,
   HeartOutlined,
   HomeOutlined,
   InfoCircleFilled,
   QrcodeOutlined,
-  SearchOutlined
+  SearchOutlined,
 } from "@ant-design/icons";
 import type {
   Episode,
@@ -34,16 +35,14 @@ import React, { useState } from "react";
 import metadataApi from "../../../../../../../../api/metadataApi";
 import Description from "../../../../../../../../components/common/Description";
 import LoadingWrapper from "../../../../../../../../components/common/LoadingWrapper";
+import ExternalIdsList from "../../../../../../../../components/dionysus/metadata/ExternalIdsList";
 import MetadataFetchJobPanel from "../../../../../../../../components/dionysus/metadata/MetadataFetchJobPanel";
 import MovieImagesPanel from "../../../../../../../../components/dionysus/metadata/MovieImagesPanel";
 import MovieVideoPanel from "../../../../../../../../components/dionysus/metadata/MovieVideoPanel";
 import TvEpisodeCastList from "../../../../../../../../components/dionysus/metadata/TvEpisodeCastList";
 import TvEpisodeCrewList from "../../../../../../../../components/dionysus/metadata/TvEpisodeCrewList";
 import TvSeasonSummaryCard from "../../../../../../../../components/dionysus/metadata/TvSeasonSummaryCard";
-import {
-  getExternalIdIcon,
-  getProgressColor,
-} from "../../../../../../../../components/dionysus/metadata/util";
+import { getProgressColor } from "../../../../../../../../components/dionysus/metadata/util";
 import { useFetch } from "../../../../../../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../../../../../../icons";
 
@@ -317,16 +316,28 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
                   {episode?.series.name}
                 </Typography.Title>
               </Link>
-              <Link
-                href={`/dionysus/tv/series/${episode.series.id}/season/${episode.seasonNumber}`}
-              >
+              <Space direction={"horizontal"}>
+                <Link
+                  href={`/dionysus/tv/series/${episode.series.id}/season/${episode.seasonNumber}`}
+                >
+                  <Typography.Title
+                    level={4}
+                    style={{ color: "#ffffffcc", marginBottom: 3 }}
+                  >
+                    Season {episode.season.seasonNumber}
+                  </Typography.Title>
+                </Link>
                 <Typography.Title
                   level={4}
                   style={{ color: "#ffffffcc", marginBottom: 3 }}
+                >-</Typography.Title>
+                <Typography.Title
+                  level={5}
+                  style={{ color: "#ffffffcc", marginBottom: 3 }}
                 >
-                  Season {episode.season.seasonNumber}
+                  Episode {episode.episodeNumber}: {episode.name}
                 </Typography.Title>
-              </Link>
+              </Space>
               <Space
                 direction={"horizontal"}
                 size={16}
@@ -616,17 +627,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
                         direction={"vertical"}
                         style={{ margin: 12, width: "100%" }}
                       >
-                        <Space direction={"horizontal"}>
-                          {episode.externalIds.map((item) => {
-                            return (
-                              <Button
-                                icon={getExternalIdIcon(item.type)}
-                                type={"text"}
-                                size={"large"}
-                              />
-                            );
-                          })}
-                        </Space>
+                        <ExternalIdsList ids={episode.externalIds} />
                       </Space>
                     ),
                   },
