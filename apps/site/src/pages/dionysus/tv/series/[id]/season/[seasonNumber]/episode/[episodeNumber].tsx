@@ -11,6 +11,7 @@ import {
 } from "@ant-design/icons";
 import type {
   Episode,
+  Season,
   TvEpisodeCastMember,
   TvEpisodeCrewMember,
 } from "@ncfritz/olympus-sdk/dionysus";
@@ -41,10 +42,16 @@ import MovieImagesPanel from "../../../../../../../../components/dionysus/metada
 import MovieVideoPanel from "../../../../../../../../components/dionysus/metadata/MovieVideoPanel";
 import TvEpisodeCastList from "../../../../../../../../components/dionysus/metadata/TvEpisodeCastList";
 import TvEpisodeCrewList from "../../../../../../../../components/dionysus/metadata/TvEpisodeCrewList";
+import TvEpisodeList from "../../../../../../../../components/dionysus/metadata/TvEpisodeList";
 import TvSeasonSummaryCard from "../../../../../../../../components/dionysus/metadata/TvSeasonSummaryCard";
 import { getProgressColor } from "../../../../../../../../components/dionysus/metadata/util";
 import { useFetch } from "../../../../../../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../../../../../../icons";
+
+interface SeasonId {
+  seriesId: number;
+  seasonNumber: number;
+}
 
 interface EpisodeId {
   seriesId: number;
@@ -79,6 +86,20 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         )
       ).data.episode,
   });
+
+  const [tvSeason, tvSeasonLoading, tvSeasonError] = useFetch<SeasonId, Season>(
+    {
+      dataType: "TV season episodes",
+      watch: [id, seasonNumber],
+      params: {
+        seriesId: id as unknown as number,
+        seasonNumber: seasonNumber as unknown as number,
+      },
+      fetchFunction: async (o) =>
+        (await metadataApi.describeTvSeason(o.seriesId, o.seasonNumber)).data
+          .season,
+    },
+  );
 
   const [crew, crewLoading, crewError] = useFetch<
     EpisodeId,
@@ -330,7 +351,9 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
                 <Typography.Title
                   level={4}
                   style={{ color: "#ffffffcc", marginBottom: 3 }}
-                >-</Typography.Title>
+                >
+                  -
+                </Typography.Title>
                 <Typography.Title
                   level={5}
                   style={{ color: "#ffffffcc", marginBottom: 3 }}
@@ -625,9 +648,22 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
                     children: (
                       <Space
                         direction={"vertical"}
-                        style={{ margin: 12, width: "100%" }}
+                        style={{ padding: 12, width: "100%" }}
                       >
                         <ExternalIdsList ids={episode.externalIds} />
+                        <Description
+                          title={"Season Episodes"}
+                          style={{ width: "100%", paddingRight: 8 }}
+                          value={
+                            <TvEpisodeList
+                              series={tvSeason?.series}
+                              episodes={tvSeason?.episodes}
+                              currentEpisode={episode.episodeNumber}
+                              loading={tvSeasonLoading}
+                              error={tvSeasonError}
+                            />
+                          }
+                        />
                       </Space>
                     ),
                   },
