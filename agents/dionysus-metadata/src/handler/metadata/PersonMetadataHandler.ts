@@ -72,14 +72,16 @@ export class PersonMetadataHandler extends BaseMetadataHandler<
 
     const images: UniqueSet<PartialBaseImage> = new UniqueSet();
 
-    personResponse.images.profiles.forEach((value) => {
-      images.add({
-        filePath: value.file_path,
-        width: value.width,
-        height: value.height,
-        languageCode: value.iso_639_1,
+    if (personResponse.images?.profiles) {
+      personResponse.images.profiles.forEach((value) => {
+        images.add({
+          filePath: value.file_path,
+          width: value.width,
+          height: value.height,
+          languageCode: value.iso_639_1,
+        });
       });
-    });
+    }
 
     const externalIds: UniqueSet<PartialExternalId> = new UniqueSet();
 
