@@ -643,10 +643,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                     key: "t-main-crew",
                     label: "Crew",
                     children: (
-                      <Space
-                        direction={"vertical"}
-                        style={{ width: "100%", padding: 16 }}
-                      >
+                      <Space direction={"vertical"} style={{ width: "100%" }}>
                         <LoadingWrapper
                           loading={crewLoading}
                           error={crewError}

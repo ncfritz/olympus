@@ -1,7 +1,4 @@
-import {
-  EyeOutlined,
-  HeartOutlined,
-} from "@ant-design/icons";
+import { EyeOutlined, HeartOutlined } from "@ant-design/icons";
 import type { SparseMovie } from "@ncfritz/olympus-sdk/dionysus";
 import { Badge, List } from "antd";
 import Link from "next/link";

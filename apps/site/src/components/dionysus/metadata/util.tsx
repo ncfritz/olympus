@@ -199,6 +199,7 @@ export const getPersonCardImageHorizontal = (person: BasePerson) => {
         backgroundColor: "#eeeeee",
         borderRadius: 8,
         margin: 8,
+        justifyContent: "center",
       }}
       styles={{
         item: {
