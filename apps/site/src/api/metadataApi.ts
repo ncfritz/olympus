@@ -12,6 +12,11 @@ import {
   describeTvSeason,
   describeTvSeries,
   getMetadataFetchJobStatistics,
+  getMovieAggregateStatistics,
+  getMovieRuntimeStatistics,
+  getMovieLocationStatistics,
+  getMovieReleaseStatusStatistics,
+  getMovieReleaseYearStatistics,
   getPeopleBirthdayStatistics,
   getPeopleDeathdayStatistics,
   getPeopleDepartmentStatistics,
@@ -27,6 +32,7 @@ import {
   listMovieCrew,
   listMovieCrewJobsForPerson,
   listMovieRecommendations,
+  listMovies,
   listNetworks,
   listNetworkTvSeries,
   listPeople,
@@ -44,7 +50,7 @@ import {
   type MetadataFetchJobStatus,
   type MetadataJobType,
   type MetadatFetchJobUpdate,
-  updateMetadataFetchJob,
+  updateMetadataFetchJob
 } from "@ncfritz/olympus-sdk/dionysus";
 import type { FilterValue } from "antd/es/table/interface";
 import type { SortOptions } from "./common";
@@ -373,6 +379,26 @@ class MetadataApi {
     });
   }
 
+  async getMovieLocationStatistics() {
+    return await getMovieLocationStatistics({});
+  }
+
+  async getMovieReleaseStatusStatistics() {
+    return await getMovieReleaseStatusStatistics({});
+  }
+
+  async getMovieReleaseYearStatistics() {
+    return await getMovieReleaseYearStatistics({});
+  }
+
+  async getMovieAggregateStatistics() {
+    return await getMovieAggregateStatistics({});
+  }
+
+  async getMovieRuntimeStatistics() {
+    return await getMovieRuntimeStatistics({});
+  }
+
   async listMetadataFetchJobs(
     page: number,
     pageSize: number,
@@ -399,6 +425,25 @@ class MetadataApi {
     filters?: Record<string, FilterValue | null>,
   ) {
     return await listPeople({
+      query: {
+        pageSize: pageSize,
+        startPage: page,
+        sort: sort.order,
+        sortBy: sort.field,
+        filters: filters
+          ? `${Buffer.from(JSON.stringify(filters)).toString("base64")}`
+          : undefined,
+      },
+    });
+  }
+
+  async listMovies(
+    page: number,
+    pageSize: number,
+    sort: SortOptions,
+    filters?: Record<string, FilterValue | null>,
+  ) {
+    return await listMovies({
       query: {
         pageSize: pageSize,
         startPage: page,
