@@ -20,7 +20,7 @@ export const useFetch = <O, T>(
   (quiet: boolean) => Promise<void>,
   (value: T) => void,
 ] => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [data, setData] = useState<T | undefined>(options.default);
   const [error, setError] = useState<Error | undefined>(undefined);
 
@@ -33,8 +33,12 @@ export const useFetch = <O, T>(
     setError(undefined);
 
     try {
-      setData(await options.fetchFunction(options.params));
+      const data = await options.fetchFunction(options.params);
+
+      setData(data);
     } catch (e) {
+      console.error("Failed to fetch...", e);
+
       setError(e);
 
       api["error"]({
