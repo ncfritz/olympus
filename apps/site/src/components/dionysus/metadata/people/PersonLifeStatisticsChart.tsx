@@ -11,10 +11,9 @@ export type PersonLifeStatisticsChartProps = {
   stats: PersonLifeStatistic[];
 };
 
-const PersonLifeStatisticsChart = ({
-  statisticType,
-  stats,
-}: PersonLifeStatisticsChartProps) => {
+const PersonLifeStatisticsChart: React.FunctionComponent<
+  PersonLifeStatisticsChartProps
+> = ({ statisticType, stats }: PersonLifeStatisticsChartProps) => {
   const [categories, setCategories] = useState<number[]>([]);
   const [data, setData] = useState<number[]>([]);
 
