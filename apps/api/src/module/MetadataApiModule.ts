@@ -20,10 +20,20 @@ import { CreateLanguageController } from "../controller/dionysus/metadata/langua
 import { ListLanguagesController } from "../controller/dionysus/metadata/language/ListLanguages";
 import { CreateMovieController } from "../controller/dionysus/metadata/movie/CreateMovie";
 import { DescribeMovieController } from "../controller/dionysus/metadata/movie/DescribeMovie";
+import {
+  GetMovieAggregateStatisticsController
+} from "../controller/dionysus/metadata/movie/GetMovieAggregateStatistics";
+import { GetMovieLocationStatisticsController } from "../controller/dionysus/metadata/movie/GetMovieLocationStatistics";
+import { GetMovieReleaseStatusStatisticsController } from "../controller/dionysus/metadata/movie/GetMovieReleaseStatusStatistics";
+import {
+  GetMovieReleaseYearStatisticsController
+} from "../controller/dionysus/metadata/movie/GetMovieReleaseYearStatistics";
+import { GetMovieRuntimeStatisticsController } from "../controller/dionysus/metadata/movie/GetMovieRuntimeStatistics";
 import { ListMovieCastController } from "../controller/dionysus/metadata/movie/ListMovieCast";
 import { ListMovieCollectionsController } from "../controller/dionysus/metadata/movie/ListMovieCollections";
 import { ListMovieCrewController } from "../controller/dionysus/metadata/movie/ListMovieCrew";
 import { ListMovieRecommendationsController } from "../controller/dionysus/metadata/movie/ListMovieRecommendations";
+import { ListMoviesController } from "../controller/dionysus/metadata/movie/ListMovies";
 import { CreateNetworkController } from "../controller/dionysus/metadata/network/CreateNetwork";
 import { DescribeNetworkController } from "../controller/dionysus/metadata/network/DescribeNetwork";
 import { ListNetworksController } from "../controller/dionysus/metadata/network/ListNetworks";
@@ -88,6 +98,11 @@ import { RabbitModule } from "./RabbitModule";
     DescribeTvSeasonController,
     DescribeTvSeriesController,
     GetMetadataFetchJobStatisticsController,
+    GetMovieAggregateStatisticsController,
+    GetMovieLocationStatisticsController,
+    GetMovieReleaseStatusStatisticsController,
+    GetMovieReleaseYearStatisticsController,
+    GetMovieRuntimeStatisticsController,
     GetPeopleBirthdayStatisticsController,
     GetPeopleDeathdayStatisticsController,
     GetPeopleDepartmentStatisticsController,
@@ -96,6 +111,7 @@ import { RabbitModule } from "./RabbitModule";
     ListGenresController,
     ListKeywordsController,
     ListLanguagesController,
+    ListMoviesController,
     ListNetworksController,
     ListNetworkTvSeriesController,
     ListPeopleController,
