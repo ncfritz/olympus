@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
+import { PaginatedResults } from "../../common";
 import { Certification } from "./certifications";
 import { Collection } from "./collections";
 import {
@@ -404,6 +405,41 @@ export class PartialMovieRecommendation {
   recommendationId: number;
 }
 
+export class MovieLocationStatistic {
+  @ApiProperty({ type: String })
+  countryCode: string;
+
+  @ApiProperty({ type: Number })
+  count: number;
+}
+
+export class MovieStatusStatistic {
+  @ApiProperty({ type: String })
+  status: string;
+
+  @ApiProperty({ type: Number })
+  count: number;
+}
+
+export class MovieYearStatistic {
+  @ApiProperty({ type: Number })
+  year: number;
+
+  @ApiProperty({ type: Number })
+  count: number;
+}
+
+export class MovieRuntimeStatistic {
+  @ApiProperty({ type: Number })
+  runtime: number;
+
+  @ApiProperty({ type: String })
+  label: string;
+
+  @ApiProperty({ type: Number })
+  count: number;
+}
+
 export class CreateMovieRequest {
   @ApiProperty({
     type: () => PartialMovie,
@@ -423,6 +459,14 @@ export class DescribeMovieResponse {
     type: () => Movie,
   })
   movie: Movie;
+}
+
+export class ListMoviesResponse extends PaginatedResults {
+  @ApiProperty({
+    type: () => SparseMovie,
+    isArray: true,
+  })
+  movies: SparseMovie[];
 }
 
 export class ListMovieCastResponse {
@@ -455,4 +499,53 @@ export class ListMovieCollectionsResponse {
     isArray: true,
   })
   collections: Collection[];
+}
+
+export class GetMovieLocationStatisticsResponse {
+  @ApiProperty({
+    type: () => MovieLocationStatistic,
+    isArray: true,
+  })
+  statistics: MovieLocationStatistic[];
+}
+
+export class GetMovieReleaseStatusStatisticsResponse {
+  @ApiProperty({
+    type: () => MovieStatusStatistic,
+    isArray: true,
+  })
+  statistics: MovieStatusStatistic[];
+}
+
+export class GetMovieReleaseYearStatisticsResponse {
+  @ApiProperty({
+    type: () => MovieYearStatistic,
+    isArray: true,
+  })
+  statistics: MovieYearStatistic[];
+}
+
+export class GetMovieRuntimeStatisticsResponse {
+  @ApiProperty({
+    type: () => MovieRuntimeStatistic,
+    isArray: true,
+  })
+  statistics: MovieRuntimeStatistic[];
+}
+
+export class GetMovieAggregateStatisticsResponse {
+  @ApiProperty({ type: Number })
+  count: number;
+
+  @ApiProperty({ type: Number })
+  averageBudget: number;
+
+  @ApiProperty({ type: Number })
+  averageRevenue: number;
+
+  @ApiProperty({ type: Number })
+  maxRevenue: number;
+
+  @ApiProperty({ type: Number })
+  averageRuntime: number;
 }
