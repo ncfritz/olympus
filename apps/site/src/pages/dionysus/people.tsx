@@ -1,10 +1,9 @@
 import { HomeOutlined } from "@ant-design/icons";
 import type {
-  BasePerson,
   PersonDepartmentStatistic,
   PersonLifeStatistic,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Affix, Breadcrumb, Col, Layout, Row, Space, Typography } from "antd";
+import { Affix, Breadcrumb, Col, Layout, Row, Space } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React from "react";
@@ -97,7 +96,7 @@ const PeopleIndexPage: React.FunctionComponent = () => {
         }}
       >
         <Content style={{ width: "calc(100vw - 384px)" }}>
-          <Row gutter={16}>
+          <Row gutter={16} style={{ margin: 16 }}>
             <Col span={8}>
               <LoadingWrapper
                 loading={birthdayStatsLoading}
@@ -129,11 +128,7 @@ const PeopleIndexPage: React.FunctionComponent = () => {
               </LoadingWrapper>
             </Col>
           </Row>
-          <Space
-            direction={"vertical"}
-            size={16}
-            style={{ width: "100%", padding: 16 }}
-          >
+          <Space direction={"vertical"} size={2} style={{ width: "100%" }}>
             <PersonList
               title={"Actors"}
               listType={"top actors"}
