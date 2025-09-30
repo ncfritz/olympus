@@ -1,27 +1,42 @@
-import { FileImageOutlined } from "@ant-design/icons";
+import {
+  CaretRightOutlined,
+  FilterFilled,
+  ProfileOutlined,
+  TableOutlined,
+} from "@ant-design/icons";
 import type {
   MovieCrewMember,
   BasePerson,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
-  Card,
   Collapse,
   type CollapseProps,
   Empty,
+  Input,
   List,
+  Radio,
   Space,
   Typography,
 } from "antd";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useDebounce } from "use-debounce";
+import PersonCard from "./PersonCard";
 
 export interface MovieCrewListProps {
   crew: MovieCrewMember[];
+  filterable?: boolean;
+  defaultLayout?: "grid" | "list";
 }
 
 const MovieCrewList: React.FunctionComponent<MovieCrewListProps> = ({
   crew,
+  filterable = true,
+  defaultLayout = "grid",
 }: MovieCrewListProps) => {
+  const [layout, setLayout] = useState<"list" | "grid">(defaultLayout);
+  const [filter, setFilter] = useState<string>("");
+  const [filteredCrew, setFilteredCrew] = useState(crew);
+
   const [departments, setDepartments] = useState<Set<string>>(new Set());
   const [departmentPeople, setDepartmentPeople] = useState<
     Map<string, Set<number>>
@@ -31,14 +46,30 @@ const MovieCrewList: React.FunctionComponent<MovieCrewListProps> = ({
     Map<number, Map<string, Set<string>>>
   >(new Map());
 
+  const [debouncedFilter] = useDebounce<string>(filter, 300);
+
+  useEffect(() => {
+    if (debouncedFilter && debouncedFilter.length >= 3) {
+      const newFilteredCast = crew.filter((item) => {
+        return item.person.name
+          .toLowerCase()
+          .includes(debouncedFilter.toLowerCase());
+      });
+
+      setFilteredCrew(newFilteredCast);
+    } else if (debouncedFilter.length <= 0) {
+      setFilteredCrew(crew);
+    }
+  }, [debouncedFilter]);
+
   useEffect(() => {
     const newDepartments: Set<string> = new Set();
     const newDepartmentPeople: Map<string, Set<number>> = new Map();
     const newPeople: Map<number, BasePerson> = new Map();
     const newPersonJobs: Map<number, Map<string, Set<string>>> = new Map();
 
-    if (crew && crew.length > 0) {
-      crew.forEach((item) => {
+    if (filteredCrew && filteredCrew.length > 0) {
+      filteredCrew.forEach((item) => {
         if (!newDepartments.has(item.department)) {
           newDepartments.add(item.department);
           newDepartmentPeople.set(item.department, new Set());
@@ -68,7 +99,9 @@ const MovieCrewList: React.FunctionComponent<MovieCrewListProps> = ({
       setPeople(newPeople);
       setPersonJobs(newPersonJobs);
     }
-  }, crew);
+  }, [filteredCrew]);
+
+  const columns = layout === "grid" ? 12 : 1;
 
   let content = <Empty />;
 
@@ -84,84 +117,48 @@ const MovieCrewList: React.FunctionComponent<MovieCrewListProps> = ({
 
       collapseItems.push({
         key: department,
-        label: department,
+        label: (
+          <Typography.Text
+            style={{
+              fontSize: "16px",
+              color: "#333333",
+              fontWeight: 500,
+            }}
+          >
+            {department}
+          </Typography.Text>
+        ),
+        styles: {
+          header: { marginBottom: 8 },
+        },
         children: (
           <List
-            grid={{ column: 12, gutter: 16 }}
+            grid={{ column: columns, gutter: 16 }}
             dataSource={departmentMembers}
             renderItem={(item) => {
               const itemJobs = personJobs.get(item.id)!.get(department);
-
+              const jobsInfo = (
+                <Typography.Text
+                  style={{
+                    fontSize: "9px",
+                    color: "#666666",
+                    lineHeight: 1,
+                  }}
+                >
+                  {[...itemJobs!].join(" / ")}
+                </Typography.Text>
+              );
               return (
                 <List.Item>
-                  <Link href={`/dionysus/person/${item.id}`}>
-                    <Card
-                      variant={"borderless"}
-                      hoverable={true}
-                      styles={{
-                        body: {
-                          margin: 0,
-                          padding: 0,
-                          flexDirection: "column",
-                          justifyContent: "start",
-                          display: "flex",
-                        },
-                        actions: { margin: 0, padding: 0 },
-                      }}
-                      cover={
-                        item.profilePath ? (
-                          <img
-                            src={`https://image.tmdb.org/t/p/h632/${item.profilePath}}`}
-                            alt={"Poster"}
-                          />
-                        ) : (
-                          <Space
-                            style={{
-                              aspectRatio: "calc(2 / 3)",
-                              backgroundColor: "#eeeeee",
-                            }}
-                            styles={{
-                              item: {
-                                display: "flex",
-                                alignContent: "center",
-                                justifyContent: "center",
-                                height: "100%",
-                              },
-                            }}
-                          >
-                            <FileImageOutlined
-                              style={{ fontSize: "64px", color: "#dddddd" }}
-                            />
-                          </Space>
-                        )
-                      }
-                    >
-                      <Space
-                        size={3}
-                        direction={"vertical"}
-                        style={{ padding: 8, width: "100%" }}
-                        styles={{ item: { width: "100%", lineHeight: 1 } }}
-                      >
-                        <Typography.Text
-                          style={{
-                            fontSize: "10px",
-                            lineHeight: 1,
-                          }}
-                        >
-                          {item.name}
-                        </Typography.Text>
-                        <Typography.Text
-                          style={{
-                            fontSize: "9px",
-                            color: "#666666",
-                            lineHeight: 1,
-                          }}
-                        >
-                          {[...itemJobs!].join(" / ")}
-                        </Typography.Text>
-                      </Space>
-                    </Card>
-                  </Link>
+                  {layout === "grid" ? (
+                    <PersonCard direction={"vertical"} person={item}>
+                      {jobsInfo}
+                    </PersonCard>
+                  ) : (
+                    <PersonCard direction={"horizontal"} person={item}>
+                      {jobsInfo}
+                    </PersonCard>
+                  )}
                 </List.Item>
               );
             }}
@@ -173,6 +170,9 @@ const MovieCrewList: React.FunctionComponent<MovieCrewListProps> = ({
     content = (
       <Collapse
         collapsible={"header"}
+        expandIcon={({ isActive }) => (
+          <CaretRightOutlined rotate={isActive ? 90 : 0} />
+        )}
         ghost={true}
         items={collapseItems}
         defaultActiveKey={[...departments]}
@@ -181,8 +181,67 @@ const MovieCrewList: React.FunctionComponent<MovieCrewListProps> = ({
   }
 
   return (
-    <Space size={8} direction={"vertical"} style={{ width: "100%" }}>
-      {content}
+    <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+      {filterable && (
+        <Space
+          direction={"horizontal"}
+          style={{
+            padding: 8,
+            background: "#fafafa",
+            width: "100%",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Input
+            size={"small"}
+            prefix={
+              <FilterFilled
+                style={{
+                  color: debouncedFilter?.length >= 3 ? "#1677ff" : "#afafaf",
+                }}
+              />
+            }
+            placeholder={"Search by name"}
+            allowClear={true}
+            style={{
+              width: 500,
+              background: "#ffffff",
+              borderColor: "#efefef",
+            }}
+            value={filter}
+            onChange={(e) => {
+              setFilter(e.target.value.trim());
+            }}
+          />
+          <Radio.Group
+            size={"small"}
+            optionType={"button"}
+            defaultValue={layout}
+            className={"dionysus-filter-header"}
+            onChange={(e) => {
+              setLayout(e.target.value);
+            }}
+            options={[
+              {
+                value: "list",
+                label: <ProfileOutlined />,
+              },
+              {
+                value: "grid",
+                label: <TableOutlined />,
+              },
+            ]}
+          />
+        </Space>
+      )}
+      <Space
+        direction={"vertical"}
+        size={8}
+        style={{ padding: 16, paddingTop: 0, width: "100%" }}
+      >
+        {content}
+      </Space>
     </Space>
   );
 };

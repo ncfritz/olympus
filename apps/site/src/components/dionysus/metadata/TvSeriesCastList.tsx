@@ -1,5 +1,5 @@
 import {
-  FilterOutlined,
+  FilterFilled,
   InfoCircleOutlined,
   ProfileOutlined,
   TableOutlined,
@@ -53,7 +53,13 @@ const TvSeriesCastList: React.FunctionComponent<TvSeriesCastList> = ({
       >
         <Input
           size={"small"}
-          prefix={<FilterOutlined style={{ color: "#cccccc" }} />}
+          prefix={
+            <FilterFilled
+              style={{
+                color: debouncedFilter?.length >= 3 ? "#1677ff" : "#afafaf",
+              }}
+            />
+          }
           placeholder={"Search by name"}
           allowClear={true}
           style={{ width: 500, background: "#ffffff", borderColor: "#efefef" }}

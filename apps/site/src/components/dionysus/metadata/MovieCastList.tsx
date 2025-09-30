@@ -1,5 +1,5 @@
 import {
-  FilterOutlined,
+  FilterFilled,
   ProfileOutlined,
   TableOutlined,
 } from "@ant-design/icons";
@@ -57,7 +57,13 @@ const MovieCastList: React.FunctionComponent<MovieCastListProps> = ({
         >
           <Input
             size={"small"}
-            prefix={<FilterOutlined style={{ color: "#cccccc" }} />}
+            prefix={
+              <FilterFilled
+                style={{
+                  color: debouncedFilter?.length >= 3 ? "#1677ff" : "#afafaf",
+                }}
+              />
+            }
             placeholder={"Search by name"}
             allowClear={true}
             style={{
@@ -92,7 +98,7 @@ const MovieCastList: React.FunctionComponent<MovieCastListProps> = ({
         </Space>
       )}
       <List
-        style={{ padding: 16 }}
+        style={{ padding: 16, paddingTop: 8 }}
         grid={{ column: columns, gutter: 16 }}
         dataSource={filteredCast}
         renderItem={(item) => {
