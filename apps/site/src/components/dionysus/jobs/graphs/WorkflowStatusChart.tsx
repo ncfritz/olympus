@@ -49,22 +49,27 @@ const WorkflowStatusChart = ({ stats }: WorkflowStatusChartProps) => {
           {
             name: "Created",
             data: stats.series.status.created,
-            color: "#ffa600",
+            color: "#003f5c",
           },
           {
             name: "Started",
             data: stats.series.status.started,
-            color: "#ef5675",
+            color: "#58508d",
           },
           {
             name: "Success",
             data: stats.series.status.success,
-            color: "#7a5195",
+            color: "#bc5090",
           },
           {
             name: "Failed",
             data: stats.series.status.failed,
-            color: "#003f5c",
+            color: "#ff6361",
+          },
+          {
+            name: "Cancelled",
+            data: stats.series.status.cancelled,
+            color: "#ffa600",
           },
         ],
         credits: {
