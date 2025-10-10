@@ -185,7 +185,13 @@ export class CreateMovieController {
               }
               data: $productionCountries
             }
-            recommendations: { data: $recommendations }
+            recommendations: {
+              on_conflict: {
+                constraint: movie_recommendations_pkey
+                update_columns: [id, recommendationId]
+              }
+              data: $recommendations
+            }
             releaseDates: {
               on_conflict: {
                 constraint: movie_release_dates_pkey
