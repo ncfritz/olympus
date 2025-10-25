@@ -1,28 +1,31 @@
+import {
+  BatchJob,
+  FilterDefinition,
+  FilterType,
+  JobType,
+  ListBatchJobsByTypeResponse,
+  SortDirection,
+} from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiProduces,
-  ApiQuery,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/job/BatchJobConverter";
 import { GraphQlListBatchJobsResponse } from "../../../../types/batchJobs";
 import {
+  ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
 import {
-  BatchJob,
-  JobType,
-  ListBatchJobsByTypeResponse,
-  SortDirection,
-} from "@ncfritz/olympus-model";
-import {
   buildFilterExpression,
   buildPaginationExpression,
+  parseFilterDefinition,
 } from "../../../../utils/filterUtil";
 
 @Controller({ version: "1" })
@@ -46,11 +49,7 @@ export class ListBatchJobsByTypeController {
     enum: JobType,
     enumName: "JobType",
   })
-  @ApiQuery({
-    name: "filters",
-    type: String,
-    required: false,
-  })
+  @ApiFilterParams()
   @ApiPaginationParams()
   @ApiOkResponse({
     description:
@@ -67,8 +66,22 @@ export class ListBatchJobsByTypeController {
     @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const typeExpression = `type: {_eq: $type}`;
-    const whereExpression = buildFilterExpression(filters, [typeExpression]);
+    const typeFilter: FilterDefinition = {
+      type: FilterType.EQUALS,
+      name: "type",
+      value: type,
+    };
+    const userFilters = parseFilterDefinition(filters);
+
+    const whereExpression = buildFilterExpression(
+      userFilters
+        ? {
+            type: FilterType.AND,
+            name: "_",
+            value: [typeFilter, userFilters!],
+          }
+        : undefined,
+    );
     const paginationExpression = buildPaginationExpression({
       pageSize: pageSize,
       startPage: startPage,
@@ -77,7 +90,7 @@ export class ListBatchJobsByTypeController {
     });
 
     const fetchRequest = gql`
-      query ListBatchJobs($type: String!) {
+      query ListBatchJobs {
       dionysus_bulk_load_jobs(${[paginationExpression, whereExpression].join(", ")}) {
         id
         type
@@ -105,7 +118,6 @@ export class ListBatchJobsByTypeController {
     const fetchResponse =
       await this.graphQLClient.request<GraphQlListBatchJobsResponse>(
         fetchRequest,
-        { type: type },
       );
     const fetchedJobs: BatchJob[] = [];
 

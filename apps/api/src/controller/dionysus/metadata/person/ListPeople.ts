@@ -4,17 +4,13 @@ import {
   SortDirection,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiProduces,
-  ApiQuery,
-} from "@nestjs/swagger";
+import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toBaseDomainObject as toDomainObject } from "../../../../convert/dionysus/metadata/PersonConverter";
 import { GraphQlBasePerson } from "../../../../types/dionysus/metadata/person";
 import {
+  ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
@@ -47,11 +43,7 @@ export class ListPeopleController {
     tags: ["Batch"],
   })
   @ApiProduces("application/json")
-  @ApiQuery({
-    name: "filters",
-    type: String,
-    required: false,
-  })
+  @ApiFilterParams()
   @ApiPaginationParams()
   @ApiOkResponse({
     description:

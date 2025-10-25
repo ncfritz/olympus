@@ -1,20 +1,16 @@
 import {
-  BatchJob,
+  BatchJob, FilterDefinition,
   ListBatchJobsResponse,
-  SortDirection,
+  SortDirection
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiProduces,
-  ApiQuery,
-} from "@nestjs/swagger";
+import { ApiExtraModels, ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/job/BatchJobConverter";
 import { GraphQlListBatchJobsResponse } from "../../../../types/batchJobs";
 import {
+  ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
@@ -24,6 +20,7 @@ import {
 } from "../../../../utils/filterUtil";
 
 @Controller({ version: "1" })
+@ApiExtraModels(FilterDefinition)
 export class ListBatchJobsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
@@ -38,11 +35,7 @@ export class ListBatchJobsController {
     tags: ["Batch"],
   })
   @ApiProduces("application/json")
-  @ApiQuery({
-    name: "filters",
-    type: String,
-    required: false,
-  })
+  @ApiFilterParams()
   @ApiPaginationParams()
   @ApiOkResponse({
     description:

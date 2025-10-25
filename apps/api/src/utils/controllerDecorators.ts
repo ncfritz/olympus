@@ -71,6 +71,17 @@ export function ApiPaginationParams() {
   );
 }
 
+export function ApiFilterParams() {
+  return applyDecorators(
+    ApiQuery({
+      name: "filters",
+      type: String,
+      format: "byte",
+      required: false,
+    }),
+  );
+}
+
 export const Header = createParamDecorator(
   (name: string, ctx: ExecutionContext): string | undefined => {
     const req = ctx.switchToHttp().getRequest<IncomingMessage>();

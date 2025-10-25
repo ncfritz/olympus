@@ -4,17 +4,13 @@ import {
   SparseMovie,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiProduces,
-  ApiQuery,
-} from "@nestjs/swagger";
+import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toSparseDomainObject as toDomainObject } from "../../../../convert/dionysus/metadata/MovieConverter";
 import { GraphQlSparseMovie } from "../../../../types/dionysus/metadata/movie";
 import {
+  ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
@@ -47,11 +43,7 @@ export class ListMoviesController {
     tags: ["Batch"],
   })
   @ApiProduces("application/json")
-  @ApiQuery({
-    name: "filters",
-    type: String,
-    required: false,
-  })
+  @ApiFilterParams()
   @ApiPaginationParams()
   @ApiOkResponse({
     description:
