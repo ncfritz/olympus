@@ -40,6 +40,7 @@ import {
   type BatchJob,
   type ListBatchJobsResponse,
   type GetBatchJobStatsByTypeResponse,
+  type FilterDefinition,
 } from "@ncfritz/olympus-sdk/dionysus";
 
 export interface BatchJobsPanelProps {
@@ -81,13 +82,36 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
   });
   const [targetStatus, setTargetStatus] = useState<JobStatus>("created");
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterDefinition | undefined>(
+    undefined,
+  );
+
+  useEffect(() => {
+    const newFilters: FilterDefinition[] = [];
+
+    if (jobFilters["status"]) {
+      newFilters.push({
+        type: "in",
+        name: "status",
+        value: jobFilters["status"] as string[],
+      });
+    }
+
+    if (newFilters && newFilters.length <= 0) {
+      setFilters(undefined);
+    } else if (newFilters.length > 1) {
+      setFilters({ type: "and", name: "_", value: newFilters });
+    } else {
+      setFilters(newFilters[0]);
+    }
+  }, [jobFilters]);
 
   const [jobs, jobsLoading, jobsError, fetchJobs] = useFetch<
     undefined,
     ListBatchJobsResponse
   >({
     dataType: "batch jobs",
-    watch: [],
+    watch: [filters],
     params: undefined,
     fetchFunction: async () =>
       (
@@ -96,7 +120,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
           jobsPage,
           jobsPageSize,
           jobsSort,
-          jobFilters,
+          filters,
         )
       ).data,
   });

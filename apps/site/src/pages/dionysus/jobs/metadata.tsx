@@ -8,6 +8,9 @@ import {
   SendOutlined,
 } from "@ant-design/icons";
 import type {
+  FilterDefinition,
+  GetMetadataFetchJobStatusStatisticsResponse,
+  ListMetadataFetchJobsResponse,
   MetadataFetchJob,
   MetadataFetchJobStatus,
 } from "@ncfritz/olympus-sdk/dionysus";
@@ -17,7 +20,6 @@ import {
   Col,
   Drawer,
   Layout,
-  notification,
   Progress,
   Row,
   Space,
@@ -33,7 +35,7 @@ import { Content } from "antd/lib/layout/layout";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import prettyMilliseconds from "pretty-ms";
-import React, { type ReactNode, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import metadataApi from "../../../api/metadataApi";
 import Timestamp from "../../../components/data/Timestamp";
@@ -45,30 +47,19 @@ import MetadataJobStatusSelect from "../../../components/dionysus/jobs/MetadataJ
 import RedriveModal from "../../../components/dionysus/jobs/RedriveModal";
 import { getMetadataJobStatusIndicator } from "../../../components/dionysus/jobs/utils";
 import RefreshTimer from "../../../components/common/RefreshTimer";
+import { useFetch } from "../../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
-import type { NotificationType } from "../../../utils/notifications";
 
 type OnChange = NonNullable<TableProps<MetadataFetchJob>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
 const MetadataFetchJobsPage: React.FunctionComponent = () => {
-  const [api] = notification.useNotification();
-
   const [selectedJob, setSelectedJob] = useState<MetadataFetchJob | undefined>(
     undefined,
   );
-  const [jobStats, setJobStats] = useState<any>();
-  const [jobStatsLoading, setJobStatsLoading] = useState<any>(true);
-  const [, setJobStatsError] = useState<any>();
-
-  const [metadataFetchJobs, setMetadataFetchJobs] = useState<any>();
   const [metadataFetchJobRequested, setMetadataFetchJobRequested] =
     useState("");
-  const [metadataFetchJobsLoading, setMetadataFetchJobsLoading] =
-    useState(true);
-  const [, setMetadataFetchJobsError] = useState<any>();
-  const [metadataFetchJobsCount, setMetadataFetchJobsCount] = useState(0);
   const [metadataFetchJobsPage, setMetadataFetchJobsPage] = useState(0);
   const [metadataFetchJobsPageSize, setMetadataFetchJobsPageSize] =
     useState(50);
@@ -94,72 +85,71 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
     useState<MetadataFetchJobStatus>("queued");
   const [redriveModalOpen, setRedriveModalOpen] = useState(false);
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterDefinition | undefined>(
+    undefined,
+  );
 
-  const openNotificationWithIcon = (
-    type: NotificationType,
-    message: string,
-    content: ReactNode,
-  ) => {
-    api[type]({
-      message: message,
-      description: content,
-    });
-  };
+  useEffect(() => {
+    const newFilters: FilterDefinition[] = [];
 
-  const fetchStatistics = async (quiet = false) => {
-    if (!quiet) {
-      setJobStatsLoading(true);
+    if (metadataFetchJobFilters["status"]) {
+      newFilters.push({
+        type: "in",
+        name: "status",
+        value: metadataFetchJobFilters["status"] as string[],
+      });
     }
-    setJobStatsError(undefined);
 
-    try {
-      const getJobsStatsResponse = await metadataApi.fetchJobStatistics();
-      setJobStats(getJobsStatsResponse.data);
-    } catch (e) {
-      setJobStatsError(e);
-    } finally {
-      setJobStatsLoading(false);
+    if (metadataFetchJobFilters["type"]) {
+      newFilters.push({
+        type: "in",
+        name: "type",
+        value: metadataFetchJobFilters["type"] as string[],
+      });
     }
-  };
 
-  const fetchMetadataFetchJobs = async (quiet = false) => {
-    if (!quiet) {
-      setMetadataFetchJobsLoading(true);
+    if (newFilters && newFilters.length <= 0) {
+      setFilters(undefined);
+    } else if (newFilters.length > 1) {
+      setFilters({ type: "and", name: "_", value: newFilters });
+    } else {
+      setFilters(newFilters[0]);
     }
-    setMetadataFetchJobsError(undefined);
+  }, [metadataFetchJobFilters]);
 
-    try {
-      const listMetadataFetchJobsResponse =
+  const [jobStats, jobStatsLoading, jobStatsError, fetchStatistics] = useFetch<
+    undefined,
+    GetMetadataFetchJobStatusStatisticsResponse
+  >({
+    dataType: "batch job statistics",
+    watch: [],
+    params: undefined,
+    fetchFunction: async () => (await metadataApi.fetchJobStatistics()).data,
+  });
+
+  const [
+    metadataFetchJobs,
+    metadataFetchJobsLoading,
+    metadataFetchJobsError,
+    fetchMetadataFetchJobs,
+  ] = useFetch<undefined, ListMetadataFetchJobsResponse>({
+    dataType: "metadata fetch jobs",
+    watch: [filters],
+    params: undefined,
+    fetchFunction: async () =>
+      (
         await metadataApi.listMetadataFetchJobs(
           metadataFetchJobsPage,
           metadataFetchJobsPageSize,
           metadataFetchJobsSort,
-          metadataFetchJobFilters,
-        );
-      setMetadataFetchJobs(listMetadataFetchJobsResponse.data.jobs);
-      setMetadataFetchJobsCount(listMetadataFetchJobsResponse.data.count);
-    } catch (e) {
-      setMetadataFetchJobsError(e);
-      openNotificationWithIcon(
-        "error",
-        "Unable to load certifications list",
-        "Poop",
-      );
-    } finally {
-      setMetadataFetchJobsLoading(false);
-    }
-  };
+          filters,
+        )
+      ).data,
+  });
 
   useEffect(() => {
     (async () => {
-      await fetchMetadataFetchJobs();
-      await fetchStatistics();
-    })();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      await fetchMetadataFetchJobs();
+      await fetchMetadataFetchJobs(true);
       setSelectedRowKeys([]);
     })();
   }, [metadataFetchJobRequested]);
@@ -595,7 +585,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
           disabled={processingRows || metadataFetchJobsLoading}
           icon={<ReloadOutlined />}
           onClick={async () => {
-            await fetchMetadataFetchJobs();
+            await fetchMetadataFetchJobs(true);
             await fetchStatistics(true);
           }}
         />
@@ -706,7 +696,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
               return `${record.id}-${record.type}`;
             }}
             columns={columns}
-            dataSource={metadataFetchJobs}
+            dataSource={metadataFetchJobs?.jobs}
             size={"middle"}
             loading={metadataFetchJobsLoading || processingRows}
             pagination={{
@@ -716,7 +706,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
               position: ["bottomLeft"],
               pageSize: metadataFetchJobsPageSize,
               size: "small",
-              total: metadataFetchJobsCount,
+              total: metadataFetchJobs?.count,
               showSizeChanger: true,
               pageSizeOptions: [25, 50, 100, 250, 500],
               onShowSizeChange: (current, size) => {

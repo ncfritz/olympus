@@ -50,7 +50,8 @@ import {
   type MetadataFetchJobStatus,
   type MetadataJobType,
   type MetadatFetchJobUpdate,
-  updateMetadataFetchJob
+  type FilterDefinition,
+  updateMetadataFetchJob,
 } from "@ncfritz/olympus-sdk/dionysus";
 import type { FilterValue } from "antd/es/table/interface";
 import type { SortOptions } from "./common";
@@ -403,7 +404,7 @@ class MetadataApi {
     page: number,
     pageSize: number,
     sort: SortOptions,
-    filters?: Record<string, FilterValue | null>,
+    filters?: FilterDefinition,
   ) {
     return await listMetadataFetchJobs({
       query: {
@@ -422,8 +423,10 @@ class MetadataApi {
     page: number,
     pageSize: number,
     sort: SortOptions,
-    filters?: Record<string, FilterValue | null>,
+    filters?: FilterDefinition,
   ) {
+    console.log(filters);
+
     return await listPeople({
       query: {
         pageSize: pageSize,

@@ -133,7 +133,9 @@ const PeopleIndexPage: React.FunctionComponent = () => {
               title={"Actors"}
               listType={"top actors"}
               initialFilters={{
-                knownForDepartment: ["Acting", "Actors"],
+                type: "in",
+                name: "knownForDepartment",
+                value: ["Acting", "Actors"],
               }}
               columns={16}
               rows={2}
@@ -142,7 +144,9 @@ const PeopleIndexPage: React.FunctionComponent = () => {
               title={"Directors"}
               listType={"top directors"}
               initialFilters={{
-                knownForDepartment: ["Directing"],
+                type: "in",
+                name: "knownForDepartment",
+                value: ["Directing"],
               }}
               columns={16}
             />
@@ -150,7 +154,9 @@ const PeopleIndexPage: React.FunctionComponent = () => {
               title={"Creators"}
               listType={"top creators"}
               initialFilters={{
-                knownForDepartment: ["Creator"],
+                type: "in",
+                name: "knownForDepartment",
+                value: ["Creator"],
               }}
               columns={16}
             />

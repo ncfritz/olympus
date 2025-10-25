@@ -1,29 +1,24 @@
 import { FilterFilled } from "@ant-design/icons";
-import type { BasePerson } from "@ncfritz/olympus-sdk/dionysus";
-import {
-  Button,
-  Checkbox,
-  Divider,
-  Dropdown,
-  Flex,
-  Input,
-  List,
-  Slider,
-  Space,
-  Typography,
-} from "antd";
-import type { FilterValue } from "antd/es/table/interface";
+import type {
+  BasePerson,
+  FilterDefinition,
+} from "@ncfritz/olympus-sdk/dionysus";
+import { Input, List, Space, Typography } from "antd";
+import { DateTime } from "luxon";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useDebounce } from "use-debounce";
 import type { SortOptions } from "../../../api/common";
 import metadataApi from "../../../api/metadataApi";
 import { useFetch } from "../../../hooks/useFetch";
+import AgeRangeFilter from "./filter/AgeRangefilter";
+import CheckboxFilter from "./filter/CheckboxFilter";
 import LoadingWrapper from "../../common/LoadingWrapper";
 import PersonCard from "./PersonCard";
 
 export interface PersonListProps {
   title?: string;
-  initialFilters?: Record<string, FilterValue>;
+  initialFilters?: FilterDefinition;
   initialSort?: SortOptions;
   listType: string;
   columns?: number;
@@ -43,14 +38,84 @@ const PersonList: React.FunctionComponent<PersonListProps> = ({
 }: PersonListProps) => {
   const [sort, setSort] = useState(initialSort);
   const [filters, setFilters] = useState(initialFilters);
-  const [nameFilter, setNameFilter] = useState("");
+  const [nameFilter, setNameFilter] = useState<string>("");
+  const [genderFilter, setGenderFilter] = useState<number[]>([]);
+  const [vitalStatusFilter, setVitalStatusFilter] = useState<("d" | "a")[]>([]);
+  const [ageRangeFilter, setAgeRangeFilter] = useState<number[]>([]);
+
+  const [debouncedNameFilter] = useDebounce<string>(nameFilter, 300);
+
+  useEffect(() => {
+    const newFilters: FilterDefinition[] = initialFilters
+      ? [initialFilters]
+      : [];
+
+    if (debouncedNameFilter.length >= 3) {
+      newFilters.push({
+        type: "ilike",
+        name: "name",
+        value: `%${debouncedNameFilter}%`,
+      });
+    }
+
+    if (genderFilter.length > 0) {
+      newFilters.push({
+        type: "in",
+        name: "gender",
+        value: genderFilter,
+      });
+    }
+
+    if (vitalStatusFilter.length > 0) {
+      const allSelected = ["a", "d"].every((value: "a" | "d") =>
+        vitalStatusFilter.includes(value),
+      );
+
+      if (!allSelected) {
+        newFilters.push({
+          type: "is_null",
+          name: "deathday",
+          // If the first element is "a" - alive, we want to make sure that the deathday is null
+          // otherwise, it must be set for a deceased person
+          value: vitalStatusFilter[0] === "a",
+        });
+      }
+    }
+
+    if (ageRangeFilter.length === 2) {
+      const now = DateTime.now().startOf("day");
+
+      newFilters.push({
+        type: "and",
+        name: "__ageRange_and",
+        value: [
+          {
+            type: "lte",
+            name: "birthday",
+            value: now.minus({ year: ageRangeFilter[0] }).toISODate(),
+          },
+          {
+            type: "gte",
+            name: "birthday",
+            value: now.minus({ year: ageRangeFilter[1] }).toISODate(),
+          },
+        ],
+      });
+    }
+
+    if (newFilters.length > 1) {
+      setFilters({ type: "and", name: "__base", value: newFilters });
+    } else {
+      setFilters(newFilters[0]);
+    }
+  }, [debouncedNameFilter, genderFilter, vitalStatusFilter, ageRangeFilter]);
 
   const [people, peopleLoading, peopleError] = useFetch<
     undefined,
     BasePerson[]
   >({
     dataType: listType,
-    watch: [],
+    watch: [filters],
     params: undefined,
     fetchFunction: async () =>
       (await metadataApi.listPeople(0, columns * rows, sort, filters)).data
@@ -84,191 +149,29 @@ const PersonList: React.FunctionComponent<PersonListProps> = ({
             setNameFilter(e.target.value.trim());
           }}
         />
-        <Dropdown
-          trigger={["click"]}
-          popupRender={(menus) => {
-            return (
-              <Space
-                direction={"vertical"}
-                size={0}
-                style={{
-                  backgroundColor: "#ffffff",
-                  borderRadius: 6,
-                }}
-              >
-                {React.cloneElement(
-                  menus as React.ReactElement<{
-                    style: React.CSSProperties;
-                  }>,
-                  { style: { boxShadow: "none" } },
-                )}
-                <Divider style={{ margin: 0 }} />
-                <Flex justify={"space-between"} style={{ margin: 4 }}>
-                  <Button type={"link"} size={"small"}>
-                    Reset
-                  </Button>
-                  <Button type={"primary"} size={"small"}>
-                    Ok
-                  </Button>
-                </Flex>
-              </Space>
-            );
+        <CheckboxFilter
+          label={"Gender"}
+          items={[
+            { key: 0, label: "Unspecified" },
+            { key: 1, label: "Female" },
+            { key: 2, label: "Male" },
+            { key: 3, label: "Non-Binary" },
+          ]}
+          onFiltersSet={(values) => {
+            setGenderFilter(values as number[]);
           }}
-          menu={{
-            onClick: ({ item, key, keyPath, domEvent }) => {
-              domEvent.stopPropagation();
-            },
-            onSelect: ({ item, key, keyPath, domEvent }) => {
-              domEvent.stopPropagation();
-            },
-            items: [
-              {
-                type: "item",
-                key: "filter-gender-unknown",
-                onClick: ({ item, key, keyPath, domEvent }) =>
-                  domEvent.stopPropagation(),
-                label: (
-                  <Checkbox onClick={(e) => e.stopPropagation()}>
-                    Unknown
-                  </Checkbox>
-                ),
-              },
-              {
-                type: "item",
-                key: "filter-gender-male",
-                onClick: ({ item, key, keyPath, domEvent }) =>
-                  domEvent.stopPropagation(),
-                label: (
-                  <Checkbox onClick={(e) => e.stopPropagation()}>Male</Checkbox>
-                ),
-              },
-              {
-                type: "item",
-                key: "filter-gender-female",
-                onClick: ({ item, key, keyPath, domEvent }) =>
-                  domEvent.stopPropagation(),
-                label: (
-                  <Checkbox onClick={(e) => e.stopPropagation()}>
-                    Female
-                  </Checkbox>
-                ),
-              },
-              {
-                type: "item",
-                key: "filter-gender-non",
-                onClick: ({ item, key, keyPath, domEvent }) =>
-                  domEvent.stopPropagation(),
-                label: (
-                  <Checkbox onClick={(e) => e.stopPropagation()}>
-                    Non-Binary
-                  </Checkbox>
-                ),
-              },
-            ],
+        />
+        <CheckboxFilter
+          label={"Vital Status"}
+          items={[
+            { key: "a", label: "Alive" },
+            { key: "d", label: "Deceased" },
+          ]}
+          onFiltersSet={(values) => {
+            setVitalStatusFilter(values as ("a" | "d")[]);
           }}
-        >
-          <Space
-            size={0}
-            style={{
-              marginLeft: 8,
-              color: "#000000",
-              alignItems: "center",
-              fontSize: "12px",
-              fontWeight: 600,
-            }}
-          >
-            Gender
-            <Button
-              size={"small"}
-              type={"text"}
-              icon={
-                <FilterFilled style={{ fontSize: "12px", color: "#b0b0b0" }} />
-              }
-            />
-          </Space>
-        </Dropdown>
-        <Dropdown
-          trigger={["click"]}
-          popupRender={(menus) => {
-            return (
-              <Space
-                direction={"vertical"}
-                size={0}
-                style={{
-                  backgroundColor: "#ffffff",
-                  borderRadius: 6,
-                }}
-              >
-                {React.cloneElement(
-                  menus as React.ReactElement<{
-                    style: React.CSSProperties;
-                  }>,
-                  { style: { boxShadow: "none" } },
-                )}
-                <Divider style={{ margin: 0 }} />
-                <Flex justify={"space-between"} style={{ margin: 4 }}>
-                  <Button type={"link"} size={"small"}>
-                    Reset
-                  </Button>
-                  <Button type={"primary"} size={"small"}>
-                    Ok
-                  </Button>
-                </Flex>
-              </Space>
-            );
-          }}
-          menu={{
-            onClick: ({ item, key, keyPath, domEvent }) => {
-              domEvent.stopPropagation();
-            },
-            onSelect: ({ item, key, keyPath, domEvent }) => {
-              domEvent.stopPropagation();
-            },
-            items: [
-              {
-                type: "item",
-                key: "filter-gender-unknown",
-                onClick: ({ item, key, keyPath, domEvent }) =>
-                  domEvent.stopPropagation(),
-                label: (
-                  <Slider
-                    min={0}
-                    max={120}
-                    step={1}
-                    range={true}
-                    defaultValue={[0, 120]}
-                    style={{ width: 350, paddingBottom: 48 }}
-                    tooltip={{
-                      open: true,
-                      placement: "bottom",
-                      color: "#b0b0b0",
-                    }}
-                  />
-                ),
-              },
-            ],
-          }}
-        >
-          <Space
-            size={0}
-            style={{
-              marginLeft: 8,
-              color: "#000000",
-              alignItems: "center",
-              fontSize: "12px",
-              fontWeight: 600,
-            }}
-          >
-            Age
-            <Button
-              size={"small"}
-              type={"text"}
-              icon={
-                <FilterFilled style={{ fontSize: "12px", color: "#b0b0b0" }} />
-              }
-            />
-          </Space>
-        </Dropdown>
+        />
+        <AgeRangeFilter label={"Age"} onFiltersSet={setAgeRangeFilter} />
       </Space>
       <List
         grid={{ gutter: 16, column: columns }}

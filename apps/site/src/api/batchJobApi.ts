@@ -11,13 +11,15 @@ import {
   type MetadataFetchJobStatus,
   type MetadataJobType,
   type PartialBatchJob,
+  type FilterDefinition,
   updateBatchJob,
 } from "@ncfritz/olympus-sdk/dionysus";
-import type { FilterValue } from "antd/es/table/interface";
+import { ApiBase } from "./apiBase";
 import type { SortOptions } from "./common";
 
-class BatchJobApi {
+class BatchJobApi extends ApiBase {
   constructor() {
+    super();
     client.setConfig({
       baseURL: "/api/v1",
       throwOnError: true,
@@ -52,19 +54,15 @@ class BatchJobApi {
     page: number,
     pageSize: number,
     sort: SortOptions,
-    filters?: Record<string, FilterValue | null>,
+    filters?: FilterDefinition,
   ) {
-    const encodedFilters = filters
-      ? Buffer.from(JSON.stringify(filters)).toString("base64")
-      : undefined;
-
     return await listBatchJobs({
       query: {
         pageSize: pageSize,
         sort: sort.order,
         sortBy: sort.field,
         startPage: page,
-        filters: encodedFilters,
+        filters: this.encodeFilters(filters),
       },
     });
   }
@@ -74,8 +72,9 @@ class BatchJobApi {
     page: number,
     pageSize: number,
     sort: SortOptions,
-    filters?: Record<string, FilterValue | null>,
+    filters?: FilterDefinition,
   ) {
+    console.log(filters);
     return await listBatchJobsByType({
       path: {
         jobType: type,
@@ -85,9 +84,7 @@ class BatchJobApi {
         startPage: page,
         sort: sort.order,
         sortBy: sort.field,
-        filters: filters
-          ? `${Buffer.from(JSON.stringify(filters)).toString("base64")}`
-          : undefined,
+        filters: this.encodeFilters(filters),
       },
     });
   }
