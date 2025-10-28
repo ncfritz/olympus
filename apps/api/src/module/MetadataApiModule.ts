@@ -20,14 +20,10 @@ import { CreateLanguageController } from "../controller/dionysus/metadata/langua
 import { ListLanguagesController } from "../controller/dionysus/metadata/language/ListLanguages";
 import { CreateMovieController } from "../controller/dionysus/metadata/movie/CreateMovie";
 import { DescribeMovieController } from "../controller/dionysus/metadata/movie/DescribeMovie";
-import {
-  GetMovieAggregateStatisticsController
-} from "../controller/dionysus/metadata/movie/GetMovieAggregateStatistics";
+import { GetMovieAggregateStatisticsController } from "../controller/dionysus/metadata/movie/GetMovieAggregateStatistics";
 import { GetMovieLocationStatisticsController } from "../controller/dionysus/metadata/movie/GetMovieLocationStatistics";
 import { GetMovieReleaseStatusStatisticsController } from "../controller/dionysus/metadata/movie/GetMovieReleaseStatusStatistics";
-import {
-  GetMovieReleaseYearStatisticsController
-} from "../controller/dionysus/metadata/movie/GetMovieReleaseYearStatistics";
+import { GetMovieReleaseYearStatisticsController } from "../controller/dionysus/metadata/movie/GetMovieReleaseYearStatistics";
 import { GetMovieRuntimeStatisticsController } from "../controller/dionysus/metadata/movie/GetMovieRuntimeStatistics";
 import { ListMovieCastController } from "../controller/dionysus/metadata/movie/ListMovieCast";
 import { ListMovieCollectionsController } from "../controller/dionysus/metadata/movie/ListMovieCollections";
@@ -57,11 +53,18 @@ import { CreateTVSeriesController } from "../controller/dionysus/metadata/tv/Cre
 import { DescribeTvEpisodeController } from "../controller/dionysus/metadata/tv/DescribeTvEpisode";
 import { DescribeTvSeasonController } from "../controller/dionysus/metadata/tv/DescribeTvSeason";
 import { DescribeTvSeriesController } from "../controller/dionysus/metadata/tv/DescribeTvSeries";
+import { GetTvSeriesAggregateStatisticsController } from "../controller/dionysus/metadata/tv/GetTvSeriesAggregateStatistics";
+import { GetTvSeriesEpisodeRuntimeStatisticsController } from "../controller/dionysus/metadata/tv/GetTvSeriesEpisodeRuntimeStatistics";
+import { GetTvSeriesFirstAirYearStatisticsController } from "../controller/dionysus/metadata/tv/GetTvSeriesFirstAirYearStatistics";
+import { GetTvSeriesLocationStatisticsController } from "../controller/dionysus/metadata/tv/GetTvSeriesLocationStatistics";
+import { GetTvSeriesSeasonStatisticsController } from "../controller/dionysus/metadata/tv/GetTvSeriesSeasonStatistics";
+import { GetTvSeriesStatusStatisticsController } from "../controller/dionysus/metadata/tv/GetTvSeriesStatusStatistics";
 import { ListTvEpisodeCastController } from "../controller/dionysus/metadata/tv/ListTvEpisodeCast";
 import { ListTvEpisodeCrewController } from "../controller/dionysus/metadata/tv/ListTvEpisodeCrew";
 import { ListTvEpisodeGuestStarsController } from "../controller/dionysus/metadata/tv/ListTvEpisodeGuestStars";
 import { ListTvSeasonCastController } from "../controller/dionysus/metadata/tv/ListTvSeasonCast";
 import { ListTvSeasonCrewController } from "../controller/dionysus/metadata/tv/ListTvSeasonCrew";
+import { ListTvSeriesController } from "../controller/dionysus/metadata/tv/ListTvSeries";
 import { ListTvSeriesCastController } from "../controller/dionysus/metadata/tv/ListTvSeriesCast";
 import { ListTvSeriesCrewController } from "../controller/dionysus/metadata/tv/ListTvSeriesCrew";
 import { ListTvSeriesRecommendationsController } from "../controller/dionysus/metadata/tv/ListTvSeriesRecommendations";
@@ -106,6 +109,12 @@ import { RabbitModule } from "./RabbitModule";
     GetPeopleBirthdayStatisticsController,
     GetPeopleDeathdayStatisticsController,
     GetPeopleDepartmentStatisticsController,
+    GetTvSeriesAggregateStatisticsController,
+    GetTvSeriesLocationStatisticsController,
+    GetTvSeriesStatusStatisticsController,
+    GetTvSeriesFirstAirYearStatisticsController,
+    GetTvSeriesEpisodeRuntimeStatisticsController,
+    GetTvSeriesSeasonStatisticsController,
     ListCertificationsController,
     ListCountriesController,
     ListGenresController,
@@ -130,6 +139,7 @@ import { RabbitModule } from "./RabbitModule";
     ListTvEpisodeGuestStarsController,
     ListTvSeasonCastController,
     ListTvSeasonCrewController,
+    ListTvSeriesController,
     ListTvSeriesCastController,
     ListTvSeriesCrewController,
     ListTvSeriesRecommendationsController,
