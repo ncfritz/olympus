@@ -10,20 +10,16 @@ import {
 import type {
   BaseImage,
   BasePerson,
-  BaseTvSeries,
-  SparseMovie,
   TypedImage,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Image, type MenuProps, Space, Typography } from "antd";
 
-export const getReleaseStatusForMovie = (
-  movie: SparseMovie,
-): [string, string] => {
+export const getReleaseStatusForMovie = (status: string): [string, string] => {
   let statusColor = "#efefef";
   let statusText = "Unknown";
 
-  if (movie.status) {
-    statusText = movie.status;
+  if (status) {
+    statusText = status;
 
     switch (statusText) {
       case "Canceled":
@@ -50,14 +46,12 @@ export const getReleaseStatusForMovie = (
   return [statusText, statusColor];
 };
 
-export const getStatusForTvSeries = (
-  tvSeries: BaseTvSeries,
-): [string, string] => {
+export const getStatusForTvSeries = (status: string): [string, string] => {
   let statusColor = "#efefef";
   let statusText = "Unknown";
 
-  if (tvSeries.status) {
-    statusText = tvSeries.status;
+  if (status) {
+    statusText = status;
 
     switch (statusText) {
       case "Canceled":

@@ -20,6 +20,7 @@ import {
   getPeopleBirthdayStatistics,
   getPeopleDeathdayStatistics,
   getPeopleDepartmentStatistics,
+  getTvSeriesLocationStatistics,
   listCertifications,
   listCountries,
   listGenres,
@@ -44,20 +45,28 @@ import {
   listTvEpisodeGuestStars,
   listTvSeasonCast,
   listTvSeasonCrew,
+  listTvSeries,
   listTvSeriesCast,
   listTvSeriesCrew,
   listTvSeriesRecommendations,
+  updateMetadataFetchJob,
+  getTvSeriesStatusStatistics,
+  getTvSeriesFirstAirYearStatistics,
+  getTvSeriesEpisodeRuntimeStatistics,
+  getTvSeriesSeasonStatistics,
+  getTvSeriesAggregateStatistics,
   type MetadataFetchJobStatus,
   type MetadataJobType,
   type MetadatFetchJobUpdate,
   type FilterDefinition,
-  updateMetadataFetchJob,
 } from "@ncfritz/olympus-sdk/dionysus";
-import type { FilterValue } from "antd/es/table/interface";
+import { ApiBase } from "./apiBase";
 import type { SortOptions } from "./common";
 
-class MetadataApi {
+class MetadataApi extends ApiBase {
   constructor() {
+    super();
+
     client.setConfig({
       baseURL: "/api/v1",
       throwOnError: true,
@@ -400,6 +409,30 @@ class MetadataApi {
     return await getMovieRuntimeStatistics({});
   }
 
+  async getTvSeriesLocationStatistics() {
+    return await getTvSeriesLocationStatistics({});
+  }
+
+  async getTvSeriesStatusStatistics() {
+    return await getTvSeriesStatusStatistics({});
+  }
+
+  async getTvSeriesFirstAirYearStatistics() {
+    return await getTvSeriesFirstAirYearStatistics({});
+  }
+
+  async getTvSeriesEpisodeRuntimeStatistics() {
+    return await getTvSeriesEpisodeRuntimeStatistics({});
+  }
+
+  async getTvSeriesSeasonStatistics() {
+    return await getTvSeriesSeasonStatistics({});
+  }
+
+  async getTvSeriesAggregateStatistics() {
+    return await getTvSeriesAggregateStatistics({});
+  }
+
   async listMetadataFetchJobs(
     page: number,
     pageSize: number,
@@ -433,9 +466,7 @@ class MetadataApi {
         startPage: page,
         sort: sort.order,
         sortBy: sort.field,
-        filters: filters
-          ? `${Buffer.from(JSON.stringify(filters)).toString("base64")}`
-          : undefined,
+        filters: this.encodeFilters(filters),
       },
     });
   }
@@ -444,7 +475,7 @@ class MetadataApi {
     page: number,
     pageSize: number,
     sort: SortOptions,
-    filters?: Record<string, FilterValue | null>,
+    filters?: FilterDefinition,
   ) {
     return await listMovies({
       query: {
@@ -452,9 +483,24 @@ class MetadataApi {
         startPage: page,
         sort: sort.order,
         sortBy: sort.field,
-        filters: filters
-          ? `${Buffer.from(JSON.stringify(filters)).toString("base64")}`
-          : undefined,
+        filters: this.encodeFilters(filters),
+      },
+    });
+  }
+
+  async listTvSeries(
+    page: number,
+    pageSize: number,
+    sort: SortOptions,
+    filters?: FilterDefinition,
+  ) {
+    return await listTvSeries({
+      query: {
+        pageSize: pageSize,
+        startPage: page,
+        sort: sort.order,
+        sortBy: sort.field,
+        filters: this.encodeFilters(filters),
       },
     });
   }

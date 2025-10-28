@@ -1,6 +1,6 @@
 "use client";
 
-import type { MovieYearStatistic } from "@ncfritz/olympus-sdk/dionysus";
+import type { YearStatistic } from "@ncfritz/olympus-sdk/dionysus";
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts";
 import { DateTime } from "luxon";
@@ -8,20 +8,31 @@ import React, { useEffect, useState } from "react";
 import metadataApi from "../../../../api/metadataApi";
 import { useFetch } from "../../../../hooks/useFetch";
 
-const MovieReleaseYearStatisticsChart: React.FunctionComponent = () => {
+export interface MovieReleaseYearStatisticsChartProps {
+  mediaType: "tv_series" | "movies";
+  size?: number;
+}
+
+const MovieReleaseYearStatisticsChart: React.FunctionComponent<
+  MovieReleaseYearStatisticsChartProps
+> = ({ mediaType, size = 10 }: MovieReleaseYearStatisticsChartProps) => {
   const [categories, setCategories] = useState<number[]>([]);
   const [data, setData] = useState<number[]>([]);
-  const [pointWidth, setPointWidth] = useState(10);
+  const [pointWidth, setPointWidth] = useState(size);
 
   const [stats, statsLoading, statsError] = useFetch<
     undefined,
-    MovieYearStatistic[]
+    YearStatistic[]
   >({
     dataType: "movies",
     watch: [],
     params: undefined,
-    fetchFunction: async () =>
-      (await metadataApi.getMovieReleaseYearStatistics()).data.statistics,
+    fetchFunction: async () => {
+      return mediaType === "movies"
+        ? (await metadataApi.getMovieReleaseYearStatistics()).data.statistics
+        : (await metadataApi.getTvSeriesFirstAirYearStatistics()).data
+            .statistics;
+    },
   });
 
   useEffect(() => {
@@ -63,7 +74,10 @@ const MovieReleaseYearStatisticsChart: React.FunctionComponent = () => {
           },
         },
         title: {
-          text: `Releases Distribution`,
+          text:
+            mediaType === "movies"
+              ? "Releases Distribution"
+              : "First Air Distribution",
           style: { fontSize: 10 },
         },
         xAxis: {

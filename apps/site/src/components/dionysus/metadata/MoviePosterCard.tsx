@@ -28,7 +28,7 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
   hoverable = false,
   className = undefined,
 }: MoviePosterCardProps) => {
-  const [statusText, statusColor] = getReleaseStatusForMovie(movie);
+  const [statusText, statusColor] = getReleaseStatusForMovie(movie.status);
 
   const extra: ReactNode[] = [];
 

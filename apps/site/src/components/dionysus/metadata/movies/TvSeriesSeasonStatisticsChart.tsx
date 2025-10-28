@@ -1,43 +1,36 @@
 "use client";
 
-import type { StatusStatistic } from "@ncfritz/olympus-sdk/dionysus";
+import type { SeasonStatistic } from "@ncfritz/olympus-sdk/dionysus";
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts";
+import { DateTime } from "luxon";
 import React, { useEffect, useState } from "react";
 import metadataApi from "../../../../api/metadataApi";
 import { useFetch } from "../../../../hooks/useFetch";
 
-export interface MediaStatusStatisticsChartProps {
-  mediaType: "tv_series" | "movies";
-}
-
-const MovieReleaseStatusStatisticsChart: React.FunctionComponent<
-  MediaStatusStatisticsChartProps
-> = ({ mediaType }: MediaStatusStatisticsChartProps) => {
-  const [categories, setCategories] = useState<string[]>([]);
+const TvSeriesSeasonStatisticsChart: React.FunctionComponent = () => {
+  const [categories, setCategories] = useState<number[]>([]);
   const [data, setData] = useState<number[]>([]);
+  const [pointWidth, setPointWidth] = useState(5);
 
   const [stats, statsLoading, statsError] = useFetch<
     undefined,
-    StatusStatistic[]
+    SeasonStatistic[]
   >({
     dataType: "movies",
     watch: [],
     params: undefined,
-    fetchFunction: async () => {
-      return mediaType === "movies"
-        ? (await metadataApi.getMovieReleaseStatusStatistics()).data.statistics
-        : (await metadataApi.getTvSeriesStatusStatistics()).data.statistics;
-    },
+    fetchFunction: async () =>
+      (await metadataApi.getTvSeriesSeasonStatistics()).data.statistics,
   });
 
   useEffect(() => {
     if (stats) {
-      const newCategories: string[] = [];
+      const newCategories: number[] = [];
       const newData: number[] = [];
 
       stats.forEach((value) => {
-        newCategories.push(value.status);
+        newCategories.push(value.seasons);
         newData.push(value.count);
       });
 
@@ -52,26 +45,31 @@ const MovieReleaseStatusStatisticsChart: React.FunctionComponent<
       options={{
         width: "100%",
         chart: {
-          height: 175,
-          type: "bar",
+          height: 275,
+          type: "column",
         },
         tooltip: {
           shared: true,
         },
         plotOptions: {
           column: {
-            pointWidth: 5,
+            pointWidth: pointWidth,
           },
         },
         title: {
-          text: null,
+          text: "Seasons",
+          style: { fontSize: 10 },
         },
         xAxis: {
           lineWidth: 0,
           categories: categories,
+          labels: {
+            rotation: -45,
+            autoRotation: undefined,
+            align: "right",
+          },
         },
         yAxis: {
-          type: "logarithmic",
           title: {
             text: null,
           },
@@ -81,7 +79,7 @@ const MovieReleaseStatusStatisticsChart: React.FunctionComponent<
         },
         series: [
           {
-            name: null,
+            name: `Season Count`,
             data: data,
             color: "#003f5c",
           },
@@ -93,4 +91,4 @@ const MovieReleaseStatusStatisticsChart: React.FunctionComponent<
     />
   );
 };
-export default MovieReleaseStatusStatisticsChart;
+export default TvSeriesSeasonStatisticsChart;

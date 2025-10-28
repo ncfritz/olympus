@@ -1,21 +1,35 @@
 import dynamic from "next/dynamic";
-import { HomeOutlined } from "@ant-design/icons";
+import { FilterFilled, HomeOutlined } from "@ant-design/icons";
 import type {
+  FilterDefinition,
   GetMovieAggregateStatisticsResponse,
   SparseMovie,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Affix, Breadcrumb, Col, Layout, Row, Space, Statistic } from "antd";
-import type { FilterValue } from "antd/es/table/interface";
+import {
+  Affix,
+  Breadcrumb,
+  Col,
+  Input,
+  Layout,
+  Row,
+  Space,
+  Statistic,
+  Tag,
+} from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import prettyMilliseconds from "pretty-ms";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useDebounce } from "use-debounce";
 import type { SortOptions } from "../../api/common";
 import metadataApi from "../../api/metadataApi";
+import CheckboxFilter from "../../components/dionysus/metadata/filter/CheckboxFilter";
+import Sorter from "../../components/dionysus/metadata/filter/Sorter";
 import MovieList from "../../components/dionysus/metadata/MovieList";
 import MovieReleaseStatusStatisticsChart from "../../components/dionysus/metadata/movies/MovieReleaseStatusStatisticsChart";
 import MovieReleaseYearStatisticsChart from "../../components/dionysus/metadata/movies/MovieReleaseYearStatisticsChart";
 import MovieRuntimeStatisticsChart from "../../components/dionysus/metadata/movies/MovieRuntimeStatisticsChart";
+import { getReleaseStatusForMovie } from "../../components/dionysus/metadata/util";
 import { useFetch } from "../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../icons";
 const MovieLocationsMap = dynamic(
@@ -28,16 +42,64 @@ const MoviesIndexPage: React.FunctionComponent = () => {
     field: "popularity",
     order: "desc",
   });
-  const [filters, setFilters] = useState<
-    Record<string, FilterValue> | undefined
-  >(undefined);
+  const [titleFilter, setTitleFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [videoFilter, setVideoFilter] = useState<("f" | "v")[]>([]);
+
+  const [filters, setFilters] = useState<FilterDefinition | undefined>(
+    undefined,
+  );
+
+  const [debouncedTitleFilter] = useDebounce<string>(titleFilter, 300);
+
+  useEffect(() => {
+    const newFilters: FilterDefinition[] = [];
+
+    if (debouncedTitleFilter.length >= 3) {
+      newFilters.push({
+        type: "ilike",
+        name: "title",
+        value: `%${debouncedTitleFilter}%`,
+      });
+    }
+
+    if (statusFilter.length > 0) {
+      newFilters.push({
+        type: "in",
+        name: "status",
+        value: statusFilter,
+      });
+    }
+
+    if (videoFilter.length > 0) {
+      const allSelected = ["f", "v"].every((value: "f" | "v") =>
+        videoFilter.includes(value),
+      );
+
+      if (!allSelected) {
+        newFilters.push({
+          type: "eq",
+          name: "video",
+          // If the first element is "a" - alive, we want to make sure that the deathday is null
+          // otherwise, it must be set for a deceased person
+          value: videoFilter[0] === "v",
+        });
+      }
+    }
+
+    if (newFilters.length > 1) {
+      setFilters({ type: "and", name: "__base", value: newFilters });
+    } else {
+      setFilters(newFilters[0]);
+    }
+  }, [debouncedTitleFilter, statusFilter, videoFilter]);
 
   const [movies, moviesLoading, moviesError] = useFetch<
     undefined,
     SparseMovie[]
   >({
     dataType: "movies",
-    watch: [],
+    watch: [sort, filters],
     params: undefined,
     fetchFunction: async () =>
       (await metadataApi.listMovies(0, 48, sort, filters)).data.movies,
@@ -107,20 +169,20 @@ const MoviesIndexPage: React.FunctionComponent = () => {
             <Col span={15}>
               <Row>
                 <Col span={24}>
-                  <MovieReleaseYearStatisticsChart />
+                  <MovieReleaseYearStatisticsChart mediaType={"movies"} />
                 </Col>
               </Row>
               <Row>
                 <Col span={12}>
-                  <MovieReleaseStatusStatisticsChart />
+                  <MovieReleaseStatusStatisticsChart mediaType={"movies"} />
                 </Col>
                 <Col span={12}>
-                  <MovieRuntimeStatisticsChart />
+                  <MovieRuntimeStatisticsChart mediaType={"movies"} />
                 </Col>
               </Row>
             </Col>
             <Col span={9}>
-              <MovieLocationsMap />
+              <MovieLocationsMap mediaType={"movies"} />
             </Col>
           </Row>
           <Row
@@ -195,7 +257,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
               style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}
             >
               <Statistic
-                title={"MAx Revenue"}
+                title={"Max Revenue"}
                 value={
                   statsLoading
                     ? 0
@@ -208,6 +270,99 @@ const MoviesIndexPage: React.FunctionComponent = () => {
               />
             </Col>
           </Row>
+          <Space
+            direction={"horizontal"}
+            size={8}
+            style={{
+              backgroundColor: "#efefef",
+              width: "100%",
+              padding: 8,
+              justifyContent: "space-between",
+            }}
+          >
+            <Space direction={"horizontal"} size={8}>
+              <Input
+                size={"small"}
+                prefix={
+                  <FilterFilled
+                    style={{
+                      color:
+                        debouncedTitleFilter?.length >= 3
+                          ? "#1677ff"
+                          : "#afafaf",
+                    }}
+                  />
+                }
+                placeholder={"Search by title"}
+                allowClear={true}
+                style={{
+                  width: 500,
+                  background: "#ffffff",
+                  borderColor: "#efefef",
+                }}
+                value={titleFilter}
+                onChange={(e) => {
+                  setTitleFilter(e.target.value.trim());
+                }}
+              />
+              <CheckboxFilter
+                label={"Status"}
+                items={[
+                  "Canceled",
+                  "In Production",
+                  "Planned",
+                  "Post Production",
+                  "Released",
+                  "Rumored",
+                ].map((item) => {
+                  const [statusText, statusColor] =
+                    getReleaseStatusForMovie(item);
+
+                  return {
+                    key: statusText,
+                    label: (
+                      <Tag color={statusColor} style={{ minWidth: 120 }}>
+                        {statusText}
+                      </Tag>
+                    ),
+                  };
+                })}
+                onFiltersSet={(values) => {
+                  setStatusFilter(values as string[]);
+                }}
+              />
+              <CheckboxFilter
+                label={"Type"}
+                items={[
+                  { key: "f", label: "Feature" },
+                  { key: "v", label: "Video" },
+                ]}
+                onFiltersSet={(values) => {
+                  setVideoFilter(values as ("f" | "v")[]);
+                }}
+              />
+            </Space>
+            <Space direction={"horizontal"} size={8}>
+              <Sorter
+                initialSort={sort.field}
+                initialDirection={sort.order}
+                sortOptions={{
+                  popularity: "Popularity",
+                  title: "Title",
+                  release_date: "Release Date",
+                  budget: "Budget",
+                  revenue: "Revenue",
+                  status: "Status",
+                }}
+                onSortChange={(sort, direction) => {
+                  setSort({
+                    field: sort,
+                    order: direction,
+                  });
+                }}
+              />
+            </Space>
+          </Space>
           <Space
             size={16}
             direction={"vertical"}

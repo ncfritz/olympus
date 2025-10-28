@@ -1,6 +1,6 @@
 "use client";
 
-import type { MovieLocationStatistic } from "@ncfritz/olympus-sdk/dionysus";
+import type { LocationStatistic } from "@ncfritz/olympus-sdk/dionysus";
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts/highmaps";
 import { useEffect, useState } from "react";
@@ -8,17 +8,26 @@ import metadataApi from "../../../../api/metadataApi";
 import { useFetch } from "../../../../hooks/useFetch";
 import topology from "@highcharts/map-collection/custom/world.topo.json" assert { type: "json" };
 
-export const MovieLocationsMap: React.FunctionComponent = () => {
+export interface MovieLocationsMapProps {
+  mediaType: "tv_series" | "movies";
+}
+
+export const MovieLocationsMap: React.FunctionComponent<
+  MovieLocationsMapProps
+> = ({ mediaType }: MovieLocationsMapProps) => {
   const [data, setData] = useState<any>([]);
   const [locationStats, locationStatsLoading, locationStatsError] = useFetch<
     undefined,
-    MovieLocationStatistic[]
+    LocationStatistic[]
   >({
-    dataType: "movies",
+    dataType: "movie locations",
     watch: [],
     params: undefined,
-    fetchFunction: async () =>
-      (await metadataApi.getMovieLocationStatistics()).data.statistics,
+    fetchFunction: async () => {
+      return mediaType === "movies"
+        ? (await metadataApi.getMovieLocationStatistics()).data.statistics
+        : (await metadataApi.getTvSeriesLocationStatistics()).data.statistics;
+    },
   });
 
   useEffect(() => {
@@ -78,6 +87,7 @@ export const MovieLocationsMap: React.FunctionComponent = () => {
         },
         legend: {
           align: "left",
+          x: 20,
         },
         series: [
           {

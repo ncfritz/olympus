@@ -1,25 +1,35 @@
 "use client";
 
-import type { MovieRuntimeStatistic, MovieYearStatistic } from "@ncfritz/olympus-sdk/dionysus";
+import type { RuntimeStatistic } from "@ncfritz/olympus-sdk/dionysus";
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts";
 import React, { useEffect, useState } from "react";
 import metadataApi from "../../../../api/metadataApi";
 import { useFetch } from "../../../../hooks/useFetch";
 
-const MovieRuntimeStatisticsChart: React.FunctionComponent = () => {
+export interface MovieRuntimeStatisticsChartProps {
+  mediaType: "tv_series" | "movies";
+}
+
+const MovieRuntimeStatisticsChart: React.FunctionComponent<
+  MovieRuntimeStatisticsChartProps
+> = ({ mediaType }: MovieRuntimeStatisticsChartProps) => {
   const [categories, setCategories] = useState<string[]>([]);
   const [data, setData] = useState<number[]>([]);
 
   const [stats, statsLoading, statsError] = useFetch<
     undefined,
-    MovieRuntimeStatistic[]
+    RuntimeStatistic[]
   >({
     dataType: "movies",
     watch: [],
     params: undefined,
-    fetchFunction: async () =>
-      (await metadataApi.getMovieRuntimeStatistics()).data.statistics,
+    fetchFunction: async () => {
+      return mediaType === "movies"
+        ? (await metadataApi.getMovieRuntimeStatistics()).data.statistics
+        : (await metadataApi.getTvSeriesEpisodeRuntimeStatistics()).data
+            .statistics;
+    },
   });
 
   useEffect(() => {
@@ -55,7 +65,10 @@ const MovieRuntimeStatisticsChart: React.FunctionComponent = () => {
           },
         },
         title: {
-          text: `Runtime Distribution`,
+          text:
+            mediaType === "movies"
+              ? "Runtime Distribution"
+              : "Episode Runtimes",
           style: { fontSize: 10 },
         },
         xAxis: {

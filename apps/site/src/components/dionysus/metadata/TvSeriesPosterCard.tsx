@@ -25,7 +25,7 @@ const TvSeriesPosterCard: React.FunctionComponent<TvSeriesPosterCardProps> = ({
   hoverable = false,
   className = undefined,
 }: TvSeriesPosterCardProps) => {
-  const [statusText, statusColor] = getStatusForTvSeries(tvSeries);
+  const [statusText, statusColor] = getStatusForTvSeries(tvSeries.status);
 
   const extra: ReactNode[] = [];
 

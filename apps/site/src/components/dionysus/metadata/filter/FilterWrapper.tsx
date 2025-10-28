@@ -1,5 +1,5 @@
 import { FilterFilled } from "@ant-design/icons";
-import { Button, Divider, Dropdown, Flex, Space } from "antd";
+import { Button, Divider, Dropdown, Flex, Space, Typography } from "antd";
 import React, { type ReactNode, useState } from "react";
 
 export interface FilterWrapperProps {
@@ -74,7 +74,8 @@ const FilterWrapper: React.FunctionComponent<FilterWrapperProps> = ({
           color: "#000000",
           alignItems: "center",
           fontSize: "12px",
-          fontWeight: 600,
+          fontWeight: 400,
+          cursor: "pointer",
         }}
       >
         {label}

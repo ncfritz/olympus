@@ -14,6 +14,7 @@ import { useFetch } from "../../../hooks/useFetch";
 import AgeRangeFilter from "./filter/AgeRangefilter";
 import CheckboxFilter from "./filter/CheckboxFilter";
 import LoadingWrapper from "../../common/LoadingWrapper";
+import Sorter from "./filter/Sorter";
 import PersonCard from "./PersonCard";
 
 export interface PersonListProps {
@@ -115,7 +116,7 @@ const PersonList: React.FunctionComponent<PersonListProps> = ({
     BasePerson[]
   >({
     dataType: listType,
-    watch: [filters],
+    watch: [sort, filters],
     params: undefined,
     fetchFunction: async () =>
       (await metadataApi.listPeople(0, columns * rows, sort, filters)).data
@@ -132,46 +133,79 @@ const PersonList: React.FunctionComponent<PersonListProps> = ({
       <Space
         direction={"horizontal"}
         size={8}
-        style={{ backgroundColor: "#efefef", width: "100%", padding: 8 }}
+        style={{
+          backgroundColor: "#efefef",
+          width: "100%",
+          padding: 8,
+          justifyContent: "space-between",
+        }}
       >
-        <Input
-          size={"small"}
-          prefix={<FilterFilled style={{ color: "#cccccc" }} />}
-          placeholder={"Search by name"}
-          allowClear={true}
-          style={{
-            width: 500,
-            background: "#ffffff",
-            borderColor: "#efefef",
-          }}
-          value={nameFilter}
-          onChange={(e) => {
-            setNameFilter(e.target.value.trim());
-          }}
-        />
-        <CheckboxFilter
-          label={"Gender"}
-          items={[
-            { key: 0, label: "Unspecified" },
-            { key: 1, label: "Female" },
-            { key: 2, label: "Male" },
-            { key: 3, label: "Non-Binary" },
-          ]}
-          onFiltersSet={(values) => {
-            setGenderFilter(values as number[]);
-          }}
-        />
-        <CheckboxFilter
-          label={"Vital Status"}
-          items={[
-            { key: "a", label: "Alive" },
-            { key: "d", label: "Deceased" },
-          ]}
-          onFiltersSet={(values) => {
-            setVitalStatusFilter(values as ("a" | "d")[]);
-          }}
-        />
-        <AgeRangeFilter label={"Age"} onFiltersSet={setAgeRangeFilter} />
+        <Space direction={"horizontal"} size={8}>
+          <Input
+            size={"small"}
+            prefix={
+              <FilterFilled
+                style={{
+                  color:
+                    debouncedNameFilter?.length >= 3 ? "#1677ff" : "#afafaf",
+                }}
+              />
+            }
+            placeholder={"Search by name"}
+            allowClear={true}
+            style={{
+              width: 500,
+              background: "#ffffff",
+              borderColor: "#efefef",
+            }}
+            value={nameFilter}
+            onChange={(e) => {
+              setNameFilter(e.target.value.trim());
+            }}
+          />
+          <CheckboxFilter
+            label={"Gender"}
+            items={[
+              { key: 0, label: "Unspecified" },
+              { key: 1, label: "Female" },
+              { key: 2, label: "Male" },
+              { key: 3, label: "Non-Binary" },
+            ]}
+            onFiltersSet={(values) => {
+              setGenderFilter(values as number[]);
+            }}
+          />
+          <CheckboxFilter
+            label={"Vital Status"}
+            items={[
+              { key: "a", label: "Alive" },
+              { key: "d", label: "Deceased" },
+            ]}
+            onFiltersSet={(values) => {
+              setVitalStatusFilter(values as ("a" | "d")[]);
+            }}
+          />
+          <AgeRangeFilter label={"Age"} onFiltersSet={setAgeRangeFilter} />
+        </Space>
+        <Space direction={"horizontal"} size={8}>
+          <Sorter
+            initialSort={sort.field}
+            initialDirection={sort.order}
+            sortOptions={{
+              popularity: "Popularity",
+              name: "Name",
+              birthday: "Birthday",
+              deathday: "Deathday",
+              gender: "Gender",
+            }}
+            onSortChange={(sort, direction) => {
+              setSort({
+                field: sort,
+                order: direction,
+              });
+            }}
+          />
+        </Space>
       </Space>
       <List
         grid={{ gutter: 16, column: columns }}
