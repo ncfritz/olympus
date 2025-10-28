@@ -9,12 +9,17 @@ import {
 import {
   AlternativeTitle,
   ExternalId,
+  LocationStatistic,
   PartialAlternativeTitle,
   PartialExternalId,
   PartialTypedImage,
   PartialVideo,
+  RuntimeStatistic,
+  SeasonStatistic,
+  StatusStatistic,
   TypedImage,
   Video,
+  YearStatistic,
 } from "./common";
 import { CountryAssociation, PartialCountryAssociation } from "./countries";
 import { GenreAssociation, PartialGenreAssociation } from "./genres";
@@ -568,10 +573,81 @@ export class ListTvSeriesCrewResponse {
   crew: TVSeriesCrewMember[];
 }
 
+export class ListTvSeriesResponse {
+  @ApiProperty({
+    type: () => BaseTVSeries,
+    isArray: true,
+  })
+  tvSeries: BaseTVSeries[];
+}
+
 export class ListTvSeriesRecommendationsResponse {
   @ApiProperty({
     type: () => BaseTVSeries,
     isArray: true,
   })
   recommendations: BaseTVSeries[];
+}
+
+export class GetTvSeriesLocationStatisticsResponse {
+  @ApiProperty({
+    type: () => LocationStatistic,
+    isArray: true,
+  })
+  statistics: LocationStatistic[];
+}
+
+export class GetTvSeriesStatusStatisticsResponse {
+  @ApiProperty({
+    type: () => StatusStatistic,
+    isArray: true,
+  })
+  statistics: StatusStatistic[];
+}
+
+export class GetTvSeriesFirstAirYearStatisticsResponse {
+  @ApiProperty({
+    type: () => YearStatistic,
+    isArray: true,
+  })
+  statistics: YearStatistic[];
+}
+
+export class GetTvSeriesEpisodeStatisticsResponse {
+  @ApiProperty({
+    type: () => RuntimeStatistic,
+    isArray: true,
+  })
+  statistics: RuntimeStatistic[];
+}
+
+export class GetTvSeriesSeasonStatisticsResponse {
+  @ApiProperty({
+    type: () => SeasonStatistic,
+    isArray: true,
+  })
+  statistics: SeasonStatistic[];
+}
+
+export class GetTvSeriesAggregateStatisticsResponse {
+  @ApiProperty({ type: Number })
+  count: number;
+
+  @ApiProperty({ type: Number })
+  totalSeasons: number;
+
+  @ApiProperty({ type: Number })
+  averageSeasonCount: number;
+
+  @ApiProperty({ type: Number })
+  maxSeasonCount: number;
+
+  @ApiProperty({ type: Number })
+  totalEpisodes: number;
+
+  @ApiProperty({ type: Number })
+  averageEpisodeCount: number;
+
+  @ApiProperty({ type: Number })
+  maxEpisodeCount: number;
 }

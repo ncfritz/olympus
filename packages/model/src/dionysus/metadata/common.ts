@@ -184,3 +184,46 @@ export class PartialVideo extends OmitType(Video, [
   @ApiProperty({ type: String })
   languageCode: string;
 }
+
+export class LocationStatistic {
+  @ApiProperty({ type: String })
+  countryCode: string;
+
+  @ApiProperty({ type: Number })
+  count: number;
+}
+
+export class StatusStatistic {
+  @ApiProperty({ type: String })
+  status: string;
+
+  @ApiProperty({ type: Number })
+  count: number;
+}
+
+export class YearStatistic {
+  @ApiProperty({ type: Number })
+  year: number;
+
+  @ApiProperty({ type: Number })
+  count: number;
+}
+
+export class RuntimeStatistic {
+  @ApiProperty({ type: Number })
+  runtime: number;
+
+  @ApiProperty({ type: String })
+  label: string;
+
+  @ApiProperty({ type: Number })
+  count: number;
+}
+
+export class SeasonStatistic {
+  @ApiProperty({ type: Number })
+  seasons: number;
+
+  @ApiProperty({ type: Number })
+  count: number;
+}

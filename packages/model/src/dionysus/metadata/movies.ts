@@ -6,13 +6,13 @@ import { Certification } from "./certifications";
 import { Collection } from "./collections";
 import {
   AlternativeTitle,
-  ExternalId,
+  ExternalId, LocationStatistic,
   PartialAlternativeTitle,
   PartialExternalId,
   PartialTypedImage,
-  PartialVideo,
+  PartialVideo, RuntimeStatistic, StatusStatistic,
   TypedImage,
-  Video,
+  Video, YearStatistic
 } from "./common";
 import {
   Country,
@@ -405,41 +405,6 @@ export class PartialMovieRecommendation {
   recommendationId: number;
 }
 
-export class MovieLocationStatistic {
-  @ApiProperty({ type: String })
-  countryCode: string;
-
-  @ApiProperty({ type: Number })
-  count: number;
-}
-
-export class MovieStatusStatistic {
-  @ApiProperty({ type: String })
-  status: string;
-
-  @ApiProperty({ type: Number })
-  count: number;
-}
-
-export class MovieYearStatistic {
-  @ApiProperty({ type: Number })
-  year: number;
-
-  @ApiProperty({ type: Number })
-  count: number;
-}
-
-export class MovieRuntimeStatistic {
-  @ApiProperty({ type: Number })
-  runtime: number;
-
-  @ApiProperty({ type: String })
-  label: string;
-
-  @ApiProperty({ type: Number })
-  count: number;
-}
-
 export class CreateMovieRequest {
   @ApiProperty({
     type: () => PartialMovie,
@@ -503,34 +468,34 @@ export class ListMovieCollectionsResponse {
 
 export class GetMovieLocationStatisticsResponse {
   @ApiProperty({
-    type: () => MovieLocationStatistic,
+    type: () => LocationStatistic,
     isArray: true,
   })
-  statistics: MovieLocationStatistic[];
+  statistics: LocationStatistic[];
 }
 
 export class GetMovieReleaseStatusStatisticsResponse {
   @ApiProperty({
-    type: () => MovieStatusStatistic,
+    type: () => StatusStatistic,
     isArray: true,
   })
-  statistics: MovieStatusStatistic[];
+  statistics: StatusStatistic[];
 }
 
 export class GetMovieReleaseYearStatisticsResponse {
   @ApiProperty({
-    type: () => MovieYearStatistic,
+    type: () => YearStatistic,
     isArray: true,
   })
-  statistics: MovieYearStatistic[];
+  statistics: YearStatistic[];
 }
 
 export class GetMovieRuntimeStatisticsResponse {
   @ApiProperty({
-    type: () => MovieRuntimeStatistic,
+    type: () => RuntimeStatistic,
     isArray: true,
   })
-  statistics: MovieRuntimeStatistic[];
+  statistics: RuntimeStatistic[];
 }
 
 export class GetMovieAggregateStatisticsResponse {
