@@ -1,6 +1,6 @@
 import {
   GetMovieReleaseYearStatisticsResponse,
-  MovieYearStatistic,
+  YearStatistic,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
@@ -8,7 +8,7 @@ import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
-type GraphQGetMovieReleaseYearStatisticsResponse = {
+type GraphQlGetMovieReleaseYearStatisticsResponse = {
   dionysus_movie_release_date_statistics: {
     year: number;
     count: number;
@@ -45,10 +45,10 @@ export class GetMovieReleaseYearStatisticsController {
     `;
 
     const fetchResponse =
-      await this.graphQLClient.request<GraphQGetMovieReleaseYearStatisticsResponse>(
+      await this.graphQLClient.request<GraphQlGetMovieReleaseYearStatisticsResponse>(
         fetchRequest,
       );
-    const releaseYearStatistics: MovieYearStatistic[] = [];
+    const releaseYearStatistics: YearStatistic[] = [];
 
     fetchResponse.dionysus_movie_release_date_statistics.forEach((result) => {
       releaseYearStatistics.push(result);

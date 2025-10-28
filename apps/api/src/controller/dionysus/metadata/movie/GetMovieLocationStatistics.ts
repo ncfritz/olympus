@@ -1,6 +1,6 @@
 import {
   GetMovieLocationStatisticsResponse,
-  MovieLocationStatistic,
+  LocationStatistic,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
@@ -48,7 +48,7 @@ export class GetMovieLocationStatisticsController {
       await this.graphQLClient.request<GraphQlMovieLocationStatistics>(
         fetchRequest,
       );
-    const statistics: MovieLocationStatistic[] = [];
+    const statistics: LocationStatistic[] = [];
 
     fetchResponse.dionysus_movie_location_statistics.forEach((result) => {
       statistics.push({

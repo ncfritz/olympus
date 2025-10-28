@@ -1,6 +1,6 @@
 import {
   GetMovieRuntimeStatisticsResponse,
-  MovieRuntimeStatistic,
+  RuntimeStatistic,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
@@ -48,7 +48,7 @@ export class GetMovieRuntimeStatisticsController {
       await this.graphQLClient.request<GraphQGetMovieRuntimeStatisticsResponse>(
         fetchRequest,
       );
-    const runtimeStatistics: MovieRuntimeStatistic[] = [];
+    const runtimeStatistics: RuntimeStatistic[] = [];
 
     fetchResponse.dionysus_movie_runtime_statistics.forEach((result) => {
       runtimeStatistics.push({

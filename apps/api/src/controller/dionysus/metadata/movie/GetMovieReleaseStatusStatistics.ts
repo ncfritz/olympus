@@ -1,6 +1,6 @@
 import {
   GetMovieReleaseStatusStatisticsResponse,
-  MovieStatusStatistic,
+  StatusStatistic,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
@@ -46,7 +46,7 @@ export class GetMovieReleaseStatusStatisticsController {
       await this.graphQLClient.request<GraphQlMovieReleaseStatusStatistics>(
         fetchRequest,
       );
-    const statistics: MovieStatusStatistic[] = [];
+    const statistics: StatusStatistic[] = [];
 
     fetchResponse.dionysus_movie_release_status_statistics.forEach((result) => {
       statistics.push({
