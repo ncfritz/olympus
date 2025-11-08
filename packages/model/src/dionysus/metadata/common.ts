@@ -227,3 +227,19 @@ export class SeasonStatistic {
   @ApiProperty({ type: Number })
   count: number;
 }
+
+export class GenreCountStatistic {
+  @ApiProperty({ type: Number })
+  genres: number;
+
+  @ApiProperty({ type: Number })
+  count: number;
+}
+
+export class GenreStatistic {
+  @ApiProperty({ type: String })
+  genre: string;
+
+  @ApiProperty({ type: Number })
+  count: number;
+}

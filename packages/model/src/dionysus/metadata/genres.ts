@@ -2,6 +2,7 @@ import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
 import { PaginatedResults } from "../../common";
+import { GenreCountStatistic, GenreStatistic } from "./common";
 
 export enum GenreType {
   TV = "TV",
@@ -71,4 +72,36 @@ export class CreateGenreResponse {
 export class ListGenresResponse extends PaginatedResults {
   @ApiProperty({ type: () => Genre, isArray: true })
   genres: Genre[];
+}
+
+export class GetMovieGenreCountStatisticsResponse {
+  @ApiProperty({
+    type: () => GenreCountStatistic,
+    isArray: true,
+  })
+  statistics: GenreCountStatistic[];
+}
+
+export class GetTvSeriesGenreCountStatisticsResponse {
+  @ApiProperty({
+    type: () => GenreCountStatistic,
+    isArray: true,
+  })
+  statistics: GenreCountStatistic[];
+}
+
+export class GetMovieGenreStatisticsResponse {
+  @ApiProperty({
+    type: () => GenreStatistic,
+    isArray: true,
+  })
+  statistics: GenreStatistic[];
+}
+
+export class GetTvSeriesGenreStatisticsResponse {
+  @ApiProperty({
+    type: () => GenreStatistic,
+    isArray: true,
+  })
+  statistics: GenreStatistic[];
 }
