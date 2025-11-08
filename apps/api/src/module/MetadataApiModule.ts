@@ -13,6 +13,10 @@ import { DescribeCollectionController } from "../controller/dionysus/metadata/co
 import { CreateCountryController } from "../controller/dionysus/metadata/country/CreateCountry";
 import { ListCountriesController } from "../controller/dionysus/metadata/country/ListCountries";
 import { CreateGenreController } from "../controller/dionysus/metadata/genre/CreateGenre";
+import { GetMovieGenreCountStatisticsController } from "../controller/dionysus/metadata/genre/GetMovieGenreCountStatistics";
+import { GetMovieGenreStatisticsController } from "../controller/dionysus/metadata/genre/GetMovieGenreStatistics";
+import { GetTvSeriesGenreCountStatisticsController } from "../controller/dionysus/metadata/genre/GetTvSeriesGenreCountStatistics";
+import { GetTvSeriesGenreStatisticsController } from "../controller/dionysus/metadata/genre/GetTvSeriesGenreStatistics";
 import { ListGenresController } from "../controller/dionysus/metadata/genre/ListGenres";
 import { CreateKeywordController } from "../controller/dionysus/metadata/keyword/CreateKeyword";
 import { ListKeywordsController } from "../controller/dionysus/metadata/keyword/ListKeywords";
@@ -106,6 +110,8 @@ import { RabbitModule } from "./RabbitModule";
     GetMovieReleaseStatusStatisticsController,
     GetMovieReleaseYearStatisticsController,
     GetMovieRuntimeStatisticsController,
+    GetMovieGenreCountStatisticsController,
+    GetMovieGenreStatisticsController,
     GetPeopleBirthdayStatisticsController,
     GetPeopleDeathdayStatisticsController,
     GetPeopleDepartmentStatisticsController,
@@ -115,6 +121,8 @@ import { RabbitModule } from "./RabbitModule";
     GetTvSeriesFirstAirYearStatisticsController,
     GetTvSeriesEpisodeRuntimeStatisticsController,
     GetTvSeriesSeasonStatisticsController,
+    GetTvSeriesGenreCountStatisticsController,
+    GetTvSeriesGenreStatisticsController,
     ListCertificationsController,
     ListCountriesController,
     ListGenresController,
