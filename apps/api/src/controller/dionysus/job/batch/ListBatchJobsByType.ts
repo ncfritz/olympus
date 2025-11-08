@@ -80,7 +80,7 @@ export class ListBatchJobsByTypeController {
             name: "_",
             value: [typeFilter, userFilters!],
           }
-        : undefined,
+        : typeFilter,
     );
     const paginationExpression = buildPaginationExpression({
       pageSize: pageSize,
