@@ -6,7 +6,10 @@ import {
   SearchOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
-import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
+import type {
+  ContentAssetTag,
+  FilterDefinition,
+} from "@ncfritz/olympus-sdk/dionysus";
 import {
   Avatar,
   Breadcrumb,
@@ -22,7 +25,6 @@ import {
 import { type ColumnsType } from "antd/es/table";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import prettyMilliseconds from "pretty-ms";
 import React, { type ReactNode, useEffect, useState } from "react";
 import type { SortOptions } from "../../../api/common";
@@ -35,8 +37,8 @@ import ContentAssetSizeDisplay from "../../../components/content/ContentAssetSiz
 import ContentAssetStatistics from "../../../components/content/ContentAssetStatistics";
 import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
 import Timestamp from "../../../components/data/Timestamp";
+import { useFetch } from "../../../hooks/useFetch";
 import { useAppSelector } from "../../../redux/hooks";
-import type { NotificationType } from "../../../utils/notifications";
 
 export interface ContentAsset {
   id: string;
@@ -59,16 +61,12 @@ type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
 const ContentAssetsPage: React.FunctionComponent = () => {
-  const router = useRouter();
-  const [api, contextHolder] = notification.useNotification();
-
   const blackCurtainEnabled = useAppSelector(
     (state) => state.blackCurtain.active,
   );
 
-  const [assets, setAssets] = useState<any>();
-  const [assetsLoading, setAssetsLoading] = useState<any>(true);
-  const [assetsError, setAssetsError] = useState<any>();
+  const [api] = notification.useNotification();
+
   const [assetsCount, setAssetsCount] = useState(0);
   const [assetsPage, setAssetsPage] = useState(0);
   const [assetsSort, setAssetsSort] = useState<SortOptions>({
@@ -79,60 +77,46 @@ const ContentAssetsPage: React.FunctionComponent = () => {
     undefined,
   );
   const [filterPanelSize, setFilterPanelSize] = useState(300);
-  const [filters, setFilters] = useState<string[]>([]);
-
-  const openNotificationWithIcon = (
-    type: NotificationType,
-    message: string,
-    content: ReactNode,
-  ) => {
-    api[type]({
-      message: message,
-      description: content,
-    });
-  };
-
-  const fetchAssets = async (quiet = false) => {
-    if (!quiet) {
-      setAssetsLoading(true);
-    }
-    setAssetsError(undefined);
-
-    try {
-      const listAssetsResponse = await contentApi.listAssets(
-        assetsPage,
-        assetsSort,
-      );
-      setAssets(listAssetsResponse.data.assets);
-      setAssetsCount(listAssetsResponse.data.count);
-    } catch (e) {
-      setAssetsError(e);
-      openNotificationWithIcon("error", "Unable to load asset list", "Poop");
-    } finally {
-      setAssetsLoading(false);
-    }
-  };
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [filters, setFilters] = useState<FilterDefinition | undefined>(
+    undefined,
+  );
+  const [assets, assetsLoading, assetsError, fetchAssets] = useFetch<
+    undefined,
+    ContentAsset[]
+  >({
+    dataType: "content assets",
+    params: undefined,
+    watch: [assetsPage, assetsSort, blackCurtainEnabled, filters],
+    fetchFunction: async () => {
+      const response = (
+        await contentApi.listAssets(assetsPage, assetsSort, filters)
+      ).data;
+      setAssetsCount(response.count);
+      return response.assets;
+    },
+  });
 
   const addFilter = async (tag: ContentAssetTag) => {
     const key = `${tag.type}:${tag.name}`;
 
-    if (!filters.includes(key)) {
-      const newFilters = [...filters];
+    if (!selectedFilters.includes(key)) {
+      const newFilters = [...selectedFilters];
       newFilters.push(key);
 
-      setFilters(newFilters);
+      setSelectedFilters(newFilters);
     }
   };
 
   const removeFilter = async (tag: ContentAssetTag) => {
     const key = `${tag.type}:${tag.name}`;
 
-    if (filters.includes(key)) {
-      const newFilters = [...filters].filter((value) => {
+    if (selectedFilters.includes(key)) {
+      const newFilters = [...selectedFilters].filter((value) => {
         return value !== key;
       });
 
-      setFilters(newFilters);
+      setSelectedFilters(newFilters);
     }
   };
 
@@ -140,19 +124,64 @@ const ContentAssetsPage: React.FunctionComponent = () => {
     setFilterPanelSize(filterPanelSize <= 0 ? 300 : 0);
   };
 
+  const appendFilterDefinition = (
+    type: string,
+    logic: "and" | "or",
+    chain: FilterDefinition[],
+  ) => {
+    const selectedValues = selectedFilters
+      .filter((value) => value.startsWith(`${type}:`))
+      .map((value) => value.substring(value.indexOf(":") + 1, value.length));
+    let values: string[] | FilterDefinition[] = selectedValues;
+
+    if (logic === "and") {
+      values = selectedValues.map<FilterDefinition>((value) => {
+        return {
+          type: "eq",
+          name: "asset_tags.tag.name",
+          value: value,
+        };
+      });
+    }
+
+    if (selectedValues.length > 0) {
+      chain.push({
+        type: "and",
+        name: "__and",
+        value: [
+          {
+            type: "eq",
+            name: "asset_tags.tag.type",
+            value: type,
+          },
+          {
+            type: logic === "and" ? "and" : "in",
+            name: logic === "and" ? "__and" : "asset_tags.tag.name",
+            value: values,
+          },
+        ],
+      });
+    }
+  };
+
   useEffect(() => {
-    console.log(filters);
-  }, [filters]);
+    const newFilters: FilterDefinition[] = [];
+    appendFilterDefinition("type", "or", newFilters);
+    appendFilterDefinition("source", "or", newFilters);
+    appendFilterDefinition("user", "and", newFilters);
+    appendFilterDefinition("model", "or", newFilters);
+    appendFilterDefinition("system", "or", newFilters);
+
+    if (newFilters.length > 1) {
+      setFilters({ type: "and", name: "__base", value: newFilters });
+    } else {
+      setFilters(newFilters[0]);
+    }
+  }, [selectedFilters]);
 
   useEffect(() => {
     setAssetsPage(0);
   }, [blackCurtainEnabled]);
-
-  useEffect(() => {
-    (async () => {
-      await fetchAssets();
-    })();
-  }, [assetsPage, assetsSort, blackCurtainEnabled]);
 
   const columns: ColumnsType<ContentAsset> = [
     {
@@ -257,11 +286,10 @@ const ContentAssetsPage: React.FunctionComponent = () => {
             <ContentAssetRating
               asset={record}
               onRatingSet={async (value) => {
-                openNotificationWithIcon(
-                  "success",
-                  "Success",
-                  "Rating set successfully.",
-                );
+                api["success"]({
+                  message: "Success",
+                  description: "The rating was set successfully",
+                });
 
                 await fetchAssets(true);
               }}
@@ -334,12 +362,16 @@ const ContentAssetsPage: React.FunctionComponent = () => {
       >
         <Content
           style={{
-            marginTop: 16,
-            marginBottom: 16,
+            height: "calc(100vh - 102px)",
+            overflowX: "hidden",
+            overflowY: "auto",
           }}
         >
           <ContentAssetStatistics />
           <Splitter
+            style={{
+              height: "calc(100vh - 391px)",
+            }}
             onResize={(sizes) => {
               setFilterPanelSize(filterPanelSize <= 0 ? 300 : 0);
             }}
@@ -350,6 +382,9 @@ const ContentAssetsPage: React.FunctionComponent = () => {
               size={filterPanelSize}
               resizable={false}
               collapsible={true}
+              style={{
+                scrollbarWidth: "none",
+              }}
             >
               <ContentAssetFilterPanel
                 togglePanel={toggleFilters}
