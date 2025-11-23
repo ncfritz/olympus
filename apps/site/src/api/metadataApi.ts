@@ -55,6 +55,10 @@ import {
   getTvSeriesEpisodeRuntimeStatistics,
   getTvSeriesSeasonStatistics,
   getTvSeriesAggregateStatistics,
+  getMovieGenreCountStatistics,
+  getTvSeriesGenreCountStatistics,
+  getMovieGenreStatistics,
+  getTvSeriesGenreStatistics,
   type MetadataFetchJobStatus,
   type MetadataJobType,
   type MetadatFetchJobUpdate,
@@ -117,10 +121,10 @@ class MetadataApi extends ApiBase {
     });
   }
 
-  async listLanguages(page: number, sort: SortOptions) {
+  async listLanguages(page: number, sort: SortOptions, pageSize = 20) {
     return await listLanguages({
       query: {
-        pageSize: 20,
+        pageSize: pageSize,
         startPage: page,
         sort: sort.order,
         sortBy: sort.field,
@@ -431,6 +435,22 @@ class MetadataApi extends ApiBase {
 
   async getTvSeriesAggregateStatistics() {
     return await getTvSeriesAggregateStatistics({});
+  }
+
+  async getMovieGenreCountStatistics() {
+    return await getMovieGenreCountStatistics({});
+  }
+
+  async getTvSeriesGenreCountStatistics() {
+    return await getTvSeriesGenreCountStatistics({});
+  }
+
+  async getMovieGenreStatistics() {
+    return await getMovieGenreStatistics({});
+  }
+
+  async getTvSeriesGenreStatistics() {
+    return await getTvSeriesGenreStatistics({});
   }
 
   async listMetadataFetchJobs(
