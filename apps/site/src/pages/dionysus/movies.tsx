@@ -3,6 +3,7 @@ import { FilterFilled, HomeOutlined } from "@ant-design/icons";
 import type {
   FilterDefinition,
   GetMovieAggregateStatisticsResponse,
+  Language,
   SparseMovie,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
@@ -15,11 +16,13 @@ import {
   Space,
   Statistic,
   Tag,
+  Typography,
 } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import prettyMilliseconds from "pretty-ms";
 import React, { useEffect, useState } from "react";
+import ReactCountryFlag from "react-country-flag/src";
 import { useDebounce } from "use-debounce";
 import type { SortOptions } from "../../api/common";
 import metadataApi from "../../api/metadataApi";
@@ -45,6 +48,9 @@ const MoviesIndexPage: React.FunctionComponent = () => {
   const [titleFilter, setTitleFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [videoFilter, setVideoFilter] = useState<("f" | "v")[]>([]);
+  const [spokenLanguageFilter, setSpokenLanguageFilter] = useState<string[]>(
+    [],
+  );
 
   const [filters, setFilters] = useState<FilterDefinition | undefined>(
     undefined,
@@ -87,12 +93,20 @@ const MoviesIndexPage: React.FunctionComponent = () => {
       }
     }
 
+    if (spokenLanguageFilter.length > 0) {
+      newFilters.push({
+        type: "in",
+        name: "spokenLanguages.languageCode",
+        value: spokenLanguageFilter,
+      });
+    }
+
     if (newFilters.length > 1) {
       setFilters({ type: "and", name: "__base", value: newFilters });
     } else {
       setFilters(newFilters[0]);
     }
-  }, [debouncedTitleFilter, statusFilter, videoFilter]);
+  }, [debouncedTitleFilter, statusFilter, videoFilter, spokenLanguageFilter]);
 
   const [movies, moviesLoading, moviesError] = useFetch<
     undefined,
@@ -103,6 +117,23 @@ const MoviesIndexPage: React.FunctionComponent = () => {
     params: undefined,
     fetchFunction: async () =>
       (await metadataApi.listMovies(0, 48, sort, filters)).data.movies,
+  });
+
+  const [languages, languagesLoading, languagesError] = useFetch<
+    undefined,
+    Language[]
+  >({
+    dataType: "languages",
+    watch: [sort, filters],
+    params: undefined,
+    fetchFunction: async () =>
+      (
+        await metadataApi.listLanguages(
+          0,
+          { field: "name", order: "desc" },
+          500,
+        )
+      ).data.languages,
   });
 
   const [stats, statsLoading, statsError] = useFetch<
@@ -339,6 +370,32 @@ const MoviesIndexPage: React.FunctionComponent = () => {
                 ]}
                 onFiltersSet={(values) => {
                   setVideoFilter(values as ("f" | "v")[]);
+                }}
+              />
+              <CheckboxFilter
+                label={"Spoken Language"}
+                items={
+                  languages?.length > 0
+                    ? languages.map((language) => {
+                        return {
+                          key: language.id,
+                          label: (
+                            <Space direction={"horizontal"} size={8}>
+                              <ReactCountryFlag
+                                countryCode={language.id}
+                                cdnUrl={"/flags/"}
+                                cdnSuffix={"svg"}
+                                svg={true}
+                              />
+                              <Typography.Text>{language.name}</Typography.Text>
+                            </Space>
+                          ),
+                        };
+                      })
+                    : []
+                }
+                onFiltersSet={(values) => {
+                  setSpokenLanguageFilter(values as string[]);
                 }}
               />
             </Space>
