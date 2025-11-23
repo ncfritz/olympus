@@ -11,9 +11,9 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetTagConverter";
-import { GraphQlContentAssetTag } from "../../../types/content";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { toDomainObject } from "../../../../convert/dionysus/content/ContentAssetTagConverter";
+import { GraphQlContentAssetTag } from "../../../../types/content";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQListContentAssetTagsResponse = {
   dionysus_content_tags: GraphQlContentAssetTag[];

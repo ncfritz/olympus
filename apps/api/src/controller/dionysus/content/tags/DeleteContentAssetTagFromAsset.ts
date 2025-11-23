@@ -9,7 +9,7 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 @Controller({ version: "1" })
 export class DeleteContentAssetTagFromAssetController {
