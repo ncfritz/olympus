@@ -5,8 +5,8 @@ import {
   Headers,
   HttpStatus,
   NotFoundException,
+  Req,
   Res,
-  UnauthorizedException,
 } from "@nestjs/common";
 import {
   ApiHeader,
@@ -14,11 +14,12 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { Request, Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetConverter";
 import { GraphQLContentAsset } from "../../../types/content";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { BaseAuthenticatedContentController } from "./auth/BaseAuthenticatedContentController";
 
 type GraphQlGerContentAssetQueryResponse = {
   dionysus_content_assets: GraphQLContentAsset[];
@@ -27,8 +28,10 @@ type GraphQlGerContentAssetQueryResponse = {
 };
 
 @Controller({ version: "1" })
-export class GetUntaggedContentAssetController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+export class GetUntaggedContentAssetController extends BaseAuthenticatedContentController {
+  constructor(protected readonly graphQLClient: GraphQLClient) {
+    super(graphQLClient);
+  }
 
   @Get("/content/assets/untagged")
   @ApiOperation({
@@ -50,10 +53,11 @@ export class GetUntaggedContentAssetController {
   @ApiStandardErrorResponses()
   async handle(
     @Headers("x-dionysus-content-bc") blackCurtain: string = "true",
+    @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
     if (blackCurtain === "true") {
-      throw new UnauthorizedException();
+      await this.authenticateRequest(request);
     }
 
     const fetchRequest = gql`

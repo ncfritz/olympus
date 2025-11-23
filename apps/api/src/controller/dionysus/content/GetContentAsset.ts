@@ -1,4 +1,8 @@
-import { GetContentAssetResponse } from "@ncfritz/olympus-model";
+import {
+  FilterDefinition,
+  FilterType,
+  GetContentAssetResponse,
+} from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -6,6 +10,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  Req,
   Res,
 } from "@nestjs/common";
 import {
@@ -15,19 +20,26 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { Request, Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetConverter";
 import { GraphQLContentAsset } from "../../../types/content";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { buildFilterExpression } from "../../../utils/filterUtil";
+import {
+  BaseAuthenticatedContentController,
+  BC_FILTER,
+} from "./auth/BaseAuthenticatedContentController";
 
 type GraphQlGerContentAssetQueryResponse = {
   dionysus_content_assets: GraphQLContentAsset[];
 };
 
 @Controller({ version: "1" })
-export class GetContentAssetController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+export class GetContentAssetController extends BaseAuthenticatedContentController {
+  constructor(protected readonly graphQLClient: GraphQLClient) {
+    super(graphQLClient);
+  }
 
   @Get("/content/asset/:assetId")
   @ApiOperation({
@@ -55,20 +67,29 @@ export class GetContentAssetController {
   async handle(
     @Param("assetId") assetId: string,
     @Headers("x-dionysus-content-bc") blackCurtain: string = "true",
+    @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    let blackCurtainClause = "";
+    const authenticated = this.authenticateRequest(request, true);
+    const itemFilter: FilterDefinition = {
+      type: FilterType.EQUALS,
+      name: "content_id",
+      value: assetId,
+    };
 
-    if (blackCurtain === "true") {
-      blackCurtainClause =
-        ', asset_tags: {tag: {_and: {name: {_ilike: "bccompliant"}, type: {_eq: "system"}}}}';
-    }
+    const queryFilter: FilterDefinition =
+      blackCurtain === "true" && !authenticated
+        ? {
+            type: FilterType.AND,
+            name: "__and",
+            value: [itemFilter, BC_FILTER],
+          }
+        : itemFilter;
+    const whereExpression = buildFilterExpression(queryFilter);
 
     const fetchRequest = gql`
-      query GetContentAssets($content_id: uuid) {
-        dionysus_content_assets(
-          where: { _and: { content_id: { _eq: $content_id }${blackCurtainClause} } }
-        ) {
+      query GetContentAssets {
+        dionysus_content_assets(${whereExpression}) {
           content_id
           asset_sha
           asset_size
@@ -96,9 +117,6 @@ export class GetContentAssetController {
     const fetchResponse =
       await this.graphQLClient.request<GraphQlGerContentAssetQueryResponse>(
         fetchRequest,
-        {
-          content_id: assetId,
-        },
       );
 
     if (fetchResponse.dionysus_content_assets.length <= 0) {

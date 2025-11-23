@@ -1,5 +1,7 @@
 import {
   ContentAsset,
+  FilterDefinition,
+  FilterType,
   ListContentAssetsResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
@@ -9,6 +11,7 @@ import {
   Headers,
   HttpStatus,
   Query,
+  Req,
   Res,
 } from "@nestjs/common";
 import {
@@ -18,14 +21,21 @@ import {
   ApiProduces,
   ApiQuery,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { Response, Request } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetConverter";
 import { GraphQLContentAsset } from "../../../types/content";
 import {
+  ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../utils/controllerDecorators";
+import {
+  buildFilterExpression,
+  buildPaginationExpression,
+  parseFilterDefinition,
+} from "../../../utils/filterUtil";
+import { BaseAuthenticatedContentController, BC_FILTER } from "./auth/BaseAuthenticatedContentController";
 
 type GraphQlListContentAssetsResponse = {
   dionysus_content_assets: GraphQLContentAsset[];
@@ -37,8 +47,10 @@ type GraphQlListContentAssetsResponse = {
 };
 
 @Controller({ version: "1" })
-export class ListContentAssetsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+export class ListContentAssetsController extends BaseAuthenticatedContentController {
+  constructor(protected readonly graphQLClient: GraphQLClient) {
+    super(graphQLClient);
+  }
 
   @Get("/content/assets")
   @ApiOperation({
@@ -60,6 +72,7 @@ export class ListContentAssetsController {
     description: "Header indicating black curtain status",
     required: false,
   })
+  @ApiFilterParams()
   @ApiPaginationParams()
   @ApiOkResponse({
     description:
@@ -72,24 +85,36 @@ export class ListContentAssetsController {
     @Query("startPage") startPage = 0,
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
     @Query("sortBy") sortField = "createdTime",
+    @Query("filters") filters = undefined,
     @Headers("x-dionysus-content-bc") blackCurtain: string = "true",
+    @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    let blackCurtainClause = "";
-    let blackCurtainAggregateClause = "";
+    const authenticated = this.authenticateRequest(request, true);
+    const parsedFilters = parseFilterDefinition(filters);
+    let queryFilters: FilterDefinition | undefined = parsedFilters;
 
-    if (blackCurtain === "true") {
-      blackCurtainClause =
-        ', where: {asset_tags: {tag: {_and: {type: {_eq: "system"}, name: {_ilike: "bcCompliant"}}}}}';
-      blackCurtainAggregateClause =
-        '(where: {asset_tags: {tag: {_and: {type: {_eq: "system"}, name: {_ilike: "bcCompliant"}}}}})';
+    if (blackCurtain === "true" && !authenticated) {
+      queryFilters = parsedFilters
+        ? {
+            type: FilterType.AND,
+            name: "__base",
+            value: [BC_FILTER, parsedFilters],
+          }
+        : parsedFilters;
     }
+
+    const whereExpression = buildFilterExpression(queryFilters);
+    const paginationExpression = buildPaginationExpression({
+      pageSize: pageSize,
+      startPage: startPage,
+      sortDirection: sortDirection,
+      sortField: sortField,
+    });
 
     const fetchRequest = gql`
       query ListContentAssets {
-        dionysus_content_assets(limit: ${pageSize}, offset: ${
-          pageSize * startPage
-        }, order_by: {${sortField}: ${sortDirection}}${blackCurtainClause}) {
+        dionysus_content_assets(${[paginationExpression, whereExpression].join(", ")}) {
           content_id
           original_sha
           original_size
@@ -110,7 +135,7 @@ export class ListContentAssetsController {
             }
           }
         }
-        dionysus_content_assets_aggregate${blackCurtainAggregateClause} {
+        dionysus_content_assets_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {
             count
           }
