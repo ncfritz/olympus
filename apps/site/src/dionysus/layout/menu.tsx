@@ -205,14 +205,14 @@ const DionysysMenu: React.FunctionComponent = () => {
               label: "Channels",
             },
             {
-              key: `/${BASE_PATH}/content/upload`,
+              key: `/${BASE_PATH}/content/ingest`,
               icon: <UploadOutlined />,
-              label: "Asset Upload",
+              label: "Asset Ingest",
             },
             {
               key: `/${BASE_PATH}/content/process`,
               icon: <BarcodeOutlined />,
-              label: "New Asset Ingest",
+              label: "Asset Tagging",
             },
             {
               key: `/${BASE_PATH}/content/duplicates`,
