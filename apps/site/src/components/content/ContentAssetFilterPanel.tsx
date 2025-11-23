@@ -3,10 +3,12 @@ import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
 import { Button, Collapse, Empty, Space, Spin, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import contentApi from "../../api/contentApi";
+import { useFetch } from "../../hooks/useFetch";
 import ContentAssetTagSelector, {
   type TagRenderer,
 } from "./ContentAssetTagSelector";
 import ContentTagCheckbox from "./ContentTagCheckbox";
+import { getTagColor } from "./util";
 
 export interface ContentAssetFilterPanelProps {
   togglePanel: () => void;
@@ -22,6 +24,7 @@ const CheckboxTagRenderer: TagRenderer = (
   return (
     <ContentTagCheckbox
       tag={tag}
+      color={getTagColor(tag)}
       onSelectTag={onSelectTag}
       onRemoveTag={onRemoveTag}
     />
@@ -35,47 +38,41 @@ const ContentAssetFilterPanel: React.FunctionComponent<
   onSelectTag,
   onRemoveTag,
 }: ContentAssetFilterPanelProps) => {
-  const [tags, setTags] = useState<Record<string, any[]>>({});
-  const [tagsLoading, setTagsLoading] = useState<boolean>(false);
-  const [tagsError, setTagsError] = useState<any>(false);
+  const [contentTags, setContentTags] = useState<
+    Record<string, ContentAssetTag[]>
+  >({});
 
-  const fetchTags = async (quiet = false) => {
-    if (!quiet) {
-      setTagsLoading(true);
-    }
-    setTagsError(undefined);
-
-    try {
-      const listTagsResponse = await contentApi.listTags();
-      const tagGroups: Record<string, any[]> = {};
-
-      listTagsResponse.data.tags.forEach((tag: any) => {
-        if (!(tag.type in tagGroups)) {
-          tagGroups[tag.type] = [];
-        }
-
-        tagGroups[tag.type].push(tag);
-      });
-
-      setTags(tagGroups);
-    } catch (e) {
-      setTagsError(e);
-    } finally {
-      setTagsLoading(false);
-    }
-  };
+  const [tags, tagsLoading, tagsError] = useFetch<undefined, ContentAssetTag[]>(
+    {
+      dataType: "tags",
+      params: undefined,
+      fetchFunction: async () => (await contentApi.listTags()).data.tags,
+    },
+  );
 
   useEffect(() => {
-    (async () => {
-      await fetchTags();
-    })();
-  }, []);
+    if (!tags || tags.length <= 0) {
+      return;
+    }
+
+    const tagGroups: Record<string, ContentAssetTag[]> = {};
+
+    tags.forEach((tag) => {
+      if (!(tag.type in tagGroups)) {
+        tagGroups[tag.type] = [];
+      }
+
+      tagGroups[tag.type].push(tag);
+    });
+
+    setContentTags(tagGroups);
+  }, [tags]);
 
   let content: any;
 
   if (tagsLoading) {
     content = <Spin size={"large"} />;
-  } else if (!tags || Object.keys(tags).length <= 0) {
+  } else if (!contentTags || Object.keys(contentTags).length <= 0) {
     content = <Empty />;
   } else {
     content = (
@@ -91,7 +88,10 @@ const ContentAssetFilterPanel: React.FunctionComponent<
           {
             key: "content-tags-type",
             label: (
-              <Typography.Title level={5} style={{ marginBottom: 0 }}>
+              <Typography.Title
+                level={5}
+                style={{ marginBottom: 8, fontSize: "14px" }}
+              >
                 Content Type
               </Typography.Title>
             ),
@@ -103,7 +103,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
             children: (
               <ContentAssetTagSelector
                 type={"type"}
-                tags={tags["type"]}
+                tags={contentTags["type"]}
                 onSelectTag={onSelectTag}
                 onRemove={onRemoveTag}
                 allowFilter={false}
@@ -115,7 +115,10 @@ const ContentAssetFilterPanel: React.FunctionComponent<
           {
             key: "content-tags-source",
             label: (
-              <Typography.Title level={5} style={{ marginBottom: 0 }}>
+              <Typography.Title
+                level={5}
+                style={{ marginBottom: 0, fontSize: "14px" }}
+              >
                 Source
               </Typography.Title>
             ),
@@ -127,7 +130,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
             children: (
               <ContentAssetTagSelector
                 type={"source"}
-                tags={tags["source"]}
+                tags={contentTags["source"]}
                 onSelectTag={onSelectTag}
                 onRemove={onRemoveTag}
                 allowFilter={true}
@@ -139,7 +142,10 @@ const ContentAssetFilterPanel: React.FunctionComponent<
           {
             key: "content-tags-user",
             label: (
-              <Typography.Title level={5} style={{ marginBottom: 0 }}>
+              <Typography.Title
+                level={5}
+                style={{ marginBottom: 0, fontSize: "14px" }}
+              >
                 User Tags
               </Typography.Title>
             ),
@@ -151,7 +157,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
             children: (
               <ContentAssetTagSelector
                 type={"user"}
-                tags={tags["user"]}
+                tags={contentTags["user"]}
                 onSelectTag={onSelectTag}
                 onRemove={onRemoveTag}
                 allowFilter={true}
@@ -163,7 +169,10 @@ const ContentAssetFilterPanel: React.FunctionComponent<
           {
             key: "content-tags-model",
             label: (
-              <Typography.Title level={5} style={{ marginBottom: 0 }}>
+              <Typography.Title
+                level={5}
+                style={{ marginBottom: 0, fontSize: "14px" }}
+              >
                 Model
               </Typography.Title>
             ),
@@ -175,7 +184,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
             children: (
               <ContentAssetTagSelector
                 type={"model"}
-                tags={tags["model"]}
+                tags={contentTags["model"]}
                 onSelectTag={onSelectTag}
                 onRemove={onRemoveTag}
                 allowFilter={true}
@@ -199,7 +208,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
             children: (
               <ContentAssetTagSelector
                 type={"system"}
-                tags={tags["system"]}
+                tags={contentTags["system"]}
                 onSelectTag={onSelectTag}
                 onRemove={onRemoveTag}
                 allowFilter={true}
@@ -216,7 +225,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
   return (
     <Space
       direction={"vertical"}
-      style={{ width: "100%" }}
+      style={{ width: "100%", height: "100%" }}
       styles={{
         item: {
           width: "100%",
@@ -225,17 +234,23 @@ const ContentAssetFilterPanel: React.FunctionComponent<
     >
       <Space
         style={{
+          position: "fixed",
+          marginTop: -16,
           borderBottom: "1px solid #f0f0f0",
           background: "#fafafa",
-          width: "100%",
-          padding: 11,
+          width: 298,
+          zIndex: 5,
+          padding: 10,
         }}
       >
         <Button type={"text"} size={"small"} onClick={togglePanel}>
           <SearchOutlined />
         </Button>
       </Space>
-      <Space direction={"vertical"} style={{ width: "100%", padding: 12 }}>
+      <Space
+        direction={"vertical"}
+        style={{ width: "100%", padding: 12, marginTop: 24 }}
+      >
         {content}
       </Space>
     </Space>
