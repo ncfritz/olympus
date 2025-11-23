@@ -180,6 +180,7 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
             textAlign: "start",
             fontSize: "16px",
             fontWeight: 500,
+            justifyContent: "start",
           }}
           icon={
             openDates[date] ? <CaretDownOutlined /> : <CaretRightOutlined />
