@@ -437,14 +437,14 @@ const MovieDetailPage: React.FunctionComponent = () => {
           styles={{
             item: {
               width: "100%",
-              minHeight: "calc(100vh - 673px",
+              minHeight: "calc(100vh - 673px)",
             },
           }}
         >
           <Splitter
             style={{
               width: "100%",
-              minHeight: "calc(100vh - 673px",
+              minHeight: "calc(100vh - 673px)",
             }}
           >
             <Splitter.Panel>
