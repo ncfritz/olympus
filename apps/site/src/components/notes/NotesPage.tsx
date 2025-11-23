@@ -111,18 +111,18 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
     let targetStart;
     let targetCount = 30;
 
-    if (target.month !== today.month) {
+    if (target.month === today.month && target.year === today.year) {
+      await router.push("/minerva/notes", "/minerva/notes", { shallow: true });
+      targetStart = today;
+    } else {
       const path =
         "/minerva/notes/" + DateTime.fromJSDate(month).toFormat("yyyy/MM");
-      router.push(path, path, { shallow: true });
-      targetStart = target.endOf("month");
+      await router.push(path, path, { shallow: true });
+      targetStart = target.startOf("month");
 
       const targetEnd = targetStart.endOf("month");
       const interval = Interval.fromDateTimes(targetStart, targetEnd);
       targetCount = Math.ceil(interval.length("days"));
-    } else {
-      router.push("/minerva/notes", "/minerva/notes", { shallow: true });
-      targetStart = today;
     }
 
     setCurrentDate(targetStart);
