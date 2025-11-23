@@ -1,13 +1,14 @@
-import axios from "axios";
+import { HttpService } from "@nestjs/axios";
 import { Parser } from "m3u8-parser";
+import { firstValueFrom } from "rxjs";
 import { USER_AGENT } from "../util/constants";
-import { IngestError } from "./ingestError";
+import { IngestError } from "../error/ingestError";
 import { MetadataExtractor } from "./metadataExtractor";
 import { HTMLElement } from "node-html-parser";
 
 export class XHetadataExtractor extends MetadataExtractor {
-  constructor(url: string) {
-    super(url);
+  constructor(client: HttpService, url: string, id: string) {
+    super(client, url, id);
   }
 
   async getSegmentUrls(root: HTMLElement): Promise<string[]> {
@@ -33,13 +34,15 @@ export class XHetadataExtractor extends MetadataExtractor {
 
     const mediaBaseUri = masterPlaylistUrl.substring(
       0,
-      masterPlaylistUrl.lastIndexOf("/")
+      masterPlaylistUrl.lastIndexOf("/"),
     );
-    const masterPlaylistResponse = await axios.get(masterPlaylistUrl, {
-      headers: {
-        "User-Agent": USER_AGENT,
-      },
-    });
+    const masterPlaylistResponse = await firstValueFrom(
+      this.client.get(masterPlaylistUrl, {
+        headers: {
+          "User-Agent": USER_AGENT,
+        },
+      }),
+    );
     const masterPlaylistParser = new Parser();
     masterPlaylistParser.push(masterPlaylistResponse.data);
     masterPlaylistParser.end();
@@ -61,13 +64,13 @@ export class XHetadataExtractor extends MetadataExtractor {
     }
 
     const mediaPlaylistUrl = `${mediaBaseUri}/${mediaPlaylistUri}`;
-    const [mediaPlaylistResponse] = await Promise.all([
-      axios.get(mediaPlaylistUrl, {
+    const mediaPlaylistResponse = await firstValueFrom(
+      this.client.get(mediaPlaylistUrl, {
         headers: {
           "User-Agent": USER_AGENT,
         },
       }),
-    ]);
+    );
     const mediaPlaylistParser = new Parser();
     mediaPlaylistParser.push(mediaPlaylistResponse.data);
     mediaPlaylistParser.end();

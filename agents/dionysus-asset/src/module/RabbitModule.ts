@@ -1,10 +1,11 @@
 import { RabbitMQConfig, RabbitMQModule } from "@golevelup/nestjs-rabbitmq";
 import { Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { logger } from "../util/logger";
 
 @Module({
   imports: [
-    RabbitMQModule.forRootAsync(RabbitMQModule, {
+    RabbitMQModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService): RabbitMQConfig => {
         const amqpProtocol = config.get<string>("AMQP_PROTOCOL", "amqp");
@@ -15,10 +16,10 @@ import { ConfigService } from "@nestjs/config";
         const amqpVhost = config.get<string>("AMQP_VHOST", "/dionysus");
 
         const amqpEndpoint = `${amqpProtocol}://${amqpUser}:${amqpPassword}@${amqpHost}:${amqpPort}/${encodeURIComponent(
-          amqpVhost
+          amqpVhost,
         )}`;
 
-        console.log(amqpEndpoint);
+        logger.info(`AMQP endpoint: ${amqpEndpoint}`);
 
         return {
           exchanges: [
@@ -27,6 +28,7 @@ import { ConfigService } from "@nestjs/config";
               type: "topic",
             },
           ],
+          prefetchCount: 1,
           connectionInitOptions: { wait: true },
           enableControllerDiscovery: true,
           uri: amqpEndpoint,

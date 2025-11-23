@@ -2,68 +2,145 @@ import {
   AddContentAssetTagToAssetRequest,
   ContentTagType,
   CreateContentAssetRequest,
-  ListDuplicateContentAssetsResponse,
-} from "@ncfritz/olympus-model";
+} from "@ncfritz/olympus-sdk/dionysus";
+import {
+  addContentAssetTagToAsset,
+  client,
+  ContentIngestionWorkflowStepType,
+  createContentAsset,
+  createContentIngestionWorkflowStep,
+  describeContentIngestionWorkflow,
+  listDuplicateContentAssets,
+  PartialContentIngestionWorkflow,
+  PartialContentIngestionWorkflowStep,
+  updateContentIngestionWorkflow,
+  updateContentIngestionWorkflowStep,
+} from "@ncfritz/olympus-sdk/dionysus";
 import { AssetMetadata } from "../workflow/workflow";
-import { BASE_URL, executeRequest } from "./apiBase";
+import { BASE_URL } from "./apiBase";
 
-const createContentAsset = async (metadata: AssetMetadata): Promise<void> => {
-  const createcontwentAssetRequest: CreateContentAssetRequest = {
-    asset: {
-      id: metadata.id,
-      originalName: metadata.name,
-      originalSha: metadata.inputSha256!,
-      originalSizeBytes: metadata.originalSize!,
-      newSha: metadata.outputSha256!,
-      newSizeBytes: metadata.assetSize!,
-      durationMs: metadata.duration!,
-      width: metadata.width!,
-      height: metadata.height!,
-    },
-  };
+class ContentAssetsApi {
+  constructor() {
+    client.setConfig({
+      baseURL: BASE_URL,
+      throwOnError: true,
+    });
+  }
 
-  await executeRequest({
-    url: `${BASE_URL}/v1/content/assets`,
-    method: "POST",
-    data: createcontwentAssetRequest,
-    successStatusCodes: [200, 201],
-  });
-};
+  async createContentAsset(metadata: AssetMetadata) {
+    const createContentAssetRequest: CreateContentAssetRequest = {
+      asset: {
+        id: metadata.id,
+        originalName: metadata.name,
+        originalSha: metadata.inputSha256!,
+        originalSizeBytes: metadata.originalSize!,
+        newSha: metadata.outputSha256!,
+        newSizeBytes: metadata.assetSize!,
+        durationMs: metadata.duration!,
+        width: metadata.width!,
+        height: metadata.height!,
+      },
+    };
 
-const addContentAssetTag = async (
-  assetId: string,
-  tagName: string,
-  tagType: ContentTagType
-): Promise<void> => {
-  const addTagRequest: AddContentAssetTagToAssetRequest = {
-    tag: {
-      name: tagName,
-      type: tagType,
-    },
-  };
-
-  await executeRequest({
-    url: `${BASE_URL}/v1/content/asset/${assetId}/tags`,
-    method: "PUT",
-    data: addTagRequest,
-    successStatusCodes: [200, 304],
-  });
-};
-
-const checkDuplicates = async (sha: string) => {
-  const checkDuplicatesResponse =
-    await executeRequest<ListDuplicateContentAssetsResponse>({
-      url: `${BASE_URL}/v1/content/assets/duplicates?digest=${sha}`,
-      method: "GET",
-      successStatusCodes: [200],
+    const response = await createContentAsset({
+      body: createContentAssetRequest,
     });
 
-  return checkDuplicatesResponse.assets;
-};
+    return response.data!.asset;
+  }
 
-const contentAssetsApi = {
-  createContentAsset: createContentAsset,
-  addTag: addContentAssetTag,
-  checkDuplicates: checkDuplicates,
-};
+  async addContentAssetTag(
+    assetId: string,
+    tagName: string,
+    tagType: ContentTagType,
+  ) {
+    const addTagRequest: AddContentAssetTagToAssetRequest = {
+      tag: {
+        name: tagName,
+        type: tagType,
+      },
+    };
+
+    await addContentAssetTagToAsset({
+      path: {
+        assetId: assetId,
+      },
+      body: addTagRequest,
+    });
+  }
+
+  async describeContentIngestionWorkflow(workflowId: string) {
+    const response = await describeContentIngestionWorkflow({
+      path: {
+        workflowId: workflowId,
+      },
+    });
+
+    return response.data!.workflow;
+  }
+
+  async updateContentIngestionWorkflow(
+    workflowId: string,
+    workflow: PartialContentIngestionWorkflow,
+  ) {
+    const response = await updateContentIngestionWorkflow({
+      path: {
+        workflowId: workflowId,
+      },
+      body: {
+        workflow: workflow,
+      },
+    });
+
+    return response.data!.workflow;
+  }
+
+  async createContentIngestionWorkflowStep(
+    workflowId: string,
+    type: ContentIngestionWorkflowStepType,
+  ) {
+    const response = await createContentIngestionWorkflowStep({
+      path: {
+        workflowId: workflowId,
+      },
+      body: {
+        step: {
+          type: type,
+        },
+      },
+    });
+
+    return response.data!.step;
+  }
+
+  async updateContentIngestionWorkflowStep(
+    workflowId: string,
+    workflowStepId: string,
+    step: PartialContentIngestionWorkflowStep,
+  ) {
+    const response = await updateContentIngestionWorkflowStep({
+      path: {
+        workflowId: workflowId,
+        workflowStepId: workflowStepId,
+      },
+      body: {
+        step: step,
+      },
+    });
+
+    return response.data!.step;
+  }
+
+  async checkDuplicates(sha: string) {
+    const response = await listDuplicateContentAssets({
+      query: {
+        digest: sha,
+      },
+    });
+
+    return response.data!.assets;
+  }
+}
+
+const contentAssetsApi = new ContentAssetsApi();
 export default contentAssetsApi;

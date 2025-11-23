@@ -1,3 +1,4 @@
+import { HttpService } from "@nestjs/axios";
 import path from "path";
 import { MetadataExtractor } from "./metadataExtractor";
 import { HTMLElement } from "node-html-parser";
@@ -5,8 +6,8 @@ import { HTMLElement } from "node-html-parser";
 export class LocalMetadataExtractor extends MetadataExtractor {
   readonly originalFile: string;
 
-  constructor(file: string) {
-    super(`file://${file}`);
+  constructor(client: HttpService, file: string, id: string) {
+    super(client, `file://${file}`, id);
     this.originalFile = file;
   }
 

@@ -1,18 +1,19 @@
 import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
-import { ContentTagType } from "@ncfritz/olympus-model";
 import { Injectable } from "@nestjs/common";
-import { ConsumeMessage } from "amqplib";
+import type { ConsumeMessage } from "amqplib";
 import * as cliProgress from "cli-progress";
 import Ffmpeg from "fluent-ffmpeg";
 import * as fs from "fs";
 import contentAssetsApi from "../api/contentAssets";
+import type { HlsGenerationMessage } from "../types/messages";
 import {
   ASSETS_JOB_PREFIX,
   JOB_TYPE_PREFIX,
   TRIGGER_SUFFIX,
 } from "../util/constants";
+import { logger } from "../util/logger";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-var-requires,@typescript-eslint/no-require-imports
 const ffmpegOnProgress = require("ffmpeg-on-progress");
 
 @Injectable()
@@ -22,8 +23,9 @@ export class HlsGenerationAssetHandler {
     queue: `${ASSETS_JOB_PREFIX}.hls.${TRIGGER_SUFFIX}`,
     routingKey: `${JOB_TYPE_PREFIX}.hls`,
   })
-  public async handle(msg: any, amqlMsg: ConsumeMessage) {
-    console.log(msg);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async handle(msg: HlsGenerationMessage, amqMsg: ConsumeMessage) {
+    logger.info(msg);
 
     const assetId = msg.assetId;
     const assetsDir = process.env.ASSETS_DIR;
@@ -37,42 +39,42 @@ export class HlsGenerationAssetHandler {
       fs.rmSync(tmpDir, { recursive: true });
     }
 
-    console.log("Starting Job - Details...");
-    console.log(`\tassetId: ${assetId}`);
-    console.log(`\tassetsDir: ${assetsDir}`);
-    console.log(`\tassetFile: ${assetFile}`);
-    console.log(`\tplaylistFile: ${playlistFile}`);
-    console.log(`\tmetadataFile: ${metadataFile}`);
-    console.log(`\tsegmentsDir: ${segmentsDir}`);
-    console.log(`\ttmpDir: ${tmpDir}`);
+    logger.info("Starting Job - Details...");
+    logger.info(`\tassetId: ${assetId}`);
+    logger.info(`\tassetsDir: ${assetsDir}`);
+    logger.info(`\tassetFile: ${assetFile}`);
+    logger.info(`\tplaylistFile: ${playlistFile}`);
+    logger.info(`\tmetadataFile: ${metadataFile}`);
+    logger.info(`\tsegmentsDir: ${segmentsDir}`);
+    logger.info(`\ttmpDir: ${tmpDir}`);
 
     if (!fs.existsSync(assetFile) || !fs.existsSync(metadataFile)) {
-      console.error("Missing asset file or asset metadata... aborting!");
+      logger.error("Missing asset file or asset metadata... aborting!");
       return;
     }
 
     try {
-      console.log(`Checking for tmp existence: ${tmpDir}`);
+      logger.info(`Checking for tmp existence: ${tmpDir}`);
       if (fs.existsSync(tmpDir)) {
-        console.log("Removing existing tmp dir");
+        logger.info("Removing existing tmp dir");
         fs.rmSync(tmpDir, { recursive: true });
       }
 
-      console.log(`Creating tmp dir: ${tmpDir}`);
+      logger.info(`Creating tmp dir: ${tmpDir}`);
       fs.mkdirSync(tmpDir);
       fs.mkdirSync(`${tmpDir}/segments`);
 
-      console.log("Loading asset metadata...");
+      logger.info("Loading asset metadata...");
       const md = JSON.parse(fs.readFileSync(metadataFile).toString("utf-8"));
       const duration = md.format.duration;
-      console.log(`Asset duration: ${duration}`);
+      logger.info(`Asset duration: ${duration}`);
 
       await new Promise<void>((resolve, reject) => {
-        console.log("\nTranscode content...");
+        logger.info("\nTranscode content...");
 
         const progress = new cliProgress.SingleBar(
           {},
-          cliProgress.Presets.rect
+          cliProgress.Presets.rect,
         );
         progress.start(100, 0);
 
@@ -89,42 +91,40 @@ export class HlsGenerationAssetHandler {
         ]);
         command.output(`${tmpDir}/playlist.m3u8`);
         command.on("error", function (err, stdout, stderr) {
-          console.log("Error encountered!");
-          console.log(stdout);
-          console.log(stderr);
+          logger.error("Error encountered!", err);
 
           progress.stop();
           reject(err);
         });
         command.on("start", function (commandLine: string) {
-          console.log(`Spawned Ffmpeg with command: ${commandLine}`);
+          logger.debug(`Spawned Ffmpeg with command: ${commandLine}`);
         });
         command.on("end", async function () {
           progress.stop();
 
-          console.log("Tagging asset");
-          await contentAssetsApi.addTag(
+          logger.info("Tagging asset");
+          await contentAssetsApi.addContentAssetTag(
             assetId,
             "video.hls",
-            ContentTagType.SYSTEM
+            "system",
           );
 
           if (fs.existsSync(segmentsDir)) {
-            console.warn("Found existing segments directory, cleaning up...");
+            logger.warn("Found existing segments directory, cleaning up...");
             fs.rmSync(segmentsDir, { recursive: true });
           }
 
           if (fs.existsSync(playlistFile)) {
-            console.warn("Found existing playlist file, cleaning up...");
+            logger.warn("Found existing playlist file, cleaning up...");
             fs.rmSync(playlistFile);
           }
 
           fs.mkdirSync(segmentsDir);
 
-          console.log("Copying segments to asset destination");
+          logger.info("Copying segments to asset destination");
           fs.cpSync(`${tmpDir}/segments`, segmentsDir, { recursive: true });
 
-          console.log("Copying playlist to asset destination");
+          logger.info("Copying playlist to asset destination");
           fs.cpSync(`${tmpDir}/playlist.m3u8`, playlistFile);
 
           resolve();
@@ -133,12 +133,12 @@ export class HlsGenerationAssetHandler {
           "progress",
           ffmpegOnProgress((p: number, e: any) => {
             progress.update(Math.trunc(p * 100));
-          }, duration)
+          }, duration),
         );
         command.run();
       });
     } finally {
-      console.log("Cleaning up...");
+      logger.info("Cleaning up...");
       fs.rmSync(tmpDir, { recursive: true });
     }
   }

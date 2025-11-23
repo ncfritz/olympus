@@ -1,10 +1,11 @@
-import { IngestError } from "./ingestError";
+import { HttpService } from "@nestjs/axios";
+import { IngestError } from "../error/ingestError";
 import { MetadataExtractor } from "./metadataExtractor";
 import { HTMLElement } from "node-html-parser";
 
 export class DPVMetadataExtractor extends MetadataExtractor {
-  constructor(url: string) {
-    super(url);
+  constructor(client: HttpService, url: string, id: string) {
+    super(client, url, id);
   }
 
   async getSegmentUrls(root: HTMLElement): Promise<string[]> {
@@ -23,7 +24,7 @@ export class DPVMetadataExtractor extends MetadataExtractor {
 
             videoUrl = contentUrl.substring(
               contentUrl.indexOf("http"),
-              contentUrl.length - 2
+              contentUrl.length - 2,
             );
 
             segments.push(videoUrl);

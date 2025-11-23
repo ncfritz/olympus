@@ -1,10 +1,12 @@
-import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
+import { Logger, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { ReporterModule } from "nestjs-metrics-reporter";
 import { DeleteAssetHandler } from "../handler/deleteAssetHandler";
 import { HlsGenerationAssetHandler } from "../handler/hlsGenerationHandler";
 import { RawIngestionHandler } from "../handler/rawIngestionHandler";
 import { ThumbnailGenerationAssetHandler } from "../handler/thumbnailGenerationHandler";
-import { GraphQLClientModule } from "./GraphQLClientModule";
+import { appName } from "../util/logger";
+import { AxiosProxyModule } from "./AxiosProxyModule";
 import { RabbitModule } from "./RabbitModule";
 
 // Setup providers
@@ -22,11 +24,22 @@ import { RabbitModule } from "./RabbitModule";
       envFilePath: `${process.env.NODE_ENV}.env`,
       isGlobal: true,
     }),
+    ReporterModule.forRootAsync({
+      useFactory: () => ({
+        defaultMetricsEnabled: true,
+        defaultLabels: {
+          app: appName,
+          environment: process.env.NODE_ENV!,
+        },
+      }),
+    }),
+    AxiosProxyModule,
     RabbitModule,
-    GraphQLClientModule,
   ],
   exports: [],
   providers: [
+    // Logging
+    Logger,
     // Batch Jobs
     DeleteAssetHandler,
     HlsGenerationAssetHandler,
@@ -36,5 +49,6 @@ import { RabbitModule } from "./RabbitModule";
   controllers: [],
 })
 export class AppModule implements NestModule {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   configure(consumer: MiddlewareConsumer) {}
 }
