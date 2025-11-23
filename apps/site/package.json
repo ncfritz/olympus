@@ -16,10 +16,11 @@
     "build": "next build",
     "lint": "eslint ./src",
     "lintfix": "eslint ./src --fix",
-    "start": "next start",
-    "app": "electron .",
     "dev": "env-cmd -f .env.dev next dev",
-    "dev:local": "env-cmd -f .env.local next dev"
+    "start": "next build && next start",
+    "dev:local": "env-cmd -f .env.local next dev",
+    "start:local": "next build && env-cmd -f .env.local next start",
+    "app": "electron ."
   },
   "devDependencies": {
     "@ant-design/icons": "^5.6.0",
