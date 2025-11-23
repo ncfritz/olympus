@@ -37,6 +37,15 @@ const buildFilterInternal = (
       filter.push(buildFilterInternal(subDefinition, wrapFilter));
     });
   } else {
+    const fieldParts = definition.name.split(".");
+    let fieldName = fieldParts[0];
+    let fieldSuffix = "";
+
+    if (fieldParts.length > 1) {
+      fieldName = fieldParts.join(": {");
+      fieldSuffix = "".padEnd(fieldParts.length - 1, "}");
+    }
+
     if (Array.isArray(definition.value) && definition.value.length > 0) {
       // Detect if the first value in the array is an object, if it is we can assume that this
       // is a FilterDefinition. If the value is not an object, we need to build the actual filter string.
@@ -59,12 +68,12 @@ const buildFilterInternal = (
           });
 
           return wrap(
-            `${definition.name}: {_${definition.type}: [${values.join(", ")}]}`,
+            `${fieldName}: {_${definition.type}: [${values.join(", ")}]}${fieldSuffix}`,
             wrapFilter,
           );
         } else {
           return wrap(
-            `${definition.name}: {_${definition.type}: ${formatValue(definition.value[0])}}`,
+            `${fieldName}: {_${definition.type}: ${formatValue(definition.value[0])}}${fieldSuffix}`,
             wrapFilter,
           );
         }
@@ -76,7 +85,7 @@ const buildFilterInternal = (
         );
       } else {
         return wrap(
-          `${definition.name}: {_${definition.type}: ${formatValue(definition.value)}}`,
+          `${fieldName}: {_${definition.type}: ${formatValue(definition.value)}}${fieldSuffix}`,
           wrapFilter,
         );
       }
