@@ -1,8 +1,8 @@
 import {
   BarChartOutlined,
-  CalendarOutlined,
+  CalendarOutlined, CarryOutOutlined,
   EditOutlined,
-  HomeOutlined,
+  HomeOutlined, ProjectOutlined, ScheduleOutlined
 } from "@ant-design/icons";
 import { Menu } from "antd";
 import { DateTime } from "luxon";
@@ -107,6 +107,39 @@ const MinervaMenu: React.FunctionComponent = () => {
           key: `/${BASE_PATH}/notes`,
           icon: <EditOutlined />,
           label: "Notes",
+        },
+        {
+          key: `/${BASE_PATH}/projects`,
+          icon: <ProjectOutlined />,
+          label: "Projects",
+        },
+        {
+          key: `/${BASE_PATH}/tasks`,
+          icon: <ScheduleOutlined />,
+          label: "Tasks",
+        },
+        {
+          key: "review-container",
+          icon: <CarryOutOutlined />,
+          label: "Review",
+          onTitleClick: updateSubMenus,
+          children: [
+            {
+              key: `review-day`,
+              icon: <CalendarOutlined />,
+              label: "Daily Review",
+            },
+            {
+              key: `review-week`,
+              icon: <CalendarOutlined />,
+              label: "Weekly Review",
+            },
+            {
+              key: `review-month`,
+              icon: <CalendarOutlined />,
+              label: "Monthly Review",
+            },
+          ],
         },
         {
           key: "meetings-container",
