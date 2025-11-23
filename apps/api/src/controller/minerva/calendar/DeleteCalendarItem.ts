@@ -18,11 +18,11 @@ type GraphQlDeleteCalendarItemResponse = {
   update_minerva_meetings_by_pk: GraphQlMeeting;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class DeleteCalendarItemController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Delete("/v1/meeting/:meetingId")
+  @Delete("/meeting/:meetingId")
   @ApiOperation({
     summary: "Soft deletes an existing meeting",
     description: "Soft deletes a meeting.",

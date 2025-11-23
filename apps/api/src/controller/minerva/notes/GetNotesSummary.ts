@@ -65,11 +65,11 @@ const getTypeForId = (id: number): keyof NoteTypeCounts => {
   }
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class GetMonthlySummaryController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/notes/summary/:start")
+  @Get("/notes/summary/:start")
   @ApiOperation({
     summary: "Gets the monthly summary for notes",
     description: "Gets monthly summary for notes",

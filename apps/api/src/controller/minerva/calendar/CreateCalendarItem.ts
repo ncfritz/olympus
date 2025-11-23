@@ -23,11 +23,11 @@ type GraphQlCreateCalendarItemResponse = {
   insert_minerva_meetings_one: GraphQlMeeting;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateCalendarItemController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Post("/v1/meetings")
+  @Post("/meetings")
   @ApiOperation({
     summary: "Creates a new note",
     description: "Creates a new note.",

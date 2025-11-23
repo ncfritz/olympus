@@ -23,11 +23,11 @@ type GraphQlCreateNoteResponse = {
   insert_minerva_notes_one: GraphQlNote;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class CreateNoteController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Post("/v1/notes")
+  @Post("/notes")
   @ApiOperation({
     summary: "Creates a new note",
     description: "Creates a new note.",

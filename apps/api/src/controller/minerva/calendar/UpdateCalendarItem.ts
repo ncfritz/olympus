@@ -32,11 +32,11 @@ type GraphQlUpdateMeetingResponse = {
   update_minerva_meetings_by_pk: GraphQlMeeting;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class UpdateCalendarItemController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/meeting/:meetingId")
+  @Put("/meeting/:meetingId")
   @ApiOperation({
     summary: "Updates an existing note",
     description: "CUpdates an existing node.",

@@ -25,11 +25,11 @@ type GraphQlDescribeNoteResponse = {
   minerva_notes_by_pk: GraphQlNote;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class DescribeNoteController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/note/:noteId")
+  @Get("/note/:noteId")
   @ApiOperation({
     summary: "Gets a single note by ID",
     description: "Gets a single note by ID",

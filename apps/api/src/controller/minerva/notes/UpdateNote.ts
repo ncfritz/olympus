@@ -34,11 +34,11 @@ type GraphQlUpdateNoteResponse = {
   update_minerva_notes_by_pk: GraphQlNote;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class UpdateNoteController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Put("/v1/note/:noteId")
+  @Put("/note/:noteId")
   @ApiOperation({
     summary: "Updates an existing note",
     description: "CUpdates an existing node.",

@@ -19,11 +19,11 @@ type GraphQlRestoreNoteResponse = {
   update_minerva_notes_by_pk: GraphQlNote & { affected_rows: number };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class RestoreNoteController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Patch("/v1/note/:noteId")
+  @Patch("/note/:noteId")
   @ApiOperation({
     summary: "Restore an existing note",
     description: "Restore an existing node.",

@@ -38,11 +38,11 @@ type GraphQlHardDeleteNoteResponse = {
   delete_minerva_notes_by_pk: GraphQlNote;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class DeleteNoteController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Delete("/v1/note/:noteId")
+  @Delete("/note/:noteId")
   @ApiOperation({
     summary: "Deleted an existing note",
     description: "Deleted an existing node.",

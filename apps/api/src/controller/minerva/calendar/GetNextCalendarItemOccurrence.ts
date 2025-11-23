@@ -33,11 +33,11 @@ type GraphQlDescribeCalendarItemResponse = {
   minerva_meetings: GraphQlMeeting[];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class GetNextCalendarItemOccurrenceController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/meeting/:meetingId/next")
+  @Get("/meeting/:meetingId/next")
   @ApiOperation({
     summary: "Gets the next occurrence of a meeting in a series",
     description: "Gets the next occurrence of a meeting in a series",

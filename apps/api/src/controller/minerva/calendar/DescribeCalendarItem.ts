@@ -25,11 +25,11 @@ type GraphQlDescribeCalendarItemResponse = {
   minerva_meetings_by_pk: GraphQlMeeting;
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class DescribeCalendarItemController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/meeting/:meetingId")
+  @Get("/meeting/:meetingId")
   @ApiOperation({
     summary: "Gets a single calendar item by ID",
     description: "Gets a single calendar item by ID",

@@ -50,11 +50,11 @@ const EMPTY_COUNTS = (): MeetingStatusStatistics => {
   };
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class GetMeetingsStatisticsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/meetings/statistics/:start")
+  @Get("/meetings/statistics/:start")
   @ApiOperation({
     summary: "Gets the monthly summary for meetings",
     description: "Gets monthly summary for meetings",

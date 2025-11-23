@@ -20,11 +20,11 @@ type GraphQlListNotesResponse = {
   }[];
 };
 
-@Controller()
+@Controller({ version: "1" })
 export class GetNotesForEntityController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/v1/notes/entity/:entityType/:entityId")
+  @Get("/notes/entity/:entityType/:entityId")
   @ApiOperation({
     summary: "Lists notes for a particular day",
     description: "Lists notes for a particular day.",
