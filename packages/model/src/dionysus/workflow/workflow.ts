@@ -1,4 +1,4 @@
-import { ApiProperty, OmitType } from "@nestjs/swagger";
+import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment";
 import { PaginatedResults } from "../../common";
@@ -51,7 +51,6 @@ export class Workflow {
       "An ISO-8601 formatted string indicating when the workflow finished.",
     required: false,
   })
-  @ApiProperty({ type: String })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   finishedTime?: Moment;
 
@@ -79,22 +78,15 @@ export class Workflow {
   stepCount?: number;
 }
 
-export class PartialWorkflow extends OmitType(Workflow, [
+export class MutableWorkflow extends OmitType(Workflow, [
   "id",
   "createdTime",
   "lastUpdatedTime",
   "steps",
   "stepCount",
-  "status",
-]) {
-  @ApiProperty({
-    enum: () => WorkflowStatus,
-    enumName: "WorkflowStatus",
-    description: "The status of the workflow.",
-    required: false,
-  })
-  status?: WorkflowStatus;
-}
+]) {}
+
+export class PartialWorkflow extends PartialType(MutableWorkflow) {}
 
 export class CreateWorkflowRequest {}
 
@@ -117,7 +109,7 @@ export class UpdateWorkflowRequest {
     description:
       "A partial workflow representing the changes to make to an existing workflow",
   })
-  workflow: Partial<PartialWorkflow>;
+  workflow: PartialWorkflow;
 }
 
 export class UpdateWorkflowResponse {

@@ -1,6 +1,6 @@
 export * from "./minerva";
 export * from "./dionysus";
-export * from "./dionysus/content";
+export * from "./dionysus/content/assets";
 export * from "./olympus";
 export * from "./olympus/notifications";
 export * from "./common";
