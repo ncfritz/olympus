@@ -9,7 +9,9 @@ import {
   Breadcrumb,
   Button,
   Col,
+  ConfigProvider,
   Drawer,
+  Empty,
   Layout,
   Progress,
   Row,
@@ -28,6 +30,8 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import workflowApi from "../../../api/workflowApi";
+import ErrorBlock from "../../../components/common/ErrorBlock";
+import LoadingWrapper from "../../../components/common/LoadingWrapper";
 import RefreshTimer from "../../../components/common/RefreshTimer";
 import { MonoNumber } from "../../../components/common/styledComponents";
 import Timestamp from "../../../components/data/Timestamp";
@@ -191,27 +195,32 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
     }
   };
 
-  let statusChart = (
-    <Space style={{ height: 300, display: "flex", justifyContent: "center" }}>
-      <Spin />
-    </Space>
-  );
-  let queueTimingChart = (
-    <Space style={{ height: 300, display: "flex", justifyContent: "center" }}>
-      <Spin />
-    </Space>
-  );
-  let runTimingChart = (
-    <Space style={{ height: 300, display: "flex", justifyContent: "center" }}>
-      <Spin />
-    </Space>
+  const statusChart = (
+    <LoadingWrapper
+      loading={workflowStatisticsLoading}
+      error={workflowStatisticsError}
+    >
+      <WorkflowStatusChart stats={workflowStatistics} />
+    </LoadingWrapper>
   );
 
-  if (!workflowStatisticsLoading && workflowStatistics) {
-    statusChart = <WorkflowStatusChart stats={workflowStatistics} />;
-    queueTimingChart = <WorkflowQueueTimeChart stats={workflowStatistics} />;
-    runTimingChart = <WorkflowRuntimeChart stats={workflowStatistics} />;
-  }
+  const queueTimingChart = (
+    <LoadingWrapper
+      loading={workflowStatisticsLoading}
+      error={workflowStatisticsError}
+    >
+      <WorkflowQueueTimeChart stats={workflowStatistics} />
+    </LoadingWrapper>
+  );
+
+  const runTimingChart = (
+    <LoadingWrapper
+      loading={workflowStatisticsLoading}
+      error={workflowStatisticsError}
+    >
+      <WorkflowRuntimeChart stats={workflowStatistics} />
+    </LoadingWrapper>
+  );
 
   const columns: ColumnsType<Workflow> = [
     {
@@ -357,7 +366,6 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
             Set Status
           </Button>
         </Space>
-        ,
       </Space>
       <Space style={{ marginRight: 16 }}>
         <Button
@@ -480,59 +488,69 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
           >
             {actionsContent}
           </Row>
-          <Table
-            style={{ width: "100%" }}
-            rowKey={(record) => {
-              return `${record.id}`;
-            }}
-            columns={columns}
-            dataSource={workflows?.workflows}
-            size={"middle"}
-            loading={workflowsLoading}
-            pagination={{
-              style: {
-                marginLeft: 16,
-              },
-              position: ["bottomLeft"],
-              pageSize: workflowsPageSize,
-              size: "small",
-              total: workflows?.count,
-              showSizeChanger: true,
-              pageSizeOptions: [25, 50, 100, 250, 500],
-              onShowSizeChange: (current, size) => {
-                setWorkflowsPageSize(size);
-              },
-              showQuickJumper: true,
-              showTotal: (total, range) => {
-                return `${range[0]} to ${range[1]} of ${total}`;
-              },
-            }}
-            onChange={(pagination, filters, sorter, extra) => {
-              const s = sorter as Sorts;
+          <ConfigProvider
+            renderEmpty={() =>
+              workflowsError ? (
+                <ErrorBlock error={workflowsError} />
+              ) : (
+                <Empty description="No workflows found" />
+              )
+            }
+          >
+            <Table
+              style={{ width: "100%" }}
+              rowKey={(record) => {
+                return `${record.id}`;
+              }}
+              columns={columns}
+              dataSource={workflows?.workflows}
+              size={"middle"}
+              loading={workflowsLoading}
+              pagination={{
+                style: {
+                  marginLeft: 16,
+                },
+                position: ["bottomLeft"],
+                pageSize: workflowsPageSize,
+                size: "small",
+                total: workflows?.count,
+                showSizeChanger: true,
+                pageSizeOptions: [25, 50, 100, 250, 500],
+                onShowSizeChange: (current, size) => {
+                  setWorkflowsPageSize(size);
+                },
+                showQuickJumper: true,
+                showTotal: (total, range) => {
+                  return `${range[0]} to ${range[1]} of ${total}`;
+                },
+              }}
+              onChange={(pagination, filters, sorter, extra) => {
+                const s = sorter as Sorts;
 
-              switch (extra.action) {
-                case "paginate":
-                  setWorkflowsPage(pagination.current! - 1);
-                  break;
-                case "sort":
-                  setWorkflowsSort({
-                    field: s.columnKey?.toString() || "",
-                    order: s.order === "ascend" ? "asc" : "desc",
-                  });
-                  break;
-                case "filter":
-                  setWorkflowsPage(0);
-                  setWorkflowFilters(filters);
-                  break;
-              }
+                switch (extra.action) {
+                  case "paginate":
+                    setWorkflowsPage(pagination.current! - 1);
+                    break;
+                  case "sort":
+                    setWorkflowsSort({
+                      field: s.columnKey?.toString() || "",
+                      order: s.order === "ascend" ? "asc" : "desc",
+                    });
+                    break;
+                  case "filter":
+                    setWorkflowsPage(0);
+                    setWorkflowFilters(filters);
+                    break;
+                }
 
-              setMetadataWorkflowRequested(new Date().toISOString());
-            }}
-            rowSelection={{
-              selectedRowKeys,
-              onChange: onSelectChange,
-            }}
-          />
+                setMetadataWorkflowRequested(new Date().toISOString());
+              }}
+              rowSelection={{
+                selectedRowKeys,
+                onChange: onSelectChange,
+              }}
+            />
+          </ConfigProvider>
           <Drawer
             title="Workflow Details"
             width={750}
