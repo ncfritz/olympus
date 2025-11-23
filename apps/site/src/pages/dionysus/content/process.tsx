@@ -510,7 +510,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
                 ),
               },
               {
-                title: <Typography.Text>New Asset Ingest</Typography.Text>,
+                title: <Typography.Text>Asset Tagging</Typography.Text>,
               },
             ]}
           />
