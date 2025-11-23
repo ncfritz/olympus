@@ -4,7 +4,7 @@ import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response, Request } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import * as jose from "jose";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type FetchJwtQueryInput = Record<string, never>;
 

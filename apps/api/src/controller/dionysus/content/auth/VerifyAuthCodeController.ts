@@ -14,22 +14,17 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
+import { GraphQLClient } from "graphql-request";
 import * as speakeasy from "speakeasy";
 import * as jose from "jose";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlGetContentAuthResponse = {
-  dionysus_content_auth_by_pk: {
-    key: string;
-    key_id: string;
-    createdTime: string;
-  };
-};
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { BaseAuthenticatedContentController } from "./BaseAuthenticatedContentController";
 
 @Controller({ version: "1" })
-export class VerifyAuthCodeController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+export class VerifyAuthCodeController extends BaseAuthenticatedContentController {
+  constructor(protected readonly graphQLClient: GraphQLClient) {
+    super(graphQLClient);
+  }
 
   @Get("/content/auth/verify")
   @ApiOperation({
@@ -53,21 +48,7 @@ export class VerifyAuthCodeController {
     @Query("otp") otp: string,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchOtpKeyRequest = gql`
-      query FetchContentAuthBlackCurtainKey {
-        dionysus_content_auth_by_pk(key_id: "bc.key") {
-          key
-          key_id
-          createdTime
-        }
-      }
-    `;
-
-    const fetchOtpKeyResponse =
-      await this.graphQLClient.request<GraphQlGetContentAuthResponse>(
-        fetchOtpKeyRequest,
-      );
-    const otpKey = fetchOtpKeyResponse.dionysus_content_auth_by_pk.key;
+    const otpKey = await this.getAuthenticationKey("bc.key");
     const verified = speakeasy.totp.verify({
       secret: otpKey,
       encoding: "base32",
@@ -77,25 +58,8 @@ export class VerifyAuthCodeController {
     if (!verified) {
       throw new UnauthorizedException();
     }
-
-    const fetchJwtKeyRequest = gql`
-      query FetchContentAuthJWTKey {
-        dionysus_content_auth_by_pk(key_id: "jwt.key") {
-          key
-          key_id
-          createdTime
-        }
-      }
-    `;
-
-    const fetchJwtKeyResponse =
-      await this.graphQLClient.request<GraphQlGetContentAuthResponse>(
-        fetchJwtKeyRequest,
-      );
-    const jwtKey = fetchJwtKeyResponse.dionysus_content_auth_by_pk.key;
-
+    const jwtKey = await this.getAuthenticationKey("jwt.key");
     const alg = "HS256";
-
     const jwt = await new jose.SignJWT({ "urn:example:claim": true })
       .setProtectedHeader({ alg })
       .setIssuedAt()
