@@ -1,5 +1,8 @@
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
-import { EmptyResponse } from "@ncfritz/olympus-model";
+import {
+  ContentIngestionWorkflowAssetLocation,
+  EmptyResponse,
+} from "@ncfritz/olympus-model";
 import {
   Controller,
   Post,
@@ -14,8 +17,10 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { Request } from "express";
+import { GraphQLClient } from "graphql-request";
 import { diskStorage } from "multer";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { BaseContentIngestionWorkflowController } from "./BaseContentIngestionWorkflowController";
 
 const destinationDir = (
   req: Request,
@@ -26,8 +31,13 @@ const destinationDir = (
 };
 
 @Controller({ version: "1" })
-export class UploadAssetsController {
-  constructor(private readonly amqpConnection: AmqpConnection) {}
+export class UploadAssetsController extends BaseContentIngestionWorkflowController {
+  constructor(
+    protected readonly graphQLClient: GraphQLClient,
+    private readonly amqpConnection: AmqpConnection,
+  ) {
+    super(graphQLClient);
+  }
 
   @Post("/content/upload")
   @ApiOperation({
@@ -58,13 +68,23 @@ export class UploadAssetsController {
     }),
   )
   public async uploadFile(@UploadedFiles() files: Express.Multer.File[]) {
-    files.forEach((file) => {
-      this.amqpConnection.publish("content.trigger", "jobType.rawIngest", {
-        assetLocation: `${process.env.DIONYSUS_PUBLISH_PATH}/${file.filename}`,
-        originalFilename: file.originalname,
-        skipWorkflow: false,
-      });
-    });
+    for (const file of files) {
+      const workflow = await this.createContentIngestionWorkflow(
+        file.originalname,
+        ContentIngestionWorkflowAssetLocation.LOCAL,
+      );
+
+      await this.amqpConnection.publish(
+        "content.trigger",
+        "jobType.rawIngest",
+        {
+          workflowId: workflow.id,
+          assetLocation: `${process.env.DIONYSUS_PUBLISH_PATH}/${file.filename}`,
+          originalFilename: file.originalname,
+          skipWorkflow: false,
+        },
+      );
+    }
 
     return files;
   }
