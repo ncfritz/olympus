@@ -1,11 +1,13 @@
 import { Alert, Space } from "antd";
 import type { CSSProperties, ReactNode } from "react";
+import ErrorBlock from "./ErrorBlock";
 import Loader from "./Loader";
 
 export interface LoadingWrapperProps {
   loading: boolean;
   loader?: ReactNode;
   showError?: boolean;
+  showErrorDetails?: boolean;
   error?: Error;
   style?: CSSProperties;
   children: ReactNode | ReactNode[];
@@ -15,17 +17,23 @@ const LoadingWrapper: React.FunctionComponent<LoadingWrapperProps> = ({
   loading,
   loader,
   showError = true,
+  showErrorDetails = false,
   error,
   children,
   style,
 }: LoadingWrapperProps) => {
   let content: ReactNode | ReactNode[] = undefined;
 
+  console.log(`Loading: ${loading}, Error: ${error}`);
+
   if (loading) {
     content = loader || <Loader />;
-  } else if (error && showError) {
-    content = <Alert type={"error"} />;
+  } else if (error) {
+    if (showError) {
+      content = <ErrorBlock error={error} includeStack={showErrorDetails} />;
+    }
   } else {
+    console.log(`I got here: ${loading}/${error}`);
     content = children;
   }
 
