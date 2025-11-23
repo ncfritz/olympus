@@ -24,8 +24,6 @@ export const useFetch = <O, T>(
   const [data, setData] = useState<T | undefined>(options.default);
   const [error, setError] = useState<Error | undefined>(undefined);
 
-  const [api] = notification.useNotification();
-
   const fetcher = async (quietOverride = true) => {
     if (!options.quiet && !quietOverride) {
       setLoading(true);
@@ -41,7 +39,7 @@ export const useFetch = <O, T>(
 
       setError(e);
 
-      api["error"]({
+      notification.error({
         message: "Unable to fetch data",
         description: `The ${options.dataType || "requested data"} could not be fetched`,
       });
