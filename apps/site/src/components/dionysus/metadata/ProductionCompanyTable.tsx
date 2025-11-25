@@ -273,7 +273,7 @@ const ProductionCompanyTable: React.FunctionComponent<
       rowKey={"id"}
       columns={columns}
       dataSource={data}
-      size={"middle"}
+      size={"small"}
       loading={loading}
       pagination={pagination}
       onChange={onChange}
