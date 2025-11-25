@@ -184,6 +184,39 @@ const DionysysMenu: React.FunctionComponent = () => {
           ],
         },
         {
+          key: "metadata-container",
+          icon: <MetadataOutlinedIcon />,
+          label: "Core Metadata",
+          onTitleClick: updateSubMenus,
+          children: [
+            {
+              key: `/${BASE_PATH}/metadata/certifications`,
+              icon: <CertificationsIcon />,
+              label: "Certifications",
+            },
+            {
+              key: `/${BASE_PATH}/metadata/countries`,
+              icon: <CountryIcon />,
+              label: "Countries",
+            },
+            {
+              key: `/${BASE_PATH}/metadata/genres`,
+              icon: <GenreIcon />,
+              label: "Genres",
+            },
+            {
+              key: `/${BASE_PATH}/metadata/keywords`,
+              icon: <KeywordIcon />,
+              label: "Keywords",
+            },
+            {
+              key: `/${BASE_PATH}/metadata/languages`,
+              icon: <LanguageIcon />,
+              label: "Languages",
+            },
+          ],
+        },
+        {
           key: "content-container",
           icon: <ExperimentOutlined />,
           label: "Content",
@@ -218,39 +251,6 @@ const DionysysMenu: React.FunctionComponent = () => {
               key: `/${BASE_PATH}/content/duplicates`,
               icon: <AppstoreOutlined />,
               label: "Duplicates",
-            },
-          ],
-        },
-        {
-          key: "metadata-container",
-          icon: <MetadataOutlinedIcon />,
-          label: "Core Metadata",
-          onTitleClick: updateSubMenus,
-          children: [
-            {
-              key: `/${BASE_PATH}/metadata/certifications`,
-              icon: <CertificationsIcon />,
-              label: "Certifications",
-            },
-            {
-              key: `/${BASE_PATH}/metadata/countries`,
-              icon: <CountryIcon />,
-              label: "Countries",
-            },
-            {
-              key: `/${BASE_PATH}/metadata/genres`,
-              icon: <GenreIcon />,
-              label: "Genres",
-            },
-            {
-              key: `/${BASE_PATH}/metadata/keywords`,
-              icon: <KeywordIcon />,
-              label: "Keywords",
-            },
-            {
-              key: `/${BASE_PATH}/metadata/languages`,
-              icon: <LanguageIcon />,
-              label: "Languages",
             },
           ],
         },
