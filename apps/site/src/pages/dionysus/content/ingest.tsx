@@ -9,38 +9,46 @@ import {
 } from "@ant-design/icons";
 import type {
   ContentIngestionWorkflow,
+  GetContentIngestionWorkflowStatisticsResponse,
   ListContentIngestionWorkflowsResponse,
+  FilterDefinition,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Breadcrumb,
   Button,
   Col,
   ConfigProvider,
-  Drawer, Empty,
+  Drawer,
+  Empty,
   Popover,
   Row,
   Space,
   Table,
   type TableProps,
-  Typography
+  Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import type { FilterValue } from "antd/es/table/interface";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import contentApi from "../../../api/contentApi";
 import ErrorBlock from "../../../components/common/ErrorBlock";
+import LoadingWrapper from "../../../components/common/LoadingWrapper";
+import RefreshTimer from "../../../components/common/RefreshTimer";
 import { MonoNumber } from "../../../components/common/styledComponents";
 import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
 import ContentIngestionUploadModal from "../../../components/content/ContentIngestionUploadModal";
 import ContentIngestionUrlUploadModal from "../../../components/content/ContentIngestionUrlUploadModal";
 import ContentIngestionWorkflowDetailsPanel from "../../../components/content/ContentIngestWorkflowDetailsPanel";
+import WorkflowSourceAggregateChart from "../../../components/content/graphs/WorkflowSourceAggregateChart";
+import WorkflowStatusAggregateChart from "../../../components/content/graphs/WorkflowStatusAggregateChart";
+import WorkflowStatusChart from "../../../components/content/graphs/WorkflowStatusChart";
 import { getContentIngestionWorkflowStatusIndicator } from "../../../components/content/util";
 import Timestamp from "../../../components/data/Timestamp";
 import { useFetch } from "../../../hooks/useFetch";
+import { buildFilterDefinitionForTable } from "../../../utils/filters";
 
 type OnChange = NonNullable<TableProps<ContentIngestionWorkflow>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
@@ -57,21 +65,31 @@ const AssetIngestPage: React.FunctionComponent = () => {
     order: "desc",
   });
   const [workflowFilters, setWorkflowFilters] = useState<
-    Record<string, FilterValue | null>
-  >({});
-  const [workflowListUpdateRequested, setWorkflowListUpdateRequested] =
-    useState("");
-
+    FilterDefinition | undefined
+  >(undefined);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<
     string | undefined
   >(id as string);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadUrlsModalOpen, setUploadUrlsModalOpen] = useState(false);
 
+  const [
+    workflowStatistics,
+    workflowStatisticsLoading,
+    workflowStatisticsError,
+    fetchWorkflowStatistics,
+  ] = useFetch<undefined, GetContentIngestionWorkflowStatisticsResponse>({
+    dataType: "workflow statistics",
+    watch: [],
+    params: undefined,
+    fetchFunction: async () =>
+      (await contentApi.getContentIngestionWorkflowStatistics()).data,
+  });
+
   const [workflows, workflowsLoading, workflowsError, fetchWorkflows] =
     useFetch<undefined, ListContentIngestionWorkflowsResponse>({
       dataType: "workflows",
-      watch: [],
+      watch: [workflowsPage, workflowsPageSize, workflowsSort, workflowFilters],
       params: undefined,
       fetchFunction: async () =>
         (
@@ -83,12 +101,6 @@ const AssetIngestPage: React.FunctionComponent = () => {
           )
         ).data,
     });
-
-  useEffect(() => {
-    (async () => {
-      await fetchWorkflows(true);
-    })();
-  }, [workflowListUpdateRequested]);
 
   const closeDrawer = async () => {
     setSelectedWorkflowId(undefined);
@@ -137,12 +149,12 @@ const AssetIngestPage: React.FunctionComponent = () => {
           value: "running",
         },
         {
-          text: getContentIngestionWorkflowStatusIndicator("success"),
-          value: "success",
-        },
-        {
           text: getContentIngestionWorkflowStatusIndicator("duplicate"),
           value: "duplicate",
+        },
+        {
+          text: getContentIngestionWorkflowStatusIndicator("success"),
+          value: "success",
         },
         {
           text: getContentIngestionWorkflowStatusIndicator("failed"),
@@ -156,6 +168,8 @@ const AssetIngestPage: React.FunctionComponent = () => {
       render: (value) => {
         return getContentIngestionWorkflowStatusIndicator(value);
       },
+      filterMode: "tree",
+      filterSearch: true,
       sorter: true,
       width: 200,
     },
@@ -244,6 +258,33 @@ const AssetIngestPage: React.FunctionComponent = () => {
     },
   ];
 
+  const statusAggregateChart = (
+    <LoadingWrapper
+      loading={workflowStatisticsLoading}
+      error={workflowStatisticsError}
+    >
+      <WorkflowStatusAggregateChart stats={workflowStatistics} />
+    </LoadingWrapper>
+  );
+
+  const sourceAggregateChart = (
+    <LoadingWrapper
+      loading={workflowStatisticsLoading}
+      error={workflowStatisticsError}
+    >
+      <WorkflowSourceAggregateChart stats={workflowStatistics} />
+    </LoadingWrapper>
+  );
+
+  const statusChart = (
+    <LoadingWrapper
+      loading={workflowStatisticsLoading}
+      error={workflowStatisticsError}
+    >
+      <WorkflowStatusChart stats={workflowStatistics} />
+    </LoadingWrapper>
+  );
+
   return (
     <ContentAuthWrapper>
       <Content>
@@ -311,8 +352,25 @@ const AssetIngestPage: React.FunctionComponent = () => {
               zIndex: 10,
               borderTop: "1px solid #efefef",
               width: "calc(100vw - 380px)",
+              height: "calc(100vh - 102px)",
             }}
           >
+            <Row gutter={16} style={{ marginBottom: 16 }}>
+              <Col span={8}>{statusAggregateChart}</Col>
+              <Col span={2}>{sourceAggregateChart}</Col>
+              <Col span={14}>{statusChart}</Col>
+            </Row>
+            <Row>
+              <Col span={24}>
+                <RefreshTimer
+                  ttlMs={60000}
+                  fetchFunction={async () => {
+                    await fetchWorkflows(true);
+                    await fetchWorkflowStatistics(true);
+                  }}
+                />
+              </Col>
+            </Row>
             <Row
               gutter={16}
               style={{
@@ -378,6 +436,7 @@ const AssetIngestPage: React.FunctionComponent = () => {
                     icon={<ReloadOutlined />}
                     onClick={async () => {
                       await fetchWorkflows(true);
+                      await fetchWorkflowStatistics(true);
                     }}
                   />
                 </Space>
@@ -398,8 +457,10 @@ const AssetIngestPage: React.FunctionComponent = () => {
                   return `${record.id}`;
                 }}
                 columns={columns}
+                sticky={true}
+                scroll={{ y: "calc(100vh - 484px)" }}
                 dataSource={workflows?.workflows}
-                size={"middle"}
+                size={"small"}
                 loading={workflowsLoading}
                 pagination={{
                   style: {
@@ -434,11 +495,11 @@ const AssetIngestPage: React.FunctionComponent = () => {
                       break;
                     case "filter":
                       setWorkflowsPage(0);
-                      setWorkflowFilters(filters);
+                      setWorkflowFilters(
+                        buildFilterDefinitionForTable(filters),
+                      );
                       break;
                   }
-
-                  setWorkflowListUpdateRequested(new Date().toISOString());
                 }}
               />
             </ConfigProvider>
@@ -465,6 +526,7 @@ const AssetIngestPage: React.FunctionComponent = () => {
         }}
         onUploadsComplete={async () => {
           await fetchWorkflows(true);
+          await fetchWorkflowStatistics(true);
         }}
       />
       <ContentIngestionUrlUploadModal
@@ -474,6 +536,7 @@ const AssetIngestPage: React.FunctionComponent = () => {
         }}
         onUploadsComplete={async () => {
           await fetchWorkflows(true);
+          await fetchWorkflowStatistics(true);
         }}
       />
     </ContentAuthWrapper>
