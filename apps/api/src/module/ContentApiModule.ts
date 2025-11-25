@@ -22,6 +22,7 @@ import { SetContentAssetRatingController } from "../controller/dionysus/content/
 import { CreateContentIngestionWorkflowController } from "../controller/dionysus/content/workflow/CreateContentIngestionWorkflow";
 import { CreateContentIngestionWorkflowStepController } from "../controller/dionysus/content/workflow/CreateContentIngestionWorkflowStep";
 import { DescribeContentIngestionWorkflowController } from "../controller/dionysus/content/workflow/DescribeContentIngestionWorkflow";
+import { GetContentIngestionWorkflowStatisticsController } from "../controller/dionysus/content/workflow/GetContentIngestionWorkflowStatistics";
 import { ListContentIngestionWorkflowsController } from "../controller/dionysus/content/workflow/ListContentIngestionWorkflows";
 import { UpdateContentIngestionWorkflowController } from "../controller/dionysus/content/workflow/UpdateContentIngestionWorkflow";
 import { UpdateContentIngestionWorkflowStepController } from "../controller/dionysus/content/workflow/UpdateContentIngestionWorkflowStep";
@@ -45,6 +46,7 @@ import { RabbitModule } from "./RabbitModule";
     CreateContentIngestionWorkflowStepController,
     CreateContentJobController,
     DeleteContentAssetTagFromAssetController,
+    GetContentIngestionWorkflowStatisticsController,
     DescribeContentIngestionWorkflowController,
     GetContentAssetController,
     GetContentAssetAggregateStatisticsController,
