@@ -1,10 +1,11 @@
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
-  CloseCircleOutlined, CopyOutlined,
+  CloseCircleOutlined,
+  CopyOutlined,
   MinusCircleOutlined,
   QuestionCircleOutlined,
-  SyncOutlined
+  SyncOutlined,
 } from "@ant-design/icons";
 import type {
   ContentAssetTag,
@@ -58,16 +59,16 @@ export const getContentIngestionWorkflowStatusIndicator = (
           Running
         </Tag>
       );
-    case "success":
-      return (
-        <Tag color={"#dd5182"} icon={<CheckCircleOutlined />} style={style}>
-          Success
-        </Tag>
-      );
     case "duplicate":
       return (
         <Tag color={"#955196"} icon={<CopyOutlined />} style={style}>
           Duplicate
+        </Tag>
+      );
+    case "success":
+      return (
+        <Tag color={"#dd5182"} icon={<CheckCircleOutlined />} style={style}>
+          Success
         </Tag>
       );
     case "failed":
@@ -79,7 +80,7 @@ export const getContentIngestionWorkflowStatusIndicator = (
     case "skipped":
       return (
         <Tag color={"#ffa600"} icon={<MinusCircleOutlined />} style={style}>
-          Duplicate
+          Skipped
         </Tag>
       );
     default:
