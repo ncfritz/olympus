@@ -19,7 +19,6 @@ import {
   Typography,
 } from "antd";
 import { type ColumnsType } from "antd/es/table";
-import type { FilterValue } from "antd/es/table/interface";
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts";
 import { DateTime } from "luxon";
@@ -28,6 +27,7 @@ import React, { type ReactNode, useEffect, useState } from "react";
 import batchJobApi from "../../../api/batchJobApi";
 import type { SortOptions } from "../../../api/common";
 import { useFetch } from "../../../hooks/useFetch";
+import { buildFilterDefinitionForTable } from "../../../utils/filters";
 import { MonoNumber } from "../../common/styledComponents";
 import Timestamp from "../../data/Timestamp";
 import BatchJobStatusSelect from "../../dionysus/jobs/BatchJobStatusSelect";
@@ -67,9 +67,9 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
     field: "createdTime",
     order: "desc",
   });
-  const [jobFilters, setJobFilters] = useState<
-    Record<string, FilterValue | null>
-  >({});
+  const [jobFilters, setJobFilters] = useState<FilterDefinition | undefined>(
+    undefined,
+  );
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [selectedRows, setSelectedRows] = useState<BatchJob[]>([]);
   const [processingRows, setProcessingRows] = useState(false);
@@ -82,36 +82,13 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
   });
   const [targetStatus, setTargetStatus] = useState<JobStatus>("created");
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
-  const [filters, setFilters] = useState<FilterDefinition | undefined>(
-    undefined,
-  );
-
-  useEffect(() => {
-    const newFilters: FilterDefinition[] = [];
-
-    if (jobFilters["status"]) {
-      newFilters.push({
-        type: "in",
-        name: "status",
-        value: jobFilters["status"] as string[],
-      });
-    }
-
-    if (newFilters && newFilters.length <= 0) {
-      setFilters(undefined);
-    } else if (newFilters.length > 1) {
-      setFilters({ type: "and", name: "_", value: newFilters });
-    } else {
-      setFilters(newFilters[0]);
-    }
-  }, [jobFilters]);
 
   const [jobs, jobsLoading, jobsError, fetchJobs] = useFetch<
     undefined,
     ListBatchJobsResponse
   >({
     dataType: "batch jobs",
-    watch: [filters],
+    watch: [jobFilters],
     params: undefined,
     fetchFunction: async () =>
       (
@@ -120,7 +97,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
           jobsPage,
           jobsPageSize,
           jobsSort,
-          filters,
+          jobFilters,
         )
       ).data,
   });
@@ -238,23 +215,23 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       },
       filters: [
         {
-          text: "Created",
+          text: getBatchJobStatusIndicator("created"),
           value: "created",
         },
         {
-          text: "Started",
+          text: getBatchJobStatusIndicator("started"),
           value: "started",
         },
         {
-          text: "Success",
-          value: "Success",
+          text: getBatchJobStatusIndicator("success"),
+          value: "success",
         },
         {
-          text: "Failed",
+          text: getBatchJobStatusIndicator("failed"),
           value: "failed",
         },
         {
-          text: "Cancelled",
+          text: getBatchJobStatusIndicator("cancelled"),
           value: "cancelled",
         },
       ],
@@ -748,8 +725,10 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
           borderTop: !showPublish ? "1px solid #f3f3f3" : "none",
         }}
         columns={columns}
+        sticky={true}
+        scroll={{ y: "calc(100vh - 853px)" }}
         dataSource={jobs?.jobs}
-        size={"middle"}
+        size={"small"}
         loading={jobsLoading}
         pagination={{
           style: {
@@ -784,7 +763,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
               break;
             case "filter":
               setJobsPage(0);
-              setJobFilters(filters);
+              setJobFilters(buildFilterDefinitionForTable(filters));
               break;
           }
 
