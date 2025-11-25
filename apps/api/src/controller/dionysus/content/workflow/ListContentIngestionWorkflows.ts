@@ -18,6 +18,10 @@ import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
+import {
+  buildFilterExpression,
+  buildPaginationExpression,
+} from "../../../../utils/filterUtil";
 
 type GraphQLListContentIngestionWorkflowsResponse = {
   dionysus_content_asset_ingest_workflows: GraphQLContentIngestionWorkflow[];
@@ -63,11 +67,17 @@ export class ListContentIngestionWorkflowsController {
     @Query("filters") filters: string | undefined,
     @Res() response: Response,
   ): Promise<void> {
+    const whereExpression = buildFilterExpression(filters);
+    const paginationExpression = buildPaginationExpression({
+      pageSize: pageSize,
+      startPage: startPage,
+      sortDirection: sortDirection,
+      sortField: sortField,
+    });
+
     const fetchRequest = gql`
       query ListContentIngestionWorkflows {
-        dionysus_content_asset_ingest_workflows(limit: ${pageSize}, 
-                                                offset: ${pageSize * startPage}, 
-                                                order_by: {${sortField}: ${sortDirection}}) {
+        dionysus_content_asset_ingest_workflows(${[paginationExpression, whereExpression].join(", ")}) {
           createdTime
           finishedTime
           id
@@ -82,7 +92,7 @@ export class ListContentIngestionWorkflowsController {
             }
           }
         }
-        dionysus_content_asset_ingest_workflows_aggregate {
+        dionysus_content_asset_ingest_workflows_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {
             count
           }
@@ -103,8 +113,8 @@ export class ListContentIngestionWorkflowsController {
     const responseBody: ListContentIngestionWorkflowsResponse = {
       workflows: fetchedWorkflows,
       count:
-      fetchResponse.dionysus_content_asset_ingest_workflows_aggregate
-        .aggregate.count,
+        fetchResponse.dionysus_content_asset_ingest_workflows_aggregate
+          .aggregate.count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);
