@@ -77,13 +77,18 @@ class MetadataApi extends ApiBase {
     });
   }
 
-  async listCertifications(page: number, sort: SortOptions) {
+  async listCertifications(
+    page: number,
+    sort: SortOptions,
+    filters?: FilterDefinition,
+  ) {
     return await listCertifications({
       query: {
-        pageSize: 20,
+        pageSize: 50,
         startPage: page,
         sort: sort.order,
         sortBy: sort.field,
+        filters: this.encodeFilters(filters),
       },
     });
   }
@@ -91,7 +96,7 @@ class MetadataApi extends ApiBase {
   async listCountries(page: number, sort: SortOptions) {
     return await listCountries({
       query: {
-        pageSize: 20,
+        pageSize: 50,
         startPage: page,
         sort: sort.order,
         sortBy: sort.field,
@@ -99,13 +104,18 @@ class MetadataApi extends ApiBase {
     });
   }
 
-  async listGenres(page: number, sort: SortOptions) {
+  async listGenres(
+    page: number,
+    sort: SortOptions,
+    filters?: FilterDefinition,
+  ) {
     return await listGenres({
       query: {
-        pageSize: 20,
+        pageSize: 50,
         startPage: page,
         sort: sort.order,
         sortBy: sort.field,
+        filters: this.encodeFilters(filters),
       },
     });
   }
@@ -113,7 +123,7 @@ class MetadataApi extends ApiBase {
   async listKeywords(page: number, sort: SortOptions) {
     return await listKeywords({
       query: {
-        pageSize: 20,
+        pageSize: 50,
         startPage: page,
         sort: sort.order,
         sortBy: sort.field,
@@ -121,7 +131,7 @@ class MetadataApi extends ApiBase {
     });
   }
 
-  async listLanguages(page: number, sort: SortOptions, pageSize = 20) {
+  async listLanguages(page: number, sort: SortOptions, pageSize = 50) {
     return await listLanguages({
       query: {
         pageSize: pageSize,

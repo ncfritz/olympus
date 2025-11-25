@@ -3,12 +3,15 @@ import {
   checkAuthorization,
   client,
   type ContentAsset,
-  type ContentAssetTag, type ContentIngestionWorkflowAssetLocation,
+  type ContentAssetTag,
+  type ContentIngestionWorkflowAssetLocation,
   type ContentJobType,
   type ContentTagType,
-  createContentAssetTag, createContentIngestionWorkflow,
+  createContentAssetTag,
+  createContentIngestionWorkflow,
   createContentJob,
-  deleteContentAssetTagFromAsset, describeContentIngestionWorkflow,
+  deleteContentAssetTagFromAsset,
+  describeContentIngestionWorkflow,
   type FilterDefinition,
   getContentAsset,
   getContentAssetAggregateStatistics,
@@ -16,20 +19,23 @@ import {
   getContentAssetHeightStatistics,
   getContentAssetSizeStatistics,
   getContentAssetWidthStatistics,
+  getContentIngestionWorkflowStatistics,
   getUntaggedContentAsset,
   listAvailableContentAssetTags,
   listContentAssets,
   listContentAssetTagsForAsset,
   listContentIngestionWorkflows,
   listSimilarContentAssets,
-  verifyAuthCode
+  verifyAuthCode,
 } from "@ncfritz/olympus-sdk/dionysus";
-import type { FilterValue } from "antd/es/table/interface";
 import { store } from "../redux/store";
+import { ApiBase } from "./apiBase";
 import type { SortOptions } from "./common";
 
-class ContentApi {
+class ContentApi extends ApiBase {
   constructor() {
+    super();
+
     client.setConfig({
       baseURL: "/api/v1",
       throwOnError: true,
@@ -194,19 +200,15 @@ class ContentApi {
     page: number,
     pageSize: number,
     sort: SortOptions,
-    filters?: Record<string, FilterValue | null>,
+    filters?: FilterDefinition,
   ) {
-    const encodedFilters = filters
-      ? Buffer.from(JSON.stringify(filters)).toString("base64")
-      : undefined;
-
     return await listContentIngestionWorkflows({
       query: {
         pageSize: pageSize,
         sort: sort.order,
         sortBy: sort.field,
         startPage: page,
-        filters: encodedFilters,
+        filters: this.encodeFilters(filters),
       },
     });
   }
@@ -217,6 +219,10 @@ class ContentApi {
         workflowId: workflowId,
       },
     });
+  }
+
+  async getContentIngestionWorkflowStatistics() {
+    return await getContentIngestionWorkflowStatistics({});
   }
 
   async queueContentTask(assetId: string, type: ContentJobType) {
