@@ -15,9 +15,14 @@ import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/metadata/GenreConverter";
 import { GraphQlGenre } from "../../../../types/dionysus/metadata/genre";
 import {
+  ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
+import {
+  buildFilterExpression,
+  buildPaginationExpression,
+} from "../../../../utils/filterUtil";
 
 type GraphQlListGenresResponse = {
   dionysus_genres: GraphQlGenre[];
@@ -47,6 +52,7 @@ export class ListGenresController {
     name: "pageSize",
     type: Number,
   })
+  @ApiFilterParams()
   @ApiPaginationParams()
   @ApiOkResponse({
     type: ListGenresResponse,
@@ -59,25 +65,32 @@ export class ListGenresController {
     @Query("startPage") startPage = 0,
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
     @Query("sortBy") sortField = "createdTime",
+    @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
+    const whereExpression = buildFilterExpression(filters);
+    const paginationExpression = buildPaginationExpression({
+      pageSize: pageSize,
+      startPage: startPage,
+      sortDirection: sortDirection,
+      sortField: sortField,
+    });
+
     const fetchRequest = gql`
       query ListGenres {
-      dionysus_genres(limit: ${pageSize}, offset: ${
-        pageSize * startPage
-      }, order_by: {${sortField}: ${sortDirection}}) {
-        id
-        type
-        name
-        createdTime
-        lastUpdatedTime
-      }
-      dionysus_genres_aggregate {
-        aggregate {
-          count
+        dionysus_genres(${[paginationExpression, whereExpression].join(", ")}) {
+          id
+          type
+          name
+          createdTime
+          lastUpdatedTime
+        }
+        dionysus_genres_aggregate${whereExpression ? `(${whereExpression})` : ""} {
+          aggregate {
+            count
+          }
         }
       }
-    }
     `;
 
     const fetchResponse =

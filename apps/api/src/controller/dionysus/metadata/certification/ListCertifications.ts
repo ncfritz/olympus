@@ -15,9 +15,14 @@ import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/metadata/CertificationConverter";
 import { GraphQlCertification } from "../../../../types/dionysus/metadata/certification";
 import {
+  ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
+import {
+  buildFilterExpression,
+  buildPaginationExpression,
+} from "../../../../utils/filterUtil";
 
 type GraphQlListCertificationsResponse = {
   dionysus_certifications: GraphQlCertification[];
@@ -47,6 +52,7 @@ export class ListCertificationsController {
     name: "pageSize",
     type: Number,
   })
+  @ApiFilterParams()
   @ApiPaginationParams()
   @ApiOkResponse({
     type: ListCertificationsResponse,
@@ -59,13 +65,20 @@ export class ListCertificationsController {
     @Query("startPage") startPage = 0,
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
     @Query("sortBy") sortField = "createdTime",
+    @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
+    const whereExpression = buildFilterExpression(filters);
+    const paginationExpression = buildPaginationExpression({
+      pageSize: pageSize,
+      startPage: startPage,
+      sortDirection: sortDirection,
+      sortField: sortField,
+    });
+
     const fetchRequest = gql`
       query ListCertifications {
-        dionysus_certifications(limit: ${pageSize}, offset: ${
-          pageSize * startPage
-        }, order_by: {${sortField}: ${sortDirection}}) {
+        dionysus_certifications(${[paginationExpression, whereExpression].join(", ")}) {
           certification
           country
           createdTime
@@ -74,7 +87,7 @@ export class ListCertificationsController {
           order
           type
         }
-        dionysus_certifications_aggregate {
+        dionysus_certifications_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {
             count
           }

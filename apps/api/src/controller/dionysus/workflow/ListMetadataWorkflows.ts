@@ -18,6 +18,10 @@ import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../utils/controllerDecorators";
+import {
+  buildFilterExpression,
+  buildPaginationExpression,
+} from "../../../utils/filterUtil";
 
 type GraphQLListMetadataWorkflowsResponse = {
   dionysus_metadata_workflow: GraphQLWorkflow[];
@@ -63,11 +67,17 @@ export class ListMetadataWorkflowsController {
     @Query("filters") filters: string | undefined,
     @Res() response: Response,
   ): Promise<void> {
+    const whereExpression = buildFilterExpression(filters);
+    const paginationExpression = buildPaginationExpression({
+      pageSize: pageSize,
+      startPage: startPage,
+      sortDirection: sortDirection,
+      sortField: sortField,
+    });
+
     const fetchRequest = gql`
       query ListWorkflows {
-        dionysus_metadata_workflow(limit: ${pageSize}, 
-                                   offset: ${pageSize * startPage}, 
-                                   order_by: {${sortField}: ${sortDirection}}) {
+        dionysus_metadata_workflow(${[paginationExpression, whereExpression].join(", ")}) {
           createdTime
           finishedTime
           id
@@ -80,7 +90,7 @@ export class ListMetadataWorkflowsController {
             }
           }
         }
-        dionysus_metadata_workflow_aggregate {
+        dionysus_metadata_workflow_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {
             count
           }
