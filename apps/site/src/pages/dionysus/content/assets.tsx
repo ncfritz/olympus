@@ -398,7 +398,7 @@ const ContentAssetsPage: React.FunctionComponent = () => {
                 rowKey={"id"}
                 columns={columns}
                 dataSource={assets}
-                size={"middle"}
+                size={"small"}
                 loading={assetsLoading}
                 pagination={{
                   style: {
