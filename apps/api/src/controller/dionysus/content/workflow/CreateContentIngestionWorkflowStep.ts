@@ -15,6 +15,7 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
+import moment from "moment";
 import { GraphQlContentIngestionWorkflowStep } from "../../../../types/dionysus/content/workflow";
 import { toDomainObject } from "../../../../convert/dionysus/content/workflow/ContentIngestionWorkflowStepConverter";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
@@ -73,6 +74,7 @@ export class CreateContentIngestionWorkflowStepController extends BaseContentIng
         $workflowStepType: String!
         $workflowStepStatus: String!
         $progress: numeric!
+        $startedTime: timestamptz!
       ) {
         insert_dionysus_content_asset_ingest_workflow_steps_one(
           object: {
@@ -80,6 +82,7 @@ export class CreateContentIngestionWorkflowStepController extends BaseContentIng
             type: $workflowStepType
             status: $workflowStepStatus
             progress: $progress
+            startedTime: $startedTime
           }
         ) {
           id
@@ -101,6 +104,7 @@ export class CreateContentIngestionWorkflowStepController extends BaseContentIng
           workflowId: workflowId,
           workflowStepType: request.step.type,
           workflowStepStatus: ContentIngestionWorkflowStepStatus.RUNNING,
+          startedTime: moment().utc().toISOString(),
           progress: 0,
         },
       );
