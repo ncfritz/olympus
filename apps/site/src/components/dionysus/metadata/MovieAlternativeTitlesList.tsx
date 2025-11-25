@@ -1,8 +1,7 @@
-import type { AlternativeTitle } from "@ncfritz/olympus-sdk/dionysus";
+import type { AlternativeTitle, Country } from "@ncfritz/olympus-sdk/dionysus";
 import { Empty, Space, Typography } from "antd";
 import { type ReactNode, useEffect, useState } from "react";
 import ReactCountryFlag from "react-country-flag/src";
-import type { Country } from "../../../pages/dionysus/metadata/countries";
 
 export interface MovieAlternativeTitlesListProps {
   alternativeTitles: AlternativeTitle[];

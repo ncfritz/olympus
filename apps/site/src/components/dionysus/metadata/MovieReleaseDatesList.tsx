@@ -1,10 +1,9 @@
 import { PaperClipOutlined } from "@ant-design/icons";
-import type { MovieReleaseDate } from "@ncfritz/olympus-sdk/dionysus";
+import type { MovieReleaseDate, Country } from "@ncfritz/olympus-sdk/dionysus";
 import { Empty, Space, Tag, Typography } from "antd";
 import { DateTime } from "luxon";
 import { type ReactNode, useEffect, useState } from "react";
 import ReactCountryFlag from "react-country-flag/src";
-import type { Country } from "../../../pages/dionysus/metadata/countries";
 import { getReleaseTypeName } from "./util";
 
 export interface MovieReleaseDateListProps {
