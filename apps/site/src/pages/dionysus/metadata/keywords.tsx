@@ -1,7 +1,9 @@
 import { HomeOutlined } from "@ant-design/icons";
+import type { Keyword } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Breadcrumb,
-  notification,
+  ConfigProvider,
+  Empty,
   Space,
   Table,
   type TableProps,
@@ -10,30 +12,19 @@ import {
 import { type ColumnsType } from "antd/es/table";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
-import React, { type ReactNode, useEffect, useState } from "react";
+import React, { useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import metadataApi from "../../../api/metadataApi";
+import ErrorBlock from "../../../components/common/ErrorBlock";
 import Timestamp from "../../../components/data/Timestamp";
+import { useFetch } from "../../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
-import type { NotificationType } from "../../../utils/notifications";
-
-export interface Keyword {
-  id: string;
-  name: string;
-  createdTime: string;
-  lastUpdatedTime: string;
-}
 
 type OnChange = NonNullable<TableProps<Keyword>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
 const MetadataKeywordsPage: React.FunctionComponent = () => {
-  const [api, contextHolder] = notification.useNotification();
-
-  const [keywords, setKeywords] = useState<any>();
-  const [keywordsLoading, setKeywordsLoading] = useState<any>(true);
-  const [keywordsError, setKeywordsError] = useState<any>();
   const [keywordsCount, setKeywordsCount] = useState(0);
   const [keywordsPage, setKeywordsPage] = useState(0);
   const [keywordsSort, setKeywordsSort] = useState<SortOptions>({
@@ -41,43 +32,22 @@ const MetadataKeywordsPage: React.FunctionComponent = () => {
     order: "asc",
   });
 
-  const openNotificationWithIcon = (
-    type: NotificationType,
-    message: string,
-    content: ReactNode,
-  ) => {
-    api[type]({
-      message: message,
-      description: content,
-    });
-  };
-
-  const fetchKeywords = async (quiet = false) => {
-    if (!quiet) {
-      setKeywordsLoading(true);
-    }
-    setKeywordsError(undefined);
-
-    try {
-      const listkeywordsResponse = await metadataApi.listKeywords(
+  const [keywords, keywordsLoading, keywordsError] = useFetch<
+    undefined,
+    Keyword[]
+  >({
+    dataType: "keywords",
+    watch: [keywordsPage, keywordsSort],
+    params: undefined,
+    fetchFunction: async () => {
+      const response = await metadataApi.listKeywords(
         keywordsPage,
         keywordsSort,
       );
-      setKeywords(listkeywordsResponse.data.keywords);
-      setKeywordsCount(listkeywordsResponse.data.count);
-    } catch (e) {
-      setKeywordsError(e);
-      openNotificationWithIcon("error", "Unable to load keywords list", "Poop");
-    } finally {
-      setKeywordsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    (async () => {
-      await fetchKeywords();
-    })();
-  }, [keywordsPage, keywordsSort]);
+      setKeywordsCount(response.data.count);
+      return response.data.keywords;
+    },
+  });
 
   const columns: ColumnsType<Keyword> = [
     {
@@ -101,7 +71,7 @@ const MetadataKeywordsPage: React.FunctionComponent = () => {
       render: (value, record) => {
         return (
           <Space direction={"horizontal"} size={8} align={"center"}>
-            <Typography>{record.name}</Typography>
+            <Typography>{record.value}</Typography>
           </Space>
         );
       },
@@ -171,47 +141,61 @@ const MetadataKeywordsPage: React.FunctionComponent = () => {
           style={{
             marginTop: 0,
             marginBottom: 16,
+            height: "calc(100vh - 118px)",
           }}
         >
-          <Table
-            style={{ width: "100%" }}
-            rowKey={"id"}
-            columns={columns}
-            dataSource={keywords}
-            size={"middle"}
-            loading={keywordsLoading}
-            pagination={{
-              style: {
-                marginLeft: 16,
-              },
-              position: ["bottomLeft"],
-              pageSize: 20,
-              size: "small",
-              total: keywordsCount,
-              showSizeChanger: false,
-              showQuickJumper: true,
-              showTotal: (total, range) => {
-                return `${range[0]} to ${range[1]} of ${total}`;
-              },
-            }}
-            onChange={(pagination, filters, sorter, extra) => {
-              const s = sorter as Sorts;
+          <ConfigProvider
+            renderEmpty={() =>
+              keywordsError ? (
+                <ErrorBlock error={keywordsError} />
+              ) : (
+                <Empty description="No countries found" />
+              )
+            }
+          >
+            <Table
+              style={{ width: "100%" }}
+              rowKey={"id"}
+              columns={columns}
+              sticky={true}
+              scroll={{ y: "calc(100vh - 197px)" }}
+              dataSource={keywords}
+              size={"small"}
+              loading={keywordsLoading}
+              pagination={{
+                style: {
+                  marginLeft: 16,
+                },
+                position: ["bottomLeft"],
+                pageSize: 50,
+                size: "small",
+                total: keywordsCount,
+                showSizeChanger: false,
+                showQuickJumper: true,
+                showTotal: (total, range) => {
+                  return `${range[0]} to ${range[1]} of ${total}`;
+                },
+              }}
+              onChange={(pagination, filters, sorter, extra) => {
+                const s = sorter as Sorts;
 
-              switch (extra.action) {
-                case "paginate":
-                  setKeywordsPage(pagination.current! - 1);
-                  break;
-                case "sort":
-                  setKeywordsSort({
-                    field: s.columnKey?.toString() || "",
-                    order: s.order === "ascend" ? "asc" : "desc",
-                  });
-                  break;
-                case "filter":
-                  break;
-              }
-            }}
-          />
+                switch (extra.action) {
+                  case "paginate":
+                    setKeywordsPage(pagination.current! - 1);
+                    break;
+                  case "sort":
+                    setKeywordsSort({
+                      field: s.columnKey?.toString() || "",
+                      order: s.order === "ascend" ? "asc" : "desc",
+                    });
+                    setKeywordsPage(0);
+                    break;
+                  case "filter":
+                    break;
+                }
+              }}
+            />
+          </ConfigProvider>
         </Content>
       </Content>
     </>

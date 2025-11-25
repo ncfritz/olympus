@@ -30,7 +30,6 @@ import {
   Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import type { FilterValue } from "antd/es/table/interface";
 import { Content } from "antd/lib/layout/layout";
 import { DateTime } from "luxon";
 import Link from "next/link";
@@ -49,6 +48,7 @@ import { getMetadataJobStatusIndicator } from "../../../components/dionysus/jobs
 import RefreshTimer from "../../../components/common/RefreshTimer";
 import { useFetch } from "../../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
+import { buildFilterDefinitionForTable } from "../../../utils/filters";
 
 type OnChange = NonNullable<TableProps<MetadataFetchJob>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
@@ -69,8 +69,8 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
       order: "asc",
     });
   const [metadataFetchJobFilters, setMetadataFetchJobFilters] = useState<
-    Record<string, FilterValue | null>
-  >({});
+    FilterDefinition | undefined
+  >(undefined);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [selectedRows, setSelectedRows] = useState<MetadataFetchJob[]>([]);
   const [processingRows, setProcessingRows] = useState(false);
@@ -85,37 +85,6 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
     useState<MetadataFetchJobStatus>("queued");
   const [redriveModalOpen, setRedriveModalOpen] = useState(false);
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
-  const [filters, setFilters] = useState<FilterDefinition | undefined>(
-    undefined,
-  );
-
-  useEffect(() => {
-    const newFilters: FilterDefinition[] = [];
-
-    if (metadataFetchJobFilters["status"]) {
-      newFilters.push({
-        type: "in",
-        name: "status",
-        value: metadataFetchJobFilters["status"] as string[],
-      });
-    }
-
-    if (metadataFetchJobFilters["type"]) {
-      newFilters.push({
-        type: "in",
-        name: "type",
-        value: metadataFetchJobFilters["type"] as string[],
-      });
-    }
-
-    if (newFilters && newFilters.length <= 0) {
-      setFilters(undefined);
-    } else if (newFilters.length > 1) {
-      setFilters({ type: "and", name: "_", value: newFilters });
-    } else {
-      setFilters(newFilters[0]);
-    }
-  }, [metadataFetchJobFilters]);
 
   const [jobStats, jobStatsLoading, jobStatsError, fetchStatistics] = useFetch<
     undefined,
@@ -134,7 +103,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
     fetchMetadataFetchJobs,
   ] = useFetch<undefined, ListMetadataFetchJobsResponse>({
     dataType: "metadata fetch jobs",
-    watch: [filters],
+    watch: [metadataFetchJobFilters],
     params: undefined,
     fetchFunction: async () =>
       (
@@ -142,7 +111,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
           metadataFetchJobsPage,
           metadataFetchJobsPageSize,
           metadataFetchJobsSort,
-          filters,
+          metadataFetchJobFilters,
         )
       ).data,
   });
@@ -328,11 +297,13 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
           value: "languages",
         },
       ],
+      filterMode: "tree",
+      filterSearch: true,
+      sorter: true,
+      width: 200,
       render: (_value, record) => {
         return <Typography.Text>{record.type}</Typography.Text>;
       },
-      sorter: true,
-      width: 175,
     },
     {
       key: "status",
@@ -364,11 +335,13 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
           value: "failed",
         },
       ],
+      filterMode: "tree",
+      filterSearch: true,
+      sorter: true,
+      width: 200,
       render: (value) => {
         return getMetadataJobStatusIndicator(value);
       },
-      sorter: true,
-      width: 200,
     },
     {
       key: "ttl",
@@ -696,8 +669,10 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
               return `${record.id}-${record.type}`;
             }}
             columns={columns}
+            sticky={true}
+            scroll={{ y: "calc(100vh - 580px)" }}
             dataSource={metadataFetchJobs?.jobs}
-            size={"middle"}
+            size={"small"}
             loading={metadataFetchJobsLoading || processingRows}
             pagination={{
               style: {
@@ -732,7 +707,9 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
                   break;
                 case "filter":
                   setMetadataFetchJobsPage(0);
-                  setMetadataFetchJobFilters(filters);
+                  setMetadataFetchJobFilters(
+                    buildFilterDefinitionForTable(filters),
+                  );
                   break;
               }
 

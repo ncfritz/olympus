@@ -1,7 +1,9 @@
 import { HomeOutlined } from "@ant-design/icons";
+import type { Country } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Breadcrumb,
-  notification,
+  ConfigProvider,
+  Empty,
   Space,
   Table,
   type TableProps,
@@ -10,31 +12,20 @@ import {
 import { type ColumnsType } from "antd/es/table";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
-import React, { type ReactNode, useEffect, useState } from "react";
+import React, { useState } from "react";
 import ReactCountryFlag from "react-country-flag/src";
 import type { SortOptions } from "../../../api/common";
 import metadataApi from "../../../api/metadataApi";
+import ErrorBlock from "../../../components/common/ErrorBlock";
 import Timestamp from "../../../components/data/Timestamp";
+import { useFetch } from "../../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
-import type { NotificationType } from "../../../utils/notifications";
-
-export interface Country {
-  id: string;
-  name: string;
-  createdTime: string;
-  lastUpdatedTime: string;
-}
 
 type OnChange = NonNullable<TableProps<Country>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
 const MetadataCountriesPage: React.FunctionComponent = () => {
-  const [api, contextHolder] = notification.useNotification();
-
-  const [countries, setCountries] = useState<any>();
-  const [countriesLoading, setCountriesLoading] = useState<any>(true);
-  const [countriesError, setCountriesError] = useState<any>();
   const [countriesCount, setCountriesCount] = useState(0);
   const [countriesPage, setCountriesPage] = useState(0);
   const [countriesSort, setCountriesSort] = useState<SortOptions>({
@@ -42,47 +33,22 @@ const MetadataCountriesPage: React.FunctionComponent = () => {
     order: "asc",
   });
 
-  const openNotificationWithIcon = (
-    type: NotificationType,
-    message: string,
-    content: ReactNode,
-  ) => {
-    api[type]({
-      message: message,
-      description: content,
-    });
-  };
-
-  const fetchCountries = async (quiet = false) => {
-    if (!quiet) {
-      setCountriesLoading(true);
-    }
-    setCountriesError(undefined);
-
-    try {
-      const listcountriesResponse = await metadataApi.listCountries(
+  const [countries, countriesLoading, countriesError] = useFetch<
+    undefined,
+    Country[]
+  >({
+    dataType: "countries",
+    watch: [countriesPage, countriesSort],
+    params: undefined,
+    fetchFunction: async () => {
+      const response = await metadataApi.listCountries(
         countriesPage,
         countriesSort,
       );
-      setCountries(listcountriesResponse.data.countries);
-      setCountriesCount(listcountriesResponse.data.count);
-    } catch (e) {
-      setCountriesError(e);
-      openNotificationWithIcon(
-        "error",
-        "Unable to load countries list",
-        "Poop",
-      );
-    } finally {
-      setCountriesLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    (async () => {
-      await fetchCountries();
-    })();
-  }, [countriesPage, countriesSort]);
+      setCountriesCount(response.data.count);
+      return response.data.countries;
+    },
+  });
 
   const columns: ColumnsType<Country> = [
     {
@@ -182,47 +148,61 @@ const MetadataCountriesPage: React.FunctionComponent = () => {
           style={{
             marginTop: 0,
             marginBottom: 16,
+            height: "calc(100vh - 118px)",
           }}
         >
-          <Table
-            style={{ width: "100%" }}
-            rowKey={"id"}
-            columns={columns}
-            dataSource={countries}
-            size={"middle"}
-            loading={countriesLoading}
-            pagination={{
-              style: {
-                marginLeft: 16,
-              },
-              position: ["bottomLeft"],
-              pageSize: 20,
-              size: "small",
-              total: countriesCount,
-              showSizeChanger: false,
-              showQuickJumper: true,
-              showTotal: (total, range) => {
-                return `${range[0]} to ${range[1]} of ${total}`;
-              },
-            }}
-            onChange={(pagination, filters, sorter, extra) => {
-              const s = sorter as Sorts;
+          <ConfigProvider
+            renderEmpty={() =>
+              countriesError ? (
+                <ErrorBlock error={countriesError} />
+              ) : (
+                <Empty description="No countries found" />
+              )
+            }
+          >
+            <Table
+              style={{ width: "100%" }}
+              rowKey={"id"}
+              columns={columns}
+              sticky={true}
+              scroll={{ y: "calc(100vh - 197px)" }}
+              dataSource={countries}
+              size={"small"}
+              loading={countriesLoading}
+              pagination={{
+                style: {
+                  marginLeft: 16,
+                },
+                position: ["bottomLeft"],
+                pageSize: 50,
+                size: "small",
+                total: countriesCount,
+                showSizeChanger: false,
+                showQuickJumper: true,
+                showTotal: (total, range) => {
+                  return `${range[0]} to ${range[1]} of ${total}`;
+                },
+              }}
+              onChange={(pagination, filters, sorter, extra) => {
+                const s = sorter as Sorts;
 
-              switch (extra.action) {
-                case "paginate":
-                  setCountriesPage(pagination.current! - 1);
-                  break;
-                case "sort":
-                  setCountriesSort({
-                    field: s.columnKey?.toString() || "",
-                    order: s.order === "ascend" ? "asc" : "desc",
-                  });
-                  break;
-                case "filter":
-                  break;
-              }
-            }}
-          />
+                switch (extra.action) {
+                  case "paginate":
+                    setCountriesPage(pagination.current! - 1);
+                    break;
+                  case "sort":
+                    setCountriesSort({
+                      field: s.columnKey?.toString() || "",
+                      order: s.order === "ascend" ? "asc" : "desc",
+                    });
+                    setCountriesPage(0);
+                    break;
+                  case "filter":
+                    break;
+                }
+              }}
+            />
+          </ConfigProvider>
         </Content>
       </Content>
     </>

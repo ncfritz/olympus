@@ -16,18 +16,16 @@ import {
   Progress,
   Row,
   Space,
-  Spin,
   Statistic,
   Table,
   type TableProps,
   Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import type { FilterValue } from "antd/es/table/interface";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import workflowApi from "../../../api/workflowApi";
 import ErrorBlock from "../../../components/common/ErrorBlock";
@@ -39,10 +37,7 @@ import WorkflowStatusSelect from "../../../components/dionysus/jobs/WorkflowStat
 import WorkflowQueueTimeChart from "../../../components/dionysus/jobs/graphs/WorkflowQueueTimeChart";
 import WorkflowRuntimeChart from "../../../components/dionysus/jobs/graphs/WorkflowRuntimeChart";
 import WorkflowStatusChart from "../../../components/dionysus/jobs/graphs/WorkflowStatusChart";
-import {
-  getMetadataJobStatusIndicator,
-  getMetadataWorkflowStatusIndicator,
-} from "../../../components/dionysus/jobs/utils";
+import { getMetadataWorkflowStatusIndicator } from "../../../components/dionysus/jobs/utils";
 import WorkflowDetailsPanel from "../../../components/dionysus/jobs/WorkflowDetailsPanel";
 import { useFetch } from "../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../icons";
@@ -52,7 +47,9 @@ import {
   type PartialWorkflow,
   type WorkflowStatus,
   type Workflow,
+  type FilterDefinition,
 } from "@ncfritz/olympus-sdk/dionysus";
+import { buildFilterDefinitionForTable } from "../../../utils/filters";
 
 type OnChange = NonNullable<TableProps<Workflow>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
@@ -62,8 +59,6 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
   const router = useRouter();
   const { id } = router.query;
 
-  const [metadataWorkflowRequested, setMetadataWorkflowRequested] =
-    useState("");
   const [workflowsPage, setWorkflowsPage] = useState(0);
   const [workflowsPageSize, setWorkflowsPageSize] = useState(50);
   const [workflowsSort, setWorkflowsSort] = useState<SortOptions>({
@@ -71,8 +66,8 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
     order: "desc",
   });
   const [workflowFilters, setWorkflowFilters] = useState<
-    Record<string, FilterValue | null>
-  >({});
+    FilterDefinition | undefined
+  >(undefined);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<
     string | undefined
   >(id as string);
@@ -104,7 +99,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
   const [workflows, workflowsLoading, workflowsError, fetchWorkflows] =
     useFetch<undefined, ListWorkflowsResponse>({
       dataType: "workflows",
-      watch: [],
+      watch: [workflowsPage, workflowsSort, workflowFilters],
       params: undefined,
       fetchFunction: async () =>
         (
@@ -121,13 +116,6 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
     await workflowApi.createMetadataWorkflow();
     await fetchWorkflows(true);
   };
-
-  useEffect(() => {
-    (async () => {
-      await fetchWorkflows(true);
-      await fetchWorkflowStatistics(true);
-    })();
-  }, [metadataWorkflowRequested]);
 
   const closeDrawer = async () => {
     setSelectedWorkflowId(undefined);
@@ -266,19 +254,21 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
           value: "success",
         },
         {
-          text: getMetadataJobStatusIndicator("failed"),
+          text: getMetadataWorkflowStatusIndicator("failed"),
           value: "failed",
         },
         {
-          text: getMetadataJobStatusIndicator("cancelled"),
+          text: getMetadataWorkflowStatusIndicator("cancelled"),
           value: "cancelled",
         },
       ],
+      filterMode: "tree",
+      filterSearch: true,
+      sorter: true,
+      width: 200,
       render: (value) => {
         return getMetadataWorkflowStatusIndicator(value);
       },
-      sorter: true,
-      width: 200,
     },
     {
       key: "stepCount",
@@ -420,7 +410,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
   }
 
   return (
-    <div>
+    <>
       <Breadcrumb
         style={{ padding: 8, background: "#f6f6f6" }}
         items={[
@@ -475,6 +465,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
                 ttlMs={60000}
                 fetchFunction={async () => {
                   await fetchWorkflows(true);
+                  await fetchWorkflowStatistics(true);
                 }}
               />
             </Col>
@@ -503,8 +494,10 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
                 return `${record.id}`;
               }}
               columns={columns}
+              sticky={true}
+              scroll={{ y: "calc(100vh - 491px)" }}
               dataSource={workflows?.workflows}
-              size={"middle"}
+              size={"small"}
               loading={workflowsLoading}
               pagination={{
                 style: {
@@ -536,14 +529,13 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
                       field: s.columnKey?.toString() || "",
                       order: s.order === "ascend" ? "asc" : "desc",
                     });
+                    setWorkflowsPage(0);
                     break;
                   case "filter":
                     setWorkflowsPage(0);
-                    setWorkflowFilters(filters);
+                    setWorkflowFilters(buildFilterDefinitionForTable(filters));
                     break;
                 }
-
-                setMetadataWorkflowRequested(new Date().toISOString());
               }}
               rowSelection={{
                 selectedRowKeys,
@@ -564,7 +556,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
           </Drawer>
         </Content>
       </Layout>
-    </div>
+    </>
   );
 };
 

@@ -1,7 +1,12 @@
 import { HomeOutlined } from "@ant-design/icons";
+import type {
+  Certification,
+  FilterDefinition,
+} from "@ncfritz/olympus-sdk/dionysus";
 import {
   Breadcrumb,
-  notification,
+  ConfigProvider,
+  Empty,
   Space,
   Table,
   type TableProps,
@@ -10,87 +15,53 @@ import {
 import { type ColumnsType } from "antd/es/table";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
-import React, { type ReactNode, useEffect, useState } from "react";
+import React, { useState } from "react";
 import ReactCountryFlag from "react-country-flag/src";
 import type { SortOptions } from "../../../api/common";
 import metadataApi from "../../../api/metadataApi";
+import ErrorBlock from "../../../components/common/ErrorBlock";
 import Timestamp from "../../../components/data/Timestamp";
+import { useFetch } from "../../../hooks/useFetch";
 import {
   CertificationOutlined,
   MetadataOutlinedIcon,
   MovieIcon,
   TvIcon,
 } from "../../../icons";
-import type { NotificationType } from "../../../utils/notifications";
-
-export interface Certification {
-  country: string;
-  certification: string;
-  type: string;
-  order: number;
-  meaning: string;
-  createdTime: string;
-  lastUpdatedTime: string;
-}
+import { buildFilterDefinitionForTable } from "../../../utils/filters";
 
 type OnChange = NonNullable<TableProps<Certification>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
 const MetadataCertificationsPage: React.FunctionComponent = () => {
-  const [api, contextHolder] = notification.useNotification();
-
-  const [certifications, setCertifications] = useState<any>();
-  const [certificationsLoading, setCertificationsLoading] = useState<any>(true);
-  const [certificationsError, setCertificationsError] = useState<any>();
   const [certificationsCount, setCertificationsCount] = useState(0);
   const [certificationsPage, setCertificationsPage] = useState(0);
   const [certificationsSort, setCertificationsSort] = useState<SortOptions>({
     field: "country",
     order: "asc",
   });
+  const [certificationsFilters, setCertificationsFilters] = useState<
+    FilterDefinition | undefined
+  >(undefined);
 
-  const openNotificationWithIcon = (
-    type: NotificationType,
-    message: string,
-    content: ReactNode,
-  ) => {
-    api[type]({
-      message: message,
-      description: content,
-    });
-  };
-
-  const fetchAssets = async (quiet = false) => {
-    if (!quiet) {
-      setCertificationsLoading(true);
-    }
-    setCertificationsError(undefined);
-
-    try {
-      const listcertificationsResponse = await metadataApi.listCertifications(
+  const [certifications, certificationsLoading, certificationsError] = useFetch<
+    undefined,
+    Certification[]
+  >({
+    dataType: "certifications",
+    watch: [certificationsPage, certificationsSort, certificationsFilters],
+    params: undefined,
+    fetchFunction: async () => {
+      const response = await metadataApi.listCertifications(
         certificationsPage,
         certificationsSort,
+        certificationsFilters,
       );
-      setCertifications(listcertificationsResponse.data.certifications);
-      setCertificationsCount(listcertificationsResponse.data.count);
-    } catch (e) {
-      setCertificationsError(e);
-      openNotificationWithIcon(
-        "error",
-        "Unable to load certifications list",
-        "Poop",
-      );
-    } finally {
-      setCertificationsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    (async () => {
-      await fetchAssets();
-    })();
-  }, [certificationsPage, certificationsSort]);
+      setCertificationsCount(response.data.count);
+      return response.data.certifications;
+    },
+  });
 
   const columns: ColumnsType<Certification> = [
     {
@@ -125,6 +96,27 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
           </Space>
         );
       },
+      filters: [
+        {
+          text: (
+            <Space direction={"horizontal"} size={8} align={"center"}>
+              <MovieIcon />
+              <Typography.Text>Movie</Typography.Text>
+            </Space>
+          ),
+          value: "Movie",
+        },
+        {
+          text: (
+            <Space direction={"horizontal"} size={8} align={"center"}>
+              <TvIcon />
+              <Typography.Text>TV</Typography.Text>
+            </Space>
+          ),
+          value: "TV",
+        },
+      ],
+      filterMode: "tree",
       sorter: true,
       width: 100,
     },
@@ -140,7 +132,7 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
         );
       },
       sorter: true,
-      width: 100,
+      width: 125,
     },
     {
       key: "meaning",
@@ -215,47 +207,65 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
           style={{
             marginTop: 0,
             marginBottom: 16,
+            height: "calc(100vh - 118px)",
           }}
         >
-          <Table
-            style={{ width: "100%" }}
-            rowKey={"id"}
-            columns={columns}
-            dataSource={certifications}
-            size={"middle"}
-            loading={certificationsLoading}
-            pagination={{
-              style: {
-                marginLeft: 16,
-              },
-              position: ["bottomLeft"],
-              pageSize: 20,
-              size: "small",
-              total: certificationsCount,
-              showSizeChanger: false,
-              showQuickJumper: true,
-              showTotal: (total, range) => {
-                return `${range[0]} to ${range[1]} of ${total}`;
-              },
-            }}
-            onChange={(pagination, filters, sorter, extra) => {
-              const s = sorter as Sorts;
+          <ConfigProvider
+            renderEmpty={() =>
+              certificationsError ? (
+                <ErrorBlock error={certificationsError} />
+              ) : (
+                <Empty description="No certifications found" />
+              )
+            }
+          >
+            <Table
+              style={{ width: "100%" }}
+              rowKey={"id"}
+              columns={columns}
+              sticky={true}
+              scroll={{ y: "calc(100vh - 197px)" }}
+              dataSource={certifications}
+              size={"small"}
+              loading={certificationsLoading}
+              pagination={{
+                style: {
+                  marginLeft: 16,
+                },
+                position: ["bottomLeft"],
+                pageSize: 50,
+                size: "small",
+                total: certificationsCount,
+                showSizeChanger: false,
+                showQuickJumper: true,
+                showTotal: (total, range) => {
+                  return `${range[0]} to ${range[1]} of ${total}`;
+                },
+              }}
+              onChange={(pagination, filters, sorter, extra) => {
+                const s = sorter as Sorts;
 
-              switch (extra.action) {
-                case "paginate":
-                  setCertificationsPage(pagination.current! - 1);
-                  break;
-                case "sort":
-                  setCertificationsSort({
-                    field: s.columnKey?.toString() || "",
-                    order: s.order === "ascend" ? "asc" : "desc",
-                  });
-                  break;
-                case "filter":
-                  break;
-              }
-            }}
-          />
+                switch (extra.action) {
+                  case "paginate":
+                    setCertificationsPage(pagination.current! - 1);
+                    break;
+                  case "sort":
+                    setCertificationsSort({
+                      field: s.columnKey?.toString() || "",
+                      order: s.order === "ascend" ? "asc" : "desc",
+                    });
+                    setCertificationsPage(0);
+                    break;
+                  case "filter":
+                    setCertificationsPage(0);
+                    setCertificationsFilters(
+                      buildFilterDefinitionForTable(filters),
+                    );
+                    break;
+                }
+              }}
+            />
+          </ConfigProvider>
         </Content>
       </Content>
     </>
