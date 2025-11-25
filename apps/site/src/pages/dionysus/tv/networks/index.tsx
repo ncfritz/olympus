@@ -8,8 +8,10 @@ import metadataApi from "../../../../api/metadataApi";
 import NetworksTable from "../../../../components/dionysus/metadata/NetworksTable";
 import { useFetch } from "../../../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../../icons";
-import type { Certification } from "../../metadata/certifications";
-import type { ListNetworksResponse } from "@ncfritz/olympus-sdk/dionysus";
+import type {
+  ListNetworksResponse,
+  Certification,
+} from "@ncfritz/olympus-sdk/dionysus";
 
 type OnChange = NonNullable<TableProps<Certification>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;

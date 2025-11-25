@@ -15,13 +15,12 @@ import React, { type ReactNode, useEffect, useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import metadataApi from "../../../api/metadataApi";
 import ProductionCompanyTable from "../../../components/dionysus/metadata/ProductionCompanyTable";
-import {
-  CertificationOutlined,
-  MetadataOutlinedIcon,
-} from "../../../icons";
+import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
 import type { NotificationType } from "../../../utils/notifications";
-import type { Certification } from "../metadata/certifications";
-import type { SparseProductionCompanyWithContentCounts } from "@ncfritz/olympus-sdk/dionysus";
+import type {
+  SparseProductionCompanyWithContentCounts,
+  Certification,
+} from "@ncfritz/olympus-sdk/dionysus";
 
 type OnChange = NonNullable<TableProps<Certification>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
