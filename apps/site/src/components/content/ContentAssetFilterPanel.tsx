@@ -23,6 +23,7 @@ const CheckboxTagRenderer: TagRenderer = (
 ) => {
   return (
     <ContentTagCheckbox
+      key={tag.id}
       tag={tag}
       color={getTagColor(tag)}
       onSelectTag={onSelectTag}
@@ -65,11 +66,15 @@ const ContentAssetFilterPanel: React.FunctionComponent<
       tagGroups[tag.type].push(tag);
     });
 
+    Object.values(tagGroups).forEach((group) =>
+      group.sort((a, b) => a.name.localeCompare(b.name)),
+    );
+
     setContentTags(tagGroups);
   }, [tags]);
 
   let content: any;
-
+  console.log(contentTags);
   if (tagsLoading) {
     content = <Spin size={"large"} />;
   } else if (!contentTags || Object.keys(contentTags).length <= 0) {

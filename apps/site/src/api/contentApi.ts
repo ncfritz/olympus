@@ -25,8 +25,8 @@ import {
   listContentAssets,
   listContentAssetTagsForAsset,
   listContentIngestionWorkflows,
-  listSimilarContentAssets,
-  verifyAuthCode,
+  listSimilarContentAssets, setContentAssetRating,
+  verifyAuthCode
 } from "@ncfritz/olympus-sdk/dionysus";
 import { store } from "../redux/store";
 import { ApiBase } from "./apiBase";
@@ -223,6 +223,17 @@ class ContentApi extends ApiBase {
 
   async getContentIngestionWorkflowStatistics() {
     return await getContentIngestionWorkflowStatistics({});
+  }
+
+  async setContentAssetRating(assetId: string, rating: number) {
+    return await setContentAssetRating({
+      path: {
+        assetId: assetId,
+      },
+      body: {
+        rating: rating,
+      },
+    });
   }
 
   async queueContentTask(assetId: string, type: ContentJobType) {

@@ -1,4 +1,3 @@
-import "plyr-react/plyr.css";
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -19,12 +18,17 @@ import {
 } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Hls from "hls.js";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import dynamic from "next/dynamic";
-const Plyr = dynamic(() => import("plyr-react"), { ssr: false });
+import type {
+  APITypes,
+  PlyrInstance,
+  PlyrOptions,
+  PlyrSource,
+} from "plyr-react";
 import prettyMilliseconds from "pretty-ms";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import contentApi from "../../../../api/contentApi";
 import ContentAssetRating from "../../../../components/content/ContentAssetRating";
 import ContentAssetSizeDisplay from "../../../../components/content/ContentAssetSizeDisplay";
@@ -36,6 +40,11 @@ import Timestamp from "../../../../components/data/Timestamp";
 import { useAppSelector } from "../../../../redux/hooks";
 import "react-horizontal-scrolling-menu/dist/styles.css";
 
+const PlyrWrapper = dynamic(
+  () => import("../../../../components/common/PlyrWrapper"),
+  { ssr: false },
+);
+
 const ContentAssetDetailsPage: React.FunctionComponent = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -44,23 +53,17 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
     (state) => state.blackCurtain.active,
   );
 
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<APITypes>(null);
 
   const [asset, setAsset] = useState<any>();
   const [assetLoading, setAssetLoading] = useState<any>(true);
   const [assetError, setAssetError] = useState<any>();
-  const [hlsEnabled, setHlsEnabled] = useState(false);
-  const [thumbsGenerated, setThumbsGenerated] = useState(false);
-
-  const videoSource: Plyr.SourceInfo = {
-    type: "video",
-    sources: [],
-  };
-  const playerOptions: Plyr.Options = {
-    controls: ["play", "progress", "current-time", "volume", "mute"],
-    muted: true,
-    clickToPlay: true,
-  };
+  const [hlsEnabled, setHlsEnabled] = useState(true);
+  const [thumbsGenerated, setThumbsGenerated] = useState(true);
+  const [videoSource, setVideoSource] = useState<PlyrSource | undefined>(
+    undefined,
+  );
+  const [options, setOptions] = useState<PlyrOptions | undefined>(undefined);
 
   const fetchAsset = async () => {
     setAssetLoading(true);
@@ -88,48 +91,65 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
     })();
   }, [id, blackCurtainEnabled]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!asset) {
       return;
     }
 
+    let hls = false;
+    let thumbs = false;
+
     for (const tag of asset.tags) {
       if (tag.type === "system" && tag.name === "video.hls") {
-        setHlsEnabled(true);
+        hls = true;
       } else if (tag.type === "system" && tag.name === "video.thumbs") {
-        setThumbsGenerated(true);
+        thumbs = true;
       }
     }
 
-    const player = playerRef.current!;
-    videoSource.poster = `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/screenshots/0.png`;
-    playerOptions.previewThumbnails = {
-      src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/thumbs.vtt`,
-      enabled: true,
+    const player = playerRef.current;
+    console.log(playerRef);
+    const source: PlyrSource = {
+      type: "video",
+      sources: [],
+      poster: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/screenshots/0.png`,
+    };
+    const options: PlyrOptions = {
+      controls: ["play", "progress", "current-time", "volume", "mute"],
+      muted: true,
+      clickToPlay: true,
     };
 
-    if (playerRef.current && typeof window !== "undefined") {
-      const plyr = playerRef.current.get("plyr");
-
-      if (hlsEnabled) {
-        const hls = new Hls();
-        plyr.source = videoSource;
-
-        hls.loadSource(
-          `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/playlist.m3u8`,
-        );
-        hls.attachMedia(player);
-      } else {
-        videoSource.sources = [
-          {
-            src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/asset.mp4?start=0`,
-            type: "video/mp4",
-          },
-        ];
-        plyr.source = videoSource;
-      }
+    if (thumbs) {
+      options.previewThumbnails = {
+        src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/thumbs.vtt`,
+        enabled: true,
+      };
     }
-  }, [asset]);
+
+    if (hls && player) {
+      const hls = new Hls();
+      hls.loadSource(
+        `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/playlist.m3u8`,
+      );
+      hls.attachMedia(player);
+      hls.on(Hls.Events.MANIFEST_PARSED, function () {
+        (player.plyr as PlyrInstance).play();
+      });
+    } else {
+      source.sources = [
+        {
+          src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/asset.mp4?start=0`,
+          type: "video/mp4",
+        },
+      ];
+    }
+
+    setHlsEnabled(hls);
+    setThumbsGenerated(thumbs);
+    setVideoSource(source);
+    setOptions(options);
+  }, [asset, playerRef.current]);
 
   const actionRequired = !(thumbsGenerated && hlsEnabled);
 
@@ -162,6 +182,8 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
 
     contentOffset = contentOffset + Math.floor(ratioAdjustment * asset.height);
 
+    const ssr = typeof window === "undefined" || !document;
+
     const assetPlayer = (
       <Space
         style={{
@@ -178,7 +200,14 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
             display: "#000000",
           }}
         >
-          <video data-displaymaxtap={true} ref={playerRef} />
+          {!ssr && videoSource && options && (
+            <PlyrWrapper
+              data-displaymaxtap={true}
+              playerRef={playerRef}
+              source={videoSource}
+              options={options}
+            />
+          )}
         </div>
       </Space>
     );
@@ -197,18 +226,20 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
             display: "flex",
           }}
         >
-          <Space style={{ width: asset.width * ratioAdjustment + 32 }}>
+          <Space
+            style={{
+              width: asset.width * ratioAdjustment + 32,
+              alignItems: "start",
+            }}
+          >
             {assetPlayer}
           </Space>
           <Space direction={"vertical"} style={{ marginTop: 16 }}>
             <ContentAssetThumbnailGrid
               asset={asset}
               seek={(seconds: number) => {
-                if (
-                  playerRef !== null &&
-                  playerRef.current !== null &&
-                  playerRef.current.plyr !== null
-                ) {
+                console.log(playerRef);
+                if (playerRef?.current?.plyr) {
                   playerRef.current.plyr.currentTime = seconds;
                 }
               }}
@@ -216,11 +247,11 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
           </Space>
         </Row>
         {actionRequired && (
-          <Row style={{ padding: 16, background: "#ffcc33", height: 100 }}>
+          <Row style={{ padding: 16, background: "#ffcc33" }}>
             <Space size={16} direction={"horizontal"}>
               <Space
                 size={8}
-                direction={"vertical"}
+                direction={"horizontal"}
                 style={{ borderRight: "1px solid #ccaa00", paddingRight: 16 }}
               >
                 <Typography.Text style={{ color: "#333333", fontSize: "12px" }}>
@@ -229,10 +260,10 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
                 {hlsEnabled ? (
                   <Space size={8}>
                     <CheckCircleOutlined
-                      style={{ fontSize: "20px", color: "#00CC00" }}
+                      style={{ fontSize: "14px", color: "#00CC00" }}
                     />
                     <Typography.Text
-                      style={{ fontSize: "20px", color: "00CC00" }}
+                      style={{ fontSize: "14px", color: "00CC00" }}
                     >
                       Enabled
                     </Typography.Text>
@@ -241,16 +272,17 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
                   <Space size={16} direction={"horizontal"}>
                     <Space size={8}>
                       <CloseCircleOutlined
-                        style={{ fontSize: "20px", color: "#cc0000" }}
+                        style={{ fontSize: "14px", color: "#cc0000" }}
                       />
                       <Typography.Text
-                        style={{ fontSize: "20px", color: "#cc0000" }}
+                        style={{ fontSize: "14px", color: "#cc0000" }}
                       >
                         Disabled
                       </Typography.Text>
                     </Space>
                     <Button
                       ghost={true}
+                      size={"small"}
                       onClick={async () => {
                         await contentApi.queueContentTask(asset.id, "hls");
                       }}
@@ -266,17 +298,17 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
               direction={"horizontal"}
               style={{ paddingLeft: 16 }}
             >
-              <Space size={8} direction={"vertical"}>
+              <Space size={8} direction={"horizontal"}>
                 <Typography.Text style={{ color: "#333333", fontSize: "12px" }}>
                   Thumbnails
                 </Typography.Text>
                 {thumbsGenerated ? (
                   <Space size={8}>
                     <CheckCircleOutlined
-                      style={{ fontSize: "20px", color: "#00CC00" }}
+                      style={{ fontSize: "14px", color: "#00CC00" }}
                     />
                     <Typography.Text
-                      style={{ fontSize: "20px", color: "00CC00" }}
+                      style={{ fontSize: "14px", color: "00CC00" }}
                     >
                       Generated
                     </Typography.Text>
@@ -285,16 +317,17 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
                   <Space size={16} direction={"horizontal"}>
                     <Space size={8}>
                       <CloseCircleOutlined
-                        style={{ fontSize: "20px", color: "#cc0000" }}
+                        style={{ fontSize: "14px", color: "#cc0000" }}
                       />
                       <Typography.Text
-                        style={{ fontSize: "20px", color: "#cc0000" }}
+                        style={{ fontSize: "14px", color: "#cc0000" }}
                       >
                         Missing
                       </Typography.Text>
                     </Space>
                     <Button
                       ghost={true}
+                      size={"small"}
                       onClick={async () => {
                         await contentApi.queueContentTask(
                           asset.id,
@@ -452,7 +485,20 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
               {
                 title: (
                   <Link
-                    href={"/content"}
+                    href={"/dionysus"}
+                    style={{ color: asset ? "#c5c5c5" : "#333333" }}
+                  >
+                    <Space direction={"horizontal"} size={4}>
+                      <ExperimentOutlined />
+                      <span>Dionysus</span>
+                    </Space>
+                  </Link>
+                ),
+              },
+              {
+                title: (
+                  <Link
+                    href={"/dionysus/content"}
                     style={{ color: asset ? "#c5c5c5" : "#333333" }}
                   >
                     <Space direction={"horizontal"} size={4}>
@@ -463,13 +509,11 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
                 ),
               },
               {
-                href: "/content/assets",
                 title: (
                   <Link
-                    href={"/content/assets"}
+                    href={"/dionysus/content/assets"}
                     style={{ color: asset ? "#c5c5c5" : "#333333" }}
                   >
-                    {" "}
                     <Space direction={"horizontal"} size={4}>
                       <VideoCameraOutlined />
                       <span>Assets</span>

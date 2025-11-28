@@ -1,4 +1,3 @@
-import "plyr-react/plyr.css";
 import {
   ExperimentOutlined,
   HomeOutlined,
@@ -23,9 +22,11 @@ import {
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import prettyMilliseconds from "pretty-ms";
 import React, { type ReactNode, useEffect, useState } from "react";
 import contentApi from "../../../api/contentApi";
 import ContentAssetPreviewPlayer from "../../../components/content/ContentAssetPreviewPlayer";
+import ContentAssetRating from "../../../components/content/ContentAssetRating";
 import ContentAssetSizeDisplay from "../../../components/content/ContentAssetSizeDisplay";
 import ContentAssetTagSelector from "../../../components/content/ContentAssetTagSelector";
 import ContentAssetThumbnailGrid from "../../../components/content/ContentAssetThumbnailGrid";
@@ -91,8 +92,8 @@ const ContentProcessingPage: React.FunctionComponent = () => {
     setTagsError(undefined);
 
     try {
-      const fetchTagsresponse = await contentApi.listTags();
-      setTags(fetchTagsresponse.data.tags);
+      const fetchTagsResponse = await contentApi.listTags();
+      setTags(fetchTagsResponse.data.tags);
     } catch (e) {
       setTagsError(e);
       openNotificationWithIcon(
@@ -199,7 +200,8 @@ const ContentProcessingPage: React.FunctionComponent = () => {
       ratioAdjustment = minHeight / asset.height;
     }
 
-    contentOffset = contentOffset + Math.floor(ratioAdjustment * asset.height);
+    contentOffset =
+      contentOffset + Math.floor(ratioAdjustment * asset.height) + 96;
 
     let videoWidth, videoHeight;
 
@@ -241,13 +243,60 @@ const ContentProcessingPage: React.FunctionComponent = () => {
             </Typography.Title>
             <Typography.Text copyable={true}>{asset.id}</Typography.Text>
           </Space>
-          <Progress
-            style={{ width: 450 }}
-            percent={(taggedCount / (untaggedCount + taggedCount)) * 100}
-            format={(percent) => {
-              return `${(percent || 0).toFixed(2)}%`;
-            }}
-          />
+          <Space direction={"vertical"}>
+            <Progress
+              style={{ width: 450 }}
+              percent={(taggedCount / (untaggedCount + taggedCount)) * 100}
+              format={(percent: number) => {
+                return `${(percent || 0).toFixed(2)}%`;
+              }}
+            />
+            <Space
+              direction={"horizontal"}
+              style={{ justifyContent: "space-between" }}
+            >
+              <Space direction={"horizontal"}>
+                <Typography.Text style={{ fontFamily: "monospace" }}>
+                  {taggedCount}
+                </Typography.Text>
+                <Typography.Text>of</Typography.Text>
+                <Typography.Text style={{ fontFamily: "monospace" }}>
+                  {untaggedCount + taggedCount}
+                </Typography.Text>
+              </Space>
+              <Space direction={"horizontal"}>
+                <Typography.Text style={{ fontFamily: "monospace" }}>
+                  {untaggedCount}
+                </Typography.Text>
+                <Typography.Text>remaining</Typography.Text>
+              </Space>
+            </Space>
+            <Space direction={"vertical"}>
+              <Typography.Title level={5}>Asset Info</Typography.Title>
+              <Space direction={"horizontal"}>
+                <Typography.Text strong={true}>Dimensions:</Typography.Text>
+                <Typography.Text>
+                  {asset.width}px x {asset.height}px
+                </Typography.Text>
+              </Space>
+              <Space direction={"horizontal"} style={{ alignItems: "start" }}>
+                <Typography.Text strong={true}>Size:</Typography.Text>
+                <ContentAssetSizeDisplay asset={asset} />
+              </Space>
+              <Space direction={"horizontal"}>
+                <Typography.Text strong={true}>Duration:</Typography.Text>
+                <Typography.Text>
+                  {asset.duration
+                    ? prettyMilliseconds(asset.duration)
+                    : "Unknown"}
+                </Typography.Text>
+              </Space>
+              <Space direction={"horizontal"}>
+                <Typography.Text strong={true}>Rating:</Typography.Text>
+                <ContentAssetRating asset={asset} />
+              </Space>
+            </Space>
+          </Space>
         </Space>
         <Space direction={"horizontal"}>
           <ContentAssetThumbnailGrid
@@ -299,6 +348,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
         {Object.keys(processedTags).map((key) => {
           return (
             <ContentAssetTagSelector
+              key={`cats-${key}`}
               title={key.charAt(0).toUpperCase() + key.slice(1)}
               type={key as ContentTagType}
               tags={processedTags[key]}
@@ -489,7 +539,17 @@ const ContentProcessingPage: React.FunctionComponent = () => {
               },
               {
                 title: (
-                  <Link href={"/content"}>
+                  <Link href={"/dionysus"}>
+                    <Space direction={"horizontal"} size={4}>
+                      <HomeOutlined />
+                      <span>Dionysus</span>
+                    </Space>
+                  </Link>
+                ),
+              },
+              {
+                title: (
+                  <Link href={"/dionysus/content"}>
                     <Space direction={"horizontal"} size={4}>
                       <ExperimentOutlined />
                       <span>Content</span>
@@ -498,9 +558,8 @@ const ContentProcessingPage: React.FunctionComponent = () => {
                 ),
               },
               {
-                href: "/content/assets",
                 title: (
-                  <Link href={"/content/assets"}>
+                  <Link href={"/dionysus/content/assets"}>
                     {" "}
                     <Space direction={"horizontal"} size={4}>
                       <VideoCameraOutlined />

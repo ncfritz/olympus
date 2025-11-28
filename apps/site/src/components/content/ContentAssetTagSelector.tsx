@@ -30,6 +30,7 @@ export interface ContentAssetTagSelectorProps {
 const DefaultTagRenderer: TagRenderer = (tag, onSelectTag, onRemove) => {
   return (
     <ContentAssetTagElement
+      key={tag.id}
       tag={tag}
       onSelectTag={onSelectTag}
       onRemove={onRemove}

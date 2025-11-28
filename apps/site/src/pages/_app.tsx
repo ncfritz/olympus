@@ -4,6 +4,7 @@ import "../styles/themis.css";
 import "antd/dist/reset.css";
 import "antd-css-utilities/utility.min.css";
 import "react-day-picker/dist/style.css";
+import "plyr-react/plyr.css";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { SessionProvider } from "next-auth/react";
 import type { AppProps } from "next/app";

@@ -1,4 +1,3 @@
-import "plyr-react/plyr.css";
 import {
   ExperimentOutlined,
   HomeOutlined,
@@ -26,7 +25,7 @@ import { type ColumnsType } from "antd/es/table";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import prettyMilliseconds from "pretty-ms";
-import React, { type ReactNode, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import contentApi from "../../../api/contentApi";
 import ContentAssetDetailsPanel from "../../../components/content/ContentAssetDetailsPanel";
@@ -170,7 +169,7 @@ const ContentAssetsPage: React.FunctionComponent = () => {
     appendFilterDefinition("source", "or", newFilters);
     appendFilterDefinition("user", "and", newFilters);
     appendFilterDefinition("model", "or", newFilters);
-    appendFilterDefinition("system", "or", newFilters);
+    appendFilterDefinition("system", "and", newFilters);
 
     if (newFilters.length > 1) {
       setFilters({ type: "and", name: "__base", value: newFilters });

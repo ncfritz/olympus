@@ -135,22 +135,38 @@ const ContentAssetTagEditor: React.FunctionComponent<
       switch (tag.type) {
         case "system":
           systemTags.push(
-            <ContentAssetTagElement tag={tag} onRemove={removeTag} />,
+            <ContentAssetTagElement
+              key={tag.id}
+              tag={tag}
+              onRemove={removeTag}
+            />,
           );
           break;
         case "user":
           userTags.push(
-            <ContentAssetTagElement tag={tag} onRemove={removeTag} />,
+            <ContentAssetTagElement
+              key={tag.id}
+              tag={tag}
+              onRemove={removeTag}
+            />,
           );
           break;
         case "type":
           typeTags.push(
-            <ContentAssetTagElement tag={tag} onRemove={removeTag} />,
+            <ContentAssetTagElement
+              key={tag.id}
+              tag={tag}
+              onRemove={removeTag}
+            />,
           );
           break;
         case "source":
           sourceTags.push(
-            <ContentAssetTagElement tag={tag} onRemove={removeTag} />,
+            <ContentAssetTagElement
+              key={tag.id}
+              tag={tag}
+              onRemove={removeTag}
+            />,
           );
           break;
       }

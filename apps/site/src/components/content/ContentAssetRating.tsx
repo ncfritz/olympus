@@ -1,6 +1,7 @@
 import { StarFilled } from "@ant-design/icons";
 import { Rate } from "antd";
 import axios from "axios";
+import contentApi from "../../api/contentApi";
 import type { ContentAsset } from "../../pages/dionysus/content/assets";
 
 interface ContentAssetRatingProps {
@@ -20,12 +21,7 @@ const ContentAssetRating: React.FunctionComponent<ContentAssetRatingProps> = ({
       allowClear={true}
       character={<StarFilled size={12} />}
       onChange={async (value) => {
-        await axios.put(
-          `http://localhost:3001/v1/content/asset/${asset.id}/rating`,
-          {
-            rating: value,
-          },
-        );
+        await contentApi.setContentAssetRating(asset.id, value);
 
         if (onRatingSet) {
           await onRatingSet(value);

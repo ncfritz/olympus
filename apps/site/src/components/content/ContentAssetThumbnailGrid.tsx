@@ -1,4 +1,5 @@
 import { Image, Space, Spin } from "antd";
+import { v4 as uuidv4 } from "uuid";
 
 interface ContentAssetThumbnailGridProps {
   asset: any;
@@ -24,6 +25,7 @@ const ContentAssetThumbnailGrid: React.FunctionComponent<
     for (let i = row * count + 1; i <= (row + 1) * count; i++) {
       images.push(
         <Image
+          key={`img-${asset.id}-${i}`}
           height={height}
           fallback={"/placeholder.png"}
           src={`https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/thumbnails/${i}.png`}
@@ -48,7 +50,7 @@ const ContentAssetThumbnailGrid: React.FunctionComponent<
     }
 
     return (
-      <Space size={8} direction={"horizontal"}>
+      <Space size={8} direction={"horizontal"} key={uuidv4()}>
         {images}
       </Space>
     );

@@ -73,6 +73,7 @@ const ContentAssetExpanderRow: React.FunctionComponent<
           span={7}
           style={{
             marginRight: 16,
+            paddingRight: 16,
             borderRight: "1px",
             borderColor: "#ccc",
             borderRightStyle: "solid",
@@ -142,6 +143,7 @@ const ContentAssetExpanderRow: React.FunctionComponent<
             bordered={false}
             style={{
               backgroundColor: "transparent",
+              marginLeft: 16,
             }}
           />
         </Col>

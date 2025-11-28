@@ -43,6 +43,8 @@ const nextConfig = {
     "@deck.gl/layers",
     "@deck.gl/mesh-layers",
     "@deck.gl/react",
+    "plyr",
+    "plyr-react",
     "rc-pagination",
     "rc-picker",
     "rc-util",
