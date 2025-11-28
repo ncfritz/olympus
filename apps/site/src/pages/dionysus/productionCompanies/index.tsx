@@ -1,6 +1,4 @@
-import {
-  HomeOutlined,
-} from "@ant-design/icons";
+import { HomeOutlined } from "@ant-design/icons";
 import {
   Affix,
   Breadcrumb,
