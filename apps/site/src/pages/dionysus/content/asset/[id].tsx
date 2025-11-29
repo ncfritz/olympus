@@ -1,6 +1,4 @@
 import {
-  CheckCircleOutlined,
-  CloseCircleOutlined,
   ExperimentOutlined,
   HomeOutlined,
   VideoCameraOutlined,
@@ -8,7 +6,6 @@ import {
 import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Breadcrumb,
-  Button,
   Col,
   Result,
   Row,
@@ -17,23 +14,15 @@ import {
   Typography,
 } from "antd";
 import { Content } from "antd/lib/layout/layout";
-import Hls from "hls.js";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import type {
-  APITypes,
-  PlyrInstance,
-  PlyrOptions,
-  PlyrSource,
-} from "plyr-react";
 import prettyMilliseconds from "pretty-ms";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import contentApi from "../../../../api/contentApi";
 import ContentAssetRating from "../../../../components/content/ContentAssetRating";
 import ContentAssetSizeDisplay from "../../../../components/content/ContentAssetSizeDisplay";
 import ContentAssetTagEditor from "../../../../components/content/ContentAssetTagEditor";
-import ContentAssetThumbnailGrid from "../../../../components/content/ContentAssetThumbnailGrid";
 import ContentAuthWrapper from "../../../../components/content/ContentAuthWrapper";
 import SimilarContentAssetsScroller from "../../../../components/content/SimilarContentAssetsScroller";
 import Timestamp from "../../../../components/data/Timestamp";
@@ -41,7 +30,7 @@ import { useAppSelector } from "../../../../redux/hooks";
 import "react-horizontal-scrolling-menu/dist/styles.css";
 
 const PlyrWrapper = dynamic(
-  () => import("../../../../components/common/PlyrWrapper"),
+  () => import("../../../../components/content/./ContentAssetPlyr"),
   { ssr: false },
 );
 
@@ -53,17 +42,11 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
     (state) => state.blackCurtain.active,
   );
 
-  const playerRef = useRef<APITypes>(null);
-
   const [asset, setAsset] = useState<any>();
   const [assetLoading, setAssetLoading] = useState<any>(true);
   const [assetError, setAssetError] = useState<any>();
   const [hlsEnabled, setHlsEnabled] = useState(true);
   const [thumbsGenerated, setThumbsGenerated] = useState(true);
-  const [videoSource, setVideoSource] = useState<PlyrSource | undefined>(
-    undefined,
-  );
-  const [options, setOptions] = useState<PlyrOptions | undefined>(undefined);
 
   const fetchAsset = async () => {
     setAssetLoading(true);
@@ -91,7 +74,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
     })();
   }, [id, blackCurtainEnabled]);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!asset) {
       return;
     }
@@ -107,55 +90,16 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
       }
     }
 
-    const player = playerRef.current;
-    console.log(playerRef);
-    const source: PlyrSource = {
-      type: "video",
-      sources: [],
-      poster: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/screenshots/0.png`,
-    };
-    const options: PlyrOptions = {
-      controls: ["play", "progress", "current-time", "volume", "mute"],
-      muted: true,
-      clickToPlay: true,
-    };
-
-    if (thumbs) {
-      options.previewThumbnails = {
-        src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/thumbs.vtt`,
-        enabled: true,
-      };
-    }
-
-    if (hls && player) {
-      const hls = new Hls();
-      hls.loadSource(
-        `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/playlist.m3u8`,
-      );
-      hls.attachMedia(player);
-      hls.on(Hls.Events.MANIFEST_PARSED, function () {
-        (player.plyr as PlyrInstance).play();
-      });
-    } else {
-      source.sources = [
-        {
-          src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/asset.mp4?start=0`,
-          type: "video/mp4",
-        },
-      ];
-    }
-
     setHlsEnabled(hls);
     setThumbsGenerated(thumbs);
-    setVideoSource(source);
-    setOptions(options);
-  }, [asset, playerRef.current]);
+  }, [asset]);
 
   const actionRequired = !(thumbsGenerated && hlsEnabled);
 
-  let playerContent = undefined;
   let content = <Spin spinning={true} />;
   let contentOffset = actionRequired ? 100 : 0;
+
+  let playerContent = undefined;
 
   if (assetError) {
     content = (
@@ -181,169 +125,13 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
     }
 
     contentOffset = contentOffset + Math.floor(ratioAdjustment * asset.height);
-
-    const ssr = typeof window === "undefined" || !document;
-
-    const assetPlayer = (
-      <Space
-        style={{
-          margin: 16,
-          backgroundColor: "#142737",
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
-        <div
-          style={{
-            width: Math.floor(ratioAdjustment * asset.width),
-            height: Math.floor(ratioAdjustment * asset.height),
-            display: "#000000",
-          }}
-        >
-          {!ssr && videoSource && options && (
-            <PlyrWrapper
-              data-displaymaxtap={true}
-              playerRef={playerRef}
-              source={videoSource}
-              options={options}
-            />
-          )}
-        </div>
-      </Space>
-    );
-
     playerContent = (
-      <Space
-        direction={"vertical"}
-        style={{
-          display: "block",
-          width: "calc(100vw - 200px)",
-        }}
-      >
-        <Row
-          style={{
-            background: "#142737",
-            display: "flex",
-          }}
-        >
-          <Space
-            style={{
-              width: asset.width * ratioAdjustment + 32,
-              alignItems: "start",
-            }}
-          >
-            {assetPlayer}
-          </Space>
-          <Space direction={"vertical"} style={{ marginTop: 16 }}>
-            <ContentAssetThumbnailGrid
-              asset={asset}
-              seek={(seconds: number) => {
-                console.log(playerRef);
-                if (playerRef?.current?.plyr) {
-                  playerRef.current.plyr.currentTime = seconds;
-                }
-              }}
-            />
-          </Space>
-        </Row>
-        {actionRequired && (
-          <Row style={{ padding: 16, background: "#ffcc33" }}>
-            <Space size={16} direction={"horizontal"}>
-              <Space
-                size={8}
-                direction={"horizontal"}
-                style={{ borderRight: "1px solid #ccaa00", paddingRight: 16 }}
-              >
-                <Typography.Text style={{ color: "#333333", fontSize: "12px" }}>
-                  HTTP Live Streaming
-                </Typography.Text>
-                {hlsEnabled ? (
-                  <Space size={8}>
-                    <CheckCircleOutlined
-                      style={{ fontSize: "14px", color: "#00CC00" }}
-                    />
-                    <Typography.Text
-                      style={{ fontSize: "14px", color: "00CC00" }}
-                    >
-                      Enabled
-                    </Typography.Text>
-                  </Space>
-                ) : (
-                  <Space size={16} direction={"horizontal"}>
-                    <Space size={8}>
-                      <CloseCircleOutlined
-                        style={{ fontSize: "14px", color: "#cc0000" }}
-                      />
-                      <Typography.Text
-                        style={{ fontSize: "14px", color: "#cc0000" }}
-                      >
-                        Disabled
-                      </Typography.Text>
-                    </Space>
-                    <Button
-                      ghost={true}
-                      size={"small"}
-                      onClick={async () => {
-                        await contentApi.queueContentTask(asset.id, "hls");
-                      }}
-                    >
-                      Enable
-                    </Button>
-                  </Space>
-                )}
-              </Space>
-            </Space>
-            <Space
-              size={16}
-              direction={"horizontal"}
-              style={{ paddingLeft: 16 }}
-            >
-              <Space size={8} direction={"horizontal"}>
-                <Typography.Text style={{ color: "#333333", fontSize: "12px" }}>
-                  Thumbnails
-                </Typography.Text>
-                {thumbsGenerated ? (
-                  <Space size={8}>
-                    <CheckCircleOutlined
-                      style={{ fontSize: "14px", color: "#00CC00" }}
-                    />
-                    <Typography.Text
-                      style={{ fontSize: "14px", color: "00CC00" }}
-                    >
-                      Generated
-                    </Typography.Text>
-                  </Space>
-                ) : (
-                  <Space size={16} direction={"horizontal"}>
-                    <Space size={8}>
-                      <CloseCircleOutlined
-                        style={{ fontSize: "14px", color: "#cc0000" }}
-                      />
-                      <Typography.Text
-                        style={{ fontSize: "14px", color: "#cc0000" }}
-                      >
-                        Missing
-                      </Typography.Text>
-                    </Space>
-                    <Button
-                      ghost={true}
-                      size={"small"}
-                      onClick={async () => {
-                        await contentApi.queueContentTask(
-                          asset.id,
-                          "thumbnail",
-                        );
-                      }}
-                    >
-                      Generate
-                    </Button>
-                  </Space>
-                )}
-              </Space>
-            </Space>
-          </Row>
-        )}
-      </Space>
+      <PlyrWrapper
+        asset={asset}
+        ratioAdjustment={ratioAdjustment}
+        thumbsGenerated={thumbsGenerated}
+        hlsEnabled={hlsEnabled}
+      />
     );
 
     content = (
