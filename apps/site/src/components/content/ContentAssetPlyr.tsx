@@ -9,72 +9,94 @@ import Plyr, {
   type PlyrOptions,
   type PlyrSource,
 } from "plyr-react";
-import React, { useCallback } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import contentApi from "../../api/contentApi";
 import ContentAssetThumbnailGrid from "./ContentAssetThumbnailGrid";
 
 export interface ContentAssetPlyrProps {
   asset: ContentAsset;
   ratioAdjustment: number;
-  thumbsGenerated: boolean;
-  hlsEnabled: boolean;
 }
 
 export const ContentAssetPlyr: React.FunctionComponent<
   ContentAssetPlyrProps
-> = ({
-  asset,
-  ratioAdjustment,
-  thumbsGenerated,
-  hlsEnabled,
-}: ContentAssetPlyrProps) => {
-  let playerInstance: Plyr | undefined = undefined;
+> = ({ asset, ratioAdjustment }: ContentAssetPlyrProps) => {
+  const [hlsEnabled, setHlsEnabled] = useState(false);
+  const [thumbsGenerated, setThumbnailsGenerated] = useState(false);
 
-  const playerRef = useCallback((ref: APITypes) => {
-    const player = ref?.plyr;
-    playerInstance = player;
+  const playerRef = useRef<APITypes>(null);
 
-    if (hlsEnabled && player) {
+  const player = useMemo(() => {
+    let hlsTag = false;
+    let thumbsTag = false;
+
+    for (const tag of asset.tags) {
+      if (tag.type === "system" && tag.name === "video.hls") {
+        hlsTag = true;
+      } else if (tag.type === "system" && tag.name === "video.thumbs") {
+        thumbsTag = true;
+      }
+    }
+
+    const options: PlyrOptions = {
+      controls: ["play", "progress", "current-time", "volume", "mute"],
+      muted: true,
+      clickToPlay: true,
+    };
+
+    const source: PlyrSource = {
+      type: "video",
+      sources: [],
+      poster: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/screenshots/0.png`,
+    };
+
+    if (thumbsGenerated) {
+      options.previewThumbnails = {
+        src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/thumbs.vtt`,
+        enabled: true,
+      };
+    }
+
+    if (!hlsEnabled) {
+      source.sources = [
+        {
+          src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/asset.mp4?start=0`,
+          type: "video/mp4",
+        },
+      ];
+    }
+
+    const playerInstance = (
+      <Plyr ref={playerRef} source={source} options={options} />
+    );
+
+    if (hlsTag) {
       const hls = new Hls();
       hls.loadSource(
         `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/playlist.m3u8`,
       );
-      hls.attachMedia(player as unknown as HTMLVideoElement);
+      hls.attachMedia(playerInstance as unknown as HTMLVideoElement);
     }
-  }, []);
+
+    setThumbnailsGenerated(thumbsTag);
+    setHlsEnabled(hlsTag);
+
+    return playerInstance;
+  }, [asset]);
 
   const ssr = typeof window === "undefined" || !document;
   const actionRequired = !(thumbsGenerated && hlsEnabled);
 
-  const options: PlyrOptions = {
-    controls: ["play", "progress", "current-time", "volume", "mute"],
-    muted: true,
-    clickToPlay: true,
-  };
+  console.log(ratioAdjustment);
 
-  const source: PlyrSource = {
-    type: "video",
-    sources: [],
-    poster: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/screenshots/0.png`,
-  };
-
-  if (thumbsGenerated) {
-    options.previewThumbnails = {
-      src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/thumbs.vtt`,
-      enabled: true,
-    };
-  } else {
-    options.previewThumbnails = undefined;
-  }
-
-  if (!hlsEnabled) {
-    source.sources = [
-      {
-        src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/asset.mp4?start=0`,
-        type: "video/mp4",
-      },
-    ];
-  }
+  // 4 rows of thumbnails and 3 grid gaps (no gap at top or bottom
+  const containerWidth = asset.width * ratioAdjustment + 32;
+  const videoWidth = Math.floor(ratioAdjustment * asset.width);
+  const videoHeight = Math.floor(ratioAdjustment * asset.height);
+  const thumbnailHeight =
+    asset.width > asset.height
+      ? (videoHeight - 3 * 8) / 4
+      : (videoHeight - 8) / 2;
 
   return (
     <Space
@@ -92,13 +114,15 @@ export const ContentAssetPlyr: React.FunctionComponent<
       >
         <Space
           style={{
-            width: asset.width * ratioAdjustment + 32,
+            width: containerWidth,
             alignItems: "start",
           }}
         >
           <Space
+            size={0}
             style={{
               margin: 16,
+              marginRight: 8,
               backgroundColor: "#142737",
               display: "flex",
               justifyContent: "center",
@@ -106,23 +130,22 @@ export const ContentAssetPlyr: React.FunctionComponent<
           >
             <div
               style={{
-                width: Math.floor(ratioAdjustment * asset.width),
-                height: Math.floor(ratioAdjustment * asset.height),
+                width: videoWidth,
+                height: videoHeight,
                 display: "#000000",
               }}
             >
-              {!ssr && asset && (
-                <Plyr ref={playerRef} source={source} options={options} />
-              )}
+              {!ssr && asset && player}
             </div>
           </Space>
         </Space>
         <Space direction={"vertical"} style={{ marginTop: 16 }}>
           <ContentAssetThumbnailGrid
             asset={asset}
+            height={thumbnailHeight}
             seek={(seconds: number) => {
-              if (playerInstance) {
-                playerInstance.currentTime = seconds;
+              if (playerRef.current?.plyr) {
+                playerRef.current.plyr.currentTime = seconds;
               }
             }}
           />

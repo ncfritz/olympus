@@ -4,15 +4,7 @@ import {
   VideoCameraOutlined,
 } from "@ant-design/icons";
 import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
-import {
-  Breadcrumb,
-  Col,
-  Result,
-  Row,
-  Space,
-  Spin,
-  Typography,
-} from "antd";
+import { Breadcrumb, Col, Result, Row, Space, Spin, Typography } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -126,12 +118,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
 
     contentOffset = contentOffset + Math.floor(ratioAdjustment * asset.height);
     playerContent = (
-      <PlyrWrapper
-        asset={asset}
-        ratioAdjustment={ratioAdjustment}
-        thumbsGenerated={thumbsGenerated}
-        hlsEnabled={hlsEnabled}
-      />
+      <PlyrWrapper asset={asset} ratioAdjustment={ratioAdjustment} />
     );
 
     content = (
