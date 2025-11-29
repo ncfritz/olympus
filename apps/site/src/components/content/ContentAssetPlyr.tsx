@@ -59,12 +59,12 @@ export const ContentAssetPlyr: React.FunctionComponent<
   };
 
   if (thumbsGenerated) {
-    source.previewThumbnails = {
+    options.previewThumbnails = {
       src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/thumbs.vtt`,
       enabled: true,
     };
   } else {
-    source.previewThumbnails = undefined;
+    options.previewThumbnails = undefined;
   }
 
   if (!hlsEnabled) {
