@@ -321,7 +321,7 @@ const CreateMetadataJobModal: React.FunctionComponent<
                 }}
               >
                 <DynamicReactJson
-                  src={field.value}
+                  src={JSON.parse(JSON.stringify(field.value))}
                   style={{ fontSize: 12 }}
                   onDelete={() => {}}
                   onAdd={() => {}}

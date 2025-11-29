@@ -179,7 +179,7 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
       render={({ field: { onChange, value } }) => (
         <NoteRichTextEditor
           onChange={onChange}
-          value={value}
+          value={value || ""}
           height={mainEditorHeight}
         />
       )}
@@ -193,7 +193,7 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
       render={({ field: { onChange, value } }) => (
         <NoteSummaryRichTextEditor
           onChange={onChange}
-          value={value}
+          value={value || ""}
           height={summaryEditorHeight}
         />
       )}
