@@ -8,6 +8,7 @@ import {
   SyncOutlined,
 } from "@ant-design/icons";
 import type {
+  ContentAsset,
   ContentAssetTag,
   ContentIngestionWorkflowStatus,
   ContentIngestionWorkflowStepStatus,
@@ -132,4 +133,48 @@ export const getContentIngestionWorkflowStepStatusIndicator = (
         </Tag>
       );
   }
+};
+
+export type AssetDimensionBounds = {
+  maxWidth: number;
+  maxHeight: number;
+  minWidth: number;
+  minHeight: number;
+};
+
+export const calculateAssetDimensions = (
+  asset: ContentAsset,
+  bounds: AssetDimensionBounds = {
+    maxWidth: 800,
+    maxHeight: 550,
+    minWidth: 600,
+    minHeight: 450,
+  },
+): [w: number, h: number, r: number, a: number] => {
+  const ratio = asset.width / asset.height;
+  let width = asset.width;
+  let height = asset.height;
+  let adjustment = 1;
+
+  if (width < bounds.minWidth) {
+    adjustment = bounds.minWidth / width;
+  } else if (height < bounds.minHeight) {
+    adjustment = bounds.minHeight / height;
+  }
+
+  width = width * adjustment;
+  height = height * adjustment;
+
+  if (width > bounds.maxWidth) {
+    adjustment = bounds.maxWidth / width;
+  } else if (height > bounds.maxHeight) {
+    adjustment = bounds.maxHeight / height;
+  }
+
+  width = width * adjustment;
+  height = height * adjustment;
+
+  adjustment = asset.width / width;
+
+  return [width, height, ratio, adjustment];
 };

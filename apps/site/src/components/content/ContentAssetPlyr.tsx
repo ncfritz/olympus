@@ -12,6 +12,7 @@ import Plyr, {
 import React, { useMemo, useRef, useState } from "react";
 import contentApi from "../../api/contentApi";
 import ContentAssetThumbnailGrid from "./ContentAssetThumbnailGrid";
+import { calculateAssetDimensions } from "./util";
 
 export interface ContentAssetPlyrProps {
   asset: ContentAsset;
@@ -23,10 +24,31 @@ export const ContentAssetPlyr: React.FunctionComponent<
 > = ({ asset, ratioAdjustment }: ContentAssetPlyrProps) => {
   const [hlsEnabled, setHlsEnabled] = useState(false);
   const [thumbsGenerated, setThumbnailsGenerated] = useState(false);
+  const [videoWidth, setVideoWidth] = useState(asset.width);
+  const [videoHeight, setVideoHeight] = useState(asset.height);
+  const [thumbnailHeight, setThumbnailHeight] = useState(125);
 
   const playerRef = useRef<APITypes>(null);
 
   const player = useMemo(() => {
+    const [width, height, aspectRatio, adjustment] =
+      calculateAssetDimensions(asset);
+    const thumbHeight =
+      asset.width > asset.height ? (height - 3 * 8) / 4 : (height - 8) / 2;
+
+    console.group("Calculated asset dimensions");
+    console.log(`asset: ${asset.width} x ${asset.height}`);
+    console.log(`aspectRatio: ${aspectRatio}`);
+    console.log(`adjustment: ${adjustment}`);
+    console.log(`videoWidth: ${width}`);
+    console.log(`videoHeight: ${height}`);
+    console.log(`thumbnailHeight: ${thumbHeight}`);
+    console.groupEnd();
+
+    setVideoWidth(width);
+    setVideoHeight(height);
+    setThumbnailHeight(thumbHeight);
+
     let hlsTag = false;
     let thumbsTag = false;
 
@@ -42,6 +64,7 @@ export const ContentAssetPlyr: React.FunctionComponent<
       controls: ["play", "progress", "current-time", "volume", "mute"],
       muted: true,
       clickToPlay: true,
+      ratio: `${width}:${height}`,
     };
 
     const source: PlyrSource = {
@@ -87,17 +110,6 @@ export const ContentAssetPlyr: React.FunctionComponent<
   const ssr = typeof window === "undefined" || !document;
   const actionRequired = !(thumbsGenerated && hlsEnabled);
 
-  console.log(ratioAdjustment);
-
-  // 4 rows of thumbnails and 3 grid gaps (no gap at top or bottom
-  const containerWidth = asset.width * ratioAdjustment + 32;
-  const videoWidth = Math.floor(ratioAdjustment * asset.width);
-  const videoHeight = Math.floor(ratioAdjustment * asset.height);
-  const thumbnailHeight =
-    asset.width > asset.height
-      ? (videoHeight - 3 * 8) / 4
-      : (videoHeight - 8) / 2;
-
   return (
     <Space
       direction={"vertical"}
@@ -114,7 +126,7 @@ export const ContentAssetPlyr: React.FunctionComponent<
       >
         <Space
           style={{
-            width: containerWidth,
+            width: videoWidth + 32,
             alignItems: "start",
           }}
         >
@@ -144,6 +156,7 @@ export const ContentAssetPlyr: React.FunctionComponent<
             asset={asset}
             height={thumbnailHeight}
             seek={(seconds: number) => {
+              console.log(playerRef.current?.plyr);
               if (playerRef.current?.plyr) {
                 playerRef.current.plyr.currentTime = seconds;
               }
