@@ -369,7 +369,7 @@ const ContentAssetsPage: React.FunctionComponent = () => {
           <ContentAssetStatistics />
           <Splitter
             style={{
-              height: "calc(100vh - 391px)",
+              height: "calc(100vh - 399px)",
             }}
             onResize={(sizes) => {
               setFilterPanelSize(filterPanelSize <= 0 ? 300 : 0);
@@ -396,6 +396,8 @@ const ContentAssetsPage: React.FunctionComponent = () => {
                 style={{ width: "100%" }}
                 rowKey={"id"}
                 columns={columns}
+                sticky={true}
+                scroll={{ y: "calc(100vh - 494px)" }}
                 dataSource={assets}
                 size={"small"}
                 loading={assetsLoading}
@@ -404,7 +406,7 @@ const ContentAssetsPage: React.FunctionComponent = () => {
                     marginLeft: 16,
                   },
                   position: ["bottomLeft"],
-                  pageSize: 15,
+                  pageSize: 30,
                   size: "small",
                   total: assetsCount,
                   showSizeChanger: false,
