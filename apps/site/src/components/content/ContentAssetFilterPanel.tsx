@@ -245,7 +245,8 @@ const ContentAssetFilterPanel: React.FunctionComponent<
           background: "#fafafa",
           width: 298,
           zIndex: 5,
-          padding: 10,
+          padding: 6,
+          paddingBottom: 7,
         }}
       >
         <Button type={"text"} size={"small"} onClick={togglePanel}>
