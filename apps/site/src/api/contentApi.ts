@@ -59,7 +59,7 @@ class ContentApi extends ApiBase {
     return await listContentAssets({
       query: {
         startPage: page,
-        pageSize: 15,
+        pageSize: 30,
         sortBy: sort.field,
         sort: sort.order,
         filters: filters
