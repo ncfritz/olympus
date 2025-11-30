@@ -201,7 +201,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
     }
 
     contentOffset =
-      contentOffset + Math.floor(ratioAdjustment * asset.height) + 96;
+      contentOffset + Math.floor(ratioAdjustment * asset.height) + 64;
 
     let videoWidth, videoHeight;
 
@@ -234,6 +234,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
           direction={"horizontal"}
           style={{
             justifyContent: "space-between",
+            alignItems: "start",
             width: "100%",
           }}
         >
@@ -242,6 +243,41 @@ const ContentProcessingPage: React.FunctionComponent = () => {
               {asset.name || asset.originalName}
             </Typography.Title>
             <Typography.Text copyable={true}>{asset.id}</Typography.Text>
+            <Space direction={"horizontal"}>
+              <ContentAssetThumbnailGrid
+                height={height}
+                asset={asset}
+                onSelect={(index: number) => {
+                  setCurrentThumbIndex(index);
+                }}
+              />
+              <Space
+                style={{
+                  objectFit: "contain",
+                }}
+              >
+                <Image
+                  preview={true}
+                  width={imgWidth}
+                  height={imgHeight}
+                  src={`https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/screenshots/${currentThumbIndex}.png`}
+                />
+              </Space>
+              <Space direction={videoOrientation}>
+                <ContentAssetPreviewPlayer
+                  assetId={asset.id}
+                  type={"sample"}
+                  height={videoHeight}
+                  width={videoWidth}
+                />
+                <ContentAssetPreviewPlayer
+                  assetId={asset.id}
+                  type={"timelapse"}
+                  height={videoHeight}
+                  width={videoWidth}
+                />
+              </Space>
+            </Space>
           </Space>
           <Space direction={"vertical"}>
             <Progress
@@ -296,41 +332,6 @@ const ContentProcessingPage: React.FunctionComponent = () => {
                 <ContentAssetRating asset={asset} />
               </Space>
             </Space>
-          </Space>
-        </Space>
-        <Space direction={"horizontal"}>
-          <ContentAssetThumbnailGrid
-            height={height}
-            asset={asset}
-            onSelect={(index: number) => {
-              setCurrentThumbIndex(index);
-            }}
-          />
-          <Space
-            style={{
-              objectFit: "contain",
-            }}
-          >
-            <Image
-              preview={true}
-              width={imgWidth}
-              height={imgHeight}
-              src={`https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/screenshots/${currentThumbIndex}.png`}
-            />
-          </Space>
-          <Space direction={videoOrientation}>
-            <ContentAssetPreviewPlayer
-              assetId={asset.id}
-              type={"sample"}
-              height={videoHeight}
-              width={videoWidth}
-            />
-            <ContentAssetPreviewPlayer
-              assetId={asset.id}
-              type={"timelapse"}
-              height={videoHeight}
-              width={videoWidth}
-            />
           </Space>
         </Space>
       </Space>
