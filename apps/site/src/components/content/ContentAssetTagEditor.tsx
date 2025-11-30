@@ -130,6 +130,7 @@ const ContentAssetTagEditor: React.FunctionComponent<
     const userTags: ReactElement[] = [];
     const typeTags: ReactElement[] = [];
     const sourceTags: ReactElement[] = [];
+    const modelTags: ReactElement[] = [];
 
     assetTags.forEach((tag: ContentAssetTag) => {
       switch (tag.type) {
@@ -169,6 +170,15 @@ const ContentAssetTagEditor: React.FunctionComponent<
             />,
           );
           break;
+        case "model":
+          modelTags.push(
+            <ContentAssetTagElement
+              key={tag.id}
+              tag={tag}
+              onRemove={removeTag}
+            />,
+          );
+          break;
       }
     });
 
@@ -184,36 +194,44 @@ const ContentAssetTagEditor: React.FunctionComponent<
             borderBottomWidth: 1,
           }}
         >
-          <Col span={6}>
+          <Col span={5}>
             <Typography.Text strong={true}>User Tags</Typography.Text>
           </Col>
-          <Col span={6}>
+          <Col span={5}>
+            <Typography.Text strong={true}>Model Tags</Typography.Text>
+          </Col>
+          <Col span={5}>
             <Typography.Text strong={true}>Source Tags</Typography.Text>
           </Col>
-          <Col span={6}>
+          <Col span={4}>
             <Typography.Text strong={true}>Type Tags</Typography.Text>
           </Col>
-          <Col span={6}>
+          <Col span={5}>
             <Typography.Text strong={true}>System Tags</Typography.Text>
           </Col>
         </Row>
         <Row style={{ marginTop: 8 }} gutter={8}>
-          <Col span={6}>
+          <Col span={5}>
             <Space size={4} direction={"vertical"} style={{ width: "100%" }}>
               {userTags}
             </Space>
           </Col>
-          <Col span={6}>
+          <Col span={5}>
+            <Space size={4} direction={"vertical"} style={{ width: "100%" }}>
+              {modelTags}
+            </Space>
+          </Col>
+          <Col span={5}>
             <Space size={4} direction={"vertical"} style={{ width: "100%" }}>
               {sourceTags}
             </Space>
           </Col>
-          <Col span={6}>
+          <Col span={4}>
             <Space size={4} direction={"vertical"} style={{ width: "100%" }}>
               {typeTags}
             </Space>
           </Col>
-          <Col span={6}>
+          <Col span={5}>
             <Space size={4} direction={"vertical"} style={{ width: "100%" }}>
               {systemTags}
             </Space>
@@ -256,6 +274,15 @@ const ContentAssetTagEditor: React.FunctionComponent<
                   <Space size={8} direction={"horizontal"}>
                     <CloudOutlined />
                     Source
+                  </Space>
+                ),
+              },
+              {
+                value: "model",
+                label: (
+                  <Space size={8} direction={"horizontal"}>
+                    <UserOutlined />
+                    Model
                   </Space>
                 ),
               },
