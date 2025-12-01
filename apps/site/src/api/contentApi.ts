@@ -114,7 +114,7 @@ class ContentApi extends ApiBase {
 
   async listAvailableTagsForAsset(assetId: string) {
     return await listAvailableContentAssetTags({
-      path: {
+      query: {
         assetId: assetId,
       },
       ...this.buildHeaders(),
