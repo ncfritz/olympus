@@ -108,25 +108,37 @@ const ContentProcessingPage: React.FunctionComponent = () => {
 
   const [progress, setProgress] = useState(0);
   const [processing, setProcessing] = useState(false);
-  const [processingComplete, setProcessingComplete] = useState(false);
-  const [progressText, setProgressText] = useState<string[]>([]);
+  const [progressText, setProgressText] = useState<string[] | undefined>(
+    undefined,
+  );
 
   const appendProgress = (text: string) => {
-    setProgressText([...progressText, `${text}\n`]);
+    const newProgress = progressText ? [...progressText] : [];
+    newProgress.push(`${text}\n`);
+
+    console.log(progressText);
+    console.log(newProgress);
+
+    setProgressText(newProgress);
   };
 
   const processAsset = async () => {
     setProcessing(true);
-    appendProgress("Initializing...");
+    setProgressText(["Initializing...\n"]);
 
     for (let i = 0; i < selectedTags.length; i++) {
       const tag = selectedTags[i];
 
+      appendProgress(
+        `Applying tag [Type: ${tag.type}]: ${tag.name} to asset...`,
+      );
+
       await contentApi.addTagToAsset(asset.id, tag.type, tag.name);
+
       setProgress((i + 1 / selectedTags.length) * 100);
-      setProcessing(false);
-      setProcessingComplete(true);
     }
+
+    setProcessing(false);
   };
 
   useEffect(() => {
@@ -186,30 +198,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
     const imgWidth = imgHeight / aspectRatio;
     const videoOrientation = aspectRatio > 1 ? "horizontal" : "vertical";
 
-    const minHeight = 550;
-    const maxHeight = 600;
-    const maxWidth = 800;
-
-    let ratioAdjustment = 1;
-
-    if (asset.width > maxWidth && videoOrientation === "vertical") {
-      ratioAdjustment = maxWidth / asset.width;
-    } else if (asset.height > maxHeight) {
-      ratioAdjustment = maxHeight / asset.height;
-    } else if (asset.height < minHeight) {
-      ratioAdjustment = minHeight / asset.height;
-    }
-
-    contentOffset =
-      contentOffset + Math.floor(ratioAdjustment * asset.height) + 64;
-
     let videoWidth, videoHeight;
-
-    console.group(`Asset Display - ${asset.id}`);
-    console.log(`Image (W x H): ${imgWidth}px x ${imgHeight}px`);
-    console.log(`Aspect ratio: ${aspectRatio}`);
-    console.log(`Content offset: ${contentOffset}px`);
-    console.groupEnd();
 
     if (videoOrientation === "horizontal") {
       videoHeight = imgHeight;
@@ -219,7 +208,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
       videoWidth = videoHeight * (1 / aspectRatio);
     }
 
-    console.log(videoOrientation);
+    contentOffset = 4 * height + 24 + 64 + 96;
 
     playerContent = (
       <Space
@@ -383,18 +372,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
       </div>
     );
 
-    const detailsContent = (
-      <div
-        style={{
-          display: "flex",
-          flexGrow: 1,
-          flexDirection: "column",
-          height: "100%",
-        }}
-      >
-        <ContentAssetSizeDisplay asset={asset} />
-      </div>
-    );
+    console.log(progressText);
 
     const processContent = (
       <div
@@ -431,11 +409,6 @@ const ContentProcessingPage: React.FunctionComponent = () => {
         content: tagStepContent,
       },
       {
-        key: "Review",
-        title: "Review Details",
-        content: detailsContent,
-      },
-      {
         key: "Process",
         title: "Process",
         content: processContent,
@@ -459,16 +432,6 @@ const ContentProcessingPage: React.FunctionComponent = () => {
           }}
         >
           <Space direction={"horizontal"}>
-            {currentStep > 0 && !processing && !processingComplete && (
-              <Button
-                disabled={currentStep >= steps.length - 1}
-                onClick={() => {
-                  setCurrentStep(currentStep - 1);
-                }}
-              >
-                Previous
-              </Button>
-            )}
             {currentStep < steps.length - 1 && (
               <Button
                 type="primary"
@@ -481,7 +444,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
                   }
                 }}
               >
-                Next
+                Apply Tags
               </Button>
             )}
             {currentStep === steps.length - 1 && (
@@ -489,9 +452,9 @@ const ContentProcessingPage: React.FunctionComponent = () => {
                 type="primary"
                 disabled={processing}
                 onClick={async () => {
-                  setProcessingComplete(false);
                   setProcessing(false);
                   setProgress(0);
+                  setProgressText(undefined);
                   setCurrentStep(0);
                   setCurrentThumbIndex(1);
                   setSelectedTags([]);
@@ -585,11 +548,11 @@ const ContentProcessingPage: React.FunctionComponent = () => {
             style={{
               marginTop: 32,
               position: "fixed",
-              top: contentOffset,
+              top: contentOffset + 16,
               zIndex: 10,
               borderTop: "1px solid #efefef",
               width: "calc(100vw - 380px)",
-              height: `calc(100vh - ${contentOffset}px - 44px)`,
+              height: `calc(100vh - ${contentOffset}px - 48px)`,
             }}
           >
             <div
