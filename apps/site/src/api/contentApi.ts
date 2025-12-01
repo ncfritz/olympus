@@ -106,7 +106,7 @@ class ContentApi extends ApiBase {
 
   async listAssetTags(assetId: string) {
     return await listContentAssetTagsForAsset({
-      params: {
+      path: {
         assetId: assetId,
       },
     });
@@ -114,7 +114,7 @@ class ContentApi extends ApiBase {
 
   async listAvailableTagsForAsset(assetId: string) {
     return await listAvailableContentAssetTags({
-      params: {
+      path: {
         assetId: assetId,
       },
       ...this.buildHeaders(),
@@ -179,6 +179,9 @@ class ContentApi extends ApiBase {
         tagId: tagId,
       },
       ...this.buildHeaders(),
+      validateStatus: (status) => {
+        return status === 410;
+      },
     });
   }
 
