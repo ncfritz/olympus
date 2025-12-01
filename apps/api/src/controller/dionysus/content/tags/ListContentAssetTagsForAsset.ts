@@ -39,7 +39,7 @@ export class ListContentAssetTagsForAssetController {
     name: "assetId",
     description: "The ID of the content asset to the tags for",
     type: String,
-    required: false,
+    required: true,
   })
   @ApiOkResponse({
     description: "The record has been successfully created.",
@@ -62,6 +62,8 @@ export class ListContentAssetTagsForAssetController {
         }
       }
     `;
+
+    console.log(assetId);
 
     const queryResponse = await this.graphQLClient.request<
       GraphQLListContentAssetTagsResponse,
