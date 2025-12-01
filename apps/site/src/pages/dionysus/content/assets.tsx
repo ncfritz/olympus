@@ -81,6 +81,12 @@ const ContentAssetsPage: React.FunctionComponent = () => {
   const [ratingFilter, setRatingFilter] = useState<number | undefined>(
     undefined,
   );
+  const [durationFilter, setDurationFilter] = useState<number[] | undefined>(
+    undefined,
+  );
+  const [resolutionFilter, setResolutionFilter] = useState<
+    number[] | undefined
+  >(undefined);
   const [filters, setFilters] = useState<FilterDefinition | undefined>(
     undefined,
   );
@@ -202,12 +208,50 @@ const ContentAssetsPage: React.FunctionComponent = () => {
       });
     }
 
+    if (durationFilter) {
+      newFilters.push({
+        name: "_and",
+        type: "and",
+        value: [
+          {
+            name: "duration",
+            type: "gte",
+            value: durationFilter[0],
+          },
+          {
+            name: "duration",
+            type: "lte",
+            value: durationFilter[1],
+          },
+        ],
+      });
+    }
+
+    if (resolutionFilter) {
+      newFilters.push({
+        name: "_and",
+        type: "and",
+        value: [
+          {
+            name: "height",
+            type: "gte",
+            value: resolutionFilter[0],
+          },
+          {
+            name: "height",
+            type: "lte",
+            value: resolutionFilter[1],
+          },
+        ],
+      });
+    }
+
     if (newFilters.length > 1) {
       setFilters({ type: "and", name: "__base", value: newFilters });
     } else {
       setFilters(newFilters[0]);
     }
-  }, [tagFilters, nameFilter, ratingFilter]);
+  }, [tagFilters, nameFilter, ratingFilter, durationFilter, resolutionFilter]);
 
   useEffect(() => {
     setAssetsPage(0);
@@ -422,6 +466,8 @@ const ContentAssetsPage: React.FunctionComponent = () => {
                 onRemoveTag={removeTagFilter}
                 onNameChange={setNameFilter}
                 onRatingChange={setRatingFilter}
+                onDurationChange={setDurationFilter}
+                onResolutionChange={setResolutionFilter}
               />
             </Splitter.Panel>
             <Splitter.Panel>

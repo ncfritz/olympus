@@ -6,6 +6,7 @@ import {
   Empty,
   Input,
   Rate,
+  Slider,
   Space,
   Spin,
   Typography,
@@ -26,6 +27,8 @@ export interface ContentAssetFilterPanelProps {
   onRemoveTag: (tag: ContentAssetTag) => Promise<void>;
   onRatingChange: (value: number) => void;
   onNameChange: (value: string) => void;
+  onDurationChange: (value: number[]) => void;
+  onResolutionChange: (value: number[]) => void;
 }
 
 const CheckboxTagRenderer: TagRenderer = (
@@ -44,6 +47,16 @@ const CheckboxTagRenderer: TagRenderer = (
   );
 };
 
+const RESOLUTION_MAP: Record<number, number> = {
+  0: 0,
+  1: 480,
+  2: 720,
+  3: 1080,
+  4: 1440,
+  5: 2160,
+  6: 4320,
+};
+
 const ContentAssetFilterPanel: React.FunctionComponent<
   ContentAssetFilterPanelProps
 > = ({
@@ -52,6 +65,8 @@ const ContentAssetFilterPanel: React.FunctionComponent<
   onRemoveTag,
   onRatingChange,
   onNameChange,
+  onDurationChange,
+  onResolutionChange,
 }: ContentAssetFilterPanelProps) => {
   const [contentTags, setContentTags] = useState<
     Record<string, ContentAssetTag[]>
@@ -155,7 +170,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
                 level={5}
                 style={{ marginBottom: 8, fontSize: "14px" }}
               >
-                Rating
+                Media
               </Typography.Title>
             ),
             styles: {
@@ -164,7 +179,14 @@ const ContentAssetFilterPanel: React.FunctionComponent<
               },
             },
             children: (
-              <Space size={0} style={{ marginLeft: 24 }}>
+              <Space
+                size={2}
+                style={{ paddingLeft: 24, width: "100%" }}
+                direction={"vertical"}
+              >
+                <Typography.Text strong={true} style={{ fontSize: "10px" }}>
+                  Rating
+                </Typography.Text>
                 <Rate
                   defaultValue={rating}
                   count={5}
@@ -174,6 +196,54 @@ const ContentAssetFilterPanel: React.FunctionComponent<
                   onChange={(value) => {
                     setRating(value);
                     onRatingChange(value);
+                  }}
+                />
+                <Typography.Text strong={true} style={{ fontSize: "10px" }}>
+                  Duration
+                </Typography.Text>
+                <Slider
+                  range={true}
+                  marks={{
+                    1: "1m",
+                    30: "30m",
+                    60: "1h",
+                    90: "1h30m",
+                    120: "2h",
+                    180: "3h",
+                  }}
+                  defaultValue={[0, 180]}
+                  min={0}
+                  max={180}
+                  onChangeComplete={(value: number[]) => {
+                    onDurationChange([
+                      value[0] * 60 * 1000,
+                      value[1] * 60 * 1000,
+                    ]);
+                  }}
+                />
+                <Typography.Text strong={true} style={{ fontSize: "10px" }}>
+                  Quality
+                </Typography.Text>
+                <Slider
+                  range={true}
+                  marks={{
+                    0: "All",
+                    1: "SD",
+                    2: "HD",
+                    3: "FHD",
+                    4: "QHD",
+                    5: "2K",
+                    6: "4K",
+                  }}
+                  defaultValue={[0, 6]}
+                  min={0}
+                  max={6}
+                  step={1}
+                  onChangeComplete={(value: number[]) => {
+                    onResolutionChange([
+                      RESOLUTION_MAP[value[0]],
+                      RESOLUTION_MAP[value[1]],
+                    ]);
                   }}
                 />
               </Space>
