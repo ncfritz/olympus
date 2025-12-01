@@ -77,6 +77,10 @@ img.electron-logo {
     vertical-align: baseline;
 }
 
+.ant-table-body {
+    scrollbar-width: none;
+}
+
 .ant-menu-item {
     border-radius: 0px !important;
     margin: 0px !important;
