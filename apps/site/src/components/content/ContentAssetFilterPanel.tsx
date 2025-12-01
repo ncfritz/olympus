@@ -1,7 +1,17 @@
-import { SearchOutlined } from "@ant-design/icons";
+import { SearchOutlined, StarFilled } from "@ant-design/icons";
 import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
-import { Button, Collapse, Empty, Space, Spin, Typography } from "antd";
+import {
+  Button,
+  Collapse,
+  Empty,
+  Input,
+  Rate,
+  Space,
+  Spin,
+  Typography,
+} from "antd";
 import React, { useEffect, useState } from "react";
+import { useDebounce } from "use-debounce";
 import contentApi from "../../api/contentApi";
 import { useFetch } from "../../hooks/useFetch";
 import ContentAssetTagSelector, {
@@ -14,6 +24,8 @@ export interface ContentAssetFilterPanelProps {
   togglePanel: () => void;
   onSelectTag: (tag: ContentAssetTag) => Promise<void>;
   onRemoveTag: (tag: ContentAssetTag) => Promise<void>;
+  onRatingChange: (value: number) => void;
+  onNameChange: (value: string) => void;
 }
 
 const CheckboxTagRenderer: TagRenderer = (
@@ -38,10 +50,16 @@ const ContentAssetFilterPanel: React.FunctionComponent<
   togglePanel,
   onSelectTag,
   onRemoveTag,
+  onRatingChange,
+  onNameChange,
 }: ContentAssetFilterPanelProps) => {
   const [contentTags, setContentTags] = useState<
     Record<string, ContentAssetTag[]>
   >({});
+  const [name, setName] = useState("");
+  const [rating, setRating] = useState(0);
+
+  const [debouncedName] = useDebounce<string>(name, 750);
 
   const [tags, tagsLoading, tagsError] = useFetch<undefined, ContentAssetTag[]>(
     {
@@ -50,6 +68,10 @@ const ContentAssetFilterPanel: React.FunctionComponent<
       fetchFunction: async () => (await contentApi.listTags()).data.tags,
     },
   );
+
+  useEffect(() => {
+    onNameChange(debouncedName);
+  }, [debouncedName]);
 
   useEffect(() => {
     if (!tags || tags.length <= 0) {
@@ -74,7 +96,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
   }, [tags]);
 
   let content: any;
-  console.log(contentTags);
+
   if (tagsLoading) {
     content = <Spin size={"large"} />;
   } else if (!contentTags || Object.keys(contentTags).length <= 0) {
@@ -85,11 +107,78 @@ const ContentAssetFilterPanel: React.FunctionComponent<
         ghost={true}
         collapsible={"header"}
         defaultActiveKey={[
+          "content-name",
+          "content-rating",
           "content-tags-type",
-          "content-tags-source",
           "content-tags-user",
         ]}
         items={[
+          {
+            key: "content-name",
+            label: (
+              <Typography.Title
+                level={5}
+                style={{ marginBottom: 8, fontSize: "14px" }}
+              >
+                Name
+              </Typography.Title>
+            ),
+            styles: {
+              body: {
+                marginBottom: 24,
+              },
+            },
+            children: (
+              <Space
+                size={0}
+                style={{ paddingLeft: 24, width: "100%" }}
+                styles={{ item: { width: "100%" } }}
+              >
+                <Input
+                  placeholder={"Search by name"}
+                  size={"small"}
+                  allowClear={true}
+                  onClear={() => {
+                    setName("");
+                  }}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                  }}
+                />
+              </Space>
+            ),
+          },
+          {
+            key: "content-rating",
+            label: (
+              <Typography.Title
+                level={5}
+                style={{ marginBottom: 8, fontSize: "14px" }}
+              >
+                Rating
+              </Typography.Title>
+            ),
+            styles: {
+              body: {
+                marginBottom: 24,
+              },
+            },
+            children: (
+              <Space size={0} style={{ marginLeft: 24 }}>
+                <Rate
+                  defaultValue={rating}
+                  count={5}
+                  allowHalf={true}
+                  allowClear={true}
+                  character={<StarFilled size={12} />}
+                  onChange={(value) => {
+                    setRating(value);
+                    onRatingChange(value);
+                  }}
+                />
+              </Space>
+            ),
+          },
           {
             key: "content-tags-type",
             label: (

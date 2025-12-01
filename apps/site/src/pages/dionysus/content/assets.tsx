@@ -76,7 +76,11 @@ const ContentAssetsPage: React.FunctionComponent = () => {
     undefined,
   );
   const [filterPanelSize, setFilterPanelSize] = useState(300);
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [tagFilters, setTagFilters] = useState<string[]>([]);
+  const [nameFilter, setNameFilter] = useState("");
+  const [ratingFilter, setRatingFilter] = useState<number | undefined>(
+    undefined,
+  );
   const [filters, setFilters] = useState<FilterDefinition | undefined>(
     undefined,
   );
@@ -96,26 +100,26 @@ const ContentAssetsPage: React.FunctionComponent = () => {
     },
   });
 
-  const addFilter = async (tag: ContentAssetTag) => {
+  const addTagFilter = async (tag: ContentAssetTag) => {
     const key = `${tag.type}:${tag.name}`;
 
-    if (!selectedFilters.includes(key)) {
-      const newFilters = [...selectedFilters];
+    if (!tagFilters.includes(key)) {
+      const newFilters = [...tagFilters];
       newFilters.push(key);
 
-      setSelectedFilters(newFilters);
+      setTagFilters(newFilters);
     }
   };
 
-  const removeFilter = async (tag: ContentAssetTag) => {
+  const removeTagFilter = async (tag: ContentAssetTag) => {
     const key = `${tag.type}:${tag.name}`;
 
-    if (selectedFilters.includes(key)) {
-      const newFilters = [...selectedFilters].filter((value) => {
+    if (tagFilters.includes(key)) {
+      const newFilters = [...tagFilters].filter((value) => {
         return value !== key;
       });
 
-      setSelectedFilters(newFilters);
+      setTagFilters(newFilters);
     }
   };
 
@@ -123,12 +127,12 @@ const ContentAssetsPage: React.FunctionComponent = () => {
     setFilterPanelSize(filterPanelSize <= 0 ? 300 : 0);
   };
 
-  const appendFilterDefinition = (
+  const appendTagFilterDefinition = (
     type: string,
     logic: "and" | "or",
     chain: FilterDefinition[],
   ) => {
-    const selectedValues = selectedFilters
+    const selectedValues = tagFilters
       .filter((value) => value.startsWith(`${type}:`))
       .map((value) => value.substring(value.indexOf(":") + 1, value.length));
     let values: string[] | FilterDefinition[] = selectedValues;
@@ -165,18 +169,45 @@ const ContentAssetsPage: React.FunctionComponent = () => {
 
   useEffect(() => {
     const newFilters: FilterDefinition[] = [];
-    appendFilterDefinition("type", "or", newFilters);
-    appendFilterDefinition("source", "or", newFilters);
-    appendFilterDefinition("user", "and", newFilters);
-    appendFilterDefinition("model", "or", newFilters);
-    appendFilterDefinition("system", "and", newFilters);
+    appendTagFilterDefinition("type", "or", newFilters);
+    appendTagFilterDefinition("source", "or", newFilters);
+    appendTagFilterDefinition("user", "and", newFilters);
+    appendTagFilterDefinition("model", "or", newFilters);
+    appendTagFilterDefinition("system", "and", newFilters);
+
+    if (ratingFilter) {
+      newFilters.push({
+        name: "rating",
+        type: "gte",
+        value: ratingFilter,
+      });
+    }
+
+    if (nameFilter) {
+      newFilters.push({
+        name: "_or",
+        type: "or",
+        value: [
+          {
+            name: "original_name",
+            type: "ilike",
+            value: `%${nameFilter}%`,
+          },
+          {
+            name: "name",
+            type: "ilike",
+            value: `%${nameFilter}%`,
+          },
+        ],
+      });
+    }
 
     if (newFilters.length > 1) {
       setFilters({ type: "and", name: "__base", value: newFilters });
     } else {
       setFilters(newFilters[0]);
     }
-  }, [selectedFilters]);
+  }, [tagFilters, nameFilter, ratingFilter]);
 
   useEffect(() => {
     setAssetsPage(0);
@@ -387,8 +418,10 @@ const ContentAssetsPage: React.FunctionComponent = () => {
             >
               <ContentAssetFilterPanel
                 togglePanel={toggleFilters}
-                onSelectTag={addFilter}
-                onRemoveTag={removeFilter}
+                onSelectTag={addTagFilter}
+                onRemoveTag={removeTagFilter}
+                onNameChange={setNameFilter}
+                onRatingChange={setRatingFilter}
               />
             </Splitter.Panel>
             <Splitter.Panel>
