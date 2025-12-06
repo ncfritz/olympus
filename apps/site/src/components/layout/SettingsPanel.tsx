@@ -82,7 +82,7 @@ const SettingsPanel: React.FunctionComponent<
           <Typography.Text>Black curtain</Typography.Text>
           <Switch
             size={"default"}
-            checked={!blackCurtainEnabled}
+            checked={blackCurtainEnabled}
             onClick={() => {
               dispatch(setCurtain(!blackCurtainEnabled));
             }}

@@ -6,10 +6,8 @@ import { useCallback, useEffect } from "react";
 import { useCookies } from "react-cookie";
 import SignInPage from "../../pages/auth/signin";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import {
-  setCurtain,
-  toggleCurtain,
-} from "../../redux/slices/blackCurtainSlice";
+import { setCurtain } from "../../redux/slices/blackCurtainSlice";
+import { publish } from "../../utils/events";
 import AuthLayout from "./AuthLayout";
 import NoAuthLayout from "./NoAuthLayout";
 
@@ -24,20 +22,39 @@ const AuthWrapper: React.FunctionComponent<AuthWrapperProps> = ({
   const blackCurtainEnabled = useAppSelector(
     (state) => state.blackCurtain.active,
   );
-  const [cookies, setCookie] = useCookies(["x-ncfritz-dionysus-content-bc"]);
+  const [cookies, setCookie, removeCookie] = useCookies([
+    "x-ncfritz-dionysus-content-bc",
+    "x-dionysus-content-auth",
+  ]);
 
   const handleKeyPress = useCallback((event: KeyboardEvent) => {
     if (event.metaKey && event.shiftKey && event.key === "k") {
-      dispatch(toggleCurtain());
+      console.log("Deploying BlackCurtain");
+      dispatch(setCurtain(true));
+      removeCookie("x-dionysus-content-auth", { path: "/", secure: true });
+      publish("dionysus:lock");
     }
   }, []);
 
   useEffect(() => {
-    dispatch(setCurtain(cookies["x-ncfritz-dionysus-content-bc"] === "true"));
+    const parsedVale =
+      String(cookies["x-ncfritz-dionysus-content-bc"]) === "true";
+    console.log(
+      `Reading value from x-ncfritz-dionysus-content-bc[${cookies["x-ncfritz-dionysus-content-bc"]}]: ${parsedVale}`,
+    );
+    dispatch(setCurtain(parsedVale));
   }, []);
 
   useEffect(() => {
-    setCookie("x-ncfritz-dionysus-content-bc", blackCurtainEnabled, {});
+    if (blackCurtainEnabled !== undefined) {
+      console.log(
+        `Setting x-ncfritz-dionysus-content-bc=${blackCurtainEnabled}`,
+      );
+      setCookie("x-ncfritz-dionysus-content-bc", blackCurtainEnabled, {
+        path: "/",
+        secure: true,
+      });
+    }
   }, [blackCurtainEnabled]);
 
   useEffect(() => {

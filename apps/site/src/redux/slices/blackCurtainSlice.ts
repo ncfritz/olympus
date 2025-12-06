@@ -1,11 +1,11 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 interface BlackCurtainState {
-  active: boolean;
+  active: boolean | undefined;
 }
 
 const initialState: BlackCurtainState = {
-  active: true,
+  active: undefined,
 };
 
 export const blackCurtainSlice = createSlice({
