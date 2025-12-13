@@ -5,13 +5,31 @@ export interface PaginationParams {
   startPage: number;
   sortField: string;
   sortDirection: "asc" | "desc";
+  fallbackSort?: {
+    sortField: string;
+    sortDirection: "asc" | "desc";
+  };
 }
 
 const ARRAY_OPERATIONS: FilterType[] = [FilterType.IN, FilterType.NOT_IN];
 const JOINING_OPERATIONS: FilterType[] = [FilterType.AND, FilterType.OR];
 
 export const buildPaginationExpression = (params: PaginationParams): string => {
-  return `limit: ${params.pageSize}, offset: ${params.pageSize * params.startPage}, order_by: {${params.sortField}: ${params.sortDirection}}`;
+  const sortOptions = [`{${params.sortField}: ${params.sortDirection}}`];
+
+  if (
+    params.fallbackSort &&
+    params.fallbackSort.sortField !== params.sortField
+  ) {
+    sortOptions.push(
+      `{${params.fallbackSort.sortField}: ${params.fallbackSort.sortDirection}}`,
+    );
+  }
+
+  const sortExpression =
+    sortOptions.length > 0 ? `[${sortOptions.join(", ")}]` : sortOptions[0];
+
+  return `limit: ${params.pageSize}, offset: ${params.pageSize * params.startPage}, order_by: ${sortExpression}`;
 };
 
 export const buildFilterExpression = (
