@@ -63,8 +63,6 @@ export class ListContentAssetTagsForAssetController {
       }
     `;
 
-    console.log(assetId);
-
     const queryResponse = await this.graphQLClient.request<
       GraphQLListContentAssetTagsResponse,
       GraphQLListContentAssetTagsInput
