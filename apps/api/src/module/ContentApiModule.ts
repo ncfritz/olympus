@@ -1,4 +1,16 @@
 import { Module } from "@nestjs/common";
+import { CreatContentAssetChannelController } from "../controller/dionysus/content/channel/CreateContentAssetChannel";
+import { CreatContentAssetChannelCategoryController } from "../controller/dionysus/content/channel/CreateContentAssetChannelCategory";
+import { DeleteContentAssetChannelController } from "../controller/dionysus/content/channel/DeleteContentAssetChannel";
+import { DescribeContentAssetChannelController } from "../controller/dionysus/content/channel/DescribeContentAssetChannel";
+import { DescribeContentAssetChannelCategoryController } from "../controller/dionysus/content/channel/DescribeContentAssetChannelCategory";
+import { FavoriteContentAssetChannelController } from "../controller/dionysus/content/channel/FavoriteContentAssetChannel";
+import { ListContentAssetChannelCategoriesController } from "../controller/dionysus/content/channel/ListContentAssetChannelCategories";
+import { ListContentAssetChannelsController } from "../controller/dionysus/content/channel/ListContentAssetChannels";
+import { ListContentAssetChannelsForCategoryController } from "../controller/dionysus/content/channel/ListContentAssetChannelsForCategory";
+import { RefreshContentAssetChannelController } from "../controller/dionysus/content/channel/RefreshContentAssetChannel";
+import { UpdateContentAssetChannelController } from "../controller/dionysus/content/channel/UpdateContentAssetChannel";
+import { UpdateContentAssetChannelCategoryController } from "../controller/dionysus/content/channel/UpdateContentAssetChannelCategory";
 import { AddContentAssetTagToAssetController } from "../controller/dionysus/content/tags/AddContentAssetTagToAsset";
 import { CheckAuthController } from "../controller/dionysus/content/auth/CheckAuthController";
 import { CreateContentAssetController } from "../controller/dionysus/content/CreateContentAsset";
@@ -39,14 +51,22 @@ import { RabbitModule } from "./RabbitModule";
   controllers: [
     AddContentAssetTagToAssetController,
     GenerateAuthKeyController,
+    UpdateContentAssetChannelController,
+    UpdateContentAssetChannelCategoryController,
+    FavoriteContentAssetChannelController,
+    DescribeContentAssetChannelCategoryController,
     CheckAuthController,
     CreateContentAssetController,
+    CreatContentAssetChannelController,
+    CreatContentAssetChannelCategoryController,
     CreateContentAssetTagController,
     CreateContentIngestionWorkflowController,
     CreateContentIngestionWorkflowStepController,
     CreateContentJobController,
+    DeleteContentAssetChannelController,
     DeleteContentAssetTagFromAssetController,
     GetContentIngestionWorkflowStatisticsController,
+    DescribeContentAssetChannelController,
     DescribeContentIngestionWorkflowController,
     GetContentAssetController,
     GetContentAssetAggregateStatisticsController,
@@ -57,10 +77,14 @@ import { RabbitModule } from "./RabbitModule";
     GetUntaggedContentAssetController,
     ListAvailableContentAssetTagsController,
     ListContentAssetsController,
+    ListContentAssetChannelsController,
+    ListContentAssetChannelsForCategoryController,
+    ListContentAssetChannelCategoriesController,
     ListContentAssetTagsForAssetController,
     ListContentIngestionWorkflowsController,
     ListDuplicateContentAssetsController,
     ListSimilarContentAssetsController,
+    RefreshContentAssetChannelController,
     SetContentAssetRatingController,
     UpdateContentIngestionWorkflowController,
     UpdateContentIngestionWorkflowStepController,

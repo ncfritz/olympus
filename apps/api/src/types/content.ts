@@ -1,4 +1,5 @@
 import { ContentTagType } from "@ncfritz/olympus-model";
+import { Timestamped } from "./dionysus/metadata";
 
 export type GraphQlBaseContentAssetTag = {
   name: string;
@@ -37,4 +38,45 @@ export type GraphQLContentAssetBucketStatistic = {
   bucket: number;
   bucket_width: number;
   count: number;
+};
+
+export type GraphQlContentAssetChannelCategory = Timestamped & {
+  id: string;
+  name: string;
+  channels_aggregate: {
+    aggregate: {
+      count: number;
+    };
+  };
+};
+
+export type GraphQlFullContentAssetChannelCategory =
+  GraphQlContentAssetChannelCategory & {
+    channels: GraphQlContentAssetChannel[];
+  };
+
+export type GraphQlContentAssetChannelCacheEntry = {
+  assetId: string;
+  width: number;
+  height: number;
+  lastFetchedTime: string;
+};
+
+export type GraphQlContentAssetChannel = Timestamped & {
+  id: string;
+  name: string;
+  description: string;
+  filterInput: string;
+  encodedFilter: string;
+  ttl: number;
+  jitter: number;
+  favorite: boolean;
+  bcCompliant: boolean;
+  lastFetchedTime: string;
+  assetCount: number;
+  assetCache: GraphQlContentAssetChannelCacheEntry[];
+};
+
+export type GraphQlFullContentAssetChannel = GraphQlContentAssetChannel & {
+  category: GraphQlContentAssetChannelCategory;
 };
