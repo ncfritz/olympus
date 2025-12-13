@@ -74,7 +74,6 @@ export class ListProductionCompaniesController {
       const decodedOptions = JSON.parse(
         Buffer.from(filters, "base64").toString("utf-8"),
       );
-      console.log(decodedOptions);
 
       const filterOptions = [];
 
