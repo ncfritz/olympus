@@ -110,6 +110,8 @@ export class CreateNoteController {
           type: request.note.type,
           flagged: request.note.flagged,
           value: request.note.value,
+          summary: request.note.summary,
+          title: request.note.title,
           associations: request.note.associations,
         },
       );
