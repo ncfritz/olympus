@@ -37,29 +37,29 @@
     "lintfix": "eslint ./src --fix"
   },
   "dependencies": {
-    "axios": "^1.11.0",
-    "debug": "^4.4.1",
+    "axios": "^1.13.2",
+    "debug": "^4.4.3",
     "tslib": "^2.8.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.29.0",
-    "@hey-api/openapi-ts": "^0.80.1",
+    "@eslint/js": "^9.39.2",
+    "@hey-api/openapi-ts": "^0.89.0",
     "@ncfritz/olympus-api": "latest",
     "@semantic-release/git": "^10.0.1",
-    "@typescript-eslint/eslint-plugin": "^8.22.0",
-    "@typescript-eslint/parser": "^8.22.0",
+    "@typescript-eslint/eslint-plugin": "^8.49.0",
+    "@typescript-eslint/parser": "^8.49.0",
     "commitizen": "^4.3.1",
-    "conventional-changelog-conventionalcommits": "^9.0.0",
+    "conventional-changelog-conventionalcommits": "^9.1.0",
     "cz-conventional-changelog": "^3.3.0",
-    "eslint": "^9.19.0",
-    "eslint-config-prettier": "^10.0.1",
-    "eslint-plugin-prettier": "^5.2.3",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "husky": "^9.1.7",
     "is-ci": "^4.1.0",
-    "rimraf": "^6.0.1",
-    "semantic-release": "^24.2.5",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.34.1"
+    "rimraf": "^6.1.2",
+    "semantic-release": "^25.0.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.49.0"
   },
   "config": {
     "commitizen": {
