@@ -55,12 +55,6 @@ export class ListCalendarItemsController {
   ): Promise<void> {
     const startTime = moment(start);
     const endTime = moment(startTime).add({ days: days });
-
-    console.log({
-      start: startTime.toISOString(),
-      end: endTime.toISOString(),
-    });
-
     //               {
     //                 _and: { start_time: { _lte: $start }, end_time: { _lte: $end } }
     //               },
