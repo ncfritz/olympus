@@ -35,7 +35,10 @@ import {
   buildPaginationExpression,
   parseFilterDefinition,
 } from "../../../utils/filterUtil";
-import { BaseAuthenticatedContentController, BC_FILTER } from "./auth/BaseAuthenticatedContentController";
+import {
+  BaseAuthenticatedContentController,
+  BC_FILTER,
+} from "./auth/BaseAuthenticatedContentController";
 
 type GraphQlListContentAssetsResponse = {
   dionysus_content_assets: GraphQLContentAsset[];
@@ -110,6 +113,10 @@ export class ListContentAssetsController extends BaseAuthenticatedContentControl
       startPage: startPage,
       sortDirection: sortDirection,
       sortField: sortField,
+      fallbackSort: {
+        sortField: "createdTime",
+        sortDirection: SortDirection.DESC,
+      },
     });
 
     const fetchRequest = gql`
