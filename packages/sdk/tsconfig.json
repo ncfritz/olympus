@@ -26,6 +26,7 @@
     "isolatedModules": true,
     "declaration": true,
     "downlevelIteration": true,
+    "strictFunctionTypes": true,
   },
   "exclude": [
     "node_modules",
