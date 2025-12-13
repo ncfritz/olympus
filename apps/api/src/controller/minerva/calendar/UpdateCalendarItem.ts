@@ -65,8 +65,6 @@ export class UpdateCalendarItemController {
     @Body() request: UpdateCalendarItemRequest,
     @Res() response: Response,
   ): Promise<void> {
-    console.log(request);
-
     if (Object.keys(request.item).length === 0) {
       response.status(HttpStatus.NOT_MODIFIED).end();
     }
