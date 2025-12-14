@@ -24,7 +24,8 @@ class NotesApi {
     return {
       headers: {
         ...existing,
-        "x-ncfritz-tz": Intl.DateTimeFormat().resolvedOptions().timeZone,      },
+        "x-ncfritz-tz": Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
     };
   }
 
