@@ -81,7 +81,7 @@ const SimilarContentAssetScroller: React.FunctionComponent<
   }) {
     return (
       <Card
-        hoverable={true}
+        hoverable={false}
         style={{
           width: "230px",
           marginRight: 16,
