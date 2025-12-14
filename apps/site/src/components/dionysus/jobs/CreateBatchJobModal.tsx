@@ -50,14 +50,14 @@ const CreateBatchJobModal: React.FunctionComponent<
   const limitWatch = watch("limit");
 
   const onSubmit: SubmitHandler<FormInput> = async (data) => {
-    await batchJobApi.createBatchJob(
-      data.type,
-      data.publish,
-      data.offset,
-      data.limit ? data.maxRecords : undefined,
-    );
-
     try {
+      await batchJobApi.createBatchJob(
+        data.type,
+        data.publish,
+        data.offset,
+        data.limit ? data.maxRecords : undefined,
+      );
+
       publish(PUBLISH_EVENT, {
         type: "success",
         message: "Job created",
