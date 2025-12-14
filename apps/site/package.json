@@ -129,5 +129,8 @@
   },
   "msw": {
     "workerDirectory": "public"
+  },
+  "dependencies": {
+    "react-infinite-scroll-component": "^6.1.1"
   }
 }
