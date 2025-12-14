@@ -33,12 +33,15 @@ const LoadingWrapper: React.FunctionComponent<LoadingWrapperProps> = ({
       content = <ErrorBlock error={error} includeStack={showErrorDetails} />;
     }
   } else {
-    console.log(`I got here: ${loading}/${error}`);
     content = children;
   }
 
   return (
-    <Space style={{ width: "100%", ...style }} direction={"vertical"}>
+    <Space
+      style={{ width: "100%", ...style }}
+      styles={{ item: { height: "inherit" } }}
+      direction={"vertical"}
+    >
       {content}
     </Space>
   );
