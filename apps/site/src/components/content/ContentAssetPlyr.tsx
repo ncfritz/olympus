@@ -9,19 +9,26 @@ import Plyr, {
   type PlyrOptions,
   type PlyrSource,
 } from "plyr-react";
-import React, { useMemo, useRef, useState } from "react";
+import React, { type CSSProperties, useMemo, useRef, useState } from "react";
 import contentApi from "../../api/contentApi";
 import ContentAssetThumbnailGrid from "./ContentAssetThumbnailGrid";
 import { calculateAssetDimensions } from "./util";
 
 export interface ContentAssetPlyrProps {
   asset: ContentAsset;
-  ratioAdjustment: number;
+  showWarnings?: boolean;
+  style?: CSSProperties;
+  wrapperStyle?: CSSProperties;
 }
 
 export const ContentAssetPlyr: React.FunctionComponent<
   ContentAssetPlyrProps
-> = ({ asset, ratioAdjustment }: ContentAssetPlyrProps) => {
+> = ({
+  asset,
+  style,
+  wrapperStyle,
+  showWarnings = true,
+}: ContentAssetPlyrProps) => {
   const [hlsEnabled, setHlsEnabled] = useState(false);
   const [thumbsGenerated, setThumbnailsGenerated] = useState(false);
   const [videoWidth, setVideoWidth] = useState(asset.width);
@@ -115,29 +122,30 @@ export const ContentAssetPlyr: React.FunctionComponent<
       direction={"vertical"}
       style={{
         display: "block",
-        width: "calc(100vw - 200px)",
+        ...style,
       }}
     >
       <Row
         style={{
-          background: "#142737",
+          ...wrapperStyle,
           display: "flex",
         }}
       >
         <Space
           style={{
-            width: videoWidth + 32,
+            width: videoWidth,
             alignItems: "start",
+            marginRight: 16,
+            borderRadius: 6,
           }}
         >
           <Space
             size={0}
             style={{
-              margin: 16,
-              marginRight: 8,
               backgroundColor: "#142737",
               display: "flex",
               justifyContent: "center",
+              borderRadius: 6,
             }}
           >
             <div
@@ -151,12 +159,13 @@ export const ContentAssetPlyr: React.FunctionComponent<
             </div>
           </Space>
         </Space>
-        <Space direction={"vertical"} style={{ marginTop: 16 }}>
+        <Space direction={"vertical"}>
           <ContentAssetThumbnailGrid
             asset={asset}
             height={thumbnailHeight}
-            seek={(seconds: number) => {
-              console.log(playerRef.current?.plyr);
+            onSelect={(i: number) => {
+              const seconds = Math.ceil(((i / 16) * asset.durationMs) / 1000);
+
               if (playerRef.current?.plyr) {
                 playerRef.current.plyr.currentTime = seconds;
               }
@@ -164,7 +173,7 @@ export const ContentAssetPlyr: React.FunctionComponent<
           />
         </Space>
       </Row>
-      {actionRequired && (
+      {actionRequired && showWarnings && (
         <Row style={{ padding: 16, background: "#ffcc33" }}>
           <Space size={16} direction={"horizontal"}>
             <Space

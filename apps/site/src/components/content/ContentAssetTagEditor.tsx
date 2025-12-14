@@ -139,7 +139,7 @@ const ContentAssetTagEditor: React.FunctionComponent<
             <ContentAssetTagElement
               key={tag.id}
               tag={tag}
-              onRemove={removeTag}
+              onRemoveTag={removeTag}
             />,
           );
           break;
@@ -148,7 +148,7 @@ const ContentAssetTagEditor: React.FunctionComponent<
             <ContentAssetTagElement
               key={tag.id}
               tag={tag}
-              onRemove={removeTag}
+              onRemoveTag={removeTag}
             />,
           );
           break;
@@ -157,7 +157,7 @@ const ContentAssetTagEditor: React.FunctionComponent<
             <ContentAssetTagElement
               key={tag.id}
               tag={tag}
-              onRemove={removeTag}
+              onRemoveTag={removeTag}
             />,
           );
           break;
@@ -166,7 +166,7 @@ const ContentAssetTagEditor: React.FunctionComponent<
             <ContentAssetTagElement
               key={tag.id}
               tag={tag}
-              onRemove={removeTag}
+              onRemoveTag={removeTag}
             />,
           );
           break;
@@ -175,7 +175,7 @@ const ContentAssetTagEditor: React.FunctionComponent<
             <ContentAssetTagElement
               key={tag.id}
               tag={tag}
-              onRemove={removeTag}
+              onRemoveTag={removeTag}
             />,
           );
           break;

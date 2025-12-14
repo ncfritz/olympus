@@ -1,11 +1,17 @@
+import type { ContentAsset } from "@ncfritz/olympus-sdk/dionysus";
 import { Image, Space, Spin } from "antd";
 import { v4 as uuidv4 } from "uuid";
+import ContentAssetFixedRatioImage from "./ContentAssetFixedRatioImage";
 
 interface ContentAssetThumbnailGridProps {
-  asset: any;
+  asset: ContentAsset;
   height?: number;
-  seek?: (seconds: number) => void;
   onSelect?: (index: number) => void;
+  rows?: 2 | 4;
+  ratio?: number;
+  forceMax?: boolean;
+  disablePreview?: boolean;
+  imageCount?: 4 | 8 | 16;
 }
 
 const ContentAssetThumbnailGrid: React.FunctionComponent<
@@ -13,39 +19,52 @@ const ContentAssetThumbnailGrid: React.FunctionComponent<
 > = ({
   asset,
   height = 125,
-  seek,
   onSelect,
+  rows,
+  ratio = 1,
+  imageCount = 16,
+  disablePreview = false,
+  forceMax = false,
 }: ContentAssetThumbnailGridProps) => {
   const aspectRatio = asset.width / asset.height;
-  const imageCount = aspectRatio > 1 ? 4 : 8;
+  let finalImageCount = aspectRatio > 1 ? 4 : 8;
 
-  const generateImageRow = (row: number, count: number) => {
+  if (rows) {
+    finalImageCount = imageCount / rows;
+  }
+
+  const generateImageRow = (
+    row: number,
+    count: number,
+    increment: number = 1,
+  ) => {
     const images = [];
 
     for (let i = row * count + 1; i <= (row + 1) * count; i++) {
+      const width = ratio * height;
+
       images.push(
-        <Image
-          key={`img-${asset.id}-${i}`}
-          height={height}
-          fallback={"/placeholder.png"}
-          src={`https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/thumbnails/${i}.png`}
-          placeholder={<Spin spinning={true} />}
-          preview={
-            seek || onSelect
-              ? false
-              : {
-                  src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/screenshots/${i}.png`,
-                }
-          }
+        <div
+          key={`catg-img-${i}`}
           onClick={() => {
-            if (seek) {
-              seek(Math.floor(((i / 16) * asset.durationMs) / 1000));
-            }
             if (onSelect) {
               onSelect(i);
             }
           }}
-        />,
+          style={{ cursor: onSelect ? "pointer" : "inherit" }}
+        >
+          <ContentAssetFixedRatioImage
+            assetId={asset.id}
+            previewIndex={i * increment}
+            width={asset.width}
+            height={asset.height}
+            maxWidth={width}
+            maxHeight={height}
+            allowPreview={!(disablePreview || onSelect)}
+            forceMax={forceMax}
+            style={{ borderRadius: 4 }}
+          />
+        </div>,
       );
     }
 
@@ -57,9 +76,14 @@ const ContentAssetThumbnailGrid: React.FunctionComponent<
   };
 
   const content = [];
+  const increment = 16 / imageCount;
 
-  for (let i = 0, total = 0; total < 16; i++, total += imageCount) {
-    content.push(generateImageRow(i, imageCount));
+  for (
+    let i = 0, total = 0;
+    total < imageCount;
+    i++, total += finalImageCount
+  ) {
+    content.push(generateImageRow(i, finalImageCount, increment));
   }
 
   return (

@@ -1,8 +1,13 @@
 import { Col, QRCode, Row, Space, Typography } from "antd";
+import dynamic from "next/dynamic";
 import type { ContentAsset } from "../../pages/dionysus/content/assets";
-import ContentAssetPreviewPlayer from "./ContentAssetPreviewPlayer";
 import ContentAssetTagEditor from "./ContentAssetTagEditor";
 import ContentAssetThumbnailGrid from "./ContentAssetThumbnailGrid";
+
+const ContentAssetPreviewPlayer = dynamic(
+  () => import("../../components/content/ContentAssetPreviewPlayer"),
+  { ssr: false },
+);
 
 export interface ContentAssetExpanderRowProps {
   record: ContentAsset;
@@ -86,7 +91,7 @@ const ContentAssetExpanderRow: React.FunctionComponent<
           >
             <Typography.Text strong={true}>Thumbnails</Typography.Text>
           </Row>
-          <ContentAssetThumbnailGrid asset={record} />
+          <ContentAssetThumbnailGrid asset={record} ratio={1} rows={4} forceMax={true} />
         </Col>
         <Col
           span={3}
@@ -102,7 +107,12 @@ const ContentAssetExpanderRow: React.FunctionComponent<
             <Typography.Text strong={true}>Preview</Typography.Text>
           </Row>
           <Row>
-            <ContentAssetPreviewPlayer assetId={record.id} type={"sample"} />
+            <ContentAssetPreviewPlayer
+              asset={record}
+              type={"sample"}
+              maxWidth={250}
+              maxHeight={243}
+            />
           </Row>
           <Row
             style={{
@@ -112,7 +122,12 @@ const ContentAssetExpanderRow: React.FunctionComponent<
             <Typography.Text strong={true}>Timelapse</Typography.Text>
           </Row>
           <Row>
-            <ContentAssetPreviewPlayer assetId={record.id} type={"timelapse"} />
+            <ContentAssetPreviewPlayer
+              asset={record}
+              type={"timelapse"}
+              maxWidth={250}
+              maxHeight={243}
+            />
           </Row>
         </Col>
         <Col

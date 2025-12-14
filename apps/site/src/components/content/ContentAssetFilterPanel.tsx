@@ -15,11 +15,9 @@ import React, { useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";
 import contentApi from "../../api/contentApi";
 import { useFetch } from "../../hooks/useFetch";
-import ContentAssetTagSelector, {
-  type TagRenderer,
-} from "./ContentAssetTagSelector";
-import ContentTagCheckbox from "./ContentTagCheckbox";
-import { getTagColor } from "./util";
+import ContentAssetTagSelector from "./ContentAssetTagSelector";
+import { CheckboxTagRenderer } from "./ContentTagCheckbox";
+import { RESOLUTION_MAP } from "./util";
 
 export interface ContentAssetFilterPanelProps {
   togglePanel: () => void;
@@ -30,32 +28,6 @@ export interface ContentAssetFilterPanelProps {
   onDurationChange: (value: number[]) => void;
   onResolutionChange: (value: number[]) => void;
 }
-
-const CheckboxTagRenderer: TagRenderer = (
-  tag: ContentAssetTag,
-  onSelectTag: (tag: ContentAssetTag) => Promise<void>,
-  onRemoveTag: (tag: ContentAssetTag) => Promise<void>,
-) => {
-  return (
-    <ContentTagCheckbox
-      key={tag.id}
-      tag={tag}
-      color={getTagColor(tag)}
-      onSelectTag={onSelectTag}
-      onRemoveTag={onRemoveTag}
-    />
-  );
-};
-
-const RESOLUTION_MAP: Record<number, number> = {
-  0: 0,
-  1: 480,
-  2: 720,
-  3: 1080,
-  4: 1440,
-  5: 2160,
-  6: 4320,
-};
 
 const ContentAssetFilterPanel: React.FunctionComponent<
   ContentAssetFilterPanelProps
@@ -269,7 +241,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
                 type={"type"}
                 tags={contentTags["type"]}
                 onSelectTag={onSelectTag}
-                onRemove={onRemoveTag}
+                onRemoveTag={onRemoveTag}
                 allowFilter={false}
                 width={"100%"}
                 tagRenderer={CheckboxTagRenderer}
@@ -296,7 +268,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
                 type={"source"}
                 tags={contentTags["source"]}
                 onSelectTag={onSelectTag}
-                onRemove={onRemoveTag}
+                onRemoveTag={onRemoveTag}
                 allowFilter={true}
                 width={"100%"}
                 tagRenderer={CheckboxTagRenderer}
@@ -323,7 +295,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
                 type={"user"}
                 tags={contentTags["user"]}
                 onSelectTag={onSelectTag}
-                onRemove={onRemoveTag}
+                onRemoveTag={onRemoveTag}
                 allowFilter={true}
                 width={"100%"}
                 tagRenderer={CheckboxTagRenderer}
@@ -350,7 +322,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
                 type={"model"}
                 tags={contentTags["model"]}
                 onSelectTag={onSelectTag}
-                onRemove={onRemoveTag}
+                onRemoveTag={onRemoveTag}
                 allowFilter={true}
                 width={"100%"}
                 tagRenderer={CheckboxTagRenderer}
@@ -374,7 +346,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
                 type={"system"}
                 tags={contentTags["system"]}
                 onSelectTag={onSelectTag}
-                onRemove={onRemoveTag}
+                onRemoveTag={onRemoveTag}
                 allowFilter={true}
                 width={"100%"}
                 tagRenderer={CheckboxTagRenderer}

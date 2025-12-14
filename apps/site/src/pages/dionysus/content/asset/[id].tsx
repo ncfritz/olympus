@@ -21,7 +21,7 @@ import Timestamp from "../../../../components/data/Timestamp";
 import { useAppSelector } from "../../../../redux/hooks";
 import "react-horizontal-scrolling-menu/dist/styles.css";
 
-const PlyrWrapper = dynamic(
+const ContentAssetPlyr = dynamic(
   () => import("../../../../components/content/./ContentAssetPlyr"),
   { ssr: false },
 );
@@ -118,7 +118,16 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
 
     contentOffset = contentOffset + Math.floor(ratioAdjustment * asset.height);
     playerContent = (
-      <PlyrWrapper asset={asset} ratioAdjustment={ratioAdjustment} />
+      <ContentAssetPlyr
+        asset={asset}
+        style={{ width: "calc(100vw - 200px)", background: "#142737" }}
+        wrapperStyle={{
+          paddingTop: 16,
+          paddingRight: 16,
+          paddingBottom: 32,
+          paddingLeft: 32,
+        }}
+      />
     );
 
     content = (
@@ -137,7 +146,9 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
             <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
               <Typography.Text strong={true}>Info</Typography.Text>
               <Row>
-                <Col span={6}>Asset Size:</Col>
+                <Col span={6}>
+                  <Typography.Text strong={true}>Asset Size:</Typography.Text>
+                </Col>
                 <Col span={16}>
                   <ContentAssetSizeDisplay asset={asset} />
                 </Col>

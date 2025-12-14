@@ -99,7 +99,7 @@ const ContentAssetsPage: React.FunctionComponent = () => {
     watch: [assetsPage, assetsSort, blackCurtainEnabled, filters],
     fetchFunction: async () => {
       const response = (
-        await contentApi.listAssets(assetsPage, assetsSort, filters)
+        await contentApi.listAssets(assetsPage, 30, assetsSort, filters)
       ).data;
       setAssetsCount(response.count);
       return response.assets;
@@ -411,7 +411,17 @@ const ContentAssetsPage: React.FunctionComponent = () => {
           },
           {
             title: (
-              <Link href={"/content"}>
+              <Link href={"/dionysus"}>
+                <Space size={4}>
+                  <VideoCameraOutlined />
+                  <span>Dionysus</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus/content"}>
                 <Space size={4}>
                   <ExperimentOutlined />
                   <span>Content</span>

@@ -1,21 +1,52 @@
 import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
 import { Checkbox, Space, Typography } from "antd";
 import { useState } from "react";
+import type {
+  TagRenderedOptionsWithState,
+  TagRenderer,
+} from "./ContentAssetTagSelector";
+import { getTagColor } from "./util";
 
 export interface ContentTagCheckboxProps {
-  tag: any;
+  tag: ContentAssetTag;
   color: string;
-  onSelectTag: (tag: ContentAssetTag) => Promise<void>;
-  onRemoveTag: (tag: ContentAssetTag) => Promise<void>;
+  onSelectTag?: (tag: ContentAssetTag) => Promise<void>;
+  onRemoveTag?: (tag: ContentAssetTag) => Promise<void>;
+  initialState?: boolean;
+  renderCheckbox?: boolean;
 }
+
+export interface CheckboxTagRendererOptions extends TagRenderedOptionsWithState {
+  renderCheckbox?: boolean;
+  initialState?: boolean;
+}
+
+export const CheckboxTagRenderer: TagRenderer<CheckboxTagRendererOptions> = (
+  tag,
+  options,
+) => {
+  return (
+    <ContentTagCheckbox
+      key={tag.id}
+      tag={tag}
+      color={getTagColor(tag)}
+      onSelectTag={options?.onSelectTag}
+      onRemoveTag={options?.onRemoveTag}
+      initialState={options?.initialState}
+      renderCheckbox={true}
+    />
+  );
+};
 
 const ContentTagCheckbox: React.FunctionComponent<ContentTagCheckboxProps> = ({
   tag,
   color,
   onSelectTag,
   onRemoveTag,
+  renderCheckbox = true,
+  initialState = false,
 }: ContentTagCheckboxProps) => {
-  const [checked, setChecked] = useState(false);
+  const [checked, setChecked] = useState(initialState);
 
   const onChange = async () => {
     if (onSelectTag && !checked) {
@@ -43,7 +74,7 @@ const ContentTagCheckbox: React.FunctionComponent<ContentTagCheckboxProps> = ({
       }}
       onClick={onChange}
     >
-      <Checkbox onClick={onChange} checked={checked} />
+      {renderCheckbox && <Checkbox onClick={onChange} checked={checked} />}
       <Typography.Text
         style={{ fontSize: "11px", fontWeight: checked ? 700 : "inherit" }}
       >

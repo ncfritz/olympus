@@ -1,9 +1,11 @@
 import {
   ExperimentOutlined,
+  ExportOutlined,
   HomeOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
 import type {
+  ContentAsset,
   ContentAssetTag,
   ContentTagType,
 } from "@ncfritz/olympus-sdk/dionysus";
@@ -20,19 +22,25 @@ import {
   Typography,
 } from "antd";
 import { Content } from "antd/lib/layout/layout";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import prettyMilliseconds from "pretty-ms";
 import React, { type ReactNode, useEffect, useState } from "react";
 import contentApi from "../../../api/contentApi";
-import ContentAssetPreviewPlayer from "../../../components/content/ContentAssetPreviewPlayer";
 import ContentAssetRating from "../../../components/content/ContentAssetRating";
 import ContentAssetSizeDisplay from "../../../components/content/ContentAssetSizeDisplay";
-import ContentAssetTagSelector from "../../../components/content/ContentAssetTagSelector";
+import ContentAssetTagInput from "../../../components/content/ContentAssetTagInput";
 import ContentAssetThumbnailGrid from "../../../components/content/ContentAssetThumbnailGrid";
 import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
+import Timestamp from "../../../components/data/Timestamp";
 import { useAppSelector } from "../../../redux/hooks";
 import type { NotificationType } from "../../../utils/notifications";
+
+const ContentAssetPreviewPlayer = dynamic(
+  () => import("../../../components/content/ContentAssetPreviewPlayer"),
+  { ssr: false },
+);
 
 const ContentProcessingPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -42,7 +50,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
     (state) => state.blackCurtain.active,
   );
 
-  const [asset, setAsset] = useState<any>();
+  const [asset, setAsset] = useState<ContentAsset>();
   const [untaggedCount, setUntaggedCount] = useState(0);
   const [taggedCount, setTaggedCount] = useState(0);
   const [assetLoading, setAssetLoading] = useState<any>(true);
@@ -52,7 +60,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
   const [tagsError, setTagsError] = useState<any>();
   const [processedTags, setProcessedTags] = useState<any>(undefined);
   const [currentThumbIndex, setCurrentThumbIndex] = useState(1);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(1);
   const [selectedTags, setSelectedTags] = useState<ContentAssetTag[]>([]);
 
   const openNotificationWithIcon = (
@@ -108,23 +116,15 @@ const ContentProcessingPage: React.FunctionComponent = () => {
 
   const [progress, setProgress] = useState(0);
   const [processing, setProcessing] = useState(false);
-  const [progressText, setProgressText] = useState<string[] | undefined>(
-    undefined,
-  );
+  const [progressText, setProgressText] = useState<string>("");
 
   const appendProgress = (text: string) => {
-    const newProgress = progressText ? [...progressText] : [];
-    newProgress.push(`${text}\n`);
-
-    console.log(progressText);
-    console.log(newProgress);
-
-    setProgressText(newProgress);
+    setProgressText(`${progressText}\n${text}`);
   };
 
   const processAsset = async () => {
     setProcessing(true);
-    setProgressText(["Initializing...\n"]);
+    setProgressText("Initializing...");
 
     for (let i = 0; i < selectedTags.length; i++) {
       const tag = selectedTags[i];
@@ -133,7 +133,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
         `Applying tag [Type: ${tag.type}]: ${tag.name} to asset...`,
       );
 
-      await contentApi.addTagToAsset(asset.id, tag.type, tag.name);
+      await contentApi.addTagToAsset(asset!.id, tag.type, tag.name);
 
       setProgress((i + 1 / selectedTags.length) * 100);
     }
@@ -146,7 +146,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
       await fetchNextAsset();
       await fetchTags();
     })();
-  }, [blackCurtainEnabled]);
+  }, []);
 
   useEffect(() => {
     const sortedTags: Record<ContentTagType, ContentAssetTag[]> = {
@@ -208,7 +208,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
       videoWidth = videoHeight * (1 / aspectRatio);
     }
 
-    contentOffset = 4 * height + 24 + 64 + 96;
+    contentOffset = rows * height + 24 + 64 + 96;
 
     playerContent = (
       <Space
@@ -250,20 +250,24 @@ const ContentProcessingPage: React.FunctionComponent = () => {
                   width={imgWidth}
                   height={imgHeight}
                   src={`https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/screenshots/${currentThumbIndex}.png`}
+                  style={{ borderRadius: 6 }}
                 />
               </Space>
-              <Space direction={videoOrientation}>
+              <Space
+                direction={videoOrientation}
+                styles={{ item: { lineHeight: 0 } }}
+              >
                 <ContentAssetPreviewPlayer
-                  assetId={asset.id}
+                  asset={asset}
                   type={"sample"}
-                  height={videoHeight}
-                  width={videoWidth}
+                  maxHeight={videoHeight}
+                  maxWidth={videoWidth}
                 />
                 <ContentAssetPreviewPlayer
-                  assetId={asset.id}
+                  asset={asset}
                   type={"timelapse"}
-                  height={videoHeight}
-                  width={videoWidth}
+                  maxHeight={videoHeight}
+                  maxWidth={videoWidth}
                 />
               </Space>
             </Space>
@@ -311,8 +315,8 @@ const ContentProcessingPage: React.FunctionComponent = () => {
               <Space direction={"horizontal"}>
                 <Typography.Text strong={true}>Duration:</Typography.Text>
                 <Typography.Text>
-                  {asset.duration
-                    ? prettyMilliseconds(asset.duration)
+                  {asset.durationMs
+                    ? prettyMilliseconds(asset.durationMs)
                     : "Unknown"}
                 </Typography.Text>
               </Space>
@@ -320,59 +324,46 @@ const ContentProcessingPage: React.FunctionComponent = () => {
                 <Typography.Text strong={true}>Rating:</Typography.Text>
                 <ContentAssetRating asset={asset} />
               </Space>
+              <Space direction={"horizontal"}>
+                <Typography.Text strong={true}>Created:</Typography.Text>
+                <Timestamp
+                  direction={"horizontal"}
+                  value={asset.createdTime}
+                  showTime={true}
+                />
+              </Space>
             </Space>
+            <Button
+              style={{ marginTop: 16 }}
+              size={"middle"}
+              color={"cyan"}
+              variant={"solid"}
+              iconPosition={"end"}
+              icon={<ExportOutlined />}
+              block={true}
+              href={`/dionysus/content/asset/${asset.id}`}
+              target={"_dionysus_asset"}
+            >
+              Asset Details Page
+            </Button>
           </Space>
         </Space>
       </Space>
     );
 
     const tagStepContent = (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          rowGap: 6,
-          height: "100%",
-        }}
+      <Space
+        direction={"horizontal"}
+        style={{ width: "100%", marginTop: 16, borderTop: "1px solid #efefef" }}
+        styles={{ item: { height: `calc(100vh - ${contentOffset + 178}px)` } }}
       >
-        {Object.keys(processedTags).map((key) => {
-          return (
-            <ContentAssetTagSelector
-              key={`cats-${key}`}
-              title={key.charAt(0).toUpperCase() + key.slice(1)}
-              type={key as ContentTagType}
-              tags={processedTags[key]}
-              allowAdd={true}
-              allowFilter={true}
-              onSelectTag={async (tag) => {
-                if (!selectedTags.includes(tag)) {
-                  setSelectedTags([...selectedTags, tag]);
-                }
-              }}
-              afterAdd={async (tag) => {
-                await fetchTags(true);
-              }}
-            />
-          );
-        })}
-        <div style={{ paddingLeft: 32 }}>
-          <ContentAssetTagSelector
-            title={"Selected"}
-            type={"selected"}
-            tags={selectedTags}
-            onRemove={async (tag) => {
-              setSelectedTags(
-                selectedTags.filter((current) => {
-                  return tag.id !== current.id;
-                }),
-              );
-            }}
-          />
-        </div>
-      </div>
+        <ContentAssetTagInput
+          onChange={(tags) => {
+            setSelectedTags(tags);
+          }}
+        />
+      </Space>
     );
-
-    console.log(progressText);
 
     const processContent = (
       <div
@@ -404,6 +395,11 @@ const ContentProcessingPage: React.FunctionComponent = () => {
 
     const steps = [
       {
+        key: "Load",
+        title: "Load Asset",
+        content: <></>,
+      },
+      {
         key: "Tag",
         title: "Tag Asset",
         content: tagStepContent,
@@ -417,8 +413,14 @@ const ContentProcessingPage: React.FunctionComponent = () => {
 
     content = (
       <>
-        <div style={{ padding: 16, width: "100%", overflow: "hidden" }}>
-          <Steps current={currentStep} items={steps} />
+        <div
+          style={{
+            padding: 16,
+            width: "100%",
+            overflow: "hidden",
+          }}
+        >
+          <Steps current={currentStep} items={steps} progressDot={true} />
           {steps[currentStep].content}
         </div>
         <div
@@ -454,8 +456,8 @@ const ContentProcessingPage: React.FunctionComponent = () => {
                 onClick={async () => {
                   setProcessing(false);
                   setProgress(0);
-                  setProgressText(undefined);
-                  setCurrentStep(0);
+                  setProgressText("");
+                  setCurrentStep(1);
                   setCurrentThumbIndex(1);
                   setSelectedTags([]);
 

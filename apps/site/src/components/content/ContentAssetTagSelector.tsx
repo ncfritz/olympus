@@ -4,54 +4,63 @@ import type {
   ContentAssetTag,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Button, Empty, Input, Space, Typography } from "antd";
-import { useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 import contentApi from "../../api/contentApi";
-import ContentAssetTagElement from "./ContentAssetTagElement";
+import {
+  SelectableTagRenderer,
+  type SelectableTagRenderOptions,
+} from "./SelectableContentTag";
 
-export type TagRenderer = (
+export interface TagRendererOptions {
+  onSelectTag?: (tag: ContentAssetTag) => Promise<void>;
+  onRemoveTag?: (tag: ContentAssetTag) => Promise<void>;
+  allowClear?: boolean;
+}
+
+export type DefaultTagRendererOptions = TagRendererOptions;
+
+export interface TagRenderedOptionsWithState extends TagRendererOptions {
+  checked?: boolean;
+}
+
+export type TagRenderer<T extends TagRendererOptions> = (
   tag: ContentAssetTag,
-  onSelectTag?: (tag: ContentAssetTag) => Promise<void>,
-  onRemove?: (tag: ContentAssetTag) => Promise<void>,
+  options?: T,
 ) => React.ReactNode;
 
-export interface ContentAssetTagSelectorProps {
+export interface ContentAssetTagSelectorProps<T extends TagRendererOptions> {
   title?: string;
   type: ContentTagType | "selected";
   tags: ContentAssetTag[];
   onSelectTag?: (tag: ContentAssetTag) => Promise<void>;
-  onRemove?: (tag: ContentAssetTag) => Promise<void>;
+  onRemoveTag?: (tag: ContentAssetTag) => Promise<void>;
   allowFilter?: boolean;
   allowAdd?: boolean;
   afterAdd?: (tag: ContentAssetTag) => Promise<void>;
   width?: number | string;
-  tagRenderer?: TagRenderer;
+  tagRenderer?: TagRenderer<T>;
+  titleStyle?: CSSProperties;
+  initialTags?: string[];
+  allowClear?: boolean;
 }
 
-const DefaultTagRenderer: TagRenderer = (tag, onSelectTag, onRemove) => {
-  return (
-    <ContentAssetTagElement
-      key={tag.id}
-      tag={tag}
-      onSelectTag={onSelectTag}
-      onRemove={onRemove}
-    />
-  );
-};
-
 const ContentAssetTagSelector: React.FunctionComponent<
-  ContentAssetTagSelectorProps
+  ContentAssetTagSelectorProps<SelectableTagRenderOptions>
 > = ({
   title,
   type,
   tags,
   onSelectTag,
-  onRemove,
+  onRemoveTag,
   allowAdd = false,
   allowFilter = false,
   afterAdd,
   width = 200,
-  tagRenderer = DefaultTagRenderer,
-}: ContentAssetTagSelectorProps) => {
+  tagRenderer = SelectableTagRenderer,
+  titleStyle,
+  initialTags,
+  allowClear = false,
+}: ContentAssetTagSelectorProps<TagRenderedOptionsWithState>) => {
   const [filter, setFilter] = useState<string | undefined>(undefined);
   const [filteredTags, setFilteredTags] = useState(tags);
 
@@ -105,7 +114,7 @@ const ContentAssetTagSelector: React.FunctionComponent<
             }}
           >
             {allowFilter && (
-              <Space.Compact style={{ width: "100%" }}>
+              <Space.Compact style={{ width: "100%", paddingRight: 4 }}>
                 <Input
                   size={"small"}
                   value={filter}
@@ -145,10 +154,16 @@ const ContentAssetTagSelector: React.FunctionComponent<
             rowGap: 6,
             overflowY: "scroll",
             height: "100%",
+            paddingBottom: 8,
           }}
         >
           {filteredTags.map((tag) => {
-            return tagRenderer(tag, onSelectTag, onRemove);
+            return tagRenderer(tag, {
+              onSelectTag: onSelectTag,
+              onRemoveTag: onRemoveTag,
+              checked: initialTags?.includes(tag.id),
+              allowClear: allowClear,
+            });
           })}
         </div>
       </>
@@ -157,7 +172,14 @@ const ContentAssetTagSelector: React.FunctionComponent<
 
   return (
     <div style={{ display: "flex", flexDirection: "column", width: width }}>
-      {title && <Typography.Title level={5}>{title}</Typography.Title>}
+      {title && (
+        <Typography.Title
+          level={5}
+          style={{ marginBottom: 0, paddingTop: 16, ...titleStyle }}
+        >
+          {title}
+        </Typography.Title>
+      )}
       {content}
     </div>
   );

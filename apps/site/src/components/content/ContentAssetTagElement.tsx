@@ -1,22 +1,39 @@
 import { CloseOutlined } from "@ant-design/icons";
 import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
 import { Tag } from "antd";
+import type {
+  DefaultTagRendererOptions,
+  TagRenderer,
+} from "./ContentAssetTagSelector";
 import { getTagColor } from "./util";
 
 export interface ContentAssetTagElementProps {
   tag: ContentAssetTag;
-  onRemove?: (tag: ContentAssetTag) => Promise<void>;
+  onRemoveTag?: (tag: ContentAssetTag) => Promise<void>;
   onSelectTag?: (tag: ContentAssetTag) => Promise<void>;
 }
 
+export const ContentAssetTagElementRenderer: TagRenderer<
+  DefaultTagRendererOptions
+> = (tag, options) => {
+  return (
+    <ContentAssetTagElement
+      key={tag.id}
+      tag={tag}
+      onSelectTag={options?.onSelectTag}
+      onRemoveTag={options?.onRemoveTag}
+    />
+  );
+};
+
 const ContentAssetTagElement: React.FunctionComponent<
   ContentAssetTagElementProps
-> = ({ tag, onRemove, onSelectTag }: ContentAssetTagElementProps) => {
+> = ({ tag, onRemoveTag, onSelectTag }: ContentAssetTagElementProps) => {
   const tagColor = getTagColor(tag);
 
   return (
     <Tag
-      closable={onRemove !== undefined}
+      closable={onRemoveTag !== undefined}
       closeIcon={<CloseOutlined style={{ color: tagColor }} />}
       style={{
         width: "100%",
@@ -27,8 +44,8 @@ const ContentAssetTagElement: React.FunctionComponent<
       }}
       color={`${tagColor}44`}
       onClose={async () => {
-        if (onRemove) {
-          await onRemove(tag);
+        if (onRemoveTag) {
+          await onRemoveTag(tag);
         }
       }}
       onClick={async () => {
