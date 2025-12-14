@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import OtpInput from "react-otp-input";
 import contentApi from "../../api/contentApi";
 import { useAppSelector } from "../../redux/hooks";
+import { subscribe } from "../../utils/events";
 
 export interface ContentAuthWrapperProps {
   children: React.ReactNode;
@@ -62,7 +63,15 @@ const ContentAuthWrapper: React.FunctionComponent<ContentAuthWrapperProps> = ({
     })();
   }, [blackCurtainEnabled]);
 
-  if (!blackCurtainEnabled && !authorized) {
+  subscribe("dionysus:lock", (e) => {
+    setAuthorized(false);
+  });
+
+  console.log(
+    `BlackCurtain: ${blackCurtainEnabled}, Authorized: ${authorized}`,
+  );
+
+  if (blackCurtainEnabled && !authorized) {
     const otpInput = (
       <OtpInput
         numInputs={6}
