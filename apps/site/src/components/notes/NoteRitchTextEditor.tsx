@@ -23,6 +23,7 @@ const NoteRichTextEditor: React.FunctionComponent<NoteRichTextEditorProps> = ({
         alignContent: "center",
         alignItems: "center",
         height: height,
+        justifyContent: "center",
       }}
     >
       <Spin size={"default"} />

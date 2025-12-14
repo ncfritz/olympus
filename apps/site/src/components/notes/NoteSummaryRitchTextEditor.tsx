@@ -21,6 +21,7 @@ const NoteSummaryRichTextEditor: React.FunctionComponent<
         alignContent: "center",
         alignItems: "center",
         height: height,
+        justifyContent: "center",
       }}
     >
       <Spin size={"default"} />

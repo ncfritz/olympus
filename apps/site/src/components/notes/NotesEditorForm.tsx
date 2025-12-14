@@ -169,6 +169,20 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
     </Space>
   );
 
+  const summaryEditor = (
+    <Controller
+      name={"summary"}
+      control={formControl.control}
+      render={({ field: { onChange, value } }) => (
+        <NoteSummaryRichTextEditor
+          onChange={onChange}
+          value={value || ""}
+          height={summaryEditorHeight}
+        />
+      )}
+    />
+  );
+
   const editor = (
     <Controller
       name={"value"}
@@ -181,20 +195,6 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
           onChange={onChange}
           value={value || ""}
           height={mainEditorHeight}
-        />
-      )}
-    />
-  );
-
-  const summaryEditor = (
-    <Controller
-      name={"summary"}
-      control={formControl.control}
-      render={({ field: { onChange, value } }) => (
-        <NoteSummaryRichTextEditor
-          onChange={onChange}
-          value={value || ""}
-          height={summaryEditorHeight}
         />
       )}
     />
@@ -226,6 +226,7 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
                 return (
                   <Radio.Button
                     id={uuidv4()}
+                    key={`nef-rg-type-${i}`}
                     value={i}
                     style={{
                       color:
