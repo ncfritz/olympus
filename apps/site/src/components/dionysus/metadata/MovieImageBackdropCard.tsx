@@ -22,7 +22,7 @@ const MovieImageBackdropCard: React.FunctionComponent<
 
   return (
     <Card
-      hoverable={true}
+      hoverable={false}
       styles={{
         body: {
           margin: 0,

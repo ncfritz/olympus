@@ -19,8 +19,7 @@ const TvCastList: React.FunctionComponent<TvCastListProps> = ({
           <List.Item>
             <Link href={`/dionysus/person/${item.person.id}`}>
               <Card
-                variant={"borderless"}
-                hoverable={true}
+                hoverable={false}
                 styles={{
                   body: {
                     margin: 0,

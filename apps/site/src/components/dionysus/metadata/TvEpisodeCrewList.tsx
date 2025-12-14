@@ -96,8 +96,7 @@ const TvEpisodeCrewList: React.FunctionComponent<TvEpisodeCrewListProps> = ({
                 <List.Item>
                   <Link href={`/dionysus/person/${item.id}`}>
                     <Card
-                      variant={"borderless"}
-                      hoverable={true}
+                      hoverable={false}
                       styles={{
                         body: {
                           margin: 0,

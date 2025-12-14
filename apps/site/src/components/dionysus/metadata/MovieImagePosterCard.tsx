@@ -25,7 +25,7 @@ const MoviePosterCard: React.FunctionComponent<MovieImagePosterCardProps> = ({
 
   return (
     <Card
-      hoverable={true}
+      hoverable={false}
       styles={{
         body: {
           margin: 0,

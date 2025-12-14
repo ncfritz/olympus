@@ -23,8 +23,7 @@ const PersonVerticalCard: React.FunctionComponent<BasePersonCardProps> = ({
 }: BasePersonCardProps) => {
   return (
     <Card
-      variant={"borderless"}
-      hoverable={true}
+      hoverable={false}
       styles={{
         body: {
           margin: 0,
@@ -69,8 +68,7 @@ const PersonHorizontalCard: React.FunctionComponent<BasePersonCardProps> = ({
 
   return (
     <Card
-      variant={"borderless"}
-      hoverable={true}
+      hoverable={false}
       styles={{
         body: {
           margin: 0,

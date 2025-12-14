@@ -31,7 +31,7 @@ const PersonProfileCard: React.FunctionComponent<PersonProfileCardProps> = ({
 
   return (
     <Card
-      hoverable={true}
+      hoverable={false}
       styles={{
         body: {
           margin: 0,

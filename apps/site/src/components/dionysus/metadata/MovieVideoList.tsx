@@ -42,7 +42,7 @@ const MovieVideoList: React.FunctionComponent<MovieVideoListProps> = ({
             <List.Item>
               <Card
                 variant={"outlined"}
-                hoverable={true}
+                hoverable={false}
                 styles={{
                   body: {
                     margin: 0,

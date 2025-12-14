@@ -86,7 +86,6 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
   return (
     <Card
       className={className}
-      variant={"borderless"}
       hoverable={hoverable}
       style={{
         borderRadius: 9,

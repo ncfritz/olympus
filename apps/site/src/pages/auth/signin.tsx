@@ -85,7 +85,7 @@ const SignInPage: React.FunctionComponent = () => {
     >
       <Card
         style={{ width: 450 }}
-        hoverable={true}
+        hoverable={false}
         cover={<img src={"/auth_header.png"} />}
       >
         <Space

@@ -31,7 +31,7 @@ const TvSeriesList: React.FunctionComponent<TvSeriesListProps> = ({
                   tvSeries={item}
                   showStatus={showStatus}
                   showTitle={true}
-                  hoverable={true}
+                  hoverable={false}
                   className={"compact"}
                   actions={[
                     <HeartOutlined

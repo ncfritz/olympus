@@ -20,7 +20,7 @@ const NetworkImageList: React.FunctionComponent<NetworkImageListProps> = ({
       renderItem={(item) => (
         <List.Item>
           <Card
-            hoverable={true}
+            hoverable={false}
             styles={{
               cover: {
                 justifyContent: "center",

@@ -65,7 +65,7 @@ const TvEpisodeList: React.FunctionComponent<TvEpisodeListProps> = ({
       const cardContent = (
         <Card
           variant={"outlined"}
-          hoverable={true}
+          hoverable={false}
           styles={{
             body: {
               margin: 0,

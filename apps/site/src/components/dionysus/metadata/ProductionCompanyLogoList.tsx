@@ -19,7 +19,7 @@ const ProductionCompanyLogoList: React.FunctionComponent<
       renderItem={(item) => (
         <List.Item>
           <Card
-            hoverable={true}
+            hoverable={false}
             styles={{
               cover: {
                 justifyContent: "center",

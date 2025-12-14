@@ -34,7 +34,7 @@ const MovieList: React.FunctionComponent<MovieListProps> = ({
                   showReleaseYear={showReleaseYear}
                   showReleaseStatus={showReleaseStatus}
                   showTitle={true}
-                  hoverable={true}
+                  hoverable={false}
                   className={"compact"}
                   actions={[
                     <HeartOutlined

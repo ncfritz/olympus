@@ -55,7 +55,7 @@ const TvSeasonSummaryCard: React.FunctionComponent<
   const cardContent = (
     <Card
       variant={"outlined"}
-      hoverable={true}
+      hoverable={false}
       styles={{ body: { padding: 0, paddingBottom: 16 } }}
     >
       <Space
