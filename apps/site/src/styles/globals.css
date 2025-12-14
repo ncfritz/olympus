@@ -412,6 +412,37 @@ img.electron-logo {
   background-color: #cccccc;
 }
 
+.react-horizontal-scrolling-menu--scroll-container {
+  padding-bottom: 16px;
+}
+
+.plyr {
+  border-radius: 6px;
+}
+
+.dionysus-preview .plyr {
+  min-width: unset !important;
+  min-height: unset !important;
+}
+
+.dionysus-preview .plyr,
+.dionysus-preview .plyr .plyr__video-wrapper {
+  height: inherit !important;
+  width: inherit !important;
+}
+
+.overflow-fade:before {
+  content: "";
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  background: linear-gradient(90deg,rgba(255, 255, 255, 0) 85%, rgba(255, 255, 255, 0.7) 100%);
+}
+.overflow-fade:after {
+  pointer-events: none;
+}
 
 @media(prefers-color-scheme: dark) {
     body {
