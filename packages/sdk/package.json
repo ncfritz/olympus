@@ -33,7 +33,7 @@
     "gen-minerva": "openapi-ts -f config/minerva.ts",
     "prebuild": "npm run clean && npm run gen-olympus && npm run gen-dionysus && npm run gen-minerva",
     "build": "tsc",
-    "lint": "eslint ./src",
+    "lint": "eslint ./src --debug",
     "lintfix": "eslint ./src --fix"
   },
   "dependencies": {
@@ -60,6 +60,9 @@
     "semantic-release": "^25.0.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.49.0"
+  },
+  "overrides": {
+    "@apollo/server": "^5.2.0"
   },
   "config": {
     "commitizen": {
