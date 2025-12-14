@@ -101,6 +101,9 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.49.0"
   },
+  "overrides": {
+    "@apollo/server": "^5.2.0"
+  },
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
