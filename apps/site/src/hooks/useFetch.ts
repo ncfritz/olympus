@@ -9,6 +9,8 @@ export interface UseFetchOptions<O, T> {
   watch?: any[];
   notifyOnError?: boolean;
   dataType?: string;
+  noWatch?: boolean;
+  onDataFetched?: (data: T) => Promise<void>;
 }
 
 export const useFetch = <O, T>(
@@ -20,7 +22,7 @@ export const useFetch = <O, T>(
   (quiet: boolean) => Promise<void>,
   (value: T) => void,
 ] => {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!options.noWatch);
   const [data, setData] = useState<T | undefined>(options.default);
   const [error, setError] = useState<Error | undefined>(undefined);
 
@@ -34,6 +36,10 @@ export const useFetch = <O, T>(
       const data = await options.fetchFunction(options.params);
 
       setData(data);
+
+      if (options.onDataFetched) {
+        await options.onDataFetched(data);
+      }
     } catch (e) {
       console.error("Failed to fetch...", e);
 
@@ -48,11 +54,13 @@ export const useFetch = <O, T>(
     }
   };
 
-  useEffect(() => {
-    (async () => {
-      await fetcher();
-    })();
-  }, options.watch || []);
+  if (!options.noWatch) {
+    useEffect(() => {
+      (async () => {
+        await fetcher();
+      })();
+    }, options.watch || []);
+  }
 
   return [data as T, loading, error, fetcher, setData];
 };
