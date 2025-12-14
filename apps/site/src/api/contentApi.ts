@@ -1,5 +1,6 @@
 import {
   addContentAssetTagToAsset,
+  type BaseContentAssetChannel,
   checkAuthorization,
   client,
   type ContentAsset,
@@ -7,12 +8,15 @@ import {
   type ContentIngestionWorkflowAssetLocation,
   type ContentJobType,
   type ContentTagType,
+  createContentAssetChannel,
+  createContentAssetChannelCategory,
   createContentAssetTag,
   createContentIngestionWorkflow,
   createContentJob,
   deleteContentAssetTagFromAsset,
   describeContentIngestionWorkflow,
   type FilterDefinition,
+  favoriteContentAssetChannel,
   getContentAsset,
   getContentAssetAggregateStatistics,
   getContentAssetDurationStatistics,
@@ -22,11 +26,21 @@ import {
   getContentIngestionWorkflowStatistics,
   getUntaggedContentAsset,
   listAvailableContentAssetTags,
+  listContentAssetChannelCategories,
   listContentAssets,
   listContentAssetTagsForAsset,
   listContentIngestionWorkflows,
-  listSimilarContentAssets, setContentAssetRating,
-  verifyAuthCode
+  listSimilarContentAssets,
+  refreshContentAssetChannel,
+  setContentAssetRating,
+  updateContentAssetChannel,
+  verifyAuthCode,
+  deleteContentAssetChannel,
+  describeContentAssetChannelCategory,
+  type BaseContentAssetChannelCategory,
+  updateContentAssetChannelCategory,
+  listContentAssetChannels,
+  describeContentAssetChannel, listContentAssetChannelsForCategory
 } from "@ncfritz/olympus-sdk/dionysus";
 import { store } from "../redux/store";
 import { ApiBase } from "./apiBase";
@@ -51,15 +65,108 @@ class ContentApi extends ApiBase {
     };
   }
 
+  async createContentAssetChannelCategory(
+    category: BaseContentAssetChannelCategory,
+  ) {
+    return await createContentAssetChannelCategory({
+      body: {
+        category: category,
+      },
+    });
+  }
+
+  async updateContentAssetChannelCategory(
+    categoryId: string,
+    category: BaseContentAssetChannelCategory,
+  ) {
+    return await updateContentAssetChannelCategory({
+      path: {
+        categoryId: categoryId,
+      },
+      body: {
+        category: category,
+      },
+    });
+  }
+
+  async describeContentAssetChannel(channelId: string) {
+    return await describeContentAssetChannel({
+      path: {
+        channelId: channelId,
+      },
+    });
+  }
+
+  async describeContentAssetChannelCategory(categoryId: string) {
+    return await describeContentAssetChannelCategory({
+      path: {
+        categoryId: categoryId,
+      },
+    });
+  }
+
+  async createContentAssetChannel(channel: BaseContentAssetChannel) {
+    return await createContentAssetChannel({
+      body: {
+        channel: channel,
+      },
+    });
+  }
+
+  async deleteContentAssetChannel(channelId: string) {
+    return await deleteContentAssetChannel({
+      path: {
+        channelId: channelId,
+      },
+      validateStatus: (status) => {
+        return status === 410;
+      },
+    });
+  }
+
+  async updateContentAssetChannel(
+    channelId: string,
+    updates: BaseContentAssetChannel,
+  ) {
+    return await updateContentAssetChannel({
+      path: {
+        channelId: channelId,
+      },
+      body: {
+        channel: updates,
+      },
+    });
+  }
+
+  async favoriteContentAssetChannel(channelId: string, favorite: boolean) {
+    return await favoriteContentAssetChannel({
+      path: {
+        channelId: channelId,
+      },
+      body: {
+        favorite: favorite,
+      },
+    });
+  }
+
+  async refreshContentAssetChannel(channelId: string) {
+    return await refreshContentAssetChannel({
+      path: {
+        channelId: channelId,
+      },
+    });
+  }
+
   async listAssets(
     page: number,
+    pageSize: number,
     sort: SortOptions,
     filters?: FilterDefinition,
   ) {
     return await listContentAssets({
       query: {
         startPage: page,
-        pageSize: 30,
+        pageSize: pageSize,
         sortBy: sort.field,
         sort: sort.order,
         filters: filters
@@ -101,6 +208,61 @@ class ContentApi extends ApiBase {
         tagName: tagNames,
       },
       ...this.buildHeaders(),
+    });
+  }
+
+  async listContentAssetChannelCategories(
+    page: number,
+    pageSize: number,
+    sort: SortOptions,
+    filters?: FilterDefinition,
+  ) {
+    return await listContentAssetChannelCategories({
+      query: {
+        pageSize: pageSize,
+        sort: sort.order,
+        sortBy: sort.field,
+        startPage: page,
+        filters: this.encodeFilters(filters),
+      },
+    });
+  }
+
+  async listContentAssetChannelsForCategory(
+    categoryId: string,
+    page: number,
+    pageSize: number,
+    sort: SortOptions,
+    filters?: FilterDefinition,
+  ) {
+    return await listContentAssetChannelsForCategory({
+      path: {
+        categoryId: categoryId,
+      },
+      query: {
+        pageSize: pageSize,
+        sort: sort.order,
+        sortBy: sort.field,
+        startPage: page,
+        filters: this.encodeFilters(filters),
+      },
+    });
+  }
+
+  async listContentAssetChannels(
+    page: number,
+    pageSize: number,
+    sort: SortOptions,
+    filters?: FilterDefinition,
+  ) {
+    return await listContentAssetChannels({
+      query: {
+        pageSize: pageSize,
+        sort: sort.order,
+        sortBy: sort.field,
+        startPage: page,
+        filters: this.encodeFilters(filters),
+      },
     });
   }
 
@@ -252,7 +414,11 @@ class ContentApi extends ApiBase {
   }
 
   async checkAuthStatus() {
-    return await checkAuthorization({});
+    return await checkAuthorization({
+      validateStatus: (status) => {
+        return status === 200 || status === 401;
+      },
+    });
   }
 
   async verifyAuthCode(code: string) {
