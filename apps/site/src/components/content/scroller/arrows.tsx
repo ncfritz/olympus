@@ -40,7 +40,12 @@ export const LeftArrow: React.FunctionComponent = () => {
   const isFirstItemVisible = visibility.useIsVisible("first", true);
 
   return (
-    <Arrow disabled={isFirstItemVisible} onClick={visibility.scrollPrev}>
+    <Arrow
+      disabled={isFirstItemVisible}
+      onClick={() => {
+        visibility.scrollPrev();
+      }}
+    >
       <LeftOutlined />
     </Arrow>
   );
@@ -51,7 +56,12 @@ export const RightArrow: React.FunctionComponent = () => {
   const isLastItemVisible = visibility.useIsVisible("last", false);
 
   return (
-    <Arrow disabled={isLastItemVisible} onClick={visibility.scrollNext}>
+    <Arrow
+      disabled={isLastItemVisible}
+      onClick={() => {
+        visibility.scrollNext();
+      }}
+    >
       <RightOutlined />
     </Arrow>
   );
