@@ -16,6 +16,16 @@ import type {
 import { Tag } from "antd";
 import React, { type CSSProperties } from "react";
 
+export const RESOLUTION_MAP: Record<number, number> = {
+  0: 0,
+  1: 480,
+  2: 720,
+  3: 1080,
+  4: 1440,
+  5: 2160,
+  6: 4320,
+};
+
 export const getTagColor = (tag: ContentAssetTag): string => {
   switch (tag.type) {
     case "type":
