@@ -6,13 +6,17 @@ import { Certification } from "./certifications";
 import { Collection } from "./collections";
 import {
   AlternativeTitle,
-  ExternalId, LocationStatistic,
+  ExternalId,
+  LocationStatistic,
   PartialAlternativeTitle,
   PartialExternalId,
   PartialTypedImage,
-  PartialVideo, RuntimeStatistic, StatusStatistic,
+  PartialVideo,
+  RuntimeStatistic,
+  StatusStatistic,
   TypedImage,
-  Video, YearStatistic
+  Video,
+  YearStatistic,
 } from "./common";
 import {
   Country,
