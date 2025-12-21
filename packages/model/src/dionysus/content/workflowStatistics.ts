@@ -4,10 +4,15 @@ import {
   ContentIngestionWorkflowStatus,
 } from "./workflow";
 
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* Response Shapes                                                                                                    */
+/* ------------------------------------------------------------------------------------------------------------------ */
 export class GetContentIngestionWorkflowStatisticsResponse {
   @ApiProperty({
     type: Object,
     additionalProperties: { type: "ContentIngestionWorkflowStats" },
+    required: true,
+    description: "The categories associated with each statistics series",
   })
   categories: {
     status: ContentIngestionWorkflowStatus[];
@@ -17,6 +22,8 @@ export class GetContentIngestionWorkflowStatisticsResponse {
   @ApiProperty({
     type: Object,
     additionalProperties: { type: "ContentIngestionWorkflowStats" },
+    required: true,
+    description: "The series data",
   })
   series: {
     status: Record<ContentIngestionWorkflowStatus, number[][]>;

@@ -19,31 +19,50 @@ export enum ContentIngestionWorkflowStatus {
 }
 
 export class BaseContentIngestionWorkflow {
-  @ApiProperty({ type: String, required: true })
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The source of the asset to ingest.  This should be either a path to a local file or a fully formed HTTP URL",
+  })
   source: string;
 
   @ApiProperty({
     enum: () => ContentIngestionWorkflowAssetLocation,
     enumName: "ContentIngestionWorkflowAssetLocation",
+    required: true,
+    description: "The type of location where the asset to ingest can be found",
   })
   sourceType: ContentIngestionWorkflowAssetLocation;
 }
 
 export class ContentIngestionWorkflow extends BaseContentIngestionWorkflow {
-  @ApiProperty({ type: String, required: true })
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The unique ID of the workflow",
+  })
   id: string;
 
-  @ApiProperty({ type: String, required: true })
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The temporary location where the input file and all outputs will be staged prior to upload to Dionysus",
+  })
   tempLocation: string;
 
   @ApiProperty({
     enum: () => ContentIngestionWorkflowStatus,
     enumName: "ContentIngestionWorkflowStatus",
+    required: true,
+    description: "The status of the workflow",
   })
   status: ContentIngestionWorkflowStatus;
 
   @ApiProperty({
     type: String,
+    required: true,
     description:
       "An ISO-8601 formatted string indicating when the workflow was created.",
   })
@@ -52,6 +71,7 @@ export class ContentIngestionWorkflow extends BaseContentIngestionWorkflow {
 
   @ApiProperty({
     type: String,
+    required: true,
     description:
       "An ISO-8601 formatted string indicating when the workflow was last updated.",
   })
@@ -60,9 +80,9 @@ export class ContentIngestionWorkflow extends BaseContentIngestionWorkflow {
 
   @ApiProperty({
     type: String,
+    required: false,
     description:
       "An ISO-8601 formatted string indicating when the workflow was started.",
-    required: false,
   })
   @ApiProperty({ type: String })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
@@ -70,15 +90,16 @@ export class ContentIngestionWorkflow extends BaseContentIngestionWorkflow {
 
   @ApiProperty({
     type: String,
+    required: false,
     description:
       "An ISO-8601 formatted string indicating when the workflow finished.",
-    required: false,
   })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   finishedTime?: Moment;
 
   @ApiProperty({
     type: ContentIngestionWorkflowStep,
+    required: true,
     isArray: true,
     description:
       "A list of the steps that have been performed, or are being performed, by the workflow",
@@ -87,9 +108,9 @@ export class ContentIngestionWorkflow extends BaseContentIngestionWorkflow {
 
   @ApiProperty({
     type: Number,
+    required: false,
     description:
       "The total number of steps that have been performed, or are being performed, by the workflow",
-    required: false,
   })
   stepCount?: number;
 }
@@ -111,6 +132,9 @@ export class PartialContentIngestionWorkflow extends PartialType(
   MutableContentIngestionWorkflow,
 ) {}
 
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* Request Shapes                                                                                                     */
+/* ------------------------------------------------------------------------------------------------------------------ */
 export class CreateContentIngestionWorkflowRequest {
   @ApiProperty({
     type: () => BaseContentIngestionWorkflow,
@@ -119,6 +143,18 @@ export class CreateContentIngestionWorkflowRequest {
   workflow: BaseContentIngestionWorkflow;
 }
 
+export class UpdateContentIngestionWorkflowRequest {
+  @ApiProperty({
+    type: () => PartialContentIngestionWorkflow,
+    description:
+      "A partial workflow representing the changes to make to an existing workflow",
+  })
+  workflow: PartialContentIngestionWorkflow;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* Response Shapes                                                                                                    */
+/* ------------------------------------------------------------------------------------------------------------------ */
 export class CreateContentIngestionWorkflowResponse {
   @ApiProperty({
     type: () => ContentIngestionWorkflow,
@@ -133,15 +169,6 @@ export class DescribeContentIngestionWorkflowResponse {
     description: "The workflow",
   })
   workflow: ContentIngestionWorkflow;
-}
-
-export class UpdateContentIngestionWorkflowRequest {
-  @ApiProperty({
-    type: () => PartialContentIngestionWorkflow,
-    description:
-      "A partial workflow representing the changes to make to an existing workflow",
-  })
-  workflow: PartialContentIngestionWorkflow;
 }
 
 export class UpdateContentIngestionWorkflowResponse {
