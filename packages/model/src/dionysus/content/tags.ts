@@ -90,7 +90,7 @@ export class CreateContentAssetTagResponse {
     type: () => ContentAssetTag,
     required: true,
     description:
-      "The newly created tag.  The tag will be stemped with a generated ID that can be used to tag ssets.",
+      "The newly created tag.  The tag will be stamped with a generated ID that can be used to tag sets.",
   })
   tag: ContentAssetTag;
 }
