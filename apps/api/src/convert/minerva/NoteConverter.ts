@@ -46,6 +46,8 @@ export const toDomainObject = (input: GraphQlNote): Note => {
     });
   }
 
+  console.log(input);
+
   return {
     id: input.id,
     author: input.author,
@@ -58,7 +60,7 @@ export const toDomainObject = (input: GraphQlNote): Note => {
     lastUpdatedTime: moment(input.lastUpdatedTime),
     deletedTime: input.deletedTime ? moment(input.deletedTime) : undefined,
     associations: associations,
-    hasParent: input.parent_id !== undefined,
+    hasParent: !(input.parent_id === undefined || input.parent_id === null),
     childCount: input.children_aggregate.aggregate.count,
   };
 };
