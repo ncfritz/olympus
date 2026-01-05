@@ -127,6 +127,10 @@
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-dev-server": "^5.2.0"
   },
+  "overrides": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
   "msw": {
     "workerDirectory": "public"
   },
