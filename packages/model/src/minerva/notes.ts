@@ -147,6 +147,23 @@ export class Note extends BaseNote {
     description: "The set of associations for the note",
   })
   associations?: NoteAssociation[];
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "`true` if the note is a child - i.e. the note has a parent note, `false` otherwise`",
+  })
+  hasParent: boolean;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "The number of children this note has.  This value only represents the direct children and " +
+      "does no account for a nested child note structure.",
+  })
+  childCount: number;
 }
 
 export class NoteTypeCounts {
