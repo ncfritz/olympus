@@ -159,6 +159,7 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
         </Sider>
         {applicationMenu && (
           <Sider
+            className={"olympus-menu"}
             width={300}
             style={{
               overflow: "auto",
