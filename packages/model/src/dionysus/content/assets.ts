@@ -110,10 +110,10 @@ export class ContentAsset extends BaseContentAsset {
   @ApiProperty({
     type: () => ContentAssetTag,
     isArray: true,
-    required: false,
+    required: true,
     description: "A set of tags associated with the asset",
   })
-  tags?: ContentAssetTag[];
+  tags: ContentAssetTag[];
 }
 
 export class ContentStatisticsSeries {
