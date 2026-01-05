@@ -132,13 +132,6 @@ img.electron-logo {
     transform: translateY(0.25em);
 }
 
-.ant-space-item.timeline-content:nth-of-type(2) {
-    margin-right: 8px;
-}
-.ant-space-item.timeline-content:nth-of-type(3) {
-    width: calc(100% - 176px);
-}
-
 .ant-space-item.timeline-content .collapsed {
     mask-image: linear-gradient(180deg, #000 0px, transparent);
 }
@@ -442,6 +435,114 @@ img.electron-logo {
 }
 .overflow-fade:after {
   pointer-events: none;
+}
+
+.olympus-menu .ant-menu-root {
+  position: relative;
+  top: 36px;
+}
+.olympus-bc {
+  position: relative;
+  left: -300px;
+  background: #f6f6f6;
+  border-bottom: 1px solid #efefef;
+  height: 28px;
+  width: calc(100vw - 380px);
+}
+.olympus-bc ol:first-of-type {
+  width: calc(100vw - 80px);
+  background-color: #f6f6f6;
+}
+.olympus-bc a:hover {
+  background-color: transparent;
+  color: #0b1a2c;
+}
+.olympus-bc .level {
+  position: relative;
+  display: inline-flex;
+  margin-left: 14px;
+  align-items: center;
+}
+.olympus-bc .root {
+  margin-left: 0px;
+}
+.olympus-bc .level a {
+  margin-inline: 6px;
+  padding-right: 0px;
+  margin-right: 0px;
+}
+.olympus-bc span.level:after {
+  content: " ";
+  width: 0;
+  height: 0;
+  position: relative;
+  left: 14px;
+  display: inline-flex;
+  border-top: 14px solid transparent;
+  border-left: 14px solid #f6f6f6;
+  border-bottom: 14px solid transparent;
+}
+
+.olympus-bc .level-1 .ant-space {
+  margin-left: 8px;
+}
+
+.olympus-bc .level-1 { background-color: rgb(20, 39, 55, 0%) }
+.olympus-bc .level-2 { background-color: rgb(20, 39, 55, 10%) }
+.olympus-bc .level-3 { background-color: rgb(20, 39, 55, 20%) }
+.olympus-bc .level-4 { background-color: rgb(20, 39, 55, 30%) }
+.olympus-bc .level-5 { background-color: rgb(20, 39, 55, 40%) }
+.olympus-bc .level-6 { background-color: rgb(20, 39, 55, 50%) }
+.olympus-bc .level-7 { background-color: rgb(20, 39, 55, 60%) }
+.olympus-bc .level-8 { background-color: rgb(20, 39, 55, 70%) }
+
+.olympus-bc span.level-2:after { border-left-color: rgb(20, 39, 55, 10%); }
+.olympus-bc span.level-3:after {
+  border-top-color: rgb(20, 39, 55, 10%);
+  border-bottom-color: rgb(20, 39, 55, 10%);
+  border-left-color: rgb(20, 39, 55, 20%);
+}
+.olympus-bc span.level-4:after {
+  border-top-color: rgb(20, 39, 55, 20%);
+  border-bottom-color: rgb(20, 39, 55, 20%);
+  border-left-color: rgb(20, 39, 55, 30%);
+}
+.olympus-bc span.level-5:after {
+  border-top-color: rgb(20, 39, 55, 30%);
+  border-bottom-color: rgb(20, 39, 55, 30%);
+  border-left-color: rgb(20, 39, 55, 40%);
+}
+.olympus-bc span.level-6:after {
+  border-top-color: rgb(20, 39, 55, 40%);
+  border-bottom-color: rgb(20, 39, 55, 40%);
+  border-left-color: rgb(20, 39, 55, 50%);
+}
+.olympus-bc span.level-7:after {
+  border-top-color: rgb(20, 39, 55, 50%);
+  border-bottom-color: rgb(20, 39, 55, 50%);
+  border-left-color: rgb(20, 39, 55, 60%);
+}
+.olympus-bc span.level-8:after {
+  border-top-color: rgb(20, 39, 55, 60%);
+  border-bottom-color: rgb(20, 39, 55, 60%);
+  border-left-color: rgb(20, 39, 55, 70%);
+}
+
+.minerva-editor.contained,
+.minerva-editor.contained .tox-mbtn,
+.minerva-editor.contained .tox-tbtn {
+  background: #f9f9f9;
+}
+
+.minerva-editor.contained .tox-menubar,
+.minerva-editor.contained .tox-menubar .tox-mbtn {
+  background: #e6e6e6;
+}
+.minerva-editor.contained .tox-statusbar {
+  border-bottom: none !important;
+}
+.minerva-editor.contained .tox-editor-header {
+  padding: 0px !important;
 }
 
 @media(prefers-color-scheme: dark) {
