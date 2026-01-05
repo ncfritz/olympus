@@ -19,6 +19,12 @@ export type GraphQlNote = {
   lastUpdatedTime: string;
   deletedTime?: string;
   associatedItems?: GraphQlNoteAssociation[];
+  parent_id?: string;
+  children_aggregate: {
+    aggregate: {
+      count: number;
+    };
+  };
 };
 
 const associationToDomainObject = (
@@ -52,5 +58,7 @@ export const toDomainObject = (input: GraphQlNote): Note => {
     lastUpdatedTime: moment(input.lastUpdatedTime),
     deletedTime: input.deletedTime ? moment(input.deletedTime) : undefined,
     associations: associations,
+    hasParent: input.parent_id !== undefined,
+    childCount: input.children_aggregate.aggregate.count,
   };
 };
