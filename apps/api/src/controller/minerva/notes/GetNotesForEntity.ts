@@ -12,6 +12,7 @@ import {
   GraphQlNote,
   toDomainObject,
 } from "../../../convert/minerva/NoteConverter";
+import { NOTE_WITH_ASSOCIATIONS_WITH_NOTE_ID } from "../../../query/minerva/notes";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlListNotesResponse = {
@@ -26,8 +27,9 @@ export class GetNotesForEntityController {
 
   @Get("/notes/entity/:entityType/:entityId")
   @ApiOperation({
-    summary: "Lists notes for a particular day",
-    description: "Lists notes for a particular day.",
+    summary: "Lists notes associated with an entity",
+    description:
+      "Lists all notes that are associated with an identified entity.",
     operationId: "GetNotesForEntity",
     tags: ["Notes"],
   })
@@ -61,22 +63,7 @@ export class GetNotesForEntityController {
           order_by: { createdTime: desc }
         ) {
           note {
-            author
-            createdTime
-            deletedTime
-            flagged
-            id
-            lastUpdatedTime
-            title
-            summary
-            type
-            value
-            associatedItems {
-              createdTime
-              itemId
-              itemType
-              noteId
-            }
+            ${NOTE_WITH_ASSOCIATIONS_WITH_NOTE_ID}
           }
         }
       }
