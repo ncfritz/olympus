@@ -6,13 +6,14 @@ import {
   FlagOutlined,
   UndoOutlined,
 } from "@ant-design/icons";
+import type { Note } from "@ncfritz/olympus-sdk/minerva";
 import { Badge, Button, Popover, Space } from "antd";
 import { useState } from "react";
 import * as React from "react";
 import { v4 as uuidv4 } from "uuid";
 import notesApi from "../../api/notestApi";
 import { publish } from "../../utils/events";
-import { config, getIconForType, type Note } from "../../utils/notes";
+import { config, getIconForType } from "../../utils/notes";
 import { PUBLISH_EVENT } from "../common/NotificationSink";
 
 export interface NotesTimelineEntryTypeProps {
@@ -56,14 +57,14 @@ const NotesTimelineEntryType: React.FunctionComponent<
         type: "success",
         message: "Note deleted",
         description:
-          "The note has been marked as deleted.  You can restore the note",
+          "The note has been permanently deleted and cannot be recovered",
       });
     } else {
       publish(PUBLISH_EVENT, {
         type: "success",
         message: "Note deleted",
         description:
-          "The note has been permanently deleted and cannot be recovered",
+          "The note has been marked as deleted.  You can restore the note",
       });
     }
 

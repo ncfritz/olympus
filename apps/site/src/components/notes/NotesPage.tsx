@@ -1,13 +1,6 @@
 import { HomeOutlined, RadarChartOutlined } from "@ant-design/icons";
-import {
-  Breadcrumb,
-  Empty,
-  Layout,
-  Space,
-  Spin,
-  Switch,
-  Typography,
-} from "antd";
+import type { GetSummaryResponse, Note } from "@ncfritz/olympus-sdk/minerva";
+import { Empty, Layout, Space, Spin, Switch, Typography } from "antd";
 import type { BreadcrumbItemType } from "antd/lib/breadcrumb/Breadcrumb";
 import { DateTime, Interval } from "luxon";
 import Link from "next/link";
@@ -15,6 +8,7 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import notesApi from "../../api/notestApi";
+import OlympusBreadcrumbs from "../layout/OlympusBreadcrumbs";
 import Day from "./DayDoughnut";
 import MonthGraph from "./MonthGraph";
 import NotesHourOfDayGraph from "./NotesHourOfDayGraph";
@@ -23,14 +17,13 @@ import NoteTypeFilterButton from "./NoteTypeFilterButton";
 import NotesTimelineBlock from "./TimelineBlock";
 import { subscribe, unsubscribe } from "../../utils/events";
 import { v4 as uuidv4 } from "uuid";
-import type { Note } from "../../utils/notes";
 
 const { Sider, Content } = Layout;
 
 export interface NotesPageProps {
   startDate: DateTime;
   days: number;
-  breadcrumbs: Partial<BreadcrumbItemType>[];
+  breadcrumbs: BreadcrumbItemType[];
 }
 
 const IndexPage: React.FunctionComponent<NotesPageProps> = ({
@@ -44,7 +37,9 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
   const [currentDayCount, setCurrentDayCount] = useState(days);
   const [typeFilters, setTypeFilters] = useState<Record<string, boolean>>({});
   const [openDates, setOpenDates] = useState<Record<string, boolean>>({});
-  const [summary, setSummary] = useState<any>(undefined);
+  const [summary, setSummary] = useState<GetSummaryResponse | undefined>(
+    undefined,
+  );
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [showMeta, setShowMeta] = useState(true);
   const [showDeleted, setShowDeleted] = useState(true);
@@ -147,6 +142,12 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
     setTypeFilters(newTypeFilters);
   };
 
+  const handleNoteUpdate = async (updated: Note, isPermanent: boolean) => {
+    if (isPermanent) {
+      await loadMonthlySummary(today, 30, true);
+    }
+  };
+
   let datePickerContent;
 
   if (summaryLoading) {
@@ -184,9 +185,9 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
         if (daySummary.total > 0 || showEmptyDays) {
           entriesContent.push(
             <NotesTimelineBlock
-              key={uuidv4()}
+              key={`block-${key}`}
               date={key}
-              openDates={openDates}
+              open={openDates[key]}
               showDeleted={showDeleted}
               showMetadata={showMeta}
               hideAssociated={hideAssociated}
@@ -195,11 +196,7 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
               renderEmptyDays={showEmptyDays}
               summaryLoading={summaryLoading}
               summary={daySummary}
-              afterUpdate={async (updated: Note, isPermanent: boolean) => {
-                if (isPermanent) {
-                  await loadMonthlySummary(today, 30, true);
-                }
-              }}
+              afterUpdate={handleNoteUpdate}
               handleToggleDay={handleToggleDayVisibility}
               toggleFilter={handleToggleTypeFilter}
             />,
@@ -213,23 +210,15 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
     }
 
     timelineContent = (
-      <Space direction={"vertical"} style={{ width: "100%" }}>
+      <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
         {entriesContent}
       </Space>
     );
   }
 
   return (
-    <Space>
-      <Breadcrumb
-        style={{
-          padding: 8,
-          background: "#f6f6f6",
-          position: "fixed",
-          top: 64,
-          width: "100%",
-          zIndex: 1000,
-        }}
+    <Space direction={"vertical"} size={0}>
+      <OlympusBreadcrumbs
         items={[
           {
             title: (
@@ -254,7 +243,7 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
           ...breadcrumbs,
         ]}
       />
-      <Layout
+      <Content
         style={{
           position: "fixed",
           background: "#ffffff",
@@ -263,24 +252,36 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
           marginRight: 788,
           overflowX: "hidden",
           overflowY: "auto",
-          height: "calc(100vh - 202px)",
+          height: "calc(100vh - 102px)",
         }}
       >
-        <Content style={{ width: "calc(100vw - 793px)" }}>
+        <Content style={{ width: "calc(100vw - 780px)" }}>
           <MonthGraph
             date={startDate}
             days={days}
             summaryLoading={summaryLoading}
             summary={summary}
           />
-          {timelineContent}
+          <Space
+            direction={"vertical"}
+            size={0}
+            style={{
+              width: "100%",
+              overflowY: "scroll",
+              height: "calc(100vh - 302px)",
+              scrollbarWidth: "none",
+              paddingRight: 8,
+            }}
+          >
+            {timelineContent}
+          </Space>
         </Content>
         <Sider
           width={400}
           collapsible={false}
           style={{
             background: "#ffffff",
-            top: 102,
+            top: 92,
             right: 0,
             position: "fixed",
             height: "calc(100vh - 104px)",
@@ -326,7 +327,7 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
                     {[0, 1, 2, 3, 4, 5].map((i) => {
                       return (
                         <NoteTypeFilterButton
-                          key={uuidv4()}
+                          key={`filter-${i}`}
                           noteType={i}
                           onToggle={handleToggleTypeFilter}
                           typeFilters={typeFilters}
@@ -446,7 +447,7 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
             </Space>
           </Space>
         </Sider>
-      </Layout>
+      </Content>
     </Space>
   );
 };

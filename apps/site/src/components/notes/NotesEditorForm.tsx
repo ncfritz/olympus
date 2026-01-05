@@ -4,6 +4,11 @@ import {
   FlagOutlined,
   SaveFilled,
 } from "@ant-design/icons";
+import type {
+  PartialNoteAssociation,
+  NoteType,
+  SingleNoteResponse,
+} from "@ncfritz/olympus-sdk/minerva";
 import { Button, Form, Input, Radio, Space } from "antd";
 import React, { type CSSProperties } from "react";
 import {
@@ -38,6 +43,7 @@ export interface NotesEditorFormProps {
   afterCreate?: (created: Note) => Promise<void>;
   afterUpdate?: (updated: Note) => Promise<void>;
   noteId?: string;
+  parentId?: string;
   formControl: {
     handleSubmit: UseFormHandleSubmit<NotesFormInput>;
     control: Control<NotesFormInput>;
@@ -51,16 +57,17 @@ export interface NotesEditorFormProps {
   summaryEditorHeight?: number;
   additionalInfoPosition?: AdditionalInfoPosition;
   style?: CSSProperties;
+  className?: string;
 }
 
 export interface NotesFormInput {
   author: string;
-  type: number;
+  type: NoteType;
   flagged: boolean;
   title?: string;
   summary?: string;
   value: string;
-  associations: any[];
+  associations: PartialNoteAssociation[];
 }
 
 export const NEW_NOTE: NotesFormInput = {
@@ -79,6 +86,7 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
   afterCreate,
   afterUpdate,
   noteId,
+  parentId,
   formControl,
   mainEditorHeight = 400,
   showAdditionalInfo = true,
@@ -88,14 +96,15 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
   showCancelButton = true,
   additionalInfoPosition = AdditionalInfoPosition.BOTTOM,
   style = {},
+  className,
 }: NotesEditorFormProps) => {
   const onSubmit: SubmitHandler<NotesFormInput> = async (data) => {
     try {
       if (noteId) {
-        const updateResponse = await notesApi.updateNote(noteId, data);
+        const updateResponse = (await notesApi.updateNote(noteId, data)).data;
 
         if (afterUpdate) {
-          await afterUpdate(updateResponse.data.note);
+          await afterUpdate(updateResponse.note);
         }
 
         publish("notes:noteUpdated");
@@ -115,13 +124,22 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
           candidate.associations = [];
         }
 
-        const createResponse = await notesApi.createNote(candidate);
+        let createResponse: SingleNoteResponse;
 
-        if (afterCreate) {
-          await afterCreate(createResponse.data.note);
+        if (parentId) {
+          createResponse = (await notesApi.createChildNote(candidate, parentId))
+            .data;
+        } else {
+          createResponse = (await notesApi.createNote(candidate)).data;
         }
 
-        publish("notes:noteAdded");
+        const createdNote = createResponse.note;
+
+        if (afterCreate) {
+          await afterCreate(createdNote);
+        }
+
+        publish("notes:noteAdded", { note: createdNote });
 
         publish(PUBLISH_EVENT, {
           type: "success",
@@ -137,6 +155,7 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
         message: "Failed to save note",
         description: "Unable to save note due to a server error",
       });
+      console.log(e);
     }
   };
 
@@ -272,7 +291,11 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
   );
 
   return (
-    <Space direction={"vertical"} style={{ width: "100%", ...style }}>
+    <Space
+      direction={"vertical"}
+      className={`minerva-editor${className ? " " + className : ""}`}
+      style={{ width: "100%", ...style }}
+    >
       {showAdditionalInfo &&
         additionalInfoPosition === AdditionalInfoPosition.TOP &&
         additionalDataControls}

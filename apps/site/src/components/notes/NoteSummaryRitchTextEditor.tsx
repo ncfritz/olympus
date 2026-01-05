@@ -61,7 +61,7 @@ const NoteSummaryRichTextEditor: React.FunctionComponent<
               "checklist",
               "codesample",
               "directionality",
-              "ditimage",
+              "editimage",
               "emoticons",
               "insertdatetime",
               "link",

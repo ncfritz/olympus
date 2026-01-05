@@ -2,7 +2,7 @@ import { CaretRightOutlined } from "@ant-design/icons";
 import { Collapse } from "antd";
 import { useState } from "react";
 import * as React from "react";
-import type { Note, NoteAssociation } from "../../utils/notes";
+import type { Note, NoteAssociation } from "@ncfritz/olympus-sdk/minerva";
 import MeetingAssociation from "./associations/MeetingAssociation";
 
 export interface NoteAssociationsProps {
@@ -21,6 +21,10 @@ const getAssociationElement = (association: NoteAssociation, open: boolean) => {
 const NoteAssociations: React.FunctionComponent<NoteAssociationsProps> = ({
   note,
 }: NoteAssociationsProps) => {
+  if (!note.associations) {
+    return;
+  }
+
   const [open, setOpen] = useState(false);
 
   let content = <></>;

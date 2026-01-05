@@ -5,12 +5,19 @@ import {
   EyeInvisibleOutlined,
   FilterOutlined,
 } from "@ant-design/icons";
+import type { Note } from "@ncfritz/olympus-sdk/minerva";
 import { Button, Empty, Space, Spin, Tag } from "antd";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import * as React from "react";
 import notesApi from "../../api/notestApi";
-import { config, getIconForType, type Note } from "../../utils/notes";
+import {
+  type NoteEvent,
+  type OlympusEvent,
+  subscribe,
+  unsubscribe,
+} from "../../utils/events";
+import { config, getIconForType } from "../../utils/notes";
 import TimelineEntry from "./TimelineEntry";
 import { v4 as uuidv4 } from "uuid";
 
@@ -21,7 +28,7 @@ interface NotesTimelineBlockProps {
   hideAssociated: boolean;
   typeFilters: Record<string, boolean>;
   date: string;
-  openDates: Record<string, boolean>;
+  open: boolean;
   summary: Record<number | string, number>;
   afterUpdate: (entry: Note, isPermanent?: boolean) => Promise<void>;
   renderEmptyDays?: boolean;
@@ -37,7 +44,7 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
   hideAssociated,
   typeFilters,
   date,
-  openDates,
+  open,
   summary,
   afterUpdate,
   renderEmptyDays,
@@ -53,32 +60,71 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
   }).startOf("day");
 
   useEffect(() => {
-    (async () => {
-      if (
-        openDates[date] &&
-        (!entries || summary["total"] !== entries.length)
-      ) {
-        setEntriesLoading(true);
+    subscribe("notes:noteAdded", onNoteAdded);
 
-        try {
-          const fetchEntriesResponse = await notesApi.getNotes(
-            blockDate.toUTC(),
-          );
-          setEntries(fetchEntriesResponse.data.notes);
-        } catch (e) {
-          console.log(e);
-        } finally {
-          setEntriesLoading(false);
-        }
+    return () => {
+      unsubscribe("notes:noteAdded", onNoteAdded);
+    };
+  }, [entries]);
+
+  useEffect(() => {
+    (async () => {
+      if (open && (!entries || summary["total"] !== entries.length)) {
+        console.log("Fetching entries due to 'open' change");
+        await fetchEntries();
       }
     })();
-  }, [openDates[date]]);
+  }, [open]);
+
+  const onNoteAdded = (e: OlympusEvent<NoteEvent>) => {
+    const noteDate = DateTime.fromISO(e.detail.note.createdTime, {
+      zone: "America/Los_Angeles",
+    }).startOf("day");
+
+    if (e.detail.note.hasParent) {
+      console.log(
+        "Skipping entries update because new note is a child of another note.",
+      );
+      return;
+    }
+
+    if (noteDate.hasSame(blockDate, "day")) {
+      console.log(`notes:noteAdded triggered for ${noteDate.toISODate()}`);
+
+      let newEntries: Note[];
+
+      if (entries) {
+        console.debug(`Found ${entries.length} existing entries`);
+        newEntries = [e.detail.note, ...entries];
+      } else {
+        console.debug("No existing entries found...");
+        newEntries = [e.detail.note];
+      }
+
+      setEntries(newEntries);
+    }
+  };
+
+  const fetchEntries = async (quiet: boolean = false) => {
+    if (!quiet) {
+      setEntriesLoading(true);
+    }
+
+    try {
+      const fetchEntriesResponse = await notesApi.getNotes(blockDate.toUTC());
+      setEntries(fetchEntriesResponse.data.notes);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setEntriesLoading(false);
+    }
+  };
 
   const afterNoteUpdate = async (updated: Note, isPermanent?: boolean) => {
     let newEntries: Note[];
 
     if (entries) {
-      newEntries = entries
+      newEntries = [...entries]
         .filter((entry) => {
           if (updated.id === entry.id) {
             return !isPermanent;
@@ -99,6 +145,7 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
       await afterUpdate(updated, isPermanent);
     }
   };
+
   const toggleDay = () => {
     handleToggleDay(DateTime.fromISO(date).toJSDate());
   };
@@ -109,7 +156,7 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
 
   const itemsContent = [];
 
-  if (openDates[date]) {
+  if (open) {
     if (summaryLoading || entriesLoading) {
       itemsContent.push(<Spin key={uuidv4()} size={"default"} />);
     } else if (entries && entries.length > 0) {
@@ -126,13 +173,13 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
           return;
         }
 
-        if (hideAssociated && item.associations.length > 0) {
+        if (hideAssociated && item.associations!.length > 0) {
           return;
         }
 
         itemsContent.push(
           <TimelineEntry
-            key={uuidv4()}
+            key={`timeline-entry-${item.id}`}
             item={item}
             showMetadata={showMetadata}
             deleteCallback={afterNoteUpdate}
@@ -182,15 +229,13 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
             fontWeight: 500,
             justifyContent: "start",
           }}
-          icon={
-            openDates[date] ? <CaretDownOutlined /> : <CaretRightOutlined />
-          }
+          icon={open ? <CaretDownOutlined /> : <CaretRightOutlined />}
         >
           <CalendarOutlined />
           {date}
         </Button>
         <Space>
-          {openDates[date] && (
+          {open && (
             <Tag
               bordered={false}
               style={{ color: "#666666", padding: 4, textAlign: "end" }}

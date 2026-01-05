@@ -53,6 +53,8 @@ const NoteRichTextEditor: React.FunctionComponent<NoteRichTextEditorProps> = ({
             branding: false,
             height: height,
             menubar: "edit view insert format tools table",
+            contextmenu: false,
+            browser_spellcheck: true,
             plugins: [
               "accordion",
               "advlist",
