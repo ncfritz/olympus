@@ -28,6 +28,7 @@ import {
   GraphQlNote,
   toDomainObject,
 } from "../../../convert/minerva/NoteConverter";
+import { NOTE_WITH_ASSOCIATIONS } from "../../../query/minerva/notes";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlUpdateNoteResponse = {
@@ -79,21 +80,7 @@ export class UpdateNoteController {
     const updateRequest = gql`
       mutation UpdateNote($id: uuid!, $changes: minerva_notes_set_input = {}) {
         update_minerva_notes_by_pk(pk_columns: { id: $id }, _set: $changes) {
-          id
-          author
-          createdTime
-          lastUpdatedTime
-          deletedTime
-          type
-          flagged
-          title
-          summary
-          value
-          associatedItems {
-            itemId
-            itemType
-            createdTime
-          }
+          ${NOTE_WITH_ASSOCIATIONS}
         }
       }
     `;

@@ -19,6 +19,7 @@ import {
   GraphQlNote,
   toDomainObject,
 } from "../../../convert/minerva/NoteConverter";
+import { NOTE_WITH_ASSOCIATIONS } from "../../../query/minerva/notes";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlDescribeNoteResponse = {
@@ -32,7 +33,9 @@ export class DescribeNoteController {
   @Get("/note/:noteId")
   @ApiOperation({
     summary: "Gets a single note by ID",
-    description: "Gets a single note by ID",
+    description:
+      "Gets a single note by ID.  The note returned will be a fully populated note including " +
+      "any associations, as well as parent and child notes",
     operationId: "DescribeNote",
     tags: ["Notes"],
   })
@@ -54,21 +57,7 @@ export class DescribeNoteController {
     const queryRequest = gql`
       query DescribeNote($id: uuid!) {
         minerva_notes_by_pk(id: $id) {
-          id
-          author
-          createdTime
-          lastUpdatedTime
-          deletedTime
-          flagged
-          type
-          title
-          summary
-          value
-          associatedItems {
-            itemId
-            itemType
-            createdTime
-          }
+          ${NOTE_WITH_ASSOCIATIONS}
         }
       }
     `;
@@ -80,10 +69,6 @@ export class DescribeNoteController {
           id: noteId,
         },
       );
-
-    if (queryResponse.minerva_notes_by_pk === null) {
-      throw new NotFoundException();
-    }
 
     if (!queryResponse.minerva_notes_by_pk) {
       throw new NotFoundException(`Note with id ${noteId} not found`);

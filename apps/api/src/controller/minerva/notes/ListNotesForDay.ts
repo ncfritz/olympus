@@ -1,4 +1,9 @@
-import { ListNotesResponse, Note } from "@ncfritz/olympus-model";
+import {
+  FilterDefinition,
+  FilterType,
+  ListNotesResponse,
+  Note,
+} from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -14,7 +19,9 @@ import {
   GraphQlNote,
   toDomainObject,
 } from "../../../convert/minerva/NoteConverter";
+import { NOTE_WITH_ASSOCIATIONS } from "../../../query/minerva/notes";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { buildFilterExpression } from "../../../utils/filterUtil";
 
 type GraphQlListNotesResponse = {
   minerva_notes: GraphQlNote[];
@@ -56,47 +63,53 @@ export class ListNotesForDayController {
     const startTime = moment(start).utc();
     const endTime = moment(startTime).add({ days: days });
 
+    const authorFilter: FilterDefinition = {
+      name: "author",
+      type: FilterType.EQUALS,
+      value: "ncfritz",
+    };
+    const dateFilter: FilterDefinition = {
+      name: "_",
+      type: FilterType.AND,
+      value: [
+        {
+          name: "createdTime",
+          type: FilterType.GREATER_THAN_EQUAL,
+          value: startTime.toISOString(),
+        },
+        {
+          name: "createdTime",
+          type: FilterType.LESS_THAN,
+          value: endTime.toISOString(),
+        },
+      ],
+    };
+    const childFilter: FilterDefinition = {
+      name: "parent_id",
+      type: FilterType.IS_NULL,
+      value: true,
+    };
+    const filters: FilterDefinition = {
+      name: "_",
+      type: FilterType.AND,
+      value: [authorFilter, dateFilter, childFilter],
+    };
+
+    const whereExpression = buildFilterExpression(filters);
+
     const queryRequest = gql`
-      query ListNotesForDay(
-        $author: String!
-        $start: timestamptz!
-        $end: timestamptz!
-      ) {
+      query ListNotesForDay {
         minerva_notes(
-          where: {
-            author: { _eq: $author }
-            _and: {
-              createdTime: { _gte: $start }
-              _and: { createdTime: { _lt: $end } }
-            }
-          }
+          ${whereExpression},
           order_by: { createdTime: desc }
         ) {
-          id
-          author
-          createdTime
-          lastUpdatedTime
-          deletedTime
-          flagged
-          type
-          title
-          summary
-          value
-          associatedItems {
-            itemId
-            itemType
-            createdTime
-          }
+          ${NOTE_WITH_ASSOCIATIONS}
         }
       }
     `;
 
     const queryResponse =
-      await this.graphQLClient.request<GraphQlListNotesResponse>(queryRequest, {
-        author: "ncfritz",
-        start: startTime,
-        end: endTime,
-      });
+      await this.graphQLClient.request<GraphQlListNotesResponse>(queryRequest);
 
     const notes: Note[] = [];
     queryResponse.minerva_notes.forEach((note) => {

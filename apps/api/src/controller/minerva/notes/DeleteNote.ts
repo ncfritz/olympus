@@ -22,7 +22,9 @@ import {
   GraphQlNote,
   toDomainObject,
 } from "../../../convert/minerva/NoteConverter";
+import { NOTE_WITH_ASSOCIATIONS } from "../../../query/minerva/notes";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { logger } from "../../../utils/logger";
 
 type GraphQlGetDeletedTimeResponse = {
   minerva_notes_by_pk: {
@@ -35,6 +37,9 @@ type GraphQlSoftDeleteNoteResponse = {
 };
 
 type GraphQlHardDeleteNoteResponse = {
+  update_minerva_notes: {
+    affected_rows: number;
+  };
   delete_minerva_notes_by_pk: GraphQlNote;
 };
 
@@ -44,8 +49,12 @@ export class DeleteNoteController {
 
   @Delete("/note/:noteId")
   @ApiOperation({
-    summary: "Deleted an existing note",
-    description: "Deleted an existing node.",
+    summary: "Deletes an existing note",
+    description:
+      "Deletes an existing node using a soft/hard deletion policy. A note is first soft-deleted by " +
+      "stamping a `deletedTime` on the entry.  In a soft-deletion state a note it recoverable.  If " +
+      "this API is called on a note that has already been soft-deleted, the note will be permanently " +
+      "removed from the database and will be unrecoverable.",
     operationId: "DeleteNote",
     tags: ["Notes"],
   })
@@ -57,11 +66,11 @@ export class DeleteNoteController {
     type: String,
   })
   @ApiOkResponse({
-    description: "The record has been successfully soft deleted.",
+    description: "The note has been successfully soft deleted.",
     type: SingleNoteResponse,
   })
   @ApiNoContentResponse({
-    description: "The record has been successfully hard deleted.",
+    description: "The note has been successfully hard deleted.",
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -86,8 +95,12 @@ export class DeleteNoteController {
       );
 
     if (getDeletedTimeResponse.minerva_notes_by_pk === null) {
-      throw new NotFoundException();
+      throw new NotFoundException(`Note with id ${noteId} not found`);
     }
+
+    logger.debug(
+      `Note ${noteId} deletedTime: ${getDeletedTimeResponse.minerva_notes_by_pk.deletedTime}`,
+    );
 
     if (getDeletedTimeResponse.minerva_notes_by_pk.deletedTime === null) {
       const softDeleteNoteRequest = gql`
@@ -96,21 +109,7 @@ export class DeleteNoteController {
             pk_columns: { id: $id }
             _set: { deletedTime: $timestamp }
           ) {
-            id
-            author
-            createdTime
-            lastUpdatedTime
-            deletedTime
-            flagged
-            type
-            title
-            summary
-            value
-            associatedItems {
-              itemId
-              itemType
-              createdTime
-            }
+            ${NOTE_WITH_ASSOCIATIONS}
           }
         }
       `;
@@ -126,22 +125,11 @@ export class DeleteNoteController {
     } else {
       const hardDeleteNoteRequest = gql`
         mutation HardDeleteNote($id: uuid!) {
+          update_minerva_notes(where: {parent_id: {_eq: $id}}, _set: {parent_id: null}) {
+            affected_rows
+          }
           delete_minerva_notes_by_pk(id: $id) {
-            id
-            author
-            createdTime
-            lastUpdatedTime
-            deletedTime
-            flagged
-            type
-            title
-            summary
-            value
-            associatedItems {
-              itemId
-              itemType
-              createdTime
-            }
+            ${NOTE_WITH_ASSOCIATIONS}
           }
         }
       `;
@@ -151,6 +139,10 @@ export class DeleteNoteController {
           hardDeleteNoteRequest,
           { id: noteId },
         );
+
+      logger.info(
+        `Disassociated ${hardDeleteNoteResponse.update_minerva_notes.affected_rows} child notes.`,
+      );
 
       note = toDomainObject(hardDeleteNoteResponse.delete_minerva_notes_by_pk);
       responseCode = HttpStatus.NO_CONTENT;

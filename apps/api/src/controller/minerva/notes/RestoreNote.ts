@@ -13,6 +13,7 @@ import {
   GraphQlNote,
   toDomainObject,
 } from "../../../convert/minerva/NoteConverter";
+import { NOTE_WITH_ASSOCIATIONS } from "../../../query/minerva/notes";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlRestoreNoteResponse = {
@@ -52,21 +53,7 @@ export class RestoreNoteController {
           pk_columns: { id: $id }
           _set: { deletedTime: null }
         ) {
-          id
-          author
-          createdTime
-          lastUpdatedTime
-          deletedTime
-          flagged
-          type
-          title
-          summary
-          value
-          associatedItems {
-            itemId
-            itemType
-            createdTime
-          }
+          ${NOTE_WITH_ASSOCIATIONS}
         }
       }
     `;
