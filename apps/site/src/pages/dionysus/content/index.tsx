@@ -14,6 +14,7 @@ import {
   LeftArrow,
   RightArrow,
 } from "../../../components/content/scroller/arrows";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import "react-horizontal-scrolling-menu/dist/styles.css";
 
@@ -66,8 +67,7 @@ const IndexPage: React.FunctionComponent = () => {
 
   return (
     <ContentAuthWrapper>
-      <Breadcrumb
-        style={{ padding: 8, background: "#f6f6f6" }}
+      <OlympusBreadcrumbs
         items={[
           {
             title: (

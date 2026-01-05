@@ -34,6 +34,7 @@ import ContentAssetTagInput from "../../../components/content/ContentAssetTagInp
 import ContentAssetThumbnailGrid from "../../../components/content/ContentAssetThumbnailGrid";
 import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
 import Timestamp from "../../../components/data/Timestamp";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useAppSelector } from "../../../redux/hooks";
 import type { NotificationType } from "../../../utils/notifications";
 
@@ -486,12 +487,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
             width: "calc(100vw - 380px)",
           }}
         >
-          <Breadcrumb
-            style={{
-              padding: 8,
-              paddingLeft: 16,
-              background: "#f6f6f6",
-            }}
+          <OlympusBreadcrumbs
             items={[
               {
                 title: (
@@ -553,7 +549,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
               top: contentOffset + 16,
               zIndex: 10,
               borderTop: "1px solid #efefef",
-              width: "calc(100vw - 380px)",
+              width: "calc(100vw - 370px)",
               height: `calc(100vh - ${contentOffset}px - 48px)`,
             }}
           >

@@ -6,12 +6,12 @@ import {
   VideoCameraOutlined,
 } from "@ant-design/icons";
 import type {
+  ContentAsset,
   ContentAssetTag,
-  FilterDefinition,
+  FilterDefinition
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Avatar,
-  Breadcrumb,
   Button,
   Drawer,
   notification,
@@ -36,24 +36,9 @@ import ContentAssetSizeDisplay from "../../../components/content/ContentAssetSiz
 import ContentAssetStatistics from "../../../components/content/ContentAssetStatistics";
 import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
 import Timestamp from "../../../components/data/Timestamp";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { useAppSelector } from "../../../redux/hooks";
-
-export interface ContentAsset {
-  id: string;
-  originalName: string;
-  originalSha: string;
-  originalSizeBytes: number;
-  newSha: string;
-  newSizeBytes: number;
-  durationMs: number;
-  width: number;
-  height: number;
-  name: string;
-  createdTime: string;
-  rating: number;
-  tags: ContentAssetTag[];
-}
 
 type OnChange = NonNullable<TableProps<ContentAsset>["onChange"]>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
@@ -396,8 +381,7 @@ const ContentAssetsPage: React.FunctionComponent = () => {
 
   return (
     <ContentAuthWrapper>
-      <Breadcrumb
-        style={{ padding: 8, background: "#f6f6f6" }}
+      <OlympusBreadcrumbs
         items={[
           {
             title: (

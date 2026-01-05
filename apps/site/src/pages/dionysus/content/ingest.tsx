@@ -47,6 +47,7 @@ import WorkflowStatusAggregateChart from "../../../components/content/graphs/Wor
 import WorkflowStatusChart from "../../../components/content/graphs/WorkflowStatusChart";
 import { getContentIngestionWorkflowStatusIndicator } from "../../../components/content/util";
 import Timestamp from "../../../components/data/Timestamp";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { buildFilterDefinitionForTable } from "../../../utils/filters";
 
@@ -297,12 +298,7 @@ const AssetIngestPage: React.FunctionComponent = () => {
             width: "calc(100vw - 380px)",
           }}
         >
-          <Breadcrumb
-            style={{
-              padding: 8,
-              paddingLeft: 16,
-              background: "#f6f6f6",
-            }}
+          <OlympusBreadcrumbs
             items={[
               {
                 title: (
@@ -347,12 +343,11 @@ const AssetIngestPage: React.FunctionComponent = () => {
         >
           <Content
             style={{
-              marginTop: 38,
+              marginTop: 2,
               position: "fixed",
               zIndex: 10,
-              borderTop: "1px solid #efefef",
               width: "calc(100vw - 380px)",
-              height: "calc(100vh - 102px)",
+              height: "calc(100vh - 92px)",
             }}
           >
             <Row gutter={16} style={{ marginBottom: 16 }}>
@@ -458,7 +453,7 @@ const AssetIngestPage: React.FunctionComponent = () => {
                 }}
                 columns={columns}
                 sticky={true}
-                scroll={{ y: "calc(100vh - 484px)" }}
+                scroll={{ y: "calc(100vh - 444px)" }}
                 dataSource={workflows?.workflows}
                 size={"small"}
                 loading={workflowsLoading}

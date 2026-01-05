@@ -25,6 +25,7 @@ import ContentAssetChannelModal, {
   type ContentAssetChannelFormData,
 } from "../../../../components/content/ContentAssetChannelModal";
 import ContentAuthWrapper from "../../../../components/content/ContentAuthWrapper";
+import OlympusBreadcrumbs from "../../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
 
 const ContentAssetCard = dynamic(
@@ -96,8 +97,7 @@ const ChannelDetailsPage: React.FunctionComponent = () => {
 
   return (
     <ContentAuthWrapper>
-      <Breadcrumb
-        style={{ padding: 8, background: "#f6f6f6" }}
+      <OlympusBreadcrumbs
         items={[
           {
             title: (

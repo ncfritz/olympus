@@ -17,6 +17,7 @@ import contentApi from "../../../api/contentApi";
 import LoadingWrapper from "../../../components/common/LoadingWrapper";
 import ContentAssetChannelCategoryModal from "../../../components/content/ContentAssetChannelCategoryModal";
 import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 
 const ContentAssetChannelCategoryRow = dynamic(
@@ -111,8 +112,7 @@ const ChannelsPage: React.FunctionComponent = () => {
 
   return (
     <ContentAuthWrapper>
-      <Breadcrumb
-        style={{ padding: 8, background: "#f6f6f6" }}
+      <OlympusBreadcrumbs
         items={[
           {
             title: (

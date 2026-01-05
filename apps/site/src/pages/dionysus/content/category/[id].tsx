@@ -21,6 +21,7 @@ import LoadingWrapper from "../../../../components/common/LoadingWrapper";
 import ContentAssetCategoryChannelCard from "../../../../components/content/ContentAssetCategoryChannelCard";
 import ContentAssetChannelCategoryModal from "../../../../components/content/ContentAssetChannelCategoryModal";
 import ContentAuthWrapper from "../../../../components/content/ContentAuthWrapper";
+import OlympusBreadcrumbs from "../../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
 
 const DuplicatesPage: React.FunctionComponent = () => {
@@ -88,8 +89,7 @@ const DuplicatesPage: React.FunctionComponent = () => {
 
   return (
     <ContentAuthWrapper>
-      <Breadcrumb
-        style={{ padding: 8, background: "#f6f6f6" }}
+      <OlympusBreadcrumbs
         items={[
           {
             title: (
