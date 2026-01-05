@@ -1,4 +1,10 @@
-import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
+import {
+  ApiExtraModels,
+  ApiProperty,
+  getSchemaPath,
+  OmitType,
+  PartialType,
+} from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment";
 
@@ -266,18 +272,25 @@ export class ListNotesResponse {
   notes: Note[];
 }
 
+@ApiExtraModels(NoteTypeCounts)
 export class GetSummaryResponse {
   @ApiProperty({
-    type: () => NoteTypeCounts,
+    type: () => Object,
     required: true,
+    additionalProperties: {
+      $ref: getSchemaPath(NoteTypeCounts),
+    },
     description:
       "A mapping of ISO-8601 dates to note count statistics for each day",
   })
   counts: Record<string, NoteTypeCounts>;
 
   @ApiProperty({
-    type: () => NoteTypeCounts,
+    type: () => Object,
     required: true,
+    additionalProperties: {
+      $ref: getSchemaPath(NoteTypeCounts),
+    },
     description:
       "A mapping of the hour of day to note count statistics for each hour of the day",
   })
