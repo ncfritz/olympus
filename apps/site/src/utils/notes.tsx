@@ -7,28 +7,10 @@ import {
 } from "@ant-design/icons";
 import { PredictiveAnalysisIcon } from "../icons";
 
-export interface UpdateNoteResponse {
-  note: Note;
-}
-
 export interface NoteAssociation {
   itemId: string;
   itemType: string;
   createdTime: string;
-}
-
-export interface Note {
-  author: string;
-  type: number;
-  flagged: boolean;
-  title?: string;
-  summary?: string;
-  value: string;
-  id: string;
-  createdTime: string;
-  lastUpdatedTime: string;
-  deletedTime?: string;
-  associations: NoteAssociation[];
 }
 
 export const config: Record<number, Record<string, any>> = {
