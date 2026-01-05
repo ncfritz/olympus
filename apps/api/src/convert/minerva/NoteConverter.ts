@@ -46,8 +46,6 @@ export const toDomainObject = (input: GraphQlNote): Note => {
     });
   }
 
-  console.log(input);
-
   return {
     id: input.id,
     author: input.author,
