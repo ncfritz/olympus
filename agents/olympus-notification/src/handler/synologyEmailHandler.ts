@@ -37,7 +37,7 @@ export class SynologyEmailHandler<
 
   getTransport(): Transporter {
     return nodemailer.createTransport({
-      host: this.configService.get<string>("SYNO_SMTP_HOST", "192.168.15.38"),
+      host: this.configService.get<string>("SYNO_SMTP_HOST", "192.168.15.21"),
       secure: true,
       auth: {
         user: this.configService.get<string>("SYNO_SMTP_USER", "ncfritz"),
