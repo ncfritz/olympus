@@ -1,6 +1,6 @@
+import type { ContentAsset } from "@ncfritz/olympus-sdk/dionysus";
 import { Col, QRCode, Row, Space, Typography } from "antd";
 import dynamic from "next/dynamic";
-import type { ContentAsset } from "../../pages/dionysus/content/assets";
 import ContentAssetTagEditor from "./ContentAssetTagEditor";
 import ContentAssetThumbnailGrid from "./ContentAssetThumbnailGrid";
 

@@ -1,7 +1,7 @@
+import type { ContentAsset } from "@ncfritz/olympus-sdk/dionysus";
 import { Col, Progress, Row, Space, Typography } from "antd";
 import prettyBytes from "pretty-bytes";
 import React from "react";
-import type { ContentAsset } from "../../pages/dionysus/content/assets";
 
 interface ContentAssetSizeDisplayProps {
   asset: ContentAsset;

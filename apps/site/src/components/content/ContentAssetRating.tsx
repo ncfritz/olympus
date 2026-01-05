@@ -1,8 +1,7 @@
 import { StarFilled } from "@ant-design/icons";
+import type { ContentAsset } from "@ncfritz/olympus-sdk/dionysus";
 import { Rate } from "antd";
-import axios from "axios";
 import contentApi from "../../api/contentApi";
-import type { ContentAsset } from "../../pages/dionysus/content/assets";
 
 interface ContentAssetRatingProps {
   asset: ContentAsset;

@@ -1,5 +1,8 @@
 import { StarFilled } from "@ant-design/icons";
-import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
+import type {
+  ContentAsset,
+  ContentAssetTag,
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Card, Empty, Rate, Space, Spin, Typography } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -7,7 +10,6 @@ import React, { useEffect, useState } from "react";
 import { ScrollMenu, VisibilityContext } from "react-horizontal-scrolling-menu";
 import contentApi from "../../api/contentApi";
 import useDrag from "../../hooks/useDrag";
-import type { ContentAsset } from "../../pages/dionysus/content/assets";
 import { useAppSelector } from "../../redux/hooks";
 import { LeftArrow, RightArrow } from "./scroller/arrows";
 
