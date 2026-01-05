@@ -1,10 +1,12 @@
 import {
   type BaseNoteWithAssociations,
   client,
+  createChildNote,
   createNote,
   deleteNote,
   getNotesForEntity,
   getNotesSummary,
+  listChildNotes,
   listNotesForDay,
   type PartialNote,
   restoreNote,
@@ -37,6 +39,19 @@ class NotesApi {
       ...this.buildHeaders(),
     });
   }
+
+  async createChildNote(note: BaseNoteWithAssociations, parentId: string) {
+    return await createChildNote({
+      path: {
+        noteId: parentId,
+      },
+      body: {
+        note: note,
+      },
+      ...this.buildHeaders(),
+    });
+  }
+
   async updateNote(id: string, update: PartialNote) {
     return await updateNote({
       path: {
@@ -74,6 +89,15 @@ class NotesApi {
       },
       query: {
         days: days,
+      },
+      ...this.buildHeaders(),
+    });
+  }
+
+  async getChildNotes(parentId: string) {
+    return await listChildNotes({
+      path: {
+        noteId: parentId,
       },
       ...this.buildHeaders(),
     });
