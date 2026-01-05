@@ -93,7 +93,7 @@ export class BaseNote {
 
 export class BaseNoteWithAssociations extends BaseNote {
   @ApiProperty({
-    type: NoteAssociation,
+    type: PartialNoteAssociation,
     isArray: true,
     required: true,
     description: "The set of associations for the note",
