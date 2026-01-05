@@ -1,5 +1,15 @@
 "use client";
 
+import type { Note } from "@ncfritz/olympus-sdk/minerva";
+
+export type OlympusEvent<T> = Event & {
+  detail: T;
+};
+
+export type NoteEvent = {
+  note: Note;
+};
+
 export const subscribe = (
   eventName: string,
   listener: EventListenerOrEventListenerObject,
@@ -14,7 +24,7 @@ export const unsubscribe = (
   document.removeEventListener(eventName, listener);
 };
 
-export const publish = (eventName: string, data?: any) => {
-  const event = new CustomEvent(eventName, { detail: data });
+export const publish = <T>(eventName: string, data?: T) => {
+  const event = new CustomEvent<T>(eventName, { detail: data });
   document.dispatchEvent(event);
 };
