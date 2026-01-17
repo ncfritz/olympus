@@ -10,9 +10,7 @@ const valueStyle: CSSProperties = {
   fontSize: "12px",
 };
 
-export class BatchJobCompletionFormatter
-  implements NotificationFormatter<DionysiusBatchJobPayload>
-{
+export class BatchJobCompletionFormatter implements NotificationFormatter<DionysiusBatchJobPayload> {
   format(
     payload: DionysiusBatchJobPayload,
   ): [string | ReactNode, string | ReactNode] {

@@ -91,7 +91,12 @@ const ContentAssetExpanderRow: React.FunctionComponent<
           >
             <Typography.Text strong={true}>Thumbnails</Typography.Text>
           </Row>
-          <ContentAssetThumbnailGrid asset={record} ratio={1} rows={4} forceMax={true} />
+          <ContentAssetThumbnailGrid
+            asset={record}
+            ratio={1}
+            rows={4}
+            forceMax={true}
+          />
         </Col>
         <Col
           span={3}

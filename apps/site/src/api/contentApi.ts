@@ -40,7 +40,8 @@ import {
   type BaseContentAssetChannelCategory,
   updateContentAssetChannelCategory,
   listContentAssetChannels,
-  describeContentAssetChannel, listContentAssetChannelsForCategory
+  describeContentAssetChannel,
+  listContentAssetChannelsForCategory,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { store } from "../redux/store";
 import { ApiBase } from "./apiBase";

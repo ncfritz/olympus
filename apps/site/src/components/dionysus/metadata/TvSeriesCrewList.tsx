@@ -1,22 +1,25 @@
 import {
   CaretRightOutlined,
-  FilterFilled, InfoCircleOutlined,
+  FilterFilled,
+  InfoCircleOutlined,
   ProfileOutlined,
-  TableOutlined
+  TableOutlined,
 } from "@ant-design/icons";
 import type {
   BasePerson,
-  TvSeriesCrewMember, TvSeriesCrewMemberJob
+  TvSeriesCrewMember,
+  TvSeriesCrewMemberJob,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Collapse,
   type CollapseProps,
   Empty,
   Input,
-  List, Popover,
+  List,
+  Popover,
   Radio,
   Space,
-  Typography
+  Typography,
 } from "antd";
 import { useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";

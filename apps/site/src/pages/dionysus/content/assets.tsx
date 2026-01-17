@@ -8,7 +8,7 @@ import {
 import type {
   ContentAsset,
   ContentAssetTag,
-  FilterDefinition
+  FilterDefinition,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Avatar,

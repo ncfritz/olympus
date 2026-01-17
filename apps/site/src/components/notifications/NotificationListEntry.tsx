@@ -105,7 +105,9 @@ const NotificationListEntry: React.FunctionComponent<
   const notificationTime = DateTime.fromISO(notification.createdTime);
   const notificationAge =
     -notificationTime.diffNow("milliseconds").milliseconds;
-  const formatter = getFormatterForMessageType(notification.notificationType.id);
+  const formatter = getFormatterForMessageType(
+    notification.notificationType.id,
+  );
 
   let title: string | ReactNode = (
     // @ts-expect-error okay

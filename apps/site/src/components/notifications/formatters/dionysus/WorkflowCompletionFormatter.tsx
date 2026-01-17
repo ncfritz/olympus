@@ -10,9 +10,7 @@ const valueStyle: CSSProperties = {
   fontSize: "12px",
 };
 
-export class WorkflowCompletionFormatter
-  implements NotificationFormatter<DionysusWorkflowPayload>
-{
+export class WorkflowCompletionFormatter implements NotificationFormatter<DionysusWorkflowPayload> {
   format(
     payload: DionysusWorkflowPayload,
   ): [string | ReactNode, string | ReactNode] {

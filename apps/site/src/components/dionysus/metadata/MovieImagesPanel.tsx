@@ -60,7 +60,6 @@ const MovieImagesPanel: React.FunctionComponent<MovieImagesPanelProps> = ({
   >(new Map());
   const [loading, setLoading] = useState(false);
 
-
   useEffect(() => {
     setLoading(true);
 

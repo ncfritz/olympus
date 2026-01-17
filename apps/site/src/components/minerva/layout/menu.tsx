@@ -1,8 +1,11 @@
 import {
   BarChartOutlined,
-  CalendarOutlined, CarryOutOutlined,
+  CalendarOutlined,
+  CarryOutOutlined,
   EditOutlined,
-  HomeOutlined, ProjectOutlined, ScheduleOutlined
+  HomeOutlined,
+  ProjectOutlined,
+  ScheduleOutlined,
 } from "@ant-design/icons";
 import { Menu } from "antd";
 import { DateTime } from "luxon";
