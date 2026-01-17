@@ -3,7 +3,7 @@ import type {
   PersonDepartmentStatistic,
   PersonLifeStatistic,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Affix, Breadcrumb, Col, Layout, Row, Space } from "antd";
+import { Affix, Col, Layout, Row, Space } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React from "react";
@@ -12,6 +12,7 @@ import LoadingWrapper from "../../components/common/LoadingWrapper";
 import PersonDepartmentStatisticsChart from "../../components/dionysus/metadata/people/PersonDepartmentStatisticsChart";
 import PersonLifeStatisticsChart from "../../components/dionysus/metadata/people/PersonLifeStatisticsChart";
 import PersonList from "../../components/dionysus/metadata/PersonList";
+import OlympusBreadcrumbs from "../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../icons";
 
@@ -50,8 +51,7 @@ const PeopleIndexPage: React.FunctionComponent = () => {
   return (
     <>
       <Affix offsetTop={64}>
-        <Breadcrumb
-          style={{ padding: 8, background: "#f6f6f6" }}
+        <OlympusBreadcrumbs
           items={[
             {
               title: (

@@ -10,7 +10,6 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import {
   Avatar,
-  Breadcrumb,
   Col,
   Collapse,
   Empty,
@@ -35,6 +34,7 @@ import meetingsApi from "../../../api/meetingsApi";
 import notesApi from "../../../api/notestApi";
 import { publish } from "../../../utils/events";
 import { PUBLISH_EVENT } from "../../common/NotificationSink";
+import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
 import Day from "./DayDoughnut";
 import NotesEditorForm, {
   type NotesFormInput,
@@ -496,15 +496,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
 
   return (
     <Space>
-      <Breadcrumb
-        style={{
-          padding: 8,
-          background: "#f6f6f6",
-          position: "fixed",
-          top: 64,
-          width: "100%",
-          zIndex: 1000,
-        }}
+      <OlympusBreadcrumbs
         items={[
           {
             title: (

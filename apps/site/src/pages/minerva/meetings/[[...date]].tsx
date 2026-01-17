@@ -98,17 +98,6 @@ const IndexPage: React.FunctionComponent = () => {
           year: parseInt(params.date[0]),
           month: parseInt(params.date[1]),
         }).startOf("month");
-
-        breadcrumbs.push({
-          title: (
-            <Link href={`/minerva/meetings/${startDate.year}`}>
-              <Space>
-                <BarChartOutlined />
-                <span>{startDate.year}</span>
-              </Space>
-            </Link>
-          ),
-        });
         breadcrumbs.push({
           title: (
             <Space>

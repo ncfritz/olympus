@@ -1,6 +1,6 @@
 import { HomeOutlined } from "@ant-design/icons";
 import type { GenreStatistic } from "@ncfritz/olympus-sdk/dionysus";
-import { Affix, Breadcrumb, Col, Layout, Row, Space } from "antd";
+import { Affix, Col, Layout, Row, Space } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React from "react";
@@ -8,6 +8,7 @@ import metadataApi from "../../api/metadataApi";
 import GenreCountStatisticsChart from "../../components/dionysus/metadata/movies/GenreCountStatisticsChart";
 import GenreStatisticsChart from "../../components/dionysus/metadata/movies/GenreStatisticsChart";
 import GenreTagCloudChart from "../../components/dionysus/metadata/movies/GenreTagCloudChart";
+import OlympusBreadcrumbs from "../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../icons";
 
@@ -37,8 +38,7 @@ const GenresIndexPage: React.FunctionComponent = () => {
   return (
     <>
       <Affix offsetTop={64}>
-        <Breadcrumb
-          style={{ padding: 8, background: "#f6f6f6" }}
+        <OlympusBreadcrumbs
           items={[
             {
               title: (

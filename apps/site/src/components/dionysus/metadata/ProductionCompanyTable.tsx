@@ -31,6 +31,8 @@ import Timestamp from "../../data/Timestamp";
 export interface ProductionCompanyTableProps {
   data: SparseProductionCompanyWithContentCounts[];
   loading: boolean;
+  sticky: boolean;
+  scrollY: string;
   pagination?: PaginationProps;
   onChange?: (
     pagination: TablePaginationConfig,
@@ -44,11 +46,18 @@ export interface ProductionCompanyTableProps {
 
 const ProductionCompanyTable: React.FunctionComponent<
   ProductionCompanyTableProps
-> = ({ data, loading, pagination, onChange }: ProductionCompanyTableProps) => {
+> = ({
+  data,
+  loading,
+  pagination,
+  onChange,
+  sticky,
+  scrollY,
+}: ProductionCompanyTableProps) => {
   const columns: ColumnsType<SparseProductionCompanyWithContentCounts> = [
     {
       key: "name",
-      title: "Name",
+      title: "",
       dataIndex: "name",
       render: (value, record) => {
         let content = (
@@ -271,6 +280,8 @@ const ProductionCompanyTable: React.FunctionComponent<
     <Table
       style={{ width: "100%" }}
       rowKey={"id"}
+      sticky={sticky}
+      scroll={{ y: scrollY }}
       columns={columns}
       dataSource={data}
       size={"small"}

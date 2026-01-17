@@ -1,20 +1,6 @@
-import {
-  BookOutlined,
-  HeartOutlined,
-  HomeOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
+import { HomeOutlined } from "@ant-design/icons";
 import type { Collection } from "@ncfritz/olympus-sdk/dionysus";
-import {
-  Breadcrumb,
-  Layout,
-  Space,
-  Spin,
-  Typography,
-  Tabs,
-  Button,
-  Progress,
-} from "antd";
+import { Layout, Space, Spin, Typography, Tabs } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -22,6 +8,7 @@ import React, { useState } from "react";
 import metadataApi from "../../../api/metadataApi";
 import CollectionImagesPanel from "../../../components/dionysus/metadata/CollectionImagesPanel";
 import MovieList from "../../../components/dionysus/metadata/MovieList";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../icons";
 
@@ -92,67 +79,11 @@ const MovieDetailPage: React.FunctionComponent = () => {
             borderBottom: "1px solid #efefef",
             alignItems: "start",
             position: "relative",
-            top: 25,
           }}
           styles={{
             item: { width: "100%" },
           }}
         >
-          <Breadcrumb
-            className={"dark"}
-            style={{
-              padding: 8,
-              background: "#021629",
-              marginBottom: 32,
-              position: "fixed",
-              top: 64,
-              left: 380,
-              width: "100%",
-              zIndex: 100,
-            }}
-            items={[
-              {
-                title: (
-                  <Link href={"/"}>
-                    <Space size={4}>
-                      <HomeOutlined />
-                      <span>Home</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Link href={"/dionysus"}>
-                    <Space size={4}>
-                      <MetadataOutlinedIcon />
-                      <span>Dionysus</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Link href={"/dionysus/collections"}>
-                    <Space size={4}>
-                      <MetadataOutlinedIcon />
-                      <span>Collections</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Space size={4}>
-                    <MetadataOutlinedIcon />
-                    <span>
-                      {collection?.name ? collection.name : "Loading..."}
-                    </span>
-                  </Space>
-                ),
-              },
-            ]}
-          />
           <Space
             direction={"horizontal"}
             size={32}
@@ -182,7 +113,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
         </Space>
         <Space
           direction={"horizontal"}
-          style={{ width: "100%", top: 24, position: "relative" }}
+          style={{ width: "100%", position: "relative" }}
           styles={{
             item: {
               width: "100%",
@@ -246,19 +177,64 @@ const MovieDetailPage: React.FunctionComponent = () => {
   }
 
   return (
-    <Layout
-      style={{
-        position: "fixed",
-        background: "#ffffff",
-        gap: 16,
-        top: 64,
-        overflowX: "hidden",
-        overflowY: "auto",
-        height: "calc(100vh - 64px)",
-      }}
-    >
-      <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
-    </Layout>
+    <>
+      <OlympusBreadcrumbs
+        className={"dark"}
+        items={[
+          {
+            title: (
+              <Link href={"/"}>
+                <Space size={4}>
+                  <HomeOutlined />
+                  <span>Home</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>Dionysus</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus/collections"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>Collections</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Space size={4}>
+                <MetadataOutlinedIcon />
+                <span>{collection?.name ? collection.name : "Loading..."}</span>
+              </Space>
+            ),
+          },
+        ]}
+      />
+      <Layout
+        style={{
+          position: "fixed",
+          background: "#ffffff",
+          gap: 16,
+          top: 64 + 28,
+          overflowX: "hidden",
+          overflowY: "auto",
+          height: "calc(100vh - 64px)",
+        }}
+      >
+        <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
+      </Layout>
+    </>
   );
 };
 

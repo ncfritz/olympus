@@ -84,6 +84,7 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
     if (e.detail.note.hasParent) {
       console.log(
         "Skipping entries update because new note is a child of another note.",
+        e.detail,
       );
       return;
     }

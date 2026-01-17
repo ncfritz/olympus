@@ -3,7 +3,7 @@ import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { Breadcrumb, Layout, Space } from "antd";
+import { Layout, Space } from "antd";
 import type { BreadcrumbItemType } from "antd/lib/breadcrumb/Breadcrumb";
 import { DateTime, Interval } from "luxon";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import meetingsApi from "../../../api/meetingsApi";
+import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
 
 const { Sider, Content } = Layout;
 
@@ -73,15 +74,7 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
 
   return (
     <Space>
-      <Breadcrumb
-        style={{
-          padding: 8,
-          background: "#f6f6f6",
-          position: "fixed",
-          top: 64,
-          width: "100%",
-          zIndex: 1000,
-        }}
+      <OlympusBreadcrumbs
         items={[
           {
             title: (

@@ -16,7 +16,6 @@ import type {
   TvSeriesCrewMember,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
-  Breadcrumb,
   Layout,
   Space,
   Spin,
@@ -52,6 +51,7 @@ import TvSeriesCrewList from "../../../../components/dionysus/metadata/TvSeriesC
 import TvSeriesList from "../../../../components/dionysus/metadata/TvSeriesList";
 import TvSeriesPosterCard from "../../../../components/dionysus/metadata/TvSeriesPosterCard";
 import { getProgressColor } from "../../../../components/dionysus/metadata/util";
+import OlympusBreadcrumbs from "../../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../../icons";
 
@@ -189,65 +189,11 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
             borderBottom: "1px solid #efefef",
             alignItems: "start",
             position: "relative",
-            top: 25,
           }}
           styles={{
             item: { width: "100%" },
           }}
         >
-          <Breadcrumb
-            className={"dark"}
-            style={{
-              padding: 8,
-              background: "#021629",
-              marginBottom: 32,
-              position: "fixed",
-              top: 64,
-              left: 380,
-              width: "100%",
-              zIndex: 100,
-            }}
-            items={[
-              {
-                title: (
-                  <Link href={"/"}>
-                    <Space size={4}>
-                      <HomeOutlined />
-                      <span>Home</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Link href={"/dionysus"}>
-                    <Space size={4}>
-                      <MetadataOutlinedIcon />
-                      <span>Dionysus</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Link href={"/dionysus/movies"}>
-                    <Space size={4}>
-                      <MetadataOutlinedIcon />
-                      <span>Movies</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Space size={4}>
-                    <MetadataOutlinedIcon />
-                    <span>{tvSeries?.name ? tvSeries.name : "Loading..."}</span>
-                  </Space>
-                ),
-              },
-            ]}
-          />
           <Space
             direction={"horizontal"}
             size={32}
@@ -988,19 +934,63 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
   }
 
   return (
-    <Layout
-      style={{
-        position: "fixed",
-        background: "#ffffff",
-        gap: 16,
-        top: 64,
-        overflowX: "hidden",
-        overflowY: "auto",
-        height: "calc(100vh - 64px)",
-      }}
-    >
-      <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
-    </Layout>
+    <>
+      <OlympusBreadcrumbs
+        items={[
+          {
+            title: (
+              <Link href={"/"}>
+                <Space size={4}>
+                  <HomeOutlined />
+                  <span>Home</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>Dionysus</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus/movies"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>Movies</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Space size={4}>
+                <MetadataOutlinedIcon />
+                <span>{tvSeries?.name ? tvSeries.name : "Loading..."}</span>
+              </Space>
+            ),
+          },
+        ]}
+      />
+      <Layout
+        style={{
+          position: "fixed",
+          background: "#ffffff",
+          gap: 16,
+          top: 64 + 28,
+          overflowX: "hidden",
+          overflowY: "auto",
+          height: "calc(100vh - 64px)",
+        }}
+      >
+        <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
+      </Layout>
+    </>
   );
 };
 

@@ -1,7 +1,6 @@
 import { HomeOutlined } from "@ant-design/icons";
 import {
   Affix,
-  Breadcrumb,
   Col,
   Drawer,
   Layout,
@@ -22,6 +21,7 @@ import BatchJobQueueTimeChart from "../../../components/dionysus/jobs/graphs/Bat
 import BatchJobRuntimeChart from "../../../components/dionysus/jobs/graphs/BatchJobRuntimeChart";
 import BatchJobStatusChart from "../../../components/dionysus/jobs/graphs/BatchJobStatusChart";
 import BatchJobPanel from "../../../components/layout/jobs/BatchJobPanel";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
 import type {
@@ -165,8 +165,7 @@ const BatchJobsPage: React.FunctionComponent = () => {
   return (
     <>
       <Affix offsetTop={64}>
-        <Breadcrumb
-          style={{ padding: 8, background: "#f6f6f6" }}
+        <OlympusBreadcrumbs
           items={[
             {
               title: (

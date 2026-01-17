@@ -3,13 +3,14 @@ import type { EventInput } from "@fullcalendar/core";
 import listPlugin from "@fullcalendar/list";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { Breadcrumb, Col, Collapse, Layout, Space } from "antd";
+import { Col, Collapse, Layout, Space } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import meetingsApi from "../../api/meetingsApi";
+import OlympusBreadcrumbs from "../../components/layout/OlympusBreadcrumbs";
 import NotesEditorForm, {
   NEW_NOTE,
   type NotesFormInput,
@@ -49,15 +50,7 @@ const IndexPage: React.FunctionComponent = () => {
 
   return (
     <Space>
-      <Breadcrumb
-        style={{
-          padding: 8,
-          background: "#f6f6f6",
-          position: "fixed",
-          top: 64,
-          width: "100%",
-          zIndex: 1000,
-        }}
+      <OlympusBreadcrumbs
         items={[
           {
             title: (

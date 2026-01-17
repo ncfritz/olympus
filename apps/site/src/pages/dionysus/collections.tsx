@@ -1,16 +1,16 @@
 import { HomeOutlined } from "@ant-design/icons";
-import { Affix, Breadcrumb, Layout, Space } from "antd";
+import { Affix, Layout, Space } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React from "react";
+import OlympusBreadcrumbs from "../../components/layout/OlympusBreadcrumbs";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../icons";
 
 const CollectionsIndexPage: React.FunctionComponent = () => {
   return (
     <>
       <Affix offsetTop={64}>
-        <Breadcrumb
-          style={{ padding: 8, background: "#f6f6f6" }}
+        <OlympusBreadcrumbs
           items={[
             {
               title: (

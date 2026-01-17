@@ -8,7 +8,6 @@ import type {
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Affix,
-  Breadcrumb,
   Col,
   Input,
   Layout,
@@ -33,6 +32,7 @@ import MovieReleaseStatusStatisticsChart from "../../components/dionysus/metadat
 import MovieReleaseYearStatisticsChart from "../../components/dionysus/metadata/movies/MovieReleaseYearStatisticsChart";
 import MovieRuntimeStatisticsChart from "../../components/dionysus/metadata/movies/MovieRuntimeStatisticsChart";
 import { getReleaseStatusForMovie } from "../../components/dionysus/metadata/util";
+import OlympusBreadcrumbs from "../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../icons";
 const MovieLocationsMap = dynamic(
@@ -150,8 +150,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
   return (
     <>
       <Affix offsetTop={64}>
-        <Breadcrumb
-          style={{ padding: 8, background: "#f6f6f6" }}
+        <OlympusBreadcrumbs
           items={[
             {
               title: (

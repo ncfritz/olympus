@@ -36,6 +36,7 @@ import MetadataFetchJobPanel from "../../../components/dionysus/metadata/Metadat
 import MovieList from "../../../components/dionysus/metadata/MovieList";
 import PersonHistoryTimeline from "../../../components/dionysus/metadata/PersonHistoryTimeline";
 import PersonImageList from "../../../components/dionysus/metadata/PersonImageList";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../icons";
 
@@ -132,59 +133,6 @@ const PersonDetailPage: React.FunctionComponent = () => {
             style={{ width: "100%", position: "relative", top: -16 }}
             styles={{ item: { width: "100%" } }}
           >
-            <Breadcrumb
-              style={{
-                padding: 8,
-                marginBottom: 32,
-                position: "fixed",
-                top: 64,
-                left: 380,
-                width: "100%",
-                zIndex: 100,
-                backgroundColor: "#efefef66",
-                backdropFilter: "blur(10px)",
-              }}
-              items={[
-                {
-                  title: (
-                    <Link href={"/"}>
-                      <Space size={4}>
-                        <HomeOutlined />
-                        <span>Home</span>
-                      </Space>
-                    </Link>
-                  ),
-                },
-                {
-                  title: (
-                    <Link href={"/dionysus"}>
-                      <Space size={4}>
-                        <MetadataOutlinedIcon />
-                        <span>Dionysus</span>
-                      </Space>
-                    </Link>
-                  ),
-                },
-                {
-                  title: (
-                    <Link href={"/dionysus/persons"}>
-                      <Space size={4}>
-                        <MetadataOutlinedIcon />
-                        <span>People</span>
-                      </Space>
-                    </Link>
-                  ),
-                },
-                {
-                  title: (
-                    <Space size={4}>
-                      <MetadataOutlinedIcon />
-                      <span>{person?.name ? person.name : "Loading..."}</span>
-                    </Space>
-                  ),
-                },
-              ]}
-            />
             <Space
               direction={"horizontal"}
               className={"person-fix"}
@@ -496,19 +444,63 @@ const PersonDetailPage: React.FunctionComponent = () => {
   }
 
   return (
-    <Layout
-      style={{
-        position: "fixed",
-        background: "#ffffff",
-        gap: 16,
-        top: 64 + 38,
-        overflowX: "hidden",
-        overflowY: "auto",
-        height: "calc(100vh - 64px)",
-      }}
-    >
-      <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
-    </Layout>
+    <>
+      <OlympusBreadcrumbs
+        items={[
+          {
+            title: (
+              <Link href={"/"}>
+                <Space size={4}>
+                  <HomeOutlined />
+                  <span>Home</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>Dionysus</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus/persons"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>People</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Space size={4}>
+                <MetadataOutlinedIcon />
+                <span>{person?.name ? person.name : "Loading..."}</span>
+              </Space>
+            ),
+          },
+        ]}
+      />
+      <Layout
+        style={{
+          position: "fixed",
+          background: "#ffffff",
+          gap: 16,
+          top: 64 + 28,
+          overflowX: "hidden",
+          overflowY: "auto",
+          height: "calc(100vh - 64px)",
+        }}
+      >
+        <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
+      </Layout>
+    </>
   );
 };
 

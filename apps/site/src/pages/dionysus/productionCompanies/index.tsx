@@ -1,18 +1,12 @@
 import { HomeOutlined } from "@ant-design/icons";
-import {
-  Affix,
-  Breadcrumb,
-  Layout,
-  notification,
-  Space,
-  type TableProps,
-} from "antd";
+import { Affix, Layout, notification, Space, type TableProps } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React, { type ReactNode, useEffect, useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import metadataApi from "../../../api/metadataApi";
 import ProductionCompanyTable from "../../../components/dionysus/metadata/ProductionCompanyTable";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
 import type { NotificationType } from "../../../utils/notifications";
 import type {
@@ -88,8 +82,7 @@ const ProductionCompaniesIndexPage: React.FunctionComponent = () => {
   return (
     <>
       <Affix offsetTop={64}>
-        <Breadcrumb
-          style={{ padding: 8, background: "#f6f6f6" }}
+        <OlympusBreadcrumbs
           items={[
             {
               title: (
@@ -127,16 +120,18 @@ const ProductionCompaniesIndexPage: React.FunctionComponent = () => {
           position: "fixed",
           background: "#ffffff",
           gap: 16,
-          top: 102,
+          top: 64 + 28,
           overflowX: "hidden",
           overflowY: "auto",
-          height: "calc(100vh - 102px)",
+          height: "calc(100vh - 92px)",
         }}
       >
-        <Content style={{ width: "calc(100vw - 384px)" }}>
+        <Content style={{ width: "calc(100vw - 380px)" }}>
           <ProductionCompanyTable
             data={productionCompanies}
             loading={productionCompaniesLoading}
+            sticky={true}
+            scrollY="calc(100vh - 187px)"
             pagination={{
               style: {
                 marginLeft: 16,

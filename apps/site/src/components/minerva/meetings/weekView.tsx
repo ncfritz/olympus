@@ -3,7 +3,7 @@ import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import interactionPlugin from "@fullcalendar/interaction";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { Breadcrumb, Layout, Space, Tabs } from "antd";
+import { Layout, Space, Tabs } from "antd";
 import type { BreadcrumbItemType } from "antd/lib/breadcrumb/Breadcrumb";
 import { DateTime, Interval } from "luxon";
 import Link from "next/link";
@@ -13,6 +13,7 @@ import { type DateRange, DayPicker } from "react-day-picker";
 import meetingsApi from "../../../api/meetingsApi";
 import { publish } from "../../../utils/events";
 import { PUBLISH_EVENT } from "../../common/NotificationSink";
+import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
 import Day from "./DayDoughnut";
 import MeetingStatisticsPanel from "./MeetingsStatisticsPanel";
 
@@ -138,15 +139,7 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
 
   return (
     <Space>
-      <Breadcrumb
-        style={{
-          padding: 8,
-          background: "#f6f6f6",
-          position: "fixed",
-          top: 64,
-          width: "100%",
-          zIndex: 1000,
-        }}
+      <OlympusBreadcrumbs
         items={[
           {
             title: (

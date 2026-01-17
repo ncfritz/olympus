@@ -4,14 +4,14 @@ import {
   EditOutlined,
   HomeOutlined,
   LoadingOutlined,
-  VideoCameraOutlined
+  VideoCameraOutlined,
 } from "@ant-design/icons";
 import type {
   ContentAsset,
   FullContentAssetChannel,
   FilterDefinition,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Breadcrumb, Button, Space, Spin, Typography } from "antd";
+import { Button, Space, Spin, Typography } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import dynamic from "next/dynamic";
 import Link from "next/link";

@@ -15,7 +15,6 @@ import type {
   MetadataFetchJobStatus,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
-  Breadcrumb,
   Button,
   Col,
   Drawer,
@@ -46,6 +45,7 @@ import MetadataJobStatusSelect from "../../../components/dionysus/jobs/MetadataJ
 import RedriveModal from "../../../components/dionysus/jobs/RedriveModal";
 import { getMetadataJobStatusIndicator } from "../../../components/dionysus/jobs/utils";
 import RefreshTimer from "../../../components/common/RefreshTimer";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
 import { buildFilterDefinitionForTable } from "../../../utils/filters";
@@ -597,8 +597,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
 
   return (
     <div>
-      <Breadcrumb
-        style={{ padding: 8, background: "#f6f6f6" }}
+      <OlympusBreadcrumbs
         items={[
           {
             title: (

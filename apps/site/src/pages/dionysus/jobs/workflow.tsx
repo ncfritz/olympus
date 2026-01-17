@@ -6,7 +6,6 @@ import {
   SaveOutlined,
 } from "@ant-design/icons";
 import {
-  Breadcrumb,
   Button,
   Col,
   ConfigProvider,
@@ -39,6 +38,7 @@ import WorkflowRuntimeChart from "../../../components/dionysus/jobs/graphs/Workf
 import WorkflowStatusChart from "../../../components/dionysus/jobs/graphs/WorkflowStatusChart";
 import { getMetadataWorkflowStatusIndicator } from "../../../components/dionysus/jobs/utils";
 import WorkflowDetailsPanel from "../../../components/dionysus/jobs/WorkflowDetailsPanel";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../icons";
 import {
@@ -411,8 +411,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
 
   return (
     <>
-      <Breadcrumb
-        style={{ padding: 8, background: "#f6f6f6" }}
+      <OlympusBreadcrumbs
         items={[
           {
             title: (

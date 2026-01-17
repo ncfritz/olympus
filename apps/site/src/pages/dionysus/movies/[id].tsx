@@ -17,7 +17,6 @@ import type {
   SparseMovie,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
-  Breadcrumb,
   Layout,
   Space,
   Spin,
@@ -28,8 +27,6 @@ import {
   Tag,
   Progress,
   QRCode,
-  Row,
-  Col,
 } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import { DateTime } from "luxon";
@@ -53,10 +50,8 @@ import MoviePosterCard from "../../../components/dionysus/metadata/MoviePosterCa
 import MovieProductionCompaniesPanel from "../../../components/dionysus/metadata/MovieProductionCompaniesPanel";
 import MovieReleaseDateList from "../../../components/dionysus/metadata/MovieReleaseDatesList";
 import MovieVideoPanel from "../../../components/dionysus/metadata/MovieVideoPanel";
-import {
-  getExternalIdIcon,
-  getProgressColor,
-} from "../../../components/dionysus/metadata/util";
+import { getProgressColor } from "../../../components/dionysus/metadata/util";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../icons";
 
@@ -218,65 +213,11 @@ const MovieDetailPage: React.FunctionComponent = () => {
             borderBottom: "1px solid #efefef",
             alignItems: "start",
             position: "relative",
-            top: 25,
           }}
           styles={{
             item: { width: "100%" },
           }}
         >
-          <Breadcrumb
-            className={"dark"}
-            style={{
-              padding: 8,
-              background: "#021629",
-              marginBottom: 32,
-              position: "fixed",
-              top: 64,
-              left: 380,
-              width: "100%",
-              zIndex: 100,
-            }}
-            items={[
-              {
-                title: (
-                  <Link href={"/"}>
-                    <Space size={4}>
-                      <HomeOutlined />
-                      <span>Home</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Link href={"/dionysus"}>
-                    <Space size={4}>
-                      <MetadataOutlinedIcon />
-                      <span>Dionysus</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Link href={"/dionysus/movies"}>
-                    <Space size={4}>
-                      <MetadataOutlinedIcon />
-                      <span>Movies</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Space size={4}>
-                    <MetadataOutlinedIcon />
-                    <span>{movie?.title ? movie.title : "Loading..."}</span>
-                  </Space>
-                ),
-              },
-            ]}
-          />
           <Space
             direction={"horizontal"}
             size={32}
@@ -433,7 +374,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
         </Space>
         <Space
           direction={"horizontal"}
-          style={{ width: "100%", top: 24, position: "relative" }}
+          style={{ width: "100%", position: "relative" }}
           styles={{
             item: {
               width: "100%",
@@ -878,19 +819,64 @@ const MovieDetailPage: React.FunctionComponent = () => {
   }
 
   return (
-    <Layout
-      style={{
-        position: "fixed",
-        background: "#ffffff",
-        gap: 16,
-        top: 64,
-        overflowX: "hidden",
-        overflowY: "auto",
-        height: "calc(100vh - 48px)",
-      }}
-    >
-      <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
-    </Layout>
+    <>
+      <OlympusBreadcrumbs
+        className={"dark"}
+        items={[
+          {
+            title: (
+              <Link href={"/"}>
+                <Space size={4}>
+                  <HomeOutlined />
+                  <span>Home</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>Dionysus</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus/movies"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>Movies</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Space size={4}>
+                <MetadataOutlinedIcon />
+                <span>{movie?.title ? movie.title : "Loading..."}</span>
+              </Space>
+            ),
+          },
+        ]}
+      />
+      <Layout
+        style={{
+          position: "fixed",
+          background: "#ffffff",
+          gap: 16,
+          top: 64 + 28,
+          overflowX: "hidden",
+          overflowY: "auto",
+          height: "calc(100vh - 48px)",
+        }}
+      >
+        <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
+      </Layout>
+    </>
   );
 };
 

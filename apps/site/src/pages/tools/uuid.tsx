@@ -1,15 +1,8 @@
 import { AimOutlined, HomeOutlined, ToolOutlined } from "@ant-design/icons";
-import {
-  Breadcrumb,
-  Card,
-  Layout,
-  Space,
-  Splitter,
-  Tabs,
-  Typography,
-} from "antd";
+import { Card, Layout, Space, Splitter, Tabs, Typography } from "antd";
 import Link from "next/link";
 import React, { useState } from "react";
+import OlympusBreadcrumbs from "../../components/layout/OlympusBreadcrumbs";
 import UUIDDecoderPanel from "../../components/tools/uuid/UUIDDecoderPanel";
 import UUIDInfoPanel from "../../components/tools/uuid/UUIDInfoPanel";
 import UUIDRandomValuesPanel from "../../components/tools/uuid/UUIDRandomValuesPanel";
@@ -27,15 +20,7 @@ const IndexPage: React.FunctionComponent = () => {
 
   return (
     <div>
-      <Breadcrumb
-        style={{
-          padding: 8,
-          background: "#f6f6f6",
-          position: "fixed",
-          top: 64,
-          width: "100%",
-          zIndex: 1000,
-        }}
+      <OlympusBreadcrumbs
         items={[
           {
             title: (
@@ -71,7 +56,7 @@ const IndexPage: React.FunctionComponent = () => {
         style={{
           position: "fixed",
           background: "#ffffff",
-          top: 102,
+          top: 92,
           marginRight: 788,
           overflowX: "hidden",
           overflowY: "auto",

@@ -31,6 +31,8 @@ import Timestamp from "../../data/Timestamp";
 export interface NetworkTableTableProps {
   data: NetworkWithContentCounts[];
   loading: boolean;
+  sticky: boolean;
+  scrollY: string;
   pagination?: PaginationProps;
   onChange?: (
     pagination: TablePaginationConfig,
@@ -45,13 +47,15 @@ export interface NetworkTableTableProps {
 const NetworkTable: React.FunctionComponent<NetworkTableTableProps> = ({
   data,
   loading,
+  sticky,
+  scrollY,
   pagination,
   onChange,
 }: NetworkTableTableProps) => {
   const columns: ColumnsType<NetworkWithContentCounts> = [
     {
       key: "name",
-      title: "Name",
+      title: "",
       dataIndex: "name",
       render: (value, record) => {
         let content = (
@@ -263,6 +267,8 @@ const NetworkTable: React.FunctionComponent<NetworkTableTableProps> = ({
   return (
     <Table
       style={{ width: "100%" }}
+      sticky={sticky}
+      scroll={{ y: scrollY }}
       rowKey={"id"}
       columns={columns}
       dataSource={data}

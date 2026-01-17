@@ -11,7 +11,6 @@ import type {
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Affix,
-  Breadcrumb,
   Layout,
   QRCode,
   Space,
@@ -28,6 +27,7 @@ import React from "react";
 import ReactCountryFlag from "react-country-flag/src";
 import NetworkImageList from "../../../../components/dionysus/metadata/NetworkImageList";
 import TvSeriesList from "../../../../components/dionysus/metadata/TvSeriesList";
+import OlympusBreadcrumbs from "../../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
 import metadataApi from "../../../../api/metadataApi";
 import Timestamp from "../../../../components/data/Timestamp";
@@ -71,7 +71,10 @@ const NetworkDetailPage: React.FunctionComponent = () => {
       key: "t-net-tv",
       label: "TV Series",
       children: (
-        <Space style={{ width: "100%", padding: 16 }}>
+        <Space
+          style={{ width: "100%", padding: 16 }}
+          styles={{ item: { width: "100%" } }}
+        >
           <TvSeriesList tvSeries={tvSeries || []} loading={tvSeriesLoading} />
         </Space>
       ),
@@ -82,7 +85,10 @@ const NetworkDetailPage: React.FunctionComponent = () => {
         key: "t-pc-logos",
         label: "Logos",
         children: (
-          <Space style={{ width: "100%", padding: 16 }}>
+          <Space
+            style={{ width: "100%", padding: 16 }}
+            styles={{ item: { width: "100%" } }}
+          >
             <NetworkImageList
               images={network.images}
               loading={networkLoading}
@@ -246,94 +252,93 @@ const NetworkDetailPage: React.FunctionComponent = () => {
   }
 
   return (
-    <Layout
-      style={{
-        position: "fixed",
-        background: "#ffffff",
-        gap: 16,
-        top: 64,
-        overflowX: "hidden",
-        overflowY: "auto",
-        height: "calc(100vh - 102px)",
-      }}
-    >
-      <Content style={{ width: "calc(100vw - 380px)" }}>
-        <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
-          <Affix offsetTop={64}>
-            <Breadcrumb
-              style={{ padding: 8, background: "#f6f6f633" }}
-              items={[
-                {
-                  title: (
-                    <Link href={"/"}>
-                      <Space size={4}>
-                        <HomeOutlined />
-                        <span>Home</span>
-                      </Space>
-                    </Link>
-                  ),
-                },
-                {
-                  title: (
-                    <Link href={"/dionysus"}>
-                      <Space size={4}>
-                        <MetadataOutlinedIcon />
-                        <span>Dionysus</span>
-                      </Space>
-                    </Link>
-                  ),
-                },
-                {
-                  title: (
-                    <Link href={"/dionysus/tv/networks"}>
-                      <Space size={4}>
-                        <MetadataOutlinedIcon />
-                        <span>TV Networks</span>
-                      </Space>
-                    </Link>
-                  ),
-                },
-                {
-                  title: (
-                    <Space size={4}>
-                      <MetadataOutlinedIcon />
-                      <span>Company</span>
-                    </Space>
-                  ),
-                },
-              ]}
-            />
-          </Affix>
-          <Space
-            direction={"horizontal"}
-            style={{
-              minHeight: 250,
-              width: "100%",
-              justifyContent: "space-between",
-              background: "bottom left no-repeat url('/section_header.png')",
-              borderBottom: "1px solid #efefef",
-            }}
-          >
-            {content}
-            {network && network.logoPath && (
-              <Space direction={"vertical"} style={{ margin: 16 }}>
-                <img
-                  src={`https://image.tmdb.org/t/p/w300/${network.logoPath}`}
-                  style={{ maxHeight: 250, marginRight: 32 }}
-                />
+    <>
+      <OlympusBreadcrumbs
+        items={[
+          {
+            title: (
+              <Link href={"/"}>
+                <Space size={4}>
+                  <HomeOutlined />
+                  <span>Home</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>Dionysus</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus/tv/networks"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>TV Networks</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Space size={4}>
+                <MetadataOutlinedIcon />
+                <span>Company</span>
               </Space>
-            )}
+            ),
+          },
+        ]}
+      />
+      <Layout
+        style={{
+          position: "fixed",
+          background: "#ffffff",
+          gap: 16,
+          top: 64 + 28,
+          overflowX: "hidden",
+          overflowY: "auto",
+          height: "calc(100vh - 102px)",
+        }}
+      >
+        <Content style={{ width: "calc(100vw - 380px)" }}>
+          <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+            <Space
+              direction={"horizontal"}
+              style={{
+                minHeight: 250,
+                width: "100%",
+                justifyContent: "space-between",
+                background: "bottom left no-repeat url('/section_header.png')",
+                borderBottom: "1px solid #efefef",
+              }}
+            >
+              {content}
+              {network && network.logoPath && (
+                <Space direction={"vertical"} style={{ margin: 16 }}>
+                  <img
+                    src={`https://image.tmdb.org/t/p/w300/${network.logoPath}`}
+                    style={{ maxHeight: 250, marginRight: 32 }}
+                  />
+                </Space>
+              )}
+            </Space>
           </Space>
-        </Space>
-        <Tabs
-          items={items}
-          className={"fill"}
-          tabBarStyle={{
-            marginBottom: 0,
-          }}
-        />
-      </Content>
-    </Layout>
+          <Tabs
+            items={items}
+            className={"fill"}
+            tabBarStyle={{
+              marginBottom: 0,
+            }}
+          />
+        </Content>
+      </Layout>
+    </>
   );
 };
 

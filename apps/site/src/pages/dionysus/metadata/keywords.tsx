@@ -1,7 +1,6 @@
 import { HomeOutlined } from "@ant-design/icons";
 import type { Keyword } from "@ncfritz/olympus-sdk/dionysus";
 import {
-  Breadcrumb,
   ConfigProvider,
   Empty,
   Space,
@@ -17,6 +16,7 @@ import type { SortOptions } from "../../../api/common";
 import metadataApi from "../../../api/metadataApi";
 import ErrorBlock from "../../../components/common/ErrorBlock";
 import Timestamp from "../../../components/data/Timestamp";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../icons";
 
@@ -101,8 +101,7 @@ const MetadataKeywordsPage: React.FunctionComponent = () => {
 
   return (
     <>
-      <Breadcrumb
-        style={{ padding: 8, background: "#f6f6f6" }}
+      <OlympusBreadcrumbs
         items={[
           {
             title: (

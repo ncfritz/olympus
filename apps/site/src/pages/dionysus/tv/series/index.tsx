@@ -5,17 +5,7 @@ import type {
   FilterDefinition,
   GetTvSeriesAggregateStatisticsResponse,
 } from "@ncfritz/olympus-sdk/dionysus";
-import {
-  Affix,
-  Breadcrumb,
-  Col,
-  Input,
-  Layout,
-  Row,
-  Space,
-  Statistic,
-  Tag,
-} from "antd";
+import { Affix, Col, Input, Layout, Row, Space, Statistic, Tag } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
@@ -31,6 +21,7 @@ import MovieRuntimeStatisticsChart from "../../../../components/dionysus/metadat
 import TvSeriesSeasonStatisticsChart from "../../../../components/dionysus/metadata/movies/TvSeriesSeasonStatisticsChart";
 import TvSeriesList from "../../../../components/dionysus/metadata/TvSeriesList";
 import { getStatusForTvSeries } from "../../../../components/dionysus/metadata/util";
+import OlympusBreadcrumbs from "../../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../../icons";
 const MovieLocationsMap = dynamic(
@@ -113,8 +104,7 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
   return (
     <>
       <Affix offsetTop={64}>
-        <Breadcrumb
-          style={{ padding: 8, background: "#f6f6f6" }}
+        <OlympusBreadcrumbs
           items={[
             {
               title: (

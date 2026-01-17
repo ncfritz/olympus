@@ -1,11 +1,12 @@
 import { HomeOutlined } from "@ant-design/icons";
-import { Affix, Breadcrumb, Layout, Space, type TableProps } from "antd";
+import { Affix, Layout, Space, type TableProps } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React, { useState } from "react";
 import type { PaginatedParams, SortOptions } from "../../../../api/common";
 import metadataApi from "../../../../api/metadataApi";
 import NetworksTable from "../../../../components/dionysus/metadata/NetworksTable";
+import OlympusBreadcrumbs from "../../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
 import { CertificationOutlined, MetadataOutlinedIcon } from "../../../../icons";
 import type {
@@ -42,8 +43,7 @@ const NetworksIndexPage: React.FunctionComponent = () => {
   return (
     <>
       <Affix offsetTop={64}>
-        <Breadcrumb
-          style={{ padding: 8, background: "#f6f6f6" }}
+        <OlympusBreadcrumbs
           items={[
             {
               title: (
@@ -81,16 +81,18 @@ const NetworksIndexPage: React.FunctionComponent = () => {
           position: "fixed",
           background: "#ffffff",
           gap: 16,
-          top: 102,
+          top: 92,
           overflowX: "hidden",
           overflowY: "auto",
-          height: "calc(100vh - 102px)",
+          height: "calc(100vh - 92px)",
         }}
       >
         <Content style={{ width: "calc(100vw - 384px)" }}>
           <NetworksTable
             data={networks.networks}
             loading={networksLoading}
+            sticky={true}
+            scrollY="calc(100vh - 187px)"
             pagination={{
               style: {
                 marginLeft: 16,

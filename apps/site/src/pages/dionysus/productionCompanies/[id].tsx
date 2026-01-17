@@ -13,7 +13,6 @@ import type {
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Affix,
-  Breadcrumb,
   Layout,
   QRCode,
   Space,
@@ -34,6 +33,7 @@ import MovieList from "../../../components/dionysus/metadata/MovieList";
 import ProductionCompanyLogoList from "../../../components/dionysus/metadata/ProductionCompanyLogoList";
 import ProductionCompanyTable from "../../../components/dionysus/metadata/ProductionCompanyTable";
 import TvSeriesList from "../../../components/dionysus/metadata/TvSeriesList";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../icons";
 
@@ -82,7 +82,10 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
         key: "t-pc-movies",
         label: "Movies",
         children: (
-          <Space style={{ width: "100%", padding: 16 }}>
+          <Space
+            style={{ width: "100%", padding: 16 }}
+            styles={{ item: { width: "100%" } }}
+          >
             <MovieList movies={movies || []} loading={moviesLoading} />
           </Space>
         ),
@@ -91,7 +94,10 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
         key: "t-pc-tv",
         label: "TV Series",
         children: (
-          <Space style={{ width: "100%", padding: 16 }}>
+          <Space
+            style={{ width: "100%", padding: 16 }}
+            styles={{ item: { width: "100%" } }}
+          >
             <TvSeriesList tvSeries={tvSeries || []} loading={tvSeriesLoading} />
           </Space>
         ),
@@ -182,6 +188,8 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
         label: "Child Companies",
         children: (
           <ProductionCompanyTable
+            sticky={true}
+            scrollY="calc(100vh - 481px)"
             data={productionCompany?.children || []}
             loading={productionCompanyLoading}
             pagination={undefined}
@@ -300,94 +308,93 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
   }
 
   return (
-    <Layout
-      style={{
-        position: "fixed",
-        background: "#ffffff",
-        gap: 16,
-        top: 64,
-        overflowX: "hidden",
-        overflowY: "auto",
-        height: "calc(100vh - 102px)",
-      }}
-    >
-      <Content style={{ width: "calc(100vw - 380px)" }}>
-        <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
-          <Affix offsetTop={64}>
-            <Breadcrumb
-              style={{ padding: 8, background: "#f6f6f633" }}
-              items={[
-                {
-                  title: (
-                    <Link href={"/"}>
-                      <Space size={4}>
-                        <HomeOutlined />
-                        <span>Home</span>
-                      </Space>
-                    </Link>
-                  ),
-                },
-                {
-                  title: (
-                    <Link href={"/dionysus"}>
-                      <Space size={4}>
-                        <MetadataOutlinedIcon />
-                        <span>Dionysus</span>
-                      </Space>
-                    </Link>
-                  ),
-                },
-                {
-                  title: (
-                    <Link href={"/dionysus/productionCompanies"}>
-                      <Space size={4}>
-                        <MetadataOutlinedIcon />
-                        <span>Production Companies</span>
-                      </Space>
-                    </Link>
-                  ),
-                },
-                {
-                  title: (
-                    <Space size={4}>
-                      <MetadataOutlinedIcon />
-                      <span>Company</span>
-                    </Space>
-                  ),
-                },
-              ]}
-            />
-          </Affix>
-          <Space
-            direction={"horizontal"}
-            style={{
-              minHeight: 250,
-              width: "100%",
-              justifyContent: "space-between",
-              background: "bottom left no-repeat url('/section_header.png')",
-              borderBottom: "1px solid #efefef",
-            }}
-          >
-            {content}
-            {productionCompany && productionCompany.logoPath && (
-              <Space direction={"vertical"} style={{ margin: 16 }}>
-                <img
-                  src={`https://image.tmdb.org/t/p/w300/${productionCompany.logoPath}`}
-                  style={{ maxHeight: 250, marginRight: 32 }}
-                />
+    <>
+      <OlympusBreadcrumbs
+        items={[
+          {
+            title: (
+              <Link href={"/"}>
+                <Space size={4}>
+                  <HomeOutlined />
+                  <span>Home</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>Dionysus</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus/productionCompanies"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>Production Companies</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Space size={4}>
+                <MetadataOutlinedIcon />
+                <span>Company</span>
               </Space>
-            )}
+            ),
+          },
+        ]}
+      />
+      <Layout
+        style={{
+          position: "fixed",
+          background: "#ffffff",
+          gap: 16,
+          top: 64 + 28,
+          overflowX: "hidden",
+          overflowY: "auto",
+          height: "calc(100vh - 92px)",
+        }}
+      >
+        <Content style={{ width: "calc(100vw - 380px)" }}>
+          <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+            <Space
+              direction={"horizontal"}
+              style={{
+                minHeight: 250,
+                width: "100%",
+                justifyContent: "space-between",
+                background: "bottom left no-repeat url('/section_header.png')",
+                borderBottom: "1px solid #efefef",
+              }}
+            >
+              {content}
+              {productionCompany && productionCompany.logoPath && (
+                <Space direction={"vertical"} style={{ margin: 16 }}>
+                  <img
+                    src={`https://image.tmdb.org/t/p/w300/${productionCompany.logoPath}`}
+                    style={{ maxHeight: 250, marginRight: 32 }}
+                  />
+                </Space>
+              )}
+            </Space>
           </Space>
-        </Space>
-        <Tabs
-          items={items}
-          className={"fill"}
-          tabBarStyle={{
-            marginBottom: 0,
-          }}
-        />
-      </Content>
-    </Layout>
+          <Tabs
+            items={items}
+            className={"fill"}
+            tabBarStyle={{
+              marginBottom: 0,
+            }}
+          />
+        </Content>
+      </Layout>
+    </>
   );
 };
 
