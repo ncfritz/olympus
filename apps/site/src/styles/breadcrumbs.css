@@ -1,0 +1,149 @@
+.ant-breadcrumb.dark .ant-breadcrumb-link,
+.ant-breadcrumb.dark .ant-space-item,
+.ant-breadcrumb.dark .ant-breadcrumb-separator {
+  color: #999999;
+}
+
+.olympus-bc {
+  position: relative;
+  left: -300px;
+  background: #f6f6f6;
+  border-bottom: 1px solid #efefef;
+  height: 28px;
+  width: calc(100vw - 380px);
+}
+
+.olympus-bc ol:first-of-type {
+  width: calc(100vw - 80px);
+  background-color: #f6f6f6;
+}
+
+.olympus-bc a:hover {
+  background-color: transparent;
+  color: #0b1a2c;
+}
+.olympus-bc .level {
+  position: relative;
+  display: inline-flex;
+  margin-left: 14px;
+  align-items: center;
+}
+.olympus-bc .root {
+  margin-left: 0px;
+}
+.olympus-bc .level a {
+  margin-inline: 6px;
+  padding-right: 0px;
+  margin-right: 0px;
+}
+.olympus-bc span.level:after {
+  content: " ";
+  width: 0;
+  height: 0;
+  position: relative;
+  left: 14px;
+  display: inline-flex;
+  border-top: 14px solid transparent;
+  border-left: 14px solid #f6f6f6;
+  border-bottom: 14px solid transparent;
+}
+
+.olympus-bc .level-1 .ant-space {
+  margin-left: 8px;
+}
+
+.olympus-bc .level-1 { background-color: rgb(20, 39, 55, 0%) }
+.olympus-bc .level-2 { background-color: rgb(20, 39, 55, 10%) }
+.olympus-bc .level-3 { background-color: rgb(20, 39, 55, 20%) }
+.olympus-bc .level-4 { background-color: rgb(20, 39, 55, 30%) }
+.olympus-bc .level-5 { background-color: rgb(20, 39, 55, 40%) }
+.olympus-bc .level-6 { background-color: rgb(20, 39, 55, 50%) }
+.olympus-bc .level-7 { background-color: rgb(20, 39, 55, 60%) }
+.olympus-bc .level-8 { background-color: rgb(20, 39, 55, 70%) }
+
+.olympus-bc.dark {
+  background: #001529;
+}
+
+.olympus-bc.dark span.level:after {
+  border-top: 14px solid transparent;
+  border-left: 14px solid #001529;
+  border-bottom: 14px solid transparent;
+}
+
+.olympus-bc.dark ol:first-of-type {
+  background-color: #001529;
+}
+
+.olympus-bc.dark .level-1 { background-color: rgb(177, 177, 177, 0%) }
+.olympus-bc.dark .level-2 { background-color: rgb(177, 177, 177, 10%)}
+.olympus-bc.dark .level-3 { background-color: rgb(177, 177, 177, 20%) }
+.olympus-bc.dark .level-4 { background-color: rgb(177, 177, 177, 30%) }
+.olympus-bc.dark .level-5 { background-color: rgb(177, 177, 177, 40%) }
+.olympus-bc.dark .level-6 { background-color: rgb(177, 177, 177, 50%) }
+.olympus-bc.dark .level-7 { background-color: rgb(177, 177, 177, 60%) }
+.olympus-bc.dark .level-8 { background-color: rgb(177, 177, 177, 70%) }
+
+.olympus-bc span.level-2:after { border-left-color: rgb(20, 39, 55, 10%); }
+.olympus-bc span.level-3:after {
+  border-top-color: rgb(20, 39, 55, 10%);
+  border-bottom-color: rgb(20, 39, 55, 10%);
+  border-left-color: rgb(20, 39, 55, 20%);
+}
+.olympus-bc span.level-4:after {
+  border-top-color: rgb(20, 39, 55, 20%);
+  border-bottom-color: rgb(20, 39, 55, 20%);
+  border-left-color: rgb(20, 39, 55, 30%);
+}
+.olympus-bc span.level-5:after {
+  border-top-color: rgb(20, 39, 55, 30%);
+  border-bottom-color: rgb(20, 39, 55, 30%);
+  border-left-color: rgb(20, 39, 55, 40%);
+}
+.olympus-bc span.level-6:after {
+  border-top-color: rgb(20, 39, 55, 40%);
+  border-bottom-color: rgb(20, 39, 55, 40%);
+  border-left-color: rgb(20, 39, 55, 50%);
+}
+.olympus-bc span.level-7:after {
+  border-top-color: rgb(20, 39, 55, 50%);
+  border-bottom-color: rgb(20, 39, 55, 50%);
+  border-left-color: rgb(20, 39, 55, 60%);
+}
+.olympus-bc span.level-8:after {
+  border-top-color: rgb(20, 39, 55, 60%);
+  border-bottom-color: rgb(20, 39, 55, 60%);
+  border-left-color: rgb(20, 39, 55, 70%);
+}
+
+.olympus-bc.dark span.level-2:after { border-left-color: rgb(177, 177, 177, 10%); }
+.olympus-bc.dark span.level-3:after {
+  border-top-color: rgb(177, 177, 177, 10%);
+  border-bottom-color: rgb(177, 177, 177, 10%);
+  border-left-color: rgb(177, 177, 177, 20%);
+}
+.olympus-bc.dark span.level-4:after {
+  border-top-color: rgb(177, 177, 177, 20%);
+  border-bottom-color: rgb(177, 177, 177, 20%);
+  border-left-color: rgb(177, 177, 177, 30%);
+}
+.olympus-bc.dark span.level-5:after {
+  border-top-color: rgb(177, 177, 177, 30%);
+  border-bottom-color: rgb(177, 177, 177, 30%);
+  border-left-color: rgb(177, 177, 177, 40%);
+}
+.olympus-bc.dark span.level-6:after {
+  border-top-color: rgb(177, 177, 177, 40%);
+  border-bottom-color: rgb(177, 177, 177, 40%);
+  border-left-color: rgb(177, 177, 177, 50%);
+}
+.olympus-bc.dark span.level-7:after {
+  border-top-color: rgb(177, 177, 177, 50%);
+  border-bottom-color: rgb(177, 177, 177, 50%);
+  border-left-color: rgb(177, 177, 177, 60%);
+}
+.olympus-bc.dark span.level-8:after {
+  border-top-color: rgb(177, 177, 177, 60%);
+  border-bottom-color: rgb(177, 177, 177, 60%);
+  border-left-color: rgb(177, 177, 177, 70%);
+}

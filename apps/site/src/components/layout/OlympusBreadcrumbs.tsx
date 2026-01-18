@@ -7,8 +7,9 @@ export interface OlympusBreadcrumbsProps {
 }
 
 const OlympusBreadcrumbs = ({ items, className }: OlympusBreadcrumbsProps) => {
+  const baseClassNames = ["olympus-bc", className];
   const newItems = items.map((item, index) => {
-    const classNames = [className, "level", `level-${items.length - index}`];
+    const classNames = ["level", `level-${items.length - index}`];
 
     if (index === 0) {
       classNames.push("root");
@@ -18,7 +19,11 @@ const OlympusBreadcrumbs = ({ items, className }: OlympusBreadcrumbsProps) => {
   });
 
   return (
-    <Breadcrumb className={"olympus-bc"} items={newItems} separator={""} />
+    <Breadcrumb
+      className={baseClassNames.join(" ")}
+      items={newItems}
+      separator={""}
+    />
   );
 };
 export default OlympusBreadcrumbs;

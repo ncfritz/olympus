@@ -1,6 +1,7 @@
 import "../styles/globals.css";
 import "../styles/onair.css";
 import "../styles/themis.css";
+import "../styles/breadcrumbs.css";
 import "antd/dist/reset.css";
 import "antd-css-utilities/utility.min.css";
 import "react-day-picker/dist/style.css";

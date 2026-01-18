@@ -151,6 +151,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
     <>
       <Affix offsetTop={64}>
         <OlympusBreadcrumbs
+          className={"dark"}
           items={[
             {
               title: (
