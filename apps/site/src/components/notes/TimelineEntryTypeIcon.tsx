@@ -8,7 +8,7 @@ import {
 } from "@ant-design/icons";
 import type { Note } from "@ncfritz/olympus-sdk/minerva";
 import { Badge, Button, Popover, Space } from "antd";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import * as React from "react";
 import { v4 as uuidv4 } from "uuid";
 import notesApi from "../../api/notestApi";
@@ -35,6 +35,8 @@ const NotesTimelineEntryType: React.FunctionComponent<
   afterUpdateFlag,
   editNoteCallback,
 }: NotesTimelineEntryTypeProps) => {
+  const buttonRef = useRef<HTMLDivElement>(null);
+
   const [open, setOpen] = useState(false);
 
   const closeMenu = () => {
@@ -154,71 +156,80 @@ const NotesTimelineEntryType: React.FunctionComponent<
       icon={getIconForType(entry.type)}
       onClick={closeMenu}
       style={{
-        border: "1px solid #cccccc",
+        border: open ? "none" : "1px solid #cccccc",
         padding: 8,
         borderRadius: 20,
         color: config[entry.type].color,
-        backgroundColor: config[entry.type].backgroundColor,
+        backgroundColor: open
+          ? `${config[entry.type].color}20`
+          : config[entry.type].backgroundColor,
         display: "flex",
         alignItems: "center",
         alignContent: "center",
+        zIndex: 100,
       }}
     />
   );
 
   return (
-    <Popover
-      placement={"bottom"}
-      open={open}
-      onOpenChange={(visible) => {
-        setOpen(visible);
-      }}
-      trigger={"click"}
-      content={
-        <Space size={8} direction={"vertical"}>
-          <Button
-            type={"text"}
-            icon={<EditOutlined />}
-            onClick={() => {
-              editNoteCallback();
-              setOpen(false);
-            }}
-            disabled={editing}
-          />
-          <Button
-            type={"text"}
-            icon={entry.flagged ? <FlagFilled /> : <FlagOutlined />}
-            onClick={async () => {
-              await handleFlagNote(entry);
-              setOpen(false);
-            }}
-            disabled={editing}
-          />
-          {deleteIcon}
-        </Space>
-      }
-    >
-      <Badge
-        count={entry.flagged ? <FlagFilled /> : 0}
-        showZero={false}
-        size={"small"}
-        style={{
-          color: "#ee0000",
+    <div ref={buttonRef}>
+      <Popover
+        classNames={{ root: "pill" }}
+        placement={"bottom"}
+        open={open}
+        getPopupContainer={() => buttonRef.current!}
+        onOpenChange={(visible) => {
+          setOpen(visible);
         }}
+        trigger={"click"}
+        content={
+          <Space size={8} direction={"vertical"}>
+            <Button
+              type={"text"}
+              icon={<EditOutlined />}
+              onClick={() => {
+                editNoteCallback();
+                setOpen(false);
+              }}
+              disabled={editing}
+            />
+            <Button
+              type={"text"}
+              icon={entry.flagged ? <FlagFilled /> : <FlagOutlined />}
+              onClick={async () => {
+                await handleFlagNote(entry);
+                setOpen(false);
+              }}
+              disabled={editing}
+            />
+            {deleteIcon}
+          </Space>
+        }
+        zIndex={1}
       >
         <Badge
-          count={entry.deletedTime ? <DeleteFilled /> : 0}
+          count={entry.flagged ? <FlagFilled /> : 0}
           showZero={false}
           size={"small"}
           style={{
-            color: "#333333",
-            top: 28,
+            color: "#ee0000",
+            zIndex: 100,
           }}
         >
-          {typeButton}
+          <Badge
+            count={entry.deletedTime ? <DeleteFilled /> : 0}
+            showZero={false}
+            size={"small"}
+            style={{
+              color: "#333333",
+              top: 28,
+            }}
+          >
+            {typeButton}
+          </Badge>
         </Badge>
-      </Badge>
-    </Popover>
+      </Popover>
+    </div>
   );
 };
 export default NotesTimelineEntryType;
