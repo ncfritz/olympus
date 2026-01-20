@@ -4,7 +4,7 @@ import {
   VideoCameraOutlined,
 } from "@ant-design/icons";
 import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
-import { Breadcrumb, Col, Result, Row, Space, Spin, Typography } from "antd";
+import { Col, Result, Row, Space, Spin, Typography } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -18,6 +18,7 @@ import ContentAssetTagEditor from "../../../../components/content/ContentAssetTa
 import ContentAuthWrapper from "../../../../components/content/ContentAuthWrapper";
 import SimilarContentAssetsScroller from "../../../../components/content/SimilarContentAssetsScroller";
 import Timestamp from "../../../../components/data/Timestamp";
+import OlympusBreadcrumbs from "../../../../components/layout/OlympusBreadcrumbs";
 import { useAppSelector } from "../../../../redux/hooks";
 import "react-horizontal-scrolling-menu/dist/styles.css";
 
@@ -122,10 +123,10 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
         asset={asset}
         style={{ width: "calc(100vw - 200px)", background: "#142737" }}
         wrapperStyle={{
-          paddingTop: 16,
-          paddingRight: 16,
-          paddingBottom: 32,
-          paddingLeft: 32,
+          paddingTop: 24,
+          paddingRight: 24,
+          paddingBottom: 24,
+          paddingLeft: 24,
         }}
       />
     );
@@ -248,12 +249,8 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
             width: "calc(100vw - 200px)",
           }}
         >
-          <Breadcrumb
-            style={{
-              padding: 8,
-              paddingLeft: 16,
-              background: asset ? "#142737" : "#c5c5c5",
-            }}
+          <OlympusBreadcrumbs
+            className={"dark"}
             items={[
               {
                 title: (
