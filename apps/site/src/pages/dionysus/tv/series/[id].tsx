@@ -214,6 +214,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                 showStatus={true}
                 scaleDirection={"horizontal"}
                 scaleBaseline={300}
+                bordered={false}
               />
             </Space>
             <Space
@@ -936,6 +937,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
   return (
     <>
       <OlympusBreadcrumbs
+        className={"dark"}
         items={[
           {
             title: (

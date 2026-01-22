@@ -51,7 +51,7 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
     if (debouncedTitleFilter.length >= 3) {
       newFilters.push({
         type: "ilike",
-        name: "title",
+        name: "name",
         value: `%${debouncedTitleFilter}%`,
       });
     }

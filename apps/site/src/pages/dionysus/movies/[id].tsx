@@ -235,6 +235,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
             >
               <MoviePosterCard
                 movie={movie}
+                bordered={false}
                 showReleaseStatus={true}
                 scaleDirection={"horizontal"}
                 scaleBaseline={300}

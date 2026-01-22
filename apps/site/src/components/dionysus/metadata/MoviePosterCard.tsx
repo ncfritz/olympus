@@ -15,6 +15,7 @@ export interface MoviePosterCardProps {
   scaleBaseline?: number;
   hoverable?: boolean;
   className?: string;
+  bordered?: boolean;
 }
 
 const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
@@ -27,6 +28,7 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
   scaleBaseline = undefined,
   hoverable = false,
   className = undefined,
+  bordered = true,
 }: MoviePosterCardProps) => {
   const [statusText, statusColor] = getReleaseStatusForMovie(movie.status);
 
@@ -85,8 +87,9 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
 
   return (
     <Card
-      className={className}
+      className={["dionysus-card", className].join(" ")}
       hoverable={hoverable}
+      variant={bordered ? "outlined" : "borderless"}
       style={{
         borderRadius: 9,
         ...scaleFactor,

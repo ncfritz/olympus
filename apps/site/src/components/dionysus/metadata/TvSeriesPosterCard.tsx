@@ -13,6 +13,7 @@ export interface TvSeriesPosterCardProps {
   scaleBaseline?: number;
   hoverable?: boolean;
   className?: string;
+  bordered?: boolean;
 }
 
 const TvSeriesPosterCard: React.FunctionComponent<TvSeriesPosterCardProps> = ({
@@ -24,6 +25,7 @@ const TvSeriesPosterCard: React.FunctionComponent<TvSeriesPosterCardProps> = ({
   scaleBaseline = undefined,
   hoverable = false,
   className = undefined,
+  bordered = true,
 }: TvSeriesPosterCardProps) => {
   const [statusText, statusColor] = getStatusForTvSeries(tvSeries.status);
 
@@ -65,8 +67,9 @@ const TvSeriesPosterCard: React.FunctionComponent<TvSeriesPosterCardProps> = ({
 
   return (
     <Card
-      className={className}
+      className={["dionysus-card", className].join(" ")}
       hoverable={hoverable}
+      variant={bordered ? "outlined" : "borderless"}
       style={{
         borderRadius: 9,
         ...scaleFactor,

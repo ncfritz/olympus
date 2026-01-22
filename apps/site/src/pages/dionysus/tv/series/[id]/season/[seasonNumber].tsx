@@ -176,7 +176,6 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                   height: 150,
                   width: 100,
                   borderRadius: 8,
-                  border: "2px solid #efefef",
                   margin: 24,
                 }}
                 src={`https://image.tmdb.org/t/p/w342/${tvSeason.series.posterPath}}`}
