@@ -50,7 +50,7 @@ export const downloadSegments = async (
     progress.update(progressPercent);
     await updateStepProgress(workflow.id, workflowStep.id, progressPercent);
 
-    await sleep(1000);
+    await sleep(300);
   }
 
   progress.stop();
@@ -60,5 +60,5 @@ export const downloadSegments = async (
 };
 
 const sleep = async (ms: number): Promise<void> => {
-  new Promise((r) => setTimeout(r, ms));
+  return new Promise((r) => setTimeout(r, ms));
 };
