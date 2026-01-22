@@ -25,7 +25,9 @@ import { logger } from "../util/logger";
 
         logger.info(`Starting AxiosProxyModule - ${socksPRoxyUrl}`);
 
-        const agent = new SocksProxyAgent(authenticatedSocksPRoxyUrl);
+        const agent = new SocksProxyAgent(authenticatedSocksPRoxyUrl, {
+          timeout: 60000,
+        });
 
         return {
           httpsAgent: agent,
