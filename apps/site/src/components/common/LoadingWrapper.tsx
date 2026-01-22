@@ -1,4 +1,4 @@
-import { Alert, Space } from "antd";
+import { Space } from "antd";
 import type { CSSProperties, ReactNode } from "react";
 import ErrorBlock from "./ErrorBlock";
 import Loader from "./Loader";
