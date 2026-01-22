@@ -151,6 +151,7 @@ const MediaAssetDetails: React.FunctionComponent<MediaAssetDetailsProps> = ({
     const streams: CollapseProps["items"] = [];
     const chapters: CollapseProps["items"] = [];
 
+    // @ts-expect-error No types for FFMpeg probe data
     metadata.streams?.forEach((stream) => {
       const rows: ReactNode[] = [];
 
@@ -397,7 +398,7 @@ const MediaAssetDetails: React.FunctionComponent<MediaAssetDetailsProps> = ({
       streams.push({
         label: (
           <Typography.Text
-            style={{ fontFamily: "12px", fontFamily: "monospace" }}
+            style={{ fontSize: "12px", fontFamily: "monospace" }}
           >
             {stream.codec_long_name}
           </Typography.Text>
