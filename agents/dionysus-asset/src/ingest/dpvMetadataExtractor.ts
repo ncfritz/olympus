@@ -9,35 +9,25 @@ export class DPVMetadataExtractor extends MetadataExtractor {
   }
 
   async getSegmentUrls(root: HTMLElement): Promise<string[]> {
-    const headElement = root.querySelector("head");
-    const scripts = headElement?.querySelectorAll("script");
-    const segments: string[] = [];
-    let videoUrl = undefined;
+    const matches = this.url.match(
+      /^http[s]?:\/\/dp-vids\.com\/videos\/(\d+)\/.*$/i,
+    );
 
-    for (const script of scripts || []) {
-      if (script.textContent) {
-        const scriptLines = script.textContent.split("\n");
-
-        for (const scriptLine of scriptLines) {
-          if (scriptLine.includes("contentUrl")) {
-            const contentUrl = scriptLine.trim();
-
-            videoUrl = contentUrl.substring(
-              contentUrl.indexOf("http"),
-              contentUrl.length - 2,
-            );
-
-            segments.push(videoUrl);
-          }
-        }
-      }
+    if (!matches || matches.length <= 0) {
+      throw new IngestError("Unable to determine video ID from url");
     }
 
-    if (!videoUrl) {
-      throw new IngestError("Could not locate video URL");
-    }
+    console.log(`matches:`, matches);
 
-    return segments;
+    const videoId = Number.parseInt(matches[1]);
+    const videoBlock = Math.trunc(videoId / 1000) * 1000;
+    const videoUrl = `https://dp-vids.com/contents/videos/${videoBlock}/${videoId}/${videoId}.mp4`;
+
+    console.log(`videoId: ${videoId}`);
+    console.log(`videoBlock: ${videoBlock}`);
+    console.log(`videoUrl: ${videoUrl}`);
+
+    return [videoUrl];
   }
 
   async getTitle(root: HTMLElement): Promise<string> {
