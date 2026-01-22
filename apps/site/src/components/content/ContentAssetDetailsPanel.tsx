@@ -1,7 +1,8 @@
-import { Spin, Tabs, type TabsProps } from "antd";
+import { Form, Switch, Tabs, type TabsProps } from "antd";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
+import LoadingWrapper from "../common/LoadingWrapper";
+import MediaAssetDetails from "./MediaAssetDetails";
 
 export interface ContentAssetDetailsPanelProps {
   assetId?: string;
@@ -10,12 +11,11 @@ export interface ContentAssetDetailsPanelProps {
 const ContentAssetDetailsPanel: React.FunctionComponent<
   ContentAssetDetailsPanelProps
 > = ({ assetId }: ContentAssetDetailsPanelProps) => {
-  const DynamicReactJson = dynamic(import("react-json-view"), { ssr: false });
-
-  const [metadataLoading, setMetadataLoading] = useState(false);
+  const [metadataLoading, setMetadataLoading] = useState(true);
   const [metadataError, setMetadataError] = useState<any>(false);
   const [assetMetadata, setAssetMetadata] = useState(undefined);
   const [originalMetadata, setOriginalMetadata] = useState(undefined);
+  const [showRawMetadata, setShowRawMetadata] = useState(false);
 
   const fetchMetadata = async () => {
     setMetadataLoading(true);
@@ -46,43 +46,29 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
     })();
   }, [assetId]);
 
-  if (metadataLoading) {
-    return <Spin spinning={true} />;
-  }
-
   const items: TabsProps["items"] = [
     {
       key: "asset-md",
       label: `Asset Metadata`,
       children: (
-        <DynamicReactJson
-          style={{
-            marginLeft: 24,
-            fontSize: 10,
-          }}
-          src={assetMetadata || {}}
-          indentWidth={2}
-          iconStyle={"square"}
-          displayDataTypes={false}
-          enableClipboard={true}
-        />
+        <LoadingWrapper loading={metadataLoading} error={metadataError}>
+          <MediaAssetDetails
+            metadata={assetMetadata}
+            showRaw={showRawMetadata}
+          />
+        </LoadingWrapper>
       ),
     },
     {
       key: "original-md",
       label: `Original Metadata`,
       children: (
-        <DynamicReactJson
-          style={{
-            marginLeft: 24,
-            fontSize: 10,
-          }}
-          src={originalMetadata || {}}
-          indentWidth={2}
-          iconStyle={"square"}
-          displayDataTypes={false}
-          enableClipboard={true}
-        />
+        <LoadingWrapper loading={metadataLoading} error={metadataError}>
+          <MediaAssetDetails
+            metadata={originalMetadata}
+            showRaw={showRawMetadata}
+          />
+        </LoadingWrapper>
       ),
     },
   ];
@@ -96,12 +82,23 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
         position: "fixed",
         zIndex: 1,
         top: 57,
-        width: "100%",
+        width: 748,
         background: "#ffffff",
       }}
       style={{
         position: "relative",
         paddingTop: 64,
+      }}
+      tabBarExtraContent={{
+        right: (
+          <Form.Item label={"Show Raw JSON"} style={{ marginRight: 16 }}>
+            <Switch
+              size={"small"}
+              checked={showRawMetadata}
+              onClick={(value) => setShowRawMetadata(value)}
+            ></Switch>
+          </Form.Item>
+        ),
       }}
     />
   );
