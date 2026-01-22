@@ -246,7 +246,7 @@ export class AssetWorkflow {
     console.log("\nExtract new metadata....");
 
     await new Promise<void>((resolve, reject) => {
-      const command = Ffmpeg(this.input.toString());
+      const command = Ffmpeg(this.assetLocation.toString());
       command.ffprobe(async (err, data) => {
         if (err) {
           await updateStepStatus(this.ingestWorkflow.id, step.id, "failed");
