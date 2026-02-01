@@ -5,6 +5,7 @@ export interface UseFetchOptions<O, T> {
   params: O;
   default?: T;
   fetchFunction: (options: O) => Promise<T>;
+  validateOptions?: (options: O) => boolean;
   quiet?: boolean;
   watch?: any[];
   notifyOnError?: boolean;
@@ -57,7 +58,15 @@ export const useFetch = <O, T>(
   if (!options.noWatch) {
     useEffect(() => {
       (async () => {
-        await fetcher();
+        let shouldFetch = true;
+
+        if (options.validateOptions) {
+          shouldFetch = options.validateOptions(options.params);
+        }
+
+        if (shouldFetch) {
+          await fetcher();
+        }
       })();
     }, options.watch || []);
   }
