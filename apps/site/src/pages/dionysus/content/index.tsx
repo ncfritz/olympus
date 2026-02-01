@@ -9,6 +9,7 @@ import contentApi from "../../../api/contentApi";
 import LoadingWrapper from "../../../components/common/LoadingWrapper";
 import ContentAssetChannelCard from "../../../components/content/ContentAssetChannelCard";
 import ContentAssetStatistics from "../../../components/content/ContentAssetStatistics";
+import ContentAssetTable from "../../../components/content/ContentAssetTable";
 import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
 import {
   LeftArrow,
@@ -96,7 +97,7 @@ const IndexPage: React.FunctionComponent = () => {
       >
         <Content
           style={{
-            height: "calc(100vh - 102px)",
+            height: "calc(100vh - 92px)",
             overflowX: "hidden",
             overflowY: "auto",
           }}
@@ -108,15 +109,22 @@ const IndexPage: React.FunctionComponent = () => {
             style={{
               width: "100%",
               borderTop: "1px solid #efefef",
-              padding: 16,
             }}
             styles={{ item: {} }}
           >
             <Space
               direction={"horizontal"}
-              style={{ width: "100%", justifyContent: "space-between" }}
+              style={{
+                width: "100%",
+                justifyContent: "space-between",
+              }}
             >
-              <Typography.Title level={5}>Favorite Channels</Typography.Title>
+              <Typography.Title
+                level={5}
+                style={{ paddingTop: 16, paddingLeft: 16, marginBottom: 0 }}
+              >
+                Favorite Channels
+              </Typography.Title>
               <Button type={"text"} href={"/dionysus/content/channels"}>
                 View All Channels
               </Button>
@@ -124,9 +132,26 @@ const IndexPage: React.FunctionComponent = () => {
             <LoadingWrapper
               loading={!channels || channelsLoading}
               error={channelsError}
+              style={{ padding: 16, paddingBottom: 0 }}
             >
               {channelsContent}
             </LoadingWrapper>
+            <Typography.Title level={5} style={{ paddingLeft: 16 }}>
+              Favorite Assets
+            </Typography.Title>
+            <ContentAssetTable
+              filters={{
+                type: "gt",
+                name: "rating",
+                value: 0,
+              }}
+              initialSort={{
+                field: "rating",
+                order: "desc",
+              }}
+              pageSize={10}
+              scrollY={"calc(100vh - 880px)"}
+            />
           </Space>
         </Content>
       </Content>
