@@ -1,19 +1,43 @@
 import { FileImageOutlined, StarFilled } from "@ant-design/icons";
-import type { SparseSeason } from "@ncfritz/olympus-sdk/dionysus";
-import { Badge, Card, Image, Space, Tag, Typography } from "antd";
+import type {
+  SparseSeason,
+  MediaAssetSearchConfiguration,
+} from "@ncfritz/olympus-sdk/dionysus";
+import { Badge, Card, Image, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import Description from "../../common/Description";
+import SearchConfigurationButton from "./SearchConfigurationButton";
 import { getProgressColor } from "./util";
 
 export interface TvSeasonSummaryCardProps {
   seriesId: number;
   season: SparseSeason;
+  initialSearchConfiguration?: MediaAssetSearchConfiguration;
+  afterSearchUpdate?: (
+    searchConfiguration: MediaAssetSearchConfiguration,
+  ) => Promise<void>;
 }
 
 const TvSeasonSummaryCard: React.FunctionComponent<
   TvSeasonSummaryCardProps
-> = ({ seriesId, season }: TvSeasonSummaryCardProps) => {
+> = ({
+  seriesId,
+  season,
+  initialSearchConfiguration,
+  afterSearchUpdate,
+}: TvSeasonSummaryCardProps) => {
+  const [searchConfiguration, setSearchConfiguration] = useState(
+    initialSearchConfiguration,
+  );
+
+  useEffect(() => {
+    if (initialSearchConfiguration) {
+      setSearchConfiguration(initialSearchConfiguration);
+    }
+  }, [initialSearchConfiguration]);
+
   const airDate = season.airDate
     ? DateTime.fromISO(season.airDate).toFormat("MM/dd/yyyy")
     : "Unknown";
@@ -60,41 +84,76 @@ const TvSeasonSummaryCard: React.FunctionComponent<
     >
       <Space
         direction={"horizontal"}
-        size={16}
-        style={{ alignItems: "start", display: "flex" }}
+        style={{
+          width: "100%",
+          alignItems: "start",
+          justifyContent: "space-between",
+        }}
       >
-        <Link
-          href={`/dionysus/tv/series/${seriesId}/season/${season.seasonNumber}`}
+        <Space
+          direction={"horizontal"}
+          size={16}
+          style={{ alignItems: "start", display: "flex" }}
         >
-          {coverImage}
-        </Link>
-        <Space direction={"vertical"} style={{ padding: 16 }} size={0}>
-          <Space
-            direction={"horizontal"}
-            size={8}
-            style={{ alignItems: "center" }}
+          <Link
+            href={`/dionysus/tv/series/${seriesId}/season/${season.seasonNumber}`}
           >
-            <Link
-              href={`/dionysus/tv/series/${seriesId}/season/${season.seasonNumber}`}
+            {coverImage}
+          </Link>
+          <Space direction={"vertical"} style={{ padding: 16 }}>
+            <Space
+              direction={"horizontal"}
+              style={{
+                alignItems: "start",
+              }}
+              size={16}
             >
-              <Typography.Title level={5} style={{ marginBottom: 0 }}>
-                {season.name}
-              </Typography.Title>
-            </Link>
-            <Typography.Text style={{ color: "#666666", fontSize: "12px" }}>
-              ({season.episodeCount} episodes)
+              <SearchConfigurationButton
+                className={"light"}
+                mediaType={"tv_season"}
+                mediaId={season.id}
+                loading={false}
+                searchConfiguration={searchConfiguration}
+                afterUpdate={async (searchConfiguration) => {
+                  setSearchConfiguration(searchConfiguration);
+
+                  if (afterSearchUpdate) {
+                    await afterSearchUpdate(searchConfiguration);
+                  }
+                }}
+              />
+              <Space direction={"vertical"} size={0}>
+                <Space
+                  direction={"horizontal"}
+                  size={8}
+                  style={{ alignItems: "center" }}
+                >
+                  <Link
+                    href={`/dionysus/tv/series/${seriesId}/season/${season.seasonNumber}`}
+                  >
+                    <Typography.Title level={5} style={{ marginBottom: 0 }}>
+                      {season.name}
+                    </Typography.Title>
+                  </Link>
+                  <Typography.Text
+                    style={{ color: "#666666", fontSize: "12px" }}
+                  >
+                    ({season.episodeCount} episodes)
+                  </Typography.Text>
+                </Space>
+                <Description
+                  title={"Air Date:"}
+                  titleFontSize={"12px"}
+                  value={airDate}
+                  direction={"horizontal"}
+                  style={{ marginTop: 2 }}
+                />
+              </Space>
+            </Space>
+            <Typography.Text style={{ fontSize: "12px" }}>
+              {season.overview}
             </Typography.Text>
           </Space>
-          <Description
-            title={"Air Date:"}
-            titleFontSize={"12px"}
-            value={airDate}
-            direction={"horizontal"}
-            style={{ marginTop: 2, marginBottom: 16 }}
-          />
-          <Typography.Text style={{ fontSize: "12px" }}>
-            {season.overview}
-          </Typography.Text>
         </Space>
       </Space>
     </Card>

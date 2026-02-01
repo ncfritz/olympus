@@ -7,10 +7,10 @@ import {
   HomeOutlined,
   InfoCircleFilled,
   QrcodeOutlined,
-  SearchOutlined,
 } from "@ant-design/icons";
 import type {
   BaseTvSeries,
+  MediaAssetSearchConfiguration,
   TvSeries,
   TvSeriesCastMember,
   TvSeriesCrewMember,
@@ -32,8 +32,9 @@ import {
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { type ReactNode, useState } from "react";
+import React, { type ReactNode, useEffect, useState } from "react";
 import ReactCountryFlag from "react-country-flag/src";
+import mediaApi from "../../../../api/mediaApi";
 import metadataApi from "../../../../api/metadataApi";
 import Description from "../../../../components/common/Description";
 import LoadingWrapper from "../../../../components/common/LoadingWrapper";
@@ -43,6 +44,7 @@ import MovieAlternativeTitlesList from "../../../../components/dionysus/metadata
 import MovieImagesPanel from "../../../../components/dionysus/metadata/MovieImagesPanel";
 import MovieProductionCompaniesPanel from "../../../../components/dionysus/metadata/MovieProductionCompaniesPanel";
 import MovieVideoPanel from "../../../../components/dionysus/metadata/MovieVideoPanel";
+import SearchConfigurationButton from "../../../../components/dionysus/metadata/SearchConfigurationButton";
 import TvCastList from "../../../../components/dionysus/metadata/TvCastList";
 import TvEpisodeSummaryCard from "../../../../components/dionysus/metadata/TvEpisodeSummaryCard";
 import TvSeasonSummaryCard from "../../../../components/dionysus/metadata/TvSeasonSummaryCard";
@@ -60,45 +62,82 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
   const { id } = router.query;
 
   const [activeTab, setActiveTab] = useState("t-main-general");
+  const [latestSeasonSearchConfiguration, setLatestSeasonSearchConfiguration] =
+    useState<MediaAssetSearchConfiguration | undefined>(undefined);
 
-  const [tvSeries, tvSeriesLoading, tvSeriesError] = useFetch<number, TvSeries>(
-    {
-      dataType: "TV series details",
-      watch: [id],
-      params: id as unknown as number,
-      fetchFunction: async (o) =>
-        (await metadataApi.describeTvSeries(o)).data.tvSeries,
-    },
-  );
+  const [tvSeries, tvSeriesLoading, tvSeriesError, fetchTvSeries] = useFetch<
+    number,
+    TvSeries
+  >({
+    dataType: "TV series details",
+    watch: [id],
+    params: id as unknown as number,
+    fetchFunction: async (o) =>
+      (await metadataApi.describeTvSeries(o)).data.tvSeries,
+  });
 
-  const [cast, castLoading, castError] = useFetch<number, TvSeriesCastMember[]>(
-    {
-      dataType: "TV series cast",
-      watch: [id],
-      params: id as unknown as number,
-      fetchFunction: async (o) =>
-        (await metadataApi.listTvSeriesCast(o)).data.cast,
-    },
-  );
+  const [cast, castLoading, castError] = useFetch<
+    TvSeries,
+    TvSeriesCastMember[]
+  >({
+    dataType: "TV series cast",
+    watch: [tvSeries?.id],
+    params: tvSeries,
+    validateOptions: (o) => o !== undefined,
+    fetchFunction: async (o) =>
+      (await metadataApi.listTvSeriesCast(o.id)).data.cast,
+  });
 
-  const [crew, crewLoading, crewError] = useFetch<number, TvSeriesCrewMember[]>(
-    {
-      dataType: "TV series crew",
-      watch: [id],
-      params: id as unknown as number,
-      fetchFunction: async (o) =>
-        (await metadataApi.listTvSeriesCrew(o)).data.crew,
-    },
-  );
+  const [crew, crewLoading, crewError] = useFetch<
+    TvSeries,
+    TvSeriesCrewMember[]
+  >({
+    dataType: "TV series crew",
+    watch: [tvSeries?.id],
+    params: tvSeries,
+    validateOptions: (o) => o !== undefined,
+    fetchFunction: async (o) =>
+      (await metadataApi.listTvSeriesCrew(o.id)).data.crew,
+  });
 
-  const [recommendations, recommendationsLoading, recommendationsError] =
-    useFetch<number, BaseTvSeries[]>({
-      dataType: "movie recommendations",
-      watch: [id],
-      params: id as unknown as number,
-      fetchFunction: async (o) =>
-        (await metadataApi.listTvSeriesRecommendations(o)).data.recommendations,
-    });
+  const [
+    recommendations,
+    recommendationsLoading,
+    recommendationsError,
+    fetchRecommendations,
+  ] = useFetch<TvSeries, BaseTvSeries[]>({
+    dataType: "movie recommendations",
+    watch: [tvSeries?.id],
+    params: tvSeries,
+    validateOptions: (o) => o !== undefined,
+    fetchFunction: async (o) =>
+      (await metadataApi.listTvSeriesRecommendations(o.id)).data
+        .recommendations,
+  });
+
+  const [
+    searchConfiguration,
+    searchConfigurationLoading,
+    searchConfigurationError,
+    fetchSearchConfiguration,
+    setSearchConfiguration,
+  ] = useFetch<TvSeries, MediaAssetSearchConfiguration>({
+    dataType: "search configuration",
+    watch: [tvSeries?.id],
+    params: tvSeries,
+    validateOptions: (o) => o !== undefined,
+    fetchFunction: async (o) =>
+      (await mediaApi.describeMediaAssetSearchConfiguration("tv_series", o.id))
+        .data.searchConfiguration,
+  });
+
+  useEffect(() => {
+    if (tvSeries) {
+      setLatestSeasonSearchConfiguration(
+        tvSeries.seasons[0].searchConfiguration,
+      );
+    }
+  }, [tvSeries]);
 
   let content = (
     <Space style={{ margin: 16 }}>
@@ -334,11 +373,16 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                     size={"large"}
                     icon={<BookOutlined />}
                   />
-                  <Button
-                    className={"dionysus-action-button"}
-                    shape={"circle"}
-                    size={"large"}
-                    icon={<SearchOutlined />}
+                  <SearchConfigurationButton
+                    mediaType={"tv_series"}
+                    mediaId={tvSeries.id}
+                    seriesId={tvSeries.id}
+                    searchConfiguration={searchConfiguration}
+                    loading={searchConfigurationLoading || tvSeriesLoading}
+                    afterUpdate={async (searchConfiguration) => {
+                      setSearchConfiguration(searchConfiguration);
+                      await fetchTvSeries(true);
+                    }}
                   />
                 </Space>
               </Space>
@@ -388,7 +432,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         </Space>
         <Space
           direction={"horizontal"}
-          style={{ width: "100%", top: 24, position: "relative" }}
+          style={{ width: "100%", position: "relative" }}
           styles={{
             item: {
               width: "100%",
@@ -470,6 +514,9 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                             <TvEpisodeSummaryCard
                               episode={tvSeries.lastEpisodeToAir}
                               seriesId={tvSeries.id}
+                              initialSearchConfiguration={
+                                tvSeries.lastEpisodeToAir.searchConfiguration
+                              }
                             />
                           </Space>
                         )}
@@ -487,6 +534,9 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                             <TvEpisodeSummaryCard
                               episode={tvSeries.nextEpisodeToAir}
                               seriesId={tvSeries.id}
+                              initialSearchConfiguration={
+                                tvSeries.nextEpisodeToAir.searchConfiguration
+                              }
                             />
                           </Space>
                         )}
@@ -504,6 +554,22 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                             <TvSeasonSummaryCard
                               seriesId={tvSeries.id}
                               season={tvSeries.seasons[0]}
+                              initialSearchConfiguration={
+                                latestSeasonSearchConfiguration ||
+                                tvSeries.seasons[0].searchConfiguration
+                              }
+                              afterSearchUpdate={async (
+                                searchConfiguration,
+                              ) => {
+                                if (
+                                  searchConfiguration.seasonNumber ===
+                                  tvSeries.seasons[0].seasonNumber
+                                ) {
+                                  setLatestSeasonSearchConfiguration(
+                                    searchConfiguration,
+                                  );
+                                }
+                              }}
                             />
                           </Space>
                         )}
@@ -565,6 +631,24 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                             <TvSeasonSummaryCard
                               seriesId={tvSeries.id}
                               season={entry}
+                              initialSearchConfiguration={
+                                entry.seasonNumber ===
+                                tvSeries.seasons[0].seasonNumber
+                                  ? latestSeasonSearchConfiguration
+                                  : entry.searchConfiguration
+                              }
+                              afterSearchUpdate={async (
+                                searchConfiguration,
+                              ) => {
+                                if (
+                                  searchConfiguration.seasonNumber ===
+                                  tvSeries.seasons[0].seasonNumber
+                                ) {
+                                  setLatestSeasonSearchConfiguration(
+                                    searchConfiguration,
+                                  );
+                                }
+                              }}
                             />
                           );
                         })}
@@ -618,6 +702,9 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                             tvSeries={recommendations}
                             loading={recommendationsLoading}
                             columns={8}
+                            afterSearchUpdate={async () => {
+                              await fetchRecommendations(true);
+                            }}
                           />
                         </LoadingWrapper>
                       </Space>

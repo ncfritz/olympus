@@ -1,16 +1,22 @@
 import { CaretDownOutlined, CaretRightOutlined } from "@ant-design/icons";
-import type { Collection } from "@ncfritz/olympus-sdk/dionysus";
+import type {
+  Collection,
+  MediaAssetSearchConfiguration,
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Button, Card, Space, Typography } from "antd";
 import { useState } from "react";
 import MovieList from "./MovieList";
 
 export interface MovieCollectionCardProps {
   collection?: Collection;
+  afterSearchUpdate?: (
+    searchConfiguration: MediaAssetSearchConfiguration,
+  ) => Promise<void>;
 }
 
 const MovieCollectionCard: React.FunctionComponent<
   MovieCollectionCardProps
-> = ({ collection }: MovieCollectionCardProps) => {
+> = ({ collection, afterSearchUpdate }: MovieCollectionCardProps) => {
   const [expanded, setExpanded] = useState(false);
 
   if (!collection) {
@@ -33,6 +39,14 @@ const MovieCollectionCard: React.FunctionComponent<
           flexDirection: "column",
           justifyContent: "start",
           display: expanded ? "flex" : "none",
+          backgroundColor: "#314151",
+          backgroundImage: `linear-gradient(90deg, rgba(90, 105, 120, 1) 10%, rgba(0, 0, 0, 0.4) 100%), url("${headerBackgroundUrl}")`,
+          backgroundPosition: "left bottom 0%",
+          backgroundSize: "100% auto",
+          backgroundRepeat: "no-repeat",
+          position: "relative",
+          alignItems: "stretch",
+          marginInline: -1,
         },
         actions: { margin: 0, padding: 0 },
         cover: {
@@ -93,6 +107,8 @@ const MovieCollectionCard: React.FunctionComponent<
               variant={"filled"}
               style={{
                 borderRadius: 32,
+                borderColor: "#efefef99",
+                backgroundColor: "#efefef33",
               }}
               href={`/dionysus/collections/${collection.id}`}
             >
@@ -104,8 +120,10 @@ const MovieCollectionCard: React.FunctionComponent<
     >
       <MovieList
         columns={8}
+        bordered={false}
         movies={collection.parts.map((part) => part.movie)}
         loading={false}
+        afterSearchUpdate={afterSearchUpdate}
       />
     </Card>
   );

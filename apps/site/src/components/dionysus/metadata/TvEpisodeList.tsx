@@ -86,6 +86,7 @@ const TvEpisodeList: React.FunctionComponent<TvEpisodeListProps> = ({
             <Space
               direction={"horizontal"}
               style={{ width: "100%", alignItems: "start", margin: 8 }}
+              styles={{ item: { fontSize: "10px" } }}
             >
               {stillPath}
               <Space

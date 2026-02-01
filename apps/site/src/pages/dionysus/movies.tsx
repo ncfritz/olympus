@@ -14,6 +14,7 @@ import {
   Row,
   Space,
   Statistic,
+  Switch,
   Tag,
   Typography,
 } from "antd";
@@ -51,6 +52,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
   const [spokenLanguageFilter, setSpokenLanguageFilter] = useState<string[]>(
     [],
   );
+  const [monitoredFilter, setMonitoredFilter] = useState(false);
 
   const [filters, setFilters] = useState<FilterDefinition | undefined>(
     undefined,
@@ -101,14 +103,28 @@ const MoviesIndexPage: React.FunctionComponent = () => {
       });
     }
 
+    if (monitoredFilter) {
+      newFilters.push({
+        type: "eq",
+        name: "searchConfiguration.enabled",
+        value: true,
+      });
+    }
+
     if (newFilters.length > 1) {
       setFilters({ type: "and", name: "__base", value: newFilters });
     } else {
       setFilters(newFilters[0]);
     }
-  }, [debouncedTitleFilter, statusFilter, videoFilter, spokenLanguageFilter]);
+  }, [
+    debouncedTitleFilter,
+    statusFilter,
+    videoFilter,
+    spokenLanguageFilter,
+    monitoredFilter,
+  ]);
 
-  const [movies, moviesLoading, moviesError] = useFetch<
+  const [movies, moviesLoading, moviesError, fetchMovies] = useFetch<
     undefined,
     SparseMovie[]
   >({
@@ -188,10 +204,10 @@ const MoviesIndexPage: React.FunctionComponent = () => {
           position: "fixed",
           background: "#ffffff",
           gap: 16,
-          top: 102,
+          top: 92,
           overflowX: "hidden",
           overflowY: "auto",
-          height: "calc(100vh - 102px)",
+          height: "calc(100vh - 92)",
         }}
       >
         <Content style={{ width: "calc(100vw - 384px)" }}>
@@ -398,14 +414,22 @@ const MoviesIndexPage: React.FunctionComponent = () => {
                 }}
               />
             </Space>
-            <Space direction={"horizontal"} size={8}>
+            <Space direction={"horizontal"} size={8} align={"center"}>
+              <Typography.Text style={{ fontSize: "12px" }}>
+                Monitored
+              </Typography.Text>
+              <Switch
+                size={"small"}
+                checked={monitoredFilter}
+                onChange={setMonitoredFilter}
+              />
               <Sorter
                 initialSort={sort.field}
                 initialDirection={sort.order}
                 sortOptions={{
                   popularity: "Popularity",
                   title: "Title",
-                  release_date: "Release Date",
+                  releaseDate: "Release Date",
                   budget: "Budget",
                   revenue: "Revenue",
                   status: "Status",
@@ -424,7 +448,13 @@ const MoviesIndexPage: React.FunctionComponent = () => {
             direction={"vertical"}
             style={{ width: "100%", padding: 16 }}
           >
-            <MovieList movies={movies} loading={moviesLoading} />
+            <MovieList
+              movies={movies}
+              loading={moviesLoading}
+              afterSearchUpdate={async () => {
+                await fetchMovies(true);
+              }}
+            />
           </Space>
         </Content>
       </Layout>

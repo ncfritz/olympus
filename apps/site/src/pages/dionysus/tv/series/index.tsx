@@ -5,7 +5,7 @@ import type {
   FilterDefinition,
   GetTvSeriesAggregateStatisticsResponse,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Affix, Col, Input, Layout, Row, Space, Statistic, Tag } from "antd";
+import { Affix, Col, Input, Layout, Row, Space, Statistic, Switch, Tag, Typography } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
@@ -38,6 +38,7 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
   const [titleFilter, setTitleFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<string | undefined>(undefined);
+  const [monitoredFilter, setMonitoredFilter] = useState(false);
 
   const [filters, setFilters] = useState<FilterDefinition | undefined>(
     undefined,
@@ -72,6 +73,14 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
       });
     }
 
+    if (monitoredFilter) {
+      newFilters.push({
+        type: "eq",
+        name: "searchConfiguration.enabled",
+        value: true,
+      });
+    }
+
     if (newFilters.length > 1) {
       setFilters({ type: "and", name: "__base", value: newFilters });
     } else {
@@ -79,7 +88,7 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
     }
   }, [debouncedTitleFilter, statusFilter, typeFilter]);
 
-  const [tvSeries, tvSeriesLoading, tvSeriesError] = useFetch<
+  const [tvSeries, tvSeriesLoading, tvSeriesError, fetchTvSeries] = useFetch<
     undefined,
     BaseTvSeries[]
   >({
@@ -142,10 +151,10 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
           position: "fixed",
           background: "#ffffff",
           gap: 16,
-          top: 102,
+          top: 92,
           overflowX: "hidden",
           overflowY: "auto",
-          height: "calc(100vh - 102px)",
+          height: "calc(100vh - 92px)",
         }}
       >
         <Content style={{ width: "calc(100vw - 384px)" }}>
@@ -333,6 +342,14 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
               />
             </Space>
             <Space direction={"horizontal"} size={8}>
+              <Typography.Text style={{ fontSize: "12px" }}>
+                Monitored
+              </Typography.Text>
+              <Switch
+                size={"small"}
+                checked={monitoredFilter}
+                onChange={setMonitoredFilter}
+              />
               <Sorter
                 initialSort={sort.field}
                 initialDirection={sort.order}
@@ -358,7 +375,12 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
             direction={"vertical"}
             style={{ width: "100%", padding: 16 }}
           >
-            <TvSeriesList tvSeries={tvSeries} loading={tvSeriesLoading} />
+            <TvSeriesList
+              tvSeries={tvSeries}
+              loading={tvSeriesLoading}
+              afterSearchUpdate={async () => {
+              await fetchTvSeries(true);
+            }} />
           </Space>
         </Content>
       </Layout>

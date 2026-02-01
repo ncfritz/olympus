@@ -1,19 +1,39 @@
 import { FileImageOutlined, StarFilled } from "@ant-design/icons";
-import type { SparseEpisode } from "@ncfritz/olympus-sdk/dionysus";
+import type {
+  MediaAssetSearchConfiguration,
+  SparseEpisode,
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Badge, Card, Image, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import Description from "../../common/Description";
+import SearchConfigurationButton from "./SearchConfigurationButton";
 import { getProgressColor } from "./util";
 
 export interface TvEpisodeSummaryCardProps {
   episode: SparseEpisode;
   seriesId: number;
+  initialSearchConfiguration?: MediaAssetSearchConfiguration;
 }
 
 const TvEpisodeSummaryCard: React.FunctionComponent<
   TvEpisodeSummaryCardProps
-> = ({ episode, seriesId }: TvEpisodeSummaryCardProps) => {
+> = ({
+  episode,
+  seriesId,
+  initialSearchConfiguration,
+}: TvEpisodeSummaryCardProps) => {
+  const [searchConfiguration, setSearchConfiguration] = useState(
+    initialSearchConfiguration,
+  );
+
+  useEffect(() => {
+    if (initialSearchConfiguration) {
+      setSearchConfiguration(initialSearchConfiguration);
+    }
+  }, [initialSearchConfiguration]);
+
   const airDate = episode.airDate
     ? DateTime.fromISO(episode.airDate).toFormat("MM/dd/yyyy")
     : "Unknown";
@@ -69,26 +89,22 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
       <Space
         className={"episode-fix"}
         direction={"horizontal"}
-        size={16}
+        size={8}
         style={{
           height: "100%",
           width: "100%",
           borderTopRightRadius: "inherit",
           borderBottomRightRadius: "inherit",
+          alignItems: "start",
         }}
         styles={{
           item: {
-            height: "100%",
             borderTopRightRadius: "inherit",
             borderBottomRightRadius: "inherit",
           },
         }}
       >
-        <Space
-          direction={"vertical"}
-          size={0}
-          style={{ padding: 16, width: "100%" }}
-        >
+        <Space direction={"vertical"} style={{ padding: 16, width: "100%" }}>
           <Space
             direction={"horizontal"}
             style={{
@@ -96,18 +112,42 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
               justifyContent: "space-between",
               width: "100%",
             }}
-            size={48}
           >
-            <Link
-              href={`/dionysus/tv/series/${seriesId}/season/${episode.seasonNumber}/episode/${episode.episodeNumber}`}
-            >
-              <Typography.Title
-                level={5}
-                style={{ fontSize: "13px", color: "#666666", marginBottom: 0 }}
-              >
-                Episode {String(episode.episodeNumber).padStart(2, "0")}
-              </Typography.Title>
-            </Link>
+            <Space direction={"horizontal"} size={16}>
+              <SearchConfigurationButton
+                mediaType={"tv_episode"}
+                mediaId={episode.id}
+                searchConfiguration={searchConfiguration}
+                loading={false}
+                className={"light"}
+                afterUpdate={async (searchConfiguration) => {
+                  setSearchConfiguration(searchConfiguration);
+                }}
+              />
+              <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+                <Link
+                  href={`/dionysus/tv/series/${seriesId}/season/${episode.seasonNumber}/episode/${episode.episodeNumber}`}
+                >
+                  <Typography.Title
+                    level={5}
+                    style={{
+                      fontSize: "13px",
+                      color: "#666666",
+                      marginBottom: 0,
+                    }}
+                  >
+                    Episode {String(episode.episodeNumber).padStart(2, "0")}
+                  </Typography.Title>
+                </Link>
+                <Link
+                  href={`/dionysus/tv/series/${seriesId}/season/${episode.seasonNumber}/episode/${episode.episodeNumber}`}
+                >
+                  <Typography.Title level={5} style={{ marginBottom: 0 }}>
+                    {episode.name}
+                  </Typography.Title>
+                </Link>
+              </Space>
+            </Space>
             <Description
               title={"Air Date:"}
               titleFontSize={"12px"}
@@ -116,13 +156,6 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
               style={{ marginTop: 2 }}
             />
           </Space>
-          <Link
-            href={`/dionysus/tv/series/${seriesId}/season/${episode.seasonNumber}/episode/${episode.episodeNumber}`}
-          >
-            <Typography.Title level={5} style={{ marginBottom: 16 }}>
-              {episode.name}
-            </Typography.Title>
-          </Link>
           <Typography.Text style={{ fontSize: "12px" }}>
             {episode.overview}
           </Typography.Text>

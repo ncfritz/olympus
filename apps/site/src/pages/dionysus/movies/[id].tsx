@@ -7,10 +7,10 @@ import {
   HomeOutlined,
   InfoCircleFilled,
   QrcodeOutlined,
-  SearchOutlined,
 } from "@ant-design/icons";
 import type {
   Collection,
+  MediaAssetSearchConfiguration,
   Movie,
   MovieCastMember,
   MovieCrewMember,
@@ -35,6 +35,7 @@ import { useRouter } from "next/router";
 import prettyMilliseconds from "pretty-ms";
 import React, { type ReactNode, useState } from "react";
 import ReactCountryFlag from "react-country-flag/src";
+import mediaApi from "../../../api/mediaApi";
 import metadataApi from "../../../api/metadataApi";
 import Description from "../../../components/common/Description";
 import LoadingWrapper from "../../../components/common/LoadingWrapper";
@@ -50,6 +51,7 @@ import MoviePosterCard from "../../../components/dionysus/metadata/MoviePosterCa
 import MovieProductionCompaniesPanel from "../../../components/dionysus/metadata/MovieProductionCompaniesPanel";
 import MovieReleaseDateList from "../../../components/dionysus/metadata/MovieReleaseDatesList";
 import MovieVideoPanel from "../../../components/dionysus/metadata/MovieVideoPanel";
+import SearchConfigurationButton from "../../../components/dionysus/metadata/SearchConfigurationButton";
 import { getProgressColor } from "../../../components/dionysus/metadata/util";
 import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
@@ -82,24 +84,41 @@ const MovieDetailPage: React.FunctionComponent = () => {
     fetchFunction: async (o) => (await metadataApi.listMovieCrew(o)).data.crew,
   });
 
-  const [recommendations, recommendationsLoading, recommendationsError] =
-    useFetch<number, SparseMovie[]>({
-      dataType: "movie recommendations",
-      watch: [id],
-      params: id as unknown as number,
-      fetchFunction: async (o) =>
-        (await metadataApi.listMovieRecommendations(o)).data.recommendations,
-    });
-
-  const [collections, collectionsLoading, collectionsError] = useFetch<
-    number,
-    Collection[]
-  >({
-    dataType: "movie collections list",
+  const [
+    recommendations,
+    recommendationsLoading,
+    recommendationsError,
+    fetchRecommendations,
+  ] = useFetch<number, SparseMovie[]>({
+    dataType: "movie recommendations",
     watch: [id],
     params: id as unknown as number,
     fetchFunction: async (o) =>
-      (await metadataApi.listMovieCollections(o)).data.collections,
+      (await metadataApi.listMovieRecommendations(o)).data.recommendations,
+  });
+
+  const [collections, collectionsLoading, collectionsError, fetchCollections] =
+    useFetch<number, Collection[]>({
+      dataType: "movie collections list",
+      watch: [id],
+      params: id as unknown as number,
+      fetchFunction: async (o) =>
+        (await metadataApi.listMovieCollections(o)).data.collections,
+    });
+
+  const [
+    searchConfiguration,
+    searchConfigurationLoading,
+    searchConfigurationError,
+    fetchSearchConfiguration,
+    setSearchConfiguration,
+  ] = useFetch<number, MediaAssetSearchConfiguration>({
+    dataType: "search configuration",
+    watch: [id],
+    params: id as unknown as number,
+    fetchFunction: async (o) =>
+      (await mediaApi.describeMediaAssetSearchConfiguration("movie", o)).data
+        .searchConfiguration,
   });
 
   let content = (
@@ -358,11 +377,18 @@ const MovieDetailPage: React.FunctionComponent = () => {
                     size={"large"}
                     icon={<BookOutlined />}
                   />
-                  <Button
-                    className={"dionysus-action-button"}
-                    shape={"circle"}
-                    size={"large"}
-                    icon={<SearchOutlined />}
+                  <SearchConfigurationButton
+                    mediaType={"movie"}
+                    mediaId={movie.id}
+                    searchConfiguration={searchConfiguration}
+                    loading={searchConfigurationLoading || movieLoading}
+                    afterUpdate={async (searchConfiguration) => {
+                      setSearchConfiguration(searchConfiguration);
+
+                      if (collections.length > 0) {
+                        await fetchCollections(true);
+                      }
+                    }}
                   />
                 </Space>
               </Space>
@@ -457,6 +483,13 @@ const MovieDetailPage: React.FunctionComponent = () => {
                                 ? collections[0]
                                 : undefined
                             }
+                            afterSearchUpdate={async (searchConfiguration) => {
+                              await fetchCollections(true);
+
+                              if (searchConfiguration.mediaId === movie.id) {
+                                setSearchConfiguration(searchConfiguration);
+                              }
+                            }}
                           />
                         </LoadingWrapper>
                         <Space
@@ -499,6 +532,9 @@ const MovieDetailPage: React.FunctionComponent = () => {
                                 ? recommendations.slice(0, 8)
                                 : []
                             }
+                            afterSearchUpdate={async () => {
+                              await fetchRecommendations(true);
+                            }}
                           />
                         </LoadingWrapper>
                       </Space>

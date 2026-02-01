@@ -7,10 +7,10 @@ import {
   HomeOutlined,
   InfoCircleFilled,
   QrcodeOutlined,
-  SearchOutlined,
 } from "@ant-design/icons";
 import type {
   Episode,
+  MediaAssetSearchConfiguration,
   Season,
   TvEpisodeCastMember,
   TvEpisodeCrewMember,
@@ -32,6 +32,7 @@ import { DateTime } from "luxon";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
+import mediaApi from "../../../../../../../../api/mediaApi";
 import metadataApi from "../../../../../../../../api/metadataApi";
 import Description from "../../../../../../../../components/common/Description";
 import LoadingWrapper from "../../../../../../../../components/common/LoadingWrapper";
@@ -39,6 +40,7 @@ import ExternalIdsList from "../../../../../../../../components/dionysus/metadat
 import MetadataFetchJobPanel from "../../../../../../../../components/dionysus/metadata/MetadataFetchJobPanel";
 import MovieImagesPanel from "../../../../../../../../components/dionysus/metadata/MovieImagesPanel";
 import MovieVideoPanel from "../../../../../../../../components/dionysus/metadata/MovieVideoPanel";
+import SearchConfigurationButton from "../../../../../../../../components/dionysus/metadata/SearchConfigurationButton";
 import TvEpisodeCastList from "../../../../../../../../components/dionysus/metadata/TvEpisodeCastList";
 import TvEpisodeCrewList from "../../../../../../../../components/dionysus/metadata/TvEpisodeCrewList";
 import TvEpisodeList from "../../../../../../../../components/dionysus/metadata/TvEpisodeList";
@@ -69,7 +71,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
 
   const [activeTab, setActiveTab] = useState("t-main-general");
 
-  const [episode, episodeLoading, episodeError] = useFetch<EpisodeId, Episode>({
+  const [episode, episodeLoading, episodeError, fetchEpisode] = useFetch<EpisodeId, Episode>({
     dataType: "TV episode details",
     watch: [id, seasonNumber, episodeNumber],
     params: {
@@ -87,19 +89,20 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
       ).data.episode,
   });
 
-  const [tvSeason, tvSeasonLoading, tvSeasonError] = useFetch<SeasonId, Season>(
-    {
-      dataType: "TV season episodes",
-      watch: [id, seasonNumber],
-      params: {
-        seriesId: id as unknown as number,
-        seasonNumber: seasonNumber as unknown as number,
-      },
-      fetchFunction: async (o) =>
-        (await metadataApi.describeTvSeason(o.seriesId, o.seasonNumber)).data
-          .season,
+  const [tvSeason, tvSeasonLoading, tvSeasonError, fetchTvSeason] = useFetch<
+    SeasonId,
+    Season
+  >({
+    dataType: "TV season episodes",
+    watch: [id, seasonNumber],
+    params: {
+      seriesId: id as unknown as number,
+      seasonNumber: seasonNumber as unknown as number,
     },
-  );
+    fetchFunction: async (o) =>
+      (await metadataApi.describeTvSeason(o.seriesId, o.seasonNumber)).data
+        .season,
+  });
 
   const [crew, crewLoading, crewError] = useFetch<
     EpisodeId,
@@ -162,6 +165,22 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
           o.episodeNumber,
         )
       ).data.guestStars,
+  });
+
+  const [
+    searchConfiguration,
+    searchConfigurationLoading,
+    searchConfigurationError,
+    fetchSearchConfiguration,
+    setSearchConfiguration,
+  ] = useFetch<number, MediaAssetSearchConfiguration>({
+    dataType: "search configuration",
+    watch: [episode],
+    params: episode?.id,
+    validateOptions: (o) => o !== undefined,
+    fetchFunction: async (o) =>
+      (await mediaApi.describeMediaAssetSearchConfiguration("tv_episode", o))
+        .data.searchConfiguration,
   });
 
   let content = (
@@ -350,11 +369,17 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
                   size={"large"}
                   icon={<BookOutlined />}
                 />
-                <Button
-                  className={"dionysus-action-button"}
-                  shape={"circle"}
-                  size={"large"}
-                  icon={<SearchOutlined />}
+                <SearchConfigurationButton
+                  mediaType={"tv_episode"}
+                  mediaId={episode.id}
+                  seriesId={episode.series.id}
+                  seasonNumber={episode.seasonNumber}
+                  episodeNumber={episode.episodeNumber}
+                  searchConfiguration={searchConfiguration}
+                  loading={searchConfigurationLoading || tvSeasonLoading}
+                  afterUpdate={async (searchConfiguration) => {
+                    setSearchConfiguration(searchConfiguration);
+                  }}
                 />
               </Space>
             </Space>
@@ -507,6 +532,13 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
                             <TvSeasonSummaryCard
                               seriesId={episode.series.id}
                               season={episode.season}
+                              initialSearchConfiguration={
+                                episode.season.searchConfiguration
+                              }
+                              afterSearchUpdate={async () => {
+                                //await fetchTvSeason(true);
+                                await fetchEpisode(true);
+                              }}
                             />
                           </Space>
                         ),
