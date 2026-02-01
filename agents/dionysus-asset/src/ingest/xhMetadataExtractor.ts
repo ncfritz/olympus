@@ -6,7 +6,7 @@ import { IngestError } from "../error/ingestError";
 import { MetadataExtractor } from "./metadataExtractor";
 import { HTMLElement } from "node-html-parser";
 
-export class XHetadataExtractor extends MetadataExtractor {
+export class XHMetadataExtractor extends MetadataExtractor {
   constructor(client: HttpService, url: string, id: string) {
     super(client, url, id);
   }

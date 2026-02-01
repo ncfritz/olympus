@@ -14,7 +14,7 @@ import { IngestError } from "../error/ingestError";
 import { LocalMetadataExtractor } from "../ingest/localMetadataExtractor";
 import { MetadataExtractor } from "../ingest/metadataExtractor";
 import { PHMetadataExtractor } from "../ingest/phMetadataExtractor";
-import { XHetadataExtractor } from "../ingest/xhMetadataExtractor";
+import { XHMetadataExtractor } from "../ingest/xhMetadataExtractor";
 import { XVMetadataExtractor } from "../ingest/xvMetadataExtractor";
 import type { RawIngestionMessage } from "../types/messages";
 import {
@@ -228,7 +228,7 @@ export class RawIngestionHandler {
     } else if (host.includes("pornhub.com")) {
       return new PHMetadataExtractor(this.httpService, url, id);
     } else if (host.includes("xhamster.com")) {
-      return new XHetadataExtractor(this.httpService, url, id);
+      return new XHMetadataExtractor(this.httpService, url, id);
     } else if (host.includes("dp-vids.com")) {
       return new DPVMetadataExtractor(this.httpService, url, id);
     }

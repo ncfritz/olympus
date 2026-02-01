@@ -7,8 +7,6 @@ Ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH!);
 Ffmpeg.setFfprobePath(process.env.FFPROBE_PATH!);
 
 async function bootstrap() {
-  //process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
-
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
   app.use(cookieParser());
