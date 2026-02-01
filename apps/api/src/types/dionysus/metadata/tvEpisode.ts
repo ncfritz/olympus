@@ -1,3 +1,4 @@
+import { GraphQlMediaAssetSearchConfiguration } from "../media/searchConfiguration";
 import {
   GraphQlExternalId,
   GraphQlTypedImage,
@@ -20,6 +21,7 @@ export type GraphQlSparseTvEpisode = Timestamped & {
   stillPath: string;
   voteAverage: number;
   voteCount: number;
+  searchConfiguration: GraphQlMediaAssetSearchConfiguration;
 };
 
 export type GraphQlTvEpisode = GraphQlSparseTvEpisode & {

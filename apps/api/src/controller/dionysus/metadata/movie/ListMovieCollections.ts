@@ -12,6 +12,7 @@ import {
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/metadata/CollectionConverter";
+import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
 import {
   GraphQlCollection,
   Timestamped,
@@ -106,6 +107,7 @@ export class ListMovieCollectionsController {
                   tagline
                   title
                   video
+                  ${SEARCH_CONFIGURATION}
                 }
               }
             }

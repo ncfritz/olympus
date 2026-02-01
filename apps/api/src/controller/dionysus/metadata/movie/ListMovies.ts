@@ -8,6 +8,7 @@ import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toSparseDomainObject as toDomainObject } from "../../../../convert/dionysus/metadata/MovieConverter";
+import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
 import { GraphQlSparseMovie } from "../../../../types/dionysus/metadata/movie";
 import {
   ApiFilterParams,
@@ -88,6 +89,7 @@ export class ListMoviesController {
           tagline
           title
           video
+          ${SEARCH_CONFIGURATION}
         }
         dionysus_movies_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {

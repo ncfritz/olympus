@@ -16,6 +16,7 @@ import {
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/metadata/tvSeriesConverter";
+import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
 import { GraphQlTvSeries } from "../../../../types/dionysus/metadata/tvSeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
@@ -209,6 +210,7 @@ export class DescribeTvSeriesController {
                 count
               }
             }
+            ${SEARCH_CONFIGURATION}
           }
           productionCountries {
             createdTime
@@ -304,6 +306,7 @@ export class DescribeTvSeriesController {
             stillPath
             voteCount
             voteAverage
+            ${SEARCH_CONFIGURATION}
           }
           nextEpisodeToAir {
             airDate
@@ -319,6 +322,7 @@ export class DescribeTvSeriesController {
             stillPath
             voteCount
             voteAverage
+            ${SEARCH_CONFIGURATION}
           }
           createdBy {
             createdTime

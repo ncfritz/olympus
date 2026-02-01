@@ -13,6 +13,7 @@ import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toBaseMovieCastDomainObject } from "../../../../convert/dionysus/metadata/CastConverter";
 import { toSparseDomainObject } from "../../../../convert/dionysus/metadata/MovieConverter";
+import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
 import { GraphQlPersonMovieCastCredit } from "../../../../types/dionysus/metadata";
 import {
   ApiPaginationParams,
@@ -81,6 +82,7 @@ export class ListMovieCastRolesForPersonController {
             tagline
             title
             video
+            ${SEARCH_CONFIGURATION}
           }
         }
       }

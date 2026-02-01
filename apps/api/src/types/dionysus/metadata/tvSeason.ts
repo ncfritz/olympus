@@ -1,3 +1,4 @@
+import { GraphQlMediaAssetSearchConfiguration } from "../media/searchConfiguration";
 import {
   GraphQlExternalId,
   GraphQlTypedImage,
@@ -21,6 +22,7 @@ export type GraphQlSparseTvSeason = Timestamped & {
       count: number;
     };
   };
+  searchConfiguration: GraphQlMediaAssetSearchConfiguration;
 };
 
 export type GraphQlTvSeason = GraphQlSparseTvSeason & {

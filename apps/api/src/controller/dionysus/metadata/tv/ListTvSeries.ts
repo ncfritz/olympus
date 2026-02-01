@@ -8,6 +8,7 @@ import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toBaseDomainObject as toTvSeriesDomainObject } from "../../../../convert/dionysus/metadata/tvSeriesConverter";
+import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
 import { GraphQlBaseTvSeries } from "../../../../types/dionysus/metadata/tvSeries";
 import {
   ApiFilterParams,
@@ -19,7 +20,7 @@ import {
   buildPaginationExpression,
 } from "../../../../utils/filterUtil";
 
-type GraphQlListTvSeriesRecommendationsResponse = {
+type GraphQlListTvSeriesResponse = {
   dionysus_tv_series: GraphQlBaseTvSeries[];
 };
 
@@ -84,6 +85,7 @@ export class ListTvSeriesController {
           type
           voteAverage
           voteCount
+          ${SEARCH_CONFIGURATION}
         }
         dionysus_tv_series_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {
@@ -94,7 +96,7 @@ export class ListTvSeriesController {
     `;
 
     const fetchResponse =
-      await this.graphQLClient.request<GraphQlListTvSeriesRecommendationsResponse>(
+      await this.graphQLClient.request<GraphQlListTvSeriesResponse>(
         fetchRequest,
       );
     const tvSeries: BaseTVSeries[] = [];

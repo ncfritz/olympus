@@ -12,6 +12,7 @@ import {
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toSparseDomainObject as toMovieDomainObject } from "../../../../convert/dionysus/metadata/MovieConverter";
+import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
 import { GraphQlMovieRecommendation } from "../../../../types/dionysus/metadata/movie";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
@@ -77,6 +78,7 @@ export class ListMovieRecommendationsController {
               voteAverage
               voteCount
               video
+              ${SEARCH_CONFIGURATION}
             }
           }
         }

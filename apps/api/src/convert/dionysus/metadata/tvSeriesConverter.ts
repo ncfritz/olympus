@@ -33,6 +33,7 @@ import {
   GraphQlTvSeriesCrewMemberJob,
   GraphQlTvSeriesRuntime,
 } from "../../../types/dionysus/metadata/tvSeries";
+import { toDomainObject as toSearchConfigurationDomainObject } from "../media/MediaAssetSearchConfigurationConverter";
 import {
   toAlternativeTitleDomainObject,
   toExternalIdDomainObject,
@@ -78,6 +79,9 @@ export const toBaseDomainObject = (
     type: input.type,
     voteCount: input.voteCount,
     voteAverage: input.voteAverage,
+    searchConfiguration: input.searchConfiguration
+      ? toSearchConfigurationDomainObject(input.searchConfiguration)
+      : undefined,
   };
 };
 

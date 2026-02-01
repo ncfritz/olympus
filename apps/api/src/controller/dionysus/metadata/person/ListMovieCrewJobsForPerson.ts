@@ -13,6 +13,7 @@ import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toBaseMovieCrewDomainObject } from "../../../../convert/dionysus/metadata/CrewConverter";
 import { toSparseDomainObject } from "../../../../convert/dionysus/metadata/MovieConverter";
+import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
 import { GraphQlPersonMovieCrewCredit } from "../../../../types/dionysus/metadata";
 import {
   ApiPaginationParams,
@@ -81,6 +82,7 @@ export class ListMovieCrewJobsForPersonController {
             tagline
             title
             video
+            ${SEARCH_CONFIGURATION}
           }
         }
       }

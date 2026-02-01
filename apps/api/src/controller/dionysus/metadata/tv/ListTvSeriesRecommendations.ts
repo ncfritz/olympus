@@ -12,6 +12,7 @@ import {
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toBaseDomainObject as toTvSeriesDomainObject } from "../../../../convert/dionysus/metadata/tvSeriesConverter";
+import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
 import { GraphQlTvSeriesRecommendation } from "../../../../types/dionysus/metadata/tvSeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
@@ -78,6 +79,7 @@ export class ListTvSeriesRecommendationsController {
               type
               voteAverage
               voteCount
+              ${SEARCH_CONFIGURATION}
             }
           }
         }

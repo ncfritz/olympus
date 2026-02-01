@@ -11,6 +11,7 @@ import {
   GraphQlSparseTvSeason,
   GraphQlTvSeason,
 } from "../../../types/dionysus/metadata/tvSeason";
+import { toDomainObject as toSearchConfigurationDomainObject } from "../media/MediaAssetSearchConfigurationConverter";
 import {
   toExternalIdDomainObject,
   toTypedImageDomainObject,
@@ -33,6 +34,9 @@ export const toSparseDomainObject = (
     seasonNumber: input.seasonNumber,
     voteAverage: input.voteAverage,
     episodeCount: input.episodes_aggregate.aggregate.count,
+    searchConfiguration: input.searchConfiguration
+      ? toSearchConfigurationDomainObject(input.searchConfiguration)
+      : undefined,
   };
 };
 
