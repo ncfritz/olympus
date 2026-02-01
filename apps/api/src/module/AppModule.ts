@@ -11,6 +11,7 @@ import { Routes } from "../utils/routes";
 import { BatchJobApiModule } from "./BatchJobApiModule";
 import { ContentApiModule } from "./ContentApiModule";
 import { GraphQLClientModule } from "./GraphQLClientModule";
+import { MediaApiModule } from "./MediaApiModule";
 import { MeetingApiModule } from "./MeetingApiModule";
 import { MetadataApiModule } from "./MetadataApiModule";
 import { NotesApiModule } from "./NotesApiModule";
@@ -40,6 +41,7 @@ import { appName } from "../utils/logger";
       { path: Routes.OLYMPUS, module: NotificationsApiModule },
       { path: Routes.DIONYSUS, module: BatchJobApiModule },
       { path: Routes.DIONYSUS, module: ContentApiModule },
+      { path: Routes.DIONYSUS, module: MediaApiModule },
       { path: Routes.DIONYSUS, module: MetadataApiModule },
       { path: Routes.DIONYSUS, module: WorkflowApiModule },
       { path: Routes.MINERVA, module: NotesApiModule },

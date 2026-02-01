@@ -1,5 +1,6 @@
 import { BatchJobApiModule } from "../module/BatchJobApiModule";
 import { ContentApiModule } from "../module/ContentApiModule";
+import { MediaApiModule } from "../module/MediaApiModule";
 import { MeetingApiModule } from "../module/MeetingApiModule";
 import { MetadataApiModule } from "../module/MetadataApiModule";
 import { NotesApiModule } from "../module/NotesApiModule";
@@ -20,6 +21,7 @@ export const DionysusApiConfig: OpenApiDocumentConfig = {
   modules: [
     BatchJobApiModule,
     ContentApiModule,
+    MediaApiModule,
     MetadataApiModule,
     WorkflowApiModule,
   ],

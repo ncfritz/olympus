@@ -1,0 +1,218 @@
+import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
+import {
+  CreateMediaAssetSearchConfigurationRequest,
+  MediaAssetSearchConfiguration,
+  MediaAssetSearchType,
+  SingleMediaAssetSearchConfigurationResponse,
+} from "@ncfritz/olympus-model";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  HttpStatus,
+  Post,
+  Res,
+} from "@nestjs/common";
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiOperation,
+  ApiProduces,
+} from "@nestjs/swagger";
+import { Response } from "express";
+import { gql, GraphQLClient } from "graphql-request";
+import moment from "moment/moment";
+import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
+import { GraphQlMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+
+type GraphQlVerifyMediaResponse = {
+  id: string;
+};
+
+type GraphQlCreateMediaAssetSearchConfigurationResponse = {
+  insert_dionysus_media_asset_search_configuration_one: GraphQlMediaAssetSearchConfiguration;
+};
+
+@Controller({ version: "1" })
+export class CreateMediaAssetSearchConfigurationController {
+  constructor(
+    private readonly graphQLClient: GraphQLClient,
+    private readonly amqpConnection: AmqpConnection,
+  ) {}
+
+  @Post("/media/searchConfigurations")
+  @ApiOperation({
+    summary: "Creates a new media asset search configuration",
+    description:
+      "Creates a new media asset search configuration.  The search will not be immediately executed, however the " +
+      "`nextExecutionTime` will be calculated based on the current time and the jitter value provided.",
+    operationId: "CreateMediaAssetSearchConfiguration",
+    tags: ["Media"],
+  })
+  @ApiConsumes("application/json")
+  @ApiProduces("application/json")
+  @ApiBody({
+    type: CreateMediaAssetSearchConfigurationRequest,
+    required: true,
+    description: "Input for the CreateMediaAssetSearchConfiguration operation",
+  })
+  @ApiCreatedResponse({
+    description: "The record has been successfully created.",
+    type: SingleMediaAssetSearchConfigurationResponse,
+    headers: {
+      Location: {
+        description: "The location of the created search configuration",
+      },
+    },
+  })
+  @ApiStandardErrorResponses()
+  async handle(
+    @Body() request: CreateMediaAssetSearchConfigurationRequest,
+    @Res() response: Response,
+  ): Promise<void> {
+    let graphQLQueryRoot = "dionysus_movies_by_pk";
+
+    if (request.searchConfiguration.type === MediaAssetSearchType.TV_SERIES) {
+      graphQLQueryRoot = "dionysus_tv_series_by_pk";
+    } else if (
+      request.searchConfiguration.type === MediaAssetSearchType.TV_SEASON
+    ) {
+      graphQLQueryRoot = "dionysus_tv_seasons_by_pk";
+    } else if (
+      request.searchConfiguration.type === MediaAssetSearchType.TV_EPISODE
+    ) {
+      graphQLQueryRoot = "dionysus_tv_episodes_by_pk";
+    }
+
+    const verifyQuery = gql`
+      query VerifyMedia($id: numeric!) {
+        ${graphQLQueryRoot}(id: $id) {
+          id
+        }
+      }
+    `;
+
+    const verifyResponse =
+      await this.graphQLClient.request<GraphQlVerifyMediaResponse>(
+        verifyQuery,
+        {
+          id: request.searchConfiguration.mediaId,
+        },
+      );
+
+    if (verifyResponse.id) {
+      throw new BadRequestException(
+        "Source media definition could not be found",
+      );
+    }
+
+    const insertRequest = gql`
+      mutation CreateMediaAssetSearchConfiguration(
+        $assetType: String!
+        $mediaId: numeric!
+        $seriesId: numeric
+        $seasonNumber: numeric
+        $episodeNumber: numeric
+        $backoff: numeric!
+        $enabled: Boolean!
+        $jitter: numeric!
+        $nextExecutionTime: timestamptz!
+      ) {
+        insert_dionysus_media_asset_search_configuration_one(
+          object: {
+            assetType: $assetType
+            mediaId: $mediaId
+            seriesId: $seriesId
+            seasonNumber: $seasonNumber
+            episodeNumber: $episodeNumber
+            backoff: $backoff
+            enabled: $enabled
+            jitter: $jitter
+            nextExecutionTime: $nextExecutionTime
+          }
+        ) {
+          assetType
+          mediaId
+          seriesId
+          seasonNumber
+          episodeNumber
+          backoff
+          createdTime
+          enabled
+          jitter
+          lastExecutionTime
+          lastModifiedTime
+          nextExecutionTime
+        }
+      }
+    `;
+
+    let nextExecutionTime = moment.utc();
+
+    // Defer execution of the search for a movie or TV episode.  If the search is for a TV series or TV season
+    // execute immediately in order to propagate the search status.
+    if (
+      request.searchConfiguration.type === MediaAssetSearchType.MOVIE ||
+      request.searchConfiguration.type === MediaAssetSearchType.TV_EPISODE
+    )
+      nextExecutionTime = nextExecutionTime.add(
+        Math.floor(Math.random() * request.searchConfiguration.jitter),
+        "minutes",
+      );
+
+    const insertResponse =
+      await this.graphQLClient.request<GraphQlCreateMediaAssetSearchConfigurationResponse>(
+        insertRequest,
+        {
+          assetType: request.searchConfiguration.type,
+          mediaId: request.searchConfiguration.mediaId,
+          seriesId: request.searchConfiguration.seriesId,
+          seasonNumber: request.searchConfiguration.seasonNumber,
+          episodeNumber: request.searchConfiguration.episodeNumber,
+          backoff: request.searchConfiguration.backoff,
+          enabled: request.searchConfiguration.enabled,
+          jitter: request.searchConfiguration.jitter,
+          nextExecutionTime: nextExecutionTime.toISOString(),
+        },
+      );
+
+    const createdSearchConfiguration: MediaAssetSearchConfiguration =
+      toDomainObject(
+        insertResponse.insert_dionysus_media_asset_search_configuration_one,
+      );
+
+    console.log(createdSearchConfiguration);
+
+    if (
+      createdSearchConfiguration.type === MediaAssetSearchType.TV_SERIES ||
+      createdSearchConfiguration.type === MediaAssetSearchType.TV_SEASON
+    ) {
+      await this.amqpConnection.publish(
+        "search.execution.trigger",
+        `jobType.${createdSearchConfiguration.type}`,
+        {
+          mediaId: createdSearchConfiguration.mediaId,
+        },
+        {
+          persistent: true,
+        },
+      );
+    }
+
+    const responseBody: SingleMediaAssetSearchConfigurationResponse = {
+      searchConfiguration: createdSearchConfiguration,
+    };
+
+    response
+      .status(HttpStatus.CREATED)
+      .setHeader(
+        "Location",
+        `http://localhost:3000/api/media/searchConfiguration/${createdSearchConfiguration.type}/${encodeURIComponent(
+          createdSearchConfiguration.mediaId,
+        )}`,
+      )
+      .send(responseBody);
+  }
+}
