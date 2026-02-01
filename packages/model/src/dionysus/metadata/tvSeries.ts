@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment";
+import { MediaAssetSearchConfiguration } from "../media";
 import {
   Certification,
   CertificationAssociation,
@@ -97,6 +98,9 @@ export class BaseTVSeries {
 
   @ApiProperty({ type: Number })
   voteAverage: number;
+
+  @ApiProperty({ type: () => MediaAssetSearchConfiguration, required: false })
+  searchConfiguration?: MediaAssetSearchConfiguration;
 
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())

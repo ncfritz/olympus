@@ -2,6 +2,7 @@ import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
 import { PaginatedResults } from "../../common";
+import { MediaAssetSearchConfiguration } from "../media";
 import { Certification } from "./certifications";
 import { Collection } from "./collections";
 import {
@@ -97,6 +98,9 @@ export class BaseMovie {
 }
 
 export class SparseMovie extends BaseMovie {
+  @ApiProperty({ type: () => MediaAssetSearchConfiguration, required: false })
+  searchConfiguration?: MediaAssetSearchConfiguration;
+
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
