@@ -34,6 +34,7 @@ import {
   JOB_TYPE_PREFIX,
   METADATA_JOB_PREFIX,
   TRIGGER_SUFFIX,
+  TV_SERIES_ID_TYPES,
 } from "../../util/constants";
 import { logger } from "../../util/logger";
 import { UniqueSet } from "../../util/UniqueSet";
@@ -175,40 +176,14 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
     const externalIds: UniqueSet<PartialExternalId> = new UniqueSet();
 
     if (seriesResponse.external_ids) {
-      if (seriesResponse.external_ids.imdb_id) {
-        externalIds.add({
-          type: "imdb",
-          externalId: `${seriesResponse.external_ids.imdb_id}`,
-        });
-      }
-
-      if (seriesResponse.external_ids["wikidata_id"]) {
-        externalIds.add({
-          type: "wikidata",
-          externalId: `${seriesResponse.external_ids["wikidata_id"]}`,
-        });
-      }
-
-      if (seriesResponse.external_ids.facebook_id) {
-        externalIds.add({
-          type: "facebook",
-          externalId: `${seriesResponse.external_ids.facebook_id}`,
-        });
-      }
-
-      if (seriesResponse.external_ids.instagram_id) {
-        externalIds.add({
-          type: "instagram",
-          externalId: `${seriesResponse.external_ids.instagram_id}`,
-        });
-      }
-
-      if (seriesResponse.external_ids.twitter_id) {
-        externalIds.add({
-          type: "twitter",
-          externalId: `${seriesResponse.external_ids.twitter_id}`,
-        });
-      }
+      Object.entries(TV_SERIES_ID_TYPES).forEach(([idType, idName]) => {
+        if (seriesResponse.external_ids[idType as never]) {
+          externalIds.add({
+            type: idName,
+            externalId: `${seriesResponse.external_ids[idType as never]}`,
+          });
+        }
+      });
     }
 
     const genres: UniqueSet<PartialGenreAssociation> = new UniqueSet();

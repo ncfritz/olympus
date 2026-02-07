@@ -22,6 +22,7 @@ import {
   JOB_TYPE_PREFIX,
   METADATA_JOB_PREFIX,
   TRIGGER_SUFFIX,
+  TV_EPISODE_ID_TYPES,
 } from "../../util/constants";
 import { UniqueSet } from "../../util/UniqueSet";
 import { BaseMetadataHandler } from "./BaseMetadataHandler";
@@ -95,40 +96,14 @@ export class TVEpisodeMetadataHandler extends BaseMetadataHandler<
     const externalIds: UniqueSet<PartialExternalId> = new UniqueSet();
 
     if (episodeResponse.external_ids) {
-      if (episodeResponse.external_ids.imdb_id) {
-        externalIds.add({
-          type: "imdb",
-          externalId: `${episodeResponse.external_ids.imdb_id}`,
-        });
-      }
-
-      if (episodeResponse.external_ids["wikidata_id"]) {
-        externalIds.add({
-          type: "wikidata",
-          externalId: `${episodeResponse.external_ids["wikidata_id"]}`,
-        });
-      }
-
-      if (episodeResponse.external_ids.facebook_id) {
-        externalIds.add({
-          type: "facebook",
-          externalId: `${episodeResponse.external_ids.facebook_id}`,
-        });
-      }
-
-      if (episodeResponse.external_ids.instagram_id) {
-        externalIds.add({
-          type: "instagram",
-          externalId: `${episodeResponse.external_ids.instagram_id}`,
-        });
-      }
-
-      if (episodeResponse.external_ids.twitter_id) {
-        externalIds.add({
-          type: "twitter",
-          externalId: `${episodeResponse.external_ids.twitter_id}`,
-        });
-      }
+      Object.entries(TV_EPISODE_ID_TYPES).forEach(([idType, idName]) => {
+        if (episodeResponse.external_ids[idType as never]) {
+          externalIds.add({
+            type: idName,
+            externalId: `${episodeResponse.external_ids[idType as never]}`,
+          });
+        }
+      });
     }
 
     const guestStars: UniqueSet<PartialTvEpisodeCastMember> = new UniqueSet();

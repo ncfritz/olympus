@@ -20,6 +20,7 @@ import { type MetadataJobMessage } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
   METADATA_JOB_PREFIX,
+  PEOPLE_ID_TYPES,
   TRIGGER_SUFFIX,
 } from "../../util/constants";
 import { UniqueSet } from "../../util/UniqueSet";
@@ -52,7 +53,7 @@ export class PersonMetadataHandler extends BaseMetadataHandler<
     metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialPerson, undefined]> {
     const endpoint = new PersonEndpoint(
-      this.configService.get<string>("TMDB_API_KEY", ""),
+      this.configService.get<string>("TMDB_API_KEY")!,
     );
 
     const personId = parseInt(entityId);
@@ -86,75 +87,14 @@ export class PersonMetadataHandler extends BaseMetadataHandler<
     const externalIds: UniqueSet<PartialExternalId> = new UniqueSet();
 
     if (personResponse.external_ids) {
-      if (personResponse.external_ids.freebase_mid) {
-        externalIds.add({
-          type: "freebaseMID",
-          externalId: `${personResponse.external_ids.freebase_mid}`,
-        });
-      }
-
-      if (personResponse.external_ids.freebase_id) {
-        externalIds.add({
-          type: "freebaseId",
-          externalId: `${personResponse.external_ids.freebase_id}`,
-        });
-      }
-
-      if (personResponse.external_ids.imdb_id) {
-        externalIds.add({
-          type: "imdb",
-          externalId: `${personResponse.external_ids.imdb_id}`,
-        });
-      }
-
-      if (personResponse.external_ids.tvrage_id) {
-        externalIds.add({
-          type: "tvRange",
-          externalId: `${personResponse.external_ids.tvrage_id}`,
-        });
-      }
-
-      if (personResponse.external_ids.wikidata_id) {
-        externalIds.add({
-          type: "wikidata",
-          externalId: `${personResponse.external_ids.wikidata_id}`,
-        });
-      }
-
-      if (personResponse.external_ids.facebook_id) {
-        externalIds.add({
-          type: "facebook",
-          externalId: `${personResponse.external_ids.facebook_id}`,
-        });
-      }
-
-      if (personResponse.external_ids.instagram_id) {
-        externalIds.add({
-          type: "instagram",
-          externalId: `${personResponse.external_ids.instagram_id}`,
-        });
-      }
-
-      if (personResponse.external_ids.tiktok_id) {
-        externalIds.add({
-          type: "tiktok",
-          externalId: `${personResponse.external_ids.tiktok_id}`,
-        });
-      }
-
-      if (personResponse.external_ids.twitter_id) {
-        externalIds.add({
-          type: "twitter",
-          externalId: `${personResponse.external_ids.twitter_id}`,
-        });
-      }
-
-      if (personResponse.external_ids.youtube_id) {
-        externalIds.add({
-          type: "youtube",
-          externalId: `${personResponse.external_ids.youtube_id}`,
-        });
-      }
+      Object.entries(PEOPLE_ID_TYPES).forEach(([idType, idName]) => {
+        if (personResponse.external_ids[idType as never]) {
+          externalIds.add({
+            type: idName,
+            externalId: `${personResponse.external_ids[idType as never]}`,
+          });
+        }
+      });
     }
 
     const person: PartialPerson = {

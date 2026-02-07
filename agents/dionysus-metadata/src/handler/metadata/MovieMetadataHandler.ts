@@ -29,6 +29,7 @@ import { type MetadataJobMessage } from "../../types/message";
 import {
   JOB_TYPE_PREFIX,
   METADATA_JOB_PREFIX,
+  MOVIE_ID_TYPES,
   TRIGGER_SUFFIX,
 } from "../../util/constants";
 import { UniqueSet } from "../../util/UniqueSet";
@@ -129,40 +130,14 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
     const externalIds: UniqueSet<PartialExternalId> = new UniqueSet();
 
     if (movieResponse.external_ids) {
-      if (movieResponse.external_ids.imdb_id) {
-        externalIds.add({
-          type: "imdb",
-          externalId: `${movieResponse.external_ids.imdb_id}`,
-        });
-      }
-
-      if (movieResponse.external_ids["wikidata_id"]) {
-        externalIds.add({
-          type: "wikidata",
-          externalId: `${movieResponse.external_ids["wikidata_id"]}`,
-        });
-      }
-
-      if (movieResponse.external_ids.facebook_id) {
-        externalIds.add({
-          type: "facebook",
-          externalId: `${movieResponse.external_ids.facebook_id}`,
-        });
-      }
-
-      if (movieResponse.external_ids.instagram_id) {
-        externalIds.add({
-          type: "instagram",
-          externalId: `${movieResponse.external_ids.instagram_id}`,
-        });
-      }
-
-      if (movieResponse.external_ids.twitter_id) {
-        externalIds.add({
-          type: "twitter",
-          externalId: `${movieResponse.external_ids.twitter_id}`,
-        });
-      }
+      Object.entries(MOVIE_ID_TYPES).forEach(([idType, idName]) => {
+        if (movieResponse.external_ids[idType as never]) {
+          externalIds.add({
+            type: idName,
+            externalId: `${movieResponse.external_ids[idType as never]}`,
+          });
+        }
+      });
     }
 
     const genres: UniqueSet<PartialGenreAssociation> = new UniqueSet();
