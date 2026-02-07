@@ -2,13 +2,11 @@ import {
   MessageHandlerErrorBehavior,
   RabbitSubscribe,
 } from "@golevelup/nestjs-rabbitmq";
-import { JobType, Workflow } from "@ncfritz/olympus-sdk/dionysus";
-import { WebSocketNotificationLevel } from "@ncfritz/olympus-sdk/olympus";
+import { JobType } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
 import { type ConsumeMessage } from "amqplib";
 import moment from "moment";
 import batchJobApi from "../../api/batchJobApi";
-import notificationsApi from "../../api/notificationsApi";
 import workflowApi from "../../api/workflowApi";
 import { type BatchJobWorkflowMessage } from "../../types/message";
 
@@ -17,7 +15,9 @@ import {
   METADATA_JOB_PREFIX,
   WORKFLOW_SUFFIX,
 } from "../../util/constants";
+import { removeExecution } from "../../util/executionHolder";
 import { logger } from "../../util/logger";
+import { sendWorkflowNotification } from "../../util/notification";
 
 @Injectable()
 export class WorkflowJobCompletionHandler {
@@ -91,6 +91,7 @@ export class WorkflowJobCompletionHandler {
           offset: 0,
         });
       } else {
+        removeExecution(msg.workflowId);
         // The workflow has ended, mark the workflow as success. If any job has failed, retry logic will have kicked
         // in to attempt successful completion of the job. If the job has exhausted all retry attempts, the job will
         // fail and the workflow will also fail.
@@ -98,13 +99,14 @@ export class WorkflowJobCompletionHandler {
           status: "success",
           finishedTime: moment.utc().toISOString(),
         });
-        await this.notify(workflow, msg);
+        await sendWorkflowNotification(workflow.id, workflow.status);
       }
     } else if (msg.status === "failed") {
       // If the current attempt is at the retry threshold, we're done, fail the workflow.  If there are still retries
       // that can be attempted, mark the current job as cancelled and create a new step.  The new step should skip
       // the number of records processed so far and increment the attempt.
       if (msg.attempt >= 3) {
+        removeExecution(msg.workflowId);
         await workflowApi.updateWorkflow(msg.workflowId, {
           status: "failed",
           finishedTime: moment.utc().toISOString(),
@@ -122,68 +124,12 @@ export class WorkflowJobCompletionHandler {
         });
       }
     } else {
+      removeExecution(msg.workflowId);
       const workflow = await workflowApi.updateWorkflow(msg.workflowId, {
         status: "failed",
         finishedTime: moment.utc().toISOString(),
       });
-      await this.notify(workflow, msg);
-    }
-  }
-
-  private async notify(
-    workflow: Workflow,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    msg: BatchJobWorkflowMessage,
-  ): Promise<void> {
-    try {
-      let notificationStatus: WebSocketNotificationLevel = "info";
-
-      switch (workflow.status) {
-        case "success":
-          notificationStatus = "success";
-          break;
-        case "failed":
-          notificationStatus = "error";
-          break;
-        // CREATED and STARTED are non-terminal states, so just ignore the notification here.
-        case "created":
-        case "started":
-          return;
-      }
-
-      await notificationsApi.sendNotification({
-        type: "dionysus_metadata_workflow_completion",
-        expirationTime: moment().add(3, "hours").toISOString(),
-        webSocketDestination: {
-          level: notificationStatus,
-          visibleDuration: 15,
-          ghost: false,
-          group: "dionysus",
-          durable: true,
-          ttl: "P7D",
-          closable: true,
-          deleteOnClose: false,
-        },
-        synoMailDestination: {
-          from: "dionysus@internal.ncfritz.net",
-          to: [{ value: "ncfritz@internal.ncfritz.net" }],
-        },
-        smtpDestination: {
-          from: "dionysus@ncfritz.net",
-          to: [{ value: "ncfritz@ncfritz.net" }],
-        },
-        context: {
-          workflowId: workflow.id,
-          status: workflow.status,
-        },
-      });
-
-      logger.info(`Notification sent for workflow ID: ${workflow.id}`);
-    } catch (e) {
-      logger.warn(
-        `Unable to send notification for workflow ID: ${workflow?.id}`,
-        e,
-      );
+      await sendWorkflowNotification(workflow.id, workflow.status);
     }
   }
 }

@@ -5,13 +5,11 @@ import {
   MetadataFetchJobStatus,
   MetadatFetchJobUpdate,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { WebSocketNotificationLevel } from "@ncfritz/olympus-sdk/olympus";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Message } from "amqplib";
 import moment, { Moment } from "moment";
 import batchJobApi from "../../api/batchJobApi";
-import notificationsApi from "../../api/notificationsApi";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { SqliteCacheManager } from "../../cache/SqliteCacheManager";
 import { BatchJobMessage } from "../../types/message";
@@ -19,7 +17,9 @@ import {
   BATCH_JOB_WORKFLOW_EXCHANGE,
   TERMINAL_STATUSES,
 } from "../../util/constants";
+import { addExecution, removeExecution } from "../../util/executionHolder";
 import { logger } from "../../util/logger";
+import { sendBatchJobNotification } from "../../util/notification";
 
 const DEFAULT_TTL = 30;
 
@@ -38,6 +38,7 @@ export abstract class BaseBatchHandler {
     amqpMessage: Message,
   ): Promise<SubscribeResponse> {
     let job = await batchJobApi.getBatchJob(message.jobId);
+    addExecution({ id: job.id, type: "batch" });
 
     if (!job) {
       logger.info("No job record found, aborting");
@@ -276,76 +277,15 @@ export abstract class BaseBatchHandler {
         skipped: skippedRecordCount,
       });
 
+      removeExecution(job.id);
       await batchJobApi.updateBatchJob(job.id, job);
       await this.cleanup();
       await metadataManager.close();
       await this.signalWorkflow(job, message);
-      await this.notify(job, message);
+      await sendBatchJobNotification(job, message.workflowId);
     }
 
     return;
-  }
-
-  private async notify(job: BatchJob, msg: BatchJobMessage): Promise<void> {
-    if (msg.workflowId) {
-      logger.info(
-        `Job ${job.id} is part of a workflow, notifications will be skipped...`,
-      );
-      return;
-    }
-
-    try {
-      let notificationStatus: WebSocketNotificationLevel = "info";
-
-      switch (job.status) {
-        case "success":
-          notificationStatus = "success";
-          break;
-        case "failed":
-          notificationStatus = "error";
-          break;
-        case "cancelled":
-          notificationStatus = "warning";
-          break;
-        // CREATED and STARTED are non-terminal states, so just ignore the notification here.
-        case "created":
-        case "started":
-          return;
-      }
-
-      await notificationsApi.sendNotification({
-        type: "dionysus_batch_job_complete",
-        expirationTime: moment().add(3, "hours").toISOString(),
-        webSocketDestination: {
-          level: notificationStatus,
-          visibleDuration: 15,
-          ghost: false,
-          group: "dionysus",
-          durable: true,
-          ttl: "P7D",
-          closable: true,
-          deleteOnClose: false,
-        },
-        context: {
-          jobId: job.id,
-          jobType: job.type,
-          status: job.status,
-          recordCounts: {
-            total: job.totalRecords,
-            processed: job.processedRecords,
-            duplicate: job.duplicateRecords,
-            new: job.newRecords,
-            expired: job.expiredRecords,
-            noop: job.noOpRecords,
-            skipped: job.skippedRecords,
-          },
-        },
-      });
-
-      logger.info(`Notification sent for job ID: ${job.id}`);
-    } catch (e) {
-      logger.warn(`Unable to send notification for job ID: ${job?.id}`, e);
-    }
   }
 
   private async signalWorkflow(

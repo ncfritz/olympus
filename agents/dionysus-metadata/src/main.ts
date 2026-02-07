@@ -4,10 +4,15 @@ import cookieParser from "cookie-parser";
 import fs from "fs";
 import moment from "moment";
 import { WinstonModule } from "nest-winston";
+import batchJobApi from "./api/batchJobApi";
+import workflowApi from "./api/workflowApi";
 import { PrometheusMetricsInterceptor } from "./middleware/PrometheusMetricsInterceptor";
 import { AppModule } from "./module/AppModule";
+import { getExecutions } from "./util/executionHolder";
 import { logger } from "./util/logger";
 import "dotenv/config";
+import { onExit } from "signal-exit";
+import { sendWorkflowNotification } from "./util/notification";
 
 const timestamp = moment.utc();
 
@@ -37,6 +42,39 @@ async function bootstrap() {
 
 bootstrap()
   .then(() => {
+    logger.info("Installing signal handler...");
+    onExit((code, signal) => {
+      logger.error(
+        `Exit handler triggered on signal ${signal} with code ${code}`,
+      );
+      (async () => {
+        const outstandingTasks = getExecutions();
+        logger.info(
+          `${outstandingTasks.length} outstanding tasks, attempting graceful shutdown`,
+        );
+
+        for (const execution of outstandingTasks) {
+          try {
+            if (execution.type === "workflow") {
+              await workflowApi.updateWorkflow(execution.id, {
+                status: "failed",
+              });
+              await sendWorkflowNotification(execution.id, "failed");
+            } else if (execution.type === "batch") {
+              await batchJobApi.updateBatchJob(execution.id, {
+                status: "failed",
+              });
+            }
+          } catch (e) {
+            logger.error(
+              `Unable to finalize execution ${execution.type}/${execution.id}`,
+              e,
+            );
+          }
+        }
+      })();
+    });
+
     logger.info("🔥🔥🔥 Olympus Metadata Agent bootstrap complete.");
   })
   .catch((e) => {

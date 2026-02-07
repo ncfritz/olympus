@@ -13,6 +13,7 @@ import {
   TRIGGER_SUFFIX,
   WORKFLOW_SUFFIX,
 } from "../../util/constants";
+import { addExecution } from "../../util/executionHolder";
 import { logger } from "../../util/logger";
 
 @Injectable()
@@ -34,6 +35,7 @@ export class StartWorkflowHandler {
       status: "started",
       startedTime: moment.utc().toISOString(),
     });
+    addExecution({ id: msg.workflowId, type: "workflow" });
 
     // The API will take care of sending the job notification message.  Once the job completes the
     // WorkflowJobCompletionHandler will take care of running the next stage of the workflow.
