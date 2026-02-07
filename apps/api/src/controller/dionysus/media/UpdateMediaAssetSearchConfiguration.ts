@@ -28,6 +28,7 @@ import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
+import { BASE_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
 import { GraphQlMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { buildFilterExpression } from "../../../utils/filterUtil";
@@ -95,18 +96,7 @@ export class UpdateMediaAssetSearchConfigurationController {
           pk_columns: { assetType: $mediaType, mediaId: $mediaId }
           _set: $changes
         ) {
-          assetType
-          mediaId
-          seriesId
-          seasonNumber
-          episodeNumber
-          backoff
-          createdTime
-          enabled
-          jitter
-          lastExecutionTime
-          lastModifiedTime
-          nextExecutionTime
+          ${BASE_SEARCH_CONFIGURATION}
         }
       }
     `;

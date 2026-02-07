@@ -24,11 +24,28 @@ import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment/moment";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
+import { BASE_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
 import { GraphQlMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
+type QueryRoot =
+  | "dionysus_movies_by_pk"
+  | "dionysus_tv_series_by_pk"
+  | "dionysus_tv_seasons_by_pk"
+  | "dionysus_tv_episodes_by_pk";
 type GraphQlVerifyMediaResponse = {
-  id: string;
+  dionysus_movies_by_pk?: {
+    id: string;
+  };
+  dionysus_tv_series_by_pk?: {
+    id: string;
+  };
+  dionysus_tv_seasons_by_pk?: {
+    id: string;
+  };
+  dionysus_tv_episodes_by_pk?: {
+    id: string;
+  };
 };
 
 type GraphQlCreateMediaAssetSearchConfigurationResponse = {
@@ -72,7 +89,7 @@ export class CreateMediaAssetSearchConfigurationController {
     @Body() request: CreateMediaAssetSearchConfigurationRequest,
     @Res() response: Response,
   ): Promise<void> {
-    let graphQLQueryRoot = "dionysus_movies_by_pk";
+    let graphQLQueryRoot: QueryRoot = "dionysus_movies_by_pk";
 
     if (request.searchConfiguration.type === MediaAssetSearchType.TV_SERIES) {
       graphQLQueryRoot = "dionysus_tv_series_by_pk";
@@ -102,7 +119,7 @@ export class CreateMediaAssetSearchConfigurationController {
         },
       );
 
-    if (verifyResponse.id) {
+    if (!verifyResponse[graphQLQueryRoot]?.id) {
       throw new BadRequestException(
         "Source media definition could not be found",
       );
@@ -133,18 +150,7 @@ export class CreateMediaAssetSearchConfigurationController {
             nextExecutionTime: $nextExecutionTime
           }
         ) {
-          assetType
-          mediaId
-          seriesId
-          seasonNumber
-          episodeNumber
-          backoff
-          createdTime
-          enabled
-          jitter
-          lastExecutionTime
-          lastModifiedTime
-          nextExecutionTime
+          ${BASE_SEARCH_CONFIGURATION}
         }
       }
     `;
@@ -182,8 +188,6 @@ export class CreateMediaAssetSearchConfigurationController {
       toDomainObject(
         insertResponse.insert_dionysus_media_asset_search_configuration_one,
       );
-
-    console.log(createdSearchConfiguration);
 
     if (
       createdSearchConfiguration.type === MediaAssetSearchType.TV_SERIES ||
