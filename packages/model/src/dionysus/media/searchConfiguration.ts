@@ -121,6 +121,8 @@ export class PartialMediaAssetSearchConfiguration extends PartialType(
     "type",
     "mediaId",
     "nextExecutionTime",
+    "createdTime",
+    "lastUpdatedTime",
   ]),
 ) {}
 
@@ -153,7 +155,8 @@ export class SingleMediaAssetSearchConfigurationResponse {
   @ApiProperty({
     type: () => MediaAssetSearchConfiguration,
     required: true,
-    description: "A note that has been created, updated, or queried",
+    description:
+      "A search configuration that has been created, updated, or queried",
   })
   searchConfiguration: MediaAssetSearchConfiguration;
 }
