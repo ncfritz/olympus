@@ -2,12 +2,13 @@ import {
   type BaseMediaAssetSearchConfiguration,
   client,
   createMediaAssetSearchConfiguration,
-  describeMediaAssetSearchConfiguration,
+  describeMediaAssetSearchConfiguration, type FilterDefinition, listMediaAssetSearchExecutions,
   type MediaAssetSearchType,
-  type PartialMediaAssetSearchConfiguration,
+  type PartialMediaAssetSearchConfiguration, triggerMediaAssetSearch,
   updateMediaAssetSearchConfiguration,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { ApiBase } from "./apiBase";
+import type {SortOptions} from "./common";
 
 class MediaApi extends ApiBase {
   constructor() {
@@ -56,6 +57,41 @@ class MediaApi extends ApiBase {
       },
       validateStatus: (status) => {
         return status === 200 || status === 404;
+      },
+    });
+  }
+
+  async listMediaAssetSearchExecutions(
+    mediaType: MediaAssetSearchType,
+    mediaId: number,
+    page: number = 0,
+    pageSize: number = 30,
+    sort: SortOptions = { field: "startedTime", order: "desc" },
+    filters?: FilterDefinition,
+  ) {
+    return await listMediaAssetSearchExecutions({
+      path: {
+        mediaType: mediaType,
+        mediaId: mediaId,
+      },
+      query: {
+        pageSize: pageSize,
+        sort: sort.order,
+        sortBy: sort.field,
+        startPage: page,
+        filters: this.encodeFilters(filters),
+      },
+    });
+  }
+
+  async triggerMediaAssetSearch(
+    mediaType: MediaAssetSearchType,
+    mediaId: number,
+  ) {
+    return await triggerMediaAssetSearch({
+      path: {
+        mediaType: mediaType,
+        mediaId: mediaId,
       },
     });
   }
