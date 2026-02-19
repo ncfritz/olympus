@@ -31,3 +31,6 @@ export interface DionysusWorkflowMessageContext {
   workflow: Workflow;
   steps: WorkflowStep[];
 }
+
+export interface DionysusMediaAssetSearchRefreshCompleteContext extends NotificationContext {
+}
