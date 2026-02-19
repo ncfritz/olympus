@@ -1,5 +1,9 @@
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
+  FilterDefinition,
+  FilterType,
+  MediaAssetSearchConfiguration,
+  MediaAssetSearchConfigurationStatus,
   MediaAssetSearchType,
   SingleMediaAssetSearchConfigurationResponse,
 } from "@ncfritz/olympus-model";
@@ -26,10 +30,16 @@ import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearch
 import { BASE_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
 import { GraphQlMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { buildFilterExpression } from "../../../utils/filterUtil";
 import { BaseMediaAssetSearchConfigurationController } from "./BaseMediaAssetSearchConfigurationController";
 
 type GraphQlUpdateMediaAssetSearchConfigurationResponse = {
   update_dionysus_media_asset_search_configuration_by_pk: GraphQlMediaAssetSearchConfiguration;
+};
+type GraphQlUpdateChildMediaAssetSearchConfigurationsResponse = {
+  update_dionysus_media_asset_search_configuration: {
+    affected_rows: number;
+  };
 };
 
 @Controller({ version: "1" })
@@ -116,13 +126,35 @@ export class TriggerMediaAssetSearchController extends BaseMediaAssetSearchConfi
       updateResponse.update_dionysus_media_asset_search_configuration_by_pk,
     );
 
+    if (
+      mediaType === MediaAssetSearchType.TV_SERIES ||
+      mediaType === MediaAssetSearchType.TV_SEASON
+    ) {
+      await this.updateChildSearchConfigurations(fetchedSearchConfiguration);
+    }
+
+    const msg: any = {
+      mediaId: updatedSearchConfiguration.mediaId,
+      propagateImmediately: true,
+      initiatingAsset: {
+        assetType: mediaType,
+        mediaId: mediaId,
+      },
+    };
+
+    if (updatedSearchConfiguration.type == MediaAssetSearchType.TV_SEASON) {
+      msg.initiatingAsset = {
+        assetType: mediaType,
+        mediaId: mediaId,
+        seriesId: updatedSearchConfiguration.seriesId,
+        seasonNumber: updatedSearchConfiguration.seasonNumber,
+      };
+    }
+
     await this.amqpConnection.publish(
       "search.execution.trigger",
       `jobType.${updatedSearchConfiguration.type}`,
-      {
-        mediaId: updatedSearchConfiguration.mediaId,
-        propagateImmediately: true,
-      },
+      msg,
       {
         persistent: true,
       },
@@ -133,5 +165,64 @@ export class TriggerMediaAssetSearchController extends BaseMediaAssetSearchConfi
     };
 
     response.status(HttpStatus.OK).send(responseBody);
+  }
+
+  private async updateChildSearchConfigurations(
+    searchConfiguration: MediaAssetSearchConfiguration,
+  ) {
+    const filters: FilterDefinition[] = [];
+    let updateFilter: FilterDefinition | undefined = undefined;
+
+    if (searchConfiguration.type === MediaAssetSearchType.TV_SERIES) {
+      filters.push({
+        type: FilterType.EQUALS,
+        name: "seriesId",
+        value: searchConfiguration.mediaId,
+      });
+    }
+
+    if (searchConfiguration.type === MediaAssetSearchType.TV_SEASON) {
+      filters.push({
+        type: FilterType.EQUALS,
+        name: "seriesId",
+        value: searchConfiguration.seriesId!,
+      });
+      filters.push({
+        type: FilterType.EQUALS,
+        name: "seasonNumber",
+        value: searchConfiguration.seasonNumber!,
+      });
+    }
+
+    if (filters.length > 0) {
+      updateFilter = {
+        type: FilterType.AND,
+        name: "_",
+        value: filters,
+      };
+    }
+
+    const updateChildrenRequest = gql`
+      mutation UpdateChildSearchConfigurations(
+        $status: String!
+      ) {
+        update_dionysus_media_asset_search_configuration(
+          ${buildFilterExpression(updateFilter)} 
+          _set: { status: $status }
+        ) {
+          affected_rows
+        }
+      }
+    `;
+
+    const updateChildrenResponse =
+      await this.graphQLClient.request<GraphQlUpdateChildMediaAssetSearchConfigurationsResponse>(
+        updateChildrenRequest,
+        { status: MediaAssetSearchConfigurationStatus.UPDATING },
+      );
+
+    console.log(
+      `Updated ${updateChildrenResponse.update_dionysus_media_asset_search_configuration.affected_rows} child search configurations`,
+    );
   }
 }
