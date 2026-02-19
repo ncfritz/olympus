@@ -27,6 +27,9 @@ export type DionysusWorkflowPayload = {
   status: WorkflowStatus;
 };
 
+export type DionysusMediaAssetSearchPayload = {
+};
+
 export type NotificationEvent<T> = {
   closable: boolean;
   deleteOnClose: boolean;
