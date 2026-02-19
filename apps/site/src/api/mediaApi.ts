@@ -3,6 +3,7 @@ import {
   client,
   createMediaAssetSearchConfiguration,
   describeMediaAssetSearchConfiguration, type FilterDefinition, listMediaAssetSearchExecutions,
+  listMediaAssetSearchResults,
   type MediaAssetSearchType,
   type PartialMediaAssetSearchConfiguration, triggerMediaAssetSearch,
   updateMediaAssetSearchConfiguration,
@@ -34,11 +35,15 @@ class MediaApi extends ApiBase {
     mediaType: MediaAssetSearchType,
     mediaId: number,
     searchConfiguration: PartialMediaAssetSearchConfiguration,
+    recursive: boolean = false,
   ) {
     return await updateMediaAssetSearchConfiguration({
       path: {
         mediaType: mediaType,
         mediaId: mediaId,
+      },
+      query: {
+        recursive: recursive,
       },
       body: {
         searchConfiguration: searchConfiguration,
@@ -70,6 +75,29 @@ class MediaApi extends ApiBase {
     filters?: FilterDefinition,
   ) {
     return await listMediaAssetSearchExecutions({
+      path: {
+        mediaType: mediaType,
+        mediaId: mediaId,
+      },
+      query: {
+        pageSize: pageSize,
+        sort: sort.order,
+        sortBy: sort.field,
+        startPage: page,
+        filters: this.encodeFilters(filters),
+      },
+    });
+  }
+
+  async listMediaAssetSearchResults(
+    mediaType: MediaAssetSearchType,
+    mediaId: number,
+    page: number = 0,
+    pageSize: number = 100,
+    sort: SortOptions = { field: "postedTime", order: "desc" },
+    filters?: FilterDefinition,
+  ) {
+    return await listMediaAssetSearchResults({
       path: {
         mediaType: mediaType,
         mediaId: mediaId,
