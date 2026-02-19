@@ -9,6 +9,12 @@ export enum MediaAssetSearchType {
   TV_EPISODE = "tv_episode",
 }
 
+export enum MediaAssetSearchConfigurationStatus {
+  UPDATING = "running",
+  ERROR = "error",
+  OK = "ok",
+}
+
 export class BaseMediaAssetSearchConfiguration {
   @ApiProperty({
     enum: () => MediaAssetSearchType,
@@ -33,6 +39,14 @@ export class BaseMediaAssetSearchConfiguration {
     description: "`true` if the search is enabled, `false` otherwise",
   })
   enabled: boolean;
+
+  @ApiProperty({
+    enum: () => MediaAssetSearchConfigurationStatus,
+    enumName: "MediaAssetSearchConfigurationStatus",
+    required: true,
+    description: "The status of the search configutation",
+  })
+  status: MediaAssetSearchConfigurationStatus;
 
   @ApiProperty({
     type: Number,
@@ -120,7 +134,6 @@ export class PartialMediaAssetSearchConfiguration extends PartialType(
   OmitType(MediaAssetSearchConfiguration, [
     "type",
     "mediaId",
-    "nextExecutionTime",
     "createdTime",
     "lastUpdatedTime",
   ]),
@@ -151,6 +164,16 @@ export class UpdateMediaAssetSearchConfigurationRequest {
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Response Shapes                                                                                                    */
 /* ------------------------------------------------------------------------------------------------------------------ */
+export class GetMediaAssetSearchConfigurationsRunningCountResponse {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "The number of search configurations that are still marked as `running`",
+  })
+  count: number;
+}
+
 export class SingleMediaAssetSearchConfigurationResponse {
   @ApiProperty({
     type: () => MediaAssetSearchConfiguration,
