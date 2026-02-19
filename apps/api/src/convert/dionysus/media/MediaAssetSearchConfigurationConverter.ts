@@ -12,6 +12,7 @@ export const toDomainObject = (
     seasonNumber: input.seasonNumber,
     episodeNumber: input.episodeNumber,
     enabled: input.enabled,
+    status: input.status,
     backoff: input.backoff,
     jitter: input.jitter,
     lastExecutionTime: input.lastExecutionTime

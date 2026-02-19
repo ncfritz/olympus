@@ -102,7 +102,7 @@ export class CreateMediaAssetSearchConfigurationController {
     ) {
       graphQLQueryRoot = "dionysus_tv_episodes_by_pk";
     }
-
+4
     const verifyQuery = gql`
       query VerifyMedia($id: numeric!) {
         ${graphQLQueryRoot}(id: $id) {
@@ -135,6 +135,7 @@ export class CreateMediaAssetSearchConfigurationController {
         $backoff: numeric!
         $enabled: Boolean!
         $jitter: numeric!
+        $status: String!
         $nextExecutionTime: timestamptz!
       ) {
         insert_dionysus_media_asset_search_configuration_one(
@@ -147,6 +148,7 @@ export class CreateMediaAssetSearchConfigurationController {
             backoff: $backoff
             enabled: $enabled
             jitter: $jitter
+            status: $status
             nextExecutionTime: $nextExecutionTime
           }
         ) {
@@ -180,6 +182,7 @@ export class CreateMediaAssetSearchConfigurationController {
           backoff: request.searchConfiguration.backoff,
           enabled: request.searchConfiguration.enabled,
           jitter: request.searchConfiguration.jitter,
+          status: request.searchConfiguration.status,
           nextExecutionTime: nextExecutionTime.toISOString(),
         },
       );

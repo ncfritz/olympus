@@ -1,4 +1,7 @@
-import { MediaAssetSearchType } from "@ncfritz/olympus-model";
+import {
+  MediaAssetSearchConfigurationStatus,
+  MediaAssetSearchType,
+} from "@ncfritz/olympus-model";
 
 export type GraphQlMediaAssetSearchConfiguration = {
   assetType: MediaAssetSearchType;
@@ -7,6 +10,7 @@ export type GraphQlMediaAssetSearchConfiguration = {
   seasonNumber?: number;
   episodeNumber?: number;
   enabled: boolean;
+  status: MediaAssetSearchConfigurationStatus;
   backoff: number;
   jitter: number;
   lastExecutionTime: string;

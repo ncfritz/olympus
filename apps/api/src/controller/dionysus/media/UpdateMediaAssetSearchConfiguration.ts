@@ -13,6 +13,7 @@ import {
   HttpStatus,
   Param,
   Put,
+  Query,
   Res,
   UseInterceptors,
 } from "@nestjs/common";
@@ -23,6 +24,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
+  ApiQuery,
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
@@ -51,8 +53,10 @@ export class UpdateMediaAssetSearchConfigurationController {
     summary: "Updates an existing media search configuration",
     description:
       "Updates an existing media search configuration.  When setting the `enabled` status of a search configuration, " +
-      "the status will be propagated to any child configurations - i.e. disabling a search configuration for a TV" +
-      "season will disable any search configurations for episodes of that season.",
+      "the status will be propagated to any child configurations if the `recursive` parameter is set to `true` - " +
+      "i.e. disabling a search configuration for a TV season will disable any search configurations for episodes of " +
+      "that season.  If the `recursive` parameter is set to `false` or not specified, only the directly identified" +
+      "search configuration will be updated",
     operationId: "UpdateMediaAssetSearchConfiguration",
     tags: ["Media"],
   })
@@ -74,6 +78,13 @@ export class UpdateMediaAssetSearchConfigurationController {
       "The ID of the media that the search configuration is targeting.",
     type: Number,
   })
+  @ApiQuery({
+    name: "recursive",
+    description:
+      "When set to `true` any child entities - seasons/episodes - will be updated with the specified `enabled` status.",
+    type: "boolean",
+    required: false,
+  })
   @ApiOkResponse({
     description: "The record has been successfully updated.",
     type: SingleMediaAssetSearchConfigurationResponse,
@@ -83,6 +94,7 @@ export class UpdateMediaAssetSearchConfigurationController {
   async handle(
     @Param("mediaType") mediaType: MediaAssetSearchType,
     @Param("mediaId") mediaId: number,
+    @Query("recursive") recursive: boolean = false,
     @Body() request: UpdateMediaAssetSearchConfigurationRequest,
     @Res() response: Response,
   ): Promise<void> {
@@ -130,7 +142,8 @@ export class UpdateMediaAssetSearchConfigurationController {
     if (
       Object.keys(request.searchConfiguration).includes("enabled") &&
       (updatedSearchConfiguration.type === MediaAssetSearchType.TV_SERIES ||
-        updatedSearchConfiguration.type === MediaAssetSearchType.TV_SEASON)
+        updatedSearchConfiguration.type === MediaAssetSearchType.TV_SEASON) &&
+      recursive
     ) {
       await this.updateChildSearchConfigurations(updatedSearchConfiguration);
     }

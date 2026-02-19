@@ -2,6 +2,7 @@ export const BASE_SEARCH_CONFIGURATION = `assetType
   backoff
   createdTime
   enabled
+  status
   episodeNumber
   jitter
   lastExecutionTime

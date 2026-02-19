@@ -2,7 +2,7 @@ import {
   MediaAssetSearchConfiguration,
   MediaAssetSearchType,
 } from "@ncfritz/olympus-model";
-import { NotFoundException } from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
 import { BASE_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
@@ -10,6 +10,12 @@ import { GraphQlMediaAssetSearchConfiguration } from "../../../types/dionysus/me
 
 type GraphQlGetMediaAssetSearchConfigurationResponse = {
   dionysus_media_asset_search_configuration_by_pk: GraphQlMediaAssetSearchConfiguration;
+};
+type GraphQlVerifySearchConfigResponse = {
+  dionysus_media_asset_search_configuration_by_pk: {
+    assetType: MediaAssetSearchType;
+    mediaId: number;
+  };
 };
 
 export abstract class BaseMediaAssetSearchConfigurationController {
@@ -49,5 +55,46 @@ export abstract class BaseMediaAssetSearchConfigurationController {
     return toDomainObject(
       fetchResponse.dionysus_media_asset_search_configuration_by_pk,
     );
+  }
+
+  protected async verifySearchConfiguration(
+    mediaType: MediaAssetSearchType,
+    mediaId: number,
+  ): Promise<void> {
+    const verifyQuery = gql`
+      query VerifyMediaAssetSearchConfiguration(
+        $assetType: String!
+        $mediaId: numeric!
+      ) {
+        dionysus_media_asset_search_configuration_by_pk(
+          assetType: $assetType
+          mediaId: $mediaId
+        ) {
+          assetType
+          mediaId
+        }
+      }
+    `;
+
+    const verifyResponse =
+      await this.graphQLClient.request<GraphQlVerifySearchConfigResponse>(
+        verifyQuery,
+        {
+          assetType: mediaType,
+          mediaId: mediaId,
+        },
+      );
+
+    if (
+      !(
+        verifyResponse.dionysus_media_asset_search_configuration_by_pk
+          .assetType &&
+        verifyResponse.dionysus_media_asset_search_configuration_by_pk.mediaId
+      )
+    ) {
+      throw new BadRequestException(
+        "Source search configuration definition could not be found",
+      );
+    }
   }
 }
