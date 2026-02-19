@@ -77,6 +77,7 @@ const MovieListItem: React.FunctionComponent<MovieListItemProps> = ({
           "movie",
           item.id,
           !item.searchConfiguration!.enabled,
+          false,
           afterSearchUpdate,
         );
       } finally {

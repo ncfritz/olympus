@@ -74,6 +74,7 @@ const TvSeriesListItem: React.FunctionComponent<TvSeriesListItemProps> = ({
           "tv_series",
           item.id,
           !item.searchConfiguration!.enabled,
+          true,
           afterSearchUpdate,
         );
       } finally {
