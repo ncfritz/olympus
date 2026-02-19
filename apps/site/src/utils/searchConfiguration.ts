@@ -27,6 +27,7 @@ export const handleCreateSearchConfiguration = async (
       backoff: 24,
       jitter: 300,
       enabled: true,
+      status: "ok",
       seriesId: ids.seriesId,
       seasonNumber: ids.seasonNumber,
       episodeNumber: ids.episodeNumber,
@@ -54,6 +55,7 @@ export const handleSetEnabled = async (
   mediaType: MediaAssetSearchType,
   mediaId: number,
   enabled: boolean,
+  recursive: boolean,
   afterUpdate?: (
     searchConfiguration: MediaAssetSearchConfiguration,
   ) => Promise<void>,
@@ -81,6 +83,35 @@ export const handleSetEnabled = async (
       type: "error",
       message: "Unable to update Search Configuration",
       description: "The request to update the Search Configuration failed",
+    });
+  }
+};
+
+export const handleTriggerSearch = async (
+  mediaType: MediaAssetSearchType,
+  mediaId: number,
+  afterUpdate?: (
+    searchConfiguration: MediaAssetSearchConfiguration,
+  ) => Promise<void>,
+) => {
+  try {
+    const response = await mediaApi.triggerMediaAssetSearch(mediaType, mediaId);
+
+    if (afterUpdate) {
+      await afterUpdate(response.data.searchConfiguration);
+    }
+
+    publish(PUBLISH_EVENT, {
+      type: "success",
+      message: "Search Triggered",
+      description: `The Search has been successfully triggered. There will be a notification once the search 
+        execution completes.`,
+    });
+  } catch (e) {
+    publish(PUBLISH_EVENT, {
+      type: "error",
+      message: "Unable to trigger search",
+      description: "The request to trigger the search failed",
     });
   }
 };
