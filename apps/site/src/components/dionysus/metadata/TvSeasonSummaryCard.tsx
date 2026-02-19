@@ -8,7 +8,7 @@ import { DateTime } from "luxon";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Description from "../../common/Description";
-import SearchConfigurationButton from "./SearchConfigurationButton";
+import SearchConfigurationButton from "../media/SearchConfigurationButton";
 import { getProgressColor } from "./util";
 
 export interface TvSeasonSummaryCardProps {

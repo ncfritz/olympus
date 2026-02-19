@@ -207,7 +207,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
           top: 92,
           overflowX: "hidden",
           overflowY: "auto",
-          height: "calc(100vh - 92)",
+          height: "calc(100vh - 92px)",
         }}
       >
         <Content style={{ width: "calc(100vw - 384px)" }}>

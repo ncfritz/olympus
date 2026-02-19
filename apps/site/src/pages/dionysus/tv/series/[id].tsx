@@ -1,7 +1,7 @@
 import {
   BookOutlined,
-  CalendarOutlined,
   CloudDownloadOutlined,
+  EyeOutlined,
   FontSizeOutlined,
   HeartOutlined,
   HomeOutlined,
@@ -38,13 +38,14 @@ import mediaApi from "../../../../api/mediaApi";
 import metadataApi from "../../../../api/metadataApi";
 import Description from "../../../../components/common/Description";
 import LoadingWrapper from "../../../../components/common/LoadingWrapper";
+import SearchConfigurationPanel from "../../../../components/dionysus/media/SearchConfigurationPanel";
 import ExternalIdsList from "../../../../components/dionysus/metadata/ExternalIdsList";
 import MetadataFetchJobPanel from "../../../../components/dionysus/metadata/MetadataFetchJobPanel";
 import MovieAlternativeTitlesList from "../../../../components/dionysus/metadata/MovieAlternativeTitlesList";
 import MovieImagesPanel from "../../../../components/dionysus/metadata/MovieImagesPanel";
 import MovieProductionCompaniesPanel from "../../../../components/dionysus/metadata/MovieProductionCompaniesPanel";
 import MovieVideoPanel from "../../../../components/dionysus/metadata/MovieVideoPanel";
-import SearchConfigurationButton from "../../../../components/dionysus/metadata/SearchConfigurationButton";
+import SearchConfigurationButton from "../../../../components/dionysus/media/SearchConfigurationButton";
 import TvCastList from "../../../../components/dionysus/metadata/TvCastList";
 import TvEpisodeSummaryCard from "../../../../components/dionysus/metadata/TvEpisodeSummaryCard";
 import TvSeasonSummaryCard from "../../../../components/dionysus/metadata/TvSeasonSummaryCard";
@@ -204,6 +205,522 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         </Typography.Text>
       </Space>
     ) : undefined;
+
+    const mainTabs = [
+      {
+        key: "t-main-general",
+        label: "Overview",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+            <Space
+              direction={"horizontal"}
+              style={{
+                width: "100%",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 16,
+              }}
+              size={16}
+            >
+              <Typography.Title level={4} style={{ marginBottom: 0 }}>
+                Top Billed Cast
+              </Typography.Title>
+              <Button
+                size={"small"}
+                ghost={true}
+                type={"text"}
+                onClick={() => {
+                  setActiveTab("t-main-cast");
+                }}
+              >
+                Full Cast List
+              </Button>
+            </Space>
+            <LoadingWrapper
+              loading={castLoading}
+              error={castError}
+              showError={true}
+            >
+              <TvCastList cast={cast?.length > 0 ? cast.slice(0, 12) : []} />
+            </LoadingWrapper>
+            {tvSeries.lastEpisodeToAir && (
+              <Space direction={"vertical"} style={{ width: "100%" }}>
+                <Typography.Title level={4} style={{ marginBottom: 0 }}>
+                  Latest Episode
+                </Typography.Title>
+                <TvEpisodeSummaryCard
+                  episode={tvSeries.lastEpisodeToAir}
+                  seriesId={tvSeries.id}
+                  initialSearchConfiguration={
+                    tvSeries.lastEpisodeToAir.searchConfiguration
+                  }
+                />
+              </Space>
+            )}
+            {tvSeries.nextEpisodeToAir && (
+              <Space direction={"vertical"} style={{ width: "100%" }}>
+                <Typography.Title level={4} style={{ marginBottom: 0 }}>
+                  Next Episode
+                </Typography.Title>
+                <TvEpisodeSummaryCard
+                  episode={tvSeries.nextEpisodeToAir}
+                  seriesId={tvSeries.id}
+                  initialSearchConfiguration={
+                    tvSeries.nextEpisodeToAir.searchConfiguration
+                  }
+                />
+              </Space>
+            )}
+            {tvSeries.seasons.length > 0 && (
+              <Space direction={"vertical"} style={{ width: "100%" }}>
+                <Typography.Title level={4} style={{ marginBottom: 0 }}>
+                  Latest Season
+                </Typography.Title>
+                <TvSeasonSummaryCard
+                  seriesId={tvSeries.id}
+                  season={tvSeries.seasons[0]}
+                  initialSearchConfiguration={
+                    latestSeasonSearchConfiguration ||
+                    tvSeries.seasons[0].searchConfiguration
+                  }
+                  afterSearchUpdate={async (searchConfiguration) => {
+                    if (
+                      searchConfiguration.seasonNumber ===
+                      tvSeries.seasons[0].seasonNumber
+                    ) {
+                      setLatestSeasonSearchConfiguration(searchConfiguration);
+                    }
+                  }}
+                />
+              </Space>
+            )}
+            <Space
+              direction={"horizontal"}
+              style={{
+                width: "100%",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 16,
+              }}
+              size={16}
+            >
+              <Typography.Title level={4} style={{ marginBottom: 0 }}>
+                Recommendations
+              </Typography.Title>
+              <Button
+                size={"small"}
+                ghost={true}
+                type={"text"}
+                onClick={() => {
+                  setActiveTab("t-main-recommendations");
+                }}
+              >
+                All Recommendations
+              </Button>
+            </Space>
+            <LoadingWrapper
+              loading={recommendationsLoading}
+              error={castError}
+              showError={true}
+            >
+              <TvSeriesList
+                loading={recommendationsLoading}
+                columns={8}
+                tvSeries={
+                  recommendations?.length > 0 ? recommendations.slice(0, 8) : []
+                }
+              />
+            </LoadingWrapper>
+          </Space>
+        ),
+      },
+      {
+        key: "t-main-seasons",
+        label: "Seasons",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+            {tvSeries.seasons.map((entry) => {
+              return (
+                <TvSeasonSummaryCard
+                  seriesId={tvSeries.id}
+                  season={entry}
+                  initialSearchConfiguration={
+                    entry.seasonNumber === tvSeries.seasons[0].seasonNumber
+                      ? latestSeasonSearchConfiguration
+                      : entry.searchConfiguration
+                  }
+                  afterSearchUpdate={async (searchConfiguration) => {
+                    if (
+                      searchConfiguration.seasonNumber ===
+                      tvSeries.seasons[0].seasonNumber
+                    ) {
+                      setLatestSeasonSearchConfiguration(searchConfiguration);
+                    }
+                  }}
+                />
+              );
+            })}
+          </Space>
+        ),
+      },
+      {
+        key: "t-main-cast",
+        label: "Cast",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%" }}>
+            <LoadingWrapper
+              loading={castLoading}
+              error={castError}
+              showError={true}
+            >
+              <TvSeriesCastList cast={cast} />
+            </LoadingWrapper>
+          </Space>
+        ),
+      },
+      {
+        key: "t-main-crew",
+        label: "Crew",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%" }}>
+            <LoadingWrapper
+              loading={crewLoading}
+              error={crewError}
+              showError={true}
+            >
+              <TvSeriesCrewList crew={crew} />
+            </LoadingWrapper>
+          </Space>
+        ),
+      },
+      {
+        key: "t-main-recommendations",
+        label: "Recommendations",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+            <LoadingWrapper
+              loading={crewLoading}
+              error={crewError}
+              showError={true}
+            >
+              <TvSeriesList
+                tvSeries={recommendations}
+                loading={recommendationsLoading}
+                columns={8}
+                afterSearchUpdate={async () => {
+                  await fetchRecommendations(true);
+                }}
+              />
+            </LoadingWrapper>
+          </Space>
+        ),
+      },
+      {
+        key: "t-main-images",
+        label: "Images",
+        children: <MovieImagesPanel images={tvSeries.images} />,
+      },
+      {
+        key: "t-main-videos",
+        label: "Videos",
+        children: <MovieVideoPanel videos={tvSeries.videos} />,
+      },
+      {
+        key: "t-main-prodCompany",
+        label: "Production Companies",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+            <MovieProductionCompaniesPanel
+              productionCompanies={tvSeries.productionCompanies}
+            />
+          </Space>
+        ),
+      },
+    ];
+
+    const sideTabs = [
+      {
+        key: "t-info-general",
+        label: <InfoCircleFilled />,
+        children: (
+          <Space direction={"vertical"} style={{ margin: 12, width: "100%" }}>
+            <Space direction={"vertical"} style={{ width: "100%" }}>
+              <Description
+                title={"Networks"}
+                value={
+                  tvSeries.networks.length > 0 ? (
+                    <Space
+                      size={8}
+                      direction={"horizontal"}
+                      style={{ alignItems: "center" }}
+                    >
+                      <Link
+                        href={`/dionysus/tv/networks/${tvSeries.networks[0].network.id}`}
+                      >
+                        <Image
+                          src={`https://image.tmdb.org/t/p/w154/${tvSeries.networks[0].network.logoPath}`}
+                          preview={false}
+                          style={{ maxHeight: 48 }}
+                        />
+                      </Link>
+                    </Space>
+                  ) : (
+                    "Unknown"
+                  )
+                }
+              />
+            </Space>
+            <ExternalIdsList ids={tvSeries.externalIds} />
+            <Description
+              title={"Origin Countries"}
+              value={
+                tvSeries.originCountries.length > 0 ? (
+                  <Space direction={"vertical"} size={2}>
+                    {tvSeries.originCountries.map((item) => {
+                      return (
+                        <Space
+                          size={8}
+                          direction={"horizontal"}
+                          style={{ alignItems: "center" }}
+                        >
+                          <ReactCountryFlag
+                            countryCode={item.country.id}
+                            cdnUrl={"/flags/"}
+                            cdnSuffix={"svg"}
+                            svg={true}
+                          />
+                          <Typography.Text style={{ fontSize: "10px" }}>
+                            {item.country.name}
+                          </Typography.Text>
+                        </Space>
+                      );
+                    })}
+                  </Space>
+                ) : (
+                  "Unknown"
+                )
+              }
+            />
+            <Description
+              title={"Locations"}
+              value={
+                tvSeries.productionCountries.length > 0 ? (
+                  <Space direction={"vertical"} size={2}>
+                    {tvSeries.productionCountries.map((item) => {
+                      return (
+                        <Space
+                          size={8}
+                          direction={"horizontal"}
+                          style={{ alignItems: "center" }}
+                        >
+                          <ReactCountryFlag
+                            countryCode={item.country.id}
+                            cdnUrl={"/flags/"}
+                            cdnSuffix={"svg"}
+                            svg={true}
+                          />
+                          <Typography.Text style={{ fontSize: "10px" }}>
+                            {item.country.name}
+                          </Typography.Text>
+                        </Space>
+                      );
+                    })}
+                  </Space>
+                ) : (
+                  "Unknown"
+                )
+              }
+            />
+            <Description
+              title={"Original Language"}
+              value={
+                tvSeries.originalLanguage ? (
+                  <Space direction={"vertical"} size={8}>
+                    <Space size={8} direction={"horizontal"}>
+                      <ReactCountryFlag
+                        countryCode={tvSeries.originalLanguage.id}
+                        cdnUrl={"/flags/"}
+                        cdnSuffix={"svg"}
+                        svg={true}
+                      />
+                      <Typography.Text style={{ fontSize: "11px" }}>
+                        {tvSeries.originalLanguage.name}
+                      </Typography.Text>
+                      {tvSeries.originalLanguage.nativeName && (
+                        <Typography.Text
+                          style={{
+                            color: "#666666",
+                            fontSize: "10px",
+                          }}
+                        >
+                          ({tvSeries.originalLanguage.nativeName})
+                        </Typography.Text>
+                      )}
+                    </Space>
+                  </Space>
+                ) : (
+                  "Unknown"
+                )
+              }
+            />
+            <Description
+              title={"Spoken Languages"}
+              value={
+                tvSeries.spokenLanguages.length > 0 ? (
+                  <Space direction={"vertical"} size={8}>
+                    {tvSeries.spokenLanguages.map((item) => {
+                      return (
+                        <Space size={8} direction={"horizontal"}>
+                          <ReactCountryFlag
+                            countryCode={item.language.id}
+                            cdnUrl={"/flags/"}
+                            cdnSuffix={"svg"}
+                            svg={true}
+                          />
+                          <Typography.Text style={{ fontSize: "11px" }}>
+                            {item.language.name}
+                          </Typography.Text>
+                          {item.language.nativeName && (
+                            <Typography.Text
+                              style={{
+                                color: "#666666",
+                                fontSize: "10px",
+                              }}
+                            >
+                              ({item.language.nativeName})
+                            </Typography.Text>
+                          )}
+                        </Space>
+                      );
+                    })}
+                  </Space>
+                ) : (
+                  "Unknown"
+                )
+              }
+            />
+            <Description
+              title={"Keywords"}
+              value={
+                tvSeries.keywords.length > 0 ? (
+                  <Space
+                    size={0}
+                    direction={"horizontal"}
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {tvSeries.keywords.map((item) => {
+                      return (
+                        <Tag
+                          key={`kw-${item.keyword.id}`}
+                          style={{ marginBottom: 8 }}
+                          bordered={false}
+                          color={"#999999"}
+                        >
+                          {item.keyword.value}
+                        </Tag>
+                      );
+                    })}
+                  </Space>
+                ) : (
+                  "No keywords"
+                )
+              }
+            />
+          </Space>
+        ),
+      },
+      {
+        key: "t-info-releases",
+        label: <EyeOutlined />,
+        children: (
+          <Space
+            size={0}
+            style={{ width: "100%", padding: 16 }}
+            direction={"vertical"}
+          ></Space>
+        ),
+      },
+      {
+        key: "m-info-altTitle",
+        label: <FontSizeOutlined />,
+        children: (
+          <Space
+            size={0}
+            style={{ width: "100%", padding: 16 }}
+            direction={"vertical"}
+          >
+            <Typography.Title level={5}>Alternative Titles:</Typography.Title>
+            <MovieAlternativeTitlesList
+              alternativeTitles={tvSeries.alternativeTitles}
+            />
+          </Space>
+        ),
+      },
+      {
+        key: "m-info-qr",
+        label: <QrcodeOutlined />,
+        children: (
+          <Space
+            size={0}
+            style={{
+              width: "100%",
+              padding: 16,
+              alignItems: "center",
+            }}
+            direction={"vertical"}
+          >
+            <QRCode
+              style={{ marginTop: 64 }}
+              size={350}
+              bordered={false}
+              errorLevel={"H"}
+              value={`https://dionysus.dev.ncfritz.net/dionysus/tv/series/${tvSeries.id}`}
+            />
+          </Space>
+        ),
+      },
+      {
+        key: "m-info-fetchJob",
+        label: <CloudDownloadOutlined />,
+        children: (
+          <Space
+            size={0}
+            style={{ width: "100%", padding: 16 }}
+            direction={"vertical"}
+          >
+            <MetadataFetchJobPanel id={tvSeries.id} type={"tv_series"} />
+          </Space>
+        ),
+      },
+    ];
+
+    if (searchConfiguration) {
+      mainTabs.push({
+        key: "t-main-searchResults",
+        label: "Search Results",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+            fff
+          </Space>
+        ),
+      });
+
+      sideTabs.splice(-1, 0, {
+        key: "t-info-searchConfig",
+        label: <EyeOutlined />,
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+            <Typography.Title level={5}>Search Executions:</Typography.Title>
+            <SearchConfigurationPanel
+              searchConfiguration={searchConfiguration}
+            />
+          </Space>
+        ),
+      });
+    }
 
     content = (
       <Space
@@ -455,564 +972,14 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                 }}
                 tabPosition={"top"}
                 size={"small"}
-                items={[
-                  {
-                    key: "t-main-general",
-                    label: "Overview",
-                    children: (
-                      <Space
-                        direction={"vertical"}
-                        style={{ width: "100%", padding: 16 }}
-                      >
-                        <Space
-                          direction={"horizontal"}
-                          style={{
-                            width: "100%",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginBottom: 16,
-                          }}
-                          size={16}
-                        >
-                          <Typography.Title
-                            level={4}
-                            style={{ marginBottom: 0 }}
-                          >
-                            Top Billed Cast
-                          </Typography.Title>
-                          <Button
-                            size={"small"}
-                            ghost={true}
-                            type={"text"}
-                            onClick={() => {
-                              setActiveTab("t-main-cast");
-                            }}
-                          >
-                            Full Cast List
-                          </Button>
-                        </Space>
-                        <LoadingWrapper
-                          loading={castLoading}
-                          error={castError}
-                          showError={true}
-                        >
-                          <TvCastList
-                            cast={cast?.length > 0 ? cast.slice(0, 12) : []}
-                          />
-                        </LoadingWrapper>
-                        {tvSeries.lastEpisodeToAir && (
-                          <Space
-                            direction={"vertical"}
-                            style={{ width: "100%" }}
-                          >
-                            <Typography.Title
-                              level={4}
-                              style={{ marginBottom: 0 }}
-                            >
-                              Latest Episode
-                            </Typography.Title>
-                            <TvEpisodeSummaryCard
-                              episode={tvSeries.lastEpisodeToAir}
-                              seriesId={tvSeries.id}
-                              initialSearchConfiguration={
-                                tvSeries.lastEpisodeToAir.searchConfiguration
-                              }
-                            />
-                          </Space>
-                        )}
-                        {tvSeries.nextEpisodeToAir && (
-                          <Space
-                            direction={"vertical"}
-                            style={{ width: "100%" }}
-                          >
-                            <Typography.Title
-                              level={4}
-                              style={{ marginBottom: 0 }}
-                            >
-                              Next Episode
-                            </Typography.Title>
-                            <TvEpisodeSummaryCard
-                              episode={tvSeries.nextEpisodeToAir}
-                              seriesId={tvSeries.id}
-                              initialSearchConfiguration={
-                                tvSeries.nextEpisodeToAir.searchConfiguration
-                              }
-                            />
-                          </Space>
-                        )}
-                        {tvSeries.seasons.length > 0 && (
-                          <Space
-                            direction={"vertical"}
-                            style={{ width: "100%" }}
-                          >
-                            <Typography.Title
-                              level={4}
-                              style={{ marginBottom: 0 }}
-                            >
-                              Latest Season
-                            </Typography.Title>
-                            <TvSeasonSummaryCard
-                              seriesId={tvSeries.id}
-                              season={tvSeries.seasons[0]}
-                              initialSearchConfiguration={
-                                latestSeasonSearchConfiguration ||
-                                tvSeries.seasons[0].searchConfiguration
-                              }
-                              afterSearchUpdate={async (
-                                searchConfiguration,
-                              ) => {
-                                if (
-                                  searchConfiguration.seasonNumber ===
-                                  tvSeries.seasons[0].seasonNumber
-                                ) {
-                                  setLatestSeasonSearchConfiguration(
-                                    searchConfiguration,
-                                  );
-                                }
-                              }}
-                            />
-                          </Space>
-                        )}
-                        <Space
-                          direction={"horizontal"}
-                          style={{
-                            width: "100%",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginBottom: 16,
-                          }}
-                          size={16}
-                        >
-                          <Typography.Title
-                            level={4}
-                            style={{ marginBottom: 0 }}
-                          >
-                            Recommendations
-                          </Typography.Title>
-                          <Button
-                            size={"small"}
-                            ghost={true}
-                            type={"text"}
-                            onClick={() => {
-                              setActiveTab("t-main-recommendations");
-                            }}
-                          >
-                            All Recommendations
-                          </Button>
-                        </Space>
-                        <LoadingWrapper
-                          loading={recommendationsLoading}
-                          error={castError}
-                          showError={true}
-                        >
-                          <TvSeriesList
-                            loading={recommendationsLoading}
-                            columns={8}
-                            tvSeries={
-                              recommendations?.length > 0
-                                ? recommendations.slice(0, 8)
-                                : []
-                            }
-                          />
-                        </LoadingWrapper>
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "t-main-seasons",
-                    label: "Seasons",
-                    children: (
-                      <Space
-                        direction={"vertical"}
-                        style={{ width: "100%", padding: 16 }}
-                      >
-                        {tvSeries.seasons.map((entry) => {
-                          return (
-                            <TvSeasonSummaryCard
-                              seriesId={tvSeries.id}
-                              season={entry}
-                              initialSearchConfiguration={
-                                entry.seasonNumber ===
-                                tvSeries.seasons[0].seasonNumber
-                                  ? latestSeasonSearchConfiguration
-                                  : entry.searchConfiguration
-                              }
-                              afterSearchUpdate={async (
-                                searchConfiguration,
-                              ) => {
-                                if (
-                                  searchConfiguration.seasonNumber ===
-                                  tvSeries.seasons[0].seasonNumber
-                                ) {
-                                  setLatestSeasonSearchConfiguration(
-                                    searchConfiguration,
-                                  );
-                                }
-                              }}
-                            />
-                          );
-                        })}
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "t-main-cast",
-                    label: "Cast",
-                    children: (
-                      <Space direction={"vertical"} style={{ width: "100%" }}>
-                        <LoadingWrapper
-                          loading={castLoading}
-                          error={castError}
-                          showError={true}
-                        >
-                          <TvSeriesCastList cast={cast} />
-                        </LoadingWrapper>
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "t-main-crew",
-                    label: "Crew",
-                    children: (
-                      <Space direction={"vertical"} style={{ width: "100%" }}>
-                        <LoadingWrapper
-                          loading={crewLoading}
-                          error={crewError}
-                          showError={true}
-                        >
-                          <TvSeriesCrewList crew={crew} />
-                        </LoadingWrapper>
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "t-main-recommendations",
-                    label: "Recommendations",
-                    children: (
-                      <Space
-                        direction={"vertical"}
-                        style={{ width: "100%", padding: 16 }}
-                      >
-                        <LoadingWrapper
-                          loading={crewLoading}
-                          error={crewError}
-                          showError={true}
-                        >
-                          <TvSeriesList
-                            tvSeries={recommendations}
-                            loading={recommendationsLoading}
-                            columns={8}
-                            afterSearchUpdate={async () => {
-                              await fetchRecommendations(true);
-                            }}
-                          />
-                        </LoadingWrapper>
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "t-main-images",
-                    label: "Images",
-                    children: <MovieImagesPanel images={tvSeries.images} />,
-                  },
-                  {
-                    key: "t-main-videos",
-                    label: "Videos",
-                    children: <MovieVideoPanel videos={tvSeries.videos} />,
-                  },
-                  {
-                    key: "t-main-prodCompany",
-                    label: "Production Companies",
-                    children: (
-                      <Space
-                        direction={"vertical"}
-                        style={{ width: "100%", padding: 16 }}
-                      >
-                        <MovieProductionCompaniesPanel
-                          productionCompanies={tvSeries.productionCompanies}
-                        />
-                      </Space>
-                    ),
-                  },
-                ]}
+                items={mainTabs}
               />
             </Splitter.Panel>
             <Splitter.Panel resizable={false} defaultSize={550}>
               <Tabs
                 tabPosition={"right"}
                 className={"compact"}
-                items={[
-                  {
-                    key: "t-info-general",
-                    label: <InfoCircleFilled />,
-                    children: (
-                      <Space
-                        direction={"vertical"}
-                        style={{ margin: 12, width: "100%" }}
-                      >
-                        <Space direction={"vertical"} style={{ width: "100%" }}>
-                          <Description
-                            title={"Networks"}
-                            value={
-                              tvSeries.networks.length > 0 ? (
-                                <Space
-                                  size={8}
-                                  direction={"horizontal"}
-                                  style={{ alignItems: "center" }}
-                                >
-                                  <Link
-                                    href={`/dionysus/tv/networks/${tvSeries.networks[0].network.id}`}
-                                  >
-                                    <Image
-                                      src={`https://image.tmdb.org/t/p/w154/${tvSeries.networks[0].network.logoPath}`}
-                                      preview={false}
-                                      style={{ maxHeight: 48 }}
-                                    />
-                                  </Link>
-                                </Space>
-                              ) : (
-                                "Unknown"
-                              )
-                            }
-                          />
-                        </Space>
-                        <ExternalIdsList ids={tvSeries.externalIds} />
-                        <Description
-                          title={"Origin Countries"}
-                          value={
-                            tvSeries.originCountries.length > 0 ? (
-                              <Space direction={"vertical"} size={2}>
-                                {tvSeries.originCountries.map((item) => {
-                                  return (
-                                    <Space
-                                      size={8}
-                                      direction={"horizontal"}
-                                      style={{ alignItems: "center" }}
-                                    >
-                                      <ReactCountryFlag
-                                        countryCode={item.country.id}
-                                        cdnUrl={"/flags/"}
-                                        cdnSuffix={"svg"}
-                                        svg={true}
-                                      />
-                                      <Typography.Text
-                                        style={{ fontSize: "10px" }}
-                                      >
-                                        {item.country.name}
-                                      </Typography.Text>
-                                    </Space>
-                                  );
-                                })}
-                              </Space>
-                            ) : (
-                              "Unknown"
-                            )
-                          }
-                        />
-                        <Description
-                          title={"Locations"}
-                          value={
-                            tvSeries.productionCountries.length > 0 ? (
-                              <Space direction={"vertical"} size={2}>
-                                {tvSeries.productionCountries.map((item) => {
-                                  return (
-                                    <Space
-                                      size={8}
-                                      direction={"horizontal"}
-                                      style={{ alignItems: "center" }}
-                                    >
-                                      <ReactCountryFlag
-                                        countryCode={item.country.id}
-                                        cdnUrl={"/flags/"}
-                                        cdnSuffix={"svg"}
-                                        svg={true}
-                                      />
-                                      <Typography.Text
-                                        style={{ fontSize: "10px" }}
-                                      >
-                                        {item.country.name}
-                                      </Typography.Text>
-                                    </Space>
-                                  );
-                                })}
-                              </Space>
-                            ) : (
-                              "Unknown"
-                            )
-                          }
-                        />
-                        <Description
-                          title={"Original Language"}
-                          value={
-                            tvSeries.originalLanguage ? (
-                              <Space direction={"vertical"} size={8}>
-                                <Space size={8} direction={"horizontal"}>
-                                  <ReactCountryFlag
-                                    countryCode={tvSeries.originalLanguage.id}
-                                    cdnUrl={"/flags/"}
-                                    cdnSuffix={"svg"}
-                                    svg={true}
-                                  />
-                                  <Typography.Text style={{ fontSize: "11px" }}>
-                                    {tvSeries.originalLanguage.name}
-                                  </Typography.Text>
-                                  {tvSeries.originalLanguage.nativeName && (
-                                    <Typography.Text
-                                      style={{
-                                        color: "#666666",
-                                        fontSize: "10px",
-                                      }}
-                                    >
-                                      ({tvSeries.originalLanguage.nativeName})
-                                    </Typography.Text>
-                                  )}
-                                </Space>
-                              </Space>
-                            ) : (
-                              "Unknown"
-                            )
-                          }
-                        />
-                        <Description
-                          title={"Spoken Languages"}
-                          value={
-                            tvSeries.spokenLanguages.length > 0 ? (
-                              <Space direction={"vertical"} size={8}>
-                                {tvSeries.spokenLanguages.map((item) => {
-                                  return (
-                                    <Space size={8} direction={"horizontal"}>
-                                      <ReactCountryFlag
-                                        countryCode={item.language.id}
-                                        cdnUrl={"/flags/"}
-                                        cdnSuffix={"svg"}
-                                        svg={true}
-                                      />
-                                      <Typography.Text
-                                        style={{ fontSize: "11px" }}
-                                      >
-                                        {item.language.name}
-                                      </Typography.Text>
-                                      {item.language.nativeName && (
-                                        <Typography.Text
-                                          style={{
-                                            color: "#666666",
-                                            fontSize: "10px",
-                                          }}
-                                        >
-                                          ({item.language.nativeName})
-                                        </Typography.Text>
-                                      )}
-                                    </Space>
-                                  );
-                                })}
-                              </Space>
-                            ) : (
-                              "Unknown"
-                            )
-                          }
-                        />
-                        <Description
-                          title={"Keywords"}
-                          value={
-                            tvSeries.keywords.length > 0 ? (
-                              <Space
-                                size={0}
-                                direction={"horizontal"}
-                                style={{
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                }}
-                              >
-                                {tvSeries.keywords.map((item) => {
-                                  return (
-                                    <Tag
-                                      key={`kw-${item.keyword.id}`}
-                                      style={{ marginBottom: 8 }}
-                                      bordered={false}
-                                      color={"#999999"}
-                                    >
-                                      {item.keyword.value}
-                                    </Tag>
-                                  );
-                                })}
-                              </Space>
-                            ) : (
-                              "No keywords"
-                            )
-                          }
-                        />
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "t-info-releases",
-                    label: <CalendarOutlined />,
-                    children: (
-                      <Space
-                        size={0}
-                        style={{ width: "100%", padding: 16 }}
-                        direction={"vertical"}
-                      ></Space>
-                    ),
-                  },
-                  {
-                    key: "m-info-altTitle",
-                    label: <FontSizeOutlined />,
-                    children: (
-                      <Space
-                        size={0}
-                        style={{ width: "100%", padding: 16 }}
-                        direction={"vertical"}
-                      >
-                        <Typography.Title level={5}>
-                          Alternative Titles:
-                        </Typography.Title>
-                        <MovieAlternativeTitlesList
-                          alternativeTitles={tvSeries.alternativeTitles}
-                        />
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "m-info-qr",
-                    label: <QrcodeOutlined />,
-                    children: (
-                      <Space
-                        size={0}
-                        style={{
-                          width: "100%",
-                          padding: 16,
-                          alignItems: "center",
-                        }}
-                        direction={"vertical"}
-                      >
-                        <QRCode
-                          style={{ marginTop: 64 }}
-                          size={350}
-                          bordered={false}
-                          errorLevel={"H"}
-                          value={`https://dionysus.dev.ncfritz.net/dionysus/tv/series/${tvSeries.id}`}
-                        />
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "m-info-fetchJob",
-                    label: <CloudDownloadOutlined />,
-                    children: (
-                      <Space
-                        size={0}
-                        style={{ width: "100%", padding: 16 }}
-                        direction={"vertical"}
-                      >
-                        <MetadataFetchJobPanel
-                          id={tvSeries.id}
-                          type={"tv_series"}
-                        />
-                      </Space>
-                    ),
-                  },
-                ]}
+                items={sideTabs}
               />
             </Splitter.Panel>
           </Splitter>

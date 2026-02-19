@@ -2,6 +2,7 @@ import {
   BookOutlined,
   CalendarOutlined,
   CloudDownloadOutlined,
+  EyeOutlined,
   HeartOutlined,
   HomeOutlined,
   QrcodeOutlined,
@@ -33,10 +34,12 @@ import mediaApi from "../../../../../../api/mediaApi";
 import metadataApi from "../../../../../../api/metadataApi";
 import Description from "../../../../../../components/common/Description";
 import LoadingWrapper from "../../../../../../components/common/LoadingWrapper";
+import SearchConfigurationPanel from "../../../../../../components/dionysus/media/SearchConfigurationPanel";
+import ExternalIdsList from "../../../../../../components/dionysus/metadata/ExternalIdsList";
 import MetadataFetchJobPanel from "../../../../../../components/dionysus/metadata/MetadataFetchJobPanel";
 import MovieImagesPanel from "../../../../../../components/dionysus/metadata/MovieImagesPanel";
 import MovieVideoPanel from "../../../../../../components/dionysus/metadata/MovieVideoPanel";
-import SearchConfigurationButton from "../../../../../../components/dionysus/metadata/SearchConfigurationButton";
+import SearchConfigurationButton from "../../../../../../components/dionysus/media/SearchConfigurationButton";
 import SeasonEpisodeCalendar from "../../../../../../components/dionysus/metadata/SeasonEpisodeCalendar";
 import TvEpisodeSummaryCard from "../../../../../../components/dionysus/metadata/TvEpisodeSummaryCard";
 import TvSeriesCastList from "../../../../../../components/dionysus/metadata/TvSeriesCastList";
@@ -153,6 +156,155 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         </Typography.Text>
       </Space>
     ) : undefined;
+
+    const mainTabs = [
+      {
+        key: "t-main-general",
+        label: "Overview",
+        children: (
+          <Space
+            direction={"vertical"}
+            style={{
+              width: "100%",
+              padding: 16,
+              alignItems: "start",
+              justifyContent: "space-between",
+              paddingRight: 48,
+            }}
+            styles={{ item: { width: "100%" } }}
+            size={16}
+          >
+            {tvSeason.episodes.map((entry) => {
+              return (
+                <TvEpisodeSummaryCard
+                  episode={entry}
+                  seriesId={tvSeason.series.id}
+                  initialSearchConfiguration={entry.searchConfiguration}
+                />
+              );
+            })}
+          </Space>
+        ),
+      },
+      {
+        key: "t-main-cast",
+        label: "Cast",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%" }}>
+            <LoadingWrapper
+              loading={castLoading}
+              error={castError}
+              showError={true}
+            >
+              <TvSeriesCastList cast={cast} />
+            </LoadingWrapper>
+          </Space>
+        ),
+      },
+      {
+        key: "t-main-crew",
+        label: "Crew",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+            <LoadingWrapper
+              loading={crewLoading}
+              error={crewError}
+              showError={true}
+            >
+              <TvSeriesCrewList crew={crew} />
+            </LoadingWrapper>
+          </Space>
+        ),
+      },
+      {
+        key: "t-main-images",
+        label: "Images",
+        children: (
+          <MovieImagesPanel images={tvSeason.images} imageTypes={["poster"]} />
+        ),
+      },
+      {
+        key: "t-main-videos",
+        label: "Videos",
+        children: <MovieVideoPanel videos={tvSeason.videos} />,
+      },
+    ];
+
+    const sideTabs = [
+      {
+        key: "t-info-episodes",
+        label: <CalendarOutlined />,
+        children: (
+          <Space direction={"vertical"} style={{ margin: 0, width: "100%" }}>
+            <SeasonEpisodeCalendar episodes={tvSeason.episodes} />
+          </Space>
+        ),
+      },
+      {
+        key: "m-info-qr",
+        label: <QrcodeOutlined />,
+        children: (
+          <Space
+            size={0}
+            style={{
+              width: "100%",
+              padding: 16,
+              alignItems: "center",
+            }}
+            direction={"vertical"}
+          >
+            <QRCode
+              style={{ marginTop: 64 }}
+              size={350}
+              bordered={false}
+              errorLevel={"H"}
+              value={`https://dionysus.dev.ncfritz.net/dionysus/tv/series/${tvSeason.series.id}/season/${tvSeason.seasonNumber}`}
+            />
+          </Space>
+        ),
+      },
+      {
+        key: "m-info-fetchJob",
+        label: <CloudDownloadOutlined />,
+        children: (
+          <Space
+            size={0}
+            style={{ width: "100%", padding: 16 }}
+            direction={"vertical"}
+          >
+            <MetadataFetchJobPanel
+              id={`${id}-${tvSeason.seasonNumber}`}
+              type={"tv_seasons"}
+            />
+          </Space>
+        ),
+      },
+    ];
+
+    if (searchConfiguration) {
+      mainTabs.push({
+        key: "t-main-searchResults",
+        label: "Search Results",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+            fff
+          </Space>
+        ),
+      });
+
+      sideTabs.splice(-1, 0, {
+        key: "t-info-searchConfig",
+        label: <EyeOutlined />,
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+            <Typography.Title level={5}>Search Executions:</Typography.Title>
+            <SearchConfigurationPanel
+              searchConfiguration={searchConfiguration}
+            />
+          </Space>
+        ),
+      });
+    }
 
     content = (
       <Space
@@ -326,17 +478,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                     title={"Episodes"}
                     value={tvSeason.episodeCount}
                   />
-                  <Space direction={"horizontal"}>
-                    {tvSeason.externalIds.map((item) => {
-                      return (
-                        <Button
-                          icon={getExternalIdIcon(item.type)}
-                          type={"text"}
-                          size={"large"}
-                        />
-                      );
-                    })}
-                  </Space>
+                  <ExternalIdsList ids={tvSeason.externalIds} />
                 </Space>
                 <Space
                   direction={"vertical"}
@@ -357,89 +499,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                     }}
                     tabPosition={"top"}
                     size={"small"}
-                    items={[
-                      {
-                        key: "t-main-general",
-                        label: "Overview",
-                        children: (
-                          <Space
-                            direction={"vertical"}
-                            style={{
-                              width: "100%",
-                              padding: 16,
-                              alignItems: "start",
-                              justifyContent: "space-between",
-                              paddingRight: 48,
-                            }}
-                            styles={{ item: { width: "100%" } }}
-                            size={16}
-                          >
-                            {tvSeason.episodes.map((entry) => {
-                              return (
-                                <TvEpisodeSummaryCard
-                                  episode={entry}
-                                  seriesId={tvSeason.series.id}
-                                  initialSearchConfiguration={
-                                    entry.searchConfiguration
-                                  }
-                                />
-                              );
-                            })}
-                          </Space>
-                        ),
-                      },
-                      {
-                        key: "t-main-cast",
-                        label: "Cast",
-                        children: (
-                          <Space
-                            direction={"vertical"}
-                            style={{ width: "100%" }}
-                          >
-                            <LoadingWrapper
-                              loading={castLoading}
-                              error={castError}
-                              showError={true}
-                            >
-                              <TvSeriesCastList cast={cast} />
-                            </LoadingWrapper>
-                          </Space>
-                        ),
-                      },
-                      {
-                        key: "t-main-crew",
-                        label: "Crew",
-                        children: (
-                          <Space
-                            direction={"vertical"}
-                            style={{ width: "100%", padding: 16 }}
-                          >
-                            <LoadingWrapper
-                              loading={crewLoading}
-                              error={crewError}
-                              showError={true}
-                            >
-                              <TvSeriesCrewList crew={crew} />
-                            </LoadingWrapper>
-                          </Space>
-                        ),
-                      },
-                      {
-                        key: "t-main-images",
-                        label: "Images",
-                        children: (
-                          <MovieImagesPanel
-                            images={tvSeason.images}
-                            imageTypes={["poster"]}
-                          />
-                        ),
-                      },
-                      {
-                        key: "t-main-videos",
-                        label: "Videos",
-                        children: <MovieVideoPanel videos={tvSeason.videos} />,
-                      },
-                    ]}
+                    items={mainTabs}
                   />
                 </Space>
               </Space>
@@ -448,59 +508,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               <Tabs
                 tabPosition={"right"}
                 className={"compact"}
-                items={[
-                  {
-                    key: "t-info-episodes",
-                    label: <CalendarOutlined />,
-                    children: (
-                      <Space
-                        direction={"vertical"}
-                        style={{ margin: 0, width: "100%" }}
-                      >
-                        <SeasonEpisodeCalendar episodes={tvSeason.episodes} />
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "m-info-qr",
-                    label: <QrcodeOutlined />,
-                    children: (
-                      <Space
-                        size={0}
-                        style={{
-                          width: "100%",
-                          padding: 16,
-                          alignItems: "center",
-                        }}
-                        direction={"vertical"}
-                      >
-                        <QRCode
-                          style={{ marginTop: 64 }}
-                          size={350}
-                          bordered={false}
-                          errorLevel={"H"}
-                          value={`https://dionysus.dev.ncfritz.net/dionysus/tv/series/${tvSeason.series.id}/season/${tvSeason.seasonNumber}`}
-                        />
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "m-info-fetchJob",
-                    label: <CloudDownloadOutlined />,
-                    children: (
-                      <Space
-                        size={0}
-                        style={{ width: "100%", padding: 16 }}
-                        direction={"vertical"}
-                      >
-                        <MetadataFetchJobPanel
-                          id={`${id}-${tvSeason.seasonNumber}`}
-                          type={"tv_seasons"}
-                        />
-                      </Space>
-                    ),
-                  },
-                ]}
+                items={sideTabs}
               />
             </Splitter.Panel>
           </Splitter>

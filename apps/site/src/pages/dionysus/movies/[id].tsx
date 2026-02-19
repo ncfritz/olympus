@@ -2,6 +2,7 @@ import {
   BookOutlined,
   CalendarOutlined,
   CloudDownloadOutlined,
+  EyeOutlined,
   FontSizeOutlined,
   HeartOutlined,
   HomeOutlined,
@@ -27,6 +28,8 @@ import {
   Tag,
   Progress,
   QRCode,
+  type TabsProps,
+  Badge,
 } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import { DateTime } from "luxon";
@@ -39,6 +42,8 @@ import mediaApi from "../../../api/mediaApi";
 import metadataApi from "../../../api/metadataApi";
 import Description from "../../../components/common/Description";
 import LoadingWrapper from "../../../components/common/LoadingWrapper";
+import SearchConfigurationPanel from "../../../components/dionysus/media/SearchConfigurationPanel";
+import SearchResultsTable from "../../../components/dionysus/media/SearchResultsTable";
 import ExternalIdsList from "../../../components/dionysus/metadata/ExternalIdsList";
 import MetadataFetchJobPanel from "../../../components/dionysus/metadata/MetadataFetchJobPanel";
 import MovieAlternativeTitlesList from "../../../components/dionysus/metadata/MovieAlternativeTitlesList";
@@ -51,7 +56,7 @@ import MoviePosterCard from "../../../components/dionysus/metadata/MoviePosterCa
 import MovieProductionCompaniesPanel from "../../../components/dionysus/metadata/MovieProductionCompaniesPanel";
 import MovieReleaseDateList from "../../../components/dionysus/metadata/MovieReleaseDatesList";
 import MovieVideoPanel from "../../../components/dionysus/metadata/MovieVideoPanel";
-import SearchConfigurationButton from "../../../components/dionysus/metadata/SearchConfigurationButton";
+import SearchConfigurationButton from "../../../components/dionysus/media/SearchConfigurationButton";
 import { getProgressColor } from "../../../components/dionysus/metadata/util";
 import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
@@ -72,14 +77,15 @@ const MovieDetailPage: React.FunctionComponent = () => {
 
   const [cast, castLoading, castError] = useFetch<number, MovieCastMember[]>({
     dataType: "movie cast list",
-    watch: [id],
+    watch: [movie?.id],
     params: id as unknown as number,
+    validateOptions: (o) => o !== undefined,
     fetchFunction: async (o) => (await metadataApi.listMovieCast(o)).data.cast,
   });
 
   const [crew, crewLoading, crewError] = useFetch<number, MovieCrewMember[]>({
     dataType: "movie crew list",
-    watch: [id],
+    watch: [movie?.id],
     params: id as unknown as number,
     fetchFunction: async (o) => (await metadataApi.listMovieCrew(o)).data.crew,
   });
@@ -91,8 +97,9 @@ const MovieDetailPage: React.FunctionComponent = () => {
     fetchRecommendations,
   ] = useFetch<number, SparseMovie[]>({
     dataType: "movie recommendations",
-    watch: [id],
+    watch: [movie?.id],
     params: id as unknown as number,
+    validateOptions: (o) => o !== undefined,
     fetchFunction: async (o) =>
       (await metadataApi.listMovieRecommendations(o)).data.recommendations,
   });
@@ -100,8 +107,9 @@ const MovieDetailPage: React.FunctionComponent = () => {
   const [collections, collectionsLoading, collectionsError, fetchCollections] =
     useFetch<number, Collection[]>({
       dataType: "movie collections list",
-      watch: [id],
+      watch: [movie?.id],
       params: id as unknown as number,
+      validateOptions: (o) => o !== undefined,
       fetchFunction: async (o) =>
         (await metadataApi.listMovieCollections(o)).data.collections,
     });
@@ -114,8 +122,9 @@ const MovieDetailPage: React.FunctionComponent = () => {
     setSearchConfiguration,
   ] = useFetch<number, MediaAssetSearchConfiguration>({
     dataType: "search configuration",
-    watch: [id],
+    watch: [movie?.id],
     params: id as unknown as number,
+    validateOptions: (o) => o !== undefined,
     fetchFunction: async (o) =>
       (await mediaApi.describeMediaAssetSearchConfiguration("movie", o)).data
         .searchConfiguration,
@@ -208,6 +217,420 @@ const MovieDetailPage: React.FunctionComponent = () => {
         </Typography.Text>
       </Space>
     ) : undefined;
+
+    const mainTabs: TabsProps["items"] = [
+      {
+        key: "t-main-general",
+        label: "Overview",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+            <Space
+              direction={"horizontal"}
+              style={{
+                width: "100%",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 16,
+              }}
+              size={16}
+            >
+              <Typography.Title level={4} style={{ marginBottom: 0 }}>
+                Top Billed Cast
+              </Typography.Title>
+              <Button
+                size={"small"}
+                ghost={true}
+                type={"text"}
+                onClick={() => {
+                  setActiveTab("t-main-cast");
+                }}
+              >
+                Full Cast List
+              </Button>
+            </Space>
+            <LoadingWrapper
+              loading={castLoading}
+              error={castError}
+              showError={true}
+            >
+              <MovieCastList
+                filterable={false}
+                defaultLayout={"grid"}
+                cast={cast?.length > 0 ? cast.slice(0, 12) : []}
+              />
+            </LoadingWrapper>
+            <LoadingWrapper
+              loading={collectionsLoading}
+              error={collectionsError}
+              showError={true}
+              style={{ width: "100%" }}
+            >
+              <MovieCollectionCard
+                collection={
+                  collections?.length > 0 ? collections[0] : undefined
+                }
+                afterSearchUpdate={async (searchConfiguration) => {
+                  await fetchCollections(true);
+
+                  if (searchConfiguration.mediaId === movie.id) {
+                    setSearchConfiguration(searchConfiguration);
+                  }
+                }}
+              />
+            </LoadingWrapper>
+            <Space
+              direction={"horizontal"}
+              style={{
+                width: "100%",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 16,
+              }}
+              size={16}
+            >
+              <Typography.Title level={4} style={{ marginBottom: 0 }}>
+                Recommendations
+              </Typography.Title>
+              <Button
+                size={"small"}
+                ghost={true}
+                type={"text"}
+                onClick={() => {
+                  setActiveTab("t-main-recommendations");
+                }}
+              >
+                All Recommendations
+              </Button>
+            </Space>
+            <LoadingWrapper
+              loading={recommendationsLoading}
+              error={castError}
+              showError={true}
+            >
+              <MovieList
+                loading={recommendationsLoading}
+                columns={8}
+                movies={
+                  recommendations?.length > 0 ? recommendations.slice(0, 8) : []
+                }
+                afterSearchUpdate={async () => {
+                  await fetchRecommendations(true);
+                }}
+              />
+            </LoadingWrapper>
+          </Space>
+        ),
+      },
+      {
+        key: "t-main-cast",
+        label: "Cast",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%" }}>
+            <LoadingWrapper
+              loading={crewLoading}
+              error={crewError}
+              showError={true}
+            >
+              <MovieCastList cast={cast} />
+            </LoadingWrapper>
+          </Space>
+        ),
+      },
+      {
+        key: "t-main-crew",
+        label: "Crew",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%" }}>
+            <LoadingWrapper
+              loading={crewLoading}
+              error={crewError}
+              showError={true}
+            >
+              <MovieCrewList crew={crew} />
+            </LoadingWrapper>
+          </Space>
+        ),
+      },
+      {
+        key: "t-main-recommendations",
+        label: "Recommendations",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+            <LoadingWrapper
+              loading={crewLoading}
+              error={crewError}
+              showError={true}
+            >
+              <MovieList
+                movies={recommendations}
+                loading={recommendationsLoading}
+                columns={8}
+              />
+            </LoadingWrapper>
+          </Space>
+        ),
+      },
+      {
+        key: "t-main-images",
+        label: "Images",
+        children: <MovieImagesPanel images={movie.images} />,
+      },
+      {
+        key: "t-main-videos",
+        label: "Videos",
+        children: <MovieVideoPanel videos={movie.videos} />,
+      },
+      {
+        key: "t-main-prodCompany",
+        label: "Production Companies",
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+            <MovieProductionCompaniesPanel
+              productionCompanies={movie.productionCompanies}
+            />
+          </Space>
+        ),
+      },
+    ];
+
+    const sideTabs = [
+      {
+        key: "t-info-general",
+        label: <InfoCircleFilled />,
+        children: (
+          <Space direction={"vertical"} style={{ margin: 12, width: "100%" }}>
+            <ExternalIdsList ids={movie.externalIds} />
+            <Description
+              title={"Budget"}
+              value={
+                movie.budget > 0
+                  ? Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(movie.budget)
+                  : "Unknown"
+              }
+            />
+            <Description
+              title={"Revenue"}
+              value={
+                movie.revenue > 0
+                  ? Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(movie.revenue)
+                  : "Unknown"
+              }
+            />
+            <Description
+              title={"Original Language"}
+              value={
+                movie.originalLanguage ? (
+                  <Space size={8} direction={"horizontal"}>
+                    <ReactCountryFlag
+                      countryCode={movie.originalLanguage.id}
+                      cdnUrl={"/flags/"}
+                      cdnSuffix={"svg"}
+                      svg={true}
+                    />
+                    <Typography.Text>
+                      {movie.originalLanguage.name}
+                    </Typography.Text>
+                  </Space>
+                ) : (
+                  "Unknown"
+                )
+              }
+            />
+            <Description
+              title={"Locations"}
+              value={
+                movie.productionCountries.length > 0 ? (
+                  <Space direction={"vertical"} size={2}>
+                    {movie.productionCountries.map((item) => {
+                      return (
+                        <Space
+                          size={8}
+                          direction={"horizontal"}
+                          style={{ alignItems: "center" }}
+                        >
+                          <ReactCountryFlag
+                            countryCode={item.country.id}
+                            cdnUrl={"/flags/"}
+                            cdnSuffix={"svg"}
+                            svg={true}
+                          />
+                          <Typography.Text style={{ fontSize: "10px" }}>
+                            {item.country.name}
+                          </Typography.Text>
+                        </Space>
+                      );
+                    })}
+                  </Space>
+                ) : (
+                  "Unknown"
+                )
+              }
+            />
+            <Description
+              title={"Spoken Languages"}
+              value={
+                movie.spokenLanguages.length > 0 ? (
+                  <Space direction={"vertical"} size={8}>
+                    {movie.spokenLanguages.map((item) => {
+                      return (
+                        <Space size={8} direction={"horizontal"}>
+                          <ReactCountryFlag
+                            countryCode={item.language.id}
+                            cdnUrl={"/flags/"}
+                            cdnSuffix={"svg"}
+                            svg={true}
+                          />
+                          <Typography.Text style={{ fontSize: "11px" }}>
+                            {item.language.name}
+                          </Typography.Text>
+                          {item.language.nativeName && (
+                            <Typography.Text
+                              style={{
+                                color: "#666666",
+                                fontSize: "10px",
+                              }}
+                            >
+                              ({item.language.nativeName})
+                            </Typography.Text>
+                          )}
+                        </Space>
+                      );
+                    })}
+                  </Space>
+                ) : (
+                  "Unknown"
+                )
+              }
+            />
+            <Description
+              title={"Keywords"}
+              value={
+                movie.keywords.length > 0 ? (
+                  <Space
+                    size={0}
+                    direction={"horizontal"}
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {movie.keywords.map((item) => {
+                      return (
+                        <Tag
+                          key={`kw-${item.keyword.id}`}
+                          style={{ marginBottom: 8 }}
+                          bordered={false}
+                          color={"#999999"}
+                        >
+                          {item.keyword.value}
+                        </Tag>
+                      );
+                    })}
+                  </Space>
+                ) : (
+                  "No keywords"
+                )
+              }
+            />
+          </Space>
+        ),
+      },
+      {
+        key: "t-info-releases",
+        label: <CalendarOutlined />,
+        children: (
+          <Space
+            size={0}
+            style={{ width: "100%", padding: 16 }}
+            direction={"vertical"}
+          >
+            <Typography.Title level={5}>Release Dates:</Typography.Title>
+            <MovieReleaseDateList releaseDates={movie.releaseDates} />
+          </Space>
+        ),
+      },
+      {
+        key: "m-info-altTitle",
+        label: <FontSizeOutlined />,
+        children: (
+          <Space
+            size={0}
+            style={{ width: "100%", padding: 16 }}
+            direction={"vertical"}
+          >
+            <Typography.Title level={5}>Alternative Titles:</Typography.Title>
+            <MovieAlternativeTitlesList
+              alternativeTitles={movie.alternativeTitles}
+            />
+          </Space>
+        ),
+      },
+      {
+        key: "m-info-qr",
+        label: <QrcodeOutlined />,
+        children: (
+          <Space
+            size={0}
+            style={{ width: "100%", padding: 16 }}
+            direction={"vertical"}
+          >
+            <QRCode
+              style={{ marginTop: 64 }}
+              size={350}
+              bordered={false}
+              errorLevel={"H"}
+              value={`https://dionysus.dev.ncfritz.net/dionysus/movies/${movie.id}`}
+            />
+          </Space>
+        ),
+      },
+      {
+        key: "m-info-fetchJob",
+        label: <CloudDownloadOutlined />,
+        children: (
+          <Space
+            size={0}
+            style={{ width: "100%", padding: 16 }}
+            direction={"vertical"}
+          >
+            <MetadataFetchJobPanel id={movie.id} type={"movies"} />
+          </Space>
+        ),
+      },
+    ];
+
+    if (searchConfiguration) {
+      mainTabs.push({
+        key: "t-main-searchResults",
+        label: "Search Results",
+        children: (
+          <Space
+            direction={"vertical"}
+            style={{ width: "100%", display: "block" }}
+          >
+            <SearchResultsTable searchConfiguration={searchConfiguration} />
+          </Space>
+        ),
+      });
+
+      sideTabs.splice(-1, 0, {
+        key: "t-info-searchConfig",
+        label: <EyeOutlined />,
+        children: (
+          <Space direction={"vertical"} style={{ width: "100%" }}>
+            <SearchConfigurationPanel
+              searchConfiguration={searchConfiguration}
+            />
+          </Space>
+        ),
+      });
+    }
 
     content = (
       <Space
@@ -424,429 +847,14 @@ const MovieDetailPage: React.FunctionComponent = () => {
                 }}
                 tabPosition={"top"}
                 size={"small"}
-                items={[
-                  {
-                    key: "t-main-general",
-                    label: "Overview",
-                    children: (
-                      <Space
-                        direction={"vertical"}
-                        style={{ width: "100%", padding: 16 }}
-                      >
-                        <Space
-                          direction={"horizontal"}
-                          style={{
-                            width: "100%",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginBottom: 16,
-                          }}
-                          size={16}
-                        >
-                          <Typography.Title
-                            level={4}
-                            style={{ marginBottom: 0 }}
-                          >
-                            Top Billed Cast
-                          </Typography.Title>
-                          <Button
-                            size={"small"}
-                            ghost={true}
-                            type={"text"}
-                            onClick={() => {
-                              setActiveTab("t-main-cast");
-                            }}
-                          >
-                            Full Cast List
-                          </Button>
-                        </Space>
-                        <LoadingWrapper
-                          loading={castLoading}
-                          error={castError}
-                          showError={true}
-                        >
-                          <MovieCastList
-                            filterable={false}
-                            defaultLayout={"grid"}
-                            cast={cast?.length > 0 ? cast.slice(0, 12) : []}
-                          />
-                        </LoadingWrapper>
-                        <LoadingWrapper
-                          loading={collectionsLoading}
-                          error={collectionsError}
-                          showError={true}
-                          style={{ width: "100%" }}
-                        >
-                          <MovieCollectionCard
-                            collection={
-                              collections?.length > 0
-                                ? collections[0]
-                                : undefined
-                            }
-                            afterSearchUpdate={async (searchConfiguration) => {
-                              await fetchCollections(true);
-
-                              if (searchConfiguration.mediaId === movie.id) {
-                                setSearchConfiguration(searchConfiguration);
-                              }
-                            }}
-                          />
-                        </LoadingWrapper>
-                        <Space
-                          direction={"horizontal"}
-                          style={{
-                            width: "100%",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginBottom: 16,
-                          }}
-                          size={16}
-                        >
-                          <Typography.Title
-                            level={4}
-                            style={{ marginBottom: 0 }}
-                          >
-                            Recommendations
-                          </Typography.Title>
-                          <Button
-                            size={"small"}
-                            ghost={true}
-                            type={"text"}
-                            onClick={() => {
-                              setActiveTab("t-main-recommendations");
-                            }}
-                          >
-                            All Recommendations
-                          </Button>
-                        </Space>
-                        <LoadingWrapper
-                          loading={recommendationsLoading}
-                          error={castError}
-                          showError={true}
-                        >
-                          <MovieList
-                            loading={recommendationsLoading}
-                            columns={8}
-                            movies={
-                              recommendations?.length > 0
-                                ? recommendations.slice(0, 8)
-                                : []
-                            }
-                            afterSearchUpdate={async () => {
-                              await fetchRecommendations(true);
-                            }}
-                          />
-                        </LoadingWrapper>
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "t-main-cast",
-                    label: "Cast",
-                    children: (
-                      <Space direction={"vertical"} style={{ width: "100%" }}>
-                        <LoadingWrapper
-                          loading={crewLoading}
-                          error={crewError}
-                          showError={true}
-                        >
-                          <MovieCastList cast={cast} />
-                        </LoadingWrapper>
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "t-main-crew",
-                    label: "Crew",
-                    children: (
-                      <Space direction={"vertical"} style={{ width: "100%" }}>
-                        <LoadingWrapper
-                          loading={crewLoading}
-                          error={crewError}
-                          showError={true}
-                        >
-                          <MovieCrewList crew={crew} />
-                        </LoadingWrapper>
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "t-main-recommendations",
-                    label: "Recommendations",
-                    children: (
-                      <Space
-                        direction={"vertical"}
-                        style={{ width: "100%", padding: 16 }}
-                      >
-                        <LoadingWrapper
-                          loading={crewLoading}
-                          error={crewError}
-                          showError={true}
-                        >
-                          <MovieList
-                            movies={recommendations}
-                            loading={recommendationsLoading}
-                            columns={8}
-                          />
-                        </LoadingWrapper>
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "t-main-images",
-                    label: "Images",
-                    children: <MovieImagesPanel images={movie.images} />,
-                  },
-                  {
-                    key: "t-main-videos",
-                    label: "Videos",
-                    children: <MovieVideoPanel videos={movie.videos} />,
-                  },
-                  {
-                    key: "t-main-prodCompany",
-                    label: "Production Companies",
-                    children: (
-                      <Space
-                        direction={"vertical"}
-                        style={{ width: "100%", padding: 16 }}
-                      >
-                        <MovieProductionCompaniesPanel
-                          productionCompanies={movie.productionCompanies}
-                        />
-                      </Space>
-                    ),
-                  },
-                ]}
+                items={mainTabs}
               />
             </Splitter.Panel>
             <Splitter.Panel resizable={false} defaultSize={550}>
               <Tabs
                 tabPosition={"right"}
                 className={"compact"}
-                items={[
-                  {
-                    key: "t-info-general",
-                    label: <InfoCircleFilled />,
-                    children: (
-                      <Space
-                        direction={"vertical"}
-                        style={{ margin: 12, width: "100%" }}
-                      >
-                        <ExternalIdsList ids={movie.externalIds} />
-                        <Description
-                          title={"Budget"}
-                          value={
-                            movie.budget > 0
-                              ? Intl.NumberFormat("en-US", {
-                                  style: "currency",
-                                  currency: "USD",
-                                }).format(movie.budget)
-                              : "Unknown"
-                          }
-                        />
-                        <Description
-                          title={"Revenue"}
-                          value={
-                            movie.revenue > 0
-                              ? Intl.NumberFormat("en-US", {
-                                  style: "currency",
-                                  currency: "USD",
-                                }).format(movie.revenue)
-                              : "Unknown"
-                          }
-                        />
-                        <Description
-                          title={"Original Language"}
-                          value={
-                            movie.originalLanguage ? (
-                              <Space size={8} direction={"horizontal"}>
-                                <ReactCountryFlag
-                                  countryCode={movie.originalLanguage.id}
-                                  cdnUrl={"/flags/"}
-                                  cdnSuffix={"svg"}
-                                  svg={true}
-                                />
-                                <Typography.Text>
-                                  {movie.originalLanguage.name}
-                                </Typography.Text>
-                              </Space>
-                            ) : (
-                              "Unknown"
-                            )
-                          }
-                        />
-                        <Description
-                          title={"Locations"}
-                          value={
-                            movie.productionCountries.length > 0 ? (
-                              <Space direction={"vertical"} size={2}>
-                                {movie.productionCountries.map((item) => {
-                                  return (
-                                    <Space
-                                      size={8}
-                                      direction={"horizontal"}
-                                      style={{ alignItems: "center" }}
-                                    >
-                                      <ReactCountryFlag
-                                        countryCode={item.country.id}
-                                        cdnUrl={"/flags/"}
-                                        cdnSuffix={"svg"}
-                                        svg={true}
-                                      />
-                                      <Typography.Text
-                                        style={{ fontSize: "10px" }}
-                                      >
-                                        {item.country.name}
-                                      </Typography.Text>
-                                    </Space>
-                                  );
-                                })}
-                              </Space>
-                            ) : (
-                              "Unknown"
-                            )
-                          }
-                        />
-                        <Description
-                          title={"Spoken Languages"}
-                          value={
-                            movie.spokenLanguages.length > 0 ? (
-                              <Space direction={"vertical"} size={8}>
-                                {movie.spokenLanguages.map((item) => {
-                                  return (
-                                    <Space size={8} direction={"horizontal"}>
-                                      <ReactCountryFlag
-                                        countryCode={item.language.id}
-                                        cdnUrl={"/flags/"}
-                                        cdnSuffix={"svg"}
-                                        svg={true}
-                                      />
-                                      <Typography.Text
-                                        style={{ fontSize: "11px" }}
-                                      >
-                                        {item.language.name}
-                                      </Typography.Text>
-                                      {item.language.nativeName && (
-                                        <Typography.Text
-                                          style={{
-                                            color: "#666666",
-                                            fontSize: "10px",
-                                          }}
-                                        >
-                                          ({item.language.nativeName})
-                                        </Typography.Text>
-                                      )}
-                                    </Space>
-                                  );
-                                })}
-                              </Space>
-                            ) : (
-                              "Unknown"
-                            )
-                          }
-                        />
-                        <Description
-                          title={"Keywords"}
-                          value={
-                            movie.keywords.length > 0 ? (
-                              <Space
-                                size={0}
-                                direction={"horizontal"}
-                                style={{
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                }}
-                              >
-                                {movie.keywords.map((item) => {
-                                  return (
-                                    <Tag
-                                      key={`kw-${item.keyword.id}`}
-                                      style={{ marginBottom: 8 }}
-                                      bordered={false}
-                                      color={"#999999"}
-                                    >
-                                      {item.keyword.value}
-                                    </Tag>
-                                  );
-                                })}
-                              </Space>
-                            ) : (
-                              "No keywords"
-                            )
-                          }
-                        />
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "t-info-releases",
-                    label: <CalendarOutlined />,
-                    children: (
-                      <Space
-                        size={0}
-                        style={{ width: "100%", padding: 16 }}
-                        direction={"vertical"}
-                      >
-                        <Typography.Title level={5}>
-                          Release Dates:
-                        </Typography.Title>
-                        <MovieReleaseDateList
-                          releaseDates={movie.releaseDates}
-                        />
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "m-info-altTitle",
-                    label: <FontSizeOutlined />,
-                    children: (
-                      <Space
-                        size={0}
-                        style={{ width: "100%", padding: 16 }}
-                        direction={"vertical"}
-                      >
-                        <Typography.Title level={5}>
-                          Alternative Titles:
-                        </Typography.Title>
-                        <MovieAlternativeTitlesList
-                          alternativeTitles={movie.alternativeTitles}
-                        />
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "m-info-qr",
-                    label: <QrcodeOutlined />,
-                    children: (
-                      <Space
-                        size={0}
-                        style={{ width: "100%", padding: 16 }}
-                        direction={"vertical"}
-                      >
-                        <QRCode
-                          style={{ marginTop: 64 }}
-                          size={350}
-                          bordered={false}
-                          errorLevel={"H"}
-                          value={`https://dionysus.dev.ncfritz.net/dionysus/movies/${movie.id}`}
-                        />
-                      </Space>
-                    ),
-                  },
-                  {
-                    key: "m-info-fetchJob",
-                    label: <CloudDownloadOutlined />,
-                    children: (
-                      <Space
-                        size={0}
-                        style={{ width: "100%", padding: 16 }}
-                        direction={"vertical"}
-                      >
-                        <MetadataFetchJobPanel id={movie.id} type={"movies"} />
-                      </Space>
-                    ),
-                  },
-                ]}
+                items={sideTabs}
               />
             </Splitter.Panel>
           </Splitter>
