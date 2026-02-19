@@ -444,6 +444,36 @@ img.electron-logo {
   background-color: #ffffff !important;
 }
 
+.dionysus-action-button.running,
+.dionysus-action-button.light.running {
+  border-color: #023c53 !important;
+}
+.dionysus-action-button.light.running {
+  color: #023c53 !important;
+  background-color: #023c5333 !important;
+}
+.dionysus-action-button.light.running:hover {
+  background-color: #023c5344 !important;
+}
+.dionysus-action-button.light.running:active {
+  background-color: #ffffff !important;
+}
+
+.dionysus-action-button.error,
+.dionysus-action-button.light.error {
+  border-color: #7d0000 !important;
+}
+.dionysus-action-button.light.error {
+  color: #7d0000 !important;
+  background-color: #7d000033 !important;
+}
+.dionysus-action-button.light.error:hover {
+  background-color: #7d000044 !important;
+}
+.dionysus-action-button.light.error:active {
+  background-color: #ffffff !important;
+}
+
 .dionysus-filter-header .ant-radio-button-wrapper {
   border-color: #dfdfdf;
   color: #666666;
