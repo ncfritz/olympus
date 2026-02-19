@@ -128,7 +128,7 @@ export class SingleMediaAssetSearchExecutionResponse {
   searchExecution: MediaAssetSearchExecution;
 }
 
-export class ListMediaAssetSearchExecutionResponse extends PaginatedResults {
+export class ListMediaAssetSearchExecutionsResponse extends PaginatedResults {
   @ApiProperty({
     type: () => MediaAssetSearchExecution,
     isArray: true,
