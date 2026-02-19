@@ -1,5 +1,8 @@
 import {
   CaretRightOutlined,
+  CloseOutlined,
+  DoubleLeftOutlined,
+  DoubleRightOutlined,
   EyeFilled,
   EyeOutlined,
   PauseOutlined,
@@ -15,6 +18,7 @@ import { useRef, useState } from "react";
 import {
   handleCreateSearchConfiguration,
   handleSetEnabled,
+  handleTriggerSearch,
 } from "../../../utils/searchConfiguration";
 
 export type SearchConfigurationButtonProps = {
@@ -53,6 +57,26 @@ const SearchConfigurationButton: React.FunctionComponent<
     setOpen(false);
   };
 
+  const updateSearchConfiguration = async (recursive: boolean) => {
+    if (!searchConfiguration) {
+      return;
+    }
+
+    try {
+      setconfigUpdating(true);
+      closeMenu();
+      await handleSetEnabled(
+        mediaType,
+        mediaId,
+        !searchConfiguration.enabled,
+        recursive,
+        afterUpdate,
+      );
+    } finally {
+      setconfigUpdating(false);
+    }
+  };
+
   let searchButton = (
     <Button
       className={`dionysus-action-button ${className}`}
@@ -63,6 +87,7 @@ const SearchConfigurationButton: React.FunctionComponent<
       onClick={async () => {
         try {
           setconfigUpdating(true);
+          closeMenu();
           await handleCreateSearchConfiguration(
             mediaType,
             {
@@ -75,7 +100,6 @@ const SearchConfigurationButton: React.FunctionComponent<
           );
         } finally {
           setconfigUpdating(false);
-          closeMenu();
         }
       }}
     />
@@ -83,6 +107,8 @@ const SearchConfigurationButton: React.FunctionComponent<
 
   if (searchConfiguration) {
     const classNames = ["dionysus-action-button", className, "active"];
+    let badgeIcon = <CaretRightOutlined style={{ color: "#ffffff" }} />;
+    let badgeColor = "#488633";
 
     if (open) {
       classNames.push("no-hover");
@@ -90,6 +116,16 @@ const SearchConfigurationButton: React.FunctionComponent<
 
     if (!searchConfiguration.enabled) {
       classNames.push("disabled");
+      badgeIcon = <PauseOutlined style={{ color: "#ffffff" }} />;
+      badgeColor = "#c5981c";
+    } else if (searchConfiguration.status === "running") {
+      classNames.push("running");
+      badgeIcon = <ReloadOutlined style={{ color: "#ffffff" }} spin={true} />;
+      badgeColor = "#023c53";
+    } else if (searchConfiguration.status === "error") {
+      classNames.push("error");
+      badgeIcon = <CloseOutlined style={{ color: "#ffffff" }} />;
+      badgeColor = "#7d0000";
     }
 
     searchButton = (
@@ -119,24 +155,38 @@ const SearchConfigurationButton: React.FunctionComponent<
                 }
                 loading={configUpdating}
                 onClick={async () => {
-                  try {
-                    setconfigUpdating(true);
-                    await handleSetEnabled(
-                      mediaType,
-                      mediaId,
-                      !searchConfiguration.enabled,
-                      afterUpdate,
-                    );
-                  } finally {
-                    setconfigUpdating(false);
-                    closeMenu();
-                  }
+                  await updateSearchConfiguration(false);
                 }}
               />
+              {(searchConfiguration.type === "tv_series" ||
+                searchConfiguration.type === "tv_season") && (
+                <Button
+                  type={"text"}
+                  icon={
+                    searchConfiguration.enabled ? (
+                      <DoubleLeftOutlined />
+                    ) : (
+                      <DoubleRightOutlined />
+                    )
+                  }
+                  loading={configUpdating}
+                  onClick={async () => {
+                    await updateSearchConfiguration(true);
+                  }}
+                />
+              )}
               <Button
                 type={"text"}
                 icon={<ReloadOutlined />}
-                onClick={() => {}}
+                onClick={async () => {
+                  try {
+                    setconfigUpdating(true);
+                    closeMenu();
+                    await handleTriggerSearch(mediaType, mediaId, afterUpdate);
+                  } finally {
+                    setconfigUpdating(false);
+                  }
+                }}
               />
             </Space>
           }
@@ -148,20 +198,14 @@ const SearchConfigurationButton: React.FunctionComponent<
             count={
               <Space
                 style={{
-                  background: searchConfiguration.enabled
-                    ? "#488633"
-                    : "#c5981c",
+                  background: badgeColor,
                   borderRadius: 16,
                   padding: 3,
                   fontSize: "12px",
                   zIndex: 101,
                 }}
               >
-                {searchConfiguration.enabled ? (
-                  <CaretRightOutlined style={{ color: "#ffffff" }} />
-                ) : (
-                  <PauseOutlined style={{ color: "#ffffff" }} />
-                )}
+                {badgeIcon}
               </Space>
             }
           >
@@ -170,7 +214,7 @@ const SearchConfigurationButton: React.FunctionComponent<
               size={"large"}
               shape={"circle"}
               icon={<EyeFilled />}
-              loading={loading}
+              loading={loading || configUpdating}
               onClick={closeMenu}
               style={{
                 border: open ? "none" : "1px solid #cccccc",
