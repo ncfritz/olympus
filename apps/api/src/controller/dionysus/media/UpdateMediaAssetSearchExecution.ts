@@ -24,7 +24,7 @@ import {
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchExecutionConverter";
-import { SEARCH_EXECUTION } from "../../../query/dionysus/media/searchExecution";
+import { BASE_SEARCH_EXECUTION } from "../../../query/dionysus/media/searchExecution";
 import { GraphQlMediaAssetSearchExecution } from "../../../types/dionysus/media/searchExecution";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
@@ -88,7 +88,7 @@ export class UpdateMediaAssetSearchExecutionController {
           pk_columns: { id: $executionId }
           _set: $changes
         ) {
-          ${SEARCH_EXECUTION}
+          ${BASE_SEARCH_EXECUTION}
         }
       }
     `;

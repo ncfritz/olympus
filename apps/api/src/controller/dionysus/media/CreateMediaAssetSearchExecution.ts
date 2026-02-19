@@ -5,15 +5,7 @@ import {
   SearchExecutionStatus,
   SingleMediaAssetSearchExecutionResponse,
 } from "@ncfritz/olympus-model";
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  HttpStatus,
-  Param,
-  Post,
-  Res,
-} from "@nestjs/common";
+import { Body, Controller, HttpStatus, Param, Post, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -25,24 +17,20 @@ import {
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchExecutionConverter";
-import { SEARCH_EXECUTION } from "../../../query/dionysus/media/searchExecution";
+import { BASE_SEARCH_EXECUTION } from "../../../query/dionysus/media/searchExecution";
 import { GraphQlMediaAssetSearchExecution } from "../../../types/dionysus/media/searchExecution";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlVerifySearchConfigResponse = {
-  dionysus_media_asset_search_configuration_by_pk: {
-    assetType: MediaAssetSearchType;
-    mediaId: number;
-  };
-};
+import { BaseMediaAssetSearchConfigurationController } from "./BaseMediaAssetSearchConfigurationController";
 
 type GraphQlCreateMediaAssetSearchExecutionResponse = {
   insert_dionysus_media_asset_search_execution_one: GraphQlMediaAssetSearchExecution;
 };
 
 @Controller({ version: "1" })
-export class CreateMediaAssetSearchExecutionController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+export class CreateMediaAssetSearchExecutionController extends BaseMediaAssetSearchConfigurationController {
+  constructor(protected readonly graphQLClient: GraphQLClient) {
+    super(graphQLClient);
+  }
 
   @Post("/media/searchConfiguration/:mediaType/:mediaId/executions")
   @ApiOperation({
@@ -86,43 +74,7 @@ export class CreateMediaAssetSearchExecutionController {
     @Body() request: CreateMediaAssetSearchExecutionRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const verifyQuery = gql`
-      query VerifyMediaAssetSearchConfiguration(
-        $assetType: String!
-        $mediaId: numeric!
-      ) {
-        dionysus_media_asset_search_configuration_by_pk(
-          assetType: $assetType
-          mediaId: $mediaId
-        ) {
-          assetType
-          mediaId
-        }
-      }
-    `;
-
-    const verifyResponse =
-      await this.graphQLClient.request<GraphQlVerifySearchConfigResponse>(
-        verifyQuery,
-        {
-          assetType: mediaType,
-          mediaId: mediaId,
-        },
-      );
-
-    console.log(verifyResponse);
-
-    if (
-      !(
-        verifyResponse.dionysus_media_asset_search_configuration_by_pk
-          .assetType &&
-        verifyResponse.dionysus_media_asset_search_configuration_by_pk.mediaId
-      )
-    ) {
-      throw new BadRequestException(
-        "Source search configuration definition could not be found",
-      );
-    }
+    await this.verifySearchConfiguration(mediaType, mediaId);
 
     const insertRequest = gql`
       mutation CreateMediaAssetSearchExecution(
@@ -137,7 +89,7 @@ export class CreateMediaAssetSearchExecutionController {
             mediaId: $mediaId
           }
         ) {
-          ${SEARCH_EXECUTION}
+          ${BASE_SEARCH_EXECUTION}
         }
       }
     `;

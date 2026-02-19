@@ -1,7 +1,7 @@
 import {
   FilterDefinition,
   FilterType,
-  ListMediaAssetSearchExecutionResponse,
+  ListMediaAssetSearchExecutionsResponse,
   MediaAssetSearchExecution,
   MediaAssetSearchType,
   SortDirection,
@@ -16,7 +16,7 @@ import {
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchExecutionConverter";
-import { SEARCH_EXECUTION } from "../../../query/dionysus/media/searchExecution";
+import { BASE_SEARCH_EXECUTION } from "../../../query/dionysus/media/searchExecution";
 import { GraphQlMediaAssetSearchExecution } from "../../../types/dionysus/media/searchExecution";
 import {
   ApiFilterParams,
@@ -69,7 +69,7 @@ export class ListMediaSearchExecutionsController {
   @ApiOkResponse({
     description:
       "The list of search executions.  If there are more executions to list, a pagination token will be present.",
-    type: () => ListMediaAssetSearchExecutionResponse,
+    type: () => ListMediaAssetSearchExecutionsResponse,
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -119,7 +119,7 @@ export class ListMediaSearchExecutionsController {
     const fetchRequest = gql`
       query DescribeMediaAssetSearchExecution {
         dionysus_media_asset_search_execution(${[paginationExpression, whereExpression].join(", ")}) {
-          ${SEARCH_EXECUTION}
+          ${BASE_SEARCH_EXECUTION}
         }
         dionysus_media_asset_search_execution_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {
@@ -139,7 +139,7 @@ export class ListMediaSearchExecutionsController {
       fetchedExecutions.push(toDomainObject(result));
     });
 
-    const responseBody: ListMediaAssetSearchExecutionResponse = {
+    const responseBody: ListMediaAssetSearchExecutionsResponse = {
       searchExecutions: fetchedExecutions,
       count:
         fetchResponse.dionysus_media_asset_search_execution_aggregate.aggregate

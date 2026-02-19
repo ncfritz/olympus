@@ -1,4 +1,4 @@
-export const SEARCH_EXECUTION =
+export const BASE_SEARCH_EXECUTION =
   "  createdTime" +
   "  duplicateRecords" +
   "  finishedTime" +
