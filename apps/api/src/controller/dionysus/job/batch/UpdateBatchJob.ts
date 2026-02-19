@@ -1,5 +1,6 @@
 import {
   BatchJob,
+  JobStatus,
   UpdateBatchJobRequest,
   UpdateBatchJobResponse,
 } from "@ncfritz/olympus-model";
@@ -23,6 +24,7 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
+import moment from "moment";
 import { toDomainObject } from "../../../../convert/dionysus/job/BatchJobConverter";
 import { GraphQlBatchJob } from "../../../../types/batchJobs";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
@@ -91,12 +93,24 @@ export class UpdateBatchJobController {
       }
     `;
 
+    const updates = request.job;
+
+    if (
+      updates.status &&
+      [JobStatus.CANCELLED, JobStatus.FAILED, JobStatus.SUCCESS].includes(
+        updates.status,
+      ) &&
+      !updates.finishedTime
+    ) {
+      updates.finishedTime = moment().utc();
+    }
+
     const updateResponse =
       await this.graphQLClient.request<GraphQlUpdateMetadataFetchJobResponse>(
         updateRequest,
         {
           id: jobId,
-          changes: request.job,
+          changes: updates,
         },
       );
 

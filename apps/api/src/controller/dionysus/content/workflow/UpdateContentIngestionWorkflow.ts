@@ -1,4 +1,5 @@
 import {
+  ContentIngestionWorkflowStatus,
   UpdateContentIngestionWorkflowRequest,
   UpdateContentIngestionWorkflowResponse,
 } from "@ncfritz/olympus-model";
@@ -22,6 +23,7 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
+import moment from "moment/moment";
 import { GraphQLContentIngestionWorkflow } from "../../../../types/dionysus/content/workflow";
 import { toDomainObject } from "../../../../convert/dionysus/content/workflow/ContentIngestionWorkflowConverter";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
@@ -95,12 +97,27 @@ export class UpdateContentIngestionWorkflowController {
       }
     `;
 
+
+    const updates = request.workflow;
+
+    if (
+      updates.status &&
+      [
+        ContentIngestionWorkflowStatus.SKIPPED,
+        ContentIngestionWorkflowStatus.FAILED,
+        ContentIngestionWorkflowStatus.SUCCESS,
+      ].includes(updates.status) &&
+      !updates.finishedTime
+    ) {
+      updates.finishedTime = moment().utc();
+    }
+
     const updateResponse =
       await this.graphQLClient.request<GraphQlUpdateContentIngestionWorkflowResponse>(
         updateRequest,
         {
           id: workflowId,
-          changes: request.workflow,
+          changes: updates,
         },
       );
 
