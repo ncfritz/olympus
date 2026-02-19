@@ -153,13 +153,13 @@ const RedriveModal: React.FunctionComponent<RedriveModalProps> = ({
               >
                 Job Type
               </th>
-              <th>{getMetadataJobStatusIndicator("queued", true)}</th>
-              <th>{getMetadataJobStatusIndicator("invalidated", true)}</th>
-              <th>{getMetadataJobStatusIndicator("fetching", true)}</th>
-              <th>{getMetadataJobStatusIndicator("cancelled", true)}</th>
               <th>{getMetadataJobStatusIndicator("fetched", true)}</th>
+              <th>{getMetadataJobStatusIndicator("fetching", true)}</th>
+              <th>{getMetadataJobStatusIndicator("invalidated", true)}</th>
               <th>{getMetadataJobStatusIndicator("failed", true)}</th>
               <th>{getMetadataJobStatusIndicator("not_found", true)}</th>
+              <th>{getMetadataJobStatusIndicator("cancelled", true)}</th>
+              <th>{getMetadataJobStatusIndicator("queued", true)}</th>
             </tr>
           </thead>
           <tbody>
@@ -172,27 +172,12 @@ const RedriveModal: React.FunctionComponent<RedriveModalProps> = ({
                     onClick={() => {
                       handleSetSearchCriteria(
                         statistics.expiration.series[index].name,
-                        "queued",
+                        "fetched",
                       );
                     }}
                   >
                     <Typography.Text style={StatisticStyle}>
-                      {statistics.status.series.queued[index].toLocaleString()}
-                    </Typography.Text>
-                  </td>
-                  <td
-                    className={"table-cell-hover"}
-                    onClick={() => {
-                      handleSetSearchCriteria(
-                        statistics.expiration.series[index].name,
-                        "invalidated",
-                      );
-                    }}
-                  >
-                    <Typography.Text style={StatisticStyle}>
-                      {statistics.status.series.invalidated[
-                        index
-                      ].toLocaleString()}
+                      {statistics.status.series.fetched[index].toLocaleString()}
                     </Typography.Text>
                   </td>
                   <td
@@ -215,27 +200,14 @@ const RedriveModal: React.FunctionComponent<RedriveModalProps> = ({
                     onClick={() => {
                       handleSetSearchCriteria(
                         statistics.expiration.series[index].name,
-                        "cancelled",
+                        "invalidated",
                       );
                     }}
                   >
                     <Typography.Text style={StatisticStyle}>
-                      {statistics.status.series.cancelled[
+                      {statistics.status.series.invalidated[
                         index
                       ].toLocaleString()}
-                    </Typography.Text>
-                  </td>
-                  <td
-                    className={"table-cell-hover"}
-                    onClick={() => {
-                      handleSetSearchCriteria(
-                        statistics.expiration.series[index].name,
-                        "fetched",
-                      );
-                    }}
-                  >
-                    <Typography.Text style={StatisticStyle}>
-                      {statistics.status.series.fetched[index].toLocaleString()}
                     </Typography.Text>
                   </td>
                   <td
@@ -264,6 +236,34 @@ const RedriveModal: React.FunctionComponent<RedriveModalProps> = ({
                       {statistics.status.series.not_found[
                         index
                       ].toLocaleString()}
+                    </Typography.Text>
+                  </td>
+                  <td
+                    className={"table-cell-hover"}
+                    onClick={() => {
+                      handleSetSearchCriteria(
+                        statistics.expiration.series[index].name,
+                        "cancelled",
+                      );
+                    }}
+                  >
+                    <Typography.Text style={StatisticStyle}>
+                      {statistics.status.series.cancelled[
+                        index
+                        ].toLocaleString()}
+                    </Typography.Text>
+                  </td>
+                  <td
+                    className={"table-cell-hover"}
+                    onClick={() => {
+                      handleSetSearchCriteria(
+                        statistics.expiration.series[index].name,
+                        "queued",
+                      );
+                    }}
+                  >
+                    <Typography.Text style={StatisticStyle}>
+                      {statistics.status.series.queued[index].toLocaleString()}
                     </Typography.Text>
                   </td>
                 </tr>

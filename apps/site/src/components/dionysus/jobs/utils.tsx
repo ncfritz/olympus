@@ -29,20 +29,20 @@ export const getMetadataJobStatusIndicator = (
   switch (status) {
     case "queued":
       return (
-        <Tag color={"#003f5c"} icon={<ClockCircleOutlined />} style={style}>
+        <Tag color={"#f4a002"} icon={<ClockCircleOutlined />} style={style}>
           Queued
         </Tag>
       );
     case "invalidated":
       return (
-        <Tag color={"#374c80"} icon={<PauseCircleOutlined />} style={style}>
+        <Tag color={"#764f90"} icon={<PauseCircleOutlined />} style={style}>
           Invalidated
         </Tag>
       );
     case "fetching":
       return (
         <Tag
-          color={"#7a5195"}
+          color={"#364a7c"}
           icon={<SyncOutlined spin={true} />}
           style={style}
         >
@@ -51,25 +51,25 @@ export const getMetadataJobStatusIndicator = (
       );
     case "cancelled":
       return (
-        <Tag color={"#bc5090"} icon={<StopOutlined />} style={style}>
+        <Tag color={"#ff764a"} icon={<StopOutlined />} style={style}>
           Cancelled
         </Tag>
       );
     case "fetched":
       return (
-        <Tag color={"#ef5675"} icon={<CheckCircleOutlined />} style={style}>
+        <Tag color={"#023e5a"} icon={<CheckCircleOutlined />} style={style}>
           Fetched
         </Tag>
       );
     case "failed":
       return (
-        <Tag color={"#ff764a"} icon={<CloseCircleOutlined />} style={style}>
+        <Tag color={"#b54e8b"} icon={<CloseCircleOutlined />} style={style}>
           Failed
         </Tag>
       );
     case "not_found":
       return (
-        <Tag color={"#ffa600"} icon={<SearchOutlined />} style={style}>
+        <Tag color={"#ef5675"} icon={<SearchOutlined />} style={style}>
           Not Found
         </Tag>
       );

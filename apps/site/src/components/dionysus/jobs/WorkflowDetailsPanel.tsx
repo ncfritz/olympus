@@ -42,12 +42,9 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
     default: undefined,
     watch: [workflowId],
     params: workflowId as string,
+    validateOptions: (o) => o !== undefined,
     fetchFunction: async (o) => {
-      if (o) {
-        return (await workflowApi.describeMetadataWorkflow(o)).data.workflow;
-      }
-
-      return undefined;
+      return (await workflowApi.describeMetadataWorkflow(o)).data.workflow;
     },
   });
 
