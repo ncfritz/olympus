@@ -1,7 +1,7 @@
 {
   "name": "@ncfritz/olympus-site",
   "type": "module",
-  "version": "1.32.0",
+  "version": "1.31.0",
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
   "repository": {
     "type": "git",
@@ -135,6 +135,7 @@
     "workerDirectory": "public"
   },
   "dependencies": {
+    "jose": "^6.2.1",
     "react-infinite-scroll-component": "^6.1.1"
   }
 }
