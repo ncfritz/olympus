@@ -1,9 +1,9 @@
-import { FileImageOutlined, StarFilled } from "@ant-design/icons";
+import { CheckCircleFilled, FileImageOutlined, StarFilled } from "@ant-design/icons";
 import type {
   SparseEpisode,
   BaseTvSeries,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Badge, Card, Image, Space, Typography } from "antd";
+import { Badge, Card, Image, Progress, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import React, { type ReactNode } from "react";
@@ -85,13 +85,15 @@ const TvEpisodeList: React.FunctionComponent<TvEpisodeListProps> = ({
           >
             <Space
               direction={"horizontal"}
+              className={"episodes-card-fix"}
               style={{ width: "100%", alignItems: "start", margin: 8 }}
               styles={{ item: { fontSize: "10px" } }}
             >
               {stillPath}
               <Space
                 direction={"vertical"}
-                style={{ alignItems: "start" }}
+                style={{ alignItems: "start", width: "100%" }}
+                styles={{ item: { width: "100%" } }}
                 size={0}
               >
                 <Typography.Text
@@ -103,9 +105,43 @@ const TvEpisodeList: React.FunctionComponent<TvEpisodeListProps> = ({
                 <Typography.Text style={{ fontSize: "12px" }}>
                   {episode.name}
                 </Typography.Text>
-                <Typography.Text style={{ fontSize: "11px", color: "#999999" }}>
-                  {airDate ? airDate.toFormat("yyyy / MM / dd") : undefined}
-                </Typography.Text>
+                <Space
+                  direction={"horizontal"}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    width: "100%",
+                  }}
+                >
+                  <Typography.Text
+                    style={{ fontSize: "11px", color: "#999999" }}
+                  >
+                    {airDate ? airDate.toFormat("yyyy / MM / dd") : undefined}
+                  </Typography.Text>
+                  {episode.voteAverage > 0 && (
+                    <Space
+                      direction={"horizontal"}
+                      size={8}
+                      style={{ alignItems: "center" }}
+                    >
+                      <Typography.Text
+                        style={{
+                          fontSize: "12px",
+                          color: "#666666",
+                          lineHeight: "12px",
+                        }}
+                      >
+                        {episode.voteAverage.toFixed(1)} / 10 <StarFilled />
+                      </Typography.Text>
+                      <Progress
+                        type={"circle"}
+                        size={16}
+                        percent={episode.voteAverage * 10}
+                        strokeColor={getProgressColor(episode.voteAverage * 10)}
+                      />
+                    </Space>
+                  )}
+                </Space>
               </Space>
             </Space>
           </Link>
@@ -113,14 +149,11 @@ const TvEpisodeList: React.FunctionComponent<TvEpisodeListProps> = ({
       );
 
       episodeCards.push(
-        episode.voteAverage > 0 ? (
+        episode.asset ? (
           <Badge.Ribbon
-            color={getProgressColor(episode.voteAverage * 10)}
-            text={
-              <Space direction={"horizontal"} size={4}>
-                {episode.voteAverage.toFixed(1)} / 10 <StarFilled />
-              </Space>
-            }
+            color={"#478133"}
+            style={{ fontSize: "12px" }}
+            text={<CheckCircleFilled />}
           >
             {cardContent}
           </Badge.Ribbon>

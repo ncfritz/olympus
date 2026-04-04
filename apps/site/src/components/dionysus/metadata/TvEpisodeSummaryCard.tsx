@@ -1,9 +1,9 @@
-import { FileImageOutlined, StarFilled } from "@ant-design/icons";
+import { CheckCircleFilled, FileImageOutlined, StarFilled } from "@ant-design/icons";
 import type {
   MediaAssetSearchConfiguration,
   SparseEpisode,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Badge, Card, Image, Space, Typography } from "antd";
+import { Badge, Card, Image, Progress, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -113,7 +113,7 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
               width: "100%",
             }}
           >
-            <Space direction={"horizontal"} size={16}>
+            <Space direction={"horizontal"} size={16} style={{ width: "100%" }}>
               <SearchConfigurationButton
                 mediaType={"tv_episode"}
                 mediaId={episode.id}
@@ -148,13 +148,47 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
                 </Link>
               </Space>
             </Space>
-            <Description
-              title={"Air Date:"}
-              titleFontSize={"12px"}
-              value={airDate}
-              direction={"horizontal"}
-              style={{ marginTop: 2 }}
-            />
+            <Space
+              direction={"vertical"}
+              size={0}
+              styles={{
+                item: {
+                  display: "flex",
+                  justifyContent: "end",
+                },
+              }}
+            >
+              <Description
+                title={"Air Date:"}
+                titleFontSize={"12px"}
+                value={airDate}
+                direction={"horizontal"}
+                style={{ marginTop: 2 }}
+              />
+              {episode.voteAverage > 0 && (
+                <Space
+                  direction={"horizontal"}
+                  size={8}
+                  style={{ alignItems: "center" }}
+                >
+                  <Typography.Text
+                    style={{
+                      fontSize: "12px",
+                      color: "#666666",
+                      lineHeight: "12px",
+                    }}
+                  >
+                    {episode.voteAverage.toFixed(1)} / 10 <StarFilled />
+                  </Typography.Text>
+                  <Progress
+                    type={"circle"}
+                    size={16}
+                    percent={episode.voteAverage * 10}
+                    strokeColor={getProgressColor(episode.voteAverage * 10)}
+                  />
+                </Space>
+              )}
+            </Space>
           </Space>
           <Typography.Text style={{ fontSize: "12px" }}>
             {episode.overview}
@@ -169,14 +203,11 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
     </Card>
   );
 
-  return episode.voteAverage > 0 ? (
+  return episode.asset ? (
     <Badge.Ribbon
-      color={getProgressColor(episode.voteAverage * 10)}
-      text={
-        <Space direction={"horizontal"} size={4}>
-          {episode.voteAverage.toFixed(1)} / 10 <StarFilled />
-        </Space>
-      }
+      color={"#478133"}
+      style={{ fontSize: "12px" }}
+      text={<CheckCircleFilled />}
     >
       {cardContent}
     </Badge.Ribbon>

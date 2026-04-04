@@ -122,7 +122,7 @@ const TvSeriesListItem: React.FunctionComponent<TvSeriesListItemProps> = ({
   );
 
   // TODO: Replace with property when available
-  if (true) {
+  if (!true) {
     listItem = (
       <Badge.Ribbon
         color={"#478133"}

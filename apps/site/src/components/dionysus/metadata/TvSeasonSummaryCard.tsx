@@ -3,7 +3,7 @@ import type {
   SparseSeason,
   MediaAssetSearchConfiguration,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Badge, Card, Image, Space, Typography } from "antd";
+import { Badge, Card, Image, Progress, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -89,22 +89,26 @@ const TvSeasonSummaryCard: React.FunctionComponent<
           alignItems: "start",
           justifyContent: "space-between",
         }}
+        styles={{ item: { width: "100%" } }}
       >
         <Space
+          className={"season-card-fix"}
           direction={"horizontal"}
           size={16}
-          style={{ alignItems: "start", display: "flex" }}
+          style={{ alignItems: "start", display: "flex", width: "100%" }}
         >
           <Link
             href={`/dionysus/tv/series/${seriesId}/season/${season.seasonNumber}`}
           >
             {coverImage}
           </Link>
-          <Space direction={"vertical"} style={{ padding: 16 }}>
+          <Space direction={"vertical"} style={{ padding: 16, width: "100%" }}>
             <Space
+              className={"season-card-fix"}
               direction={"horizontal"}
               style={{
                 alignItems: "start",
+                width: "100%",
               }}
               size={16}
             >
@@ -122,32 +126,69 @@ const TvSeasonSummaryCard: React.FunctionComponent<
                   }
                 }}
               />
-              <Space direction={"vertical"} size={0}>
+              <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
                 <Space
                   direction={"horizontal"}
                   size={8}
-                  style={{ alignItems: "center" }}
+                  style={{
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                  }}
                 >
-                  <Link
-                    href={`/dionysus/tv/series/${seriesId}/season/${season.seasonNumber}`}
+                  <Space direction={"vertical"} size={0}>
+                    <Link
+                      href={`/dionysus/tv/series/${seriesId}/season/${season.seasonNumber}`}
+                    >
+                      <Typography.Title level={5} style={{ marginBottom: 0 }}>
+                        {season.name}
+                      </Typography.Title>
+                    </Link>
+                    <Typography.Text
+                      style={{ color: "#666666", fontSize: "12px" }}
+                    >
+                      {season.episodeCount} episodes
+                    </Typography.Text>
+                  </Space>
+                  <Space
+                    direction={"vertical"}
+                    size={0}
+                    style={{ alignItems: "end" }}
                   >
-                    <Typography.Title level={5} style={{ marginBottom: 0 }}>
-                      {season.name}
-                    </Typography.Title>
-                  </Link>
-                  <Typography.Text
-                    style={{ color: "#666666", fontSize: "12px" }}
-                  >
-                    ({season.episodeCount} episodes)
-                  </Typography.Text>
+                    <Description
+                      title={"Air Date:"}
+                      titleFontSize={"12px"}
+                      value={airDate}
+                      direction={"horizontal"}
+                      style={{ marginTop: 2 }}
+                    />
+                    {season.voteAverage > 0 && (
+                      <Space
+                        direction={"horizontal"}
+                        size={8}
+                        style={{ alignItems: "center" }}
+                      >
+                        <Typography.Text
+                          style={{
+                            fontSize: "12px",
+                            color: "#666666",
+                            lineHeight: "12px",
+                          }}
+                        >
+                          {season.voteAverage.toFixed(1)} / 10 <StarFilled />
+                        </Typography.Text>
+                        <Progress
+                          type={"circle"}
+                          size={16}
+                          percent={season.voteAverage * 10}
+                          strokeColor={getProgressColor(
+                            season.voteAverage * 10,
+                          )}
+                        />
+                      </Space>
+                    )}
+                  </Space>
                 </Space>
-                <Description
-                  title={"Air Date:"}
-                  titleFontSize={"12px"}
-                  value={airDate}
-                  direction={"horizontal"}
-                  style={{ marginTop: 2 }}
-                />
               </Space>
             </Space>
             <Typography.Text style={{ fontSize: "12px" }}>
@@ -159,19 +200,6 @@ const TvSeasonSummaryCard: React.FunctionComponent<
     </Card>
   );
 
-  return season.voteAverage > 0 ? (
-    <Badge.Ribbon
-      color={getProgressColor(season.voteAverage * 10)}
-      text={
-        <Space direction={"horizontal"} size={4}>
-          {season.voteAverage.toFixed(1)} / 10 <StarFilled />
-        </Space>
-      }
-    >
-      {cardContent}
-    </Badge.Ribbon>
-  ) : (
-    cardContent
-  );
+  return cardContent;
 };
 export default TvSeasonSummaryCard;

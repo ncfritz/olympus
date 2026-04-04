@@ -119,8 +119,7 @@ const MovieListItem: React.FunctionComponent<MovieListItemProps> = ({
     </Link>
   );
 
-  // TODO: Replace with property when available
-  if (true) {
+  if (item.asset) {
     listItem = (
       <Badge.Ribbon
         color={"#478133"}
