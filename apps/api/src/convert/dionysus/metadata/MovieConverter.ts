@@ -28,6 +28,7 @@ import {
   toTypedImageDomainObject,
   toVideoDomainObject,
 } from "./common";
+import { toDomainObject as toAssetDomainObject } from "../media/MediaAssetConverter";
 import { toDomainObject as toSearchConfigurationDomainObject } from "../media/MediaAssetSearchConfigurationConverter";
 import {
   toDomainObject as toCountryDomainObject,
@@ -191,6 +192,7 @@ export const toSparseDomainObject = (
     searchConfiguration: input.searchConfiguration
       ? toSearchConfigurationDomainObject(input.searchConfiguration)
       : undefined,
+    asset: input.asset ? toAssetDomainObject(input.asset) : undefined,
   };
 };
 

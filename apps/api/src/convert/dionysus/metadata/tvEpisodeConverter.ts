@@ -14,6 +14,7 @@ import {
   GraphQlTvEpisodeCastMember,
   GraphQlTvEpisodeCrewMember,
 } from "../../../types/dionysus/metadata/tvEpisode";
+import { toDomainObject as toAssetDomainObject } from "../media/MediaAssetConverter";
 import { toDomainObject as toSearchConfigurationDomainObject } from "../media/MediaAssetSearchConfigurationConverter";
 import {
   toExternalIdDomainObject,
@@ -44,6 +45,7 @@ export const toSparseDomainObject = (
     searchConfiguration: input.searchConfiguration
       ? toSearchConfigurationDomainObject(input.searchConfiguration)
       : undefined,
+    asset: input.asset ? toAssetDomainObject(input.asset) : undefined,
   };
 };
 

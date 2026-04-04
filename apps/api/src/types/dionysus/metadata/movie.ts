@@ -1,3 +1,4 @@
+import { GraphQlMediaAsset } from "../media/mediaAsset";
 import { GraphQlMediaAssetSearchConfiguration } from "../media/searchConfiguration";
 import { GraphQlVideo, Timestamped } from "../metadata";
 import {
@@ -38,6 +39,7 @@ export type GraphQlSparseMovie = {
   voteAverage: number;
   originalLanguage: GraphQlLanguage;
   searchConfiguration: GraphQlMediaAssetSearchConfiguration;
+  asset?: GraphQlMediaAsset;
 };
 
 export type GraphQlMovie = GraphQlSparseMovie & {

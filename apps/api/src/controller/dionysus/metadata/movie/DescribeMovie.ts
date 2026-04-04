@@ -15,6 +15,7 @@ import {
 } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
+import { MEDIA_ASSET } from "../../../../query/dionysus/media/mediaAsset";
 import { GraphQlMovie } from "../../../../types/dionysus/metadata/movie";
 import { toDomainObject } from "../../../../convert/dionysus/metadata/MovieConverter";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
@@ -236,6 +237,7 @@ export class DescribeMovieController {
             name
             nativeName
           }
+          ${MEDIA_ASSET}
         }
       }
     `;

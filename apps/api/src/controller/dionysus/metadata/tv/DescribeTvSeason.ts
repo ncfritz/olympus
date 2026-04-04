@@ -16,6 +16,7 @@ import {
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/metadata/tvSeasonConverter";
+import { MEDIA_ASSET } from "../../../../query/dionysus/media/mediaAsset";
 import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
 import { GraphQlTvSeason } from "../../../../types/dionysus/metadata/tvSeason";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
@@ -141,6 +142,7 @@ export class DescribeTvSeasonController {
             voteCount
             voteAverage
             ${SEARCH_CONFIGURATION}
+            ${MEDIA_ASSET}
           }
           series {
             adult

@@ -16,6 +16,7 @@ import {
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/metadata/tvEpisodeConverter";
+import { MEDIA_ASSET } from "../../../../query/dionysus/media/mediaAsset";
 import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
 import { GraphQlTvEpisode } from "../../../../types/dionysus/metadata/tvEpisode";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
@@ -158,6 +159,7 @@ export class DescribeTvEpisodeController {
             tagline
             type
           }
+          ${MEDIA_ASSET}
           season {
             airDate
             createdTime

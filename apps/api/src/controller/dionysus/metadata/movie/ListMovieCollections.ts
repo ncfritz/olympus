@@ -12,6 +12,7 @@ import {
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/metadata/CollectionConverter";
+import { MEDIA_ASSET } from "../../../../query/dionysus/media/mediaAsset";
 import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
 import {
   GraphQlCollection,
@@ -108,6 +109,7 @@ export class ListMovieCollectionsController {
                   title
                   video
                   ${SEARCH_CONFIGURATION}
+                  ${MEDIA_ASSET}
                 }
               }
             }

@@ -8,6 +8,7 @@ import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toSparseDomainObject as toDomainObject } from "../../../../convert/dionysus/metadata/MovieConverter";
+import { MEDIA_ASSET } from "../../../../query/dionysus/media/mediaAsset";
 import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
 import { GraphQlSparseMovie } from "../../../../types/dionysus/metadata/movie";
 import {
@@ -69,7 +70,7 @@ export class ListMoviesController {
     });
 
     const fetchRequest = gql`
-      query ListBatchJobs {
+      query ListMovies {
         dionysus_movies(${[paginationExpression, whereExpression].join(", ")}) {
           id
           adult
@@ -90,14 +91,19 @@ export class ListMoviesController {
           title
           video
           ${SEARCH_CONFIGURATION}
+          ${MEDIA_ASSET}
         }
-        dionysus_movies_aggregate${whereExpression ? `(${whereExpression})` : ""} {
+        dionysus_movies_aggregate${
+          whereExpression ? `(${whereExpression})` : ""
+        } {
           aggregate {
             count
           }
         }
       }
     `;
+
+    console.log(fetchRequest);
 
     const fetchResponse =
       await this.graphQLClient.request<GraphQlListMoviesResponse>(fetchRequest);
