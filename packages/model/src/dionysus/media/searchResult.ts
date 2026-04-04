@@ -2,12 +2,70 @@ import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment";
 import { PaginatedResults } from "../../common";
+import { MediaAssetDownload } from "./mediaDownload";
 import { MediaAssetSearchType } from "./searchConfiguration";
 
 export enum PasswordType {
   NONE = 0,
   RAR_PASS = 1,
   INNER_ARCHIVE = 2,
+}
+
+export enum SearchResultStatus {
+  NONE = "none",
+  DOWNLOAD_REQUESTED = "download_requested",
+  DOWNLOADING = "downloading",
+  DOWNLOADED = "downloaded",
+  DOWNLOAD_FAILED = "download_failed",
+  BLOCKED = "blocked",
+}
+
+export enum SearchResultTagType {
+  AUDIO_CHANNEL = "audioChannel",
+  AUDIO_FORMAT = "audioFormat",
+  HDR = "hdr",
+  MOVIE_VERSION = "movieVersion",
+  UNWANTED = "unwanted",
+  STREAMING_SERVICES = "streamingServices",
+  RELEASE_GROUPS = "releaseGroups",
+  MISC = "misc",
+  RESOLUTION = "resolution",
+  VIDEO_CODEC = "videoCodec",
+}
+
+export class BaseSearchResultTag {
+  @ApiProperty({
+    enum: () => SearchResultTagType,
+    enumName: "SearchResultTagType",
+    required: true,
+    description: "The type of the tag",
+  })
+  type: SearchResultTagType;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The tag value",
+  })
+  value: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The score of the tag",
+  })
+  score: number;
+}
+
+export class SearchResultTag extends BaseSearchResultTag {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the search result tag was created",
+  })
+  @Transform(({ value }) => value.toISOString())
+  createdTime: Moment;
 }
 
 export class BaseMediaAssetSearchResult {
@@ -18,6 +76,21 @@ export class BaseMediaAssetSearchResult {
       "The GUID of the search result.  This should be a pure GUID and not one encoded as a URL.",
   })
   id: string;
+
+  @ApiProperty({
+    enum: () => SearchResultStatus,
+    enumName: "SearchResultStatus",
+    required: true,
+    description: "The status of the search result",
+  })
+  status: SearchResultStatus;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The overall score of the search result.",
+  })
+  score: number;
 
   @ApiProperty({
     type: String,
@@ -58,7 +131,7 @@ export class BaseMediaAssetSearchResult {
   @ApiProperty({
     type: Number,
     required: true,
-    description: "The resolution of the resuhlt.",
+    description: "The resolution of the result.",
   })
   resolution: number;
 
@@ -102,11 +175,27 @@ export class BaseMediaAssetSearchResult {
   createdTime: Moment;
 }
 
-export class MediaAssetSearchResult extends BaseMediaAssetSearchResult {}
+export class MediaAssetSearchResult extends BaseMediaAssetSearchResult {
+  @ApiProperty({
+    type: () => MediaAssetDownload,
+    required: true,
+    isArray: true,
+    description: "The set of downloads associated with the search result",
+  })
+  downloads: MediaAssetDownload[];
+
+  @ApiProperty({
+    type: () => SearchResultTag,
+    required: true,
+    isArray: true,
+    description: "The tags associated with the search result",
+  })
+  tags: SearchResultTag[];
+}
 
 export class PartialMediaAssetSearchResult extends OmitType(
   MediaAssetSearchResult,
-  ["createdTime"],
+  ["createdTime", "tags", "downloads"],
 ) {
   @ApiProperty({
     enum: () => MediaAssetSearchType,
@@ -124,6 +213,14 @@ export class PartialMediaAssetSearchResult extends OmitType(
       "and should not include the season or episode IDs if requesting a TV Season or TV Episode.",
   })
   mediaId: number;
+
+  @ApiProperty({
+    type: () => BaseSearchResultTag,
+    required: false,
+    isArray: true,
+    description: "The tags associated with the search result",
+  })
+  tags?: BaseSearchResultTag[];
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -136,6 +233,16 @@ export class CreateMediaAssetSearchResultRequest {
     description: "The media asset search result to create",
   })
   searchResult: PartialMediaAssetSearchResult;
+}
+
+export class UpdateMediaAssetSearchResultStatusRequest {
+  @ApiProperty({
+    type: () => SearchResultStatus,
+    enumName: "SearchResultStatus",
+    required: true,
+    description: "The status to set the search result to",
+  })
+  searchResult: SearchResultStatus;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */
