@@ -83,7 +83,8 @@ export class TriggerMediaAssetSearchController extends BaseMediaAssetSearchConfi
   async handle(
     @Param("mediaType") mediaType: MediaAssetSearchType,
     @Param("mediaId") mediaId: number,
-    @Res() response: Response,
+    @Res()
+    response: Response,
   ): Promise<void> {
     const fetchedSearchConfiguration =
       await this.fetchMediaAssetSearchConfiguration(mediaType, mediaId);
@@ -142,12 +143,22 @@ export class TriggerMediaAssetSearchController extends BaseMediaAssetSearchConfi
       },
     };
 
-    if (updatedSearchConfiguration.type == MediaAssetSearchType.TV_SEASON) {
+    if (updatedSearchConfiguration.type === MediaAssetSearchType.TV_SEASON) {
       msg.initiatingAsset = {
         assetType: mediaType,
         mediaId: mediaId,
         seriesId: updatedSearchConfiguration.seriesId,
         seasonNumber: updatedSearchConfiguration.seasonNumber,
+      };
+    } else if (
+      updatedSearchConfiguration.type === MediaAssetSearchType.TV_EPISODE
+    ) {
+      msg.initiatingAsset = {
+        assetType: mediaType,
+        mediaId: mediaId,
+        seriesId: updatedSearchConfiguration.seriesId,
+        seasonNumber: updatedSearchConfiguration.seasonNumber,
+        episodeNumber: updatedSearchConfiguration.episodeNumber,
       };
     }
 
