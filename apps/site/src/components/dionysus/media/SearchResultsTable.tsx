@@ -1,4 +1,14 @@
-import { DownloadOutlined } from "@ant-design/icons";
+import {
+  CheckCircleFilled,
+  ClockCircleFilled,
+  CloseCircleFilled,
+  DownloadOutlined,
+  LoadingOutlined,
+  ReloadOutlined,
+  StopFilled,
+  TagFilled,
+  TagOutlined,
+} from "@ant-design/icons";
 import type {
   Country,
   FilterDefinition,
@@ -7,8 +17,11 @@ import type {
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Button,
+  Col,
   ConfigProvider,
   Empty,
+  Progress,
+  Row,
   Space,
   Table,
   type TableProps,
@@ -17,7 +30,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import { DateTime } from "luxon";
 import prettyBytes from "pretty-bytes";
-import React, { useState } from "react";
+import React, { type ReactNode, useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import mediaApi from "../../../api/mediaApi";
 import { useFetch } from "../../../hooks/useFetch";
@@ -25,13 +38,15 @@ import { buildFilterDefinitionForTable } from "../../../utils/filters";
 import { getGradientAtPercent } from "../../../utils/gradient";
 import ErrorBlock from "../../common/ErrorBlock";
 import Timestamp from "../../data/Timestamp";
+import SearchResultMetaTag from "./SearchResultMetaTag";
 import SearchResultTag from "./SearchResultTag";
 import {
-  getGroupColor, getGroupTag,
+  getGroupColor,
+  getGroupTag,
   getModifier,
   getResolutionTag,
   getResolutionTransparency,
-  getSource
+  getSource,
 } from "./utils";
 
 type OnChange = NonNullable<TableProps<Country>["onChange"]>;
@@ -55,10 +70,12 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
     FilterDefinition | undefined
   >(undefined);
 
-  const [searchResults, searchResultsLoading, searchResultsError] = useFetch<
-    undefined,
-    MediaAssetSearchResult[]
-  >({
+  const [
+    searchResults,
+    searchResultsLoading,
+    searchResultsError,
+    fetchSearchResults,
+  ] = useFetch<undefined, MediaAssetSearchResult[]>({
     dataType: "search results",
     watch: [
       searchConfiguration,
@@ -81,13 +98,19 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
     },
   });
 
-  const handleStartDownload = async (id: string) => {};
+  const handleStartDownload = async (id: string) => {
+    const response = await mediaApi.createMediaAssetDownload(
+      searchConfiguration.type,
+      searchConfiguration.mediaId,
+      id,
+    );
+  };
 
   const now = DateTime.now();
 
   const columns: ColumnsType<MediaAssetSearchResult> = [
     {
-      key: "id",
+      key: "title",
       title: "Title",
       dataIndex: "title",
       render: (value, record) => {
@@ -109,6 +132,23 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
         );
       },
       sorter: true,
+      ellipsis: true,
+    },
+    {
+      key: "score",
+      title: "Score",
+      dataIndex: "score",
+      render: (value) => {
+        return (
+          <Typography.Text
+            style={{ fontFamily: "monospace", fontSize: "11px" }}
+          >
+            {value}
+          </Typography.Text>
+        );
+      },
+      sorter: true,
+      width: 80,
     },
     {
       key: "qualityGroup",
@@ -349,9 +389,45 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
     },
     {
       key: "id",
-      title: "",
       dataIndex: "id",
-      render: (value) => {
+      title: (
+        <Button
+          icon={
+            <ReloadOutlined
+              onClick={async () => {
+                await fetchSearchResults(true);
+              }}
+            />
+          }
+          type={"text"}
+          size={"small"}
+        />
+      ),
+      render: (value, record) => {
+        let disabled = false;
+        let icon = <DownloadOutlined />;
+
+        switch (record.status) {
+          case "downloading":
+            icon = <LoadingOutlined style={{ color: "#183650" }} />;
+            disabled = true;
+            break;
+          case "downloaded":
+            icon = <CheckCircleFilled style={{ color: "#275916" }} />;
+            break;
+          case "download_failed":
+            icon = <CloseCircleFilled style={{ color: "#7d0000" }} />;
+            break;
+          case "download_requested":
+            icon = <ClockCircleFilled style={{ color: "#183650" }} />;
+            disabled = true;
+            break;
+          case "blocked":
+            icon = <StopFilled style={{ color: "#7d0000" }} />;
+            disabled = true;
+            break;
+        }
+
         return (
           <Space
             direction={"horizontal"}
@@ -364,7 +440,8 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
           >
             <Button
               size={"small"}
-              icon={<DownloadOutlined />}
+              icon={icon}
+              disabled={disabled}
               type={"text"}
               onClick={async () => {
                 await handleStartDownload(value);
@@ -430,6 +507,208 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
               setSearchResultsFilters(buildFilterDefinitionForTable(filters));
               break;
           }
+        }}
+        expandable={{
+          expandIcon: ({ expanded, onExpand, record }) =>
+            expanded ? (
+              <TagFilled onClick={(e) => onExpand(record, e)} />
+            ) : (
+              <TagOutlined onClick={(e) => onExpand(record, e)} />
+            ),
+          expandedRowRender: (record) => {
+            const tags: Record<string, ReactNode[]> = {};
+
+            record.tags.forEach((tag) => {
+              if (!(tag.type in tags)) {
+                tags[tag.type] = [];
+              }
+
+              tags[tag.type].push(<SearchResultMetaTag tag={tag} />);
+            });
+
+            let downloadContent: ReactNode = undefined;
+
+            if (record.downloads?.length > 0) {
+              downloadContent = (
+                <Space
+                  size={0}
+                  direction={"vertical"}
+                  style={{ width: "100%" }}
+                >
+                  <Typography.Text strong={true}>Downloads:</Typography.Text>
+                  <Row
+                    style={{ borderBottom: "1px solid #efefef", marginTop: 4 }}
+                  >
+                    <Col span={5}>
+                      <Typography.Text
+                        style={{ fontSize: "12px" }}
+                        strong={true}
+                      >
+                        ID:
+                      </Typography.Text>
+                    </Col>
+                    <Col span={2}>
+                      <Typography.Text
+                        style={{ fontSize: "12px" }}
+                        strong={true}
+                      >
+                        Status:
+                      </Typography.Text>
+                    </Col>
+                    <Col span={3}>
+                      <Typography.Text
+                        style={{ fontSize: "12px" }}
+                        strong={true}
+                      >
+                        Created:
+                      </Typography.Text>
+                    </Col>
+                    <Col span={3}>
+                      <Typography.Text
+                        style={{ fontSize: "12px" }}
+                        strong={true}
+                      >
+                        Updated:
+                      </Typography.Text>
+                    </Col>
+                    <Col span={3}>
+                      <Typography.Text
+                        style={{ fontSize: "12px" }}
+                        strong={true}
+                      >
+                        Started:
+                      </Typography.Text>
+                    </Col>
+                    <Col span={3}>
+                      <Typography.Text
+                        style={{ fontSize: "12px" }}
+                        strong={true}
+                      >
+                        Finished:
+                      </Typography.Text>
+                    </Col>
+                    <Col span={5}>
+                      <Typography.Text
+                        style={{ fontSize: "12px" }}
+                        strong={true}
+                      >
+                        Progress:
+                      </Typography.Text>
+                    </Col>
+                  </Row>
+                  {record.downloads.map((download) => {
+                    let color = "#666666";
+
+                    switch (download.status) {
+                      case "downloading":
+                        color = "#023c53";
+                        break;
+                      case "pending":
+                        color = "#833683";
+                        break;
+                      case "success":
+                        color = "#275916";
+                        break;
+                      case "failed":
+                        color = "#7d0000";
+                        break;
+                      case "cancelled":
+                        color = "#c5981c";
+                        break;
+                    }
+
+                    return (
+                      <Row gutter={8}>
+                        <Col span={5}>
+                          <Typography.Text
+                            style={{
+                              fontFamily: "monospace",
+                              fontSize: "12px",
+                            }}
+                          >
+                            {download.id}
+                          </Typography.Text>
+                        </Col>
+                        <Col span={2}>
+                          <SearchResultTag
+                            color={color}
+                            monospace={true}
+                            style={{ maxWidth: 110 }}
+                          >
+                            {download.status}
+                          </SearchResultTag>
+                        </Col>
+                        <Col span={3}>
+                          <Timestamp
+                            value={download.createdTime}
+                            showTime={true}
+                          />
+                        </Col>
+                        <Col span={3}>
+                          <Timestamp
+                            value={download.lastUpdatedTime}
+                            showTime={true}
+                          />
+                        </Col>
+                        <Col span={3}>
+                          <Timestamp
+                            value={download.startedTime}
+                            showTime={true}
+                          />
+                        </Col>
+                        <Col span={3}>
+                          <Timestamp
+                            value={download.finishedTime}
+                            showTime={true}
+                          />
+                        </Col>
+                        <Col span={5}>
+                          <Progress
+                            percent={download.progress}
+                            status={
+                              download.status === "success"
+                                ? "success"
+                                : "normal"
+                            }
+                            format={(value) => `${value?.toFixed(2)}%`}
+                          />
+                        </Col>
+                      </Row>
+                    );
+                  })}
+                </Space>
+              );
+            }
+
+            return (
+              <Space
+                size={16}
+                direction={"vertical"}
+                style={{ paddingLeft: 48, width: "100%" }}
+              >
+                <Space size={2} direction={"vertical"}>
+                  <Typography.Text strong={true}>Tags:</Typography.Text>
+                  <Space
+                    direction={"horizontal"}
+                    size={8}
+                    style={{
+                      display: "flex",
+                      alignItems: "start",
+                    }}
+                  >
+                    {Object.entries(tags).map((value) => {
+                      return (
+                        <Space direction={"vertical"} size={4}>
+                          {value[1]}
+                        </Space>
+                      );
+                    })}
+                  </Space>
+                </Space>
+                {downloadContent}
+              </Space>
+            );
+          },
         }}
       />
     </ConfigProvider>
