@@ -1,17 +1,19 @@
 import { Space } from "antd";
-import React, { type ReactNode } from "react";
+import React, { type CSSProperties, type ReactNode } from "react";
 
 export interface SearchResultTagProps {
   color?: string;
   textColor?: string;
   monospace?: boolean;
   children: ReactNode | ReactNode[];
+  style?: CSSProperties;
 }
 
 const SearchResultTag: React.FunctionComponent<SearchResultTagProps> = ({
   color = "#666666",
   textColor = "#ffffff",
   monospace = false,
+  style,
   children,
 }: SearchResultTagProps) => {
   return (
@@ -26,6 +28,7 @@ const SearchResultTag: React.FunctionComponent<SearchResultTagProps> = ({
         color: textColor ? textColor : "inherit",
         backgroundColor: color,
         borderRadius: 4,
+        ...style,
       }}
     >
       {children}

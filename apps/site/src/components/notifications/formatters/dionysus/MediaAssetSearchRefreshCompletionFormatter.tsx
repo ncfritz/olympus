@@ -15,7 +15,9 @@ export class MediaAssetSearchRefreshCompletionFormatter implements NotificationF
 
     const message = (
       <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
-        <Typography.Text>A search configuration has succesfully refreshed</Typography.Text>
+        <Typography.Text>
+          A search configuration has succesfully refreshed
+        </Typography.Text>
       </Space>
     );
 

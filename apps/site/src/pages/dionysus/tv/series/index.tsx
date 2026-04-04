@@ -5,7 +5,18 @@ import type {
   FilterDefinition,
   GetTvSeriesAggregateStatisticsResponse,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Affix, Col, Input, Layout, Row, Space, Statistic, Switch, Tag, Typography } from "antd";
+import {
+  Affix,
+  Col,
+  Input,
+  Layout,
+  Row,
+  Space,
+  Statistic,
+  Switch,
+  Tag,
+  Typography,
+} from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
@@ -379,8 +390,9 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
               tvSeries={tvSeries}
               loading={tvSeriesLoading}
               afterSearchUpdate={async () => {
-              await fetchTvSeries(true);
-            }} />
+                await fetchTvSeries(true);
+              }}
+            />
           </Space>
         </Content>
       </Layout>

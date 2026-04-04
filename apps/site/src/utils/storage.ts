@@ -5,7 +5,7 @@ export const loadFromLocalStorage = <T>(key: string, defaultValue: T): T => {
     if (value) {
       return JSON.parse(value);
     }
-  } catch(e) {
+  } catch (e) {
     console.error(`Unable to load key ${key} from localStorage`);
   }
 

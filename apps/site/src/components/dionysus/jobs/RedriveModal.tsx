@@ -250,7 +250,7 @@ const RedriveModal: React.FunctionComponent<RedriveModalProps> = ({
                     <Typography.Text style={StatisticStyle}>
                       {statistics.status.series.cancelled[
                         index
-                        ].toLocaleString()}
+                      ].toLocaleString()}
                     </Typography.Text>
                   </td>
                   <td

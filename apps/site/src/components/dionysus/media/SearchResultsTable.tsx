@@ -99,7 +99,7 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
   });
 
   const handleStartDownload = async (id: string) => {
-    const response = await mediaApi.createMediaAssetDownload(
+    await mediaApi.createMediaAssetDownload(
       searchConfiguration.type,
       searchConfiguration.mediaId,
       id,

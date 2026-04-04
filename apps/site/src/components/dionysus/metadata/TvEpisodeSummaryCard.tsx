@@ -1,4 +1,8 @@
-import { CheckCircleFilled, FileImageOutlined, StarFilled } from "@ant-design/icons";
+import {
+  CheckCircleFilled,
+  FileImageOutlined,
+  StarFilled,
+} from "@ant-design/icons";
 import type {
   MediaAssetSearchConfiguration,
   SparseEpisode,
