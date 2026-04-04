@@ -81,6 +81,7 @@ export class CreateMediaAssetSearchResultController extends BaseMediaAssetSearch
         $assetType: String!
         $mediaId: numeric!
         $title: String!
+        $score: numeric!
         $size: numeric!
         $password: numeric!
         $quality: String!
@@ -90,6 +91,7 @@ export class CreateMediaAssetSearchResultController extends BaseMediaAssetSearch
         $resolution: numeric!
         $repack: Boolean!
         $postedTime: timestamptz!
+        $tags: [dionysus_media_asset_search_result_tag_insert_input!]!
       ) {
         insert_dionysus_media_asset_search_result_one(
           object: {
@@ -97,6 +99,7 @@ export class CreateMediaAssetSearchResultController extends BaseMediaAssetSearch
             assetType: $assetType
             mediaId: $mediaId
             title: $title
+            score: $score
             size: $size
             password: $password
             quality: $quality
@@ -106,6 +109,9 @@ export class CreateMediaAssetSearchResultController extends BaseMediaAssetSearch
             resolution: $resolution
             repack: $repack
             postedTime: $postedTime
+            tags: {
+              data: $tags
+            }
           }
         ) {
           ${BASE_SEARCH_RESULT}
@@ -113,14 +119,13 @@ export class CreateMediaAssetSearchResultController extends BaseMediaAssetSearch
       }
     `;
 
-    console.log(request.searchResult);
-
     const insertResponse =
       await this.graphQLClient.request<GraphQlCreateMediaAssetSearchResultResponse>(
         insertRequest,
         {
           id: request.searchResult.id,
           title: request.searchResult.title,
+          score: request.searchResult.score,
           assetType: mediaType,
           mediaId: mediaId,
           size: request.searchResult.size,
@@ -132,6 +137,7 @@ export class CreateMediaAssetSearchResultController extends BaseMediaAssetSearch
           resolution: request.searchResult.resolution,
           repack: request.searchResult.repack,
           postedTime: request.searchResult.postedTime,
+          tags: request.searchResult.tags || [],
         },
       );
 

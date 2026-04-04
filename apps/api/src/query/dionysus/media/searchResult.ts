@@ -1,8 +1,17 @@
+import { BASE_MEDIA_DOWNLOAD } from "./mediaDownload";
+
+export const BASE_SEARCH_RESULT_TAG = `type
+  value
+  score
+  createdTime`;
+
 export const BASE_SEARCH_RESULT = `assetType
   id
   assetType
   mediaId
   title
+  status
+  score
   size
   password
   quality
@@ -12,4 +21,10 @@ export const BASE_SEARCH_RESULT = `assetType
   resolution
   repack
   postedTime
-  createdTime`;
+  createdTime
+  tags {
+    ${BASE_SEARCH_RESULT_TAG}
+  }
+  downloads {
+    ${BASE_MEDIA_DOWNLOAD}
+  }`;
