@@ -1,15 +1,19 @@
 import {
   type BaseMediaAssetSearchConfiguration,
   client,
+  createMediaAssetDownload,
   createMediaAssetSearchConfiguration,
-  describeMediaAssetSearchConfiguration, type FilterDefinition, listMediaAssetSearchExecutions,
+  describeMediaAssetSearchConfiguration,
+  type FilterDefinition,
+  listMediaAssetSearchExecutions,
   listMediaAssetSearchResults,
   type MediaAssetSearchType,
-  type PartialMediaAssetSearchConfiguration, triggerMediaAssetSearch,
+  type PartialMediaAssetSearchConfiguration,
+  triggerMediaAssetSearch,
   updateMediaAssetSearchConfiguration,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { ApiBase } from "./apiBase";
-import type {SortOptions} from "./common";
+import type { SortOptions } from "./common";
 
 class MediaApi extends ApiBase {
   constructor() {
@@ -27,6 +31,20 @@ class MediaApi extends ApiBase {
     return await createMediaAssetSearchConfiguration({
       body: {
         searchConfiguration: searchConfiguration,
+      },
+    });
+  }
+
+  async createMediaAssetDownload(
+    mediaType: MediaAssetSearchType,
+    mediaId: number,
+    searchResultId: string,
+  ) {
+    return await createMediaAssetDownload({
+      path: {
+        mediaType: mediaType,
+        mediaId: mediaId,
+        resultId: searchResultId,
       },
     });
   }
