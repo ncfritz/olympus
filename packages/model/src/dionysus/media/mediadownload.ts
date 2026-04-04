@@ -1,0 +1,179 @@
+import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
+import { Moment } from "moment/moment";
+import { PaginatedResults } from "../../common";
+import { SearchResultStatus } from "./searchResult";
+
+export enum MediaDownloadStatus {
+  PENDING = "pending",
+  DOWNLOADING = "downloading",
+  SUCCESS = "success",
+  FAILED = "failed",
+  CANCELLED = "cancelled",
+}
+
+export class MediaAssetDownload {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The GUID of the download.",
+  })
+  id: string;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "The Id of the download assigned by NZBGet.",
+  })
+  nzbId?: number;
+
+  @ApiProperty({
+    enum: () => MediaDownloadStatus,
+    enumName: "MediaDownloadStatus",
+    required: true,
+    description: "The status of the download",
+  })
+  status: MediaDownloadStatus;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The progress percent of the download",
+  })
+  progress: number;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "An ISO-8601 formatted string indicating when the download started",
+  })
+  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  startedTime?: Moment;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "An ISO-8601 formatted string indicating when the download finished",
+  })
+  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  finishedTime?: Moment;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the download was created",
+  })
+  @Transform(({ value }) => value.toISOString())
+  createdTime: Moment;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the download was last updated",
+  })
+  @Transform(({ value }) => value.toISOString())
+  lastUpdatedTime: Moment;
+}
+
+export class PartialMediaAssetDownload extends PartialType(
+  OmitType(MediaAssetDownload, ["createdTime", "lastUpdatedTime", "id"]),
+) {}
+
+export class MediaAssetDownloadStatusUpdate {
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "The Id of the download assigned by NZBGet.",
+  })
+  nzbId?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The progress percent of the download",
+  })
+  progress: number;
+
+  @ApiProperty({
+    enum: () => MediaDownloadStatus,
+    enumName: "MediaDownloadStatus",
+    required: true,
+    description: "The status of the download",
+  })
+  status: MediaDownloadStatus;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* Request Shapes                                                                                                     */
+/* ------------------------------------------------------------------------------------------------------------------ */
+export class UpdateMediaAssetDownloadRequest {
+  @ApiProperty({
+    type: () => PartialMediaAssetDownload,
+    required: true,
+    description: "The media asset download updates to make",
+  })
+  download: PartialMediaAssetDownload;
+}
+
+export class UpdateMediaAssetDownloadByNzbIdRequest {
+  @ApiProperty({
+    type: () => PartialMediaAssetDownload,
+    required: true,
+    description: "The media asset download updates to make",
+  })
+  download: PartialMediaAssetDownload;
+
+  @ApiProperty({
+    enum: () => SearchResultStatus,
+    enumName: "SearchResultStatus",
+    required: true,
+    description: "The status of the download",
+  })
+  searchResultStatus: SearchResultStatus;
+}
+
+export class BulkUpdateMediaAssetDownloadStatusRequest {
+  @ApiProperty({
+    type: () => MediaAssetDownloadStatusUpdate,
+    required: true,
+    isArray: true,
+    description: "The set of download status updates to make",
+  })
+  updates: MediaAssetDownloadStatusUpdate[];
+}
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* Response Shapes                                                                                                    */
+/* ------------------------------------------------------------------------------------------------------------------ */
+export class SingleMediaAssetDownloadResponse {
+  @ApiProperty({
+    type: () => MediaAssetDownload,
+    required: true,
+    description: "A download that has been created, updated, or queried",
+  })
+  download: MediaAssetDownload;
+}
+
+export class BulkUpdateMediaAssetDownloadsResponse {
+  @ApiProperty({
+    type: () => MediaAssetDownload,
+    isArray: true,
+    required: true,
+    description: "A download that has been created, updated, or queried",
+  })
+  updates: MediaAssetDownload[];
+}
+
+export class ListMediaAssetDownloadsResponse extends PaginatedResults {
+  @ApiProperty({
+    type: () => MediaAssetDownload,
+    isArray: true,
+    required: true,
+    description: "A download that has been created, updated, or queried",
+  })
+  downloads: MediaAssetDownload[];
+}
