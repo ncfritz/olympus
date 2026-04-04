@@ -1,4 +1,7 @@
 import { Module } from "@nestjs/common";
+import { BulkUpdateMediaAssetDownloadsController } from "../controller/dionysus/media/BulkUpdateMediaAssetDownloads";
+import { CreateMediaAssetController } from "../controller/dionysus/media/CreateMediaAsset";
+import { CreateMediaAssetDownloadController } from "../controller/dionysus/media/CreateMediaAssetDownload";
 import { CreateMediaAssetSearchConfigurationController } from "../controller/dionysus/media/CreateMediaAssetSearchConfiguration";
 import { CreateMediaAssetSearchExecutionController } from "../controller/dionysus/media/CreateMediaAssetSearchExecution";
 import { CreateMediaAssetSearchResultController } from "../controller/dionysus/media/CreateMediaAssetSearchResult";
@@ -9,6 +12,8 @@ import { GetMediaAssetSearchConfigurationsRunningCountController } from "../cont
 import { ListMediaSearchExecutionsController } from "../controller/dionysus/media/ListMediaAssetSearchExecutions";
 import { ListMediaAssetSearchResultsController } from "../controller/dionysus/media/ListMediaAssetSearchResults";
 import { TriggerMediaAssetSearchController } from "../controller/dionysus/media/TriggerMediaAssetSearch";
+import { UpdateMediaAssetDownloadController } from "../controller/dionysus/media/UpdateMediaAssetDownload";
+import { UpdateMediaAssetDownloadByNzbIdController } from "../controller/dionysus/media/UpdateMediaAssetDownloadByNzbId";
 import { UpdateMediaAssetSearchConfigurationController } from "../controller/dionysus/media/UpdateMediaAssetSearchConfiguration";
 import { UpdateMediaAssetSearchExecutionController } from "../controller/dionysus/media/UpdateMediaAssetSearchExecution";
 
@@ -20,9 +25,12 @@ import { RabbitModule } from "./RabbitModule";
   exports: [],
   providers: [],
   controllers: [
+    BulkUpdateMediaAssetDownloadsController,
+    CreateMediaAssetController,
     CreateMediaAssetSearchConfigurationController,
     CreateMediaAssetSearchExecutionController,
     CreateMediaAssetSearchResultController,
+    CreateMediaAssetDownloadController,
     GetMediaAssetSearchConfigurationsRunningCountController,
     DescribeMediaAssetSearchConfigurationController,
     DescribeMediaAssetSearchExecutionController,
@@ -30,6 +38,8 @@ import { RabbitModule } from "./RabbitModule";
     ListMediaSearchExecutionsController,
     ListMediaAssetSearchResultsController,
     TriggerMediaAssetSearchController,
+    UpdateMediaAssetDownloadController,
+    UpdateMediaAssetDownloadByNzbIdController,
     UpdateMediaAssetSearchConfigurationController,
     UpdateMediaAssetSearchExecutionController,
   ],
