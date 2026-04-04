@@ -221,19 +221,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
           },
         ]}
       />
-      <Layout
-        style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 64 + 28,
-          overflowX: "hidden",
-          overflowY: "auto",
-          height: "calc(100vh - 64px)",
-        }}
-      >
-        <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
-      </Layout>
+      {content}
     </>
   );
 };

@@ -176,73 +176,67 @@ const MetadataGenresPage: React.FunctionComponent = () => {
       />
       <Content
         style={{
-          background: "#fff",
+          marginTop: 28,
+          marginBottom: 16,
+          height: "calc(100vh - 118px)",
         }}
       >
-        <Content
-          style={{
-            marginTop: 0,
-            marginBottom: 16,
-            height: "calc(100vh - 118px)",
-          }}
+        <ConfigProvider
+          renderEmpty={() =>
+            genresError ? (
+              <ErrorBlock error={genresError} />
+            ) : (
+              <Empty description="No genres found" />
+            )
+          }
         >
-          <ConfigProvider
-            renderEmpty={() =>
-              genresError ? (
-                <ErrorBlock error={genresError} />
-              ) : (
-                <Empty description="No genres found" />
-              )
-            }
-          >
-            <Table
-              style={{ width: "100%" }}
-              rowKey={(record) => {
-                return `${record.id}-${record.type}`;
-              }}
-              columns={columns}
-              sticky={true}
-              scroll={{ y: "calc(100vh - 197px)" }}
-              dataSource={genres}
-              size={"small"}
-              loading={genresLoading}
-              pagination={{
-                style: {
-                  marginLeft: 16,
-                },
-                position: ["bottomLeft"],
-                pageSize: 50,
-                size: "small",
-                total: genresCount,
-                showSizeChanger: false,
-                showQuickJumper: true,
-                showTotal: (total, range) => {
-                  return `${range[0]} to ${range[1]} of ${total}`;
-                },
-              }}
-              onChange={(pagination, filters, sorter, extra) => {
-                const s = sorter as Sorts;
+          <Table
+            style={{ width: "100%" }}
+            rowKey={(record) => {
+              return `${record.id}-${record.type}`;
+            }}
+            columns={columns}
+            sticky={true}
+            scroll={{ y: "calc(100vh - 197px)" }}
+            dataSource={genres}
+            size={"small"}
+            loading={genresLoading}
+            pagination={{
+              style: {
+                marginLeft: 16,
+              },
+              position: ["bottomLeft"],
+              pageSize: 50,
+              size: "small",
+              total: genresCount,
+              showSizeChanger: false,
+              showQuickJumper: true,
+              showTotal: (total, range) => {
+                return `${range[0]} to ${range[1]} of ${total}`;
+              },
+            }}
+            onChange={(pagination, filters, sorter, extra) => {
+              const s = sorter as Sorts;
 
-                switch (extra.action) {
-                  case "paginate":
-                    setGenresPage(pagination.current! - 1);
-                    break;
-                  case "sort":
-                    setGenresSort({
-                      field: s.columnKey?.toString() || "",
-                      order: s.order === "ascend" ? "asc" : "desc",
-                    });
-                    setGenresPage(0);
-                    break;
-                  case "filter":
-                    setGenresPage(0);
-                    setGenreFilters(buildFilterDefinitionForTable(filters));
-                    break;
-                }
-              }}
-            />
-          </ConfigProvider>
-        </Content>
+              switch (extra.action) {
+                case "paginate":
+                  setGenresPage(pagination.current! - 1);
+                  break;
+                case "sort":
+                  setGenresSort({
+                    field: s.columnKey?.toString() || "",
+                    order: s.order === "ascend" ? "asc" : "desc",
+                  });
+                  setGenresPage(0);
+                  break;
+                case "filter":
+                  setGenresPage(0);
+                  setGenreFilters(buildFilterDefinitionForTable(filters));
+                  break;
+              }
+            }}
+          />
+        </ConfigProvider>
       </Content>
     </>
   );

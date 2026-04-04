@@ -596,7 +596,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
   }
 
   return (
-    <div>
+    <>
       <OlympusBreadcrumbs
         items={[
           {
@@ -627,131 +627,117 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
           },
         ]}
       />
-      <Layout
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col span={16}>{expirationChart}</Col>
+        <Col span={8}>{statusChart}</Col>
+      </Row>
+      <Row>
+        <Col span={24}>
+          <RefreshTimer
+            ttlMs={60000}
+            fetchFunction={async () => {
+              await fetchStatistics(true);
+            }}
+          />
+        </Col>
+      </Row>
+      <Row
+        gutter={16}
         style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 102,
-          overflowX: "hidden",
-          overflowY: "auto",
-          height: "calc(100vh - 102px)",
+          borderTop: "1px solid #f3f3f3",
+          borderBottom: "1px solid #f3f3f3",
         }}
       >
-        <Content style={{ width: "calc(100vw - 384px)" }}>
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={16}>{expirationChart}</Col>
-            <Col span={8}>{statusChart}</Col>
-          </Row>
-          <Row>
-            <Col span={24}>
-              <RefreshTimer
-                ttlMs={60000}
-                fetchFunction={async () => {
-                  await fetchStatistics(true);
-                }}
-              />
-            </Col>
-          </Row>
-          <Row
-            gutter={16}
-            style={{
-              borderTop: "1px solid #f3f3f3",
-              borderBottom: "1px solid #f3f3f3",
-            }}
-          >
-            {actionsContent}
-          </Row>
-          <Table
-            style={{ width: "100%" }}
-            rowKey={(record) => {
-              return `${record.id}-${record.type}`;
-            }}
-            columns={columns}
-            sticky={true}
-            scroll={{ y: "calc(100vh - 580px)" }}
-            dataSource={metadataFetchJobs?.jobs}
-            size={"small"}
-            loading={metadataFetchJobsLoading || processingRows}
-            pagination={{
-              style: {
-                marginLeft: 16,
-              },
-              position: ["bottomLeft"],
-              pageSize: metadataFetchJobsPageSize,
-              size: "small",
-              total: metadataFetchJobs?.count,
-              showSizeChanger: true,
-              pageSizeOptions: [25, 50, 100, 250, 500],
-              onShowSizeChange: (current, size) => {
-                setMetadataFetchJobsPageSize(size);
-              },
-              showQuickJumper: true,
-              showTotal: (total, range) => {
-                return `${range[0]} to ${range[1]} of ${total}`;
-              },
-            }}
-            onChange={(pagination, filters, sorter, extra) => {
-              const s = sorter as Sorts;
+        {actionsContent}
+      </Row>
+      <Table
+        style={{ width: "100%" }}
+        rowKey={(record) => {
+          return `${record.id}-${record.type}`;
+        }}
+        columns={columns}
+        sticky={true}
+        scroll={{ y: "calc(100vh - 580px)" }}
+        dataSource={metadataFetchJobs?.jobs}
+        size={"small"}
+        loading={metadataFetchJobsLoading || processingRows}
+        pagination={{
+          style: {
+            marginLeft: 16,
+          },
+          position: ["bottomLeft"],
+          pageSize: metadataFetchJobsPageSize,
+          size: "small",
+          total: metadataFetchJobs?.count,
+          showSizeChanger: true,
+          pageSizeOptions: [25, 50, 100, 250, 500],
+          onShowSizeChange: (current, size) => {
+            setMetadataFetchJobsPageSize(size);
+          },
+          showQuickJumper: true,
+          showTotal: (total, range) => {
+            return `${range[0]} to ${range[1]} of ${total}`;
+          },
+        }}
+        onChange={(pagination, filters, sorter, extra) => {
+          const s = sorter as Sorts;
 
-              switch (extra.action) {
-                case "paginate":
-                  setMetadataFetchJobsPage(pagination.current! - 1);
-                  break;
-                case "sort":
-                  setMetadataFetchJobsSort({
-                    field: s.columnKey?.toString() || "",
-                    order: s.order === "ascend" ? "asc" : "desc",
-                  });
-                  break;
-                case "filter":
-                  setMetadataFetchJobsPage(0);
-                  setMetadataFetchJobFilters(
-                    buildFilterDefinitionForTable(filters),
-                  );
-                  break;
-              }
+          switch (extra.action) {
+            case "paginate":
+              setMetadataFetchJobsPage(pagination.current! - 1);
+              break;
+            case "sort":
+              setMetadataFetchJobsSort({
+                field: s.columnKey?.toString() || "",
+                order: s.order === "ascend" ? "asc" : "desc",
+              });
+              break;
+            case "filter":
+              setMetadataFetchJobsPage(0);
+              setMetadataFetchJobFilters(
+                buildFilterDefinitionForTable(filters),
+              );
+              break;
+          }
 
-              setMetadataFetchJobRequested(new Date().toISOString());
-            }}
-            rowSelection={{
-              selectedRowKeys,
-              onChange: onSelectChange,
-            }}
-          />
-          <Drawer
-            title="Fetch Job Details"
-            width={550}
-            placement="right"
-            onClose={() => {
-              closeDrawer();
-            }}
-            open={selectedJob !== undefined}
-          >
-            <MetadataFetchJobDetailsPanel
-              job={selectedJob!}
-              close={closeDrawer}
-              postUpdate={async () => {
-                await fetchMetadataFetchJobs(true);
-              }}
-            />
-          </Drawer>
-          <RedriveModal
-            open={redriveModalOpen}
-            onClose={() => {
-              setRedriveModalOpen(false);
-            }}
-            statistics={jobStats}
-          />
-          <CreateMetadataJobModal
-            open={createJobModalOpen}
-            onClose={() => {
-              setCreateJobModalOpen(false);
-            }}
-          />
-        </Content>
-      </Layout>
-    </div>
+          setMetadataFetchJobRequested(new Date().toISOString());
+        }}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: onSelectChange,
+        }}
+      />
+      <Drawer
+        title="Fetch Job Details"
+        width={550}
+        placement="right"
+        onClose={() => {
+          closeDrawer();
+        }}
+        open={selectedJob !== undefined}
+      >
+        <MetadataFetchJobDetailsPanel
+          job={selectedJob!}
+          close={closeDrawer}
+          postUpdate={async () => {
+            await fetchMetadataFetchJobs(true);
+          }}
+        />
+      </Drawer>
+      <RedriveModal
+        open={redriveModalOpen}
+        onClose={() => {
+          setRedriveModalOpen(false);
+        }}
+        statistics={jobStats}
+      />
+      <CreateMetadataJobModal
+        open={createJobModalOpen}
+        onClose={() => {
+          setCreateJobModalOpen(false);
+        }}
+      />
+    </>
   );
 };
 

@@ -231,79 +231,74 @@ const ContentAssetsPage: React.FunctionComponent = () => {
       />
       <Content
         style={{
-          background: "#fff",
+          height: "calc(100vh - 102px)",
+          overflowX: "hidden",
+          overflowY: "auto",
+          marginTop: 28,
         }}
       >
-        <Content
+        <ContentAssetStatistics />
+        <Splitter
           style={{
-            height: "calc(100vh - 102px)",
-            overflowX: "hidden",
-            overflowY: "auto",
+            height: "calc(100vh - 399px)",
+          }}
+          onResize={(sizes) => {
+            setFilterPanelSize(filterPanelSize <= 0 ? 300 : 0);
           }}
         >
-          <ContentAssetStatistics />
-          <Splitter
+          <Splitter.Panel
+            min={0}
+            max={300}
+            size={filterPanelSize}
+            resizable={false}
+            collapsible={true}
             style={{
-              height: "calc(100vh - 399px)",
-            }}
-            onResize={(sizes) => {
-              setFilterPanelSize(filterPanelSize <= 0 ? 300 : 0);
+              scrollbarWidth: "none",
             }}
           >
-            <Splitter.Panel
-              min={0}
-              max={300}
-              size={filterPanelSize}
-              resizable={false}
-              collapsible={true}
-              style={{
-                scrollbarWidth: "none",
+            <ContentAssetFilterPanel
+              togglePanel={toggleFilters}
+              onSelectTag={addTagFilter}
+              onRemoveTag={removeTagFilter}
+              onNameChange={setNameFilter}
+              onRatingChange={setRatingFilter}
+              onDurationChange={setDurationFilter}
+              onResolutionChange={setResolutionFilter}
+            />
+          </Splitter.Panel>
+          <Splitter.Panel>
+            <ContentAssetTable
+              filters={filters}
+              initialSort={{
+                field: "createdTime",
+                order: "desc",
               }}
-            >
-              <ContentAssetFilterPanel
-                togglePanel={toggleFilters}
-                onSelectTag={addTagFilter}
-                onRemoveTag={removeTagFilter}
-                onNameChange={setNameFilter}
-                onRatingChange={setRatingFilter}
-                onDurationChange={setDurationFilter}
-                onResolutionChange={setResolutionFilter}
-              />
-            </Splitter.Panel>
-            <Splitter.Panel>
-              <ContentAssetTable
-                filters={filters}
-                initialSort={{
-                  field: "createdTime",
-                  order: "desc",
-                }}
-                onInfoButtonClick={(record) => {
-                  setAssetPanelTarget(record.id);
-                }}
-                onSearchButtonClick={toggleFilters}
-                searchButtonVisible={filterPanelSize > 0}
-                scrollY={"calc(100vh - 494px)"}
-              />
-            </Splitter.Panel>
-          </Splitter>
-          <Drawer
-            title={"Asset Details"}
-            width={750}
-            placement={"right"}
-            closable={true}
-            styles={{
-              body: {
-                padding: 0,
-              },
-            }}
-            onClose={() => {
-              setAssetPanelTarget(undefined);
-            }}
-            open={assetPanelTarget !== undefined}
-          >
-            <ContentAssetDetailsPanel assetId={assetPanelTarget!} />
-          </Drawer>
-        </Content>
+              onInfoButtonClick={(record) => {
+                setAssetPanelTarget(record.id);
+              }}
+              onSearchButtonClick={toggleFilters}
+              searchButtonVisible={filterPanelSize > 0}
+              scrollY={"calc(100vh - 494px)"}
+            />
+          </Splitter.Panel>
+        </Splitter>
+        <Drawer
+          title={"Asset Details"}
+          width={750}
+          placement={"right"}
+          closable={true}
+          styles={{
+            body: {
+              padding: 0,
+            },
+          }}
+          onClose={() => {
+            setAssetPanelTarget(undefined);
+          }}
+          open={assetPanelTarget !== undefined}
+        >
+          <ContentAssetDetailsPanel assetId={assetPanelTarget!} />
+        </Drawer>
       </Content>
     </ContentAuthWrapper>
   );

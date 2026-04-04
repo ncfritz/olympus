@@ -295,49 +295,35 @@ const NetworkDetailPage: React.FunctionComponent = () => {
           },
         ]}
       />
-      <Layout
-        style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 64 + 28,
-          overflowX: "hidden",
-          overflowY: "auto",
-          height: "calc(100vh - 102px)",
-        }}
-      >
-        <Content style={{ width: "calc(100vw - 380px)" }}>
-          <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
-            <Space
-              direction={"horizontal"}
-              style={{
-                minHeight: 250,
-                width: "100%",
-                justifyContent: "space-between",
-                background: "bottom left no-repeat url('/section_header.png')",
-                borderBottom: "1px solid #efefef",
-              }}
-            >
-              {content}
-              {network && network.logoPath && (
-                <Space direction={"vertical"} style={{ margin: 16 }}>
-                  <img
-                    src={`https://image.tmdb.org/t/p/w300/${network.logoPath}`}
-                    style={{ maxHeight: 250, marginRight: 32 }}
-                  />
-                </Space>
-              )}
+      <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+        <Space
+          direction={"horizontal"}
+          style={{
+            minHeight: 250,
+            width: "100%",
+            justifyContent: "space-between",
+            background: "bottom left no-repeat url('/section_header.png')",
+            borderBottom: "1px solid #efefef",
+          }}
+        >
+          {content}
+          {network && network.logoPath && (
+            <Space direction={"vertical"} style={{ margin: 16 }}>
+              <img
+                src={`https://image.tmdb.org/t/p/w300/${network.logoPath}`}
+                style={{ maxHeight: 250, marginRight: 32 }}
+              />
             </Space>
-          </Space>
-          <Tabs
-            items={items}
-            className={"fill"}
-            tabBarStyle={{
-              marginBottom: 0,
-            }}
-          />
-        </Content>
-      </Layout>
+          )}
+        </Space>
+      </Space>
+      <Tabs
+        items={items}
+        className={"fill"}
+        tabBarStyle={{
+          marginBottom: 0,
+        }}
+      />
     </>
   );
 };

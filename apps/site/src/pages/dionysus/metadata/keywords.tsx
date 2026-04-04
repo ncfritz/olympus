@@ -133,69 +133,63 @@ const MetadataKeywordsPage: React.FunctionComponent = () => {
       />
       <Content
         style={{
-          background: "#fff",
+          marginTop: 28,
+          marginBottom: 16,
+          height: "calc(100vh - 118px)",
         }}
       >
-        <Content
-          style={{
-            marginTop: 0,
-            marginBottom: 16,
-            height: "calc(100vh - 118px)",
-          }}
+        <ConfigProvider
+          renderEmpty={() =>
+            keywordsError ? (
+              <ErrorBlock error={keywordsError} />
+            ) : (
+              <Empty description="No countries found" />
+            )
+          }
         >
-          <ConfigProvider
-            renderEmpty={() =>
-              keywordsError ? (
-                <ErrorBlock error={keywordsError} />
-              ) : (
-                <Empty description="No countries found" />
-              )
-            }
-          >
-            <Table
-              style={{ width: "100%" }}
-              rowKey={"id"}
-              columns={columns}
-              sticky={true}
-              scroll={{ y: "calc(100vh - 197px)" }}
-              dataSource={keywords}
-              size={"small"}
-              loading={keywordsLoading}
-              pagination={{
-                style: {
-                  marginLeft: 16,
-                },
-                position: ["bottomLeft"],
-                pageSize: 50,
-                size: "small",
-                total: keywordsCount,
-                showSizeChanger: false,
-                showQuickJumper: true,
-                showTotal: (total, range) => {
-                  return `${range[0]} to ${range[1]} of ${total}`;
-                },
-              }}
-              onChange={(pagination, filters, sorter, extra) => {
-                const s = sorter as Sorts;
+          <Table
+            style={{ width: "100%" }}
+            rowKey={"id"}
+            columns={columns}
+            sticky={true}
+            scroll={{ y: "calc(100vh - 197px)" }}
+            dataSource={keywords}
+            size={"small"}
+            loading={keywordsLoading}
+            pagination={{
+              style: {
+                marginLeft: 16,
+              },
+              position: ["bottomLeft"],
+              pageSize: 50,
+              size: "small",
+              total: keywordsCount,
+              showSizeChanger: false,
+              showQuickJumper: true,
+              showTotal: (total, range) => {
+                return `${range[0]} to ${range[1]} of ${total}`;
+              },
+            }}
+            onChange={(pagination, filters, sorter, extra) => {
+              const s = sorter as Sorts;
 
-                switch (extra.action) {
-                  case "paginate":
-                    setKeywordsPage(pagination.current! - 1);
-                    break;
-                  case "sort":
-                    setKeywordsSort({
-                      field: s.columnKey?.toString() || "",
-                      order: s.order === "ascend" ? "asc" : "desc",
-                    });
-                    setKeywordsPage(0);
-                    break;
-                  case "filter":
-                    break;
-                }
-              }}
-            />
-          </ConfigProvider>
-        </Content>
+              switch (extra.action) {
+                case "paginate":
+                  setKeywordsPage(pagination.current! - 1);
+                  break;
+                case "sort":
+                  setKeywordsSort({
+                    field: s.columnKey?.toString() || "",
+                    order: s.order === "ascend" ? "asc" : "desc",
+                  });
+                  setKeywordsPage(0);
+                  break;
+                case "filter":
+                  break;
+              }
+            }}
+          />
+        </ConfigProvider>
       </Content>
     </>
   );

@@ -3,11 +3,13 @@ import {
   CalendarOutlined,
   CloudDownloadOutlined,
   EyeOutlined,
+  FileOutlined,
   FontSizeOutlined,
   HeartOutlined,
   HomeOutlined,
   InfoCircleFilled,
   QrcodeOutlined,
+  SafetyCertificateTwoTone,
 } from "@ant-design/icons";
 import type {
   Collection,
@@ -18,20 +20,17 @@ import type {
   SparseMovie,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
-  Layout,
   Space,
   Spin,
   Typography,
-  Splitter,
   Tabs,
   Button,
   Tag,
   Progress,
   QRCode,
   type TabsProps,
-  Badge,
+  Drawer,
 } from "antd";
-import { Content } from "antd/lib/layout/layout";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -42,6 +41,7 @@ import mediaApi from "../../../api/mediaApi";
 import metadataApi from "../../../api/metadataApi";
 import Description from "../../../components/common/Description";
 import LoadingWrapper from "../../../components/common/LoadingWrapper";
+import AssetDetailsPanel from "../../../components/dionysus/media/AssetDetailsPanel";
 import SearchConfigurationPanel from "../../../components/dionysus/media/SearchConfigurationPanel";
 import SearchResultsTable from "../../../components/dionysus/media/SearchResultsTable";
 import ExternalIdsList from "../../../components/dionysus/metadata/ExternalIdsList";
@@ -58,6 +58,7 @@ import MovieReleaseDateList from "../../../components/dionysus/metadata/MovieRel
 import MovieVideoPanel from "../../../components/dionysus/metadata/MovieVideoPanel";
 import SearchConfigurationButton from "../../../components/dionysus/media/SearchConfigurationButton";
 import { getProgressColor } from "../../../components/dionysus/metadata/util";
+import CollapsibleTabPanel from "../../../components/layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../icons";
@@ -67,11 +68,13 @@ const MovieDetailPage: React.FunctionComponent = () => {
   const { id } = router.query;
 
   const [activeTab, setActiveTab] = useState("t-main-general");
+  const [assetInfoOpen, setAssetInfoOpen] = useState(false);
 
   const [movie, movieLoading, movieError] = useFetch<number, Movie>({
     dataType: "movie details",
     watch: [id],
     params: id as unknown as number,
+    validateOptions: (o) => o !== undefined,
     fetchFunction: async (o) => (await metadataApi.describeMovie(o)).data.movie,
   });
 
@@ -87,6 +90,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
     dataType: "movie crew list",
     watch: [movie?.id],
     params: id as unknown as number,
+    validateOptions: (o) => o !== undefined,
     fetchFunction: async (o) => (await metadataApi.listMovieCrew(o)).data.crew,
   });
 
@@ -691,7 +695,19 @@ const MovieDetailPage: React.FunctionComponent = () => {
                 level={1}
                 style={{ color: "#ffffffdd", marginBottom: 3 }}
               >
-                {movie?.title}
+                <Space
+                  direction={"horizontal"}
+                  size={8}
+                  style={{ display: "flex", alignItems: "center" }}
+                >
+                  {movie.asset && (
+                    <SafetyCertificateTwoTone
+                      twoToneColor={"#488633"}
+                      style={{ fontSize: "32px" }}
+                    />
+                  )}
+                  {movie?.title}
+                </Space>
               </Typography.Title>
               <Space direction={"horizontal"}>{titleDecorations}</Space>
               <Space
@@ -813,6 +829,20 @@ const MovieDetailPage: React.FunctionComponent = () => {
                       }
                     }}
                   />
+                  {movie.asset && (
+                    <Button
+                      className={"dionysus-action-button"}
+                      size={"large"}
+                      icon={<FileOutlined />}
+                      style={{
+                        borderRadius: 32,
+                        fontSize: "14px",
+                      }}
+                      onClick={() => setAssetInfoOpen(true)}
+                    >
+                      Asset Info
+                    </Button>
+                  )}
                 </Space>
               </Space>
               <Space direction={"vertical"} style={{ marginTop: 16 }}>
@@ -832,32 +862,25 @@ const MovieDetailPage: React.FunctionComponent = () => {
             },
           }}
         >
-          <Splitter
+          <CollapsibleTabPanel
+            panelId={"movie.side"}
+            width={550}
+            tabs={sideTabs}
             style={{
               width: "100%",
-              minHeight: "calc(100vh - 673px)",
             }}
           >
-            <Splitter.Panel>
-              <Tabs
-                className={"fill compact"}
-                activeKey={activeTab}
-                onChange={(activeKey: string) => {
-                  setActiveTab(activeKey);
-                }}
-                tabPosition={"top"}
-                size={"small"}
-                items={mainTabs}
-              />
-            </Splitter.Panel>
-            <Splitter.Panel resizable={false} defaultSize={550}>
-              <Tabs
-                tabPosition={"right"}
-                className={"compact"}
-                items={sideTabs}
-              />
-            </Splitter.Panel>
-          </Splitter>
+            <Tabs
+              className={"fill compact collapsible-tabs"}
+              activeKey={activeTab}
+              onChange={(activeKey: string) => {
+                setActiveTab(activeKey);
+              }}
+              tabPosition={"top"}
+              size={"small"}
+              items={mainTabs}
+            />
+          </CollapsibleTabPanel>
         </Space>
       </Space>
     );
@@ -908,19 +931,26 @@ const MovieDetailPage: React.FunctionComponent = () => {
           },
         ]}
       />
-      <Layout
-        style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 64 + 28,
-          overflowX: "hidden",
-          overflowY: "auto",
-          height: "calc(100vh - 48px)",
-        }}
-      >
-        <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
-      </Layout>
+      <LoadingWrapper loading={movieLoading} error={movieError}>
+        {content}
+        <Drawer
+          title={"Asset Details"}
+          width={750}
+          placement={"right"}
+          closable={true}
+          styles={{
+            body: {
+              padding: 0,
+            },
+          }}
+          onClose={() => {
+            setAssetInfoOpen(false);
+          }}
+          open={assetInfoOpen}
+        >
+          <AssetDetailsPanel assetType={"movie"} assetId={movie?.id} />
+        </Drawer>
+      </LoadingWrapper>
     </>
   );
 };

@@ -31,6 +31,7 @@ import {
   TvNetworkIcon,
   WorkQueueIcon,
 } from "../../icons";
+import { useAppSelector } from "../../redux/hooks";
 
 const BASE_PATH = "dionysus";
 const SUB_MENUS = {
@@ -39,8 +40,12 @@ const SUB_MENUS = {
   "/jobs": "jobs_container",
 };
 
-const DionysysMenu: React.FunctionComponent = () => {
+const DionysusMenu: React.FunctionComponent = () => {
   const router = useRouter();
+
+  const submenuExpanded = useAppSelector(
+    (state) => state.layout.submenuExpanded,
+  );
 
   const [sideMenuItem, setSideMenuItem] = useState<string>("/");
   const [sideMenuSubMenuItems, setSideMenuSubMenuItems] = useState<string[]>(
@@ -77,12 +82,12 @@ const DionysysMenu: React.FunctionComponent = () => {
   return (
     <Menu
       style={{
-        width: 300,
+        width: submenuExpanded ? 300 : 80,
       }}
       theme={"light"}
       defaultSelectedKeys={["/"]}
       selectedKeys={[sideMenuItem]}
-      openKeys={sideMenuSubMenuItems}
+      openKeys={submenuExpanded ? sideMenuSubMenuItems : undefined}
       mode={"inline"}
       onSelect={({ item, key, keyPath, selectedKeys, domEvent }) => {
         setSideMenuItem(key);
@@ -258,4 +263,4 @@ const DionysysMenu: React.FunctionComponent = () => {
     />
   );
 };
-export default DionysysMenu;
+export default DionysusMenu;

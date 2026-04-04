@@ -10,7 +10,6 @@ import type {
   ContentTagType,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
-  Breadcrumb,
   Button,
   Image,
   notification,
@@ -216,7 +215,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
         direction={"vertical"}
         style={{
           display: "block",
-          width: "calc(100vw - 380px)",
+          width: "100%",
           padding: 16,
         }}
       >
@@ -476,96 +475,83 @@ const ContentProcessingPage: React.FunctionComponent = () => {
 
   return (
     <ContentAuthWrapper>
-      <Content>
+      <OlympusBreadcrumbs
+        items={[
+          {
+            title: (
+              <Link href={"/"}>
+                <Space direction={"horizontal"} size={4}>
+                  <HomeOutlined />
+                  <span>Home</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus"}>
+                <Space direction={"horizontal"} size={4}>
+                  <HomeOutlined />
+                  <span>Dionysus</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus/content"}>
+                <Space direction={"horizontal"} size={4}>
+                  <ExperimentOutlined />
+                  <span>Content</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus/content/assets"}>
+                {" "}
+                <Space direction={"horizontal"} size={4}>
+                  <VideoCameraOutlined />
+                  <span>Assets</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: <Typography.Text>Asset Tagging</Typography.Text>,
+          },
+        ]}
+      />
+      {playerContent}
+      <Content
+        style={{
+          background: "#fff",
+        }}
+      >
         <Content
           style={{
+            marginTop: 32,
             position: "fixed",
-            display: "block",
-            height: Math.floor(contentOffset),
-            top: 64,
-            zIndex: 100,
-            width: "calc(100vw - 380px)",
+            top: contentOffset + 16,
+            zIndex: 10,
+            borderTop: "1px solid #efefef",
+            width: "100%",
+            height: `calc(100vh - ${contentOffset}px - 48px)`,
           }}
         >
-          <OlympusBreadcrumbs
-            items={[
-              {
-                title: (
-                  <Link href={"/"}>
-                    <Space direction={"horizontal"} size={4}>
-                      <HomeOutlined />
-                      <span>Home</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Link href={"/dionysus"}>
-                    <Space direction={"horizontal"} size={4}>
-                      <HomeOutlined />
-                      <span>Dionysus</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Link href={"/dionysus/content"}>
-                    <Space direction={"horizontal"} size={4}>
-                      <ExperimentOutlined />
-                      <span>Content</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Link href={"/dionysus/content/assets"}>
-                    {" "}
-                    <Space direction={"horizontal"} size={4}>
-                      <VideoCameraOutlined />
-                      <span>Assets</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: <Typography.Text>Asset Tagging</Typography.Text>,
-              },
-            ]}
-          />
-          {playerContent}
-        </Content>
-        <Content
-          style={{
-            background: "#fff",
-          }}
-        >
-          <Content
+          <div
             style={{
-              marginTop: 32,
-              position: "fixed",
-              top: contentOffset + 16,
-              zIndex: 10,
-              borderTop: "1px solid #efefef",
-              width: "calc(100vw - 370px)",
-              height: `calc(100vh - ${contentOffset}px - 48px)`,
+              width: "100%",
+              height: "100%",
+              overflow: "hidden",
+              display: "flex",
+              justifyContent: "space-between",
+              flexDirection: "column",
             }}
           >
-            <div
-              style={{
-                width: "100%",
-                height: "100%",
-                overflow: "hidden",
-                display: "flex",
-                justifyContent: "space-between",
-                flexDirection: "column",
-              }}
-            >
-              {content}
-            </div>
-          </Content>
+            {content}
+          </div>
         </Content>
       </Content>
     </ContentAuthWrapper>

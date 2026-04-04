@@ -4,10 +4,12 @@ import {
   CloudDownloadOutlined,
   EyeOutlined,
   FileImageOutlined,
+  FileOutlined,
   HeartOutlined,
   HomeOutlined,
   InfoCircleFilled,
   QrcodeOutlined,
+  SafetyCertificateTwoTone,
 } from "@ant-design/icons";
 import type {
   Episode,
@@ -17,18 +19,15 @@ import type {
   TvEpisodeCrewMember,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
-  Layout,
   Space,
-  Spin,
   Typography,
-  Splitter,
   Tabs,
   Button,
   Progress,
   Image,
   QRCode,
+  Drawer,
 } from "antd";
-import { Content } from "antd/lib/layout/layout";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -37,7 +36,9 @@ import mediaApi from "../../../../../../../../api/mediaApi";
 import metadataApi from "../../../../../../../../api/metadataApi";
 import Description from "../../../../../../../../components/common/Description";
 import LoadingWrapper from "../../../../../../../../components/common/LoadingWrapper";
+import AssetDetailsPanel from "../../../../../../../../components/dionysus/media/AssetDetailsPanel";
 import SearchConfigurationPanel from "../../../../../../../../components/dionysus/media/SearchConfigurationPanel";
+import SearchResultsTable from "../../../../../../../../components/dionysus/media/SearchResultsTable";
 import ExternalIdsList from "../../../../../../../../components/dionysus/metadata/ExternalIdsList";
 import MetadataFetchJobPanel from "../../../../../../../../components/dionysus/metadata/MetadataFetchJobPanel";
 import MovieImagesPanel from "../../../../../../../../components/dionysus/metadata/MovieImagesPanel";
@@ -48,6 +49,7 @@ import TvEpisodeCrewList from "../../../../../../../../components/dionysus/metad
 import TvEpisodeList from "../../../../../../../../components/dionysus/metadata/TvEpisodeList";
 import TvSeasonSummaryCard from "../../../../../../../../components/dionysus/metadata/TvSeasonSummaryCard";
 import { getProgressColor } from "../../../../../../../../components/dionysus/metadata/util";
+import CollapsibleTabPanel from "../../../../../../../../components/layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../../../../../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../../../../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../../../../../../icons";
@@ -72,6 +74,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
   const { episodeNumber } = router.query;
 
   const [activeTab, setActiveTab] = useState("t-main-general");
+  const [assetInfoOpen, setAssetInfoOpen] = useState(false);
 
   const [episode, episodeLoading, episodeError, fetchEpisode] = useFetch<
     EpisodeId,
@@ -188,11 +191,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         .data.searchConfiguration,
   });
 
-  let content = (
-    <Space style={{ margin: 16 }}>
-      <Spin size={"large"} />
-    </Space>
-  );
+  let content = <></>;
 
   if (episode) {
     const headerBackgroundUrl = episode?.series.backdropPath
@@ -448,8 +447,11 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         key: "t-main-searchResults",
         label: "Search Results",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
-            fff
+          <Space
+            direction={"vertical"}
+            style={{ width: "100%", display: "block" }}
+          >
+            <SearchResultsTable searchConfiguration={searchConfiguration} />
           </Space>
         ),
       });
@@ -543,7 +545,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
                   {episode?.series.name}
                 </Typography.Title>
               </Link>
-              <Space direction={"horizontal"}>
+              <Space direction={"horizontal"} size={2}>
                 <Link
                   href={`/dionysus/tv/series/${episode.series.id}/season/${episode.seasonNumber}`}
                 >
@@ -560,6 +562,12 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
                 >
                   -
                 </Typography.Title>
+                {episode.asset && (
+                  <SafetyCertificateTwoTone
+                    twoToneColor={"#488633"}
+                    style={{ fontSize: "20px" }}
+                  />
+                )}
                 <Typography.Title
                   level={5}
                   style={{ color: "#ffffffcc", marginBottom: 3 }}
@@ -623,6 +631,20 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
                     setSearchConfiguration(searchConfiguration);
                   }}
                 />
+                {episode.asset && (
+                  <Button
+                    className={"dionysus-action-button"}
+                    size={"large"}
+                    icon={<FileOutlined />}
+                    style={{
+                      borderRadius: 32,
+                      fontSize: "14px",
+                    }}
+                    onClick={() => setAssetInfoOpen(true)}
+                  >
+                    Asset Info
+                  </Button>
+                )}
               </Space>
             </Space>
           </Space>
@@ -637,64 +659,57 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
             },
           }}
         >
-          <Splitter
+          <CollapsibleTabPanel
+            panelId={"tvEpisode.side"}
+            width={550}
+            tabs={sideTabs}
             style={{
               width: "100%",
-              minHeight: `calc(100vh - ${topOffset}px`,
             }}
           >
-            <Splitter.Panel>
+            <Space
+              direction={"horizontal"}
+              className={"person-fix"}
+              size={0}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "start",
+              }}
+            >
+              <Space direction={"vertical"} style={{ padding: 16 }}>
+                {stillPath}
+                <Description
+                  title={"Air Date"}
+                  value={
+                    airDate ? airDate.toFormat("yyyy / MM / dd") : undefined
+                  }
+                />
+                <ExternalIdsList ids={episode.externalIds} />
+              </Space>
               <Space
-                direction={"horizontal"}
-                className={"person-fix"}
-                size={0}
+                direction={"vertical"}
                 style={{
                   width: "100%",
-                  display: "flex",
-                  alignItems: "start",
+                  height: `calc(100vh - ${topOffset - 16}px`,
+                  alignItems: "top",
+                  overflow: "scroll",
                 }}
               >
-                <Space direction={"vertical"} style={{ padding: 16 }}>
-                  {stillPath}
-                  <Description
-                    title={"Air Date"}
-                    value={
-                      airDate ? airDate.toFormat("yyyy / MM / dd") : undefined
-                    }
-                  />
-                  <ExternalIdsList ids={episode.externalIds} />
-                </Space>
-                <Space
-                  direction={"vertical"}
-                  style={{
-                    width: "100%",
-                    height: `calc(100vh - ${topOffset - 16}px`,
-                    alignItems: "top",
-                    overflow: "scroll",
+                {overview}
+                <Tabs
+                  className={"fill compact collapsible-tabs"}
+                  activeKey={activeTab}
+                  onChange={(activeKey: string) => {
+                    setActiveTab(activeKey);
                   }}
-                >
-                  {overview}
-                  <Tabs
-                    className={"fill"}
-                    activeKey={activeTab}
-                    onChange={(activeKey: string) => {
-                      setActiveTab(activeKey);
-                    }}
-                    tabPosition={"top"}
-                    size={"small"}
-                    items={mainTabs}
-                  />
-                </Space>
+                  tabPosition={"top"}
+                  size={"small"}
+                  items={mainTabs}
+                />
               </Space>
-            </Splitter.Panel>
-            <Splitter.Panel resizable={false} defaultSize={550}>
-              <Tabs
-                tabPosition={"right"}
-                className={"compact"}
-                items={sideTabs}
-              />
-            </Splitter.Panel>
-          </Splitter>
+            </Space>
+          </CollapsibleTabPanel>
         </Space>
       </Space>
     );
@@ -727,10 +742,38 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
           },
           {
             title: (
-              <Link href={"/dionysus/movies"}>
+              <Link href={"/dionysus/tv/series"}>
                 <Space size={4}>
                   <MetadataOutlinedIcon />
-                  <span>Movies</span>
+                  <span>TV Series</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={`/dionysus/tv/series/${id}`}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>
+                    <span>
+                      {episode?.series?.name
+                        ? episode.series.name
+                        : "Loading..."}
+                    </span>
+                  </span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={`/dionysus/tv/series`}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>
+                    Season {seasonNumber?.toString().padStart(2, "0")}
+                  </span>
                 </Space>
               </Link>
             ),
@@ -745,19 +788,26 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
           },
         ]}
       />
-      <Layout
-        style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 64 + 28,
-          overflowX: "hidden",
-          overflowY: "auto",
-          height: "calc(100vh - 48px)",
-        }}
-      >
-        <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
-      </Layout>
+      <LoadingWrapper loading={episodeLoading} error={episodeError}>
+        {content}
+        <Drawer
+          title={"Asset Details"}
+          width={750}
+          placement={"right"}
+          closable={true}
+          styles={{
+            body: {
+              padding: 0,
+            },
+          }}
+          onClose={() => {
+            setAssetInfoOpen(false);
+          }}
+          open={assetInfoOpen}
+        >
+          <AssetDetailsPanel assetType={"tv_episode"} assetId={episode?.id} />
+        </Drawer>
+      </LoadingWrapper>
     </>
   );
 };

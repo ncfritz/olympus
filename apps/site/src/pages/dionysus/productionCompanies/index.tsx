@@ -81,90 +81,74 @@ const ProductionCompaniesIndexPage: React.FunctionComponent = () => {
 
   return (
     <>
-      <Affix offsetTop={64}>
-        <OlympusBreadcrumbs
-          items={[
-            {
-              title: (
-                <Link href={"/public"}>
-                  <Space size={4}>
-                    <HomeOutlined />
-                    <span>Home</span>
-                  </Space>
-                </Link>
-              ),
-            },
-            {
-              title: (
-                <Link href={"/dionysus"}>
-                  <Space size={4}>
-                    <MetadataOutlinedIcon />
-                    <span>Dionysus</span>
-                  </Space>
-                </Link>
-              ),
-            },
-            {
-              title: (
-                <Space>
-                  <CertificationOutlined />
-                  <span>Production Companies</span>
+      <OlympusBreadcrumbs
+        items={[
+          {
+            title: (
+              <Link href={"/public"}>
+                <Space size={4}>
+                  <HomeOutlined />
+                  <span>Home</span>
                 </Space>
-              ),
-            },
-          ]}
-        />
-      </Affix>
-      <Layout
-        style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 64 + 28,
-          overflowX: "hidden",
-          overflowY: "auto",
-          height: "calc(100vh - 92px)",
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>Dionysus</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Space>
+                <CertificationOutlined />
+                <span>Production Companies</span>
+              </Space>
+            ),
+          },
+        ]}
+      />
+      <ProductionCompanyTable
+        data={productionCompanies}
+        loading={productionCompaniesLoading}
+        sticky={true}
+        scrollY="calc(100vh - 187px)"
+        pagination={{
+          style: {
+            marginLeft: 16,
+          },
+          pageSize: 20,
+          size: "small",
+          total: productionCompaniesCount,
+          showSizeChanger: false,
+          showQuickJumper: true,
+          showTotal: (total, range) => {
+            return `${range[0]} to ${range[1]} of ${total}`;
+          },
         }}
-      >
-        <Content style={{ width: "calc(100vw - 380px)" }}>
-          <ProductionCompanyTable
-            data={productionCompanies}
-            loading={productionCompaniesLoading}
-            sticky={true}
-            scrollY="calc(100vh - 187px)"
-            pagination={{
-              style: {
-                marginLeft: 16,
-              },
-              pageSize: 20,
-              size: "small",
-              total: productionCompaniesCount,
-              showSizeChanger: false,
-              showQuickJumper: true,
-              showTotal: (total, range) => {
-                return `${range[0]} to ${range[1]} of ${total}`;
-              },
-            }}
-            onChange={(pagination, filters, sorter, extra) => {
-              const s = sorter as Sorts;
+        onChange={(pagination, filters, sorter, extra) => {
+          const s = sorter as Sorts;
 
-              switch (extra.action) {
-                case "paginate":
-                  setProductionCompaniesPage(pagination.current! - 1);
-                  break;
-                case "sort":
-                  setProductionCompaniesSort({
-                    field: s.columnKey?.toString() || "",
-                    order: s.order === "ascend" ? "asc" : "desc",
-                  });
-                  break;
-                case "filter":
-                  break;
-              }
-            }}
-          />
-        </Content>
-      </Layout>
+          switch (extra.action) {
+            case "paginate":
+              setProductionCompaniesPage(pagination.current! - 1);
+              break;
+            case "sort":
+              setProductionCompaniesSort({
+                field: s.columnKey?.toString() || "",
+                order: s.order === "ascend" ? "asc" : "desc",
+              });
+              break;
+            case "filter":
+              break;
+          }
+        }}
+      />
     </>
   );
 };

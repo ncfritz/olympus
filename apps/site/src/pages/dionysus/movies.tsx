@@ -165,40 +165,39 @@ const MoviesIndexPage: React.FunctionComponent = () => {
 
   return (
     <>
-      <Affix offsetTop={64}>
-        <OlympusBreadcrumbs
-          items={[
-            {
-              title: (
-                <Link href={"/"}>
-                  <Space size={4}>
-                    <HomeOutlined />
-                    <span>Home</span>
-                  </Space>
-                </Link>
-              ),
-            },
-            {
-              title: (
-                <Link href={"/dionysus"}>
-                  <Space size={4}>
-                    <MetadataOutlinedIcon />
-                    <span>Dionysus</span>
-                  </Space>
-                </Link>
-              ),
-            },
-            {
-              title: (
-                <Space>
-                  <CertificationOutlined />
-                  <span>Movies</span>
+      <OlympusBreadcrumbs
+        className={"dark"}
+        items={[
+          {
+            title: (
+              <Link href={"/"}>
+                <Space size={4}>
+                  <HomeOutlined />
+                  <span>Home</span>
                 </Space>
-              ),
-            },
-          ]}
-        />
-      </Affix>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus"}>
+                <Space size={4}>
+                  <MetadataOutlinedIcon />
+                  <span>Dionysus</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Space>
+                <CertificationOutlined />
+                <span>Movies</span>
+              </Space>
+            ),
+          },
+        ]}
+      />
       <Layout
         style={{
           position: "fixed",
@@ -210,253 +209,249 @@ const MoviesIndexPage: React.FunctionComponent = () => {
           height: "calc(100vh - 92px)",
         }}
       >
-        <Content style={{ width: "calc(100vw - 384px)" }}>
-          <Row gutter={8}>
-            <Col span={15}>
-              <Row>
-                <Col span={24}>
-                  <MovieReleaseYearStatisticsChart mediaType={"movies"} />
-                </Col>
-              </Row>
-              <Row>
-                <Col span={12}>
-                  <MovieReleaseStatusStatisticsChart mediaType={"movies"} />
-                </Col>
-                <Col span={12}>
-                  <MovieRuntimeStatisticsChart mediaType={"movies"} />
-                </Col>
-              </Row>
-            </Col>
-            <Col span={9}>
-              <MovieLocationsMap mediaType={"movies"} />
-            </Col>
-          </Row>
-          <Row
-            style={{
-              borderTop: "1px solid #f0f0f0",
-              borderBottom: "1px solid #f0f0f0",
-            }}
+        <Row gutter={8}>
+          <Col span={15}>
+            <Row>
+              <Col span={24}>
+                <MovieReleaseYearStatisticsChart mediaType={"movies"} />
+              </Col>
+            </Row>
+            <Row>
+              <Col span={12}>
+                <MovieReleaseStatusStatisticsChart mediaType={"movies"} />
+              </Col>
+              <Col span={12}>
+                <MovieRuntimeStatisticsChart mediaType={"movies"} />
+              </Col>
+            </Row>
+          </Col>
+          <Col span={9}>
+            <MovieLocationsMap mediaType={"movies"} />
+          </Col>
+        </Row>
+        <Row
+          style={{
+            borderTop: "1px solid #f0f0f0",
+            borderBottom: "1px solid #f0f0f0",
+          }}
+        >
+          <Col
+            span={3}
+            style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}
           >
-            <Col
-              span={3}
-              style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}
-            >
-              <Statistic
-                title={"Count"}
-                value={statsLoading ? 0 : stats.count}
-                loading={statsLoading}
-              />
-            </Col>
-            <Col
-              span={3}
-              style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}
-            >
-              <Statistic
-                title={"Avg Runtime"}
-                value={
-                  statsLoading
-                    ? 0
-                    : prettyMilliseconds(stats.averageRuntime * 60 * 1000, {
-                        formatSubMilliseconds: false,
-                        secondsDecimalDigits: 0,
-                      })
-                }
-                loading={statsLoading}
-              />
-            </Col>
-            <Col
-              span={3}
-              style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}
-            >
-              <Statistic
-                title={"Avg Budget"}
-                value={
-                  statsLoading
-                    ? 0
-                    : stats.averageBudget.toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                      })
-                }
-                loading={statsLoading}
-              />
-            </Col>
-            <Col
-              span={3}
-              style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}
-            >
-              <Statistic
-                title={"Avg Revenue"}
-                value={
-                  statsLoading
-                    ? 0
-                    : stats.averageRevenue.toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                      })
-                }
-                loading={statsLoading}
-              />
-            </Col>
-            <Col
-              span={3}
-              style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}
-            >
-              <Statistic
-                title={"Max Revenue"}
-                value={
-                  statsLoading
-                    ? 0
-                    : stats.maxRevenue.toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                      })
-                }
-                loading={statsLoading}
-              />
-            </Col>
-          </Row>
-          <Space
-            direction={"horizontal"}
-            size={8}
-            style={{
-              backgroundColor: "#efefef",
-              width: "100%",
-              padding: 8,
-              justifyContent: "space-between",
-            }}
+            <Statistic
+              title={"Count"}
+              value={statsLoading ? 0 : stats.count}
+              loading={statsLoading}
+            />
+          </Col>
+          <Col
+            span={3}
+            style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}
           >
-            <Space direction={"horizontal"} size={8}>
-              <Input
-                size={"small"}
-                prefix={
-                  <FilterFilled
-                    style={{
-                      color:
-                        debouncedTitleFilter?.length >= 3
-                          ? "#1677ff"
-                          : "#afafaf",
-                    }}
-                  />
-                }
-                placeholder={"Search by title"}
-                allowClear={true}
-                style={{
-                  width: 500,
-                  background: "#ffffff",
-                  borderColor: "#efefef",
-                }}
-                value={titleFilter}
-                onChange={(e) => {
-                  setTitleFilter(e.target.value.trim());
-                }}
-              />
-              <CheckboxFilter
-                label={"Status"}
-                items={[
-                  "Canceled",
-                  "In Production",
-                  "Planned",
-                  "Post Production",
-                  "Released",
-                  "Rumored",
-                ].map((item) => {
-                  const [statusText, statusColor] =
-                    getReleaseStatusForMovie(item);
+            <Statistic
+              title={"Avg Runtime"}
+              value={
+                statsLoading
+                  ? 0
+                  : prettyMilliseconds(stats.averageRuntime * 60 * 1000, {
+                      formatSubMilliseconds: false,
+                      secondsDecimalDigits: 0,
+                    })
+              }
+              loading={statsLoading}
+            />
+          </Col>
+          <Col
+            span={3}
+            style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}
+          >
+            <Statistic
+              title={"Avg Budget"}
+              value={
+                statsLoading
+                  ? 0
+                  : stats.averageBudget.toLocaleString("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    })
+              }
+              loading={statsLoading}
+            />
+          </Col>
+          <Col
+            span={3}
+            style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}
+          >
+            <Statistic
+              title={"Avg Revenue"}
+              value={
+                statsLoading
+                  ? 0
+                  : stats.averageRevenue.toLocaleString("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    })
+              }
+              loading={statsLoading}
+            />
+          </Col>
+          <Col
+            span={3}
+            style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}
+          >
+            <Statistic
+              title={"Max Revenue"}
+              value={
+                statsLoading
+                  ? 0
+                  : stats.maxRevenue.toLocaleString("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    })
+              }
+              loading={statsLoading}
+            />
+          </Col>
+        </Row>
+        <Space
+          direction={"horizontal"}
+          size={8}
+          style={{
+            backgroundColor: "#efefef",
+            width: "100%",
+            padding: 8,
+            justifyContent: "space-between",
+          }}
+        >
+          <Space direction={"horizontal"} size={8}>
+            <Input
+              size={"small"}
+              prefix={
+                <FilterFilled
+                  style={{
+                    color:
+                      debouncedTitleFilter?.length >= 3 ? "#1677ff" : "#afafaf",
+                  }}
+                />
+              }
+              placeholder={"Search by title"}
+              allowClear={true}
+              style={{
+                width: 500,
+                background: "#ffffff",
+                borderColor: "#efefef",
+              }}
+              value={titleFilter}
+              onChange={(e) => {
+                setTitleFilter(e.target.value.trim());
+              }}
+            />
+            <CheckboxFilter
+              label={"Status"}
+              items={[
+                "Canceled",
+                "In Production",
+                "Planned",
+                "Post Production",
+                "Released",
+                "Rumored",
+              ].map((item) => {
+                const [statusText, statusColor] =
+                  getReleaseStatusForMovie(item);
 
-                  return {
-                    key: statusText,
-                    label: (
-                      <Tag color={statusColor} style={{ minWidth: 120 }}>
-                        {statusText}
-                      </Tag>
-                    ),
-                  };
-                })}
-                onFiltersSet={(values) => {
-                  setStatusFilter(values as string[]);
-                }}
-              />
-              <CheckboxFilter
-                label={"Type"}
-                items={[
-                  { key: "f", label: "Feature" },
-                  { key: "v", label: "Video" },
-                ]}
-                onFiltersSet={(values) => {
-                  setVideoFilter(values as ("f" | "v")[]);
-                }}
-              />
-              <CheckboxFilter
-                label={"Spoken Language"}
-                items={
-                  languages?.length > 0
-                    ? languages.map((language) => {
-                        return {
-                          key: language.id,
-                          label: (
-                            <Space direction={"horizontal"} size={8}>
-                              <ReactCountryFlag
-                                countryCode={language.id}
-                                cdnUrl={"/flags/"}
-                                cdnSuffix={"svg"}
-                                svg={true}
-                              />
-                              <Typography.Text>{language.name}</Typography.Text>
-                            </Space>
-                          ),
-                        };
-                      })
-                    : []
-                }
-                onFiltersSet={(values) => {
-                  setSpokenLanguageFilter(values as string[]);
-                }}
-              />
-            </Space>
-            <Space direction={"horizontal"} size={8} align={"center"}>
-              <Typography.Text style={{ fontSize: "12px" }}>
-                Monitored
-              </Typography.Text>
-              <Switch
-                size={"small"}
-                checked={monitoredFilter}
-                onChange={setMonitoredFilter}
-              />
-              <Sorter
-                initialSort={sort.field}
-                initialDirection={sort.order}
-                sortOptions={{
-                  popularity: "Popularity",
-                  title: "Title",
-                  releaseDate: "Release Date",
-                  budget: "Budget",
-                  revenue: "Revenue",
-                  status: "Status",
-                }}
-                onSortChange={(sort, direction) => {
-                  setSort({
-                    field: sort,
-                    order: direction,
-                  });
-                }}
-              />
-            </Space>
-          </Space>
-          <Space
-            size={16}
-            direction={"vertical"}
-            style={{ width: "100%", padding: 16 }}
-          >
-            <MovieList
-              movies={movies}
-              loading={moviesLoading}
-              afterSearchUpdate={async () => {
-                await fetchMovies(true);
+                return {
+                  key: statusText,
+                  label: (
+                    <Tag color={statusColor} style={{ minWidth: 120 }}>
+                      {statusText}
+                    </Tag>
+                  ),
+                };
+              })}
+              onFiltersSet={(values) => {
+                setStatusFilter(values as string[]);
+              }}
+            />
+            <CheckboxFilter
+              label={"Type"}
+              items={[
+                { key: "f", label: "Feature" },
+                { key: "v", label: "Video" },
+              ]}
+              onFiltersSet={(values) => {
+                setVideoFilter(values as ("f" | "v")[]);
+              }}
+            />
+            <CheckboxFilter
+              label={"Spoken Language"}
+              items={
+                languages?.length > 0
+                  ? languages.map((language) => {
+                      return {
+                        key: language.id,
+                        label: (
+                          <Space direction={"horizontal"} size={8}>
+                            <ReactCountryFlag
+                              countryCode={language.id}
+                              cdnUrl={"/flags/"}
+                              cdnSuffix={"svg"}
+                              svg={true}
+                            />
+                            <Typography.Text>{language.name}</Typography.Text>
+                          </Space>
+                        ),
+                      };
+                    })
+                  : []
+              }
+              onFiltersSet={(values) => {
+                setSpokenLanguageFilter(values as string[]);
               }}
             />
           </Space>
-        </Content>
+          <Space direction={"horizontal"} size={8} align={"center"}>
+            <Typography.Text style={{ fontSize: "12px" }}>
+              Monitored
+            </Typography.Text>
+            <Switch
+              size={"small"}
+              checked={monitoredFilter}
+              onChange={setMonitoredFilter}
+            />
+            <Sorter
+              initialSort={sort.field}
+              initialDirection={sort.order}
+              sortOptions={{
+                popularity: "Popularity",
+                title: "Title",
+                releaseDate: "Release Date",
+                budget: "Budget",
+                revenue: "Revenue",
+                status: "Status",
+              }}
+              onSortChange={(sort, direction) => {
+                setSort({
+                  field: sort,
+                  order: direction,
+                });
+              }}
+            />
+          </Space>
+        </Space>
+        <Space
+          size={16}
+          direction={"vertical"}
+          style={{ width: "100%", padding: 16 }}
+        >
+          <MovieList
+            movies={movies}
+            loading={moviesLoading}
+            afterSearchUpdate={async () => {
+              await fetchMovies(true);
+            }}
+          />
+        </Space>
       </Layout>
     </>
   );

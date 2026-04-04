@@ -441,120 +441,106 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
           },
         ]}
       />
-      <Layout
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col span={8}>{statusChart}</Col>
+        <Col span={8}>{queueTimingChart}</Col>
+        <Col span={8}>{runTimingChart}</Col>
+      </Row>
+      <Row>
+        <Col span={24}>
+          <RefreshTimer
+            ttlMs={60000}
+            fetchFunction={async () => {
+              await fetchWorkflows(true);
+              await fetchWorkflowStatistics(true);
+            }}
+          />
+        </Col>
+      </Row>
+      <Row
+        gutter={16}
         style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 102,
-          overflowX: "hidden",
-          overflowY: "auto",
-          height: "calc(100vh - 102px)",
+          borderTop: "1px solid #f3f3f3",
+          borderBottom: "1px solid #f3f3f3",
         }}
       >
-        <Content style={{ width: "calc(100vw - 384px)" }}>
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={8}>{statusChart}</Col>
-            <Col span={8}>{queueTimingChart}</Col>
-            <Col span={8}>{runTimingChart}</Col>
-          </Row>
-          <Row>
-            <Col span={24}>
-              <RefreshTimer
-                ttlMs={60000}
-                fetchFunction={async () => {
-                  await fetchWorkflows(true);
-                  await fetchWorkflowStatistics(true);
-                }}
-              />
-            </Col>
-          </Row>
-          <Row
-            gutter={16}
-            style={{
-              borderTop: "1px solid #f3f3f3",
-              borderBottom: "1px solid #f3f3f3",
-            }}
-          >
-            {actionsContent}
-          </Row>
-          <ConfigProvider
-            renderEmpty={() =>
-              workflowsError ? (
-                <ErrorBlock error={workflowsError} />
-              ) : (
-                <Empty description="No workflows found" />
-              )
-            }
-          >
-            <Table
-              style={{ width: "100%" }}
-              rowKey={(record) => {
-                return `${record.id}`;
-              }}
-              columns={columns}
-              sticky={true}
-              scroll={{ y: "calc(100vh - 491px)" }}
-              dataSource={workflows?.workflows}
-              size={"small"}
-              loading={workflowsLoading}
-              pagination={{
-                style: {
-                  marginLeft: 16,
-                },
-                position: ["bottomLeft"],
-                pageSize: workflowsPageSize,
-                size: "small",
-                total: workflows?.count,
-                showSizeChanger: true,
-                pageSizeOptions: [25, 50, 100, 250, 500],
-                onShowSizeChange: (current, size) => {
-                  setWorkflowsPageSize(size);
-                },
-                showQuickJumper: true,
-                showTotal: (total, range) => {
-                  return `${range[0]} to ${range[1]} of ${total}`;
-                },
-              }}
-              onChange={(pagination, filters, sorter, extra) => {
-                const s = sorter as Sorts;
+        {actionsContent}
+      </Row>
+      <ConfigProvider
+        renderEmpty={() =>
+          workflowsError ? (
+            <ErrorBlock error={workflowsError} />
+          ) : (
+            <Empty description="No workflows found" />
+          )
+        }
+      >
+        <Table
+          style={{ width: "100%" }}
+          rowKey={(record) => {
+            return `${record.id}`;
+          }}
+          columns={columns}
+          sticky={true}
+          scroll={{ y: "calc(100vh - 491px)" }}
+          dataSource={workflows?.workflows}
+          size={"small"}
+          loading={workflowsLoading}
+          pagination={{
+            style: {
+              marginLeft: 16,
+            },
+            position: ["bottomLeft"],
+            pageSize: workflowsPageSize,
+            size: "small",
+            total: workflows?.count,
+            showSizeChanger: true,
+            pageSizeOptions: [25, 50, 100, 250, 500],
+            onShowSizeChange: (current, size) => {
+              setWorkflowsPageSize(size);
+            },
+            showQuickJumper: true,
+            showTotal: (total, range) => {
+              return `${range[0]} to ${range[1]} of ${total}`;
+            },
+          }}
+          onChange={(pagination, filters, sorter, extra) => {
+            const s = sorter as Sorts;
 
-                switch (extra.action) {
-                  case "paginate":
-                    setWorkflowsPage(pagination.current! - 1);
-                    break;
-                  case "sort":
-                    setWorkflowsSort({
-                      field: s.columnKey?.toString() || "",
-                      order: s.order === "ascend" ? "asc" : "desc",
-                    });
-                    setWorkflowsPage(0);
-                    break;
-                  case "filter":
-                    setWorkflowsPage(0);
-                    setWorkflowFilters(buildFilterDefinitionForTable(filters));
-                    break;
-                }
-              }}
-              rowSelection={{
-                selectedRowKeys,
-                onChange: onSelectChange,
-              }}
-            />
-          </ConfigProvider>
-          <Drawer
-            title="Workflow Details"
-            width={750}
-            placement="right"
-            onClose={async () => {
-              await closeDrawer();
-            }}
-            open={selectedWorkflowId !== undefined}
-          >
-            <WorkflowDetailsPanel workflowId={selectedWorkflowId} />
-          </Drawer>
-        </Content>
-      </Layout>
+            switch (extra.action) {
+              case "paginate":
+                setWorkflowsPage(pagination.current! - 1);
+                break;
+              case "sort":
+                setWorkflowsSort({
+                  field: s.columnKey?.toString() || "",
+                  order: s.order === "ascend" ? "asc" : "desc",
+                });
+                setWorkflowsPage(0);
+                break;
+              case "filter":
+                setWorkflowsPage(0);
+                setWorkflowFilters(buildFilterDefinitionForTable(filters));
+                break;
+            }
+          }}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: onSelectChange,
+          }}
+        />
+      </ConfigProvider>
+      <Drawer
+        title="Workflow Details"
+        width={750}
+        placement="right"
+        onClose={async () => {
+          await closeDrawer();
+        }}
+        open={selectedWorkflowId !== undefined}
+      >
+        <WorkflowDetailsPanel workflowId={selectedWorkflowId} />
+      </Drawer>
     </>
   );
 };

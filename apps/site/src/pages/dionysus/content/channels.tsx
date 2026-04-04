@@ -7,7 +7,7 @@ import type {
   FullContentAssetChannelCategory,
   FilterDefinition,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Breadcrumb, Button, Empty, Space, Typography } from "antd";
+import { Button, Empty, Space, Typography } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -136,6 +136,16 @@ const ChannelsPage: React.FunctionComponent = () => {
           },
           {
             title: (
+              <Link href={"/dionysus/content"}>
+                <Space>
+                  <VideoCameraOutlined />
+                  <span>Content</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
               <Space>
                 <VideoCameraOutlined />
                 <span>Channels</span>
@@ -146,21 +156,16 @@ const ChannelsPage: React.FunctionComponent = () => {
       />
       <Content
         style={{
-          background: "#fff",
+          height: "calc(100vh - 102px)",
+          overflowX: "hidden",
+          overflowY: "auto",
+          padding: 16,
+          marginTop: 28,
         }}
       >
-        <Content
-          style={{
-            height: "calc(100vh - 102px)",
-            overflowX: "hidden",
-            overflowY: "auto",
-            padding: 16,
-          }}
-        >
-          <LoadingWrapper loading={categoriesLoading} error={categoriesError}>
-            {categoriesContent}
-          </LoadingWrapper>
-        </Content>
+        <LoadingWrapper loading={categoriesLoading} error={categoriesError}>
+          {categoriesContent}
+        </LoadingWrapper>
       </Content>
       <ContentAssetChannelCategoryModal
         isOpen={categoryModalOpen}

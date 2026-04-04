@@ -18,7 +18,6 @@ import {
   Space,
   Spin,
   Typography,
-  Splitter,
   Tabs,
   Button,
   Progress,
@@ -48,6 +47,7 @@ import {
   getExternalIdIcon,
   getProgressColor,
 } from "../../../../../../components/dionysus/metadata/util";
+import CollapsibleTabPanel from "../../../../../../components/layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../../../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../../../../icons";
@@ -445,73 +445,63 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
             },
           }}
         >
-          <Splitter
+          <CollapsibleTabPanel
+            panelId={"tvEpisode.side"}
+            width={550}
+            tabs={sideTabs}
             style={{
               width: "100%",
-              minHeight: `calc(100vh - ${topOffset}px)`,
             }}
           >
-            <Splitter.Panel>
+            <Space
+              direction={"horizontal"}
+              className={"person-fix"}
+              size={0}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "start",
+              }}
+            >
+              <Space direction={"vertical"} style={{ padding: 16 }}>
+                <Image
+                  src={`https://image.tmdb.org/t/p/w342/${tvSeason.posterPath}}`}
+                  width={275}
+                  style={{ borderRadius: 8 }}
+                />
+                <Description
+                  title={"Air Date"}
+                  value={
+                    airDate ? airDate.toFormat("yyyy / MM / dd") : undefined
+                  }
+                />
+                <Description title={"Episodes"} value={tvSeason.episodeCount} />
+                <ExternalIdsList ids={tvSeason.externalIds} />
+              </Space>
               <Space
-                direction={"horizontal"}
-                className={"person-fix"}
-                size={0}
+                direction={"vertical"}
                 style={{
                   width: "100%",
-                  display: "flex",
-                  alignItems: "start",
+                  height: `calc(100vh - ${topOffset - 16}px`,
+                  alignItems: "top",
+                  overflow: "scroll",
+                  scrollbarWidth: "none",
                 }}
               >
-                <Space direction={"vertical"} style={{ padding: 16 }}>
-                  <Image
-                    src={`https://image.tmdb.org/t/p/w342/${tvSeason.posterPath}}`}
-                    width={275}
-                    style={{ borderRadius: 8 }}
-                  />
-                  <Description
-                    title={"Air Date"}
-                    value={
-                      airDate ? airDate.toFormat("yyyy / MM / dd") : undefined
-                    }
-                  />
-                  <Description
-                    title={"Episodes"}
-                    value={tvSeason.episodeCount}
-                  />
-                  <ExternalIdsList ids={tvSeason.externalIds} />
-                </Space>
-                <Space
-                  direction={"vertical"}
-                  style={{
-                    width: "100%",
-                    height: `calc(100vh - ${topOffset - 16}px`,
-                    alignItems: "top",
-                    overflow: "scroll",
-                    scrollbarWidth: "none",
+                {overview}
+                <Tabs
+                  className={"fill compact"}
+                  activeKey={activeTab}
+                  onChange={(activeKey: string) => {
+                    setActiveTab(activeKey);
                   }}
-                >
-                  {overview}
-                  <Tabs
-                    className={"fill compact"}
-                    activeKey={activeTab}
-                    onChange={(activeKey: string) => {
-                      setActiveTab(activeKey);
-                    }}
-                    tabPosition={"top"}
-                    size={"small"}
-                    items={mainTabs}
-                  />
-                </Space>
+                  tabPosition={"top"}
+                  size={"small"}
+                  items={mainTabs}
+                />
               </Space>
-            </Splitter.Panel>
-            <Splitter.Panel resizable={false} defaultSize={550}>
-              <Tabs
-                tabPosition={"right"}
-                className={"compact"}
-                items={sideTabs}
-              />
-            </Splitter.Panel>
-          </Splitter>
+            </Space>
+          </CollapsibleTabPanel>
         </Space>
       </Space>
     );
@@ -562,19 +552,9 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
           },
         ]}
       />
-      <Layout
-        style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 64 + 28,
-          overflowX: "hidden",
-          overflowY: "auto",
-          height: "calc(100vh - 48px)",
-        }}
-      >
-        <Content style={{ width: "calc(100vw - 380px)" }}>{content}</Content>
-      </Layout>
+      <LoadingWrapper loading={tvSeasonLoading} error={tvSeasonError}>
+        {content}
+      </LoadingWrapper>
     </>
   );
 };

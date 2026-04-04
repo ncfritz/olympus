@@ -49,7 +49,7 @@ const IndexPage: React.FunctionComponent = () => {
   }, []);
 
   return (
-    <Space>
+    <>
       <OlympusBreadcrumbs
         items={[
           {
@@ -157,7 +157,7 @@ const IndexPage: React.FunctionComponent = () => {
           </Col>
         </Sider>
       </Layout>
-    </Space>
+    </>
   );
 };
 

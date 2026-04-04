@@ -199,73 +199,67 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
       />
       <Content
         style={{
-          background: "#fff",
+          marginTop: 28,
+          marginBottom: 16,
+          height: "calc(100vh - 118px)",
         }}
       >
-        <Content
-          style={{
-            marginTop: 0,
-            marginBottom: 16,
-            height: "calc(100vh - 118px)",
-          }}
+        <ConfigProvider
+          renderEmpty={() =>
+            certificationsError ? (
+              <ErrorBlock error={certificationsError} />
+            ) : (
+              <Empty description="No certifications found" />
+            )
+          }
         >
-          <ConfigProvider
-            renderEmpty={() =>
-              certificationsError ? (
-                <ErrorBlock error={certificationsError} />
-              ) : (
-                <Empty description="No certifications found" />
-              )
-            }
-          >
-            <Table
-              style={{ width: "100%" }}
-              rowKey={"id"}
-              columns={columns}
-              sticky={true}
-              scroll={{ y: "calc(100vh - 197px)" }}
-              dataSource={certifications}
-              size={"small"}
-              loading={certificationsLoading}
-              pagination={{
-                style: {
-                  marginLeft: 16,
-                },
-                position: ["bottomLeft"],
-                pageSize: 50,
-                size: "small",
-                total: certificationsCount,
-                showSizeChanger: false,
-                showQuickJumper: true,
-                showTotal: (total, range) => {
-                  return `${range[0]} to ${range[1]} of ${total}`;
-                },
-              }}
-              onChange={(pagination, filters, sorter, extra) => {
-                const s = sorter as Sorts;
+          <Table
+            style={{ width: "100%" }}
+            rowKey={"id"}
+            columns={columns}
+            sticky={true}
+            scroll={{ y: "calc(100vh - 197px)" }}
+            dataSource={certifications}
+            size={"small"}
+            loading={certificationsLoading}
+            pagination={{
+              style: {
+                marginLeft: 16,
+              },
+              position: ["bottomLeft"],
+              pageSize: 50,
+              size: "small",
+              total: certificationsCount,
+              showSizeChanger: false,
+              showQuickJumper: true,
+              showTotal: (total, range) => {
+                return `${range[0]} to ${range[1]} of ${total}`;
+              },
+            }}
+            onChange={(pagination, filters, sorter, extra) => {
+              const s = sorter as Sorts;
 
-                switch (extra.action) {
-                  case "paginate":
-                    setCertificationsPage(pagination.current! - 1);
-                    break;
-                  case "sort":
-                    setCertificationsSort({
-                      field: s.columnKey?.toString() || "",
-                      order: s.order === "ascend" ? "asc" : "desc",
-                    });
-                    setCertificationsPage(0);
-                    break;
-                  case "filter":
-                    setCertificationsPage(0);
-                    setCertificationsFilters(
-                      buildFilterDefinitionForTable(filters),
-                    );
-                    break;
-                }
-              }}
-            />
-          </ConfigProvider>
-        </Content>
+              switch (extra.action) {
+                case "paginate":
+                  setCertificationsPage(pagination.current! - 1);
+                  break;
+                case "sort":
+                  setCertificationsSort({
+                    field: s.columnKey?.toString() || "",
+                    order: s.order === "ascend" ? "asc" : "desc",
+                  });
+                  setCertificationsPage(0);
+                  break;
+                case "filter":
+                  setCertificationsPage(0);
+                  setCertificationsFilters(
+                    buildFilterDefinitionForTable(filters),
+                  );
+                  break;
+              }
+            }}
+          />
+        </ConfigProvider>
       </Content>
     </>
   );

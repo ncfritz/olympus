@@ -1,6 +1,6 @@
 import { HomeOutlined, VideoCameraOutlined } from "@ant-design/icons";
 import type { FullContentAssetChannel } from "@ncfritz/olympus-sdk/dionysus";
-import { Breadcrumb, Button, Empty, Space, Typography } from "antd";
+import { Button, Empty, Space, Typography } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import React, { type ReactNode } from "react";
@@ -82,9 +82,19 @@ const IndexPage: React.FunctionComponent = () => {
           },
           {
             title: (
+              <Link href={"/dionysus"}>
+                <Space>
+                  <VideoCameraOutlined />
+                  <span>Dionysus</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
               <Space>
                 <VideoCameraOutlined />
-                <span>Dionysus</span>
+                <span>Content</span>
               </Space>
             ),
           },
@@ -92,68 +102,63 @@ const IndexPage: React.FunctionComponent = () => {
       />
       <Content
         style={{
-          background: "#fff",
+          height: "calc(100vh - 92px)",
+          overflowX: "hidden",
+          overflowY: "auto",
+          marginTop: 28,
         }}
       >
-        <Content
+        <ContentAssetStatistics />
+        <Space
+          direction={"vertical"}
+          size={0}
           style={{
-            height: "calc(100vh - 92px)",
-            overflowX: "hidden",
-            overflowY: "auto",
+            width: "100%",
+            borderTop: "1px solid #efefef",
           }}
+          styles={{ item: {} }}
         >
-          <ContentAssetStatistics />
           <Space
-            direction={"vertical"}
-            size={0}
+            direction={"horizontal"}
             style={{
               width: "100%",
-              borderTop: "1px solid #efefef",
+              justifyContent: "space-between",
             }}
-            styles={{ item: {} }}
           >
-            <Space
-              direction={"horizontal"}
-              style={{
-                width: "100%",
-                justifyContent: "space-between",
-              }}
+            <Typography.Title
+              level={5}
+              style={{ paddingTop: 16, paddingLeft: 16, marginBottom: 0 }}
             >
-              <Typography.Title
-                level={5}
-                style={{ paddingTop: 16, paddingLeft: 16, marginBottom: 0 }}
-              >
-                Favorite Channels
-              </Typography.Title>
-              <Button type={"text"} href={"/dionysus/content/channels"}>
-                View All Channels
-              </Button>
-            </Space>
-            <LoadingWrapper
-              loading={!channels || channelsLoading}
-              error={channelsError}
-              style={{ padding: 16, paddingBottom: 0 }}
-            >
-              {channelsContent}
-            </LoadingWrapper>
-            <Typography.Title level={5} style={{ paddingLeft: 16 }}>
-              Favorite Assets
+              Favorite Channels
             </Typography.Title>
-            <ContentAssetTable
-              filters={{
-                type: "gt",
-                name: "rating",
-                value: 0,
-              }}
-              initialSort={{
-                field: "rating",
-                order: "desc",
-              }}
-              pageSize={10}
-              scrollY={"calc(100vh - 880px)"}
-            />
+            <Button type={"text"} href={"/dionysus/content/channels"}>
+              View All Channels
+            </Button>
           </Space>
-        </Content>
+          <LoadingWrapper
+            loading={!channels || channelsLoading}
+            error={channelsError}
+            style={{ padding: 16, paddingBottom: 0 }}
+          >
+            {channelsContent}
+          </LoadingWrapper>
+          <Typography.Title level={5} style={{ paddingLeft: 16 }}>
+            Favorite Assets
+          </Typography.Title>
+          <ContentAssetTable
+            filters={{
+              type: "gt",
+              name: "rating",
+              value: 0,
+            }}
+            initialSort={{
+              field: "rating",
+              order: "desc",
+            }}
+            pageSize={10}
+            scrollY={"calc(100vh - 880px)"}
+          />
+        </Space>
       </Content>
     </ContentAuthWrapper>
   );

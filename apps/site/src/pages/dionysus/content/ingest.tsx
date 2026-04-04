@@ -14,7 +14,6 @@ import type {
   FilterDefinition,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
-  Breadcrumb,
   Button,
   Col,
   ConfigProvider,
@@ -288,231 +287,210 @@ const AssetIngestPage: React.FunctionComponent = () => {
 
   return (
     <ContentAuthWrapper>
-      <Content>
-        <Content
+      <OlympusBreadcrumbs
+        items={[
+          {
+            title: (
+              <Link href={"/"}>
+                <Space direction={"horizontal"} size={4}>
+                  <HomeOutlined />
+                  <span>Home</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus/content"}>
+                <Space direction={"horizontal"} size={4}>
+                  <ExperimentOutlined />
+                  <span>Content</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus/content/assets"}>
+                <Space direction={"horizontal"} size={4}>
+                  <VideoCameraOutlined />
+                  <span>Assets</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: <Typography.Text>Asset Upload</Typography.Text>,
+          },
+        ]}
+      />
+      <Content
+        style={{
+          marginTop: 2,
+          position: "fixed",
+          zIndex: 10,
+          height: "calc(100vh - 92px)",
+        }}
+      >
+        <Row gutter={16} style={{ marginBottom: 16 }}>
+          <Col span={8}>{statusAggregateChart}</Col>
+          <Col span={2}>{sourceAggregateChart}</Col>
+          <Col span={14}>{statusChart}</Col>
+        </Row>
+        <Row>
+          <Col span={24}>
+            <RefreshTimer
+              ttlMs={60000}
+              fetchFunction={async () => {
+                await fetchWorkflows(true);
+                await fetchWorkflowStatistics(true);
+              }}
+            />
+          </Col>
+        </Row>
+        <Row
+          gutter={16}
           style={{
-            position: "fixed",
-            display: "block",
-            top: 64,
-            zIndex: 100,
-            width: "calc(100vw - 380px)",
+            borderTop: "1px solid #f3f3f3",
+            borderBottom: "1px solid #f3f3f3",
           }}
         >
-          <OlympusBreadcrumbs
-            items={[
-              {
-                title: (
-                  <Link href={"/"}>
-                    <Space direction={"horizontal"} size={4}>
-                      <HomeOutlined />
-                      <span>Home</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Link href={"/dionysus/content"}>
-                    <Space direction={"horizontal"} size={4}>
-                      <ExperimentOutlined />
-                      <span>Content</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: (
-                  <Link href={"/dionysus/content/assets"}>
-                    <Space direction={"horizontal"} size={4}>
-                      <VideoCameraOutlined />
-                      <span>Assets</span>
-                    </Space>
-                  </Link>
-                ),
-              },
-              {
-                title: <Typography.Text>Asset Upload</Typography.Text>,
-              },
-            ]}
-          />
-        </Content>
-        <Content
-          style={{
-            background: "#fff",
-          }}
-        >
-          <Content
-            style={{
-              marginTop: 2,
-              position: "fixed",
-              zIndex: 10,
-              width: "calc(100vw - 380px)",
-              height: "calc(100vh - 92px)",
-            }}
+          <Col
+            span={24}
+            style={{ justifyContent: "space-between", display: "flex" }}
           >
-            <Row gutter={16} style={{ marginBottom: 16 }}>
-              <Col span={8}>{statusAggregateChart}</Col>
-              <Col span={2}>{sourceAggregateChart}</Col>
-              <Col span={14}>{statusChart}</Col>
-            </Row>
-            <Row>
-              <Col span={24}>
-                <RefreshTimer
-                  ttlMs={60000}
-                  fetchFunction={async () => {
-                    await fetchWorkflows(true);
-                    await fetchWorkflowStatistics(true);
-                  }}
-                />
-              </Col>
-            </Row>
-            <Row
-              gutter={16}
-              style={{
-                borderTop: "1px solid #f3f3f3",
-                borderBottom: "1px solid #f3f3f3",
-              }}
+            <Space
+              direction={"horizontal"}
+              style={{ padding: 0, marginLeft: 16, marginRight: 16 }}
             >
-              <Col
-                span={24}
-                style={{ justifyContent: "space-between", display: "flex" }}
+              <Space
+                direction={"horizontal"}
+                size={8}
+                style={{
+                  alignItems: "center",
+                  borderRight: "1px solid #f3f3f3",
+                  padding: 16,
+                }}
               >
-                <Space
-                  direction={"horizontal"}
-                  style={{ padding: 0, marginLeft: 16, marginRight: 16 }}
+                <Typography.Text strong={true}>Upload: </Typography.Text>
+                <Button
+                  type={"primary"}
+                  icon={<UploadOutlined />}
+                  onClick={async () => {
+                    setUploadModalOpen(true);
+                  }}
                 >
-                  <Space
-                    direction={"horizontal"}
-                    size={8}
-                    style={{
-                      alignItems: "center",
-                      borderRight: "1px solid #f3f3f3",
-                      padding: 16,
-                    }}
-                  >
-                    <Typography.Text strong={true}>Upload: </Typography.Text>
-                    <Button
-                      type={"primary"}
-                      icon={<UploadOutlined />}
-                      onClick={async () => {
-                        setUploadModalOpen(true);
-                      }}
-                    >
-                      Upload Assets
-                    </Button>
-                  </Space>
-                  <Space
-                    direction={"horizontal"}
-                    size={8}
-                    style={{
-                      alignItems: "center",
-                      borderRight: "1px solid #f3f3f3",
-                      padding: 16,
-                    }}
-                  >
-                    <Typography.Text strong={true}>
-                      External Sources:
-                    </Typography.Text>
-                    <Button
-                      type={"primary"}
-                      icon={<UploadOutlined />}
-                      onClick={async () => {
-                        setUploadUrlsModalOpen(true);
-                      }}
-                    >
-                      Upload URLs
-                    </Button>
-                  </Space>
-                </Space>
-                <Space style={{ marginRight: 16 }}>
-                  <Button
-                    type={"text"}
-                    disabled={workflowsLoading}
-                    icon={<ReloadOutlined />}
-                    onClick={async () => {
-                      await fetchWorkflows(true);
-                      await fetchWorkflowStatistics(true);
-                    }}
-                  />
-                </Space>
-              </Col>
-            </Row>
-            <ConfigProvider
-              renderEmpty={() =>
-                workflowsError ? (
-                  <ErrorBlock error={workflowsError} />
-                ) : (
-                  <Empty description="No workflows found" />
-                )
-              }
-            >
-              <Table
-                style={{ width: "100%" }}
-                rowKey={(record) => {
-                  return `${record.id}`;
+                  Upload Assets
+                </Button>
+              </Space>
+              <Space
+                direction={"horizontal"}
+                size={8}
+                style={{
+                  alignItems: "center",
+                  borderRight: "1px solid #f3f3f3",
+                  padding: 16,
                 }}
-                columns={columns}
-                sticky={true}
-                scroll={{ y: "calc(100vh - 444px)" }}
-                dataSource={workflows?.workflows}
-                size={"small"}
-                loading={workflowsLoading}
-                pagination={{
-                  style: {
-                    marginLeft: 16,
-                  },
-                  position: ["bottomLeft"],
-                  pageSize: workflowsPageSize,
-                  size: "small",
-                  total: workflows?.count,
-                  showSizeChanger: true,
-                  pageSizeOptions: [25, 50, 100, 250, 500],
-                  onShowSizeChange: (current, size) => {
-                    setWorkflowsPageSize(size);
-                  },
-                  showQuickJumper: true,
-                  showTotal: (total, range) => {
-                    return `${range[0]} to ${range[1]} of ${total}`;
-                  },
+              >
+                <Typography.Text strong={true}>
+                  External Sources:
+                </Typography.Text>
+                <Button
+                  type={"primary"}
+                  icon={<UploadOutlined />}
+                  onClick={async () => {
+                    setUploadUrlsModalOpen(true);
+                  }}
+                >
+                  Upload URLs
+                </Button>
+              </Space>
+            </Space>
+            <Space style={{ marginRight: 16 }}>
+              <Button
+                type={"text"}
+                disabled={workflowsLoading}
+                icon={<ReloadOutlined />}
+                onClick={async () => {
+                  await fetchWorkflows(true);
+                  await fetchWorkflowStatistics(true);
                 }}
-                onChange={(pagination, filters, sorter, extra) => {
-                  const s = sorter as Sorts;
+              />
+            </Space>
+          </Col>
+        </Row>
+        <ConfigProvider
+          renderEmpty={() =>
+            workflowsError ? (
+              <ErrorBlock error={workflowsError} />
+            ) : (
+              <Empty description="No workflows found" />
+            )
+          }
+        >
+          <Table
+            style={{ width: "100%" }}
+            rowKey={(record) => {
+              return `${record.id}`;
+            }}
+            columns={columns}
+            sticky={true}
+            scroll={{ y: "calc(100vh - 444px)" }}
+            dataSource={workflows?.workflows}
+            size={"small"}
+            loading={workflowsLoading}
+            pagination={{
+              style: {
+                marginLeft: 16,
+              },
+              position: ["bottomLeft"],
+              pageSize: workflowsPageSize,
+              size: "small",
+              total: workflows?.count,
+              showSizeChanger: true,
+              pageSizeOptions: [25, 50, 100, 250, 500],
+              onShowSizeChange: (current, size) => {
+                setWorkflowsPageSize(size);
+              },
+              showQuickJumper: true,
+              showTotal: (total, range) => {
+                return `${range[0]} to ${range[1]} of ${total}`;
+              },
+            }}
+            onChange={(pagination, filters, sorter, extra) => {
+              const s = sorter as Sorts;
 
-                  switch (extra.action) {
-                    case "paginate":
-                      setWorkflowsPage(pagination.current! - 1);
-                      break;
-                    case "sort":
-                      setWorkflowsSort({
-                        field: s.columnKey?.toString() || "",
-                        order: s.order === "ascend" ? "asc" : "desc",
-                      });
-                      break;
-                    case "filter":
-                      setWorkflowsPage(0);
-                      setWorkflowFilters(
-                        buildFilterDefinitionForTable(filters),
-                      );
-                      break;
-                  }
-                }}
-              />
-            </ConfigProvider>
-            <Drawer
-              title="Workflow Details"
-              width={750}
-              placement="right"
-              onClose={async () => {
-                await closeDrawer();
-              }}
-              open={selectedWorkflowId !== undefined}
-            >
-              <ContentIngestionWorkflowDetailsPanel
-                workflowId={selectedWorkflowId}
-              />
-            </Drawer>
-          </Content>
-        </Content>
+              switch (extra.action) {
+                case "paginate":
+                  setWorkflowsPage(pagination.current! - 1);
+                  break;
+                case "sort":
+                  setWorkflowsSort({
+                    field: s.columnKey?.toString() || "",
+                    order: s.order === "ascend" ? "asc" : "desc",
+                  });
+                  break;
+                case "filter":
+                  setWorkflowsPage(0);
+                  setWorkflowFilters(buildFilterDefinitionForTable(filters));
+                  break;
+              }
+            }}
+          />
+        </ConfigProvider>
+        <Drawer
+          title="Workflow Details"
+          width={750}
+          placement="right"
+          onClose={async () => {
+            await closeDrawer();
+          }}
+          open={selectedWorkflowId !== undefined}
+        >
+          <ContentIngestionWorkflowDetailsPanel
+            workflowId={selectedWorkflowId}
+          />
+        </Drawer>
       </Content>
       <ContentIngestionUploadModal
         isOpen={uploadModalOpen}
