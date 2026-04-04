@@ -99,7 +99,7 @@ export class MediaAssetSearchConfiguration extends BaseMediaAssetSearchConfigura
     description:
       "An ISO-8601 formatted string indicating when the search configuration was last run",
   })
-  @Transform(({ value }) => value.toISOString())
+  @Transform(({ value }) => (value ? value.toISOString() : undefined))
   lastExecutionTime?: Moment;
 
   @ApiProperty({
