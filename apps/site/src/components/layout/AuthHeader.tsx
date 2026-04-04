@@ -13,6 +13,7 @@ import NotificationSink, {
   PUBLISH_EVENT,
   REFRESH_EVENT,
 } from "../common/NotificationSink";
+import AuthSessionTimer from "../content/AuthSessionTimer";
 import NotesEditorModal from "../notes/NotesEditorModal";
 import OnAirDrawer from "../onair/OnAirDrawer";
 import RefreshTimer from "../common/RefreshTimer";
@@ -110,7 +111,7 @@ const AuthHeader: React.FunctionComponent = () => {
         }}
       >
         <Row>
-          <Col flex={"none"}>
+          <Col span={8}>
             <img
               src={isElectron() ? "/header_electron.png" : "/header.png"}
               style={{ verticalAlign: "top", height: 64 }}
@@ -119,6 +120,7 @@ const AuthHeader: React.FunctionComponent = () => {
             />
           </Col>
           <Col
+            span={8}
             flex={"auto"}
             style={{
               display: "flex",
@@ -138,11 +140,14 @@ const AuthHeader: React.FunctionComponent = () => {
             />
           </Col>
           <Col
+            flex={"auto"}
+            span={8}
             style={{
-              marginLeft: 150,
+              justifyItems: "end",
             }}
           >
             <Row gutter={24}>
+              <AuthSessionTimer />
               <Col
                 style={{ alignItems: "center", display: "flex", columnGap: 8 }}
               >
@@ -183,7 +188,7 @@ const AuthHeader: React.FunctionComponent = () => {
                   }}
                   style={{
                     background: onAirActive ? "#ff0000" : "transparent",
-                    borderWidth: 3,
+                    borderWidth: 2,
                     color: "#ffffff",
                     fontWeight: "bold",
                   }}

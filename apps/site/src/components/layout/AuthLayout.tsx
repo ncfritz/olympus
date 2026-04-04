@@ -11,8 +11,11 @@ import {
 import { FloatButton, Layout, Menu, Space, Typography } from "antd";
 import { useRouter } from "next/router";
 import { type ReactNode, useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import styled from "styled-components";
-import DionysysMenu from "../../dionysus/layout/menu";
+import DionysusMenu from "../../dionysus/layout/menu";
+import { useAppSelector } from "../../redux/hooks";
+import { toggleSubmenuExpanded } from "../../redux/slices/layoutSlice";
 import MinervaMenu from "../minerva/layout/menu";
 import ToolsMenu from "../tools/layout/menu";
 import AuthHeader from "./AuthHeader";
@@ -44,6 +47,11 @@ export interface AuthLayoutProps {
 
 const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
   const router = useRouter();
+  const dispatch = useDispatch();
+
+  const submenuExpanded = useAppSelector(
+    (state) => state.layout.submenuExpanded,
+  );
 
   const [menuItem, setMenuItem] = useState<string>("/");
   const [applicationMenu, setApplicationMenu] = useState<ReactNode | undefined>(
@@ -57,7 +65,7 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
 
     switch (application) {
       case "dionysus":
-        setApplicationMenu(<DionysysMenu />);
+        setApplicationMenu(<DionysusMenu />);
         break;
       case "tools":
         setApplicationMenu(<ToolsMenu />);
@@ -69,6 +77,19 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
         setApplicationMenu(undefined);
     }
   }, [router]);
+
+  let menuWidth = 0;
+  let leftMarginWidth = 80; // Account for main menu
+
+  if (applicationMenu) {
+    if (submenuExpanded) {
+      menuWidth = 300;
+    } else {
+      menuWidth = 80;
+    }
+  }
+
+  leftMarginWidth += menuWidth;
 
   return (
     <Layout>
@@ -82,6 +103,7 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
             overflow: "auto",
             height: "100vh",
             position: "fixed",
+            zIndex: 600,
             top: 64,
             left: 0,
           }}
@@ -131,9 +153,26 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
                 type: "divider",
               },
               {
-                key: `/docs`,
+                key: `documentation`,
                 icon: <ApiOutlined />,
                 label: "API Documentation",
+                children: [
+                  {
+                    key: `/docs/olympus`,
+                    icon: <ApiOutlined />,
+                    label: "Olympus",
+                  },
+                  {
+                    key: `/docs/dionysus`,
+                    icon: <ApiOutlined />,
+                    label: "Dionysus",
+                  },
+                  {
+                    key: `/docs/minerva`,
+                    icon: <ApiOutlined />,
+                    label: "Minerva",
+                  },
+                ],
               },
             ]}
           />
@@ -159,16 +198,20 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
         </Sider>
         {applicationMenu && (
           <Sider
-            className={"olympus-menu"}
-            width={300}
+            className={`olympus-menu ${submenuExpanded ? "expanded" : "collapsed"}`}
+            width={menuWidth}
+            collapsedWidth={80}
             style={{
-              overflow: "auto",
-              height: "100vh",
-              position: "fixed",
-              top: 64,
+              overflowX: "hidden",
+              height: "calc(100vh - 64px)",
+              position: "absolute",
               left: 80,
-              backgroundColor: "#ffffff",
-              borderRight: "1px solid #0505050f",
+              backgroundColor: submenuExpanded ? "#ffffff" : "#324354",
+            }}
+            collapsible={true}
+            collapsed={!submenuExpanded}
+            onCollapse={(collapsed, type) => {
+              dispatch(toggleSubmenuExpanded());
             }}
           >
             {applicationMenu}
@@ -177,10 +220,29 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
         <Content
           style={{
             overflow: "initial",
-            marginLeft: applicationMenu ? 380 : 80,
+            marginLeft: leftMarginWidth,
           }}
         >
-          <div className={"main"}>{children}</div>
+          <Layout
+            style={{
+              position: "fixed",
+              background: "#ffffff",
+              gap: 16,
+              top: 64,
+              overflowX: "hidden",
+              overflowY: "auto",
+              height: "calc(100vh - 48px)",
+            }}
+          >
+            <Content
+              className={"main-content"}
+              style={{
+                width: `calc(100vw - ${leftMarginWidth}px)`,
+              }}
+            >
+              {children}
+            </Content>
+          </Layout>
           <FloatButton.BackTop visibilityHeight={600}>
             <BackToTopButton>
               <UpOutlined />
