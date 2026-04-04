@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
-import { MediaAssetSearchConfiguration } from "../media";
+import { MediaAsset, MediaAssetSearchConfiguration } from "../media";
 import {
   ExternalId,
   PartialExternalId,
@@ -53,6 +53,9 @@ export class BaseEpisode {
 export class SparseEpisode extends BaseEpisode {
   @ApiProperty({ type: () => MediaAssetSearchConfiguration, required: false })
   searchConfiguration?: MediaAssetSearchConfiguration;
+
+  @ApiProperty({ type: () => MediaAsset, required: false })
+  asset?: MediaAsset;
 
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
