@@ -113,12 +113,18 @@ export class UpdateMediaAssetSearchConfigurationController {
       }
     `;
 
-    const nextExecutionTime = moment
-      .utc()
-      .add(
-        Math.floor(Math.random() * (request.searchConfiguration.jitter || 300)),
-        "minutes",
-      );
+    const changes = { ...request.searchConfiguration };
+
+    if (!request.searchConfiguration.nextExecutionTime) {
+      changes.nextExecutionTime = moment
+        .utc()
+        .add(
+          Math.floor(
+            Math.random() * (request.searchConfiguration.jitter || 300),
+          ),
+          "minutes",
+        );
+    }
 
     const updateResponse =
       await this.graphQLClient.request<GraphQlUpdateMediaAssetSearchConfigurationResponse>(
@@ -126,10 +132,7 @@ export class UpdateMediaAssetSearchConfigurationController {
         {
           mediaType: mediaType,
           mediaId: mediaId,
-          changes: {
-            ...request.searchConfiguration,
-            nextExecutionTime: nextExecutionTime.toISOString(),
-          },
+          changes: changes,
         },
       );
 
