@@ -259,7 +259,7 @@ const NotificationForm: React.FunctionComponent = () => {
       console.log(e);
       publish(PUBLISH_EVENT, {
         type: "error",
-        message: "Unable to sent notification",
+        message: "Unable to send notification",
         description: "The API call to /v1/notifications/publish failed",
       });
     }
