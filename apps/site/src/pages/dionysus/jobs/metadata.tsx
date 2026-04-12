@@ -18,7 +18,6 @@ import {
   Button,
   Col,
   Drawer,
-  Layout,
   Progress,
   Row,
   Space,
@@ -29,7 +28,6 @@ import {
   Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { Content } from "antd/lib/layout/layout";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import prettyMilliseconds from "pretty-ms";
@@ -311,28 +309,32 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
       dataIndex: "status",
       filters: [
         {
-          text: getMetadataJobStatusIndicator("queued"),
-          value: "queued",
-        },
-        {
-          text: getMetadataJobStatusIndicator("invalidated"),
-          value: "invalidated",
+          text: getMetadataJobStatusIndicator("fetched"),
+          value: "fetched",
         },
         {
           text: getMetadataJobStatusIndicator("fetching"),
           value: "fetching",
         },
         {
-          text: getMetadataJobStatusIndicator("cancelled"),
-          value: "cancelled",
-        },
-        {
-          text: getMetadataJobStatusIndicator("fetched"),
-          value: "fetched",
+          text: getMetadataJobStatusIndicator("invalidated"),
+          value: "invalidated",
         },
         {
           text: getMetadataJobStatusIndicator("failed"),
           value: "failed",
+        },
+        {
+          text: getMetadataJobStatusIndicator("not_found"),
+          value: "not_found",
+        },
+        {
+          text: getMetadataJobStatusIndicator("cancelled"),
+          value: "cancelled",
+        },
+        {
+          text: getMetadataJobStatusIndicator("queued"),
+          value: "queued",
         },
       ],
       filterMode: "tree",

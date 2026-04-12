@@ -26,24 +26,16 @@ const MetadataJobStatusSelect: React.FunctionComponent<
       variant={bordered ? "outlined" : "borderless"}
       options={[
         {
-          value: "queued",
-          label: getMetadataJobStatusIndicator("queued", true),
-        },
-        {
-          value: "invalidated",
-          label: getMetadataJobStatusIndicator("invalidated", true),
+          value: "fetched",
+          label: getMetadataJobStatusIndicator("fetched", true),
         },
         {
           value: "fetching",
           label: getMetadataJobStatusIndicator("fetching", true),
         },
         {
-          value: "cancelled",
-          label: getMetadataJobStatusIndicator("cancelled", true),
-        },
-        {
-          value: "fetched",
-          label: getMetadataJobStatusIndicator("fetched", true),
+          value: "invalidated",
+          label: getMetadataJobStatusIndicator("invalidated", true),
         },
         {
           value: "failed",
@@ -52,6 +44,14 @@ const MetadataJobStatusSelect: React.FunctionComponent<
         {
           value: "not_found",
           label: getMetadataJobStatusIndicator("not_found", true),
+        },
+        {
+          value: "cancelled",
+          label: getMetadataJobStatusIndicator("cancelled", true),
+        },
+        {
+          value: "queued",
+          label: getMetadataJobStatusIndicator("queued", true),
         },
       ]}
     />

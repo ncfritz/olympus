@@ -14,10 +14,11 @@ import React, { type CSSProperties } from "react";
 import {
   type WorkflowStatus,
   type JobStatus,
+  type MetadataFetchJobStatus,
 } from "@ncfritz/olympus-sdk/dionysus";
 
 export const getMetadataJobStatusIndicator = (
-  status: string,
+  status: MetadataFetchJobStatus,
   fullWidth = false,
 ) => {
   const style: CSSProperties = { minWidth: 120 };
