@@ -5,8 +5,8 @@ export interface SearchResultTagProps {
   color?: string;
   textColor?: string;
   monospace?: boolean;
-  children: ReactNode | ReactNode[];
   style?: CSSProperties;
+  children: ReactNode | ReactNode[];
 }
 
 const SearchResultTag: React.FunctionComponent<SearchResultTagProps> = ({
