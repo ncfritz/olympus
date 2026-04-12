@@ -1,4 +1,13 @@
-import { CheckCircleFilled, CloseCircleFilled } from "@ant-design/icons";
+import {
+  CaretRightOutlined,
+  CheckCircleFilled,
+  CloseCircleFilled,
+  FileTextOutlined,
+  FileUnknownOutlined,
+  SoundOutlined,
+  VideoCameraOutlined
+} from "@ant-design/icons";
+import { co } from "@fullcalendar/core/internal-common";
 import {
   Col,
   Collapse,
@@ -7,8 +16,10 @@ import {
   Space,
   Typography,
 } from "antd";
+import { iso6392 } from "iso-639-2";
 import dynamic from "next/dynamic";
 import { type ReactNode } from "react";
+import ReactCountryFlag from "react-country-flag/src";
 const DynamicReactJson = dynamic(import("react-json-view"), { ssr: false });
 
 export interface MediaAssetDetailsProps {
@@ -395,13 +406,66 @@ const MediaAssetDetails: React.FunctionComponent<MediaAssetDetailsProps> = ({
         </Row>,
       );
 
+      let titleIcon = <FileUnknownOutlined />;
+      let titleExtra: ReactNode = undefined;
+
+      if (stream.codec_type === "video") {
+        titleIcon = <VideoCameraOutlined />;
+      } else if (stream.codec_type === "audio") {
+        titleIcon = <SoundOutlined />;
+      } else if (stream.codec_type === "subtitle") {
+        titleIcon = <FileTextOutlined />;
+
+        const subtitleLanguageCode = stream.tags?.language;
+        const subtitleTitle = stream.tags?.title;
+
+        if (subtitleLanguageCode) {
+          const subtitleLanguage = iso6392.filter(
+            (entry) => entry.iso6392B === subtitleLanguageCode,
+          )[0];
+
+          if (subtitleLanguage) {
+            titleExtra = (
+              <Space direction={"horizontal"} size={4}>
+                {subtitleLanguage.iso6391 ? (
+                  <ReactCountryFlag
+                    countryCode={subtitleLanguage.iso6391}
+                    cdnUrl={"/flags/"}
+                    cdnSuffix={"svg"}
+                    svg={true}
+                  />
+                ) : (
+                  "huh"
+                )}
+                {subtitleLanguage && subtitleLanguage.name}
+                {subtitleTitle && (
+                  <Typography.Text
+                    style={{ fontSize: "12px", color: "#666666" }}
+                  >
+                    ({subtitleTitle})
+                  </Typography.Text>
+                )}
+              </Space>
+            );
+          }
+        }
+      }
+
       streams.push({
         label: (
-          <Typography.Text
-            style={{ fontSize: "12px", fontFamily: "monospace" }}
+          <Space
+            direction={"horizontal"}
+            size={8}
+            style={{ alignItems: "center" }}
           >
-            {stream.codec_long_name}
-          </Typography.Text>
+            {titleIcon}
+            <Typography.Text
+              style={{ fontSize: "12px", fontFamily: "monospace" }}
+            >
+              {stream.codec_long_name}
+            </Typography.Text>
+            {titleExtra && ["-", titleExtra]}
+          </Space>
         ),
         key: `stream-${stream.index}`,
         children: (
@@ -455,6 +519,9 @@ const MediaAssetDetails: React.FunctionComponent<MediaAssetDetailsProps> = ({
             </Typography.Title>
             <Collapse
               items={streams}
+              expandIcon={({ isActive }) => (
+                <CaretRightOutlined rotate={isActive ? 90 : 0} />
+              )}
               ghost={true}
               style={{ marginBottom: 16 }}
             />
@@ -465,6 +532,9 @@ const MediaAssetDetails: React.FunctionComponent<MediaAssetDetailsProps> = ({
             <Typography.Title level={5}>Chapters</Typography.Title>
             <Collapse
               items={chapters}
+              expandIcon={({ isActive }) => (
+                <CaretRightOutlined rotate={isActive ? 90 : 0} />
+              )}
               ghost={true}
               style={{ marginBottom: 16 }}
             />
