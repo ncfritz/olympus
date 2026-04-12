@@ -1,4 +1,4 @@
-import type { WorkflowStatus } from "@ncfritz/olympus-sdk/dionysus";
+import type { MediaAssetSearchType, WorkflowStatus } from "@ncfritz/olympus-sdk/dionysus";
 import type { ReactNode } from "react";
 import { type JobStatus, type JobType } from "@ncfritz/olympus-sdk/dionysus";
 
@@ -27,7 +27,10 @@ export type DionysusWorkflowPayload = {
   status: WorkflowStatus;
 };
 
-export type DionysusMediaAssetSearchPayload = {};
+export type DionysusMediaAssetSearchPayload = {
+  assetType: MediaAssetSearchType;
+  mediaId: number;
+};
 
 export type NotificationEvent<T> = {
   closable: boolean;

@@ -1,5 +1,6 @@
-import { Button, Space, Typography } from "antd";
+import { Space, Typography } from "antd";
 import type { ReactNode } from "react";
+import { publish } from "../../../../utils/events";
 import {
   type DionysusMediaAssetSearchPayload,
   NotificationFormatter,
@@ -16,10 +17,12 @@ export class MediaAssetSearchRefreshCompletionFormatter implements NotificationF
     const message = (
       <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
         <Typography.Text>
-          A search configuration has succesfully refreshed
+          A search configuration has successfully refreshed.
         </Typography.Text>
       </Space>
     );
+
+    publish("dionysus:search:complete", payload);
 
     return [title, message];
   }

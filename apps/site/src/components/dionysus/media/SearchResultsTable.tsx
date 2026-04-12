@@ -30,10 +30,11 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import { DateTime } from "luxon";
 import prettyBytes from "pretty-bytes";
-import React, { type ReactNode, useState } from "react";
+import React, { type ReactNode, useEffect, useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import mediaApi from "../../../api/mediaApi";
 import { useFetch } from "../../../hooks/useFetch";
+import { subscribe, unsubscribe } from "../../../utils/events";
 import { buildFilterDefinitionForTable } from "../../../utils/filters";
 import { getGradientAtPercent } from "../../../utils/gradient";
 import ErrorBlock from "../../common/ErrorBlock";
@@ -98,12 +99,37 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
     },
   });
 
+  const onSearchComplete = async (e: CustomEvent) => {
+    console.log(
+      `Asset Type - ${e.detail?.assetType} - ${searchConfiguration.type}`,
+    );
+    console.log(
+      `Media ID - ${e.detail?.mediaId} - ${searchConfiguration.mediaId}`,
+    );
+
+    if (
+      `${e.detail?.assetType}` === `${searchConfiguration.type}` &&
+      `${e.detail?.mediaId}` === `${searchConfiguration.mediaId}`
+    ) {
+      await fetchSearchResults(true);
+    }
+  };
+
+  useEffect(() => {
+    subscribe("dionysus:search:complete", onSearchComplete);
+
+    return () => {
+      unsubscribe("dionysus:search:complete", onSearchComplete);
+    };
+  }, []);
+
   const handleStartDownload = async (id: string) => {
     await mediaApi.createMediaAssetDownload(
       searchConfiguration.type,
       searchConfiguration.mediaId,
       id,
     );
+    await fetchSearchResults(true);
   };
 
   const now = DateTime.now();
@@ -467,6 +493,7 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
     >
       <Table
         style={{ width: "100%" }}
+        className={"search-results-table"}
         rowKey={"id"}
         columns={columns}
         sticky={true}
@@ -474,6 +501,22 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
         dataSource={searchResults}
         size={"small"}
         loading={searchResultsLoading}
+        rowClassName={(record, index, indent) => {
+          switch (record.status) {
+            case "downloading":
+              return "downloading";
+            case "downloaded":
+              return "downloaded";
+            case "download_failed":
+              return "download-failed";
+            case "download_requested":
+              return "download-requested";
+            case "blocked":
+              return "blocked";
+            default:
+              return "";
+          }
+        }}
         pagination={{
           style: {
             marginLeft: 16,
@@ -598,6 +641,7 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
                   </Row>
                   {record.downloads.map((download) => {
                     let color = "#666666";
+                    let progressStatus = "normal";
 
                     switch (download.status) {
                       case "downloading":
@@ -608,12 +652,15 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
                         break;
                       case "success":
                         color = "#275916";
+                        progressStatus = "success";
                         break;
                       case "failed":
                         color = "#7d0000";
+                        progressStatus = "exception";
                         break;
                       case "cancelled":
                         color = "#c5981c";
+                        progressStatus = "exception";
                         break;
                     }
 
@@ -665,11 +712,7 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
                         <Col span={5}>
                           <Progress
                             percent={download.progress}
-                            status={
-                              download.status === "success"
-                                ? "success"
-                                : "normal"
-                            }
+                            status={progressStatus}
                             format={(value) => `${value?.toFixed(2)}%`}
                           />
                         </Col>
