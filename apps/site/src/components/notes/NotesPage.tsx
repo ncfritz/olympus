@@ -1,4 +1,9 @@
-import { HomeOutlined, RadarChartOutlined } from "@ant-design/icons";
+import {
+  CalendarOutlined,
+  FilterOutlined,
+  HomeOutlined,
+  RadarChartOutlined,
+} from "@ant-design/icons";
 import type { GetSummaryResponse, Note } from "@ncfritz/olympus-sdk/minerva";
 import { Empty, Layout, Space, Spin, Switch, Typography } from "antd";
 import type { BreadcrumbItemType } from "antd/lib/breadcrumb/Breadcrumb";
@@ -8,6 +13,8 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import notesApi from "../../api/notestApi";
+import MovieReleaseDateList from "../dionysus/metadata/MovieReleaseDatesList";
+import CollapsibleTabPanel from "../layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../layout/OlympusBreadcrumbs";
 import Day from "./DayDoughnut";
 import MonthGraph from "./MonthGraph";
@@ -216,9 +223,176 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
     );
   }
 
+  const sideTabs = [
+    {
+      key: "t-statistics",
+      label: <CalendarOutlined />,
+      children: (
+        <Space direction={"vertical"}>
+          <Space
+            size={8}
+            className={"date-picker"}
+            direction={"vertical"}
+            style={{ width: 390 }}
+          >
+            <Space
+              style={{
+                borderBottom: "1px solid #f6f6f6",
+                width: "100%",
+                justifyContent: "center",
+              }}
+            >
+              {datePickerContent}
+            </Space>
+          </Space>
+          <Space
+            style={{
+              padding: "0px 16px 16px 16px",
+              borderBottom: "1px solid #f6f6f6",
+            }}
+          >
+            <NotesTypeGraph
+              date={startDate}
+              days={days}
+              summaryLoading={summaryLoading}
+              summary={summary}
+            />
+          </Space>
+          <Space
+            style={{
+              padding: "0px 16px 16px 16px",
+              borderBottom: "1px solid #f6f6f6",
+            }}
+          >
+            <NotesHourOfDayGraph
+              date={startDate}
+              summaryLoading={summaryLoading}
+              summary={summary}
+            />
+          </Space>
+        </Space>
+      ),
+    },
+    {
+      key: "t-filters",
+      label: <FilterOutlined />,
+      children: (
+        <Space
+          size={16}
+          direction={"vertical"}
+          style={{
+            padding: 16,
+            width: "100%",
+            borderBottom: "1px solid #f6f6f6",
+          }}
+        >
+          <Typography.Title level={5}>Filters</Typography.Title>
+          <Space size={16} direction={"vertical"} style={{ width: "100%" }}>
+            <Space size={8} direction={"vertical"} style={{ width: "100%" }}>
+              <Typography.Text>Type</Typography.Text>
+              <Space.Compact block={true} style={{ width: "100%" }}>
+                {[0, 1, 2, 3, 4, 5].map((i) => {
+                  return (
+                    <NoteTypeFilterButton
+                      key={`filter-${i}`}
+                      noteType={i}
+                      onToggle={handleToggleTypeFilter}
+                      typeFilters={typeFilters}
+                    />
+                  );
+                })}
+              </Space.Compact>
+            </Space>
+            <Space
+              direction={"horizontal"}
+              style={{
+                width: "100%",
+                justifyContent: "space-between",
+                paddingRight: 8,
+              }}
+            >
+              <Typography.Text>Show metadata</Typography.Text>
+              <Switch
+                checked={showMeta}
+                onChange={(checked) => {
+                  setShowMeta(checked);
+                }}
+              />
+            </Space>
+            <Space
+              direction={"horizontal"}
+              style={{
+                width: "100%",
+                justifyContent: "space-between",
+                paddingRight: 8,
+              }}
+            >
+              <Typography.Text>Hide notes with associations</Typography.Text>
+              <Switch
+                checked={hideAssociated}
+                onChange={(checked) => {
+                  setHideAssociated(checked);
+                }}
+              />
+            </Space>
+            <Space
+              direction={"horizontal"}
+              style={{
+                width: "100%",
+                justifyContent: "space-between",
+                paddingRight: 8,
+              }}
+            >
+              <Typography.Text>Show deleted notes</Typography.Text>
+              <Switch
+                checked={showDeleted}
+                onChange={(checked) => {
+                  setShowDeleted(checked);
+                }}
+              />
+            </Space>
+            <Space
+              direction={"horizontal"}
+              style={{
+                width: "100%",
+                justifyContent: "space-between",
+                paddingRight: 8,
+              }}
+            >
+              <Typography.Text>Only show flagged notes</Typography.Text>
+              <Switch
+                checked={showFlaggedOnly}
+                onChange={(checked) => {
+                  setShowFlaggedOnly(checked);
+                }}
+              />
+            </Space>
+            <Space
+              direction={"horizontal"}
+              style={{
+                width: "100%",
+                justifyContent: "space-between",
+                paddingRight: 8,
+              }}
+            >
+              <Typography.Text>Show empty days</Typography.Text>
+              <Switch
+                checked={showEmptyDays}
+                onChange={(checked) => {
+                  setShowEmptyDays(checked);
+                }}
+              />
+            </Space>
+          </Space>
+        </Space>
+      ),
+    },
+  ];
+
   return (
-    <Space direction={"vertical"} size={0}>
+    <>
       <OlympusBreadcrumbs
+        className={"dark"}
         items={[
           {
             title: (
@@ -243,212 +417,35 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
           ...breadcrumbs,
         ]}
       />
-      <Content
+      <CollapsibleTabPanel
+        panelId={"movie.side"}
+        width={445}
+        tabs={sideTabs}
         style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 102,
-          marginRight: 788,
-          overflowX: "hidden",
-          overflowY: "auto",
-          height: "calc(100vh - 102px)",
+          width: "100%",
         }}
       >
-        <Content style={{ width: "calc(100vw - 780px)" }}>
-          <MonthGraph
-            date={startDate}
-            days={days}
-            summaryLoading={summaryLoading}
-            summary={summary}
-          />
-          <Space
-            direction={"vertical"}
-            size={0}
-            style={{
-              width: "100%",
-              overflowY: "scroll",
-              height: "calc(100vh - 302px)",
-              scrollbarWidth: "none",
-              paddingRight: 8,
-            }}
-          >
-            {timelineContent}
-          </Space>
-        </Content>
-        <Sider
-          width={400}
-          collapsible={false}
+        <MonthGraph
+          date={startDate}
+          days={days}
+          summaryLoading={summaryLoading}
+          summary={summary}
+        />
+        <Space
+          direction={"vertical"}
+          size={0}
           style={{
-            background: "#ffffff",
-            top: 92,
-            right: 0,
-            position: "fixed",
-            height: "calc(100vh - 104px)",
-            borderLeft: "1px solid #f0f0f0",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
+            width: "100%",
+            overflowY: "scroll",
+            height: "calc(100vh - 302px)",
+            scrollbarWidth: "none",
+            paddingRight: 8,
           }}
         >
-          <Space
-            size={8}
-            className={"date-picker"}
-            direction={"vertical"}
-            style={{ width: 390 }}
-          >
-            <Space
-              style={{
-                borderBottom: "1px solid #f6f6f6",
-                width: "100%",
-                justifyContent: "center",
-              }}
-            >
-              {datePickerContent}
-            </Space>
-            <Space
-              size={16}
-              direction={"vertical"}
-              style={{
-                padding: 16,
-                width: "100%",
-                borderBottom: "1px solid #f6f6f6",
-              }}
-            >
-              <Typography.Title level={5}>Filters</Typography.Title>
-              <Space size={16} direction={"vertical"} style={{ width: "100%" }}>
-                <Space
-                  size={8}
-                  direction={"vertical"}
-                  style={{ width: "100%" }}
-                >
-                  <Typography.Text>Type</Typography.Text>
-                  <Space.Compact block={true} style={{ width: "100%" }}>
-                    {[0, 1, 2, 3, 4, 5].map((i) => {
-                      return (
-                        <NoteTypeFilterButton
-                          key={`filter-${i}`}
-                          noteType={i}
-                          onToggle={handleToggleTypeFilter}
-                          typeFilters={typeFilters}
-                        />
-                      );
-                    })}
-                  </Space.Compact>
-                </Space>
-                <Space
-                  direction={"horizontal"}
-                  style={{
-                    width: "100%",
-                    justifyContent: "space-between",
-                    paddingRight: 8,
-                  }}
-                >
-                  <Typography.Text>Show metadata</Typography.Text>
-                  <Switch
-                    checked={showMeta}
-                    onChange={(checked) => {
-                      setShowMeta(checked);
-                    }}
-                  />
-                </Space>
-                <Space
-                  direction={"horizontal"}
-                  style={{
-                    width: "100%",
-                    justifyContent: "space-between",
-                    paddingRight: 8,
-                  }}
-                >
-                  <Typography.Text>
-                    Hide notes with associations
-                  </Typography.Text>
-                  <Switch
-                    checked={hideAssociated}
-                    onChange={(checked) => {
-                      setHideAssociated(checked);
-                    }}
-                  />
-                </Space>
-                <Space
-                  direction={"horizontal"}
-                  style={{
-                    width: "100%",
-                    justifyContent: "space-between",
-                    paddingRight: 8,
-                  }}
-                >
-                  <Typography.Text>Show deleted notes</Typography.Text>
-                  <Switch
-                    checked={showDeleted}
-                    onChange={(checked) => {
-                      setShowDeleted(checked);
-                    }}
-                  />
-                </Space>
-                <Space
-                  direction={"horizontal"}
-                  style={{
-                    width: "100%",
-                    justifyContent: "space-between",
-                    paddingRight: 8,
-                  }}
-                >
-                  <Typography.Text>Only show flagged notes</Typography.Text>
-                  <Switch
-                    checked={showFlaggedOnly}
-                    onChange={(checked) => {
-                      setShowFlaggedOnly(checked);
-                    }}
-                  />
-                </Space>
-                <Space
-                  direction={"horizontal"}
-                  style={{
-                    width: "100%",
-                    justifyContent: "space-between",
-                    paddingRight: 8,
-                  }}
-                >
-                  <Typography.Text>Show empty days</Typography.Text>
-                  <Switch
-                    checked={showEmptyDays}
-                    onChange={(checked) => {
-                      setShowEmptyDays(checked);
-                    }}
-                  />
-                </Space>
-              </Space>
-            </Space>
-            <Space
-              style={{
-                padding: "0px 16px 16px 16px",
-                borderBottom: "1px solid #f6f6f6",
-              }}
-            >
-              <NotesTypeGraph
-                date={startDate}
-                days={days}
-                summaryLoading={summaryLoading}
-                summary={summary}
-              />
-            </Space>
-            <Space
-              style={{
-                padding: "0px 16px 16px 16px",
-                borderBottom: "1px solid #f6f6f6",
-              }}
-            >
-              <NotesHourOfDayGraph
-                date={startDate}
-                summaryLoading={summaryLoading}
-                summary={summary}
-              />
-            </Space>
-          </Space>
-        </Sider>
-      </Content>
-    </Space>
+          {timelineContent}
+        </Space>
+      </CollapsibleTabPanel>
+    </>
   );
 };
 
