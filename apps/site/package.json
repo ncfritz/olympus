@@ -81,6 +81,8 @@
     "humanize-duration": "^3.32.1",
     "husky": "^9.1.7",
     "is-ci": "^3.0.1",
+    "iso-639-2": "^3.0.2",
+    "jose": "^6.2.1",
     "luxon": "^3.4.4",
     "mobx": "^6.12.5",
     "msw": "^2.3.1",
@@ -105,6 +107,7 @@
     "react-html-parser": "^2.0.2",
     "react-inlinesvg": "^4.1.8",
     "react-json-view": "^1.21.3",
+    "react-infinite-scroll-component": "^6.1.1",
     "react-leaflet": "^4.2.1",
     "react-leaflet-google-layer": "^2.2.0",
     "react-markdown": "^9.0.3",
@@ -134,8 +137,5 @@
   "msw": {
     "workerDirectory": "public"
   },
-  "dependencies": {
-    "jose": "^6.2.1",
-    "react-infinite-scroll-component": "^6.1.1"
-  }
+  "dependencies": {}
 }
