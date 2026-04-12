@@ -1,13 +1,13 @@
 import { LockFilled } from "@ant-design/icons";
 import { Col, Result, Row, Space, Spin } from "antd";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import OtpInput from "react-otp-input";
 import contentApi from "../../api/contentApi";
 import { useAppSelector } from "../../redux/hooks";
 import { subscribe } from "../../utils/events";
 
 export interface ContentAuthWrapperProps {
-  children: React.ReactNode;
+  children: ReactNode | ReactNode[];
 }
 
 const ContentAuthWrapper: React.FunctionComponent<ContentAuthWrapperProps> = ({
