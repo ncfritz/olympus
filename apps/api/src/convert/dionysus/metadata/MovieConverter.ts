@@ -95,6 +95,10 @@ export const toDomainObject = (input: GraphQlMovie): Movie => {
 
   if (input.productionCompanies) {
     input.productionCompanies.forEach((entity) => {
+      if (!entity.productionCompany) {
+        return;
+      }
+
       productionCompanies.push(
         toProductionCompanyAssociationDomainObject(entity),
       );
