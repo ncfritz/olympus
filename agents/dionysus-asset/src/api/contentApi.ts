@@ -16,10 +16,10 @@ import {
   updateContentIngestionWorkflow,
   updateContentIngestionWorkflowStep,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { AssetMetadata } from "../workflow/workflow";
+import { AssetMetadata } from "../workflow/content/workflow";
 import { BASE_URL } from "./apiBase";
 
-class ContentAssetsApi {
+class ContentApi {
   constructor() {
     client.setConfig({
       baseURL: BASE_URL,
@@ -142,5 +142,5 @@ class ContentAssetsApi {
   }
 }
 
-const contentAssetsApi = new ContentAssetsApi();
-export default contentAssetsApi;
+const contentApi = new ContentApi();
+export default contentApi;
