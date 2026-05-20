@@ -2,13 +2,7 @@ import {
   MediaAssetSearchType,
   SingleMediaAssetSearchConfigurationResponse,
 } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
