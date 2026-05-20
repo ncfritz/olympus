@@ -5,11 +5,11 @@ import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
 import { ApiStandardErrorResponses } from "../utils/controllerDecorators";
 
-@Controller()
+@Controller({ version: "1" })
 export class PingController {
   constructor(private configService: ConfigService) {}
 
-  @Get("/v1/ping")
+  @Get("/ping")
   @ApiOperation({
     summary: "Ping",
     description: "Ping",
