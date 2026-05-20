@@ -103,8 +103,6 @@ export class ListMoviesController {
       }
     `;
 
-    console.log(fetchRequest);
-
     const fetchResponse =
       await this.graphQLClient.request<GraphQlListMoviesResponse>(fetchRequest);
     const fetchedMovies: SparseMovie[] = [];
