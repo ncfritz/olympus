@@ -39,7 +39,7 @@ export type GraphQlListMediaAssetSearchExecutionsResponse = {
 };
 
 @Controller({ version: "1" })
-export class ListMediaSearchExecutionsController {
+export class ListMediaAssetSearchExecutionsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/media/searchConfiguration/:mediaType/:mediaId/executions")
