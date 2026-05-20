@@ -1,4 +1,7 @@
-import { GetMetadataWorkflowStatisticsResponse, WorkflowStatus } from "@ncfritz/olympus-model";
+import {
+  GetMetadataWorkflowStatisticsResponse,
+  WorkflowStatus,
+} from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { Response } from "express";
