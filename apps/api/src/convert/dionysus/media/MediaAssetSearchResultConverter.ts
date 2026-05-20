@@ -1,7 +1,7 @@
 import {
   MediaAssetDownload,
   MediaAssetSearchResult,
-  SearchResultTag
+  SearchResultTag,
 } from "@ncfritz/olympus-model";
 import moment from "moment";
 import {

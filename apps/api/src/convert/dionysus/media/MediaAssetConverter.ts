@@ -2,9 +2,7 @@ import { MediaAsset } from "@ncfritz/olympus-model";
 import moment from "moment/moment";
 import { GraphQlMediaAsset } from "../../../types/dionysus/media/mediaAsset";
 
-export const toDomainObject = (
-  input: GraphQlMediaAsset,
-): MediaAsset => {
+export const toDomainObject = (input: GraphQlMediaAsset): MediaAsset => {
   return {
     type: input.type,
     mediaId: input.mediaId,
