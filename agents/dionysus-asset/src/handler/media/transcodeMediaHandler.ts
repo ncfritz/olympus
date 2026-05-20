@@ -198,7 +198,7 @@ export class TranscodeMediaHandler {
           } catch (e) {
             logger.error("Unable to update transcode progress...");
           }
-        }
+        },
       );
 
       await updateStepStatus(workflow.workflowId, step.id, "success");
