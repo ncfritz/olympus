@@ -1,13 +1,13 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { RouterModule } from "@nestjs/core";
 import { ReporterModule } from "nestjs-metrics-reporter";
-import { PingController } from "../controller/PingController";
 import {
   DionysusApiConfig,
   MinervaApiConfig,
   OlympusApiConfig,
 } from "../schema/schemas";
 import { Routes } from "../utils/routes";
+import { AdminApiModule } from "./AdminApiModule";
 import { BatchJobApiModule } from "./BatchJobApiModule";
 import { ContentApiModule } from "./ContentApiModule";
 import { GraphQLClientModule } from "./GraphQLClientModule";
@@ -38,6 +38,7 @@ import { appName } from "../utils/logger";
       }),
     }),
     RouterModule.register([
+      { path: Routes.OLYMPUS, module: AdminApiModule },
       { path: Routes.OLYMPUS, module: NotificationsApiModule },
       { path: Routes.DIONYSUS, module: BatchJobApiModule },
       { path: Routes.DIONYSUS, module: ContentApiModule },
@@ -59,7 +60,7 @@ import { appName } from "../utils/logger";
   ],
   exports: [],
   providers: [],
-  controllers: [PingController],
+  controllers: [],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {}
