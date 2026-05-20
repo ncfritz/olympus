@@ -8,11 +8,12 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
-  HttpStatus, NotFoundException,
+  HttpStatus,
+  NotFoundException,
   Param,
   Put,
   Res,
-  UseInterceptors
+  UseInterceptors,
 } from "@nestjs/common";
 import {
   ApiBody,
@@ -128,8 +129,6 @@ export class UpdateMediaAssetDownloadByNzbIdController {
         }
       }
     `;
-
-    console.log(updateRequest);
 
     const updateResponse =
       await this.graphQLClient.request<GraphQlUpdateChildMediaAssetDownloadResponse>(
