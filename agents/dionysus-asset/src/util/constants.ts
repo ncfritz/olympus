@@ -1,6 +1,7 @@
 export const IS_PROD = process.env.NODE_ENV === "production";
 
 export const ASSETS_JOB_PREFIX = "content";
+export const MEDIA_JOB_PREFIX = "media";
 export const JOB_TYPE_PREFIX = "jobType";
 export const TRIGGER_SUFFIX = "trigger";
 
