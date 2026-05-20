@@ -31,6 +31,7 @@ import { BASE_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchC
 import { GraphQlMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { buildFilterExpression } from "../../../utils/filterUtil";
+import { logger } from "../../../utils/logger";
 import { BaseMediaAssetSearchConfigurationController } from "./BaseMediaAssetSearchConfigurationController";
 
 type GraphQlUpdateMediaAssetSearchConfigurationResponse = {
@@ -232,7 +233,7 @@ export class TriggerMediaAssetSearchController extends BaseMediaAssetSearchConfi
         { status: MediaAssetSearchConfigurationStatus.UPDATING },
       );
 
-    console.log(
+    logger.info(
       `Updated ${updateChildrenResponse.update_dionysus_media_asset_search_configuration.affected_rows} child search configurations`,
     );
   }
