@@ -23,9 +23,16 @@ export class MediaAssetDownload {
   @ApiProperty({
     type: Number,
     required: false,
-    description: "The Id of the download assigned by NZBGet.",
+    description: "The ID of the download assigned by NZBGet.",
   })
   nzbId?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "The ID of the workflow this download belongs to.",
+  })
+  workflowId: string;
 
   @ApiProperty({
     enum: () => MediaDownloadStatus,
@@ -80,7 +87,12 @@ export class MediaAssetDownload {
 }
 
 export class PartialMediaAssetDownload extends PartialType(
-  OmitType(MediaAssetDownload, ["createdTime", "lastUpdatedTime", "id"]),
+  OmitType(MediaAssetDownload, [
+    "createdTime",
+    "lastUpdatedTime",
+    "id",
+    "workflowId",
+  ]),
 ) {}
 
 export class MediaAssetDownloadStatusUpdate {
