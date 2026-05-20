@@ -22,15 +22,35 @@ import { logger } from "../util/logger";
         logger.info(`AMQP endpoint: ${amqpEndpoint}`);
 
         return {
+          channels: {
+            transcodeMediaChannel: {
+              prefetchCount: 1,
+            },
+            general: {
+              prefetchCount: 1,
+              default: true,
+            },
+          },
           exchanges: [
             {
               name: "content.trigger",
               type: "topic",
             },
+            {
+              name: "media.trigger",
+              type: "topic",
+            },
           ],
-          prefetchCount: 1,
           connectionInitOptions: { wait: true },
           enableControllerDiscovery: true,
+          prefetchCount: 1,
+          connectionManagerOptions: {
+            heartbeatIntervalInSeconds: 30,
+            reconnectTimeInSeconds: 1,
+            connectionOptions: {
+              keepAlive: true,
+            },
+          },
           uri: amqpEndpoint,
         };
       },
