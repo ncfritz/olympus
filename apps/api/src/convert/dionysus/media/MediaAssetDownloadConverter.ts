@@ -8,6 +8,7 @@ export const toDomainObject = (
   return {
     id: input.id,
     nzbId: input.nzbId,
+    workflowId: input.workflowId,
     status: input.status,
     progress: input.progress,
     startedTime: input.startedTime ? moment(input.startedTime) : undefined,
