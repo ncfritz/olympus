@@ -1,10 +1,16 @@
 import {
-  BatchJob, FilterDefinition,
+  BatchJob,
+  FilterDefinition,
   ListBatchJobsResponse,
-  SortDirection
+  SortDirection,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
-import { ApiExtraModels, ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
+import {
+  ApiExtraModels,
+  ApiOkResponse,
+  ApiOperation,
+  ApiProduces,
+} from "@nestjs/swagger";
 import { Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/job/BatchJobConverter";
