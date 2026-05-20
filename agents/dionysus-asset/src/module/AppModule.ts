@@ -1,22 +1,50 @@
 import { Logger, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ReporterModule } from "nestjs-metrics-reporter";
-import { DeleteAssetHandler } from "../handler/deleteAssetHandler";
-import { HlsGenerationAssetHandler } from "../handler/hlsGenerationHandler";
-import { RawIngestionHandler } from "../handler/rawIngestionHandler";
-import { ThumbnailGenerationAssetHandler } from "../handler/thumbnailGenerationHandler";
-import { appName } from "../util/logger";
+import { DeleteAssetHandler } from "../handler/content/deleteAssetHandler";
+import { HlsGenerationAssetHandler } from "../handler/content/hlsGenerationHandler";
+import { TranscodeCleanupHandler } from "../handler/media/cleanupHandler";
+import { ConfigureTranscodeHandler } from "../handler/media/configureTranscodeHandler";
+import { MetadataExtractionHandler } from "../handler/media/metadataExtractionHandler";
+import { RawIngestionHandler } from "../handler/content/rawIngestionHandler";
+import { ThumbnailGenerationAssetHandler } from "../handler/content/thumbnailGenerationHandler";
+import { TestHandler } from "../handler/media/testHandler";
+import { TranscodeConfigurationHandler } from "../handler/media/transcodeConfigurationHandler";
+import { TranscodeMediaHandler } from "../handler/media/transcodeMediaHandler";
+import { VerifyTranscodeConfigurationHandler } from "../handler/media/verifyTranscodeConfigurationHandler";
+import { appName, logger } from "../util/logger";
 import { AxiosProxyModule } from "./AxiosProxyModule";
 import { RabbitModule } from "./RabbitModule";
 
-// Setup providers
-// look for config.json
-// if not found
-//   load all providers
-// else
-//   for each provider
-//     load add to providers list
-//
+const HANDLER_MAP = {
+  // Content Asset Jobs
+  DISABLE_CONTENT_DELETION_HANDLER: DeleteAssetHandler,
+  DISABLE_CONTENT_HLS_HANDLER: HlsGenerationAssetHandler,
+  DISABLE_CONTENT_THUMBNAIL_HANDLER: ThumbnailGenerationAssetHandler,
+  DISABLE_CONTENT_RAW_INGESTION_HANDLER: RawIngestionHandler,
+  // Media Asset Jobs
+  DISABLE_DIONYSUS_METADATA_HANDLER: MetadataExtractionHandler,
+  DISABLE_DIONYSUS_XCODE_PRE_CONFIGURATION_HANDLER: ConfigureTranscodeHandler,
+  DISABLE_DIONYSUS_XCODE_CONFIGURATION_HANDLER: TranscodeConfigurationHandler,
+  DISABLE_DIONYSUS_XCODE_HANDLER: TranscodeMediaHandler,
+  DISABLE_DIONYSUS_VERIFY_XCODE_HANDLER: VerifyTranscodeConfigurationHandler,
+  DISABLE_DIONYSUS_CLEANUP_HANDLER: TranscodeCleanupHandler,
+  // Test - DELETE ME!!!
+  DISABLE_TEST_HANDLER: TestHandler,
+};
+
+const enabledHandlers = Object.entries(HANDLER_MAP)
+  .filter(([key, handler]) => {
+    if (process.env[key] !== "true") {
+      return true;
+    }
+
+    logger.warn(
+      `Handler ${handler.name} is disabled per environment variable ${key} - set to 'false' to enable`,
+    );
+    return false;
+  })
+  .map(([key, handler]) => handler);
 
 @Module({
   imports: [
@@ -40,11 +68,7 @@ import { RabbitModule } from "./RabbitModule";
   providers: [
     // Logging
     Logger,
-    // Batch Jobs
-    DeleteAssetHandler,
-    HlsGenerationAssetHandler,
-    ThumbnailGenerationAssetHandler,
-    RawIngestionHandler,
+    ...enabledHandlers,
   ],
   controllers: [],
 })
