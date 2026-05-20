@@ -1,6 +1,4 @@
-import {
-  ContentIngestionWorkflowStep,
-} from "@ncfritz/olympus-model";
+import { ContentIngestionWorkflowStep } from "@ncfritz/olympus-model";
 import moment from "moment";
 import { GraphQlContentIngestionWorkflowStep } from "../../../../types/dionysus/content/workflow";
 
