@@ -21,3 +21,8 @@ export class PingResponse {
   @ApiProperty({ type: () => SystemConfiguration })
   config: Record<string, string>;
 }
+
+export class TestRequest {
+  @ApiProperty({ type: () => Object })
+  payload: any;
+}
