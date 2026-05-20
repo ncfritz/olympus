@@ -102,7 +102,7 @@ export class CreateMediaAssetSearchConfigurationController {
     ) {
       graphQLQueryRoot = "dionysus_tv_episodes_by_pk";
     }
-4
+
     const verifyQuery = gql`
       query VerifyMedia($id: numeric!) {
         ${graphQLQueryRoot}(id: $id) {
