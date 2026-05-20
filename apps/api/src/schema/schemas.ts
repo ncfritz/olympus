@@ -1,3 +1,4 @@
+import { AdminApiModule } from "../module/AdminApiModule";
 import { BatchJobApiModule } from "../module/BatchJobApiModule";
 import { ContentApiModule } from "../module/ContentApiModule";
 import { MediaApiModule } from "../module/MediaApiModule";
@@ -12,7 +13,7 @@ import { OpenApiDocumentConfig } from "./documentBuilder";
 export const OlympusApiConfig: OpenApiDocumentConfig = {
   name: "Olympus",
   route: Routes.OLYMPUS,
-  modules: [NotificationsApiModule],
+  modules: [AdminApiModule, NotificationsApiModule],
 };
 
 export const DionysusApiConfig: OpenApiDocumentConfig = {
