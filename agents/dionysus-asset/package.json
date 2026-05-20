@@ -51,6 +51,7 @@
     "n-readlines": "^1.0.1",
     "nestjs-metrics-reporter": "^1.9.1",
     "node-html-parser": "^7.0.1",
+    "object-to-spawn-args": "^2.0.1",
     "pretty-ms": "^9.3.0",
     "progress-stream": "^2.0.0",
     "reflect-metadata": "^0.2.2",
@@ -58,6 +59,7 @@
     "sharp": "^0.34.5",
     "socks-proxy-agent": "^8.0.5",
     "ssh2-sftp-client": "^12.0.1",
+    "subparse": "^0.0.1",
     "tmdb-ts": "^2.0.2",
     "uuid": "^11.1.0",
     "winston": "^3.18.3",
@@ -87,7 +89,8 @@
     "ts-loader": "^9.5.4",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.41.0"
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
