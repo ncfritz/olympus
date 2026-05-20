@@ -1,7 +1,8 @@
 import {
   MediaAssetSearchType,
-  PasswordType, SearchResultStatus,
-  SearchResultTagType
+  PasswordType,
+  SearchResultStatus,
+  SearchResultTagType,
 } from "@ncfritz/olympus-model";
 import { GraphQlMediaAssetDownload } from "./mediaDownload";
 
