@@ -4,16 +4,16 @@ import type { ConsumeMessage } from "amqplib";
 import * as cliProgress from "cli-progress";
 import Ffmpeg from "fluent-ffmpeg";
 import * as fs from "fs";
-import contentAssetsApi from "../api/contentAssets";
-import type { HlsGenerationMessage } from "../types/messages";
+import contentApi from "../../api/contentApi";
+import type { HlsGenerationMessage } from "../../types/messages";
 import {
   ASSETS_JOB_PREFIX,
   JOB_TYPE_PREFIX,
   TRIGGER_SUFFIX,
-} from "../util/constants";
-import { logger } from "../util/logger";
+} from "../../util/constants";
+import { logger } from "../../util/logger";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires,@typescript-eslint/no-require-imports
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const ffmpegOnProgress = require("ffmpeg-on-progress");
 
 @Injectable()
@@ -103,11 +103,7 @@ export class HlsGenerationAssetHandler {
           progress.stop();
 
           logger.info("Tagging asset");
-          await contentAssetsApi.addContentAssetTag(
-            assetId,
-            "video.hls",
-            "system",
-          );
+          await contentApi.addContentAssetTag(assetId, "video.hls", "system");
 
           if (fs.existsSync(segmentsDir)) {
             logger.warn("Found existing segments directory, cleaning up...");

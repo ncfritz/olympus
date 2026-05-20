@@ -10,16 +10,15 @@ import fs, { PathLike } from "fs";
 import moment from "moment/moment";
 import path from "path";
 import sharp, { OverlayOptions } from "sharp";
-import contentAssetsApi from "../api/contentAssets";
-import { DuplicateError } from "../error/duplicateError";
-import { IngestError } from "../error/ingestError";
+import contentApi from "../../api/contentApi";
+import { DuplicateError } from "../../error/duplicateError";
+import { IngestError } from "../../error/ingestError";
 import sftp from "ssh2-sftp-client";
 import progress_stream from "progress-stream";
-import { ts } from "../util/format";
-import { logger } from "../util/logger";
+import { ts } from "../../util/format";
+import { logger } from "../../util/logger";
 import { createStep, updateStepProgress, updateStepStatus } from "./reporter";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const ffmpegOnProgress = require("ffmpeg-on-progress");
 
 export interface AssetMetadata {
@@ -139,7 +138,7 @@ export class AssetWorkflow {
           this.metadata.originalSize = stat.size;
 
           console.log(`Duplicate check... ${this.metadata.inputSha256}`);
-          const duplicates = await contentAssetsApi.checkDuplicates(digest);
+          const duplicates = await contentApi.checkDuplicates(digest);
 
           console.log(duplicates);
 
@@ -791,10 +790,10 @@ export class AssetWorkflow {
       console.log("Connecting SSH...");
       const client = new sftp();
       await client.connect({
-        host: "nfs01.sea.ncfritz.net",
+        host: process.env.CONTENT_SSH_HOST!,
         port: 22,
-        username: process.env.SSH_USERNAME!,
-        password: process.env.SSH_PASSWORD!,
+        username: process.env.CONTENT_SSH_USERNAME!,
+        password: process.env.CONTENT_SSH_PASSWORD!,
       });
 
       for (const file of files) {
@@ -878,11 +877,11 @@ export class AssetWorkflow {
     }
 
     if (this.isNewAsset) {
-      await contentAssetsApi.createContentAsset(this.metadata);
+      await contentApi.createContentAsset(this.metadata);
     }
 
     for (const pendingTag of this.tags) {
-      await contentAssetsApi.addContentAssetTag(
+      await contentApi.addContentAssetTag(
         this.metadata.id,
         pendingTag.name,
         pendingTag.type,

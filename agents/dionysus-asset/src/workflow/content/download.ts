@@ -6,7 +6,7 @@ import axios from "axios";
 import * as cliProgress from "cli-progress";
 import fs, { PathLike } from "fs";
 import { PassThrough } from "stream";
-import { USER_AGENT } from "../util/constants";
+import { USER_AGENT } from "../../util/constants";
 import { updateStepProgress } from "./reporter";
 
 export interface DownloadStepProps {

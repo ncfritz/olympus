@@ -1,13 +1,13 @@
 import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
 import { Injectable } from "@nestjs/common";
 import type { ConsumeMessage } from "amqplib";
-import type { DeleteAssetMessage } from "../types/messages";
+import type { DeleteAssetMessage } from "../../types/messages";
 import {
   ASSETS_JOB_PREFIX,
   JOB_TYPE_PREFIX,
   TRIGGER_SUFFIX,
-} from "../util/constants";
-import { logger } from "../util/logger";
+} from "../../util/constants";
+import { logger } from "../../util/logger";
 
 @Injectable()
 export class DeleteAssetHandler {

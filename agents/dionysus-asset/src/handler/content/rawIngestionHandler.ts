@@ -7,31 +7,31 @@ import * as fs from "fs";
 import moment from "moment";
 import path from "path";
 import { firstValueFrom } from "rxjs";
-import contentAssetsApi from "../api/contentAssets";
-import { DuplicateError } from "../error/duplicateError";
-import { DPVMetadataExtractor } from "../ingest/dpvMetadataExtractor";
-import { IngestError } from "../error/ingestError";
-import { LocalMetadataExtractor } from "../ingest/localMetadataExtractor";
-import { MetadataExtractor } from "../ingest/metadataExtractor";
-import { PHMetadataExtractor } from "../ingest/phMetadataExtractor";
-import { XHMetadataExtractor } from "../ingest/xhMetadataExtractor";
-import { XVMetadataExtractor } from "../ingest/xvMetadataExtractor";
-import type { RawIngestionMessage } from "../types/messages";
+import contentApi from "../../api/contentApi";
+import { DuplicateError } from "../../error/duplicateError";
+import { DPVMetadataExtractor } from "../../ingest/dpvMetadataExtractor";
+import { IngestError } from "../../error/ingestError";
+import { LocalMetadataExtractor } from "../../ingest/localMetadataExtractor";
+import { MetadataExtractor } from "../../ingest/metadataExtractor";
+import { PHMetadataExtractor } from "../../ingest/phMetadataExtractor";
+import { XHMetadataExtractor } from "../../ingest/xhMetadataExtractor";
+import { XVMetadataExtractor } from "../../ingest/xvMetadataExtractor";
+import type { RawIngestionMessage } from "../../types/messages";
 import {
   ASSETS_JOB_PREFIX,
   JOB_TYPE_PREFIX,
   TRIGGER_SUFFIX,
   USER_AGENT,
-} from "../util/constants";
+} from "../../util/constants";
 import { parse } from "node-html-parser";
-import { logger } from "../util/logger";
-import { downloadSegments } from "../workflow/download";
+import { logger } from "../../util/logger";
+import { downloadSegments } from "../../workflow/content/download";
 import {
   createStep,
   updateStepStatus,
   updateWorkflowStatus,
-} from "../workflow/reporter";
-import { AssetWorkflow } from "../workflow/workflow";
+} from "../../workflow/content/reporter";
+import { AssetWorkflow } from "../../workflow/content/workflow";
 import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
@@ -56,13 +56,12 @@ export class RawIngestionHandler {
       return;
     } else {
       try {
-        ingestionWorkflow =
-          await contentAssetsApi.describeContentIngestionWorkflow(
-            msg.workflowId,
-          );
+        ingestionWorkflow = await contentApi.describeContentIngestionWorkflow(
+          msg.workflowId,
+        );
 
         if (ingestionWorkflow.status === "queued") {
-          await contentAssetsApi.updateContentIngestionWorkflow(
+          await contentApi.updateContentIngestionWorkflow(
             ingestionWorkflow.id,
             {
               status: "running",

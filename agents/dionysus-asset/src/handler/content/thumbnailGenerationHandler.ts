@@ -6,17 +6,17 @@ import Ffmpeg from "fluent-ffmpeg";
 import * as fs from "fs";
 import * as path from "path";
 import sharp, { OverlayOptions } from "sharp";
-import type { ThumbnailGenerationMessage } from "../types/messages";
-import { ts } from "../util/format";
-import contentAssetsApi from "../api/contentAssets";
+import type { ThumbnailGenerationMessage } from "../../types/messages";
+import { ts } from "../../util/format";
+import contentApi from "../../api/contentApi";
 import {
   ASSETS_JOB_PREFIX,
   JOB_TYPE_PREFIX,
   TRIGGER_SUFFIX,
-} from "../util/constants";
-import { logger } from "../util/logger";
+} from "../../util/constants";
+import { logger } from "../../util/logger";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires,@typescript-eslint/no-require-imports
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const ffmpegOnProgress = require("ffmpeg-on-progress");
 
 const DEFAULT_THUMB_INTERVAL = 5;
@@ -117,7 +117,7 @@ export class ThumbnailGenerationAssetHandler {
           progress.stop();
 
           logger.info("Tagging asset...");
-          await contentAssetsApi.addContentAssetTag(
+          await contentApi.addContentAssetTag(
             assetId,
             "video.thumbs",
             "system",

@@ -2,16 +2,16 @@ import {
   ContentIngestionWorkflowStatus,
   ContentIngestionWorkflowStepStatus,
   ContentIngestionWorkflowStepType,
-  PartialContentIngestionWorkflowStep
+  PartialContentIngestionWorkflowStep,
 } from "@ncfritz/olympus-sdk/dionysus";
 import moment from "moment";
-import contentAssetsApi from "../api/contentAssets";
+import contentApi from "../../api/contentApi";
 
 export const updateWorkflowStatus = async (
   workflowId: string,
   status: ContentIngestionWorkflowStatus,
 ) => {
-  await contentAssetsApi.updateContentIngestionWorkflow(workflowId, {
+  await contentApi.updateContentIngestionWorkflow(workflowId, {
     status: status,
     finishedTime: moment.utc().toISOString(),
   });
@@ -21,10 +21,7 @@ export const createStep = async (
   workflowId: string,
   type: ContentIngestionWorkflowStepType,
 ) => {
-  return await contentAssetsApi.createContentIngestionWorkflowStep(
-    workflowId,
-    type,
-  );
+  return await contentApi.createContentIngestionWorkflowStep(workflowId, type);
 };
 
 export const updateStepProgress = async (
@@ -32,13 +29,9 @@ export const updateStepProgress = async (
   stepId: string,
   percent: number,
 ) => {
-  await contentAssetsApi.updateContentIngestionWorkflowStep(
-    workflowId,
-    stepId,
-    {
-      progress: percent,
-    },
-  );
+  await contentApi.updateContentIngestionWorkflowStep(workflowId, stepId, {
+    progress: percent,
+  });
 };
 
 export const updateStepStatus = async (
@@ -55,7 +48,7 @@ export const updateStepStatus = async (
     update.progress = 100;
   }
 
-  await contentAssetsApi.updateContentIngestionWorkflowStep(
+  await contentApi.updateContentIngestionWorkflowStep(
     workflowId,
     stepId,
     update,
