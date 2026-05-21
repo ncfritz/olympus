@@ -71,7 +71,7 @@ export class FileMeta {
     this.name =
       (this.subject.match(/"([^"]*)"/) ||
         this.subject.match(
-          /\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b/
+          /\b([\w\-+()' .,]+(?:\[[\w\-/+()' .,]*][\w\-+()' .,]*)*\.[A-Za-z0-9]{2,4})\b/,
         ))?.[1].trim() || "";
   }
 }
@@ -92,7 +92,7 @@ export class NZB {
 
     // Determine main file (largest one)
     this.file = this.files.reduce((maxFile, file) =>
-      file.size > maxFile.size ? file : maxFile
+      file.size > maxFile.size ? file : maxFile,
     );
 
     this.size = this.files.reduce((sum, file) => sum + file.size, 0);
@@ -101,7 +101,7 @@ export class NZB {
 
     const groupsSet = new Set<string>();
     this.files.forEach((file) =>
-      file.groups.forEach((group) => groupsSet.add(group))
+      file.groups.forEach((group) => groupsSet.add(group)),
     );
     this.groups = [...groupsSet].sort();
 

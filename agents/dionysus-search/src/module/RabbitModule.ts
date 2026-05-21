@@ -2,9 +2,10 @@ import { RabbitMQConfig, RabbitMQModule } from "@golevelup/nestjs-rabbitmq";
 import { Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import {
-  DOWNLOAD_TRIGGER_EXCHANGE, DOWNLOAD_UPDATE_EXCHANGE,
+  DOWNLOAD_TRIGGER_EXCHANGE,
+  DOWNLOAD_UPDATE_EXCHANGE,
   SEARCH_EXECUTION_TRIGGER_EXCHANGE,
-  SEARCH_FANOUT_TRIGGER_EXCHANGE
+  SEARCH_FANOUT_TRIGGER_EXCHANGE,
 } from "../util/constants";
 import { logger } from "../util/logger";
 
