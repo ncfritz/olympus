@@ -54,11 +54,13 @@ export class DownloadUpdateHandler {
   public async handle(msg: any, amqMsg: ConsumeMessage) {
     const ts = msg.ts;
     const nzbId = parseInt(msg.nzbId);
-    const stagingDir = "/Users/ncfritz/Temp/dionysus/staging";
-    const filePath = `/Users/ncfritz/Temp/dionysus/events/${ts}.json`;
+    const stagingDir = process.env.STAGING_DIRECTORY!;
 
     try {
-      fs.writeFileSync(filePath, JSON.stringify(msg, null, 2));
+      if (process.env.PERSIST_EVENTS === "true") {
+        const filePath = `${process.env.EVENTS_DIRECTORY}/${ts}.json`;
+        fs.writeFileSync(filePath, JSON.stringify(msg, null, 2));
+      }
 
       if (msg.type === "queue") {
         if (msg.event === "NZB_NAMED" || msg.event === "NZB_ADDED") {
@@ -110,13 +112,13 @@ export class DownloadUpdateHandler {
           }
 
           const usenetFiles = fs.readdirSync(msg.destDirectory);
-          console.log("Usenet files:", usenetFiles);
+          logger.debug("Usenet files:", usenetFiles);
 
           const mediaFilenames = usenetFiles.filter((filename) => {
             const extension = filename.split(".").pop();
             return MEDIA_EXTENSIONS.includes(extension!);
           });
-          console.log("Media filenames:", mediaFilenames);
+          logger.info("Media filenames:", mediaFilenames);
 
           if (!mediaFilenames || mediaFilenames.length === 0) {
             await this.updateDownloadStatus(
@@ -138,13 +140,13 @@ export class DownloadUpdateHandler {
           }
 
           const mediaFilename = mediaFilenames[0];
-          console.log("Media filename:", mediaFilename);
+          logger.info("Media filename:", mediaFilename);
 
           const originalExtension = mediaFilename.split(".").pop();
 
-          console.log("Moving asset to staging directory:");
-          console.log(`\t   Original: ${msg.destDirectory}/${mediaFilename}`);
-          console.log(
+          logger.info("Moving asset to staging directory:");
+          logger.debug(`\t   Original: ${msg.destDirectory}/${mediaFilename}`);
+          logger.debug(
             `\tDestination: ${stagingDir}/${download.workflowId}/original.${originalExtension}`,
           );
 
@@ -214,7 +216,7 @@ export class DownloadUpdateHandler {
   }
 
   private async deleteNzbHistory(nzbId: number) {
-    const rpcResponse = await axios.post(
+    await axios.post(
       this.nzbGetUrl,
       {
         id: 1,
@@ -226,7 +228,5 @@ export class DownloadUpdateHandler {
         auth: { username: this.nzbGetUsername, password: this.nzbGetPassword },
       },
     );
-
-    console.log(rpcResponse.data);
   }
 }

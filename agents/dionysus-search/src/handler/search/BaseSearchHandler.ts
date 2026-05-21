@@ -88,7 +88,6 @@ export abstract class BaseSearchHandler {
                 msg.initiatingAsset.seasonNumber,
               )
             ).data.count;
-            console.log(count);
           }
 
           if (
@@ -119,7 +118,6 @@ export abstract class BaseSearchHandler {
         }
       }
     } catch (e) {
-      console.log(e);
       logger.error("Unable to process search message: ", e);
     }
   }

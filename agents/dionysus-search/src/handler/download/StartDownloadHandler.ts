@@ -29,7 +29,7 @@ export class StartDownloadHandler {
     const nzbGeekApiKey = this.configService.get("NZBGEEK_API_KEY");
     const nzbGeekUrl = `https://api.nzbgeek.info/api?t=get&id=${msg.nzbId}&apikey=${nzbGeekApiKey}`;
 
-    const stagingDir = "/Users/ncfritz/Temp/dionysus/staging";
+    const stagingDir = process.env.STAGING_DIRECTORY!;
     const nzbFilename = `/tmp/${msg.nzbId}.nzb`;
 
     const writer = fs.createWriteStream(nzbFilename);
@@ -104,8 +104,6 @@ export class StartDownloadHandler {
         auth: { username: nzbGetUsername, password: nzbGetPassword },
       },
     );
-
-    console.log(rpcResponse.data);
 
     if (rpcResponse.data.result >= 0) {
       await mediaApi.updateMediaAssetDownload(
