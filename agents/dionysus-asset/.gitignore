@@ -155,7 +155,6 @@ local.env
 .env.development.local
 .env.test.local
 .env.production.local
-local.env
 dev.env
 
 # parcel-bundler cache (https://parceljs.org/)
