@@ -11,24 +11,22 @@ POSTPROCESS_SUCCESS = 93
 POSTPROCESS_ERROR = 94
 POSTPROCESS_SKIP = 95
 
-RABBITMQ_HOST = "snowball.desktop.ncfritz.net"
-RABBITMQ_PORT = 5672
-RABBITMQ_USERNAME = "admin"
-RABBITMQ_PASSWORD = "admin"
-RABBITMQ_VHOST="/dionysus-dev"
+RABBITMQ_HOST = os.environ["NZBOP_RABBITMQ_HOST"]
+RABBITMQ_PORT = os.environ["NZBOP_RABBITMQ_PORT"]
+RABBITMQ_USERNAME = os.environ["NZBOP_RABBITMQ_USERNAME"]
+RABBITMQ_PASSWORD = os.environ["NZBOP_RABBITMQ_PASSWORD"]
+RABBITMQ_VHOST = os.environ["NZBOP_RABBITMQ_VIRTUAL_HOST"]
 
 EXCHANGE_NAME = "download.update"
-EXCHANGE_TYPE = "topic"  # change if your exchange uses a different type
+EXCHANGE_TYPE = "topic"
 ROUTING_KEY = "update.queue"
 
 ###################################################################
 ### NZBGET QUEUE SCRIPT                                         ###
 
-# Publishes all queue events to a RabbbitMQ exchange.
+# Publishes all QUEUE events to a RabbbitMQ exchange.
 #
-# <@NZBGET-VERSION:21.1>
-#
-# --- NZBGET SCRIPT: Dionysus-Queue-Publisher ---
+# NOTE: This script requires https://github.com/pika/pika to be installed and available to local Python environment
 
 ### NZBGET QUEUE SCRIPT                                         ###
 ###################################################################

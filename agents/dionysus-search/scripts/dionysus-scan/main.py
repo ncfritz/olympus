@@ -11,26 +11,24 @@ POSTPROCESS_SUCCESS = 93
 POSTPROCESS_ERROR = 94
 POSTPROCESS_SKIP = 95
 
-RABBITMQ_HOST = "snowball.desktop.ncfritz.net"
-RABBITMQ_PORT = 5672
-RABBITMQ_USERNAME = "admin"
-RABBITMQ_PASSWORD = "admin"
-RABBITMQ_VHOST="/dionysus-dev"
+RABBITMQ_HOST = os.environ["NZBOP_RABBITMQ_HOST"]
+RABBITMQ_PORT = os.environ["NZBOP_RABBITMQ_PORT"]
+RABBITMQ_USERNAME = os.environ["NZBOP_RABBITMQ_USERNAME"]
+RABBITMQ_PASSWORD = os.environ["NZBOP_RABBITMQ_PASSWORD"]
+RABBITMQ_VHOST = os.environ["NZBOP_RABBITMQ_VIRTUAL_HOST"]
 
 EXCHANGE_NAME = "download.update"
-EXCHANGE_TYPE = "topic"  # change if your exchange uses a different type
+EXCHANGE_TYPE = "topic"
 ROUTING_KEY = "update.queue"
 
 ###################################################################
-### NZBGET POST-PROCESSING SCRIPT                               ###
+### NZBGET SCAN SCRIPT                                          ###
 
-# Publishes all scan events to a RabbbitMQ exchange.
+# Publishes all SCAN events to a RabbbitMQ exchange.
 #
-# <@NZBGET-VERSION:21.1>
-#
-# --- NZBGET SCRIPT: Dionysus-Queue-Publisher ---
+# NOTE: This script requires https://github.com/pika/pika to be installed and available to local Python environment
 
-### NZBGET POST-PROCESSING SCRIPT                               ###
+### NZBGET SCAN SCRIPT                                          ###
 ###################################################################
 def publish_message(message):
     # Create credentials
@@ -43,7 +41,7 @@ def publish_message(message):
             port=RABBITMQ_PORT,
             virtual_host=RABBITMQ_VHOST,
             credentials=credentials)
-        )
+    )
     channel = connection.channel()
 
     # Declare the exchange (safe even if it already exists)
@@ -69,20 +67,20 @@ def publish_message(message):
     connection.close()
 
 if __name__ == "__main__":
-    print("dionysus-post-process.py` is running.")
     message = {
-        "type": "post-process",
+        "type": "scan",
         "ts": time.time_ns(),
-        "destDirectory": os.getenv("NZBPP_DIRECTORY"),
-        "nzbDirectory": os.getenv("NZBPP_FINALDIR"),
-        "nzbFilename": os.getenv("NZBPP_NZBFILENAME"),
-        "nzbName": os.getenv("NZBPP_NZBNAME"),
-        "category": os.getenv("NZBPP_CATEGORY"),
-        "status": os.getenv("NZBPP_STATUS"),
-        "nzbId": os.getenv("NZBPP_NZBID"),
-        "scriptStatus": os.getenv("NZBPP_SCRIPTSTATUS"),
-        "parStatus": os.getenv("NZBPP_PARSTATUS"),
-        "unpackStatus": os.getenv("NZBPP_UNPACKSTATUS"),
+        "nzbDirectory": os.getenv("NZBNP_DIRECTORY"),
+        "nzbFilename": os.getenv("NZBNP_FILENAME"),
+        "nzbName": os.getenv("NZBNP_NZBNAME"),
+        "nzbUrl": os.getenv("NZBNP_URL"),
+        "category": os.getenv("NZBNP_CATEGORY"),
+        "priority": os.getenv("NZBNA_PRIORITY"),
+        "top": os.getenv("NZBNP_TOP"),
+        "paused": os.getenv("NZBNP_PAUSED"),
+        "dupeKey": os.getenv("NZBNP_DUPEKEY"),
+        "dupeScore": os.getenv("NZBNP_DUPESCORE"),
+        "dupeMode": os.getenv("NZBNP_DUPEMODE"),
     }
     publish_message(message)
 
