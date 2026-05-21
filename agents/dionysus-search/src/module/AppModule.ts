@@ -1,0 +1,64 @@
+import { Logger, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { ScheduleModule } from "@nestjs/schedule";
+import { ReporterModule } from "nestjs-metrics-reporter";
+import { DownloadStatusHandler } from "../handler/download/DownloadStatusHandler";
+import { DownloadUpdateHandler } from "../handler/download/DownloadUpdateHandler";
+import { StartDownloadHandler } from "../handler/download/StartDownloadHandler";
+import { MovieSearchFanoutHandler } from "../handler/fanout/MovieSearchFanoutHandler";
+import { TVSeasonSearchFanoutHandler } from "../handler/fanout/TVSeasonSearchFanoutHandler";
+import { TVSeriesSearchFanoutHandler } from "../handler/fanout/TVSeriesSearchFanoutHandler";
+import { MovieSearchHandler } from "../handler/search/MovieSearchHandler";
+import { TVEpisodeSearchHandler } from "../handler/search/TVEpisodeSearchHandler";
+import { TVSeasonSearchHandler } from "../handler/search/TVSeasonSearchHandler";
+import { TVSeriesSearchHandler } from "../handler/search/TVSeriesSearchHandler";
+import { appName } from "../util/logger";
+import { RabbitModule } from "./RabbitModule";
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      envFilePath: `${process.env.NODE_ENV}.env`,
+      isGlobal: true,
+    }),
+    ReporterModule.forRootAsync({
+      useFactory: () => ({
+        defaultMetricsEnabled: true,
+        defaultLabels: {
+          app: appName,
+          environment: process.env.NODE_ENV!,
+        },
+      }),
+    }),
+    RabbitModule,
+    ScheduleModule.forRoot(),
+  ],
+  exports: [],
+  providers: [
+    // Logging
+    Logger,
+
+    // Fanout Jobs
+    MovieSearchFanoutHandler,
+    TVSeriesSearchFanoutHandler,
+    TVSeasonSearchFanoutHandler,
+
+    // Search Jobs
+    MovieSearchHandler,
+    TVSeriesSearchHandler,
+    TVSeasonSearchHandler,
+    TVEpisodeSearchHandler,
+
+    // Download Jobs
+    StartDownloadHandler,
+    DownloadUpdateHandler,
+
+    // Status Jobs
+    DownloadStatusHandler,
+  ],
+  controllers: [],
+})
+export class AppModule implements NestModule {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  configure(consumer: MiddlewareConsumer) {}
+}
