@@ -1,10 +1,6 @@
 import { Logger, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { ScheduleModule } from "@nestjs/schedule";
 import { ReporterModule } from "nestjs-metrics-reporter";
-import { DownloadStatusHandler } from "../handler/download/DownloadStatusHandler";
-import { DownloadUpdateHandler } from "../handler/download/DownloadUpdateHandler";
-import { StartDownloadHandler } from "../handler/download/StartDownloadHandler";
 import { MovieSearchFanoutHandler } from "../handler/fanout/MovieSearchFanoutHandler";
 import { TVSeasonSearchFanoutHandler } from "../handler/fanout/TVSeasonSearchFanoutHandler";
 import { TVSeriesSearchFanoutHandler } from "../handler/fanout/TVSeriesSearchFanoutHandler";
@@ -31,7 +27,6 @@ import { RabbitModule } from "./RabbitModule";
       }),
     }),
     RabbitModule,
-    ScheduleModule.forRoot(),
   ],
   exports: [],
   providers: [
@@ -48,13 +43,6 @@ import { RabbitModule } from "./RabbitModule";
     TVSeriesSearchHandler,
     TVSeasonSearchHandler,
     TVEpisodeSearchHandler,
-
-    // Download Jobs
-    StartDownloadHandler,
-    DownloadUpdateHandler,
-
-    // Status Jobs
-    DownloadStatusHandler,
   ],
   controllers: [],
 })

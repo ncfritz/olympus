@@ -14,12 +14,3 @@ export type SearchExecutionMessage = {
     seasonNumber: number;
   };
 };
-
-export type StartDownloadMessage = {
-  mediaType: MediaAssetSearchType;
-  mediaId: number;
-  resultId: string;
-  workflowId: string;
-  downloadId: string;
-  nzbId: string;
-};

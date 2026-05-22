@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "experimentalDecorators": true,
-    "baseUrl": ".",
     "outDir": "dist",
     "module": "node16",
     "target": "esnext",
