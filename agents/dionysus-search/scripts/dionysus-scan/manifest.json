@@ -5,7 +5,7 @@
   "kind": "SCAN",
   "displayName": "Dionysus SCAN publisher",
   "version": "1.0",
-  "command": "python3 main.py",
+  "command": "cd .. && python3 -m dionysus-scan.main",
   "category": "Scan",
   "nzbgetMinVersion": "24",
   "author": "Neil Fritz",
@@ -60,5 +60,12 @@
       "select": []
     }
   ],
-  "commands": []
+  "commands": [
+    {
+      "name": "ConnectionTest",
+      "action": "Test AMQP connection",
+      "displayName": "Connection Test",
+      "description": ["Check the connection to the AMQP server"]
+    }
+  ]
 }

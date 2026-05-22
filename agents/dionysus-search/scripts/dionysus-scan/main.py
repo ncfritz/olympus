@@ -1,25 +1,14 @@
 #!/usr/bin/env python3
 import os
-
-import sys
-import pika
-import json
 import time
+import sys
 
-# Exit codes used by NZBGet
-POSTPROCESS_SUCCESS = 93
-POSTPROCESS_ERROR = 94
-POSTPROCESS_SKIP = 95
+from pathlib import Path
 
-RABBITMQ_HOST = os.environ["NZBOP_RABBITMQ_HOST"]
-RABBITMQ_PORT = os.environ["NZBOP_RABBITMQ_PORT"]
-RABBITMQ_USERNAME = os.environ["NZBOP_RABBITMQ_USERNAME"]
-RABBITMQ_PASSWORD = os.environ["NZBOP_RABBITMQ_PASSWORD"]
-RABBITMQ_VHOST = os.environ["NZBOP_RABBITMQ_VIRTUAL_HOST"]
+# Add to the beginning of the search path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-EXCHANGE_NAME = "download.update"
-EXCHANGE_TYPE = "topic"
-ROUTING_KEY = "update.queue"
+from common.common import publish_message, run_script_harness
 
 ###################################################################
 ### NZBGET SCAN SCRIPT                                          ###
@@ -30,44 +19,8 @@ ROUTING_KEY = "update.queue"
 
 ### NZBGET SCAN SCRIPT                                          ###
 ###################################################################
-def publish_message(message):
-    # Create credentials
-    credentials = pika.PlainCredentials(RABBITMQ_USERNAME, RABBITMQ_PASSWORD)
-
-    # Connect to RabbitMQ
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(
-            host=RABBITMQ_HOST,
-            port=RABBITMQ_PORT,
-            virtual_host=RABBITMQ_VHOST,
-            credentials=credentials)
-    )
-    channel = connection.channel()
-
-    # Declare the exchange (safe even if it already exists)
-    channel.exchange_declare(
-        exchange=EXCHANGE_NAME,
-        exchange_type=EXCHANGE_TYPE,
-        durable=True
-    )
-
-    # Publish the message
-    channel.basic_publish(
-        exchange=EXCHANGE_NAME,
-        routing_key=ROUTING_KEY,
-        body=json.dumps(message),
-        properties=pika.BasicProperties(
-            content_type="application/json",
-            delivery_mode=2  # make message persistent
-        )
-    )
-
-    print("Message published to exchange:", EXCHANGE_NAME)
-
-    connection.close()
-
-if __name__ == "__main__":
-    message = {
+def do_work():
+    publish_message({
         "type": "scan",
         "ts": time.time_ns(),
         "nzbDirectory": os.getenv("NZBNP_DIRECTORY"),
@@ -81,7 +34,7 @@ if __name__ == "__main__":
         "dupeKey": os.getenv("NZBNP_DUPEKEY"),
         "dupeScore": os.getenv("NZBNP_DUPESCORE"),
         "dupeMode": os.getenv("NZBNP_DUPEMODE"),
-    }
-    publish_message(message)
+    }, "download.update", "update.queue")
 
-    sys.exit(POSTPROCESS_SUCCESS)
+if __name__ == "__main__":
+    run_script_harness(do_work)
