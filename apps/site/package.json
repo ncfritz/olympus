@@ -105,9 +105,9 @@
     "react-hook-form": "^7.54.2",
     "react-horizontal-scrolling-menu": "^7.0.0",
     "react-html-parser": "^2.0.2",
+    "react-infinite-scroll-component": "^6.1.1",
     "react-inlinesvg": "^4.1.8",
     "react-json-view": "^1.21.3",
-    "react-infinite-scroll-component": "^6.1.1",
     "react-leaflet": "^4.2.1",
     "react-leaflet-google-layer": "^2.2.0",
     "react-markdown": "^9.0.3",
@@ -137,5 +137,7 @@
   "msw": {
     "workerDirectory": "public"
   },
-  "dependencies": {}
+  "dependencies": {
+    "react-audio-visualize": "^1.2.0"
+  }
 }
