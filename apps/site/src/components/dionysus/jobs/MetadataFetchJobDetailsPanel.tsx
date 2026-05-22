@@ -104,7 +104,9 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
               title={"status"}
               value={job.status}
               formatter={(value: string) => {
-                return getMetadataJobStatusIndicator(value);
+                return getMetadataJobStatusIndicator(
+                  value as MetadataFetchJobStatus,
+                );
               }}
               valueStyle={{ fontSize: "inherit" }}
             />
