@@ -1,12 +1,17 @@
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
+  HourglassOutlined,
+  LoadingOutlined,
   MinusCircleOutlined,
   QuestionCircleOutlined,
   SyncOutlined,
 } from "@ant-design/icons";
-import type { SearchExecutionStatus } from "@ncfritz/olympus-sdk/dionysus";
-import { Tag } from "antd";
+import type {
+  MediaAssetDownload, MediaAssetWorkflowStep, MediaAssetWorkflowStepType,
+  SearchExecutionStatus
+} from "@ncfritz/olympus-sdk/dionysus";
+import { type StepProps, Tag } from "antd";
 import React, { type CSSProperties } from "react";
 import SearchResultTag from "./SearchResultTag";
 
@@ -204,4 +209,137 @@ export const getResolutionTransparency = (resolution: number) => {
   }
 
   return "ff";
+};
+
+export const getDownloadStepProperties = (
+  download?: MediaAssetDownload,
+  includeClassName: boolean = true,
+): Partial<StepProps> => {
+  let icon = undefined;
+  let status: "wait" | "process" | "finish" | "error" | undefined = "wait";
+  let className: string | undefined = undefined;
+
+  switch (download?.status) {
+    case "pending":
+      icon = (
+        <HourglassOutlined style={{ color: "#ffffff", fontSize: "16px" }} />
+      );
+      className = "dionysus-step-paused";
+      break;
+    case "downloading":
+      status = "process";
+      icon = <LoadingOutlined />;
+      break;
+    case "success":
+      status = "finish";
+      break;
+    case "failed":
+      status = "error";
+      break;
+    case "cancelled":
+      status = "finish";
+      break;
+  }
+
+  return {
+    disabled: !download,
+    icon: icon,
+    status: status,
+    className: includeClassName ? className : undefined,
+  };
+};
+
+export const getStepProperties = (
+  steps: MediaAssetWorkflowStep[],
+  stepType: MediaAssetWorkflowStepType,
+  includeClassName: boolean = true,
+): Partial<StepProps> => {
+  let icon = undefined;
+  let status: "wait" | "process" | "finish" | "error" | undefined = "wait";
+  let className: string | undefined = undefined;
+
+  const candidateSteps = steps?.filter((s) => s.type === stepType);
+  const step = candidateSteps?.[0];
+
+  if (step) {
+    switch (step.status) {
+      case "pending":
+        icon = (
+          <HourglassOutlined style={{ color: "#ffffff", fontSize: "16px" }} />
+        );
+        className = "dionysus-step-paused";
+        break;
+      case "running":
+        status = "process";
+        icon = <LoadingOutlined />;
+        break;
+      case "success":
+        status = "finish";
+        break;
+      case "skipped":
+        status = "finish";
+        break;
+      case "failed":
+        status = "error";
+        break;
+    }
+  }
+
+  return {
+    disabled: !step,
+    icon: icon,
+    status: status,
+    className: includeClassName ? className : undefined,
+  };
+};
+
+export const getDownloadProgressColor = (status: string) => {
+  switch (status) {
+    case "downloading":
+      return "#023c53";
+    case "pending":
+      return "#833683";
+    case "success":
+      return "#275916";
+    case "failed":
+      return "#7d0000";
+    case "cancelled":
+      return "#c5981c";
+    default:
+      return "#666666";
+  }
+};
+
+export const getDownloadProgressLabel = (status: string) => {
+  switch (status) {
+    case "success":
+      return "success";
+    case "failed":
+      return "exception";
+    case "cancelled":
+      return "exception";
+    case "downloading":
+    case "pending":
+    default:
+      return "normal";
+  }
+};
+
+export const getDownloadProgressStepStatus = (
+  status: string,
+): "process" | "wait" | "finish" | "error" | undefined => {
+  switch (status) {
+    case "downloading":
+      return "process";
+    case "pending":
+      return "wait";
+    case "success":
+      return "finish";
+    case "failed":
+      return "error";
+    case "cancelled":
+      return "error";
+    default:
+      return "wait";
+  }
 };

@@ -29,6 +29,7 @@ import {
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { DateTime } from "luxon";
+import Link from "next/link";
 import prettyBytes from "pretty-bytes";
 import React, { type ReactNode, useEffect, useState } from "react";
 import type { SortOptions } from "../../../api/common";
@@ -42,12 +43,14 @@ import Timestamp from "../../data/Timestamp";
 import SearchResultMetaTag from "./SearchResultMetaTag";
 import SearchResultTag from "./SearchResultTag";
 import {
+  getDownloadProgressColor,
+  getDownloadProgressLabel,
   getGroupColor,
   getGroupTag,
   getModifier,
   getResolutionTag,
   getResolutionTransparency,
-  getSource,
+  getSource
 } from "./utils";
 
 type OnChange = NonNullable<TableProps<Country>["onChange"]>;
@@ -100,13 +103,6 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
   });
 
   const onSearchComplete = async (e: CustomEvent) => {
-    console.log(
-      `Asset Type - ${e.detail?.assetType} - ${searchConfiguration.type}`,
-    );
-    console.log(
-      `Media ID - ${e.detail?.mediaId} - ${searchConfiguration.mediaId}`,
-    );
-
     if (
       `${e.detail?.assetType}` === `${searchConfiguration.type}` &&
       `${e.detail?.mediaId}` === `${searchConfiguration.mediaId}`
@@ -124,7 +120,7 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
   }, []);
 
   const handleStartDownload = async (id: string) => {
-    await mediaApi.createMediaAssetDownload(
+    await mediaApi.createMediaAssetWorkflow(
       searchConfiguration.type,
       searchConfiguration.mediaId,
       id,
@@ -640,29 +636,10 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
                     </Col>
                   </Row>
                   {record.downloads.map((download) => {
-                    let color = "#666666";
-                    let progressStatus = "normal";
-
-                    switch (download.status) {
-                      case "downloading":
-                        color = "#023c53";
-                        break;
-                      case "pending":
-                        color = "#833683";
-                        break;
-                      case "success":
-                        color = "#275916";
-                        progressStatus = "success";
-                        break;
-                      case "failed":
-                        color = "#7d0000";
-                        progressStatus = "exception";
-                        break;
-                      case "cancelled":
-                        color = "#c5981c";
-                        progressStatus = "exception";
-                        break;
-                    }
+                    const color = getDownloadProgressColor(download.status);
+                    const progressStatus = getDownloadProgressLabel(
+                      download.status,
+                    );
 
                     return (
                       <Row gutter={8}>
@@ -673,7 +650,11 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
                               fontSize: "12px",
                             }}
                           >
-                            {download.id}
+                            <Link
+                              href={`/dionysus/queue/${download.workflowId}`}
+                            >
+                              {download.id}
+                            </Link>
                           </Typography.Text>
                         </Col>
                         <Col span={2}>

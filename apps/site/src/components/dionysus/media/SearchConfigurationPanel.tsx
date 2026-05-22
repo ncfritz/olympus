@@ -6,9 +6,10 @@ import type {
 import { Button, Col, Collapse, Empty, Row, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import type { ItemType } from "rc-collapse/es/interface";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import mediaApi from "../../../api/mediaApi";
 import { useFetch } from "../../../hooks/useFetch";
+import { subscribe, unsubscribe } from "../../../utils/events";
 import Description from "../../common/Description";
 import LoadingWrapper from "../../common/LoadingWrapper";
 import RefreshTimer from "../../common/RefreshTimer";
@@ -41,6 +42,23 @@ const SearchConfigurationPanel: React.FunctionComponent<
         ).data.searchExecutions;
       },
     });
+
+  useEffect(() => {
+    subscribe("dionysus:search:complete", onSearchComplete);
+
+    return () => {
+      unsubscribe("dionysus:search:complete", onSearchComplete);
+    };
+  }, []);
+
+  const onSearchComplete = async (e: CustomEvent) => {
+    if (
+      `${e.detail?.assetType}` === `${searchConfiguration.type}` &&
+      `${e.detail?.mediaId}` === `${searchConfiguration.mediaId}`
+    ) {
+      await fetchExecutions(true);
+    }
+  };
 
   const updateActivePanels = (keys: string[]) => {
     setActiveKeys(keys);
