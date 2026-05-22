@@ -11,7 +11,6 @@ import {
   ConfigProvider,
   Drawer,
   Empty,
-  Layout,
   Progress,
   Row,
   Space,
@@ -21,7 +20,6 @@ import {
   Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
