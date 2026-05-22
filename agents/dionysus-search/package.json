@@ -23,8 +23,8 @@
     "dev:local": "NODE_ENV=local NODE_EXTRA_CA_CERTS=./ca_roots.pem nest --env-file=local.env start --watch"
   },
   "dependencies": {
-    "@golevelup/nestjs-graphql-request": "^0.2.5",
-    "@golevelup/nestjs-rabbitmq": "^6.0.2",
+    "@golevelup/nestjs-graphql-request": "^5.0.0",
+    "@golevelup/nestjs-rabbitmq": "^9.0.2",
     "@ncfritz/olympus-sdk": "latest",
     "@nestjs/common": "^11.1.23",
     "@nestjs/config": "^4.0.4",
