@@ -7,6 +7,7 @@ interface RefreshTimerProps {
   showProgress?: boolean;
   renderProgress?: (progress: number) => ReactNode;
   disabled?: boolean;
+  children?: ReactNode | ReactNode[];
 }
 
 const RefreshTimer: React.FunctionComponent<RefreshTimerProps> = ({
