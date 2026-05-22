@@ -7,7 +7,6 @@ import type {
   SparseMovie,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
-  Affix,
   Col,
   Input,
   Layout,
@@ -18,7 +17,6 @@ import {
   Tag,
   Typography,
 } from "antd";
-import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import prettyMilliseconds from "pretty-ms";
 import React, { useEffect, useState } from "react";
@@ -344,7 +342,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
               }}
               value={titleFilter}
               onChange={(e) => {
-                setTitleFilter(e.target.value.trim());
+                setTitleFilter(e.target.value);
               }}
             />
             <CheckboxFilter
