@@ -19,15 +19,15 @@ export const ExternalIdsList: React.FunctionComponent<ExternalIdsListProps> = ({
         {ids.map((item) => {
           return (
             <Row gutter={8} style={{ height: 25, alignItems: "center" }}>
-              <Col span={5} style={{ textAlign: "end" }}>
-                <Typography.Text style={{ fontSize: "12px" }}>
+              <Col span={8} style={{ textAlign: "end" }}>
+                <Typography.Text style={{ fontSize: "11px" }}>
                   {item.type}:
                 </Typography.Text>
               </Col>
-              <Col span={15}>
+              <Col span={14}>
                 <Typography.Text
                   style={{
-                    fontSize: "12px",
+                    fontSize: "11px",
                     fontFamily: "monospace",
                   }}
                 >
@@ -35,10 +35,9 @@ export const ExternalIdsList: React.FunctionComponent<ExternalIdsListProps> = ({
                 </Typography.Text>
               </Col>
               <Col
-                span={4}
+                span={2}
                 style={{
                   textAlign: "end",
-                  paddingRight: 32,
                 }}
               >
                 <Button
