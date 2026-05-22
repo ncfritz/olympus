@@ -5,9 +5,8 @@ import {
   FileTextOutlined,
   FileUnknownOutlined,
   SoundOutlined,
-  VideoCameraOutlined
+  VideoCameraOutlined,
 } from "@ant-design/icons";
-import { co } from "@fullcalendar/core/internal-common";
 import {
   Col,
   Collapse,
@@ -36,6 +35,7 @@ const metadataLabel = (label: string, span = 4) => {
           display: "flex",
           justifyContent: "end",
           marginRight: 8,
+          height: "-webkit-fill-available",
         }}
         strong={true}
       >
