@@ -1,5 +1,6 @@
 import { Image, Space } from "antd";
 import type { CSSProperties } from "react";
+import { CONTENT_CDN_HOST } from "../../utils/constants";
 
 export interface ContentAssetFixedRatioImageProps {
   assetId: string;
@@ -60,7 +61,7 @@ const ContentAssetFixedRatioImage: React.FunctionComponent<
       styles={{ item: { textAlign: "center" } }}
     >
       <Image
-        src={`https://content-cdn.sea.ncfritz.net:9443/assets/${assetId}/thumbnails/${previewIndex}.png`}
+        src={`${CONTENT_CDN_HOST}/assets/${assetId}/thumbnails/${previewIndex}.png`}
         preview={allowPreview && !onClick}
         width={fullWidth ? "100%" : imgWidth}
         height={imgHeight}

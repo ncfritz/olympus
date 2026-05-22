@@ -53,6 +53,7 @@ import CollapsibleTabPanel from "../../../../../../../../components/layout/Colla
 import OlympusBreadcrumbs from "../../../../../../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../../../../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../../../../../../icons";
+import { OLYMPUS_HOST } from "../../../../../../../../utils/constants";
 
 interface SeasonId {
   seriesId: number;
@@ -408,7 +409,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
               size={350}
               bordered={false}
               errorLevel={"H"}
-              value={`https://dionysus.dev.ncfritz.net/dionysus/tv/series/${episode.series.id}/season/${episode.seasonNumber}/episode/${episode.episodeNumber}`}
+              value={`${OLYMPUS_HOST}/dionysus/tv/series/${episode.series.id}/season/${episode.seasonNumber}/episode/${episode.episodeNumber}`}
             />
           </Space>
         ),

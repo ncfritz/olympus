@@ -20,6 +20,7 @@ import prettyMilliseconds from "pretty-ms";
 import React from "react";
 import adminApi from "../../../../api/adminApi";
 import { useFetch } from "../../../../hooks/useFetch";
+import { DIONYSUS_CDN_HOST } from "../../../../utils/constants";
 import LoadingWrapper from "../../../common/LoadingWrapper";
 import RefreshTimer from "../../../common/RefreshTimer";
 import Timestamp from "../../../data/Timestamp";
@@ -44,7 +45,7 @@ const DownloadDetailsPanel: React.FunctionComponent<
       watch: [workflow.id],
       fetchFunction: async () => {
         const response = await axios.get(
-          `https://dionysus-cdn.dev.ncfritz.net/workflow/${workflow.id}/nzbMeta.json`,
+          `${DIONYSUS_CDN_HOST}/workflow/${workflow.id}/nzbMeta.json`,
           {
             validateStatus: (status) => status === 200 || status === 404,
           },

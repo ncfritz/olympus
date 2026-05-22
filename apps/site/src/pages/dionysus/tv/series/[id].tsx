@@ -56,6 +56,7 @@ import CollapsibleTabPanel from "../../../../components/layout/CollapsibleTabPan
 import OlympusBreadcrumbs from "../../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../../icons";
+import { OLYMPUS_HOST } from "../../../../utils/constants";
 
 const TvSeriesDetailPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -676,7 +677,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               size={350}
               bordered={false}
               errorLevel={"H"}
-              value={`https://dionysus.dev.ncfritz.net/dionysus/tv/series/${tvSeries.id}`}
+              value={`${OLYMPUS_HOST}/dionysus/tv/series/${tvSeries.id}`}
             />
           </Space>
         ),

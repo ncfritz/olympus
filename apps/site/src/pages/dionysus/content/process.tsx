@@ -249,7 +249,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
                   preview={true}
                   width={imgWidth}
                   height={imgHeight}
-                  src={`https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/screenshots/${currentThumbIndex}.png`}
+                  src={`${CONTENT_CDN_HOST}/assets/${asset.id}/screenshots/${currentThumbIndex}.png`}
                   style={{ borderRadius: 6 }}
                 />
               </Space>

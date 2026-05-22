@@ -3,6 +3,7 @@
 import { Space } from "antd";
 import Plyr, { type APITypes } from "plyr-react";
 import React, { useMemo, useRef } from "react";
+import { DIONYSUS_CDN_HOST } from "../../../../utils/constants";
 
 export interface MediaAssetPreviewPlayerProps {
   workflowId: string;
@@ -35,7 +36,7 @@ const MediaAssetPreviewPlayer: React.FunctionComponent<
           type: "video",
           sources: [
             {
-              src: `https://dionysus-cdn.dev.ncfritz.net/workflow/${workflowId}/sample${sampleIndex}.mp4`,
+              src: `${DIONYSUS_CDN_HOST}/workflow/${workflowId}/sample${sampleIndex}.mp4`,
               type: "video/mp4",
             },
           ],

@@ -7,6 +7,7 @@ import { Empty, Result, Space } from "antd";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useFetch } from "../../../../hooks/useFetch";
+import { DIONYSUS_CDN_HOST } from "../../../../utils/constants";
 import LoadingWrapper from "../../../common/LoadingWrapper";
 import MediaAssetDetails from "../../../content/MediaAssetDetails";
 
@@ -35,7 +36,7 @@ const MetadataDetailsPanel: React.FunctionComponent<
           ? "original.json"
           : "metadata.json";
       const response = await axios.get(
-        `https://dionysus-cdn.dev.ncfritz.net/workflow/${workflow.id}/${metadataFileName}`,
+        `${DIONYSUS_CDN_HOST}/workflow/${workflow.id}/${metadataFileName}`,
         {
           validateStatus: (status) => status === 200 || status === 404,
         },

@@ -4,6 +4,7 @@ import type { ContentAsset } from "@ncfritz/olympus-sdk/dionysus";
 import { Space } from "antd";
 import Plyr, { type APITypes } from "plyr-react";
 import React, { useMemo, useRef } from "react";
+import { CONTENT_CDN_HOST } from "../../utils/constants";
 
 export interface ContentAssetPreviewPlayerProps {
   asset: ContentAsset;
@@ -43,14 +44,14 @@ const ContentAssetPreviewPlayer: React.FunctionComponent<
       controls = ["play", "progress", "current-time"];
     }
 
-    const playerInstance = (
+    return (
       <Plyr
         ref={playerRef}
         source={{
           type: "video",
           sources: [
             {
-              src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/${type}.mp4`,
+              src: `${CONTENT_CDN_HOST}/assets/${asset.id}/${type}.mp4`,
               type: "video/mp4",
             },
           ],
@@ -62,8 +63,6 @@ const ContentAssetPreviewPlayer: React.FunctionComponent<
         }}
       />
     );
-
-    return playerInstance;
   }, [asset]);
 
   let timerRef: ReturnType<typeof setTimeout>;

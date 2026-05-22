@@ -32,6 +32,7 @@ import { useFetch } from "../../../../hooks/useFetch";
 import metadataApi from "../../../../api/metadataApi";
 import Timestamp from "../../../../components/data/Timestamp";
 import { MetadataOutlinedIcon } from "../../../../icons";
+import { OLYMPUS_HOST } from "../../../../utils/constants";
 
 const NetworkDetailPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -244,7 +245,7 @@ const NetworkDetailPage: React.FunctionComponent = () => {
           </Space>
           <QRCode
             bordered={false}
-            value={`https://dionysus.dev.ncfritz.net/dionysus/tv/networks/${network.id}`}
+            value={`${OLYMPUS_HOST}/dionysus/tv/networks/${network.id}`}
           />
         </Space>
       </Space>

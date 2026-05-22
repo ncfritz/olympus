@@ -2,6 +2,7 @@ import type { MediaAssetSearchType } from "@ncfritz/olympus-sdk/dionysus";
 import { Empty, Form, Switch, Tabs, type TabsProps } from "antd";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { DIONYSUS_CDN_HOST } from "../../../utils/constants";
 import LoadingWrapper from "../../common/LoadingWrapper";
 import MediaAssetDetails from "../../content/MediaAssetDetails";
 
@@ -33,7 +34,7 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
 
     try {
       const fetchAssetMetadataResponse = await axios.get(
-        `https://dionysus-cdn.sea.ncfritz.net:9443/metadata/${assetType}/${assetId}/${mdType}.json`,
+        `${DIONYSUS_CDN_HOST}/metadata/${assetType}/${assetId}/${mdType}.json`,
       );
       setMetadata(fetchAssetMetadataResponse.data);
     } catch (e) {

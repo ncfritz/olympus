@@ -11,6 +11,7 @@ import Plyr, {
 } from "plyr-react";
 import React, { type CSSProperties, useMemo, useRef, useState } from "react";
 import contentApi from "../../api/contentApi";
+import { CONTENT_CDN_HOST } from "../../utils/constants";
 import ContentAssetThumbnailGrid from "./ContentAssetThumbnailGrid";
 import { calculateAssetDimensions } from "./util";
 
@@ -77,12 +78,12 @@ export const ContentAssetPlyr: React.FunctionComponent<
     const source: PlyrSource = {
       type: "video",
       sources: [],
-      poster: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/screenshots/0.png`,
+      poster: `${CONTENT_CDN_HOST}/assets/${asset.id}/screenshots/0.png`,
     };
 
     if (thumbsGenerated) {
       options.previewThumbnails = {
-        src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/thumbs.vtt`,
+        src: `${CONTENT_CDN_HOST}/assets/${asset.id}/thumbs.vtt`,
         enabled: true,
       };
     }
@@ -90,7 +91,7 @@ export const ContentAssetPlyr: React.FunctionComponent<
     if (!hlsEnabled) {
       source.sources = [
         {
-          src: `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/asset.mp4?start=0`,
+          src: `${CONTENT_CDN_HOST}/assets/${asset.id}/asset.mp4?start=0`,
           type: "video/mp4",
         },
       ];
@@ -102,9 +103,7 @@ export const ContentAssetPlyr: React.FunctionComponent<
 
     if (hlsTag) {
       const hls = new Hls();
-      hls.loadSource(
-        `https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/playlist.m3u8`,
-      );
+      hls.loadSource(`${CONTENT_CDN_HOST}/assets/${asset.id}/playlist.m3u8`);
       hls.attachMedia(playerInstance as unknown as HTMLVideoElement);
     }
 

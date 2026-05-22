@@ -36,6 +36,7 @@ import TvSeriesList from "../../../components/dionysus/metadata/TvSeriesList";
 import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../icons";
+import { OLYMPUS_HOST } from "../../../utils/constants";
 
 const ProductionCompanyDetailPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -295,7 +296,7 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
           </Space>
           <QRCode
             bordered={false}
-            value={`https://dionysus.dev.ncfritz.net/dionysus/productionCompanies/${productionCompany.id}`}
+            value={`${OLYMPUS_HOST}/dionysus/productionCompanies/${productionCompany.id}`}
           />
         </Space>
         {productionCompany?.description && (

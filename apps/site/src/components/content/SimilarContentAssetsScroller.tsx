@@ -11,6 +11,7 @@ import { ScrollMenu, VisibilityContext } from "react-horizontal-scrolling-menu";
 import contentApi from "../../api/contentApi";
 import useDrag from "../../hooks/useDrag";
 import { useAppSelector } from "../../redux/hooks";
+import { CONTENT_CDN_HOST } from "../../utils/constants";
 import { LeftArrow, RightArrow } from "./scroller/arrows";
 
 export interface SimilarContentAssetsScrollerProps {
@@ -91,7 +92,7 @@ const SimilarContentAssetScroller: React.FunctionComponent<
         tabIndex={0}
         cover={
           <img
-            src={`https://content-cdn.sea.ncfritz.net:9443/assets/${asset.id}/thumbnails/3.png`}
+            src={`${CONTENT_CDN_HOST}/assets/${asset.id}/thumbnails/3.png`}
             height={150}
           />
         }

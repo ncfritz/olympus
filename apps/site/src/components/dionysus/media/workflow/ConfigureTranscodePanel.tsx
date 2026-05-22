@@ -10,6 +10,7 @@ import React, { type ReactNode, useEffect, useState } from "react";
 import ReactCountryFlag from "react-country-flag/src";
 import mediaApi from "../../../../api/mediaApi";
 import { useFetch } from "../../../../hooks/useFetch";
+import { DIONYSUS_CDN_HOST } from "../../../../utils/constants";
 import LoadingWrapper from "../../../common/LoadingWrapper";
 import SearchResultTag from "../SearchResultTag";
 
@@ -38,7 +39,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
     watch: [workflow.id],
     fetchFunction: async () => {
       const response = await axios.get(
-        `https://dionysus-cdn.dev.ncfritz.net/workflow/${workflow.id}/handbrakeMetadata.json`,
+        `${DIONYSUS_CDN_HOST}/workflow/${workflow.id}/handbrakeMetadata.json`,
         {
           validateStatus: (status) => status === 200 || status === 404,
         },
@@ -66,7 +67,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
     },
     fetchFunction: async () => {
       const response = await axios.get(
-        `https://dionysus-cdn.dev.ncfritz.net/workflow/${workflow.id}/transcodeMetadata.json`,
+        `${DIONYSUS_CDN_HOST}/workflow/${workflow.id}/transcodeMetadata.json`,
         {
           validateStatus: (status) => status === 200 || status === 404,
         },

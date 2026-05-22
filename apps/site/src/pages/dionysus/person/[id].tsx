@@ -36,6 +36,7 @@ import CollapsibleTabPanel from "../../../components/layout/CollapsibleTabPanel"
 import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { MetadataOutlinedIcon } from "../../../icons";
+import { OLYMPUS_HOST } from "../../../utils/constants";
 
 const PersonDetailPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -152,7 +153,7 @@ const PersonDetailPage: React.FunctionComponent = () => {
               size={350}
               bordered={false}
               errorLevel={"H"}
-              value={`https://dionysus.dev.ncfritz.net/dionysus/person/${person.id}`}
+              value={`${OLYMPUS_HOST}/dionysus/person/${person.id}`}
             />
           </Space>
         ),

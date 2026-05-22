@@ -1,6 +1,7 @@
 import { Form, Switch, Tabs, type TabsProps } from "antd";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { CONTENT_CDN_HOST } from "../../utils/constants";
 import LoadingWrapper from "../common/LoadingWrapper";
 import MediaAssetDetails from "./MediaAssetDetails";
 
@@ -23,12 +24,12 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
 
     try {
       const fetchAssetMetadataResponse = await axios.get(
-        `https://content-cdn.sea.ncfritz.net:9443/assets/${assetId}/metadata.json`,
+        `${CONTENT_CDN_HOST}/assets/${assetId}/metadata.json`,
       );
       setAssetMetadata(fetchAssetMetadataResponse.data);
 
       const fetchOriginalMetadataResponse = await axios.get(
-        `https://content-cdn.sea.ncfritz.net:9443/assets/${assetId}/original_metadata.json`,
+        `${CONTENT_CDN_HOST}/assets/${assetId}/original_metadata.json`,
       );
       setOriginalMetadata(fetchOriginalMetadataResponse.data);
     } catch (e) {
