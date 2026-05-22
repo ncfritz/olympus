@@ -1,5 +1,6 @@
 import {
   ApiOutlined,
+  AudioOutlined,
   EditOutlined,
   HeartOutlined,
   HomeOutlined,
@@ -17,6 +18,7 @@ import DionysusMenu from "../../dionysus/layout/menu";
 import { useAppSelector } from "../../redux/hooks";
 import { toggleSubmenuExpanded } from "../../redux/slices/layoutSlice";
 import MinervaMenu from "../minerva/layout/menu";
+import TranscriptionButton from "../notes/TranscriptionButton";
 import ToolsMenu from "../tools/layout/menu";
 import AuthHeader from "./AuthHeader";
 
@@ -243,6 +245,7 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
               {children}
             </Content>
           </Layout>
+          <TranscriptionButton />
           <FloatButton.BackTop visibilityHeight={600}>
             <BackToTopButton>
               <UpOutlined />

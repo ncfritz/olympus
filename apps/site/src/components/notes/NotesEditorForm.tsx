@@ -58,6 +58,7 @@ export interface NotesEditorFormProps {
   additionalInfoPosition?: AdditionalInfoPosition;
   style?: CSSProperties;
   className?: string;
+  buttonsPosition?: "left" | "right";
 }
 
 export interface NotesFormInput {
@@ -97,6 +98,7 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
   additionalInfoPosition = AdditionalInfoPosition.BOTTOM,
   style = {},
   className,
+  buttonsPosition = "right",
 }: NotesEditorFormProps) => {
   const onSubmit: SubmitHandler<NotesFormInput> = async (data) => {
     try {
@@ -307,7 +309,7 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
         additionalDataControls}
       <Space
         size={8}
-        style={{ justifyContent: "end", padding: 20, width: "100%" }}
+        style={{ justifyContent: buttonsPosition === "left" ? "start" : "end", padding: 20, width: "100%" }}
       >
         <Button
           type={"primary"}
