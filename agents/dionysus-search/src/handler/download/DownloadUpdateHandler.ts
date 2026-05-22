@@ -33,16 +33,23 @@ const MEDIA_EXTENSIONS = [
 
 @Injectable()
 export class DownloadUpdateHandler {
-  private readonly nzbGetUrl = `http://localhost:6789/jsonrpc`;
-  private nzbGetUsername: string;
-  private nzbGetPassword: string;
+  private readonly nzbGetUrl: string;
+  private readonly nzbGetUsername: string;
+  private readonly nzbGetPassword: string;
 
   constructor(
     private readonly amqpConnection: AmqpConnection,
     protected readonly configService: ConfigService,
   ) {
-    this.nzbGetUsername = this.configService.get("NZBGET_USERNAME")!;
-    this.nzbGetPassword = this.configService.get("NZBGET_PASSWORD")!;
+    const nzbGetHost = this.configService.get<string>(
+      "NZBGET_HOST",
+      "localhost",
+    );
+    const nzbGetPort = this.configService.get<number>("NZBGET_PORT", 6789);
+
+    this.nzbGetUrl = `http://${nzbGetHost}:${nzbGetPort}/jsonrpc`;
+    this.nzbGetUsername = this.configService.get<string>("NZBGET_USERNAME")!;
+    this.nzbGetPassword = this.configService.get<string>("NZBGET_PASSWORD")!;
   }
 
   @RabbitSubscribe({

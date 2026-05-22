@@ -76,10 +76,14 @@ export class StartDownloadHandler {
       };
     });
 
-    const nzbGetUsername = this.configService.get("NZBGET_USERNAME");
-    const nzbGetPassword = this.configService.get("NZBGET_PASSWORD");
-
-    const nzbGetUrl = `http://localhost:6789/jsonrpc`;
+    const nzbGetHost = this.configService.get<string>(
+      "NZBGET_HOST",
+      "localhost",
+    );
+    const nzbGetPort = this.configService.get<number>("NZBGET_PORT", 6789);
+    const nzbGetUsername = this.configService.get<string>("NZBGET_USERNAME")!;
+    const nzbGetPassword = this.configService.get<string>("NZBGET_PASSWORD")!;
+    const nzbGetUrl = `http://${nzbGetHost}:${nzbGetPort}/jsonrpc`;
 
     const rpcResponse = await axios.post(
       nzbGetUrl,
