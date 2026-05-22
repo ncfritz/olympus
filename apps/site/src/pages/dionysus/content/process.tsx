@@ -35,6 +35,7 @@ import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
 import Timestamp from "../../../components/data/Timestamp";
 import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useAppSelector } from "../../../redux/hooks";
+import { CONTENT_CDN_HOST } from "../../../utils/constants";
 import type { NotificationType } from "../../../utils/notifications";
 
 const ContentAssetPreviewPlayer = dynamic(
