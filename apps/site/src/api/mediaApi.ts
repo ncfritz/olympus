@@ -15,7 +15,8 @@ import {
   type MediaAssetSearchType,
   type PartialMediaAssetSearchConfiguration,
   triggerMediaAssetSearch,
-  updateMediaAssetSearchConfiguration, verifyMediaAssetTranscodeConfiguration
+  updateMediaAssetSearchConfiguration,
+  verifyMediaAssetTranscodeConfiguration,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { ApiBase } from "./apiBase";
 import type { SortOptions } from "./common";
@@ -31,7 +32,7 @@ class MediaApi extends ApiBase {
   }
 
   async createMediaAssetSearchConfiguration(
-    searchConfiguration: BaseMediaAssetSearchConfiguration
+    searchConfiguration: BaseMediaAssetSearchConfiguration,
   ) {
     return await createMediaAssetSearchConfiguration({
       body: {
@@ -43,7 +44,7 @@ class MediaApi extends ApiBase {
   async createMediaAssetDownload(
     mediaType: MediaAssetSearchType,
     mediaId: number,
-    searchResultId: string
+    searchResultId: string,
   ) {
     return await createMediaAssetDownload({
       path: {
@@ -57,7 +58,7 @@ class MediaApi extends ApiBase {
   async createMediaAssetWorkflow(
     mediaType: MediaAssetSearchType,
     mediaId: number,
-    searchResultId: string
+    searchResultId: string,
   ) {
     return await createMediaAssetWorkflow({
       path: {
@@ -72,7 +73,7 @@ class MediaApi extends ApiBase {
     mediaType: MediaAssetSearchType,
     mediaId: number,
     searchConfiguration: PartialMediaAssetSearchConfiguration,
-    recursive: boolean = false
+    recursive: boolean = false,
   ) {
     return await updateMediaAssetSearchConfiguration({
       path: {
@@ -90,7 +91,7 @@ class MediaApi extends ApiBase {
 
   async describeMediaAssetSearchConfiguration(
     mediaType: MediaAssetSearchType,
-    mediaId: number
+    mediaId: number,
   ) {
     return await describeMediaAssetSearchConfiguration({
       path: {
@@ -120,7 +121,7 @@ class MediaApi extends ApiBase {
     page: number = 0,
     pageSize: number = 30,
     sort: SortOptions = { field: "startedTime", order: "desc" },
-    filters?: FilterDefinition
+    filters?: FilterDefinition,
   ) {
     return await listMediaAssetSearchExecutions({
       path: {
@@ -143,7 +144,7 @@ class MediaApi extends ApiBase {
     page: number = 0,
     pageSize: number = 100,
     sort: SortOptions = { field: "postedTime", order: "desc" },
-    filters?: FilterDefinition
+    filters?: FilterDefinition,
   ) {
     return await listMediaAssetSearchResults({
       path: {
@@ -164,7 +165,7 @@ class MediaApi extends ApiBase {
     page: number = 0,
     pageSize: number = 30,
     sort: SortOptions = { field: "startedTime", order: "desc" },
-    filters?: FilterDefinition
+    filters?: FilterDefinition,
   ) {
     return await listMediaAssetWorkflows({
       query: {
@@ -179,7 +180,7 @@ class MediaApi extends ApiBase {
 
   async triggerMediaAssetSearch(
     mediaType: MediaAssetSearchType,
-    mediaId: number
+    mediaId: number,
   ) {
     return await triggerMediaAssetSearch({
       path: {
@@ -192,7 +193,7 @@ class MediaApi extends ApiBase {
   async approveMediaAssetTranscodeConfiguration(
     workflowId: string,
     workflowStepId: string,
-    request: ApproveMediaAssetTranscodeConfigurationRequest
+    request: ApproveMediaAssetTranscodeConfigurationRequest,
   ) {
     return await approveMediaAssetTranscodeConfiguration({
       path: {

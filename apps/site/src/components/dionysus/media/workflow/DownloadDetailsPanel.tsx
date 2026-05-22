@@ -236,7 +236,11 @@ const DownloadDetailsPanel: React.FunctionComponent<
   }
 
   return (
-    <Space direction={"vertical"} style={{ width: "100%", marginTop: 16 }} size={16}>
+    <Space
+      direction={"vertical"}
+      style={{ width: "100%", marginTop: 16 }}
+      size={16}
+    >
       <RefreshTimer
         ttlMs={15000}
         showProgress={false}

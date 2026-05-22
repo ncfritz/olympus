@@ -62,7 +62,8 @@ import {
   type MetadataFetchJobStatus,
   type MetadataJobType,
   type MetadatFetchJobUpdate,
-  type FilterDefinition, getTvEpisodeById
+  type FilterDefinition,
+  getTvEpisodeById,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { ApiBase } from "./apiBase";
 import type { SortOptions } from "./common";
@@ -80,7 +81,7 @@ class MetadataApi extends ApiBase {
   async listCertifications(
     page: number,
     sort: SortOptions,
-    filters?: FilterDefinition
+    filters?: FilterDefinition,
   ) {
     return await listCertifications({
       query: {
@@ -107,7 +108,7 @@ class MetadataApi extends ApiBase {
   async listGenres(
     page: number,
     sort: SortOptions,
-    filters?: FilterDefinition
+    filters?: FilterDefinition,
   ) {
     return await listGenres({
       query: {
@@ -161,7 +162,7 @@ class MetadataApi extends ApiBase {
   async describeTvEpisode(
     id: number,
     seasonNumber: number,
-    episodeNumber: number
+    episodeNumber: number,
   ) {
     return describeTvEpisode({
       path: {
@@ -175,7 +176,7 @@ class MetadataApi extends ApiBase {
   async listTvEpisodeCrew(
     id: number,
     seasonNumber: number,
-    episodeNumber: number
+    episodeNumber: number,
   ) {
     return listTvEpisodeCrew({
       path: {
@@ -189,7 +190,7 @@ class MetadataApi extends ApiBase {
   async listTvEpisodeCast(
     id: number,
     seasonNumber: number,
-    episodeNumber: number
+    episodeNumber: number,
   ) {
     return listTvEpisodeCast({
       path: {
@@ -203,7 +204,7 @@ class MetadataApi extends ApiBase {
   async listTvEpisodeGuestStars(
     id: number,
     seasonNumber: number,
-    episodeNumber: number
+    episodeNumber: number,
   ) {
     return listTvEpisodeGuestStars({
       path: {
@@ -475,7 +476,7 @@ class MetadataApi extends ApiBase {
     page: number,
     pageSize: number,
     sort: SortOptions,
-    filters?: FilterDefinition
+    filters?: FilterDefinition,
   ) {
     return await listMetadataFetchJobs({
       query: {
@@ -494,7 +495,7 @@ class MetadataApi extends ApiBase {
     page: number,
     pageSize: number,
     sort: SortOptions,
-    filters?: FilterDefinition
+    filters?: FilterDefinition,
   ) {
     console.log(filters);
 
@@ -513,7 +514,7 @@ class MetadataApi extends ApiBase {
     page: number,
     pageSize: number,
     sort: SortOptions,
-    filters?: FilterDefinition
+    filters?: FilterDefinition,
   ) {
     return await listMovies({
       query: {
@@ -530,7 +531,7 @@ class MetadataApi extends ApiBase {
     page: number,
     pageSize: number,
     sort: SortOptions,
-    filters?: FilterDefinition
+    filters?: FilterDefinition,
   ) {
     return await listTvSeries({
       query: {
@@ -551,7 +552,7 @@ class MetadataApi extends ApiBase {
     jitter: number,
     publish: boolean,
     bypassCache: boolean,
-    context: Record<string, string>
+    context: Record<string, string>,
   ) {
     return await createMetadataFetchJob({
       body: {
@@ -572,7 +573,7 @@ class MetadataApi extends ApiBase {
     type: MetadataJobType,
     data: MetadatFetchJobUpdate,
     republish: boolean,
-    bypassCache?: boolean
+    bypassCache?: boolean,
   ) {
     await updateMetadataFetchJob({
       path: {

@@ -50,7 +50,7 @@ import {
   getModifier,
   getResolutionTag,
   getResolutionTransparency,
-  getSource
+  getSource,
 } from "./utils";
 
 type OnChange = NonNullable<TableProps<Country>["onChange"]>;
