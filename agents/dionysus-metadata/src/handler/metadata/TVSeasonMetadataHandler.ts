@@ -68,7 +68,6 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
 
     const cast: UniqueSet<PartialTvSeriesCastMember> = new UniqueSet();
 
-    // @ts-expect-error - expected per API - TS bindings are incorrect
     seasonResponse.aggregate_credits.cast.forEach((value: AggregateCast) => {
       cast.add({
         personId: value.id,
@@ -87,7 +86,6 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
 
     const crew: UniqueSet<PartialTvSeriesCrewMember> = new UniqueSet();
 
-    // @ts-expect-error - expected per API - TS bindings are incorrect
     seasonResponse.aggregate_credits.crew.forEach((value: AggregateCrew) => {
       crew.add({
         personId: value.id,
