@@ -11,7 +11,7 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/metadata/CountryConverter";
 import { GraphQlCountry } from "../../../../types/dionysus/metadata/country";

@@ -9,7 +9,7 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 @Controller({ version: "1" })

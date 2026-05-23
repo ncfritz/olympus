@@ -14,7 +14,7 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchExecutionConverter";
 import { BASE_SEARCH_EXECUTION } from "../../../query/dionysus/media/searchExecution";

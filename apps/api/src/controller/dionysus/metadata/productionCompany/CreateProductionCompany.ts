@@ -12,7 +12,7 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toSparseDomainObject as toSparseProductionCompanyDomainObject } from "../../../../convert/dionysus/metadata/ProductionCompanyConverter";
 import { GraphQlSparseProductionCompany } from "../../../../types/dionysus/metadata/productionCompany";

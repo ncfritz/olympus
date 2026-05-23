@@ -13,7 +13,7 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { MEDIA_ASSET } from "../../../../query/dionysus/media/mediaAsset";
 import { GraphQlMovie } from "../../../../types/dionysus/metadata/movie";

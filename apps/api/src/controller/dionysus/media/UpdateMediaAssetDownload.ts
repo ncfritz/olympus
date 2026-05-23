@@ -21,7 +21,7 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetDownloadConverter";
 import { BASE_MEDIA_DOWNLOAD } from "../../../query/dionysus/media/mediaDownload";

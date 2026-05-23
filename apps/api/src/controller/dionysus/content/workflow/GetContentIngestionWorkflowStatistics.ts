@@ -5,7 +5,7 @@ import {
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment, { Moment } from "moment";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";

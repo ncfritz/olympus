@@ -9,7 +9,7 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toBaseDomainObject as toTvSeriesDomainObject } from "../../../../convert/dionysus/metadata/tvSeriesConverter";
 import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";

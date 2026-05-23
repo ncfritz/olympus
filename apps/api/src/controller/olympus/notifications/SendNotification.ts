@@ -22,7 +22,7 @@ import {
   ApiProduces,
   ApiResponse,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { v4 as uuidv4 } from "uuid";

@@ -10,7 +10,7 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { toFullDomainObject } from "../../../../convert/dionysus/content/channel/ContentAssetChannelConverter";

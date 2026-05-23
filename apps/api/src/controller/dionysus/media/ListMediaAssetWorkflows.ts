@@ -5,7 +5,7 @@ import {
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toMediaAssetWorkflowListItemDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowConverter";
 import { MEDIA_ASSET_WORKFLOW_LIST_ITEM } from "../../../query/dionysus/media/mediaAssetWorkflow";

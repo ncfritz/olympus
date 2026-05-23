@@ -7,7 +7,7 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { BaseNoteController } from "./BaseNoteController";

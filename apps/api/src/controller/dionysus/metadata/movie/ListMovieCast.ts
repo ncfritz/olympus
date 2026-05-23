@@ -6,7 +6,7 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toMovieCastDomainObject } from "../../../../convert/dionysus/metadata/CastConverter";
 import { GraphQlMovieCastMember } from "../../../../types/dionysus/metadata";

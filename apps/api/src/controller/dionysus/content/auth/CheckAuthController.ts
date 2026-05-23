@@ -1,7 +1,7 @@
 import { CheckAuthResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Req, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
-import { Response, Request } from "express";
+import { type Response, type Request } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import * as jose from "jose";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";

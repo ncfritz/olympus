@@ -10,7 +10,7 @@ import {
   ApiProduces,
   ApiQuery,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toSparseDomainObjectWithContentCounts } from "../../../../convert/dionysus/metadata/ProductionCompanyConverter";
 import { GraphQlSparseProductionCompanyWithContentCounts } from "../../../../types/dionysus/metadata/productionCompany";

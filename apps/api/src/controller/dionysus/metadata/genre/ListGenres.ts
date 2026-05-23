@@ -10,7 +10,7 @@ import {
   ApiProduces,
   ApiQuery,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/metadata/GenreConverter";
 import { GraphQlGenre } from "../../../../types/dionysus/metadata/genre";

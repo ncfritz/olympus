@@ -13,7 +13,7 @@ import {
   ApiProduces,
   ApiQuery,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { GraphQLClient } from "graphql-request";
 import * as speakeasy from "speakeasy";
 import * as jose from "jose";

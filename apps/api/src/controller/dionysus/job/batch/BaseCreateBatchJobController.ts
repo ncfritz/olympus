@@ -5,7 +5,7 @@ import {
   JobType,
 } from "@ncfritz/olympus-model";
 import { Body, HttpStatus, Res } from "@nestjs/common";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/job/BatchJobConverter";
 import { GraphQlBatchJob } from "../../../../types/batchJobs";

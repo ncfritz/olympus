@@ -9,7 +9,7 @@ import {
   ApiProduces,
   ApiQuery,
 } from "@nestjs/swagger";
-import { Response } from "express";
+import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/content/ContentAssetTagConverter";
 import { GraphQlContentAssetTag } from "../../../../types/content";
