@@ -5,7 +5,7 @@ import {
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
 import type { ConsumeMessage } from "amqplib";
-import moment from "moment/moment";
+import moment from "moment";
 import mediaApi from "../../api/mediaApi";
 import metadataApi from "../../api/metadataApi";
 import { type SearchExecutionMessage } from "../../types/message";

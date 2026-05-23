@@ -7,7 +7,7 @@ import {
 import { Injectable } from "@nestjs/common";
 import type { ConsumeMessage } from "amqplib";
 import axios from "axios";
-import moment from "moment/moment";
+import moment from "moment";
 import mediaApi from "../../api/mediaApi";
 import metadataApi from "../../api/metadataApi";
 import { parseTitle } from "../../metadata/detector";
