@@ -1,5 +1,6 @@
 {
   "name": "@ncfritz/dionysus-asset-agents",
+  "description": "Asynchronous agent for handling content and media assets",
   "main": "dist/main.js",
   "version": "1.2.0",
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
