@@ -4,7 +4,7 @@ import toSpawnArgs from "object-to-spawn-args";
 import path from "path";
 import { HandbrakeError, HandbrakeErrorType } from "../error/handbrakeError";
 import { SpawnError } from "../error/spawnError";
-import * as progress from "./progress.js";
+import * as progress from "./progress";
 
 class HandbrakeCommand extends EventEmitter {
   private readonly options: any;

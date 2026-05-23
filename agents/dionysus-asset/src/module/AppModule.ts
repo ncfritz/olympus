@@ -1,8 +1,12 @@
 import { Logger, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { ScheduleModule } from "@nestjs/schedule";
 import { ReporterModule } from "nestjs-metrics-reporter";
 import { DeleteAssetHandler } from "../handler/content/deleteAssetHandler";
 import { HlsGenerationAssetHandler } from "../handler/content/hlsGenerationHandler";
+import { DownloadStatusHandler } from "../handler/download/DownloadStatusHandler";
+import { DownloadUpdateHandler } from "../handler/download/DownloadUpdateHandler";
+import { StartDownloadHandler } from "../handler/download/StartDownloadHandler";
 import { TranscodeCleanupHandler } from "../handler/media/cleanupHandler";
 import { ConfigureTranscodeHandler } from "../handler/media/configureTranscodeHandler";
 import { MetadataExtractionHandler } from "../handler/media/metadataExtractionHandler";
@@ -29,6 +33,11 @@ const HANDLER_MAP = {
   DISABLE_DIONYSUS_XCODE_HANDLER: TranscodeMediaHandler,
   DISABLE_DIONYSUS_VERIFY_XCODE_HANDLER: VerifyTranscodeConfigurationHandler,
   DISABLE_DIONYSUS_CLEANUP_HANDLER: TranscodeCleanupHandler,
+  // Download Jobs
+  DISABLE_DIONYSUS_START_DOWNLOAD_HANDLER: StartDownloadHandler,
+  DISABLE_DIONYSUS_DOWNLOAD_UPDATE_HANDLER: DownloadUpdateHandler,
+  // Status Jobs
+  DISABLE_DIONYSUS_DOWNLOAD_STATUS_HANDLER: DownloadStatusHandler,
   // Test - DELETE ME!!!
   DISABLE_TEST_HANDLER: TestHandler,
 };
@@ -61,6 +70,7 @@ const enabledHandlers = Object.entries(HANDLER_MAP)
         },
       }),
     }),
+    ScheduleModule.forRoot(),
     AxiosProxyModule,
     RabbitModule,
   ],

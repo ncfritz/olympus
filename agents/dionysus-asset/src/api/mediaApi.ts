@@ -12,6 +12,13 @@ import {
   describeMediaAssetWorkflow,
   createMediaAsset,
   BaseMediaAsset,
+  MediaAssetDownloadStatusUpdate,
+  bulkUpdateMediaAssetDownloads,
+  PartialMediaAssetDownload,
+  SearchResultStatus,
+  updateMediaAssetDownloadByNzbId,
+  MediaAssetSearchType,
+  updateMediaAssetDownload,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { BASE_URL } from "./apiBase";
 
@@ -20,6 +27,16 @@ class MediaApi {
     client.setConfig({
       baseURL: BASE_URL,
       throwOnError: true,
+    });
+  }
+
+  async bulkUpdateMediaAssetDownloads(
+    updates: MediaAssetDownloadStatusUpdate[],
+  ) {
+    return await bulkUpdateMediaAssetDownloads({
+      body: {
+        updates: updates,
+      },
     });
   }
 
@@ -93,6 +110,45 @@ class MediaApi {
     });
 
     return response.data!.step;
+  }
+
+  async updateMediaAssetDownload(
+    mediaType: MediaAssetSearchType,
+    mediaId: number,
+    resultId: string,
+    downloadId: string,
+    download: PartialMediaAssetDownload,
+  ) {
+    return await updateMediaAssetDownload({
+      path: {
+        mediaType: mediaType,
+        mediaId: mediaId,
+        resultId: resultId,
+        downloadId: downloadId,
+      },
+      body: {
+        download: download,
+      },
+    });
+  }
+
+  async updateMediaAssetDownloadByNzbId(
+    nzbId: number,
+    download: PartialMediaAssetDownload,
+    searchResultStatus: SearchResultStatus,
+  ) {
+    return await updateMediaAssetDownloadByNzbId({
+      path: {
+        nzbId: nzbId,
+      },
+      body: {
+        download: download,
+        searchResultStatus: searchResultStatus,
+      },
+      validateStatus: (status) => {
+        return status === 200 || status === 404;
+      },
+    });
   }
 
   async updateMediaAssetWorkflowStep(

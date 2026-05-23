@@ -1,6 +1,10 @@
 import { RabbitMQConfig, RabbitMQModule } from "@golevelup/nestjs-rabbitmq";
 import { Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import {
+  DOWNLOAD_TRIGGER_EXCHANGE,
+  DOWNLOAD_UPDATE_EXCHANGE,
+} from "../util/constants";
 import { logger } from "../util/logger";
 
 @Module({
@@ -38,6 +42,17 @@ import { logger } from "../util/logger";
             },
             {
               name: "media.trigger",
+              type: "topic",
+            },
+            {
+              name: DOWNLOAD_TRIGGER_EXCHANGE,
+              type: "x-delayed-message",
+              options: {
+                arguments: { "x-delayed-type": "direct" },
+              },
+            },
+            {
+              name: DOWNLOAD_UPDATE_EXCHANGE,
               type: "topic",
             },
           ],

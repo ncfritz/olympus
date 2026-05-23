@@ -7,7 +7,7 @@ import * as cliProgress from "cli-progress";
 import { createHash } from "crypto";
 import Ffmpeg, { FfprobeData } from "fluent-ffmpeg";
 import fs, { PathLike } from "fs";
-import moment from "moment/moment";
+import moment from "moment";
 import path from "path";
 import sharp, { OverlayOptions } from "sharp";
 import contentApi from "../../api/contentApi";
@@ -17,9 +17,12 @@ import sftp from "ssh2-sftp-client";
 import progress_stream from "progress-stream";
 import { ts } from "../../util/format";
 import { logger } from "../../util/logger";
-import { createStep, updateStepProgress, updateStepStatus } from "./reporter";
-
-const ffmpegOnProgress = require("ffmpeg-on-progress");
+import {
+  createStep,
+  updateStepProgress,
+  updateStepStatus,
+} from "./reporter";
+import * as ffmpegOnProgress from "ffmpeg-on-progress";
 
 export interface AssetMetadata {
   id: string;
@@ -670,7 +673,7 @@ export class AssetWorkflow {
           );
 
           console.log("Removing 'screens' directory");
-          fs.rmdirSync(screensDir, { recursive: true });
+          fs.rmSync(screensDir, { recursive: true, force: true });
 
           await updateStepStatus(this.ingestWorkflow.id, step.id, "success");
 

@@ -1,3 +1,5 @@
+import { MediaAssetSearchType } from "@ncfritz/olympus-sdk/dionysus";
+
 export type RawIngestionMessage = {
   workflowId: string;
   assetLocation: string;
@@ -46,4 +48,13 @@ export type TranscodeMediaMessage = {
 export type CleanupMessage = {
   workflowId: string;
   mediaExtension: string;
+};
+
+export type StartDownloadMessage = {
+  mediaType: MediaAssetSearchType;
+  mediaId: number;
+  resultId: string;
+  workflowId: string;
+  downloadId: string;
+  nzbId: string;
 };

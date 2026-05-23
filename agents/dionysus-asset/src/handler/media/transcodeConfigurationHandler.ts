@@ -9,7 +9,7 @@ import {
   MEDIA_JOB_PREFIX,
   TRIGGER_SUFFIX,
 } from "../../util/constants";
-import config from "../../handbrakeDefault.json";
+import config from "../../handbrakeDefault.json" with { type: "json" };
 import { updateStepStatus } from "../../workflow/media/reporter";
 import { MediaWorkflow } from "../../workflow/media/workflow";
 

@@ -12,9 +12,7 @@ import {
   TRIGGER_SUFFIX,
 } from "../../util/constants";
 import { logger } from "../../util/logger";
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const ffmpegOnProgress = require("ffmpeg-on-progress");
+import * as ffmpegOnProgress from "ffmpeg-on-progress";
 
 @Injectable()
 export class HlsGenerationAssetHandler {
