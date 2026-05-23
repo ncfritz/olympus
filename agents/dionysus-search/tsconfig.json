@@ -18,13 +18,13 @@
     "noImplicitThis": true,
     "noUnusedLocals": true,
     "outDir": "./dist",
+    "rootDir": "./src",
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": false,
     "strictNullChecks": true,
     "target": "esnext",
-    "resolveJsonModule": true,
-    "rootDir": "./src"
+    "resolveJsonModule": true
   },
   "exclude": ["node_modules", "build", "scripts", "webpack", "jest"],
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
