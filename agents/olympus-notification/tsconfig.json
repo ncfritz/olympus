@@ -1,45 +1,31 @@
 {
   "compilerOptions": {
-    "experimentalDecorators": true,
-    "baseUrl": ".",
-    "outDir": "dist",
-    "module": "node16",
-    "target": "esnext",
-    "lib": [
-      "es6",
-      "dom"
-    ],
-    "sourceMap": true,
     "allowJs": true,
-    "jsx": "preserve",
-    "moduleResolution": "node16",
-    "rootDir": "src",
-    "forceConsistentCasingInFileNames": true,
     "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
+    "importHelpers": true,
+    "incremental": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "lib": ["es6", "dom", "ES2018"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmit": false,
+    "noImplicitAny": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
-    "noImplicitAny": true,
-    "importHelpers": true,
-    "strictNullChecks": true,
     "noUnusedLocals": true,
+    "outDir": "./dist",
     "skipLibCheck": true,
+    "sourceMap": true,
     "strict": false,
-    "noEmit": false,
-    "incremental": true,
-    "esModuleInterop": true,
+    "strictNullChecks": true,
+    "target": "esnext",
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "rootDir": "./src"
   },
-  "exclude": [
-    "node_modules",
-    "build",
-    "scripts",
-    "webpack",
-    "jest"
-  ],
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx"
-  ]
+  "exclude": ["node_modules", "build", "scripts", "webpack", "jest"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
 }
