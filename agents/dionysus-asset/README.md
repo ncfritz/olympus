@@ -11,20 +11,20 @@ environment variables.
 ### Available habndlers:
 | Handler                                          | Description                                                                                      | Default Value |
 |--------------------------------------------------|--------------------------------------------------------------------------------------------------|---------------|
-| DISABLE_CONTENT_DELETION_HANDLER                 | Handles deletion of content assets/metadata at the library level                                 | true          |
-| DISABLE_CONTENT_HLS_HANDLER                      | Generates HLS segemnts for progressive streaming                                                 | true          |
-| DISABLE_CONTENT_THUMBNAIL_HANDLER                | Generates thumbnails for content assets                                                          | true          |
-| DISABLE_CONTENT_RAW_INGESTION_HANDLER            | Handles the full content asset workflow from download to transcode                               | false         |
-| DISABLE_DIONYSUS_METADATA_HANDLER                | Extracts metadata from a media asset source or transcode                                         | false         |
-| DISABLE_DIONYSUS_XCODE_PRE_CONFIGURATION_HANDLER | Attempts to detect audio/subtitle tracks from source media asset                                 | false         |
-| DISABLE_DIONYSUS_XCODE_CONFIGURATION_HANDLER     | Generates a Handbrake CLI input JSON file for the transcode                                      | false         |
-| DISABLE_DIONYSUS_XCODE_HANDLER                   | Tuns the actual media asset transcode                                                            | false         |
-| DISABLE_DIONYSUS_VERIFY_XCODE_HANDLER            | When the transcode is manually configured, generates samples for verification proir to transcode | false         |
-| DISABLE_DIONYSUS_CLEANUP_HANDLER                 | Cleans up a media asset workflow's artifacts                                                     | false         |
-| DISABLE_DIONYSUS_START_DOWNLOAD_HANDLER,         | Downloads NZB metadata and enqueues a mmedia asset for download using NzbGet                     | false         |
-| DISABLE_DIONYSUS_DOWNLOAD_UPDATE_HANDLER,        | Handles updates from NzbGet                                                                      | false         |
-| DISABLE_DIONYSUS_DOWNLOAD_STATUS_HANDLER,        | Periodically polls for downloads in NzbGet and persists their status to the database             | false         |
-| DISABLE_TEST_HANDLER                             | Generic handler for testing purposes                                                             | true          |
+| DISABLE_CONTENT_DELETION_HANDLER                 | Handles deletion of content assets/metadata at the library level                                 | `true`        |
+| DISABLE_CONTENT_HLS_HANDLER                      | Generates HLS segemnts for progressive streaming                                                 | `true`        |
+| DISABLE_CONTENT_THUMBNAIL_HANDLER                | Generates thumbnails for content assets                                                          | `true`        |
+| DISABLE_CONTENT_RAW_INGESTION_HANDLER            | Handles the full content asset workflow from download to transcode                               | `false`       |
+| DISABLE_DIONYSUS_METADATA_HANDLER                | Extracts metadata from a media asset source or transcode                                         | `false`       |
+| DISABLE_DIONYSUS_XCODE_PRE_CONFIGURATION_HANDLER | Attempts to detect audio/subtitle tracks from source media asset                                 | `false`       |
+| DISABLE_DIONYSUS_XCODE_CONFIGURATION_HANDLER     | Generates a Handbrake CLI input JSON file for the transcode                                      | `false`       |
+| DISABLE_DIONYSUS_XCODE_HANDLER                   | Tuns the actual media asset transcode                                                            | `false`       |
+| DISABLE_DIONYSUS_VERIFY_XCODE_HANDLER            | When the transcode is manually configured, generates samples for verification proir to transcode | `false`       |
+| DISABLE_DIONYSUS_CLEANUP_HANDLER                 | Cleans up a media asset workflow's artifacts                                                     | `false`       |
+| DISABLE_DIONYSUS_START_DOWNLOAD_HANDLER,         | Downloads NZB metadata and enqueues a mmedia asset for download using NzbGet                     | `false`       |
+| DISABLE_DIONYSUS_DOWNLOAD_UPDATE_HANDLER,        | Handles updates from NzbGet                                                                      | `false`       |
+| DISABLE_DIONYSUS_DOWNLOAD_STATUS_HANDLER,        | Periodically polls for downloads in NzbGet and persists their status to the database             | `false`       |
+| DISABLE_TEST_HANDLER                             | Generic handler for testing purposes                                                             | `true`        |
 
 ## Development
 * `npm run dev` - Starts the development server (watched for changes).  Environment variables are populated from
@@ -97,7 +97,7 @@ can be used:
 | Variable             | Usage                                                       | Default Value                       |
 |----------------------|-------------------------------------------------------------|-------------------------------------|
 | SOCKS_PROXY_HOST     | The SOCKS proxy host to use when downloading content assets | `los-angeles.us.socks.nordhold.net` |
-| SOCKS_PROXY_PORT     | The SOCKS proxy port to use when downloading content assets | 1080                                |
+| SOCKS_PROXY_PORT     | The SOCKS proxy port to use when downloading content assets | `1080`                              |
 | SOCKS_PROXY_USERNAME | The username to authenticate to the proxy with              |                                     |
 | SOCKS_PROXY_PASSWORD | The password to authenticate to the proxy with              |                                     |
 
@@ -122,16 +122,24 @@ can be used:
 | FFMPEG_PATH                 | The path to the `ffmpeg` binary                               |               |
 | FFPROBE_PATH                | The path to the `ffprobe` binary                              |               |
 | HANDBRAKE_PATH              | The path to the `HandbrakeCLI` binary                         |               |
-| DEPLOYMENT_MODE             | Whether to run locally or in remote mode                      | local         |
+| DEPLOYMENT_MODE             | Whether to run locally or in remote mode                      | `local`       |
 | DIONYSUS_CDN_BASE_URL       | The path to write the entity cache                            |               |
-| DIONYSUS_SKIP_SSH_UPLOAD    | When `true`, does not upload assets via SSH                   | false         |
-| DIONYSUS_SKIP_CDN_DOWNLOAD  | When `true`, does not upload asset artifacts to the CDN       | false         |
+| DIONYSUS_SKIP_SSH_UPLOAD    | When `true`, does not upload assets via SSH                   | `false`       |
+| DIONYSUS_SKIP_CDN_DOWNLOAD  | When `true`, does not upload asset artifacts to the CDN       | `false`       |
 | CONTENT_ASSETS_DIR          | The path to write transcoded assets and their metadata to     |               |
 | CONTENT_ASSETS_DOWNLOAD_DIR | The path to write content downloads to                        |               |
 | CONTENT_ASSETS_TEMP_DIR     | The path to use for temp storage when handling content assets |               |
-
 
 ##### Olympus
 | Variable       | Usage                                          | Default Value |
 |----------------|------------------------------------------------|---------------|
 | API_BASE_URL   | The API key to use for accessing TMDB's APIs   |               |
+
+##### NzbGeek/NzbGet
+| Variable        | Usage                                             | Default Value |
+|-----------------|---------------------------------------------------|---------------|
+| NZBGEEK_API_KEY | The API key to use when authenticating to NzbGeek |               |
+| NZBGET_HOST     | The NzbGet host to enqueue downloads with         | `localhost`   |
+| NZBGET_HOST     | The port NzbGet is listening on                   | `6789`        |
+| NZBGET_USERNAME | The username to authenticate to NzbGet with       |               |
+| NZBGET_PASSWORD | The password to authenticate to NzbGet with       |               |
