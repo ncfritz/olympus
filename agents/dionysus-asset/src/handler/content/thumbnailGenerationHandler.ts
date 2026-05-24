@@ -32,7 +32,7 @@ export class ThumbnailGenerationAssetHandler {
     logger.info(msg);
 
     const assetId = msg.assetId;
-    const assetsDir = process.env.ASSETS_DIR;
+    const assetsDir = process.env.CONTENT_ASSETS_DIR;
     const assetFile = `${assetsDir}/${assetId}/asset.mp4`;
     const metadataFile = `${assetsDir}/${assetId}/metadata.json`;
     const spriteFile = `${assetsDir}/${assetId}/sprite.jpg`;

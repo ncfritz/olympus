@@ -151,7 +151,7 @@ export class AssetWorkflow {
             fs.rmSync(this.workDir, { recursive: true });
             fs.renameSync(
               this.input,
-              `${process.env.ASSETS_DIR}/duplicate/${path.basename(
+              `${process.env.CONTENT_ASSETS_DIR}/duplicate/${path.basename(
                 this.input.toString(),
               )}`,
             );
@@ -364,7 +364,7 @@ export class AssetWorkflow {
         console.log("An error occurred: " + err.message);
         fs.renameSync(
           this.input,
-          `${process.env.ASSETS_DIR}/failed/${path.basename(
+          `${process.env.CONTENT_ASSETS_DIR}/failed/${path.basename(
             this.input.toString(),
           )}`,
         );
@@ -396,7 +396,7 @@ export class AssetWorkflow {
         console.log("An error occurred: " + err.message);
         fs.renameSync(
           this.input,
-          `${process.env.ASSETS_DIR}/failed/${path.basename(
+          `${process.env.CONTENT_ASSETS_DIR}/failed/${path.basename(
             this.input.toString(),
           )}`,
         );
@@ -464,7 +464,7 @@ export class AssetWorkflow {
         console.log("An error occurred: " + err.message);
         fs.renameSync(
           this.input,
-          `${process.env.ASSETS_DIR}/failed/${path.basename(
+          `${process.env.CONTENT_ASSETS_DIR}/failed/${path.basename(
             this.input.toString(),
           )}`,
         );
@@ -520,7 +520,7 @@ export class AssetWorkflow {
         console.log("An error occurred: " + err.message);
         fs.renameSync(
           this.input,
-          `${process.env.ASSETS_DIR}/${path.basename(this.input.toString())}`,
+          `${process.env.CONTENT_ASSETS_DIR}/${path.basename(this.input.toString())}`,
         );
 
         await updateStepStatus(this.ingestWorkflow.id, step.id, "failed");
@@ -900,7 +900,7 @@ export class AssetWorkflow {
       fs.rmSync(this.workDir, { recursive: true });
       fs.renameSync(
         this.input,
-        `${process.env.ASSETS_DIR}/processed/${path.basename(
+        `${process.env.CONTENT_ASSETS_DIR}/processed/${path.basename(
           this.input.toString(),
         )}`,
       );

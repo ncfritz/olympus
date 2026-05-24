@@ -84,7 +84,7 @@ export class RawIngestionHandler {
     }
 
     const id = uuidv4();
-    const tempDirPath = path.join(process.env.ASSET_DOWNLOAD_DIR!, id);
+    const tempDirPath = path.join(process.env.CONTENT_ASSETS_DOWNLOAD_DIR!, id);
     const processWorkflow = !(msg.skipWorkflow && Boolean(msg.skipWorkflow));
 
     try {
@@ -185,7 +185,7 @@ export class RawIngestionHandler {
       } else {
         fs.renameSync(
           `${tempDirPath}/${name}.mp4`,
-          `${process.env.ASSETS_DIR}/unprocessed/${name}.mp4`,
+          `${process.env.CONTENT_ASSETS_DIR}/unprocessed/${name}.mp4`,
         );
 
         await updateWorkflowStatus(ingestionWorkflow!.id, "skipped");

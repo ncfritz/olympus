@@ -26,12 +26,12 @@ export class HlsGenerationAssetHandler {
     logger.info(msg);
 
     const assetId = msg.assetId;
-    const assetsDir = process.env.ASSETS_DIR;
+    const assetsDir = process.env.CONTENT_ASSETS_DIR;
     const assetFile = `${assetsDir}/${assetId}/asset.mp4`;
     const playlistFile = `${assetsDir}/${assetId}/playlist.m3u8`;
     const metadataFile = `${assetsDir}/${assetId}/metadata.json`;
     const segmentsDir = `${assetsDir}/${assetId}/segments`;
-    const tmpDir = `${process.env.TEMP_DIR}/${assetId}-hls`;
+    const tmpDir = `${process.env.CONTENT_ASSETS_TEMP_DIR}/${assetId}-hls`;
 
     if (fs.existsSync(tmpDir)) {
       fs.rmSync(tmpDir, { recursive: true });
