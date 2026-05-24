@@ -63,7 +63,7 @@ scrape_configs:
       module: [http_2xx]
     static_configs:
       - targets:
-          - localhost:3101
+          - localhost:13001
 ```
 
 ## Docker Image
@@ -80,7 +80,7 @@ Environment variables are used to configure the NestJS modules that connect to v
 | LOKI_LEVEL             | The minimum log level to push to Loki                    | `debug`       |
 | ENABLE_CONSOLE_LOGGING | Whether to log to the console                            | `true`        |
 | CONSOLE_LOGGING_LEVEL  | The minimum log level to write to the console            | `debug`       |
-| LISTEN_PORT            | The port to listen on, this is where metrics are exposed | `3101`        |
+| LISTEN_PORT            | The port to listen on, this is where metrics are exposed | `13001`       |
 
 ##### AMQP - RabbitMQ
 | Variable      | Usage                                        | Default Value   |
