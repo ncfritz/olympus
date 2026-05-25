@@ -48,7 +48,7 @@ describe("OpenAPI spec generator", () => {
     const document = buildOpenApiDocument(app, DionysusApiConfig, false);
     fs.writeFileSync(
       "./dist/openapi/dionysus-openapi-spec.json",
-      JSON.stringify(document, null, 2)
+      JSON.stringify(document, null, 2),
     );
   });
 
@@ -56,7 +56,7 @@ describe("OpenAPI spec generator", () => {
     const document = buildOpenApiDocument(app, MinervaApiConfig, false);
     fs.writeFileSync(
       "./dist/openapi/minerva-openapi-spec.json",
-      JSON.stringify(document, null, 2)
+      JSON.stringify(document, null, 2),
     );
   });
 });
