@@ -22,7 +22,7 @@ import {
 } from "@nestjs/swagger";
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import moment from "moment/moment";
+import moment from "moment";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
 import { BASE_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
 import { GraphQlMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";

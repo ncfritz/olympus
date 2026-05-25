@@ -1,5 +1,5 @@
 import { MediaAssetDownload } from "@ncfritz/olympus-model";
-import moment from "moment/moment";
+import moment from "moment";
 import { GraphQlMediaAssetDownload } from "../../../types/dionysus/media/mediaDownload";
 
 export const toDomainObject = (

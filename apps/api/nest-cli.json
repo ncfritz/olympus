@@ -1,7 +1,8 @@
 {
-  "sourceRoot": "src",
   "compilerOptions": {
-    "webpack": true,
-    "webpackConfigPath": "webpack.config.js"
+    "builder": "swc",
+    "options": {
+      "stripLeadingPaths": false
+    }
   }
 }

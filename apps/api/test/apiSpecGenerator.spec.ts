@@ -20,10 +20,6 @@ describe("OpenAPI spec generator", () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    if (!fs.existsSync("./dist/openapi")) {
-      fs.mkdirSync("./dist/openapi");
-    }
-
     const module: TestingModule = await Test.createTestingModule({
       imports: [HttpModule, AppModule],
     }).compile();
@@ -39,7 +35,7 @@ describe("OpenAPI spec generator", () => {
   it("generates Olympus swagger spec", async () => {
     const document = buildOpenApiDocument(app, OlympusApiConfig, false);
     fs.writeFileSync(
-      "./dist/openapi/olympus-openapi-spec.json",
+      "./dist/olympus-openapi-spec.json",
       JSON.stringify(document, null, 2),
     );
   });
@@ -47,7 +43,7 @@ describe("OpenAPI spec generator", () => {
   it("generates Dionysus swagger spec", async () => {
     const document = buildOpenApiDocument(app, DionysusApiConfig, false);
     fs.writeFileSync(
-      "./dist/openapi/dionysus-openapi-spec.json",
+      "./dist/dionysus-openapi-spec.json",
       JSON.stringify(document, null, 2),
     );
   });
@@ -55,7 +51,7 @@ describe("OpenAPI spec generator", () => {
   it("generates Minerva swagger spec", async () => {
     const document = buildOpenApiDocument(app, MinervaApiConfig, false);
     fs.writeFileSync(
-      "./dist/openapi/minerva-openapi-spec.json",
+      "./dist/minerva-openapi-spec.json",
       JSON.stringify(document, null, 2),
     );
   });

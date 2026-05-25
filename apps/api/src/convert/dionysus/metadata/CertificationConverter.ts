@@ -2,7 +2,7 @@ import {
   Certification,
   CertificationAssociation,
 } from "@ncfritz/olympus-model";
-import moment from "moment/moment";
+import moment from "moment";
 import {
   GraphQlCertification,
   GraphQlCertificationWrapper,

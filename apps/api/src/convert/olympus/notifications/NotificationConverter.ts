@@ -7,7 +7,7 @@ import {
   GraphQlNotificationGroup,
   toDomainObject as notificationGroupToDomainObject,
 } from "./NotificationGroupConverter";
-import moment from "moment/moment";
+import moment from "moment";
 
 export type GraphQlNotification = {
   eventId: string;

@@ -13,7 +13,7 @@ import {
 } from "@nestjs/swagger";
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import moment, { Moment } from "moment/moment";
+import moment, { Moment } from "moment";
 import { GraphQlBulkLoadJobStat } from "../../../../types/batchJobs";
 import { METADATA_CATEGORY_MAP } from "../../../../utils/constants";
 
