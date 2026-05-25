@@ -2,7 +2,7 @@
   "name": "@ncfritz/olympus-api",
   "description": "REST API for Olympus",
   "main": "dist/main.js",
-  "version": "1.23.0",
+  "version": "1.23.1",
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
   "readmeFilename": "README.md",
   "license": "Apache-2.0",
