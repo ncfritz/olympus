@@ -1,5 +1,6 @@
 import fs from "fs";
 import winston from "winston";
+import DailyRotateFile from "winston-daily-rotate-file";
 import LokiTransport from "winston-loki";
 import { IS_PROD } from "./constants";
 
@@ -12,6 +13,9 @@ const consoleLoggingEnabled =
 const consoleLoggingLevel = process.env.CONSOLE_LOGGING_LEVEL || "info";
 const lokiLoggingEnabled = process.env.LOKI_URL;
 const lokiLoggingLevel = process.env.CONSOLE_LOGGING_LEVEL || "info";
+const fileLoggingEnabled = process.env.FILE_LOGGING_ENABLED === "true";
+const fileLoggingLevel = process.env.FILE_LOGGING_LEVEL || "debug";
+const fileLoggingPath = process.env.FILE_LOGGING_PATH || "./logs/";
 
 const transports = [];
 
@@ -44,6 +48,20 @@ if (consoleLoggingEnabled) {
           (info) => `${info.timestamp} [${info.level}]: ${info.message}`,
         ),
       ),
+    }),
+  );
+}
+
+if (fileLoggingEnabled) {
+  transports.push(
+    new DailyRotateFile({
+      level: fileLoggingLevel,
+      dirname: fileLoggingPath,
+      filename: "application-%DATE%.log",
+      datePattern: "YYYY-MM-DD-HH",
+      zippedArchive: true,
+      maxSize: "200m",
+      maxFiles: "14d",
     }),
   );
 }
