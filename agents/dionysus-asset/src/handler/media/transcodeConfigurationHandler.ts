@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import type { ConsumeMessage } from "amqplib";
 import fs from "fs";
 import mediaApi from "../../api/mediaApi";
-import * as messages from "../../types/messages";
+import { type TranscodeConfigurationMessage } from "../../types/messages";
 import {
   JOB_TYPE_PREFIX,
   MEDIA_JOB_PREFIX,
@@ -23,7 +23,7 @@ export class TranscodeConfigurationHandler {
     routingKey: `${JOB_TYPE_PREFIX}.transcodeConfiguration`,
   })
   public async handle(
-    msg: messages.TranscodeConfigurationMessage,
+    msg: TranscodeConfigurationMessage,
     amqMsg: ConsumeMessage,
   ) {
     const workflow = new MediaWorkflow(msg.workflowId, msg.mediaExtension);

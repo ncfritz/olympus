@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import type { ConsumeMessage } from "amqplib";
 import fs from "fs";
 import mediaApi from "../../api/mediaApi";
-import * as messages from "../../types/messages";
+import { type ConfigureTranscodeMessage } from "../../types/messages";
 import {
   JOB_TYPE_PREFIX,
   MEDIA_JOB_PREFIX,
@@ -20,10 +20,7 @@ export class ConfigureTranscodeHandler {
     queue: `${MEDIA_JOB_PREFIX}.configureTranscode.${TRIGGER_SUFFIX}`,
     routingKey: `${JOB_TYPE_PREFIX}.configureTranscode`,
   })
-  public async handle(
-    msg: messages.ConfigureTranscodeMessage,
-    amqMsg: ConsumeMessage,
-  ) {
+  public async handle(msg: ConfigureTranscodeMessage, amqMsg: ConsumeMessage) {
     const step = await createStep(msg.workflowId, "configure_transcode");
 
     try {
