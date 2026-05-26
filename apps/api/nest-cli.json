@@ -1,8 +1,0 @@
-{
-  "compilerOptions": {
-    "builder": "swc",
-    "options": {
-      "stripLeadingPaths": false
-    }
-  }
-}
