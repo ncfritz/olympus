@@ -44,6 +44,7 @@
     "object-to-spawn-args": "^2.0.1",
     "progress-stream": "^2.0.0",
     "sharp": "^0.34.5",
+    "signal-exit": "^4.1.0",
     "socks-proxy-agent": "^10.0.0",
     "ssh2-sftp-client": "^12.1.1",
     "subparse": "^0.0.1",
