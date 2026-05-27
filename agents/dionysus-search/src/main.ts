@@ -45,7 +45,7 @@ bootstrap()
       );
     });
 
-    logger.info("🔥🔥🔥 Olympus Metadata Agent bootstrap complete.");
+    logger.info("🔥🔥🔥 Olympus Search Agent bootstrap complete.");
   })
   .catch((e) => {
     logger.error("🤯🤯🤯 Error during bootstrap!", e);
