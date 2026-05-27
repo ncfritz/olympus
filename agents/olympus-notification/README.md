@@ -46,14 +46,21 @@ The Docker image will expose port 3100 for metrics scraping.  Environment variab
 ### Environment Variables
 Environment variables are used to configure the NestJS modules that connect to various external data sources:
 
-##### Loki / Logging
+##### General
 | Variable               | Usage                                                    | Default Value |
 |------------------------|----------------------------------------------------------|---------------|
-| LOKI_URL               | The URL of the Loki server to push logs to               |               |
-| LOKI_LEVEL             | The minimum log level to push to Loki                    | `debug`       |
-| ENABLE_CONSOLE_LOGGING | Whether to log to the console                            | `true`        |
-| CONSOLE_LOGGING_LEVEL  | The minimum log level to write to the console            | `debug`       |
 | LISTEN_PORT            | The port to listen on, this is where metrics are exposed | `3101`        |
+
+##### Loki / Logging
+| Variable               | Usage                                         | Default Value                 |
+|------------------------|-----------------------------------------------|-------------------------------|
+| LOKI_URL               | The URL of the Loki server to push logs to    |                               |
+| LOKI_LOGGING_LEVEL     | The minimum log level to push to Loki         | `info`                        |
+| ENABLE_CONSOLE_LOGGING | Whether to log to the console                 | `true` (dev) / `false` (prod) |
+| CONSOLE_LOGGING_LEVEL  | The minimum log level to write to the console | `info`                        |
+| FILE_LOGGING_ENABLED   | Whether to log to a file                      | `false` (dev) / `true` (prod) |
+| FILE_LOGGING_LEVEL     | The minimum log level to write to a file      | `info`                        |
+| FILE_LOGGING_PATH      | The path to write logs to                     | `./logs`                      |
 
 ##### AMQP - RabbitMQ
 | Variable      | Usage                                        | Default Value   |
