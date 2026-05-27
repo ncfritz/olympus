@@ -12,9 +12,10 @@ const consoleLoggingEnabled =
   !IS_PROD || process.env.ENABLE_CONSOLE_LOGGING === "true";
 const consoleLoggingLevel = process.env.CONSOLE_LOGGING_LEVEL || "info";
 const lokiLoggingEnabled = process.env.LOKI_URL;
-const lokiLoggingLevel = process.env.CONSOLE_LOGGING_LEVEL || "info";
-const fileLoggingEnabled = process.env.FILE_LOGGING_ENABLED === "true";
-const fileLoggingLevel = process.env.FILE_LOGGING_LEVEL || "debug";
+const lokiLoggingLevel = process.env.LOKI_LOGGING_LEVEL || "info";
+const fileLoggingEnabled =
+  IS_PROD || process.env.FILE_LOGGING_ENABLED === "true";
+const fileLoggingLevel = process.env.FILE_LOGGING_LEVEL || "info";
 const fileLoggingPath = process.env.FILE_LOGGING_PATH || "./logs/";
 
 const transports = [];
