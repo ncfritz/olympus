@@ -1,5 +1,5 @@
 # Install dependencies only when needed
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 
 # Set up build to allow pulling from GitHub NPM repos
 ARG github_token
@@ -8,15 +8,6 @@ ENV GITHUB_TOKEN=$github_token
 RUN echo registry=https://registry.npmjs.org/ >> ~/.npmrc
 RUN echo @ncfritz:registry=https://npm.pkg.github.com/ >> ~/.npmrc
 RUN echo //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN >> ~/.npmrc
-
-# Install dependencies needed for a full build of the dependencies.
-# We need to allow the postinstall scripts to run so native bindings are
-# generated for better-sqlite3 (among others) and Alpine doesn't have the
-# needed requirements by default.
-RUN apk update
-RUN apk upgrade
-RUN apk add --no-cache pnpm
-RUN apk add --no-cache python3 make gcc libc-dev g++ make py3-pip
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -52,15 +43,12 @@ COPY --chown=nestjs:nodejs . .
 RUN npm run build
 
 # Running `npm ci` removes the existing node_modules directory and passing in
-# --only=production ensures that only the production dependencies are installed.
+# --omit=dev ensures that only the production dependencies are installed.
 # This ensures that the node_modules directory is as optimized as possible
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
-USER root
+USER nestjs
 
-ENV NODE_EXTRA_CA_CERTS=./ca_roots.pem
+EXPOSE 3101
 
-EXPOSE 3100
-
-CMD node --env-file=production.env dist/main.js
-
+CMD ["node", "--env-file=production.env", "dist/main.js"]
