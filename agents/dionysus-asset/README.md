@@ -124,6 +124,7 @@ can be used:
 | Variable                    | Usage                                                         | Default Value |
 |-----------------------------|---------------------------------------------------------------|---------------|
 | LOCAL_DIRECTORY             | The path to write the entity cache                            |               |
+| PERSIST_EVENTS              | The path to write the entity cache                            |               |
 | STAGING_DIRECTORY           | The path to write the entity cache                            |               |
 | FFMPEG_PATH                 | The path to the `ffmpeg` binary                               |               |
 | FFPROBE_PATH                | The path to the `ffprobe` binary                              |               |
