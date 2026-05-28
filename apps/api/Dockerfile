@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 
 # Set up build to allow pulling from GitHub NPM repos
 ARG github_token
@@ -8,12 +8,12 @@ RUN echo registry=https://registry.npmjs.org/ >> ~/.npmrc
 RUN echo @ncfritz:registry=https://npm.pkg.github.com/ >> ~/.npmrc
 RUN echo //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN >> ~/.npmrc
 
-# Install dependencies only when needed
+# Install dependeencies only when needed
 FROM base AS deps
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+COPY package.json package-lock.json* ./
 RUN npm ci --ignore-scripts
 
 # Rebuild the source code only when needed
@@ -36,10 +36,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-COPY --chown=nestjs:nodejs --from=builder /app/node_modules ./node_modules
+COPY --chown=nestjs:nodejs --from=builder /app/dist ./dist
 COPY --chown=nestjs:nodejs . .
-
-RUN npm run build
 
 # Running `npm ci` removes the existing node_modules directory and passing in
 # --only=production ensures that only the production dependencies are installed.
@@ -50,5 +48,4 @@ USER nestjs
 
 EXPOSE 3001
 
-CMD node dist/main.js 
-
+CMD ["node", "--env-file=production.env", "dist/main.js"]
