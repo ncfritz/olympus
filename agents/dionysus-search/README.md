@@ -70,7 +70,11 @@ Environment variables are used to configure the NestJS modules that connect to v
 | Variable         | Usage                                | Default Value |
 |------------------|--------------------------------------|---------------|
 | EVENTS_DIRECTORY | The path to write NzbGet messages to |               |
-| PERSIST_EVENTS   | The path to write the entity cache   |               |
+
+##### Olympus
+| Variable   | Usage                                              | Default Value            |
+|------------|----------------------------------------------------|--------------------------|
+| API_HOST   | The Olympus API host                               | `http://localhost:3001`  |      
 
 ##### NzbGeek
 | Variable        | Usage                                             | Default Value |
