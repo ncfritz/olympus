@@ -16,7 +16,6 @@ import { toDomainObject as toWorkflowStepDomainObject } from "./MediaAssetWorkfl
 export const toDomainObject = (
   input: GraphQlMediaAssetWorkflow,
 ): MediaAssetWorkflow => {
-  console.log(input);
   const steps: MediaAssetWorkflowStep[] = [];
 
   if (input.steps && input.steps.length > 0) {
