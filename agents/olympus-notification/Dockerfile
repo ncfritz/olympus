@@ -1,5 +1,4 @@
-# Install dependencies only when needed
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 
 # Set up build to allow pulling from GitHub NPM repos
 ARG github_token
@@ -23,7 +22,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
 
@@ -31,8 +30,8 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
@@ -51,4 +50,4 @@ USER nestjs
 
 EXPOSE 3100
 
-CMD node --env-file=production.env dist/main.js
+CMD ["node", "--env-file=production.env", "dist/main.js"]
