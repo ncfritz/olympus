@@ -104,7 +104,12 @@ Environment variables are used to configure the NestJS modules that connect to v
 |---------------------|---------------------------------------|---------------|
 | DIONYSUS_CACHE_PATH | The path to write the entity cache    |               |
 
-##### Dionysus
+##### Olympus
+| Variable   | Usage                                              | Default Value            |
+|------------|----------------------------------------------------|--------------------------|
+| API_HOST   | The Olympus API host                               | `http://localhost:3001`  |              
+
+##### TMDB
 | Variable       | Usage                                          | Default Value |
 |----------------|------------------------------------------------|---------------|
 | TMDB_API_KEY   | The API key to use for accessing TMDB's APIs   |               |
