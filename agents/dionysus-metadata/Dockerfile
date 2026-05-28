@@ -1,5 +1,5 @@
 # Install dependencies only when needed
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 
 # Set up build to allow pulling from GitHub NPM repos
 ARG github_token
@@ -52,9 +52,14 @@ COPY --chown=nestjs:nodejs . .
 RUN npm run build
 
 # Running `npm ci` removes the existing node_modules directory and passing in
-# --only=production ensures that only the production dependencies are installed.
+# --omit=dev ensures that only the production dependencies are installed.
 # This ensures that the node_modules directory is as optimized as possible
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+
+# For dependencies that require scripts to be run diring the install process
+# rebuild them directly after installation to generate any node bindings
+# that they require
+RUN npm rebuild better-sqlite3
 
 USER root
 
@@ -62,5 +67,5 @@ ENV NODE_EXTRA_CA_CERTS=./ca_roots.pem
 
 EXPOSE 3100
 
-CMD node --env-file=production.env dist/main.js
+CMD ["node", "--env-file=production.env", "dist/main.js"]
 
