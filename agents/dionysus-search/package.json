@@ -2,7 +2,7 @@
   "name": "@ncfritz/dionysus-search-agents",
   "description": "Asynchronous agent for handling media searches",
   "main": "dist/main.js",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
   "readmeFilename": "README.md",
   "license": "Apache-2.0",
