@@ -48,7 +48,8 @@ bootstrap()
     logger.info("🔥🔥🔥 Olympus Search Agent bootstrap complete.");
   })
   .catch((e) => {
-    logger.error("🤯🤯🤯 Error during bootstrap!", e);
+    logger.error("🤯🤯🤯 Error during bootstrap!");
+    logger.error(e);
 
     fs.writeFileSync(
       `/logs/${timestamp.unix()}-graph.json`,

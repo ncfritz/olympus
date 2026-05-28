@@ -118,7 +118,8 @@ export abstract class BaseSearchHandler {
         }
       }
     } catch (e) {
-      logger.error("Unable to process search message: ", e);
+      logger.error("Unable to process search message: ");
+      logger.error(e);
     }
   }
 
