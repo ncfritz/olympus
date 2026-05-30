@@ -200,7 +200,6 @@ const MoviesIndexPage: React.FunctionComponent = () => {
         style={{
           position: "fixed",
           background: "#ffffff",
-          gap: 16,
           top: 92,
           overflowX: "hidden",
           overflowY: "auto",
