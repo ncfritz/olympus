@@ -21,7 +21,7 @@ import {
   GenreIcon,
   KeywordIcon,
   LanguageIcon,
-  MetadataOutlinedIcon,
+  MetadataOutlinedIcon, MetadataWorkflowIcon,
   MovieIcon,
   PeopleIcon,
   ProcessingQueueIcon,
@@ -29,7 +29,7 @@ import {
   TranscodeIcon,
   TvIcon,
   TvNetworkIcon,
-  WorkQueueIcon,
+  WorkQueueIcon
 } from "../../icons";
 import { useAppSelector } from "../../redux/hooks";
 
@@ -144,7 +144,7 @@ const DionysusMenu: React.FunctionComponent = () => {
         },
         {
           key: "jobs_container",
-          icon: <WorkQueueIcon />,
+          icon: <MetadataWorkflowIcon />,
           label: "Metadata Jobs",
           onTitleClick: updateSubMenus,
           children: [
