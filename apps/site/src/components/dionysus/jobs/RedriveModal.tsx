@@ -13,23 +13,18 @@ import {
   Switch,
   Typography,
 } from "antd";
-import { type CSSProperties, useState } from "react";
+import { useState } from "react";
 import batchJobApi from "../../../api/batchJobApi";
 import { publish } from "../../../utils/events";
 import { PUBLISH_EVENT } from "../../common/NotificationSink";
+import MetadataStatusTable from "../metadata/MetadataStatusTable";
 import MetadataJobStatusSelect from "./MetadataJobStatusSelect";
-import { getMetadataJobStatusIndicator } from "./utils";
 
 export interface RedriveModalProps {
   open: boolean;
   onClose: () => void;
   statistics: any;
 }
-
-const StatisticStyle: CSSProperties = {
-  fontFamily: "monospace",
-  fontSize: "12px",
-};
 
 const RedriveModal: React.FunctionComponent<RedriveModalProps> = ({
   open,
@@ -134,143 +129,10 @@ const RedriveModal: React.FunctionComponent<RedriveModalProps> = ({
       }}
     >
       {statistics && (
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            marginTop: 16,
-            marginBottom: 16,
-          }}
-        >
-          <thead>
-            <tr>
-              <th
-                style={{
-                  verticalAlign: "bottom",
-                  textAlign: "left",
-                  borderBottom: "1px solid #f0f0f0",
-                }}
-              >
-                Job Type
-              </th>
-              <th>{getMetadataJobStatusIndicator("fetched", true)}</th>
-              <th>{getMetadataJobStatusIndicator("fetching", true)}</th>
-              <th>{getMetadataJobStatusIndicator("invalidated", true)}</th>
-              <th>{getMetadataJobStatusIndicator("failed", true)}</th>
-              <th>{getMetadataJobStatusIndicator("not_found", true)}</th>
-              <th>{getMetadataJobStatusIndicator("cancelled", true)}</th>
-              <th>{getMetadataJobStatusIndicator("queued", true)}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {statistics.status.categories.map((item: string, index: number) => {
-              return (
-                <tr className={"table-row-hover"}>
-                  <td>{item}</td>
-                  <td
-                    className={"table-cell-hover"}
-                    onClick={() => {
-                      handleSetSearchCriteria(
-                        statistics.expiration.series[index].name,
-                        "fetched",
-                      );
-                    }}
-                  >
-                    <Typography.Text style={StatisticStyle}>
-                      {statistics.status.series.fetched[index].toLocaleString()}
-                    </Typography.Text>
-                  </td>
-                  <td
-                    className={"table-cell-hover"}
-                    onClick={() => {
-                      handleSetSearchCriteria(
-                        statistics.expiration.series[index].name,
-                        "fetching",
-                      );
-                    }}
-                  >
-                    <Typography.Text style={StatisticStyle}>
-                      {statistics.status.series.fetching[
-                        index
-                      ].toLocaleString()}
-                    </Typography.Text>
-                  </td>
-                  <td
-                    className={"table-cell-hover"}
-                    onClick={() => {
-                      handleSetSearchCriteria(
-                        statistics.expiration.series[index].name,
-                        "invalidated",
-                      );
-                    }}
-                  >
-                    <Typography.Text style={StatisticStyle}>
-                      {statistics.status.series.invalidated[
-                        index
-                      ].toLocaleString()}
-                    </Typography.Text>
-                  </td>
-                  <td
-                    className={"table-cell-hover"}
-                    onClick={() => {
-                      handleSetSearchCriteria(
-                        statistics.expiration.series[index].name,
-                        "failed",
-                      );
-                    }}
-                  >
-                    <Typography.Text style={StatisticStyle}>
-                      {statistics.status.series.failed[index].toLocaleString()}
-                    </Typography.Text>
-                  </td>
-                  <td
-                    className={"table-cell-hover"}
-                    onClick={() => {
-                      handleSetSearchCriteria(
-                        statistics.expiration.series[index].name,
-                        "not_found",
-                      );
-                    }}
-                  >
-                    <Typography.Text style={StatisticStyle}>
-                      {statistics.status.series.not_found[
-                        index
-                      ].toLocaleString()}
-                    </Typography.Text>
-                  </td>
-                  <td
-                    className={"table-cell-hover"}
-                    onClick={() => {
-                      handleSetSearchCriteria(
-                        statistics.expiration.series[index].name,
-                        "cancelled",
-                      );
-                    }}
-                  >
-                    <Typography.Text style={StatisticStyle}>
-                      {statistics.status.series.cancelled[
-                        index
-                      ].toLocaleString()}
-                    </Typography.Text>
-                  </td>
-                  <td
-                    className={"table-cell-hover"}
-                    onClick={() => {
-                      handleSetSearchCriteria(
-                        statistics.expiration.series[index].name,
-                        "queued",
-                      );
-                    }}
-                  >
-                    <Typography.Text style={StatisticStyle}>
-                      {statistics.status.series.queued[index].toLocaleString()}
-                    </Typography.Text>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <MetadataStatusTable
+          statistics={statistics}
+          onCellClick={handleSetSearchCriteria}
+        />
       )}
       <Steps
         direction={"vertical"}
