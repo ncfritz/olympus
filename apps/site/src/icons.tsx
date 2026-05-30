@@ -17,10 +17,18 @@ import DownloadsSvg from "./icons/Downloads.svg";
 import TvNetworkSvg from "./icons/TvNetwork.svg";
 import TranscodeSvg from "./icons/Transcode.svg";
 import WorkQueueSvg from "./icons/WorkQueue.svg";
+import WorkflowSvg from "./icons/Workflow.svg";
+import MetadataWorkflowSvg from "./icons/MetadataWorkflow.svg";
 
 export const MovieIcon = () => <Icon component={MovieSvg} />;
 
 export const WorkQueueIcon = () => <Icon component={WorkQueueSvg} />;
+
+export const WorkflowIcon = () => <Icon component={WorkflowSvg} />;
+
+export const MetadataWorkflowIcon = () => (
+  <Icon component={MetadataWorkflowSvg} />
+);
 
 export const DownloadsIcon = () => <Icon component={DownloadsSvg} />;
 
