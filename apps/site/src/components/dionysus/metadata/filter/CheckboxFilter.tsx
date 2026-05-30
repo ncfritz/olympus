@@ -8,6 +8,7 @@ export interface CheckboxFilterProps {
   items: MenuItemType[];
   onFiltersSet: (values: React.Key[]) => void;
   filterValues?: (values: string[]) => string[];
+  initialValues?: string[];
 }
 
 const CheckboxFilter: React.FunctionComponent<CheckboxFilterProps> = ({
@@ -15,8 +16,11 @@ const CheckboxFilter: React.FunctionComponent<CheckboxFilterProps> = ({
   items,
   onFiltersSet,
   filterValues,
+  initialValues,
 }: CheckboxFilterProps) => {
-  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>(
+    initialValues || [],
+  );
   const [values, setValues] = useState<React.Key[]>([]);
 
   useEffect(() => {
