@@ -45,8 +45,8 @@ const MoviesIndexPage: React.FunctionComponent = () => {
     order: "desc",
   });
   const [titleFilter, setTitleFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [videoFilter, setVideoFilter] = useState<("f" | "v")[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string[]>(["Released"]);
+  const [videoFilter, setVideoFilter] = useState<("f" | "v")[]>(["f"]);
   const [spokenLanguageFilter, setSpokenLanguageFilter] = useState<string[]>(
     [],
   );
@@ -347,13 +347,14 @@ const MoviesIndexPage: React.FunctionComponent = () => {
             />
             <CheckboxFilter
               label={"Status"}
+              initialValues={statusFilter}
               items={[
-                "Canceled",
+                "Released",
+                "Post Production",
                 "In Production",
                 "Planned",
-                "Post Production",
-                "Released",
                 "Rumored",
+                "Canceled",
               ].map((item) => {
                 const [statusText, statusColor] =
                   getReleaseStatusForMovie(item);
@@ -373,6 +374,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
             />
             <CheckboxFilter
               label={"Type"}
+              initialValues={videoFilter}
               items={[
                 { key: "f", label: "Feature" },
                 { key: "v", label: "Video" },
