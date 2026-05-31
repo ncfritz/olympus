@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
 import { FilterFilled, HomeOutlined } from "@ant-design/icons";
 import type {
@@ -25,6 +26,9 @@ import { useDebounce } from "use-debounce";
 import type { SortOptions } from "../../api/common";
 import metadataApi from "../../api/metadataApi";
 import CheckboxFilter from "../../components/dionysus/metadata/filter/CheckboxFilter";
+import DateRangeFilter, {
+ type DateRangeFilterValue,
+} from "../../components/dionysus/metadata/filter/DateRangeFilter";
 import Sorter from "../../components/dionysus/metadata/filter/Sorter";
 import MovieList from "../../components/dionysus/metadata/MovieList";
 import MovieReleaseStatusStatisticsChart from "../../components/dionysus/metadata/movies/MovieReleaseStatusStatisticsChart";
@@ -40,6 +44,8 @@ const MovieLocationsMap = dynamic(
 );
 
 const MoviesIndexPage: React.FunctionComponent = () => {
+  const now = DateTime.utc();
+
   const [sort, setSort] = useState<SortOptions>({
     field: "popularity",
     order: "desc",
@@ -47,6 +53,11 @@ const MoviesIndexPage: React.FunctionComponent = () => {
   const [titleFilter, setTitleFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string[]>(["Released"]);
   const [videoFilter, setVideoFilter] = useState<("f" | "v")[]>(["f"]);
+  const [releaseDateFilter, setReleaseDateFilter] =
+    useState<DateRangeFilterValue>({
+      start: { month: now.month, year: now.year - 1 },
+      end: { month: now.month, year: now.year },
+    });
   const [spokenLanguageFilter, setSpokenLanguageFilter] = useState<string[]>(
     [],
   );
@@ -101,6 +112,25 @@ const MoviesIndexPage: React.FunctionComponent = () => {
       });
     }
 
+    if (releaseDateFilter) {
+      const startDate = DateTime.fromObject({
+        month: releaseDateFilter.start.month,
+        year: releaseDateFilter.start.year,
+      });
+      const endDate = DateTime.fromObject({
+        month: releaseDateFilter.end.month,
+        year: releaseDateFilter.end.year,
+      });
+      newFilters.push({
+        type: "and",
+        name: "_",
+        value: [
+          { type: "gte", name: "releaseDate", value: startDate.toISODate()! },
+          { type: "lte", name: "releaseDate", value: endDate.toISODate()! },
+        ],
+      });
+    }
+
     if (monitoredFilter) {
       newFilters.push({
         type: "eq",
@@ -119,6 +149,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
     statusFilter,
     videoFilter,
     spokenLanguageFilter,
+    releaseDateFilter,
     monitoredFilter,
   ]);
 
@@ -406,6 +437,13 @@ const MoviesIndexPage: React.FunctionComponent = () => {
               }
               onFiltersSet={(values) => {
                 setSpokenLanguageFilter(values as string[]);
+              }}
+            />
+            <DateRangeFilter
+              initialValue={releaseDateFilter}
+              label={"Release Date"}
+              onFiltersSet={(value) => {
+                setReleaseDateFilter(value);
               }}
             />
           </Space>
