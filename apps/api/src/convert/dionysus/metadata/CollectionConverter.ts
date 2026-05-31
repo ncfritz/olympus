@@ -19,7 +19,9 @@ export const toDomainObject = (input: GraphQlCollection): Collection => {
 
   if (input.parts) {
     input.parts.forEach((entity) => {
-      parts.push(toCollectionPartDomainObject(entity));
+      if (entity.movie) {
+        parts.push(toCollectionPartDomainObject(entity));
+      }
     });
   }
 

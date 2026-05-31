@@ -23,7 +23,9 @@ export const toDomainObject = (input: GraphQlNetwork): Network => {
 
   if (input.alternativeNames) {
     input.alternativeNames.forEach((entity) => {
-      alternativeNames.push(toAlternativeNameDomainObject(entity));
+      if (entity) {
+        alternativeNames.push(toAlternativeNameDomainObject(entity));
+      }
     });
   }
 

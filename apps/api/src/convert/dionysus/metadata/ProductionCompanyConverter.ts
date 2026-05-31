@@ -13,7 +13,10 @@ import {
   GraphQlSparseProductionCompany,
   GraphQlSparseProductionCompanyWithContentCounts,
 } from "../../../types/dionysus/metadata/productionCompany";
-import { toIdentifiableImageDomainObject } from "./common";
+import {
+  toAlternativeNameDomainObject,
+  toIdentifiableImageDomainObject,
+} from "./common";
 import { toDomainObject as toCountryDomainObject } from "./CountryConverter";
 
 export const toSparseDomainObject = (
@@ -23,12 +26,9 @@ export const toSparseDomainObject = (
 
   if (input.alternativeNames) {
     input.alternativeNames.forEach((entity) => {
-      alternativeNames.push({
-        createdTime: moment(input.createdTime),
-        lastUpdatedTime: moment(input.lastUpdatedTime),
-        name: entity.name,
-        type: entity.type,
-      });
+      if (entity) {
+        alternativeNames.push(toAlternativeNameDomainObject(entity));
+      }
     });
   }
 

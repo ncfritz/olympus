@@ -71,7 +71,9 @@ export const toDomainObject = (input: GraphQlMovie): Movie => {
 
   if (input.genres) {
     input.genres.forEach((entity) => {
-      genres.push(toGenreAssociationDomainObject(entity));
+      if (entity.genre) {
+        genres.push(toGenreAssociationDomainObject(entity));
+      }
     });
   }
 
@@ -83,25 +85,27 @@ export const toDomainObject = (input: GraphQlMovie): Movie => {
 
   if (input.keywords) {
     input.keywords.forEach((entity) => {
-      keywords.push(toKeywordAssociationDomainObject(entity));
+      if (entity.keyword) {
+        keywords.push(toKeywordAssociationDomainObject(entity));
+      }
     });
   }
 
   if (input.productionCountries) {
     input.productionCountries.forEach((entity) => {
-      productionCountries.push(toCountryAssociationDomainObject(entity));
+      if (entity.country) {
+        productionCountries.push(toCountryAssociationDomainObject(entity));
+      }
     });
   }
 
   if (input.productionCompanies) {
     input.productionCompanies.forEach((entity) => {
-      if (!entity.productionCompany) {
-        return;
+      if (entity.productionCompany) {
+        productionCompanies.push(
+          toProductionCompanyAssociationDomainObject(entity),
+        );
       }
-
-      productionCompanies.push(
-        toProductionCompanyAssociationDomainObject(entity),
-      );
     });
   }
 
@@ -113,7 +117,9 @@ export const toDomainObject = (input: GraphQlMovie): Movie => {
 
   if (input.spokenLanguages) {
     input.spokenLanguages.forEach((entity) => {
-      spokenLanguages.push(toLanguageAssociationDomainObject(entity));
+      if (entity.language) {
+        spokenLanguages.push(toLanguageAssociationDomainObject(entity));
+      }
     });
   }
 

@@ -180,7 +180,9 @@ export const toDomainObject = (input: GraphQlTvSeries): TVSeries => {
 
   if (input.createdBy) {
     input.createdBy.forEach((entity) => {
-      createdBy.push(toTvSeriesCreatedBy(entity));
+      if (entity.person) {
+        createdBy.push(toTvSeriesCreatedBy(entity));
+      }
     });
   }
 
@@ -192,21 +194,27 @@ export const toDomainObject = (input: GraphQlTvSeries): TVSeries => {
 
   if (input.networks) {
     input.networks.forEach((entity) => {
-      networks.push(toNetworkAssociationDomainObject(entity));
+      if (entity.network) {
+        networks.push(toNetworkAssociationDomainObject(entity));
+      }
     });
   }
 
   if (input.productionCompanies) {
     input.productionCompanies.forEach((entity) => {
-      productionCompanies.push(
-        toProductionCompanyAssociationDomainObject(entity),
-      );
+      if (entity.productionCompany) {
+        productionCompanies.push(
+          toProductionCompanyAssociationDomainObject(entity),
+        );
+      }
     });
   }
 
   if (input.productionCountries) {
     input.productionCountries.forEach((entity) => {
-      productionCountries.push(toCountryAssociationDomainObject(entity));
+      if (entity.country) {
+        productionCountries.push(toCountryAssociationDomainObject(entity));
+      }
     });
   }
 
