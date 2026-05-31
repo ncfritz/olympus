@@ -97,6 +97,15 @@ const buildFilterInternal = (
         }
       }
     } else {
+      // For existence filters, disregard the value since we are not testing on any value based element
+      if (definition.type === FilterType.EXISTS) {
+        if (definition.value !== false) {
+          return wrap(`${fieldName}: {}`, wrapFilter);
+        } else {
+          return wrap(`_not: { ${fieldName}: {}}`, wrapFilter);
+        }
+      }
+
       if (typeof definition.value === "object") {
         filter.push(
           buildFilterInternal(definition.value as FilterDefinition, wrapFilter),
