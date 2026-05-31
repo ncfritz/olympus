@@ -5,6 +5,7 @@ export enum FilterType {
   OR = "or",
   NOT = "not",
   EQUALS = "eq",
+  EXISTS = "exists",
   GREATER_THAN = "gt",
   GREATER_THAN_EQUAL = "gte",
   LIKE_IGNORE_CASE = "ilike",
