@@ -23,10 +23,6 @@ const CheckboxFilter: React.FunctionComponent<CheckboxFilterProps> = ({
   );
   const [values, setValues] = useState<React.Key[]>([]);
 
-  useEffect(() => {
-    onFiltersSet(selectedKeys);
-  }, [selectedKeys]);
-
   const menuItems = items.map((item) => {
     return {
       ...item,
@@ -66,11 +62,13 @@ const CheckboxFilter: React.FunctionComponent<CheckboxFilterProps> = ({
     <FilterWrapper
       label={label}
       filters={menu}
+      initialFiltersPresent={(initialValues?.length ?? 0) > 0}
       onReset={() => {
-        setSelectedKeys([]);
+        setSelectedKeys(initialValues || []);
         setValues([]);
       }}
       onClose={() => {
+        onFiltersSet(selectedKeys);
         return selectedKeys.length;
       }}
     />

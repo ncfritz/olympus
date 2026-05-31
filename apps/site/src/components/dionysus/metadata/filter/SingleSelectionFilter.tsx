@@ -17,10 +17,6 @@ const SingleSelectionFilter: React.FunctionComponent<CheckboxFilterProps> = ({
 }: CheckboxFilterProps) => {
   const [selectedKey, setSelectedKey] = useState<string | undefined>(undefined);
 
-  useEffect(() => {
-    onFiltersSet(selectedKey);
-  }, [selectedKey]);
-
   const menuItems = items.map((item) => {
     return {
       ...item,
@@ -60,6 +56,7 @@ const SingleSelectionFilter: React.FunctionComponent<CheckboxFilterProps> = ({
         setSelectedKey(undefined);
       }}
       onClose={() => {
+        onFiltersSet(selectedKey);
         return selectedKey ? 1 : 0;
       }}
     />

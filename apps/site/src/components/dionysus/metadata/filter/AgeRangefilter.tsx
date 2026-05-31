@@ -14,10 +14,6 @@ const AgeRangeFilter: React.FunctionComponent<AgeRangeFilterProps> = ({
   const [ageRange, setAgeRange] = useState([0, 120]);
   const [rangeSet, setRangeSet] = useState(0);
 
-  useEffect(() => {
-    onFiltersSet(rangeSet ? ageRange : []);
-  }, [ageRange, rangeSet]);
-
   const handleRange = (values: number[]) => {
     setAgeRange(values);
     setRangeSet(rangeSet + 1);
@@ -148,6 +144,7 @@ const AgeRangeFilter: React.FunctionComponent<AgeRangeFilterProps> = ({
         setRangeSet(0);
       }}
       onClose={() => {
+        onFiltersSet(rangeSet ? ageRange : []);
         return rangeSet > 0 ? 1 : 0;
       }}
     />
