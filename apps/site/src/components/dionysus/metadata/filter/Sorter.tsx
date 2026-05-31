@@ -24,7 +24,6 @@ const Sorter: React.FunctionComponent<SorterProps> = ({
   }, [direction, field]);
 
   const items: MenuProps["items"] = Object.entries(sortOptions).map((item) => {
-    console.log(item);
     return {
       key: item[0],
       label: item[1],

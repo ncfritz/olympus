@@ -40,8 +40,6 @@ export const MovieLocationsMap: React.FunctionComponent<
     setData(newData);
   }, [locationStats]);
 
-  console.log(data);
-
   return (
     <HighchartsReact
       highcharts={Highcharts}
