@@ -1,5 +1,5 @@
 import { FilterFilled } from "@ant-design/icons";
-import { Button, Divider, Dropdown, Flex, Space, Typography } from "antd";
+import { Button, Divider, Dropdown, Flex, Space } from "antd";
 import React, { type ReactNode, useState } from "react";
 
 export interface FilterWrapperProps {
@@ -7,6 +7,7 @@ export interface FilterWrapperProps {
   filters: ReactNode | ReactNode[];
   onReset: () => void;
   onClose: () => number;
+  initialFiltersPresent?: boolean;
 }
 
 const FilterWrapper: React.FunctionComponent<FilterWrapperProps> = ({
@@ -14,9 +15,10 @@ const FilterWrapper: React.FunctionComponent<FilterWrapperProps> = ({
   filters,
   onReset,
   onClose,
+  initialFiltersPresent = false,
 }: FilterWrapperProps) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [filtersPresent, setFiltersPresent] = useState(false);
+  const [filtersPresent, setFiltersPresent] = useState(initialFiltersPresent);
 
   const handleClose = () => {
     const filterCount = onClose();
@@ -35,7 +37,7 @@ const FilterWrapper: React.FunctionComponent<FilterWrapperProps> = ({
         setDropdownOpen(open);
       }}
       open={dropdownOpen}
-      popupRender={(menus) => {
+      popupRender={() => {
         return (
           <Space
             direction={"vertical"}
