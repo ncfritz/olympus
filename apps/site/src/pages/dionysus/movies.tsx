@@ -61,6 +61,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
   const [spokenLanguageFilter, setSpokenLanguageFilter] = useState<string[]>(
     [],
   );
+  const [missingFilter, setMissingFilter] = useState(false);
   const [monitoredFilter, setMonitoredFilter] = useState(false);
 
   const [filters, setFilters] = useState<FilterDefinition | undefined>(
@@ -131,6 +132,14 @@ const MoviesIndexPage: React.FunctionComponent = () => {
       });
     }
 
+    if (missingFilter) {
+      newFilters.push({
+        type: "exists",
+        name: "asset",
+        value: false,
+      });
+    }
+
     if (monitoredFilter) {
       newFilters.push({
         type: "eq",
@@ -151,6 +160,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
     spokenLanguageFilter,
     releaseDateFilter,
     monitoredFilter,
+    missingFilter,
   ]);
 
   const [movies, moviesLoading, moviesError, fetchMovies] = useFetch<
@@ -455,6 +465,14 @@ const MoviesIndexPage: React.FunctionComponent = () => {
               size={"small"}
               checked={monitoredFilter}
               onChange={setMonitoredFilter}
+            />
+            <Typography.Text style={{ fontSize: "12px" }}>
+              Missing
+            </Typography.Text>
+            <Switch
+              size={"small"}
+              checked={missingFilter}
+              onChange={setMissingFilter}
             />
             <Sorter
               initialSort={sort.field}
