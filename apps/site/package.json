@@ -12,6 +12,8 @@
   "scripts": {
     "prepare": "is-ci || husky install",
     "clean": "rm -rf .next",
+    "analyze:client": "RSDOCTOR=true rsdoctor analyze --profile .next/.rsdoctor/manifest.json",
+    "analyze:server": "RSDOCTOR=true rsdoctor analyze --profile .next/server/.rsdoctor/manifest.json",
     "prebuild": "npm run clean",
     "build": "next build",
     "lint": "eslint ./src",
@@ -41,6 +43,8 @@
     "@next/eslint-plugin-next": "^15.3.3",
     "@reduxjs/toolkit": "^2.5.1",
     "@rocketseat/react-plyr": "^1.0.1",
+    "@rsdoctor/cli": "^1.5.12",
+    "@rsdoctor/webpack-plugin": "^1.5.12",
     "@semantic-release/git": "^10.0.1",
     "@svgr/webpack": "^8.1.0",
     "@tinymce/tinymce-react": "^5.1.1",
@@ -127,7 +131,6 @@
     "usehooks-ts": "^3.1.0",
     "uuid": "^11.0.5",
     "uuid-time": "^1.0.0",
-    "webpack-bundle-analyzer": "^4.10.2",
     "webpack-dev-server": "^5.2.0"
   },
   "overrides": {

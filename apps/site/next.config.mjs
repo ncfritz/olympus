@@ -1,4 +1,4 @@
-import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
+import { RsdoctorWebpackPlugin } from "@rsdoctor/webpack-plugin";
 import CopyPlugin from "copy-webpack-plugin";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -85,15 +85,25 @@ const nextConfig = {
         use: ["@svgr/webpack"],
       },
     );
-    /*config.plugins = [
-      new BundleAnalyzerPlugin({
-        analyzerMode: "static",
-        openAnalyzer: false,
-        reportFilename: "webpack.html",
-        generateStatsFile: true,
-        statsFilename: "webpack.json",
-      }),
-    ];*/
+
+    if (process.env.RSDOCTOR) {
+      if (config.name === "client") {
+        config.plugins.push(
+          new RsdoctorWebpackPlugin({
+            disableClientServer: true,
+          }),
+        );
+      } else if (config.name === "server") {
+        config.plugins.push(
+          new RsdoctorWebpackPlugin({
+            disableClientServer: true,
+            output: {
+              reportDir: "./.next/server",
+            },
+          }),
+        );
+      }
+    }
 
     fileLoaderRule.exclude = /\.svg$/i;
 
