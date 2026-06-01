@@ -23,6 +23,10 @@ const Sorter: React.FunctionComponent<SorterProps> = ({
     onSortChange(field, direction);
   }, [direction, field]);
 
+  const toggleDirection = () => {
+    setDirection(direction === "asc" ? "desc" : "asc");
+  };
+
   const items: MenuProps["items"] = Object.entries(sortOptions).map((item) => {
     return {
       key: item[0],
@@ -55,7 +59,7 @@ const Sorter: React.FunctionComponent<SorterProps> = ({
             color: direction === "asc" ? "#1677ff" : "#afafaf",
           }}
           onClick={() => {
-            setDirection("asc");
+            toggleDirection();
           }}
         />
         <CaretDownOutlined
@@ -65,7 +69,7 @@ const Sorter: React.FunctionComponent<SorterProps> = ({
             color: direction === "desc" ? "#1677ff" : "#afafaf",
           }}
           onClick={() => {
-            setDirection("desc");
+            toggleDirection();
           }}
         />
       </Space>
