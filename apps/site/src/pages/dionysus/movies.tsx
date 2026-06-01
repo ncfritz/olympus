@@ -25,9 +25,10 @@ import ReactCountryFlag from "react-country-flag/src";
 import { useDebounce } from "use-debounce";
 import type { SortOptions } from "../../api/common";
 import metadataApi from "../../api/metadataApi";
+import LoadingWrapper from "../../components/common/LoadingWrapper";
 import CheckboxFilter from "../../components/dionysus/metadata/filter/CheckboxFilter";
 import DateRangeFilter, {
- type DateRangeFilterValue,
+  type DateRangeFilterValue,
 } from "../../components/dionysus/metadata/filter/DateRangeFilter";
 import Sorter from "../../components/dionysus/metadata/filter/Sorter";
 import MovieList from "../../components/dionysus/metadata/MovieList";
@@ -63,10 +64,10 @@ const MoviesIndexPage: React.FunctionComponent = () => {
   );
   const [missingFilter, setMissingFilter] = useState(false);
   const [monitoredFilter, setMonitoredFilter] = useState(false);
-
   const [filters, setFilters] = useState<FilterDefinition | undefined>(
     undefined,
   );
+  const [affix, setAffix] = useState(false);
 
   const [debouncedTitleFilter] = useDebounce<string>(titleFilter, 300);
 
@@ -239,12 +240,15 @@ const MoviesIndexPage: React.FunctionComponent = () => {
       />
       <Layout
         style={{
-          position: "fixed",
+          position: "relative",
           background: "#ffffff",
-          top: 92,
           overflowX: "hidden",
-          overflowY: "auto",
+          overflowY: "scroll",
+          scrollbarWidth: "none",
           height: "calc(100vh - 92px)",
+        }}
+        onScroll={(e) => {
+          setAffix(e.currentTarget.scrollTop >= 548);
         }}
       >
         <Row gutter={8}>
@@ -356,10 +360,14 @@ const MoviesIndexPage: React.FunctionComponent = () => {
           direction={"horizontal"}
           size={8}
           style={{
+            position: affix ? "sticky" : "relative",
+            scrollBehavior: "smooth",
+            top: affix ? 0 : undefined,
             backgroundColor: "#efefef",
             width: "100%",
             padding: 8,
             justifyContent: "space-between",
+            zIndex: 4,
           }}
         >
           <Space direction={"horizontal"} size={8}>
@@ -497,15 +505,21 @@ const MoviesIndexPage: React.FunctionComponent = () => {
         <Space
           size={16}
           direction={"vertical"}
-          style={{ width: "100%", padding: 16 }}
+          style={{
+            width: "100%",
+            padding: 16,
+            top: affix ? 92 + 42 : undefined,
+          }}
         >
-          <MovieList
-            movies={movies}
-            loading={moviesLoading}
-            afterSearchUpdate={async () => {
-              await fetchMovies(true);
-            }}
-          />
+          <LoadingWrapper loading={moviesLoading} error={moviesError}>
+            <MovieList
+              movies={movies}
+              loading={moviesLoading}
+              afterSearchUpdate={async () => {
+                await fetchMovies(true);
+              }}
+            />
+          </LoadingWrapper>
         </Space>
       </Layout>
     </>
