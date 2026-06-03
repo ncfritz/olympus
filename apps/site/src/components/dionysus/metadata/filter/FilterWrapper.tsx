@@ -1,6 +1,7 @@
-import { FilterFilled } from "@ant-design/icons";
+import { CloseCircleFilled, FilterFilled } from "@ant-design/icons";
 import { Button, Divider, Dropdown, Flex, Space } from "antd";
 import React, { type ReactNode, useState } from "react";
+import { flushSync } from "react-dom";
 
 export interface FilterWrapperProps {
   label: ReactNode;
@@ -8,6 +9,7 @@ export interface FilterWrapperProps {
   onReset: () => void;
   onClose: () => number;
   initialFiltersPresent?: boolean;
+  onClear?: () => void;
 }
 
 const FilterWrapper: React.FunctionComponent<FilterWrapperProps> = ({
@@ -16,13 +18,27 @@ const FilterWrapper: React.FunctionComponent<FilterWrapperProps> = ({
   onReset,
   onClose,
   initialFiltersPresent = false,
+  onClear,
 }: FilterWrapperProps) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [filtersPresent, setFiltersPresent] = useState(initialFiltersPresent);
+  const [isFilterButtonHovered, setIsFilterButtonHovered] = useState(false);
 
   const handleClose = () => {
+    console.log("FilterWrapper.handleClose()");
+
     const filterCount = onClose();
     setFiltersPresent(filterCount > 0);
+  };
+
+  const clearFilter = () => {
+    console.log("FilterWrapper.clearFilter()");
+    if (onClear) {
+      onClear();
+    }
+
+    handleClose();
+    setDropdownOpen(false);
   };
 
   return (
@@ -33,7 +49,10 @@ const FilterWrapper: React.FunctionComponent<FilterWrapperProps> = ({
           return;
         }
 
-        handleClose();
+        if (!open) {
+          handleClose();
+        }
+
         setDropdownOpen(open);
       }}
       open={dropdownOpen}
@@ -51,9 +70,21 @@ const FilterWrapper: React.FunctionComponent<FilterWrapperProps> = ({
             {filters}
             <Divider style={{ margin: 0 }} />
             <Flex justify={"space-between"} style={{ margin: 4 }}>
-              <Button type={"link"} size={"small"} onClick={onReset}>
-                Reset
-              </Button>
+              <Space orientation={"horizontal"} size={8}>
+                <Button type={"link"} size={"small"} onClick={onReset}>
+                  Reset
+                </Button>
+                {onClear && filtersPresent && (
+                  <Button
+                    type={"link"}
+                    size={"small"}
+                    danger={true}
+                    onClick={clearFilter}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </Space>
               <Button
                 type={"primary"}
                 size={"small"}
@@ -85,13 +116,34 @@ const FilterWrapper: React.FunctionComponent<FilterWrapperProps> = ({
           size={"small"}
           type={"text"}
           icon={
-            <FilterFilled
-              style={{
-                fontSize: "12px",
-                color: filtersPresent ? "#1677ff" : "#afafaf",
-              }}
-            />
+            isFilterButtonHovered && filtersPresent && onClear ? (
+              <CloseCircleFilled
+                style={{
+                  fontSize: "12px",
+                  color: "#afafaf",
+                }}
+              />
+            ) : (
+              <FilterFilled
+                style={{
+                  fontSize: "12px",
+                  color: filtersPresent ? "#1677ff" : "#afafaf",
+                }}
+              />
+            )
           }
+          onMouseEnter={() => setIsFilterButtonHovered(true)}
+          onMouseLeave={() => setIsFilterButtonHovered(false)}
+          onClick={(e) => {
+            if (filtersPresent && onClear) {
+              console.log("FilterWrapper: Clear button click");
+              e.preventDefault();
+              e.stopPropagation();
+              clearFilter();
+            } else {
+              setDropdownOpen(!dropdownOpen);
+            }
+          }}
         />
       </Space>
     </Dropdown>

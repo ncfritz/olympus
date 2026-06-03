@@ -1,6 +1,6 @@
 import { Button, Select, Space, Typography } from "antd";
 import { DateTime } from "luxon";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FilterWrapper from "./FilterWrapper";
 
 type monthNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
@@ -8,17 +8,17 @@ type monthNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 export interface DateRangeFilterValue {
   start: {
     year: number;
-    month?: number;
+    month: number;
   };
   end: {
     year: number;
-    month?: number;
+    month: number;
   };
 }
 
 export interface DateRangeFilterProps {
   label: string;
-  onFiltersSet: (value: DateRangeFilterValue) => void;
+  onFiltersSet: (value: DateRangeFilterValue | undefined) => void;
   initialValue?: DateRangeFilterValue;
   startYear?: number;
   startMonth?: number;
@@ -32,11 +32,32 @@ const DateRangeFilter: React.FunctionComponent<DateRangeFilterProps> = ({
   initialValue,
 }: DateRangeFilterProps) => {
   const now = DateTime.utc();
+  let localFilterValue = initialValue;
 
   const [fromMonth, setFromMonth] = useState<monthNumber>(1);
-  const [fromYear, setFromYear] = useState(now.year - 2);
+  const [fromYear, setFromYear] = useState<number>(now.year - 2);
   const [toMonth, setToMonth] = useState<monthNumber>(now.month);
-  const [toYear, setToYear] = useState(now.year);
+  const [toYear, setToYear] = useState<number>(now.year);
+  const [filterValue, setFilterValue] = useState<
+    DateRangeFilterValue | undefined
+  >();
+
+  useEffect(() => {
+    setFilterValue(localFilterValue);
+  }, [localFilterValue]);
+
+  useEffect(() => {
+    localFilterValue = {
+      start: {
+        year: fromYear,
+        month: fromMonth,
+      },
+      end: {
+        year: toYear,
+        month: toMonth,
+      },
+    };
+  }, [fromYear, fromMonth, toYear, toMonth]);
 
   const setRange = (
     startYear: number,
@@ -94,9 +115,9 @@ const DateRangeFilter: React.FunctionComponent<DateRangeFilterProps> = ({
       label={label}
       initialFiltersPresent={initialValue !== undefined}
       filters={
-        <Space direction={"vertical"} size={0}>
+        <Space orientation={"vertical"} size={0}>
           <Space
-            direction={"horizontal"}
+            orientation={"horizontal"}
             style={{
               paddingTop: 8,
               paddingLeft: 8,
@@ -104,7 +125,7 @@ const DateRangeFilter: React.FunctionComponent<DateRangeFilterProps> = ({
             }}
           >
             <Space
-              direction={"vertical"}
+              orientation={"vertical"}
               style={{
                 alignItems: "center",
                 borderRight: "1px solid #efefef",
@@ -113,12 +134,13 @@ const DateRangeFilter: React.FunctionComponent<DateRangeFilterProps> = ({
               }}
             >
               <Typography.Text strong={true}>From</Typography.Text>
-              <Space direction={"horizontal"}>
-                <Space direction={"vertical"} size={0}>
+              <Space orientation={"horizontal"}>
+                <Space orientation={"vertical"} size={0}>
                   <Typography.Text style={{ fontSize: "11px" }}>
                     Month
                   </Typography.Text>
                   <Select
+                    disabled={!filterValue}
                     variant={"borderless"}
                     style={{ width: 120 }}
                     value={fromMonth}
@@ -126,11 +148,12 @@ const DateRangeFilter: React.FunctionComponent<DateRangeFilterProps> = ({
                     options={fromMonths}
                   />
                 </Space>
-                <Space direction={"vertical"} size={0}>
+                <Space orientation={"vertical"} size={0}>
                   <Typography.Text style={{ fontSize: "11px" }}>
                     Year
                   </Typography.Text>
                   <Select
+                    disabled={!filterValue}
                     variant={"borderless"}
                     value={fromYear}
                     onChange={(value) => setFromYear(value)}
@@ -140,16 +163,17 @@ const DateRangeFilter: React.FunctionComponent<DateRangeFilterProps> = ({
               </Space>
             </Space>
             <Space
-              direction={"vertical"}
+              orientation={"vertical"}
               style={{ alignItems: "center", paddingBottom: 8 }}
             >
               <Typography.Text strong={true}>To</Typography.Text>
-              <Space direction={"horizontal"}>
-                <Space direction={"vertical"} size={0}>
+              <Space orientation={"horizontal"}>
+                <Space orientation={"vertical"} size={0}>
                   <Typography.Text style={{ fontSize: "11px" }}>
                     Month
                   </Typography.Text>
                   <Select
+                    disabled={!filterValue}
                     variant={"borderless"}
                     style={{ width: 120 }}
                     value={toMonth}
@@ -157,11 +181,12 @@ const DateRangeFilter: React.FunctionComponent<DateRangeFilterProps> = ({
                     options={toMonths}
                   />
                 </Space>
-                <Space direction={"vertical"} size={0}>
+                <Space orientation={"vertical"} size={0}>
                   <Typography.Text style={{ fontSize: "11px" }}>
                     Year
                   </Typography.Text>
                   <Select
+                    disabled={!filterValue}
                     variant={"borderless"}
                     value={toYear}
                     onChange={(value) => setToYear(value)}
@@ -172,12 +197,15 @@ const DateRangeFilter: React.FunctionComponent<DateRangeFilterProps> = ({
             </Space>
           </Space>
           <Space
-            direction={"horizontal"}
+            orientation={"horizontal"}
             size={0}
             style={{ width: "100%", borderTop: "1px solid #efefef" }}
             styles={{ item: { width: "100%" } }}
           >
-            <Space direction={"vertical"} style={{ width: "100%", padding: 8 }}>
+            <Space
+              orientation={"vertical"}
+              style={{ width: "100%", padding: 8 }}
+            >
               <Button
                 size={"small"}
                 block={true}
@@ -226,7 +254,10 @@ const DateRangeFilter: React.FunctionComponent<DateRangeFilterProps> = ({
                 {now.year - (now.year % 10) - 50}s
               </Button>
             </Space>
-            <Space direction={"vertical"} style={{ width: "100%", padding: 8 }}>
+            <Space
+              orientation={"vertical"}
+              style={{ width: "100%", padding: 8 }}
+            >
               <Button
                 size={"small"}
                 block={true}
@@ -275,9 +306,9 @@ const DateRangeFilter: React.FunctionComponent<DateRangeFilterProps> = ({
                 {now.year - (now.year % 10) - 60}s
               </Button>
             </Space>
-            <Space direction={"vertical"} style={{ width: "100%" }}>
+            <Space orientation={"vertical"} style={{ width: "100%" }}>
               <Space
-                direction={"vertical"}
+                orientation={"vertical"}
                 style={{ width: "100%", padding: 8 }}
               >
                 <Button
@@ -335,19 +366,24 @@ const DateRangeFilter: React.FunctionComponent<DateRangeFilterProps> = ({
         setFromYear(now.year - 2);
         setToMonth(now.month);
         setToYear(now.year);
-      }}
-      onClose={() => {
-        onFiltersSet({
+
+        localFilterValue = {
           start: {
-            year: fromYear,
-            month: fromMonth,
+            year: now.year - 2,
+            month: 1,
           },
           end: {
-            year: toYear,
-            month: toMonth,
+            year: now.year,
+            month: now.month,
           },
-        });
-        return 1;
+        };
+      }}
+      onClear={() => {
+        localFilterValue = undefined;
+      }}
+      onClose={() => {
+        onFiltersSet(localFilterValue);
+        return localFilterValue ? 1 : 0;
       }}
     />
   );
