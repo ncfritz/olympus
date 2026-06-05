@@ -1,8 +1,9 @@
 import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
-import { FilterFilled, HomeOutlined } from "@ant-design/icons";
+import { EyeFilled, FilterFilled, HomeOutlined } from "@ant-design/icons";
 import type {
   FilterDefinition,
+  Genre,
   GetMovieAggregateStatisticsResponse,
   Language,
   SparseMovie,
@@ -30,6 +31,7 @@ import CheckboxFilter from "../../components/dionysus/metadata/filter/CheckboxFi
 import DateRangeFilter, {
   type DateRangeFilterValue,
 } from "../../components/dionysus/metadata/filter/DateRangeFilter";
+import DurationFilter from "../../components/dionysus/metadata/filter/DurationFilter";
 import Sorter from "../../components/dionysus/metadata/filter/Sorter";
 import MovieList from "../../components/dionysus/metadata/MovieList";
 import MovieReleaseStatusStatisticsChart from "../../components/dionysus/metadata/movies/MovieReleaseStatusStatisticsChart";
@@ -69,7 +71,12 @@ const MoviesIndexPage: React.FunctionComponent = () => {
   const [spokenLanguageFilter, setSpokenLanguageFilter] = useState<string[]>(
     [],
   );
-  const [missingFilter, setMissingFilter] = useState(false);
+  const [genresFilter, setGenresFilter] = useState<string[]>([]);
+  const [runtimeFilter, setRuntimeFilter] = useState<number[]>([]);
+  const [originalLanguageFilter, setOriginalLanguageFilter] = useState<
+    string[]
+  >([]);
+  const [missingFilter, setMissingFilter] = useState<string[]>([]);
   const [monitoredFilter, setMonitoredFilter] = useState(false);
   const [filters, setFilters] = useState<FilterDefinition | undefined>(
     undefined,
@@ -113,11 +120,46 @@ const MoviesIndexPage: React.FunctionComponent = () => {
       }
     }
 
+    if (genresFilter.length > 0) {
+      newFilters.push({
+        type: "in",
+        name: "genres.genreId",
+        value: genresFilter,
+      });
+    }
+
+    if (runtimeFilter.length === 2) {
+      newFilters.push({
+        type: "and",
+        name: "__runtime_and",
+        value: [
+          {
+            type: "lte",
+            name: "runtime",
+            value: runtimeFilter[1],
+          },
+          {
+            type: "gte",
+            name: "runtime",
+            value: runtimeFilter[0],
+          },
+        ],
+      });
+    }
+
     if (spokenLanguageFilter.length > 0) {
       newFilters.push({
         type: "in",
         name: "spokenLanguages.languageCode",
         value: spokenLanguageFilter,
+      });
+    }
+
+    if (originalLanguageFilter.length > 0) {
+      newFilters.push({
+        type: "in",
+        name: "originalLanguageCode",
+        value: originalLanguageFilter,
       });
     }
 
@@ -140,11 +182,11 @@ const MoviesIndexPage: React.FunctionComponent = () => {
       });
     }
 
-    if (missingFilter) {
+    if (missingFilter.length === 1) {
       newFilters.push({
         type: "exists",
         name: "asset",
-        value: false,
+        value: missingFilter[0] === "y",
       });
     }
 
@@ -168,10 +210,13 @@ const MoviesIndexPage: React.FunctionComponent = () => {
     debouncedTitleFilter,
     statusFilter,
     videoFilter,
+    genresFilter,
     spokenLanguageFilter,
     releaseDateFilter,
+    runtimeFilter,
     monitoredFilter,
     missingFilter,
+    originalLanguageFilter,
   ]);
 
   const [movies, moviesLoading, moviesError, fetchMovies] = useFetch<
@@ -187,12 +232,9 @@ const MoviesIndexPage: React.FunctionComponent = () => {
       }
     },
     validateOptions: (options) => {
-      console.log("InitialFiltersSet: ", initialFiltersSet);
-      console.log("Filters: ", filters);
       return initialFiltersSet;
     },
     fetchFunction: async () => {
-      console.log("Fetching movies, page: ", moviesPage);
       const response = await metadataApi.listMovies(
         moviesPage,
         48,
@@ -225,6 +267,16 @@ const MoviesIndexPage: React.FunctionComponent = () => {
           500,
         )
       ).data.languages,
+  });
+
+  const [genres, genresLoading, genresError] = useFetch<undefined, Genre[]>({
+    dataType: "genres",
+    watch: [],
+    params: undefined,
+    fetchFunction: async () =>
+      (
+        await metadataApi.listGenres(0, 500, { field: "name", order: "desc" })
+      ).data.genres.filter((genre) => genre.type === "Movie"),
   });
 
   const fetchNextMoviesPage = async () => {
@@ -413,7 +465,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
             zIndex: 4,
           }}
         >
-          <Space direction={"horizontal"} size={8}>
+          <Space orientation={"horizontal"} size={8}>
             <Input
               size={"small"}
               prefix={
@@ -474,6 +526,28 @@ const MoviesIndexPage: React.FunctionComponent = () => {
                 setVideoFilter(values as ("f" | "v")[]);
               }}
             />
+            <DateRangeFilter
+              initialValue={releaseDateFilter}
+              label={"Release Date"}
+              onFiltersSet={setReleaseDateFilter}
+            />
+            <CheckboxFilter
+              label={"Genre"}
+              items={
+                genres?.length > 0
+                  ? genres.map((genre) => {
+                      return {
+                        key: genre.id,
+                        label: <Typography.Text>{genre.name}</Typography.Text>,
+                      };
+                    })
+                  : []
+              }
+              onFiltersSet={(values) => {
+                setGenresFilter(values as string[]);
+              }}
+            />
+            <DurationFilter label={"Runtime"} onFiltersSet={setRuntimeFilter} />
             <CheckboxFilter
               label={"Spoken Language"}
               items={
@@ -482,7 +556,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
                       return {
                         key: language.id,
                         label: (
-                          <Space direction={"horizontal"} size={8}>
+                          <Space orientation={"horizontal"} size={8}>
                             <ReactCountryFlag
                               countryCode={language.id}
                               cdnUrl={"/flags/"}
@@ -500,28 +574,57 @@ const MoviesIndexPage: React.FunctionComponent = () => {
                 setSpokenLanguageFilter(values as string[]);
               }}
             />
-            <DateRangeFilter
-              initialValue={releaseDateFilter}
-              label={"Release Date"}
-              onFiltersSet={setReleaseDateFilter}
+            <CheckboxFilter
+              label={"Original Language"}
+              items={
+                languages?.length > 0
+                  ? languages.map((language) => {
+                      return {
+                        key: language.id,
+                        label: (
+                          <Space orientation={"horizontal"} size={8}>
+                            <ReactCountryFlag
+                              countryCode={language.id}
+                              cdnUrl={"/flags/"}
+                              cdnSuffix={"svg"}
+                              svg={true}
+                            />
+                            <Typography.Text>{language.name}</Typography.Text>
+                          </Space>
+                        ),
+                      };
+                    })
+                  : []
+              }
+              onFiltersSet={(values) => {
+                setOriginalLanguageFilter(values as string[]);
+              }}
             />
           </Space>
-          <Space direction={"horizontal"} size={8} align={"center"}>
+          <Space orientation={"horizontal"} size={8} align={"center"}>
+            <CheckboxFilter
+              label={"Asset"}
+              initialValues={[]}
+              items={[
+                { key: "y", label: "In Library" },
+                { key: "n", label: "Not in Library" },
+              ]}
+              onFiltersSet={(values) => {
+                setMissingFilter(values as string[]);
+              }}
+            />
             <Typography.Text style={{ fontSize: "12px" }}>
-              Monitored
+              <EyeFilled
+                style={{
+                  fontSize: "18px",
+                  color: monitoredFilter ? "#333333" : "#afafaf",
+                }}
+              />
             </Typography.Text>
             <Switch
               size={"small"}
               checked={monitoredFilter}
               onChange={setMonitoredFilter}
-            />
-            <Typography.Text style={{ fontSize: "12px" }}>
-              Missing
-            </Typography.Text>
-            <Switch
-              size={"small"}
-              checked={missingFilter}
-              onChange={setMissingFilter}
             />
             <Sorter
               initialSort={sort.field}
