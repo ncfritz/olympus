@@ -24,8 +24,6 @@ const LoadingWrapper: React.FunctionComponent<LoadingWrapperProps> = ({
 }: LoadingWrapperProps) => {
   let content: ReactNode | ReactNode[] = undefined;
 
-  console.log(`Loading: ${loading}, Error: ${error}`);
-
   if (loading) {
     content = loader || <Loader />;
   } else if (error) {
@@ -40,7 +38,7 @@ const LoadingWrapper: React.FunctionComponent<LoadingWrapperProps> = ({
     <Space
       style={{ width: "100%", ...style }}
       styles={{ item: { height: "inherit" } }}
-      direction={"vertical"}
+      orientation={"vertical"}
     >
       {content}
     </Space>
