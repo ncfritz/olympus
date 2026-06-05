@@ -43,22 +43,29 @@ const MovieLocationsMap = dynamic(
   () => import("../../components/dionysus/metadata/movies/MovieLocationsMap"),
   { ssr: false },
 );
+import { v4 as uuidv4 } from "uuid";
 
 const MoviesIndexPage: React.FunctionComponent = () => {
   const now = DateTime.utc();
+  const movieListContainerId = uuidv4();
 
   const [sort, setSort] = useState<SortOptions>({
     field: "popularity",
     order: "desc",
   });
-  const [titleFilter, setTitleFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string[]>(["Released"]);
+  const [moviesPage, setMoviesPage] = useState(0);
+  const [movieCount, setMovieCount] = useState(0);
+  const [aggregateMovies, setAggregateMovies] = useState<SparseMovie[]>([]);
+  const [initialFiltersSet, setInitialFiltersSet] = useState(false);
+  const [titleFilter, setTitleFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(["Released"]);
   const [videoFilter, setVideoFilter] = useState<("f" | "v")[]>(["f"]);
-  const [releaseDateFilter, setReleaseDateFilter] =
-    useState<DateRangeFilterValue>({
-      start: { month: now.month, year: now.year - 1 },
-      end: { month: now.month, year: now.year },
-    });
+  const [releaseDateFilter, setReleaseDateFilter] = useState<
+    DateRangeFilterValue | undefined
+  >({
+    start: { month: now.month, year: now.year - 1 },
+    end: { month: now.month, year: now.year },
+  });
   const [spokenLanguageFilter, setSpokenLanguageFilter] = useState<string[]>(
     [],
   );
@@ -154,6 +161,9 @@ const MoviesIndexPage: React.FunctionComponent = () => {
     } else {
       setFilters(newFilters[0]);
     }
+
+    setMoviesPage(0);
+    setInitialFiltersSet(true);
   }, [
     debouncedTitleFilter,
     statusFilter,
@@ -169,10 +179,35 @@ const MoviesIndexPage: React.FunctionComponent = () => {
     SparseMovie[]
   >({
     dataType: "movies",
-    watch: [sort, filters],
+    watch: [sort, filters, moviesPage],
     params: undefined,
-    fetchFunction: async () =>
-      (await metadataApi.listMovies(0, 48, sort, filters)).data.movies,
+    beforeDataRequest: async (params) => {
+      if (moviesPage === 0) {
+        setAggregateMovies([]);
+      }
+    },
+    validateOptions: (options) => {
+      console.log("InitialFiltersSet: ", initialFiltersSet);
+      console.log("Filters: ", filters);
+      return initialFiltersSet;
+    },
+    fetchFunction: async () => {
+      console.log("Fetching movies, page: ", moviesPage);
+      const response = await metadataApi.listMovies(
+        moviesPage,
+        48,
+        sort,
+        filters,
+      );
+      setMovieCount(response.data.count);
+      return response.data.movies;
+    },
+    onDataFetched: async (data) => {
+      setAggregateMovies((prev) => [...prev, ...data]);
+      if (moviesPage === 0) {
+        setMoviesPage(moviesPage + 1);
+      }
+    },
   });
 
   const [languages, languagesLoading, languagesError] = useFetch<
@@ -180,7 +215,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
     Language[]
   >({
     dataType: "languages",
-    watch: [sort, filters],
+    watch: [],
     params: undefined,
     fetchFunction: async () =>
       (
@@ -191,6 +226,13 @@ const MoviesIndexPage: React.FunctionComponent = () => {
         )
       ).data.languages,
   });
+
+  const fetchNextMoviesPage = async () => {
+    console.log("fetching next page: ", moviesPage);
+    setMoviesPage(moviesPage + 1);
+
+    //await fetchMovies(true);
+  };
 
   const [stats, statsLoading, statsError] = useFetch<
     undefined,
@@ -239,6 +281,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
         ]}
       />
       <Layout
+        id={movieListContainerId}
         style={{
           position: "relative",
           background: "#ffffff",
@@ -357,7 +400,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
           </Col>
         </Row>
         <Space
-          direction={"horizontal"}
+          orientation={"horizontal"}
           size={8}
           style={{
             position: affix ? "sticky" : "relative",
@@ -460,9 +503,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
             <DateRangeFilter
               initialValue={releaseDateFilter}
               label={"Release Date"}
-              onFiltersSet={(value) => {
-                setReleaseDateFilter(value);
-              }}
+              onFiltersSet={setReleaseDateFilter}
             />
           </Space>
           <Space direction={"horizontal"} size={8} align={"center"}>
@@ -504,19 +545,25 @@ const MoviesIndexPage: React.FunctionComponent = () => {
         </Space>
         <Space
           size={16}
-          direction={"vertical"}
+          orientation={"vertical"}
           style={{
             width: "100%",
             padding: 16,
+            paddingTop: affix ? 0 : 16,
             top: affix ? 92 + 42 : undefined,
           }}
         >
           <LoadingWrapper loading={moviesLoading} error={moviesError}>
             <MovieList
-              movies={movies}
+              movies={aggregateMovies}
               loading={moviesLoading}
               afterSearchUpdate={async () => {
                 await fetchMovies(true);
+              }}
+              scrollOptions={{
+                fetchNextPage: fetchNextMoviesPage,
+                itemCount: movieCount,
+                target: movieListContainerId,
               }}
             />
           </LoadingWrapper>

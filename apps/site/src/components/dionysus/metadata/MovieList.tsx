@@ -1,5 +1,4 @@
 import {
-  CheckCircleFilled,
   EyeFilled,
   EyeOutlined,
   HeartOutlined,
@@ -9,9 +8,15 @@ import type {
   MediaAssetSearchConfiguration,
   SparseMovie,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Badge, List } from "antd";
+import { List, Space, Spin } from "antd";
 import Link from "next/link";
-import { type MouseEventHandler, useState } from "react";
+import {
+  type CSSProperties,
+  type MouseEventHandler,
+  type ReactNode,
+  useState,
+} from "react";
+import InfiniteScroll from "react-infinite-scroll-component";
 import {
   handleCreateSearchConfiguration,
   handleSetEnabled,
@@ -28,6 +33,12 @@ export interface MovieListProps {
   afterSearchUpdate?: (
     searchConfiguration: MediaAssetSearchConfiguration,
   ) => Promise<void>;
+  scrollOptions?: {
+    fetchNextPage: () => Promise<void>;
+    itemCount: number;
+    target?: string;
+  };
+  style?: CSSProperties;
 }
 
 interface MovieListItemProps {
@@ -96,7 +107,7 @@ const MovieListItem: React.FunctionComponent<MovieListItemProps> = ({
     searchActionIcon = <EyeOutlined onClick={searchAction} />;
   }
 
-  let listItem = (
+  const listItem = (
     <Link href={`/dionysus/movies/${item.id}`}>
       <MoviePosterCard
         movie={item}
@@ -106,6 +117,7 @@ const MovieListItem: React.FunctionComponent<MovieListItemProps> = ({
         hoverable={false}
         className={"compact"}
         bordered={bordered}
+        enablePopover={true}
         actions={[
           <HeartOutlined
             onClick={(e) => {
@@ -119,18 +131,6 @@ const MovieListItem: React.FunctionComponent<MovieListItemProps> = ({
     </Link>
   );
 
-  if (item.asset) {
-    listItem = (
-      <Badge.Ribbon
-        color={"#478133"}
-        style={{ fontSize: "12px" }}
-        text={<CheckCircleFilled />}
-      >
-        {listItem}
-      </Badge.Ribbon>
-    );
-  }
-
   return <List.Item>{listItem}</List.Item>;
 };
 
@@ -142,8 +142,11 @@ const MovieList: React.FunctionComponent<MovieListProps> = ({
   columns = 12,
   bordered = true,
   afterSearchUpdate,
+  scrollOptions,
+  style,
 }: MovieListProps) => {
-  return (
+  let content: ReactNode;
+  const listContent = (
     <List
       grid={{ gutter: 16, column: columns }}
       dataSource={movies}
@@ -161,5 +164,28 @@ const MovieList: React.FunctionComponent<MovieListProps> = ({
       }}
     />
   );
+
+  if (scrollOptions) {
+    content = (
+      <InfiniteScroll
+        scrollableTarget={scrollOptions.target}
+        style={{ overflow: "inherit" }}
+        dataLength={movies.length}
+        next={scrollOptions.fetchNextPage}
+        hasMore={scrollOptions.itemCount > movies.length}
+        loader={
+          <Space style={{ width: "100%", justifyContent: "center" }}>
+            <Spin />
+          </Space>
+        }
+      >
+        {listContent}
+      </InfiniteScroll>
+    );
+  } else {
+    content = listContent;
+  }
+
+  return content;
 };
 export default MovieList;
