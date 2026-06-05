@@ -48,6 +48,7 @@ const MetadataGenresPage: React.FunctionComponent = () => {
     fetchFunction: async () => {
       const response = await metadataApi.listGenres(
         genresPage,
+        50,
         genresSort,
         genreFilters,
       );

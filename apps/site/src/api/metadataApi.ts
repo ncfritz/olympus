@@ -94,10 +94,10 @@ class MetadataApi extends ApiBase {
     });
   }
 
-  async listCountries(page: number, sort: SortOptions) {
+  async listCountries(page: number, sort: SortOptions, pageSize = 50) {
     return await listCountries({
       query: {
-        pageSize: 50,
+        pageSize: pageSize,
         startPage: page,
         sort: sort.order,
         sortBy: sort.field,
@@ -107,12 +107,13 @@ class MetadataApi extends ApiBase {
 
   async listGenres(
     page: number,
+    pageSize: number,
     sort: SortOptions,
     filters?: FilterDefinition,
   ) {
     return await listGenres({
       query: {
-        pageSize: 50,
+        pageSize: pageSize,
         startPage: page,
         sort: sort.order,
         sortBy: sort.field,
