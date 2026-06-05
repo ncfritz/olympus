@@ -1,10 +1,10 @@
 import { Checkbox, Menu, Space } from "antd";
 import type { MenuItemType } from "antd/es/menu/interface";
-import { useEffect, useState } from "react";
+import { type ReactNode, useState } from "react";
 import FilterWrapper from "./FilterWrapper";
 
 export interface CheckboxFilterProps {
-  label: string;
+  label: string | ReactNode;
   items: MenuItemType[];
   onFiltersSet: (values: React.Key[]) => void;
   filterValues?: (values: string[]) => string[];
