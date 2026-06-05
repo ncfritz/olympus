@@ -11,6 +11,7 @@ export interface UseFetchOptions<O, T> {
   notifyOnError?: boolean;
   dataType?: string;
   noWatch?: boolean;
+  beforeDataRequest?: (params: O) => Promise<void>;
   onDataFetched?: (data: T) => Promise<void>;
 }
 
@@ -65,6 +66,10 @@ export const useFetch = <O, T>(
         }
 
         if (shouldFetch) {
+          if (options.beforeDataRequest) {
+            await options.beforeDataRequest(options.params);
+          }
+
           await fetcher();
         }
       })();
