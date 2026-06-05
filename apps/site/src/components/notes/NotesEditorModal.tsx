@@ -33,7 +33,7 @@ const NotesEditorModal: React.FunctionComponent<NotesEditorModalProps> = ({
         top: 100,
       }}
       styles={{
-        content: {
+        body: {
           padding: 0,
         },
         header: {

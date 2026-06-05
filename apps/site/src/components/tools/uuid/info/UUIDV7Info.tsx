@@ -1,7 +1,7 @@
 import { Space, Typography } from "antd";
-import type { ItemType } from "rc-collapse/es/interface";
+import type { ItemType } from "@rc-component/collapse/lib/interface";
 import React from "react";
-import { V1_INFO_PANEL, V7_INFO_PANEL } from "../infoPanels";
+import { V7_INFO_PANEL } from "../infoPanels";
 import { styles } from "./utils";
 
 const UUIDV7Info: ItemType = {

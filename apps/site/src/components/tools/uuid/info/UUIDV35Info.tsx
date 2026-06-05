@@ -1,6 +1,6 @@
 import { CopyOutlined } from "@ant-design/icons";
 import { Button, Space, Typography } from "antd";
-import type { ItemType } from "rc-collapse/es/interface";
+import type { ItemType } from "@rc-component/collapse/lib/interface";
 import React from "react";
 import {
   NAMESPACE_DNS,
