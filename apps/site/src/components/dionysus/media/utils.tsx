@@ -13,7 +13,8 @@ import type {
   MediaAssetWorkflowStepType,
   SearchExecutionStatus,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { type StepProps, Tag } from "antd";
+import type { StepItem } from "@rc-component/steps/lib/Steps";
+import { Tag } from "antd";
 import React, { type CSSProperties } from "react";
 import SearchResultTag from "./SearchResultTag";
 
@@ -216,7 +217,7 @@ export const getResolutionTransparency = (resolution: number) => {
 export const getDownloadStepProperties = (
   download?: MediaAssetDownload,
   includeClassName: boolean = true,
-): Partial<StepProps> => {
+): Partial<StepItem> => {
   let icon = undefined;
   let status: "wait" | "process" | "finish" | "error" | undefined = "wait";
   let className: string | undefined = undefined;
@@ -255,7 +256,7 @@ export const getStepProperties = (
   steps: MediaAssetWorkflowStep[],
   stepType: MediaAssetWorkflowStepType,
   includeClassName: boolean = true,
-): Partial<StepProps> => {
+): Partial<StepItem> => {
   let icon = undefined;
   let status: "wait" | "process" | "finish" | "error" | undefined = "wait";
   let className: string | undefined = undefined;

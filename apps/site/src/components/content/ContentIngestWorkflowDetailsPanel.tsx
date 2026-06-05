@@ -3,6 +3,7 @@ import {
   QuestionCircleOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
+import type { ItemType } from "@rc-component/collapse/lib/interface";
 import {
   Alert,
   Button,
@@ -17,7 +18,6 @@ import {
 } from "antd";
 import { DateTime } from "luxon";
 import prettyMilliseconds from "pretty-ms";
-import type { ItemType } from "rc-collapse/es/interface";
 import React, { useState } from "react";
 import type { ContentIngestionWorkflow } from "@ncfritz/olympus-sdk/dionysus";
 import contentApi from "../../api/contentApi";

@@ -3,9 +3,9 @@ import type {
   MediaAssetSearchConfiguration,
   MediaAssetSearchExecution,
 } from "@ncfritz/olympus-sdk/dionysus";
+import type { ItemType } from "@rc-component/collapse/lib/interface";
 import { Button, Col, Collapse, Empty, Row, Space, Typography } from "antd";
 import { DateTime } from "luxon";
-import type { ItemType } from "rc-collapse/es/interface";
 import React, { useEffect, useState } from "react";
 import mediaApi from "../../../api/mediaApi";
 import { useFetch } from "../../../hooks/useFetch";

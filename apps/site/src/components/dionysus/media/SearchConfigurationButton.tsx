@@ -133,7 +133,7 @@ const SearchConfigurationButton: React.FunctionComponent<
         <Popover
           classNames={{
             root: `pill large ${className}`,
-            body: classNames.join(" "),
+            content: classNames.join(" "),
           }}
           placement={"bottom"}
           open={open}
