@@ -173,7 +173,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
 
     if (movie.genres && movie.genres.length > 0) {
       titleDecorations.push(
-        <Space direction={"horizontal"} size={4}>
+        <Space orientation={"horizontal"} size={4}>
           {movie.genres.map((genre) => {
             return (
               <Typography.Text
@@ -208,7 +208,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
     }
 
     const overview = movie.overview ? (
-      <Space direction={"vertical"} size={0}>
+      <Space orientation={"vertical"} size={0}>
         <Typography.Title
           style={{ color: "#efefef", marginBottom: 0 }}
           level={4}
@@ -228,9 +228,12 @@ const MovieDetailPage: React.FunctionComponent = () => {
         key: "t-main-general",
         label: "Overview",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", padding: 16 }}
+          >
             <Space
-              direction={"horizontal"}
+              orientation={"horizontal"}
               style={{
                 width: "100%",
                 alignItems: "center",
@@ -284,7 +287,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
               />
             </LoadingWrapper>
             <Space
-              direction={"horizontal"}
+              orientation={"horizontal"}
               style={{
                 width: "100%",
                 alignItems: "center",
@@ -330,7 +333,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
         key: "t-main-cast",
         label: "Cast",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%" }}>
+          <Space orientation={"vertical"} style={{ width: "100%" }}>
             <LoadingWrapper
               loading={crewLoading}
               error={crewError}
@@ -345,7 +348,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
         key: "t-main-crew",
         label: "Crew",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%" }}>
+          <Space orientation={"vertical"} style={{ width: "100%" }}>
             <LoadingWrapper
               loading={crewLoading}
               error={crewError}
@@ -360,7 +363,10 @@ const MovieDetailPage: React.FunctionComponent = () => {
         key: "t-main-recommendations",
         label: "Recommendations",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", padding: 16 }}
+          >
             <LoadingWrapper
               loading={crewLoading}
               error={crewError}
@@ -389,7 +395,10 @@ const MovieDetailPage: React.FunctionComponent = () => {
         key: "t-main-prodCompany",
         label: "Production Companies",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", padding: 16 }}
+          >
             <MovieProductionCompaniesPanel
               productionCompanies={movie.productionCompanies}
             />
@@ -403,7 +412,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
         key: "t-info-general",
         label: <InfoCircleFilled />,
         children: (
-          <Space direction={"vertical"} style={{ margin: 12, width: "100%" }}>
+          <Space orientation={"vertical"} style={{ margin: 12, width: "100%" }}>
             <ExternalIdsList ids={movie.externalIds} />
             <Description
               title={"Budget"}
@@ -431,7 +440,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
               title={"Original Language"}
               value={
                 movie.originalLanguage ? (
-                  <Space size={8} direction={"horizontal"}>
+                  <Space size={8} orientation={"horizontal"}>
                     <ReactCountryFlag
                       countryCode={movie.originalLanguage.id}
                       cdnUrl={"/flags/"}
@@ -451,12 +460,12 @@ const MovieDetailPage: React.FunctionComponent = () => {
               title={"Locations"}
               value={
                 movie.productionCountries.length > 0 ? (
-                  <Space direction={"vertical"} size={2}>
+                  <Space orientation={"vertical"} size={2}>
                     {movie.productionCountries.map((item) => {
                       return (
                         <Space
                           size={8}
-                          direction={"horizontal"}
+                          orientation={"horizontal"}
                           style={{ alignItems: "center" }}
                         >
                           <ReactCountryFlag
@@ -481,10 +490,10 @@ const MovieDetailPage: React.FunctionComponent = () => {
               title={"Spoken Languages"}
               value={
                 movie.spokenLanguages.length > 0 ? (
-                  <Space direction={"vertical"} size={8}>
+                  <Space orientation={"vertical"} size={8}>
                     {movie.spokenLanguages.map((item) => {
                       return (
-                        <Space size={8} direction={"horizontal"}>
+                        <Space size={8} orientation={"horizontal"}>
                           <ReactCountryFlag
                             countryCode={item.language.id}
                             cdnUrl={"/flags/"}
@@ -519,7 +528,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
                 movie.keywords.length > 0 ? (
                   <Space
                     size={0}
-                    direction={"horizontal"}
+                    orientation={"horizontal"}
                     style={{
                       display: "flex",
                       flexWrap: "wrap",
@@ -553,7 +562,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
           <Space
             size={0}
             style={{ width: "100%", padding: 16 }}
-            direction={"vertical"}
+            orientation={"vertical"}
           >
             <Typography.Title level={5}>Release Dates:</Typography.Title>
             <MovieReleaseDateList releaseDates={movie.releaseDates} />
@@ -567,7 +576,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
           <Space
             size={0}
             style={{ width: "100%", padding: 16 }}
-            direction={"vertical"}
+            orientation={"vertical"}
           >
             <Typography.Title level={5}>Alternative Titles:</Typography.Title>
             <MovieAlternativeTitlesList
@@ -583,7 +592,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
           <Space
             size={0}
             style={{ width: "100%", padding: 16 }}
-            direction={"vertical"}
+            orientation={"vertical"}
           >
             <QRCode
               style={{ marginTop: 64 }}
@@ -602,7 +611,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
           <Space
             size={0}
             style={{ width: "100%", padding: 16 }}
-            direction={"vertical"}
+            orientation={"vertical"}
           >
             <MetadataFetchJobPanel id={movie.id} type={"movies"} />
           </Space>
@@ -616,7 +625,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
         label: "Search Results",
         children: (
           <Space
-            direction={"vertical"}
+            orientation={"vertical"}
             style={{ width: "100%", display: "block" }}
           >
             <SearchResultsTable searchConfiguration={searchConfiguration} />
@@ -628,7 +637,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
         key: "t-info-searchConfig",
         label: <EyeOutlined />,
         children: (
-          <Space direction={"vertical"} style={{ width: "100%" }}>
+          <Space orientation={"vertical"} style={{ width: "100%" }}>
             <SearchConfigurationPanel
               searchConfiguration={searchConfiguration}
             />
@@ -639,14 +648,14 @@ const MovieDetailPage: React.FunctionComponent = () => {
 
     content = (
       <Space
-        direction={"vertical"}
+        orientation={"vertical"}
         size={0}
         style={{ width: "100%", height: "100%" }}
         styles={{ item: { width: "100%" } }}
       >
         <Space
           size={0}
-          direction={"vertical"}
+          orientation={"vertical"}
           className={"movieHeader"}
           style={{
             minHeight: 522,
@@ -666,7 +675,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
           }}
         >
           <Space
-            direction={"horizontal"}
+            orientation={"horizontal"}
             size={32}
             style={{
               width: "100%",
@@ -676,7 +685,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
             }}
           >
             <Space
-              direction={"vertical"}
+              orientation={"vertical"}
               size={0}
               style={{ marginLeft: 32, marginBottom: 32 }}
             >
@@ -689,7 +698,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
               />
             </Space>
             <Space
-              direction={"vertical"}
+              orientation={"vertical"}
               style={{ width: "100%", height: "100%", alignItems: "top" }}
             >
               <Typography.Title
@@ -697,7 +706,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
                 style={{ color: "#ffffffdd", marginBottom: 3 }}
               >
                 <Space
-                  direction={"horizontal"}
+                  orientation={"horizontal"}
                   size={8}
                   style={{ display: "flex", alignItems: "center" }}
                 >
@@ -710,9 +719,9 @@ const MovieDetailPage: React.FunctionComponent = () => {
                   {movie?.title}
                 </Space>
               </Typography.Title>
-              <Space direction={"horizontal"}>{titleDecorations}</Space>
+              <Space orientation={"horizontal"}>{titleDecorations}</Space>
               <Space
-                direction={"horizontal"}
+                orientation={"horizontal"}
                 size={16}
                 style={{ marginTop: 16 }}
               >
@@ -743,7 +752,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
                   }}
                 />
                 <Space
-                  direction={"vertical"}
+                  orientation={"vertical"}
                   style={{
                     background: "#202f3e",
                     height: 48,
@@ -757,7 +766,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
                     zIndex: 98,
                   }}
                 >
-                  <Space direction={"horizontal"} size={8}>
+                  <Space orientation={"horizontal"} size={8}>
                     <Typography.Text
                       strong={true}
                       style={{
@@ -778,7 +787,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
                       {movie.voteCount.toLocaleString()}
                     </Typography.Text>
                   </Space>
-                  <Space direction={"horizontal"} size={8}>
+                  <Space orientation={"horizontal"} size={8}>
                     <Typography.Text
                       strong={true}
                       style={{
@@ -802,7 +811,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
                 </Space>
                 <Space
                   size={16}
-                  direction={"horizontal"}
+                  orientation={"horizontal"}
                   style={{ left: -48, position: "relative" }}
                 >
                   <Button
@@ -846,7 +855,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
                   )}
                 </Space>
               </Space>
-              <Space direction={"vertical"} style={{ marginTop: 16 }}>
+              <Space orientation={"vertical"} style={{ marginTop: 16 }}>
                 {tagline}
                 {overview}
               </Space>
@@ -854,7 +863,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
           </Space>
         </Space>
         <Space
-          direction={"horizontal"}
+          orientation={"horizontal"}
           style={{ width: "100%", position: "relative" }}
           styles={{
             item: {
