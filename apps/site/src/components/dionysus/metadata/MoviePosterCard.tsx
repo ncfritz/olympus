@@ -1,7 +1,6 @@
 import {
   CheckCircleFilled,
   EyeFilled,
-  EyeOutlined,
   FileImageOutlined,
   InfoCircleFilled,
   PauseCircleFilled,
@@ -251,7 +250,7 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
       );
     }
 
-    /*if (movie.genres && movie.genres.length > 0) {
+    if (movie.genres && movie.genres.length > 0) {
       titleDecorations.push(
         <Space orientation={"horizontal"} size={4}>
           {movie.genres.map((genre) => {
@@ -270,9 +269,9 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
               </Typography.Text>
             );
           })}
-        </Space>
+        </Space>,
       );
-    }*/
+    }
 
     if (movie.runtime) {
       titleDecorations.push(
