@@ -111,6 +111,12 @@ export class SparseMovie extends BaseMovie {
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
+
+  @ApiProperty({
+    type: () => GenreAssociation,
+    isArray: true,
+  })
+  genres: GenreAssociation[];
 }
 
 export class Movie extends SparseMovie {
@@ -125,12 +131,6 @@ export class Movie extends SparseMovie {
     isArray: true,
   })
   externalIds: ExternalId[];
-
-  @ApiProperty({
-    type: () => GenreAssociation,
-    isArray: true,
-  })
-  genres: GenreAssociation[];
 
   @ApiProperty({
     type: () => TypedImage,
