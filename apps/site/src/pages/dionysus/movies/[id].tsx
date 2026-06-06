@@ -26,7 +26,6 @@ import {
   Tabs,
   Button,
   Tag,
-  Progress,
   QRCode,
   type TabsProps,
   Drawer,
@@ -57,7 +56,7 @@ import MovieProductionCompaniesPanel from "../../../components/dionysus/metadata
 import MovieReleaseDateList from "../../../components/dionysus/metadata/MovieReleaseDatesList";
 import MovieVideoPanel from "../../../components/dionysus/metadata/MovieVideoPanel";
 import SearchConfigurationButton from "../../../components/dionysus/media/SearchConfigurationButton";
-import { getProgressColor } from "../../../components/dionysus/metadata/util";
+import PopularityIndicator from "../../../components/dionysus/metadata/PopulairtyIndicator";
 import CollapsibleTabPanel from "../../../components/layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
@@ -725,90 +724,11 @@ const MovieDetailPage: React.FunctionComponent = () => {
                 size={16}
                 style={{ marginTop: 16 }}
               >
-                <Progress
-                  type={"circle"}
-                  strokeColor={getProgressColor(movie.popularity * 10 || 0)}
-                  percent={movie.voteAverage * 10}
-                  size={64}
-                  format={(percent) => {
-                    return (
-                      <Typography.Text
-                        style={{
-                          fontSize: "15px",
-                          color: "#efefef",
-                          fontWeight: 500,
-                        }}
-                      >
-                        {percent?.toFixed(0)}%
-                      </Typography.Text>
-                    );
-                  }}
-                  style={{
-                    backgroundColor: "#202f3e",
-                    borderRadius: 48,
-                    padding: 6,
-                    zIndex: 99,
-                    position: "relative",
-                  }}
+                <PopularityIndicator
+                  popularity={movie.popularity}
+                  voteCount={movie.voteCount}
+                  voteAverage={movie.voteAverage}
                 />
-                <Space
-                  orientation={"vertical"}
-                  style={{
-                    background: "#202f3e",
-                    height: 48,
-                    borderRadius: 24,
-                    paddingLeft: 36,
-                    paddingRight: 24,
-                    position: "relative",
-                    left: -48,
-                    gap: 0,
-                    justifyContent: "center",
-                    zIndex: 98,
-                  }}
-                >
-                  <Space orientation={"horizontal"} size={8}>
-                    <Typography.Text
-                      strong={true}
-                      style={{
-                        color: "#ffffffdd",
-                        marginBottom: 0,
-                        fontSize: "10px",
-                      }}
-                    >
-                      Vote Count:
-                    </Typography.Text>
-                    <Typography.Text
-                      style={{
-                        color: "#ffffffdd",
-                        marginBottom: 0,
-                        fontSize: "10px",
-                      }}
-                    >
-                      {movie.voteCount.toLocaleString()}
-                    </Typography.Text>
-                  </Space>
-                  <Space orientation={"horizontal"} size={8}>
-                    <Typography.Text
-                      strong={true}
-                      style={{
-                        color: "#ffffffdd",
-                        marginBottom: 0,
-                        fontSize: "10px",
-                      }}
-                    >
-                      Popularity:
-                    </Typography.Text>
-                    <Typography.Text
-                      style={{
-                        color: "#ffffffdd",
-                        marginBottom: 0,
-                        fontSize: "10px",
-                      }}
-                    >
-                      {movie.popularity.toFixed(2)}
-                    </Typography.Text>
-                  </Space>
-                </Space>
                 <Space
                   size={16}
                   orientation={"horizontal"}

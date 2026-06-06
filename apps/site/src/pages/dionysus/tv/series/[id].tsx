@@ -19,7 +19,6 @@ import {
   Space,
   Spin,
   Typography,
-  Splitter,
   Tabs,
   Button,
   Tag,
@@ -44,6 +43,7 @@ import MovieImagesPanel from "../../../../components/dionysus/metadata/MovieImag
 import MovieProductionCompaniesPanel from "../../../../components/dionysus/metadata/MovieProductionCompaniesPanel";
 import MovieVideoPanel from "../../../../components/dionysus/metadata/MovieVideoPanel";
 import SearchConfigurationButton from "../../../../components/dionysus/media/SearchConfigurationButton";
+import PopularityIndicator from "../../../../components/dionysus/metadata/PopulairtyIndicator";
 import TvCastList from "../../../../components/dionysus/metadata/TvCastList";
 import TvEpisodeSummaryCard from "../../../../components/dionysus/metadata/TvEpisodeSummaryCard";
 import TvSeasonSummaryCard from "../../../../components/dionysus/metadata/TvSeasonSummaryCard";
@@ -51,7 +51,6 @@ import TvSeriesCastList from "../../../../components/dionysus/metadata/TvSeriesC
 import TvSeriesCrewList from "../../../../components/dionysus/metadata/TvSeriesCrewList";
 import TvSeriesList from "../../../../components/dionysus/metadata/TvSeriesList";
 import TvSeriesPosterCard from "../../../../components/dionysus/metadata/TvSeriesPosterCard";
-import { getProgressColor } from "../../../../components/dionysus/metadata/util";
 import CollapsibleTabPanel from "../../../../components/layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
@@ -789,90 +788,11 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                 size={16}
                 style={{ marginTop: 16, alignItems: "center" }}
               >
-                <Progress
-                  type={"circle"}
-                  strokeColor={getProgressColor(tvSeries.popularity * 10 || 0)}
-                  percent={tvSeries.voteAverage * 10}
-                  size={64}
-                  format={(percent) => {
-                    return (
-                      <Typography.Text
-                        style={{
-                          fontSize: "15px",
-                          color: "#efefef",
-                          fontWeight: 500,
-                        }}
-                      >
-                        {percent?.toFixed(0)}%
-                      </Typography.Text>
-                    );
-                  }}
-                  style={{
-                    backgroundColor: "#202f3e",
-                    borderRadius: 48,
-                    padding: 6,
-                    zIndex: 99,
-                    position: "relative",
-                  }}
+                <PopularityIndicator
+                  popularity={tvSeries.popularity}
+                  voteCount={tvSeries.voteCount}
+                  voteAverage={tvSeries.voteAverage}
                 />
-                <Space
-                  direction={"vertical"}
-                  style={{
-                    background: "#202f3e",
-                    height: 48,
-                    borderRadius: 24,
-                    paddingLeft: 36,
-                    paddingRight: 24,
-                    position: "relative",
-                    left: -48,
-                    gap: 0,
-                    justifyContent: "center",
-                    zIndex: 98,
-                  }}
-                >
-                  <Space direction={"horizontal"} size={8}>
-                    <Typography.Text
-                      strong={true}
-                      style={{
-                        color: "#ffffffdd",
-                        marginBottom: 0,
-                        fontSize: "10px",
-                      }}
-                    >
-                      Vote Count:
-                    </Typography.Text>
-                    <Typography.Text
-                      style={{
-                        color: "#ffffffdd",
-                        marginBottom: 0,
-                        fontSize: "10px",
-                      }}
-                    >
-                      {tvSeries.voteCount.toLocaleString()}
-                    </Typography.Text>
-                  </Space>
-                  <Space direction={"horizontal"} size={8}>
-                    <Typography.Text
-                      strong={true}
-                      style={{
-                        color: "#ffffffdd",
-                        marginBottom: 0,
-                        fontSize: "10px",
-                      }}
-                    >
-                      Popularity:
-                    </Typography.Text>
-                    <Typography.Text
-                      style={{
-                        color: "#ffffffdd",
-                        marginBottom: 0,
-                        fontSize: "10px",
-                      }}
-                    >
-                      {tvSeries.popularity.toFixed(2)}
-                    </Typography.Text>
-                  </Space>
-                </Space>
                 <Space
                   size={16}
                   direction={"horizontal"}
