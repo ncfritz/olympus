@@ -48,7 +48,6 @@ import { toProductionCompanyAssociationDomainObject } from "./ProductionCompanyC
 export const toDomainObject = (input: GraphQlMovie): Movie => {
   const alternativeTitles: AlternativeTitle[] = [];
   const externalIds: ExternalId[] = [];
-  const genres: GenreAssociation[] = [];
   const images: TypedImage[] = [];
   const keywords: KeywordAssociation[] = [];
   const productionCountries: CountryAssociation[] = [];
@@ -66,14 +65,6 @@ export const toDomainObject = (input: GraphQlMovie): Movie => {
   if (input.externalIds) {
     input.externalIds.forEach((entity) => {
       externalIds.push(toExternalIdDomainObject(entity));
-    });
-  }
-
-  if (input.genres) {
-    input.genres.forEach((entity) => {
-      if (entity.genre) {
-        genres.push(toGenreAssociationDomainObject(entity));
-      }
     });
   }
 
@@ -133,7 +124,6 @@ export const toDomainObject = (input: GraphQlMovie): Movie => {
     ...toSparseDomainObject(input),
     alternativeTitles: alternativeTitles,
     externalIds: externalIds,
-    genres: genres,
     images: images,
     keywords: keywords,
     originalLanguage: toLanguageDomainObject(input.originalLanguage),
@@ -177,6 +167,16 @@ export const toDomainObjectWithCredits = (
 export const toSparseDomainObject = (
   input: GraphQlSparseMovie,
 ): SparseMovie => {
+  const genres: GenreAssociation[] = [];
+
+  if (input.genres) {
+    input.genres.forEach((entity) => {
+      if (entity.genre) {
+        genres.push(toGenreAssociationDomainObject(entity));
+      }
+    });
+  }
+
   return {
     adult: input.adult,
     backdropPath: input.backdropPath,
@@ -199,6 +199,7 @@ export const toSparseDomainObject = (
     voteAverage: input.voteAverage,
     voteCount: input.voteCount,
     video: input.video,
+    genres: genres,
     searchConfiguration: input.searchConfiguration
       ? toSearchConfigurationDomainObject(input.searchConfiguration)
       : undefined,

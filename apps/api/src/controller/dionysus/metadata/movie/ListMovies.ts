@@ -90,6 +90,20 @@ export class ListMoviesController {
           tagline
           title
           video
+          popularity
+          voteAverage
+          voteCount
+          genres {
+            genre {
+              createdTime
+              id
+              lastUpdatedTime
+              name
+              type
+            }
+            createdTime
+            lastUpdatedTime
+          }
           ${SEARCH_CONFIGURATION}
           ${MEDIA_ASSET}
         }

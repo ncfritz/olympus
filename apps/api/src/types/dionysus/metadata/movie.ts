@@ -37,6 +37,7 @@ export type GraphQlSparseMovie = {
   video: boolean;
   voteCount: number;
   voteAverage: number;
+  genres: GraphQlGenreWrapper[];
   originalLanguage: GraphQlLanguage;
   searchConfiguration: GraphQlMediaAssetSearchConfiguration;
   asset?: GraphQlMediaAsset;
@@ -45,7 +46,6 @@ export type GraphQlSparseMovie = {
 export type GraphQlMovie = GraphQlSparseMovie & {
   alternativeTitles: GraphQlAlternativeTitle[];
   externalIds: GraphQlExternalId[];
-  genres: GraphQlGenreWrapper[];
   images: GraphQlTypedImage[];
   keywords: GraphQlKeywordWrapper[];
   productionCountries: GraphQlCountryWrapper[];

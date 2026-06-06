@@ -79,6 +79,17 @@ export class ListMovieRecommendationsController {
               voteAverage
               voteCount
               video
+              genres {
+                genre {
+                  createdTime
+                  id
+                  lastUpdatedTime
+                  name
+                  type
+                }
+                createdTime
+                lastUpdatedTime
+              }
               ${SEARCH_CONFIGURATION}
               ${MEDIA_ASSET}
             }
