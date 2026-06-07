@@ -114,7 +114,7 @@ const PeopleIndexPage: React.FunctionComponent = () => {
           </LoadingWrapper>
         </Col>
       </Row>
-      <Space direction={"vertical"} size={2} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} size={2} style={{ width: "100%" }}>
         <PersonList
           title={"Actors"}
           listType={"top actors"}

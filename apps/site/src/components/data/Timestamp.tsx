@@ -61,7 +61,7 @@ const Timestamp: React.FunctionComponent<TimestampProps> = ({
         style={{ width: 250 }}
         placement={"bottomLeft"}
       >
-        <Space direction={"horizontal"} size={8} align={"center"}>
+        <Space orientation={"horizontal"} size={8} align={"center"}>
           {showIcon && icon}
           <Space
             direction={direction}

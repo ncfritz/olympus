@@ -136,13 +136,13 @@ const PreviousMeeting: React.FunctionComponent<PreviousMeetingProps> = ({
                 marginBottom: notesOpen ? 8 : 0,
               }}
             >
-              <Space direction={"horizontal"} size={8}>
+              <Space orientation={"horizontal"} size={8}>
                 <CalendarOutlined />
                 <Typography.Text style={{ fontSize: "12px" }}>
                   {startTime.toFormat("DDDD")}
                 </Typography.Text>
               </Space>
-              <Space direction={"horizontal"} size={8}>
+              <Space orientation={"horizontal"} size={8}>
                 <ClockCircleOutlined />
                 <Typography.Text style={{ fontSize: "12px" }}>
                   {startTime.toFormat("t")} - {endTime.toFormat("t")}
@@ -151,7 +151,7 @@ const PreviousMeeting: React.FunctionComponent<PreviousMeetingProps> = ({
             </Space>
           ),
           children: (
-            <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+            <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
               {timelineContents}
             </Space>
           ),

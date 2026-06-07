@@ -98,7 +98,7 @@ const PersonDetailPage: React.FunctionComponent = () => {
       : "/section_header.png";
 
     const overview = (
-      <Space direction={"vertical"} size={0} style={{ marginRight: 16 }}>
+      <Space orientation={"vertical"} size={0} style={{ marginRight: 16 }}>
         <Typography.Title
           style={{ color: "#666666", marginBottom: 0 }}
           level={4}
@@ -122,7 +122,7 @@ const PersonDetailPage: React.FunctionComponent = () => {
         key: "t-info-timeline",
         label: <CalendarOutlined />,
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space orientation={"vertical"} style={{ width: "100%", padding: 16 }}>
             <PersonHistoryTimeline
               movieRoles={castCredits}
               movieJobs={crewCredits}
@@ -244,7 +244,7 @@ const PersonDetailPage: React.FunctionComponent = () => {
                   <Description
                     title={"Also Known As"}
                     value={
-                      <Space direction={"vertical"} size={2}>
+                      <Space orientation={"vertical"} size={2}>
                         {person.alsoKnownAs.map((item) => item.name)}
                       </Space>
                     }

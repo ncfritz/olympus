@@ -62,7 +62,7 @@ const UploadPanel: React.FunctionComponent<UploadPanelProps> = ({
     }
 
     content = (
-      <Space direction={"vertical"} size={8}>
+      <Space orientation={"vertical"} size={8}>
         {statusContent}
         <StepProgress title={"Upload"} step={step} />,
       </Space>

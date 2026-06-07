@@ -6,7 +6,7 @@ const SynologyChatDestinationForm: React.FunctionComponent<
   DestinationFormProps
 > = ({ control }: DestinationFormProps) => {
   return (
-    <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+    <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
       <Form.Item
         label={"Delivery Type"}
         tooltip={"The type of chat destination to deliver the notification to."}

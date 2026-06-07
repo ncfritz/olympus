@@ -13,7 +13,7 @@ const UUIDRandomValuesPanel: React.FunctionComponent<
   UUIDRandomValuesPanelProps
 > = ({ getInfo }: UUIDRandomValuesPanelProps) => {
   return (
-    <Space direction={"vertical"} size={8}>
+    <Space orientation={"vertical"} size={8}>
       <UUIDRandomValue
         version={1}
         getInfo={getInfo}

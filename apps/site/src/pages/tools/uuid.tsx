@@ -73,7 +73,7 @@ const IndexPage: React.FunctionComponent = () => {
               UUID Utilities
             </Typography.Title>
             <Space
-              direction={"vertical"}
+              orientation={"vertical"}
               size={16}
               style={{
                 margin: 16,
@@ -83,7 +83,7 @@ const IndexPage: React.FunctionComponent = () => {
             >
               <Space
                 size={16}
-                direction={"vertical"}
+                orientation={"vertical"}
                 style={{ width: "100%", paddingRight: 16 }}
               >
                 <Card
@@ -198,7 +198,7 @@ const IndexPage: React.FunctionComponent = () => {
               About UUIDs
             </Typography.Title>
             <Space
-              direction={"vertical"}
+              orientation={"vertical"}
               size={16}
               style={{
                 position: "fixed",

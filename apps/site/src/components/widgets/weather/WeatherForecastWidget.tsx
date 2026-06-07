@@ -112,7 +112,7 @@ const WeatherForecastWidget: React.FunctionComponent = () => {
           <Typography.Title level={5}>Weather</Typography.Title>
           <Popover
             content={
-              <Space direction={"vertical"} style={{ width: "100%" }}>
+              <Space orientation={"vertical"} style={{ width: "100%" }}>
                 {popoverContent}
               </Space>
             }

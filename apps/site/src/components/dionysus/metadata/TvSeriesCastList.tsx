@@ -40,7 +40,7 @@ const TvSeriesCastList: React.FunctionComponent<TvSeriesCastList> = ({
   const columns = layout === "grid" ? 12 : 1;
 
   return (
-    <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+    <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
       <Space
         direction={"horizontal"}
         style={{
@@ -95,7 +95,7 @@ const TvSeriesCastList: React.FunctionComponent<TvSeriesCastList> = ({
         renderItem={(item) => {
           const rolesContent = item.roles.map((role) => {
             return (
-              <Space direction={"horizontal"}>
+              <Space orientation={"horizontal"}>
                 <Typography.Text style={{ fontSize: "11px" }}>
                   {role.character}
                 </Typography.Text>
@@ -130,7 +130,7 @@ const TvSeriesCastList: React.FunctionComponent<TvSeriesCastList> = ({
                         style={{ alignItems: "start" }}
                       >
                         <InfoCircleOutlined />
-                        <Space direction={"vertical"} size={2}>
+                        <Space orientation={"vertical"} size={2}>
                           {`${item.totalEpisodeCount} episode${item.totalEpisodeCount > 1 ? "s" : ""}`}
                           {`${item.roles.length} role${item.roles.length > 1 ? "s" : ""}`}
                         </Space>

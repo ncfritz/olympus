@@ -49,7 +49,7 @@ const OnAirOverrideEvent: React.FunctionComponent<OnAirOverrideEventProps> = ({
           justifyContent: "space-between",
         }}
       >
-        <Space direction={"horizontal"}>
+        <Space orientation={"horizontal"}>
           <div
             className={`oa-light-status-${
               event.extendedProps.status || "clear"

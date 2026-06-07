@@ -81,7 +81,7 @@ const MeetingNoteAssociation: React.FunctionComponent<AssociatedItemProps> = ({
     );
   } else {
     content = (
-      <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
         <Space
           direction={"horizontal"}
           className={`oa-event oa-status-${meeting.status.toLowerCase()} minerva-event`}
@@ -109,7 +109,7 @@ const MeetingNoteAssociation: React.FunctionComponent<AssociatedItemProps> = ({
             direction={"horizontal"}
             style={{ alignItems: "center" }}
           >
-            <Space direction={"horizontal"}>
+            <Space orientation={"horizontal"}>
               <Typography.Text
                 style={{ paddingBottom: 2, margin: 0, fontSize: 13 }}
               >

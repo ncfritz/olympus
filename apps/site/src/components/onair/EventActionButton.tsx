@@ -29,7 +29,7 @@ const EventActionButtion: React.FunctionComponent<EventActionButtonProps> = ({
         alignItems: "start",
       }}
     >
-      <Space direction={"horizontal"} style={{ width: "100%" }} size={8}>
+      <Space orientation={"horizontal"} style={{ width: "100%" }} size={8}>
         <div
           style={{
             width: 18,

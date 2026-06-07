@@ -181,7 +181,7 @@ const MovieCrewList: React.FunctionComponent<MovieCrewListProps> = ({
   }
 
   return (
-    <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+    <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
       {filterable && (
         <Space
           direction={"horizontal"}

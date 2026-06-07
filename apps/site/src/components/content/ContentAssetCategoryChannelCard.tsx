@@ -113,7 +113,7 @@ const ContentAssetCategoryChannelCard: React.FunctionComponent<
           content.push(getChannelCard(258));
         } else {
           content.push(
-            <Space direction={"vertical"} style={{ alignItems: "start" }}>
+            <Space orientation={"vertical"} style={{ alignItems: "start" }}>
               {getChannelCard(125)}
             </Space>,
           );
@@ -131,7 +131,7 @@ const ContentAssetCategoryChannelCard: React.FunctionComponent<
           largeImages++;
         } else {
           content.push(
-            <Space direction={"vertical"} style={{ alignItems: "start" }}>
+            <Space orientation={"vertical"} style={{ alignItems: "start" }}>
               {i < channel.assetCache.length
                 ? getAssetImage(channel.assetCache[i], 125)
                 : getChannelCard(125)}
@@ -157,7 +157,7 @@ const ContentAssetCategoryChannelCard: React.FunctionComponent<
       }}
       styles={{ body: { padding: 8 } }}
     >
-      <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
         <Space
           direction={"horizontal"}
           size={0}
@@ -169,13 +169,13 @@ const ContentAssetCategoryChannelCard: React.FunctionComponent<
             {channel.name}
           </Typography.Text>
           <Typography.Text style={{ fontSize: "12px", color: "#666666" }}>
-            <Space direction={"horizontal"}>
+            <Space orientation={"horizontal"}>
               <PlayCircleOutlined />
               {channel.assetCount}
             </Space>
           </Typography.Text>
         </Space>
-        <Space direction={"horizontal"} size={8}>
+        <Space orientation={"horizontal"} size={8}>
           {content}
         </Space>
       </Space>

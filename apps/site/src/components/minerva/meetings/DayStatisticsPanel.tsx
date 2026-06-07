@@ -161,8 +161,8 @@ const DayStatisticsPanel: React.FunctionComponent<DayStatisticsPanelProps> = ({
   }
 
   return (
-    <Space direction={"vertical"} style={{ width: "100%" }}>
-      <Space direction={"vertical"} style={{ width: "100%" }}>
+    <Space orientation={"vertical"} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} style={{ width: "100%" }}>
         <Typography.Text strong={true} style={{ marginLeft: 8 }}>
           Top Attendees:
         </Typography.Text>

@@ -50,7 +50,7 @@ const EmailDestinationForm: React.FunctionComponent<
   const bccFieldState = control.getFieldState(`${formPathPrefix}.bcc`);
 
   return (
-    <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+    <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
       {formPathPrefix !== "synoMailDestination" && (
         <Controller
           name={`${formPathPrefix}.priority`}

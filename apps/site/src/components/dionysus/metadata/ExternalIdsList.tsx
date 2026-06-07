@@ -15,7 +15,7 @@ export const ExternalIdsList: React.FunctionComponent<ExternalIdsListProps> = ({
 
   if (ids && ids.length > 0) {
     content = (
-      <Space direction={"vertical"} style={{ width: "100%" }} size={0}>
+      <Space orientation={"vertical"} style={{ width: "100%" }} size={0}>
         {ids.map((item) => {
           return (
             <Row gutter={8} style={{ height: 25, alignItems: "center" }}>

@@ -57,7 +57,7 @@ const MetadataLanguagesPage: React.FunctionComponent = () => {
       dataIndex: "id",
       render: (value, record) => {
         return (
-          <Space direction={"horizontal"} size={8} align={"center"}>
+          <Space orientation={"horizontal"} size={8} align={"center"}>
             <ReactCountryFlag
               countryCode={record.id}
               cdnUrl={"/flags/"}
@@ -77,7 +77,7 @@ const MetadataLanguagesPage: React.FunctionComponent = () => {
       dataIndex: "name",
       render: (value, record) => {
         return (
-          <Space direction={"horizontal"} size={8} align={"center"}>
+          <Space orientation={"horizontal"} size={8} align={"center"}>
             <Typography>{record.name}</Typography>
           </Space>
         );
@@ -91,7 +91,7 @@ const MetadataLanguagesPage: React.FunctionComponent = () => {
       dataIndex: "nativeName",
       render: (value, record) => {
         return (
-          <Space direction={"horizontal"} size={8} align={"center"}>
+          <Space orientation={"horizontal"} size={8} align={"center"}>
             <Typography>{record.nativeName}</Typography>
           </Space>
         );

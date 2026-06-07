@@ -138,7 +138,7 @@ const PersonHistoryTimeline: React.FunctionComponent<
             }}
           >
             <Typography.Text style={{ fontSize: "11px" }}>
-              <Space direction={"horizontal"} size={4}>
+              <Space orientation={"horizontal"} size={4}>
                 {part.creditType === "cast" ? (
                   <UserOutlined />
                 ) : (

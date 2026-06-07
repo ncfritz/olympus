@@ -509,7 +509,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
             Set Status & Republish
           </Button>
         </Space>
-        <Space direction={"horizontal"} size={8}>
+        <Space orientation={"horizontal"} size={8}>
           <Typography.Text strong={true}>Delete:</Typography.Text>
           <Button
             type={"primary"}
@@ -584,7 +584,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
               return `${percent?.toFixed(0)}%`;
             }}
           />
-          <Space direction={"horizontal"} size={64}>
+          <Space orientation={"horizontal"} size={64}>
             <Statistic title={"To Publish"} value={selectedRows.length} />
             <Statistic title={"Success"} value={processingStatus.success} />
             <Statistic title={"Skipped"} value={processingStatus.skipped} />

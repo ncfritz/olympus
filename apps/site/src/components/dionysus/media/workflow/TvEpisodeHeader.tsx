@@ -57,7 +57,7 @@ const TvEpisodeHeader: React.FunctionComponent<TvEpisodeHeaderProps> = ({
 
     if (episode.series.genres && episode.series.genres.length > 0) {
       titleDecorations.push(
-        <Space direction={"horizontal"} size={4}>
+        <Space orientation={"horizontal"} size={4}>
           {episode.series.genres.map((genre) => {
             return (
               <Typography.Text
@@ -159,7 +159,7 @@ const TvEpisodeHeader: React.FunctionComponent<TvEpisodeHeaderProps> = ({
             >
               Episode {episode.episodeNumber}: {episode.name}
             </Typography.Title>
-            <Space direction={"horizontal"}>{titleDecorations}</Space>
+            <Space orientation={"horizontal"}>{titleDecorations}</Space>
           </Space>
         </Space>
       </Space>

@@ -15,7 +15,7 @@ const ContentAssetSizeDisplay: React.FunctionComponent<
     100;
 
   return (
-    <Space direction={"vertical"} size={0} style={{ width: 300 }}>
+    <Space orientation={"vertical"} size={0} style={{ width: 300 }}>
       <Row>
         <Col span={24}>
           <Progress

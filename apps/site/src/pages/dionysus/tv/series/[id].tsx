@@ -168,7 +168,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
 
     if (tvSeries.genres && tvSeries.genres.length > 0) {
       titleDecorations.push(
-        <Space direction={"horizontal"} size={4}>
+        <Space orientation={"horizontal"} size={4}>
           {tvSeries.genres.map((genre) => {
             return (
               <Typography.Text
@@ -190,7 +190,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
     }
 
     const overview = tvSeries.overview ? (
-      <Space direction={"vertical"} size={0}>
+      <Space orientation={"vertical"} size={0}>
         <Typography.Title
           style={{ color: "#efefef", marginBottom: 0 }}
           level={4}
@@ -210,9 +210,12 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-main-general",
         label: "Overview",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", padding: 16 }}
+          >
             <Space
-              direction={"horizontal"}
+              orientation={"horizontal"}
               style={{
                 width: "100%",
                 alignItems: "center",
@@ -243,7 +246,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               <TvCastList cast={cast?.length > 0 ? cast.slice(0, 12) : []} />
             </LoadingWrapper>
             {tvSeries.lastEpisodeToAir && (
-              <Space direction={"vertical"} style={{ width: "100%" }}>
+              <Space orientation={"vertical"} style={{ width: "100%" }}>
                 <Typography.Title level={4} style={{ marginBottom: 0 }}>
                   Latest Episode
                 </Typography.Title>
@@ -257,7 +260,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               </Space>
             )}
             {tvSeries.nextEpisodeToAir && (
-              <Space direction={"vertical"} style={{ width: "100%" }}>
+              <Space orientation={"vertical"} style={{ width: "100%" }}>
                 <Typography.Title level={4} style={{ marginBottom: 0 }}>
                   Next Episode
                 </Typography.Title>
@@ -271,7 +274,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               </Space>
             )}
             {tvSeries.seasons.length > 0 && (
-              <Space direction={"vertical"} style={{ width: "100%" }}>
+              <Space orientation={"vertical"} style={{ width: "100%" }}>
                 <Typography.Title level={4} style={{ marginBottom: 0 }}>
                   Latest Season
                 </Typography.Title>
@@ -294,7 +297,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               </Space>
             )}
             <Space
-              direction={"horizontal"}
+              orientation={"horizontal"}
               style={{
                 width: "100%",
                 alignItems: "center",
@@ -337,7 +340,10 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-main-seasons",
         label: "Seasons",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", padding: 16 }}
+          >
             {tvSeries.seasons.map((entry) => {
               return (
                 <TvSeasonSummaryCard
@@ -366,7 +372,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-main-cast",
         label: "Cast",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%" }}>
+          <Space orientation={"vertical"} style={{ width: "100%" }}>
             <LoadingWrapper
               loading={castLoading}
               error={castError}
@@ -381,7 +387,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-main-crew",
         label: "Crew",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%" }}>
+          <Space orientation={"vertical"} style={{ width: "100%" }}>
             <LoadingWrapper
               loading={crewLoading}
               error={crewError}
@@ -396,7 +402,10 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-main-recommendations",
         label: "Recommendations",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", padding: 16 }}
+          >
             <LoadingWrapper
               loading={crewLoading}
               error={crewError}
@@ -428,7 +437,10 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-main-prodCompany",
         label: "Production Companies",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", padding: 16 }}
+          >
             <MovieProductionCompaniesPanel
               productionCompanies={tvSeries.productionCompanies}
             />
@@ -442,15 +454,15 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-info-general",
         label: <InfoCircleFilled />,
         children: (
-          <Space direction={"vertical"} style={{ margin: 12, width: "100%" }}>
-            <Space direction={"vertical"} style={{ width: "100%" }}>
+          <Space orientation={"vertical"} style={{ margin: 12, width: "100%" }}>
+            <Space orientation={"vertical"} style={{ width: "100%" }}>
               <Description
                 title={"Networks"}
                 value={
                   tvSeries.networks.length > 0 ? (
                     <Space
                       size={8}
-                      direction={"horizontal"}
+                      orientation={"horizontal"}
                       style={{ alignItems: "center" }}
                     >
                       <Link
@@ -474,12 +486,12 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               title={"Origin Countries"}
               value={
                 tvSeries.originCountries.length > 0 ? (
-                  <Space direction={"vertical"} size={2}>
+                  <Space orientation={"vertical"} size={2}>
                     {tvSeries.originCountries.map((item) => {
                       return (
                         <Space
                           size={8}
-                          direction={"horizontal"}
+                          orientation={"horizontal"}
                           style={{ alignItems: "center" }}
                         >
                           <ReactCountryFlag
@@ -504,12 +516,12 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               title={"Locations"}
               value={
                 tvSeries.productionCountries.length > 0 ? (
-                  <Space direction={"vertical"} size={2}>
+                  <Space orientation={"vertical"} size={2}>
                     {tvSeries.productionCountries.map((item) => {
                       return (
                         <Space
                           size={8}
-                          direction={"horizontal"}
+                          orientation={"horizontal"}
                           style={{ alignItems: "center" }}
                         >
                           <ReactCountryFlag
@@ -534,8 +546,8 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               title={"Original Language"}
               value={
                 tvSeries.originalLanguage ? (
-                  <Space direction={"vertical"} size={8}>
-                    <Space size={8} direction={"horizontal"}>
+                  <Space orientation={"vertical"} size={8}>
+                    <Space size={8} orientation={"horizontal"}>
                       <ReactCountryFlag
                         countryCode={tvSeries.originalLanguage.id}
                         cdnUrl={"/flags/"}
@@ -566,10 +578,10 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               title={"Spoken Languages"}
               value={
                 tvSeries.spokenLanguages.length > 0 ? (
-                  <Space direction={"vertical"} size={8}>
+                  <Space orientation={"vertical"} size={8}>
                     {tvSeries.spokenLanguages.map((item) => {
                       return (
-                        <Space size={8} direction={"horizontal"}>
+                        <Space size={8} orientation={"horizontal"}>
                           <ReactCountryFlag
                             countryCode={item.language.id}
                             cdnUrl={"/flags/"}
@@ -604,7 +616,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                 tvSeries.keywords.length > 0 ? (
                   <Space
                     size={0}
-                    direction={"horizontal"}
+                    orientation={"horizontal"}
                     style={{
                       display: "flex",
                       flexWrap: "wrap",
@@ -638,7 +650,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
           <Space
             size={0}
             style={{ width: "100%", padding: 16 }}
-            direction={"vertical"}
+            orientation={"vertical"}
           ></Space>
         ),
       },
@@ -649,7 +661,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
           <Space
             size={0}
             style={{ width: "100%", padding: 16 }}
-            direction={"vertical"}
+            orientation={"vertical"}
           >
             <Typography.Title level={5}>Alternative Titles:</Typography.Title>
             <MovieAlternativeTitlesList
@@ -669,7 +681,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               padding: 16,
               alignItems: "center",
             }}
-            direction={"vertical"}
+            orientation={"vertical"}
           >
             <QRCode
               style={{ marginTop: 64 }}
@@ -688,7 +700,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
           <Space
             size={0}
             style={{ width: "100%", padding: 16 }}
-            direction={"vertical"}
+            orientation={"vertical"}
           >
             <MetadataFetchJobPanel id={tvSeries.id} type={"tv_series"} />
           </Space>
@@ -701,7 +713,10 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-main-searchResults",
         label: "Search Results",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", padding: 16 }}
+          >
             fff
           </Space>
         ),
@@ -711,7 +726,10 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-info-searchConfig",
         label: <EyeOutlined />,
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", padding: 16 }}
+          >
             <Typography.Title level={5}>Search Executions:</Typography.Title>
             <SearchConfigurationPanel
               searchConfiguration={searchConfiguration}
@@ -723,14 +741,14 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
 
     content = (
       <Space
-        direction={"vertical"}
+        orientation={"vertical"}
         size={0}
         style={{ width: "100%", height: "100%" }}
         styles={{ item: { width: "100%" } }}
       >
         <Space
           size={0}
-          direction={"vertical"}
+          orientation={"vertical"}
           className={"movieHeader"}
           style={{
             minHeight: 522,
@@ -750,7 +768,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
           }}
         >
           <Space
-            direction={"horizontal"}
+            orientation={"horizontal"}
             size={32}
             style={{
               width: "100%",
@@ -760,7 +778,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
             }}
           >
             <Space
-              direction={"vertical"}
+              orientation={"vertical"}
               size={0}
               style={{ marginLeft: 32, marginBottom: 32 }}
             >
@@ -773,7 +791,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               />
             </Space>
             <Space
-              direction={"vertical"}
+              orientation={"vertical"}
               style={{ width: "100%", height: "100%", alignItems: "top" }}
             >
               <Typography.Title
@@ -782,9 +800,9 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               >
                 {tvSeries?.name}
               </Typography.Title>
-              <Space direction={"horizontal"}>{titleDecorations}</Space>
+              <Space orientation={"horizontal"}>{titleDecorations}</Space>
               <Space
-                direction={"horizontal"}
+                orientation={"horizontal"}
                 size={16}
                 style={{ marginTop: 16, alignItems: "center" }}
               >
@@ -795,7 +813,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                 />
                 <Space
                   size={16}
-                  direction={"horizontal"}
+                  orientation={"horizontal"}
                   style={{ left: -48, position: "relative" }}
                 >
                   <Button
@@ -823,11 +841,11 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                   />
                 </Space>
               </Space>
-              <Space direction={"vertical"} style={{ marginTop: 16 }}>
+              <Space orientation={"vertical"} style={{ marginTop: 16 }}>
                 {tagline}
                 {overview}
                 {tvSeries.createdBy.length > 0 && (
-                  <Space direction={"vertical"} size={0}>
+                  <Space orientation={"vertical"} size={0}>
                     <Typography.Title
                       style={{
                         color: "#efefef",
@@ -838,10 +856,10 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                     >
                       Created By
                     </Typography.Title>
-                    <Space direction={"horizontal"} size={32}>
+                    <Space orientation={"horizontal"} size={32}>
                       {tvSeries.createdBy.map((entry) => {
                         return (
-                          <Space direction={"horizontal"} size={8}>
+                          <Space orientation={"horizontal"} size={8}>
                             <Avatar
                               shape={"circle"}
                               size={64}
@@ -868,7 +886,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
           </Space>
         </Space>
         <Space
-          direction={"horizontal"}
+          orientation={"horizontal"}
           style={{ width: "100%", position: "relative" }}
           styles={{
             item: {

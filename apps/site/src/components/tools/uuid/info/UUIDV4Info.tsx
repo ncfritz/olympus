@@ -9,7 +9,7 @@ const UUIDV4Info: ItemType = {
   label: "Version 4",
   styles: styles,
   children: (
-    <Space direction={"vertical"} size={8}>
+    <Space orientation={"vertical"} size={8}>
       <Typography.Text>
         Version-4 UUIDs are randomly generated. There are over 5.3 x 1036 unique
         v4 UUIDs. This is the most common UUID version.

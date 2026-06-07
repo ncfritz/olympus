@@ -143,7 +143,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
       : undefined;
 
     const overview = tvSeason.overview ? (
-      <Space direction={"vertical"} size={0} style={{ padding: 16 }}>
+      <Space orientation={"vertical"} size={0} style={{ padding: 16 }}>
         <Typography.Title
           style={{ color: "#222222", marginBottom: 0 }}
           level={4}
@@ -191,7 +191,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-main-cast",
         label: "Cast",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%" }}>
+          <Space orientation={"vertical"} style={{ width: "100%" }}>
             <LoadingWrapper
               loading={castLoading}
               error={castError}
@@ -206,7 +206,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-main-crew",
         label: "Crew",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space orientation={"vertical"} style={{ width: "100%", padding: 16 }}>
             <LoadingWrapper
               loading={crewLoading}
               error={crewError}
@@ -236,7 +236,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-info-episodes",
         label: <CalendarOutlined />,
         children: (
-          <Space direction={"vertical"} style={{ margin: 0, width: "100%" }}>
+          <Space orientation={"vertical"} style={{ margin: 0, width: "100%" }}>
             <SeasonEpisodeCalendar episodes={tvSeason.episodes} />
           </Space>
         ),
@@ -287,7 +287,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-main-searchResults",
         label: "Search Results",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space orientation={"vertical"} style={{ width: "100%", padding: 16 }}>
             fff
           </Space>
         ),
@@ -297,7 +297,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         key: "t-info-searchConfig",
         label: <EyeOutlined />,
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space orientation={"vertical"} style={{ width: "100%", padding: 16 }}>
             <Typography.Title level={5}>Search Executions:</Typography.Title>
             <SearchConfigurationPanel
               searchConfiguration={searchConfiguration}
@@ -464,7 +464,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                 alignItems: "start",
               }}
             >
-              <Space direction={"vertical"} style={{ padding: 16 }}>
+              <Space orientation={"vertical"} style={{ padding: 16 }}>
                 <Image
                   src={`https://image.tmdb.org/t/p/w342/${tvSeason.posterPath}}`}
                   width={275}

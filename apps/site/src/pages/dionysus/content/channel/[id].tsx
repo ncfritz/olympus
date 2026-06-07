@@ -145,7 +145,7 @@ const ChannelDetailsPage: React.FunctionComponent = () => {
                 <VideoCameraOutlined />
                 <span>
                   {!channel || channelLoading ? (
-                    <Space direction={"horizontal"}>
+                    <Space orientation={"horizontal"}>
                       <LoadingOutlined spin={true} />
                       Loading...
                     </Space>
@@ -172,15 +172,15 @@ const ChannelDetailsPage: React.FunctionComponent = () => {
               borderBottom: "1px solid #efefef",
             }}
           >
-            <Space direction={"vertical"} style={{ padding: 16 }} size={8}>
-              <Space direction={"vertical"} size={0}>
+            <Space orientation={"vertical"} style={{ padding: 16 }} size={8}>
+              <Space orientation={"vertical"} size={0}>
                 <Typography.Title
                   level={4}
                   style={{ color: "#999999", marginBottom: 0 }}
                 >
                   {channel.name}
                 </Typography.Title>
-                <Space direction={"horizontal"} size={8}>
+                <Space orientation={"horizontal"} size={8}>
                   <Typography.Text
                     style={{ fontSize: "11px", color: "#666666" }}
                   >
@@ -217,7 +217,7 @@ const ChannelDetailsPage: React.FunctionComponent = () => {
               </Space>
               <Typography.Text>{channel.description}</Typography.Text>
             </Space>
-            <Space direction={"horizontal"} style={{ padding: 16 }}>
+            <Space orientation={"horizontal"} style={{ padding: 16 }}>
               <Button
                 type={"primary"}
                 icon={<EditOutlined />}

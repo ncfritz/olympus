@@ -27,7 +27,7 @@ const CheckboxFilter: React.FunctionComponent<CheckboxFilterProps> = ({
     return {
       ...item,
       label: (
-        <Space direction={"horizontal"}>
+        <Space orientation={"horizontal"}>
           <Checkbox checked={selectedKeys.includes(item.key.toString())} />
           {item.label}
         </Space>

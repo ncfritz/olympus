@@ -135,8 +135,8 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
 
       if (DASH_LOCATIONS.indexOf(index) >= 0) {
         uuidDisplay.push(
-          <Space direction={"vertical"} size={16}>
-            <Space direction={"vertical"} size={4}>
+          <Space orientation={"vertical"} size={16}>
+            <Space orientation={"vertical"} size={4}>
               <div
                 style={{
                   minWidth: 16,
@@ -168,7 +168,7 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
       const timestamp = v1time(parsed);
 
       versionInfoPanel = (
-        <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>
+        <Space orientation={"vertical"} size={8} style={{ marginTop: 16 }}>
           <UUIDPartRow
             label={"time_low"}
             types={[TIME_LOW]}
@@ -255,7 +255,7 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
       const hash = [];
 
       versionInfoPanel = (
-        <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>
+        <Space orientation={"vertical"} size={8} style={{ marginTop: 16 }}>
           <UUIDPartRow
             label={version === 3 ? "hash_md5" : "hash_sha1"}
             types={[version === 3 ? HASH_MD5 : HASH_SHA1]}
@@ -278,7 +278,7 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
       );
     } else if (version === 4) {
       versionInfoPanel = (
-        <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>
+        <Space orientation={"vertical"} size={8} style={{ marginTop: 16 }}>
           <UUIDPartRow
             label={"random"}
             types={[RANDOM]}
@@ -310,7 +310,7 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
       const timestamp = v6time(parsed);
 
       versionInfoPanel = (
-        <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>
+        <Space orientation={"vertical"} size={8} style={{ marginTop: 16 }}>
           <UUIDPartRow
             label={"time_low"}
             types={[TIME_LOW]}
@@ -399,7 +399,7 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
       const timestamp = DateTime.fromMillis(timestampMs);
 
       versionInfoPanel = (
-        <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>
+        <Space orientation={"vertical"} size={8} style={{ marginTop: 16 }}>
           <UUIDPartRow
             label={"unix_timestamp_ms"}
             types={[UNIX_TS_MS]}
@@ -437,9 +437,9 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
     content = (
       <>
         <Divider />
-        <Space direction={"vertical"} size={16}>
+        <Space orientation={"vertical"} size={16}>
           {error ? (
-            <Space direction={"horizontal"} size={8}>
+            <Space orientation={"horizontal"} size={8}>
               <CloseCircleFilled
                 style={{ color: "#990000", fontSize: "18px" }}
               />
@@ -448,7 +448,7 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
               </Typography.Text>
             </Space>
           ) : (
-            <Space direction={"horizontal"} size={8}>
+            <Space orientation={"horizontal"} size={8}>
               <CheckCircleFilled
                 style={{ color: "#009900", fontSize: "32px" }}
               />
@@ -460,7 +460,7 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
               </Typography.Title>
             </Space>
           )}
-          <Space direction={"horizontal"} size={4}>
+          <Space orientation={"horizontal"} size={4}>
             {uuidDisplay}
           </Space>
           <Divider />
@@ -529,7 +529,7 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
           />
         </Space>
         <Form.Item {...buttonItemLayout} style={{ width: "100%" }}>
-          <Space direction={"horizontal"} size={8} style={{ width: "100%" }}>
+          <Space orientation={"horizontal"} size={8} style={{ width: "100%" }}>
             <Button
               type={"primary"}
               style={{ width: 150 }}

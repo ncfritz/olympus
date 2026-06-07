@@ -326,7 +326,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         key: "t-main-cast",
         label: "Cast",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space orientation={"vertical"} style={{ width: "100%", padding: 16 }}>
             <LoadingWrapper loading={castLoading} error={castError}>
               <TvEpisodeCastList cast={cast} />
             </LoadingWrapper>
@@ -337,7 +337,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         key: "t-main-guest-stars",
         label: "Guest Stars",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space orientation={"vertical"} style={{ width: "100%", padding: 16 }}>
             <LoadingWrapper loading={castLoading} error={castError}>
               <TvEpisodeCastList cast={guestStars} />
             </LoadingWrapper>
@@ -348,7 +348,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         key: "t-main-crew",
         label: "Crew",
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space orientation={"vertical"} style={{ width: "100%", padding: 16 }}>
             <LoadingWrapper loading={crewLoading} error={crewError}>
               <TvEpisodeCrewList crew={crew} />
             </LoadingWrapper>
@@ -374,7 +374,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         key: "t-info-general",
         label: <InfoCircleFilled />,
         children: (
-          <Space direction={"vertical"} style={{ padding: 12, width: "100%" }}>
+          <Space orientation={"vertical"} style={{ padding: 12, width: "100%" }}>
             <Description
               title={"Other Episodes"}
               style={{ width: "100%", paddingRight: 8 }}
@@ -461,7 +461,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         key: "t-info-searchConfig",
         label: <EyeOutlined />,
         children: (
-          <Space direction={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space orientation={"vertical"} style={{ width: "100%", padding: 16 }}>
             <Typography.Title level={5}>Search Executions:</Typography.Title>
             <SearchConfigurationPanel
               searchConfiguration={searchConfiguration}
@@ -471,7 +471,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
       });
     }
     const overview = episode.overview ? (
-      <Space direction={"vertical"} size={0} style={{ padding: 16 }}>
+      <Space orientation={"vertical"} size={0} style={{ padding: 16 }}>
         <Typography.Title
           style={{ color: "#222222", marginBottom: 0 }}
           level={4}
@@ -546,7 +546,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
                   {episode?.series.name}
                 </Typography.Title>
               </Link>
-              <Space direction={"horizontal"} size={2}>
+              <Space orientation={"horizontal"} size={2}>
                 <Link
                   href={`/dionysus/tv/series/${episode.series.id}/season/${episode.seasonNumber}`}
                 >
@@ -678,7 +678,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
                 alignItems: "start",
               }}
             >
-              <Space direction={"vertical"} style={{ padding: 16 }}>
+              <Space orientation={"vertical"} style={{ padding: 16 }}>
                 {stillPath}
                 <Description
                   title={"Air Date"}

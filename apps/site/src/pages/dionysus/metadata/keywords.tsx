@@ -56,7 +56,7 @@ const MetadataKeywordsPage: React.FunctionComponent = () => {
       dataIndex: "id",
       render: (value, record) => {
         return (
-          <Space direction={"horizontal"} size={8} align={"center"}>
+          <Space orientation={"horizontal"} size={8} align={"center"}>
             <Typography>{record.id}</Typography>
           </Space>
         );
@@ -70,7 +70,7 @@ const MetadataKeywordsPage: React.FunctionComponent = () => {
       dataIndex: "value",
       render: (value, record) => {
         return (
-          <Space direction={"horizontal"} size={8} align={"center"}>
+          <Space orientation={"horizontal"} size={8} align={"center"}>
             <Typography>{record.value}</Typography>
           </Space>
         );

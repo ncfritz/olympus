@@ -140,7 +140,7 @@ const PersonList: React.FunctionComponent<PersonListProps> = ({
           justifyContent: "space-between",
         }}
       >
-        <Space direction={"horizontal"} size={8}>
+        <Space orientation={"horizontal"} size={8}>
           <Input
             size={"small"}
             prefix={
@@ -187,7 +187,7 @@ const PersonList: React.FunctionComponent<PersonListProps> = ({
           />
           <AgeRangeFilter label={"Age"} onFiltersSet={setAgeRangeFilter} />
         </Space>
-        <Space direction={"horizontal"} size={8}>
+        <Space orientation={"horizontal"} size={8}>
           <Sorter
             initialSort={sort.field}
             initialDirection={sort.order}
@@ -216,7 +216,7 @@ const PersonList: React.FunctionComponent<PersonListProps> = ({
             <List.Item>
               <Link href={`/dionysus/person/${item.id}`}>
                 <PersonCard person={item} direction={"vertical"}>
-                  <Space direction={"horizontal"} size={8}>
+                  <Space orientation={"horizontal"} size={8}>
                     <Typography.Text strong={true} style={{ fontSize: "10px" }}>
                       Score:
                     </Typography.Text>

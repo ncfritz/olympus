@@ -72,7 +72,7 @@ const ChannelsPage: React.FunctionComponent = () => {
 
   if (categories?.length > 0) {
     categoriesContent = (
-      <Space direction={"vertical"} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} style={{ width: "100%" }}>
         <Space
           direction={"horizontal"}
           style={{ width: "100%", justifyContent: "space-between" }}

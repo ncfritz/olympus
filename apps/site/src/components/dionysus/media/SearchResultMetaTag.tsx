@@ -122,7 +122,7 @@ const SearchResultMetaTag: React.FunctionComponent<
           borderTopLeftRadius: 4,
         }}
       >
-        <Space direction={"horizontal"} size={4} style={{ paddingRight: 4 }}>
+        <Space orientation={"horizontal"} size={4} style={{ paddingRight: 4 }}>
           {getIconForType(tag.type)}
           {getLabelForType(tag.type)}
         </Space>

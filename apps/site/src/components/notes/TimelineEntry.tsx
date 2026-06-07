@@ -327,7 +327,7 @@ const TimelineEntry: React.FunctionComponent<TimelineEntryProps> = ({
           className={entryOpen ? "" : "collapsed"}
         >
           {item.summary && (
-            <Space direction={"vertical"}>
+            <Space orientation={"vertical"}>
               <Typography.Text
                 style={{
                   fontSize: "13px",
@@ -420,7 +420,7 @@ const TimelineEntry: React.FunctionComponent<TimelineEntryProps> = ({
             })}
           </Space>
           {!subEditorOpen && (
-            <Space direction={"horizontal"} style={{ padding: 8 }}>
+            <Space orientation={"horizontal"} style={{ padding: 8 }}>
               <Button
                 size={"small"}
                 ghost={true}

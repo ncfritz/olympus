@@ -65,7 +65,7 @@ const TranscodePanel: React.FunctionComponent<TranscodePanelProps> = ({
       (s) => s.type === "transfer_source",
     );
     content = (
-      <Space direction={"vertical"} size={8}>
+      <Space orientation={"vertical"} size={8}>
         {statusContent}
         {downloadSourceStep && [
           <StepProgress title={"Download Source"} step={downloadSourceStep} />,

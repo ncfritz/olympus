@@ -196,7 +196,7 @@ const TranscriptionButton: React.FunctionComponent<
               flexDirection: "column",
             }}
           >
-            <Space direction={"horizontal"} size={8} style={{ padding: 16 }}>
+            <Space orientation={"horizontal"} size={8} style={{ padding: 16 }}>
               <Typography.Text strong={true}>Transcription</Typography.Text>
             </Space>
             <div

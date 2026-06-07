@@ -41,7 +41,7 @@ const MovieAlternativeTitlesList: React.FunctionComponent<
       const country = countryData.get(countryCode);
 
       content.push(
-        <Space direction={"vertical"} size={4} style={{ marginBottom: 8 }}>
+        <Space orientation={"vertical"} size={4} style={{ marginBottom: 8 }}>
           <Space size={8} direction={"horizontal"}>
             <ReactCountryFlag
               countryCode={country!.id}
@@ -81,7 +81,7 @@ const MovieAlternativeTitlesList: React.FunctionComponent<
   }
 
   return (
-    <Space direction={"vertical"} style={{ width: "100%" }} size={8}>
+    <Space orientation={"vertical"} style={{ width: "100%" }} size={8}>
       {content}
     </Space>
   );

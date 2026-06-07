@@ -70,7 +70,7 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
       dataIndex: "country",
       render: (value, record) => {
         return (
-          <Space direction={"horizontal"} size={8} align={"center"}>
+          <Space orientation={"horizontal"} size={8} align={"center"}>
             <ReactCountryFlag
               countryCode={record.country}
               cdnUrl={"/flags/"}
@@ -90,7 +90,7 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
       dataIndex: "type",
       render: (value, record) => {
         return (
-          <Space direction={"horizontal"} size={8} align={"center"}>
+          <Space orientation={"horizontal"} size={8} align={"center"}>
             {record.type === "Movie" ? <MovieIcon /> : <TvIcon />}
             <Typography.Text>{record.type}</Typography.Text>
           </Space>
@@ -99,7 +99,7 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
       filters: [
         {
           text: (
-            <Space direction={"horizontal"} size={8} align={"center"}>
+            <Space orientation={"horizontal"} size={8} align={"center"}>
               <MovieIcon />
               <Typography.Text>Movie</Typography.Text>
             </Space>
@@ -108,7 +108,7 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
         },
         {
           text: (
-            <Space direction={"horizontal"} size={8} align={"center"}>
+            <Space orientation={"horizontal"} size={8} align={"center"}>
               <TvIcon />
               <Typography.Text>TV</Typography.Text>
             </Space>

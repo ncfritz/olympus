@@ -36,7 +36,7 @@ const Sorter: React.FunctionComponent<SorterProps> = ({
   });
 
   return (
-    <Space direction={"horizontal"}>
+    <Space orientation={"horizontal"}>
       <Dropdown trigger={["click"]} menu={{ items: items }}>
         <Typography.Text
           style={{
@@ -51,7 +51,7 @@ const Sorter: React.FunctionComponent<SorterProps> = ({
           {sortOptions[field] ? sortOptions[field] : "Unknown"}
         </Typography.Text>
       </Dropdown>
-      <Space direction={"vertical"} size={0} style={{ lineHeight: 0 }}>
+      <Space orientation={"vertical"} size={0} style={{ lineHeight: 0 }}>
         <CaretUpOutlined
           style={{
             height: 12,

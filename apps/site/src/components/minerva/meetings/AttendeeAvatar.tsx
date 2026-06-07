@@ -19,21 +19,21 @@ const AttendeeAvatar: React.FunctionComponent<AttendeeAvatarProps> = ({
   }
 
   const popoverContent = (
-    <Space direction={"vertical"} size={0}>
-      <Space direction={"horizontal"} style={{ marginBottom: 8 }}>
+    <Space orientation={"vertical"} size={0}>
+      <Space orientation={"horizontal"} style={{ marginBottom: 8 }}>
         <AttendeeAvatar attendee={attendee} />
-        <Space direction={"vertical"} size={0}>
+        <Space orientation={"vertical"} size={0}>
           <Typography.Title level={5} style={{ paddingBottom: 4, margin: 0 }}>
             {`${attendee.givenName} ${attendee.surname}`}
           </Typography.Title>
           <Typography.Text>{attendee.email}</Typography.Text>
         </Space>
       </Space>
-      <Space direction={"horizontal"}>
+      <Space orientation={"horizontal"}>
         <Typography.Text strong={true}>Attendance:</Typography.Text>
         {attendee.attendance}
       </Space>
-      <Space direction={"horizontal"}>
+      <Space orientation={"horizontal"}>
         <Typography.Text strong={true}>Response</Typography.Text>
         {attendee.response}
       </Space>

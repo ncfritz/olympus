@@ -144,8 +144,8 @@ const ContentAssetChannelCategoryRow: React.FunctionComponent<
       loading={!category || categoryLoading}
       error={categoryError}
     >
-      <Space direction={"vertical"} style={{ width: "100%" }}>
-        <Space direction={"vertical"} size={2} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} style={{ width: "100%" }}>
+        <Space orientation={"vertical"} size={2} style={{ width: "100%" }}>
           <Space
             direction={"horizontal"}
             size={2}
@@ -157,7 +157,7 @@ const ContentAssetChannelCategoryRow: React.FunctionComponent<
             }}
           >
             <Typography.Title level={5} style={{ marginBottom: 0 }}>
-              <Space direction={"horizontal"} size={0}>
+              <Space orientation={"horizontal"} size={0}>
                 {category.name}
                 <Button
                   type={"text"}

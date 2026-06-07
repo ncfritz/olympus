@@ -145,7 +145,7 @@ const TvSeriesCrewList: React.FunctionComponent<TvSeriesCrewListProps> = ({
               const itemJobs = personJobs.get(item.id)!.get(department);
               const jobsInfo = itemJobs!.map((job) => {
                 return (
-                  <Space direction={"horizontal"}>
+                  <Space orientation={"horizontal"}>
                     <Typography.Text style={{ fontSize: "11px" }}>
                       {job.job}
                     </Typography.Text>
@@ -181,7 +181,7 @@ const TvSeriesCrewList: React.FunctionComponent<TvSeriesCrewListProps> = ({
                             style={{ alignItems: "start" }}
                           >
                             <InfoCircleOutlined />
-                            <Space direction={"vertical"} size={2}>
+                            <Space orientation={"vertical"} size={2}>
                               {`${itemJobs!.length} ${itemJobs!.length > 1 ? "jobs" : "job"}`}
                             </Space>
                           </Space>
@@ -215,7 +215,7 @@ const TvSeriesCrewList: React.FunctionComponent<TvSeriesCrewListProps> = ({
   }
 
   return (
-    <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+    <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
       {filterable && (
         <Space
           direction={"horizontal"}

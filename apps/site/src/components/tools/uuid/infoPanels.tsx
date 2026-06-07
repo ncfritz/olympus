@@ -17,7 +17,7 @@ import {
 import UUIDPartRow from "./UUIDPartRow";
 
 export const V1_INFO_PANEL = (
-  <Space direction={"vertical"} size={8}>
+  <Space orientation={"vertical"} size={8}>
     <UUIDPartRow
       label={"time_low"}
       types={[TIME_LOW]}
@@ -74,7 +74,7 @@ export const V1_INFO_PANEL = (
 );
 
 export const V35_INFO_PANEL = (
-  <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>
+  <Space orientation={"vertical"} size={8} style={{ marginTop: 16 }}>
     <UUIDPartRow
       label={"hash_md5"}
       types={[HASH_MD5]}
@@ -99,7 +99,7 @@ export const V35_INFO_PANEL = (
 );
 
 export const V4_INFO_PANEL = (
-  <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>
+  <Space orientation={"vertical"} size={8} style={{ marginTop: 16 }}>
     <UUIDPartRow
       label={"random"}
       types={[RANDOM]}
@@ -115,7 +115,7 @@ export const V4_INFO_PANEL = (
 );
 
 export const V6_INFO_PANEL = (
-  <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>
+  <Space orientation={"vertical"} size={8} style={{ marginTop: 16 }}>
     <UUIDPartRow
       label={"time_high"}
       types={[TIME_HIGH]}
@@ -172,7 +172,7 @@ export const V6_INFO_PANEL = (
 );
 
 export const V7_INFO_PANEL = (
-  <Space direction={"vertical"} size={8} style={{ marginTop: 16 }}>
+  <Space orientation={"vertical"} size={8} style={{ marginTop: 16 }}>
     <UUIDPartRow
       label={"unix ts"}
       types={[UNIX_TS_MS]}

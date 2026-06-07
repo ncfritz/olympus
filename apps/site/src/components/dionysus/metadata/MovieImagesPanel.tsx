@@ -28,7 +28,7 @@ export interface MovieImagesPanelProps {
 
 export const labelRenderer = (language: Language) => {
   return (
-    <Space direction={"horizontal"} size={8}>
+    <Space orientation={"horizontal"} size={8}>
       <ReactCountryFlag
         countryCode={language.id}
         cdnUrl={"/flags/"}
@@ -104,7 +104,7 @@ const MovieImagesPanel: React.FunctionComponent<MovieImagesPanelProps> = ({
 
       options.push(
         <Radio.Button value={item[0]} disabled={imageTypes?.length <= 1}>
-          <Space direction={"horizontal"}>
+          <Space orientation={"horizontal"}>
             <Typography.Text>{item[1]}</Typography.Text>
             <Badge
               size={"small"}
@@ -118,7 +118,7 @@ const MovieImagesPanel: React.FunctionComponent<MovieImagesPanelProps> = ({
     });
 
     content = (
-      <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
         <Space
           direction={"horizontal"}
           style={{
@@ -137,7 +137,7 @@ const MovieImagesPanel: React.FunctionComponent<MovieImagesPanelProps> = ({
           >
             {options}
           </Radio.Group>
-          <Space direction={"horizontal"} size={8}>
+          <Space orientation={"horizontal"} size={8}>
             <Select
               style={{ minWidth: 250 }}
               value={language}

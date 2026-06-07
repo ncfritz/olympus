@@ -43,7 +43,7 @@ const MovieCastList: React.FunctionComponent<MovieCastListProps> = ({
   const columns = layout === "grid" ? 12 : 1;
 
   return (
-    <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+    <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
       {filterable && (
         <Space
           direction={"horizontal"}

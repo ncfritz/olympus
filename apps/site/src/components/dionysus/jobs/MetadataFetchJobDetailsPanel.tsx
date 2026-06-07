@@ -177,7 +177,7 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
           <form onSubmit={handleSubmit(onSubmit)}>
             <Card
               title={
-                <Space direction={"horizontal"} size={8}>
+                <Space orientation={"horizontal"} size={8}>
                   <WarningOutlined />
                   Danger Zone
                 </Space>

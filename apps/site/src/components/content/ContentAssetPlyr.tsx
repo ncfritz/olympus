@@ -158,7 +158,7 @@ export const ContentAssetPlyr: React.FunctionComponent<
             </div>
           </Space>
         </Space>
-        <Space direction={"vertical"}>
+        <Space orientation={"vertical"}>
           <ContentAssetThumbnailGrid
             asset={asset}
             height={thumbnailHeight}

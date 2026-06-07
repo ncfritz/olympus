@@ -135,8 +135,9 @@ const SearchConfigurationButton: React.FunctionComponent<
             root: `pill large ${className}`,
             content: classNames.join(" "),
           }}
+          arrow={false}
           placement={"bottom"}
-          open={open}
+          open={true}
           getPopupContainer={() => buttonRef.current!}
           onOpenChange={(visible) => {
             setOpen(visible);

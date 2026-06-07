@@ -144,7 +144,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
           </Col>
           <Col span={1} />
           <Col span={9} style={{ marginTop: 16 }}>
-            <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+            <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
               <Typography.Text strong={true}>Info</Typography.Text>
               <Row>
                 <Col span={6}>
@@ -203,7 +203,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
         </Row>
         <Row gutter={16} style={{ margin: 16, marginTop: 48 }}>
           <Col span={24}>
-            <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+            <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
               <Typography.Text strong={true}>Similar Content</Typography.Text>
               <SimilarContentAssetsScroller
                 asset={asset}
@@ -213,7 +213,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
           </Col>
         </Row>
         <Row gutter={16} style={{ margin: 16, marginTop: 16 }}>
-          <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+          <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
             <Typography.Text strong={true}>More of Type</Typography.Text>
             <SimilarContentAssetsScroller
               asset={asset}
@@ -222,7 +222,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
           </Space>
         </Row>
         <Row gutter={16} style={{ margin: 16, marginTop: 16 }}>
-          <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+          <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
             <Typography.Text strong={true}>
               More From the Same Sources
             </Typography.Text>
@@ -258,7 +258,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
                     href={"/"}
                     style={{ color: asset ? "#c5c5c5" : "#333333" }}
                   >
-                    <Space direction={"horizontal"} size={4}>
+                    <Space orientation={"horizontal"} size={4}>
                       <HomeOutlined />
                       <span>Home</span>
                     </Space>
@@ -271,7 +271,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
                     href={"/dionysus"}
                     style={{ color: asset ? "#c5c5c5" : "#333333" }}
                   >
-                    <Space direction={"horizontal"} size={4}>
+                    <Space orientation={"horizontal"} size={4}>
                       <ExperimentOutlined />
                       <span>Dionysus</span>
                     </Space>
@@ -284,7 +284,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
                     href={"/dionysus/content"}
                     style={{ color: asset ? "#c5c5c5" : "#333333" }}
                   >
-                    <Space direction={"horizontal"} size={4}>
+                    <Space orientation={"horizontal"} size={4}>
                       <ExperimentOutlined />
                       <span>Content</span>
                     </Space>
@@ -297,7 +297,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
                     href={"/dionysus/content/assets"}
                     style={{ color: asset ? "#c5c5c5" : "#333333" }}
                   >
-                    <Space direction={"horizontal"} size={4}>
+                    <Space orientation={"horizontal"} size={4}>
                       <VideoCameraOutlined />
                       <span>Assets</span>
                     </Space>

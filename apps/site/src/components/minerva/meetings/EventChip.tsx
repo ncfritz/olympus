@@ -47,13 +47,13 @@ const EventChip: React.FunctionComponent<EventChipProps> = ({
       <Typography.Title level={5} style={{ marginBottom: 2, fontSize: 12 }}>
         {titleOverride ? titleOverride : event.subject}
       </Typography.Title>
-      <Space direction={"horizontal"} size={8}>
+      <Space orientation={"horizontal"} size={8}>
         <CalendarOutlined />
         <Typography.Text style={{ fontSize: "12px" }}>
           {start.toFormat("DDDD")}
         </Typography.Text>
       </Space>
-      <Space direction={"horizontal"} size={8}>
+      <Space orientation={"horizontal"} size={8}>
         <ClockCircleOutlined />
         <Typography.Text style={{ fontSize: "12px" }}>
           {start.toFormat("t")} - {end.toFormat("t")}

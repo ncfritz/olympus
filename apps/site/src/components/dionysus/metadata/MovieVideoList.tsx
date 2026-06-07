@@ -93,10 +93,10 @@ const MovieVideoList: React.FunctionComponent<MovieVideoListProps> = ({
                       },
                     }}
                   />
-                  <Space direction={"vertical"} style={{ padding: 16 }}>
+                  <Space orientation={"vertical"} style={{ padding: 16 }}>
                     <Typography.Title level={5}>{item.name}</Typography.Title>
                     {item.official && (
-                      <Space direction={"horizontal"} size={8}>
+                      <Space orientation={"horizontal"} size={8}>
                         <SafetyCertificateFilled style={{ fontSize: "12px" }} />
                         <Typography.Text>Official</Typography.Text>
                       </Space>

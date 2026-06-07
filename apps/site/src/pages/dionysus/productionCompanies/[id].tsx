@@ -217,18 +217,18 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
           size={32}
           style={{ justifyContent: "space-between" }}
         >
-          <Space direction={"vertical"}>
-            <Space direction={"horizontal"} size={4}>
+          <Space orientation={"vertical"}>
+            <Space orientation={"horizontal"} size={4}>
               <Typography.Text strong={true}>ID:</Typography.Text>
               <Typography.Text>{productionCompany?.id}</Typography.Text>
             </Space>
             {productionCompany?.homepage && (
               <Typography.Text>
-                <Space direction={"horizontal"} size={4}>
+                <Space orientation={"horizontal"} size={4}>
                   <HomeOutlined />
                   <Typography.Text strong={true}>Homepage:</Typography.Text>
                   <Link href={productionCompany.homepage}>
-                    <Space direction={"horizontal"} size={4}>
+                    <Space orientation={"horizontal"} size={4}>
                       <Typography.Text
                         style={{ fontSize: "inherit", color: "inherit" }}
                       >
@@ -241,7 +241,7 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
               </Typography.Text>
             )}
             {productionCompany?.headquarters && (
-              <Space direction={"horizontal"} size={8} align={"center"}>
+              <Space orientation={"horizontal"} size={8} align={"center"}>
                 <CrownOutlined />
                 <Typography.Text strong={true}>Headquarters:</Typography.Text>
                 <Typography.Text>
@@ -250,7 +250,7 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
               </Space>
             )}
             {productionCompany?.originCountry && (
-              <Space direction={"horizontal"} size={8} align={"center"}>
+              <Space orientation={"horizontal"} size={8} align={"center"}>
                 <AimOutlined />
                 <Typography.Text strong={true}>Country:</Typography.Text>
                 <ReactCountryFlag
@@ -263,7 +263,7 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
               </Space>
             )}
             {productionCompany?.parent && (
-              <Space direction={"horizontal"} size={8} align={"center"}>
+              <Space orientation={"horizontal"} size={8} align={"center"}>
                 <ClusterOutlined />
                 <Typography.Text strong={true}>Parent:</Typography.Text>
                 <Link
@@ -273,7 +273,7 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
                 </Link>
               </Space>
             )}
-            <Space direction={"horizontal"} size={8} align={"center"}>
+            <Space orientation={"horizontal"} size={8} align={"center"}>
               <CalendarOutlined />
               <Typography.Text strong={true}>Created:</Typography.Text>
               <Timestamp
@@ -283,7 +283,7 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
                 direction={"horizontal"}
               />
             </Space>
-            <Space direction={"horizontal"} size={8} align={"center"}>
+            <Space orientation={"horizontal"} size={8} align={"center"}>
               <CalendarOutlined />
               <Typography.Text strong={true}>Last Updated:</Typography.Text>
               <Timestamp
@@ -352,7 +352,7 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
           },
         ]}
       />
-      <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
         <Space
           direction={"horizontal"}
           style={{
@@ -365,7 +365,7 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
         >
           {content}
           {productionCompany && productionCompany.logoPath && (
-            <Space direction={"vertical"} style={{ margin: 16 }}>
+            <Space orientation={"vertical"} style={{ margin: 16 }}>
               <img
                 src={`https://image.tmdb.org/t/p/w300/${productionCompany.logoPath}`}
                 style={{ maxHeight: 250, marginRight: 32 }}

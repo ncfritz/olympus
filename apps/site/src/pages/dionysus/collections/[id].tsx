@@ -41,7 +41,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
       : "/section_header.png";
 
     const overview = collection.overview ? (
-      <Space direction={"vertical"} size={0}>
+      <Space orientation={"vertical"} size={0}>
         <Typography.Title
           style={{ color: "#efefef", marginBottom: 0 }}
           level={4}
@@ -105,7 +105,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
               >
                 {collection?.name}
               </Typography.Title>
-              <Space direction={"vertical"} style={{ marginTop: 16 }}>
+              <Space orientation={"vertical"} style={{ marginTop: 16 }}>
                 {overview}
               </Space>
             </Space>

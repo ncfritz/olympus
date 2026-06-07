@@ -75,7 +75,7 @@ const MovieCollectionCard: React.FunctionComponent<
             justifyContent: "space-between",
           }}
         >
-          <Space direction={"vertical"}>
+          <Space orientation={"vertical"}>
             <Typography.Text style={{ color: "#efefefcc", fontSize: "24px" }}>
               Part of the {collection.name}
             </Typography.Text>

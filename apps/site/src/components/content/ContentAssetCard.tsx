@@ -45,7 +45,7 @@ const ContentAssetCard: React.FunctionComponent<ContentAssetCardProps> = ({
       style={style}
       styles={{ body: { padding: 8 } }}
     >
-      <Space direction={"vertical"}>
+      <Space orientation={"vertical"}>
         <Typography.Title level={5} style={{ marginBottom: 0 }}>
           {asset.originalName}
         </Typography.Title>
@@ -81,19 +81,19 @@ const ContentAssetCard: React.FunctionComponent<ContentAssetCardProps> = ({
               forceMax={true}
             />
           </Space>
-          <Space direction={"vertical"} size={2}>
+          <Space orientation={"vertical"} size={2}>
             <Typography.Title level={5}>Asset Info</Typography.Title>
-            <Space direction={"horizontal"}>
+            <Space orientation={"horizontal"}>
               <Typography.Text strong={true}>Dimensions:</Typography.Text>
               <Typography.Text>
                 {asset.width}px x {asset.height}px
               </Typography.Text>
             </Space>
-            <Space direction={"horizontal"} style={{ alignItems: "start" }}>
+            <Space orientation={"horizontal"} style={{ alignItems: "start" }}>
               <Typography.Text strong={true}>Size:</Typography.Text>
               <ContentAssetSizeDisplay asset={asset} />
             </Space>
-            <Space direction={"horizontal"}>
+            <Space orientation={"horizontal"}>
               <Typography.Text strong={true}>Duration:</Typography.Text>
               <Typography.Text>
                 {asset.durationMs
@@ -101,11 +101,11 @@ const ContentAssetCard: React.FunctionComponent<ContentAssetCardProps> = ({
                   : "Unknown"}
               </Typography.Text>
             </Space>
-            <Space direction={"horizontal"}>
+            <Space orientation={"horizontal"}>
               <Typography.Text strong={true}>Rating:</Typography.Text>
               <ContentAssetRating asset={asset} />
             </Space>
-            <Space direction={"horizontal"}>
+            <Space orientation={"horizontal"}>
               <Typography.Text strong={true}>Created:</Typography.Text>
               <Timestamp
                 direction={"horizontal"}
@@ -113,7 +113,7 @@ const ContentAssetCard: React.FunctionComponent<ContentAssetCardProps> = ({
                 showTime={true}
               />
             </Space>
-            <Space direction={"horizontal"}>
+            <Space orientation={"horizontal"}>
               <Button
                 type={"primary"}
                 icon={<LinkOutlined />}

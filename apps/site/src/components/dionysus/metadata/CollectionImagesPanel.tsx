@@ -10,7 +10,7 @@ export interface CollectionImagesPanelProps {
 
 export const labelRenderer = (language: Language) => {
   return (
-    <Space direction={"horizontal"} size={8}>
+    <Space orientation={"horizontal"} size={8}>
       <ReactCountryFlag
         countryCode={language.id}
         cdnUrl={"/flags/"}
@@ -67,7 +67,7 @@ const CollectionImagesPanel: React.FunctionComponent<
 
   if (imageTypeMap.size > 0) {
     content = (
-      <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
         <Space
           direction={"horizontal"}
           style={{
@@ -85,7 +85,7 @@ const CollectionImagesPanel: React.FunctionComponent<
             buttonStyle="solid"
           >
             <Radio.Button value={"poster"}>
-              <Space direction={"horizontal"}>
+              <Space orientation={"horizontal"}>
                 <Typography.Text>Posters</Typography.Text>
                 <Badge
                   size={"small"}
@@ -96,7 +96,7 @@ const CollectionImagesPanel: React.FunctionComponent<
               </Space>
             </Radio.Button>
             <Radio.Button value={"backdrop"}>
-              <Space direction={"horizontal"}>
+              <Space orientation={"horizontal"}>
                 <Typography.Text>Backdrops</Typography.Text>
                 <Badge
                   size={"small"}
@@ -109,7 +109,7 @@ const CollectionImagesPanel: React.FunctionComponent<
               </Space>
             </Radio.Button>
           </Radio.Group>
-          <Space direction={"horizontal"} size={8}>
+          <Space orientation={"horizontal"} size={8}>
             <Select
               style={{ minWidth: 250 }}
               value={language}

@@ -102,7 +102,7 @@ const TvSeasonSummaryCard: React.FunctionComponent<
           >
             {coverImage}
           </Link>
-          <Space direction={"vertical"} style={{ padding: 16, width: "100%" }}>
+          <Space orientation={"vertical"} style={{ padding: 16, width: "100%" }}>
             <Space
               className={"season-card-fix"}
               direction={"horizontal"}
@@ -126,7 +126,7 @@ const TvSeasonSummaryCard: React.FunctionComponent<
                   }
                 }}
               />
-              <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+              <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
                 <Space
                   direction={"horizontal"}
                   size={8}
@@ -136,7 +136,7 @@ const TvSeasonSummaryCard: React.FunctionComponent<
                     width: "100%",
                   }}
                 >
-                  <Space direction={"vertical"} size={0}>
+                  <Space orientation={"vertical"} size={0}>
                     <Link
                       href={`/dionysus/tv/series/${seriesId}/season/${season.seasonNumber}`}
                     >

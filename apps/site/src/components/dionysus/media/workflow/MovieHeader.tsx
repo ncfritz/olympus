@@ -55,7 +55,7 @@ const MovieHeader: React.FunctionComponent<MovieHeaderProps> = ({
 
     if (movie.genres && movie.genres.length > 0) {
       titleDecorations.push(
-        <Space direction={"horizontal"} size={4}>
+        <Space orientation={"horizontal"} size={4}>
           {movie.genres.map((genre) => {
             return (
               <Typography.Text
@@ -159,8 +159,8 @@ const MovieHeader: React.FunctionComponent<MovieHeaderProps> = ({
                 {movie?.title}
               </Space>
             </Typography.Title>
-            <Space direction={"horizontal"}>{titleDecorations}</Space>
-            <Space direction={"vertical"} style={{ marginTop: 16 }}>
+            <Space orientation={"horizontal"}>{titleDecorations}</Space>
+            <Space orientation={"vertical"} style={{ marginTop: 16 }}>
               {tagline}
             </Space>
           </Space>

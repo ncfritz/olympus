@@ -9,7 +9,7 @@ const UUIDV7Info: ItemType = {
   label: "Version 7",
   styles: styles,
   children: (
-    <Space direction={"vertical"} size={8}>
+    <Space orientation={"vertical"} size={8}>
       <Typography.Text>
         Version-7 UUIDs features a time-ordered value field derived from the
         widely implemented and well known Unix Epoch timestamp source, the

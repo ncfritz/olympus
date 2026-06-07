@@ -112,7 +112,7 @@ const MovieProductionCompaniesPanel: React.FunctionComponent<
                         />
                       </Space>
                     )}
-                    <Space direction={"vertical"} style={{ padding: 16 }}>
+                    <Space orientation={"vertical"} style={{ padding: 16 }}>
                       <Typography.Title level={5}>
                         {item.productionCompany.name}
                       </Typography.Title>

@@ -190,12 +190,12 @@ const AssetIngestPage: React.FunctionComponent = () => {
       render: (value, record) => {
         const content =
           value === "local" ? (
-            <Space direction={"horizontal"} size={8}>
+            <Space orientation={"horizontal"} size={8}>
               <SaveOutlined />
               Local
             </Space>
           ) : (
-            <Space direction={"horizontal"} size={8}>
+            <Space orientation={"horizontal"} size={8}>
               <CloudServerOutlined />
               Remote
             </Space>
@@ -292,7 +292,7 @@ const AssetIngestPage: React.FunctionComponent = () => {
           {
             title: (
               <Link href={"/"}>
-                <Space direction={"horizontal"} size={4}>
+                <Space orientation={"horizontal"} size={4}>
                   <HomeOutlined />
                   <span>Home</span>
                 </Space>
@@ -302,7 +302,7 @@ const AssetIngestPage: React.FunctionComponent = () => {
           {
             title: (
               <Link href={"/dionysus/content"}>
-                <Space direction={"horizontal"} size={4}>
+                <Space orientation={"horizontal"} size={4}>
                   <ExperimentOutlined />
                   <span>Content</span>
                 </Space>
@@ -312,7 +312,7 @@ const AssetIngestPage: React.FunctionComponent = () => {
           {
             title: (
               <Link href={"/dionysus/content/assets"}>
-                <Space direction={"horizontal"} size={4}>
+                <Space orientation={"horizontal"} size={4}>
                   <VideoCameraOutlined />
                   <span>Assets</span>
                 </Space>

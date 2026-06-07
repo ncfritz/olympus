@@ -207,7 +207,7 @@ const ContentAssetChannelCard: React.FunctionComponent<
           );
         }}
       >
-        <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+        <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
           <Space
             direction={"horizontal"}
             size={0}
@@ -219,7 +219,7 @@ const ContentAssetChannelCard: React.FunctionComponent<
               {channel.name}
             </Typography.Text>
             <Typography.Text style={{ fontSize: "12px", color: "#666666" }}>
-              <Space direction={"horizontal"}>
+              <Space orientation={"horizontal"}>
                 <PlayCircleOutlined />
                 {channel.assetCount}
               </Space>

@@ -57,7 +57,7 @@ const MovieVideoPanel: React.FunctionComponent<MovieVideoPanelProps> = ({
   }> = ({ type, label }) => {
     return (
       <Radio.Button value={type}>
-        <Space direction={"horizontal"}>
+        <Space orientation={"horizontal"}>
           <Typography.Text>{label}</Typography.Text>
           <Badge
             size={"small"}
@@ -93,7 +93,7 @@ const MovieVideoPanel: React.FunctionComponent<MovieVideoPanelProps> = ({
     }
 
     content = (
-      <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
         <Space
           direction={"horizontal"}
           style={{
@@ -120,7 +120,7 @@ const MovieVideoPanel: React.FunctionComponent<MovieVideoPanelProps> = ({
               label={"Behind the Scenes"}
             />
           </Radio.Group>
-          <Space direction={"horizontal"} size={8}>
+          <Space orientation={"horizontal"} size={8}>
             <Select
               style={{ minWidth: 250 }}
               value={language}

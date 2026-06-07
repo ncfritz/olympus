@@ -9,7 +9,7 @@ const UUIDV6Info: ItemType = {
   label: "Version 6",
   styles: styles,
   children: (
-    <Space direction={"vertical"} size={8}>
+    <Space orientation={"vertical"} size={8}>
       <Typography.Text>
         Version-6 UUIDs are a field-compatible version of Version -1 UUIDs,
         reordered for improved DB locality. It is expected that version-6 UUIDs

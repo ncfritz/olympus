@@ -23,7 +23,7 @@ const UUIDPartRow: React.FunctionComponent<UUIDPartRowProps> = ({
   }
 
   return (
-    <Space direction={"horizontal"} size={8} align={"baseline"}>
+    <Space orientation={"horizontal"} size={8} align={"baseline"}>
       <Typography.Text
         style={{
           justifyContent: "end",

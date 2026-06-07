@@ -23,7 +23,7 @@ const WebSocketDestinationForm: React.FunctionComponent<
   const ghostWatch = watch("webSocketDestination.ghost");
 
   return (
-    <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+    <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
       <Controller
         name="webSocketDestination.level"
         control={control}

@@ -87,8 +87,8 @@ const ContentAssetTable: React.FunctionComponent<ContentAssetTableProps> = ({
       dataIndex: "id",
       render: (value, record) => {
         return (
-          <Space direction={"horizontal"} size={8} align={"center"}>
-            <Space direction={"vertical"} size={2}>
+          <Space orientation={"horizontal"} size={8} align={"center"}>
+            <Space orientation={"vertical"} size={2}>
               <Typography.Link
                 copyable={true}
                 href={`/dionysus/content/asset/${record.id}`}
@@ -127,7 +127,7 @@ const ContentAssetTable: React.FunctionComponent<ContentAssetTableProps> = ({
       dataIndex: "durationMs",
       render: (value) => {
         return (
-          <Space direction={"horizontal"} size={8} align={"center"}>
+          <Space orientation={"horizontal"} size={8} align={"center"}>
             <Typography.Text>{prettyMilliseconds(value)}</Typography.Text>
           </Space>
         );
@@ -141,7 +141,7 @@ const ContentAssetTable: React.FunctionComponent<ContentAssetTableProps> = ({
       dataIndex: "width",
       render: (value) => {
         return (
-          <Space direction={"horizontal"} size={8} align={"center"}>
+          <Space orientation={"horizontal"} size={8} align={"center"}>
             <Typography.Text>{value}px</Typography.Text>
           </Space>
         );
@@ -155,7 +155,7 @@ const ContentAssetTable: React.FunctionComponent<ContentAssetTableProps> = ({
       dataIndex: "height",
       render: (value) => {
         return (
-          <Space direction={"horizontal"} size={8} align={"center"}>
+          <Space orientation={"horizontal"} size={8} align={"center"}>
             <Typography.Text>{value}px</Typography.Text>
           </Space>
         );
@@ -179,7 +179,7 @@ const ContentAssetTable: React.FunctionComponent<ContentAssetTableProps> = ({
       dataIndex: "rating",
       render: (value, record) => {
         return (
-          <Space direction={"vertical"}>
+          <Space orientation={"vertical"}>
             <ContentAssetRating
               asset={record}
               onRatingSet={async (value) => {

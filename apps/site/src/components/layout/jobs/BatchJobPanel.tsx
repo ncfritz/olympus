@@ -192,7 +192,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       dataIndex: "id",
       render: (value, record) => {
         return (
-          <Space direction={"horizontal"} size={8} align={"center"}>
+          <Space orientation={"horizontal"} size={8} align={"center"}>
             <Typography.Link
               onClick={() => {
                 onSelect(record);
@@ -684,7 +684,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
               return `${percent?.toFixed(0)}%`;
             }}
           />
-          <Space direction={"horizontal"} size={64}>
+          <Space orientation={"horizontal"} size={64}>
             <Statistic title={"To Publish"} value={selectedRows.length} />
             <Statistic title={"Success"} value={processingStatus.success} />
             <Statistic title={"Skipped"} value={processingStatus.skipped} />

@@ -161,7 +161,7 @@ const EventDetailsPanel: React.FunctionComponent<EventDetailsPanelProps> = ({
               doClose();
             }}
           >
-            <Space direction={"horizontal"} size={8}>
+            <Space orientation={"horizontal"} size={8}>
               <CloseCircleOutlined />
               Cancel
             </Space>
@@ -178,7 +178,7 @@ const EventDetailsPanel: React.FunctionComponent<EventDetailsPanelProps> = ({
                   await removeOverride(event.id);
                 }}
               >
-                <Space direction={"horizontal"} size={8}>
+                <Space orientation={"horizontal"} size={8}>
                   <DeleteOutlined />
                   Remove
                 </Space>

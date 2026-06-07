@@ -17,7 +17,7 @@ const UUIDV35Info = (copy: (text: string) => Promise<boolean>): ItemType => {
     label: "Version 3/5",
     styles: styles,
     children: (
-      <Space direction={"vertical"} size={8}>
+      <Space orientation={"vertical"} size={8}>
         <Typography.Text>
           Version-3 and version-5 are generated based on a "namespace" and
           unique "name". Namespace and name are concatenated and hashed. There
@@ -50,7 +50,7 @@ const UUIDV35Info = (copy: (text: string) => Promise<boolean>): ItemType => {
         <Typography.Text>
           <ul>
             <li>
-              <Space direction={"horizontal"} size={8} align={"center"}>
+              <Space orientation={"horizontal"} size={8} align={"center"}>
                 <Typography.Text strong={true}>DNS</Typography.Text>—
                 <Typography.Text style={{ fontFamily: "monospace" }}>
                   6ba7b810-9dad-11d1-80b4-00c04fd430c8
@@ -65,7 +65,7 @@ const UUIDV35Info = (copy: (text: string) => Promise<boolean>): ItemType => {
               </Space>
             </li>
             <li>
-              <Space direction={"horizontal"} size={8} align={"center"}>
+              <Space orientation={"horizontal"} size={8} align={"center"}>
                 <Typography.Text strong={true}>URL</Typography.Text>—
                 <Typography.Text style={{ fontFamily: "monospace" }}>
                   6ba7b811-9dad-11d1-80b4-00c04fd430c8
@@ -80,7 +80,7 @@ const UUIDV35Info = (copy: (text: string) => Promise<boolean>): ItemType => {
               </Space>
             </li>
             <li>
-              <Space direction={"horizontal"} size={8} align={"center"}>
+              <Space orientation={"horizontal"} size={8} align={"center"}>
                 <Typography.Text strong={true}>OID</Typography.Text>—
                 <Typography.Text style={{ fontFamily: "monospace" }}>
                   6ba7b812-9dad-11d1-80b4-00c04fd430c8
@@ -95,7 +95,7 @@ const UUIDV35Info = (copy: (text: string) => Promise<boolean>): ItemType => {
               </Space>
             </li>
             <li>
-              <Space direction={"horizontal"} size={8} align={"center"}>
+              <Space orientation={"horizontal"} size={8} align={"center"}>
                 <Typography.Text strong={true}>X.500 DN</Typography.Text>—
                 <Typography.Text style={{ fontFamily: "monospace" }}>
                   6ba7b814-9dad-11d1-80b4-00c04fd430c8

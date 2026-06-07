@@ -9,7 +9,7 @@ const UUIDV1Info: ItemType = {
   label: "Version 1",
   styles: styles,
   children: (
-    <Space direction={"vertical"} size={8}>
+    <Space orientation={"vertical"} size={8}>
       <Typography.Text>
         Version-1 is based on the current time and the MAC address for the
         computer or "node" generating the UUID.

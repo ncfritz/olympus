@@ -136,7 +136,7 @@ const ContentIngestionUrlUploadModal: React.FunctionComponent<
               Validate URLs
             </Button>
           ) : (
-            <Space direction={"horizontal"} size={8}>
+            <Space orientation={"horizontal"} size={8}>
               <Button
                 color={"magenta"}
                 variant={"solid"}
@@ -180,7 +180,7 @@ const ContentIngestionUrlUploadModal: React.FunctionComponent<
         </Space>
       }
     >
-      <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
         {(!urlsValidated || toProcess.size <= 0) && !urlsProcessing && (
           <TextArea
             rows={4}

@@ -426,7 +426,7 @@ const MediaAssetDetails: React.FunctionComponent<MediaAssetDetailsProps> = ({
 
           if (subtitleLanguage) {
             titleExtra = (
-              <Space direction={"horizontal"} size={4}>
+              <Space orientation={"horizontal"} size={4}>
                 {subtitleLanguage.iso6391 ? (
                   <ReactCountryFlag
                     countryCode={subtitleLanguage.iso6391}
@@ -481,7 +481,7 @@ const MediaAssetDetails: React.FunctionComponent<MediaAssetDetailsProps> = ({
     });
 
     content = (
-      <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
         <Typography.Title level={5}>Format</Typography.Title>
         <Row>
           {metadataLabel("Name")}

@@ -108,7 +108,7 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
           },
         }}
       >
-        <Space direction={"vertical"} style={{ padding: 16, width: "100%" }}>
+        <Space orientation={"vertical"} style={{ padding: 16, width: "100%" }}>
           <Space
             direction={"horizontal"}
             style={{
@@ -117,7 +117,7 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
               width: "100%",
             }}
           >
-            <Space direction={"horizontal"} size={16} style={{ width: "100%" }}>
+            <Space orientation={"horizontal"} size={16} style={{ width: "100%" }}>
               <SearchConfigurationButton
                 mediaType={"tv_episode"}
                 mediaId={episode.id}
@@ -128,7 +128,7 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
                   setSearchConfiguration(searchConfiguration);
                 }}
               />
-              <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+              <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
                 <Link
                   href={`/dionysus/tv/series/${seriesId}/season/${episode.seasonNumber}/episode/${episode.episodeNumber}`}
                 >

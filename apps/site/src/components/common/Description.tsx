@@ -33,7 +33,7 @@ const Description: React.FunctionComponent<DescriptionProps> = ({
   direction = "vertical",
 }: DescriptionProps) => {
   return (
-    <Space direction={direction} style={{ marginTop: 8, ...style }} size={2}>
+    <Space orientation={direction} style={{ marginTop: 8, ...style }} size={2}>
       <Typography.Text
         style={{
           fontSize: titleFontSize,
@@ -42,7 +42,7 @@ const Description: React.FunctionComponent<DescriptionProps> = ({
           paddingBottom: 0,
         }}
       >
-        <Space direction={"horizontal"} size={8}>
+        <Space orientation={"horizontal"} size={8}>
           {title}
           {helpContent && (
             <Popover placement={helpPosition} content={helpContent}>

@@ -228,12 +228,12 @@ const ContentProcessingPage: React.FunctionComponent = () => {
             width: "100%",
           }}
         >
-          <Space direction={"vertical"}>
+          <Space orientation={"vertical"}>
             <Typography.Title level={3} style={{ marginBottom: 2 }}>
               {asset.name || asset.originalName}
             </Typography.Title>
             <Typography.Text copyable={true}>{asset.id}</Typography.Text>
-            <Space direction={"horizontal"}>
+            <Space orientation={"horizontal"}>
               <ContentAssetThumbnailGrid
                 height={height}
                 asset={asset}
@@ -273,7 +273,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
               </Space>
             </Space>
           </Space>
-          <Space direction={"vertical"}>
+          <Space orientation={"vertical"}>
             <Progress
               style={{ width: 450 }}
               percent={(taggedCount / (untaggedCount + taggedCount)) * 100}
@@ -285,7 +285,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
               direction={"horizontal"}
               style={{ justifyContent: "space-between" }}
             >
-              <Space direction={"horizontal"}>
+              <Space orientation={"horizontal"}>
                 <Typography.Text style={{ fontFamily: "monospace" }}>
                   {taggedCount}
                 </Typography.Text>
@@ -294,26 +294,26 @@ const ContentProcessingPage: React.FunctionComponent = () => {
                   {untaggedCount + taggedCount}
                 </Typography.Text>
               </Space>
-              <Space direction={"horizontal"}>
+              <Space orientation={"horizontal"}>
                 <Typography.Text style={{ fontFamily: "monospace" }}>
                   {untaggedCount}
                 </Typography.Text>
                 <Typography.Text>remaining</Typography.Text>
               </Space>
             </Space>
-            <Space direction={"vertical"}>
+            <Space orientation={"vertical"}>
               <Typography.Title level={5}>Asset Info</Typography.Title>
-              <Space direction={"horizontal"}>
+              <Space orientation={"horizontal"}>
                 <Typography.Text strong={true}>Dimensions:</Typography.Text>
                 <Typography.Text>
                   {asset.width}px x {asset.height}px
                 </Typography.Text>
               </Space>
-              <Space direction={"horizontal"} style={{ alignItems: "start" }}>
+              <Space orientation={"horizontal"} style={{ alignItems: "start" }}>
                 <Typography.Text strong={true}>Size:</Typography.Text>
                 <ContentAssetSizeDisplay asset={asset} />
               </Space>
-              <Space direction={"horizontal"}>
+              <Space orientation={"horizontal"}>
                 <Typography.Text strong={true}>Duration:</Typography.Text>
                 <Typography.Text>
                   {asset.durationMs
@@ -321,11 +321,11 @@ const ContentProcessingPage: React.FunctionComponent = () => {
                     : "Unknown"}
                 </Typography.Text>
               </Space>
-              <Space direction={"horizontal"}>
+              <Space orientation={"horizontal"}>
                 <Typography.Text strong={true}>Rating:</Typography.Text>
                 <ContentAssetRating asset={asset} />
               </Space>
-              <Space direction={"horizontal"}>
+              <Space orientation={"horizontal"}>
                 <Typography.Text strong={true}>Created:</Typography.Text>
                 <Timestamp
                   direction={"horizontal"}
@@ -434,7 +434,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
             alignItems: "center",
           }}
         >
-          <Space direction={"horizontal"}>
+          <Space orientation={"horizontal"}>
             {currentStep < steps.length - 1 && (
               <Button
                 type="primary"
@@ -481,7 +481,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
           {
             title: (
               <Link href={"/"}>
-                <Space direction={"horizontal"} size={4}>
+                <Space orientation={"horizontal"} size={4}>
                   <HomeOutlined />
                   <span>Home</span>
                 </Space>
@@ -491,7 +491,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
           {
             title: (
               <Link href={"/dionysus"}>
-                <Space direction={"horizontal"} size={4}>
+                <Space orientation={"horizontal"} size={4}>
                   <HomeOutlined />
                   <span>Dionysus</span>
                 </Space>
@@ -501,7 +501,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
           {
             title: (
               <Link href={"/dionysus/content"}>
-                <Space direction={"horizontal"} size={4}>
+                <Space orientation={"horizontal"} size={4}>
                   <ExperimentOutlined />
                   <span>Content</span>
                 </Space>
@@ -512,7 +512,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
             title: (
               <Link href={"/dionysus/content/assets"}>
                 {" "}
-                <Space direction={"horizontal"} size={4}>
+                <Space orientation={"horizontal"} size={4}>
                   <VideoCameraOutlined />
                   <span>Assets</span>
                 </Space>

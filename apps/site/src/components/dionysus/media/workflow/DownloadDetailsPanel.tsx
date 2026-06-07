@@ -127,7 +127,7 @@ const DownloadDetailsPanel: React.FunctionComponent<
 
   if (nzbMetadata) {
     nzbContent = (
-      <Space direction={"vertical"} style={{ width: "100%" }} size={0}>
+      <Space orientation={"vertical"} style={{ width: "100%" }} size={0}>
         <Button
           style={{ marginBottom: 32 }}
           type="primary"

@@ -44,7 +44,7 @@ export const MetadataDetail: React.FunctionComponent<MetadataDetailProps> = ({
   children,
 }: MetadataDetailProps) => {
   return (
-    <Space direction={"horizontal"} size={8} style={{ alignItems: "center" }}>
+    <Space orientation={"horizontal"} size={8} style={{ alignItems: "center" }}>
       <Typography.Text
         strong={true}
         style={{

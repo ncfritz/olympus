@@ -269,7 +269,7 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
           </Col>
         </Row>
         <Space
-          direction={"horizontal"}
+          orientation={"horizontal"}
           size={8}
           style={{
             backgroundColor: "#efefef",
@@ -278,7 +278,7 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
             justifyContent: "space-between",
           }}
         >
-          <Space direction={"horizontal"} size={8}>
+          <Space orientation={"horizontal"} size={8}>
             <Input
               size={"small"}
               prefix={
@@ -346,7 +346,7 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
               }}
             />
           </Space>
-          <Space direction={"horizontal"} size={8}>
+          <Space orientation={"horizontal"} size={8}>
             <Typography.Text style={{ fontSize: "12px" }}>
               Monitored
             </Typography.Text>
@@ -377,7 +377,7 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
         </Space>
         <Space
           size={16}
-          direction={"vertical"}
+          orientation={"vertical"}
           style={{ width: "100%", padding: 16 }}
         >
           <TvSeriesList

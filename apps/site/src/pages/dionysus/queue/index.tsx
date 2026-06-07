@@ -83,7 +83,7 @@ const IndexPage: React.FunctionComponent = () => {
       render: (value, record) => {
         return (
           <Link href={`/dionysus/queue/${record.id}`}>
-            <Space direction={"horizontal"} size={8} align={"center"}>
+            <Space orientation={"horizontal"} size={8} align={"center"}>
               <Image
                 preview={false}
                 style={{
@@ -131,7 +131,7 @@ const IndexPage: React.FunctionComponent = () => {
       filters: [
         {
           text: (
-            <Space direction={"horizontal"} size={8} align={"center"}>
+            <Space orientation={"horizontal"} size={8} align={"center"}>
               <MovieIcon />
               <Typography.Text>Movie</Typography.Text>
             </Space>
@@ -140,7 +140,7 @@ const IndexPage: React.FunctionComponent = () => {
         },
         {
           text: (
-            <Space direction={"horizontal"} size={8} align={"center"}>
+            <Space orientation={"horizontal"} size={8} align={"center"}>
               <TvIcon />
               <Typography.Text>TV Episode</Typography.Text>
             </Space>
@@ -158,7 +158,7 @@ const IndexPage: React.FunctionComponent = () => {
       dataIndex: "status",
       render: (value, record) => {
         return (
-          <Space direction={"horizontal"} size={8} style={{ width: "100%" }}>
+          <Space orientation={"horizontal"} size={8} style={{ width: "100%" }}>
             <Typography.Text style={{ fontSize: 18, color: "#777777" }}>
               <SearchResultTag
                 color={getWorkflowStatusColor(record.status)}
@@ -202,14 +202,14 @@ const IndexPage: React.FunctionComponent = () => {
         let content =
           record.download.status === "failed" ? (
             <Typography.Text style={{ fontSize: "12px", color: "#f34a4c" }}>
-              <Space direction={"horizontal"} size={4} align={"center"}>
+              <Space orientation={"horizontal"} size={4} align={"center"}>
                 <CloseCircleFilled />
                 Transcode skipped...
               </Space>
             </Typography.Text>
           ) : (
             <Typography.Text style={{ fontSize: "12px", color: "#999999" }}>
-              <Space direction={"horizontal"} size={4} align={"center"}>
+              <Space orientation={"horizontal"} size={4} align={"center"}>
                 <HourglassOutlined />
                 Transcode pending...
               </Space>

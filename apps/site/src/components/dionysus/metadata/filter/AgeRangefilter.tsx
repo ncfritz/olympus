@@ -23,7 +23,7 @@ const AgeRangeFilter: React.FunctionComponent<AgeRangeFilterProps> = ({
     <FilterWrapper
       label={label}
       filters={
-        <Space direction={"vertical"} size={8} style={{}}>
+        <Space orientation={"vertical"} size={8} style={{}}>
           <Space
             direction={"vertical"}
             style={{ padding: 16, width: "100%" }}
@@ -51,7 +51,7 @@ const AgeRangeFilter: React.FunctionComponent<AgeRangeFilterProps> = ({
               <Tag>{ageRange[1]}</Tag>
             </Space>
           </Space>
-          <Space direction={"vertical"} style={{ width: "100%", padding: 8 }}>
+          <Space orientation={"vertical"} style={{ width: "100%", padding: 8 }}>
             <Row gutter={8}>
               <Col span={12}>
                 <Button

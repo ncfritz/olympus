@@ -394,7 +394,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
               return `${percent?.toFixed(0)}%`;
             }}
           />
-          <Space direction={"horizontal"} size={64}>
+          <Space orientation={"horizontal"} size={64}>
             <Statistic title={"To Publish"} value={selectedRows.length} />
             <Statistic title={"Success"} value={processingStatus.success} />
             <Statistic title={"Skipped"} value={processingStatus.skipped} />

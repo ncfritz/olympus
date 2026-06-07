@@ -55,7 +55,7 @@ const StepProgress: React.FunctionComponent<StepProgressProps> = ({
   }
 
   return (
-    <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+    <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
       {title && (
         <Typography.Text style={{ fontSize: "16px", fontWeight: "bold" }}>
           {title}

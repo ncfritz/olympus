@@ -136,7 +136,7 @@ const DuplicatesPage: React.FunctionComponent = () => {
                 <VideoCameraOutlined />
                 <span>
                   {!category || categoryLoading ? (
-                    <Space direction={"horizontal"}>
+                    <Space orientation={"horizontal"}>
                       <LoadingOutlined spin={true} />
                       Loading...
                     </Space>
@@ -163,8 +163,8 @@ const DuplicatesPage: React.FunctionComponent = () => {
               borderBottom: "1px solid #efefef",
             }}
           >
-            <Space direction={"vertical"} style={{ padding: 16 }} size={8}>
-              <Space direction={"vertical"} size={0}>
+            <Space orientation={"vertical"} style={{ padding: 16 }} size={8}>
+              <Space orientation={"vertical"} size={0}>
                 <Typography.Title
                   level={4}
                   style={{ color: "#999999", marginBottom: 0 }}
@@ -184,7 +184,7 @@ const DuplicatesPage: React.FunctionComponent = () => {
                 </Typography.Text>
               </Space>
             </Space>
-            <Space direction={"horizontal"} style={{ padding: 16 }}>
+            <Space orientation={"horizontal"} style={{ padding: 16 }}>
               <Button
                 type={"primary"}
                 icon={<EditOutlined />}

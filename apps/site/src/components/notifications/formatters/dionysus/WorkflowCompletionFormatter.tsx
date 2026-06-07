@@ -19,7 +19,7 @@ export class WorkflowCompletionFormatter implements NotificationFormatter<Dionys
     );
 
     const message = (
-      <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
         <Typography.Text>
           Dionysus metadata workflow{" "}
           <Typography.Text style={valueStyle}>

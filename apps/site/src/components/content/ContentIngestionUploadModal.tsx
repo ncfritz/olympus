@@ -30,7 +30,7 @@ const ContentIngestionUploadModal: React.FunctionComponent<
       }}
       width={1250}
       footer={
-        <Space direction={"horizontal"}>
+        <Space orientation={"horizontal"}>
           <Button
             type={"primary"}
             onClick={() => {

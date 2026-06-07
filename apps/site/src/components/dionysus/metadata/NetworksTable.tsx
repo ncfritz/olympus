@@ -102,7 +102,7 @@ const NetworkTable: React.FunctionComponent<NetworkTableTableProps> = ({
       dataIndex: "name",
       render: (value, record) => {
         return (
-          <Space direction={"vertical"} size={0}>
+          <Space orientation={"vertical"} size={0}>
             <Link href={`/dionysus/tv/networks/${record.id}`}>
               <Typography.Text
                 style={{ fontWeight: 500, fontSize: "15px", lineHeight: 0 }}
@@ -112,10 +112,10 @@ const NetworkTable: React.FunctionComponent<NetworkTableTableProps> = ({
             </Link>
             {record.homepage && (
               <Typography.Text style={{ fontSize: "11px" }}>
-                <Space direction={"horizontal"} size={4}>
+                <Space orientation={"horizontal"} size={4}>
                   <HomeOutlined />
                   <Link href={record.homepage} style={{ fontSize: "11px" }}>
-                    <Space direction={"horizontal"} size={4}>
+                    <Space orientation={"horizontal"} size={4}>
                       <Typography.Text
                         style={{ fontSize: "inherit", color: "inherit" }}
                       >
@@ -152,7 +152,7 @@ const NetworkTable: React.FunctionComponent<NetworkTableTableProps> = ({
 
         if (record.originCountry) {
           content = (
-            <Space direction={"horizontal"} size={8} align={"center"}>
+            <Space orientation={"horizontal"} size={8} align={"center"}>
               <ReactCountryFlag
                 countryCode={record.originCountry.id}
                 cdnUrl={"/flags/"}
@@ -189,7 +189,7 @@ const NetworkTable: React.FunctionComponent<NetworkTableTableProps> = ({
 
         if (record.alternativeNames.length > 1) {
           titleContent = (
-            <Space direction={"horizontal"} size={4}>
+            <Space orientation={"horizontal"} size={4}>
               <Typography.Text>
                 {record.alternativeNames[0].name}
               </Typography.Text>

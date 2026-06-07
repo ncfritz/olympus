@@ -50,7 +50,7 @@ const VerifyConfigurationPanel: React.FunctionComponent<
       );
     } else if (step.status === "pending") {
       content = (
-        <Space direction={"vertical"} size={8}>
+        <Space orientation={"vertical"} size={8}>
           <Result
             style={{ padding: 0, marginBottom: 16 }}
             status={"info"}
@@ -101,7 +101,7 @@ const VerifyConfigurationPanel: React.FunctionComponent<
       );
 
       content = (
-        <Space direction={"vertical"} size={8}>
+        <Space orientation={"vertical"} size={8}>
           <Result
             style={{ padding: 0, marginBottom: 16 }}
             icon={<LoadingOutlined />}
@@ -118,7 +118,7 @@ const VerifyConfigurationPanel: React.FunctionComponent<
           <Typography.Text style={{ fontSize: "16px", fontWeight: "bold" }}>
             Generate Samples
           </Typography.Text>
-          <Space direction={"vertical"} size={0}>
+          <Space orientation={"vertical"} size={0}>
             {samples.map((sample, index) => {
               return (
                 <Space

@@ -37,7 +37,7 @@ const UUIDV4Form: React.FunctionComponent<UUIDGeneratorProps> = ({
   return (
     <Space size={16} direction={"vertical"} style={{ width: "100%" }}>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <Space direction={"vertical"} size={16} style={{ width: "100%" }}>
+        <Space orientation={"vertical"} size={16} style={{ width: "100%" }}>
           <Space
             direction={"horizontal"}
             style={{ width: "100%", display: "block" }}
@@ -74,7 +74,7 @@ const UUIDV4Form: React.FunctionComponent<UUIDGeneratorProps> = ({
             />
           </Space>
           <Form.Item {...buttonItemLayout} style={{ width: "100%" }}>
-            <Space direction={"horizontal"} size={8} style={{ width: "100%" }}>
+            <Space orientation={"horizontal"} size={8} style={{ width: "100%" }}>
               <Button type={"primary"} htmlType={"submit"}>
                 Generate
               </Button>

@@ -104,7 +104,7 @@ const ProductionCompanyTable: React.FunctionComponent<
       dataIndex: "name",
       render: (value, record) => {
         return (
-          <Space direction={"vertical"} size={0}>
+          <Space orientation={"vertical"} size={0}>
             <Link href={`/dionysus/productionCompanies/${record.id}`}>
               <Typography.Text
                 style={{ fontWeight: 500, fontSize: "15px", lineHeight: 0 }}
@@ -114,10 +114,10 @@ const ProductionCompanyTable: React.FunctionComponent<
             </Link>
             {record.homepage && (
               <Typography.Text style={{ fontSize: "11px" }}>
-                <Space direction={"horizontal"} size={4}>
+                <Space orientation={"horizontal"} size={4}>
                   <HomeOutlined />
                   <Link href={record.homepage} style={{ fontSize: "11px" }}>
-                    <Space direction={"horizontal"} size={4}>
+                    <Space orientation={"horizontal"} size={4}>
                       <Typography.Text
                         style={{ fontSize: "inherit", color: "inherit" }}
                       >
@@ -154,7 +154,7 @@ const ProductionCompanyTable: React.FunctionComponent<
 
         if (record.originCountry) {
           content = (
-            <Space direction={"horizontal"} size={8} align={"center"}>
+            <Space orientation={"horizontal"} size={8} align={"center"}>
               <ReactCountryFlag
                 countryCode={record.originCountry.id}
                 cdnUrl={"/flags/"}
@@ -201,7 +201,7 @@ const ProductionCompanyTable: React.FunctionComponent<
 
         if (record.alternativeNames.length > 1) {
           titleContent = (
-            <Space direction={"horizontal"} size={4}>
+            <Space orientation={"horizontal"} size={4}>
               <Typography.Text>
                 {record.alternativeNames[0].name}
               </Typography.Text>

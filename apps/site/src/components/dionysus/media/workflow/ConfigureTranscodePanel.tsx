@@ -163,12 +163,12 @@ const ConfigureTranscodePanel: React.FunctionComponent<
         style={{ width: 950, minWidth: 650, marginTop: 16 }}
       >
         {statusContent}
-        <Space direction={"vertical"} style={{ width: 950, minWidth: 650 }}>
+        <Space orientation={"vertical"} style={{ width: 950, minWidth: 650 }}>
           <Typography.Title level={5}>Video Streams</Typography.Title>
           {videoTracks.length === 0 ? (
             <Empty />
           ) : (
-            <Space direction={"vertical"} size={4} style={{ width: "100%" }}>
+            <Space orientation={"vertical"} size={4} style={{ width: "100%" }}>
               {videoTracks.map((track, index) => {
                 let backgroundColor = "#ffffff";
                 let selectColor = "#ffffff";
@@ -197,7 +197,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                       }
                     }}
                   >
-                    <Space direction={"vertical"} style={{ width: "100%" }}>
+                    <Space orientation={"vertical"} style={{ width: "100%" }}>
                       <Space
                         direction={"horizontal"}
                         className={"person-fix"}
@@ -237,8 +237,8 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                           )}
                         </Space>
                       </Space>
-                      <Space direction={"vertical"} style={{ marginLeft: 28 }}>
-                        <Space direction={"horizontal"}>
+                      <Space orientation={"vertical"} style={{ marginLeft: 28 }}>
+                        <Space orientation={"horizontal"}>
                           <Typography.Text
                             strong={true}
                             style={{ fontSize: 12, textAlign: "right" }}
@@ -262,12 +262,12 @@ const ConfigureTranscodePanel: React.FunctionComponent<
             </Space>
           )}
         </Space>
-        <Space direction={"vertical"} style={{ width: 950, minWidth: 650 }}>
+        <Space orientation={"vertical"} style={{ width: 950, minWidth: 650 }}>
           <Typography.Title level={5}>Audio Streams</Typography.Title>
           {audioTracks.length === 0 ? (
             <Empty />
           ) : (
-            <Space direction={"vertical"} size={4} style={{ width: "100%" }}>
+            <Space orientation={"vertical"} size={4} style={{ width: "100%" }}>
               {audioTracks.map((track, index) => {
                 let titleExtra: ReactNode = undefined;
                 const audioLanguageCode = track.LanguageCode;
@@ -347,7 +347,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                       }
                     }}
                   >
-                    <Space direction={"vertical"} style={{ width: "100%" }}>
+                    <Space orientation={"vertical"} style={{ width: "100%" }}>
                       <Space
                         direction={"horizontal"}
                         className={"person-fix"}
@@ -401,9 +401,9 @@ const ConfigureTranscodePanel: React.FunctionComponent<
           )}
         </Space>
         {subtitleTracks.length > 0 && (
-          <Space direction={"vertical"} style={{ width: 950, minWidth: 650 }}>
+          <Space orientation={"vertical"} style={{ width: 950, minWidth: 650 }}>
             <Typography.Title level={5}>Subtitle Streams</Typography.Title>
-            <Space direction={"vertical"} size={4} style={{ width: "100%" }}>
+            <Space orientation={"vertical"} size={4} style={{ width: "100%" }}>
               {subtitleTracks.map((track, index) => {
                 let titleExtra: ReactNode = undefined;
                 const subtitleLanguageCode = track.LanguageCode;
@@ -450,7 +450,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                             </Typography.Text>
                           )}
                         </Space>
-                        <Space direction="horizontal">
+                        <Space orientation="horizontal">
                           {track.Attributes.Default && (
                             <SearchResultTag
                               style={{ padding: "2px 6px" }}
@@ -517,7 +517,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                       }
                     }}
                   >
-                    <Space direction={"vertical"} style={{ width: "100%" }}>
+                    <Space orientation={"vertical"} style={{ width: "100%" }}>
                       <Space
                         direction={"horizontal"}
                         className={"person-fix"}
