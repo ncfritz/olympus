@@ -7,7 +7,7 @@ import { useCookies } from "react-cookie";
 import SignInPage from "../../pages/auth/signin";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { setCurtain } from "../../redux/slices/blackCurtainSlice";
-import { publish } from "../../utils/events";
+import { Events, publish } from "../../utils/events";
 import AuthLayout from "./AuthLayout";
 import NoAuthLayout from "./NoAuthLayout";
 
@@ -32,7 +32,7 @@ const AuthWrapper: React.FunctionComponent<AuthWrapperProps> = ({
       console.log("Deploying BlackCurtain");
       dispatch(setCurtain(true));
       removeCookie("x-dionysus-content-auth", { path: "/", secure: true });
-      publish("dionysus:lock");
+      publish(Events.DIONYSUS_BLACK_CURTAIN_LOCK);
     }
   }, []);
 

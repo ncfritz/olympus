@@ -16,8 +16,7 @@ import {
 } from "antd";
 import { type ReactNode, useEffect, useState } from "react";
 import notificationsApi from "../../api/notificationsApi";
-import { subscribe, unsubscribe } from "../../utils/events";
-import { REFRESH_EVENT } from "../common/NotificationSink";
+import { Events, subscribe, unsubscribe } from "../../utils/events";
 import NotificationGroupEntryList from "./NotificationGroupEntryList";
 import NotificationGroupHeader from "./NotificationGroupHeader";
 import NotificationListEntry from "./NotificationListEntry";
@@ -38,10 +37,10 @@ const NotificationsList: React.FunctionComponent = () => {
     useState<unknown>(undefined);
 
   useEffect(() => {
-    subscribe(REFRESH_EVENT, onRefreshEvent);
+    subscribe(Events.NOTIFICATIONS_REFRESH_EVENT, onRefreshEvent);
 
     return () => {
-      unsubscribe(REFRESH_EVENT, onRefreshEvent);
+      unsubscribe(Events.NOTIFICATIONS_REFRESH_EVENT, onRefreshEvent);
     };
   }, []);
 

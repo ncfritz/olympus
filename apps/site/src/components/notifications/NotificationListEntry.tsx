@@ -12,9 +12,8 @@ import { DateTime } from "luxon";
 import prettyMilliseconds from "pretty-ms";
 import { type ReactNode, useState } from "react";
 import notificationsApi from "../../api/notificationsApi";
-import { publish } from "../../utils/events";
-import { PUBLISH_EVENT } from "../common/NotificationSink";
-import { getFormatterForMessageType } from "./formatters/NotificationRegistry";
+import { Events, publish } from "../../utils/events";
+=import { getFormatterForMessageType } from "./formatters/NotificationRegistry";
 
 export interface NotificationListEntryProps {
   notification: Notification;
@@ -60,7 +59,7 @@ const NotificationListEntry: React.FunctionComponent<
     } catch (e) {
       console.error(`Unable to acknowledge notification ${notificationId}`, e);
 
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Unable to acknowledge notification",
         description:
@@ -85,7 +84,7 @@ const NotificationListEntry: React.FunctionComponent<
     } catch (e) {
       console.error(`Unable to delete notification ${notificationId}`, e);
 
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Unable to delete notification",
         description: "The notification could not be deleted due to an error",
@@ -131,7 +130,7 @@ const NotificationListEntry: React.FunctionComponent<
         paddingRight: 0,
       }}
       actions={[
-        <Space direction={"vertical"} size={0} align={"end"}>
+        <Space orientation={"vertical"} size={0} align={"end"}>
           <Typography.Text style={{ fontSize: 11, marginRight: 8 }}>
             {prettyMilliseconds(notificationAge, { hideSeconds: true })}
           </Typography.Text>
@@ -186,7 +185,7 @@ const NotificationListEntry: React.FunctionComponent<
           </Typography.Text>
         }
         title={
-          <Space direction={"horizontal"} size={0}>
+          <Space orientation={"horizontal"} size={0}>
             {showGroup && notification.notificationGroup && (
               <Tag bordered={false} color={"blue"}>
                 {notification.notificationGroup.name}

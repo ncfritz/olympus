@@ -4,7 +4,7 @@ import prettyMilliseconds from "pretty-ms";
 import { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
 import { decodeJwt } from "jose";
-import { publish } from "../../utils/events";
+import { Events, publish } from "../../utils/events";
 
 export interface AuthSessionTimerProps {}
 
@@ -132,7 +132,7 @@ const AuthSessionTimer: React.FunctionComponent<
       path: "/",
       secure: true,
     });
-    publish("dionysus:lock");
+    publish(Events.DIONYSUS_BLACK_CURTAIN_LOCK);
   };
 
   useEffect(() => {
@@ -193,7 +193,7 @@ const AuthSessionTimer: React.FunctionComponent<
       style={{ width: 350, justifyContent: "center" }}
       styles={{ item: { height: 16, display: "flex" } }}
     >
-      <Space direction={"horizontal"} size={4}>
+      <Space orientation={"horizontal"} size={4}>
         <Typography.Text
           style={{
             fontSize: "11px",

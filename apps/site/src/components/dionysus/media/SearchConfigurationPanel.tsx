@@ -9,7 +9,7 @@ import { DateTime } from "luxon";
 import React, { useEffect, useState } from "react";
 import mediaApi from "../../../api/mediaApi";
 import { useFetch } from "../../../hooks/useFetch";
-import { subscribe, unsubscribe } from "../../../utils/events";
+import { Events, subscribe, unsubscribe } from "../../../utils/events";
 import Description from "../../common/Description";
 import LoadingWrapper from "../../common/LoadingWrapper";
 import RefreshTimer from "../../common/RefreshTimer";
@@ -44,10 +44,10 @@ const SearchConfigurationPanel: React.FunctionComponent<
     });
 
   useEffect(() => {
-    subscribe("dionysus:search:complete", onSearchComplete);
+    subscribe(Events.DIONYSYS_MEDIA_SEARCH_COMPLETE, onSearchComplete);
 
     return () => {
-      unsubscribe("dionysus:search:complete", onSearchComplete);
+      unsubscribe(Events.DIONYSYS_MEDIA_SEARCH_COMPLETE, onSearchComplete);
     };
   }, []);
 
@@ -251,7 +251,7 @@ const SearchConfigurationPanel: React.FunctionComponent<
   }
 
   return (
-    <Space direction={"vertical"} style={{ width: "100%" }}>
+    <Space orientation={"vertical"} style={{ width: "100%" }}>
       <Space
         direction={"horizontal"}
         style={{

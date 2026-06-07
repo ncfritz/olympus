@@ -2,7 +2,7 @@ import { notification, type NotificationArgsProps } from "antd";
 import type { IconType } from "antd/es/notification/interface";
 import { type ReactNode, useEffect } from "react";
 import notificationsApi from "../../api/notificationsApi";
-import { subscribe, unsubscribe } from "../../utils/events";
+import { Events, subscribe, unsubscribe } from "../../utils/events";
 import type {
   NotificationEvent,
   NotificationFormatter,
@@ -10,19 +10,16 @@ import type {
 } from "../notifications/formatters/interfaces";
 import { getFormatterForMessageType } from "../notifications/formatters/NotificationRegistry";
 
-export const PUBLISH_EVENT = "notifications:publish";
-export const REFRESH_EVENT = "notifications:refresh";
-
 const NotificationSink: React.FunctionComponent = () => {
   const [api, contextHolder] = notification.useNotification({
     top: 96,
   });
 
   useEffect(() => {
-    subscribe(PUBLISH_EVENT, onNotificationReceived);
+    subscribe(Events.NOTIFICATIONS_PUBLISH_EVENT, onNotificationReceived);
 
     return () => {
-      unsubscribe(PUBLISH_EVENT, onNotificationReceived);
+      unsubscribe(Events.NOTIFICATIONS_PUBLISH_EVENT, onNotificationReceived);
     };
   }, []);
 

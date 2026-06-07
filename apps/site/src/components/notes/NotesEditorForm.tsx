@@ -19,14 +19,13 @@ import {
   type UseFormReset,
 } from "react-hook-form";
 import notesApi from "../../api/notestApi";
-import { publish } from "../../utils/events";
+import { Events, publish } from "../../utils/events";
 import {
   getColorForType,
   getIconForType,
   getSecondaryColorForType,
 } from "../../utils/notes";
-import { PUBLISH_EVENT } from "../common/NotificationSink";
-import NoteRichTextEditor from "./NoteRitchTextEditor";
+=import NoteRichTextEditor from "./NoteRitchTextEditor";
 import { v4 as uuidv4 } from "uuid";
 import NoteSummaryRichTextEditor from "./NoteSummaryRitchTextEditor";
 
@@ -109,8 +108,8 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
           await afterUpdate(updateResponse.note);
         }
 
-        publish("notes:noteUpdated");
-        publish(PUBLISH_EVENT, {
+        publish(Events.MINERVA_NOTE_UPDATED);
+        publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
           type: "success",
           message: "Note saved",
           description: "The note has been successfully updated",
@@ -141,9 +140,9 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
           await afterCreate(createdNote);
         }
 
-        publish("notes:noteAdded", { note: createdNote });
+        publish(Events.MINERVA_NOTE_ADDED, { note: createdNote });
 
-        publish(PUBLISH_EVENT, {
+        publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
           type: "success",
           message: "Note saved",
           description: "The note has been successfully created",
@@ -152,7 +151,7 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
       formControl.reset(NEW_NOTE);
       onClose();
     } catch (e) {
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Failed to save note",
         description: "Unable to save note due to a server error",

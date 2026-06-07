@@ -16,8 +16,7 @@ import {
 import dynamic from "next/dynamic";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 import metadataApi from "../../../api/metadataApi";
-import { publish } from "../../../utils/events";
-import { PUBLISH_EVENT } from "../../common/NotificationSink";
+import { Events, publish } from "../../../utils/events";
 import MetadataJobStatusSelect from "./MetadataJobStatusSelect";
 
 interface FormInput {
@@ -75,7 +74,7 @@ const CreateMetadataJobModal: React.FunctionComponent<
     );
 
     try {
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "success",
         message: "Job created",
         description: "Metadata fetch job successfully created",
@@ -83,7 +82,7 @@ const CreateMetadataJobModal: React.FunctionComponent<
 
       closeModal();
     } catch (e) {
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Unable to create job",
         description: "The API call to /v1/jobs/metadata failed",

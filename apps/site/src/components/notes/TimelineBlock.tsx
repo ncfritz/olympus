@@ -12,10 +12,11 @@ import { useEffect, useState } from "react";
 import * as React from "react";
 import notesApi from "../../api/notestApi";
 import {
+  Events,
   type NoteEvent,
   type OlympusEvent,
   subscribe,
-  unsubscribe,
+  unsubscribe
 } from "../../utils/events";
 import { config, getIconForType } from "../../utils/notes";
 import TimelineEntry from "./TimelineEntry";
@@ -60,10 +61,10 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
   }).startOf("day");
 
   useEffect(() => {
-    subscribe("notes:noteAdded", onNoteAdded);
+    subscribe(Events.MINERVA_NOTE_ADDED, onNoteAdded);
 
     return () => {
-      unsubscribe("notes:noteAdded", onNoteAdded);
+      unsubscribe(Events.MINERVA_NOTE_ADDED, onNoteAdded);
     };
   }, [entries]);
 
@@ -90,7 +91,9 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
     }
 
     if (noteDate.hasSame(blockDate, "day")) {
-      console.log(`notes:noteAdded triggered for ${noteDate.toISODate()}`);
+      console.log(
+        `${Events.MINERVA_NOTE_ADDED} triggered for ${noteDate.toISODate()}`
+      );
 
       let newEntries: Note[];
 
@@ -208,7 +211,7 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
   const total = summary["total"];
 
   return (
-    <Space direction={"vertical"} style={{ width: "100%" }}>
+    <Space orientation={"vertical"} style={{ width: "100%" }}>
       <Space
         style={{
           width: "100%",
@@ -245,7 +248,7 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
               {itemsContent.length} of {total} items
             </Tag>
           )}
-          <Space direction={"horizontal"} size={8}>
+          <Space orientation={"horizontal"} size={8}>
             {[0, 1, 2, 3, 4, 5].map((i) => {
               const filtered = typeFilters[config[i].type];
 

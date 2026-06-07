@@ -33,9 +33,8 @@ import {
   useForm,
 } from "react-hook-form";
 import notificationsApi from "../../api/notificationsApi";
-import { publish } from "../../utils/events";
-import { PUBLISH_EVENT } from "../common/NotificationSink";
-import EmailDestinationForm from "./destination/EmailDestinationForm";
+import { Events, publish } from "../../utils/events";
+=import EmailDestinationForm from "./destination/EmailDestinationForm";
 import SynologyChatDestinationForm from "./destination/SynologyChatDestinationForm";
 import WebSocketDestinationForm from "./destination/WebSocketDestinationForm";
 import { v4 as uuid4 } from "uuid";
@@ -254,10 +253,10 @@ const NotificationForm: React.FunctionComponent = () => {
         visibleDuration: 2,
       };
 
-      publish(PUBLISH_EVENT, message);
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, message);
     } catch (e) {
       console.log(e);
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Unable to send notification",
         description: "The API call to /v1/notifications/publish failed",

@@ -3,8 +3,7 @@ import { Button, Form, Input, Modal, Space } from "antd";
 import React from "react";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 import contentApi from "../../api/contentApi";
-import { publish } from "../../utils/events";
-import { PUBLISH_EVENT } from "../common/NotificationSink";
+import { Events, publish } from "../../utils/events";
 
 export interface ContentAssetChannelCategoryModalProps {
   categoryId?: string;
@@ -64,7 +63,7 @@ const ContentAssetChannelCategoryModal: React.FunctionComponent<
         ).data.category;
       }
 
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "success",
         message: categoryId ? "Category updated" : "Category created",
         description: categoryId
@@ -78,7 +77,7 @@ const ContentAssetChannelCategoryModal: React.FunctionComponent<
 
       closeModal();
     } catch (e) {
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Unable to create category",
         description: "The API call to /v1/content/channels/categories failed",

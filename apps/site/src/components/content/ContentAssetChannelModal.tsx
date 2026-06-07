@@ -21,8 +21,7 @@ import {
 import React, { useState } from "react";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 import contentApi from "../../api/contentApi";
-import { publish } from "../../utils/events";
-import { PUBLISH_EVENT } from "../common/NotificationSink";
+import { Events, publish } from "../../utils/events";
 import ContentAssetChannelPreviewPannel from "./ContentAssetChannelPreviewPannel";
 import ContentAssetTagInput from "./ContentAssetTagInput";
 import { RESOLUTION_MAP } from "./util";
@@ -234,7 +233,7 @@ const ContentAssetChannelModal: React.FunctionComponent<
         ).data.channel;
       }
 
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "success",
         message: channelId ? "Category updated" : "Category created",
         description: channelId
@@ -248,7 +247,7 @@ const ContentAssetChannelModal: React.FunctionComponent<
 
       closeModal();
     } catch (e) {
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Unable to create category",
         description: "The API call to /v1/content/channels/categories failed",
@@ -424,7 +423,7 @@ const ContentAssetChannelModal: React.FunctionComponent<
   );
 
   const previewContent = (
-    <Space direction={"vertical"} style={{ height: 640, width: "100%" }}>
+    <Space orientation={"vertical"} style={{ height: 640, width: "100%" }}>
       <Space
         direction={"horizontal"}
         size={0}
@@ -527,8 +526,8 @@ const ContentAssetChannelModal: React.FunctionComponent<
       }}
     >
       <form onSubmit={handleSubmit(onSubmit)}>
-        <Space direction={"vertical"} style={{ width: "100%" }}>
-          <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+        <Space orientation={"vertical"} style={{ width: "100%" }}>
+          <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
             <Controller
               name={"name"}
               control={control}

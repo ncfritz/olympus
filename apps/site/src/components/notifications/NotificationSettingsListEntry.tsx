@@ -1,9 +1,8 @@
 import { Checkbox, Typography } from "antd";
 import { useState } from "react";
 import notificationsApi from "../../api/notificationsApi";
-import { publish } from "../../utils/events";
-import { PUBLISH_EVENT } from "../common/NotificationSink";
-
+import { Events, publish } from "../../utils/events";
+=
 export interface NotificationSettings {
   webSocketEnabled: boolean;
   synoChatEnabled: boolean;
@@ -98,7 +97,7 @@ const NotificationSettingsListEntry: React.FunctionComponent<
         },
       );
 
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "success",
         message: "Settings updated",
         description: `Settings for "${notificationType.name}" have been updated successfully.`,
@@ -107,7 +106,7 @@ const NotificationSettingsListEntry: React.FunctionComponent<
 
       await afterUpdate();
     } catch (e) {
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Unable to update settings",
         description: `Settings for "${notificationType.name}" could not be updated.`,

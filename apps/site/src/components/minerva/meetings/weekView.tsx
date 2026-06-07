@@ -11,8 +11,7 @@ import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import { type DateRange, DayPicker } from "react-day-picker";
 import meetingsApi from "../../../api/meetingsApi";
-import { publish } from "../../../utils/events";
-import { PUBLISH_EVENT } from "../../common/NotificationSink";
+import { Events, publish } from "../../../utils/events";
 import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
 import Day from "./DayDoughnut";
 import MeetingStatisticsPanel from "./MeetingsStatisticsPanel";
@@ -113,7 +112,7 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
       const summaryResponse = await meetingsApi.getSummary(endOfView, 42);
       setSummary(summaryResponse.data);
     } catch (e) {
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Failed to load meetings",
         description: `Unable fetch meetings, please try again`,

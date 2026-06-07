@@ -9,17 +9,14 @@ import onairApi from "../../api/onairApi";
 import { useAppSelector } from "../../redux/hooks";
 import { setUnreadCount } from "../../redux/slices/notificationsSlice";
 import { isElectron } from "../../utils/electron";
-import NotificationSink, {
-  PUBLISH_EVENT,
-  REFRESH_EVENT,
-} from "../common/NotificationSink";
+import NotificationSink from "../common/NotificationSink";
 import AuthSessionTimer from "../content/AuthSessionTimer";
 import NotesEditorModal from "../notes/NotesEditorModal";
 import OnAirDrawer from "../onair/OnAirDrawer";
 import RefreshTimer from "../common/RefreshTimer";
 import NotificationsDrawer from "../notifications/NotificationsDrawer";
 import SettingsDrawer from "./SettingsDrawer";
-import { publish } from "../../utils/events";
+import { Events, publish } from "../../utils/events";
 
 const { Header } = Layout;
 
@@ -66,7 +63,7 @@ const AuthHeader: React.FunctionComponent = () => {
   useSocketEvent(socket, "notification.push", {
     onMessage: (message: any) => {
       if (message && !message.ghost) {
-        publish(PUBLISH_EVENT, {
+        publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
           eventId: message.eventId,
           notificationId: message.notificationId,
           messageType: message.messageType,
@@ -83,7 +80,7 @@ const AuthHeader: React.FunctionComponent = () => {
   });
   useSocketEvent(socket, "notification.refresh", {
     onMessage: (message: any) => {
-      publish(REFRESH_EVENT, {
+      publish(Events.NOTIFICATIONS_REFRESH_EVENT, {
         groupId: message.groupId,
       });
       dispatch(setUnreadCount(message.unreadCount));

@@ -1,11 +1,8 @@
-const DynamicReactJson = dynamic(import("react-json-view"), { ssr: false });
 import { Button, Form, Input, InputNumber, Modal, Space, Switch } from "antd";
-import dynamic from "next/dynamic";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 import batchJobApi from "../../../api/batchJobApi";
-import { publish } from "../../../utils/events";
+import { Events, publish } from "../../../utils/events";
 import { type JobType } from "@ncfritz/olympus-sdk/dionysus";
-import { PUBLISH_EVENT } from "../../common/NotificationSink";
 
 interface FormInput {
   type: JobType;
@@ -58,7 +55,7 @@ const CreateBatchJobModal: React.FunctionComponent<
         data.limit ? data.maxRecords : undefined,
       );
 
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "success",
         message: "Job created",
         description: "Metadata batch job successfully created",
@@ -70,7 +67,7 @@ const CreateBatchJobModal: React.FunctionComponent<
 
       closeModal();
     } catch (e) {
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Unable to create job",
         description: "The API call to /v1/jobs/batch failed",

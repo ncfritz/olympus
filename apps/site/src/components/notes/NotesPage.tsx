@@ -22,7 +22,7 @@ import NotesHourOfDayGraph from "./NotesHourOfDayGraph";
 import NotesTypeGraph from "./NotesTypeGraph";
 import NoteTypeFilterButton from "./NoteTypeFilterButton";
 import NotesTimelineBlock from "./TimelineBlock";
-import { subscribe, unsubscribe } from "../../utils/events";
+import { Events, subscribe, unsubscribe } from "../../utils/events";
 import { v4 as uuidv4 } from "uuid";
 
 const { Sider, Content } = Layout;
@@ -80,10 +80,10 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
   };
 
   useEffect(() => {
-    subscribe("notes:noteAdded", onNotesChanged);
+    subscribe(Events.MINERVA_NOTE_ADDED, onNotesChanged);
 
     return () => {
-      unsubscribe("notes:noteAdded", onNotesChanged);
+      unsubscribe(Events.MINERVA_NOTE_ADDED, onNotesChanged);
     };
   }, []);
 
@@ -217,7 +217,7 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
     }
 
     timelineContent = (
-      <Space direction={"vertical"} size={0} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
         {entriesContent}
       </Space>
     );
@@ -228,7 +228,7 @@ const IndexPage: React.FunctionComponent<NotesPageProps> = ({
       key: "t-statistics",
       label: <CalendarOutlined />,
       children: (
-        <Space direction={"vertical"}>
+        <Space orientation={"vertical"}>
           <Space
             size={8}
             className={"date-picker"}

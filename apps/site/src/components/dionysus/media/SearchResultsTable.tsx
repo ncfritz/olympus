@@ -35,7 +35,7 @@ import React, { type ReactNode, useEffect, useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import mediaApi from "../../../api/mediaApi";
 import { useFetch } from "../../../hooks/useFetch";
-import { subscribe, unsubscribe } from "../../../utils/events";
+import { Events, subscribe, unsubscribe } from "../../../utils/events";
 import { buildFilterDefinitionForTable } from "../../../utils/filters";
 import { getGradientAtPercent } from "../../../utils/gradient";
 import ErrorBlock from "../../common/ErrorBlock";
@@ -112,10 +112,10 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
   };
 
   useEffect(() => {
-    subscribe("dionysus:search:complete", onSearchComplete);
+    subscribe(Events.DIONYSYS_MEDIA_SEARCH_COMPLETE, onSearchComplete);
 
     return () => {
-      unsubscribe("dionysus:search:complete", onSearchComplete);
+      unsubscribe(Events.DIONYSYS_MEDIA_SEARCH_COMPLETE, onSearchComplete);
     };
   }, []);
 
@@ -722,7 +722,7 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
                   >
                     {Object.entries(tags).map((value) => {
                       return (
-                        <Space direction={"vertical"} size={4}>
+                        <Space orientation={"vertical"} size={4}>
                           {value[1]}
                         </Space>
                       );

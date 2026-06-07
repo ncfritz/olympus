@@ -32,8 +32,7 @@ import { useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import meetingsApi from "../../../api/meetingsApi";
 import notesApi from "../../../api/notestApi";
-import { publish } from "../../../utils/events";
-import { PUBLISH_EVENT } from "../../common/NotificationSink";
+import { Events, publish } from "../../../utils/events";
 import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
 import Day from "./DayDoughnut";
 import NotesEditorForm, {
@@ -164,7 +163,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
         setRawEvents(getMeetingsResponse.data.items);
         await loadSummary();
       } catch (e) {
-        publish(PUBLISH_EVENT, {
+        publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
           type: "error",
           message: "Failed to load meetings",
           description: `Unable fetch meetings, please try again`,
@@ -217,7 +216,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
           setEvents(newEvents);
         }
       } catch (e) {
-        publish(PUBLISH_EVENT, {
+        publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
           type: "error",
           message: "Failed to load meeting",
           description: `Unable fetch meeting details, please try again`,
@@ -252,7 +251,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
       );
       setSummary(summaryResponse.data);
     } catch (e) {
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Failed to load meeting summary",
         description: `Unable fetch meeting summary for range ${startOfMonth.toISODate()} to ${endOfMonth.toISODate()}`,
@@ -271,7 +270,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
       );
       setEventNotes(notesResponse.data.notes);
     } catch (e) {
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Failed to load notes",
         description: `Unable fetch notes for the selected meeting`,
@@ -363,7 +362,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
     );
   } else if (event) {
     eventContent = (
-      <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
         <Space
           direction={"vertical"}
           className={`oa-event oa-status-${event.status.toLowerCase()} minerva-event`}
@@ -381,13 +380,13 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
             direction={"horizontal"}
             style={{ alignItems: "center" }}
           >
-            <Space direction={"horizontal"}>
+            <Space orientation={"horizontal"}>
               <Avatar
                 shape={"circle"}
                 size={"large"}
                 src={`https://cdn.internal.ncfritz.net/amzn/avatar/${event.organizer.alias}.jpg`}
               />
-              <Space direction={"vertical"} size={0}>
+              <Space orientation={"vertical"} size={0}>
                 <Typography.Title
                   level={5}
                   style={{ paddingBottom: 2, margin: 0 }}
@@ -643,7 +642,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
             }}
           />
           {nextEventInSeries && (
-            <Space direction={"vertical"} style={{ padding: 8, width: "100%" }}>
+            <Space orientation={"vertical"} style={{ padding: 8, width: "100%" }}>
               <EventChip event={nextEventInSeries} />
             </Space>
           )}

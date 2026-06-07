@@ -15,8 +15,7 @@ import {
 } from "antd";
 import { useState } from "react";
 import batchJobApi from "../../../api/batchJobApi";
-import { publish } from "../../../utils/events";
-import { PUBLISH_EVENT } from "../../common/NotificationSink";
+import { Events, publish } from "../../../utils/events";
 import MetadataStatusTable from "../metadata/MetadataStatusTable";
 import MetadataJobStatusSelect from "./MetadataJobStatusSelect";
 
@@ -67,7 +66,7 @@ const RedriveModal: React.FunctionComponent<RedriveModalProps> = ({
         republish,
       );
 
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "success",
         message: "Re-drive created",
         description: "The re-drive job was created successfully",
@@ -75,7 +74,7 @@ const RedriveModal: React.FunctionComponent<RedriveModalProps> = ({
 
       closeModal();
     } catch (e) {
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Unable to create re-drive",
         description: "The API call to /v1/jobs/batch/redrive failed",

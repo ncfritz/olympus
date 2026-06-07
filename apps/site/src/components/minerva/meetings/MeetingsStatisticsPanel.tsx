@@ -2,8 +2,7 @@ import { Alert, Button, Space, Spin } from "antd";
 import { type DateTime } from "luxon";
 import React, { useCallback, useEffect, useState } from "react";
 import meetingsApi from "../../../api/meetingsApi";
-import { publish } from "../../../utils/events";
-import { PUBLISH_EVENT } from "../../common/NotificationSink";
+import { Events, publish } from "../../../utils/events";
 import MeetingsDayOfWeekGraph from "./MeetingsDayOfWeekGraph";
 import MeetingsHourOfDayGraph from "./MeetingsHourOfDayGraph";
 
@@ -31,7 +30,7 @@ const MeetingStatisticsPanel: React.FunctionComponent<
       setStatistics(summaryResponse.data);
     } catch (e) {
       const endDate = startDate.plus({ days: dayCount });
-      publish(PUBLISH_EVENT, {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Failed to load meeting summary",
         description: `Unable fetch meeting summary for range ${startDate.toISODate()} to ${endDate.toISODate()}`,
@@ -74,7 +73,7 @@ const MeetingStatisticsPanel: React.FunctionComponent<
     );
   } else {
     content = (
-      <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+      <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
         <MeetingsHourOfDayGraph
           date={startDate}
           summaryLoading={statisticsLoading}

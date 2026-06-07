@@ -3,8 +3,7 @@ import type {
   MediaAssetSearchType,
 } from "@ncfritz/olympus-sdk/dionysus";
 import mediaApi from "../api/mediaApi";
-import { PUBLISH_EVENT } from "../components/common/NotificationSink";
-import { publish } from "./events";
+import { Events, publish } from "./events";
 
 export type SearchConfigurationIdentifiers = {
   mediaId: number;
@@ -37,13 +36,13 @@ export const handleCreateSearchConfiguration = async (
       await afterUpdate(response.data.searchConfiguration);
     }
 
-    publish(PUBLISH_EVENT, {
+    publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
       type: "success",
       message: "Search Configuration created",
       description: "The Search Configuration has been created successfully",
     });
   } catch (e) {
-    publish(PUBLISH_EVENT, {
+    publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
       type: "error",
       message: "Unable to create Search Configuration",
       description: "The request to create a Search Configuration failed",
@@ -73,13 +72,13 @@ export const handleSetEnabled = async (
       await afterUpdate(response.data.searchConfiguration);
     }
 
-    publish(PUBLISH_EVENT, {
+    publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
       type: "success",
       message: "Search Configuration updated",
       description: `The Search Configuration has been ${enabled ? "enabled" : "disabled"} successfully`,
     });
   } catch (e) {
-    publish(PUBLISH_EVENT, {
+    publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
       type: "error",
       message: "Unable to update Search Configuration",
       description: "The request to update the Search Configuration failed",
@@ -101,14 +100,14 @@ export const handleTriggerSearch = async (
       await afterUpdate(response.data.searchConfiguration);
     }
 
-    publish(PUBLISH_EVENT, {
+    publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
       type: "success",
       message: "Search Triggered",
       description: `The Search has been successfully triggered. There will be a notification once the search 
         execution completes.`,
     });
   } catch (e) {
-    publish(PUBLISH_EVENT, {
+    publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
       type: "error",
       message: "Unable to trigger search",
       description: "The request to trigger the search failed",

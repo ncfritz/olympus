@@ -1,8 +1,7 @@
 import { Alert, Button, Empty, List, Pagination, Space, Spin } from "antd";
 import { useEffect, useState } from "react";
 import notificationsApi from "../../api/notificationsApi";
-import { subscribe, unsubscribe } from "../../utils/events";
-import { REFRESH_EVENT } from "../common/NotificationSink";
+import { Events, subscribe, unsubscribe } from "../../utils/events";
 import NotificationListEntry from "./NotificationListEntry";
 
 export interface NotificationGroupEntryListProps {
@@ -20,10 +19,10 @@ const NotificationGroupEntryList: React.FunctionComponent<
   const [notificationsError, setNotificationsError] = useState<any>(undefined);
 
   useEffect(() => {
-    subscribe(REFRESH_EVENT, onRefreshEvent);
+    subscribe(Events.NOTIFICATIONS_REFRESH_EVENT, onRefreshEvent);
 
     return () => {
-      unsubscribe(REFRESH_EVENT, onRefreshEvent);
+      unsubscribe(Events.NOTIFICATIONS_REFRESH_EVENT, onRefreshEvent);
     };
   }, []);
 
