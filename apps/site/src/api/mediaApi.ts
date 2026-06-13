@@ -6,6 +6,8 @@ import {
   createMediaAssetDownload,
   createMediaAssetSearchConfiguration,
   createMediaAssetWorkflow,
+  createMediaFavorite,
+  deleteMediaFavorite,
   describeMediaAssetSearchConfiguration,
   describeMediaAssetWorkflow,
   type FilterDefinition,
@@ -212,6 +214,27 @@ class MediaApi extends ApiBase {
       path: {
         workflowId: workflowId,
         workflowStepId: workflowStepId,
+      },
+    });
+  }
+
+  async createMediaFavorite(mediaType: MediaAssetSearchType, mediaId: number) {
+    return await createMediaFavorite({
+      path: {
+        mediaType: mediaType,
+        mediaId: mediaId,
+      },
+    });
+  }
+
+  async deleteMediaFavorite(mediaType: MediaAssetSearchType, mediaId: number) {
+    return await deleteMediaFavorite({
+      path: {
+        mediaType: mediaType,
+        mediaId: mediaId,
+      },
+      validateStatus: (status) => {
+        return status === 200 || status == 410;
       },
     });
   }

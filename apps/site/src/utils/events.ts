@@ -4,8 +4,9 @@ import type { Note } from "@ncfritz/olympus-sdk/minerva";
 
 export enum Events {
   DIONYSUS_BLACK_CURTAIN_LOCK = "dionysus:black-curtain:lock",
-  DIONYSYS_MEDIA_SEARCH_COMPLETE = "dionysus:media:search:complete",
-  DIONYSYS_MEDIA_SEARCH_CONFIGURATION_UPDATED = "dionysus:media:search-configuration:updated",
+  DIONYSUS_MEDIA_SEARCH_COMPLETE = "dionysus:media:search:complete",
+  DIONYSUS_MEDIA_SEARCH_CONFIGURATION_UPDATED = "dionysus:media:search-configuration:updated",
+  DIONYSUS_MEDIA_FAVORITE_UPDATED = "dionysus:media:favorite:updated",
   MINERVA_NOTE_ADDED = "minerva:note:added",
   MINERVA_NOTE_UPDATED = "minerva:note:updated",
   NOTIFICATIONS_PUBLISH_EVENT = "notifications:publish",

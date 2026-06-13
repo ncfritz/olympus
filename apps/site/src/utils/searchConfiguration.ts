@@ -36,6 +36,10 @@ export const handleCreateSearchConfiguration = async (
       await afterUpdate(response.data.searchConfiguration);
     }
 
+    publish(
+      Events.DIONYSUS_MEDIA_SEARCH_CONFIGURATION_UPDATED,
+      response.data.searchConfiguration,
+    );
     publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
       type: "success",
       message: "Search Configuration created",
@@ -71,6 +75,11 @@ export const handleSetEnabled = async (
     if (afterUpdate) {
       await afterUpdate(response.data.searchConfiguration);
     }
+
+    publish(
+      Events.DIONYSUS_MEDIA_SEARCH_CONFIGURATION_UPDATED,
+      response.data.searchConfiguration,
+    );
 
     publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
       type: "success",

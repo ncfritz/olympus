@@ -5,7 +5,6 @@ import {
   EyeOutlined,
   FileOutlined,
   FontSizeOutlined,
-  HeartOutlined,
   HomeOutlined,
   InfoCircleFilled,
   QrcodeOutlined,
@@ -41,6 +40,7 @@ import metadataApi from "../../../api/metadataApi";
 import Description from "../../../components/common/Description";
 import LoadingWrapper from "../../../components/common/LoadingWrapper";
 import AssetDetailsPanel from "../../../components/dionysus/media/AssetDetailsPanel";
+import FavoriteButton from "../../../components/dionysus/media/FavoriteButton";
 import SearchConfigurationPanel from "../../../components/dionysus/media/SearchConfigurationPanel";
 import SearchResultsTable from "../../../components/dionysus/media/SearchResultsTable";
 import ExternalIdsList from "../../../components/dionysus/metadata/ExternalIdsList";
@@ -734,11 +734,10 @@ const MovieDetailPage: React.FunctionComponent = () => {
                   orientation={"horizontal"}
                   style={{ left: -48, position: "relative" }}
                 >
-                  <Button
-                    className={"dionysus-action-button"}
-                    shape={"circle"}
-                    size={"large"}
-                    icon={<HeartOutlined />}
+                  <FavoriteButton
+                    mediaType={"movie"}
+                    mediaId={movie.id}
+                    favorite={movie.favorite !== undefined}
                   />
                   <Button
                     className={"dionysus-action-button"}

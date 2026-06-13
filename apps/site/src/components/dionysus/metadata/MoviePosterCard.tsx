@@ -13,10 +13,12 @@ import prettyMilliseconds from "pretty-ms";
 import React, {
   type CSSProperties,
   type ReactNode,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
 } from "react";
+import { Events, subscribe, unsubscribe } from "../../../utils/events";
 import SearchConfigurationButton from "../media/SearchConfigurationButton";
 import PopularityIndicator from "./PopulairtyIndicator";
 import { getReleaseStatusForMovie } from "./util";
@@ -55,6 +57,34 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
   const [cardY, setCardY] = useState(0);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [coverHover, setCoverHover] = useState(false);
+  const [searchConfiguration, setSearchConfiguration] = useState(
+    movie.searchConfiguration,
+  );
+
+  useEffect(() => {
+    setSearchConfiguration(movie.searchConfiguration);
+  }, [movie]);
+
+  useEffect(() => {
+    subscribe(
+      Events.DIONYSUS_MEDIA_SEARCH_CONFIGURATION_UPDATED,
+      onSearchConfigurationUpdated,
+    );
+
+    return () => {
+      unsubscribe(
+        Events.DIONYSUS_MEDIA_SEARCH_CONFIGURATION_UPDATED,
+        onSearchConfigurationUpdated,
+      );
+    };
+  }, []);
+
+  const onSearchConfigurationUpdated = (e: CustomEvent) => {
+    if (e.detail.type === "movie" && e.detail.mediaId === movie.id) {
+      console.log("Updated search configuration", e.detail);
+      setSearchConfiguration(e.detail);
+    }
+  };
 
   useLayoutEffect(() => {
     if (cardRef.current) {
@@ -67,14 +97,24 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
 
   const getPoster = (
     movie: SparseMovie,
-    height?: number,
+    direction?: "horizontal" | "vertical",
+    baseline?: number,
     borderRadius?: number | string,
   ) => {
+    let height = undefined;
+    let width = undefined;
+
+    if (baseline) {
+      height = direction === "vertical" ? baseline : (3 / 2) * baseline;
+      width = direction === "horizontal" ? baseline : (2 / 3) * baseline;
+    }
+
     return movie.posterPath ? (
       <img
         style={{
           height: height ? height : "inherit",
-          width: "inherit",
+          width: width ? width : "inherit",
+          aspectRatio: "calc(2 / 3)",
           borderRadius: borderRadius ? borderRadius : "inherit",
         }}
         src={`https://image.tmdb.org/t/p/w342/${movie.posterPath}}`}
@@ -83,10 +123,12 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
     ) : (
       <Space
         style={{
-          height: height,
-          borderRadius: borderRadius,
+          height: height ? height : "inherit",
+          width: width ? width : "inherit",
+          borderRadius: borderRadius ? borderRadius : "inherit",
           aspectRatio: "calc(2 / 3)",
           backgroundColor: "#eeeeee",
+          justifyContent: "center",
         }}
         styles={{
           item: {
@@ -199,7 +241,7 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
               }}
             />
           )}
-          {getPoster(movie, scaleBaseline)}
+          {getPoster(movie, scaleDirection, scaleBaseline)}
         </div>
       }
       actions={actions}
@@ -326,7 +368,7 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
             style={{ alignItems: "start" }}
             size={16}
           >
-            <div>{getPoster(movie, 166, 4)}</div>
+            <div>{getPoster(movie, "vertical", 166, 4)}</div>
             <Typography.Title
               level={4}
               style={{ color: "#ffffffdd", marginBottom: 3 }}
@@ -403,7 +445,7 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
                     <SearchConfigurationButton
                       mediaType={"movie"}
                       mediaId={movie.id}
-                      searchConfiguration={movie.searchConfiguration}
+                      searchConfiguration={searchConfiguration}
                       loading={false}
                     />
                   </Space>
@@ -436,11 +478,11 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
 
     if (cardX + 790 > window.innerWidth) {
       cardPosition.left =
-        movie.asset || movie.searchConfiguration
+        movie.asset || searchConfiguration
           ? -790 + cardWidth
           : -780 + cardWidth;
     } else {
-      cardPosition.left = movie.asset || movie.searchConfiguration ? 0 : 9;
+      cardPosition.left = movie.asset || searchConfiguration ? 0 : 9;
     }
 
     content = (
@@ -504,17 +546,13 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
         {content}
       </Badge.Ribbon>
     );
-  } else if (movie.searchConfiguration) {
+  } else if (searchConfiguration) {
     return (
       <Badge.Ribbon
-        color={movie.searchConfiguration.enabled ? "#2657a8" : "#c5981c"}
+        color={searchConfiguration.enabled ? "#2657a8" : "#c5981c"}
         style={{ fontSize: "12px" }}
         text={
-          movie.searchConfiguration.enabled ? (
-            <EyeFilled />
-          ) : (
-            <PauseCircleFilled />
-          )
+          searchConfiguration.enabled ? <EyeFilled /> : <PauseCircleFilled />
         }
       >
         {content}

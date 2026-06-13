@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
-import { EyeFilled, FilterFilled, HomeOutlined } from "@ant-design/icons";
+import { EyeFilled, FilterFilled, HeartFilled, HomeOutlined } from "@ant-design/icons";
 import type {
   FilterDefinition,
   Genre,
@@ -78,6 +78,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
   >([]);
   const [missingFilter, setMissingFilter] = useState<string[]>([]);
   const [monitoredFilter, setMonitoredFilter] = useState(false);
+  const [favoriteFilter, setFavoriteFilter] = useState(false);
   const [filters, setFilters] = useState<FilterDefinition | undefined>(
     undefined,
   );
@@ -198,6 +199,14 @@ const MoviesIndexPage: React.FunctionComponent = () => {
       });
     }
 
+    if (favoriteFilter) {
+      newFilters.push({
+        type: "exists",
+        name: "favorite",
+        value: true,
+      });
+    }
+
     if (newFilters.length > 1) {
       setFilters({ type: "and", name: "__base", value: newFilters });
     } else {
@@ -215,6 +224,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
     releaseDateFilter,
     runtimeFilter,
     monitoredFilter,
+    favoriteFilter,
     missingFilter,
     originalLanguageFilter,
   ]);
@@ -617,7 +627,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
               <EyeFilled
                 style={{
                   fontSize: "18px",
-                  color: monitoredFilter ? "#333333" : "#afafaf",
+                  color: monitoredFilter ? "#1672f3" : "#afafaf",
                 }}
               />
             </Typography.Text>
@@ -625,6 +635,19 @@ const MoviesIndexPage: React.FunctionComponent = () => {
               size={"small"}
               checked={monitoredFilter}
               onChange={setMonitoredFilter}
+            />
+            <Typography.Text style={{ fontSize: "12px" }}>
+              <HeartFilled
+                style={{
+                  fontSize: "18px",
+                  color: favoriteFilter ? "#1672f3" : "#afafaf",
+                }}
+              />
+            </Typography.Text>
+            <Switch
+              size={"small"}
+              checked={favoriteFilter}
+              onChange={setFavoriteFilter}
             />
             <Sorter
               initialSort={sort.field}
