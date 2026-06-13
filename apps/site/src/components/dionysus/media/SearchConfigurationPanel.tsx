@@ -44,10 +44,10 @@ const SearchConfigurationPanel: React.FunctionComponent<
     });
 
   useEffect(() => {
-    subscribe(Events.DIONYSYS_MEDIA_SEARCH_COMPLETE, onSearchComplete);
+    subscribe(Events.DIONYSUS_MEDIA_SEARCH_COMPLETE, onSearchComplete);
 
     return () => {
-      unsubscribe(Events.DIONYSYS_MEDIA_SEARCH_COMPLETE, onSearchComplete);
+      unsubscribe(Events.DIONYSUS_MEDIA_SEARCH_COMPLETE, onSearchComplete);
     };
   }, []);
 
