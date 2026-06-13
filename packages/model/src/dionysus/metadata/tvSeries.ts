@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment";
-import { MediaAssetSearchConfiguration } from "../media";
+import { MediaAssetSearchConfiguration, SparseMediaFavorite } from "../media";
 import {
   Certification,
   CertificationAssociation,
@@ -101,6 +101,12 @@ export class BaseTVSeries {
 
   @ApiProperty({ type: () => MediaAssetSearchConfiguration, required: false })
   searchConfiguration?: MediaAssetSearchConfiguration;
+
+  @ApiProperty({
+    type: () => SparseMediaFavorite,
+    required: false,
+  })
+  favorite?: SparseMediaFavorite;
 
   @ApiProperty({ type: String })
   @Transform(({ value }) => value.toISOString())

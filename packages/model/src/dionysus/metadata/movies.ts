@@ -2,7 +2,11 @@ import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
 import { PaginatedResults } from "../../common";
-import { MediaAsset, MediaAssetSearchConfiguration } from "../media";
+import {
+  MediaAsset,
+  MediaAssetSearchConfiguration,
+  SparseMediaFavorite,
+} from "../media";
 import { Certification } from "./certifications";
 import { Collection } from "./collections";
 import {
@@ -117,6 +121,12 @@ export class SparseMovie extends BaseMovie {
     isArray: true,
   })
   genres: GenreAssociation[];
+
+  @ApiProperty({
+    type: () => SparseMediaFavorite,
+    required: false,
+  })
+  favorite?: SparseMediaFavorite;
 }
 
 export class Movie extends SparseMovie {

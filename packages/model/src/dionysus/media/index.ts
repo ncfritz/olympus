@@ -1,3 +1,4 @@
+export * from "./mediaFavorite";
 export * from "./mediaAsset";
 export * from "./mediaDownload";
 export * from "./mediaWorkflow";
