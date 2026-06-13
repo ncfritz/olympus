@@ -13,7 +13,6 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import notesApi from "../../api/notestApi";
-import MovieReleaseDateList from "../dionysus/metadata/MovieReleaseDatesList";
 import CollapsibleTabPanel from "../layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../layout/OlympusBreadcrumbs";
 import Day from "./DayDoughnut";

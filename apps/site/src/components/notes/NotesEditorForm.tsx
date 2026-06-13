@@ -25,7 +25,7 @@ import {
   getIconForType,
   getSecondaryColorForType,
 } from "../../utils/notes";
-=import NoteRichTextEditor from "./NoteRitchTextEditor";
+import NoteRichTextEditor from "./NoteRitchTextEditor";
 import { v4 as uuidv4 } from "uuid";
 import NoteSummaryRichTextEditor from "./NoteSummaryRitchTextEditor";
 

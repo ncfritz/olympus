@@ -14,7 +14,7 @@ import { v4 as uuidv4 } from "uuid";
 import notesApi from "../../api/notestApi";
 import { Events, publish } from "../../utils/events";
 import { config, getIconForType } from "../../utils/notes";
-=
+
 export interface NotesTimelineEntryTypeProps {
   entry: Note;
   editing: boolean;
