@@ -22,7 +22,7 @@ export class MediaAssetSearchRefreshCompletionFormatter implements NotificationF
       </Space>
     );
 
-    publish(Events.DIONYSYS_MEDIA_SEARCH_COMPLETE, payload);
+    publish(Events.DIONYSUS_MEDIA_SEARCH_COMPLETE, payload);
 
     return [title, message];
   }
