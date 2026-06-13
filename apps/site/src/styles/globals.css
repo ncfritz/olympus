@@ -395,11 +395,16 @@ img.electron-logo {
   background: #202f3e;
   border-color: #4b4d52;
 }
-.dionysus-action-button:hover {
+.dionysus-action-button:hover,
+.dionysus-action-button button:hover {
   color: #efefef !important;
   background: #37445CFF !important;
   border-color: #595a5f !important;
 }
+.dionysus-action-button button:hover {
+  border-color: #37445CFF !important;
+}
+
 .dionysus-action-button:active {
   color: #efefef !important;
   background: #475877 !important;
@@ -424,14 +429,7 @@ img.electron-logo {
 
 .dionysus-action-button.active {
   color: #efefef !important;
-  background: #4a4b4d !important;
   border-color: #488633 !important;
-}
-.dionysus-action-button.active:hover {
-  background: #66686c !important;
-}
-.dionysus-action-button.active:active {
-  background: #6a6b6d !important;
 }
 
 .dionysus-action-button.light.active {
@@ -444,12 +442,6 @@ img.electron-logo {
 }
 .dionysus-action-button.light.active:active {
   background: #ffffff !important;
-}
-
-.dionysus-action-button.active.no-hover,
-.dionysus-action-button.active.no-hover:hover,
-.dionysus-action-button.active.no-hover:active {
-  background: #66686c !important;
 }
 
 .dionysus-action-button.light.active.no-hover,
@@ -578,9 +570,19 @@ img.electron-logo {
   padding: 0px !important;
 }
 
+.ant-popover.pill .ant-popover-container {
+  padding: 44px 1px 1px 1px;
+  position: relative;
+  top: -44px;
+  border-radius: 32px;
+  background-color: #202f3e;
+
+}
 .ant-popover.pill .ant-btn {
   color: #ffffff !important;
   border-radius: 32px;
+  width: 38px;
+  height: 38px;
 }
 .ant-popover.pill.light .ant-btn {
   color: #333333 !important;
@@ -590,6 +592,9 @@ img.electron-logo {
 }
 .ant-popover.pill .ant-popover-content {
   border-radius: 32px;
+}
+.ant-popover.pill .ant-popover-content:hover {
+  background-color: inherit !important;
 }
 
 .ant-popover.pill .ant-popover-inner {

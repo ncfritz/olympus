@@ -51,7 +51,7 @@ const SearchConfigurationButton: React.FunctionComponent<
   const buttonRef = useRef<HTMLDivElement>(null);
 
   const [open, setOpen] = useState(false);
-  const [configUpdating, setconfigUpdating] = useState(false);
+  const [updating, setUpdating] = useState(false);
 
   const closeMenu = () => {
     setOpen(false);
@@ -63,7 +63,7 @@ const SearchConfigurationButton: React.FunctionComponent<
     }
 
     try {
-      setconfigUpdating(true);
+      setUpdating(true);
       closeMenu();
       await handleSetEnabled(
         mediaType,
@@ -73,7 +73,7 @@ const SearchConfigurationButton: React.FunctionComponent<
         afterUpdate,
       );
     } finally {
-      setconfigUpdating(false);
+      setUpdating(false);
     }
   };
 
@@ -83,10 +83,10 @@ const SearchConfigurationButton: React.FunctionComponent<
       shape={"circle"}
       size={"large"}
       icon={<EyeOutlined />}
-      loading={loading || configUpdating}
+      loading={loading || updating}
       onClick={async () => {
         try {
-          setconfigUpdating(true);
+          setUpdating(true);
           closeMenu();
           await handleCreateSearchConfiguration(
             mediaType,
@@ -99,7 +99,7 @@ const SearchConfigurationButton: React.FunctionComponent<
             afterUpdate,
           );
         } finally {
-          setconfigUpdating(false);
+          setUpdating(false);
         }
       }}
     />
@@ -137,7 +137,7 @@ const SearchConfigurationButton: React.FunctionComponent<
           }}
           arrow={false}
           placement={"bottom"}
-          open={true}
+          open={open}
           getPopupContainer={() => buttonRef.current!}
           onOpenChange={(visible) => {
             setOpen(visible);
@@ -154,7 +154,7 @@ const SearchConfigurationButton: React.FunctionComponent<
                     <CaretRightOutlined />
                   )
                 }
-                loading={configUpdating}
+                loading={updating}
                 onClick={async () => {
                   await updateSearchConfiguration(false);
                 }}
@@ -170,7 +170,7 @@ const SearchConfigurationButton: React.FunctionComponent<
                       <DoubleRightOutlined />
                     )
                   }
-                  loading={configUpdating}
+                  loading={updating}
                   onClick={async () => {
                     await updateSearchConfiguration(true);
                   }}
@@ -181,11 +181,11 @@ const SearchConfigurationButton: React.FunctionComponent<
                 icon={<ReloadOutlined />}
                 onClick={async () => {
                   try {
-                    setconfigUpdating(true);
+                    setUpdating(true);
                     closeMenu();
                     await handleTriggerSearch(mediaType, mediaId, afterUpdate);
                   } finally {
-                    setconfigUpdating(false);
+                    setUpdating(false);
                   }
                 }}
               />
@@ -215,7 +215,7 @@ const SearchConfigurationButton: React.FunctionComponent<
               size={"large"}
               shape={"circle"}
               icon={<EyeFilled />}
-              loading={loading || configUpdating}
+              loading={loading || updating}
               onClick={closeMenu}
               style={{
                 border: open ? "none" : "1px solid #cccccc",
