@@ -15,7 +15,9 @@ const nextConfig = {
   },
   allowedDevOrigins: ["olympus.dev.ncfritz.net", "olympus.local"],
   output: "standalone",
-  reactStrictMode: true,
+  // Disable this to prevent double rendering of effects - this may be helpful to detect side effects
+  // but can also introduce side effects depending on how state management is coupled with effects.
+  reactStrictMode: false,
   eslint: {
     ignoreDuringBuilds: true,
   },
