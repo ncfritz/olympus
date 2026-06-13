@@ -12,7 +12,7 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toBaseDomainObject as toTvSeriesDomainObject } from "../../../../convert/dionysus/metadata/tvSeriesConverter";
-import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
+import { BASE_TV_SERIES } from "../../../../query/dionysus/metadata/tvSeries";
 import { GraphQlTvSeriesRecommendation } from "../../../../types/dionysus/metadata/tvSeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
@@ -53,34 +53,7 @@ export class ListTvSeriesRecommendationsController {
       query ListTvSeriesRecommendations($id: numeric!) {
         dionysus_tv_series_by_pk(id: $id) {
           recommendations {
-            created_at
-            updated_at
-            tvSeries {
-              adult
-              backdropPath
-              createdTime
-              firstAirDate
-              homepage
-              id
-              inProduction
-              lastAirDate
-              lastEpisodeToAirId
-              lastUpdatedTime
-              name
-              numberOfEpisodes
-              numberOfSeasons
-              originalName
-              original_language
-              overview
-              popularity
-              posterPath
-              status
-              tagline
-              type
-              voteAverage
-              voteCount
-              ${SEARCH_CONFIGURATION}
-            }
+            ${BASE_TV_SERIES}
           }
         }
       }

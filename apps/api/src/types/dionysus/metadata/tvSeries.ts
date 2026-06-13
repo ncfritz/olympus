@@ -1,3 +1,4 @@
+import { GraphQlMediaFavorite } from "../media/mediaFavorite";
 import { GraphQlMediaAssetSearchConfiguration } from "../media/searchConfiguration";
 import {
   GraphQlAlternativeTitle,
@@ -38,7 +39,8 @@ export type GraphQlBaseTvSeries = Timestamped & {
   type: string;
   voteAverage: number;
   voteCount: number;
-  searchConfiguration: GraphQlMediaAssetSearchConfiguration;
+  searchConfiguration?: GraphQlMediaAssetSearchConfiguration;
+  favorite?: GraphQlMediaFavorite;
 };
 
 export type GraphQlSparseTvSeries = GraphQlBaseTvSeries & {

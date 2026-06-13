@@ -12,6 +12,7 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toTvSeriesCrewMember } from "../../../../convert/dionysus/metadata/tvSeriesConverter";
+import { TV_SERIES_CREW_MEMBER } from "../../../../query/dionysus/metadata/tvSeries";
 import { GraphQlTvSeriesCrewMember } from "../../../../types/dionysus/metadata/tvSeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
@@ -49,33 +50,7 @@ export class ListTvSeriesCrewController {
     const fetchRequest = gql`
       query ListTvSeriesCrewMembers($id: numeric!) {
         dionysus_tv_series_crew(where: { seriesId: { _eq: $id } }) {
-          createdTime
-          lastUpdatedTime
-          department
-          originalName
-          totalEpisodeCount
-          jobs {
-            job
-            createdTime
-            creditId
-            episodeCount
-            lastUpdatedTime
-          }
-          person {
-            adult
-            birthday
-            birthplace
-            createdTime
-            deathday
-            gender
-            homepage
-            id
-            imdbId
-            knownForDepartment
-            lastUpdatedTime
-            name
-            profilePath
-          }
+          ${TV_SERIES_CREW_MEMBER}
         }
       }
     `;

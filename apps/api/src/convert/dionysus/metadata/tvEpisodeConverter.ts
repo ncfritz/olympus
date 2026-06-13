@@ -16,6 +16,7 @@ import {
 } from "../../../types/dionysus/metadata/tvEpisode";
 import { toDomainObject as toAssetDomainObject } from "../media/MediaAssetConverter";
 import { toDomainObject as toSearchConfigurationDomainObject } from "../media/MediaAssetSearchConfigurationConverter";
+import { toSparseDomainObject as toMediaFavoriteDomainObject } from "../media/MediaFavoriteConverter";
 import {
   toExternalIdDomainObject,
   toTypedImageDomainObject,
@@ -46,6 +47,9 @@ export const toSparseDomainObject = (
       ? toSearchConfigurationDomainObject(input.searchConfiguration)
       : undefined,
     asset: input.asset ? toAssetDomainObject(input.asset) : undefined,
+    favorite: input.favorite
+      ? toMediaFavoriteDomainObject(input.favorite)
+      : undefined,
   };
 };
 

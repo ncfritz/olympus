@@ -1,4 +1,5 @@
 import { GraphQlMediaAsset } from "../media/mediaAsset";
+import { GraphQlMediaFavorite } from "../media/mediaFavorite";
 import { GraphQlMediaAssetSearchConfiguration } from "../media/searchConfiguration";
 import { GraphQlVideo, Timestamped } from "../metadata";
 import {
@@ -41,6 +42,7 @@ export type GraphQlSparseMovie = {
   originalLanguage: GraphQlLanguage;
   searchConfiguration: GraphQlMediaAssetSearchConfiguration;
   asset?: GraphQlMediaAsset;
+  favorite?: GraphQlMediaFavorite;
 };
 
 export type GraphQlMovie = GraphQlSparseMovie & {

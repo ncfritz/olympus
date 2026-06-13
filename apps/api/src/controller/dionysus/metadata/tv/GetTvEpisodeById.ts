@@ -16,8 +16,7 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/metadata/tvEpisodeConverter";
-import { MEDIA_ASSET } from "../../../../query/dionysus/media/mediaAsset";
-import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
+import { TV_EPISODE } from "../../../../query/dionysus/metadata/tvEpisode";
 import { GraphQlTvEpisode } from "../../../../types/dionysus/metadata/tvEpisode";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
@@ -56,103 +55,7 @@ export class GetTvEpisodeByIdController {
         $episodeId: numeric!
       ) {
         dionysus_tv_episodes_by_pk(id: $episodeId) {
-          createdTime
-          id
-          lastUpdatedTime
-          name
-          overview
-          externalIds {
-            createdTime
-            externalId
-            lastUpdatedTime
-            type
-          }
-          videos {
-            country {
-              createdTime
-              id
-              lastUpdatedTime
-              name
-            }
-            createdTime
-            id
-            key
-            language {
-              createdTime
-              lastUpdatedTime
-              id
-              name
-              nativeName
-            }
-            lastUpdatedTime
-            name
-            official
-            publishedDate
-            site
-            size
-            type
-          }
-          images {
-            createdTime
-            filePath
-            height
-            language {
-              createdTime
-              id
-              lastUpdatedTime
-              name
-              nativeName
-            }
-            lastUpdatedTime
-            type
-            width
-          }
-          episodeNumber
-          airDate
-          productionCode
-          runtime
-          seasonNumber
-          stillPath
-          voteCount
-          voteAverage
-          series {
-            adult
-            backdropPath
-            createdTime
-            lastAirDate
-            inProduction
-            id
-            firstAirDate
-            lastEpisodeToAirId
-            lastUpdatedTime
-            name
-            numberOfEpisodes
-            numberOfSeasons
-            originalName
-            overview
-            posterPath
-            status
-            tagline
-            type
-          }
-          ${MEDIA_ASSET}
-          season {
-            airDate
-            createdTime
-            id
-            lastUpdatedTime
-            name
-            overview
-            posterPath
-            seasonNumber
-            voteAverage
-            episodes_aggregate {
-              aggregate {
-                count
-              }
-            }
-            ${SEARCH_CONFIGURATION}
-          }
+          ${TV_EPISODE}
         }
       }
     `;

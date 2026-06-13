@@ -2,14 +2,7 @@ import {
   ListTvSeasonCrewResponse,
   TVSeriesCrewMember,
 } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -19,22 +12,20 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toTvSeriesCrewMember } from "../../../../convert/dionysus/metadata/tvSeriesConverter";
+import { TV_SERIES_CREW_MEMBER } from "../../../../query/dionysus/metadata/tvSeries";
 import { GraphQlTvSeriesCrewMember } from "../../../../types/dionysus/metadata/tvSeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlTvSeasonIdLookupResponse = {
-  dionysus_tv_seasons: {
-    id: number;
-  }[];
-};
+import { BaseTVController } from "./BaseTVController";
 
 type GraphQlListTvSeasonCrewResponse = {
   dionysus_tv_season_crew: GraphQlTvSeriesCrewMember[];
 };
 
 @Controller({ version: "1" })
-export class ListTvSeasonCrewController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+export class ListTvSeasonCrewController extends BaseTVController {
+  constructor(protected readonly graphQLClient: GraphQLClient) {
+    super(graphQLClient);
+  }
 
   @Get("/metadata/tvSeries/:tvSeriesId/seasons/:seasonNumber/crew")
   @ApiOperation({
@@ -61,66 +52,12 @@ export class ListTvSeasonCrewController {
 
     @Res() response: Response,
   ): Promise<void> {
-    const seasonIdLookupRequest = gql`
-      query LookupTvSeasonId($seriesId: numeric!, $seasonNumber: numeric!) {
-        dionysus_tv_seasons(
-          where: {
-            _and: {
-              seriesId: { _eq: $seriesId }
-              seasonNumber: { _eq: $seasonNumber }
-            }
-          }
-        ) {
-          id
-        }
-      }
-    `;
-
-    const tvSeriesIdFetchResponse =
-      await this.graphQLClient.request<GraphQlTvSeasonIdLookupResponse>(
-        seasonIdLookupRequest,
-        {
-          seriesId: tvSeriesId,
-          seasonNumber: seasonNumber,
-        },
-      );
-
-    if (tvSeriesIdFetchResponse.dionysus_tv_seasons.length <= 0) {
-      throw new NotFoundException();
-    }
-
-    const seasonId = tvSeriesIdFetchResponse.dionysus_tv_seasons[0].id;
+    const seasonId = this.lookupMediaIdForTvSeason(tvSeriesId, seasonNumber);
 
     const fetchRequest = gql`
       query ListTvSeasonCrewMembers($id: numeric!) {
         dionysus_tv_season_crew(where: { seasonId: { _eq: $id } }) {
-          createdTime
-          lastUpdatedTime
-          department
-          originalName
-          totalEpisodeCount
-          jobs {
-            job
-            createdTime
-            creditId
-            episodeCount
-            lastUpdatedTime
-          }
-          person {
-            adult
-            birthday
-            birthplace
-            createdTime
-            deathday
-            gender
-            homepage
-            id
-            imdbId
-            knownForDepartment
-            lastUpdatedTime
-            name
-            profilePath
-          }
+         ${TV_SERIES_CREW_MEMBER}
         }
       }
     `;

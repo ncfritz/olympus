@@ -2,14 +2,7 @@ import {
   ListTVEpisodeCastResponse,
   TVEpisodeCastMember,
 } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -19,21 +12,20 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toTvEpisodeCastMember } from "../../../../convert/dionysus/metadata/tvEpisodeConverter";
+import { TV_EPISODE_CAST_MEMBER } from "../../../../query/dionysus/metadata/tvEpisode";
 import { GraphQlTvEpisodeCastMember } from "../../../../types/dionysus/metadata/tvEpisode";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { BaseTVController } from "./BaseTVController";
 
-type GraphQlTvEpisodeIdLookupResponse = {
-  dionysus_tv_episodes: {
-    id: number;
-  }[];
-};
 type GraphQlListTvEpisodeCastResponse = {
   dionysus_tv_episode_cast: GraphQlTvEpisodeCastMember[];
 };
 
 @Controller({ version: "1" })
-export class ListTvEpisodeCastController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+export class ListTvEpisodeCastController extends BaseTVController {
+  constructor(protected readonly graphQLClient: GraphQLClient) {
+    super(graphQLClient);
+  }
 
   @Get(
     "/metadata/tvSeries/:tvSeriesId/seasons/:seasonNumber/episodes/:episodeNumber/cast",
@@ -72,65 +64,16 @@ export class ListTvEpisodeCastController {
     @Param("episodeNumber") episodeNumber: number,
     @Res() response: Response,
   ): Promise<void> {
-    const seasonIdLookupRequest = gql`
-      query LookupTvEpisodeId(
-        $seriesId: numeric!
-        $seasonNumber: numeric!
-        $episodeNumber: numeric!
-      ) {
-        dionysus_tv_episodes(
-          where: {
-            _and: {
-              seriesId: { _eq: $seriesId }
-              seasonNumber: { _eq: $seasonNumber }
-              episodeNumber: { _eq: $episodeNumber }
-            }
-          }
-        ) {
-          id
-        }
-      }
-    `;
-
-    const tvSeriesIdFetchResponse =
-      await this.graphQLClient.request<GraphQlTvEpisodeIdLookupResponse>(
-        seasonIdLookupRequest,
-        {
-          seriesId: tvSeriesId,
-          seasonNumber: seasonNumber,
-          episodeNumber: episodeNumber,
-        },
-      );
-
-    if (tvSeriesIdFetchResponse.dionysus_tv_episodes.length <= 0) {
-      throw new NotFoundException();
-    }
-
-    const episodeId = tvSeriesIdFetchResponse.dionysus_tv_episodes[0].id;
+    const episodeId = this.lookupMediaIdForTvEpisode(
+      tvSeriesId,
+      seasonNumber,
+      episodeNumber,
+    );
 
     const fetchRequest = gql`
       query ListTvEpisodeCastMembers($episodeId: numeric!) {
         dionysus_tv_episode_cast(where: { episodeId: { _eq: $episodeId } }) {
-          createdTime
-          creditId
-          character
-          lastUpdatedTime
-          originalName
-          person {
-            adult
-            birthday
-            birthplace
-            createdTime
-            gender
-            homepage
-            id
-            imdbId
-            knownForDepartment
-            lastUpdatedTime
-            name
-            profilePath
-          }
-        }
+          ${TV_EPISODE_CAST_MEMBER}
       }
     `;
 

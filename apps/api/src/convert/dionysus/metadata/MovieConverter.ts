@@ -39,6 +39,7 @@ import {
   toDomainObject as toLanguageDomainObject,
   toLanguageAssociationDomainObject,
 } from "./LanguageConverter";
+import { toSparseDomainObject as toMediaFavoriteDomainObject } from "../media/MediaFavoriteConverter";
 import { toMovieCastDomainObject } from "./CastConverter";
 import { toMovieCrewDomainObject } from "./CrewConverter";
 import { toGenreAssociationDomainObject } from "./GenreConverter";
@@ -204,6 +205,9 @@ export const toSparseDomainObject = (
       ? toSearchConfigurationDomainObject(input.searchConfiguration)
       : undefined,
     asset: input.asset ? toAssetDomainObject(input.asset) : undefined,
+    favorite: input.favorite
+      ? toMediaFavoriteDomainObject(input.favorite)
+      : undefined,
   };
 };
 

@@ -1,3 +1,4 @@
+import { GraphQlMediaFavorite } from "../media/mediaFavorite";
 import { GraphQlMediaAssetSearchConfiguration } from "../media/searchConfiguration";
 import {
   GraphQlExternalId,
@@ -22,7 +23,8 @@ export type GraphQlSparseTvSeason = Timestamped & {
       count: number;
     };
   };
-  searchConfiguration: GraphQlMediaAssetSearchConfiguration;
+  searchConfiguration?: GraphQlMediaAssetSearchConfiguration;
+  favorite?: GraphQlMediaFavorite;
 };
 
 export type GraphQlTvSeason = GraphQlSparseTvSeason & {

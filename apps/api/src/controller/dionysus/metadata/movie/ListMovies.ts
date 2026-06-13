@@ -8,8 +8,7 @@ import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toSparseDomainObject as toDomainObject } from "../../../../convert/dionysus/metadata/MovieConverter";
-import { MEDIA_ASSET } from "../../../../query/dionysus/media/mediaAsset";
-import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
+import { SPARSE_MOVIE } from "../../../../query/dionysus/metadata/movies";
 import { GraphQlSparseMovie } from "../../../../types/dionysus/metadata/movie";
 import {
   ApiFilterParams,
@@ -72,40 +71,7 @@ export class ListMoviesController {
     const fetchRequest = gql`
       query ListMovies {
         dionysus_movies(${[paginationExpression, whereExpression].join(", ")}) {
-          id
-          adult
-          backdropPath
-          budget
-          createdTime
-          homepage
-          imdbId
-          lastUpdatedTime
-          originalTitle
-          overview
-          posterPath
-          releaseDate
-          revenue
-          runtime
-          status
-          tagline
-          title
-          video
-          popularity
-          voteAverage
-          voteCount
-          genres {
-            genre {
-              createdTime
-              id
-              lastUpdatedTime
-              name
-              type
-            }
-            createdTime
-            lastUpdatedTime
-          }
-          ${SEARCH_CONFIGURATION}
-          ${MEDIA_ASSET}
+          ${SPARSE_MOVIE}
         }
         dionysus_movies_aggregate${
           whereExpression ? `(${whereExpression})` : ""

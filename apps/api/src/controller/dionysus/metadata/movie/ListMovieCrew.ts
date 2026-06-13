@@ -9,6 +9,7 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toMovieCrewDomainObject } from "../../../../convert/dionysus/metadata/CrewConverter";
+import { MOVIE_CREW_MEMBER } from "../../../../query/dionysus/metadata/movies";
 import { GraphQlMovieCrewMember } from "../../../../types/dionysus/metadata";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
@@ -46,27 +47,7 @@ export class ListMovieCrewController {
     const fetchRequest = gql`
       query ListMovieCrewMembers($id: numeric!) {
         dionysus_movie_crew(where: { movieId: { _eq: $id } }) {
-          createdTime
-          creditId
-          department
-          job
-          lastUpdatedTime
-          originalName
-          person {
-            adult
-            birthday
-            birthplace
-            createdTime
-            deathday
-            gender
-            homepage
-            id
-            imdbId
-            knownForDepartment
-            lastUpdatedTime
-            name
-            profilePath
-          }
+          ${MOVIE_CREW_MEMBER}
         }
       }
     `;

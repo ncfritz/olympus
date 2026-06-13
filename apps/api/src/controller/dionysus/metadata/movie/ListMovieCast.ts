@@ -9,6 +9,7 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toMovieCastDomainObject } from "../../../../convert/dionysus/metadata/CastConverter";
+import { MOVIE_CAST_MEMBER } from "../../../../query/dionysus/metadata/movies";
 import { GraphQlMovieCastMember } from "../../../../types/dionysus/metadata";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
@@ -49,28 +50,7 @@ export class ListMovieCastController {
           order_by: { order: asc }
           where: { movieId: { _eq: $id } }
         ) {
-          character
-          createdTime
-          creditId
-          lastUpdatedTime
-          order
-          originalName
-          castId
-          person {
-            adult
-            birthday
-            birthplace
-            createdTime
-            deathday
-            gender
-            homepage
-            id
-            imdbId
-            knownForDepartment
-            lastUpdatedTime
-            name
-            profilePath
-          }
+          ${MOVIE_CAST_MEMBER}
         }
       }
     `;

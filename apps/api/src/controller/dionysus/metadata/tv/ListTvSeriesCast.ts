@@ -12,6 +12,7 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toTvSeriesCastMember } from "../../../../convert/dionysus/metadata/tvSeriesConverter";
+import { TV_SERIES_CAST_MEMBER } from "../../../../query/dionysus/metadata/tvSeries";
 import { GraphQlTvSeriesCastMember } from "../../../../types/dionysus/metadata/tvSeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
@@ -52,33 +53,7 @@ export class ListTvSeriesCastController {
           order_by: { order: asc }
           where: { seriesId: { _eq: $id } }
         ) {
-          createdTime
-          lastUpdatedTime
-          order
-          originalName
-          totalEpisodeCount
-          roles {
-            character
-            createdTime
-            creditId
-            episodeCount
-            lastUpdatedTime
-          }
-          person {
-            adult
-            birthday
-            birthplace
-            createdTime
-            deathday
-            gender
-            homepage
-            id
-            imdbId
-            knownForDepartment
-            lastUpdatedTime
-            name
-            profilePath
-          }
+          ${TV_SERIES_CAST_MEMBER}
         }
       }
     `;

@@ -3,12 +3,14 @@ import { ApproveMediaAssetTranscodeConfigurationController } from "../controller
 import { BulkUpdateMediaAssetDownloadsController } from "../controller/dionysus/media/BulkUpdateMediaAssetDownloads";
 import { CreateMediaAssetController } from "../controller/dionysus/media/CreateMediaAsset";
 import { CreateMediaAssetDownloadController } from "../controller/dionysus/media/CreateMediaAssetDownload";
+import { CreateMediaFavoriteController } from "../controller/dionysus/media/CreateMediaAssetFavorite";
 import { CreateMediaAssetSearchConfigurationController } from "../controller/dionysus/media/CreateMediaAssetSearchConfiguration";
 import { CreateMediaAssetSearchExecutionController } from "../controller/dionysus/media/CreateMediaAssetSearchExecution";
 import { CreateMediaAssetSearchResultController } from "../controller/dionysus/media/CreateMediaAssetSearchResult";
 import { CreateMediaAssetWorkflowController } from "../controller/dionysus/media/CreateMediaAssetWorkflow";
 import { CreateMediaAssetWorkflowStepController } from "../controller/dionysus/media/CreateMediaAssetWorkflowStep";
 import { CreateMediaAssetWorkflowSubStepController } from "../controller/dionysus/media/CreateMediaAssetWorkflowSubStep";
+import { DeleteMediaFavoriteController } from "../controller/dionysus/media/DeleteMediaAssetFavorite";
 import { DescribeMediaAssetSearchConfigurationController } from "../controller/dionysus/media/DescribeMediaAssetSearchConfiguration";
 import { DescribeMediaAssetSearchExecutionController } from "../controller/dionysus/media/DescribeMediaAssetSearchExecution";
 import { DescribeMediaAssetSearchResultController } from "../controller/dionysus/media/DescribeMediaAssetSearchResult";
@@ -45,6 +47,8 @@ import { RabbitModule } from "./RabbitModule";
     CreateMediaAssetWorkflowController,
     CreateMediaAssetWorkflowStepController,
     CreateMediaAssetWorkflowSubStepController,
+    CreateMediaFavoriteController,
+    DeleteMediaFavoriteController,
     GetTvEpisodeByIdController,
     GetMediaAssetSearchConfigurationsRunningCountController,
     DescribeMediaAssetSearchConfigurationController,

@@ -34,6 +34,7 @@ import {
   GraphQlTvSeriesRuntime,
 } from "../../../types/dionysus/metadata/tvSeries";
 import { toDomainObject as toSearchConfigurationDomainObject } from "../media/MediaAssetSearchConfigurationConverter";
+import { toSparseDomainObject as toMediaFavoriteDomainObject } from "../media/MediaFavoriteConverter";
 import {
   toAlternativeTitleDomainObject,
   toExternalIdDomainObject,
@@ -81,6 +82,9 @@ export const toBaseDomainObject = (
     voteAverage: input.voteAverage,
     searchConfiguration: input.searchConfiguration
       ? toSearchConfigurationDomainObject(input.searchConfiguration)
+      : undefined,
+    favorite: input.favorite
+      ? toMediaFavoriteDomainObject(input.favorite)
       : undefined,
   };
 };

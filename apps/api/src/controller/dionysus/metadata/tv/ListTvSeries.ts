@@ -8,7 +8,7 @@ import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toBaseDomainObject as toTvSeriesDomainObject } from "../../../../convert/dionysus/metadata/tvSeriesConverter";
-import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
+import { BASE_TV_SERIES } from "../../../../query/dionysus/metadata/tvSeries";
 import { GraphQlBaseTvSeries } from "../../../../types/dionysus/metadata/tvSeries";
 import {
   ApiFilterParams,
@@ -62,30 +62,7 @@ export class ListTvSeriesController {
     const fetchRequest = gql`
       query ListTvSeries {
         dionysus_tv_series(${[paginationExpression, whereExpression].join(", ")}) {
-          adult
-          backdropPath
-          createdTime
-          firstAirDate
-          homepage
-          id
-          inProduction
-          lastAirDate
-          lastEpisodeToAirId
-          lastUpdatedTime
-          name
-          numberOfEpisodes
-          numberOfSeasons
-          originalName
-          original_language
-          overview
-          popularity
-          posterPath
-          status
-          tagline
-          type
-          voteAverage
-          voteCount
-          ${SEARCH_CONFIGURATION}
+          ${BASE_TV_SERIES}
         }
         dionysus_tv_series_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {

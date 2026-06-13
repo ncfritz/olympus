@@ -12,8 +12,7 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toSparseDomainObject as toMovieDomainObject } from "../../../../convert/dionysus/metadata/MovieConverter";
-import { MEDIA_ASSET } from "../../../../query/dionysus/media/mediaAsset";
-import { SEARCH_CONFIGURATION } from "../../../../query/dionysus/media/searchConfigutation";
+import { BASE_MOVIE_RECOMMENDATION } from "../../../../query/dionysus/metadata/movies";
 import { GraphQlMovieRecommendation } from "../../../../types/dionysus/metadata/movie";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
@@ -54,45 +53,7 @@ export class ListMovieRecommendationsController {
       query ListMovieRecommendations($id: numeric!) {
         dionysus_movies_by_pk(id: $id) {
           recommendations {
-            created_at
-            updated_at
-            movie {
-              adult
-              backdropPath
-              budget
-              createdTime
-              homepage
-              id
-              imdbId
-              lastUpdatedTime
-              originalLanguageCode
-              originalTitle
-              overview
-              popularity
-              posterPath
-              releaseDate
-              revenue
-              runtime
-              status
-              tagline
-              title
-              voteAverage
-              voteCount
-              video
-              genres {
-                genre {
-                  createdTime
-                  id
-                  lastUpdatedTime
-                  name
-                  type
-                }
-                createdTime
-                lastUpdatedTime
-              }
-              ${SEARCH_CONFIGURATION}
-              ${MEDIA_ASSET}
-            }
+            ${BASE_MOVIE_RECOMMENDATION}
           }
         }
       }
