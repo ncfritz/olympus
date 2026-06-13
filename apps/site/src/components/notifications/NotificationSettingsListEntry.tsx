@@ -2,7 +2,7 @@ import { Checkbox, Typography } from "antd";
 import { useState } from "react";
 import notificationsApi from "../../api/notificationsApi";
 import { Events, publish } from "../../utils/events";
-=
+
 export interface NotificationSettings {
   webSocketEnabled: boolean;
   synoChatEnabled: boolean;

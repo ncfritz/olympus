@@ -34,7 +34,7 @@ import {
 } from "react-hook-form";
 import notificationsApi from "../../api/notificationsApi";
 import { Events, publish } from "../../utils/events";
-=import EmailDestinationForm from "./destination/EmailDestinationForm";
+import EmailDestinationForm from "./destination/EmailDestinationForm";
 import SynologyChatDestinationForm from "./destination/SynologyChatDestinationForm";
 import WebSocketDestinationForm from "./destination/WebSocketDestinationForm";
 import { v4 as uuid4 } from "uuid";

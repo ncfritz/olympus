@@ -13,7 +13,7 @@ import prettyMilliseconds from "pretty-ms";
 import { type ReactNode, useState } from "react";
 import notificationsApi from "../../api/notificationsApi";
 import { Events, publish } from "../../utils/events";
-=import { getFormatterForMessageType } from "./formatters/NotificationRegistry";
+import { getFormatterForMessageType } from "./formatters/NotificationRegistry";
 
 export interface NotificationListEntryProps {
   notification: Notification;
