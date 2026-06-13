@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import OtpInput from "react-otp-input";
 import contentApi from "../../api/contentApi";
 import { useAppSelector } from "../../redux/hooks";
-import { Events, subscribe } from "../../utils/events";
+import { Events, subscribe, unsubscribe } from "../../utils/events";
 
 export interface ContentAuthWrapperProps {
   children: ReactNode | ReactNode[];
@@ -63,9 +63,17 @@ const ContentAuthWrapper: React.FunctionComponent<ContentAuthWrapperProps> = ({
     })();
   }, [blackCurtainEnabled]);
 
-  subscribe(Events.DIONYSUS_BLACK_CURTAIN_LOCK, (e) => {
+  useEffect(() => {
+    subscribe(Events.DIONYSUS_BLACK_CURTAIN_LOCK, onBlackCurtainLocked);
+
+    return () => {
+      unsubscribe(Events.DIONYSUS_BLACK_CURTAIN_LOCK, onBlackCurtainLocked);
+    };
+  }, []);
+
+  const onBlackCurtainLocked = () => {
     setAuthorized(false);
-  });
+  };
 
   console.log(
     `BlackCurtain: ${blackCurtainEnabled}, Authorized: ${authorized}`,
