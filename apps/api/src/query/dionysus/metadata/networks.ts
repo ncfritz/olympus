@@ -4,14 +4,14 @@ export const BASE_NETWORK = `id
   name
   headquarters
   homepage
-  logoPath`;
+  logo`;
 
 export const NETWORK = `${BASE_NETWORK}
   createdTime
   lastUpdatedTime
   ${ALTERNATIVE_NAMES}
   ${IDENTIFIABLE_IMAGE}
-  originCountry {
+  country {
     ${BASE_COUNTRY}
   }`;
 

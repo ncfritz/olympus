@@ -218,7 +218,7 @@ export class CreateMovieController {
                   size
                   type
                   official
-                  publishedTime
+                  publishedDate
                 ]
               }
               data: $videos

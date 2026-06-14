@@ -1,4 +1,6 @@
-import { SPARSE_MEDIA_FAVORITE } from "../media/mediaFavorite";
+import { SortDirection } from "@ncfritz/olympus-model";
+import { MEDIA_ASSET } from "../media/mediaAsset";
+import { MEDIA_FAVORITE, SPARSE_MEDIA_FAVORITE } from "../media/mediaFavorite";
 import { SEARCH_CONFIGURATION } from "../media/searchConfigutation";
 import { CERTIFICATIONS } from "./certifications";
 import {
@@ -10,15 +12,73 @@ import {
   LANGUAGES,
   TV_EPISODE_RUNTIMES,
   TYPED_IMAGES,
-  VIDEOS
+  VIDEOS,
 } from "./common";
 import { GENRES } from "./genres";
 import { KEYWORDS } from "./keywords";
 import { NETWORKS } from "./networks";
 import { BASE_PERSON } from "./people";
 import { PRODUCTION_COMPANIES } from "./productionCompany";
-import { SPARSE_TV_EPISODE } from "./tvEpisode";
-import { SPARSE_TV_SEASON } from "./tvSeason";
+
+export const BASE_TV_SEASON = `id
+  airDate
+  name
+  overview
+  posterPath
+  seasonNumber
+  voteAverage`;
+
+export const SPARSE_TV_SEASON = `${BASE_TV_SEASON}
+  createdTime
+  lastUpdatedTime
+  episodes_aggregate {
+    aggregate {
+      count
+    }
+  }
+  ${SEARCH_CONFIGURATION}
+  ${SPARSE_MEDIA_FAVORITE}`;
+
+export const BASE_TV_EPISODE = `id
+  airDate
+  episodeNumber
+  name
+  overview
+  productionCode
+  runtime
+  seasonNumber
+  stillPath
+  voteCount
+  voteAverage`;
+
+export const SPARSE_TV_EPISODE = `${BASE_TV_EPISODE}
+  createdTime
+  lastUpdatedTime
+  ${SEARCH_CONFIGURATION}
+  ${MEDIA_FAVORITE}
+  ${MEDIA_ASSET}`;
+
+export const BASE_TV_EPISODE_CREW_MEMBER = `creditId
+  job
+  department
+  person {
+    ${BASE_PERSON}
+  }
+  originalName
+  createdTime
+  lastUpdatedTime`;
+
+export const SPARSE_TV_EPISODE_CAST_MEMBER = `character
+  creditId
+  order
+  originalName
+  createdTime
+  lastUpdatedTime`;
+
+export const TV_EPISODE_CAST_MEMBER = `${SPARSE_TV_EPISODE_CAST_MEMBER}
+  person {
+    ${BASE_PERSON}
+  }`;
 
 export const TV_SERIES_CREATED_BY = `createdBy {
   creditId
@@ -42,7 +102,7 @@ export const BASE_TV_SERIES = `id
   originalName
   overview
   posterPath
-  populatiry
+  popularity
   status
   tagline
   type
@@ -51,8 +111,7 @@ export const BASE_TV_SERIES = `id
   createdTime
   lastUpdatedTime
   ${SEARCH_CONFIGURATION}
-  ${SPARSE_MEDIA_FAVORITE}
- `;
+  ${SPARSE_MEDIA_FAVORITE}`;
 
 export const SPARSE_TV_SERIES = `${BASE_TV_SERIES}
   originalLanguage {
@@ -89,12 +148,11 @@ export const TV_SERIES = `${SPARSE_TV_SERIES}
   seasons {
     ${SPARSE_TV_SEASON}
   }
-  ${VIDEOS}
-  `;
+  ${VIDEOS}`;
 
 export const TV_SERIES_CAST_MEMBER_ROLE = `creditId
   character
-  episodecount
+  episodeCount
   createdTime
   lastUpdatedTime`;
 
@@ -131,3 +189,25 @@ export const TV_SERIES_CREW_MEMBER = `${SPARSE_TV_SERIES_CREW_MEMBER}
   person {
     ${BASE_PERSON}
   }`;
+
+export const TV_EPISODE = `${SPARSE_TV_EPISODE}
+  series {
+    ${BASE_TV_SERIES}
+  }
+  season {
+    ${SPARSE_TV_SEASON}
+  }
+  ${EXTERNAL_IDS}
+  ${TYPED_IMAGES}
+  ${VIDEOS}`;
+
+export const TV_SEASON = `${SPARSE_TV_SEASON}
+  series {
+    ${BASE_TV_SERIES}
+  }
+  episodes(order_by: { episodeNumber: ${SortDirection.ASC}}) {
+    ${SPARSE_TV_EPISODE}
+  }
+  ${EXTERNAL_IDS}
+  ${TYPED_IMAGES}
+  ${VIDEOS}`;

@@ -16,7 +16,7 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/metadata/tvSeasonConverter";
-import { TV_SEASON } from "../../../../query/dionysus/metadata/tvSeason";
+import { TV_SEASON } from "../../../../query/dionysus/metadata/tvSeries";
 import { GraphQlTvSeason } from "../../../../types/dionysus/metadata/tvSeason";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 

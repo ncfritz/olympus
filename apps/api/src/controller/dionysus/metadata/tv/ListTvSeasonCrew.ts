@@ -52,7 +52,10 @@ export class ListTvSeasonCrewController extends BaseTVController {
 
     @Res() response: Response,
   ): Promise<void> {
-    const seasonId = this.lookupMediaIdForTvSeason(tvSeriesId, seasonNumber);
+    const seasonId = await this.lookupMediaIdForTvSeason(
+      tvSeriesId,
+      seasonNumber,
+    );
 
     const fetchRequest = gql`
       query ListTvSeasonCrewMembers($id: numeric!) {

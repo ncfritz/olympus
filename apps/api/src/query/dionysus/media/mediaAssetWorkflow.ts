@@ -17,8 +17,8 @@ export const MEDIA_ASSET_WORKFLOW_STEP = `${BASE_MEDIA_ASSET_WORKFLOW_STEP}
 
 export const MEDIA_ASSET_WORKFLOW_DECORATION = `name
     mediaType
+    title
     posterPath
-    seriesName
     season
     episode`;
 

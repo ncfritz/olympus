@@ -12,7 +12,7 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toTvEpisodeCastMember } from "../../../../convert/dionysus/metadata/tvEpisodeConverter";
-import { TV_EPISODE_CAST_MEMBER } from "../../../../query/dionysus/metadata/tvEpisode";
+import { TV_EPISODE_CAST_MEMBER } from "../../../../query/dionysus/metadata/tvSeries";
 import { GraphQlTvEpisodeCastMember } from "../../../../types/dionysus/metadata/tvEpisode";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { BaseTVController } from "./BaseTVController";
@@ -64,7 +64,7 @@ export class ListTvEpisodeCastController extends BaseTVController {
     @Param("episodeNumber") episodeNumber: number,
     @Res() response: Response,
   ): Promise<void> {
-    const episodeId = this.lookupMediaIdForTvEpisode(
+    const episodeId = await this.lookupMediaIdForTvEpisode(
       tvSeriesId,
       seasonNumber,
       episodeNumber,
@@ -74,8 +74,8 @@ export class ListTvEpisodeCastController extends BaseTVController {
       query ListTvEpisodeCastMembers($episodeId: numeric!) {
         dionysus_tv_episode_cast(where: { episodeId: { _eq: $episodeId } }) {
           ${TV_EPISODE_CAST_MEMBER}
-      }
-    `;
+        }
+      }`;
 
     const fetchResponse =
       await this.graphQLClient.request<GraphQlListTvEpisodeCastResponse>(

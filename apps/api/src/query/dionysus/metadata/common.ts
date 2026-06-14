@@ -1,5 +1,3 @@
-import { SortDirection } from "@ncfritz/olympus-model";
-import { SPARSE_TV_EPISODE } from "./tvEpisode";
 
 export const BASE_EXTERNAL_ID = `type
   externalId
@@ -89,7 +87,7 @@ export const BASE_VIDEO = `id
   size
   type
   official
-  publishedTime
+  publishedDate
   createdTime
   lastUpdatedTime
   country {
@@ -103,19 +101,10 @@ export const VIDEOS = `videos {
     ${BASE_VIDEO}
   }`;
 
-export const BASE_RUNTIME = `runTIme
+export const BASE_RUNTIME = `runTime
   createdTime
   lastUpdatedTime`;
 
-export const TV_EPISODE_RUNTIMES = `episodeRunTimes3 {
+export const TV_EPISODE_RUNTIMES = `episodeRunTimes {
     ${BASE_RUNTIME}
   }`;
-
-export const SPARSE_TV_EPISODES = (sort?: {
-  field: string;
-  order: SortDirection;
-}) => {
-  return `episodes(order_by${sort ? `: { ${sort.field}: ${sort.order}})` : ""} {
-    ${SPARSE_TV_EPISODE}
-  }`;
-};

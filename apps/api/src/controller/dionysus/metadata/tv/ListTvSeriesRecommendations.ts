@@ -53,7 +53,9 @@ export class ListTvSeriesRecommendationsController {
       query ListTvSeriesRecommendations($id: numeric!) {
         dionysus_tv_series_by_pk(id: $id) {
           recommendations {
-            ${BASE_TV_SERIES}
+            tvSeries {
+              ${BASE_TV_SERIES}
+            }
           }
         }
       }

@@ -12,7 +12,7 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toTvEpisodeCrewMember } from "../../../../convert/dionysus/metadata/tvEpisodeConverter";
-import { BASE_TV_EPISODE_CREW_MEMBER } from "../../../../query/dionysus/metadata/tvEpisode";
+import { BASE_TV_EPISODE_CREW_MEMBER } from "../../../../query/dionysus/metadata/tvSeries";
 import { GraphQlTvEpisodeCrewMember } from "../../../../types/dionysus/metadata/tvEpisode";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { BaseTVController } from "./BaseTVController";
@@ -64,7 +64,7 @@ export class ListTvEpisodeCrewController extends BaseTVController {
     @Param("episodeNumber") episodeNumber: number,
     @Res() response: Response,
   ): Promise<void> {
-    const episodeId = this.lookupMediaIdForTvEpisode(
+    const episodeId = await this.lookupMediaIdForTvEpisode(
       tvSeriesId,
       seasonNumber,
       episodeNumber,
