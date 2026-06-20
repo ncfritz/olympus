@@ -3,7 +3,6 @@ import {
   CloudDownloadOutlined,
   EyeOutlined,
   FontSizeOutlined,
-  HeartOutlined,
   HomeOutlined,
   InfoCircleFilled,
   QrcodeOutlined,
@@ -22,10 +21,10 @@ import {
   Tabs,
   Button,
   Tag,
-  Progress,
   QRCode,
   Image,
   Avatar,
+  Layout,
 } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -35,6 +34,7 @@ import mediaApi from "../../../../api/mediaApi";
 import metadataApi from "../../../../api/metadataApi";
 import Description from "../../../../components/common/Description";
 import LoadingWrapper from "../../../../components/common/LoadingWrapper";
+import FavoriteButton from "../../../../components/dionysus/media/FavoriteButton";
 import SearchConfigurationPanel from "../../../../components/dionysus/media/SearchConfigurationPanel";
 import ExternalIdsList from "../../../../components/dionysus/metadata/ExternalIdsList";
 import MetadataFetchJobPanel from "../../../../components/dionysus/metadata/MetadataFetchJobPanel";
@@ -62,6 +62,8 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
   const { id } = router.query;
 
   const [activeTab, setActiveTab] = useState("t-main-general");
+  const [affix, setAffix] = useState(false);
+
   const [latestSeasonSearchConfiguration, setLatestSeasonSearchConfiguration] =
     useState<MediaAssetSearchConfiguration | undefined>(undefined);
 
@@ -138,6 +140,11 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
       );
     }
   }, [tvSeries]);
+
+  useEffect(() => {
+    setAffix(false);
+    setActiveTab("t-main-general");
+  }, [id]);
 
   let content = (
     <Space style={{ margin: 16 }}>
@@ -322,7 +329,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
             </Space>
             <LoadingWrapper
               loading={recommendationsLoading}
-              error={castError}
+              error={recommendationsError}
               showError={true}
             >
               <TvSeriesList
@@ -455,7 +462,10 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         label: <InfoCircleFilled />,
         children: (
           <Space orientation={"vertical"} style={{ margin: 12, width: "100%" }}>
-            <Space orientation={"vertical"} style={{ width: "100%" }}>
+            <Space
+              orientation={"vertical"}
+              style={{ width: "100%", paddingRight: 20 }}
+            >
               <Description
                 title={"Networks"}
                 value={
@@ -480,8 +490,8 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                   )
                 }
               />
+              <ExternalIdsList ids={tvSeries.externalIds} />
             </Space>
-            <ExternalIdsList ids={tvSeries.externalIds} />
             <Description
               title={"Origin Countries"}
               value={
@@ -615,11 +625,12 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               value={
                 tvSeries.keywords.length > 0 ? (
                   <Space
-                    size={0}
+                    size={4}
                     orientation={"horizontal"}
                     style={{
                       display: "flex",
                       flexWrap: "wrap",
+                      marginRight: 16,
                     }}
                   >
                     {tvSeries.keywords.map((item) => {
@@ -627,7 +638,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                         <Tag
                           key={`kw-${item.keyword.id}`}
                           style={{ marginBottom: 8 }}
-                          bordered={false}
+                          variant={"filled"}
                           color={"#999999"}
                         >
                           {item.keyword.value}
@@ -739,13 +750,126 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
       });
     }
 
-    content = (
+    const tvSeriesActions = (
       <Space
-        orientation={"vertical"}
-        size={0}
-        style={{ width: "100%", height: "100%" }}
-        styles={{ item: { width: "100%" } }}
+        orientation={"horizontal"}
+        size={16}
+        style={{ marginTop: 16, alignItems: "center" }}
       >
+        <PopularityIndicator
+          popularity={tvSeries.popularity}
+          voteCount={tvSeries.voteCount}
+          voteAverage={tvSeries.voteAverage}
+        />
+        <Space
+          size={16}
+          orientation={"horizontal"}
+          style={{ left: -48, position: "relative" }}
+        >
+          <FavoriteButton
+            mediaType={"tv_series"}
+            mediaId={tvSeries.id}
+            favorite={tvSeries.favorite !== undefined}
+          />
+          <Button
+            className={"dionysus-action-button"}
+            shape={"circle"}
+            size={"large"}
+            icon={<BookOutlined />}
+          />
+          <SearchConfigurationButton
+            mediaType={"tv_series"}
+            mediaId={tvSeries.id}
+            seriesId={tvSeries.id}
+            searchConfiguration={searchConfiguration}
+            loading={searchConfigurationLoading || tvSeriesLoading}
+            afterUpdate={async (searchConfiguration) => {
+              setSearchConfiguration(searchConfiguration);
+              await fetchTvSeries(true);
+            }}
+          />
+        </Space>
+      </Space>
+    );
+
+    let heroSpace: ReactNode;
+
+    if (affix) {
+      heroSpace = (
+        <Space
+          size={0}
+          orientation={"vertical"}
+          className={"movieHeader"}
+          style={{
+            position: "sticky",
+            minHeight: 522,
+            maxHeight: 522,
+            width: "100%",
+            top: 0,
+            zIndex: 4000,
+          }}
+          styles={{
+            item: { width: "100%" },
+          }}
+        >
+          <Space
+            size={0}
+            orientation={"vertical"}
+            className={"movieHeader"}
+            style={{
+              height: 200,
+              width: "100%",
+              backgroundColor: "#021629",
+              backgroundImage: `linear-gradient(90deg, rgba(0, 21, 41, 1) 10%, rgba(0, 0, 0, 0.4) 100%), url("${headerBackgroundUrl}")`,
+              backgroundPosition: "left 350px top",
+              backgroundSize: "cover",
+              backgroundRepeat: "no-repeat",
+              alignItems: "start",
+              zIndex: 4,
+            }}
+            styles={{
+              item: { width: "100%" },
+            }}
+          >
+            <Space
+              orientation={"horizontal"}
+              size={0}
+              style={{ display: "flex", alignItems: "center" }}
+              styles={{ item: { height: 200 } }}
+            >
+              <Space
+                orientation={"horizontal"}
+                style={{ margin: 16, marginRight: 32 }}
+              >
+                <TvSeriesPosterCard
+                  tvSeries={tvSeries}
+                  bordered={false}
+                  showStatus={true}
+                  scaleDirection={"vertical"}
+                  scaleBaseline={150}
+                  enablePopover={false}
+                />
+              </Space>
+              <Space
+                orientation={"vertical"}
+                size={8}
+                style={{ alignItems: "start", marginTop: 16 }}
+              >
+                <Typography.Title
+                  level={1}
+                  style={{ color: "#ffffffdd", marginBottom: 3 }}
+                >
+                  {tvSeries?.name}
+                </Typography.Title>
+                <Space orientation={"horizontal"}>{titleDecorations}</Space>
+                {tvSeriesActions}
+              </Space>
+            </Space>
+          </Space>
+        </Space>
+      );
+    } else {
+      heroSpace = (
         <Space
           size={0}
           orientation={"vertical"}
@@ -801,46 +925,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                 {tvSeries?.name}
               </Typography.Title>
               <Space orientation={"horizontal"}>{titleDecorations}</Space>
-              <Space
-                orientation={"horizontal"}
-                size={16}
-                style={{ marginTop: 16, alignItems: "center" }}
-              >
-                <PopularityIndicator
-                  popularity={tvSeries.popularity}
-                  voteCount={tvSeries.voteCount}
-                  voteAverage={tvSeries.voteAverage}
-                />
-                <Space
-                  size={16}
-                  orientation={"horizontal"}
-                  style={{ left: -48, position: "relative" }}
-                >
-                  <Button
-                    className={"dionysus-action-button"}
-                    shape={"circle"}
-                    size={"large"}
-                    icon={<HeartOutlined />}
-                  />
-                  <Button
-                    className={"dionysus-action-button"}
-                    shape={"circle"}
-                    size={"large"}
-                    icon={<BookOutlined />}
-                  />
-                  <SearchConfigurationButton
-                    mediaType={"tv_series"}
-                    mediaId={tvSeries.id}
-                    seriesId={tvSeries.id}
-                    searchConfiguration={searchConfiguration}
-                    loading={searchConfigurationLoading || tvSeriesLoading}
-                    afterUpdate={async (searchConfiguration) => {
-                      setSearchConfiguration(searchConfiguration);
-                      await fetchTvSeries(true);
-                    }}
-                  />
-                </Space>
-              </Space>
+              {tvSeriesActions}
               <Space orientation={"vertical"} style={{ marginTop: 16 }}>
                 {tagline}
                 {overview}
@@ -885,13 +970,37 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
             </Space>
           </Space>
         </Space>
+      );
+    }
+
+    content = (
+      <Layout
+        style={{
+          position: "relative",
+          background: "#ffcc33",
+          overflowX: "hidden",
+          overflowY: "scroll",
+          scrollbarWidth: "none",
+          height: "calc(100vh - 92px)",
+        }}
+        onScroll={(e) => {
+          if (!affix) {
+            setAffix(e.currentTarget.scrollTop >= 319);
+          }
+        }}
+      >
+        {heroSpace}
         <Space
           orientation={"horizontal"}
-          style={{ width: "100%", position: "relative" }}
+          style={{
+            width: "100%",
+            position: "relative",
+            marginTop: affix ? -322 : -546,
+            top: affix ? undefined : 546,
+          }}
           styles={{
             item: {
               width: "100%",
-              minHeight: "calc(100vh - 673px",
             },
           }}
         >
@@ -901,21 +1010,48 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
             tabs={sideTabs}
             style={{
               width: "100%",
+              height: affix ? `calc(100vh - 292px)` : undefined,
+              scrollbarWidth: "none",
+              position: "relative",
+              zIndex: 4000,
+            }}
+            tabContentStyle={{
+              scrollbarWidth: "none",
+              height: affix ? `calc(100vh - 308px)` : undefined,
+              overflowY: "scroll",
             }}
           >
             <Tabs
-              className={"fill compact"}
+              style={{
+                scrollbarWidth: "none",
+                height: affix ? `calc(100vh - 292px)` : undefined,
+                overflowY: "scroll",
+              }}
+              styles={{
+                header: {
+                  position: "sticky",
+                  top: 0,
+                  zIndex: 5,
+                  background: "#ffffff",
+                },
+              }}
+              className={"fill compact collapsible-tabs"}
               activeKey={activeTab}
               onChange={(activeKey: string) => {
                 setActiveTab(activeKey);
               }}
-              tabPosition={"top"}
+              onWheel={(e) => {
+                if (affix && e.currentTarget.scrollTop === 0 && e.deltaY < 0) {
+                  setAffix(false);
+                }
+              }}
+              tabPlacement={"top"}
               size={"small"}
               items={mainTabs}
             />
           </CollapsibleTabPanel>
         </Space>
-      </Space>
+      </Layout>
     );
   }
 
@@ -946,10 +1082,10 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
           },
           {
             title: (
-              <Link href={"/dionysus/movies"}>
+              <Link href={"/dionysus/tv/series"}>
                 <Space size={4}>
                   <MetadataOutlinedIcon />
-                  <span>Movies</span>
+                  <span>TV Series</span>
                 </Space>
               </Link>
             ),

@@ -1,7 +1,7 @@
 import {
-  CheckCircleFilled,
   EyeFilled,
   EyeOutlined,
+  HeartFilled,
   HeartOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
@@ -9,9 +9,12 @@ import type {
   BaseTvSeries,
   MediaAssetSearchConfiguration,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Badge, List } from "antd";
+import { List, Space, Spin } from "antd";
 import Link from "next/link";
-import { type MouseEventHandler, useState } from "react";
+import React, { type MouseEventHandler, useEffect, useState } from "react";
+import InfiniteScroll from "react-infinite-scroll-component";
+import mediaApi from "../../../api/mediaApi";
+import { Events, publish, subscribe, unsubscribe } from "../../../utils/events";
 import {
   handleCreateSearchConfiguration,
   handleSetEnabled,
@@ -27,6 +30,11 @@ export interface TvSeriesListProps {
   afterSearchUpdate?: (
     searchConfiguration: MediaAssetSearchConfiguration,
   ) => Promise<void>;
+  scrollOptions?: {
+    fetchNextPage: () => Promise<void>;
+    itemCount: number;
+    target?: string;
+  };
 }
 
 export interface TvSeriesListItemProps {
@@ -36,6 +44,7 @@ export interface TvSeriesListItemProps {
   afterSearchUpdate?: (
     searchConfiguration: MediaAssetSearchConfiguration,
   ) => Promise<void>;
+  afterFavoriteUpdate?: (favorite: boolean) => Promise<void>;
 }
 
 const TvSeriesListItem: React.FunctionComponent<TvSeriesListItemProps> = ({
@@ -43,15 +52,49 @@ const TvSeriesListItem: React.FunctionComponent<TvSeriesListItemProps> = ({
   bordered,
   showStatus,
   afterSearchUpdate,
+  afterFavoriteUpdate,
 }) => {
-  const [updating, setUpdating] = useState(false);
+  const [searchConfigurationUpdating, setSearchConfigurationUpdating] =
+    useState(false);
+  const [favoriteUpdating, setFavoriteUpdating] = useState(false);
+  const [searchConfiguration, setSearchConfiguration] = useState(
+    item.searchConfiguration,
+  );
+  const [favorite, setFavorite] = useState(item.favorite !== undefined);
+
+  useEffect(() => {
+    setSearchConfiguration(item.searchConfiguration);
+  }, [item]);
+
+  useEffect(() => {
+    subscribe(
+      Events.DIONYSUS_MEDIA_SEARCH_CONFIGURATION_UPDATED,
+      onSearchConfigurationUpdated,
+    );
+    subscribe(Events.DIONYSUS_MEDIA_FAVORITE_UPDATED, onFavoriteUpdated);
+
+    return () => {
+      unsubscribe(
+        Events.DIONYSUS_MEDIA_SEARCH_CONFIGURATION_UPDATED,
+        onSearchConfigurationUpdated,
+      );
+      unsubscribe(Events.DIONYSUS_MEDIA_FAVORITE_UPDATED, onFavoriteUpdated);
+    };
+  }, []);
+
+  const onSearchConfigurationUpdated = (e: CustomEvent) => {
+    if (e.detail.type === "tv_series" && e.detail.mediaId === item.id) {
+      console.log("Updated search configuration", e.detail);
+      setSearchConfiguration(e.detail);
+    }
+  };
 
   let searchAction: MouseEventHandler = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
     try {
-      setUpdating(true);
+      setSearchConfigurationUpdating(true);
 
       await handleCreateSearchConfiguration(
         "tv_series",
@@ -59,33 +102,33 @@ const TvSeriesListItem: React.FunctionComponent<TvSeriesListItemProps> = ({
         afterSearchUpdate,
       );
     } finally {
-      setUpdating(false);
+      setSearchConfigurationUpdating(false);
     }
   };
 
-  if (item.searchConfiguration) {
+  if (searchConfiguration) {
     searchAction = async (e) => {
       e.preventDefault();
       e.stopPropagation();
 
       try {
-        setUpdating(true);
+        setSearchConfigurationUpdating(true);
         await handleSetEnabled(
           "tv_series",
           item.id,
-          !item.searchConfiguration!.enabled,
+          !searchConfiguration!.enabled,
           true,
           afterSearchUpdate,
         );
       } finally {
-        setUpdating(false);
+        setSearchConfigurationUpdating(false);
       }
     };
   }
 
   let searchActionIcon;
 
-  if (updating) {
+  if (searchConfigurationUpdating) {
     searchActionIcon = <LoadingOutlined />;
   } else if (item.searchConfiguration && item.searchConfiguration.enabled) {
     searchActionIcon = (
@@ -99,7 +142,53 @@ const TvSeriesListItem: React.FunctionComponent<TvSeriesListItemProps> = ({
     searchActionIcon = <EyeOutlined onClick={searchAction} />;
   }
 
-  let listItem = (
+  const onFavoriteUpdated = (e: CustomEvent) => {
+    if (e.detail.type === "tv_series" && e.detail.mediaId === item.id) {
+      setFavorite(e.detail);
+    }
+  };
+
+  const favoriteAction: MouseEventHandler = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      setFavoriteUpdating(true);
+
+      if (favorite) {
+        await mediaApi.deleteMediaFavorite("tv_series", item.id);
+      } else {
+        await mediaApi.createMediaFavorite("tv_series", item.id);
+      }
+
+      if (afterFavoriteUpdate) {
+        await afterFavoriteUpdate(!favorite);
+      }
+
+      publish(Events.DIONYSUS_MEDIA_FAVORITE_UPDATED, !favorite);
+
+      setFavorite(!favorite);
+    } finally {
+      setFavoriteUpdating(false);
+    }
+  };
+
+  let favoriteIcon;
+
+  if (favoriteUpdating) {
+    favoriteIcon = <LoadingOutlined />;
+  } else if (favorite) {
+    favoriteIcon = (
+      <HeartFilled
+        style={{ color: favorite ? "#ff4d4f" : undefined }}
+        onClick={favoriteAction}
+      />
+    );
+  } else {
+    favoriteIcon = <HeartOutlined onClick={favoriteAction} />;
+  }
+
+  const listItem = (
     <Link href={`/dionysus/tv/series/${item.id}`}>
       <TvSeriesPosterCard
         tvSeries={item}
@@ -108,31 +197,11 @@ const TvSeriesListItem: React.FunctionComponent<TvSeriesListItemProps> = ({
         hoverable={false}
         className={"compact"}
         bordered={bordered}
-        actions={[
-          <HeartOutlined
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          />,
-          searchActionIcon,
-        ]}
+        enablePopover={true}
+        actions={[favoriteIcon, searchActionIcon]}
       />
     </Link>
   );
-
-  // TODO: Replace with property when available
-  if (!true) {
-    listItem = (
-      <Badge.Ribbon
-        color={"#478133"}
-        style={{ fontSize: "12px" }}
-        text={<CheckCircleFilled />}
-      >
-        {listItem}
-      </Badge.Ribbon>
-    );
-  }
 
   return <List.Item>{listItem}</List.Item>;
 };
@@ -144,8 +213,11 @@ const TvSeriesList: React.FunctionComponent<TvSeriesListProps> = ({
   columns = 12,
   bordered = true,
   afterSearchUpdate,
+  scrollOptions,
 }: TvSeriesListProps) => {
-  return (
+  let content: React.ReactNode;
+
+  const listContent = (
     <List
       grid={{ gutter: 16, column: columns }}
       dataSource={tvSeries}
@@ -162,5 +234,28 @@ const TvSeriesList: React.FunctionComponent<TvSeriesListProps> = ({
       }}
     />
   );
+
+  if (scrollOptions) {
+    content = (
+      <InfiniteScroll
+        scrollableTarget={scrollOptions.target}
+        style={{ overflow: "inherit" }}
+        dataLength={tvSeries.length}
+        next={scrollOptions.fetchNextPage}
+        hasMore={scrollOptions.itemCount > tvSeries.length}
+        loader={
+          <Space style={{ width: "100%", justifyContent: "center" }}>
+            <Spin />
+          </Space>
+        }
+      >
+        {listContent}
+      </InfiniteScroll>
+    );
+  } else {
+    content = listContent;
+  }
+
+  return content;
 };
 export default TvSeriesList;
