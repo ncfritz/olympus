@@ -12,7 +12,6 @@ import type {
 import { List, Space, Spin } from "antd";
 import Link from "next/link";
 import React, {
-  type CSSProperties,
   type MouseEventHandler,
   type ReactNode,
   useEffect,
@@ -42,7 +41,6 @@ export interface MovieListProps {
     itemCount: number;
     target?: string;
   };
-  style?: CSSProperties;
 }
 
 interface MovieListItemProps {
@@ -220,9 +218,9 @@ const MovieList: React.FunctionComponent<MovieListProps> = ({
   bordered = true,
   afterSearchUpdate,
   scrollOptions,
-  style,
 }: MovieListProps) => {
   let content: ReactNode;
+
   const listContent = (
     <List
       grid={{ gutter: 16, column: columns }}
