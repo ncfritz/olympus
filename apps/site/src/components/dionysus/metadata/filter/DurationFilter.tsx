@@ -1,4 +1,4 @@
-import { Button, Col, Row, Slider, Space, Tag } from "antd";
+import { Slider, Space, Tag } from "antd";
 import React, { type CSSProperties, useState } from "react";
 import FilterWrapper from "./FilterWrapper";
 
@@ -13,10 +13,12 @@ const DurationFilter: React.FunctionComponent<DurationFilterProps> = ({
   label,
   onFiltersSet,
 }: DurationFilterProps) => {
-  const [durationRange, setDurationRange] = useState([45, 240]);
+  const [durationRange, setDurationRange] = useState<[number, number] | []>([
+    45, 240,
+  ]);
   const [rangeSet, setRangeSet] = useState(0);
 
-  const handleRange = (values: number[]) => {
+  const handleRange = (values: [number, number]) => {
     setDurationRange(values);
     setRangeSet(rangeSet + 1);
   };
