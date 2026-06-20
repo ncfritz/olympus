@@ -1,6 +1,11 @@
 import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
-import { EyeFilled, FilterFilled, HeartFilled, HomeOutlined } from "@ant-design/icons";
+import {
+  EyeFilled,
+  FilterFilled,
+  HeartFilled,
+  HomeOutlined,
+} from "@ant-design/icons";
 import type {
   FilterDefinition,
   Genre,
@@ -252,10 +257,12 @@ const MoviesIndexPage: React.FunctionComponent = () => {
         filters,
       );
       setMovieCount(response.data.count);
+
       return response.data.movies;
     },
     onDataFetched: async (data) => {
       setAggregateMovies((prev) => [...prev, ...data]);
+
       if (moviesPage === 0) {
         setMoviesPage(moviesPage + 1);
       }
@@ -292,8 +299,6 @@ const MoviesIndexPage: React.FunctionComponent = () => {
   const fetchNextMoviesPage = async () => {
     console.log("fetching next page: ", moviesPage);
     setMoviesPage(moviesPage + 1);
-
-    //await fetchMovies(true);
   };
 
   const [stats, statsLoading, statsError] = useFetch<
@@ -683,9 +688,6 @@ const MoviesIndexPage: React.FunctionComponent = () => {
             <MovieList
               movies={aggregateMovies}
               loading={moviesLoading}
-              afterSearchUpdate={async () => {
-                await fetchMovies(true);
-              }}
               scrollOptions={{
                 fetchNextPage: fetchNextMoviesPage,
                 itemCount: movieCount,
