@@ -27,6 +27,10 @@ const MovieCastList: React.FunctionComponent<MovieCastListProps> = ({
   const [debouncedFilter] = useDebounce<string>(filter, 300);
 
   useEffect(() => {
+    setFilteredCast(cast);
+  }, [cast]);
+
+  useEffect(() => {
     if (debouncedFilter && debouncedFilter.length >= 3) {
       const newFilteredCast = cast.filter((item) => {
         return item.person.name
@@ -46,7 +50,7 @@ const MovieCastList: React.FunctionComponent<MovieCastListProps> = ({
     <Space orientation={"vertical"} size={8} style={{ width: "100%" }}>
       {filterable && (
         <Space
-          direction={"horizontal"}
+          orientation={"horizontal"}
           style={{
             padding: 8,
             background: "#fafafa",
