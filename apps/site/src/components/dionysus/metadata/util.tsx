@@ -1,18 +1,19 @@
 import {
   DribbbleOutlined,
-  FacebookFilled,
+  FacebookFilled, FileImageOutlined,
   GlobalOutlined,
   InstagramOutlined,
   QuestionCircleOutlined,
   TwitterOutlined,
-  UserOutlined,
+  UserOutlined
 } from "@ant-design/icons";
 import type {
   BaseImage,
-  BasePerson,
-  TypedImage,
+  BasePerson, BaseTvSeries,
+  TypedImage
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Image, type MenuProps, Space, Typography } from "antd";
+import React from "react";
 
 export const getReleaseStatusForMovie = (status: string): [string, string] => {
   let statusColor = "#efefef";
@@ -236,6 +237,55 @@ export const getPersonCardImageVertical = (person: BasePerson) => {
       }}
     >
       <UserOutlined style={{ fontSize: "64px", color: "#dddddd" }} />
+    </Space>
+  );
+};
+
+export const getPoster = (
+  posterPath?: string,
+  direction?: "horizontal" | "vertical",
+  baseline?: number,
+  borderRadius?: number | string,
+) => {
+  let height = undefined;
+  let width = undefined;
+
+  if (baseline) {
+    height = direction === "vertical" ? baseline : (3 / 2) * baseline;
+    width = direction === "horizontal" ? baseline : (2 / 3) * baseline;
+  }
+
+  return posterPath ? (
+    <img
+      style={{
+        height: height ? height : "inherit",
+        width: width ? width : "inherit",
+        aspectRatio: "calc(2 / 3)",
+        borderRadius: borderRadius ? borderRadius : "inherit",
+      }}
+      src={`https://image.tmdb.org/t/p/w342/${posterPath}}`}
+      alt={"Poster"}
+    />
+  ) : (
+    <Space
+      style={{
+        height: height ? height : "inherit",
+        width: width ? width : "inherit",
+        borderRadius: borderRadius ? borderRadius : "inherit",
+        aspectRatio: "calc(2 / 3)",
+        backgroundColor: "#eeeeee",
+        justifyContent: "center",
+      }}
+      styles={{
+        item: {
+          display: "flex",
+          alignContent: "center",
+          justifyContent: "center",
+          height: "100%",
+        },
+      }}
+    >
+      <FileImageOutlined style={{ fontSize: "64px", color: "#dddddd" }} />
     </Space>
   );
 };

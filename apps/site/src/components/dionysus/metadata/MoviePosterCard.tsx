@@ -1,7 +1,6 @@
 import {
   CheckCircleFilled,
   EyeFilled,
-  FileImageOutlined,
   InfoCircleFilled,
   PauseCircleFilled,
   SafetyCertificateTwoTone,
@@ -21,7 +20,7 @@ import React, {
 import { Events, subscribe, unsubscribe } from "../../../utils/events";
 import SearchConfigurationButton from "../media/SearchConfigurationButton";
 import PopularityIndicator from "./PopulairtyIndicator";
-import { getReleaseStatusForMovie } from "./util";
+import { getPoster, getReleaseStatusForMovie } from "./util";
 
 export interface MoviePosterCardProps {
   movie: SparseMovie;
@@ -95,55 +94,6 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
     }
   }, [cardRef.current?.getBoundingClientRect()]);
 
-  const getPoster = (
-    movie: SparseMovie,
-    direction?: "horizontal" | "vertical",
-    baseline?: number,
-    borderRadius?: number | string,
-  ) => {
-    let height = undefined;
-    let width = undefined;
-
-    if (baseline) {
-      height = direction === "vertical" ? baseline : (3 / 2) * baseline;
-      width = direction === "horizontal" ? baseline : (2 / 3) * baseline;
-    }
-
-    return movie.posterPath ? (
-      <img
-        style={{
-          height: height ? height : "inherit",
-          width: width ? width : "inherit",
-          aspectRatio: "calc(2 / 3)",
-          borderRadius: borderRadius ? borderRadius : "inherit",
-        }}
-        src={`https://image.tmdb.org/t/p/w342/${movie.posterPath}}`}
-        alt={"Poster"}
-      />
-    ) : (
-      <Space
-        style={{
-          height: height ? height : "inherit",
-          width: width ? width : "inherit",
-          borderRadius: borderRadius ? borderRadius : "inherit",
-          aspectRatio: "calc(2 / 3)",
-          backgroundColor: "#eeeeee",
-          justifyContent: "center",
-        }}
-        styles={{
-          item: {
-            display: "flex",
-            alignContent: "center",
-            justifyContent: "center",
-            height: "100%",
-          },
-        }}
-      >
-        <FileImageOutlined style={{ fontSize: "64px", color: "#dddddd" }} />
-      </Space>
-    );
-  };
-
   const [statusText, statusColor] = getReleaseStatusForMovie(movie.status);
 
   const extra: ReactNode[] = [];
@@ -166,7 +116,7 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
   if (showReleaseYear) {
     const year = movie.releaseDate
       ? DateTime.fromISO(movie.releaseDate).year
-      : undefined;
+      : "Year ???";
     extra.push(
       <Typography.Text
         style={{
@@ -229,7 +179,7 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
             setCoverHover(false);
           }}
         >
-          {coverHover && (
+          {enablePopover && coverHover && (
             <Button
               style={{ float: "left", position: "absolute", color: "#ffffff" }}
               type="text"
@@ -241,7 +191,7 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
               }}
             />
           )}
-          {getPoster(movie, scaleDirection, scaleBaseline)}
+          {getPoster(movie.posterPath, scaleDirection, scaleBaseline)}
         </div>
       }
       actions={actions}
@@ -368,7 +318,7 @@ const MoviePosterCard: React.FunctionComponent<MoviePosterCardProps> = ({
             style={{ alignItems: "start" }}
             size={16}
           >
-            <div>{getPoster(movie, "vertical", 166, 4)}</div>
+            <div>{getPoster(movie.posterPath, "vertical", 166, 4)}</div>
             <Typography.Title
               level={4}
               style={{ color: "#ffffffdd", marginBottom: 3 }}
