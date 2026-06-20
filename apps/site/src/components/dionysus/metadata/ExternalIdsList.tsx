@@ -18,13 +18,21 @@ export const ExternalIdsList: React.FunctionComponent<ExternalIdsListProps> = ({
       <Space orientation={"vertical"} style={{ width: "100%" }} size={0}>
         {ids.map((item) => {
           return (
-            <Row gutter={8} style={{ height: 25, alignItems: "center" }}>
-              <Col span={8} style={{ textAlign: "end" }}>
+            <Space
+              orientation={"horizontal"}
+              style={{
+                height: 25,
+                alignItems: "center",
+                width: "100%",
+                justifyContent: "space-between",
+              }}
+            >
+              <Space style={{ textAlign: "end", width: 150 }}>
                 <Typography.Text style={{ fontSize: "11px" }}>
                   {item.type}:
                 </Typography.Text>
-              </Col>
-              <Col span={14}>
+              </Space>
+              <Space orientation={"horizontal"} size={8}>
                 <Typography.Text
                   style={{
                     fontSize: "11px",
@@ -33,20 +41,13 @@ export const ExternalIdsList: React.FunctionComponent<ExternalIdsListProps> = ({
                 >
                   {item.externalId}
                 </Typography.Text>
-              </Col>
-              <Col
-                span={2}
-                style={{
-                  textAlign: "end",
-                }}
-              >
                 <Button
                   icon={getExternalIdIcon(item.type)}
                   type={"text"}
                   size={"small"}
                 />
-              </Col>
-            </Row>
+              </Space>
+            </Space>
           );
         })}
       </Space>
