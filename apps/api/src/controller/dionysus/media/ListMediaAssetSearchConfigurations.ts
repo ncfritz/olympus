@@ -1,0 +1,109 @@
+import {
+  ListMediaAssetSearchConfigurationsResponse,
+  MediaAssetSearchConfiguration,
+  SortDirection,
+} from "@ncfritz/olympus-model";
+import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
+import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
+import { type Response } from "express";
+import { gql, GraphQLClient } from "graphql-request";
+import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
+import { BASE_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
+import { GraphQlMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
+import {
+  ApiFilterParams,
+  ApiPaginationParams,
+  ApiStandardErrorResponses,
+} from "../../../utils/controllerDecorators";
+import {
+  buildFilterExpression,
+  buildPaginationExpression,
+  parseFilterDefinition,
+} from "../../../utils/filterUtil";
+
+export type GraphQlListMediaAssetSearchConfigurationResponse = {
+  dionysus_media_asset_search_configuration: GraphQlMediaAssetSearchConfiguration[];
+  dionysus_media_asset_search_configuration_aggregate: {
+    aggregate: {
+      count: number;
+    };
+  };
+};
+
+@Controller({ version: "1" })
+export class ListMediaAssetSearchConfigurationsController {
+  constructor(private readonly graphQLClient: GraphQLClient) {}
+
+  @Get("/media/searchConfigurations")
+  @ApiOperation({
+    summary: "Lists search configurations",
+    description: "Lists search configurations.",
+    operationId: "ListMediaAssetSearchConfigurations",
+    tags: ["Media"],
+  })
+  @ApiProduces("application/json")
+  @ApiFilterParams()
+  @ApiPaginationParams()
+  @ApiOkResponse({
+    description:
+      "The list of search configurations.  If there are more results to list, a pagination token will be present.",
+    type: () => ListMediaAssetSearchConfigurationsResponse,
+  })
+  @ApiStandardErrorResponses()
+  async handle(
+    @Query("pageSize") pageSize = 24,
+    @Query("startPage") startPage = 0,
+    @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
+    @Query("sortBy") sortField = "postedTime",
+    @Query("filters") filters = undefined,
+    @Res() response: Response,
+  ): Promise<void> {
+    const userFilters = parseFilterDefinition(filters);
+    const whereExpression = buildFilterExpression(userFilters);
+    const paginationExpression = buildPaginationExpression({
+      pageSize: pageSize,
+      startPage: startPage,
+      sortDirection: sortDirection,
+      sortField: sortField,
+    });
+
+    const fetchRequest = gql`
+      query ListMediaAssetSearchConfigurations {
+        dionysus_media_asset_search_configuration(${[
+          paginationExpression,
+          whereExpression,
+        ].join(", ")}) {
+          ${BASE_SEARCH_CONFIGURATION}
+        }
+        dionysus_media_asset_search_configuration_aggregate${
+          whereExpression ? `(${whereExpression})` : ""
+        } {
+          aggregate {
+            count
+          }
+        }
+      }
+    `;
+
+    const fetchResponse =
+      await this.graphQLClient.request<GraphQlListMediaAssetSearchConfigurationResponse>(
+        fetchRequest,
+      );
+    const fetchedConfigurations: MediaAssetSearchConfiguration[] = [];
+
+    fetchResponse.dionysus_media_asset_search_configuration.forEach(
+      (configuration) => {
+        fetchedConfigurations.push(toDomainObject(configuration));
+      },
+    );
+
+    const responseBody: ListMediaAssetSearchConfigurationsResponse = {
+      searchConfigurations: fetchedConfigurations,
+      count:
+        fetchResponse.dionysus_media_asset_search_configuration_aggregate
+          .aggregate.count,
+    };
+
+    response.status(HttpStatus.OK).send(responseBody);
+  }
+}
