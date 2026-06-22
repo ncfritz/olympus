@@ -1,11 +1,9 @@
 import {
   BookOutlined,
-  CalendarOutlined,
   CloudDownloadOutlined,
   EyeOutlined,
   FileImageOutlined,
   FileOutlined,
-  HeartOutlined,
   HomeOutlined,
   InfoCircleFilled,
   QrcodeOutlined,
@@ -27,16 +25,18 @@ import {
   Image,
   QRCode,
   Drawer,
+  Layout,
 } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import mediaApi from "../../../../../../../../api/mediaApi";
 import metadataApi from "../../../../../../../../api/metadataApi";
 import Description from "../../../../../../../../components/common/Description";
 import LoadingWrapper from "../../../../../../../../components/common/LoadingWrapper";
 import AssetDetailsPanel from "../../../../../../../../components/dionysus/media/AssetDetailsPanel";
+import FavoriteButton from "../../../../../../../../components/dionysus/media/FavoriteButton";
 import SearchConfigurationPanel from "../../../../../../../../components/dionysus/media/SearchConfigurationPanel";
 import SearchResultsTable from "../../../../../../../../components/dionysus/media/SearchResultsTable";
 import ExternalIdsList from "../../../../../../../../components/dionysus/metadata/ExternalIdsList";
@@ -65,8 +65,6 @@ interface EpisodeId {
   seasonNumber: number;
   episodeNumber: number;
 }
-
-const topOffset = 301;
 
 const TvEpisodeDetailPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -192,6 +190,10 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         .data.searchConfiguration,
   });
 
+  useEffect(() => {
+    setActiveTab("t-main-general");
+  }, [episode]);
+
   let content = <></>;
 
   if (episode) {
@@ -207,6 +209,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         src={`https://image.tmdb.org/t/p/w342/${episode.stillPath}}`}
         width={275}
         style={{ borderRadius: 8 }}
+        preview={false}
       />
     ) : (
       <Space
@@ -230,13 +233,27 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
       </Space>
     );
 
+    const overview = episode.overview ? (
+      <Space orientation={"vertical"} size={0}>
+        <Typography.Title
+          style={{ color: "#222222", marginBottom: 0 }}
+          level={4}
+        >
+          Overview
+        </Typography.Title>
+        <Typography.Text style={{ color: "#333333", display: "flex" }}>
+          {episode?.overview}
+        </Typography.Text>
+      </Space>
+    ) : undefined;
+
     const mainTabs = [
       {
         key: "t-main-general",
         label: "Overview",
         children: (
           <Space
-            direction={"vertical"}
+            orientation={"vertical"}
             style={{ width: "100%", padding: 16 }}
             styles={{
               item: {
@@ -244,13 +261,15 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
               },
             }}
           >
+            {overview}
             <Space
-              direction={"horizontal"}
+              orientation={"horizontal"}
               style={{
                 width: "100%",
                 alignItems: "center",
                 justifyContent: "space-between",
                 marginBottom: 16,
+                marginTop: 16,
               }}
               size={16}
             >
@@ -278,7 +297,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
               />
             </LoadingWrapper>
             <Space
-              direction={"horizontal"}
+              orientation={"horizontal"}
               style={{
                 width: "100%",
                 alignItems: "center",
@@ -315,7 +334,6 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
               season={episode.season}
               initialSearchConfiguration={episode.season.searchConfiguration}
               afterSearchUpdate={async () => {
-                //await fetchTvSeason(true);
                 await fetchEpisode(true);
               }}
             />
@@ -326,7 +344,10 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         key: "t-main-cast",
         label: "Cast",
         children: (
-          <Space orientation={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", padding: 16 }}
+          >
             <LoadingWrapper loading={castLoading} error={castError}>
               <TvEpisodeCastList cast={cast} />
             </LoadingWrapper>
@@ -337,7 +358,10 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         key: "t-main-guest-stars",
         label: "Guest Stars",
         children: (
-          <Space orientation={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", padding: 16 }}
+          >
             <LoadingWrapper loading={castLoading} error={castError}>
               <TvEpisodeCastList cast={guestStars} />
             </LoadingWrapper>
@@ -348,7 +372,10 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         key: "t-main-crew",
         label: "Crew",
         children: (
-          <Space orientation={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", padding: 16 }}
+          >
             <LoadingWrapper loading={crewLoading} error={crewError}>
               <TvEpisodeCrewList crew={crew} />
             </LoadingWrapper>
@@ -374,7 +401,10 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         key: "t-info-general",
         label: <InfoCircleFilled />,
         children: (
-          <Space orientation={"vertical"} style={{ padding: 12, width: "100%" }}>
+          <Space
+            orientation={"vertical"}
+            style={{ padding: 12, width: "100%" }}
+          >
             <Description
               title={"Other Episodes"}
               style={{ width: "100%", paddingRight: 8 }}
@@ -402,7 +432,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
               padding: 16,
               alignItems: "center",
             }}
-            direction={"vertical"}
+            orientation={"vertical"}
           >
             <QRCode
               style={{ marginTop: 64 }}
@@ -415,24 +445,13 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         ),
       },
       {
-        key: "t-info-releases",
-        label: <CalendarOutlined />,
-        children: (
-          <Space
-            size={0}
-            style={{ width: "100%", padding: 16 }}
-            direction={"vertical"}
-          ></Space>
-        ),
-      },
-      {
         key: "m-info-fetchJob",
         label: <CloudDownloadOutlined />,
         children: (
           <Space
             size={0}
             style={{ width: "100%", padding: 16 }}
-            direction={"vertical"}
+            orientation={"vertical"}
           >
             <MetadataFetchJobPanel
               id={`${id}-${episode.season.seasonNumber}-${episode.episodeNumber}`}
@@ -449,10 +468,13 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         label: "Search Results",
         children: (
           <Space
-            direction={"vertical"}
+            orientation={"vertical"}
             style={{ width: "100%", display: "block" }}
           >
-            <SearchResultsTable searchConfiguration={searchConfiguration} />
+            <SearchResultsTable
+              searchConfiguration={searchConfiguration}
+              containerHeight={428}
+            />
           </Space>
         ),
       });
@@ -461,7 +483,10 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         key: "t-info-searchConfig",
         label: <EyeOutlined />,
         children: (
-          <Space orientation={"vertical"} style={{ width: "100%", padding: 16 }}>
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", padding: 16 }}
+          >
             <Typography.Title level={5}>Search Executions:</Typography.Title>
             <SearchConfigurationPanel
               searchConfiguration={searchConfiguration}
@@ -470,249 +495,255 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         ),
       });
     }
-    const overview = episode.overview ? (
-      <Space orientation={"vertical"} size={0} style={{ padding: 16 }}>
-        <Typography.Title
-          style={{ color: "#222222", marginBottom: 0 }}
-          level={4}
-        >
-          Overview
-        </Typography.Title>
-        <Typography.Text
-          style={{ color: "#333333", maxWidth: 1024, display: "flex" }}
-        >
-          {episode?.overview}
-        </Typography.Text>
-      </Space>
-    ) : undefined;
 
-    content = (
+    const episodeDetails = (
       <Space
-        direction={"vertical"}
+        orientation={"horizontal"}
+        className={"person-fix"}
         size={0}
-        style={{ width: "100%", height: "100%" }}
-        styles={{ item: { width: "100%" } }}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "start",
+        }}
+      >
+        <Space orientation={"vertical"} style={{ padding: 16 }}>
+          {stillPath}
+          <Description
+            title={"Air Date"}
+            value={airDate ? airDate.toFormat("yyyy / MM / dd") : undefined}
+          />
+          <ExternalIdsList ids={episode.externalIds} />
+        </Space>
+      </Space>
+    );
+
+    const heroSpace = (
+      <Space
+        size={0}
+        orientation={"vertical"}
+        className={"movieHeader"}
+        style={{
+          minHeight: 200,
+          maxHeight: 200,
+          width: "100%",
+          backgroundColor: "#021629",
+          backgroundImage: `linear-gradient(90deg, rgba(0, 21, 41, 1) 10%, rgba(0, 0, 0, 0.4) 100%), url("${headerBackgroundUrl}")`,
+          backgroundPosition: "left 150px top",
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
+          borderBottom: "1px solid #efefef",
+          alignItems: "start",
+          position: "relative",
+        }}
+        styles={{
+          item: { width: "100%", height: 200 },
+        }}
       >
         <Space
+          orientation={"horizontal"}
           size={0}
-          direction={"vertical"}
-          className={"movieHeader"}
-          style={{
-            minHeight: 200,
-            maxHeight: 200,
-            width: "100%",
-            backgroundColor: "#021629",
-            backgroundImage: `linear-gradient(90deg, rgba(0, 21, 41, 1) 10%, rgba(0, 0, 0, 0.4) 100%), url("${headerBackgroundUrl}")`,
-            backgroundPosition: "left 150px top",
-            backgroundSize: "cover",
-            backgroundRepeat: "no-repeat",
-            borderBottom: "1px solid #efefef",
-            alignItems: "start",
-            position: "relative",
-          }}
-          styles={{
-            item: { width: "100%", height: 200 },
-          }}
+          style={{ display: "flex", alignItems: "center" }}
+          styles={{ item: { height: 200 } }}
         >
+          <Link href={`/dionysus/tv/series/${episode.series.id}`}>
+            <Image
+              preview={false}
+              style={{
+                height: 150,
+                width: 100,
+                borderRadius: 8,
+                margin: 24,
+              }}
+              src={`https://image.tmdb.org/t/p/w342/${episode.series.posterPath}}`}
+              alt={"Poster"}
+            />
+          </Link>
           <Space
-            direction={"horizontal"}
-            size={0}
-            style={{ display: "flex", alignItems: "center" }}
-            styles={{ item: { height: 200 } }}
+            orientation={"vertical"}
+            size={8}
+            style={{ alignItems: "start", marginTop: 24 }}
           >
             <Link href={`/dionysus/tv/series/${episode.series.id}`}>
-              <Image
-                preview={false}
-                style={{
-                  height: 150,
-                  width: 100,
-                  borderRadius: 8,
-                  margin: 24,
-                }}
-                src={`https://image.tmdb.org/t/p/w342/${episode.series.posterPath}}`}
-                alt={"Poster"}
-              />
+              <Typography.Title
+                level={1}
+                style={{ color: "#ffffffdd", marginBottom: 0 }}
+              >
+                {episode?.series.name}
+              </Typography.Title>
             </Link>
-            <Space
-              direction={"vertical"}
-              size={8}
-              style={{ alignItems: "start", marginTop: 24 }}
-            >
-              <Link href={`/dionysus/tv/series/${episode.series.id}`}>
-                <Typography.Title
-                  level={1}
-                  style={{ color: "#ffffffdd", marginBottom: 0 }}
-                >
-                  {episode?.series.name}
-                </Typography.Title>
-              </Link>
-              <Space orientation={"horizontal"} size={2}>
-                <Link
-                  href={`/dionysus/tv/series/${episode.series.id}/season/${episode.seasonNumber}`}
-                >
-                  <Typography.Title
-                    level={4}
-                    style={{ color: "#ffffffcc", marginBottom: 3 }}
-                  >
-                    Season {episode.season.seasonNumber}
-                  </Typography.Title>
-                </Link>
+            <Space orientation={"horizontal"} size={2}>
+              <Link
+                href={`/dionysus/tv/series/${episode.series.id}/season/${episode.seasonNumber}`}
+              >
                 <Typography.Title
                   level={4}
                   style={{ color: "#ffffffcc", marginBottom: 3 }}
                 >
-                  -
+                  Season {episode.season.seasonNumber}
                 </Typography.Title>
-                {episode.asset && (
-                  <SafetyCertificateTwoTone
-                    twoToneColor={"#488633"}
-                    style={{ fontSize: "20px" }}
-                  />
-                )}
-                <Typography.Title
-                  level={5}
-                  style={{ color: "#ffffffcc", marginBottom: 3 }}
-                >
-                  Episode {episode.episodeNumber}: {episode.name}
-                </Typography.Title>
-              </Space>
-              <Space
-                direction={"horizontal"}
-                size={16}
-                style={{
-                  alignItems: "center",
-                  display: "flex",
-                }}
+              </Link>
+              <Typography.Title
+                level={4}
+                style={{ color: "#ffffffcc", marginBottom: 3 }}
               >
-                <Progress
-                  type={"circle"}
-                  strokeColor={getProgressColor(episode.voteAverage * 10)}
-                  percent={episode.voteAverage * 10}
-                  size={48}
-                  format={(percent) => {
-                    return (
-                      <Typography.Text
-                        style={{
-                          fontSize: "13px",
-                          color: "#efefef",
-                          fontWeight: 500,
-                        }}
-                      >
-                        {percent?.toFixed(0)}%
-                      </Typography.Text>
-                    );
-                  }}
+                -
+              </Typography.Title>
+              {episode.asset && (
+                <SafetyCertificateTwoTone
+                  twoToneColor={"#488633"}
+                  style={{ fontSize: "20px" }}
+                />
+              )}
+              <Typography.Title
+                level={5}
+                style={{ color: "#ffffffcc", marginBottom: 3 }}
+              >
+                Episode {episode.episodeNumber}: {episode.name}
+              </Typography.Title>
+            </Space>
+            <Space
+              orientation={"horizontal"}
+              size={16}
+              style={{
+                alignItems: "center",
+                display: "flex",
+              }}
+            >
+              <Progress
+                type={"circle"}
+                strokeColor={getProgressColor(episode.voteAverage * 10)}
+                percent={episode.voteAverage * 10}
+                size={48}
+                format={(percent) => {
+                  return (
+                    <Typography.Text
+                      style={{
+                        fontSize: "13px",
+                        color: "#efefef",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {percent?.toFixed(0)}%
+                    </Typography.Text>
+                  );
+                }}
+                style={{
+                  backgroundColor: "#99999933",
+                  borderRadius: 48,
+                  padding: 6,
+                }}
+              />
+              <FavoriteButton
+                mediaType={"tv_episode"}
+                mediaId={episode.id}
+                favorite={episode.favorite !== undefined}
+              />
+              <Button
+                className={"dionysus-action-button"}
+                shape={"circle"}
+                size={"large"}
+                icon={<BookOutlined />}
+              />
+              <SearchConfigurationButton
+                mediaType={"tv_episode"}
+                mediaId={episode.id}
+                seriesId={episode.series.id}
+                seasonNumber={episode.seasonNumber}
+                episodeNumber={episode.episodeNumber}
+                searchConfiguration={searchConfiguration}
+                loading={searchConfigurationLoading || tvSeasonLoading}
+                afterUpdate={async (searchConfiguration) => {
+                  setSearchConfiguration(searchConfiguration);
+                  await fetchTvSeason(true);
+                }}
+              />
+              {episode.asset && (
+                <Button
+                  className={"dionysus-action-button"}
+                  size={"large"}
+                  icon={<FileOutlined />}
                   style={{
-                    backgroundColor: "#99999933",
-                    borderRadius: 48,
-                    padding: 6,
+                    borderRadius: 32,
+                    fontSize: "14px",
                   }}
-                />
-                <Button
-                  className={"dionysus-action-button"}
-                  shape={"circle"}
-                  size={"large"}
-                  icon={<HeartOutlined />}
-                />
-                <Button
-                  className={"dionysus-action-button"}
-                  shape={"circle"}
-                  size={"large"}
-                  icon={<BookOutlined />}
-                />
-                <SearchConfigurationButton
-                  mediaType={"tv_episode"}
-                  mediaId={episode.id}
-                  seriesId={episode.series.id}
-                  seasonNumber={episode.seasonNumber}
-                  episodeNumber={episode.episodeNumber}
-                  searchConfiguration={searchConfiguration}
-                  loading={searchConfigurationLoading || tvSeasonLoading}
-                  afterUpdate={async (searchConfiguration) => {
-                    setSearchConfiguration(searchConfiguration);
-                  }}
-                />
-                {episode.asset && (
-                  <Button
-                    className={"dionysus-action-button"}
-                    size={"large"}
-                    icon={<FileOutlined />}
-                    style={{
-                      borderRadius: 32,
-                      fontSize: "14px",
-                    }}
-                    onClick={() => setAssetInfoOpen(true)}
-                  >
-                    Asset Info
-                  </Button>
-                )}
-              </Space>
+                  onClick={() => setAssetInfoOpen(true)}
+                >
+                  Asset Info
+                </Button>
+              )}
             </Space>
           </Space>
         </Space>
+      </Space>
+    );
+
+    content = (
+      <Layout
+        style={{
+          position: "relative",
+          background: "#ffffff",
+          overflowX: "hidden",
+          overflowY: "scroll",
+          scrollbarWidth: "none",
+          height: "calc(100vh - 92px)",
+        }}
+      >
+        {heroSpace}
         <Space
-          direction={"horizontal"}
-          style={{ width: "100%", position: "relative" }}
-          styles={{
-            item: {
-              width: "100%",
-              minHeight: `calc(100vh - ${topOffset}px`,
-            },
+          orientation={"horizontal"}
+          className={"person-fix"}
+          style={{
+            width: "100%",
+            position: "relative",
+            alignItems: "start",
           }}
         >
+          {episodeDetails}
           <CollapsibleTabPanel
             panelId={"tvEpisode.side"}
             width={550}
             tabs={sideTabs}
             style={{
               width: "100%",
+              scrollbarWidth: "none",
+              position: "relative",
+              height: `calc(100vh - 292px)`,
+
+              zIndex: 4000,
+            }}
+            tabContentStyle={{
+              scrollbarWidth: "none",
+              height: `calc(100vh - 308px)`,
+              overflowY: "scroll",
             }}
           >
-            <Space
-              direction={"horizontal"}
-              className={"person-fix"}
-              size={0}
+            <Tabs
               style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "start",
+                scrollbarWidth: "none",
+                height: `calc(100vh - 292px)`,
+                overflowY: "scroll",
               }}
-            >
-              <Space orientation={"vertical"} style={{ padding: 16 }}>
-                {stillPath}
-                <Description
-                  title={"Air Date"}
-                  value={
-                    airDate ? airDate.toFormat("yyyy / MM / dd") : undefined
-                  }
-                />
-                <ExternalIdsList ids={episode.externalIds} />
-              </Space>
-              <Space
-                direction={"vertical"}
-                style={{
-                  width: "100%",
-                  height: `calc(100vh - ${topOffset - 16}px`,
-                  alignItems: "top",
-                  overflow: "scroll",
-                }}
-              >
-                {overview}
-                <Tabs
-                  className={"fill compact collapsible-tabs"}
-                  activeKey={activeTab}
-                  onChange={(activeKey: string) => {
-                    setActiveTab(activeKey);
-                  }}
-                  tabPosition={"top"}
-                  size={"small"}
-                  items={mainTabs}
-                />
-              </Space>
-            </Space>
+              styles={{
+                header: {
+                  position: "sticky",
+                  top: 0,
+                  zIndex: 5,
+                  background: "#ffffff",
+                },
+              }}
+              className={"fill compact collapsible-tabs"}
+              activeKey={activeTab}
+              onChange={(activeKey: string) => {
+                setActiveTab(activeKey);
+              }}
+              tabPlacement={"top"}
+              size={"small"}
+              items={mainTabs}
+            />
           </CollapsibleTabPanel>
         </Space>
-      </Space>
+      </Layout>
     );
   }
 
@@ -793,7 +824,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
         {content}
         <Drawer
           title={"Asset Details"}
-          width={750}
+          size={750}
           placement={"right"}
           closable={true}
           styles={{
