@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment";
+import { PaginatedResults } from "../../common";
 import { MediaAssetSearchConfiguration, SparseMediaFavorite } from "../media";
 import {
   Certification,
@@ -99,6 +100,12 @@ export class BaseTVSeries {
   @ApiProperty({ type: Number })
   voteAverage: number;
 
+  @ApiProperty({
+    type: () => GenreAssociation,
+    isArray: true,
+  })
+  genres: GenreAssociation[];
+
   @ApiProperty({ type: () => MediaAssetSearchConfiguration, required: false })
   searchConfiguration?: MediaAssetSearchConfiguration;
 
@@ -144,12 +151,6 @@ export class SparseTvSeries extends BaseTVSeries {
     isArray: true,
   })
   externalIds: ExternalId[];
-
-  @ApiProperty({
-    type: () => GenreAssociation,
-    isArray: true,
-  })
-  genres: GenreAssociation[];
 
   @ApiProperty({
     type: () => KeywordAssociation,
@@ -229,6 +230,7 @@ export class TVSeriesWithCastAndCrew extends TVSeries {
 }
 
 export class PartialTVSeries extends OmitType(BaseTVSeries, [
+  "genres",
   "createdTime",
   "lastUpdatedTime",
 ]) {
@@ -583,7 +585,7 @@ export class ListTvSeriesCrewResponse {
   crew: TVSeriesCrewMember[];
 }
 
-export class ListTvSeriesResponse {
+export class ListTvSeriesResponse extends PaginatedResults {
   @ApiProperty({
     type: () => BaseTVSeries,
     isArray: true,
