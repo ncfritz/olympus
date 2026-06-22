@@ -13,7 +13,10 @@ import {
   updateMediaAssetSearchConfiguration,
   updateMediaAssetSearchExecution,
   describeMediaAssetSearchResult,
+  listMediaAssetSearchConfigurations,
+  FilterDefinition,
 } from "@ncfritz/olympus-sdk/dionysus";
+import { SortOptions } from "../types/common";
 import { ApiBase, BASE_URL } from "./apiBase";
 
 class MediaApi extends ApiBase {
@@ -109,6 +112,23 @@ class MediaApi extends ApiBase {
       },
       query: {
         seasonNumber: seasonNumber,
+      },
+    });
+  }
+
+  async listMediaAssetSearchConfigurations(
+    page: number = 0,
+    pageSize: number = 30,
+    sort: SortOptions = { field: "startedTime", order: "desc" },
+    filters?: FilterDefinition,
+  ) {
+    return await listMediaAssetSearchConfigurations({
+      query: {
+        pageSize: pageSize,
+        sort: sort.order,
+        sortBy: sort.field,
+        startPage: page,
+        filters: this.encodeFilters(filters),
       },
     });
   }

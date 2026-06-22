@@ -1,9 +1,7 @@
 import { Logger, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ReporterModule } from "nestjs-metrics-reporter";
-import { MovieSearchFanoutHandler } from "../handler/fanout/MovieSearchFanoutHandler";
-import { TVSeasonSearchFanoutHandler } from "../handler/fanout/TVSeasonSearchFanoutHandler";
-import { TVSeriesSearchFanoutHandler } from "../handler/fanout/TVSeriesSearchFanoutHandler";
+import { SearchConfigurationFanoutHandler } from "../handler/fanout/SearchConfigurationFanoutHandler";
 import { MovieSearchHandler } from "../handler/search/MovieSearchHandler";
 import { TVEpisodeSearchHandler } from "../handler/search/TVEpisodeSearchHandler";
 import { TVSeasonSearchHandler } from "../handler/search/TVSeasonSearchHandler";
@@ -32,12 +30,8 @@ import { RabbitModule } from "./RabbitModule";
   providers: [
     // Logging
     Logger,
-
     // Fanout Jobs
-    MovieSearchFanoutHandler,
-    TVSeriesSearchFanoutHandler,
-    TVSeasonSearchFanoutHandler,
-
+    SearchConfigurationFanoutHandler,
     // Search Jobs
     MovieSearchHandler,
     TVSeriesSearchHandler,

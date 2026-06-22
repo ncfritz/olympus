@@ -35,11 +35,14 @@ import { logger } from "../util/logger";
           exchanges: [
             {
               name: SEARCH_FANOUT_TRIGGER_EXCHANGE,
-              type: "topic",
+              type: "fanout",
             },
             {
               name: SEARCH_EXECUTION_TRIGGER_EXCHANGE,
-              type: "topic",
+              type: "x-delayed-message",
+              options: {
+                arguments: { "x-delayed-type": "topic" },
+              },
             },
           ],
           connectionInitOptions: { wait: true },
