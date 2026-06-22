@@ -638,7 +638,10 @@ const MovieDetailPage: React.FunctionComponent = () => {
             orientation={"vertical"}
             style={{ width: "100%", display: "block" }}
           >
-            <SearchResultsTable searchConfiguration={searchConfiguration} />
+            <SearchResultsTable
+              searchConfiguration={searchConfiguration}
+              containerHeight={affix ? 428 : 428}
+            />
           </Space>
         ),
       });
@@ -869,7 +872,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
       <Layout
         style={{
           position: "relative",
-          background: "#ffcc33",
+          background: "#ffffff",
           overflowX: "hidden",
           overflowY: "scroll",
           scrollbarWidth: "none",
