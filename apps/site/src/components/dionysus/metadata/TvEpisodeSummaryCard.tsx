@@ -1,6 +1,8 @@
 import {
   CheckCircleFilled,
+  EyeFilled,
   FileImageOutlined,
+  PauseCircleFilled,
   StarFilled,
 } from "@ant-design/icons";
 import type {
@@ -10,8 +12,9 @@ import type {
 import { Badge, Card, Image, Progress, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Description from "../../common/Description";
+import MediaBannerWrapper from "../media/MediaBannerWrapper";
 import SearchConfigurationButton from "../media/SearchConfigurationButton";
 import { getProgressColor } from "./util";
 
@@ -92,7 +95,7 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
     >
       <Space
         className={"episode-fix"}
-        direction={"horizontal"}
+        orientation={"horizontal"}
         size={8}
         style={{
           height: "100%",
@@ -110,14 +113,18 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
       >
         <Space orientation={"vertical"} style={{ padding: 16, width: "100%" }}>
           <Space
-            direction={"horizontal"}
+            orientation={"horizontal"}
             style={{
               alignItems: "center",
               justifyContent: "space-between",
               width: "100%",
             }}
           >
-            <Space orientation={"horizontal"} size={16} style={{ width: "100%" }}>
+            <Space
+              orientation={"horizontal"}
+              size={16}
+              style={{ width: "100%", alignItems: "start" }}
+            >
               <SearchConfigurationButton
                 mediaType={"tv_episode"}
                 mediaId={episode.id}
@@ -128,7 +135,11 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
                   setSearchConfiguration(searchConfiguration);
                 }}
               />
-              <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
+              <Space
+                orientation={"vertical"}
+                size={0}
+                style={{ width: "100%", paddingRight: 16 }}
+              >
                 <Link
                   href={`/dionysus/tv/series/${seriesId}/season/${episode.seasonNumber}/episode/${episode.episodeNumber}`}
                 >
@@ -150,10 +161,13 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
                     {episode.name}
                   </Typography.Title>
                 </Link>
+                <Typography.Text style={{ fontSize: "12px" }}>
+                  {episode.overview}
+                </Typography.Text>
               </Space>
             </Space>
             <Space
-              direction={"vertical"}
+              orientation={"vertical"}
               size={0}
               styles={{
                 item: {
@@ -167,11 +181,11 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
                 titleFontSize={"12px"}
                 value={airDate}
                 direction={"horizontal"}
-                style={{ marginTop: 2 }}
+                style={{ marginTop: 2, whiteSpace: "nowrap" }}
               />
               {episode.voteAverage > 0 && (
                 <Space
-                  direction={"horizontal"}
+                  orientation={"horizontal"}
                   size={8}
                   style={{ alignItems: "center" }}
                 >
@@ -194,9 +208,6 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
               )}
             </Space>
           </Space>
-          <Typography.Text style={{ fontSize: "12px" }}>
-            {episode.overview}
-          </Typography.Text>
         </Space>
         <Link
           href={`/dionysus/tv/series/${seriesId}/season/${episode.seasonNumber}/episode/${episode.episodeNumber}`}
@@ -207,16 +218,13 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
     </Card>
   );
 
-  return episode.asset ? (
-    <Badge.Ribbon
-      color={"#478133"}
-      style={{ fontSize: "12px" }}
-      text={<CheckCircleFilled />}
+  return (
+    <MediaBannerWrapper
+      asset={episode.asset !== undefined}
+      searchConfiguration={episode.searchConfiguration}
     >
       {cardContent}
-    </Badge.Ribbon>
-  ) : (
-    cardContent
+    </MediaBannerWrapper>
   );
 };
 export default TvEpisodeSummaryCard;
