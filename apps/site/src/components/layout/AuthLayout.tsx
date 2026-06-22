@@ -233,7 +233,7 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
               top: 64,
               overflowX: "hidden",
               overflowY: "auto",
-              height: "calc(100vh - 48px)",
+              height: "calc(100vh - 64px)",
             }}
           >
             <Content
