@@ -13,17 +13,25 @@ export interface CollapsibleTabPanelProps {
   children: ReactNode | ReactNode[];
   tabs: any[];
   width: number;
-  style: CSSProperties;
+  style?: CSSProperties;
+  tabContentStyle?: CSSProperties;
   panelId?: string;
 }
 
 const CollapsibleTabPanel: React.FunctionComponent<
   CollapsibleTabPanelProps
-> = ({ children, tabs, width, style, panelId }: CollapsibleTabPanelProps) => {
+> = ({
+  children,
+  tabs,
+  width,
+  style,
+  tabContentStyle,
+  panelId,
+}: CollapsibleTabPanelProps) => {
   const dispatch = useDispatch();
 
   const expanded = useAppSelector((state) =>
-    panelId ? state.layout.expandedTabPanels[panelId] : false,
+    panelId ? state.layout.expandedTabPanels[panelId] : false
   );
 
   return (
@@ -50,11 +58,16 @@ const CollapsibleTabPanel: React.FunctionComponent<
         }}
       >
         <Tabs
-          className={`collapsible-tab-panel compact ${expanded ? "expanded" : "collapsed"}`}
-          tabPosition={"right"}
+          className={`collapsible-tab-panel compact ${
+            expanded ? "expanded" : "collapsed"
+          }`}
+          tabPlacement={"end"}
           items={tabs}
           onChange={() => {
             dispatch(setTabPanelExpanded({ key: panelId, expanded: true }));
+          }}
+          styles={{
+            content: tabContentStyle,
           }}
         />
       </Sider>
