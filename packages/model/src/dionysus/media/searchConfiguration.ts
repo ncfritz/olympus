@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
+import { PaginatedResults } from "../../common";
 
 export enum MediaAssetSearchType {
   MOVIE = "movie",
@@ -182,4 +183,14 @@ export class SingleMediaAssetSearchConfigurationResponse {
       "A search configuration that has been created, updated, or queried",
   })
   searchConfiguration: MediaAssetSearchConfiguration;
+}
+
+export class ListMediaAssetSearchConfigurationsResponse extends PaginatedResults {
+  @ApiProperty({
+    type: () => MediaAssetSearchConfiguration,
+    isArray: true,
+    required: true,
+    description: "A list of search configurations",
+  })
+  searchConfigurations: MediaAssetSearchConfiguration[];
 }
