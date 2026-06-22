@@ -977,7 +977,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
       <Layout
         style={{
           position: "relative",
-          background: "#ffcc33",
+          background: "#ffffff",
           overflowX: "hidden",
           overflowY: "scroll",
           scrollbarWidth: "none",
