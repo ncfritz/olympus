@@ -59,10 +59,12 @@ type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
 export interface SearchResultsTableProps {
   searchConfiguration: MediaAssetSearchConfiguration;
+  containerHeight: number;
 }
 
 const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
   searchConfiguration,
+  containerHeight,
 }: SearchResultsTableProps) => {
   const [searchResultsCount, setSearchResultsCount] = useState(0);
   const [searchResultsPage, setSearchResultsPage] = useState(0);
@@ -138,7 +140,7 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
       render: (value, record) => {
         return (
           <Space
-            direction={"vertical"}
+            orientation={"vertical"}
             styles={{ item: { lineHeight: "11px" } }}
             size={2}
           >
@@ -452,7 +454,7 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
 
         return (
           <Space
-            direction={"horizontal"}
+            orientation={"horizontal"}
             style={{
               width: "100%",
               justifyContent: "center",
@@ -493,11 +495,11 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
         rowKey={"id"}
         columns={columns}
         sticky={true}
-        scroll={{ y: "calc(100vh - 747px)" }}
+        scroll={{ y: `calc(100vh - ${containerHeight}px)` }}
         dataSource={searchResults}
         size={"small"}
         loading={searchResultsLoading}
-        rowClassName={(record, index, indent) => {
+        rowClassName={(record) => {
           switch (record.status) {
             case "downloading":
               return "downloading";
@@ -571,7 +573,7 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
               downloadContent = (
                 <Space
                   size={0}
-                  direction={"vertical"}
+                  orientation={"vertical"}
                   style={{ width: "100%" }}
                 >
                   <Typography.Text strong={true}>Downloads:</Typography.Text>
@@ -638,7 +640,7 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
                   {record.downloads.map((download) => {
                     const color = getDownloadProgressColor(download.status);
                     const progressStatus = getDownloadProgressLabel(
-                      download.status,
+                      download.status
                     );
 
                     return (
@@ -707,13 +709,13 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
             return (
               <Space
                 size={16}
-                direction={"vertical"}
+                orientation={"vertical"}
                 style={{ paddingLeft: 48, width: "100%" }}
               >
-                <Space size={2} direction={"vertical"}>
+                <Space size={2} orientation={"vertical"}>
                   <Typography.Text strong={true}>Tags:</Typography.Text>
                   <Space
-                    direction={"horizontal"}
+                    orientation={"horizontal"}
                     size={8}
                     style={{
                       display: "flex",
