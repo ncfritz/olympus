@@ -95,7 +95,7 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
           <Statistic
             title={"ID"}
             value={job.id}
-            valueStyle={{ fontSize: "inherit" }}
+            styles={{ content: { fontSize: "inherit" } }}
           />
         </Col>
         <Col span={24}>
@@ -108,7 +108,7 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
                   value as MetadataFetchJobStatus,
                 );
               }}
-              valueStyle={{ fontSize: "inherit" }}
+              styles={{ content: { fontSize: "inherit" } }}
             />
           </Col>
         </Col>
@@ -122,7 +122,7 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
             formatter={(value: string) => {
               return <Timestamp value={value} />;
             }}
-            valueStyle={{ fontSize: "inherit" }}
+            styles={{ content: { fontSize: "inherit" } }}
           />
         </Col>
         <Col span={12}>
@@ -132,7 +132,7 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
             formatter={(value: string) => {
               return <Timestamp value={value} />;
             }}
-            valueStyle={{ fontSize: "inherit" }}
+            styles={{ content: { fontSize: "inherit" } }}
           />
         </Col>
       </Row>
@@ -141,14 +141,14 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
           <Statistic
             title={"TTL"}
             value={job.ttl}
-            valueStyle={{ fontSize: "inherit" }}
+            styles={{ content: { fontSize: "inherit" } }}
           />
         </Col>
         <Col span={12}>
           <Statistic
             title={"Jitter"}
             value={job.jitter}
-            valueStyle={{ fontSize: "inherit" }}
+            styles={{ content: { fontSize: "inherit" } }}
           />
         </Col>
       </Row>
@@ -160,7 +160,7 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
             formatter={(value: string) => {
               return <Timestamp value={value} unknownValue={"Unknown"} />;
             }}
-            valueStyle={{ fontSize: "inherit" }}
+            styles={{ content: { fontSize: "inherit" } }}
           />
         </Col>
         <Col span={12}>
@@ -170,7 +170,7 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
             formatter={(value: string) => {
               return <Timestamp value={value} unknownValue={"Unknown"} />;
             }}
-            valueStyle={{ fontSize: "inherit" }}
+            styles={{ content: { fontSize: "inherit" } }}
           />
         </Col>
         <Col span={24}>
@@ -312,11 +312,18 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
                     <Select
                       {...field}
                       style={{ width: 200 }}
-                      bordered={false}
+                      variant={"borderless"}
                       options={[
                         {
-                          value: "queued",
-                          label: getMetadataJobStatusIndicator("queued", true),
+                          value: "fetched",
+                          label: getMetadataJobStatusIndicator("fetched", true),
+                        },
+                        {
+                          value: "fetching",
+                          label: getMetadataJobStatusIndicator(
+                            "fetching",
+                            true,
+                          ),
                         },
                         {
                           value: "invalidated",
@@ -326,9 +333,13 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
                           ),
                         },
                         {
-                          value: "fetching",
+                          value: "failed",
+                          label: getMetadataJobStatusIndicator("failed", true),
+                        },
+                        {
+                          value: "not_found",
                           label: getMetadataJobStatusIndicator(
-                            "fetching",
+                            "not_found",
                             true,
                           ),
                         },
@@ -340,12 +351,8 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
                           ),
                         },
                         {
-                          value: "fetched",
-                          label: getMetadataJobStatusIndicator("fetched", true),
-                        },
-                        {
-                          value: "failed",
-                          label: getMetadataJobStatusIndicator("failed", true),
+                          value: "queued",
+                          label: getMetadataJobStatusIndicator("queued", true),
                         },
                       ]}
                     />

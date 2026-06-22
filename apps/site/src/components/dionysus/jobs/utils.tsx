@@ -30,13 +30,23 @@ export const getMetadataJobStatusIndicator = (
   switch (status) {
     case "queued":
       return (
-        <Tag color={"#f4a002"} icon={<ClockCircleOutlined />} style={style}>
+        <Tag
+          color={"#f4a002"}
+          icon={<ClockCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
           Queued
         </Tag>
       );
     case "invalidated":
       return (
-        <Tag color={"#764f90"} icon={<PauseCircleOutlined />} style={style}>
+        <Tag
+          color={"#764f90"}
+          icon={<PauseCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
           Invalidated
         </Tag>
       );
@@ -46,37 +56,58 @@ export const getMetadataJobStatusIndicator = (
           color={"#364a7c"}
           icon={<SyncOutlined spin={true} />}
           style={style}
+          variant={"solid"}
         >
           Fetching
         </Tag>
       );
     case "cancelled":
       return (
-        <Tag color={"#ff764a"} icon={<StopOutlined />} style={style}>
+        <Tag
+          color={"#ff764a"}
+          icon={<StopOutlined />}
+          style={style}
+          variant={"solid"}
+        >
           Cancelled
         </Tag>
       );
     case "fetched":
       return (
-        <Tag color={"#023e5a"} icon={<CheckCircleOutlined />} style={style}>
+        <Tag
+          color={"#023e5a"}
+          icon={<CheckCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
           Fetched
         </Tag>
       );
     case "failed":
       return (
-        <Tag color={"#b54e8b"} icon={<CloseCircleOutlined />} style={style}>
+        <Tag
+          color={"#b54e8b"}
+          icon={<CloseCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
           Failed
         </Tag>
       );
     case "not_found":
       return (
-        <Tag color={"#ef5675"} icon={<SearchOutlined />} style={style}>
+        <Tag
+          color={"#ef5675"}
+          icon={<SearchOutlined />}
+          style={style}
+          variant={"solid"}
+        >
           Not Found
         </Tag>
       );
     default:
       return (
-        <Tag icon={<QuestionCircleOutlined />} style={style}>
+        <Tag icon={<QuestionCircleOutlined />} style={style} variant={"solid"}>
           Unknown
         </Tag>
       );
@@ -96,7 +127,12 @@ export const getBatchJobStatusIndicator = (
   switch (status) {
     case "created":
       return (
-        <Tag color={"#003f5c"} icon={<ClockCircleOutlined />} style={style}>
+        <Tag
+          color={"#003f5c"}
+          icon={<ClockCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
           Created
         </Tag>
       );
@@ -106,31 +142,47 @@ export const getBatchJobStatusIndicator = (
           color={"#58508d"}
           icon={<SyncOutlined spin={true} />}
           style={style}
+          variant={"solid"}
         >
           Running
         </Tag>
       );
     case "cancelled":
       return (
-        <Tag color={"#ffa600"} icon={<MinusCircleOutlined />} style={style}>
+        <Tag
+          color={"#ffa600"}
+          icon={<MinusCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
           Cancelled
         </Tag>
       );
     case "success":
       return (
-        <Tag color={"#bc5090"} icon={<CheckCircleOutlined />} style={style}>
+        <Tag
+          color={"#bc5090"}
+          icon={<CheckCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
           Success
         </Tag>
       );
     case "failed":
       return (
-        <Tag color={"#ff6361"} icon={<CloseCircleOutlined />} style={style}>
+        <Tag
+          color={"#ff6361"}
+          icon={<CloseCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
           Failed
         </Tag>
       );
     default:
       return (
-        <Tag icon={<QuestionCircleOutlined />} style={style}>
+        <Tag icon={<QuestionCircleOutlined />} style={style} variant={"solid"}>
           Unknown
         </Tag>
       );
