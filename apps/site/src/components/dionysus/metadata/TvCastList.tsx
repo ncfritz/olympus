@@ -23,7 +23,7 @@ const TvCastList: React.FunctionComponent<TvCastListProps> = ({
                 styles={{
                   body: {
                     margin: 0,
-                    padding: 0,
+                    padding: 8,
                     flexDirection: "column",
                     justifyContent: "start",
                     display: "flex",
@@ -67,7 +67,7 @@ const TvCastList: React.FunctionComponent<TvCastListProps> = ({
               >
                 <Space
                   size={3}
-                  direction={"vertical"}
+                  orientation={"vertical"}
                   style={{ padding: 8, width: "100%" }}
                   styles={{ item: { width: "100%", lineHeight: 1 } }}
                 >

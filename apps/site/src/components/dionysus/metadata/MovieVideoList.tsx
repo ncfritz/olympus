@@ -54,7 +54,7 @@ const MovieVideoList: React.FunctionComponent<MovieVideoListProps> = ({
                 }}
               >
                 <Space
-                  direction={"horizontal"}
+                  orientation={"horizontal"}
                   size={16}
                   style={{
                     height: "100%",

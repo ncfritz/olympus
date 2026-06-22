@@ -36,6 +36,10 @@ const TvEpisodeCastList: React.FunctionComponent<TvEpisodeCastListProps> = ({
                       src={`https://image.tmdb.org/t/p/h632/${item.person.profilePath}}`}
                       alt={"Poster"}
                       preview={false}
+                      style={{
+                        borderTopLeftRadius: 8,
+                        borderTopRightRadius: 8,
+                      }}
                     />
                   ) : (
                     <Space
@@ -61,7 +65,7 @@ const TvEpisodeCastList: React.FunctionComponent<TvEpisodeCastListProps> = ({
               >
                 <Space
                   size={3}
-                  direction={"vertical"}
+                  orientation={"vertical"}
                   style={{ padding: 8, width: "100%" }}
                   styles={{ item: { width: "100%", lineHeight: 1 } }}
                 >
