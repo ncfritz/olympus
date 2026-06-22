@@ -58,6 +58,14 @@ import { toNetworkAssociationDomainObject } from "./NetworkConverter";
 export const toBaseDomainObject = (
   input: GraphQlBaseTvSeries,
 ): BaseTVSeries => {
+  const genres: GenreAssociation[] = [];
+
+  if (input.genres) {
+    input.genres.forEach((entity) => {
+      genres.push(toGenreAssociationDomainObject(entity));
+    });
+  }
+
   return {
     adult: input.adult,
     backdropPath: input.backdropPath,
@@ -80,6 +88,7 @@ export const toBaseDomainObject = (
     type: input.type,
     voteCount: input.voteCount,
     voteAverage: input.voteAverage,
+    genres: genres,
     searchConfiguration: input.searchConfiguration
       ? toSearchConfigurationDomainObject(input.searchConfiguration)
       : undefined,
@@ -96,7 +105,6 @@ export const toSparseDomainObject = (
   const certifications: CertificationAssociation[] = [];
   const runtimes: TVSeriesRuntime[] = [];
   const externalIds: ExternalId[] = [];
-  const genres: GenreAssociation[] = [];
   const keywords: KeywordAssociation[] = [];
   const languages: LanguageAssociation[] = [];
   const originCountries: CountryAssociation[] = [];
@@ -125,12 +133,6 @@ export const toSparseDomainObject = (
   if (input.externalIds) {
     input.externalIds.forEach((entity) => {
       externalIds.push(toExternalIdDomainObject(entity));
-    });
-  }
-
-  if (input.genres) {
-    input.genres.forEach((entity) => {
-      genres.push(toGenreAssociationDomainObject(entity));
     });
   }
 
@@ -165,7 +167,6 @@ export const toSparseDomainObject = (
     certifications: certifications,
     runtimes: runtimes,
     externalIds: externalIds,
-    genres: genres,
     keywords: keywords,
     languages: languages,
     originCountries: originCountries,

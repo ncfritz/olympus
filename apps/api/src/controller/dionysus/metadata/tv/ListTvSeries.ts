@@ -22,6 +22,11 @@ import {
 
 type GraphQlListTvSeriesResponse = {
   dionysus_tv_series: GraphQlBaseTvSeries[];
+  dionysus_tv_series_aggregate: {
+    aggregate: {
+      count: number;
+    };
+  };
 };
 
 @Controller({ version: "1" })
@@ -84,6 +89,7 @@ export class ListTvSeriesController {
 
     const responseBody: ListTvSeriesResponse = {
       tvSeries: tvSeries,
+      count: fetchResponse.dionysus_tv_series_aggregate.aggregate.count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

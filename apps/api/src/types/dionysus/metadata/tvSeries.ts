@@ -39,6 +39,7 @@ export type GraphQlBaseTvSeries = Timestamped & {
   type: string;
   voteAverage: number;
   voteCount: number;
+  genres: GraphQlGenreWrapper[];
   searchConfiguration?: GraphQlMediaAssetSearchConfiguration;
   favorite?: GraphQlMediaFavorite;
 };
@@ -49,7 +50,6 @@ export type GraphQlSparseTvSeries = GraphQlBaseTvSeries & {
   certifications: GraphQlCertificationWrapper[];
   episodeRuntimes: GraphQlTvSeriesRuntime[];
   externalIds: GraphQlExternalId[];
-  genres: GraphQlGenreWrapper[];
   keywords: GraphQlKeywordWrapper[];
   languages: GraphQlLanguageWrapper[];
   originCountries: GraphQlCountryWrapper[];

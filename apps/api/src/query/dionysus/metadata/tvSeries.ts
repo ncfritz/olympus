@@ -110,6 +110,7 @@ export const BASE_TV_SERIES = `id
   voteAverage
   createdTime
   lastUpdatedTime
+  ${GENRES}
   ${SEARCH_CONFIGURATION}
   ${SPARSE_MEDIA_FAVORITE}`;
 
@@ -121,7 +122,6 @@ export const SPARSE_TV_SERIES = `${BASE_TV_SERIES}
   ${CERTIFICATIONS}
   ${TV_EPISODE_RUNTIMES}
   ${EXTERNAL_IDS}
-  ${GENRES}
   ${KEYWORDS}
   ${LANGUAGES}
   originCountries {
@@ -145,7 +145,7 @@ export const TV_SERIES = `${SPARSE_TV_SERIES}
   productionCountries {
     ${COUNTRY_ASSOCIATION}
   }
-  seasons {
+  seasons(order_by: { seasonNumber: asc }) {
     ${SPARSE_TV_SEASON}
   }
   ${VIDEOS}`;
