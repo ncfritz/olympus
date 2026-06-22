@@ -204,6 +204,9 @@ export class CreateMediaAssetSearchConfigurationController {
         },
         {
           persistent: true,
+          headers: {
+            "x-delay": 0,
+          },
         },
       );
     }

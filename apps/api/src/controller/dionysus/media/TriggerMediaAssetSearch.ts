@@ -169,6 +169,9 @@ export class TriggerMediaAssetSearchController extends BaseMediaAssetSearchConfi
       msg,
       {
         persistent: true,
+        headers: {
+          "x-delay": 0,
+        },
       },
     );
 
