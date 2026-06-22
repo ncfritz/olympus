@@ -27,7 +27,7 @@ export const ExternalIdsList: React.FunctionComponent<ExternalIdsListProps> = ({
                 justifyContent: "space-between",
               }}
             >
-              <Space style={{ textAlign: "end", width: 150 }}>
+              <Space style={{ textAlign: "end", width: 90 }}>
                 <Typography.Text style={{ fontSize: "11px" }}>
                   {item.type}:
                 </Typography.Text>
