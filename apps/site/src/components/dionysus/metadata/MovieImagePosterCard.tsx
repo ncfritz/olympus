@@ -69,7 +69,7 @@ const MoviePosterCard: React.FunctionComponent<MovieImagePosterCardProps> = ({
     >
       <Space
         size={3}
-        direction={"vertical"}
+        orientation={"vertical"}
         style={{ padding: 8, width: "100%" }}
         styles={{ item: { width: "100%", lineHeight: 1 } }}
       >
