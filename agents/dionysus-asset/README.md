@@ -8,7 +8,7 @@ asynchronous processing agents, however, when dealing directly with the asset, t
 the storage.  These agent's handlers can be disabled on a case-by-case basis using the `DISABLE_XXX_HANDLER`
 environment variables.
 
-### Available habndlers:
+### Available Handlers:
 | Handler                                          | Description                                                                                      | Default Value |
 |--------------------------------------------------|--------------------------------------------------------------------------------------------------|---------------|
 | DISABLE_CONTENT_DELETION_HANDLER                 | Handles deletion of content assets/metadata at the library level                                 | `true`        |
@@ -35,6 +35,21 @@ environment variables.
   `dev.env`
 * `npm run start:local` - Starts the development server.  Environment variables are populated from
   `local.env`
+
+## Docker Image
+This project ships with a `Dockerfile` for building a docker image.  Because some requirements are hosted in a private
+GitHub NPM repository, you will need to supply a `github_token` build argument so the builder can pull the required
+dependencies.
+
+To build the Docker image, run the following command:
+
+```aiignore
+docker build . --tag ncfritz/dionysus-asset-agents:latest --build-arg github_token=<your_github_token>
+```
+
+```bash
+docker build --build-arg github_token=<your_github_token> -t dionysus-asset-agent .
+```
 
 ## Monitoring
 These agents expose a Prometheus metrics endpoint at `/metrics/` providing basic NodeJS memory, loop timing, and GC
