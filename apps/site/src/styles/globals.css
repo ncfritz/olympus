@@ -390,6 +390,62 @@ img.electron-logo {
   padding-top: 12px;
 }
 
+.ant-popover.pill .ant-popover-container {
+  padding: 44px 1px 1px 1px;
+  position: relative;
+  top: -44px;
+  border-radius: 32px;
+  background-color: #202f3e;
+}
+
+.ant-popover.pill.light .ant-popover-container {
+  background-color: #ffffff;
+}
+
+.ant-popover.pill .ant-btn {
+  color: #ffffff !important;
+  border-radius: 32px;
+  width: 38px;
+  height: 38px;
+}
+.ant-popover.pill.light .ant-btn {
+  color: #333333 !important;
+}
+.ant-popover.pill .ant-popover-arrow {
+  display: none;
+}
+.ant-popover.pill .ant-popover-content {
+  border-radius: 32px;
+}
+.ant-popover.pill .ant-popover-content:hover {
+  background-color: inherit !important;
+}
+
+.ant-popover.pill .ant-popover-inner {
+  position: relative;
+  top: -44px;
+  padding: 32px 2px 2px 2px;
+  border: 1px solid #e6e6e6;
+  border-radius: 32px;
+  z-index: 1;
+}
+.ant-popover.pill.ant-popover-placement-top .ant-popover-container {
+  padding: 1px 1px 44px 1px;
+  top: 44px;
+}
+.ant-popover.pill.ant-popover-placement-top .ant-popover-inner {
+  top: 44px;
+  padding: 2px 2px 32px 2px;
+}
+.ant-popover.pill.large .ant-popover-inner {
+  top: -53px;
+  padding: 52px 4px 4px 4px;
+}
+.ant-popover.pill.large.ant-popover-placement-top .ant-popover-inner {
+  top: 53px;
+  padding: 4px 4px 52px 4px;
+}
+
 .dionysus-action-button {
   color: #efefef;
   background: #202f3e;
@@ -416,7 +472,8 @@ img.electron-logo {
   background: #ffffff;
   border-color: #e6e6e6;
 }
-.dionysus-action-button.light:hover {
+.dionysus-action-button.light:hover,
+.dionysus-action-button.light button:hover {
   color: #333333 !important;
   background: #f3f3f3 !important;
   border-color: #e0e0e0 !important;
@@ -570,53 +627,6 @@ img.electron-logo {
   padding: 0px !important;
 }
 
-.ant-popover.pill .ant-popover-container {
-  padding: 44px 1px 1px 1px;
-  position: relative;
-  top: -44px;
-  border-radius: 32px;
-  background-color: #202f3e;
-
-}
-.ant-popover.pill .ant-btn {
-  color: #ffffff !important;
-  border-radius: 32px;
-  width: 38px;
-  height: 38px;
-}
-.ant-popover.pill.light .ant-btn {
-  color: #333333 !important;
-}
-.ant-popover.pill .ant-popover-arrow {
-  display: none;
-}
-.ant-popover.pill .ant-popover-content {
-  border-radius: 32px;
-}
-.ant-popover.pill .ant-popover-content:hover {
-  background-color: inherit !important;
-}
-
-.ant-popover.pill .ant-popover-inner {
-  position: relative;
-  top: -44px;
-  padding: 32px 2px 2px 2px;
-  border: 1px solid #e6e6e6;
-  border-radius: 32px;
-  z-index: 1;
-}
-.ant-popover.pill.ant-popover-placement-top .ant-popover-inner {
-  top: 44px;
-  padding: 2px 2px 32px 2px;
-}
-.ant-popover.pill.large .ant-popover-inner {
-  top: -53px;
-  padding: 52px 4px 4px 4px;
-}
-.ant-popover.pill.large.ant-popover-placement-top .ant-popover-inner {
-  top: 53px;
-  padding: 4px 4px 52px 4px;
-}
 .dionysus-card .ant-card-cover {
   margin-inline: 0;
   margin: 0;
