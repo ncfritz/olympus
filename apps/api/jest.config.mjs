@@ -1,4 +1,4 @@
-module.exports = {
+const config = {
   roots: ["<rootDir>/test"],
   testMatch: ["**/?(*.)+(spec|test).+(ts|tsx|js)"],
   transform: {
@@ -9,3 +9,4 @@ module.exports = {
     "node_modules/(?!" + ["graphql-request"].join("|") + ")/",
   ],
 };
+export default config;
