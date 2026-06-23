@@ -3,6 +3,6 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "builder": "webpack",
-    "webpackPath": "webpack.config.mjs"
+    "webpackPath": "webpack.config.js"
   }
 }
