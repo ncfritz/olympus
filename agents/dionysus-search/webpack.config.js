@@ -3,19 +3,20 @@ const path = require("path");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { RsdoctorWebpackPlugin } = require("@rsdoctor/webpack-plugin");
 
-console.log("--- Webpack Build Initializing ---");
-console.log("Current Mode:", process.env.NODE_ENV);
-
 let mode = "development";
 
 if (process.env.NODE_ENV === "production") {
   mode = "production";
 }
 
+console.log("--- Webpack Build Initializing ---");
+console.log("Current Mode:", mode);
+
 module.exports = {
   entry: "./src/main.ts",
   mode: mode,
   target: "node",
+  devtool: "source-map",
   plugins: [
     process.env.RSDOCTOR &&
       new RsdoctorWebpackPlugin({
@@ -46,9 +47,15 @@ module.exports = {
     },
   },
   resolve: {
-    extensions: [".ts", ".js"],
+    extensions: [".ts", ".js", ".json"],
   },
   module: {
-    rules: [{ test: /\.ts$/, loader: "ts-loader" }],
+    rules: [
+      { test: /\.ts$/, loader: "ts-loader" },
+    ],
+  },
+  optimization: {
+    splitChunks: false,
+    runtimeChunk: false,
   },
 };
