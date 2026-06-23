@@ -1,4 +1,6 @@
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const path = require("path");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { RsdoctorWebpackPlugin } = require("@rsdoctor/webpack-plugin");
 
 console.log("--- Webpack Build Initializing ---");
