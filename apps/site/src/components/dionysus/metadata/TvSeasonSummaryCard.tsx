@@ -102,7 +102,10 @@ const TvSeasonSummaryCard: React.FunctionComponent<
           >
             {coverImage}
           </Link>
-          <Space orientation={"vertical"} style={{ padding: 16, width: "100%" }}>
+          <Space
+            orientation={"vertical"}
+            style={{ padding: 16, width: "100%" }}
+          >
             <Space
               className={"season-card-fix"}
               direction={"horizontal"}
@@ -117,6 +120,7 @@ const TvSeasonSummaryCard: React.FunctionComponent<
                 mediaType={"tv_season"}
                 mediaId={season.id}
                 loading={false}
+                zIndex={2}
                 searchConfiguration={searchConfiguration}
                 afterUpdate={async (searchConfiguration) => {
                   setSearchConfiguration(searchConfiguration);
@@ -126,7 +130,11 @@ const TvSeasonSummaryCard: React.FunctionComponent<
                   }
                 }}
               />
-              <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
+              <Space
+                orientation={"vertical"}
+                size={0}
+                style={{ width: "100%" }}
+              >
                 <Space
                   direction={"horizontal"}
                   size={8}
@@ -182,7 +190,7 @@ const TvSeasonSummaryCard: React.FunctionComponent<
                           size={16}
                           percent={season.voteAverage * 10}
                           strokeColor={getProgressColor(
-                            season.voteAverage * 10,
+                            season.voteAverage * 10
                           )}
                         />
                       </Space>

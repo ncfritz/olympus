@@ -653,6 +653,7 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
                 episodeNumber={episode.episodeNumber}
                 searchConfiguration={searchConfiguration}
                 loading={searchConfigurationLoading || tvSeasonLoading}
+                zIndex={10000}
                 afterUpdate={async (searchConfiguration) => {
                   setSearchConfiguration(searchConfiguration);
                   await fetchTvSeason(true);

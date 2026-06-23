@@ -1,24 +1,16 @@
 import {
   CaretDownOutlined,
   CaretRightOutlined,
-  CheckCircleFilled,
   StarFilled,
 } from "@ant-design/icons";
 import type {
   MediaAssetSearchConfiguration,
   SparseEpisode,
 } from "@ncfritz/olympus-sdk/dionysus";
-import {
-  Badge,
-  Card,
-  Collapse,
-  Image,
-  Progress,
-  Space,
-  Typography,
-} from "antd";
+import { Card, Collapse, Progress, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import React, { useEffect, useState } from "react";
+import { Events, subscribe, unsubscribe } from "../../../utils/events";
 import Description from "../../common/Description";
 import MediaBannerWrapper from "../media/MediaBannerWrapper";
 import SearchConfigurationButton from "../media/SearchConfigurationButton";
@@ -46,6 +38,27 @@ const TvEpisodeSearchResultsCard: React.FunctionComponent<
       setSearchConfiguration(initialSearchConfiguration);
     }
   }, [initialSearchConfiguration]);
+
+  useEffect(() => {
+    subscribe(
+      Events.DIONYSUS_MEDIA_SEARCH_CONFIGURATION_UPDATED,
+      onSearchConfigurationUpdated,
+    );
+
+    return () => {
+      unsubscribe(
+        Events.DIONYSUS_MEDIA_SEARCH_CONFIGURATION_UPDATED,
+        onSearchConfigurationUpdated,
+      );
+    };
+  }, []);
+
+  const onSearchConfigurationUpdated = (e: CustomEvent) => {
+    if (e.detail.type === "tv_episode" && e.detail.mediaId === episode.id) {
+      console.log("Updated search configuration", e.detail);
+      setSearchConfiguration(e.detail);
+    }
+  };
 
   const airDate = episode.airDate
     ? DateTime.fromISO(episode.airDate).toFormat("MM/dd/yyyy")
@@ -138,6 +151,7 @@ const TvEpisodeSearchResultsCard: React.FunctionComponent<
                         mediaId={episode.id}
                         searchConfiguration={searchConfiguration}
                         loading={false}
+                        zIndex={500}
                         className={"light"}
                         afterUpdate={async (searchConfiguration) => {
                           setSearchConfiguration(searchConfiguration);

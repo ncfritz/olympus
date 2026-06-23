@@ -83,7 +83,7 @@ const TvSeriesPosterCard: React.FunctionComponent<TvSeriesPosterCardProps> = ({
   }, [cardRef.current?.getBoundingClientRect()]);
 
   const onSearchConfigurationUpdated = (e: CustomEvent) => {
-    if (e.detail.type === "movie" && e.detail.mediaId === tvSeries.id) {
+    if (e.detail.type === "tv_series" && e.detail.mediaId === tvSeries.id) {
       console.log("Updated search configuration", e.detail);
       setSearchConfiguration(e.detail);
     }

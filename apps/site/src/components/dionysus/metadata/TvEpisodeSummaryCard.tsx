@@ -12,7 +12,8 @@ import type {
 import { Badge, Card, Image, Progress, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
+import { Events, subscribe, unsubscribe } from "../../../utils/events";
 import Description from "../../common/Description";
 import MediaBannerWrapper from "../media/MediaBannerWrapper";
 import SearchConfigurationButton from "../media/SearchConfigurationButton";
@@ -40,6 +41,27 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
       setSearchConfiguration(initialSearchConfiguration);
     }
   }, [initialSearchConfiguration]);
+
+  useEffect(() => {
+    subscribe(
+      Events.DIONYSUS_MEDIA_SEARCH_CONFIGURATION_UPDATED,
+      onSearchConfigurationUpdated,
+    );
+
+    return () => {
+      unsubscribe(
+        Events.DIONYSUS_MEDIA_SEARCH_CONFIGURATION_UPDATED,
+        onSearchConfigurationUpdated,
+      );
+    };
+  }, []);
+
+  const onSearchConfigurationUpdated = (e: CustomEvent) => {
+    if (e.detail.type === "tv_episode" && e.detail.mediaId === episode.id) {
+      console.log("Updated search configuration", e.detail);
+      setSearchConfiguration(e.detail);
+    }
+  };
 
   const airDate = episode.airDate
     ? DateTime.fromISO(episode.airDate).toFormat("MM/dd/yyyy")
@@ -131,6 +153,7 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
                 searchConfiguration={searchConfiguration}
                 loading={false}
                 className={"light"}
+                zIndex={2}
                 afterUpdate={async (searchConfiguration) => {
                   setSearchConfiguration(searchConfiguration);
                 }}
@@ -221,7 +244,7 @@ const TvEpisodeSummaryCard: React.FunctionComponent<
   return (
     <MediaBannerWrapper
       asset={episode.asset !== undefined}
-      searchConfiguration={episode.searchConfiguration}
+      searchConfiguration={searchConfiguration}
     >
       {cardContent}
     </MediaBannerWrapper>

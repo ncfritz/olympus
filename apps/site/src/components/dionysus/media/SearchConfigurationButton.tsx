@@ -33,6 +33,7 @@ export type SearchConfigurationButtonProps = {
     searchConfiguration: MediaAssetSearchConfiguration,
   ) => Promise<void>;
   className?: string;
+  zIndex?: number;
 };
 
 const SearchConfigurationButton: React.FunctionComponent<
@@ -47,6 +48,7 @@ const SearchConfigurationButton: React.FunctionComponent<
   loading,
   afterUpdate,
   className,
+  zIndex = 4000,
 }: SearchConfigurationButtonProps) => {
   const buttonRef = useRef<HTMLDivElement>(null);
 
@@ -144,7 +146,7 @@ const SearchConfigurationButton: React.FunctionComponent<
           }}
           trigger={"click"}
           content={
-            <Space size={8} direction={"vertical"}>
+            <Space size={8} orientation={"vertical"}>
               <Button
                 type={"text"}
                 icon={
@@ -191,11 +193,11 @@ const SearchConfigurationButton: React.FunctionComponent<
               />
             </Space>
           }
-          zIndex={1}
+          zIndex={zIndex + (open ? 10 : 1)}
         >
           <Badge
             offset={[0, 32]}
-            style={{ zIndex: 102 }}
+            style={{ zIndex: zIndex + (open ? 12 : 3) }}
             count={
               <Space
                 style={{
@@ -203,7 +205,7 @@ const SearchConfigurationButton: React.FunctionComponent<
                   borderRadius: 16,
                   padding: 3,
                   fontSize: "12px",
-                  zIndex: 101,
+                  zIndex: zIndex + (open ? 11 : 2),
                 }}
               >
                 {badgeIcon}
@@ -222,7 +224,7 @@ const SearchConfigurationButton: React.FunctionComponent<
                 display: "flex",
                 alignItems: "center",
                 alignContent: "center",
-                zIndex: 100,
+                zIndex: zIndex + (open ? 11 : 2),
               }}
             />
           </Badge>

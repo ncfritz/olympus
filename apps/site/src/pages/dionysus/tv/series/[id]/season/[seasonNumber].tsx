@@ -462,6 +462,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                 seriesId={tvSeason.series.id}
                 seasonNumber={tvSeason.seasonNumber}
                 searchConfiguration={searchConfiguration}
+                zIndex={10000}
                 loading={searchConfigurationLoading || tvSeasonLoading}
                 afterUpdate={async () => {
                   await fetchTvSeason(true);
