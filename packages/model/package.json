@@ -1,7 +1,7 @@
 {
   "name": "@ncfritz/olympus-model",
   "description": "Contains the model and request/response types for Olympus",
-  "version": "1.23.0",
+  "version": "1.24.0",
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
   "repository": {
     "type": "git",
