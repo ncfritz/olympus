@@ -159,7 +159,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
 
     content = (
       <Space
-        direction={"vertical"}
+        orientation={"vertical"}
         style={{ width: 950, minWidth: 650, marginTop: 16 }}
       >
         {statusContent}
@@ -199,7 +199,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                   >
                     <Space orientation={"vertical"} style={{ width: "100%" }}>
                       <Space
-                        direction={"horizontal"}
+                        orientation={"horizontal"}
                         className={"person-fix"}
                         style={{ width: "100%", alignItems: "start" }}
                       >
@@ -219,7 +219,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                           <CheckOutlined style={{ fontSize: "10px" }} />
                         </div>
                         <Space
-                          direction={"horizontal"}
+                          orientation={"horizontal"}
                           style={{
                             width: "100%",
                             display: "flex",
@@ -237,7 +237,10 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                           )}
                         </Space>
                       </Space>
-                      <Space orientation={"vertical"} style={{ marginLeft: 28 }}>
+                      <Space
+                        orientation={"vertical"}
+                        style={{ marginLeft: 28 }}
+                      >
                         <Space orientation={"horizontal"}>
                           <Typography.Text
                             strong={true}
@@ -268,7 +271,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
             <Empty />
           ) : (
             <Space orientation={"vertical"} size={4} style={{ width: "100%" }}>
-              {audioTracks.map((track, index) => {
+              {audioTracks.map((track) => {
                 let titleExtra: ReactNode = undefined;
                 const audioLanguageCode = track.LanguageCode;
                 const audioTitle = track.Name;
@@ -281,7 +284,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                   if (audioLanguageCode) {
                     titleExtra = (
                       <Space
-                        direction={"horizontal"}
+                        orientation={"horizontal"}
                         size={4}
                         style={{
                           width: "100%",
@@ -291,7 +294,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                         }}
                       >
                         <Space
-                          direction={"horizontal"}
+                          orientation={"horizontal"}
                           style={{ width: "100%" }}
                         >
                           {audioLanguage.iso6391 ? (
@@ -349,7 +352,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                   >
                     <Space orientation={"vertical"} style={{ width: "100%" }}>
                       <Space
-                        direction={"horizontal"}
+                        orientation={"horizontal"}
                         className={"person-fix"}
                         style={{ width: "100%", alignItems: "start" }}
                       >
@@ -369,7 +372,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                           <CheckOutlined style={{ fontSize: "10px" }} />
                         </div>
                         <Space
-                          direction={"horizontal"}
+                          orientation={"horizontal"}
                           style={{
                             width: "100%",
                             display: "flex",
@@ -388,7 +391,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                         </Space>
                       </Space>
                       <Space
-                        direction={"vertical"}
+                        orientation={"vertical"}
                         style={{ width: "100%", marginLeft: 28 }}
                       >
                         {titleExtra}
@@ -404,7 +407,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
           <Space orientation={"vertical"} style={{ width: 950, minWidth: 650 }}>
             <Typography.Title level={5}>Subtitle Streams</Typography.Title>
             <Space orientation={"vertical"} size={4} style={{ width: "100%" }}>
-              {subtitleTracks.map((track, index) => {
+              {subtitleTracks.map((track) => {
                 let titleExtra: ReactNode = undefined;
                 const subtitleLanguageCode = track.LanguageCode;
                 const subtitleTitle = track.Name;
@@ -417,7 +420,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                   if (subtitleLanguage) {
                     titleExtra = (
                       <Space
-                        direction={"horizontal"}
+                        orientation={"horizontal"}
                         size={4}
                         style={{
                           width: "100%",
@@ -427,7 +430,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                         }}
                       >
                         <Space
-                          direction={"horizontal"}
+                          orientation={"horizontal"}
                           style={{ width: "100%", alignItems: "center" }}
                         >
                           {subtitleLanguage.iso6391 ? (
@@ -519,7 +522,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                   >
                     <Space orientation={"vertical"} style={{ width: "100%" }}>
                       <Space
-                        direction={"horizontal"}
+                        orientation={"horizontal"}
                         className={"person-fix"}
                         style={{ width: "100%", alignItems: "start" }}
                       >

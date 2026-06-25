@@ -7,15 +7,15 @@ import { Empty, Result, Space } from "antd";
 import React, { useEffect, useState } from "react";
 import StepProgress from "./StepProgress";
 
-export interface TranscodePanelProps {
+export interface CleanupPanelProps {
   workflow: MediaAssetWorkflow;
 }
 
-const TranscodePanel: React.FunctionComponent<TranscodePanelProps> = ({
+const CleanupPanel: React.FunctionComponent<CleanupPanelProps> = ({
   workflow,
-}: TranscodePanelProps) => {
+}: CleanupPanelProps) => {
   const [step, setStep] = useState<MediaAssetWorkflowStep | undefined>(
-    undefined,
+    undefined
   );
 
   useEffect(() => {
@@ -30,48 +30,33 @@ const TranscodePanel: React.FunctionComponent<TranscodePanelProps> = ({
   let content = <Empty description={"No transcode artifacts present"} />;
 
   if (step) {
-    let statusContent = <></>;
-
     if (step.status === "failed") {
-      statusContent = (
+      content = (
         <Result
           style={{ padding: 0, marginBottom: 16 }}
           status={"error"}
-          title="Transcode Failed"
-          subTitle="The source file could not be transcoded.  This may be due to an invalid or corrupted source file."
+          title="Cleanup Failed"
+          subTitle="The source file and artifacts could not be cleaned up.  Please complete cleanup manually."
         />
       );
     } else if (step.status === "running") {
-      statusContent = (
+      content = (
         <Result
           style={{ padding: 0, marginBottom: 16 }}
           icon={<LoadingOutlined />}
-          subTitle={"The source asset is being transcoded"}
+          subTitle={"The source file and artifacts are being cleaned up. "}
         />
       );
     } else if (step.status === "success") {
-      statusContent = (
+      content = (
         <Result
           style={{ padding: 0, marginBottom: 16 }}
           status={"success"}
-          title="Transcode Complete"
-          subTitle="The source file has been successfully transcoded.  The transcoded asset and metadata will be uploaded to the library/CDN."
+          title="Cleanup Complete"
+          subTitle="The source file and artifacts have been successfully cleaned up."
         />
       );
     }
-
-    const downloadSourceStep = step.subSteps.find(
-      (s) => s.type === "transfer_source",
-    );
-    content = (
-      <Space orientation={"vertical"} size={8}>
-        {statusContent}
-        {downloadSourceStep && [
-          <StepProgress title={"Download Source"} step={downloadSourceStep} />,
-          <StepProgress title={"Transcode"} step={step} />,
-        ]}
-      </Space>
-    );
   }
 
   return (
@@ -84,4 +69,4 @@ const TranscodePanel: React.FunctionComponent<TranscodePanelProps> = ({
     </Space>
   );
 };
-export default TranscodePanel;
+export default CleanupPanel;

@@ -1,6 +1,6 @@
 import { HomeOutlined, LoadingOutlined } from "@ant-design/icons";
 import type { MediaAssetWorkflow } from "@ncfritz/olympus-sdk/dionysus";
-import { Button, Empty, Space, Steps } from "antd";
+import { Empty, Space, Steps } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState } from "react";
@@ -11,6 +11,7 @@ import {
   getDownloadStepProperties,
   getStepProperties,
 } from "../../../components/dionysus/media/utils";
+import CleanupPanel from "../../../components/dionysus/media/workflow/CleanupPanel";
 import ConfigureTranscodePanel from "../../../components/dionysus/media/workflow/ConfigureTranscodePanel";
 import DownloadDetailsPanel from "../../../components/dionysus/media/workflow/DownloadDetailsPanel";
 import MetadataDetailsPanel from "../../../components/dionysus/media/workflow/MetadataDetailsPanel";
@@ -78,6 +79,8 @@ const IndexPage: React.FunctionComponent = () => {
       );
     } else if (current === 6) {
       panelContent = <UploadPanel workflow={workflow} />;
+    } else if (current === 7) {
+      panelContent = <CleanupPanel workflow={workflow} />;
     }
 
     if (workflow.type === "movie") {
@@ -88,7 +91,7 @@ const IndexPage: React.FunctionComponent = () => {
 
     content = (
       <Space
-        direction={"vertical"}
+        orientation={"vertical"}
         size={0}
         style={{ width: "100%", position: "relative" }}
         styles={{ item: { width: "100%" } }}
@@ -100,7 +103,7 @@ const IndexPage: React.FunctionComponent = () => {
           showProgress={true}
         />
         <Space
-          direction={"horizontal"}
+          orientation={"horizontal"}
           className={"person-fix"}
           size={32}
           style={{
@@ -110,32 +113,25 @@ const IndexPage: React.FunctionComponent = () => {
           }}
         >
           <Space
-            direction={"vertical"}
+            orientation={"vertical"}
             size={16}
             style={{ marginLeft: 32, paddingTop: 16, width: 275 }}
           >
-            <Button
-              onClick={async () => await fetchWorkflow(true)}
-              type="default"
-              block={true}
-            >
-              Refresh Workflow
-            </Button>
             <Steps
               current={current}
               onChange={onChange}
-              direction="vertical"
+              orientation="vertical"
               className={"dionysus-workflow"}
               size={"small"}
               items={[
                 {
                   title: "Download",
-                  description: "Fetch source from Usenet",
+                  content: "Fetch source from Usenet",
                   ...getDownloadStepProperties(workflow.download),
                 },
                 {
                   title: "Original Metadata",
-                  description: "Extract original metadata",
+                  content: "Extract original metadata",
                   ...getStepProperties(
                     workflow.steps,
                     "extract_original_metadata",
@@ -143,22 +139,22 @@ const IndexPage: React.FunctionComponent = () => {
                 },
                 {
                   title: "Configure Transcode",
-                  description: "Determine audio/subtitle tracks",
+                  content: "Determine audio/subtitle tracks",
                   ...getStepProperties(workflow.steps, "configure_transcode"),
                 },
                 {
                   title: "Verify Configuration",
-                  description: "Verify audio/subtitle config",
+                  content: "Verify audio/subtitle config",
                   ...getStepProperties(workflow.steps, "verify_transcode"),
                 },
                 {
                   title: "Transcode",
-                  description: "Transcode source",
+                  content: "Transcode source",
                   ...getStepProperties(workflow.steps, "transcode"),
                 },
                 {
                   title: "New Metadata",
-                  description: "Extract transcode metadata",
+                  content: "Extract transcode metadata",
                   ...getStepProperties(workflow.steps, "extract_new_metadata"),
                 },
                 {
@@ -173,7 +169,7 @@ const IndexPage: React.FunctionComponent = () => {
             />
           </Space>
           <Space
-            direction={"vertical"}
+            orientation={"vertical"}
             size={0}
             style={{
               marginLeft: 32,

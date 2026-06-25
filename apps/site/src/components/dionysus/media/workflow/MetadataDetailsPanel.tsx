@@ -76,18 +76,28 @@ const MetadataDetailsPanel: React.FunctionComponent<
         <Result
           style={{ padding: 0, marginBottom: 16 }}
           icon={<LoadingOutlined />}
-          subTitle={"Metadta is being extracted from the media file."}
+          subTitle={"Metadata is being extracted from the media file."}
         />
       );
     } else if (step.status === "success" && mediaMetadata) {
-      content = <MediaAssetDetails metadata={mediaMetadata} showRaw={false} />;
+      content = (
+        <>
+          <Result
+            style={{ padding: 0, marginBottom: 16 }}
+            status={"success"}
+            title="Metadata Extraction Complete"
+            subTitle="Metadata has been successfully extracted from the media file.  The following metadata has been extracted from the media file."
+          />
+          <MediaAssetDetails metadata={mediaMetadata} showRaw={false} />
+        </>
+      );
     }
   }
 
   return (
     <LoadingWrapper loading={mediaMetaLoading} error={mediaMetaError}>
       <Space
-        direction={"vertical"}
+        orientation={"vertical"}
         style={{ width: 950, minWidth: 650, marginTop: 16 }}
       >
         {content}

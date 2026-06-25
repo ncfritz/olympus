@@ -3,29 +3,18 @@ import type {
   MediaAssetDownload,
   MediaAssetWorkflow,
 } from "@ncfritz/olympus-sdk/dionysus";
-import {
-  Button,
-  Col,
-  Collapse,
-  Empty,
-  Progress,
-  Row,
-  Space,
-  Typography,
-} from "antd";
+import { Button, Collapse, Empty, Result, Space, Typography } from "antd";
 import axios from "axios";
-import { DateTime } from "luxon";
 import prettyBytes from "pretty-bytes";
-import prettyMilliseconds from "pretty-ms";
 import React from "react";
 import adminApi from "../../../../api/adminApi";
 import { useFetch } from "../../../../hooks/useFetch";
-import { DIONYSUS_CDN_HOST } from "../../../../utils/constants";
+import { DIONYSUS_CDN_HOST, ENVIRONMENT } from "../../../../utils/constants";
 import LoadingWrapper from "../../../common/LoadingWrapper";
 import RefreshTimer from "../../../common/RefreshTimer";
 import Timestamp from "../../../data/Timestamp";
 import SearchResultTag from "../SearchResultTag";
-import { getDownloadProgressColor, getDownloadProgressLabel } from "../utils";
+import { getDownloadProgressColor } from "../utils";
 import { MetadataDetail, MetadataTitle } from "./common";
 import { v4 as uuidv4 } from "uuid";
 import StepProgress from "./StepProgress";
@@ -63,38 +52,31 @@ const DownloadDetailsPanel: React.FunctionComponent<
 
   if (download) {
     const color = getDownloadProgressColor(download.status);
-    const progressStatus = getDownloadProgressLabel(download.status);
-
-    let elapsedTime = "Unknown";
-    let remainingTime = "Unknown";
-
-    if (download.finishedTime) {
-      const startedTime = DateTime.fromISO(download.startedTime!);
-      const finishedTime = DateTime.fromISO(download.finishedTime);
-
-      elapsedTime = prettyMilliseconds(
-        Math.abs(finishedTime.diff(startedTime, "milliseconds").milliseconds),
-      );
-      remainingTime = prettyMilliseconds(0);
-    } else if (download.startedTime) {
-      const startedTime = DateTime.fromISO(download.startedTime);
-      const elapsedMs = Math.abs(
-        startedTime.diffNow("milliseconds").milliseconds,
-      );
-      elapsedTime = prettyMilliseconds(elapsedMs);
-      remainingTime = prettyMilliseconds(
-        ((100 - download.progress) / download.progress) * elapsedMs,
-      );
-    }
 
     downloadContent = (
       <Space
-        direction={"vertical"}
+        orientation={"vertical"}
         style={{ maxWidth: 950, marginBottom: 32 }}
         size={0}
       >
+        {download.status === "success" && (
+          <Result
+            style={{ padding: 0, marginBottom: 16 }}
+            status={"success"}
+            title="Download Complete"
+            subTitle="The Usenet download has been successfully completed."
+          />
+        )}
+        {download.status === "failed" && (
+          <Result
+            style={{ padding: 0, marginBottom: 16 }}
+            status={"error"}
+            title="Download Failed"
+            subTitle="The Usenet download has failed - the workflow may need to be re-run to complete the download."
+          />
+        )}
         <Space
-          direction={"horizontal"}
+          orientation={"horizontal"}
           size={8}
           style={{ alignItems: "center" }}
         >
@@ -128,27 +110,27 @@ const DownloadDetailsPanel: React.FunctionComponent<
   if (nzbMetadata) {
     nzbContent = (
       <Space orientation={"vertical"} style={{ width: "100%" }} size={0}>
-        <Button
-          style={{ marginBottom: 32 }}
-          type="primary"
-          block={true}
-          danger={true}
-          onClick={async () => {
-            const suffix = nzbMetadata.file.name.split(".").pop();
-
-            await adminApi.sendAmqpTestMessage(
-              "media.trigger",
-              {
-                workflowId: workflow.id,
-                mediaExtension: "mkv",
-                mediaType: "original",
-              },
-              "jobType.extractMetadata",
-            );
-          }}
-        >
-          Run Workflow
-        </Button>
+        {ENVIRONMENT === "dev" && (
+          <Button
+            style={{ marginBottom: 32 }}
+            type="primary"
+            block={true}
+            danger={true}
+            onClick={async () => {
+              await adminApi.sendAmqpTestMessage(
+                "media.trigger",
+                {
+                  workflowId: workflow.id,
+                  mediaExtension: "mkv",
+                  mediaType: "original",
+                },
+                "jobType.extractMetadata",
+              );
+            }}
+          >
+            Run Workflow
+          </Button>
+        )}
         <MetadataTitle strong={true} fontSize={16} monospace={true}>
           {nzbMetadata.meta.title}
         </MetadataTitle>
@@ -199,7 +181,7 @@ const DownloadDetailsPanel: React.FunctionComponent<
               ),
               children: (
                 <Space
-                  direction={"vertical"}
+                  orientation={"vertical"}
                   size={0}
                   style={{ marginLeft: 24, marginBottom: 8, paddingBottom: 16 }}
                   styles={{ item: { lineHeight: "13px" } }}
@@ -238,7 +220,7 @@ const DownloadDetailsPanel: React.FunctionComponent<
 
   return (
     <Space
-      direction={"vertical"}
+      orientation={"vertical"}
       style={{ width: "100%", marginTop: 16 }}
       size={16}
     >
