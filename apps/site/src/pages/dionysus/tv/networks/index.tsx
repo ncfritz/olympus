@@ -1,6 +1,5 @@
 import { HomeOutlined } from "@ant-design/icons";
-import { Affix, Layout, Space, type TableProps } from "antd";
-import { Content } from "antd/lib/layout/layout";
+import { Space, type TableProps } from "antd";
 import Link from "next/link";
 import React, { useState } from "react";
 import type { PaginatedParams, SortOptions } from "../../../../api/common";
@@ -43,6 +42,7 @@ const NetworksIndexPage: React.FunctionComponent = () => {
   return (
     <>
       <OlympusBreadcrumbs
+        className={"dark"}
         items={[
           {
             title: (
@@ -77,6 +77,7 @@ const NetworksIndexPage: React.FunctionComponent = () => {
       <NetworksTable
         data={networks.networks}
         loading={networksLoading}
+        error={networksError}
         sticky={true}
         scrollY="calc(100vh - 187px)"
         pagination={{
@@ -85,6 +86,7 @@ const NetworksIndexPage: React.FunctionComponent = () => {
           },
           pageSize: 20,
           size: "small",
+          position: ["bottomLeft"],
           total: networks.count,
           showSizeChanger: false,
           showQuickJumper: true,
