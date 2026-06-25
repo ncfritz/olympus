@@ -7,8 +7,9 @@ import type { SparseProductionCompanyWithContentCounts } from "@ncfritz/olympus-
 import {
   Avatar,
   Col,
+  ConfigProvider,
+  Empty,
   Image,
-  type PaginationProps,
   Popover,
   Row,
   Space,
@@ -26,14 +27,16 @@ import Link from "next/link";
 import React, { type ReactNode } from "react";
 import ReactCountryFlag from "react-country-flag/src";
 import { MovieIcon, TvIcon } from "../../../icons";
+import ErrorBlock from "../../common/ErrorBlock";
 import Timestamp from "../../data/Timestamp";
 
 export interface ProductionCompanyTableProps {
   data: SparseProductionCompanyWithContentCounts[];
   loading: boolean;
+  error?: Error;
   sticky: boolean;
   scrollY: string;
-  pagination?: PaginationProps;
+  pagination?: false | TablePaginationConfig;
   onChange?: (
     pagination: TablePaginationConfig,
     filters: Record<string, FilterValue | null>,
@@ -49,6 +52,7 @@ const ProductionCompanyTable: React.FunctionComponent<
 > = ({
   data,
   loading,
+  error,
   pagination,
   onChange,
   sticky,
@@ -277,18 +281,28 @@ const ProductionCompanyTable: React.FunctionComponent<
   ];
 
   return (
-    <Table
-      style={{ width: "100%" }}
-      rowKey={"id"}
-      sticky={sticky}
-      scroll={{ y: scrollY }}
-      columns={columns}
-      dataSource={data}
-      size={"small"}
-      loading={loading}
-      pagination={pagination}
-      onChange={onChange}
-    />
+    <ConfigProvider
+      renderEmpty={() =>
+        error ? (
+          <ErrorBlock error={error} />
+        ) : (
+          <Empty description="No production companies found" />
+        )
+      }
+    >
+      <Table
+        style={{ width: "100%" }}
+        rowKey={"id"}
+        sticky={sticky}
+        scroll={{ y: scrollY }}
+        columns={columns}
+        dataSource={data}
+        size={"small"}
+        loading={loading}
+        pagination={pagination}
+        onChange={onChange}
+      />
+    </ConfigProvider>
   );
 };
 export default ProductionCompanyTable;

@@ -7,8 +7,9 @@ import type { NetworkWithContentCounts } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Avatar,
   Col,
+  ConfigProvider,
+  Empty,
   Image,
-  type PaginationProps,
   Popover,
   Row,
   Space,
@@ -26,14 +27,16 @@ import Link from "next/link";
 import React, { type ReactNode } from "react";
 import ReactCountryFlag from "react-country-flag/src";
 import { TvIcon } from "../../../icons";
+import ErrorBlock from "../../common/ErrorBlock";
 import Timestamp from "../../data/Timestamp";
 
 export interface NetworkTableTableProps {
   data: NetworkWithContentCounts[];
   loading: boolean;
+  error?: Error;
   sticky: boolean;
   scrollY: string;
-  pagination?: PaginationProps;
+  pagination?: false | TablePaginationConfig;
   onChange?: (
     pagination: TablePaginationConfig,
     filters: Record<string, FilterValue | null>,
@@ -47,6 +50,7 @@ export interface NetworkTableTableProps {
 const NetworkTable: React.FunctionComponent<NetworkTableTableProps> = ({
   data,
   loading,
+  error,
   sticky,
   scrollY,
   pagination,
@@ -265,18 +269,28 @@ const NetworkTable: React.FunctionComponent<NetworkTableTableProps> = ({
   ];
 
   return (
-    <Table
-      style={{ width: "100%" }}
-      sticky={sticky}
-      scroll={{ y: scrollY }}
-      rowKey={"id"}
-      columns={columns}
-      dataSource={data}
-      size={"small"}
-      loading={loading}
-      pagination={pagination}
-      onChange={onChange}
-    />
+    <ConfigProvider
+      renderEmpty={() =>
+        error ? (
+          <ErrorBlock error={error} />
+        ) : (
+          <Empty description="No networks found" />
+        )
+      }
+    >
+      <Table
+        style={{ width: "100%" }}
+        sticky={sticky}
+        scroll={{ y: scrollY }}
+        rowKey={"id"}
+        columns={columns}
+        dataSource={data}
+        size={"small"}
+        loading={loading}
+        pagination={pagination}
+        onChange={onChange}
+      />
+    </ConfigProvider>
   );
 };
 export default NetworkTable;
