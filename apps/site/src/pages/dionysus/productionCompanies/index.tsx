@@ -82,6 +82,7 @@ const ProductionCompaniesIndexPage: React.FunctionComponent = () => {
   return (
     <>
       <OlympusBreadcrumbs
+        className={"dark"}
         items={[
           {
             title: (
@@ -116,6 +117,7 @@ const ProductionCompaniesIndexPage: React.FunctionComponent = () => {
       <ProductionCompanyTable
         data={productionCompanies}
         loading={productionCompaniesLoading}
+        error={productionCompaniesError}
         sticky={true}
         scrollY="calc(100vh - 187px)"
         pagination={{
@@ -124,6 +126,7 @@ const ProductionCompaniesIndexPage: React.FunctionComponent = () => {
           },
           pageSize: 20,
           size: "small",
+          position: ["bottomLeft"],
           total: productionCompaniesCount,
           showSizeChanger: false,
           showQuickJumper: true,

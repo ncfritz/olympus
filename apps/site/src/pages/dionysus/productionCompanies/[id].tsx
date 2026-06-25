@@ -193,6 +193,7 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
             scrollY="calc(100vh - 481px)"
             data={productionCompany?.children || []}
             loading={productionCompanyLoading}
+            error={productionCompanyError}
             pagination={undefined}
             onChange={undefined}
           />
