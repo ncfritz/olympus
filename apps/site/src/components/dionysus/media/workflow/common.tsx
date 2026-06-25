@@ -1,5 +1,4 @@
 import { Space, Typography } from "antd";
-import prettyBytes from "pretty-bytes";
 import type { CSSProperties, ReactNode } from "react";
 
 export interface MetadataTitleProps {

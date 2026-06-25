@@ -322,11 +322,11 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
   let actionsContent = (
     <Col span={24} style={{ justifyContent: "space-between", display: "flex" }}>
       <Space
-        direction={"horizontal"}
+        orientation={"horizontal"}
         style={{ padding: 0, marginLeft: 16, marginRight: 16 }}
       >
         <Space
-          direction={"horizontal"}
+          orientation={"horizontal"}
           size={8}
           style={{
             alignItems: "center",
@@ -382,7 +382,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
     actionsContent = (
       <Col span={24} style={{ padding: 16 }}>
         <Space
-          direction={"vertical"}
+          orientation={"vertical"}
           size={16}
           style={{ marginLeft: 16, marginRight: 16, width: "100%" }}
         >
@@ -410,6 +410,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
   return (
     <>
       <OlympusBreadcrumbs
+        className={"dark"}
         items={[
           {
             title: (
@@ -480,7 +481,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
           }}
           columns={columns}
           sticky={true}
-          scroll={{ y: "calc(100vh - 491px)" }}
+          scroll={{ y: "calc(100vh - 475px)" }}
           dataSource={workflows?.workflows}
           size={"small"}
           loading={workflowsLoading}
@@ -530,12 +531,17 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
       </ConfigProvider>
       <Drawer
         title="Workflow Details"
-        width={750}
+        size={750}
         placement="right"
         onClose={async () => {
           await closeDrawer();
         }}
         open={selectedWorkflowId !== undefined}
+        styles={{
+          body: {
+            padding: 0,
+          },
+        }}
       >
         <WorkflowDetailsPanel workflowId={selectedWorkflowId} />
       </Drawer>

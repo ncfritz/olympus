@@ -164,88 +164,73 @@ const BatchJobsPage: React.FunctionComponent = () => {
 
   return (
     <>
-      <Affix offsetTop={64}>
-        <OlympusBreadcrumbs
-          items={[
-            {
-              title: (
-                <Link href={"/"}>
-                  <Space size={4}>
-                    <HomeOutlined />
-                    <span>Home</span>
-                  </Space>
-                </Link>
-              ),
-            },
-            {
-              title: (
+      <OlympusBreadcrumbs
+        className={"dark"}
+        items={[
+          {
+            title: (
+              <Link href={"/"}>
                 <Space size={4}>
-                  <MetadataOutlinedIcon />
-                  <span>Metadata</span>
+                  <HomeOutlined />
+                  <span>Home</span>
                 </Space>
-              ),
-            },
-            {
-              title: (
-                <Space>
-                  <CertificationOutlined />
-                  <span>Batch Jobs</span>
-                </Space>
-              ),
-            },
-          ]}
-        />
-      </Affix>
-      <Layout
-        style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 102,
-          overflowX: "hidden",
-          overflowY: "auto",
-          height: "calc(100vh - 102px)",
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Space size={4}>
+                <MetadataOutlinedIcon />
+                <span>Metadata</span>
+              </Space>
+            ),
+          },
+          {
+            title: (
+              <Space>
+                <CertificationOutlined />
+                <span>Batch Jobs</span>
+              </Space>
+            ),
+          },
+        ]}
+      />
+      <Row gutter={16} style={{ marginBottom: 36 }}>
+        <Col span={8}>{statusChart}</Col>
+        <Col span={8}>{queueTimeChart}</Col>
+        <Col span={8}>{runtimeChart}</Col>
+      </Row>
+      <Tabs
+        className={"fill"}
+        activeKey={`t-bj-${activeTab}`}
+        items={items}
+        onSelect={() => {
+          closeDrawer();
         }}
+        onChange={(tab) => {
+          const activeTabName = tab.substring("t-bj-".length);
+          setActiveTab(activeTabName);
+          router.push(
+            `${router.pathname}?tab=${activeTabName}`,
+            `${router.pathname}?tab=${activeTabName}`,
+            { shallow: true },
+          );
+        }}
+        tabBarStyle={{
+          marginBottom: 0,
+        }}
+      />
+      <Drawer
+        title="Batch Job Details"
+        size={550}
+        placement="right"
+        onClose={() => {
+          closeDrawer();
+        }}
+        open={selectedJob !== undefined}
       >
-        <Content style={{ width: "calc(100vw - 384px)" }}>
-          <Row gutter={16} style={{ marginBottom: 36 }}>
-            <Col span={8}>{statusChart}</Col>
-            <Col span={8}>{queueTimeChart}</Col>
-            <Col span={8}>{runtimeChart}</Col>
-          </Row>
-          <Tabs
-            className={"fill"}
-            activeKey={`t-bj-${activeTab}`}
-            items={items}
-            onSelect={() => {
-              closeDrawer();
-            }}
-            onChange={(tab) => {
-              const activeTabName = tab.substring("t-bj-".length);
-              setActiveTab(activeTabName);
-              router.push(
-                `${router.pathname}?tab=${activeTabName}`,
-                `${router.pathname}?tab=${activeTabName}`,
-                { shallow: true },
-              );
-            }}
-            tabBarStyle={{
-              marginBottom: 0,
-            }}
-          />
-          <Drawer
-            title="Batch Job Details"
-            width={550}
-            placement="right"
-            onClose={() => {
-              closeDrawer();
-            }}
-            open={selectedJob !== undefined}
-          >
-            <BatchJobDetailsPanel job={selectedJob!} close={closeDrawer} />
-          </Drawer>
-        </Content>
-      </Layout>
+        <BatchJobDetailsPanel job={selectedJob!} close={closeDrawer} />
+      </Drawer>
     </>
   );
 };

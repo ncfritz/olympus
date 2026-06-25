@@ -82,7 +82,7 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
   } else if (workflowStepsError) {
     stepsContent = (
       <Alert
-        message="Error"
+        title="Error"
         description="An error occurred while fetching workflow steps"
         type="error"
         showIcon
@@ -90,7 +90,7 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
     );
   } else if (!workflowSteps || workflowSteps.length <= 0) {
     stepsContent = <Empty description={"No workflow steps found"} />;
-  } else {2
+  } else {
     const stepItems: ItemType[] = [];
 
     workflowSteps.forEach((step) => {
@@ -191,7 +191,7 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
         ),
         children: (
           <Space
-            direction={"vertical"}
+            orientation={"vertical"}
             style={{
               width: "100%",
               marginLeft: 28,
@@ -334,8 +334,8 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
   }
 
   return (
-    <Space style={{ width: "100%" }} direction={"vertical"} size={8}>
-      <Row>
+    <Space style={{ width: "100%" }} orientation={"vertical"} size={8}>
+      <Row style={{ padding: 16 }}>
         <Col span={24}>
           <Typography.Title level={4}>Workflow Details</Typography.Title>
         </Col>
@@ -399,7 +399,12 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
         <Col span={24} style={{ marginTop: 24 }}>
           <Space
             size={0}
-            style={{ width: "100%", justifyContent: "space-between" }}
+            style={{
+              width: "100%",
+              paddingLeft: 16,
+              paddingRight: 16,
+              justifyContent: "space-between",
+            }}
           >
             <Typography.Title level={4}>Workflow Steps</Typography.Title>
             <Button
@@ -423,7 +428,7 @@ const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
             }
           />
           <Space
-            style={{ width: "100%", marginTop: 8 }}
+            style={{ width: "100%", marginTop: 8, padding: 16 }}
             styles={{ item: { width: "100%" } }}
           >
             {stepsContent}

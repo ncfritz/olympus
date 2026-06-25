@@ -18,7 +18,7 @@ const BatchJobDetailsPanel: React.FunctionComponent<
   }
 
   return (
-    <Space style={{ width: "100%" }} direction={"vertical"} size={8}>
+    <Space style={{ width: "100%" }} orientation={"vertical"} size={8}>
       <Row>
         <Col span={24}>
           <Typography.Title level={4}>Job Details</Typography.Title>

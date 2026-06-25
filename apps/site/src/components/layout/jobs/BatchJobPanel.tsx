@@ -726,7 +726,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
         }}
         columns={columns}
         sticky={true}
-        scroll={{ y: "calc(100vh - 853px)" }}
+        scroll={{ y: "calc(100vh - 845px)" }}
         dataSource={jobs?.jobs}
         size={"small"}
         loading={jobsLoading}

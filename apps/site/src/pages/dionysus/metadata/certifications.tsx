@@ -168,6 +168,7 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
   return (
     <>
       <OlympusBreadcrumbs
+        className={"dark"}
         items={[
           {
             title: (
@@ -201,7 +202,7 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
         style={{
           marginTop: 28,
           marginBottom: 16,
-          height: "calc(100vh - 118px)",
+          height: "calc(100vh - 92px)",
         }}
       >
         <ConfigProvider
@@ -218,7 +219,7 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
             rowKey={"id"}
             columns={columns}
             sticky={true}
-            scroll={{ y: "calc(100vh - 197px)" }}
+            scroll={{ y: "calc(100vh - 187px)" }}
             dataSource={certifications}
             size={"small"}
             loading={certificationsLoading}
