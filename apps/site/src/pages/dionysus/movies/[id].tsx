@@ -748,10 +748,15 @@ const MovieDetailPage: React.FunctionComponent = () => {
             maxHeight: 522,
             width: "100%",
             top: 0,
-            zIndex: 4000,
+            zIndex: 5,
           }}
           styles={{
             item: { width: "100%" },
+          }}
+          onWheel={(e) => {
+            if (affix && e.currentTarget.scrollTop === 0 && e.deltaY < 0) {
+              setAffix(false);
+            }
           }}
         >
           <Space
@@ -767,7 +772,6 @@ const MovieDetailPage: React.FunctionComponent = () => {
               backgroundSize: "cover",
               backgroundRepeat: "no-repeat",
               alignItems: "start",
-              zIndex: 4,
             }}
             styles={{
               item: { width: "100%" },
@@ -812,7 +816,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
           orientation={"vertical"}
           className={"movieHeader"}
           style={{
-            position: "relative",
+            position: "sticky",
             width: "100%",
             backgroundColor: "#021629",
             backgroundImage: `linear-gradient(90deg, rgba(0, 21, 41, 1) 10%, rgba(0, 0, 0, 0.4) 100%), url("${headerBackgroundUrl}")`,
@@ -908,7 +912,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
               height: affix ? `calc(100vh - 292px)` : undefined,
               scrollbarWidth: "none",
               position: "relative",
-              zIndex: 4000,
+              zIndex: 4,
             }}
             tabContentStyle={{
               scrollbarWidth: "none",
