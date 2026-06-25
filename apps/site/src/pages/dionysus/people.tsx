@@ -51,6 +51,7 @@ const PeopleIndexPage: React.FunctionComponent = () => {
   return (
     <>
       <OlympusBreadcrumbs
+        className={"dark"}
         items={[
           {
             title: (
