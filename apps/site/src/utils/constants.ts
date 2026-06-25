@@ -1,3 +1,5 @@
+export const ENVIRONMENT = process.env.NEXT_PUBLIC_ENVIRONMENT || "dev";
+
 export const OLYMPUS_HOST =
   process.env.NEXT_PUBLIC_OLYMPUS_HOST || "https://olympus.dev.ncfritz.net";
 
