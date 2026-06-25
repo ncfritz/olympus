@@ -3,6 +3,7 @@ import {
   CalendarOutlined,
   CloudDownloadOutlined,
   EyeOutlined,
+  FileImageOutlined,
   HomeOutlined,
   QrcodeOutlined,
 } from "@ant-design/icons";
@@ -54,8 +55,6 @@ interface SeasonId {
   seriesId: number;
   seasonNumber: number;
 }
-
-const topOffset = 301;
 
 const TvSeriesDetailPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -333,13 +332,36 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
     }
 
     const seasonDetails = (
-      <Space orientation={"vertical"} style={{ padding: 16 }}>
-        <Image
-          src={`https://image.tmdb.org/t/p/w342/${tvSeason.posterPath}}`}
-          width={275}
-          style={{ borderRadius: 8 }}
-          preview={false}
-        />
+      <Space orientation={"vertical"} style={{ padding: 16, paddingRight: 8 }}>
+        {tvSeason.posterPath ? (
+          <Image
+            src={`https://image.tmdb.org/t/p/w342/${tvSeason.posterPath}}`}
+            width={275}
+            style={{ borderRadius: 8 }}
+            preview={false}
+          />
+        ) : (
+          <Space
+            style={{
+              height: 275 * (3 / 2),
+              width: 275,
+              borderRadius: 8,
+              aspectRatio: "calc(2 / 3)",
+              backgroundColor: "#eeeeee",
+              justifyContent: "center",
+            }}
+            styles={{
+              item: {
+                display: "flex",
+                alignContent: "center",
+                justifyContent: "center",
+                height: "100%",
+              },
+            }}
+          >
+            <FileImageOutlined style={{ fontSize: "64px", color: "#dddddd" }} />
+          </Space>
+        )}
         <Description
           title={"Air Date"}
           value={airDate ? airDate.toFormat("yyyy / MM / dd") : undefined}
@@ -524,7 +546,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                 header: {
                   position: "sticky",
                   top: 0,
-                  zIndex: 5,
+                  zIndex: 50000,
                   background: "#ffffff",
                 },
               }}

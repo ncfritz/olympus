@@ -783,7 +783,6 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
             seriesId={tvSeries.id}
             searchConfiguration={searchConfiguration}
             loading={searchConfigurationLoading || tvSeriesLoading}
-            zIndex={10000}
             afterUpdate={async (searchConfiguration) => {
               setSearchConfiguration(searchConfiguration);
               await fetchTvSeries(true);
@@ -807,7 +806,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
             maxHeight: 522,
             width: "100%",
             top: 0,
-            zIndex: 4000,
+            zIndex: 5,
           }}
           styles={{
             item: { width: "100%" },
@@ -826,10 +825,14 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               backgroundSize: "cover",
               backgroundRepeat: "no-repeat",
               alignItems: "start",
-              zIndex: 4,
             }}
             styles={{
               item: { width: "100%" },
+            }}
+            onWheel={(e) => {
+              if (affix && e.currentTarget.scrollTop === 0 && e.deltaY < 0) {
+                setAffix(false);
+              }
             }}
           >
             <Space
@@ -1014,7 +1017,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               height: affix ? `calc(100vh - 292px)` : undefined,
               scrollbarWidth: "none",
               position: "relative",
-              zIndex: 4000,
+              zIndex: 4,
             }}
             tabContentStyle={{
               scrollbarWidth: "none",
@@ -1032,7 +1035,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                 header: {
                   position: "sticky",
                   top: 0,
-                  zIndex: 5,
+                  zIndex: 50,
                   background: "#ffffff",
                 },
               }}
