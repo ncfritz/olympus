@@ -1,3 +1,5 @@
+import "source-map-support/register";
+
 import { VersioningType } from "@nestjs/common";
 import { NestFactory, PartialGraphHost, Reflector } from "@nestjs/core";
 import cookieParser from "cookie-parser";
