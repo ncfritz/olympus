@@ -296,6 +296,25 @@ export const getStepProperties = (
   };
 };
 
+export const getStepLabel = (stepType: MediaAssetWorkflowStepType) => {
+  switch (stepType) {
+    case "extract_original_metadata":
+      return "Extract Original Metadata";
+    case "extract_new_metadata":
+      return "Extract New Metadata";
+    case "configure_transcode":
+      return "Configure Transcode";
+    case "transcode":
+      return "Transcode";
+    case "verify_transcode":
+      return "Verify Transcode";
+    case "upload":
+      return "Upload";
+    case "cleanup":
+      return "Cleanup";
+  }
+};
+
 export const getDownloadProgressColor = (status: string) => {
   switch (status) {
     case "downloading":

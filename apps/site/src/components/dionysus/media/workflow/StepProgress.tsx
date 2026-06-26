@@ -93,12 +93,14 @@ const StepProgress: React.FunctionComponent<StepProgressProps> = ({
               direction={"horizontal"}
             />
           </Col>
-          <Col span={4} offset={3} style={{ textAlign: "right" }}>
+          <Col span={2} offset={3} style={{ textAlign: "right" }}>
             <Typography.Text style={{ fontSize: "12px" }} strong={true}>
               Remaining:
             </Typography.Text>
           </Col>
-          <Col span={2}>{remainingTime}</Col>
+          <Col span={4} style={{ fontSize: "12px" }}>
+            {remainingTime}
+          </Col>
           <Col span={2} style={{ textAlign: "right" }}>
             <Typography.Text style={{ fontSize: "12px" }} strong={true}>
               Created:
@@ -123,12 +125,14 @@ const StepProgress: React.FunctionComponent<StepProgressProps> = ({
               direction={"horizontal"}
             />
           </Col>
-          <Col span={4} offset={3} style={{ textAlign: "right" }}>
+          <Col span={2} offset={3} style={{ textAlign: "right" }}>
             <Typography.Text style={{ fontSize: "12px" }} strong={true}>
               Elapsed:
             </Typography.Text>
           </Col>
-          <Col span={2}>{elapsedTime}</Col>
+          <Col span={4} style={{ fontSize: "12px" }}>
+            {elapsedTime}
+          </Col>
         </Row>
       )}
     </Space>

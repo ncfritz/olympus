@@ -1,9 +1,13 @@
-import { HomeOutlined, LoadingOutlined } from "@ant-design/icons";
+import {
+  HomeOutlined,
+  LoadingOutlined,
+  OrderedListOutlined,
+} from "@ant-design/icons";
 import type { MediaAssetWorkflow } from "@ncfritz/olympus-sdk/dionysus";
 import { Empty, Space, Steps } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import mediaApi from "../../../api/mediaApi";
 import LoadingWrapper from "../../../components/common/LoadingWrapper";
 import RefreshTimer from "../../../components/common/RefreshTimer";
@@ -18,6 +22,7 @@ import MetadataDetailsPanel from "../../../components/dionysus/media/workflow/Me
 import MovieHeader from "../../../components/dionysus/media/workflow/MovieHeader";
 import TranscodePanel from "../../../components/dionysus/media/workflow/TranscodePanel";
 import UploadPanel from "../../../components/dionysus/media/workflow/UploadPanel";
+import SummaryPanel from "../../../components/dionysus/media/workflow/SummaryPanel";
 import VerifyConfigurationPanel from "../../../components/dionysus/media/workflow/VerifyConfigurationPanel";
 import TvEpisodeHeader from "../../../components/dionysus/media/workflow/TvEpisodeHeader";
 import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
@@ -29,6 +34,7 @@ const IndexPage: React.FunctionComponent = () => {
   const { id } = router.query;
 
   const [current, setCurrent] = useState(0);
+  const [currentOverride, setCurrentOverride] = useState(false);
 
   const [workflow, workflowLoading, workflowError, fetchWorkflow] = useFetch<
     string,
@@ -41,8 +47,28 @@ const IndexPage: React.FunctionComponent = () => {
       (await mediaApi.describeMediaAssetWorkflow(o)).data.workflow,
   });
 
+  useEffect(() => {
+    if (!workflow) {
+      return;
+    }
+
+    if (!currentOverride) {
+      if (!workflow.steps || workflow.steps.length <= 0) {
+        setCurrent(0);
+      } else if (["success", "failed"].includes(workflow.status)) {
+        setCurrent(8);
+      } else {
+        setCurrent(workflow.steps.length);
+      }
+    }
+  }, [workflow]);
+
   const onChange = (value: number) => {
     setCurrent(value);
+
+    if (value !== workflow.steps?.length) {
+      setCurrentOverride(true);
+    }
   };
 
   let panelContent = <></>;
@@ -81,6 +107,8 @@ const IndexPage: React.FunctionComponent = () => {
       panelContent = <UploadPanel workflow={workflow} />;
     } else if (current === 7) {
       panelContent = <CleanupPanel workflow={workflow} />;
+    } else if (current === 8) {
+      panelContent = <SummaryPanel workflow={workflow} />;
     }
 
     if (workflow.type === "movie") {
@@ -134,7 +162,7 @@ const IndexPage: React.FunctionComponent = () => {
                   content: "Extract original metadata",
                   ...getStepProperties(
                     workflow.steps,
-                    "extract_original_metadata",
+                    "extract_original_metadata"
                   ),
                 },
                 {
@@ -164,6 +192,11 @@ const IndexPage: React.FunctionComponent = () => {
                 {
                   title: "Cleanup",
                   ...getStepProperties(workflow.steps, "cleanup"),
+                },
+                {
+                  title: "Summary",
+                  disabled: !["success", "failed"].includes(workflow.status),
+                  icon: <OrderedListOutlined />,
                 },
               ]}
             />

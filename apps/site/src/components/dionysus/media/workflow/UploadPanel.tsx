@@ -64,14 +64,14 @@ const UploadPanel: React.FunctionComponent<UploadPanelProps> = ({
     content = (
       <Space orientation={"vertical"} size={8}>
         {statusContent}
-        <StepProgress title={"Upload"} step={step} />,
+        <StepProgress title={"Upload"} step={step} />
       </Space>
     );
   }
 
   return (
     <Space
-      direction={"vertical"}
+      orientation={"vertical"}
       style={{ width: "100%", marginTop: 16 }}
       size={16}
     >

@@ -20,14 +20,14 @@ const CleanupPanel: React.FunctionComponent<CleanupPanelProps> = ({
 
   useEffect(() => {
     workflow.steps.forEach((current) => {
-      if (current.type === "transcode") {
+      if (current.type === "cleanup") {
         setStep(current);
         return;
       }
     });
   }, [workflow]);
 
-  let content = <Empty description={"No transcode artifacts present"} />;
+  let content = <Empty description={"No cleanup info present"} />;
 
   if (step) {
     if (step.status === "failed") {
