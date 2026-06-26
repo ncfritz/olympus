@@ -2,7 +2,7 @@
   "name": "@ncfritz/olympus-notification-agent",
   "description": "Asynchronous agent for handling Olympus notifications",
   "main": "dist/main.js",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
   "readmeFilename": "README.md",
   "license": "Apache-2.0",
