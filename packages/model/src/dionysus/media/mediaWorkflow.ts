@@ -47,6 +47,14 @@ export class MediaAssetWorkflowDecoration {
   episodeNumber?: number;
 
   @ApiProperty({
+    type: Number,
+    required: false,
+    description:
+      "The ID of the TV series associated with the media, if the media is a TV series, season, or episode",
+  })
+  seriesId?: number;
+
+  @ApiProperty({
     type: String,
     required: false,
     description: "The path to the poster for the media",
