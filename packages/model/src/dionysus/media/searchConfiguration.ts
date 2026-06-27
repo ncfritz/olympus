@@ -2,6 +2,7 @@ import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
 import { PaginatedResults } from "../../common";
+import { MediaAssetWorkflowDecoration } from "./mediaWorkflow";
 
 export enum MediaAssetSearchType {
   MOVIE = "movie",
@@ -131,6 +132,15 @@ export class MediaAssetSearchConfiguration extends BaseMediaAssetSearchConfigura
   lastUpdatedTime: Moment;
 }
 
+export class DecoratedMediaAssetSearchConfiguration extends MediaAssetSearchConfiguration {
+  @ApiProperty({
+    type: () => MediaAssetWorkflowDecoration,
+    required: true,
+    description: "Decoration details used for list items display",
+  })
+  decoration: MediaAssetWorkflowDecoration;
+}
+
 export class PartialMediaAssetSearchConfiguration extends PartialType(
   OmitType(MediaAssetSearchConfiguration, [
     "type",
@@ -177,12 +187,12 @@ export class GetMediaAssetSearchConfigurationsRunningCountResponse {
 
 export class SingleMediaAssetSearchConfigurationResponse {
   @ApiProperty({
-    type: () => MediaAssetSearchConfiguration,
+    type: () => DecoratedMediaAssetSearchConfiguration,
     required: true,
     description:
       "A search configuration that has been created, updated, or queried",
   })
-  searchConfiguration: MediaAssetSearchConfiguration;
+  searchConfiguration: DecoratedMediaAssetSearchConfiguration;
 }
 
 export class ListMediaAssetSearchConfigurationsResponse extends PaginatedResults {
