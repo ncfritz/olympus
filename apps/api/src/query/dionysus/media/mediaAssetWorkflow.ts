@@ -15,12 +15,13 @@ export const MEDIA_ASSET_WORKFLOW_STEP = `${BASE_MEDIA_ASSET_WORKFLOW_STEP}
   }
 `;
 
-export const MEDIA_ASSET_WORKFLOW_DECORATION = `name
-    mediaType
+export const MEDIA_ASSET_WORKFLOW_DECORATION = `mediaType
+    name
     title
     posterPath
     season
-    episode`;
+    episode
+    seriesId`;
 
 export const BASE_MEDIA_ASSET_WORKFLOW = `id
   type

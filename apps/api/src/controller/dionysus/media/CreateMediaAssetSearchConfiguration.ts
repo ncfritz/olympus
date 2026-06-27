@@ -1,7 +1,7 @@
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   CreateMediaAssetSearchConfigurationRequest,
-  MediaAssetSearchConfiguration,
+  DecoratedMediaAssetSearchConfiguration,
   MediaAssetSearchType,
   SingleMediaAssetSearchConfigurationResponse,
 } from "@ncfritz/olympus-model";
@@ -23,9 +23,9 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
-import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
-import { BASE_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
-import { GraphQlMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
+import { toDecoratedDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
+import { BASE_DECORATED_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
+import { type GraphQlDecoratedMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type QueryRoot =
@@ -49,7 +49,7 @@ type GraphQlVerifyMediaResponse = {
 };
 
 type GraphQlCreateMediaAssetSearchConfigurationResponse = {
-  insert_dionysus_media_asset_search_configuration_one: GraphQlMediaAssetSearchConfiguration;
+  insert_dionysus_media_asset_search_configuration_one: GraphQlDecoratedMediaAssetSearchConfiguration;
 };
 
 @Controller({ version: "1" })
@@ -152,7 +152,7 @@ export class CreateMediaAssetSearchConfigurationController {
             nextExecutionTime: $nextExecutionTime
           }
         ) {
-          ${BASE_SEARCH_CONFIGURATION}
+          ${BASE_DECORATED_SEARCH_CONFIGURATION}
         }
       }
     `;
@@ -187,8 +187,8 @@ export class CreateMediaAssetSearchConfigurationController {
         },
       );
 
-    const createdSearchConfiguration: MediaAssetSearchConfiguration =
-      toDomainObject(
+    const createdSearchConfiguration: DecoratedMediaAssetSearchConfiguration =
+      toDecoratedDomainObject(
         insertResponse.insert_dionysus_media_asset_search_configuration_one,
       );
 

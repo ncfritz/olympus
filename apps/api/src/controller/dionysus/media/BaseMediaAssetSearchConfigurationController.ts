@@ -1,15 +1,15 @@
 import {
-  MediaAssetSearchConfiguration,
+  DecoratedMediaAssetSearchConfiguration,
   MediaAssetSearchType,
 } from "@ncfritz/olympus-model";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
-import { BASE_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
-import { GraphQlMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
+import { toDecoratedDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
+import { BASE_DECORATED_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
+import { GraphQlDecoratedMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
 
 type GraphQlGetMediaAssetSearchConfigurationResponse = {
-  dionysus_media_asset_search_configuration_by_pk: GraphQlMediaAssetSearchConfiguration;
+  dionysus_media_asset_search_configuration_by_pk: GraphQlDecoratedMediaAssetSearchConfiguration;
 };
 type GraphQlVerifySearchConfigResponse = {
   dionysus_media_asset_search_configuration_by_pk: {
@@ -24,7 +24,7 @@ export abstract class BaseMediaAssetSearchConfigurationController {
   protected async fetchMediaAssetSearchConfiguration(
     mediaType: MediaAssetSearchType,
     mediaId: number,
-  ): Promise<MediaAssetSearchConfiguration> {
+  ): Promise<DecoratedMediaAssetSearchConfiguration> {
     const fetchRequest = gql`
       query DescribeMediaAssetSearchConfiguration(
         $assetType: String!
@@ -34,7 +34,7 @@ export abstract class BaseMediaAssetSearchConfigurationController {
           assetType: $assetType
           mediaId: $mediaId
         ) {
-          ${BASE_SEARCH_CONFIGURATION}
+          ${BASE_DECORATED_SEARCH_CONFIGURATION}
         }
       }
     `;
@@ -52,7 +52,7 @@ export abstract class BaseMediaAssetSearchConfigurationController {
       throw new NotFoundException();
     }
 
-    return toDomainObject(
+    return toDecoratedDomainObject(
       fetchResponse.dionysus_media_asset_search_configuration_by_pk,
     );
   }

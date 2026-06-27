@@ -29,15 +29,15 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
-import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
-import { BASE_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
-import { GraphQlMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
+import { toDecoratedDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
+import { BASE_DECORATED_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
+import { GraphQlDecoratedMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { buildFilterExpression } from "../../../utils/filterUtil";
 import { logger } from "../../../utils/logger";
 
 type GraphQlUpdateMediaAssetSearchConfigurationResponse = {
-  update_dionysus_media_asset_search_configuration_by_pk: GraphQlMediaAssetSearchConfiguration;
+  update_dionysus_media_asset_search_configuration_by_pk: GraphQlDecoratedMediaAssetSearchConfiguration;
 };
 type GraphQlUpdateChildMediaAssetSearchConfigurationsResponse = {
   update_dionysus_media_asset_search_configuration: {
@@ -109,7 +109,7 @@ export class UpdateMediaAssetSearchConfigurationController {
           pk_columns: { assetType: $mediaType, mediaId: $mediaId }
           _set: $changes
         ) {
-          ${BASE_SEARCH_CONFIGURATION}
+          ${BASE_DECORATED_SEARCH_CONFIGURATION}
         }
       }
     `;
@@ -137,7 +137,7 @@ export class UpdateMediaAssetSearchConfigurationController {
         },
       );
 
-    const updatedSearchConfiguration = toDomainObject(
+    const updatedSearchConfiguration = toDecoratedDomainObject(
       updateResponse.update_dionysus_media_asset_search_configuration_by_pk,
     );
 

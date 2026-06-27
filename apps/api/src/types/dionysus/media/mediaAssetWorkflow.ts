@@ -45,9 +45,10 @@ export type GraphQlMediaAssetWorkflowStep =
 
 export type GraphQlMediaAssetWorkflowDecoration = {
   name: string;
-  seriesName?: string;
+  title?: string;
   season?: number;
   episode?: number;
+  seriesId?: number;
   posterPath?: string;
 };
 

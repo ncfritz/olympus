@@ -44,9 +44,10 @@ export const toMediaWorkflowDecorationDomainObject = (
 ): MediaAssetWorkflowDecoration => {
   return {
     name: input.name,
-    seriesName: input.seriesName,
+    seriesName: input.title,
     seasonNumber: input.season,
     episodeNumber: input.episode,
+    seriesId: input.seriesId,
     posterPath: input.posterPath,
   };
 };

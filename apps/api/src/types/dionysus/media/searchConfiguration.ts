@@ -2,6 +2,7 @@ import {
   MediaAssetSearchConfigurationStatus,
   MediaAssetSearchType,
 } from "@ncfritz/olympus-model";
+import type { GraphQlMediaAssetWorkflowDecoration } from "./mediaAssetWorkflow";
 
 export type GraphQlMediaAssetSearchConfiguration = {
   assetType: MediaAssetSearchType;
@@ -18,3 +19,8 @@ export type GraphQlMediaAssetSearchConfiguration = {
   createdTime: string;
   lastUpdatedTime: string;
 };
+
+export type GraphQlDecoratedMediaAssetSearchConfiguration =
+  GraphQlMediaAssetSearchConfiguration & {
+    decoration: GraphQlMediaAssetWorkflowDecoration;
+  };

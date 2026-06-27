@@ -1,6 +1,13 @@
-import { MediaAssetSearchConfiguration } from "@ncfritz/olympus-model";
+import {
+  DecoratedMediaAssetSearchConfiguration,
+  MediaAssetSearchConfiguration,
+} from "@ncfritz/olympus-model";
 import moment from "moment";
-import { GraphQlMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
+import {
+  type GraphQlDecoratedMediaAssetSearchConfiguration,
+  GraphQlMediaAssetSearchConfiguration,
+} from "../../../types/dionysus/media/searchConfiguration";
+import { toMediaWorkflowDecorationDomainObject } from "./MediaAssetWorkflowConverter";
 
 export const toDomainObject = (
   input: GraphQlMediaAssetSearchConfiguration,
@@ -21,5 +28,14 @@ export const toDomainObject = (
     nextExecutionTime: moment(input.nextExecutionTime),
     createdTime: moment(input.createdTime),
     lastUpdatedTime: moment(input.lastUpdatedTime),
+  };
+};
+
+export const toDecoratedDomainObject = (
+  input: GraphQlDecoratedMediaAssetSearchConfiguration,
+): DecoratedMediaAssetSearchConfiguration => {
+  return {
+    ...toDomainObject(input),
+    decoration: toMediaWorkflowDecorationDomainObject(input.decoration),
   };
 };
