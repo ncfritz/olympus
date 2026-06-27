@@ -68,9 +68,7 @@ interface EpisodeId {
 
 const TvEpisodeDetailPage: React.FunctionComponent = () => {
   const router = useRouter();
-  const { id } = router.query;
-  const { seasonNumber } = router.query;
-  const { episodeNumber } = router.query;
+  const { id, seasonNumber, episodeNumber, tab } = router.query;
 
   const [activeTab, setActiveTab] = useState("t-main-general");
   const [assetInfoOpen, setAssetInfoOpen] = useState(false);
@@ -191,7 +189,11 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
   });
 
   useEffect(() => {
-    setActiveTab("t-main-general");
+    if (tab === "sr") {
+      setActiveTab("t-main-searchResults");
+    } else {
+      setActiveTab("t-main-general");
+    }
   }, [episode]);
 
   let content = <></>;

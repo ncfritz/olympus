@@ -27,7 +27,7 @@ import {
 import { DateTime } from "luxon";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import mediaApi from "../../../../../../api/mediaApi";
 import metadataApi from "../../../../../../api/metadataApi";
 import Description from "../../../../../../components/common/Description";
@@ -58,8 +58,7 @@ interface SeasonId {
 
 const TvSeriesDetailPage: React.FunctionComponent = () => {
   const router = useRouter();
-  const { id } = router.query;
-  const { seasonNumber } = router.query;
+  const { id, seasonNumber, tab } = router.query;
 
   const [activeTab, setActiveTab] = useState("t-main-general");
 
@@ -123,6 +122,14 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
       (await mediaApi.describeMediaAssetSearchConfiguration("tv_season", o))
         .data.searchConfiguration,
   });
+
+  useEffect(() => {
+    if (tab === "sr") {
+      setActiveTab("t-main-searchResults");
+    } else {
+      setActiveTab("t-main-general");
+    }
+  }, [tvSeason]);
 
   let content = (
     <Space style={{ margin: 16 }}>

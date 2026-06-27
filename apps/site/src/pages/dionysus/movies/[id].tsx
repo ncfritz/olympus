@@ -66,7 +66,10 @@ import { OLYMPUS_HOST } from "../../../utils/constants";
 
 const MovieDetailPage: React.FunctionComponent = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, tab } = router.query;
+
+  console.log(router.query);
+
 
   const [activeTab, setActiveTab] = useState("t-main-general");
   const [assetInfoOpen, setAssetInfoOpen] = useState(false);
@@ -138,7 +141,12 @@ const MovieDetailPage: React.FunctionComponent = () => {
 
   useEffect(() => {
     setAffix(false);
-    setActiveTab("t-main-general");
+
+    if (tab === "sr") {
+      setActiveTab("t-main-searchResults");
+    } else {
+      setActiveTab("t-main-general");
+    }
   }, [id]);
 
   let content = (

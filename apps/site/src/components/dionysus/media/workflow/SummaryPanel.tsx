@@ -50,7 +50,7 @@ const SummaryPanel: React.FunctionComponent<SummaryPanelProps> = ({
     >
       {content}
       <Space
-        orientation={"horizontal"}
+        orientation={"vertical"}
         style={{
           display: "flex",
           alignItems: "start",
@@ -59,11 +59,6 @@ const SummaryPanel: React.FunctionComponent<SummaryPanelProps> = ({
       >
         <Typography.Text
           strong={true}
-          style={{
-            width: 200,
-            textAlign: "right",
-            display: "inline-block",
-          }}
         >
           Download:
         </Typography.Text>
@@ -72,7 +67,7 @@ const SummaryPanel: React.FunctionComponent<SummaryPanelProps> = ({
       {workflow.steps.map((step) => {
         return (
           <Space
-            orientation={"horizontal"}
+            orientation={"vertical"}
             style={{
               display: "flex",
               alignItems: "start",
@@ -81,11 +76,6 @@ const SummaryPanel: React.FunctionComponent<SummaryPanelProps> = ({
           >
             <Typography.Text
               strong={true}
-              style={{
-                width: 200,
-                textAlign: "right",
-                display: "inline-block",
-              }}
             >
               {getStepLabel(step.type)}:
             </Typography.Text>

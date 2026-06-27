@@ -59,7 +59,7 @@ import { OLYMPUS_HOST } from "../../../../utils/constants";
 
 const TvSeriesDetailPage: React.FunctionComponent = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, tab } = router.query;
 
   const [activeTab, setActiveTab] = useState("t-main-general");
   const [affix, setAffix] = useState(false);
@@ -143,7 +143,12 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
 
   useEffect(() => {
     setAffix(false);
-    setActiveTab("t-main-general");
+
+    if (tab === "sr") {
+      setActiveTab("t-main-searchResults");
+    } else {
+      setActiveTab("t-main-general");
+    }
   }, [id]);
 
   let content = (
