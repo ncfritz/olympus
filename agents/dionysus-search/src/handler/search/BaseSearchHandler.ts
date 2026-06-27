@@ -95,7 +95,7 @@ export abstract class BaseSearchHandler {
             msg.initiatingAsset.assetType === "movie" ||
             msg.initiatingAsset.assetType === "tv_episode"
           ) {
-            await mediaApi.updateMediaAssetSearchConfiguration(
+            const updateSearchConfigurationResponse = await mediaApi.updateMediaAssetSearchConfiguration(
               msg.initiatingAsset.assetType,
               msg.initiatingAsset.mediaId,
               { status: "ok" },
@@ -112,6 +112,7 @@ export abstract class BaseSearchHandler {
               context: {
                 assetType: msg.initiatingAsset.assetType,
                 mediaId: msg.initiatingAsset.mediaId,
+                media: updateSearchConfigurationResponse.data.searchConfiguration.decoration,
               },
             });
           }
