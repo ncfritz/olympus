@@ -35,31 +35,47 @@ export const getMediaAssetSearchExecutionStatusIndicator = (
           color={"#58508d"}
           icon={<SyncOutlined spin={true} />}
           style={style}
+          variant={"solid"}
         >
           Running
         </Tag>
       );
     case "skipped":
       return (
-        <Tag color={"#ffa600"} icon={<MinusCircleOutlined />} style={style}>
-          Cancelled
+        <Tag
+          color={"#ffa600"}
+          icon={<MinusCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
+          Skipped
         </Tag>
       );
     case "success":
       return (
-        <Tag color={"#bc5090"} icon={<CheckCircleOutlined />} style={style}>
+        <Tag
+          color={"#bc5090"}
+          icon={<CheckCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
           Success
         </Tag>
       );
     case "failed":
       return (
-        <Tag color={"#ff6361"} icon={<CloseCircleOutlined />} style={style}>
+        <Tag
+          color={"#ff6361"}
+          icon={<CloseCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
           Failed
         </Tag>
       );
     default:
       return (
-        <Tag icon={<QuestionCircleOutlined />} style={style}>
+        <Tag icon={<QuestionCircleOutlined />} style={style} variant={"solid"}>
           Unknown
         </Tag>
       );
