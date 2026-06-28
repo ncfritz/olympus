@@ -99,13 +99,13 @@ const SearchConfigurationPanel: React.FunctionComponent<
         style: { width: "100%" },
         label: (
           <Space
-            direction={"vertical"}
+            orientation={"vertical"}
             style={{ width: "100%", marginBottom: 4 }}
             styles={{ item: { lineHeight: "12px" } }}
             size={0}
           >
             <Space
-              direction={"horizontal"}
+              orientation={"horizontal"}
               style={{ width: "100%", justifyContent: "space-between" }}
             >
               <Typography.Text style={{ fontSize: "12px" }}>
@@ -117,7 +117,7 @@ const SearchConfigurationPanel: React.FunctionComponent<
         ),
         children: (
           <Space
-            direction={"vertical"}
+            orientation={"vertical"}
             style={{
               width: "100%",
               marginLeft: 28,
@@ -253,7 +253,7 @@ const SearchConfigurationPanel: React.FunctionComponent<
   return (
     <Space orientation={"vertical"} style={{ width: "100%" }}>
       <Space
-        direction={"horizontal"}
+        orientation={"horizontal"}
         style={{
           width: "100%",
           justifyContent: "space-between",
