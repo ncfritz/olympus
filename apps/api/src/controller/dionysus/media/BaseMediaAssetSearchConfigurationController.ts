@@ -85,13 +85,11 @@ export abstract class BaseMediaAssetSearchConfigurationController {
         },
       );
 
-    if (
-      !(
-        verifyResponse.dionysus_media_asset_search_configuration_by_pk
-          .assetType &&
-        verifyResponse.dionysus_media_asset_search_configuration_by_pk.mediaId
-      )
-    ) {
+    if (!(
+      verifyResponse.dionysus_media_asset_search_configuration_by_pk
+        .assetType &&
+      verifyResponse.dionysus_media_asset_search_configuration_by_pk.mediaId
+    )) {
       throw new BadRequestException(
         "Source search configuration definition could not be found",
       );

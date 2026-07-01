@@ -51,7 +51,7 @@ export class CreateMediaFavoriteController {
   @ApiProduces("application/json")
   @ApiParam({
     name: "mediaType",
-    description: "The type media asset the search download is for",
+    description: "The type of media asset the search download is for",
     enum: MediaAssetSearchType,
     enumName: "MediaAssetSearchType",
   })
@@ -91,7 +91,7 @@ export class CreateMediaFavoriteController {
         mediaIdQueryRoot = "dionysus_tv_seasons_by_pk";
         break;
       default:
-        throw new BadRequestException("Invalid media type");
+        throw new BadRequestException("Invalid media assetType");
     }
 
     const findMediaIdQuery = gql`query GetMediaIdForAsset($id: numeric!) {

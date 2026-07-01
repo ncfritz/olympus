@@ -10,7 +10,7 @@ import {
   EXTERNAL_IDS,
   LANGUAGE_ASSOCIATION,
   TYPED_IMAGES,
-  VIDEOS
+  VIDEOS,
 } from "./common";
 import { GENRES } from "./genres";
 import { KEYWORDS } from "./keywords";

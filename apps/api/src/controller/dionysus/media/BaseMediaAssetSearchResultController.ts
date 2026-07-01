@@ -46,13 +46,11 @@ export abstract class BaseMediaAssetSearchResultController {
         },
       );
 
-    if (
-      !(
-        verifyResponse.dionysus_media_asset_search_result_by_pk.assetType &&
-        verifyResponse.dionysus_media_asset_search_result_by_pk.mediaId &&
-        verifyResponse.dionysus_media_asset_search_result_by_pk.id
-      )
-    ) {
+    if (!(
+      verifyResponse.dionysus_media_asset_search_result_by_pk.assetType &&
+      verifyResponse.dionysus_media_asset_search_result_by_pk.mediaId &&
+      verifyResponse.dionysus_media_asset_search_result_by_pk.id
+    )) {
       throw new BadRequestException(
         "Source search result definition could not be found",
       );

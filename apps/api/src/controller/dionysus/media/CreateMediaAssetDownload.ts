@@ -51,7 +51,7 @@ export class CreateMediaAssetDownloadController extends BaseMediaAssetSearchResu
   @ApiProduces("application/json")
   @ApiParam({
     name: "mediaType",
-    description: "The type media asset the search download is for",
+    description: "The type of media asset the search download is for",
     enum: MediaAssetSearchType,
     enumName: "MediaAssetSearchType",
   })
@@ -91,12 +91,16 @@ export class CreateMediaAssetDownloadController extends BaseMediaAssetSearchResu
         $assetType: String!
         $mediaId: numeric!
         $searchResultStatus: String!
+        $assetType: String!
+        $mediaId: numeric!
       ) {
         insert_dionysus_media_asset_download_one(
           object: {
             status: $status
             searchResultId: $searchResultId
             progress: $progress
+            assetType: $assetType
+            mediaId: $mediaId
           }
         ) {
           ${BASE_MEDIA_DOWNLOAD}

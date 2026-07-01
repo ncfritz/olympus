@@ -1,4 +1,3 @@
-
 export const BASE_EXTERNAL_ID = `type
   externalId
   createdTime

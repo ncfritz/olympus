@@ -57,7 +57,7 @@ export class CreateMediaAssetWorkflowController extends BaseMediaAssetSearchResu
   @ApiProduces("application/json")
   @ApiParam({
     name: "mediaType",
-    description: "The type media asset the search download is for",
+    description: "The type of media asset the search download is for",
     enum: MediaAssetSearchType,
     enumName: "MediaAssetSearchType",
   })

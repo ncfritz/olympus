@@ -69,7 +69,7 @@ export class UpdateMediaAssetSearchConfigurationController {
   })
   @ApiParam({
     name: "mediaType",
-    description: "The type media asset the search configuration is for",
+    description: "The type of media asset the search configuration is for",
     enum: MediaAssetSearchType,
     enumName: "MediaAssetSearchType",
   })
@@ -141,7 +141,7 @@ export class UpdateMediaAssetSearchConfigurationController {
       updateResponse.update_dionysus_media_asset_search_configuration_by_pk,
     );
 
-    // If the update property set contains the "enabled" property and the media type is a TV season or TV series
+    // If the update property set contains the "enabled" property and the media assetType is a TV season or TV series
     // cascade the enabled status to all child configurations
     if (
       Object.keys(request.searchConfiguration).includes("enabled") &&

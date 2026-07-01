@@ -67,14 +67,14 @@ export class VerifyMediaAssetTranscodeConfigurationController extends BaseMediaA
     @Res() response: Response,
   ): Promise<void> {
     await this.verifyWorkflowExists(workflowId);
-    const status = await this.verifyWorkflowStepExists(
+    const stepDetails = await this.verifyWorkflowStepExists(
       workflowId,
       workflowStepId,
       MediaAssetWorkflowStepType.VERIFY_TRANSCODE,
     );
 
     const newStatus =
-      status === MediaAssetWorkflowStepStatus.SKIPPED
+      stepDetails.status === MediaAssetWorkflowStepStatus.SKIPPED
         ? MediaAssetWorkflowStepStatus.SKIPPED
         : MediaAssetWorkflowStepStatus.SUCCESS;
 
