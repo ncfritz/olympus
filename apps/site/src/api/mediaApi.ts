@@ -11,8 +11,11 @@ import {
   describeMediaAssetSearchConfiguration,
   describeMediaAssetWorkflow,
   type FilterDefinition,
+  listMediaAssetDownloads,
+  listMediaAssetSearchConfigurations,
   listMediaAssetSearchExecutions,
   listMediaAssetSearchResults,
+  listMediaAssetTranscodes,
   listMediaAssetWorkflows,
   type MediaAssetSearchType,
   type PartialMediaAssetSearchConfiguration,
@@ -113,6 +116,57 @@ class MediaApi extends ApiBase {
       },
       validateStatus: (status) => {
         return status === 200 || status === 404;
+      },
+    });
+  }
+
+  async listMediaAssetDownloads(
+    page: number = 0,
+    pageSize: number = 30,
+    sort: SortOptions = { field: "startedTime", order: "desc" },
+    filters?: FilterDefinition,
+  ) {
+    return await listMediaAssetDownloads({
+      query: {
+        pageSize: pageSize,
+        sort: sort.order,
+        sortBy: sort.field,
+        startPage: page,
+        filters: this.encodeFilters(filters),
+      },
+    });
+  }
+
+  async listMediaAssetTranscodes(
+    page: number = 0,
+    pageSize: number = 30,
+    sort: SortOptions = { field: "startedTime", order: "desc" },
+    filters?: FilterDefinition,
+  ) {
+    return await listMediaAssetTranscodes({
+      query: {
+        pageSize: pageSize,
+        sort: sort.order,
+        sortBy: sort.field,
+        startPage: page,
+        filters: this.encodeFilters(filters),
+      },
+    });
+  }
+
+  async listMediaAssetSearchConfigurations(
+    page: number = 0,
+    pageSize: number = 30,
+    sort: SortOptions = { field: "lastExecutionTime", order: "desc" },
+    filters?: FilterDefinition,
+  ) {
+    return await listMediaAssetSearchConfigurations({
+      query: {
+        pageSize: pageSize,
+        sort: sort.order,
+        sortBy: sort.field,
+        startPage: page,
+        filters: this.encodeFilters(filters),
       },
     });
   }

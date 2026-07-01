@@ -4,6 +4,7 @@ import type {
   MediaAssetWorkflowSubStep,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Col, Progress, Row, Space, Typography } from "antd";
+import type { ProgressSize } from "antd/es/progress/progress";
 import { DateTime } from "luxon";
 import prettyMilliseconds from "pretty-ms";
 import Timestamp from "../../../data/Timestamp";
@@ -13,6 +14,14 @@ export interface StepProgressProps {
   title?: string;
   showTiming?: boolean;
   width?: number;
+  progressSize?:
+    | number
+    | [string | number, number]
+    | ProgressSize
+    | {
+        width?: number;
+        height?: number;
+      };
   step:
     | MediaAssetWorkflowStep
     | MediaAssetWorkflowSubStep
@@ -24,6 +33,7 @@ const StepProgress: React.FunctionComponent<StepProgressProps> = ({
   title,
   showTiming = true,
   width = 950,
+  progressSize = "default",
   step,
 }: StepProgressProps) => {
   let elapsedTime = "Unknown";
@@ -66,6 +76,7 @@ const StepProgress: React.FunctionComponent<StepProgressProps> = ({
         percent={step?.progress}
         status={progressStatus}
         format={(value) => `${value?.toFixed(2)}%`}
+        size={progressSize}
       />
       {showTiming && (
         <Row gutter={4}>
