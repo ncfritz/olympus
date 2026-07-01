@@ -19,7 +19,7 @@ const ContentAssetExpanderRow: React.FunctionComponent<
 > = ({ record, reloadAssets }: ContentAssetExpanderRowProps) => {
   return (
     <Space
-      direction={"vertical"}
+      orientation={"vertical"}
       size={2}
       style={{
         width: "100%",
