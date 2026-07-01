@@ -1,6 +1,9 @@
+import { MEDIA_ASSET_WORKFLOW_DECORATION } from "./common";
 import { BASE_MEDIA_DOWNLOAD } from "./mediaDownload";
 
 export const BASE_MEDIA_ASSET_WORKFLOW_STEP = `id
+  assetType
+  mediaId
   type
   status
   progress  
@@ -15,13 +18,10 @@ export const MEDIA_ASSET_WORKFLOW_STEP = `${BASE_MEDIA_ASSET_WORKFLOW_STEP}
   }
 `;
 
-export const MEDIA_ASSET_WORKFLOW_DECORATION = `mediaType
-    name
-    title
-    posterPath
-    season
-    episode
-    seriesId`;
+export const BASE_DECORATED_MEDIA_ASSET_WORKFLOW_STEP = `${BASE_MEDIA_ASSET_WORKFLOW_STEP}
+  decoration {
+    ${MEDIA_ASSET_WORKFLOW_DECORATION}
+  }`;
 
 export const BASE_MEDIA_ASSET_WORKFLOW = `id
   type

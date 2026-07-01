@@ -1,4 +1,4 @@
-import { MEDIA_ASSET_WORKFLOW_DECORATION } from "./mediaAssetWorkflow";
+import { MEDIA_ASSET_WORKFLOW_DECORATION } from "./common";
 
 export const BASE_MEDIA_FAVORITE = `createdTime`;
 
