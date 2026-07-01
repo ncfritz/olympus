@@ -1,3 +1,5 @@
+import "source-map-support/register";
+
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory, PartialGraphHost } from "@nestjs/core";
 import cookieParser from "cookie-parser";
