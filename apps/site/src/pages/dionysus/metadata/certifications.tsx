@@ -182,6 +182,16 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
           },
           {
             title: (
+              <Link href={"/dionysus"}>
+                <Space size={4}>
+                  <HomeOutlined />
+                  <span>Dionysus</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
               <Space size={4}>
                 <MetadataOutlinedIcon />
                 <span>Metadata</span>
@@ -254,7 +264,7 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
                 case "filter":
                   setCertificationsPage(0);
                   setCertificationsFilters(
-                    buildFilterDefinitionForTable(filters),
+                    buildFilterDefinitionForTable(filters)
                   );
                   break;
               }
