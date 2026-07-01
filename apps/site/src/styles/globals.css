@@ -76,6 +76,9 @@ img.electron-logo {
 .ant-table-cell {
     vertical-align: baseline;
 }
+.ant-table-cell.vcenter {
+  vertical-align: middle;
+}
 .ant-table-cell.table-cell-center-align {
   vertical-align: middle;
 }
