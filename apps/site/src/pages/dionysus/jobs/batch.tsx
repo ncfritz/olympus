@@ -1,16 +1,5 @@
 import { HomeOutlined } from "@ant-design/icons";
-import {
-  Affix,
-  Col,
-  Drawer,
-  Layout,
-  Row,
-  Space,
-  Spin,
-  Tabs,
-  type TabsProps,
-} from "antd";
-import { Content } from "antd/lib/layout/layout";
+import { Col, Drawer, Row, Space, Spin, Tabs, type TabsProps } from "antd";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/router";

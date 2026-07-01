@@ -385,7 +385,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
 
           return (
             <Space
-              direction={"horizontal"}
+              orientation={"horizontal"}
               size={16}
               style={{ paddingRight: 32 }}
             >
@@ -448,11 +448,11 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
   let actionsContent = (
     <Col span={24} style={{ justifyContent: "space-between", display: "flex" }}>
       <Space
-        direction={"horizontal"}
+        orientation={"horizontal"}
         style={{ padding: 0, marginLeft: 16, marginRight: 16 }}
       >
         <Space
-          direction={"horizontal"}
+          orientation={"horizontal"}
           size={8}
           style={{
             alignItems: "center",
@@ -473,7 +473,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
           </Button>
         </Space>
         <Space
-          direction={"horizontal"}
+          orientation={"horizontal"}
           size={8}
           style={{
             alignItems: "center",
@@ -526,7 +526,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
       </Space>
       <Space style={{ marginRight: 16 }}>
         <Space
-          direction={"horizontal"}
+          orientation={"horizontal"}
           size={8}
           style={{
             alignItems: "center",
@@ -572,7 +572,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
     actionsContent = (
       <Col span={24} style={{ padding: 16 }}>
         <Space
-          direction={"vertical"}
+          orientation={"vertical"}
           size={16}
           style={{ marginLeft: 16, marginRight: 16, width: "100%" }}
         >
@@ -711,7 +711,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
       />
       <Drawer
         title="Fetch Job Details"
-        width={550}
+        size={550}
         placement="right"
         onClose={() => {
           closeDrawer();

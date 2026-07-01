@@ -13,7 +13,6 @@ const CATEGORIES = ["new", "duplicate", "skipped"];
 const SearchExecutionsStatusChart = ({
   stats,
 }: SearchExecutionsStatusChartProps) => {
-  console.log(stats);
   return (
     <HighchartsReact
       highcharts={Highcharts}
@@ -77,6 +76,11 @@ const SearchExecutionsStatusChart = ({
             name: "Skipped",
             data: stats.skipped,
             color: "#ffa600",
+          },
+          {
+            name: "Failed",
+            data: stats.failed,
+            color: "#ff6361",
           },
           {
             name: "Runtime",
