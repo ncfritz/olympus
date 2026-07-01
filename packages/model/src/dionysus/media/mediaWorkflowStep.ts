@@ -1,6 +1,9 @@
 import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
+import { PaginatedResults } from "../../common";
+import { MediaAssetWorkflowDecoration } from "./mediaWorkflow";
+import { MediaAssetSearchType } from "./searchConfiguration";
 
 export enum MediaAssetWorkflowStepType {
   EXTRACT_ORIGINAL_METADATA = "extract_original_metadata",
@@ -44,6 +47,23 @@ class InternalBaseMediaAssetWorkflowStep {
     description: "The unique identified for the workflow step",
   })
   id: string;
+
+  @ApiProperty({
+    enum: () => MediaAssetSearchType,
+    enumName: "MediaAssetSearchType",
+    required: true,
+    description: "The type of media asset",
+  })
+  assetType: MediaAssetSearchType;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "The primary ID of the media asset associated with the download.  This should be the canonical ID of the " +
+      "media source and should not include the season or episode IDs if requesting a TV Season or TV Episode.",
+  })
+  mediaId: number;
 
   @ApiProperty({
     enum: () => MediaAssetWorkflowStepStatus,
@@ -157,6 +177,15 @@ export class PartialMediaAssetWorkflowStep extends PartialType(
   MutableMediaAssetWorkflowStep,
 ) {}
 
+export class DecoratedMediaAssetWorkflowStep extends MediaAssetWorkflowStep {
+  @ApiProperty({
+    type: () => MediaAssetWorkflowDecoration,
+    required: true,
+    description: "Decoration details used for list items display",
+  })
+  decoration: MediaAssetWorkflowDecoration;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -267,4 +296,13 @@ export class ListMediaAssetWorkflowStepsResponse {
     description: "A list of workflow steps associated with the workflow",
   })
   steps: MediaAssetWorkflowStep[];
+}
+
+export class ListMediaAssetTranscodesResponse extends PaginatedResults {
+  @ApiProperty({
+    type: () => DecoratedMediaAssetWorkflowStep,
+    isArray: true,
+    description: "A list of workflow steps associated with a transcode task",
+  })
+  steps: DecoratedMediaAssetWorkflowStep[];
 }

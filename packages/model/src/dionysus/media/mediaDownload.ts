@@ -2,6 +2,8 @@ import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
 import { PaginatedResults } from "../../common";
+import { MediaAssetWorkflowDecoration } from "./mediaWorkflow";
+import { MediaAssetSearchType } from "./searchConfiguration";
 import { SearchResultStatus } from "./searchResult";
 
 export enum MediaDownloadStatus {
@@ -19,6 +21,23 @@ export class MediaAssetDownload {
     description: "The GUID of the download.",
   })
   id: string;
+
+  @ApiProperty({
+    enum: () => MediaAssetSearchType,
+    enumName: "MediaAssetSearchType",
+    required: true,
+    description: "The type of media asset",
+  })
+  type: MediaAssetSearchType;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "The primary ID of the media asset associated with the download.  This should be the canonical ID of the " +
+      "media source and should not include the season or episode IDs if requesting a TV Season or TV Episode.",
+  })
+  mediaId: number;
 
   @ApiProperty({
     type: Number,
@@ -119,6 +138,15 @@ export class MediaAssetDownloadStatusUpdate {
   status: MediaDownloadStatus;
 }
 
+export class DecoratedMediaAssetDownload extends MediaAssetDownload {
+  @ApiProperty({
+    type: () => MediaAssetWorkflowDecoration,
+    required: true,
+    description: "Decoration details used for list items display",
+  })
+  decoration: MediaAssetWorkflowDecoration;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -182,10 +210,10 @@ export class BulkUpdateMediaAssetDownloadsResponse {
 
 export class ListMediaAssetDownloadsResponse extends PaginatedResults {
   @ApiProperty({
-    type: () => MediaAssetDownload,
+    type: () => DecoratedMediaAssetDownload,
     isArray: true,
     required: true,
     description: "A download that has been created, updated, or queried",
   })
-  downloads: MediaAssetDownload[];
+  downloads: DecoratedMediaAssetDownload[];
 }

@@ -3,6 +3,7 @@ import { Transform } from "class-transformer";
 import { Moment } from "moment/moment";
 import { PaginatedResults } from "../../common";
 import { MediaAssetWorkflowDecoration } from "./mediaWorkflow";
+import { MediaAssetSearchExecution } from "./searchExecution";
 
 export enum MediaAssetSearchType {
   MOVIE = "movie",
@@ -150,6 +151,16 @@ export class PartialMediaAssetSearchConfiguration extends PartialType(
   ]),
 ) {}
 
+export class MediaAssetSearchConfigurationListItem extends DecoratedMediaAssetSearchConfiguration {
+  @ApiProperty({
+    type: () => MediaAssetSearchExecution,
+    required: true,
+    isArray: true,
+    description: "The last 30 search executions for the search configuration",
+  })
+  executions: MediaAssetSearchExecution[];
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -197,10 +208,10 @@ export class SingleMediaAssetSearchConfigurationResponse {
 
 export class ListMediaAssetSearchConfigurationsResponse extends PaginatedResults {
   @ApiProperty({
-    type: () => MediaAssetSearchConfiguration,
+    type: () => MediaAssetSearchConfigurationListItem,
     isArray: true,
     required: true,
     description: "A list of search configurations",
   })
-  searchConfigurations: MediaAssetSearchConfiguration[];
+  searchConfigurations: MediaAssetSearchConfigurationListItem[];
 }
