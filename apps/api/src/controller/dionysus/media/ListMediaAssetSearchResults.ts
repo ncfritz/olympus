@@ -53,7 +53,7 @@ export class ListMediaAssetSearchResultsController {
   @ApiProduces("application/json")
   @ApiParam({
     name: "mediaType",
-    description: "The type media asset the search configuration is for",
+    description: "The type of media asset the search configuration is for",
     enum: MediaAssetSearchType,
     enumName: "MediaAssetSearchType",
   })

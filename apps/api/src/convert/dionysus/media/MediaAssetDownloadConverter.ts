@@ -1,6 +1,13 @@
-import { MediaAssetDownload } from "@ncfritz/olympus-model";
+import {
+  DecoratedMediaAssetDownload,
+  MediaAssetDownload,
+} from "@ncfritz/olympus-model";
 import moment from "moment";
-import { GraphQlMediaAssetDownload } from "../../../types/dionysus/media/mediaDownload";
+import {
+  GraphQlDecoratedMediaAssetDownload,
+  GraphQlMediaAssetDownload,
+} from "../../../types/dionysus/media/mediaDownload";
+import { toMediaWorkflowDecorationDomainObject } from "./MediaAssetWorkflowConverter";
 
 export const toDomainObject = (
   input: GraphQlMediaAssetDownload,
@@ -8,6 +15,8 @@ export const toDomainObject = (
   return {
     id: input.id,
     nzbId: input.nzbId,
+    type: input.assetType,
+    mediaId: input.mediaId,
     workflowId: input.workflowId,
     status: input.status,
     progress: input.progress,
@@ -15,5 +24,14 @@ export const toDomainObject = (
     finishedTime: input.finishedTime ? moment(input.finishedTime) : undefined,
     createdTime: moment(input.createdTime),
     lastUpdatedTime: moment(input.lastUpdatedTime),
+  };
+};
+
+export const toDecoratedDomainObject = (
+  input: GraphQlDecoratedMediaAssetDownload,
+): DecoratedMediaAssetDownload => {
+  return {
+    ...toDomainObject(input),
+    decoration: toMediaWorkflowDecorationDomainObject(input.decoration),
   };
 };

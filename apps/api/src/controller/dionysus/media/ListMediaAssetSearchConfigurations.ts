@@ -1,15 +1,15 @@
 import {
   ListMediaAssetSearchConfigurationsResponse,
-  MediaAssetSearchConfiguration,
+  MediaAssetSearchConfigurationListItem,
   SortDirection,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
-import { BASE_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
-import { GraphQlMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
+import { toDomainObjectListItem } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
+import { BASE_SEARCH_CONFIGURATION_LIST_ITEM } from "../../../query/dionysus/media/searchConfigutation";
+import { type GraphQlDecoratedMediaAssetSearchConfigurationListItem } from "../../../types/dionysus/media/searchConfiguration";
 import {
   ApiFilterParams,
   ApiPaginationParams,
@@ -22,7 +22,7 @@ import {
 } from "../../../utils/filterUtil";
 
 export type GraphQlListMediaAssetSearchConfigurationResponse = {
-  dionysus_media_asset_search_configuration: GraphQlMediaAssetSearchConfiguration[];
+  dionysus_media_asset_search_configuration: GraphQlDecoratedMediaAssetSearchConfigurationListItem[];
   dionysus_media_asset_search_configuration_aggregate: {
     aggregate: {
       count: number;
@@ -54,7 +54,7 @@ export class ListMediaAssetSearchConfigurationsController {
     @Query("pageSize") pageSize = 24,
     @Query("startPage") startPage = 0,
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
-    @Query("sortBy") sortField = "postedTime",
+    @Query("sortBy") sortField = "lastExecutionTime",
     @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
@@ -73,7 +73,7 @@ export class ListMediaAssetSearchConfigurationsController {
           paginationExpression,
           whereExpression,
         ].join(", ")}) {
-          ${BASE_SEARCH_CONFIGURATION}
+          ${BASE_SEARCH_CONFIGURATION_LIST_ITEM}
         }
         dionysus_media_asset_search_configuration_aggregate${
           whereExpression ? `(${whereExpression})` : ""
@@ -89,11 +89,11 @@ export class ListMediaAssetSearchConfigurationsController {
       await this.graphQLClient.request<GraphQlListMediaAssetSearchConfigurationResponse>(
         fetchRequest,
       );
-    const fetchedConfigurations: MediaAssetSearchConfiguration[] = [];
+    const fetchedConfigurations: MediaAssetSearchConfigurationListItem[] = [];
 
     fetchResponse.dionysus_media_asset_search_configuration.forEach(
       (configuration) => {
-        fetchedConfigurations.push(toDomainObject(configuration));
+        fetchedConfigurations.push(toDomainObjectListItem(configuration));
       },
     );
 

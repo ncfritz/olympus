@@ -17,6 +17,7 @@ import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowStepConverter";
+import { BASE_MEDIA_ASSET_WORKFLOW_STEP } from "../../../query/dionysus/media/mediaAssetWorkflow";
 import { GraphQlMediaAssetWorkflowStep } from "../../../types/dionysus/media/mediaAssetWorkflow";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { BaseMediaAssetWorkflowController } from "./BaseMediaAssetWorkflowController";
@@ -66,11 +67,13 @@ export class CreateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
     @Body() request: CreateMediaAssetWorkflowStepRequest,
     @Res() response: Response,
   ): Promise<void> {
-    await this.verifyWorkflowExists(workflowId);
+    const workflowDetails = await this.verifyWorkflowExists(workflowId);
 
     const insertRequest = gql`
       mutation CreateMediaAssetWorkflowStep(
         $workflowId: uuid!
+        $assetType: string!
+        $mediaId: numeric!
         $workflowStepType: String!
         $workflowStepStatus: String!
         $progress: numeric!
@@ -79,20 +82,15 @@ export class CreateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
         insert_dionysus_media_asset_workflow_step_one(
           object: {
             workflowId: $workflowId
+            assetType: $assetType
+            mediaId: $mediaId
             type: $workflowStepType
             status: $workflowStepStatus
             progress: $progress
             startedTime: $startedTime
           }
         ) {
-          id
-          type
-          status
-          progress
-          startedTime
-          finishedTime
-          createdTime
-          lastUpdatedTime
+          ${BASE_MEDIA_ASSET_WORKFLOW_STEP}
         }
       }
     `;
@@ -102,6 +100,8 @@ export class CreateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
         insertRequest,
         {
           workflowId: workflowId,
+          assetType: workflowDetails.assetType,
+          mediaId: workflowDetails.mediaId,
           workflowStepType: request.step.type,
           workflowStepStatus: MediaAssetWorkflowStepStatus.RUNNING,
           startedTime: moment().utc().toISOString(),

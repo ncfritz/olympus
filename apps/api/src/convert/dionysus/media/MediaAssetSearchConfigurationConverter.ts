@@ -1,13 +1,17 @@
 import {
   DecoratedMediaAssetSearchConfiguration,
   MediaAssetSearchConfiguration,
+  MediaAssetSearchConfigurationListItem,
+  MediaAssetSearchExecution,
 } from "@ncfritz/olympus-model";
 import moment from "moment";
 import {
   type GraphQlDecoratedMediaAssetSearchConfiguration,
+  type GraphQlDecoratedMediaAssetSearchConfigurationListItem,
   GraphQlMediaAssetSearchConfiguration,
 } from "../../../types/dionysus/media/searchConfiguration";
 import { toMediaWorkflowDecorationDomainObject } from "./MediaAssetWorkflowConverter";
+import { toDomainObject as toSearchExecutionDomainObject } from "./MediaAssetSearchExecutionConverter";
 
 export const toDomainObject = (
   input: GraphQlMediaAssetSearchConfiguration,
@@ -37,5 +41,22 @@ export const toDecoratedDomainObject = (
   return {
     ...toDomainObject(input),
     decoration: toMediaWorkflowDecorationDomainObject(input.decoration),
+  };
+};
+
+export const toDomainObjectListItem = (
+  input: GraphQlDecoratedMediaAssetSearchConfigurationListItem,
+): MediaAssetSearchConfigurationListItem => {
+  const searchExecutions: MediaAssetSearchExecution[] = [];
+
+  if (input.searchExecutions && input.searchExecutions.length > 0) {
+    input.searchExecutions.forEach((step) => {
+      searchExecutions.push(toSearchExecutionDomainObject(step));
+    });
+  }
+
+  return {
+    ...toDecoratedDomainObject(input),
+    executions: searchExecutions,
   };
 };

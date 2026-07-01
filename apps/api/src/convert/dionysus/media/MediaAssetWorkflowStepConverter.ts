@@ -1,19 +1,24 @@
 import {
+  DecoratedMediaAssetWorkflowStep,
   MediaAssetWorkflowStep,
   MediaAssetWorkflowSubStep,
 } from "@ncfritz/olympus-model";
 import moment from "moment";
 import {
+  GraphQlDecoratedMediaAssetWorkflowStep,
   GraphQlMediaAssetWorkflowGenericStep,
   GraphQlMediaAssetWorkflowStep,
   GraphQlMediaAssetWorkflowSubStep,
 } from "../../../types/dionysus/media/mediaAssetWorkflow";
+import { toMediaWorkflowDecorationDomainObject } from "./MediaAssetWorkflowConverter";
 
 export const toBaseDomainObject = (
   input: GraphQlMediaAssetWorkflowGenericStep,
 ): Omit<MediaAssetWorkflowSubStep, "type"> => {
   return {
     id: input.id,
+    assetType: input.assetType,
+    mediaId: input.mediaId,
     status: input.status,
     progress: input.progress,
     startedTime: input.startedTime ? moment(input.startedTime) : undefined,
@@ -47,5 +52,14 @@ export const toDomainObject = (
     ...toBaseDomainObject(input),
     type: input.type,
     subSteps: subSteps,
+  };
+};
+
+export const toDecoratedDomainObject = (
+  input: GraphQlDecoratedMediaAssetWorkflowStep,
+): DecoratedMediaAssetWorkflowStep => {
+  return {
+    ...toDomainObject(input),
+    decoration: toMediaWorkflowDecorationDomainObject(input.decoration),
   };
 };

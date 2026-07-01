@@ -1,8 +1,7 @@
 import {
+  MediaAssetSearchType,
   MediaAssetWorkflowStatus,
-  MediaAssetWorkflowStepStatus,
   MediaAssetWorkflowStepType,
-  MediaAssetWorkflowSubStepType,
   PartialMediaAssetWorkflowStep,
 } from "@ncfritz/olympus-model";
 import { BadRequestException } from "@nestjs/common";
@@ -11,18 +10,26 @@ import moment from "moment";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowStepConverter";
 import { GraphQlMediaAssetWorkflowStep } from "../../../types/dionysus/media/mediaAssetWorkflow";
 
+export type MediaWorkflowDetails = {
+  id: string;
+  assetType: MediaAssetSearchType;
+  mediaId: number;
+};
+
+export type MediaWorkflowStepDetails = {
+  id: string;
+  type: MediaAssetWorkflowStepType;
+  status: string;
+  assetType: MediaAssetSearchType;
+  mediaId: number;
+};
+
 type GraphQlGetParentMediaAssetWorkflowIdResponse = {
-  dionysus_media_asset_workflow_by_pk: {
-    id: string;
-  };
+  dionysus_media_asset_workflow_by_pk: MediaWorkflowDetails;
 };
 
 type GraphQlGetParentMediaAssetWorkflowStepIdResponse = {
-  dionysus_media_asset_workflow_step_by_pk: {
-    id: string;
-    type: MediaAssetWorkflowStepType | MediaAssetWorkflowSubStepType;
-    status: MediaAssetWorkflowStepStatus;
-  };
+  dionysus_media_asset_workflow_step_by_pk: MediaWorkflowStepDetails;
 };
 
 type GraphQlUpdateMediaAssetWorkflowStepResponse = {
@@ -35,11 +42,15 @@ type GraphQlUpdateMediaAssetWorkflowStepResponse = {
 export class BaseMediaAssetWorkflowController {
   constructor(protected readonly graphQLClient: GraphQLClient) {}
 
-  protected async verifyWorkflowExists(workflowId: string) {
+  protected async verifyWorkflowExists(
+    workflowId: string,
+  ): Promise<MediaWorkflowDetails> {
     const checkParentWorkflowRequest = gql`
       query GetTargetWorkflow($id: uuid!) {
         dionysus_media_asset_workflow_by_pk(id: $id) {
           id
+          type
+          mediaId
         }
       }
     `;
@@ -53,13 +64,22 @@ export class BaseMediaAssetWorkflowController {
     if (!checkParentWorkflowResponse.dionysus_media_asset_workflow_by_pk?.id) {
       throw new BadRequestException();
     }
+
+    return {
+      id: checkParentWorkflowResponse.dionysus_media_asset_workflow_by_pk.id,
+      assetType:
+        checkParentWorkflowResponse.dionysus_media_asset_workflow_by_pk
+          .assetType,
+      mediaId:
+        checkParentWorkflowResponse.dionysus_media_asset_workflow_by_pk.mediaId,
+    };
   }
 
   protected async verifyWorkflowStepExists(
     workflowId: string,
     workflowStepId: string,
     requiredStepType?: MediaAssetWorkflowStepType,
-  ) {
+  ): Promise<MediaWorkflowStepDetails> {
     const checkWorkflowStepRequest = gql`
       query GetTargetWorkflowStep($id: uuid!, $workflowId: uuid!) {
         dionysus_media_asset_workflow_step_by_pk(
@@ -69,6 +89,8 @@ export class BaseMediaAssetWorkflowController {
           id
           type
           status
+          assetType
+          mediaId
         }
       }
     `;
@@ -93,8 +115,20 @@ export class BaseMediaAssetWorkflowController {
       throw new BadRequestException();
     }
 
-    return checkWorkflowStepResponse.dionysus_media_asset_workflow_step_by_pk
-      .status;
+    return {
+      id: checkWorkflowStepResponse.dionysus_media_asset_workflow_step_by_pk.id,
+      type: checkWorkflowStepResponse.dionysus_media_asset_workflow_step_by_pk
+        .type,
+      status:
+        checkWorkflowStepResponse.dionysus_media_asset_workflow_step_by_pk
+          .status,
+      assetType:
+        checkWorkflowStepResponse.dionysus_media_asset_workflow_step_by_pk
+          .assetType,
+      mediaId:
+        checkWorkflowStepResponse.dionysus_media_asset_workflow_step_by_pk
+          .mediaId,
+    };
   }
 
   protected async updateWorkflowStep(

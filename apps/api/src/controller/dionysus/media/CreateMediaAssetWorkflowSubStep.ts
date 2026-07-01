@@ -74,11 +74,16 @@ export class CreateMediaAssetWorkflowSubStepController extends BaseMediaAssetWor
     @Body() request: CreateMediaAssetWorkflowSubStepRequest,
     @Res() response: Response,
   ): Promise<void> {
-    await this.verifyWorkflowStepExists(workflowId, workflowStepId);
+    const stepDetails = await this.verifyWorkflowStepExists(
+      workflowId,
+      workflowStepId,
+    );
 
     const insertRequest = gql`
       mutation CreateMediaAssetWorkflowStep(
         $workflowId: uuid!
+        $assetType: string!
+        $mediaId: numeric!
         $workflowStepId: uuid!
         $workflowStepType: String!
         $workflowStepStatus: String!
@@ -88,6 +93,8 @@ export class CreateMediaAssetWorkflowSubStepController extends BaseMediaAssetWor
         insert_dionysus_media_asset_workflow_step_one(
           object: {
             workflowId: $workflowId
+            assetType: $assetType
+            mediaId: $mediaId
             type: $workflowStepType
             status: $workflowStepStatus
             progress: $progress
@@ -105,6 +112,8 @@ export class CreateMediaAssetWorkflowSubStepController extends BaseMediaAssetWor
         insertRequest,
         {
           workflowId: workflowId,
+          assetType: stepDetails.assetType,
+          mediaId: stepDetails.mediaId,
           workflowStepId: workflowStepId,
           workflowStepType: request.step.type,
           workflowStepStatus: MediaAssetWorkflowStepStatus.RUNNING,
