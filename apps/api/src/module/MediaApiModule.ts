@@ -17,9 +17,11 @@ import { DescribeMediaAssetSearchResultController } from "../controller/dionysus
 import { DescribeMediaAssetWorkflowController } from "../controller/dionysus/media/DescribeMediaAssetWorkflow";
 import { DescribeMediaAssetWorkflowStepController } from "../controller/dionysus/media/DescribeMediaAssetWorkflowStep";
 import { GetMediaAssetSearchConfigurationsRunningCountController } from "../controller/dionysus/media/GetMediaAssetSearchConfigurationsRunningCount";
+import { ListMediaAssetDownloadsController } from "../controller/dionysus/media/ListMediaAssetDownloads";
 import { ListMediaAssetSearchConfigurationsController } from "../controller/dionysus/media/ListMediaAssetSearchConfigurations";
 import { ListMediaAssetSearchExecutionsController } from "../controller/dionysus/media/ListMediaAssetSearchExecutions";
 import { ListMediaAssetSearchResultsController } from "../controller/dionysus/media/ListMediaAssetSearchResults";
+import { ListMediaAssetTranscodesController } from "../controller/dionysus/media/ListMediaAssetTranscodes";
 import { ListMediaAssetWorkflowsController } from "../controller/dionysus/media/ListMediaAssetWorkflows";
 import { TriggerMediaAssetSearchController } from "../controller/dionysus/media/TriggerMediaAssetSearch";
 import { UpdateMediaAssetDownloadController } from "../controller/dionysus/media/UpdateMediaAssetDownload";
@@ -57,9 +59,11 @@ import { RabbitModule } from "./RabbitModule";
     DescribeMediaAssetSearchResultController,
     DescribeMediaAssetWorkflowController,
     DescribeMediaAssetWorkflowStepController,
+    ListMediaAssetDownloadsController,
     ListMediaAssetSearchConfigurationsController,
     ListMediaAssetSearchExecutionsController,
     ListMediaAssetSearchResultsController,
+    ListMediaAssetTranscodesController,
     ListMediaAssetWorkflowsController,
     TriggerMediaAssetSearchController,
     UpdateMediaAssetDownloadController,
