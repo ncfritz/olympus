@@ -1,6 +1,8 @@
+import type { SortDirection } from "@ncfritz/olympus-sdk/olympus";
+
 export interface SortOptions {
   field: string;
-  order: "asc" | "desc";
+  order: SortDirection;
 }
 
 export type PaginatedParams = {
