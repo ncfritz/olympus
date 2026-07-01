@@ -24,6 +24,8 @@ export type GraphQlMediaAssetWorkflow = {
 
 export type GraphQlMediaAssetWorkflowGenericStep = {
   id: string;
+  assetType: MediaAssetSearchType;
+  mediaId: number;
   status: MediaAssetWorkflowStepStatus;
   progress: number;
   startedTime: string;
@@ -51,6 +53,11 @@ export type GraphQlMediaAssetWorkflowDecoration = {
   seriesId?: number;
   posterPath?: string;
 };
+
+export type GraphQlDecoratedMediaAssetWorkflowStep =
+  GraphQlMediaAssetWorkflowStep & {
+    decoration: GraphQlMediaAssetWorkflowDecoration;
+  };
 
 export type GraphQlMediaAssetWorkflowListItem = GraphQlMediaAssetWorkflow & {
   decoration: GraphQlMediaAssetWorkflowDecoration;

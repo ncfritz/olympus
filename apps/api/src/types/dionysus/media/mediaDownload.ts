@@ -1,8 +1,14 @@
-import { MediaDownloadStatus } from "@ncfritz/olympus-model";
+import {
+  MediaAssetSearchType,
+  MediaDownloadStatus,
+} from "@ncfritz/olympus-model";
+import type { GraphQlMediaAssetWorkflowDecoration } from "./mediaAssetWorkflow";
 
 export type GraphQlMediaAssetDownload = {
   id: string;
   nzbId?: number;
+  assetType: MediaAssetSearchType;
+  mediaId: number;
   workflowId: string;
   status: MediaDownloadStatus;
   progress: number;
@@ -10,4 +16,8 @@ export type GraphQlMediaAssetDownload = {
   finishedTime: string;
   createdTime: string;
   lastUpdatedTime: string;
+};
+
+export type GraphQlDecoratedMediaAssetDownload = GraphQlMediaAssetDownload & {
+  decoration: GraphQlMediaAssetWorkflowDecoration;
 };
