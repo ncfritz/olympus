@@ -9,14 +9,86 @@ import {
 } from "@ant-design/icons";
 import type {
   MediaAssetDownload,
-  MediaAssetWorkflowStep,
+  MediaAssetSearchConfigurationStatus,
+  MediaAssetWorkflowStep, MediaAssetWorkflowStepStatus,
   MediaAssetWorkflowStepType,
-  SearchExecutionStatus,
+  MediaDownloadStatus,
+  SearchExecutionStatus
 } from "@ncfritz/olympus-sdk/dionysus";
 import type { StepItem } from "@rc-component/steps/lib/Steps";
 import { Tag } from "antd";
 import React, { type CSSProperties } from "react";
 import SearchResultTag from "./SearchResultTag";
+
+export const getMediaAssetSearchConfigurationStatusIndicator = (
+  status: MediaAssetSearchConfigurationStatus,
+  fullWidth = false,
+) => {
+  const style: CSSProperties = { minWidth: 120 };
+
+  if (fullWidth) {
+    style.width = "calc(100% - 8px)";
+  }
+
+  switch (status) {
+    case "running":
+      return (
+        <Tag
+          color={"#58508d"}
+          icon={<SyncOutlined spin={true} />}
+          style={style}
+          variant={"solid"}
+        >
+          Running
+        </Tag>
+      );
+    case "error":
+      return (
+        <Tag
+          color={"#ffa600"}
+          icon={<MinusCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
+          Skipped
+        </Tag>
+      );
+    case "ok":
+      return (
+        <Tag
+          color={"#bc5090"}
+          icon={<CheckCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
+          Success
+        </Tag>
+      );
+    default:
+      return (
+        <Tag icon={<QuestionCircleOutlined />} style={style} variant={"solid"}>
+          Unknown
+        </Tag>
+      );
+  }
+};
+
+export const getMediaAssetSearchExecutionStatusColor = (
+  status: SearchExecutionStatus | "none",
+) => {
+  switch (status) {
+    case "running":
+      return "#58508d";
+    case "skipped":
+      return "#ffa600";
+    case "success":
+      return "#bc5090";
+    case "failed":
+      return "#ff6361";
+    default:
+      return "#eeeeee";
+  }
+};
 
 export const getMediaAssetSearchExecutionStatusIndicator = (
   status: SearchExecutionStatus,
@@ -268,6 +340,81 @@ export const getDownloadStepProperties = (
   };
 };
 
+export const getMediaAssetDownloadStatusIndicator = (
+  status: MediaDownloadStatus,
+  fullWidth = false,
+) => {
+  const style: CSSProperties = { minWidth: 120 };
+
+  if (fullWidth) {
+    style.width = "calc(100% - 8px)";
+  }
+
+  switch (status) {
+    case "downloading":
+      return (
+        <Tag
+          color={"#554d87"}
+          icon={<SyncOutlined spin={true} />}
+          style={style}
+          variant={"solid"}
+        >
+          Downloading
+        </Tag>
+      );
+    case "cancelled":
+      return (
+        <Tag
+          color={"#f39f01"}
+          icon={<MinusCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
+          Cancelled
+        </Tag>
+      );
+    case "failed":
+      return (
+        <Tag
+          color={"#f35f5e"}
+          icon={<MinusCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
+          Failed
+        </Tag>
+      );
+    case "success":
+      return (
+        <Tag
+          color={"#b44d8a"}
+          icon={<CheckCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
+          Success
+        </Tag>
+      );
+    case "pending":
+      return (
+        <Tag
+          color={"#013d59"}
+          icon={<HourglassOutlined />}
+          style={style}
+          variant={"solid"}
+        >
+          Pending
+        </Tag>
+      );
+    default:
+      return (
+        <Tag icon={<QuestionCircleOutlined />} style={style} variant={"solid"}>
+          Unknown
+        </Tag>
+      );
+  }
+};
+
 export const getStepProperties = (
   steps: MediaAssetWorkflowStep[],
   stepType: MediaAssetWorkflowStepType,
@@ -310,6 +457,81 @@ export const getStepProperties = (
     status: status,
     className: includeClassName ? className : undefined,
   };
+};
+
+export const getStepStatusIndicator = (
+  status: MediaAssetWorkflowStepStatus,
+  fullWidth = false,
+) => {
+  const style: CSSProperties = { minWidth: 120 };
+
+  if (fullWidth) {
+    style.width = "calc(100% - 8px)";
+  }
+
+  switch (status) {
+    case "running":
+      return (
+        <Tag
+          color={"#554d87"}
+          icon={<SyncOutlined spin={true} />}
+          style={style}
+          variant={"solid"}
+        >
+          Running
+        </Tag>
+      );
+    case "skipped":
+      return (
+        <Tag
+          color={"#f39f01"}
+          icon={<MinusCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
+          Skipped
+        </Tag>
+      );
+    case "failed":
+      return (
+        <Tag
+          color={"#f35f5e"}
+          icon={<MinusCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
+          Failed
+        </Tag>
+      );
+    case "success":
+      return (
+        <Tag
+          color={"#b44d8a"}
+          icon={<CheckCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
+          Success
+        </Tag>
+      );
+    case "pending":
+      return (
+        <Tag
+          color={"#013d59"}
+          icon={<CheckCircleOutlined />}
+          style={style}
+          variant={"solid"}
+        >
+          Pending
+        </Tag>
+      );
+    default:
+      return (
+        <Tag icon={<QuestionCircleOutlined />} style={style} variant={"solid"}>
+          Unknown
+        </Tag>
+      );
+  }
 };
 
 export const getStepLabel = (stepType: MediaAssetWorkflowStepType) => {
