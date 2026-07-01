@@ -1,13 +1,17 @@
-import { FilterDefinition, FilterType } from "@ncfritz/olympus-model";
+import {
+  FilterDefinition,
+  FilterType,
+  SortDirection,
+} from "@ncfritz/olympus-model";
 
 export interface PaginationParams {
   pageSize: number;
   startPage: number;
   sortField: string;
-  sortDirection: "asc" | "desc";
+  sortDirection: SortDirection;
   fallbackSort?: {
     sortField: string;
-    sortDirection: "asc" | "desc";
+    sortDirection: SortDirection;
   };
 }
 
