@@ -109,6 +109,8 @@ export class CreateMediaAssetWorkflowController extends BaseMediaAssetSearchResu
             searchResultId: $searchResultId
             progress: $downloadProgress
             workflowId: $workflowId
+            assetType: $assetType
+            mediaId: $mediaId
           }
         ) {
           status

@@ -101,8 +101,6 @@ export class CreateMediaAssetDownloadController extends BaseMediaAssetSearchResu
             progress: $progress
             assetType: $assetType
             mediaId: $mediaId
-            assetType: $assetType
-            mediaId: $mediaId
           }
         ) {
           ${BASE_MEDIA_DOWNLOAD}
