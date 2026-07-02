@@ -59,6 +59,10 @@ export class DownloadUpdateHandler {
   })
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async handle(msg: any, amqMsg: ConsumeMessage) {
+    logger.info(
+      `DownloadUpdateHandler: Starting update for nzbId: ${msg.nzbId}`,
+    );
+
     const ts = msg.ts;
     const nzbId = parseInt(msg.nzbId);
     const stagingDir = process.env.STAGING_DIRECTORY!;
@@ -68,6 +72,8 @@ export class DownloadUpdateHandler {
         const filePath = `${process.env.EVENTS_DIRECTORY}/${ts}.json`;
         fs.writeFileSync(filePath, JSON.stringify(msg, null, 2));
       }
+
+      logger.debug(`Got message with type "${msg.type}" and event "${msg.event}"`);
 
       if (msg.type === "queue") {
         if (msg.event === "NZB_NAMED" || msg.event === "NZB_ADDED") {
@@ -161,6 +167,8 @@ export class DownloadUpdateHandler {
             `${msg.destDirectory}/${mediaFilename}`,
             `${stagingDir}/${download.workflowId}/original.${originalExtension}`,
           );
+
+          logger.debug(`Publishing "mdia.trigger" message for workflow ${download.workflowId}`);
 
           await this.amqpConnection.publish(
             "media.trigger",

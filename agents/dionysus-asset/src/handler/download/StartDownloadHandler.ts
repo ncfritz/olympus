@@ -26,6 +26,10 @@ export class StartDownloadHandler {
   })
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async handle(msg: StartDownloadMessage, amqMsg: ConsumeMessage) {
+    logger.info(
+      `StartDownloadHandler: Starting download for nzbId: ${msg.nzbId}`,
+    );
+
     const nzbGeekApiKey = this.configService.get("NZBGEEK_API_KEY");
     const nzbGeekUrl = `https://api.nzbgeek.info/api?t=get&id=${msg.nzbId}&apikey=${nzbGeekApiKey}`;
 
@@ -38,6 +42,9 @@ export class StartDownloadHandler {
     });
     response.data.pipe(writer);
     await finished(writer);
+
+    logger.debug(`NZB file downloaded to ${nzbFilename}`);
+    logger.debug("Parsing NZB...");
 
     const rawNzb = fs.readFileSync(nzbFilename, "utf8");
     const nzb = parse(rawNzb);
@@ -109,6 +116,10 @@ export class StartDownloadHandler {
       },
     );
 
+    logger.debug(
+      `Got ${rpcResponse.status} HTTP response, NZBGet result (${rpcResponse.data.result}) from NZBGet: ${nzbGetUrl}`
+    );
+
     if (rpcResponse.data.result >= 0) {
       await mediaApi.updateMediaAssetDownload(
         msg.mediaType,
@@ -121,9 +132,13 @@ export class StartDownloadHandler {
       );
 
       if (!fs.existsSync(`${stagingDir}/${msg.workflowId}`)) {
+        logger.debug(`Creating workflow directory: ${stagingDir}/${msg.workflowId}`);
         fs.mkdirSync(`${stagingDir}/${msg.workflowId}`, { recursive: true });
       }
 
+      logger.info(
+        `Writing NZB metadata to ${stagingDir}/${msg.workflowId}/nzbMeta.json`
+      );
       fs.writeFileSync(
         `${stagingDir}/${msg.workflowId}/nzbMeta.json`,
         JSON.stringify(metadata),
