@@ -45,6 +45,10 @@ const HANDLER_MAP = {
 const enabledHandlers = Object.entries(HANDLER_MAP)
   .filter(([key, handler]) => {
     if (process.env[key] !== "true") {
+      logger.info(
+        `Handler ${handler.name} is enabled per environment variable ${key}`,
+      );
+
       return true;
     }
 

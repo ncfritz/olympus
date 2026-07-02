@@ -44,8 +44,10 @@ export class MediaWorkflow {
   }
 
   async init() {
+    logger.info(`Running workflow step "init()`);
+
     if (!fs.existsSync(`${this.stagingDir}`)) {
-      logger.debug(`mkdir: ${this.stagingDir}`);
+      logger.debug(`Creating staging directory: ${this.stagingDir}`);
 
       fs.mkdirSync(`${this.stagingDir}`, {
         recursive: true,
@@ -59,6 +61,10 @@ export class MediaWorkflow {
     onProgress?: (progress: number) => Promise<void>,
     progressInterval = 5000,
   ) {
+    logger.info(`Running workflow step "downloadAsset()`);
+    logger.debug(`path: ${path}`);
+    logger.debug(`destinationPath: ${destinationPath}`);
+
     if (!path.startsWith("/")) {
       path = `/${path}`;
     }
@@ -97,7 +103,7 @@ export class MediaWorkflow {
                 await onProgress(progress);
               })();
             } else {
-              console.log(`Progress: ${progress}%`);
+              logger.debug(`Progress: ${progress}%`);
             }
 
             lastProgressUpdate = now;
@@ -115,6 +121,10 @@ export class MediaWorkflow {
   }
 
   async downloadFile(path: string, destinationPath: string) {
+    logger.info(`Running workflow step "downloadFile()`);
+    logger.debug(`path: ${path}`);
+    logger.debug(`destinationPath: ${destinationPath}`);
+
     if (!path.startsWith("/")) {
       path = `/${path}`;
     }
@@ -137,11 +147,14 @@ export class MediaWorkflow {
   }
 
   async extractSrt(subtitleIndex: number) {
+    logger.info(`Running workflow step "extractSrt()`);
+    logger.debug(`subtitleIndex: ${subtitleIndex}`);
+
     await new Promise<void>((resolve, reject) => {
       const command = Ffmpeg(this.sourceFile);
       command.addOption(`-map 0:s:${subtitleIndex}`);
       command.on("error", async (err) => {
-        console.log("An error occurred: " + err.message);
+        logger.error(`An error occurred: ${err.message}`);
         reject(new IngestError("Unable to extract SRT from asset:", err));
       });
       command.on("end", async () => {
@@ -155,6 +168,9 @@ export class MediaWorkflow {
     jobFile: string,
     onProgress: (progress: number) => Promise<void>,
   ) {
+    logger.info(`Running workflow step "transcode()`);
+    logger.debug(`jobFile: ${jobFile}`);
+
     await new Promise<void>((resolve, reject) => {
       let lastProgressUpdate = 0;
 
@@ -177,7 +193,7 @@ export class MediaWorkflow {
                 await onProgress(progress.percentComplete);
               })();
             } else {
-              console.log(`Progress: ${progress.percentComplete}%`);
+              logger.debug(`Progress: ${progress.percentComplete}%`);
             }
 
             lastProgressUpdate = now;
@@ -191,6 +207,9 @@ export class MediaWorkflow {
   }
 
   async fetchSource(step: MediaAssetWorkflowStep, assetExtension: string) {
+    logger.info(`Running workflow step "fetchSource()`);
+    logger.debug(`workflowStepId: ${step.id}`);
+
     const subStep = await createSubStep(
       this.workflowId,
       step.id,
@@ -214,7 +233,7 @@ export class MediaWorkflow {
 
       await updateStepStatus(this.workflowId, subStep.id, "success");
     } catch (e) {
-      console.log(e);
+      logger.error(`An error occurred: ${e.message}`);
       await updateStepStatus(this.workflowId, subStep.id, "failed");
       throw e;
     }
@@ -225,17 +244,19 @@ export class MediaWorkflow {
     connection: sftp.ConnectOptions,
     onProgress?: (progress: number, bytesTransferred: number) => Promise<void>,
   ): Promise<void> {
+    logger.info(`Running workflow step "upload()`);
+
     try {
       const totalSize = Object.keys(files).reduce((acc, file) => {
         if (!file.startsWith("/")) {
           file = `/${file}`;
         }
 
-        console.log(file);
+        logger.debug(`Processing ${file}`);
         return acc + fs.statSync(`${this.stagingDir}${file}`).size;
       }, 0);
 
-      console.log(`Total size to upload: ${totalSize} bytes`);
+      logger.info(`Total size to upload: ${totalSize} bytes`);
       let lastUpdateTime = 0;
 
       if (process.env.DIONYSUS_SKIP_CDN_DOWNLOAD === "true") {
@@ -262,7 +283,7 @@ export class MediaWorkflow {
           );
         }
       } else {
-        console.log("Connecting SSH...");
+        logger.debug("Connecting SSH...");
         const client = new sftp();
         await client.connect(connection);
 
@@ -277,7 +298,7 @@ export class MediaWorkflow {
             destination = `/${destination}`;
           }
 
-          console.log(sourceFile);
+          logger.debug(`Uploading ${sourceFile}`);
           const stat = fs.statSync(sourceFile);
           const pStream = progress_stream({
             length: stat.size,
@@ -291,7 +312,7 @@ export class MediaWorkflow {
               if (now - lastUpdateTime > 5000) {
                 const progress = (p.transferred / totalSize) * 100;
 
-                console.log(
+                logger.debug(
                   `Transferred ${p.transferred} bytes of ${totalSize} - ${progress}%`,
                 );
 
@@ -312,7 +333,7 @@ export class MediaWorkflow {
           );
           const stream = fs.createReadStream(sourceFile).pipe(pStream);
 
-          console.log(`Uploading ${sourceFile} to ${destination}...`);
+          logger.info(`Uploading ${sourceFile} to ${destination}...`);
           await client.mkdir(remoteDir, true);
           await client.put(stream, destination);
         }
@@ -320,7 +341,7 @@ export class MediaWorkflow {
         await client.end();
       }
     } catch (e) {
-      console.log("Asset upload failed:", e);
+      logger.error(`Asset upload failed: ${e.message}`);
       throw new IngestError("Unable to upload assets:", e);
     }
   }
@@ -397,7 +418,8 @@ export class MediaWorkflow {
   }
 
   async calculateOutputSha(): Promise<string> {
-    console.log("Generating SHA-256 of asset...");
+    logger.info(`Running workflow step "calculateOutputSha()`);
+    logger.info("Generating SHA-256 of asset...");
     const readableStream = fs.createReadStream(
       `${this.stagingDir}/transcoded.mp4`,
     );
@@ -409,7 +431,7 @@ export class MediaWorkflow {
       });
       readableStream.on("end", async () => {
         const digest = hash.digest("hex");
-        console.log(`Output SHA: ${digest}`);
+        logger.debug(`Output SHA: ${digest}`);
         resolve(digest);
       });
     });
