@@ -660,17 +660,6 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         ),
       },
       {
-        key: "t-info-releases",
-        label: <EyeOutlined />,
-        children: (
-          <Space
-            size={0}
-            style={{ width: "100%", padding: 16 }}
-            orientation={"vertical"}
-          ></Space>
-        ),
-      },
-      {
         key: "m-info-altTitle",
         label: <FontSizeOutlined />,
         children: (
@@ -1028,6 +1017,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               scrollbarWidth: "none",
               height: affix ? `calc(100vh - 308px)` : undefined,
               overflowY: "scroll",
+              paddingTop: 16,
             }}
           >
             <Tabs

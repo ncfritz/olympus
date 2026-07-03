@@ -926,6 +926,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
               scrollbarWidth: "none",
               height: affix ? `calc(100vh - 308px)` : undefined,
               overflowY: "scroll",
+              paddingTop: 16,
             }}
           >
             <Tabs

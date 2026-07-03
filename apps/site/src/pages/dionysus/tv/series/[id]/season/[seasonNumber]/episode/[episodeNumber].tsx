@@ -712,13 +712,13 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
               scrollbarWidth: "none",
               position: "relative",
               height: `calc(100vh - 292px)`,
-
               zIndex: 4000,
             }}
             tabContentStyle={{
               scrollbarWidth: "none",
               height: `calc(100vh - 308px)`,
               overflowY: "scroll",
+              paddingTop: 16,
             }}
           >
             <Tabs
