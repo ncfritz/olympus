@@ -101,6 +101,10 @@ export class UpdateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
       workflowStatus = MediaAssetWorkflowStatus.RUNNING;
     }
 
+    logger.debug(
+      `updateWorkflowStatus: ${updateWorkflowStatus} - currentStatus: ${workflowStatus}`,
+    );
+
     if (
       updateWorkflowStatus &&
       request.step.status === MediaAssetWorkflowStepStatus.SUCCESS
