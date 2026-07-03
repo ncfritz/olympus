@@ -9,6 +9,7 @@ import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowStepConverter";
 import { GraphQlMediaAssetWorkflowStep } from "../../../types/dionysus/media/mediaAssetWorkflow";
+import { logger } from "../../../utils/logger";
 
 export type MediaWorkflowDetails = {
   id: string;
@@ -136,10 +137,29 @@ export class BaseMediaAssetWorkflowController {
     update: PartialMediaAssetWorkflowStep,
     workflowStatus?: MediaAssetWorkflowStatus,
   ) {
+    logger.info(
+      `Updating workflow step ${workflowStepId} to status ${update.status} - workflow status: ${workflowStatus}`,
+    );
     let workflowUpdateParamsFragment = "";
     let workflowUpdateFragment = "";
 
+    const requestParams: Record<string, any> = {
+      id: workflowStepId,
+      workflowId: workflowId,
+      changes: update,
+    };
+
     if (workflowStatus) {
+      logger.info(
+        `Updating workflow ${workflowId} to status ${workflowStatus}`,
+      );
+
+      requestParams["workflowStatus"] = workflowStatus;
+
+      if (MediaAssetWorkflowStatus.SUCCESS) {
+        requestParams["workflowFinishedTime"] = moment().utc().toISOString();
+      }
+
       workflowUpdateParamsFragment = gql`
         $workflowStatus: String!
         ${
@@ -164,7 +184,7 @@ export class BaseMediaAssetWorkflowController {
     }
 
     const updateRequest = gql`
-      mutation UpdateWorkflow(
+      mutation UpdateWorkflowStep(
         $id: uuid!
         $workflowId: uuid!
         $changes: dionysus_media_asset_workflow_step_set_input = {}
@@ -186,20 +206,6 @@ export class BaseMediaAssetWorkflowController {
         ${workflowUpdateFragment}
       }
     `;
-
-    const requestParams: Record<string, any> = {
-      id: workflowStepId,
-      workflowId: workflowId,
-      changes: update,
-    };
-
-    if (workflowStatus) {
-      requestParams["workflowStatus"] = workflowStatus;
-    }
-
-    if (workflowStatus === MediaAssetWorkflowStatus.SUCCESS) {
-      requestParams["workflowFinishedTime"] = moment().utc().toISOString();
-    }
 
     const updateResponse =
       await this.graphQLClient.request<GraphQlUpdateMediaAssetWorkflowStepResponse>(
