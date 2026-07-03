@@ -94,6 +94,11 @@ export class UpdateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
       workflowStatus = MediaAssetWorkflowStatus.PENDING_INPUT;
     } else if (request.step.status === MediaAssetWorkflowStepStatus.FAILED) {
       workflowStatus = MediaAssetWorkflowStatus.FAILED;
+    } else if (
+      request.step.status === MediaAssetWorkflowStepStatus.SKIPPED ||
+      request.step.status === MediaAssetWorkflowStepStatus.RUNNING
+    ) {
+      workflowStatus = MediaAssetWorkflowStatus.RUNNING;
     }
 
     if (

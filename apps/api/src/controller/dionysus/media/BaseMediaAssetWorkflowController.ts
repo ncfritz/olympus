@@ -137,9 +137,6 @@ export class BaseMediaAssetWorkflowController {
     update: PartialMediaAssetWorkflowStep,
     workflowStatus?: MediaAssetWorkflowStatus,
   ) {
-    logger.info(
-      `Updating workflow step ${workflowStepId} to status ${update.status} - workflow status: ${workflowStatus}`,
-    );
     let workflowUpdateParamsFragment = "";
     let workflowUpdateFragment = "";
 
