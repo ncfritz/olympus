@@ -133,17 +133,29 @@ export class MediaWorkflow {
       destinationPath = `/${destinationPath}`;
     }
 
-    const sourceUrl = `${this.cdnUrl}${path}`;
-    const destinationFile = `${this.stagingDir}${destinationPath}`;
+    if (process.env.DEPLOYMENT_MODE === "local") {
+      logger.debug(
+        `Copying asset from local storage: ${this.localDir}${path} to ${this.stagingDir}${destinationPath}`,
+      );
 
-    logger.info(`Downloading ${path} file from CDN:`);
-    logger.debug(`Source URL: ${sourceUrl}`);
-    logger.debug(`Destination file: ${destinationFile}`);
+      fs.copyFileSync(
+        `${this.localDir}${path}`,
+        `${this.stagingDir}${destinationPath}`,
+      );
 
-    const response = await axios.get(sourceUrl);
-    fs.writeFileSync(destinationFile, JSON.stringify(response.data, null, 2));
+      return fs.readFileSync(`${this.stagingDir}${destinationPath}`, "utf-8");
+    } else {
+      const sourceUrl = `${this.cdnUrl}${path}`;
+      const destinationFile = `${this.stagingDir}${destinationPath}`;
 
-    return response.data;
+      logger.info(`Downloading ${path} file from CDN:`);
+      logger.debug(`Source URL: ${sourceUrl}`);
+      logger.debug(`Destination file: ${destinationFile}`);
+
+      const response = await axios.get(sourceUrl);
+      fs.writeFileSync(destinationFile, JSON.stringify(response.data, null, 2));
+
+      return response.data;
   }
 
   async extractSrt(subtitleIndex: number) {
@@ -351,6 +363,8 @@ export class MediaWorkflow {
     metadataType: "original" | "metadata",
     extractHandbrakeMetadata: boolean,
   ) {
+    logger.info(`Running workflow step "extractMetadata(${metadataType})`);
+
     const step = await createStep(this.workflowId, stepType);
 
     try {
