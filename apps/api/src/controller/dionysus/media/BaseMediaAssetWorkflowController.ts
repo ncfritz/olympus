@@ -12,7 +12,7 @@ import { GraphQlMediaAssetWorkflowStep } from "../../../types/dionysus/media/med
 
 export type MediaWorkflowDetails = {
   id: string;
-  assetType: MediaAssetSearchType;
+  type: MediaAssetSearchType;
   mediaId: number;
 };
 
@@ -67,9 +67,8 @@ export class BaseMediaAssetWorkflowController {
 
     return {
       id: checkParentWorkflowResponse.dionysus_media_asset_workflow_by_pk.id,
-      assetType:
-        checkParentWorkflowResponse.dionysus_media_asset_workflow_by_pk
-          .assetType,
+      type: checkParentWorkflowResponse.dionysus_media_asset_workflow_by_pk
+        .type,
       mediaId:
         checkParentWorkflowResponse.dionysus_media_asset_workflow_by_pk.mediaId,
     };

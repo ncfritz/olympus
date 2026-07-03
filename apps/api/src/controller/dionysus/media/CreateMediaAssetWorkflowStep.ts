@@ -100,7 +100,7 @@ export class CreateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
         insertRequest,
         {
           workflowId: workflowId,
-          assetType: workflowDetails.assetType,
+          assetType: workflowDetails.type,
           mediaId: workflowDetails.mediaId,
           workflowStepType: request.step.type,
           workflowStepStatus: MediaAssetWorkflowStepStatus.RUNNING,
