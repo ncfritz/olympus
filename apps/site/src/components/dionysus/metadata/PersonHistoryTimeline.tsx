@@ -11,6 +11,7 @@ import { Space, Timeline, type TimelineItemProps, Typography } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
+import { getPoster } from "./util";
 
 export interface PersonHistoryTimelineProps {
   movieRoles: PersonMovieCastCredit[];
@@ -22,6 +23,7 @@ interface TimelineEntry {
   showType: "movie" | "tv_show";
   showTitle: string;
   showId: number;
+  poster: string | undefined;
   parts: JobOrRole[];
 }
 
@@ -60,6 +62,7 @@ const PersonHistoryTimeline: React.FunctionComponent<
           showTitle: item.movie.title,
           showType: "movie",
           showId: item.movie.id,
+          poster: item.movie.posterPath,
           parts: [],
         };
 
@@ -94,6 +97,7 @@ const PersonHistoryTimeline: React.FunctionComponent<
           showTitle: item.movie.title,
           showType: "movie",
           showId: item.movie.id,
+          poster: item.movie.posterPath,
           parts: [],
         };
 
@@ -116,7 +120,7 @@ const PersonHistoryTimeline: React.FunctionComponent<
 
   events.entries().forEach(([year, timelineEntries]) => {
     items.push({
-      label: (
+      title: (
         <Typography.Text strong={true} style={{ fontSize: "13px" }}>
           {year}
         </Typography.Text>
@@ -130,7 +134,7 @@ const PersonHistoryTimeline: React.FunctionComponent<
       timelineEntry.parts.forEach((part) => {
         parts.push(
           <Space
-            direction={"horizontal"}
+            orientation={"horizontal"}
             style={{
               width: "100%",
               alignItems: "center",
@@ -155,32 +159,57 @@ const PersonHistoryTimeline: React.FunctionComponent<
       });
 
       const children = (
-        <Space
-          direction={"vertical"}
-          style={{ width: "100%", paddingRight: 24 }}
-          size={0}
-        >
-          <Link href={`/dionysus/movies/${timelineEntry.showId}`}>
-            <Typography.Text style={{ fontSize: "12px" }} italic={true}>
-              {timelineEntry.showTitle}
-            </Typography.Text>
-          </Link>
-          {parts}
+        <Space orientation={"horizontal"} size={8} style={{ width: "100%" }}>
+          {getPoster(timelineEntry.poster, "vertical", 48, 4)}
+          <Space
+            orientation={"vertical"}
+            style={{ width: "100%", paddingRight: 24 }}
+            size={0}
+          >
+            <Link href={`/dionysus/movies/${timelineEntry.showId}`}>
+              <Typography.Text style={{ fontSize: "12px" }} italic={true}>
+                {timelineEntry.showTitle}
+              </Typography.Text>
+            </Link>
+            {parts}
+          </Space>
         </Space>
       );
 
       items.push({
-        label: (
+        title: (
           <Typography.Text style={{ fontSize: "10px" }}>
             {timelineEntry.date.toFormat("MM-dd")}
           </Typography.Text>
         ),
-        children: children,
-        dot: <VideoCameraOutlined />,
+        content: children,
+        icon: <VideoCameraOutlined />,
       });
     });
   });
 
-  return <Timeline className={"person-timeline"} mode={"left"} items={items} />;
+  return (
+    <Timeline
+      className={"person-timeline"}
+      mode={"left"}
+      items={items}
+      styles={{
+        itemHeader: {
+          width: 48,
+          flex: 0,
+        },
+        itemTitle: {
+          width: 48,
+        },
+        itemIcon: {
+          marginInlineStart: -5,
+          insetInlineStart: 67,
+        },
+        itemRail: {
+          insetInlineStart: 66,
+        },
+      }}
+    />
+  );
 };
 export default PersonHistoryTimeline;
