@@ -73,7 +73,9 @@ export class DownloadUpdateHandler {
         fs.writeFileSync(filePath, JSON.stringify(msg, null, 2));
       }
 
-      logger.debug(`Got message with type "${msg.type}" and event "${msg.event}"`);
+      logger.debug(
+        `Got message with type "${msg.type}" and event "${msg.event}"`,
+      );
 
       if (msg.type === "queue") {
         if (msg.event === "NZB_NAMED" || msg.event === "NZB_ADDED") {
@@ -168,7 +170,9 @@ export class DownloadUpdateHandler {
             `${stagingDir}/${download.workflowId}/original.${originalExtension}`,
           );
 
-          logger.debug(`Publishing "mdia.trigger" message for workflow ${download.workflowId}`);
+          logger.debug(
+            `Publishing "media.trigger" message for workflow ${download.workflowId}`,
+          );
 
           await this.amqpConnection.publish(
             "media.trigger",

@@ -117,7 +117,7 @@ export class StartDownloadHandler {
     );
 
     logger.debug(
-      `Got ${rpcResponse.status} HTTP response, NZBGet result (${rpcResponse.data.result}) from NZBGet: ${nzbGetUrl}`
+      `Got ${rpcResponse.status} HTTP response, NZBGet result (${rpcResponse.data.result}) from NZBGet: ${nzbGetUrl}`,
     );
 
     if (rpcResponse.data.result >= 0) {
@@ -132,12 +132,14 @@ export class StartDownloadHandler {
       );
 
       if (!fs.existsSync(`${stagingDir}/${msg.workflowId}`)) {
-        logger.debug(`Creating workflow directory: ${stagingDir}/${msg.workflowId}`);
+        logger.debug(
+          `Creating workflow directory: ${stagingDir}/${msg.workflowId}`,
+        );
         fs.mkdirSync(`${stagingDir}/${msg.workflowId}`, { recursive: true });
       }
 
       logger.info(
-        `Writing NZB metadata to ${stagingDir}/${msg.workflowId}/nzbMeta.json`
+        `Writing NZB metadata to ${stagingDir}/${msg.workflowId}/nzbMeta.json`,
       );
       fs.writeFileSync(
         `${stagingDir}/${msg.workflowId}/nzbMeta.json`,
