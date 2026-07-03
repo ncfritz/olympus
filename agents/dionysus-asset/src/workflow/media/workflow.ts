@@ -156,6 +156,7 @@ export class MediaWorkflow {
       fs.writeFileSync(destinationFile, JSON.stringify(response.data, null, 2));
 
       return response.data;
+    }
   }
 
   async extractSrt(subtitleIndex: number) {
