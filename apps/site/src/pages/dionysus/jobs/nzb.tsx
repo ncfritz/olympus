@@ -509,6 +509,7 @@ const SearchConfigurationsPage: React.FunctionComponent = () => {
                     size={"small"}
                     dataSource={record.executions}
                     pagination={false}
+                    scroll={{ y: "350px" }}
                     columns={[
                       {
                         key: "id",
@@ -619,40 +620,64 @@ const SearchConfigurationsPage: React.FunctionComponent = () => {
                         title: "Started Time",
                         dataIndex: "startedTime",
                         render: (value) => {
-                          return <Timestamp value={value} showTime={true} />;
+                          return (
+                            <Timestamp
+                              value={value}
+                              showTime={true}
+                              direction={"horizontal"}
+                            />
+                          );
                         },
                         sorter: true,
-                        width: 150,
+                        width: 200,
                       },
                       {
                         key: "finishedTime",
                         title: "Finished Time",
                         dataIndex: "finishedTime",
                         render: (value) => {
-                          return <Timestamp value={value} showTime={true} />;
+                          return (
+                            <Timestamp
+                              value={value}
+                              showTime={true}
+                              direction={"horizontal"}
+                            />
+                          );
                         },
                         sorter: true,
-                        width: 150,
+                        width: 200,
                       },
                       {
                         key: "createdTime",
                         title: "Created",
                         dataIndex: "createdTime",
                         render: (value) => {
-                          return <Timestamp value={value} showTime={true} />;
+                          return (
+                            <Timestamp
+                              value={value}
+                              showTime={true}
+                              direction={"horizontal"}
+                            />
+                          );
                         },
                         sorter: true,
-                        width: 150,
+                        width: 200,
                       },
                       {
                         key: "last_updated_at",
                         title: "Last Updated",
                         dataIndex: "lastUpdatedTime",
                         render: (value) => {
-                          return <Timestamp value={value} showTime={true} />;
+                          return (
+                            <Timestamp
+                              value={value}
+                              showTime={true}
+                              direction={"horizontal"}
+                            />
+                          );
                         },
                         sorter: true,
-                        width: 150,
+                        width: 200,
                       },
                     ]}
                   />
