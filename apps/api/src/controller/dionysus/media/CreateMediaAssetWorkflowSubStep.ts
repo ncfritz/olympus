@@ -82,7 +82,7 @@ export class CreateMediaAssetWorkflowSubStepController extends BaseMediaAssetWor
     const insertRequest = gql`
       mutation CreateMediaAssetWorkflowStep(
         $workflowId: uuid!
-        $assetType: string!
+        $assetType: String!
         $mediaId: numeric!
         $workflowStepId: uuid!
         $workflowStepType: String!
