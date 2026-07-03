@@ -27,6 +27,7 @@ import {
 import { type Response } from "express";
 import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { logger } from "../../../utils/logger";
 import { BaseMediaAssetWorkflowController } from "./BaseMediaAssetWorkflowController";
 
 @Controller({ version: "1" })
@@ -80,6 +81,10 @@ export class UpdateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
     @Body() request: UpdateMediaAssetWorkflowStepRequest,
     @Res() response: Response,
   ): Promise<void> {
+    logger.info(
+      `Updating workflow step ${workflowStepId} to status ${request.step.status} - workflow update: ${updateWorkflowStatus}`,
+    );
+
     await this.verifyWorkflowExists(workflowId);
     await this.verifyWorkflowStepExists(workflowId, workflowStepId);
 

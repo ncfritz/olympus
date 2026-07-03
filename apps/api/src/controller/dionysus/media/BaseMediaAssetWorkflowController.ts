@@ -156,7 +156,7 @@ export class BaseMediaAssetWorkflowController {
 
       requestParams["workflowStatus"] = workflowStatus;
 
-      if (MediaAssetWorkflowStatus.SUCCESS) {
+      if (workflowStatus === MediaAssetWorkflowStatus.SUCCESS) {
         requestParams["workflowFinishedTime"] = moment().utc().toISOString();
       }
 
