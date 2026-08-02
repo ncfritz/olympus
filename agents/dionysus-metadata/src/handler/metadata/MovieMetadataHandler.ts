@@ -247,7 +247,7 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
         // @ts-expect-error external api
         official: value["official"] as boolean,
         // @ts-expect-error external api
-        publishedTime: moment(value["published_at"]),
+        publishedDate: moment(value["published_at"]),
       });
     });
 
