@@ -15,7 +15,7 @@ class NotificationsApi {
     });
   }
 
-  @ExecuteWithMetrics("SendNotification")
+  @ExecuteWithMetrics("Olympus.SendNotification")
   async sendNotification(
     notification: SendNotificationRequest,
   ): Promise<SendNotificationResponse> {

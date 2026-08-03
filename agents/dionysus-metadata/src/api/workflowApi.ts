@@ -16,7 +16,7 @@ class WorkflowApi {
     });
   }
 
-  @ExecuteWithMetrics("CreateMetadataWorkflowStep")
+  @ExecuteWithMetrics("Dionysus.CreateMetadataWorkflowStep")
   async createWorkflowStep(workflowId: string, step: PartialWorkflowStep) {
     const response = await createMetadataWorkflowStep({
       path: {
@@ -30,7 +30,7 @@ class WorkflowApi {
     return response.data!.step;
   }
 
-  @ExecuteWithMetrics("UpdateMetadataWorkflow")
+  @ExecuteWithMetrics("Dionysus.UpdateMetadataWorkflow")
   async updateWorkflow(id: string, workflow: PartialWorkflow) {
     const response = await updateMetadataWorkflow({
       path: {

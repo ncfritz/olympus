@@ -18,7 +18,7 @@ class BatchJobApi {
     });
   }
 
-  @ExecuteWithMetrics("DescribeBatchJob")
+  @ExecuteWithMetrics("Dionysus.DescribeBatchJob")
   async getBatchJob(id: string) {
     const response = await describeBatchJob({
       path: { jobId: id },
@@ -27,10 +27,10 @@ class BatchJobApi {
     return response.data!.job;
   }
 
-  @ExecuteWithMetrics("CreateBatchJob")
+  @ExecuteWithMetrics("Dionysus.CreateBatchJob")
   async createBatchJob(
     type: JobType,
-    publishNotification: boolean,
+    publishNotification: boolean
   ): Promise<BatchJob> {
     const response = await createBatchJob({
       body: {
@@ -42,7 +42,7 @@ class BatchJobApi {
     return response.data!.job;
   }
 
-  @ExecuteWithMetrics("UpdateBatchJob")
+  @ExecuteWithMetrics("Dionysus.UpdateBatchJob")
   async updateBatchJob(id: string, job: PartialBatchJob): Promise<BatchJob> {
     const response = await updateBatchJob({
       path: { jobId: id },

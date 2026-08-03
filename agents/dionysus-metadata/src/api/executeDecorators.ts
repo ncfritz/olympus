@@ -21,6 +21,7 @@ export function ExecuteWithMetrics(
       let error = 0;
       let fatal = 0;
       let exception = 0;
+      let throttled = 0;
       let status1xx = 0;
       let status2xx = 0;
       let status3xx = 0;
@@ -47,6 +48,10 @@ export function ExecuteWithMetrics(
         if (response && response && response.status) {
           const status = response.status;
 
+          if (status === 429) {
+            throttled = 1;
+          }
+
           if (status >= 100 && status <= 199) {
             status1xx = 1;
           }
@@ -71,6 +76,7 @@ export function ExecuteWithMetrics(
         ReporterService.counter(`client_${operation}_error`, {}, error);
         ReporterService.counter(`client_${operation}_fatal`, {}, fatal);
         ReporterService.counter(`client_${operation}_exception`, {}, exception);
+        ReporterService.counter(`client_${operation}_throttles`, {}, throttled);
         ReporterService.counter(`client_${operation}_1xx`, {}, status1xx);
         ReporterService.counter(`client_${operation}_2xx`, {}, status2xx);
         ReporterService.counter(`client_${operation}_3xx`, {}, status3xx);

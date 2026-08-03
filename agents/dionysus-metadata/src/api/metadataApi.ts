@@ -22,28 +22,28 @@ import {
   createTvSeriesSeason,
   describeMetadataFetchJob,
   Genre,
-  JobStatus,
+  type JobStatus,
   Keyword,
   Language,
   ListMetadataFetchJobsResponse,
   MetadataFetchJob,
   MetadataFetchJobStatus,
   type MetadataJobType,
-  MetadatFetchJobUpdate,
-  Network,
-  PartialCertification,
-  PartialCollection,
-  PartialCountry,
-  PartialEpisode,
-  PartialGenre,
-  PartialKeyword,
-  PartialLanguage,
-  PartialMovie,
-  PartialNetwork,
-  PartialPerson,
-  PartialProductionCompany,
-  PartialSeason,
-  PartialTvSeries,
+  type MetadatFetchJobUpdate,
+  type Network,
+  type PartialCertification,
+  type PartialCollection,
+  type PartialCountry,
+  type PartialEpisode,
+  type PartialGenre,
+  type PartialKeyword,
+  type PartialLanguage,
+  type PartialMovie,
+  type PartialNetwork,
+  type PartialPerson,
+  type PartialProductionCompany,
+  type PartialSeason,
+  type PartialTvSeries,
   scrollMetadataFetchJobs,
   SparseMovie,
   SparseProductionCompany,
@@ -87,7 +87,7 @@ class MetadataApi {
     return response.data!.job;
   }
 
-  @ExecuteWithMetrics("DescribeMetadataFetchJob")
+  @ExecuteWithMetrics("Dionysus.DescribeMetadataFetchJob")
   async getMetadataFetchJob(
     id: string,
     type: MetadataJobType,
@@ -102,6 +102,7 @@ class MetadataApi {
     return response.data!.job;
   }
 
+  @ExecuteWithMetrics("Dionysus.UpdateMetadataFetchJob")
   async updateMetadataFetchJob(
     id: string,
     type: MetadataJobType,
@@ -124,6 +125,7 @@ class MetadataApi {
     return response.data!.job;
   }
 
+  @ExecuteWithMetrics("Dionysus.ScrollMetadataFetchJobs")
   async scrollMetadataFetchJobs(
     type: MetadataJobType,
     status: JobStatus,
@@ -148,6 +150,7 @@ class MetadataApi {
     return response.data!;
   }
 
+  @ExecuteWithMetrics("Dionysus.CreateCertification")
   async createCertification(
     certification: PartialCertification,
   ): Promise<Certification> {
@@ -160,6 +163,7 @@ class MetadataApi {
     return response.data!.certification;
   }
 
+  @ExecuteWithMetrics("Dionysus.CreateCollection")
   async createCollection(collection: PartialCollection): Promise<number> {
     const response = await createCollection({
       body: {
@@ -170,6 +174,7 @@ class MetadataApi {
     return response.data!.id;
   }
 
+  @ExecuteWithMetrics("Dionysus.CreateCountry")
   async createCountry(country: PartialCountry): Promise<Country> {
     const response = await createCountry({
       body: {
@@ -180,6 +185,7 @@ class MetadataApi {
     return response.data!.country;
   }
 
+  @ExecuteWithMetrics("Dionysus.CreateLanguage")
   async createLanguage(language: PartialLanguage): Promise<Language> {
     const response = await createLanguage({
       body: {
@@ -190,6 +196,7 @@ class MetadataApi {
     return response.data!.language;
   }
 
+  @ExecuteWithMetrics("Dionysus.CreateGenre")
   async createGenre(genre: PartialGenre): Promise<Genre> {
     const response = await createGenre({
       body: {
@@ -200,6 +207,7 @@ class MetadataApi {
     return response.data!.genre;
   }
 
+  @ExecuteWithMetrics("Dionysus.CreateKeyword")
   async createKeyword(keyword: PartialKeyword): Promise<Keyword> {
     const response = await createKeyword({
       body: {
@@ -210,6 +218,7 @@ class MetadataApi {
     return response.data!.keyword;
   }
 
+  @ExecuteWithMetrics("Dionysus.CreateMovie")
   async createMovie(movie: PartialMovie): Promise<SparseMovie> {
     const response = await createMovie({
       body: {
@@ -220,6 +229,7 @@ class MetadataApi {
     return response.data!.movie;
   }
 
+  @ExecuteWithMetrics("Dionysus.CreateNetwork")
   async createNetwork(network: PartialNetwork): Promise<Network> {
     const response = await createNetwork({
       body: {
@@ -230,6 +240,7 @@ class MetadataApi {
     return response.data!.network;
   }
 
+  @ExecuteWithMetrics("Dionysus.CreatePerson")
   async createPerson(person: PartialPerson): Promise<CreatePersonResponse> {
     const response = await createPerson({
       body: {
@@ -240,6 +251,7 @@ class MetadataApi {
     return response.data!;
   }
 
+  @ExecuteWithMetrics("Dionysus.CreateProductionCompany")
   async createProductionCompany(
     company: PartialProductionCompany,
   ): Promise<SparseProductionCompany> {
@@ -252,6 +264,7 @@ class MetadataApi {
     return response.data!.company;
   }
 
+  @ExecuteWithMetrics("Dionysus.CreateTvSeries")
   async createTVSeries(
     series: PartialTvSeries,
   ): Promise<CreateTvSeriesResponse> {
@@ -264,6 +277,7 @@ class MetadataApi {
     return response.data!;
   }
 
+  @ExecuteWithMetrics("Dionysus.CreateTvSeason")
   async createTVSeason(
     seriesId: number,
     season: PartialSeason,
@@ -280,6 +294,7 @@ class MetadataApi {
     return response.data!;
   }
 
+  @ExecuteWithMetrics("Dionysus.CreateTvEpisode")
   async createTVEpisode(
     seriesId: number,
     seasonNumber: number,
