@@ -30,7 +30,7 @@ class BatchJobApi {
   @ExecuteWithMetrics("Dionysus.CreateBatchJob")
   async createBatchJob(
     type: JobType,
-    publishNotification: boolean
+    publishNotification: boolean,
   ): Promise<BatchJob> {
     const response = await createBatchJob({
       body: {
