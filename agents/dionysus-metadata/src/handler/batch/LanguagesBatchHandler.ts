@@ -10,7 +10,6 @@ import { Injectable } from "@nestjs/common";
 import { type ConsumeMessage } from "amqplib";
 import { Moment } from "moment/moment";
 import metadataApi from "../../api/metadataApi";
-import { ConfigurationEndpoint } from "../../api/tmdb/configuration";
 import { type BatchJobMessage } from "../../types/message";
 import {
   BATCH_JOB_PREFIX,
@@ -39,11 +38,7 @@ export class LanguagesBatchHandler extends BaseBatchHandler {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected async init(now: Moment) {
-    const endpoint = new ConfigurationEndpoint(
-      this.configService.get<string>("TMDB_API_KEY")!,
-    );
-
-    const languagesResponse = await endpoint.languages();
+    const languagesResponse = await this.tmdbApi.listLanguages();
 
     for (const language of languagesResponse) {
       this.records.push({

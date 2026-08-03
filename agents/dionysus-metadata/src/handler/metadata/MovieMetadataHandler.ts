@@ -22,7 +22,6 @@ import {
 import { Injectable } from "@nestjs/common";
 import { type ConsumeMessage } from "amqplib";
 import moment from "moment";
-import { MoviesEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { type MetadataJobMessage } from "../../types/message";
@@ -61,13 +60,9 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialMovie, undefined]> {
-    const endpoint = new MoviesEndpoint(
-      this.configService.get<string>("TMDB_API_KEY")!,
-    );
-
     const movieId = parseInt(entityId);
 
-    const movieResponse = await endpoint.details(movieId, [
+    const movieResponse = await this.tmdbApi.getMovieDetails(movieId, [
       "alternative_titles",
       "credits",
       "external_ids",
@@ -77,10 +72,13 @@ export class MoviesMetadataHandler extends BaseMetadataHandler<
       "videos",
     ]);
 
-    const recommendationsResponse = await endpoint.recommendations(movieId, {
-      language: "en-US",
-      page: 1,
-    });
+    const recommendationsResponse = await this.tmdbApi.getMovieRecommendations(
+      movieId,
+      {
+        language: "en-US",
+        page: 1,
+      },
+    );
 
     const recommendations: UniqueSet<PartialMovieRecommendation> =
       new UniqueSet();

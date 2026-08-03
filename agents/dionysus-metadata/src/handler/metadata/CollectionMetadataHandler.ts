@@ -10,7 +10,6 @@ import {
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
 import { type ConsumeMessage } from "amqplib";
-import { CollectionsEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { type MetadataJobMessage } from "../../types/message";
@@ -47,13 +46,11 @@ export class CollectionsMetadataHandler extends BaseMetadataHandler<
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialCollection, undefined]> {
-    const endpoint = new CollectionsEndpoint(
-      this.configService.get<string>("TMDB_API_KEY")!,
-    );
-
     const collectionId = parseInt(entityId);
-    const collectionResponse = await endpoint.details(collectionId);
-    const collectionImagesResponse = await endpoint.images(collectionId);
+    const collectionResponse =
+      await this.tmdbApi.getCollectionDetails(collectionId);
+    const collectionImagesResponse =
+      await this.tmdbApi.getCollectionImages(collectionId);
 
     const parts: PartialCollectionPart[] = [];
 

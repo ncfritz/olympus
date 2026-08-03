@@ -11,7 +11,6 @@ import {
 import { Injectable } from "@nestjs/common";
 import { type ConsumeMessage } from "amqplib";
 import metadataApi from "../../api/metadataApi";
-import { ProductionCompaniesEndpoint } from "../../api/tmdb/productionCompany";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { type MetadataJobMessage } from "../../types/message";
 
@@ -48,14 +47,13 @@ export class ProductionCompanyMetadataHandler extends BaseMetadataHandler<
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialProductionCompany, undefined]> {
-    const endpoint = new ProductionCompaniesEndpoint(
-      this.configService.get<string>("TMDB_API_KEY")!,
-    );
-
     const companyId = parseInt(entityId);
-    const companyResponse = await endpoint.details(companyId);
-    const alternativeNamesResponse = await endpoint.alternativeNames(companyId);
-    const imagesResponse = await endpoint.images(companyId);
+    const companyResponse =
+      await this.tmdbApi.getProductionCompanyDetails(companyId);
+    const alternativeNamesResponse =
+      await this.tmdbApi.getNetworkAlternativeNames(companyId);
+    const imagesResponse =
+      await this.tmdbApi.getProductionCompanyImages(companyId);
 
     const alternativeNames: PartialAlternativeName[] = [];
 

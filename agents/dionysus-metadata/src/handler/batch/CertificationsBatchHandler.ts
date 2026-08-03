@@ -11,7 +11,6 @@ import { Injectable } from "@nestjs/common";
 import { type ConsumeMessage } from "amqplib";
 import { Moment } from "moment/moment";
 import { Certifications } from "tmdb-ts";
-import { CertificationEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
 import { type BatchJobMessage } from "../../types/message";
 import {
@@ -41,15 +40,12 @@ export class CertificationsBatchHandler extends BaseBatchHandler {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected async init(now: Moment) {
-    const endpoint = new CertificationEndpoint(
-      this.configService.get<string>("TMDB_API_KEY")!,
-    );
-
-    const tvCertificationsResponse = await endpoint.tvShows();
+    const tvCertificationsResponse = await this.tmdbApi.getTvCertifications();
 
     this.processCertificationsResponse(tvCertificationsResponse, "TV");
 
-    const movieCertificationsResponse = await endpoint.movies();
+    const movieCertificationsResponse =
+      await this.tmdbApi.getMovieCertifications();
 
     this.processCertificationsResponse(movieCertificationsResponse, "Movie");
   }

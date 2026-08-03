@@ -26,7 +26,6 @@ import { Injectable } from "@nestjs/common";
 import { type ConsumeMessage } from "amqplib";
 import moment from "moment/moment";
 import { AggregateCast, AggregateCrew } from "tmdb-ts";
-import { TvShowsEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { type MetadataJobMessage } from "../../types/message";
@@ -65,13 +64,9 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
     metadataFetchJob: MetadataFetchJob,
     metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialTvSeries, undefined]> {
-    const endpoint = new TvShowsEndpoint(
-      this.configService.get<string>("TMDB_API_KEY")!,
-    );
-
     const seriesId = parseInt(entityId);
 
-    const seriesResponse = await endpoint.details(seriesId, [
+    const seriesResponse = await this.tmdbApi.getTvSeriesDetails(seriesId, [
       "alternative_titles",
       "content_ratings",
       "external_ids",
@@ -81,10 +76,11 @@ export class TVSeriesMetadataHandler extends BaseMetadataHandler<
       "videos",
     ]);
 
-    const recommendationsResponse = await endpoint.recommendations(seriesId, {
-      language: "en-US",
-      page: 1,
-    });
+    const recommendationsResponse =
+      await this.tmdbApi.getTvSeriesRecommendation(seriesId, {
+        language: "en-US",
+        page: 1,
+      });
 
     const recommendations: UniqueSet<PartialTvSeriesRecommendation> =
       new UniqueSet();

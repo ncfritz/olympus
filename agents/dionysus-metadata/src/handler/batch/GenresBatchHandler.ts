@@ -10,7 +10,7 @@ import {
 import { Injectable } from "@nestjs/common";
 import { type ConsumeMessage } from "amqplib";
 import { Moment } from "moment/moment";
-import { GenreEndpoint, Genres } from "tmdb-ts/dist/endpoints";
+import { Genres } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
 import { type BatchJobMessage } from "../../types/message";
 import {
@@ -40,14 +40,10 @@ export class GenresBatchHandler extends BaseBatchHandler {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected async init(now: Moment) {
-    const endpoint = new GenreEndpoint(
-      this.configService.get<string>("TMDB_API_KEY")!,
-    );
-
-    const tvGenresResponse = await endpoint.tvShows();
+    const tvGenresResponse = await this.tmdbApi.getTvShowGenres();
     this.processGenresResponse(tvGenresResponse, "TV");
 
-    const movieGenresResponse = await endpoint.movies();
+    const movieGenresResponse = await this.tmdbApi.getMovieGenres();
     this.processGenresResponse(movieGenresResponse, "Movie");
   }
 

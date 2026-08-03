@@ -15,7 +15,6 @@ import { Injectable } from "@nestjs/common";
 import { type ConsumeMessage } from "amqplib";
 import moment from "moment/moment";
 import { AggregateCast, AggregateCrew } from "tmdb-ts";
-import { TvSeasonsEndpoint } from "tmdb-ts/dist/endpoints";
 import metadataApi from "../../api/metadataApi";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { type MetadataJobMessage, TVSeasonContext } from "../../types/message";
@@ -53,15 +52,11 @@ export class TVSeasonMetadataHandler extends BaseMetadataHandler<
     metadataFetchJob: MetadataFetchJob,
     metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialSeason, TVSeasonContext]> {
-    const endpoint = new TvSeasonsEndpoint(
-      this.configService.get<string>("TMDB_API_KEY")!,
-    );
-
     const [seriesId, seasonNumber] = entityId
       .split("-", 2)
       .map((id) => parseInt(id));
 
-    const seasonResponse = await endpoint.details(
+    const seasonResponse = await this.tmdbApi.getTvSeasonDetails(
       { tvShowID: seriesId, seasonNumber: seasonNumber },
       ["external_ids", "images", "aggregate_credits", "videos"],
     );

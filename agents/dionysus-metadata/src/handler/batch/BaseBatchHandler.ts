@@ -10,6 +10,7 @@ import { ConfigService } from "@nestjs/config";
 import { Message } from "amqplib";
 import moment, { Moment } from "moment";
 import batchJobApi from "../../api/batchJobApi";
+import { TmdbApi } from "../../api/tmdb/tmdbApi";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { SqliteCacheManager } from "../../cache/SqliteCacheManager";
 import { BatchJobMessage } from "../../types/message";
@@ -28,6 +29,7 @@ export abstract class BaseBatchHandler {
   constructor(
     protected readonly amqpConnection: AmqpConnection,
     protected readonly configService: ConfigService,
+    protected readonly tmdbApi: TmdbApi,
   ) {
     this.amqpConnection = amqpConnection;
     this.configService = configService;

@@ -5,6 +5,7 @@ import {
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import moment, { Moment } from "moment";
+import { TmdbApi } from "../../api/tmdb/tmdbApi";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { SqliteCacheManager } from "../../cache/SqliteCacheManager";
 import { MetadataJobMessage } from "../../types/message";
@@ -13,8 +14,12 @@ import { logger } from "../../util/logger";
 
 @Injectable()
 export abstract class BaseMetadataHandler<T, C> {
-  constructor(protected readonly configService: ConfigService) {
+  constructor(
+    protected readonly configService: ConfigService,
+    protected readonly tmdbApi: TmdbApi,
+  ) {
     this.configService = configService;
+    this.tmdbApi = tmdbApi;
   }
 
   protected async doFetch(message: MetadataJobMessage) {

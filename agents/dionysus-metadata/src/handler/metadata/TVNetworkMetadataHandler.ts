@@ -11,7 +11,6 @@ import {
 import { Injectable } from "@nestjs/common";
 import { type ConsumeMessage } from "amqplib";
 import metadataApi from "../../api/metadataApi";
-import { NetworksEndpoint } from "../../api/tmdb/network";
 import { MetadataFetchJobManager } from "../../cache/MetadataFetchJobManager";
 import { type MetadataJobMessage } from "../../types/message";
 import {
@@ -47,14 +46,11 @@ export class TVNetworkMetadataHandler extends BaseMetadataHandler<
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     metadataManager: MetadataFetchJobManager,
   ): Promise<[PartialNetwork, undefined]> {
-    const endpoint = new NetworksEndpoint(
-      this.configService.get<string>("TMDB_API_KEY")!,
-    );
-
     const networkId = parseInt(entityId);
-    const networkResponse = await endpoint.details(networkId);
-    const alternativeNamesResponse = await endpoint.alternativeNames(networkId);
-    const imagesResponse = await endpoint.images(networkId);
+    const networkResponse = await this.tmdbApi.getNetworkDetails(networkId);
+    const alternativeNamesResponse =
+      await this.tmdbApi.getNetworkAlternativeNames(networkId);
+    const imagesResponse = await this.tmdbApi.getNetworkImages(networkId);
 
     const alternativeNames: PartialAlternativeName[] = [];
 
