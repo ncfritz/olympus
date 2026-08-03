@@ -1,6 +1,7 @@
 import { Logger, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ReporterModule } from "nestjs-metrics-reporter";
+import { TmdbApi } from "../api/tmdb/tmdbApi";
 import { CertificationsBatchHandler } from "../handler/batch/CertificationsBatchHandler";
 import { CollectionsBatchHandler } from "../handler/batch/CollectionsBatchHandler";
 import { CountriesBatchHandler } from "../handler/batch/CountiresBatchHandler";
@@ -47,6 +48,8 @@ import { RabbitModule } from "./RabbitModule";
   providers: [
     // Logging
     Logger,
+    // Services
+    TmdbApi,
     // Batch Jobs
     CertificationsBatchHandler,
     CollectionsBatchHandler,
