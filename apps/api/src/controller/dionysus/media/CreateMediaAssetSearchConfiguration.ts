@@ -24,7 +24,9 @@ import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { toDecoratedDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
+import { BASE_MEDIA_ASSET } from "../../../query/dionysus/media/mediaAsset";
 import { BASE_DECORATED_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
+import { GraphQlMediaAsset } from "../../../types/dionysus/media/mediaAsset";
 import { type GraphQlDecoratedMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
@@ -36,15 +38,19 @@ type QueryRoot =
 type GraphQlVerifyMediaResponse = {
   dionysus_movies_by_pk?: {
     id: string;
+    asset?: GraphQlMediaAsset;
   };
   dionysus_tv_series_by_pk?: {
     id: string;
+    asset?: GraphQlMediaAsset;
   };
   dionysus_tv_seasons_by_pk?: {
     id: string;
+    asset?: GraphQlMediaAsset;
   };
   dionysus_tv_episodes_by_pk?: {
     id: string;
+    asset: GraphQlMediaAsset;
   };
 };
 
@@ -64,7 +70,10 @@ export class CreateMediaAssetSearchConfigurationController {
     summary: "Creates a new media asset search configuration",
     description:
       "Creates a new media asset search configuration.  The search will not be immediately executed, however the " +
-      "`nextExecutionTime` will be calculated based on the current time and the jitter value provided.",
+      "`nextExecutionTime` will be calculated based on the current time and the jitter value provided.  If the " +
+      "media the search configuration is being created for has an existing asset associated with it, the search " +
+      "configuration will be disabled by default.  If no asset exists for the media, the configuration will be " +
+      "enabled.",
     operationId: "CreateMediaAssetSearchConfiguration",
     tags: ["Media"],
   })
@@ -107,6 +116,14 @@ export class CreateMediaAssetSearchConfigurationController {
       query VerifyMedia($id: numeric!) {
         ${graphQLQueryRoot}(id: $id) {
           id
+          ${
+            request.searchConfiguration.type === MediaAssetSearchType.MOVIE ||
+            request.searchConfiguration.type === MediaAssetSearchType.TV_EPISODE
+              ? `asset {
+            ${BASE_MEDIA_ASSET}
+          }`
+              : ""
+          }
         }
       }
     `;
@@ -124,6 +141,8 @@ export class CreateMediaAssetSearchConfigurationController {
         "Source media definition could not be found",
       );
     }
+
+    const assetExists = verifyResponse[graphQLQueryRoot]?.asset;
 
     const insertRequest = gql`
       mutation CreateMediaAssetSearchConfiguration(
@@ -180,7 +199,7 @@ export class CreateMediaAssetSearchConfigurationController {
           seasonNumber: request.searchConfiguration.seasonNumber,
           episodeNumber: request.searchConfiguration.episodeNumber,
           backoff: request.searchConfiguration.backoff,
-          enabled: request.searchConfiguration.enabled,
+          enabled: assetExists ? false : request.searchConfiguration.enabled,
           jitter: request.searchConfiguration.jitter,
           status: request.searchConfiguration.status,
           nextExecutionTime: nextExecutionTime.toISOString(),
