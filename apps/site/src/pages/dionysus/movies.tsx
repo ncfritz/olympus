@@ -174,7 +174,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
           >
             <Statistic
               title={"Count"}
-              value={statsLoading ? 0 : stats.count}
+              value={statsLoading ? 0 : stats ? stats.count : "Unknown"}
               loading={statsLoading}
             />
           </Col>
@@ -187,10 +187,12 @@ const MoviesIndexPage: React.FunctionComponent = () => {
               value={
                 statsLoading
                   ? 0
-                  : prettyMilliseconds(stats.averageRuntime * 60 * 1000, {
-                      formatSubMilliseconds: false,
-                      secondsDecimalDigits: 0,
-                    })
+                  : stats.averageRuntime
+                    ? prettyMilliseconds(stats.averageRuntime * 60 * 1000, {
+                        formatSubMilliseconds: false,
+                        secondsDecimalDigits: 0,
+                      })
+                    : "Unknown"
               }
               loading={statsLoading}
             />
@@ -204,10 +206,12 @@ const MoviesIndexPage: React.FunctionComponent = () => {
               value={
                 statsLoading
                   ? 0
-                  : stats.averageBudget.toLocaleString("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                    })
+                  : stats.averageBudget
+                    ? stats.averageBudget.toLocaleString("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                      })
+                    : "Unknown"
               }
               loading={statsLoading}
             />
@@ -221,10 +225,12 @@ const MoviesIndexPage: React.FunctionComponent = () => {
               value={
                 statsLoading
                   ? 0
-                  : stats.averageRevenue.toLocaleString("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                    })
+                  : stats.averageRevenue
+                    ? stats.averageRevenue.toLocaleString("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                      })
+                    : "Unknown"
               }
               loading={statsLoading}
             />
@@ -238,10 +244,12 @@ const MoviesIndexPage: React.FunctionComponent = () => {
               value={
                 statsLoading
                   ? 0
-                  : stats.maxRevenue.toLocaleString("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                    })
+                  : stats.maxRevenue
+                    ? stats.maxRevenue.toLocaleString("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                      })
+                    : "Unknown"
               }
               loading={statsLoading}
             />
