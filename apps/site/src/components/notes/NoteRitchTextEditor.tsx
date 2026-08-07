@@ -35,7 +35,7 @@ const NoteRichTextEditor: React.FunctionComponent<NoteRichTextEditorProps> = ({
       style={{
         width: "100%",
       }}
-      direction={"vertical"}
+      orientation={"vertical"}
     >
       {loader}
       <Space
@@ -43,7 +43,7 @@ const NoteRichTextEditor: React.FunctionComponent<NoteRichTextEditorProps> = ({
       >
         <Editor
           ref={editorRef}
-          tinymceScriptSrc={"/assets/libs/tinymce/tinymce.min.js"}
+          tinymceScriptSrc="/assets/libs/tinymce/tinymce.js"
           onInit={(event, editor) => {
             setEditorLoaded(true);
           }}
@@ -51,6 +51,8 @@ const NoteRichTextEditor: React.FunctionComponent<NoteRichTextEditorProps> = ({
           value={value}
           init={{
             branding: false,
+            license_key:
+              "T8LK:eyJhcGlfa2V5IjoiVzR4M2ZmS3IxdlZLUXk0cjZnZVMwMmN4U0xoWTRkNkhySG1CY2d1dHFBRlYyQjRLIiwiYWxnIjoiRVMyNTYiLCJ4NWMiOlsiTUlJQmhUQ0NBU3VnQXdJQkFnSUlQY2ZMWi9lMEw4b3dDZ1lJS29aSXpqMEVBd0l3T1RFVU1CSUdBMVVFQ2hNTGJtTm1jbWwwZWk1dVpYUXhJVEFmQmdOVkJBTVRHRlJwYm5sTlEwVWdPQ0JzYVdObGJuTmxJR3RsZVNCRFFUQWdGdzB5TmpBM01qRXdNREF3TURCYUdBOHlNRGMyTURjeU1ESXpOVGsxT1Zvd0VqRVFNQTRHQTFVRUF4TUhWRGhNUzFNdFVEQlpNQk1HQnlxR1NNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJETlFKQnNMcUdmN3ZXL2MzWTVLbmhUTkVXVk5ERHo4SnhMcGNPSXJxcUo4bE42NUxHVktscGdieHJqNkw0dkRRSDFjOXgrRkhDWGpyM3N4KzN4cEJLR2pRakJBTUIwR0ExVWREZ1FXQkJSeXBpU21RclVvU0NtamNjUlpybS9ERGdxS05UQWZCZ05WSFNNRUdEQVdnQlR0YU9lMS9ibDQ1TElpUnFucmtLQktFdTlBR3pBS0JnZ3Foa2pPUFFRREFnTklBREJGQWlBYWV0RWxJMEJPeHA3ajZ0eEdBNnVNN0ZvS0d5ZEc2a0VVNEhIZ2laUCs4UUloQU9SckdiSEZFOVRyL2JpYjBiM2R0NC9XakVScmhLU0hraGE3MnVudHBoeVQiXX0.CiQ5NjU1NWJmOS1kNTIxLTQ5NzgtODlmYy0wMmQzYTgzOTc0ZGKaAgDCAgoKBgiAroOsDBIAsAQI0gUBAQ.NYjMMnQ14sVamEQ0y6tX8i1GurA1ucbzpOT-MjFq4mw7B-Uw1H9bciQwXk-WCPzYtRWBlzG9GuG0f5VHKTVvHw",
             height: height,
             menubar: "edit view insert format tools table",
             contextmenu: false,
@@ -72,8 +74,10 @@ const NoteRichTextEditor: React.FunctionComponent<NoteRichTextEditorProps> = ({
               "image",
               "importcss",
               "insertdatetime",
+              "licensekeymanager",
               "link",
               "lists",
+              "math",
               "media",
               "nonbreaking",
               "pagebreak",
@@ -122,9 +126,11 @@ const NoteRichTextEditor: React.FunctionComponent<NoteRichTextEditorProps> = ({
             content_style:
               "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
             advcode_inline: true,
+            quickbars_insert_toolbar: false,
             codesample_languages: [
               { text: "Shell", value: "shell" },
               { text: "JSON", value: "json" },
+              { text: "YAML", value: "yaml" },
               { text: "HTML/XML", value: "markup" },
               { text: "CSS", value: "css" },
               { text: "JavaScript", value: "javascript" },

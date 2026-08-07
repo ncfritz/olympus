@@ -10,7 +10,7 @@ import type {
   SingleNoteResponse,
 } from "@ncfritz/olympus-sdk/minerva";
 import { Button, Form, Input, Radio, Space } from "antd";
-import React, { type CSSProperties } from "react";
+import React, { type CSSProperties, useEffect } from "react";
 import {
   type Control,
   Controller,
@@ -99,6 +99,19 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
   className,
   buttonsPosition = "right",
 }: NotesEditorFormProps) => {
+  // This prevents Antd from stealing focus from TinyMCE
+  // https://stackoverflow.com/questions/17271634/tinymce-modal-in-jquery-modal-not-editable
+  useEffect(() => {
+    const handleFocusIn = (event: any) => {
+      if (event.target.closest(".tox-tinymce-aux, .tox-dialog")) {
+        event.stopImmediatePropagation();
+      }
+    };
+
+    document.addEventListener("focusin", handleFocusIn, true);
+    return () => document.removeEventListener("focusin", handleFocusIn, true);
+  }, []);
+
   const onSubmit: SubmitHandler<NotesFormInput> = async (data) => {
     try {
       if (noteId) {
