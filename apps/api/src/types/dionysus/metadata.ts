@@ -74,7 +74,7 @@ export type GraphQlVideo = Timestamped & {
   language: GraphQlLanguage;
   name: string;
   official: boolean;
-  publishedTime: string;
+  publishedDate: string;
   site: string;
   size: number;
   type: string;
