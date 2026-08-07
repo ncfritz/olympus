@@ -159,13 +159,14 @@ const PersonHistoryTimeline: React.FunctionComponent<
       });
 
       const children = (
-        <Space orientation={"horizontal"} size={8} style={{ width: "100%" }}>
+        <Space
+          orientation={"horizontal"}
+          size={8}
+          style={{ width: "100%" }}
+          className={"person-fix"}
+        >
           {getPoster(timelineEntry.poster, "vertical", 48, 4)}
-          <Space
-            orientation={"vertical"}
-            style={{ width: "100%", paddingRight: 24 }}
-            size={0}
-          >
+          <Space orientation={"vertical"} style={{ width: "100%" }} size={0}>
             <Link href={`/dionysus/movies/${timelineEntry.showId}`}>
               <Typography.Text style={{ fontSize: "12px" }} italic={true}>
                 {timelineEntry.showTitle}
