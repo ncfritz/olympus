@@ -21,7 +21,8 @@ import {
   GenreIcon,
   KeywordIcon,
   LanguageIcon,
-  MetadataOutlinedIcon, MetadataWorkflowIcon,
+  MetadataOutlinedIcon,
+  MetadataWorkflowIcon,
   MovieIcon,
   PeopleIcon,
   ProcessingQueueIcon,
@@ -29,7 +30,7 @@ import {
   TranscodeIcon,
   TvIcon,
   TvNetworkIcon,
-  WorkQueueIcon
+  WorkQueueIcon,
 } from "../../icons";
 import { useAppSelector } from "../../redux/hooks";
 
