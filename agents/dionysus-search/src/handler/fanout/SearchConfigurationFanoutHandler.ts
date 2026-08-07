@@ -58,6 +58,10 @@ export class SearchConfigurationFanoutHandler {
         logger.info("No search configurations to trigger");
         return;
       } else {
+        logger.info(
+          `Found ${configurationsToTrigger.length} search configurations to trigger`,
+        );
+
         for (const configuration of configurationsToTrigger) {
           const msg: any = {
             mediaId: configuration.mediaId,
