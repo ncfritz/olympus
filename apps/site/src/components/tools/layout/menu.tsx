@@ -7,6 +7,7 @@ import {
 import { Menu } from "antd";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import { useAppSelector } from "../../../redux/hooks";
 
 const BASE_PATH = "tools";
 const SUB_MENUS = {
@@ -18,6 +19,10 @@ const SUB_MENUS = {
 
 const ToolsMenu: React.FunctionComponent = () => {
   const router = useRouter();
+
+  const submenuExpanded = useAppSelector(
+    (state) => state.layout.submenuExpanded,
+  );
 
   const [sideMenuItem, setSideMenuItem] = useState<string>("/");
   const [sideMenuSubMenuItems, setSideMenuSubMenuItems] = useState<string[]>(
@@ -53,7 +58,7 @@ const ToolsMenu: React.FunctionComponent = () => {
   return (
     <Menu
       style={{
-        width: 300,
+        width: submenuExpanded ? 300 : 80,
       }}
       theme={"light"}
       defaultSelectedKeys={["/"]}
