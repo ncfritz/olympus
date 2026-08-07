@@ -64,7 +64,7 @@ export const toVideoDomainObject = (input: GraphQlVideo): Video => {
     name: input.name,
     id: input.id,
     official: input.official,
-    publishedTime: moment(input.publishedTime),
+    publishedTime: moment(input.publishedDate),
     site: input.site,
     size: input.size,
     language: toLanguageDomainObject(input.language),
