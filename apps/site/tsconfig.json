@@ -37,7 +37,8 @@
     "build",
     "scripts",
     "webpack",
-    "jest"
+    "jest",
+    "public",
   ],
   "include": [
     "**/*.ts",
