@@ -36,7 +36,6 @@ import CheckboxFilter from "../../../../components/dionysus/metadata/filter/Chec
 import DateRangeFilter, {
   type DateRangeFilterValue,
 } from "../../../../components/dionysus/metadata/filter/DateRangeFilter";
-import DurationFilter from "../../../../components/dionysus/metadata/filter/DurationFilter";
 import NumericRangeFilter from "../../../../components/dionysus/metadata/filter/NumericRangeFilter";
 import SingleSelectionFilter from "../../../../components/dionysus/metadata/filter/SingleSelectionFilter";
 import Sorter from "../../../../components/dionysus/metadata/filter/Sorter";
@@ -409,7 +408,7 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
           >
             <Statistic
               title={"Count"}
-              value={statsLoading ? 0 : stats.count}
+              value={statsLoading ? 0 : stats ? stats.count : "Unknown"}
               loading={statsLoading}
             />
           </Col>
@@ -419,7 +418,13 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
           >
             <Statistic
               title={"Total Seasons"}
-              value={statsLoading ? 0 : stats.totalSeasons}
+              value={
+                statsLoading
+                  ? 0
+                  : stats.totalSeasons
+                    ? stats.totalSeasons
+                    : "Unknown"
+              }
               loading={statsLoading}
             />
           </Col>
@@ -429,7 +434,13 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
           >
             <Statistic
               title={"Total Episodes"}
-              value={statsLoading ? 0 : stats.totalEpisodes}
+              value={
+                statsLoading
+                  ? 0
+                  : stats.totalEpisodes
+                    ? stats.totalEpisodes
+                    : "Unknown"
+              }
               loading={statsLoading}
             />
           </Col>
@@ -439,7 +450,13 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
           >
             <Statistic
               title={"Max Seasons"}
-              value={statsLoading ? 0 : stats.maxSeasonCount}
+              value={
+                statsLoading
+                  ? 0
+                  : stats.maxSeasonCount
+                    ? stats.maxSeasonCount
+                    : "Unknown"
+              }
               loading={statsLoading}
             />
           </Col>
@@ -449,7 +466,13 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
           >
             <Statistic
               title={"Max Episodes"}
-              value={statsLoading ? 0 : stats.maxEpisodeCount}
+              value={
+                statsLoading
+                  ? 0
+                  : stats.maxEpisodeCount
+                    ? stats.maxEpisodeCount
+                    : "Unknown"
+              }
               loading={statsLoading}
             />
           </Col>
@@ -459,7 +482,13 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
           >
             <Statistic
               title={"Average Seasons"}
-              value={statsLoading ? 0 : stats.averageSeasonCount.toFixed(2)}
+              value={
+                statsLoading
+                  ? 0
+                  : stats.averageEpisodeCount
+                    ? stats.averageSeasonCount.toFixed(2)
+                    : "Unknown"
+              }
               loading={statsLoading}
             />
           </Col>
@@ -469,7 +498,13 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
           >
             <Statistic
               title={"Average Episodes"}
-              value={statsLoading ? 0 : stats.averageEpisodeCount.toFixed(2)}
+              value={
+                statsLoading
+                  ? 0
+                  : stats.averageEpisodeCount
+                    ? stats.averageEpisodeCount.toFixed(2)
+                    : "Unknown"
+              }
               loading={statsLoading}
             />
           </Col>
