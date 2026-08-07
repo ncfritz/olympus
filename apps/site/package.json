@@ -47,7 +47,7 @@
     "@rsdoctor/webpack-plugin": "^1.5.12",
     "@semantic-release/git": "^10.0.1",
     "@svgr/webpack": "^8.1.0",
-    "@tinymce/tinymce-react": "^5.1.1",
+    "@tinymce/tinymce-react": "^6.3.0",
     "@types/crypto-js": "^4.2.2",
     "@types/humanize-duration": "^3.27.4",
     "@types/luxon": "^3.4.2",
@@ -125,7 +125,8 @@
     "socket.io-client": "^4.8.1",
     "socket.io-react-hook": "^2.4.5",
     "styled-components": "^6.1.14",
-    "tinymce": "^7.6.1",
+    "tinymce": "^8.8.0",
+    "tinymce-premium": "^8.8.0",
     "typescript": "^5.4.5",
     "typescript-eslint": "^8.34.1",
     "usehooks-ts": "^3.1.0",
@@ -141,6 +142,7 @@
     "workerDirectory": "public"
   },
   "dependencies": {
+    "protobufjs": "^8.7.1",
     "react-audio-visualize": "^1.2.0"
   }
 }
