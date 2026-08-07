@@ -92,7 +92,6 @@ export class TVEpisodeSearchHandler extends BaseSearchHandler {
       result = await this.runSearch(msg, searchConfiguration);
     }
 
-    logger.info("Updating search configuration...");
     await mediaApi.updateMediaAssetSearchConfiguration(
       "tv_episode",
       msg.mediaId,
