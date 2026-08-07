@@ -37,6 +37,8 @@ export abstract class BaseSearchHandler {
     assetType: MediaAssetSearchType,
     msg: SearchExecutionMessage,
   ) {
+    const now = moment.utc();
+
     try {
       const searchExecution = (
         await mediaApi.createMediaAssetSearchExecution(assetType, msg.mediaId)
@@ -66,7 +68,7 @@ export abstract class BaseSearchHandler {
             duplicateRecords: result.duplicateResults,
             skippedRecords: result.skippedRecords,
             totalRecords: result.totalRecords,
-            finishedTime: moment.utc().toISOString(),
+            finishedTime: now.toISOString(),
           },
         );
 
@@ -90,17 +92,21 @@ export abstract class BaseSearchHandler {
             ).data.count;
           }
 
+          const updateSearchConfigurationResponse =
+            await mediaApi.updateMediaAssetSearchConfiguration(
+              msg.initiatingAsset.assetType,
+              msg.initiatingAsset.mediaId,
+              {
+                status: "ok",
+                lastExecutionTime: now.toISOString(),
+              },
+            );
+
           if (
             count === 0 ||
             msg.initiatingAsset.assetType === "movie" ||
             msg.initiatingAsset.assetType === "tv_episode"
           ) {
-            const updateSearchConfigurationResponse = await mediaApi.updateMediaAssetSearchConfiguration(
-              msg.initiatingAsset.assetType,
-              msg.initiatingAsset.mediaId,
-              { status: "ok" },
-            );
-
             logger.info("Publishing search completion message");
 
             await notificationsApi.sendNotification({
@@ -112,7 +118,9 @@ export abstract class BaseSearchHandler {
               context: {
                 assetType: msg.initiatingAsset.assetType,
                 mediaId: msg.initiatingAsset.mediaId,
-                media: updateSearchConfigurationResponse.data.searchConfiguration.decoration,
+                media:
+                  updateSearchConfigurationResponse.data.searchConfiguration
+                    .decoration,
               },
             });
           }
