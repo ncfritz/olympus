@@ -13,6 +13,7 @@ import { useFetch } from "../../../../hooks/useFetch";
 import { DIONYSUS_CDN_HOST } from "../../../../utils/constants";
 import LoadingWrapper from "../../../common/LoadingWrapper";
 import SearchResultTag from "../SearchResultTag";
+import { v4 as uuidv4 } from "uuid";
 
 export interface ConfigureTranscodePanelProps {
   workflow: MediaAssetWorkflow;
@@ -59,7 +60,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
   >({
     dataType: undefined,
     params: step,
-    watch: [step],
+    watch: [step?.id],
     validateOptions: (o) => {
       return (
         o !== undefined && (o.status === "success" || o.status === "pending")
@@ -94,7 +95,6 @@ const ConfigureTranscodePanel: React.FunctionComponent<
     if (mediaTracks) {
       setVideoTrack(mediaTracks.videoTrackIndex);
       setAudioTrack(mediaTracks.audioTrackIndex);
-      console.log(mediaTracks.audioTrackIndex);
       setSubtitleTrack(mediaTracks.subtitleTrackIndex);
     }
   }, [mediaTracks]);
@@ -183,6 +183,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
 
                 return (
                   <Card
+                    key={uuidv4()}
                     style={{
                       backgroundColor: backgroundColor,
                       cursor:
@@ -278,10 +279,10 @@ const ConfigureTranscodePanel: React.FunctionComponent<
 
                 if (audioLanguageCode) {
                   const audioLanguage = iso6392.filter(
-                    (entry) => entry.iso6392B === audioLanguageCode,
+                    (entry) => entry.iso6392B === audioLanguageCode || entry.iso6392T === audioLanguageCode,
                   )[0];
 
-                  if (audioLanguageCode) {
+                  if (audioLanguage) {
                     titleExtra = (
                       <Space
                         orientation={"horizontal"}
@@ -335,6 +336,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
 
                 return (
                   <Card
+                    key={uuidv4()}
                     style={{
                       backgroundColor: backgroundColor,
                       cursor:
@@ -414,7 +416,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
 
                 if (subtitleLanguageCode) {
                   const subtitleLanguage = iso6392.filter(
-                    (entry) => entry.iso6392B === subtitleLanguageCode,
+                    (entry) => entry.iso6392B === subtitleLanguageCode || entry.iso6392T === subtitleLanguageCode,
                   )[0];
 
                   if (subtitleLanguage) {
@@ -502,6 +504,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
 
                 return (
                   <Card
+                    key={uuidv4()}
                     styles={{
                       body: { padding: 12, width: "100%" },
                     }}
@@ -515,7 +518,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                         setSubtitleTrack(
                           track.TrackNumber === subtitleTrack
                             ? undefined
-                            : track.TrackNumber,
+                            : track.TrackNumber
                         );
                       }
                     }}
