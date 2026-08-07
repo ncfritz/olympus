@@ -1,0 +1,15 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("bg-BG", {
+  "Embed iframe": "\u0412\u043c\u044a\u043a\u0432\u0430\u043d\u0435 \u043d\u0430 iframe",
+  "Enable scrollbar": "\u0410\u043a\u0442\u0438\u0432\u0438\u0440\u0430\u043d\u0435 \u043d\u0430 \u043f\u043b\u044a\u0437\u0433\u0430\u0447",
+  "Insert/edit iframe": "\u0412\u043c\u044a\u043a\u0432\u0430\u043d\u0435/\u0440\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u0430\u043d\u0435 \u043d\u0430 iframe",
+  "Long description URL": "URL \u0441 \u0434\u044a\u043b\u0433\u043e \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435",
+  "Page Embed": "\u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0430 \u0437\u0430 \u0432\u0433\u0440\u0430\u0436\u0434\u0430\u043d\u0435",
+  "Scrollbar": "\u041f\u043b\u044a\u0437\u0433\u0430\u0447",
+  "Show iframe border": "\u041f\u043e\u043a\u0430\u0437\u0432\u0430\u043d\u0435 \u043d\u0430 \u0433\u0440\u0430\u043d\u0438\u0446\u0430 \u043d\u0430 iframe"
+});

@@ -1,0 +1,22 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("he-IL", {
+  "AI-assisted revision on {0}": "\u05e1\u05e7\u05d9\u05e8\u05d4 \u05de\u05d1\u05d5\u05e1\u05e1\u05ea AI \u05d1-{0}",
+  "An error occurred fetching revisions.": "\u05d0\u05e8\u05e2\u05d4 \u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d0\u05d7\u05d6\u05d5\u05e8 \u05d4\u05ea\u05d9\u05e7\u05d5\u05e0\u05d9\u05dd.",
+  "An error occurred fetching the updated revision.": "\u05d0\u05e8\u05e2\u05d4 \u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d0\u05d7\u05d6\u05d5\u05e8 \u05d4\u05ea\u05d9\u05e7\u05d5\u05df \u05d4\u05de\u05e2\u05d5\u05d3\u05db\u05df.",
+  "Anonymous": "\u05d0\u05e0\u05d5\u05e0\u05d9\u05de\u05d9",
+  "Comparing revision on {0} to the previous version": "\u05de\u05e9\u05d5\u05d5\u05d4 \u05d0\u05ea \u05d4\u05ea\u05d9\u05e7\u05d5\u05df \u05d1-{0} \u05dc\u05d2\u05e8\u05e1\u05d4 \u05d4\u05e7\u05d5\u05d3\u05de\u05ea",
+  "DRAFT": "\u05d8\u05d9\u05d5\u05d8\u05d4",
+  "INITIAL": "\u05e8\u05d0\u05e9\u05d5\u05e0\u05d9\u05ea",
+  "No revisions": "\u05d0\u05d9\u05df \u05ea\u05d9\u05e7\u05d5\u05e0\u05d9\u05dd",
+  "Restore this version": "\u05e9\u05d7\u05d6\u05e8 \u05d0\u05ea \u05d4\u05d2\u05e8\u05e1\u05d4 \u05d4\u05d6\u05d0\u05ea",
+  "Revision History": "\u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea \u05d4\u05ea\u05d9\u05e7\u05d5\u05e0\u05d9\u05dd",
+  "Revision on {0}": "\u05ea\u05d9\u05e7\u05d5\u05df \u05d1-{0}",
+  "Showing the initial version on {0}": "\u05de\u05e6\u05d9\u05d2 \u05d0\u05ea \u05d4\u05d2\u05e8\u05e1\u05d4 \u05d4\u05e8\u05d0\u05e9\u05d5\u05e0\u05d9\u05ea \u05d1-{0}"
+});
+
+console.warn('TinyMCE language code "he_IL" is deprecated, please use "he-IL" instead.');

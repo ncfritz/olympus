@@ -1,1 +1,602 @@
-!function(){"use strict";let e;var t=tinymce.util.Tools.resolve("tinymce.PluginManager");let n=e=>t=>(e=>{var t,n;let r,o=typeof e;if(null===e)return"null";if("object"===o&&Array.isArray(e))return"array";return"object"===o&&(r=e,(t=String).prototype.isPrototypeOf(r)||(null==(n=e.constructor)?void 0:n.name)===t.name)?"string":o})(t)===e,r=e=>t=>typeof t===e,o=n("string"),l=n("object"),i=n("array"),s=r("boolean"),a=e=>null!=e,d=r("function"),m=r("number"),u=()=>{},c=e=>()=>e,p=(e,t)=>e===t,g=e=>t=>!e(t),h=c(!1);class f{constructor(e,t){this.tag=e,this.value=t}static some(e){return new f(!0,e)}static none(){return f.singletonNone}fold(e,t){return this.tag?t(this.value):e()}isSome(){return this.tag}isNone(){return!this.tag}map(e){return this.tag?f.some(e(this.value)):f.none()}bind(e){return this.tag?e(this.value):f.none()}exists(e){return this.tag&&e(this.value)}forall(e){return!this.tag||e(this.value)}filter(e){return!this.tag||e(this.value)?this:f.none()}getOr(e){return this.tag?this.value:e}or(e){return this.tag?this:e}getOrThunk(e){return this.tag?this.value:e()}orThunk(e){return this.tag?this:e()}getOrDie(e){if(this.tag)return this.value;throw Error(null!=e?e:"Called getOrDie on None")}static from(e){return a(e)?f.some(e):f.none()}getOrNull(){return this.tag?this.value:null}getOrUndefined(){return this.value}each(e){this.tag&&e(this.value)}toArray(){return this.tag?[this.value]:[]}toString(){return this.tag?`some(${this.value})`:"none()"}}f.singletonNone=new f(!1);let y=Array.prototype.slice,b=Array.prototype.indexOf,v=Array.prototype.push,C=(e,t)=>b.call(e,t)>-1,N=(e,t)=>{for(let n=0,r=e.length;n<r;n++)if(t(e[n],n))return!0;return!1},S=(e,t)=>{let n=e.length,r=Array(n);for(let o=0;o<n;o++){let n=e[o];r[o]=t(n,o)}return r},L=(e,t)=>{for(let n=0,r=e.length;n<r;n++)t(e[n],n)},O=(e,t)=>{let n=[];for(let r=0,o=e.length;r<o;r++){let o=e[r];t(o,r)&&n.push(o)}return n},T=(e,t,n)=>(L(e,(e,r)=>{n=t(n,e,r)}),n),k=(e,t,n)=>{for(let r=0,o=e.length;r<o;r++){let o=e[r];if(t(o,r))return f.some(o);if(n(o,r))break}return f.none()},E=(e,t)=>k(e,t,h),A=(e,t)=>(e=>{let t=[];for(let n=0,r=e.length;n<r;++n){if(!i(e[n]))throw Error("Arr.flatten item "+n+" was not an array, input: "+e);v.apply(t,e[n])}return t})(S(e,t)),x=e=>{let t=y.call(e,0);return t.reverse(),t},w=(e,t)=>t>=0&&t<e.length?f.some(e[t]):f.none(),D=e=>w(e,0),B=e=>w(e,e.length-1),M=(e,t)=>{let n=[],r=d(t)?e=>N(n,n=>t(n,e)):e=>C(n,e);for(let t=0,o=e.length;t<o;t++){let o=e[t];r(o)||n.push(o)}return n},P=Object.keys,I=(e,t)=>{let n=P(e);for(let r=0,o=n.length;r<o;r++){let o=n[r];t(e[o],o)}},R="undefined"!=typeof window?window:Function("return this;")(),U=(e,t,n=p)=>e.exists(e=>n(e,t)),$=(e,t,n)=>e.isSome()&&t.isSome()?f.some(n(e.getOrDie(),t.getOrDie())):f.none(),F=(e,t)=>{var n=e.split(".");let r=null!=t?t:R;for(let e=0;e<n.length&&null!=r;++e)r=r[n[e]];return r},_=(e=/^\s+|\s+$/g,t=>t.replace(e,"")),H=e=>"\uFEFF"===e,V=e=>{if(null==e)throw Error("Node cannot be null or undefined");return{dom:e}},j=(e,t)=>{let n=(t||document).createElement("div");if(n.innerHTML=e,!n.hasChildNodes()||n.childNodes.length>1){let t="HTML does not have a single root node";throw console.error(t,e),Error(t)}return V(n.childNodes[0])},K=(e,t)=>V((t||document).createElement(e)),z=(e,t)=>{let n=e.dom;if(1!==n.nodeType)return!1;if(void 0!==n.matches)return n.matches(t);if(void 0!==n.msMatchesSelector)return n.msMatchesSelector(t);if(void 0!==n.webkitMatchesSelector)return n.webkitMatchesSelector(t);if(void 0!==n.mozMatchesSelector)return n.mozMatchesSelector(t);else throw Error("Browser lacks native selectors")},Q=(e,t)=>e.dom===t.dom,W=Object.getPrototypeOf,q=e=>e.dom.nodeName.toLowerCase(),Z=e=>t=>t.dom.nodeType===e,G=e=>J(e)&&(e=>{let t=F("ownerDocument.defaultView",e);return l(e)&&(((e,t)=>{let n=F(e,t);if(null==n)throw Error(e+" not available on this browser");return n})("HTMLElement",t).prototype.isPrototypeOf(e)||/^HTML\w*Element$/.test(W(e).constructor.name))})(e.dom),J=Z(1),X=Z(3),Y=Z(11),ee=e=>t=>J(t)&&q(t)===e,et=e=>f.from(e.dom.parentNode).map(V),en=e=>S(e.dom.childNodes,V),er=(e,t)=>{let n=e.dom.childNodes;return f.from(n[t]).map(V)},eo=e=>er(e,0),el=e=>er(e,e.dom.childNodes.length-1),ei=e=>V(e.dom.host),es=(e,t)=>{et(e).each(n=>{n.dom.insertBefore(t.dom,e.dom)})},ea=(e,t)=>{e.dom.appendChild(t.dom)},ed=(e,t)=>{L(t,t=>{ea(e,t)})},em=(e,t)=>{let n=e.dom;I(t,(e,t)=>{if(o(e)||s(e)||m(e))n.setAttribute(t,e+"");else throw console.error("Invalid call to Attribute.set. Key ",t,":: Value ",e,":: Element ",n),Error("Attribute value was not simple")})},eu=e=>T(e.dom.attributes,(e,t)=>(e[t.name]=t.value,e),{}),ec=e=>{e.dom.textContent="",L(en(e),e=>{ep(e)})},ep=e=>{let t=e.dom;null!==t.parentNode&&t.parentNode.removeChild(t)},eg=e=>V(e.dom.cloneNode(!0)),eh=(e,t)=>{let n=((e,t)=>{let n=K(t);return em(n,eu(e)),n})(e,t);return f.from(e.dom.nextSibling).map(V).fold(()=>{et(e).each(e=>{ea(e,n)})},e=>{es(e,n)}),ed(n,en(e)),ep(e),n},ef=e=>S(e,V),ey=e=>{let t=X(e)?e.dom.parentNode:e.dom;if(null==t||null===t.ownerDocument)return!1;let n=t.ownerDocument;return(e=>{let t=V(e.dom.getRootNode());return Y(t)&&a(t.dom.host)?f.some(t):f.none()})(V(t)).fold(()=>n.body.contains(t),e=>ey(ei(e)))},eb=(e,t,n)=>{var r=e.dom;if(!o(n))throw console.error("Invalid call to CSS.set. Property ",t,":: Value ",n,":: Element ",r),Error("CSS value must be a string: "+n);void 0!==r.style&&d(r.style.getPropertyValue)&&r.style.setProperty(t,n)},ev=(e,t)=>{let n=(t||document).createDocumentFragment();return L(e,e=>{n.appendChild(e.dom)}),V(n)};var eC=(e,t,n,r,o)=>e(n,r)?f.some(n):d(o)&&o(n)?f.none():t(n,r,o);let eN=(e,t,n)=>{let r=e.dom,o=d(n)?n:h;for(;r.parentNode;){let e=V(r=r.parentNode);if(t(e))return f.some(e);if(o(e))break}return f.none()},eS=(e,t,n)=>eC((e,t)=>t(e),eN,e,t,n),eL=(e,t,n)=>eN(e,e=>z(e,t),n);var eO=tinymce.util.Tools.resolve("tinymce.dom.RangeUtils"),eT=tinymce.util.Tools.resolve("tinymce.dom.TreeWalker"),ek=tinymce.util.Tools.resolve("tinymce.util.VK"),eE=tinymce.util.Tools.resolve("tinymce.dom.DOMUtils"),eA=tinymce.util.Tools.resolve("tinymce.util.Tools");let ex=e=>t=>a(t)&&t.nodeName.toLowerCase()===e,ew=e=>t=>a(t)&&e.test(t.nodeName),eD=e=>a(e)&&3===e.nodeType,eB=e=>a(e)&&1===e.nodeType,eM=ew(/^(OL|UL|DL)$/),eP=ew(/^(OL|UL)$/),eI=ex("ol"),eR=ew(/^(LI|DT|DD)$/),eU=ew(/^(DT|DD)$/),e$=ew(/^(TH|TD)$/),eF=ex("br"),e_=(e,t)=>a(t)&&t.nodeName in e.schema.getTextBlockElements(),eH=(e,t)=>a(e)&&e.nodeName in t,eV=(e,t)=>a(t)&&t.nodeName in e.schema.getVoidElements(),ej=(e,t,n)=>{let r=e.isEmpty(t);return(!n||!(e.select("span[data-mce-type=bookmark]",t).length>0))&&r},eK=(e,t)=>e.isChildOf(t,e.getRoot()),ez=e=>t=>t.options.get(e),eQ=ez("lists_indent_on_tab"),eW=ez("forced_root_block"),eq=ez("forced_root_block_attrs"),eZ=(e,t,n={})=>{let r,o,l=e.dom,i=e.schema.getBlockElements(),s=l.createFragment(),a=eW(e),d=eq(e),m=!1;for(o=l.create(a,{...d,...n.style?{style:n.style}:{}}),eH(t.firstChild,i)||s.appendChild(o);r=t.firstChild;){let e=r.nodeName;m||"SPAN"===e&&"bookmark"===r.getAttribute("data-mce-type")||(m=!0),eH(r,i)?(s.appendChild(r),o=null):(o||(o=l.create(a,d),s.appendChild(o)),o.appendChild(r))}return!m&&o&&o.appendChild(l.create("br",{"data-mce-bogus":"1"})),s},eG=eE.DOM,eJ=ee("dd"),eX=ee("dt"),eY=e=>{eX(e)&&eh(e,"dd")},e0=(e,t)=>{if(eD(e))return{container:e,offset:t};let n=eO.getNode(e,t);return eD(n)?{container:n,offset:t>=e.childNodes.length?n.data.length:0}:n.previousSibling&&eD(n.previousSibling)?{container:n.previousSibling,offset:n.previousSibling.data.length}:n.nextSibling&&eD(n.nextSibling)?{container:n.nextSibling,offset:0}:{container:e,offset:t}},e1=e=>{let t=e.cloneRange(),n=e0(e.startContainer,e.startOffset);t.setStart(n.container,n.offset);let r=e0(e.endContainer,e.endOffset);return t.setEnd(r.container,r.offset),t},e2=["OL","UL","DL"],e3=e2.join(","),e6=(e,t)=>{let n=t||e.selection.getStart(!0);return e.dom.getParent(n,e3,e8(e,n))},e4=e=>{let t=e.selection.getSelectedBlocks();return O(M(eA.map(t,t=>e.dom.getParent(t,"li,dd,dt",e8(e,t))||t)),eR)},e5=(e,t)=>{let n=e.dom.getParents(t,"TD,TH");return n.length>0?n[0]:e.getBody()},e8=(e,t)=>E(e.dom.getParents(t,e.dom.isBlock),t=>{let n;return t.nodeName.toLowerCase()!==eW(e)&&(n=e.schema,!eM(t)&&!eR(t)&&N(e2,e=>n.isValidChild(t.nodeName,e)))}).getOr(e.getBody()),e9=(e,t)=>B(e.dom.getParents(t,"ol,ul",e8(e,t))),e7=e=>/\btox\-/.test(e.className),te=(e,t)=>k(e,eM,e$).exists(e=>e.nodeName===t&&!e7(e)),tt=(e,t)=>null!==t&&!e.dom.isEditable(t),tn=(e,t)=>{let n=e.dom.getParent(t,"ol,ul,dl");return tt(e,n)||!e.selection.isEditable()},tr=(e,t)=>{let n=e.selection.getNode();return t({parents:e.dom.getParents(n),element:n}),e.on("NodeChange",t),()=>e.off("NodeChange",t)},to=(e,t,n)=>e.dispatch("ListMutation",{action:t,element:n}),tl=e=>z(e,"OL,UL"),ti=e=>eo(e).exists(tl),ts=e=>"listAttributes"in e,ta=e=>e.depth>0,td=e=>e.isSelected,tm=(e,t)=>{ea(e.item,t.list)},tu=(e,t)=>{let n={list:K(t,e),item:K("li",e)};return ea(n.list,n.item),n},tc=(e,t,n)=>{let r=t.slice(0,n.depth);return B(r).each(t=>{if(ts(n)){let r=((e,t,n)=>{let r=K("li",e);return em(r,t),ed(r,n),r})(e,n.itemAttributes,n.content);ea(t.list,r),t.item=r,q(t.list)!==n.listType&&(t.list=eh(t.list,n.listType)),em(t.list,n.listAttributes)}else if("isFragment"in n)ed(t.item,n.content);else{let e=j(`<!--${n.content}-->`);ea(t.list,e)}}),r},tp=e=>(L(e,(t,n)=>{((e,t)=>{let n=e[t].depth,r=e=>e.depth===n&&!e.dirty,o=e=>e.depth<n;return k(x(e.slice(0,t)),r,o).orThunk(()=>k(e.slice(t+1),r,o))})(e,n).fold(()=>{t.dirty&&ts(t)&&(t.listAttributes=((e,t)=>{var n;let r={};return n=(e,t)=>{r[t]=e},I(e,(e,r)=>{(t(e,r)?n:u)(e,r)}),r})(t.listAttributes,(e,t)=>"start"!==t))},e=>{ts(t)&&ts(e)&&(t.listType=e.listType,t.listAttributes={...e.listAttributes})})}),e),tg=(e,t,n,r)=>{var o;let l,i;if(8===(i=r).dom.nodeType||"#comment"===q(i))return[{depth:e+1,content:null!=(o=r.dom.nodeValue)?o:"",dirty:!1,isSelected:!1,isComment:!0}];t.each(e=>{Q(e.start,r)&&n.set(!0)});let s=(l=n.get(),et(r).filter(J).map(t=>({depth:e,dirty:!1,isSelected:l,content:(e=>{let t=en(e);return S(el(e).exists(tl)?t.slice(0,-1):t,eg)})(r),itemAttributes:eu(r),listAttributes:eu(t),listType:q(t),isInPreviousLi:!1})));t.each(e=>{Q(e.end,r)&&n.set(!1)});let a=el(r).filter(tl).map(r=>tf(e,t,n,r)).getOr([]);return s.toArray().concat(a)},th=(e,t,n,r)=>eo(r).filter(tl).fold(()=>tg(e,t,n,r),o=>{let l=T(en(r),(r,l,i)=>{if(0===i)return r;{if(z(l,"LI"))return r.concat(tg(e,t,n,l));let i={isFragment:!0,depth:e,content:[l],isSelected:!1,dirty:!1,parentListType:q(o)};return r.concat(i)}},[]);return tf(e,t,n,o).concat(l)}),tf=(e,t,n,r)=>A(en(r),r=>(tl(r)?tf:th)(e+1,t,n,r)),ty=(e,t)=>!(e=>{let t=e6(e);return tt(e,t)||!e.selection.isEditable()})(e)&&((e,t)=>{let n=ef((e=>{let t=(e=>{let t=e9(e,e.selection.getStart()),n=O(e.selection.getSelectedBlocks(),eP);return t.toArray().concat(n)})(e);return E((e=>{let t=e.selection.getStart();return e.dom.getParents(t,"ol,ul",e8(e,t))})(e),e=>et(V(e)).exists(e=>eR(e.dom)&&eo(e).exists(e=>!eM(e.dom))&&el(e).exists(e=>!eM(e.dom)))).fold(()=>{let n;return n=e,M(S(t,e=>e9(n,e).getOr(e)))},e=>[e])})(e)),r=ef(O(e4(e),eU)),o=!1;if(n.length||r.length){let l=e.selection.getBookmark();L(((e,t)=>{let n,r=(n=!1,{get:()=>n,set:e=>{n=e}});return S(e,e=>({sourceList:e,entries:tf(0,t,r,e)}))})(n,(e=>{let t=S(e4(e),V);return $(E(t,g(ti)),E(x(t),g(ti)),(e,t)=>({start:e,end:t}))})(e)),n=>{var r,o;r=n.entries,L(O(r,td),e=>((e,t)=>{switch(e){case"Indent":t.depth++;break;case"Outdent":t.depth--;break;case"Flatten":t.depth=0}t.dirty=!0})(t,e));let l=A(((e,t)=>{if(0===e.length)return[];{let n=t(e[0]),r=[],o=[];for(let l=0,i=e.length;l<i;l++){let i=e[l],s=t(i);s!==n&&(r.push(o),o=[]),n=s,o.push(i)}return 0!==o.length&&r.push(o),r}})(n.entries,ta),t=>D(t).exists(ta)?((e,t)=>{let n=tp(t);return((e,t)=>{let n=f.none(),r=T(t,(t,r,o)=>"isComment"in r?0===o?(n=f.some(r),t):tc(e,t,r):r.depth>t.length?((e,t,n)=>{let r=((e,t,n)=>{let r=[];for(let o=0;o<n;o++)r.push(tu(e,ts(t)?t.listType:t.parentListType));return r})(e,n,n.depth-t.length);for(let e=1;e<r.length;e++)tm(r[e-1],r[e]);for(let e=0;e<r.length-1;e++)eb(r[e].item,"list-style-type","none");return B(r).each(e=>{ts(n)&&(em(e.list,n.listAttributes),em(e.item,n.itemAttributes)),ed(e.item,n.content)}),$(B(t),D(r),tm),t.concat(r)})(e,t,r):tc(e,t,r),[]);return n.each(e=>{let t=j(`<!--${e.content}-->`);D(r).each(e=>{var n;n=e.list,eo(n).fold(()=>{ea(n,t)},e=>{n.dom.insertBefore(t.dom,e.dom)})})}),D(r).map(e=>e.list)})(e.contentDocument,n).toArray()})(e,t):S(tp(t),t=>{let n="isComment"in t?ev([j(`<!--${t.content}-->`)]):ev(t.content),r=ts(t)?t.itemAttributes:{};return V(eZ(e,n.dom,r))}));L(l,n=>{to(e,"Indent"===t?"IndentList":"OutdentList",n.dom)}),o=n.sourceList,L(l,e=>{es(o,e)}),ep(n.sourceList)}),"Indent"===t?L(r,eY):L(r,t=>((e,t)=>{if(eJ(t))eh(t,"dt");else eX(t)&&f.from(t.dom.parentElement).map(V).each(n=>((e,t,n)=>{let r=eG.select('span[data-mce-type="bookmark"]',t),o=eZ(e,n),l=eG.createRng();l.setStartAfter(n),l.setEndAfter(t);let i=l.extractContents();for(let t=i.firstChild;t;t=t.firstChild)if("LI"===t.nodeName&&e.dom.isEmpty(t)){eG.remove(t);break}e.dom.isEmpty(i)||eG.insertAfter(i,t),eG.insertAfter(o,t);let s=n.parentElement;s&&ej(e.dom,s)&&(e=>{let t=e.parentNode;t&&eA.each(r,e=>{t.insertBefore(e,n.parentNode)}),eG.remove(e)})(s),eG.remove(n),ej(e.dom,t)&&eG.remove(t)})(e,n.dom,t.dom))})(e,t)),e.selection.moveToBookmark(l),e.selection.setRng(e1(e.selection.getRng())),e.nodeChanged(),o=!0}return o})(e,t),tb=e=>ty(e,"Indent"),tv=e=>ty(e,"Outdent"),tC=e=>ty(e,"Flatten");var tN=tinymce.util.Tools.resolve("tinymce.dom.BookmarkManager");let tS=eE.DOM,tL=e=>{let t={},n=n=>{let r=e[n?"startContainer":"endContainer"],o=e[n?"startOffset":"endOffset"];if(eB(r)){let e=tS.create("span",{"data-mce-type":"bookmark"});r.hasChildNodes()?(o=Math.min(o,r.childNodes.length-1),n?r.insertBefore(e,r.childNodes[o]):tS.insertAfter(e,r.childNodes[o])):r.appendChild(e),r=e,o=0}t[n?"startContainer":"endContainer"]=r,t[n?"startOffset":"endOffset"]=o};return n(!0),e.collapsed||n(),t},tO=e=>{let t=t=>{let n=e[t?"startContainer":"endContainer"],r=e[t?"startOffset":"endOffset"];if(n){if(eB(n)&&n.parentNode){let e=n;r=(e=>{var t;let n=null==(t=e.parentNode)?void 0:t.firstChild,r=0;for(;n;){if(n===e)return r;(!eB(n)||"bookmark"!==n.getAttribute("data-mce-type"))&&r++,n=n.nextSibling}return -1})(n),n=n.parentNode,tS.remove(e),!n.hasChildNodes()&&tS.isBlock(n)&&n.appendChild(tS.create("br"))}e[t?"startContainer":"endContainer"]=n,e[t?"startOffset":"endOffset"]=r}};t(!0),t();let n=tS.createRng();return n.setStart(e.startContainer,e.startOffset),e.endContainer&&n.setEnd(e.endContainer,e.endOffset),e1(n)},tT=e=>{switch(e){case"UL":return"ToggleUlList";case"OL":return"ToggleOlList";case"DL":return"ToggleDLList"}},tk=(e,t)=>{eA.each(t,(t,n)=>{e.setAttribute(n,t)})},tE=(e,t,n)=>{let r=n["list-style-type"]?n["list-style-type"]:null;e.setStyle(t,"list-style-type",r),tk(t,n["list-attributes"]),eA.each(e.select("li",t),e=>{tk(e,n["list-item-attributes"])})},tA=(e,t)=>a(t)&&!eH(t,e.schema.getBlockElements()),tx=(e,t,n,r)=>{let o=t[n?"startContainer":"endContainer"],l=t[n?"startOffset":"endOffset"];eB(o)&&(o=o.childNodes[Math.min(l,o.childNodes.length-1)]||o),!n&&eF(o.nextSibling)&&(o=o.nextSibling);let i=(t,n)=>{var o;let l,i=new eT(t,(t=>{for(;!e.dom.isBlock(t)&&t.parentNode&&r!==t;)t=t.parentNode;return t})(t)),s=n?"next":"prev";for(;l=i[s]();)if(!(eV(e,l)||H(l.textContent)||(null==(o=l.textContent)?void 0:o.length)===0))return f.some(l);return f.none()};if(n&&eD(o))if(H(o.textContent))o=i(o,!1).getOr(o);else for(null!==o.parentNode&&tA(e,o.parentNode)&&(o=o.parentNode);null!==o.previousSibling&&(tA(e,o.previousSibling)||eD(o.previousSibling));)o=o.previousSibling;if(!n&&eD(o))if(H(o.textContent))o=i(o,!0).getOr(o);else for(null!==o.parentNode&&tA(e,o.parentNode)&&(o=o.parentNode);null!==o.nextSibling&&(tA(e,o.nextSibling)||eD(o.nextSibling));)o=o.nextSibling;for(;o.parentNode!==r;){let t=o.parentNode;if(e_(e,o)||/^(TD|TH)$/.test(t.nodeName))break;o=t}return o},tw=(e,t,n)=>{let r=e.selection.getRng(),o="LI",l=e8(e,((e,t)=>{var n;let r=e.selection.getStart(!0);return(n=V(tx(e,t,!0,e.getBody())),eN(n,function(e,...t){return(...n)=>{let r=t.concat(n);return e.apply(null,r)}}(Q,V(t.commonAncestorContainer)),void 0).isSome())?t.commonAncestorContainer:r})(e,r)),i=e.dom;if("false"===i.getContentEditable(e.selection.getNode()))return;"DL"===(t=t.toUpperCase())&&(o="DT");let s=tL(r),a=O(((e,t,n)=>{let r,o=[],l=e.dom,i=tx(e,t,!0,n),s=tx(e,t,!1,n),a=[];for(let e=i;e&&(a.push(e),e!==s);e=e.nextSibling);return eA.each(a,t=>{var i;if(e_(e,t)){o.push(t),r=null;return}if(l.isBlock(t)||eF(t)){eF(t)&&l.remove(t),r=null;return}let s=t.nextSibling;if(tN.isBookmarkNode(t)&&(eM(s)||e_(e,s)||!s&&t.parentNode===n)){r=null;return}r||(r=l.create("p"),null==(i=t.parentNode)||i.insertBefore(r,t),o.push(r)),r.appendChild(t)}),o})(e,r,l),e.dom.isEditable);eA.each(a,r=>{let l,s=r.previousSibling,a=r.parentNode;if(!eR(a)){var d;s&&eM(s)&&s.nodeName===t&&((e,t,n)=>{let r=e.getStyle(t,"list-style-type"),o=n?n["list-style-type"]:"";return r===(o=null===o?"":o)})(i,s,n)?(l=s,r=i.rename(r,o),s.appendChild(r)):(l=i.create(t),a.insertBefore(l,r),l.appendChild(r),r=i.rename(r,o)),d=r,eA.each(["margin","margin-right","margin-bottom","margin-left","margin-top","padding","padding-right","padding-bottom","padding-left","padding-top"],e=>i.setStyle(d,e,"")),tE(i,l,n),tB(e.dom,l)}}),e.selection.setRng(tO(s))},tD=(e,t,n)=>{var r,o,l;return eM(t)&&t.nodeName===(null==n?void 0:n.nodeName)&&(r=e,o=t,l=n,r.getStyle(o,"list-style-type",!0)===r.getStyle(l,"list-style-type",!0))&&t.className===n.className},tB=(e,t)=>{let n,r=t.nextSibling;if(tD(e,t,r)){let o=r;for(;n=o.firstChild;)t.appendChild(n);e.remove(o)}if(r=t.previousSibling,tD(e,t,r)){let o=r;for(;n=o.lastChild;)t.insertBefore(n,t.firstChild);e.remove(o)}},tM=(e,t,n,r)=>{if(t.nodeName!==n){let o=e.dom.rename(t,n);tE(e.dom,o,r),to(e,tT(n),o)}else tE(e.dom,t,r),to(e,tT(n),t)},tP=(e,t,n,r)=>{if(t.classList.forEach((e,n,r)=>{e.startsWith("tox-")&&(r.remove(e),0===r.length&&t.removeAttribute("class"))}),t.nodeName!==n){let o=e.dom.rename(t,n);tE(e.dom,o,r),to(e,tT(n),o)}else tE(e.dom,t,r),to(e,tT(n),t)},tI=(e,t,n)=>{let r=e6(e);if(tn(e,r))return;let o=(e=>{let t=e6(e),n=e.selection.getSelectedBlocks();return a(t)&&1===n.length&&n[0]===t?O(t.querySelectorAll(e3),eM):O(n,e=>eM(e)&&t!==e)})(e),i=l(n)?n:{};if(o.length>0){let n=eM(r);if(!n||r.nodeName!==t||"list-style-type"in i||e7(r)){tw(e,t,i);let l=tL(e.selection.getRng()),s=n?[r,...o]:o,a=n&&e7(r)?tP:tM;eA.each(s,n=>{a(e,n,t,i)}),e.selection.setRng(tO(l))}else tC(e)}else if(r!==e.getBody())if(r)if(r.nodeName!==t||"list-style-type"in i||e7(r)){let n=tL(e.selection.getRng());e7(r)&&r.classList.forEach((e,t,n)=>{e.startsWith("tox-")&&(n.remove(e),0===n.length&&r.removeAttribute("class"))}),tE(e.dom,r,i);let o=e.dom.rename(r,t);tB(e.dom,o),e.selection.setRng(tO(n)),tw(e,t,i),to(e,tT(t),o)}else tC(e);else tw(e,t,i),to(e,tT(t),r)},tR=eE.DOM,tU=(e,t)=>{let n=eA.grep(e.select("ol,ul",t));eA.each(n,t=>{let n=t.parentElement;if(n&&"LI"===n.nodeName&&n.firstChild===t){let r=n.previousSibling;r&&"LI"===r.nodeName?(r.appendChild(t),ej(e,n)&&tR.remove(n)):tR.setStyle(n,"listStyleType","none")}if(eM(n)){let e=n.previousSibling;e&&"LI"===e.nodeName&&e.appendChild(t)}})},t$=(e,t,n,r)=>{var o,l;let i=t.startContainer,s=t.startOffset;if(eD(i)&&(n?s<i.data.length:s>0))return i;let a=e.schema.getNonEmptyElements();eB(i)&&(i=eO.getNode(i,s));let d=new eT(i,r);n&&(o=e.dom,eF(l=i)&&o.isBlock(l.nextSibling)&&!eF(l.previousSibling))&&d.next();let m=n?d.next.bind(d):d.prev2.bind(d);for(;i=m();)if("LI"===i.nodeName&&!i.hasChildNodes()||a[i.nodeName]||eD(i)&&i.data.length>0)return i;return null},tF=(e,t)=>{let n=t.childNodes;return 1===n.length&&!eM(n[0])&&e.isBlock(n[0])},t_=(e,t,n)=>{let r,o,l=tF(e,n)?n.firstChild:n;if(tF(e,t)&&(o=t.firstChild,f.from(o).map(V).filter(G).exists(e=>((e,t=!1)=>ey(e)?e.dom.isContentEditable:eC((e,t)=>z(e,t),eL,e,"[contenteditable]",void 0).fold(c(t),e=>"true"===e.dom.contentEditable))(e)&&!C(["details"],q(e))))&&e.remove(t.firstChild,!0),!ej(e,t,!0))for(;r=t.firstChild;)l.appendChild(r)},tH=(e,t,n)=>{let r,o=t.parentNode;if(!eK(e,t)||!eK(e,n))return;eM(n.lastChild)&&(r=n.lastChild),o===n.lastChild&&eF(o.previousSibling)&&e.remove(o.previousSibling);let l=n.lastChild;l&&eF(l)&&t.hasChildNodes()&&e.remove(l),ej(e,n,!0)&&ec(V(n)),t_(e,t,n),r&&n.appendChild(r);let i=((e,t)=>{let n=e.dom,r=t.dom;return n!==r&&n.contains(r)})(V(n),V(t))?e.getParents(t,eM,n):[];e.remove(t),L(i,t=>{ej(e,t)&&t!==e.getRoot()&&e.remove(t)})},tV=e=>{let t=e.selection.getStart(),n=e5(e,t);return e.dom.getParent(t,"LI,DT,DD",n)||e4(e).length>0},tj=(e,t)=>{let n=e.selection;return!tn(e,n.getNode())&&(n.isCollapsed()?((e,t)=>{let n=e.dom,r=e.selection,o=e5(e,r.getStart()),l=n.getParent(r.getStart(),"LI",o);if(l){let i=l.parentElement;if(i===e.getBody()&&ej(n,i))return!0;let s=e1(r.getRng()),a=n.getParent(t$(e,s,t,o),"LI",o),d=a&&(t?n.isChildOf(l,a):n.isChildOf(a,l));if(a&&a!==l&&!d)return e.undoManager.transact(()=>{if(t)((e,t,n,r)=>{let o=e.dom;if(o.isEmpty(r))ec(V(r)),tH(e.dom,n,r),e.selection.setCursorLocation(r,0);else{let l=tL(t);tH(o,n,r),e.selection.setRng(tO(l))}})(e,s,a,l);else if((null==(n=l.parentNode)?void 0:n.firstChild)===l)tv(e);else{var n;let t=tL(s);tH(e.dom,l,a);let r=tO(t);e.selection.setRng(r)}}),!0;if(d&&!t&&a!==l){let t=s.commonAncestorContainer.parentElement;return!(!t||n.isChildOf(a,t))&&(e.undoManager.transact(()=>{let r=tL(s);t_(n,t,a),t.remove();let o=tO(r);e.selection.setRng(o)}),!0)}if(!a&&!t&&0===s.startOffset&&0===s.endOffset)return e.undoManager.transact(()=>{tC(e)}),!0}return!1})(e,t)||((e,t)=>{let n=e.dom,r=e.selection.getStart(),o=e5(e,r),l=n.getParent(r,n.isBlock,o);if(l&&n.isEmpty(l,void 0,{checkRootAsContent:!0})){let r=e1(e.selection.getRng()),i=t$(e,r,t,o),s=n.getParent(i,"LI",o);if(i&&s){let a=e=>C(["td","th","caption"],q(e)),d=e=>e.dom===o;return!!((e,t,n=p)=>$(e,t,n).getOr(e.isNone()&&t.isNone()))(eS(V(s),a,d),eS(V(r.startContainer),a,d),Q)&&(e.undoManager.transact(()=>{let r=s.parentNode,a=n.getParent(l.parentNode,n.isBlock,o);n.remove(l),a&&n.isEmpty(a)&&n.remove(a),tB(n,r),e.selection.select(i,!0),e.selection.collapse(t)}),!0)}}return!1})(e,t):!!tV(e)&&(e.undoManager.transact(()=>{let t=!0,n=()=>t=!1;e.on("input",n),e.execCommand("Delete"),e.off("input",n),t&&e.dispatch("input"),tU(e.dom,e.getBody())}),!0))},tK=e=>T(S(x(_(e).split("")),(e,t)=>Math.pow(26,t)*(e.toUpperCase().charCodeAt(0)-65+1)),(e,t)=>e+t,0),tz=e=>{if(--e<0)return"";{let t=e%26;return tz(Math.floor(e/26))+String.fromCharCode(65+t)}},tQ=(e,t)=>()=>{let n=e6(e);return a(n)&&n.nodeName===t},tW=e=>{e.addCommand("mceListProps",()=>{let t=e6(e);!eI(t)||tn(e,t)||e.windowManager.open({title:"List Properties",body:{type:"panel",items:[{type:"input",name:"start",label:"Start list at number",inputMode:"numeric"}]},initialData:{start:(e=>{let t=parseInt(e.start,10);return U(e.listStyleType,"upper-alpha")?tz(t):U(e.listStyleType,"lower-alpha")?tz(t).toLowerCase():e.start})({start:e.dom.getAttrib(t,"start","1"),listStyleType:f.from(e.dom.getStyle(t,"list-style-type"))})},buttons:[{type:"cancel",name:"cancel",text:"Cancel"},{type:"submit",name:"save",text:"Save",primary:!0}],onSubmit:t=>{(e=>{switch((e=>{if(/^[0-9]+$/.test(e))return 2;if(/^[A-Z]+$/.test(e))return 0;if(/^[a-z]+$/.test(e))return 1;if(!(e.length>0))return 3;else return 4})(e)){case 2:return f.some({listStyleType:f.none(),start:e});case 0:return f.some({listStyleType:f.some("upper-alpha"),start:tK(e).toString()});case 1:return f.some({listStyleType:f.some("lower-alpha"),start:tK(e).toString()});case 3:return f.some({listStyleType:f.none(),start:""});case 4:return f.none()}})(t.getData().start).each(t=>{e.execCommand("mceListUpdate",!1,{attrs:{start:"1"===t.start?"":t.start},styles:{"list-style-type":t.listStyleType.getOr("")}})}),t.close()}})})};var tq=tinymce.util.Tools.resolve("tinymce.html.Node");let tZ=e=>{let t=(t,n)=>{let r=tq.create("li");L(t,e=>r.append(e)),n?e.insert(r,n,!0):e.append(r)},n=T(e.children(),(e,n)=>3===n.type?[...e,n]:0!==e.length&&3!==n.type?(t(e,n),[]):e,[]);0!==n.length&&t(n)},tG=(e,t)=>n=>(n.setEnabled(e.selection.isEditable()),tr(e,r=>{n.setActive(te(r.parents,t)),n.setEnabled(!tn(e,r.element)&&e.selection.isEditable())}));t.add("lists",e=>{((0,e.options.register)("lists_indent_on_tab",{processor:"boolean",default:!0}),e.on("PreInit",()=>{let{parser:t}=e;t.addNodeFilter("ul,ol",e=>L(e,tZ))}),e.hasPlugin("rtc",!0))?tW(e):(eQ(e)&&e.on("keydown",t=>{t.keyCode!==ek.TAB||ek.metaKeyPressed(t)||e.undoManager.transact(()=>{(t.shiftKey?tv(e):tb(e))&&t.preventDefault()})}),e.on("ExecCommand",t=>{let n=t.command.toLowerCase();("delete"===n||"forwarddelete"===n)&&tV(e)&&tU(e.dom,e.getBody())}),e.on("keydown",t=>{t.keyCode===ek.BACKSPACE?tj(e,!1)&&t.preventDefault():t.keyCode===ek.DELETE&&tj(e,!0)&&t.preventDefault()}),e.on("BeforeExecCommand",t=>{let n=t.command.toLowerCase();"indent"===n?tb(e):"outdent"===n&&tv(e)}),e.addCommand("InsertUnorderedList",(t,n)=>{tI(e,"UL",n)}),e.addCommand("InsertOrderedList",(t,n)=>{tI(e,"OL",n)}),e.addCommand("InsertDefinitionList",(t,n)=>{tI(e,"DL",n)}),e.addCommand("RemoveList",()=>{tC(e)}),tW(e),e.addCommand("mceListUpdate",(t,n)=>{l(n)&&((e,t)=>{let n=e6(e);null===n||tn(e,n)||e.undoManager.transact(()=>{l(t.styles)&&e.dom.setStyles(n,t.styles),l(t.attrs)&&I(t.attrs,(t,r)=>e.dom.setAttrib(n,r,t))})})(e,n)}),e.addQueryStateHandler("InsertUnorderedList",tQ(e,"UL")),e.addQueryStateHandler("InsertOrderedList",tQ(e,"OL")),e.addQueryStateHandler("InsertDefinitionList",tQ(e,"DL")));let t=t=>()=>e.execCommand(t);return e.hasPlugin("advlist")||(e.ui.registry.addToggleButton("numlist",{icon:"ordered-list",active:!1,tooltip:"Numbered list",onAction:t("InsertOrderedList"),onSetup:tG(e,"OL")}),e.ui.registry.addToggleButton("bullist",{icon:"unordered-list",active:!1,tooltip:"Bullet list",onAction:t("InsertUnorderedList"),onSetup:tG(e,"UL")})),e.ui.registry.addMenuItem("listprops",{text:"List properties...",icon:"ordered-list",onAction:()=>e.execCommand("mceListProps"),onSetup:t=>tr(e,n=>t.setEnabled(te(n.parents,"OL")&&!tn(e,n.element)))}),e.ui.registry.addContextMenu("lists",{update:t=>eI(e6(e,t))?["listprops"]:[]}),{backspaceDelete:t=>{tj(e,t)}}})}();
+/**
+ * TinyMCE version 8.8.0 (2026-07-15)
+ */
+
+(function () {
+    'use strict';
+
+    var global = tinymce.util.Tools.resolve('tinymce.PluginManager');
+
+    const get = (editor) => ({
+        backspaceDelete: (isForward) => {
+            editor.execCommand('mceListBackspaceDelete', false, isForward);
+        }
+    });
+
+    /* eslint-disable @typescript-eslint/no-wrapper-object-types */
+    const isSimpleType = (type) => (value) => typeof value === type;
+    const isNullable = (a) => a === null || a === undefined;
+    const isNonNullable = (a) => !isNullable(a);
+    const isFunction = isSimpleType('function');
+
+    const constant = (value) => {
+        return () => {
+            return value;
+        };
+    };
+    const tripleEquals = (a, b) => {
+        return a === b;
+    };
+    const never = constant(false);
+
+    /**
+     * The `Optional` type represents a value (of any type) that potentially does
+     * not exist. Any `Optional<T>` can either be a `Some<T>` (in which case the
+     * value does exist) or a `None` (in which case the value does not exist). This
+     * module defines a whole lot of FP-inspired utility functions for dealing with
+     * `Optional` objects.
+     *
+     * Comparison with null or undefined:
+     * - We don't get fancy null coalescing operators with `Optional`
+     * - We do get fancy helper functions with `Optional`
+     * - `Optional` support nesting, and allow for the type to still be nullable (or
+     * another `Optional`)
+     * - There is no option to turn off strict-optional-checks like there is for
+     * strict-null-checks
+     */
+    class Optional {
+        tag;
+        value;
+        // Sneaky optimisation: every instance of Optional.none is identical, so just
+        // reuse the same object
+        static singletonNone = new Optional(false);
+        // The internal representation has a `tag` and a `value`, but both are
+        // private: able to be console.logged, but not able to be accessed by code
+        constructor(tag, value) {
+            this.tag = tag;
+            this.value = value;
+        }
+        // --- Identities ---
+        /**
+         * Creates a new `Optional<T>` that **does** contain a value.
+         */
+        static some(value) {
+            return new Optional(true, value);
+        }
+        /**
+         * Create a new `Optional<T>` that **does not** contain a value. `T` can be
+         * any type because we don't actually have a `T`.
+         */
+        static none() {
+            return Optional.singletonNone;
+        }
+        /**
+         * Perform a transform on an `Optional` type. Regardless of whether this
+         * `Optional` contains a value or not, `fold` will return a value of type `U`.
+         * If this `Optional` does not contain a value, the `U` will be created by
+         * calling `onNone`. If this `Optional` does contain a value, the `U` will be
+         * created by calling `onSome`.
+         *
+         * For the FP enthusiasts in the room, this function:
+         * 1. Could be used to implement all of the functions below
+         * 2. Forms a catamorphism
+         */
+        fold(onNone, onSome) {
+            if (this.tag) {
+                return onSome(this.value);
+            }
+            else {
+                return onNone();
+            }
+        }
+        /**
+         * Determine if this `Optional` object contains a value.
+         */
+        isSome() {
+            return this.tag;
+        }
+        /**
+         * Determine if this `Optional` object **does not** contain a value.
+         */
+        isNone() {
+            return !this.tag;
+        }
+        // --- Functor (name stolen from Haskell / maths) ---
+        /**
+         * Perform a transform on an `Optional` object, **if** there is a value. If
+         * you provide a function to turn a T into a U, this is the function you use
+         * to turn an `Optional<T>` into an `Optional<U>`. If this **does** contain
+         * a value then the output will also contain a value (that value being the
+         * output of `mapper(this.value)`), and if this **does not** contain a value
+         * then neither will the output.
+         */
+        map(mapper) {
+            if (this.tag) {
+                return Optional.some(mapper(this.value));
+            }
+            else {
+                return Optional.none();
+            }
+        }
+        // --- Monad (name stolen from Haskell / maths) ---
+        /**
+         * Perform a transform on an `Optional` object, **if** there is a value.
+         * Unlike `map`, here the transform itself also returns an `Optional`.
+         */
+        bind(binder) {
+            if (this.tag) {
+                return binder(this.value);
+            }
+            else {
+                return Optional.none();
+            }
+        }
+        // --- Traversable (name stolen from Haskell / maths) ---
+        /**
+         * For a given predicate, this function finds out if there **exists** a value
+         * inside this `Optional` object that meets the predicate. In practice, this
+         * means that for `Optional`s that do not contain a value it returns false (as
+         * no predicate-meeting value exists).
+         */
+        exists(predicate) {
+            return this.tag && predicate(this.value);
+        }
+        /**
+         * For a given predicate, this function finds out if **all** the values inside
+         * this `Optional` object meet the predicate. In practice, this means that
+         * for `Optional`s that do not contain a value it returns true (as all 0
+         * objects do meet the predicate).
+         */
+        forall(predicate) {
+            return !this.tag || predicate(this.value);
+        }
+        filter(predicate) {
+            if (!this.tag || predicate(this.value)) {
+                return this;
+            }
+            else {
+                return Optional.none();
+            }
+        }
+        // --- Getters ---
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided `Optional` object does not contain a
+         * value.
+         */
+        getOr(replacement) {
+            return this.tag ? this.value : replacement;
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided `Optional` object does not contain a
+         * value.  Unlike `getOr`, in this method the `replacement` object is also
+         * `Optional` - meaning that this method will always return an `Optional`.
+         */
+        or(replacement) {
+            return this.tag ? this : replacement;
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided `Optional` object does not contain a
+         * value. Unlike `getOr`, in this method the `replacement` value is
+         * "thunked" - that is to say that you don't pass a value to `getOrThunk`, you
+         * pass a function which (if called) will **return** the `value` you want to
+         * use.
+         */
+        getOrThunk(thunk) {
+            return this.tag ? this.value : thunk();
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided Optional object does not contain a
+         * value.
+         *
+         * Unlike `or`, in this method the `replacement` value is "thunked" - that is
+         * to say that you don't pass a value to `orThunk`, you pass a function which
+         * (if called) will **return** the `value` you want to use.
+         *
+         * Unlike `getOrThunk`, in this method the `replacement` value is also
+         * `Optional`, meaning that this method will always return an `Optional`.
+         */
+        orThunk(thunk) {
+            return this.tag ? this : thunk();
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, throwing an
+         * exception if the provided `Optional` object does not contain a value.
+         *
+         * WARNING:
+         * You should only be using this function if you know that the `Optional`
+         * object **is not** empty (otherwise you're throwing exceptions in production
+         * code, which is bad).
+         *
+         * In tests this is more acceptable.
+         *
+         * Prefer other methods to this, such as `.each`.
+         */
+        getOrDie(message) {
+            if (!this.tag) {
+                throw new Error(message ?? 'Called getOrDie on None');
+            }
+            else {
+                return this.value;
+            }
+        }
+        // --- Interop with null and undefined ---
+        /**
+         * Creates an `Optional` value from a nullable (or undefined-able) input.
+         * Null, or undefined, is converted to `None`, and anything else is converted
+         * to `Some`.
+         */
+        static from(value) {
+            return isNonNullable(value) ? Optional.some(value) : Optional.none();
+        }
+        /**
+         * Converts an `Optional` to a nullable type, by getting the value if it
+         * exists, or returning `null` if it does not.
+         */
+        getOrNull() {
+            return this.tag ? this.value : null;
+        }
+        /**
+         * Converts an `Optional` to an undefined-able type, by getting the value if
+         * it exists, or returning `undefined` if it does not.
+         */
+        getOrUndefined() {
+            return this.value;
+        }
+        // --- Utilities ---
+        /**
+         * If the `Optional` contains a value, perform an action on that value.
+         * Unlike the rest of the methods on this type, `.each` has side-effects. If
+         * you want to transform an `Optional<T>` **into** something, then this is not
+         * the method for you. If you want to use an `Optional<T>` to **do**
+         * something, then this is the method for you - provided you're okay with not
+         * doing anything in the case where the `Optional` doesn't have a value inside
+         * it. If you're not sure whether your use-case fits into transforming
+         * **into** something or **doing** something, check whether it has a return
+         * value. If it does, you should be performing a transform.
+         */
+        each(worker) {
+            if (this.tag) {
+                worker(this.value);
+            }
+        }
+        /**
+         * Turn the `Optional` object into an array that contains all of the values
+         * stored inside the `Optional`. In practice, this means the output will have
+         * either 0 or 1 elements.
+         */
+        toArray() {
+            return this.tag ? [this.value] : [];
+        }
+        /**
+         * Turn the `Optional` object into a string for debugging or printing. Not
+         * recommended for production code, but good for debugging. Also note that
+         * these days an `Optional` object can be logged to the console directly, and
+         * its inner value (if it exists) will be visible.
+         */
+        toString() {
+            return this.tag ? `some(${this.value})` : 'none()';
+        }
+    }
+
+    const nativeSlice = Array.prototype.slice;
+    const exists = (xs, pred) => {
+        for (let i = 0, len = xs.length; i < len; i++) {
+            const x = xs[i];
+            if (pred(x, i)) {
+                return true;
+            }
+        }
+        return false;
+    };
+    const map = (xs, f) => {
+        // pre-allocating array size when it's guaranteed to be known
+        // http://jsperf.com/push-allocated-vs-dynamic/22
+        const len = xs.length;
+        const r = new Array(len);
+        for (let i = 0; i < len; i++) {
+            const x = xs[i];
+            r[i] = f(x, i);
+        }
+        return r;
+    };
+    // Unwound implementing other functions in terms of each.
+    // The code size is roughly the same, and it should allow for better optimisation.
+    // const each = function<T, U>(xs: T[], f: (x: T, i?: number, xs?: T[]) => void): void {
+    const each = (xs, f) => {
+        for (let i = 0, len = xs.length; i < len; i++) {
+            const x = xs[i];
+            f(x, i);
+        }
+    };
+    const foldl = (xs, f, acc) => {
+        each(xs, (x, i) => {
+            acc = f(acc, x, i);
+        });
+        return acc;
+    };
+    const findUntil = (xs, pred, until) => {
+        for (let i = 0, len = xs.length; i < len; i++) {
+            const x = xs[i];
+            if (pred(x, i)) {
+                return Optional.some(x);
+            }
+            else if (until(x, i)) {
+                break;
+            }
+        }
+        return Optional.none();
+    };
+    const find = (xs, pred) => {
+        return findUntil(xs, pred, never);
+    };
+    const reverse = (xs) => {
+        const r = nativeSlice.call(xs, 0);
+        r.reverse();
+        return r;
+    };
+    isFunction(Array.from) ? Array.from : (x) => nativeSlice.call(x);
+
+    /**
+     * **Is** the value stored inside this Optional object equal to `rhs`?
+     */
+    const is = (lhs, rhs, comparator = tripleEquals) => lhs.exists((left) => comparator(left, rhs));
+
+    const blank = (r) => (s) => s.replace(r, '');
+    /** removes all leading and trailing spaces */
+    const trim = blank(/^\s+|\s+$/g);
+    const isNotEmpty = (s) => s.length > 0;
+    const isEmpty = (s) => !isNotEmpty(s);
+
+    // Example: 'AB' -> 28
+    const parseAlphabeticBase26 = (str) => {
+        const chars = reverse(trim(str).split(''));
+        const values = map(chars, (char, i) => {
+            const charValue = char.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0) + 1;
+            return Math.pow(26, i) * charValue;
+        });
+        return foldl(values, (sum, v) => sum + v, 0);
+    };
+    // Example: 28 -> 'AB'
+    const composeAlphabeticBase26 = (value) => {
+        value--;
+        if (value < 0) {
+            return '';
+        }
+        else {
+            const remainder = value % 26;
+            const quotient = Math.floor(value / 26);
+            const rest = composeAlphabeticBase26(quotient);
+            const char = String.fromCharCode('A'.charCodeAt(0) + remainder);
+            return rest + char;
+        }
+    };
+    const isUppercase = (str) => /^[A-Z]+$/.test(str);
+    const isLowercase = (str) => /^[a-z]+$/.test(str);
+    const isNumeric = (str) => /^[0-9]+$/.test(str);
+    const deduceListType = (start) => {
+        if (isNumeric(start)) {
+            return 2 /* ListType.Numeric */;
+        }
+        else if (isUppercase(start)) {
+            return 0 /* ListType.UpperAlpha */;
+        }
+        else if (isLowercase(start)) {
+            return 1 /* ListType.LowerAlpha */;
+        }
+        else if (isEmpty(start)) {
+            return 3 /* ListType.None */;
+        }
+        else {
+            return 4 /* ListType.Unknown */;
+        }
+    };
+    const parseStartValue = (start) => {
+        switch (deduceListType(start)) {
+            case 2 /* ListType.Numeric */:
+                return Optional.some({
+                    listStyleType: Optional.none(),
+                    start
+                });
+            case 0 /* ListType.UpperAlpha */:
+                return Optional.some({
+                    listStyleType: Optional.some('upper-alpha'),
+                    start: parseAlphabeticBase26(start).toString()
+                });
+            case 1 /* ListType.LowerAlpha */:
+                return Optional.some({
+                    listStyleType: Optional.some('lower-alpha'),
+                    start: parseAlphabeticBase26(start).toString()
+                });
+            case 3 /* ListType.None */:
+                return Optional.some({
+                    listStyleType: Optional.none(),
+                    start: ''
+                });
+            case 4 /* ListType.Unknown */:
+                return Optional.none();
+        }
+    };
+    const parseDetail = (detail) => {
+        const start = parseInt(detail.start, 10);
+        if (is(detail.listStyleType, 'upper-alpha')) {
+            return composeAlphabeticBase26(start);
+        }
+        else if (is(detail.listStyleType, 'lower-alpha')) {
+            return composeAlphabeticBase26(start).toLowerCase();
+        }
+        else {
+            return detail.start;
+        }
+    };
+
+    const option = (name) => (editor) => editor.options.get(name);
+    const getForcedRootBlock = option('forced_root_block');
+
+    const isCustomList = (list) => /\btox\-/.test(list.className);
+    const matchNodeNames = (regex) => (node) => isNonNullable(node) && regex.test(node.nodeName);
+    const matchNodeName = (name) => (node) => isNonNullable(node) && node.nodeName.toLowerCase() === name;
+    const isListNode = matchNodeNames(/^(OL|UL|DL)$/);
+    const isTableCellNode = matchNodeNames(/^(TH|TD)$/);
+    const isListItemNode = matchNodeNames(/^(LI|DT|DD)$/);
+    const inList = (parents, listName) => findUntil(parents, isListNode, isTableCellNode)
+        .exists((list) => list.nodeName === listName && !isCustomList(list));
+    const setNodeChangeHandler = (editor, nodeChangeHandler) => {
+        const initialNode = editor.selection.getNode();
+        // Set the initial state
+        nodeChangeHandler({
+            parents: editor.dom.getParents(initialNode),
+            element: initialNode
+        });
+        editor.on('NodeChange', nodeChangeHandler);
+        return () => editor.off('NodeChange', nodeChangeHandler);
+    };
+    const isWithinNonEditable = (editor, element) => element !== null && !editor.dom.isEditable(element);
+    const isWithinNonEditableList = (editor, element) => {
+        const parentList = editor.dom.getParent(element, 'ol,ul,dl');
+        return isWithinNonEditable(editor, parentList) || !editor.selection.isEditable();
+    };
+    const isOlNode = matchNodeName('ol');
+    const listNames = ['OL', 'UL', 'DL'];
+    const listSelector = listNames.join(',');
+    const getParentList = (editor, node) => {
+        const selectionStart = node || editor.selection.getStart(true);
+        return editor.dom.getParent(selectionStart, listSelector, getClosestListHost(editor, selectionStart, editor.selection.isCollapsed()));
+    };
+    const getClosestListHost = (editor, elm, isCollapsed) => {
+        const parentBlocks = editor.dom.getParents(elm, editor.dom.isBlock);
+        const isNotForcedRootBlock = (elm) => elm.nodeName.toLowerCase() !== getForcedRootBlock(editor);
+        const parentBlock = find(parentBlocks, (elm) => (!isCollapsed || isNotForcedRootBlock(elm)) && isListHost(editor.schema, elm));
+        return parentBlock.getOr(editor.getBody());
+    };
+    const isListHost = (schema, node) => !isListNode(node) && !isListItemNode(node) && exists(listNames, (listName) => schema.isValidChild(node.nodeName, listName));
+
+    const open = (editor) => {
+        // Find the current list and skip opening if the selection isn't in an ordered list
+        const currentList = getParentList(editor);
+        if (!isOlNode(currentList) || isWithinNonEditableList(editor, currentList)) {
+            return;
+        }
+        editor.windowManager.open({
+            title: 'List Properties',
+            body: {
+                type: 'panel',
+                items: [
+                    {
+                        type: 'input',
+                        name: 'start',
+                        label: 'Start list at number',
+                        inputMode: 'numeric'
+                    }
+                ]
+            },
+            initialData: {
+                start: parseDetail({
+                    start: editor.dom.getAttrib(currentList, 'start', '1'),
+                    listStyleType: Optional.from(editor.dom.getStyle(currentList, 'list-style-type'))
+                })
+            },
+            buttons: [
+                {
+                    type: 'cancel',
+                    name: 'cancel',
+                    text: 'Cancel'
+                },
+                {
+                    type: 'submit',
+                    name: 'save',
+                    text: 'Save',
+                    primary: true
+                }
+            ],
+            onSubmit: (api) => {
+                const data = api.getData();
+                parseStartValue(data.start).each((detail) => {
+                    editor.execCommand('mceListUpdate', false, {
+                        attrs: {
+                            start: detail.start === '1' ? '' : detail.start
+                        },
+                        styles: {
+                            'list-style-type': detail.listStyleType.getOr('')
+                        }
+                    });
+                });
+                api.close();
+            }
+        });
+    };
+
+    const register$2 = (editor) => {
+        editor.addCommand('mceListProps', () => {
+            open(editor);
+        });
+    };
+
+    const setupToggleButtonHandler = (editor, listName) => (api) => {
+        const toggleButtonHandler = (e) => {
+            api.setActive(inList(e.parents, listName));
+            api.setEnabled(!isWithinNonEditableList(editor, e.element) && editor.selection.isEditable());
+        };
+        api.setEnabled(editor.selection.isEditable());
+        return setNodeChangeHandler(editor, toggleButtonHandler);
+    };
+    const register$1 = (editor) => {
+        const exec = (command) => () => editor.execCommand(command);
+        if (!editor.hasPlugin('advlist')) {
+            editor.ui.registry.addToggleButton('numlist', {
+                icon: 'ordered-list',
+                active: false,
+                tooltip: 'Numbered list',
+                onAction: exec('InsertOrderedList'),
+                onSetup: setupToggleButtonHandler(editor, 'OL')
+            });
+            editor.ui.registry.addToggleButton('bullist', {
+                icon: 'unordered-list',
+                active: false,
+                tooltip: 'Bullet list',
+                onAction: exec('InsertUnorderedList'),
+                onSetup: setupToggleButtonHandler(editor, 'UL')
+            });
+        }
+    };
+
+    const setupMenuButtonHandler = (editor, listName) => (api) => {
+        const menuButtonHandler = (e) => api.setEnabled(inList(e.parents, listName) && !isWithinNonEditableList(editor, e.element));
+        return setNodeChangeHandler(editor, menuButtonHandler);
+    };
+    const register = (editor) => {
+        const listProperties = {
+            text: 'List properties...',
+            icon: 'ordered-list',
+            onAction: () => editor.execCommand('mceListProps'),
+            onSetup: setupMenuButtonHandler(editor, 'OL')
+        };
+        editor.ui.registry.addMenuItem('listprops', listProperties);
+        editor.ui.registry.addContextMenu('lists', {
+            update: (node) => {
+                const parentList = getParentList(editor, node);
+                return isOlNode(parentList) ? ['listprops'] : [];
+            }
+        });
+    };
+
+    var Plugin = () => {
+        global.add('lists', (editor) => {
+            register$2(editor);
+            register$1(editor);
+            register(editor);
+            return get(editor);
+        });
+    };
+
+    Plugin();
+    /** *****
+     * DO NOT EXPORT ANYTHING
+     *
+     * IF YOU DO ROLLUP WILL LEAVE A GLOBAL ON THE PAGE
+     *******/
+
+})();

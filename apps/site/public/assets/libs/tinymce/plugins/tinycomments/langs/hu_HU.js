@@ -1,0 +1,60 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("hu-HU", {
+  " (edited)": "(szerkesztve)",
+  "1 comment will be deleted. You can't undo this action.": "1 hozz\xe1sz\xf3l\xe1s t\xf6rl\xe9sre ker\xfcl. Ezt a m\u0171veletet nem vonhatja vissza.",
+  "1 comment will be resolved. You can't undo this action.": "1 hozz\xe1sz\xf3l\xe1s felold\xe1sra ker\xfcl. Ezt a m\u0171veletet nem lehet visszavonni.",
+  "1 day ago": "1 nappal ezel\u0151tt",
+  "1 hour ago": "1 \xf3r\xe1val ezel\u0151tt",
+  "1 minute ago": "1 perccel ezel\u0151tt",
+  "1 month ago": "1 h\xf3nappal ezel\u0151tt",
+  "1 reply": "1 v\xe1lasz",
+  "1 week ago": "1 h\xe9ttel ezel\u0151tt",
+  "1 year ago": "1 \xe9vvel ezel\u0151tt",
+  "Add comment": "Hozz\xe1sz\xf3l\xe1s hozz\xe1ad\xe1sa",
+  "Add comment...": "Hozz\xe1sz\xf3l\xe1s \xedr\xe1sa...",
+  "Are you sure you want to delete this comment?": "Biztosan t\xf6r\xf6lni szeretn\xe9d ezt a hozz\xe1sz\xf3l\xe1st?",
+  "Clear": "T\xf6rl\xe9s",
+  "Comment": "Hozz\xe1sz\xf3l\xe1s",
+  "Comment Actions": "M\u0171veletek hozz\xe1sz\xf3l\xe1sn\xe1l",
+  "Comment or mention with @": "Hozz\xe1sz\xf3l\xe1s vagy megeml\xedt\xe9s, @",
+  "Comments": "Hozz\xe1sz\xf3l\xe1sok",
+  "Conversation Actions": "M\u0171veletek besz\xe9lget\xe9sn\xe9l",
+  "Delete": "T\xf6rl\xe9s",
+  "Delete all conversations": "\xd6sszes besz\xe9lget\xe9s t\xf6rl\xe9se",
+  "Delete all conversations in the content? This cannot be undone.": "T\xf6rl\xf6d a tartalom \xf6sszes besz\xe9lget\xe9s\xe9t? A m\u0171velet nem vonhat\xf3 vissza.",
+  "Delete comment": "Hozz\xe1sz\xf3l\xe1s t\xf6rl\xe9se",
+  "Delete conversation": "Besz\xe9lget\xe9s t\xf6rl\xe9se",
+  "Delete this conversation?": "T\xf6rl\xf6d a besz\xe9lget\xe9st?",
+  "Edit": "Szerkeszt\xe9s",
+  "No users found": "Nem tal\xe1lhat\xf3 felhaszn\xe1l\xf3",
+  "Resolve": "Felold\xe1s",
+  "Resolve conversation": "Besz\xe9lget\xe9s felold\xe1sa",
+  "Resolve this conversation?": "Feloldja a besz\xe9lget\xe9st?",
+  "SHOW LESS": "KEVESEBB MEGJELEN\xcdT\xc9SE",
+  "SHOW MORE": "T\xd6BB MEGJELEN\xcdT\xc9SE",
+  "Save": "Elment",
+  "Saving": "Ment\xe9s",
+  "Show comments": "Megjegyz\xe9sek megjelen\xedt\xe9se",
+  "You are not allowed to delete all the conversations": "Az \xf6sszes besz\xe9lget\xe9s t\xf6rl\xe9se nem enged\xe9lyezett",
+  "You are not allowed to delete this comment": "A hozz\xe1sz\xf3l\xe1s t\xf6rl\xe9se nem enged\xe9lyezett",
+  "You are not allowed to delete this conversation": "A besz\xe9lget\xe9s t\xf6rl\xe9se nem enged\xe9lyezett",
+  "You are not allowed to edit this comment": "A hozz\xe1sz\xf3l\xe1s szerkeszt\xe9se nem enged\xe9lyezett",
+  "You are not allowed to resolve this conversation": "A besz\xe9lget\xe9s felold\xe1sa nem enged\xe9lyezett",
+  "a moment ago": "az im\xe9nt",
+  "{0} comments will be deleted. You can't undo this action.": "{0} hozz\xe1sz\xf3l\xe1s ker\xfcl t\xf6rl\xe9sre. Ezt a m\u0171veletet nem vonhatja vissza.",
+  "{0} comments will be resolved. You can't undo this action.": "{0} hozz\xe1sz\xf3l\xe1s ker\xfcl felold\xe1sra. Ezt a m\u0171veletet nem lehet visszavonni.",
+  "{0} days ago": "{0} nappal ezel\u0151tt",
+  "{0} hours ago": "{0} \xf3r\xe1val ezel\u0151tt",
+  "{0} minutes ago": "{0} perccel ezel\u0151tt",
+  "{0} months ago": "{0} h\xf3nappal ezel\u0151tt",
+  "{0} replies": "{0} v\xe1lasz",
+  "{0} weeks ago": "{0} h\xe9ttel ezel\u0151tt",
+  "{0} years ago": "{0} \xe9vvel ezel\u0151tt"
+});
+
+console.warn('TinyMCE language code "hu_HU" is deprecated, please use "hu-HU" instead.');

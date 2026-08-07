@@ -1,0 +1,18 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("bg-BG", {
+  "Author": "\u0410\u0432\u0442\u043e\u0440",
+  "Description": "\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435",
+  "Encoding": "\u041a\u043e\u0434\u0438\u0440\u0430\u043d\u0435",
+  "Keywords": "\u041a\u043b\u044e\u0447\u043e\u0432\u0438 \u0434\u0443\u043c\u0438",
+  "Metadata and Document Properties": "\u041c\u0435\u0442\u0430\u0434\u0430\u043d\u043d\u0438 \u0438 \u0441\u0432\u043e\u0439\u0441\u0442\u0432\u0430 \u043d\u0430 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430",
+  "Metadata and document properties": "\u041c\u0435\u0442\u0430\u0434\u0430\u043d\u043d\u0438 \u0438 \u0441\u0432\u043e\u0439\u0441\u0442\u0432\u0430 \u043d\u0430 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430",
+  "Robots": "\u0420\u043e\u0431\u043e\u0442\u0438",
+  "Title": "\u041d\u0430\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u0435"
+});
+
+console.warn('TinyMCE language code "bg_BG" is deprecated, please use "bg-BG" instead.');

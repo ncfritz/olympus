@@ -1,0 +1,60 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("nb-NO", {
+  " (edited)": "(redigert)",
+  "1 comment will be deleted. You can't undo this action.": "1 kommentar vil bli slettet. Du kan ikke angre denne handlingen.",
+  "1 comment will be resolved. You can't undo this action.": "1 kommentar vil bli l\xf8st. Du kan ikke angre denne handlingen.",
+  "1 day ago": "1 dag siden",
+  "1 hour ago": "1 time siden",
+  "1 minute ago": "1 minutt siden",
+  "1 month ago": "1 m\xe5ned siden",
+  "1 reply": "1 svar",
+  "1 week ago": "1 uke siden",
+  "1 year ago": "1 \xe5r siden",
+  "Add comment": "Legg til kommentar",
+  "Add comment...": "Legg til kommentar ...",
+  "Are you sure you want to delete this comment?": "Er du sikker p\xe5 at du vil slette denne kommentaren?",
+  "Clear": "T\xf8m",
+  "Comment": "Kommentar",
+  "Comment Actions": "Kommentarhandlinger",
+  "Comment or mention with @": "Kommenter eller nevn med @",
+  "Comments": "Kommentarer",
+  "Conversation Actions": "Samtalehandlinger",
+  "Delete": "Slett",
+  "Delete all conversations": "Slett alle samtaler",
+  "Delete all conversations in the content? This cannot be undone.": "Vil du slette alle samtaler i innholdet? Denne handlingen kan ikke angres.",
+  "Delete comment": "Slett kommentar",
+  "Delete conversation": "Slett samtale",
+  "Delete this conversation?": "Vil du slette denne samtalen?",
+  "Edit": "Rediger",
+  "No users found": "Ingen brukere funnet",
+  "Resolve": "L\xf8se",
+  "Resolve conversation": "L\xf8se samtale",
+  "Resolve this conversation?": "L\xf8se denne samtalen?",
+  "SHOW LESS": "VIS MINDRE",
+  "SHOW MORE": "VIS MER",
+  "Save": "Lagre",
+  "Saving": "Lagrer",
+  "Show comments": "Vis kommentarer",
+  "You are not allowed to delete all the conversations": "Du har ikke tillatelse til \xe5 slette alle samtaler",
+  "You are not allowed to delete this comment": "Du har ikke tillatelse til \xe5 slette denne kommentaren",
+  "You are not allowed to delete this conversation": "Du har ikke tillatelse til \xe5 slette denne samtalen",
+  "You are not allowed to edit this comment": "Du har ikke tillatelse til \xe5 redigere denne kommentaren",
+  "You are not allowed to resolve this conversation": "Du har ikke tillatelse til \xe5 l\xf8se denne samtalen",
+  "a moment ago": "et \xf8yeblikk siden",
+  "{0} comments will be deleted. You can't undo this action.": "{0} kommentarer vil bli slettet. Du kan ikke angre denne handlingen.",
+  "{0} comments will be resolved. You can't undo this action.": "{0} kommentarer vil bli l\xf8st. Du kan ikke angre denne handlingen.",
+  "{0} days ago": "{0} dager siden",
+  "{0} hours ago": "{0} timer siden",
+  "{0} minutes ago": "{0} minutter siden",
+  "{0} months ago": "{0} m\xe5neder siden",
+  "{0} replies": "{0} svar",
+  "{0} weeks ago": "{0} uker siden",
+  "{0} years ago": "{0} \xe5r siden"
+});
+
+console.warn('TinyMCE language code "nb_NO" is deprecated, please use "nb-NO" instead.');

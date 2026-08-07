@@ -1,0 +1,16 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("ar", {
+  "Author": "\u0627\u0644\u0645\u0624\u0644\u0641",
+  "Description": "\u0627\u0644\u0648\u0635\u0641",
+  "Encoding": "\u0627\u0644\u062a\u0631\u0645\u064a\u0632",
+  "Keywords": "\u0627\u0644\u0643\u0644\u0645\u0627\u062a \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629",
+  "Metadata and Document Properties": "\u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0648\u0635\u0641\u064a\u0629 \u0648\u062e\u0635\u0627\u0626\u0635 \u0627\u0644\u0645\u0633\u062a\u0646\u062f",
+  "Metadata and document properties": "\u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0648\u0635\u0641\u064a\u0629 \u0648\u062e\u0635\u0627\u0626\u0635 \u0627\u0644\u0645\u0633\u062a\u0646\u062f",
+  "Robots": "\u0627\u0644\u0631\u0648\u0628\u0648\u062a\u0627\u062a",
+  "Title": "\u0627\u0644\u0639\u0646\u0648\u0627\u0646"
+});
