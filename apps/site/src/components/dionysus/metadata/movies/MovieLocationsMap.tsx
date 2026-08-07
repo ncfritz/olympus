@@ -31,13 +31,15 @@ export const MovieLocationsMap: React.FunctionComponent<
   });
 
   useEffect(() => {
-    const newData = locationStats
-      ? locationStats.map((stat) => {
-          return [stat.countryCode.toLowerCase(), stat.count];
-        })
-      : [];
+    if (locationStats) {
+      const newData = locationStats
+        ? locationStats.map((stat) => {
+            return [stat.countryCode.toLowerCase(), stat.count];
+          })
+        : [];
 
-    setData(newData);
+      setData(newData);
+    }
   }, [locationStats]);
 
   return (
