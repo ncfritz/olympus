@@ -105,7 +105,7 @@ const CreateMetadataJobModal: React.FunctionComponent<
         return (
           <Space
             size={8}
-            direction={"horizontal"}
+            orientation={"horizontal"}
             style={{
               width: "100%",
               alignItems: "center",
@@ -115,7 +115,7 @@ const CreateMetadataJobModal: React.FunctionComponent<
             <Button type={"primary"} danger={true} onClick={closeModal}>
               Cancel
             </Button>
-            <Space size={8} direction={"horizontal"}>
+            <Space size={8} orientation={"horizontal"}>
               <Button
                 htmlType={"submit"}
                 type={"primary"}
@@ -134,7 +134,7 @@ const CreateMetadataJobModal: React.FunctionComponent<
       <form onSubmit={handleSubmit(onSubmit)}>
         <Space
           size={4}
-          direction={"vertical"}
+          orientation={"vertical"}
           style={{ width: "100%" }}
           styles={{ item: { width: "100%" } }}
         >
@@ -320,7 +320,9 @@ const CreateMetadataJobModal: React.FunctionComponent<
                 }}
               >
                 <DynamicReactJson
-                  src={JSON.parse(JSON.stringify(field.value))}
+                  src={
+                    field.value ? JSON.parse(JSON.stringify(field.value)) : {}
+                  }
                   style={{ fontSize: 12 }}
                   onDelete={() => {}}
                   onAdd={() => {}}
