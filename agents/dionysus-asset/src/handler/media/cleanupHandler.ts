@@ -1,6 +1,7 @@
 import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
 import { Injectable } from "@nestjs/common";
 import type { ConsumeMessage } from "amqplib";
+import fs from "fs";
 import { type CleanupMessage } from "../../types/messages";
 import {
   JOB_TYPE_PREFIX,
@@ -24,7 +25,7 @@ export class TranscodeCleanupHandler {
     const step = await createStep(workflow.workflowId, "cleanup");
 
     try {
-      //fs.rmSync(`${workflow.stagingDir}/original.${msg.mediaExtension}`);
+      fs.rmSync(`${workflow.stagingDir}/original.${msg.mediaExtension}`);
       await updateStepStatus(workflow.workflowId, step.id, "success", true);
     } catch (e) {
       logger.error(e);
