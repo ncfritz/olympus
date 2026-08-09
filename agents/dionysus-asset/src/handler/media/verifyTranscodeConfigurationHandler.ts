@@ -25,8 +25,6 @@ import { parseFile } from "subparse";
 
 @Injectable()
 export class VerifyTranscodeConfigurationHandler {
-  //constructor(private readonly amqpConnection: AmqpConnection) {}
-
   @RabbitSubscribe({
     exchange: `${MEDIA_JOB_PREFIX}.${TRIGGER_SUFFIX}`,
     queue: `${MEDIA_JOB_PREFIX}.verifyTranscodeConfiguration.${TRIGGER_SUFFIX}`,
@@ -216,7 +214,7 @@ export class VerifyTranscodeConfigurationHandler {
       await updateStepStatus(msg.workflowId, step.id, "failed");
     } finally {
       try {
-        //fs.rmSync(workflow.stagingDir, { recursive: true, force: true });
+        fs.rmSync(workflow.stagingDir, { recursive: true, force: true });
       } catch (e) {
         logger.error(
           `Failed to remove temp directory ${workflow.stagingDir}: ${e}`,
