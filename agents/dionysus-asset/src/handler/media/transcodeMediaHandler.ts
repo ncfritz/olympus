@@ -1,6 +1,7 @@
 import { AmqpConnection, RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
 import { MediaAssetWorkflow } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import type { ConsumeMessage } from "amqplib";
 import fs from "fs";
 import moment from "moment";
@@ -28,7 +29,10 @@ export class TranscodeMediaHandler {
   private transcodeJob: any;
   private transcodeMetadata: any;
 
-  constructor(private readonly amqpConnection: AmqpConnection) {
+  constructor(
+    private readonly amqpConnection: AmqpConnection,
+    private readonly configService: ConfigService,
+  ) {
     this.libraryFilesToUpload = {};
     this.cdnFilesToUpload = {};
   }
@@ -274,6 +278,15 @@ export class TranscodeMediaHandler {
     } catch (e) {
       await updateStepStatus(workflow.workflowId, step.id, "failed");
       throw e;
+    } finally {
+      if (this.configService.get("TRANSCODE_CLEANUP", "false`") === "true") {
+        try {
+          fs.rmdirSync(workflow.stagingDir);
+        } catch (e) {
+          logger.error("Unable to cleanup transcode directory");
+          logger.error(e);
+        }
+      }
     }
   }
 }
