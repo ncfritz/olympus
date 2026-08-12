@@ -18,6 +18,7 @@ export const toDomainObject = (
     type: input.assetType,
     mediaId: input.mediaId,
     workflowId: input.workflowId,
+    searchResultId: input.searchResultId,
     status: input.status,
     progress: input.progress,
     startedTime: input.startedTime ? moment(input.startedTime) : undefined,

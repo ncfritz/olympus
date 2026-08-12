@@ -10,6 +10,7 @@ export type GraphQlMediaAssetDownload = {
   assetType: MediaAssetSearchType;
   mediaId: number;
   workflowId: string;
+  searchResultId: string;
   status: MediaDownloadStatus;
   progress: number;
   startedTime: string;

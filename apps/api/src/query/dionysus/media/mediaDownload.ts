@@ -5,6 +5,7 @@ export const BASE_MEDIA_DOWNLOAD = `id
     assetType
     mediaId
     workflowId
+    searchResultId
     status
     progress
     startedTime
