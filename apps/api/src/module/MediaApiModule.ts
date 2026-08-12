@@ -11,6 +11,7 @@ import { CreateMediaAssetWorkflowController } from "../controller/dionysus/media
 import { CreateMediaAssetWorkflowStepController } from "../controller/dionysus/media/CreateMediaAssetWorkflowStep";
 import { CreateMediaAssetWorkflowSubStepController } from "../controller/dionysus/media/CreateMediaAssetWorkflowSubStep";
 import { DeleteMediaFavoriteController } from "../controller/dionysus/media/DeleteMediaAssetFavorite";
+import { DeleteMediaWorkflowController } from "../controller/dionysus/media/DeleteMediaWorkflow";
 import { DescribeMediaAssetSearchConfigurationController } from "../controller/dionysus/media/DescribeMediaAssetSearchConfiguration";
 import { DescribeMediaAssetSearchExecutionController } from "../controller/dionysus/media/DescribeMediaAssetSearchExecution";
 import { DescribeMediaAssetSearchResultController } from "../controller/dionysus/media/DescribeMediaAssetSearchResult";
@@ -52,6 +53,7 @@ import { RabbitModule } from "./RabbitModule";
     CreateMediaAssetWorkflowSubStepController,
     CreateMediaFavoriteController,
     DeleteMediaFavoriteController,
+    DeleteMediaWorkflowController,
     GetTvEpisodeByIdController,
     GetMediaAssetSearchConfigurationsRunningCountController,
     DescribeMediaAssetSearchConfigurationController,
