@@ -7,6 +7,7 @@ import {
   createMediaAssetSearchConfiguration,
   createMediaAssetWorkflow,
   createMediaFavorite,
+  deleteMediaAssetWorkflow,
   deleteMediaFavorite,
   describeMediaAssetSearchConfiguration,
   describeMediaAssetWorkflow,
@@ -289,6 +290,17 @@ class MediaApi extends ApiBase {
       },
       validateStatus: (status) => {
         return status === 200 || status == 410;
+      },
+    });
+  }
+
+  async deleteMediaAssetWorkflow(workflowId: string, hardDelete = false) {
+    return await deleteMediaAssetWorkflow({
+      path: {
+        workflowId: workflowId,
+      },
+      query: {
+        hardDelete: hardDelete,
       },
     });
   }
