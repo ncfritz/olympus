@@ -54,6 +54,13 @@ export class MediaAssetDownload {
   workflowId: string;
 
   @ApiProperty({
+    type: String,
+    required: true,
+    description: "The ID of the search result this download was created from.",
+  })
+  searchResultId: string;
+
+  @ApiProperty({
     enum: () => MediaDownloadStatus,
     enumName: "MediaDownloadStatus",
     required: true,
