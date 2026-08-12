@@ -17,11 +17,7 @@ import sftp from "ssh2-sftp-client";
 import progress_stream from "progress-stream";
 import { ts } from "../../util/format";
 import { logger } from "../../util/logger";
-import {
-  createStep,
-  updateStepProgress,
-  updateStepStatus,
-} from "./reporter";
+import { createStep, updateStepProgress, updateStepStatus } from "./reporter";
 import * as ffmpegOnProgress from "ffmpeg-on-progress";
 
 export interface AssetMetadata {

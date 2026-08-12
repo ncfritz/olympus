@@ -27,14 +27,10 @@ export default function parse(string: string): NZB {
 }
 
 type MetaFieldType =
-  | Array<Record<string, string>>
-  | Record<string, string>
-  | undefined;
+  Array<Record<string, string>> | Record<string, string> | undefined;
 
 type FileFieldType =
-  | Array<Record<string, any>>
-  | Record<string, any>
-  | undefined;
+  Array<Record<string, any>> | Record<string, any> | undefined;
 
 type GroupFieldType = Array<string> | string | undefined;
 
