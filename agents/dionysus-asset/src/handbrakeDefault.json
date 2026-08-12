@@ -20,10 +20,10 @@
             "DRC": 0,
             "Encoder": "ac3",
             "Gain": 0,
-            "Mixdown": 4,
+            "Mixdown": 7,
             "NormalizeMixLevel": false,
             "Samplerate": 0,
-            "Name": "Stereo",
+            "Name": "5.1 Channels",
             "Track": 0,
             "DitherMethod": 0
           }
@@ -81,8 +81,7 @@
           {
             "ID": 11,
             "Settings": {
-              "mode": "1",
-              "rate": "27000000/900000"
+              "mode": "0"
             }
           }
         ]
