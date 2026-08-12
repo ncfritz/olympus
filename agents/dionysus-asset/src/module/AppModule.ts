@@ -9,6 +9,7 @@ import { DownloadUpdateHandler } from "../handler/download/DownloadUpdateHandler
 import { StartDownloadHandler } from "../handler/download/StartDownloadHandler";
 import { TranscodeCleanupHandler } from "../handler/media/cleanupHandler";
 import { ConfigureTranscodeHandler } from "../handler/media/configureTranscodeHandler";
+import { DeleteWorkflowHandler } from "../handler/media/deleteWorkflowHandler";
 import { MetadataExtractionHandler } from "../handler/media/metadataExtractionHandler";
 import { RawIngestionHandler } from "../handler/content/rawIngestionHandler";
 import { ThumbnailGenerationAssetHandler } from "../handler/content/thumbnailGenerationHandler";
@@ -33,6 +34,7 @@ const HANDLER_MAP = {
   DISABLE_DIONYSUS_XCODE_HANDLER: TranscodeMediaHandler,
   DISABLE_DIONYSUS_VERIFY_XCODE_HANDLER: VerifyTranscodeConfigurationHandler,
   DISABLE_DIONYSUS_CLEANUP_HANDLER: TranscodeCleanupHandler,
+  DISABLE_DIONYSUS_DELETE_MEDIA_WORKFLOW_HANDLER: DeleteWorkflowHandler,
   // Download Jobs
   DISABLE_DIONYSUS_START_DOWNLOAD_HANDLER: StartDownloadHandler,
   DISABLE_DIONYSUS_DOWNLOAD_UPDATE_HANDLER: DownloadUpdateHandler,

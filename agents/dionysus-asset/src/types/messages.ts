@@ -58,3 +58,7 @@ export type StartDownloadMessage = {
   downloadId: string;
   nzbId: string;
 };
+
+export type DeleteMediaWorkflowMessage = {
+  workflowId: string;
+};

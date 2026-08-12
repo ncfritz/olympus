@@ -21,6 +21,7 @@ environment variables.
 | DISABLE_DIONYSUS_XCODE_HANDLER                   | Tuns the actual media asset transcode                                                            | `false`       |
 | DISABLE_DIONYSUS_VERIFY_XCODE_HANDLER            | When the transcode is manually configured, generates samples for verification proir to transcode | `false`       |
 | DISABLE_DIONYSUS_CLEANUP_HANDLER                 | Cleans up a media asset workflow's artifacts                                                     | `false`       |
+  | DISABLE_DIONYSUS_DELETE_MEDIA_WORKFLOW_HANDLER | Removed workflow staging artifacts                                                               | `false`       |
 | DISABLE_DIONYSUS_START_DOWNLOAD_HANDLER,         | Downloads NZB metadata and enqueues a mmedia asset for download using NzbGet                     | `false`       |
 | DISABLE_DIONYSUS_DOWNLOAD_UPDATE_HANDLER,        | Handles updates from NzbGet                                                                      | `false`       |
 | DISABLE_DIONYSUS_DOWNLOAD_STATUS_HANDLER,        | Periodically polls for downloads in NzbGet and persists their status to the database             | `false`       |
