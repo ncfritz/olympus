@@ -115,12 +115,15 @@ export class TranscodeMediaHandler {
       logger.info("Triggering cleanup job...");
       await this.amqpConnection.publish("media.trigger", "jobType.cleanup", {
         workflowId: workflow.workflowId,
+        mediaExtension: this.transcodeMetadata.mediaExtension,
       });
     } catch (e) {
       logger.error(`Transcode workflow failed: ${e}`);
     } finally {
       try {
-        //fs.rmSync(workflow.stagingDir, { recursive: true, force: true });
+        if (this.configService.get("TRANSCODE_CLEANUP", "false`") === "true") {
+          fs.rmSync(workflow.stagingDir, { recursive: true, force: true });
+        }
       } catch (e) {
         logger.error(
           `Failed to remove temp directory ${workflow.stagingDir}: ${e}`,
@@ -278,15 +281,6 @@ export class TranscodeMediaHandler {
     } catch (e) {
       await updateStepStatus(workflow.workflowId, step.id, "failed");
       throw e;
-    } finally {
-      if (this.configService.get("TRANSCODE_CLEANUP", "false`") === "true") {
-        try {
-          fs.rmdirSync(workflow.stagingDir);
-        } catch (e) {
-          logger.error("Unable to cleanup transcode directory");
-          logger.error(e);
-        }
-      }
     }
   }
 }
