@@ -4,9 +4,10 @@ import {
   Controller,
   Delete,
   HttpStatus,
-  Param, ParseBoolPipe,
+  Param,
+  ParseBoolPipe,
   Query,
-  Res
+  Res,
 } from "@nestjs/common";
 import {
   ApiNoContentResponse,
@@ -24,7 +25,7 @@ import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 export class DeleteMediaWorkflowController {
   constructor(
     private readonly graphQLClient: GraphQLClient,
-    protected readonly amqpConnection: AmqpConnection
+    protected readonly amqpConnection: AmqpConnection,
   ) {}
 
   @Delete("/media/workflow/:workflowId")
@@ -113,7 +114,7 @@ export class DeleteMediaWorkflowController {
         "jobType.deleteWorkflow",
         {
           workflowId: workflowId,
-        }
+        },
       );
     }
 
