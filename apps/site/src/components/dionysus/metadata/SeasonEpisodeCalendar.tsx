@@ -5,7 +5,6 @@ import type { SparseEpisode } from "@ncfritz/olympus-sdk/dionysus";
 import { Col, Spin } from "antd";
 import { DateTime } from "luxon";
 import React, { useEffect, useRef, useState } from "react";
-import LoadingWrapper from "../../common/LoadingWrapper";
 
 export interface SeasonEpisodeCalendarProps {
   episodes: SparseEpisode[];
@@ -27,7 +26,7 @@ const SeasonEpisodeCalendar: React.FunctionComponent<
     const now = DateTime.utc();
 
     try {
-      let start = DateTime.utc();
+      let start: DateTime = DateTime.utc();
       let end = DateTime.fromMillis(0);
       const newEvents: EventInput[] = [];
 
