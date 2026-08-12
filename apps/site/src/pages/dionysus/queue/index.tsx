@@ -1,18 +1,24 @@
 import {
-  CloseCircleFilled,
+  CloseCircleFilled, CloseOutlined,
   HomeOutlined,
-  HourglassOutlined,
+  HourglassOutlined, RedoOutlined,
+  ReloadOutlined,
+  SaveOutlined
 } from "@ant-design/icons";
 import type {
   FilterDefinition,
   MediaAssetWorkflowListItem,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
+  Button,
+  Col,
   ConfigProvider,
   Empty,
   Image,
   Progress,
+  Row,
   Space,
+  Statistic,
   Steps,
   Table,
   type TableProps,
@@ -26,14 +32,14 @@ import React, { useState } from "react";
 import type { SortOptions } from "../../../api/common";
 import mediaApi from "../../../api/mediaApi";
 import ErrorBlock from "../../../components/common/ErrorBlock";
+import RefreshTimer from "../../../components/common/RefreshTimer";
 import Timestamp from "../../../components/data/Timestamp";
-import SearchResultTag from "../../../components/dionysus/media/SearchResultTag";
 import {
   getDownloadProgressLabel,
   getDownloadStepProperties,
   getStepProperties,
 } from "../../../components/dionysus/media/utils";
-import { getWorkflowStatusColor } from "../../../components/dionysus/media/workflow/util";
+import { getWorkflowStatusIndicator } from "../../../components/dionysus/media/workflow/util";
 import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { CertificationOutlined, MovieIcon, TvIcon } from "../../../icons";
@@ -55,25 +61,109 @@ const IndexPage: React.FunctionComponent = () => {
   const [workflowsFilters, setWorkflowsFilters] = useState<
     FilterDefinition | undefined
   >(undefined);
-
-  const [workflows, workflowsLoading, workflowsError] = useFetch<
-    undefined,
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [selectedRows, setSelectedRows] = useState<
     MediaAssetWorkflowListItem[]
-  >({
-    dataType: "workflows",
-    watch: [workflowsPage, workflowsSort, workflowsFilters],
-    params: undefined,
-    fetchFunction: async () => {
-      const response = await mediaApi.listMediaAssetWorkflows(
-        workflowsPage,
-        30,
-        workflowsSort,
-        workflowsFilters,
-      );
-      setWorkflowsCount(response.data.count);
-      return response.data.workflows;
-    },
+  >([]);
+  const [processingRows, setProcessingRows] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState({
+    pending: 0,
+    skipped: 0,
+    success: 0,
+    failed: 0,
+    total: 0,
   });
+
+  const [workflows, workflowsLoading, workflowsError, fetchWorkflows] =
+    useFetch<undefined, MediaAssetWorkflowListItem[]>({
+      dataType: "workflows",
+      watch: [workflowsPage, workflowsSort, workflowsFilters],
+      params: undefined,
+      fetchFunction: async () => {
+        const response = await mediaApi.listMediaAssetWorkflows(
+          workflowsPage,
+          30,
+          workflowsSort,
+          workflowsFilters,
+        );
+        setWorkflowsCount(response.data.count);
+        return response.data.workflows;
+      },
+    });
+
+  const onSelectChange = (
+    newSelectedRowKeys: React.Key[],
+    newSelectedRows: MediaAssetWorkflowListItem[],
+  ) => {
+    setSelectedRowKeys(newSelectedRowKeys);
+    setSelectedRows(newSelectedRows);
+  };
+
+  const deleteSelectedWorkflows = async () => {
+    await processRows(async (job) => {
+      await mediaApi.deleteMediaAssetWorkflow(job.id, false);
+      return true;
+    });
+  };
+
+  const reprocessSelectedWorkflows = async () => {
+    await processRows(async (job) => {
+      let resubmitted = false;
+
+      if (job.download) {
+        await mediaApi.createMediaAssetDownload(job.type, job.mediaId, job.download.searchResultId);
+        resubmitted = true;
+      }
+
+      await mediaApi.deleteMediaAssetWorkflow(job.id, false);
+
+      return resubmitted;
+    });
+  };
+
+  const processRows = async (
+    process: (job: MediaAssetWorkflowListItem) => Promise<boolean>,
+  ) => {
+    setProcessingRows(true);
+
+    try {
+      const currentStatus = {
+        total: 0,
+        failed: 0,
+        pending: 0,
+        skipped: 0,
+        success: 0,
+      };
+
+      for (const value of selectedRows) {
+        try {
+          const processed = await process(value);
+
+          if (processed) {
+            currentStatus.success++;
+          } else {
+            currentStatus.skipped++;
+          }
+        } catch (e) {
+          currentStatus.failed++;
+        }
+
+        currentStatus.total++;
+        setProcessingStatus({ ...currentStatus });
+      }
+    } finally {
+      await fetchWorkflows(true);
+      setSelectedRowKeys([]);
+      setProcessingRows(false);
+      setProcessingStatus({
+        total: 0,
+        failed: 0,
+        pending: 0,
+        skipped: 0,
+        success: 0,
+      });
+    }
+  };
 
   const columns: ColumnsType<MediaAssetWorkflowListItem> = [
     {
@@ -96,7 +186,7 @@ const IndexPage: React.FunctionComponent = () => {
                 alt={"Poster"}
               />
               <Space
-                direction={"vertical"}
+                orientation={"vertical"}
                 size={0}
                 style={{ display: "flex", alignItems: "start" }}
               >
@@ -158,21 +248,43 @@ const IndexPage: React.FunctionComponent = () => {
       dataIndex: "status",
       render: (value, record) => {
         return (
-          <Space orientation={"horizontal"} size={8} style={{ width: "100%" }}>
+          <Space
+            orientation={"horizontal"}
+            size={8}
+            style={{ width: "100%" }}
+            styles={{ item: { width: "100%" } }}
+          >
             <Typography.Text style={{ fontSize: 18, color: "#777777" }}>
-              <SearchResultTag
-                color={getWorkflowStatusColor(record.status)}
-                monospace={true}
-                style={{ width: 85, padding: 2 }}
-              >
-                {record.status}
-              </SearchResultTag>
+              {getWorkflowStatusIndicator(record.status, true)}
             </Typography.Text>
           </Space>
         );
       },
+      filters: [
+        {
+          text: getWorkflowStatusIndicator("queued", true),
+          value: "queued",
+        },
+        {
+          text: getWorkflowStatusIndicator("pending_input", true),
+          value: "pending_input",
+        },
+        {
+          text: getWorkflowStatusIndicator("running", true),
+          value: "running",
+        },
+        {
+          text: getWorkflowStatusIndicator("success", true),
+          value: "success",
+        },
+        {
+          text: getWorkflowStatusIndicator("failed", true),
+          value: "failed",
+        },
+      ],
+      filterMode: "tree",
       sorter: true,
-      width: 100,
+      width: 160,
     },
     {
       key: "download",
@@ -255,35 +367,35 @@ const IndexPage: React.FunctionComponent = () => {
                 { shallow: true },
               );
             }}
+            styles={{
+              itemRail: { borderWidth: 1.5 },
+              itemIcon: { borderWidth: 5, marginTop: 1 },
+              itemSection: { width: 55 },
+            }}
             items={[
               {
-                title: "Download",
-                description: "Fetch source from Usenet",
+                title: "DL",
                 ...getDownloadStepProperties(record.download, false),
               },
               {
-                title: "Original MD",
-                description: "Extract original metadata",
+                title: "Orig MD",
                 ...getStepProperties(record.steps, "extract_original_metadata"),
               },
               {
-                title: "Configure",
-                description: "Determine audio/subtitle tracks",
+                title: "Config",
                 ...getStepProperties(record.steps, "configure_transcode"),
               },
               {
                 title: "Verify",
-                description: "Verify audio/subtitle output",
+                content: "Verify audio/subtitle output",
                 ...getStepProperties(record.steps, "verify_transcode"),
               },
               {
-                title: "Transcode",
-                description: "Transcode source",
+                title: "Xcode",
                 ...getStepProperties(record.steps, "transcode"),
               },
               {
-                title: "Transcode MD",
-                description: "Extract transcoded metadata",
+                title: "New MD",
                 ...getStepProperties(record.steps, "extract_new_metadata"),
               },
               {
@@ -342,6 +454,92 @@ const IndexPage: React.FunctionComponent = () => {
     },
   ];
 
+  let actionsContent = (
+    <Col span={24} style={{ justifyContent: "space-between", display: "flex" }}>
+      <Space
+        orientation={"horizontal"}
+        style={{ padding: 0, marginLeft: 16, marginRight: 16 }}
+      >
+        <Space
+          orientation={"horizontal"}
+          size={8}
+          style={{
+            alignItems: "center",
+            borderRight: "1px solid #f3f3f3",
+            padding: 16,
+          }}
+        >
+          <Typography.Text strong={true}>Status: </Typography.Text>
+          <Button
+            type={"primary"}
+            icon={<CloseOutlined />}
+            danger={true}
+            disabled={
+              selectedRows.length <= 0 || processingRows || workflowsLoading
+            }
+            onClick={async () => {
+              await deleteSelectedWorkflows();
+            }}
+          >
+            Delete
+          </Button>
+          <Button
+            type={"primary"}
+            color={"cyan"}
+            icon={<RedoOutlined />}
+            disabled={
+              selectedRows.length <= 0 || processingRows || workflowsLoading
+            }
+            onClick={async () => {
+              await reprocessSelectedWorkflows();
+            }}
+          >
+            Re-Process
+          </Button>
+        </Space>
+      </Space>
+      <Space style={{ marginRight: 16 }}>
+        <Button
+          type={"text"}
+          disabled={workflowsLoading}
+          icon={<ReloadOutlined />}
+          onClick={async () => {
+            await fetchWorkflows(true);
+          }}
+        />
+      </Space>
+    </Col>
+  );
+
+  if (processingRows) {
+    actionsContent = (
+      <Col span={24} style={{ padding: 16 }}>
+        <Space
+          orientation={"vertical"}
+          size={16}
+          style={{ marginLeft: 16, marginRight: 16, width: "100%" }}
+        >
+          <Progress
+            size={"default"}
+            percent={(processingStatus.total / selectedRowKeys.length) * 100}
+            style={{ paddingRight: 32 }}
+            format={(percent) => {
+              return `${percent?.toFixed(0)}%`;
+            }}
+          />
+          <Space orientation={"horizontal"} size={64}>
+            <Statistic title={"To Publish"} value={selectedRows.length} />
+            <Statistic title={"Success"} value={processingStatus.success} />
+            <Statistic title={"Skipped"} value={processingStatus.skipped} />
+            <Statistic title={"Pending"} value={processingStatus.pending} />
+            <Statistic title={"Failed"} value={processingStatus.failed} />
+            <Statistic title={"Total"} value={processingStatus.total} />
+          </Space>
+        </Space>
+      </Col>
+    );
+  }
+
   return (
     <>
       <OlympusBreadcrumbs
@@ -393,12 +591,29 @@ const IndexPage: React.FunctionComponent = () => {
             )
           }
         >
+          <RefreshTimer
+            ttlMs={60000}
+            fetchFunction={async () => {
+              await fetchWorkflows(true);
+            }}
+          />
+          <Row
+            gutter={16}
+            style={{
+              borderTop: "1px solid #f3f3f3",
+              borderBottom: "1px solid #f3f3f3",
+            }}
+          >
+            {actionsContent}
+          </Row>
           <Table
             style={{ width: "100%" }}
-            rowKey={"id"}
+            rowKey={(record) => {
+              return `${record.id}`;
+            }}
             columns={columns}
             sticky={true}
-            scroll={{ y: "calc(100vh - 197px)" }}
+            scroll={{ y: `calc(100vh - ${197 + 64}px)` }}
             dataSource={workflows}
             size={"small"}
             loading={workflowsLoading}
@@ -435,6 +650,10 @@ const IndexPage: React.FunctionComponent = () => {
                   setWorkflowsFilters(buildFilterDefinitionForTable(filters));
                   break;
               }
+            }}
+            rowSelection={{
+              selectedRowKeys,
+              onChange: onSelectChange,
             }}
           />
         </ConfigProvider>
