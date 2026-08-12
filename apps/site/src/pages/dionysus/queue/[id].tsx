@@ -126,9 +126,10 @@ const IndexPage: React.FunctionComponent = () => {
       >
         {headerContent}
         <RefreshTimer
-          ttlMs={10000}
+          ttlMs={5000}
           fetchFunction={async () => await fetchWorkflow(true)}
           showProgress={true}
+          disabled={["success", "failed"].includes(workflow?.status)}
         />
         <Space
           orientation={"horizontal"}
@@ -162,7 +163,7 @@ const IndexPage: React.FunctionComponent = () => {
                   content: "Extract original metadata",
                   ...getStepProperties(
                     workflow.steps,
-                    "extract_original_metadata"
+                    "extract_original_metadata",
                   ),
                 },
                 {
