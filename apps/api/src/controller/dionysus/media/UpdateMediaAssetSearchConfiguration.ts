@@ -12,6 +12,7 @@ import {
   Controller,
   HttpStatus,
   Param,
+  ParseBoolPipe,
   Put,
   Query,
   Res,
@@ -95,7 +96,7 @@ export class UpdateMediaAssetSearchConfigurationController {
   async handle(
     @Param("mediaType") mediaType: MediaAssetSearchType,
     @Param("mediaId") mediaId: number,
-    @Query("recursive") recursive: boolean = false,
+    @Query("recursive", ParseBoolPipe) recursive: boolean = false,
     @Body() request: UpdateMediaAssetSearchConfigurationRequest,
     @Res() response: Response,
   ): Promise<void> {

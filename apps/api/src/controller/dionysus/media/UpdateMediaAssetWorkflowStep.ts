@@ -10,6 +10,7 @@ import {
   Controller,
   HttpStatus,
   Param,
+  ParseBoolPipe,
   Put,
   Query,
   Res,
@@ -77,7 +78,8 @@ export class UpdateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
   async handle(
     @Param("workflowId") workflowId: string,
     @Param("workflowStepId") workflowStepId: string,
-    @Query("updateWorkflowStatus") updateWorkflowStatus: boolean = false,
+    @Query("updateWorkflowStatus", ParseBoolPipe)
+    updateWorkflowStatus: boolean = false,
     @Body() request: UpdateMediaAssetWorkflowStepRequest,
     @Res() response: Response,
   ): Promise<void> {
