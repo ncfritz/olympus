@@ -10,10 +10,11 @@ import {
 import type {
   MediaAssetDownload,
   MediaAssetSearchConfigurationStatus,
-  MediaAssetWorkflowStep, MediaAssetWorkflowStepStatus,
+  MediaAssetWorkflowStep,
+  MediaAssetWorkflowStepStatus,
   MediaAssetWorkflowStepType,
   MediaDownloadStatus,
-  SearchExecutionStatus
+  SearchExecutionStatus,
 } from "@ncfritz/olympus-sdk/dionysus";
 import type { StepItem } from "@rc-component/steps/lib/Steps";
 import { Tag } from "antd";

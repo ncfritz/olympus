@@ -70,7 +70,6 @@ const MovieDetailPage: React.FunctionComponent = () => {
 
   console.log(router.query);
 
-
   const [activeTab, setActiveTab] = useState("t-main-general");
   const [assetInfoOpen, setAssetInfoOpen] = useState(false);
   const [affix, setAffix] = useState(false);

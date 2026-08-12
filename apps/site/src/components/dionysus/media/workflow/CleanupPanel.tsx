@@ -15,7 +15,7 @@ const CleanupPanel: React.FunctionComponent<CleanupPanelProps> = ({
   workflow,
 }: CleanupPanelProps) => {
   const [step, setStep] = useState<MediaAssetWorkflowStep | undefined>(
-    undefined
+    undefined,
   );
 
   useEffect(() => {

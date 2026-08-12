@@ -640,7 +640,7 @@ const SearchResultsTable: React.FunctionComponent<SearchResultsTableProps> = ({
                   {record.downloads.map((download) => {
                     const color = getDownloadProgressColor(download.status);
                     const progressStatus = getDownloadProgressLabel(
-                      download.status
+                      download.status,
                     );
 
                     return (

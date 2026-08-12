@@ -57,11 +57,7 @@ const SummaryPanel: React.FunctionComponent<SummaryPanelProps> = ({
         }}
         size={8}
       >
-        <Typography.Text
-          strong={true}
-        >
-          Download:
-        </Typography.Text>
+        <Typography.Text strong={true}>Download:</Typography.Text>
         <StepProgress step={workflow.download} />
       </Space>
       {workflow.steps.map((step) => {
@@ -74,9 +70,7 @@ const SummaryPanel: React.FunctionComponent<SummaryPanelProps> = ({
             }}
             size={8}
           >
-            <Typography.Text
-              strong={true}
-            >
+            <Typography.Text strong={true}>
               {getStepLabel(step.type)}:
             </Typography.Text>
             <StepProgress step={step} />

@@ -1,9 +1,11 @@
 import {
-  CloseCircleFilled, CloseOutlined,
+  CloseCircleFilled,
+  CloseOutlined,
   HomeOutlined,
-  HourglassOutlined, RedoOutlined,
+  HourglassOutlined,
+  RedoOutlined,
   ReloadOutlined,
-  SaveOutlined
+  SaveOutlined,
 } from "@ant-design/icons";
 import type {
   FilterDefinition,
@@ -111,7 +113,11 @@ const IndexPage: React.FunctionComponent = () => {
       let resubmitted = false;
 
       if (job.download) {
-        await mediaApi.createMediaAssetDownload(job.type, job.mediaId, job.download.searchResultId);
+        await mediaApi.createMediaAssetDownload(
+          job.type,
+          job.mediaId,
+          job.download.searchResultId,
+        );
         resubmitted = true;
       }
 

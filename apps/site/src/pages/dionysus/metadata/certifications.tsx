@@ -264,7 +264,7 @@ const MetadataCertificationsPage: React.FunctionComponent = () => {
                 case "filter":
                   setCertificationsPage(0);
                   setCertificationsFilters(
-                    buildFilterDefinitionForTable(filters)
+                    buildFilterDefinitionForTable(filters),
                   );
                   break;
               }

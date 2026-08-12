@@ -31,7 +31,7 @@ const CollapsibleTabPanel: React.FunctionComponent<
   const dispatch = useDispatch();
 
   const expanded = useAppSelector((state) =>
-    panelId ? state.layout.expandedTabPanels[panelId] : false
+    panelId ? state.layout.expandedTabPanels[panelId] : false,
   );
 
   return (

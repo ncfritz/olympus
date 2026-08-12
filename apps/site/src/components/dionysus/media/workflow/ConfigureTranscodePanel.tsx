@@ -279,7 +279,9 @@ const ConfigureTranscodePanel: React.FunctionComponent<
 
                 if (audioLanguageCode) {
                   const audioLanguage = iso6392.filter(
-                    (entry) => entry.iso6392B === audioLanguageCode || entry.iso6392T === audioLanguageCode,
+                    (entry) =>
+                      entry.iso6392B === audioLanguageCode ||
+                      entry.iso6392T === audioLanguageCode,
                   )[0];
 
                   if (audioLanguage) {
@@ -416,7 +418,9 @@ const ConfigureTranscodePanel: React.FunctionComponent<
 
                 if (subtitleLanguageCode) {
                   const subtitleLanguage = iso6392.filter(
-                    (entry) => entry.iso6392B === subtitleLanguageCode || entry.iso6392T === subtitleLanguageCode,
+                    (entry) =>
+                      entry.iso6392B === subtitleLanguageCode ||
+                      entry.iso6392T === subtitleLanguageCode,
                   )[0];
 
                   if (subtitleLanguage) {
@@ -518,7 +522,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                         setSubtitleTrack(
                           track.TrackNumber === subtitleTrack
                             ? undefined
-                            : track.TrackNumber
+                            : track.TrackNumber,
                         );
                       }
                     }}

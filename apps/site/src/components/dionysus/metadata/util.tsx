@@ -1,16 +1,18 @@
 import {
   DribbbleOutlined,
-  FacebookFilled, FileImageOutlined,
+  FacebookFilled,
+  FileImageOutlined,
   GlobalOutlined,
   InstagramOutlined,
   QuestionCircleOutlined,
   TwitterOutlined,
-  UserOutlined
+  UserOutlined,
 } from "@ant-design/icons";
 import type {
   BaseImage,
-  BasePerson, BaseTvSeries,
-  TypedImage
+  BasePerson,
+  BaseTvSeries,
+  TypedImage,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Image, type MenuProps, Space, Typography } from "antd";
 import React from "react";

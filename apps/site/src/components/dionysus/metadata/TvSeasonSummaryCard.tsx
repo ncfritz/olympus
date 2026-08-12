@@ -190,7 +190,7 @@ const TvSeasonSummaryCard: React.FunctionComponent<
                           size={16}
                           percent={season.voteAverage * 10}
                           strokeColor={getProgressColor(
-                            season.voteAverage * 10
+                            season.voteAverage * 10,
                           )}
                         />
                       </Space>

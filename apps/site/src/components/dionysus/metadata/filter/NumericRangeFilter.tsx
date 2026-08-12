@@ -28,8 +28,8 @@ const DurationFilter: React.FunctionComponent<DurationFilterProps> = ({
   };
 
   let marks:
-    | Record<number, { label: string; style: CSSProperties }>
-    | undefined = undefined;
+    Record<number, { label: string; style: CSSProperties }> | undefined =
+    undefined;
 
   if (tickInterval) {
     marks = {};

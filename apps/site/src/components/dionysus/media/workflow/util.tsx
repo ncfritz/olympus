@@ -2,8 +2,9 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
-  PauseCircleFilled, QuestionCircleOutlined,
-  SyncOutlined
+  PauseCircleFilled,
+  QuestionCircleOutlined,
+  SyncOutlined,
 } from "@ant-design/icons";
 import type { MediaAssetWorkflowStatus } from "@ncfritz/olympus-sdk/dionysus";
 import { Tag } from "antd";

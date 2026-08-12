@@ -642,7 +642,10 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
             }}
           />
           {nextEventInSeries && (
-            <Space orientation={"vertical"} style={{ padding: 8, width: "100%" }}>
+            <Space
+              orientation={"vertical"}
+              style={{ padding: 8, width: "100%" }}
+            >
               <EventChip event={nextEventInSeries} />
             </Space>
           )}

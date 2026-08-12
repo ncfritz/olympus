@@ -263,7 +263,11 @@ const UUIDV16Form: React.FunctionComponent<UUIDGeneratorProps> = ({
             />
           </Space>
           <Form.Item {...buttonItemLayout} style={{ width: "100%" }}>
-            <Space orientation={"horizontal"} size={8} style={{ width: "100%" }}>
+            <Space
+              orientation={"horizontal"}
+              size={8}
+              style={{ width: "100%" }}
+            >
               <Button type={"primary"} htmlType={"submit"}>
                 Generate
               </Button>

@@ -16,7 +16,7 @@ import {
   type NoteEvent,
   type OlympusEvent,
   subscribe,
-  unsubscribe
+  unsubscribe,
 } from "../../utils/events";
 import { config, getIconForType } from "../../utils/notes";
 import TimelineEntry from "./TimelineEntry";
@@ -92,7 +92,7 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
 
     if (noteDate.hasSame(blockDate, "day")) {
       console.log(
-        `${Events.MINERVA_NOTE_ADDED} triggered for ${noteDate.toISODate()}`
+        `${Events.MINERVA_NOTE_ADDED} triggered for ${noteDate.toISODate()}`,
       );
 
       let newEntries: Note[];
