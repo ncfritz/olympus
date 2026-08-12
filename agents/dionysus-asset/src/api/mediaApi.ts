@@ -19,6 +19,7 @@ import {
   updateMediaAssetDownloadByNzbId,
   MediaAssetSearchType,
   updateMediaAssetDownload,
+  deleteMediaAssetWorkflow,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { BASE_URL } from "./apiBase";
 
@@ -205,6 +206,17 @@ class MediaApi {
       path: {
         workflowId: workflowId,
         workflowStepId: workflowStepId,
+      },
+    });
+  }
+
+  async deleteMediaAssetWorkflow(workflowId: string, hardDelete = false) {
+    await deleteMediaAssetWorkflow({
+      path: {
+        workflowId: workflowId,
+      },
+      query: {
+        hardDelete: hardDelete,
       },
     });
   }
