@@ -35,7 +35,7 @@ export class DeleteWorkflowHandler {
         logger.info(
           `Removing staging directory for workflow ${msg.workflowId}`,
         );
-        //fs.rmSync(workflowPath, { recursive: true, force: true });
+        fs.rmSync(workflowPath, { recursive: true, force: true });
       } else {
         logger.warn(
           `No directory for workflow ${msg.workflowId} exists, look for ${workflowPath}`,
