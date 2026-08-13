@@ -66,7 +66,7 @@ export class DeleteMediaWorkflowController {
 
     if (hardDelete) {
       const deleteRequest = gql`
-        mutation HardDeleteMediaAssetWorkflow(workflowId: uuid!) {
+        mutation HardDeleteMediaAssetWorkflow($workflowId: uuid!) {
           delete_dionysus_media_asset_workflow_step(
             where: { workflowId: { _eq: workflowId } }
           ) {
