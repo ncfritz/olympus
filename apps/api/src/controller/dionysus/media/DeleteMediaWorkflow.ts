@@ -68,16 +68,16 @@ export class DeleteMediaWorkflowController {
       const deleteRequest = gql`
         mutation HardDeleteMediaAssetWorkflow($workflowId: uuid!) {
           delete_dionysus_media_asset_workflow_step(
-            where: { workflowId: { _eq: workflowId } }
+            where: { workflowId: { _eq: $workflowId } }
           ) {
             affected_rows
           }
           delete_dionysus_media_asset_download(
-            where: { workflowId: { _eq: workflowId } }
+            where: { workflowId: { _eq: $workflowId } }
           ) {
             affected_rows
           }
-          delete_dionysus_media_asset_workflow_by_pk(id: workflowId) {
+          delete_dionysus_media_asset_workflow_by_pk(id: $workflowId) {
             id
           }
         }
