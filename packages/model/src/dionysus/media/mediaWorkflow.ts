@@ -143,8 +143,6 @@ export class MediaAssetWorkflow extends BaseMediaAssetWorkflow {
   })
   download: MediaAssetDownload;
 
-  // Transcode
-
   @ApiProperty({
     type: MediaAssetWorkflowStep,
     required: true,
@@ -169,7 +167,6 @@ export class MutableMediaAssetWorkflow extends OmitType(MediaAssetWorkflow, [
   "createdTime",
   "lastUpdatedTime",
   "download",
-  // "transcode",
   "steps",
 ]) {}
 
