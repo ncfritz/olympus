@@ -29,6 +29,7 @@ import { UpdateMediaAssetDownloadController } from "../controller/dionysus/media
 import { UpdateMediaAssetDownloadByNzbIdController } from "../controller/dionysus/media/UpdateMediaAssetDownloadByNzbId";
 import { UpdateMediaAssetSearchConfigurationController } from "../controller/dionysus/media/UpdateMediaAssetSearchConfiguration";
 import { UpdateMediaAssetSearchExecutionController } from "../controller/dionysus/media/UpdateMediaAssetSearchExecution";
+import { UpdateMediaAssetWorkflowController } from "../controller/dionysus/media/UpdateMediaAssetWorkflow";
 import { UpdateMediaAssetWorkflowStepController } from "../controller/dionysus/media/UpdateMediaAssetWorkflowStep";
 import { VerifyMediaAssetTranscodeConfigurationController } from "../controller/dionysus/media/VerifyMediaAssetTranscodeConfigurationController";
 import { GetTvEpisodeByIdController } from "../controller/dionysus/metadata/tv/GetTvEpisodeById";
@@ -72,6 +73,7 @@ import { RabbitModule } from "./RabbitModule";
     UpdateMediaAssetDownloadByNzbIdController,
     UpdateMediaAssetSearchConfigurationController,
     UpdateMediaAssetSearchExecutionController,
+    UpdateMediaAssetWorkflowController,
     UpdateMediaAssetWorkflowStepController,
     VerifyMediaAssetTranscodeConfigurationController,
   ],
