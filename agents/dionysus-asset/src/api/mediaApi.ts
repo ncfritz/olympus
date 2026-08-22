@@ -20,6 +20,8 @@ import {
   MediaAssetSearchType,
   updateMediaAssetDownload,
   deleteMediaAssetWorkflow,
+  PartialMediaAssetWorkflow,
+  updateMediaAssetWorkflow,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { BASE_URL } from "./apiBase";
 
@@ -120,6 +122,8 @@ class MediaApi {
     downloadId: string,
     download: PartialMediaAssetDownload,
   ) {
+    console.log("updateMediaAssetDownload", resultId);
+
     return await updateMediaAssetDownload({
       path: {
         mediaType: mediaType,
@@ -148,6 +152,20 @@ class MediaApi {
       },
       validateStatus: (status) => {
         return status === 200 || status === 404;
+      },
+    });
+  }
+
+  async updateMediaAssetWorkflow(
+    workflowId: string,
+    workflow: PartialMediaAssetWorkflow,
+  ) {
+    return await updateMediaAssetWorkflow({
+      path: {
+        workflowId: workflowId,
+      },
+      body: {
+        workflow: workflow,
       },
     });
   }

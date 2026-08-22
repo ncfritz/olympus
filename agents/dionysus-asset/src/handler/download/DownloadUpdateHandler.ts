@@ -1,12 +1,11 @@
 import { AmqpConnection, RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
 import {
+  MediaDownloadStatus,
   PartialMediaAssetDownload,
-  SearchResultStatus,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { type ConsumeMessage } from "amqplib";
-import axios from "axios";
 import fs from "fs";
 import moment from "moment";
 import mediaApi from "../../api/mediaApi";
@@ -16,6 +15,7 @@ import {
   UPDATE_SUFFIX,
 } from "../../util/constants";
 import { logger } from "../../util/logger";
+import { BaseDownloadHandler } from "./BaseDownloadHandler";
 
 const MEDIA_EXTENSIONS = [
   "mp4",
@@ -32,24 +32,12 @@ const MEDIA_EXTENSIONS = [
 ];
 
 @Injectable()
-export class DownloadUpdateHandler {
-  private readonly nzbGetUrl: string;
-  private readonly nzbGetUsername: string;
-  private readonly nzbGetPassword: string;
-
+export class DownloadUpdateHandler extends BaseDownloadHandler {
   constructor(
     private readonly amqpConnection: AmqpConnection,
     protected readonly configService: ConfigService,
   ) {
-    const nzbGetHost = this.configService.get<string>(
-      "NZBGET_HOST",
-      "localhost",
-    );
-    const nzbGetPort = this.configService.get<number>("NZBGET_PORT", 6789);
-
-    this.nzbGetUrl = `http://${nzbGetHost}:${nzbGetPort}/jsonrpc`;
-    this.nzbGetUsername = this.configService.get<string>("NZBGET_USERNAME")!;
-    this.nzbGetPassword = this.configService.get<string>("NZBGET_PASSWORD")!;
+    super(configService);
   }
 
   @RabbitSubscribe({
@@ -91,15 +79,7 @@ export class DownloadUpdateHandler {
           msg.event === "NZB_DELETED0" &&
           msg.deleteStatus === "COPY"
         ) {
-          await this.updateDownloadStatus(
-            nzbId,
-            {
-              status: "cancelled",
-              startedTime: moment.utc().toISOString(),
-              finishedTime: moment.utc().toISOString(),
-            },
-            "download_failed",
-          );
+          await this.failDownload(msg.workflowId, nzbId, "cancelled", false);
         }
       } else if (msg.type === "post-process") {
         if (msg.status.startsWith("SUCCESS")) {
@@ -136,15 +116,7 @@ export class DownloadUpdateHandler {
           logger.info("Media filenames:", mediaFilenames);
 
           if (!mediaFilenames || mediaFilenames.length === 0) {
-            await this.updateDownloadStatus(
-              nzbId,
-              {
-                status: "failed",
-                finishedTime: moment.utc().toISOString(),
-              },
-              "download_failed",
-            );
-            await this.deleteNzbHistory(nzbId);
+            await this.failDownload(msg.workflowId, nzbId, "failed");
 
             return;
           } else if (mediaFilenames?.length > 0) {
@@ -189,63 +161,45 @@ export class DownloadUpdateHandler {
 
           await this.deleteNzbHistory(nzbId);
         } else if (msg.status.startsWith("FAILURE")) {
-          await this.updateDownloadStatus(
-            nzbId,
-            {
-              status: "failed",
-              finishedTime: moment.utc().toISOString(),
-            },
-            "download_failed",
-          );
-          await this.deleteNzbHistory(nzbId);
+          await this.failDownload(msg.workflowId, nzbId, "failed");
         }
       }
     } catch (e) {
       logger.error(`Error processing download update message: ${e.message}`, e);
 
-      await this.updateDownloadStatus(
-        nzbId,
-        {
-          status: "failed",
-          finishedTime: moment.utc().toISOString(),
-        },
-        "download_failed",
-      );
-      await this.deleteNzbHistory(nzbId);
+      await this.failDownload(msg.workflowId, nzbId, "failed");
     }
   }
 
-  private async updateDownloadStatus(
+  private async failDownload(
+    workflowId: string,
     nzbId: number,
-    updates: PartialMediaAssetDownload,
-    searchResultStatus: SearchResultStatus,
+    downloadStatus: MediaDownloadStatus,
+    cleanupNzb = true,
   ) {
-    const response = await mediaApi.updateMediaAssetDownloadByNzbId(
-      nzbId as number,
-      updates,
-      searchResultStatus,
-    );
+    const now = moment.utc();
 
-    if (response.status === 404) {
-      logger.warn(`Download with nzbId ${nzbId} not found, skipping update`);
-      return undefined;
+    try {
+      const downloadUpdate: PartialMediaAssetDownload = {
+        status: downloadStatus,
+        finishedTime: now.toISOString(),
+      };
+
+      if (downloadStatus === "cancelled") {
+        downloadUpdate.startedTime = moment.utc().toISOString();
+      }
+
+      await this.updateDownloadStatus(nzbId, downloadUpdate, "download_failed");
+      await mediaApi.updateMediaAssetWorkflow(workflowId, {
+        status: "failed",
+        finishedTime: now.toISOString(),
+      });
+
+      if (cleanupNzb) {
+        await this.deleteNzbHistory(nzbId);
+      }
+    } catch (e) {
+      logger.error(`Error updating download status: ${e.message}`, e);
     }
-
-    return response.data.download;
-  }
-
-  private async deleteNzbHistory(nzbId: number) {
-    await axios.post(
-      this.nzbGetUrl,
-      {
-        id: 1,
-        jsonrpc: "2.0",
-        method: "editqueue",
-        params: ["GroupFinalDelete", 0, "", [nzbId]],
-      },
-      {
-        auth: { username: this.nzbGetUsername, password: this.nzbGetPassword },
-      },
-    );
   }
 }
