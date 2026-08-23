@@ -20,6 +20,7 @@ export class ConfigureTranscodeHandler {
     queue: `${MEDIA_JOB_PREFIX}.configureTranscode.${TRIGGER_SUFFIX}`,
     routingKey: `${JOB_TYPE_PREFIX}.configureTranscode`,
   })
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async handle(msg: ConfigureTranscodeMessage, amqMsg: ConsumeMessage) {
     const step = await createStep(msg.workflowId, "configure_transcode");
 
@@ -39,13 +40,13 @@ export class ConfigureTranscodeHandler {
         logger.debug(`Audio Tracks: ${audioTracks.length}`);
         logger.debug(`Subtitle Tracks: ${subtitleTracks.length}`);
 
-        // Assume the media will be auto-configured
+        // Assume the media will be autoconfigured
         let configurationRequiresApproval = false;
         let transcodeVerificationRequired = false;
         let audioTrackIndex = 1;
         let subtitleTrackIndex: number | undefined = undefined;
 
-        // We can auto-configure the transcode IFF:
+        // We can autoconfigure the transcode IFF:
         // 1. There is only one video track - this check may be proceeded by culling the video list to remove any static
         //    media types like cover art, which is reported as a video stream
         // 2. There is only one audio track, OR we can reliably identify one audio track as "eng" language.  If there
@@ -95,7 +96,7 @@ export class ConfigureTranscodeHandler {
             if (track.LanguageCode === "eng") {
               engSubtitleTracks.push({
                 index: track.TrackNumber,
-                forced: track.Attributes.Forced === 1,
+                forced: track.Attributes.Forced === true,
               });
             }
 
@@ -104,13 +105,13 @@ export class ConfigureTranscodeHandler {
                 "Multiple 'eng' subtitle track found, flagging transcode for verification",
               );
 
-              engSubtitleTracks.forEach((track) => {
-                if (track.forced) {
+              engSubtitleTracks.forEach((subTrack) => {
+                if (subTrack.forced) {
                   logger.info(
-                    `'eng' subtitle track at index ${track.index} is forced, flagging transcode for verification`,
+                    `'eng' subtitle track at index ${subTrack.index} is forced, flagging transcode for verification`,
                   );
 
-                  subtitleTrackIndex = track.index;
+                  subtitleTrackIndex = subTrack.index;
                   transcodeVerificationRequired = true;
                 }
               });
