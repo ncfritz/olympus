@@ -76,10 +76,10 @@ export class DownloadUpdateHandler extends BaseDownloadHandler {
             "downloading",
           );
         } else if (
-          msg.event === "NZB_DELETED0" &&
+          msg.event === "NZB_DELETED" &&
           msg.deleteStatus === "COPY"
         ) {
-          await this.failDownload(msg.workflowId, nzbId, "cancelled", false);
+          await this.failDownload(nzbId, "cancelled", false);
         }
       } else if (msg.type === "post-process") {
         if (msg.status.startsWith("SUCCESS")) {
@@ -116,7 +116,7 @@ export class DownloadUpdateHandler extends BaseDownloadHandler {
           logger.info("Media filenames:", mediaFilenames);
 
           if (!mediaFilenames || mediaFilenames.length === 0) {
-            await this.failDownload(msg.workflowId, nzbId, "failed");
+            await this.failDownload(nzbId, "failed");
 
             return;
           } else if (mediaFilenames?.length > 0) {
@@ -161,18 +161,17 @@ export class DownloadUpdateHandler extends BaseDownloadHandler {
 
           await this.deleteNzbHistory(nzbId);
         } else if (msg.status.startsWith("FAILURE")) {
-          await this.failDownload(msg.workflowId, nzbId, "failed");
+          await this.failDownload(nzbId, "failed");
         }
       }
     } catch (e) {
       logger.error(`Error processing download update message: ${e.message}`, e);
 
-      await this.failDownload(msg.workflowId, nzbId, "failed");
+      await this.failDownload(nzbId, "failed");
     }
   }
 
   private async failDownload(
-    workflowId: string,
     nzbId: number,
     downloadStatus: MediaDownloadStatus,
     cleanupNzb = true,
@@ -189,11 +188,16 @@ export class DownloadUpdateHandler extends BaseDownloadHandler {
         downloadUpdate.startedTime = moment.utc().toISOString();
       }
 
-      await this.updateDownloadStatus(nzbId, downloadUpdate, "download_failed");
-      await mediaApi.updateMediaAssetWorkflow(workflowId, {
-        status: "failed",
-        finishedTime: now.toISOString(),
-      });
+      const updatedDownload = await this.updateDownloadStatus(nzbId, downloadUpdate, "download_failed");
+
+      if (updatedDownload && updatedDownload.workflowId) {
+        await mediaApi.updateMediaAssetWorkflow(updatedDownload.workflowId, {
+          status: "failed",
+          finishedTime: now.toISOString(),
+        });
+      } else {
+        logger.warn(`Download for NZB ${nzbId} is not associated with a workflow, skipping update`);
+      }
 
       if (cleanupNzb) {
         await this.deleteNzbHistory(nzbId);
