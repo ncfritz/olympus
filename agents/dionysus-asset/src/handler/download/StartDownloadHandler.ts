@@ -161,8 +161,6 @@ export class StartDownloadHandler extends BaseDownloadHandler {
     } catch (e) {
       logger.error(`Error processing download update message: ${e.message}`, e);
 
-      console.log(msg);
-
       try {
         await this.failDownload(
           msg.workflowId,
@@ -198,6 +196,7 @@ export class StartDownloadHandler extends BaseDownloadHandler {
         finishedTime: now.toISOString(),
       },
     );
+
     await mediaApi.updateMediaAssetWorkflow(workflowId, {
       status: "failed",
       finishedTime: now.toISOString(),
