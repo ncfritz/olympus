@@ -122,6 +122,12 @@ export class ConfigureTranscodeHandler {
                 );
                 configurationRequiresApproval = true;
               }
+            } else if (
+              engSubtitleTracks.length === 1 &&
+              engSubtitleTracks[0].forced
+            ) {
+              subtitleTrackIndex = engSubtitleTracks[0].index;
+              transcodeVerificationRequired = true;
             }
           });
         }
@@ -168,7 +174,6 @@ export class ConfigureTranscodeHandler {
         await updateStepStatus(msg.workflowId, step.id, "failed");
       }
     } catch (e) {
-      console.log(e);
       await updateStepStatus(msg.workflowId, step.id, "failed");
     }
   }
