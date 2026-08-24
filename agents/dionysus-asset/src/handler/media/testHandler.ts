@@ -6,6 +6,7 @@ import {
   MEDIA_JOB_PREFIX,
   TRIGGER_SUFFIX,
 } from "../../util/constants";
+import { logger } from "../../util/logger";
 import { MediaWorkflow } from "../../workflow/media/workflow";
 
 @Injectable()
@@ -15,6 +16,7 @@ export class TestHandler {
     queue: `${MEDIA_JOB_PREFIX}.test.${TRIGGER_SUFFIX}`,
     routingKey: `${JOB_TYPE_PREFIX}.test`,
   })
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async handle(msg: any, amqMsg: ConsumeMessage) {
     const workflowId = "386e15d2-c124-4c30-a966-ed2c2ae9579c";
     try {
@@ -31,7 +33,7 @@ export class TestHandler {
           password: process.env.DIONYSUS_CDN_SSH_PASSWORD!,
         },
         async (progress, bytesTransferred) => {
-          console.log(
+          logger.debug(
             `Progress: ${progress} - Bytes transferred: ${bytesTransferred}`,
           );
         },
