@@ -47,7 +47,7 @@ export class MediaAssetDownload {
   nzbId?: number;
 
   @ApiProperty({
-    type: Number,
+    type: String,
     required: false,
     description: "The ID of the workflow this download belongs to.",
   })
