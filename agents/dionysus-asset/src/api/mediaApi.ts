@@ -122,8 +122,6 @@ class MediaApi {
     downloadId: string,
     download: PartialMediaAssetDownload,
   ) {
-    console.log("updateMediaAssetDownload", resultId);
-
     return await updateMediaAssetDownload({
       path: {
         mediaType: mediaType,
