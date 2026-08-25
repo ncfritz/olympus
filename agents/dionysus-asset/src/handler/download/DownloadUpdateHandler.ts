@@ -75,10 +75,7 @@ export class DownloadUpdateHandler extends BaseDownloadHandler {
             },
             "downloading",
           );
-        } else if (
-          msg.event === "NZB_DELETED" &&
-          msg.deleteStatus === "COPY"
-        ) {
+        } else if (msg.event === "NZB_DELETED" && msg.deleteStatus === "COPY") {
           await this.failDownload(nzbId, "cancelled", false);
         }
       } else if (msg.type === "post-process") {
@@ -188,7 +185,11 @@ export class DownloadUpdateHandler extends BaseDownloadHandler {
         downloadUpdate.startedTime = moment.utc().toISOString();
       }
 
-      const updatedDownload = await this.updateDownloadStatus(nzbId, downloadUpdate, "download_failed");
+      const updatedDownload = await this.updateDownloadStatus(
+        nzbId,
+        downloadUpdate,
+        "download_failed",
+      );
 
       if (updatedDownload && updatedDownload.workflowId) {
         await mediaApi.updateMediaAssetWorkflow(updatedDownload.workflowId, {
@@ -196,7 +197,9 @@ export class DownloadUpdateHandler extends BaseDownloadHandler {
           finishedTime: now.toISOString(),
         });
       } else {
-        logger.warn(`Download for NZB ${nzbId} is not associated with a workflow, skipping update`);
+        logger.warn(
+          `Download for NZB ${nzbId} is not associated with a workflow, skipping update`,
+        );
       }
 
       if (cleanupNzb) {
