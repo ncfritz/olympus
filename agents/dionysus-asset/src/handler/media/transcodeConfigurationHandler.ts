@@ -9,7 +9,7 @@ import {
   MEDIA_JOB_PREFIX,
   TRIGGER_SUFFIX,
 } from "../../util/constants";
-import config from "../../handbrakeDefault.json" with { type: "json" };
+import * as HANDBRAKE_DEFAULT_CONFIG from "../../handbrakeDefault.json" with { type: "json" };
 import { updateStepStatus } from "../../workflow/media/reporter";
 import { MediaWorkflow } from "../../workflow/media/workflow";
 
@@ -32,6 +32,7 @@ export class TranscodeConfigurationHandler {
       msg.configurationStepId,
     );
 
+    const config = JSON.parse(JSON.stringify(HANDBRAKE_DEFAULT_CONFIG));
     const configFile = `${workflow.stagingDir}/transcodeJob.json`;
     const handbrakeMetadataFile = `${workflow.stagingDir}/handbrakeMetadata.json`;
     const transcodeMetadataFile = `${workflow.stagingDir}/transcodeMetadata.json`;
@@ -91,7 +92,9 @@ export class TranscodeConfigurationHandler {
     config[0].Job.Subtitle.SubtitleList = [];
 
     if (subtitleMetadata) {
-      // @ts-expect-error I'm not typing this
+      // Delete the Subtitle.Search element
+      delete config[0].Job.Subtitle.Search;
+
       config[0].Job.Subtitle.SubtitleList.push({
         Burn: true,
         Default: false,
@@ -102,10 +105,12 @@ export class TranscodeConfigurationHandler {
         Name: subtitleMetadata.Name,
       });
     } else {
-      config[0].Job.Subtitle.Search.Burn = true;
-      config[0].Job.Subtitle.Search.Default = false;
-      config[0].Job.Subtitle.Search.Enable = true;
-      config[0].Job.Subtitle.Search.Forced = true;
+      config[0].Job.Subtitle.Search = {
+        Burn: true,
+        Default: false,
+        Enable: true,
+        Forced: true,
+      };
     }
 
     fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
