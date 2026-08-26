@@ -3,13 +3,14 @@ import type {
   MediaAssetWorkflow,
   MediaAssetWorkflowStep,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Empty, Result, Space } from "antd";
+import { Empty, Radio, Result, Space } from "antd";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useFetch } from "../../../../hooks/useFetch";
 import { DIONYSUS_CDN_HOST } from "../../../../utils/constants";
 import LoadingWrapper from "../../../common/LoadingWrapper";
-import MediaAssetDetails from "../../../content/MediaAssetDetails";
+import MediaAssetFFMpegDetails from "../../../content/MediaAssetFFMpegDetails";
+import MediaAssetHandbrakeDetails from "../../../content/MediaAssetHandbrakeDetails";
 
 export interface MetadataDetailsPanelProps {
   workflow: MediaAssetWorkflow;
@@ -22,8 +23,11 @@ const MetadataDetailsPanel: React.FunctionComponent<
   const [step, setStep] = useState<MediaAssetWorkflowStep | undefined>(
     undefined,
   );
+  const [metadataSource, setMetadataSource] = useState<"ffmpeg" | "handbrake">(
+    "ffmpeg",
+  );
 
-  const [mediaMetadata, mediaMetaLoading, mediaMetaError] = useFetch<
+  const [ffmpegMetadata, ffmpegMetaLoading, ffmpegMetaError] = useFetch<
     undefined,
     any
   >({
@@ -49,6 +53,27 @@ const MetadataDetailsPanel: React.FunctionComponent<
       return response.data;
     },
   });
+
+  const [handbrakeMetadata, handbrakeMetaLoading, handbrakeMetaError] =
+    useFetch<undefined, any>({
+      dataType: undefined,
+      params: undefined,
+      watch: [workflow.id],
+      fetchFunction: async () => {
+        const response = await axios.get(
+          `${DIONYSUS_CDN_HOST}/workflow/${workflow.id}/handbrakeMetadata.json`,
+          {
+            validateStatus: (status) => status === 200 || status === 404,
+          },
+        );
+
+        if (response.status === 404) {
+          return undefined;
+        }
+
+        return response.data;
+      },
+    });
 
   useEffect(() => {
     workflow.steps.forEach((current) => {
@@ -79,7 +104,7 @@ const MetadataDetailsPanel: React.FunctionComponent<
           subTitle={"Metadata is being extracted from the media file."}
         />
       );
-    } else if (step.status === "success" && mediaMetadata) {
+    } else if (step.status === "success" && ffmpegMetadata) {
       content = (
         <>
           <Result
@@ -88,14 +113,49 @@ const MetadataDetailsPanel: React.FunctionComponent<
             title="Metadata Extraction Complete"
             subTitle="Metadata has been successfully extracted from the media file.  The following metadata has been extracted from the media file."
           />
-          <MediaAssetDetails metadata={mediaMetadata} showRaw={false} />
+          <Radio.Group
+            defaultValue={"ffmpeg"}
+            block={true}
+            onChange={(e) => {
+              setMetadataSource(e.target.value);
+            }}
+            options={[
+              {
+                label: "FFmpeg",
+                value: "ffmpeg",
+              },
+              {
+                label: "Handbrake",
+                value: "handbrake",
+              },
+            ]}
+            optionType="button"
+            buttonStyle="solid"
+            style={{ marginBottom: 32 }}
+          />
+          {metadataSource === "ffmpeg" ? (
+            <MediaAssetFFMpegDetails
+              metadata={ffmpegMetadata}
+              allowRawToggle={true}
+              showRaw={false}
+            />
+          ) : (
+            <MediaAssetHandbrakeDetails
+              metadata={handbrakeMetadata}
+              allowRawToggle={true}
+              showRaw={false}
+            />
+          )}
         </>
       );
     }
   }
 
   return (
-    <LoadingWrapper loading={mediaMetaLoading} error={mediaMetaError}>
+    <LoadingWrapper
+      loading={ffmpegMetaLoading || handbrakeMetaLoading}
+      error={ffmpegMetaError || handbrakeMetaError}
+    >
       <Space
         orientation={"vertical"}
         style={{ width: 950, minWidth: 650, marginTop: 16 }}
