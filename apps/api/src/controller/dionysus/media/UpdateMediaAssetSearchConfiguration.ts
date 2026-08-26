@@ -84,8 +84,9 @@ export class UpdateMediaAssetSearchConfigurationController {
     name: "recursive",
     description:
       "When set to `true` any child entities - seasons/episodes - will be updated with the specified `enabled` status.",
-    type: "boolean",
+    type: Boolean,
     required: false,
+    default: false,
   })
   @ApiOkResponse({
     description: "The record has been successfully updated.",
@@ -96,7 +97,7 @@ export class UpdateMediaAssetSearchConfigurationController {
   async handle(
     @Param("mediaType") mediaType: MediaAssetSearchType,
     @Param("mediaId") mediaId: number,
-    @Query("recursive", ParseBoolPipe) recursive: boolean = false,
+    @Query("recursive", ParseBoolPipe) recursive = false,
     @Body() request: UpdateMediaAssetSearchConfigurationRequest,
     @Res() response: Response,
   ): Promise<void> {
