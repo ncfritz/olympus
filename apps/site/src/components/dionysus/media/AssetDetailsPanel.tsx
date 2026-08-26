@@ -4,7 +4,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { DIONYSUS_CDN_HOST } from "../../../utils/constants";
 import LoadingWrapper from "../../common/LoadingWrapper";
-import MediaAssetDetails from "../../content/MediaAssetDetails";
+import MediaAssetFFMpegDetails from "../../content/MediaAssetFFMpegDetails";
 
 export interface ContentAssetDetailsPanelProps {
   assetType: MediaAssetSearchType;
@@ -79,7 +79,7 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
           error={assetMetadataError}
         >
           {assetMetadata ? (
-            <MediaAssetDetails
+            <MediaAssetFFMpegDetails
               metadata={assetMetadata}
               showRaw={showRawMetadata}
             />
@@ -98,7 +98,7 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
           error={originalMetadataError}
         >
           {originalMetadata ? (
-            <MediaAssetDetails
+            <MediaAssetFFMpegDetails
               metadata={originalMetadata}
               showRaw={showRawMetadata}
             />

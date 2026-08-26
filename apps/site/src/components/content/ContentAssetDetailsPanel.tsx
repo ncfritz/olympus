@@ -3,7 +3,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { CONTENT_CDN_HOST } from "../../utils/constants";
 import LoadingWrapper from "../common/LoadingWrapper";
-import MediaAssetDetails from "./MediaAssetDetails";
+import MediaAssetFFMpegDetails from "./MediaAssetFFMpegDetails";
 
 export interface ContentAssetDetailsPanelProps {
   assetId?: string;
@@ -53,7 +53,7 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
       label: `Asset Metadata`,
       children: (
         <LoadingWrapper loading={metadataLoading} error={metadataError}>
-          <MediaAssetDetails
+          <MediaAssetFFMpegDetails
             metadata={assetMetadata}
             showRaw={showRawMetadata}
           />
@@ -65,7 +65,7 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
       label: `Original Metadata`,
       children: (
         <LoadingWrapper loading={metadataLoading} error={metadataError}>
-          <MediaAssetDetails
+          <MediaAssetFFMpegDetails
             metadata={originalMetadata}
             showRaw={showRawMetadata}
           />

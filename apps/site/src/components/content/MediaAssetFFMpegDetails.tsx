@@ -4,6 +4,7 @@ import {
   CloseCircleFilled,
   FileTextOutlined,
   FileUnknownOutlined,
+  ProfileOutlined,
   SoundOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
@@ -11,22 +12,60 @@ import {
   Col,
   Collapse,
   type CollapseProps,
+  Radio,
   Row,
   Space,
   Typography,
 } from "antd";
 import { iso6392 } from "iso-639-2";
 import dynamic from "next/dynamic";
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import ReactCountryFlag from "react-country-flag/src";
+import { JsonIcon } from "../../icons";
 const DynamicReactJson = dynamic(import("react-json-view"), { ssr: false });
 
-export interface MediaAssetDetailsProps {
+export interface MediaAssetFFMpegDetailsProps {
   metadata: any;
   showRaw: boolean;
+  allowRawToggle?: boolean;
 }
 
-const metadataLabel = (label: string, span = 4) => {
+export const getTitleExtra = (subtitleLanguageCode: string, title: string) => {
+  let titleExtra: ReactNode = undefined;
+
+  if (subtitleLanguageCode) {
+    const subtitleLanguage = iso6392.filter(
+      (entry) => entry.iso6392B === subtitleLanguageCode
+    )[0];
+
+    if (subtitleLanguage) {
+      titleExtra = (
+        <Space orientation={"horizontal"} size={4}>
+          {subtitleLanguage.iso6391 ? (
+            <ReactCountryFlag
+              countryCode={subtitleLanguage.iso6391}
+              cdnUrl={"/flags/"}
+              cdnSuffix={"svg"}
+              svg={true}
+            />
+          ) : (
+            "huh"
+          )}
+          {subtitleLanguage && subtitleLanguage.name}
+          {title && (
+            <Typography.Text style={{ fontSize: "12px", color: "#666666" }}>
+              ({title})
+            </Typography.Text>
+          )}
+        </Space>
+      );
+    }
+  }
+
+  return titleExtra;
+};
+
+export const metadataLabel = (label: string, span = 4) => {
   return (
     <Col span={span}>
       <Typography.Text
@@ -45,7 +84,7 @@ const metadataLabel = (label: string, span = 4) => {
   );
 };
 
-const metadataValue = (value: ReactNode, span = 4) => {
+export const metadataValue = (value: ReactNode, span = 4) => {
   return (
     <Col span={span}>
       <Typography.Text style={{ fontSize: "12px", fontFamily: "monospace" }}>
@@ -55,7 +94,7 @@ const metadataValue = (value: ReactNode, span = 4) => {
   );
 };
 
-const tagsSection = (tags: Record<string, string>) => {
+export const tagsSection = (tags: Record<string, string>) => {
   const rows: ReactNode[] = [];
   const tagsContent: ReactNode[] = [];
 
@@ -127,36 +166,78 @@ const tagsSection = (tags: Record<string, string>) => {
   return rows;
 };
 
-const enabled = (
+export const enabled = (
   <Typography.Text style={{ color: "#006600" }}>
     <CheckCircleFilled />
   </Typography.Text>
 );
-const disabled = (
+export const disabled = (
   <Typography.Text style={{ color: "#990000" }}>
     <CloseCircleFilled />
   </Typography.Text>
 );
 
-const MediaAssetDetails: React.FunctionComponent<MediaAssetDetailsProps> = ({
+const MediaAssetFFMpegDetails: React.FunctionComponent<
+  MediaAssetFFMpegDetailsProps
+> = ({
   metadata,
   showRaw,
-}: MediaAssetDetailsProps) => {
-  let content;
+  allowRawToggle = false,
+}: MediaAssetFFMpegDetailsProps) => {
+  const [displayStyle, setDisplayStyle] = useState<"form" | "raw">(
+    showRaw ? "raw" : "form",
+  );
 
-  if (showRaw) {
+  let content;
+  const formatSelector = allowRawToggle ? (
+    <Radio.Group
+      size={"small"}
+      optionType={"button"}
+      defaultValue={displayStyle}
+      className={"dionysus-filter-header"}
+      onChange={(e) => {
+        setDisplayStyle(e.target.value);
+      }}
+      options={[
+        {
+          value: "form",
+          label: <ProfileOutlined />,
+        },
+        {
+          value: "raw",
+          label: <JsonIcon />,
+        },
+      ]}
+    />
+  ) : undefined;
+
+  if (displayStyle === "raw") {
     content = (
-      <DynamicReactJson
-        style={{
-          marginLeft: 24,
-          fontSize: 10,
-        }}
-        src={metadata || {}}
-        indentWidth={2}
-        iconStyle={"square"}
-        displayDataTypes={false}
-        enableClipboard={true}
-      />
+      <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
+        <Space
+          orientation={"horizontal"}
+          size={8}
+          style={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
+          <Typography.Title level={5}>JSON</Typography.Title>
+          {formatSelector}
+        </Space>
+        <DynamicReactJson
+          style={{
+            marginLeft: 24,
+            fontSize: 10,
+          }}
+          src={metadata || {}}
+          indentWidth={2}
+          iconStyle={"square"}
+          displayDataTypes={false}
+          enableClipboard={true}
+        />
+      </Space>
     );
   } else {
     const streams: CollapseProps["items"] = [];
@@ -415,46 +496,13 @@ const MediaAssetDetails: React.FunctionComponent<MediaAssetDetailsProps> = ({
         titleIcon = <SoundOutlined />;
       } else if (stream.codec_type === "subtitle") {
         titleIcon = <FileTextOutlined />;
-
-        const subtitleLanguageCode = stream.tags?.language;
-        const subtitleTitle = stream.tags?.title;
-
-        if (subtitleLanguageCode) {
-          const subtitleLanguage = iso6392.filter(
-            (entry) => entry.iso6392B === subtitleLanguageCode,
-          )[0];
-
-          if (subtitleLanguage) {
-            titleExtra = (
-              <Space orientation={"horizontal"} size={4}>
-                {subtitleLanguage.iso6391 ? (
-                  <ReactCountryFlag
-                    countryCode={subtitleLanguage.iso6391}
-                    cdnUrl={"/flags/"}
-                    cdnSuffix={"svg"}
-                    svg={true}
-                  />
-                ) : (
-                  "huh"
-                )}
-                {subtitleLanguage && subtitleLanguage.name}
-                {subtitleTitle && (
-                  <Typography.Text
-                    style={{ fontSize: "12px", color: "#666666" }}
-                  >
-                    ({subtitleTitle})
-                  </Typography.Text>
-                )}
-              </Space>
-            );
-          }
-        }
+        titleExtra = getTitleExtra(stream.tags?.language, stream.tags?.title);
       }
 
       streams.push({
         label: (
           <Space
-            direction={"horizontal"}
+            orientation={"horizontal"}
             size={8}
             style={{ alignItems: "center" }}
           >
@@ -470,7 +518,7 @@ const MediaAssetDetails: React.FunctionComponent<MediaAssetDetailsProps> = ({
         key: `stream-${stream.index}`,
         children: (
           <Space
-            direction={"vertical"}
+            orientation={"vertical"}
             size={4}
             style={{ width: "100%", marginBottom: 16 }}
           >
@@ -482,7 +530,18 @@ const MediaAssetDetails: React.FunctionComponent<MediaAssetDetailsProps> = ({
 
     content = (
       <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
-        <Typography.Title level={5}>Format</Typography.Title>
+        <Space
+          orientation={"horizontal"}
+          size={8}
+          style={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
+          <Typography.Title level={5}>Format</Typography.Title>
+          {formatSelector}
+        </Space>
         <Row>
           {metadataLabel("Name")}
           {metadataValue(metadata.format.format_name, 20)}
@@ -546,7 +605,7 @@ const MediaAssetDetails: React.FunctionComponent<MediaAssetDetailsProps> = ({
 
   return (
     <Space
-      direction={"vertical"}
+      orientation={"vertical"}
       size={8}
       style={{
         width: "100%",
@@ -559,4 +618,4 @@ const MediaAssetDetails: React.FunctionComponent<MediaAssetDetailsProps> = ({
     </Space>
   );
 };
-export default MediaAssetDetails;
+export default MediaAssetFFMpegDetails;
