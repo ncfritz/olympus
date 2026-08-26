@@ -19,6 +19,7 @@ import TranscodeSvg from "./icons/Transcode.svg";
 import WorkQueueSvg from "./icons/WorkQueue.svg";
 import WorkflowSvg from "./icons/Workflow.svg";
 import MetadataWorkflowSvg from "./icons/MetadataWorkflow.svg";
+import JsonSvg from "./icons/Json.svg";
 
 export const MovieIcon = () => <Icon component={MovieSvg} />;
 
@@ -70,3 +71,4 @@ export const PredictiveAnalysisIcon = () => (
 export const ProcessingQueueIcon = () => (
   <Icon component={ProcessingQueueSvg} />
 );
+export const JsonIcon = () => <Icon component={JsonSvg} />;
