@@ -113,7 +113,7 @@ const IndexPage: React.FunctionComponent = () => {
       let resubmitted = false;
 
       if (job.download) {
-        await mediaApi.createMediaAssetDownload(
+        await mediaApi.createMediaAssetWorkflow(
           job.type,
           job.mediaId,
           job.download.searchResultId,
