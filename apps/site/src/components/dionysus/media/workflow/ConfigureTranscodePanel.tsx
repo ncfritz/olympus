@@ -59,10 +59,11 @@ const ConfigureTranscodePanel: React.FunctionComponent<
     },
   });
 
-  const [transcodeJobConfig, transcodeJobConfigLoading, transcodeJobConfigError] = useFetch<
-    undefined,
-    any
-  >({
+  const [
+    transcodeJobConfig,
+    transcodeJobConfigLoading,
+    transcodeJobConfigError,
+  ] = useFetch<undefined, any>({
     dataType: undefined,
     params: undefined,
     watch: [workflow.id],
@@ -71,7 +72,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
         `${DIONYSUS_CDN_HOST}/workflow/${workflow.id}/transcodeJob.json`,
         {
           validateStatus: (status) => status === 200 || status === 404,
-        }
+        },
       );
 
       if (response.status === 404) {
@@ -354,7 +355,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                     const audioLanguage = iso6392.filter(
                       (entry) =>
                         entry.iso6392B === audioLanguageCode ||
-                        entry.iso6392T === audioLanguageCode
+                        entry.iso6392T === audioLanguageCode,
                     )[0];
 
                     if (audioLanguage) {
@@ -503,7 +504,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                     const subtitleLanguage = iso6392.filter(
                       (entry) =>
                         entry.iso6392B === subtitleLanguageCode ||
-                        entry.iso6392T === subtitleLanguageCode
+                        entry.iso6392T === subtitleLanguageCode,
                     )[0];
 
                     if (subtitleLanguage) {
@@ -608,7 +609,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
                           setSubtitleTrack(
                             track.TrackNumber === subtitleTrack
                               ? undefined
-                              : track.TrackNumber
+                              : track.TrackNumber,
                           );
                         }
                       }}

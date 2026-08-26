@@ -35,7 +35,7 @@ export const getTitleExtra = (subtitleLanguageCode: string, title: string) => {
 
   if (subtitleLanguageCode) {
     const subtitleLanguage = iso6392.filter(
-      (entry) => entry.iso6392B === subtitleLanguageCode
+      (entry) => entry.iso6392B === subtitleLanguageCode,
     )[0];
 
     if (subtitleLanguage) {
