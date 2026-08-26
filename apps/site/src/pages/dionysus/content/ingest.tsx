@@ -288,6 +288,7 @@ const AssetIngestPage: React.FunctionComponent = () => {
   return (
     <ContentAuthWrapper>
       <OlympusBreadcrumbs
+        className={"dark"}
         items={[
           {
             title: (

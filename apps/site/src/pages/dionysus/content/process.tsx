@@ -23,7 +23,6 @@ import {
 import { Content } from "antd/lib/layout/layout";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import prettyMilliseconds from "pretty-ms";
 import React, { type ReactNode, useEffect, useState } from "react";
 import contentApi from "../../../api/contentApi";
@@ -34,7 +33,6 @@ import ContentAssetThumbnailGrid from "../../../components/content/ContentAssetT
 import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
 import Timestamp from "../../../components/data/Timestamp";
 import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
-import { useAppSelector } from "../../../redux/hooks";
 import { CONTENT_CDN_HOST } from "../../../utils/constants";
 import type { NotificationType } from "../../../utils/notifications";
 
@@ -44,12 +42,7 @@ const ContentAssetPreviewPlayer = dynamic(
 );
 
 const ContentProcessingPage: React.FunctionComponent = () => {
-  const router = useRouter();
   const [api, contextHolder] = notification.useNotification();
-
-  const blackCurtainEnabled = useAppSelector(
-    (state) => state.blackCurtain.active,
-  );
 
   const [asset, setAsset] = useState<ContentAsset>();
   const [untaggedCount, setUntaggedCount] = useState(0);
@@ -213,7 +206,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
 
     playerContent = (
       <Space
-        direction={"vertical"}
+        orientation={"vertical"}
         style={{
           display: "block",
           width: "100%",
@@ -221,7 +214,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
         }}
       >
         <Space
-          direction={"horizontal"}
+          orientation={"horizontal"}
           style={{
             justifyContent: "space-between",
             alignItems: "start",
@@ -255,7 +248,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
                 />
               </Space>
               <Space
-                direction={videoOrientation}
+                orientation={videoOrientation}
                 styles={{ item: { lineHeight: 0 } }}
               >
                 <ContentAssetPreviewPlayer
@@ -282,7 +275,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
               }}
             />
             <Space
-              direction={"horizontal"}
+              orientation={"horizontal"}
               style={{ justifyContent: "space-between" }}
             >
               <Space orientation={"horizontal"}>
@@ -339,7 +332,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
               size={"middle"}
               color={"cyan"}
               variant={"solid"}
-              iconPosition={"end"}
+              iconPlacement={"end"}
               icon={<ExportOutlined />}
               block={true}
               href={`/dionysus/content/asset/${asset.id}`}
@@ -354,7 +347,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
 
     const tagStepContent = (
       <Space
-        direction={"horizontal"}
+        orientation={"horizontal"}
         style={{ width: "100%", marginTop: 16, borderTop: "1px solid #efefef" }}
         styles={{ item: { height: `calc(100vh - ${contentOffset + 178}px)` } }}
       >
@@ -421,7 +414,9 @@ const ContentProcessingPage: React.FunctionComponent = () => {
             overflow: "hidden",
           }}
         >
-          <Steps current={currentStep} items={steps} progressDot={true} />
+          <Steps current={currentStep} items={steps} type={"default"} />
+        </div>
+        <div style={{ paddingLeft: 16, paddingRight: 16 }}>
           {steps[currentStep].content}
         </div>
         <div
@@ -477,6 +472,7 @@ const ContentProcessingPage: React.FunctionComponent = () => {
   return (
     <ContentAuthWrapper>
       <OlympusBreadcrumbs
+        className={"dark"}
         items={[
           {
             title: (
