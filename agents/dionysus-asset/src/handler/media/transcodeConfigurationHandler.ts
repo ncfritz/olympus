@@ -3,13 +3,14 @@ import { Injectable } from "@nestjs/common";
 import type { ConsumeMessage } from "amqplib";
 import fs from "fs";
 import mediaApi from "../../api/mediaApi";
+import { DEFAULT_HANDBRAKE_CONFIG } from "../../handbrakeDefault";
 import { type TranscodeConfigurationMessage } from "../../types/messages";
 import {
   JOB_TYPE_PREFIX,
   MEDIA_JOB_PREFIX,
   TRIGGER_SUFFIX,
 } from "../../util/constants";
-import * as HANDBRAKE_DEFAULT_CONFIG from "../../handbrakeDefault.json" with { type: "json" };
+import { logger } from "../../util/logger";
 import { updateStepStatus } from "../../workflow/media/reporter";
 import { MediaWorkflow } from "../../workflow/media/workflow";
 
@@ -26,13 +27,16 @@ export class TranscodeConfigurationHandler {
     msg: TranscodeConfigurationMessage,
     amqMsg: ConsumeMessage,
   ) {
+    logger.debug("TranscodeConfigurationHandler");
+    logger.debug(msg);
+
     const workflow = new MediaWorkflow(msg.workflowId, msg.mediaExtension);
     const step = await mediaApi.describeMediaAssetWorkflowStep(
       msg.workflowId,
       msg.configurationStepId,
     );
 
-    const config = JSON.parse(JSON.stringify(HANDBRAKE_DEFAULT_CONFIG));
+    const config = JSON.parse(JSON.stringify(DEFAULT_HANDBRAKE_CONFIG));
     const configFile = `${workflow.stagingDir}/transcodeJob.json`;
     const handbrakeMetadataFile = `${workflow.stagingDir}/handbrakeMetadata.json`;
     const transcodeMetadataFile = `${workflow.stagingDir}/transcodeMetadata.json`;

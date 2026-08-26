@@ -21,6 +21,9 @@ export class TranscodeCleanupHandler {
   })
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async handle(msg: CleanupMessage, amqMsg: ConsumeMessage) {
+    logger.debug("TranscodeCleanupHandler");
+    logger.debug(msg);
+
     const workflow = new MediaWorkflow(msg.workflowId, msg.mediaExtension);
     const step = await createStep(workflow.workflowId, "cleanup");
 

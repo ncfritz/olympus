@@ -50,6 +50,9 @@ export class TranscodeMediaHandler {
   })
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async handle(msg: TranscodeMediaMessage, amqMsg: ConsumeMessage) {
+    logger.debug("TranscodeMediaHandler");
+    logger.debug(msg);
+
     const workflow = new MediaWorkflow(
       msg.workflowId,
       msg.mediaExtension,

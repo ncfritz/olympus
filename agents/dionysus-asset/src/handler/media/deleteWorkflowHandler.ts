@@ -23,6 +23,9 @@ export class DeleteWorkflowHandler {
   })
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async handle(msg: DeleteMediaWorkflowMessage, amqMsg: ConsumeMessage) {
+    logger.debug("DeleteWorkflowHandler");
+    logger.debug(msg);
+
     if (!UUID_REGEX.test(msg.workflowId)) {
       logger.error(`Invalid workflow ID: ${msg.workflowId}`);
       return;

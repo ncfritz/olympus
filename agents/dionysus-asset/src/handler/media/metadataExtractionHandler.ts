@@ -22,8 +22,12 @@ export class MetadataExtractionHandler {
   })
   public async handle(
     msg: ExtractMediaMetadataMessage,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     amqMsg: ConsumeMessage,
   ) {
+    logger.debug("MetadataExtractionHandler");
+    logger.debug(msg);
+
     const workflow = new MediaWorkflow(msg.workflowId, msg.mediaExtension);
 
     try {

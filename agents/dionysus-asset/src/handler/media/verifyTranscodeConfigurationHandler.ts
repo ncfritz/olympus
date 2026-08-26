@@ -32,6 +32,9 @@ export class VerifyTranscodeConfigurationHandler {
   })
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async handle(msg: TranscodeMediaMessage, amqMsg: ConsumeMessage) {
+    console.log("VerifyTranscodeConfigurationHandler");
+    console.log(msg);
+
     const step = await createStep(msg.workflowId, "verify_transcode");
     const workflow = new MediaWorkflow(
       msg.workflowId,

@@ -22,6 +22,9 @@ export class ConfigureTranscodeHandler {
   })
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async handle(msg: ConfigureTranscodeMessage, amqMsg: ConsumeMessage) {
+    logger.debug("ConfigureTranscodeHandler");
+    logger.debug(msg);
+
     const step = await createStep(msg.workflowId, "configure_transcode");
 
     try {
