@@ -23,6 +23,7 @@ export type MediaWorkflowStepDetails = {
   status: string;
   assetType: MediaAssetSearchType;
   mediaId: number;
+  progress: number;
 };
 
 type GraphQlGetParentMediaAssetWorkflowIdResponse = {
@@ -91,6 +92,7 @@ export class BaseMediaAssetWorkflowController {
           status
           assetType
           mediaId
+          progress
         }
       }
     `;
@@ -128,6 +130,9 @@ export class BaseMediaAssetWorkflowController {
       mediaId:
         checkWorkflowStepResponse.dionysus_media_asset_workflow_step_by_pk
           .mediaId,
+      progress:
+        checkWorkflowStepResponse.dionysus_media_asset_workflow_step_by_pk
+          .progress,
     };
   }
 

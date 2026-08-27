@@ -1,5 +1,6 @@
 import {
   MediaAssetSearchType,
+  MediaDownloadStatus,
   SearchResultStatus,
   SingleMediaAssetDownloadResponse,
   UpdateMediaAssetDownloadByNzbIdRequest,
@@ -29,10 +30,13 @@ import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetDownlo
 import { BASE_MEDIA_DOWNLOAD } from "../../../query/dionysus/media/mediaDownload";
 import { GraphQlMediaAssetDownload } from "../../../types/dionysus/media/mediaDownload";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { logger } from "../../../utils/logger";
 
 type GraphQlLookupDownloadByNzbIdResponse = {
   dionysus_media_asset_download: {
     id: string;
+    progress: number;
+    status: MediaDownloadStatus;
     searchResult: {
       assetType: MediaAssetSearchType;
       mediaId: number;
@@ -85,6 +89,8 @@ export class UpdateMediaAssetDownloadByNzbIdController {
       query LookupDownloadByNzbId($nzbId: numeric!) {
         dionysus_media_asset_download(where: { nzbId: { _eq: $nzbId } }) {
           id
+          progress
+          status
           searchResult {
             assetType
             mediaId
@@ -102,6 +108,19 @@ export class UpdateMediaAssetDownloadByNzbIdController {
 
     if (locateDownloadResponse.dionysus_media_asset_download.length === 0) {
       throw new NotFoundException(`No download found for NZB ID ${nzbId}`);
+    }
+
+    if (
+      request.download.progress &&
+      request.download.progress <
+        locateDownloadResponse.dionysus_media_asset_download[0].progress
+    ) {
+      logger.debug(
+        `Download progress for NZB ID ${nzbId} is ${request.download.progress}, but download progress is ${locateDownloadResponse.dionysus_media_asset_download[0].progress}. Request progress will be ignored`,
+      );
+
+      request.download.progress =
+        locateDownloadResponse.dionysus_media_asset_download[0].progress;
     }
 
     const downloadId = locateDownloadResponse.dionysus_media_asset_download[0];

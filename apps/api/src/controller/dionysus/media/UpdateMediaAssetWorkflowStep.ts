@@ -7,14 +7,14 @@ import {
 import {
   Body,
   ClassSerializerInterceptor,
-  Controller,
+  Controller, DefaultValuePipe,
   HttpStatus,
   Param,
   ParseBoolPipe,
   Put,
   Query,
   Res,
-  UseInterceptors,
+  UseInterceptors
 } from "@nestjs/common";
 import {
   ApiBody,
@@ -78,8 +78,8 @@ export class UpdateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
   async handle(
     @Param("workflowId") workflowId: string,
     @Param("workflowStepId") workflowStepId: string,
-    @Query("updateWorkflowStatus", ParseBoolPipe)
-    updateWorkflowStatus: boolean = false,
+    @Query("updateWorkflowStatus", new DefaultValuePipe(false), ParseBoolPipe)
+    updateWorkflowStatus: boolean,
     @Body() request: UpdateMediaAssetWorkflowStepRequest,
     @Res() response: Response,
   ): Promise<void> {
@@ -88,7 +88,10 @@ export class UpdateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
     );
 
     await this.verifyWorkflowExists(workflowId);
-    await this.verifyWorkflowStepExists(workflowId, workflowStepId);
+    const stepDetails = await this.verifyWorkflowStepExists(
+      workflowId,
+      workflowStepId,
+    );
 
     let workflowStatus: MediaAssetWorkflowStatus | undefined = undefined;
 
@@ -104,7 +107,7 @@ export class UpdateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
     }
 
     logger.debug(
-      `updateWorkflowStatus: ${updateWorkflowStatus} - currentStatus: ${workflowStatus}`,
+      `UpdateWorkflowStatus: ${updateWorkflowStatus} - currentStatus: ${workflowStatus}`,
     );
 
     if (
@@ -112,6 +115,14 @@ export class UpdateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
       request.step.status === MediaAssetWorkflowStepStatus.SUCCESS
     ) {
       workflowStatus = MediaAssetWorkflowStatus.SUCCESS;
+    }
+
+    if (request.step.progress && request.step.progress > stepDetails.progress) {
+      logger.debug(
+        `Progress for step ID ${workflowStepId} is ${request.step.progress}, but download progress is ${stepDetails.progress}. Request progress will be ignored`,
+      );
+
+      request.step.progress = stepDetails.progress;
     }
 
     const updatedWorkflowStep = await this.updateWorkflowStep(
