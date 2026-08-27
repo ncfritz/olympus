@@ -10,6 +10,7 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  DefaultValuePipe,
   HttpStatus,
   Param,
   ParseBoolPipe,
@@ -97,7 +98,8 @@ export class UpdateMediaAssetSearchConfigurationController {
   async handle(
     @Param("mediaType") mediaType: MediaAssetSearchType,
     @Param("mediaId") mediaId: number,
-    @Query("recursive", ParseBoolPipe) recursive = false,
+    @Query("recursive", new DefaultValuePipe(false), ParseBoolPipe)
+    recursive: boolean,
     @Body() request: UpdateMediaAssetSearchConfigurationRequest,
     @Res() response: Response,
   ): Promise<void> {

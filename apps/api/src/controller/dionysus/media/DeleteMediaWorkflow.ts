@@ -2,6 +2,7 @@ import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import { EmptyResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
+  DefaultValuePipe,
   Delete,
   HttpStatus,
   Param,
@@ -59,7 +60,8 @@ export class DeleteMediaWorkflowController {
   @ApiStandardErrorResponses()
   async handle(
     @Param("workflowId") workflowId: string,
-    @Query("hardDelete", ParseBoolPipe) hardDelete = false,
+    @Query("hardDelete", new DefaultValuePipe(false), ParseBoolPipe)
+    hardDelete: boolean,
     @Res() response: Response,
   ): Promise<void> {
     let responseCode = HttpStatus.OK;
