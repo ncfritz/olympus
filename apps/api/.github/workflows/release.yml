@@ -68,9 +68,9 @@ jobs:
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
       - name: Trigger olympus-sdk build
-        if: success()
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        if: success()
         run: |
           VERSION=$(npm view @ncfritz/olympus-api version)
 
