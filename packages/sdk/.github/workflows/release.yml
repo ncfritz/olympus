@@ -6,7 +6,6 @@ on:
   repository_dispatch:
     types:
       - olympus-api-released
-      -
 permissions:
   contents: read
 
