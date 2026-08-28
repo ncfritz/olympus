@@ -39,8 +39,6 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
           echo "@ncfritz:registry=https://npm.pkg.github.com" >> .npmrc
       - name: Update olympus-model
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: github.event_name == 'repository_dispatch'
         run: |
           npm install @ncfritz/olympus-model@${{ github.event.client_payload.version }}
