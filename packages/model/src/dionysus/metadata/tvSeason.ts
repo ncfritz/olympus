@@ -20,26 +20,26 @@ import {
 } from "./tvSeries";
 
 export class BaseSeason {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   id: number;
 
   @ApiProperty({ type: String, required: false })
   @Transform(({ value }) => value.toISOString())
   airDate?: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   name: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   overview: string;
 
   @ApiProperty({ type: String, required: false })
   posterPath?: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   seasonNumber: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   voteAverage: number;
 }
 
@@ -53,43 +53,48 @@ export class SparseSeason extends BaseSeason {
   })
   favorite?: SparseMediaFavorite;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   episodeCount: number;
 }
 
 export class Season extends SparseSeason {
   @ApiProperty({
+    required: true,
     type: () => BaseTVSeries,
   })
   series: BaseTVSeries;
 
   @ApiProperty({
+    required: true,
     type: () => ExternalId,
     isArray: true,
   })
   externalIds: ExternalId[];
 
   @ApiProperty({
+    required: true,
     type: () => TypedImage,
     isArray: true,
   })
   images: TypedImage[];
 
   @ApiProperty({
+    required: true,
     type: () => Video,
     isArray: true,
   })
   videos: Video[];
 
   @ApiProperty({
+    required: true,
     type: () => SparseEpisode,
     isArray: true,
   })
@@ -98,12 +103,14 @@ export class Season extends SparseSeason {
 
 export class SeasonWithCastAndCrew extends Season {
   @ApiProperty({
+    required: true,
     type: () => TVSeriesCastMember,
     isArray: true,
   })
   cast: TVSeriesCastMember[];
 
   @ApiProperty({
+    required: true,
     type: () => TVSeriesCrewMember,
     isArray: true,
   })
@@ -112,30 +119,35 @@ export class SeasonWithCastAndCrew extends Season {
 
 export class PartialSeason extends BaseSeason {
   @ApiProperty({
+    required: true,
     type: () => PartialTVSeriesCastMember,
     isArray: true,
   })
   cast: PartialTVSeriesCastMember[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialTVSeriesCrewMember,
     isArray: true,
   })
   crew: PartialTVSeriesCrewMember[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialExternalId,
     isArray: true,
   })
   externalIds: PartialExternalId[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialTypedImage,
     isArray: true,
   })
   images: PartialTypedImage[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialVideo,
     isArray: true,
   })
@@ -144,6 +156,7 @@ export class PartialSeason extends BaseSeason {
 
 export class CreateTVSeasonRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialSeason,
   })
   season: PartialSeason;
@@ -151,16 +164,19 @@ export class CreateTVSeasonRequest {
 
 export class CreateTVSeasonResponse {
   @ApiProperty({
+    required: true,
     type: () => Number,
   })
   seriesId: number;
 
   @ApiProperty({
+    required: true,
     type: () => Number,
   })
   seasonId: number;
 
   @ApiProperty({
+    required: true,
     type: () => Number,
   })
   seasonNumber: number;
@@ -168,6 +184,7 @@ export class CreateTVSeasonResponse {
 
 export class DescribeTVSeasonResponse {
   @ApiProperty({
+    required: true,
     type: () => Season,
   })
   season: Season;
@@ -175,6 +192,7 @@ export class DescribeTVSeasonResponse {
 
 export class ListTvSeasonCastResponse {
   @ApiProperty({
+    required: true,
     type: () => TVSeriesCastMember,
     isArray: true,
   })
@@ -183,6 +201,7 @@ export class ListTvSeasonCastResponse {
 
 export class ListTvSeasonCrewResponse {
   @ApiProperty({
+    required: true,
     type: () => TVSeriesCrewMember,
     isArray: true,
   })

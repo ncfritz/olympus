@@ -121,7 +121,6 @@ export class MediaAssetWorkflow extends BaseMediaAssetWorkflow {
     description:
       "An ISO-8601 formatted string indicating when the workflow was started.",
   })
-  @ApiProperty({ type: String })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   startedTime?: Moment;
 
@@ -179,6 +178,7 @@ export class PartialMediaAssetWorkflow extends PartialType(
 /* ------------------------------------------------------------------------------------------------------------------ */
 export class UpdateMediaAssetWorkflowRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialMediaAssetWorkflow,
     description:
       "A partial workflow representing the changes to make to an existing workflow",
@@ -191,6 +191,7 @@ export class UpdateMediaAssetWorkflowRequest {
 /* ------------------------------------------------------------------------------------------------------------------ */
 export class SingleMediaAssetWorkflowResponse {
   @ApiProperty({
+    required: true,
     type: () => MediaAssetWorkflow,
     description: "The newly created workflow",
   })
@@ -199,6 +200,7 @@ export class SingleMediaAssetWorkflowResponse {
 
 export class ListMediaAssetWorkflowsResponse extends PaginatedResults {
   @ApiProperty({
+    required: true,
     type: () => MediaAssetWorkflowListItem,
     isArray: true,
     description: "A list of workflows",

@@ -5,38 +5,40 @@ import { PartialTypedImage, TypedImage } from "./common";
 import { SparseMovie } from "./movies";
 
 export class BaseCollection {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   id: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   name: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   overview: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   posterPath: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   backdropPath: string;
 }
 
 export class Collection extends BaseCollection {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
   @ApiProperty({
+    required: true,
     type: () => CollectionPart,
     isArray: true,
   })
   parts: CollectionPart[];
 
   @ApiProperty({
+    required: true,
     type: () => TypedImage,
     isArray: true,
   })
@@ -45,12 +47,14 @@ export class Collection extends BaseCollection {
 
 export class PartialCollection extends BaseCollection {
   @ApiProperty({
+    required: true,
     type: () => PartialCollectionPart,
     isArray: true,
   })
   parts: PartialCollectionPart[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialTypedImage,
     isArray: true,
   })
@@ -58,14 +62,14 @@ export class PartialCollection extends BaseCollection {
 }
 
 export class CollectionPart {
-  @ApiProperty({ type: SparseMovie })
+  @ApiProperty({ required: true, type: SparseMovie })
   movie: SparseMovie;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -75,12 +79,13 @@ export class PartialCollectionPart extends OmitType(CollectionPart, [
   "lastUpdatedTime",
   "movie",
 ]) {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   movieId: number;
 }
 
 export class CreateCollectionRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialCollection,
   })
   collection: PartialCollection;
@@ -88,6 +93,7 @@ export class CreateCollectionRequest {
 
 export class CreateCollectionResponse {
   @ApiProperty({
+    required: true,
     type: Number,
   })
   id: number;
@@ -95,6 +101,7 @@ export class CreateCollectionResponse {
 
 export class DescribeCollectionResponse {
   @ApiProperty({
+    required: true,
     type: () => Collection,
   })
   collection: Collection;

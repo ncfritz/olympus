@@ -367,14 +367,14 @@ export class GetMeetingStatisticsResponse {
     required: false,
     description: "A map of hours of the day to meeting statistics",
   })
-  hourOfDayStatistics: Record<string, MeetingStatusStatistics>;
+  hourOfDayStatistics?: Record<string, MeetingStatusStatistics>;
 
   @ApiProperty({
     type: () => MeetingStatusStatistics,
     required: false,
     description: "A map of day of the week to meeting statistics",
   })
-  dayOfWeekStatistics: Record<string, MeetingStatusStatistics>;
+  dayOfWeekStatistics?: Record<string, MeetingStatusStatistics>;
 }
 
 export class GetMeetingSummaryResponse {
@@ -383,5 +383,5 @@ export class GetMeetingSummaryResponse {
     required: false,
     description: "A map of ISO-8601 date strings to meeting statistics",
   })
-  statusStatistics: Record<string, MeetingStatusStatistics>;
+  statusStatistics?: Record<string, MeetingStatusStatistics>;
 }

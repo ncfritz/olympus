@@ -12,7 +12,7 @@ export enum SortDirection {
 export class EmptyResponse {}
 
 export class PaginatedResults {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   count: number;
 }
 
@@ -22,11 +22,11 @@ export class SystemConfiguration {
 }
 
 export class PingResponse {
-  @ApiProperty({ type: () => SystemConfiguration })
+  @ApiProperty({ required: true, type: () => SystemConfiguration })
   config: Record<string, string>;
 }
 
 export class TestRequest {
-  @ApiProperty({ type: () => Object })
+  @ApiProperty({ required: true, type: () => Object })
   payload: any;
 }

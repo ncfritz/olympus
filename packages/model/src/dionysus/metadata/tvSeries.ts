@@ -41,66 +41,67 @@ import { SparseEpisode } from "./tvEpisode";
 import { SparseSeason } from "./tvSeason";
 
 export class BaseTVSeries {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   id: number;
 
-  @ApiProperty({ type: Boolean })
+  @ApiProperty({ required: true, type: Boolean })
   adult: boolean;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   backdropPath: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: false, type: String })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   firstAirDate?: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   homepage: string;
 
-  @ApiProperty({ type: Boolean })
+  @ApiProperty({ required: true, type: Boolean })
   inProduction: boolean;
 
   @ApiProperty({ type: String, required: false })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   lastAirDate?: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   name: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   numberOfEpisodes: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   numberOfSeasons: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   originalName: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   popularity: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   overview: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: false, type: String })
   posterPath?: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   status: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   tagline: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   type: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   voteCount: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   voteAverage: number;
 
   @ApiProperty({
+    required: true,
     type: () => GenreAssociation,
     isArray: true,
   })
@@ -115,114 +116,131 @@ export class BaseTVSeries {
   })
   favorite?: SparseMediaFavorite;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 
 export class SparseTvSeries extends BaseTVSeries {
-  @ApiProperty({ type: () => Language })
+  @ApiProperty({ required: true, type: () => Language })
   originalLanguage: Language;
 
   @ApiProperty({
+    required: true,
     type: () => AlternativeTitle,
     isArray: true,
   })
   alternativeTitles: AlternativeTitle[];
 
   @ApiProperty({
+    required: true,
     type: () => Certification,
     isArray: true,
   })
   certifications: CertificationAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => TVSeriesRuntime,
     isArray: true,
   })
   runtimes: TVSeriesRuntime[];
 
   @ApiProperty({
+    required: true,
     type: () => ExternalId,
     isArray: true,
   })
   externalIds: ExternalId[];
 
   @ApiProperty({
+    required: true,
     type: () => KeywordAssociation,
     isArray: true,
   })
   keywords: KeywordAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => LanguageAssociation,
     isArray: true,
   })
   languages: LanguageAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => CountryAssociation,
     isArray: true,
   })
   originCountries: CountryAssociation[];
 
-  @ApiProperty({ type: () => LanguageAssociation, isArray: true })
+  @ApiProperty({
+    required: true,
+    type: () => LanguageAssociation,
+    isArray: true,
+  })
   spokenLanguages: LanguageAssociation[];
 }
 
 export class TVSeries extends SparseTvSeries {
-  @ApiProperty({ type: () => SparseEpisode })
+  @ApiProperty({ required: false, type: () => SparseEpisode })
   lastEpisodeToAir?: SparseEpisode;
 
-  @ApiProperty({ type: () => SparseEpisode })
+  @ApiProperty({ required: false, type: () => SparseEpisode })
   nextEpisodeToAir?: SparseEpisode;
 
-  @ApiProperty({ type: () => TvSeriesCreatedBy, isArray: true })
+  @ApiProperty({ required: true, type: () => TvSeriesCreatedBy, isArray: true })
   createdBy: TvSeriesCreatedBy[];
 
   @ApiProperty({
+    required: true,
     type: () => TypedImage,
     isArray: true,
   })
   images: TypedImage[];
 
   @ApiProperty({
+    required: true,
     type: () => NetworkAssociation,
     isArray: true,
   })
   networks: NetworkAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => ProductionCompanyAssociation,
     isArray: true,
   })
   productionCompanies: ProductionCompanyAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => CountryAssociation,
     isArray: true,
   })
   productionCountries: CountryAssociation[];
 
-  @ApiProperty({ type: () => SparseSeason, isArray: true })
+  @ApiProperty({ required: true, type: () => SparseSeason, isArray: true })
   seasons: SparseSeason[];
 
-  @ApiProperty({ type: () => Video, isArray: true })
+  @ApiProperty({ required: true, type: () => Video, isArray: true })
   videos: Video[];
 }
 
 export class TVSeriesWithCastAndCrew extends TVSeries {
   @ApiProperty({
+    required: true,
     type: () => TVSeriesCastMember,
     isArray: true,
   })
   cast: TVSeriesCastMember[];
 
   @ApiProperty({
+    required: true,
     type: () => TVSeriesCrewMember,
     isArray: true,
   })
@@ -234,7 +252,7 @@ export class PartialTVSeries extends OmitType(BaseTVSeries, [
   "createdTime",
   "lastUpdatedTime",
 ]) {
-  @ApiProperty({ type: () => String })
+  @ApiProperty({ required: true, type: () => String })
   originalLanguageCode: string;
 
   @ApiProperty({ type: () => Number, required: false })
@@ -244,105 +262,126 @@ export class PartialTVSeries extends OmitType(BaseTVSeries, [
   nextEpisodeToAirId?: number;
 
   @ApiProperty({
+    required: true,
     type: () => PartialAlternativeTitle,
     isArray: true,
   })
   alternativeTitles: PartialAlternativeTitle[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialTVSeriesCastMember,
     isArray: true,
   })
   cast: PartialTVSeriesCastMember[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialTVSeriesCertification,
     isArray: true,
   })
   certifications: PartialTVSeriesCertification[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialTVSeriesCrewMember,
     isArray: true,
   })
   crew: PartialTVSeriesCrewMember[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialTvSeriesCreatedBy,
     isArray: true,
   })
   createdBy: PartialTvSeriesCreatedBy[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialTVSeriesRuntime,
     isArray: true,
   })
   runtimes: PartialTVSeriesRuntime[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialExternalId,
     isArray: true,
   })
   externalIds: PartialExternalId[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialGenreAssociation,
     isArray: true,
   })
   genres: PartialGenreAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialTypedImage,
     isArray: true,
   })
   images: PartialTypedImage[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialKeywordAssociation,
     isArray: true,
   })
   keywords: PartialKeywordAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialLanguageAssociation,
     isArray: true,
   })
   languages: PartialLanguageAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialNetworkAssociation,
     isArray: true,
   })
   networks: PartialNetworkAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialCountryAssociation,
     isArray: true,
   })
   originCountries: PartialCountryAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialProductionCompanyAssociation,
     isArray: true,
   })
   productionCompanies: PartialProductionCompanyAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialTvSeriesRecommendation,
     isArray: true,
   })
   recommendations: PartialTvSeriesRecommendation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialCountryAssociation,
     isArray: true,
   })
   productionCountries: PartialCountryAssociation[];
 
-  @ApiProperty({ type: () => PartialLanguageAssociation, isArray: true })
+  @ApiProperty({
+    required: true,
+    type: () => PartialLanguageAssociation,
+    isArray: true,
+  })
   spokenLanguages: PartialLanguageAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialVideo,
     isArray: true,
   })
@@ -350,20 +389,20 @@ export class PartialTVSeries extends OmitType(BaseTVSeries, [
 }
 
 export class TVSeriesCastMemberRole {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   creditId: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   character: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   episodeCount: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -374,29 +413,33 @@ export class PartialTVSeriesCastMemberRole extends OmitType(
 ) {}
 
 export class SparseTVSeriesCastMember {
-  @ApiProperty({ type: () => TVSeriesCastMemberRole, isArray: true })
+  @ApiProperty({
+    required: true,
+    type: () => TVSeriesCastMemberRole,
+    isArray: true,
+  })
   roles: TVSeriesCastMemberRole[];
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   order: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: false, type: String })
   originalName?: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   totalEpisodeCount: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 
 export class TVSeriesCastMember extends SparseTVSeriesCastMember {
-  @ApiProperty({ type: () => BasePerson })
+  @ApiProperty({ required: true, type: () => BasePerson })
   person: BasePerson;
 }
 
@@ -406,28 +449,32 @@ export class PartialTVSeriesCastMember extends OmitType(TVSeriesCastMember, [
   "person",
   "roles",
 ]) {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   personId: number;
 
-  @ApiProperty({ type: () => PartialTVSeriesCastMemberRole, isArray: true })
+  @ApiProperty({
+    required: false,
+    type: () => PartialTVSeriesCastMemberRole,
+    isArray: true,
+  })
   roles?: PartialTVSeriesCastMemberRole[];
 }
 
 export class TVSeriesCrewMemberJob {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   creditId: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   job: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   episodeCount: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -438,29 +485,33 @@ export class PartialTVSeriesCrewMemberJob extends OmitType(
 ) {}
 
 export class SparseTVSeriesCrewMember {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   department: string;
 
-  @ApiProperty({ type: () => TVSeriesCrewMemberJob, isArray: true })
+  @ApiProperty({
+    required: true,
+    type: () => TVSeriesCrewMemberJob,
+    isArray: true,
+  })
   jobs: TVSeriesCrewMemberJob[];
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: false, type: String })
   originalName?: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   totalEpisodeCount: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 
 export class TVSeriesCrewMember extends SparseTVSeriesCrewMember {
-  @ApiProperty({ type: () => BasePerson })
+  @ApiProperty({ required: true, type: () => BasePerson })
   person: BasePerson;
 }
 
@@ -470,22 +521,26 @@ export class PartialTVSeriesCrewMember extends OmitType(TVSeriesCrewMember, [
   "person",
   "jobs",
 ]) {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   personId: number;
 
-  @ApiProperty({ type: () => PartialTVSeriesCrewMemberJob, isArray: true })
+  @ApiProperty({
+    required: false,
+    type: () => PartialTVSeriesCrewMemberJob,
+    isArray: true,
+  })
   jobs?: PartialTVSeriesCrewMemberJob[];
 }
 
 export class TVSeriesRuntime {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   runTime: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -504,17 +559,17 @@ export class PartialTVSeriesCertification extends OmitType(
 }
 
 export class TvSeriesCreatedBy {
-  @ApiProperty({ type: () => BasePerson })
+  @ApiProperty({ required: true, type: () => BasePerson })
   person: BasePerson;
 
   @ApiProperty({ type: String, required: true })
   creditId: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -524,32 +579,34 @@ export class PartialTvSeriesCreatedBy extends OmitType(TvSeriesCreatedBy, [
   "lastUpdatedTime",
   "person",
 ]) {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   personId: number;
 }
 
 export class TvSeriesRecommendation {
   @ApiProperty({
+    required: true,
     type: () => BaseTVSeries,
   })
   tvSeries: BaseTVSeries;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 
 export class PartialTvSeriesRecommendation {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   recommendationId: number;
 }
 
 export class CreateTVSeriesRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialTVSeries,
   })
   tvSeries: PartialTVSeries;
@@ -557,6 +614,7 @@ export class CreateTVSeriesRequest {
 
 export class CreateTVSeriesResponse {
   @ApiProperty({
+    required: true,
     type: () => Number,
   })
   seriesId: number;
@@ -564,6 +622,7 @@ export class CreateTVSeriesResponse {
 
 export class DescribeTVSeriesResponse {
   @ApiProperty({
+    required: true,
     type: () => TVSeries,
   })
   tvSeries: TVSeries;
@@ -571,6 +630,7 @@ export class DescribeTVSeriesResponse {
 
 export class ListTvSeriesCastResponse {
   @ApiProperty({
+    required: true,
     type: () => TVSeriesCastMember,
     isArray: true,
   })
@@ -579,6 +639,7 @@ export class ListTvSeriesCastResponse {
 
 export class ListTvSeriesCrewResponse {
   @ApiProperty({
+    required: true,
     type: () => TVSeriesCrewMember,
     isArray: true,
   })
@@ -587,6 +648,7 @@ export class ListTvSeriesCrewResponse {
 
 export class ListTvSeriesResponse extends PaginatedResults {
   @ApiProperty({
+    required: true,
     type: () => BaseTVSeries,
     isArray: true,
   })
@@ -595,6 +657,7 @@ export class ListTvSeriesResponse extends PaginatedResults {
 
 export class ListTvSeriesRecommendationsResponse {
   @ApiProperty({
+    required: true,
     type: () => BaseTVSeries,
     isArray: true,
   })
@@ -603,6 +666,7 @@ export class ListTvSeriesRecommendationsResponse {
 
 export class GetTvSeriesLocationStatisticsResponse {
   @ApiProperty({
+    required: true,
     type: () => LocationStatistic,
     isArray: true,
   })
@@ -611,6 +675,7 @@ export class GetTvSeriesLocationStatisticsResponse {
 
 export class GetTvSeriesStatusStatisticsResponse {
   @ApiProperty({
+    required: true,
     type: () => StatusStatistic,
     isArray: true,
   })
@@ -619,6 +684,7 @@ export class GetTvSeriesStatusStatisticsResponse {
 
 export class GetTvSeriesFirstAirYearStatisticsResponse {
   @ApiProperty({
+    required: true,
     type: () => YearStatistic,
     isArray: true,
   })
@@ -627,6 +693,7 @@ export class GetTvSeriesFirstAirYearStatisticsResponse {
 
 export class GetTvSeriesEpisodeStatisticsResponse {
   @ApiProperty({
+    required: true,
     type: () => RuntimeStatistic,
     isArray: true,
   })
@@ -635,6 +702,7 @@ export class GetTvSeriesEpisodeStatisticsResponse {
 
 export class GetTvSeriesSeasonStatisticsResponse {
   @ApiProperty({
+    required: true,
     type: () => SeasonStatistic,
     isArray: true,
   })
@@ -642,24 +710,24 @@ export class GetTvSeriesSeasonStatisticsResponse {
 }
 
 export class GetTvSeriesAggregateStatisticsResponse {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   count: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   totalSeasons: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   averageSeasonCount: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   maxSeasonCount: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   totalEpisodes: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   averageEpisodeCount: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   maxEpisodeCount: number;
 }

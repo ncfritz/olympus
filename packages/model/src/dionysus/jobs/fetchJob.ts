@@ -33,37 +33,43 @@ export enum MetadataJobType {
 export class FetchJobContext<K extends keyof never, T> {}
 
 export class MetadataFetchJob {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   id: string;
 
-  @ApiProperty({ enum: () => MetadataJobType, enumName: "MetadataJobType" })
+  @ApiProperty({
+    required: true,
+    enum: () => MetadataJobType,
+    enumName: "MetadataJobType",
+  })
   type: MetadataJobType;
 
   @ApiProperty({
+    required: true,
     enum: () => MetadataFetchJobStatus,
     enumName: "MetadataFetchJobStatus",
   })
   status: MetadataFetchJobStatus;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: false, type: String })
   @Transform(({ value }) => value.toISOString())
   lastFetchedTime?: Moment;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   ttl: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   jitter: number;
 
   @ApiProperty({
+    required: true,
     type: () => FetchJobContext,
   })
   context: FetchJobContext<string, never>;
@@ -116,7 +122,7 @@ export class CreateMetadataFetchJobRequest {
     required: false,
     default: MetadataFetchJobStatus.QUEUED,
   })
-  status: MetadataFetchJobStatus;
+  status?: MetadataFetchJobStatus;
 
   @ApiProperty({ type: String, required: false, default: undefined })
   @Transform(({ value }) => (value ? moment(value) : undefined))
@@ -140,11 +146,12 @@ export class CreateMetadataFetchJobRequest {
     type: () => FetchJobContext,
     required: false,
   })
-  context: FetchJobContext<string, never>;
+  context?: FetchJobContext<string, never>;
 }
 
 export class CreateMetadataFetchJobResponse {
   @ApiProperty({
+    required: true,
     type: () => MetadataFetchJob,
   })
   job: MetadataFetchJob;
@@ -152,6 +159,7 @@ export class CreateMetadataFetchJobResponse {
 
 export class DescribeMetadataFetchJobResponse {
   @ApiProperty({
+    required: true,
     type: () => MetadataFetchJob,
   })
   job: MetadataFetchJob;
@@ -159,6 +167,7 @@ export class DescribeMetadataFetchJobResponse {
 
 export class DeleteMetadataFetchJobResponse {
   @ApiProperty({
+    required: true,
     type: () => MetadataFetchJob,
   })
   job: MetadataFetchJob;
@@ -166,6 +175,7 @@ export class DeleteMetadataFetchJobResponse {
 
 export class UpdateMetadataFetchJobRequest {
   @ApiProperty({
+    required: true,
     type: () => MetadatFetchJobUpdate,
   })
   job: MetadatFetchJobUpdate;
@@ -187,6 +197,7 @@ export class UpdateMetadataFetchJobRequest {
 
 export class UpdateMetadataFetchJobResponse {
   @ApiProperty({
+    required: true,
     type: () => MetadataFetchJob,
   })
   job: MetadataFetchJob;
@@ -209,6 +220,6 @@ export class GetMetadataFetchJobStatusStatisticsResponse {
 }
 
 export class ListMetadataFetchJobsResponse extends PaginatedResults {
-  @ApiProperty({ type: () => MetadataFetchJob, isArray: true })
+  @ApiProperty({ required: true, type: () => MetadataFetchJob, isArray: true })
   jobs: MetadataFetchJob[];
 }

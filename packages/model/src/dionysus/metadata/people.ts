@@ -29,70 +29,72 @@ export enum Gender {
 }
 
 export class BasePerson {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   id: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   name: string;
 
-  @ApiProperty({ type: Boolean })
+  @ApiProperty({ required: true, type: Boolean })
   adult: boolean;
 
   @ApiProperty({ type: String, required: false })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   birthday?: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: false, type: String })
   birthplace?: string;
 
   @ApiProperty({ type: String, required: false })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   deathday?: Moment;
 
-  @ApiProperty({ enum: () => Gender, enumName: "Gender" })
+  @ApiProperty({ required: true, enum: () => Gender, enumName: "Gender" })
   gender: Gender;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   homepage: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   imdbId: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   knownForDepartment: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: false, type: String })
   profilePath?: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   popularity: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 
 export class Person extends BasePerson {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   biography: string;
 
   @ApiProperty({
+    required: true,
     type: () => ExternalId,
     isArray: true,
   })
   externalIds: ExternalId[];
 
   @ApiProperty({
+    required: true,
     type: () => PersonAlsoKnownAs,
     isArray: true,
   })
   alsoKnownAs: PersonAlsoKnownAs[];
 
-  @ApiProperty({ type: () => BaseImage, isArray: true })
+  @ApiProperty({ required: true, type: () => BaseImage, isArray: true })
   images: BaseImage[];
 }
 
@@ -100,34 +102,36 @@ export class PartialPerson extends OmitType(BasePerson, [
   "createdTime",
   "lastUpdatedTime",
 ]) {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   biography: string;
 
   @ApiProperty({
+    required: true,
     type: () => PartialExternalId,
     isArray: true,
   })
   externalIds: PartialExternalId[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialPersonAlsoKnownAs,
     isArray: true,
   })
   alsoKnownAs: PartialPersonAlsoKnownAs[];
 
-  @ApiProperty({ type: () => PartialBaseImage, isArray: true })
+  @ApiProperty({ required: true, type: () => PartialBaseImage, isArray: true })
   images: PartialBaseImage[];
 }
 
 export class PersonAlsoKnownAs {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   name: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -139,6 +143,7 @@ export class PartialPersonAlsoKnownAs extends OmitType(PersonAlsoKnownAs, [
 
 export class PersonMovieCastCredit {
   @ApiProperty({
+    required: true,
     type: () => SparseMovie,
     description: "The movie that the credits are associated with",
   })
@@ -155,6 +160,7 @@ export class PersonMovieCastCredit {
 
 export class PersonMovieCrewCredit {
   @ApiProperty({
+    required: true,
     type: () => SparseMovie,
     description: "The movie that the credits are associated with",
   })
@@ -171,6 +177,7 @@ export class PersonMovieCrewCredit {
 
 export class PersonTvSeriesCastCredit {
   @ApiProperty({
+    required: true,
     type: () => BaseTVSeries,
     description: "The TV series that the credits are associated with",
   })
@@ -187,6 +194,7 @@ export class PersonTvSeriesCastCredit {
 
 export class PersonTvSeriesCrewCredit {
   @ApiProperty({
+    required: true,
     type: () => BaseTVSeries,
     description: "The TV Series that the credits are associated with",
   })
@@ -203,12 +211,14 @@ export class PersonTvSeriesCrewCredit {
 
 export class PersonTvEpisodeGuestAppearance {
   @ApiProperty({
+    required: true,
     type: () => BaseTVSeries,
     description: "The TV series that the credits are associated with",
   })
   movie: BaseTVSeries;
 
   @ApiProperty({
+    required: true,
     type: () => SparseSeason,
     description: "The season that the credits are associated with",
   })
@@ -223,31 +233,31 @@ export class PersonTvEpisodeGuestAppearance {
 }
 
 export class PersonAssociation {
-  @ApiProperty({ type: () => BasePerson })
+  @ApiProperty({ required: true, type: () => BasePerson })
   person: BasePerson;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 
 export class PersonLifeStatistic {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   year: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   count: number;
 }
 
 export class PersonDepartmentStatistic {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   department: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   count: number;
 }
 
@@ -256,12 +266,13 @@ export class PartialPersonAssociation extends OmitType(PersonAssociation, [
   "lastUpdatedTime",
   "person",
 ]) {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   personId: number;
 }
 
 export class CreatePersonRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialPerson,
   })
   person: PartialPerson;
@@ -274,6 +285,7 @@ export class CreatePersonResponse {
 
 export class DescribePersonResponse {
   @ApiProperty({
+    required: true,
     type: () => Person,
   })
   person: Person;

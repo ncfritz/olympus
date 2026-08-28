@@ -215,6 +215,7 @@ export class SMTPDestination extends BaseSMTPDestination {
   cc?: string[];
 
   @ApiProperty({
+    required: false,
     type: String,
     isArray: true,
     description:

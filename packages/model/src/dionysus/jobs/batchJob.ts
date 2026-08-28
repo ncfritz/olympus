@@ -30,20 +30,20 @@ export enum JobStatus {
 }
 
 export class BatchJob {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   id: string;
 
-  @ApiProperty({ enum: () => JobType, enumName: "JobType" })
+  @ApiProperty({ required: true, enum: () => JobType, enumName: "JobType" })
   type: JobType;
 
-  @ApiProperty({ enum: () => JobStatus, enumName: "JobStatus" })
+  @ApiProperty({ required: true, enum: () => JobStatus, enumName: "JobStatus" })
   status: JobStatus;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
@@ -89,12 +89,14 @@ export class PartialBatchJob extends OmitType(BatchJob, [
 
 export class BatchJobTimingStatistics {
   @ApiProperty({
+    required: true,
     type: "array",
     items: { type: "array", items: { type: "number" } },
   })
   queueTime: number[][];
 
   @ApiProperty({
+    required: true,
     type: "array",
     items: { type: "array", items: { type: "number" } },
   })
@@ -103,36 +105,42 @@ export class BatchJobTimingStatistics {
 
 export class BatchJobRecordStats {
   @ApiProperty({
+    required: true,
     type: "array",
     items: { type: "array", items: { type: "number" } },
   })
   total: number[][];
 
   @ApiProperty({
+    required: true,
     type: "array",
     items: { type: "array", items: { type: "number" } },
   })
   new: number[][];
 
   @ApiProperty({
+    required: true,
     type: "array",
     items: { type: "array", items: { type: "number" } },
   })
   expired: number[][];
 
   @ApiProperty({
+    required: true,
     type: "array",
     items: { type: "array", items: { type: "number" } },
   })
   noop: number[][];
 
   @ApiProperty({
+    required: true,
     type: "array",
     items: { type: "array", items: { type: "number" } },
   })
   skipped: number[][];
 
   @ApiProperty({
+    required: true,
     type: "array",
     items: { type: "array", items: { type: "number" } },
   })
@@ -141,11 +149,13 @@ export class BatchJobRecordStats {
 
 export class BatchJobStatsByTypeSeries {
   @ApiProperty({
+    required: true,
     type: () => BatchJobRecordStats,
   })
   records: BatchJobRecordStats;
 
   @ApiProperty({
+    required: true,
     type: () => BatchJobTimingStatistics,
   })
   timing: BatchJobTimingStatistics;
@@ -201,7 +211,7 @@ export class CreateRedriveJobRequest {
     description: "The status of the records to re-drive",
     required: true,
   })
-  status?: MetadataFetchJobStatus;
+  status: MetadataFetchJobStatus;
 
   @ApiProperty({
     enum: () => MetadataFetchJobStatus,
@@ -209,7 +219,7 @@ export class CreateRedriveJobRequest {
     description: "The status of the records after they have been re-driven",
     required: true,
   })
-  targetStatus?: MetadataFetchJobStatus;
+  targetStatus: MetadataFetchJobStatus;
 
   @ApiProperty({
     type: Boolean,
@@ -223,6 +233,7 @@ export class CreateRedriveJobRequest {
 
 export class CreateBatchJobResponse {
   @ApiProperty({
+    required: true,
     type: () => BatchJob,
   })
   job: BatchJob;
@@ -232,6 +243,7 @@ export class DeleteBatchJobResponse {}
 
 export class DescribeBatchJobResponse {
   @ApiProperty({
+    required: true,
     type: () => BatchJob,
   })
   job: BatchJob;
@@ -239,6 +251,7 @@ export class DescribeBatchJobResponse {
 
 export class GetBatchJobStatsResponse {
   @ApiProperty({
+    required: true,
     type: Object,
     additionalProperties: { type: "BatchJobStats" },
   })
@@ -248,6 +261,7 @@ export class GetBatchJobStatsResponse {
   };
 
   @ApiProperty({
+    required: true,
     type: Object,
     additionalProperties: { type: "BatchJobStats" },
   })
@@ -262,23 +276,25 @@ export class GetBatchJobStatsResponse {
 
 export class GetBatchJobStatsByTypeResponse {
   @ApiProperty({
+    required: true,
     type: () => BatchJobStatsByTypeSeries,
   })
   series: BatchJobStatsByTypeSeries;
 }
 
 export class ListBatchJobsResponse extends PaginatedResults {
-  @ApiProperty({ type: () => BatchJob, isArray: true })
+  @ApiProperty({ required: true, type: () => BatchJob, isArray: true })
   jobs: BatchJob[];
 }
 
 export class ListBatchJobsByTypeResponse extends PaginatedResults {
-  @ApiProperty({ type: () => BatchJob, isArray: true })
+  @ApiProperty({ required: true, type: () => BatchJob, isArray: true })
   jobs: BatchJob[];
 }
 
 export class UpdateBatchJobRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialBatchJob,
   })
   job: PartialBatchJob;
@@ -286,6 +302,7 @@ export class UpdateBatchJobRequest {
 
 export class UpdateBatchJobResponse {
   @ApiProperty({
+    required: true,
     type: () => BatchJob,
   })
   job: BatchJob;

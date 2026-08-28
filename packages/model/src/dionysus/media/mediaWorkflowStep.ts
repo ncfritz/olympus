@@ -105,7 +105,6 @@ class InternalBaseMediaAssetWorkflowStep {
     description:
       "An ISO-8601 formatted string indicating when the workflow was started.",
   })
-  @ApiProperty({ type: String })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   startedTime?: Moment;
 
@@ -191,6 +190,7 @@ export class DecoratedMediaAssetWorkflowStep extends MediaAssetWorkflowStep {
 /* ------------------------------------------------------------------------------------------------------------------ */
 export class CreateMediaAssetWorkflowStepRequest {
   @ApiProperty({
+    required: true,
     type: () => BaseMediaAssetWorkflowStep,
     description: "The details of the workflow step to create",
   })
@@ -199,6 +199,7 @@ export class CreateMediaAssetWorkflowStepRequest {
 
 export class CreateMediaAssetWorkflowSubStepRequest {
   @ApiProperty({
+    required: true,
     type: () => BaseMediaAssetWorkflowSubStep,
     description: "The details of the workflow sub step to create",
   })
@@ -207,6 +208,7 @@ export class CreateMediaAssetWorkflowSubStepRequest {
 
 export class UpdateMediaAssetWorkflowStepRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialMediaAssetWorkflowStep,
     description: "The details of the workflow step to update",
   })
@@ -242,7 +244,7 @@ export class ApproveMediaAssetTranscodeConfigurationRequest {
     description: "The index of the subtitle track to use for transcoding",
     required: false,
   })
-  subtitleTrackIndex: number;
+  subtitleTrackIndex?: number;
 
   @ApiProperty({
     type: Boolean,
@@ -251,7 +253,7 @@ export class ApproveMediaAssetTranscodeConfigurationRequest {
     required: false,
     default: false,
   })
-  verificationRequired: boolean;
+  verificationRequired?: boolean;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -259,6 +261,7 @@ export class ApproveMediaAssetTranscodeConfigurationRequest {
 /* ------------------------------------------------------------------------------------------------------------------ */
 export class CreateMediaAssetWorkflowStepResponse {
   @ApiProperty({
+    required: true,
     type: () => MediaAssetWorkflowStep,
     description: "The newly created workflow step",
   })
@@ -267,6 +270,7 @@ export class CreateMediaAssetWorkflowStepResponse {
 
 export class CreateMediaAssetWorkflowSubStepResponse {
   @ApiProperty({
+    required: true,
     type: () => MediaAssetWorkflowSubStep,
     description: "The newly created workflow step",
   })
@@ -275,6 +279,7 @@ export class CreateMediaAssetWorkflowSubStepResponse {
 
 export class DescribeMediaAssetWorkflowStepResponse {
   @ApiProperty({
+    required: true,
     type: () => MediaAssetWorkflowStep,
     description: "The workflow step",
   })
@@ -283,6 +288,7 @@ export class DescribeMediaAssetWorkflowStepResponse {
 
 export class UpdateMediaAssetWorkflowStepResponse {
   @ApiProperty({
+    required: true,
     type: () => MediaAssetWorkflowStep,
     description: "The updated workflow step",
   })
@@ -291,6 +297,7 @@ export class UpdateMediaAssetWorkflowStepResponse {
 
 export class ListMediaAssetWorkflowStepsResponse {
   @ApiProperty({
+    required: true,
     type: () => MediaAssetWorkflowStep,
     isArray: true,
     description: "A list of workflow steps associated with the workflow",
@@ -300,6 +307,7 @@ export class ListMediaAssetWorkflowStepsResponse {
 
 export class ListMediaAssetTranscodesResponse extends PaginatedResults {
   @ApiProperty({
+    required: true,
     type: () => DecoratedMediaAssetWorkflowStep,
     isArray: true,
     description: "A list of workflow steps associated with a transcode task",

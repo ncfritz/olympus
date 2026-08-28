@@ -139,7 +139,7 @@ export class Note extends BaseNote {
 
   @ApiProperty({
     type: String,
-    required: true,
+    required: false,
     description:
       "An ISO-8601 formatted string indicating when the note was marked as deleted",
   })

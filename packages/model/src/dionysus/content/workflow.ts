@@ -84,7 +84,6 @@ export class ContentIngestionWorkflow extends BaseContentIngestionWorkflow {
     description:
       "An ISO-8601 formatted string indicating when the workflow was started.",
   })
-  @ApiProperty({ type: String })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   startedTime?: Moment;
 
@@ -137,6 +136,7 @@ export class PartialContentIngestionWorkflow extends PartialType(
 /* ------------------------------------------------------------------------------------------------------------------ */
 export class CreateContentIngestionWorkflowRequest {
   @ApiProperty({
+    required: true,
     type: () => BaseContentIngestionWorkflow,
     description: "The newly created workflow",
   })
@@ -145,6 +145,7 @@ export class CreateContentIngestionWorkflowRequest {
 
 export class UpdateContentIngestionWorkflowRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialContentIngestionWorkflow,
     description:
       "A partial workflow representing the changes to make to an existing workflow",
@@ -157,6 +158,7 @@ export class UpdateContentIngestionWorkflowRequest {
 /* ------------------------------------------------------------------------------------------------------------------ */
 export class CreateContentIngestionWorkflowResponse {
   @ApiProperty({
+    required: true,
     type: () => ContentIngestionWorkflow,
     description: "The newly created workflow",
   })
@@ -165,6 +167,7 @@ export class CreateContentIngestionWorkflowResponse {
 
 export class DescribeContentIngestionWorkflowResponse {
   @ApiProperty({
+    required: true,
     type: () => ContentIngestionWorkflow,
     description: "The workflow",
   })
@@ -173,6 +176,7 @@ export class DescribeContentIngestionWorkflowResponse {
 
 export class UpdateContentIngestionWorkflowResponse {
   @ApiProperty({
+    required: true,
     type: () => ContentIngestionWorkflow,
     description: "The updated workflow",
   })
@@ -181,6 +185,7 @@ export class UpdateContentIngestionWorkflowResponse {
 
 export class ListContentIngestionWorkflowsResponse extends PaginatedResults {
   @ApiProperty({
+    required: true,
     type: () => ContentIngestionWorkflow,
     isArray: true,
     description: "A list of workflows",

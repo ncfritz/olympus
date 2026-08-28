@@ -14,12 +14,14 @@ export enum WorkflowStatus {
 
 export class Workflow {
   @ApiProperty({
+    required: true,
     type: String,
     description: "The unique ID of the workflow",
   })
   id: string;
 
   @ApiProperty({
+    required: true,
     type: String,
     description:
       "An ISO-8601 formatted string indicating when the workflow was created.",
@@ -28,6 +30,7 @@ export class Workflow {
   createdTime: Moment;
 
   @ApiProperty({
+    required: true,
     type: String,
     description:
       "An ISO-8601 formatted string indicating when the workflow was last updated.",
@@ -41,7 +44,6 @@ export class Workflow {
       "An ISO-8601 formatted string indicating when the workflow was started.",
     required: false,
   })
-  @ApiProperty({ type: String })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   startedTime?: Moment;
 
@@ -55,6 +57,7 @@ export class Workflow {
   finishedTime?: Moment;
 
   @ApiProperty({
+    required: true,
     enum: () => WorkflowStatus,
     enumName: "WorkflowStatus",
     description: "The status of the workflow.",
@@ -62,6 +65,7 @@ export class Workflow {
   status: WorkflowStatus;
 
   @ApiProperty({
+    required: true,
     type: WorkflowStep,
     isArray: true,
     description:
@@ -91,12 +95,17 @@ export class PartialWorkflow extends PartialType(MutableWorkflow) {}
 export class CreateWorkflowRequest {}
 
 export class CreateWorkflowResponse {
-  @ApiProperty({ type: () => Workflow, description: "The workflow to create" })
+  @ApiProperty({
+    required: true,
+    type: () => Workflow,
+    description: "The workflow to create",
+  })
   workflow: Workflow;
 }
 
 export class DescribeWorkflowResponse {
   @ApiProperty({
+    required: true,
     type: () => Workflow,
     description: "The newly created workflow",
   })
@@ -105,6 +114,7 @@ export class DescribeWorkflowResponse {
 
 export class UpdateWorkflowRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialWorkflow,
     description:
       "A partial workflow representing the changes to make to an existing workflow",
@@ -113,12 +123,17 @@ export class UpdateWorkflowRequest {
 }
 
 export class UpdateWorkflowResponse {
-  @ApiProperty({ type: () => Workflow, description: "The updated workflow" })
+  @ApiProperty({
+    required: true,
+    type: () => Workflow,
+    description: "The updated workflow",
+  })
   workflow: Workflow;
 }
 
 export class ListWorkflowsResponse extends PaginatedResults {
   @ApiProperty({
+    required: true,
     type: () => Workflow,
     isArray: true,
     description: "A list of workflows",

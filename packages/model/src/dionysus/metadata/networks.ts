@@ -12,41 +12,42 @@ import { Country } from "./countries";
 import { BaseTVSeries } from "./tvSeries";
 
 export class BaseNetwork {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   id: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   name: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   headquarters: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   homepage: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   logoPath: string;
 }
 
 export class Network extends BaseNetwork {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
   @ApiProperty({
+    required: true,
     type: () => AlternativeName,
     isArray: true,
   })
   alternativeNames: AlternativeName[];
 
-  @ApiProperty({ type: () => IdentifiableImage, isArray: true })
+  @ApiProperty({ required: true, type: () => IdentifiableImage, isArray: true })
   images: IdentifiableImage[];
 
-  @ApiProperty({ type: () => Country })
+  @ApiProperty({ required: false, type: () => Country })
   originCountry?: Country;
 }
 
@@ -56,35 +57,41 @@ export class NetworkWithContentCounts extends Network {
 }
 
 export class PartialNetwork extends BaseNetwork {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   originCountry: string;
 
   @ApiProperty({
+    required: true,
     type: () => PartialAlternativeName,
     isArray: true,
   })
   alternativeNames: PartialAlternativeName[];
 
-  @ApiProperty({ type: () => PartialIdentifiableImage, isArray: true })
+  @ApiProperty({
+    required: true,
+    type: () => PartialIdentifiableImage,
+    isArray: true,
+  })
   images: PartialIdentifiableImage[];
 }
 
 export class CreateNetworkRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialNetwork,
   })
   network: PartialNetwork;
 }
 
 export class NetworkAssociation {
-  @ApiProperty({ type: Network })
+  @ApiProperty({ required: true, type: Network })
   network: Network;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -94,12 +101,13 @@ export class PartialNetworkAssociation extends OmitType(NetworkAssociation, [
   "lastUpdatedTime",
   "network",
 ]) {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   networkId: number;
 }
 
 export class CreateNetworkResponse {
   @ApiProperty({
+    required: true,
     type: () => Network,
   })
   network: Network;

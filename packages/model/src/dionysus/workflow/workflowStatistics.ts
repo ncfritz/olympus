@@ -3,6 +3,7 @@ import { WorkflowStatus } from "./workflow";
 
 export class GetMetadataWorkflowStatisticsResponse {
   @ApiProperty({
+    required: true,
     type: Object,
     additionalProperties: { type: "MetadataWorkflowStats" },
   })
@@ -11,6 +12,7 @@ export class GetMetadataWorkflowStatisticsResponse {
   };
 
   @ApiProperty({
+    required: true,
     type: Object,
     additionalProperties: { type: "MetadataWorkflowStats" },
   })

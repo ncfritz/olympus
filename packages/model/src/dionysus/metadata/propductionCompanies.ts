@@ -13,41 +13,42 @@ import { SparseMovie } from "./movies";
 import { BaseTVSeries } from "./tvSeries";
 
 export class BaseProductionCompany {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   id: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   name: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   description: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   headquarters: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   homepage: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   logoPath: string;
 }
 
 export class SparseProductionCompany extends BaseProductionCompany {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
   @ApiProperty({
+    required: true,
     type: () => AlternativeName,
     isArray: true,
   })
   alternativeNames: AlternativeName[];
 
-  @ApiProperty({ type: () => Country })
+  @ApiProperty({ required: false, type: () => Country })
   originCountry?: Country;
 }
 
@@ -60,24 +61,29 @@ export class SparseProductionCompanyWithContentCounts extends SparseProductionCo
 }
 
 export class ProductionCompany extends SparseProductionCompany {
-  @ApiProperty({ type: () => IdentifiableImage, isArray: true })
+  @ApiProperty({ required: true, type: () => IdentifiableImage, isArray: true })
   logos: IdentifiableImage[];
 }
 
 export class PartialProductionCompany extends BaseProductionCompany {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   originCountry: string;
 
   @ApiProperty({ type: Number, required: false })
   parentCompanyId?: number;
 
   @ApiProperty({
+    required: true,
     type: () => PartialAlternativeName,
     isArray: true,
   })
   alternativeNames: PartialAlternativeName[];
 
-  @ApiProperty({ type: () => PartialIdentifiableImage, isArray: true })
+  @ApiProperty({
+    required: true,
+    type: () => PartialIdentifiableImage,
+    isArray: true,
+  })
   logos: PartialIdentifiableImage[];
 }
 
@@ -97,14 +103,14 @@ export class FullProductionCompany extends ProductionCompany {
 }
 
 export class ProductionCompanyAssociation {
-  @ApiProperty({ type: SparseProductionCompany })
+  @ApiProperty({ required: true, type: SparseProductionCompany })
   productionCompany: SparseProductionCompany;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -113,12 +119,13 @@ export class PartialProductionCompanyAssociation extends OmitType(
   ProductionCompanyAssociation,
   ["createdTime", "lastUpdatedTime", "productionCompany"],
 ) {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   productionCompanyId: number;
 }
 
 export class CreateProductionCompanyRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialProductionCompany,
   })
   company: PartialProductionCompany;
@@ -126,6 +133,7 @@ export class CreateProductionCompanyRequest {
 
 export class CreateProductionCompanyResponse {
   @ApiProperty({
+    required: true,
     type: () => SparseProductionCompany,
   })
   company: SparseProductionCompany;
@@ -133,6 +141,7 @@ export class CreateProductionCompanyResponse {
 
 export class DescribeProductionCompanyResponse {
   @ApiProperty({
+    required: true,
     type: () => FullProductionCompany,
   })
   company: FullProductionCompany;

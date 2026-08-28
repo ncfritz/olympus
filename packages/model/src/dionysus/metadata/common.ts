@@ -5,17 +5,17 @@ import { Country } from "./countries";
 import { Language } from "./languages";
 
 export class ExternalId {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   type: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   externalId: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -26,20 +26,20 @@ export class PartialExternalId extends OmitType(ExternalId, [
 ]) {}
 
 export class AlternativeTitle {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   title: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   type: string;
 
-  @ApiProperty({ type: Country })
+  @ApiProperty({ required: true, type: Country })
   country: Country;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -49,22 +49,22 @@ export class PartialAlternativeTitle extends OmitType(AlternativeTitle, [
   "lastUpdatedTime",
   "country",
 ]) {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   countryCode: string;
 }
 
 export class AlternativeName {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   name: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   type: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -75,20 +75,20 @@ export class PartialAlternativeName extends OmitType(AlternativeName, [
 ]) {}
 
 export class BaseImage {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   width: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   height: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   filePath: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -97,15 +97,15 @@ export class PartialBaseImage extends OmitType(BaseImage, [
   "createdTime",
   "lastUpdatedTime",
 ]) {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   languageCode: string;
 }
 
 export class TypedImage extends BaseImage {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   type: string;
 
-  @ApiProperty({ type: Language })
+  @ApiProperty({ required: false, type: Language })
   language?: Language;
 }
 
@@ -114,15 +114,15 @@ export class PartialTypedImage extends OmitType(TypedImage, [
   "lastUpdatedTime",
   "language",
 ]) {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   languageCode: string;
 }
 
 export class IdentifiableImage extends BaseImage {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   id: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   fileType: string;
 }
 
@@ -132,42 +132,42 @@ export class PartialIdentifiableImage extends OmitType(IdentifiableImage, [
 ]) {}
 
 export class Video {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   id: string;
 
-  @ApiProperty({ type: Country })
+  @ApiProperty({ required: true, type: Country })
   country: Country;
 
-  @ApiProperty({ type: Language })
+  @ApiProperty({ required: true, type: Language })
   language: Language;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   name: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   key: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   site: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   size: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   type: string;
 
-  @ApiProperty({ type: Boolean })
+  @ApiProperty({ required: true, type: Boolean })
   official: boolean;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   publishedTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -178,68 +178,68 @@ export class PartialVideo extends OmitType(Video, [
   "language",
   "country",
 ]) {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   countryCode: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   languageCode: string;
 }
 
 export class LocationStatistic {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   countryCode: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   count: number;
 }
 
 export class StatusStatistic {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   status: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   count: number;
 }
 
 export class YearStatistic {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   year: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   count: number;
 }
 
 export class RuntimeStatistic {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   runtime: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   label: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   count: number;
 }
 
 export class SeasonStatistic {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   seasons: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   count: number;
 }
 
 export class GenreCountStatistic {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   genres: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   count: number;
 }
 
 export class GenreStatistic {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   genre: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   count: number;
 }

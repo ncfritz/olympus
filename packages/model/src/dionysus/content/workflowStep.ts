@@ -84,7 +84,6 @@ export class ContentIngestionWorkflowStep extends BaseContentIngestionWorkflowSt
     description:
       "An ISO-8601 formatted string indicating when the workflow was started.",
   })
-  @ApiProperty({ type: String })
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   startedTime?: Moment;
 
@@ -112,6 +111,7 @@ export class PartialContentIngestionWorkflowStep extends PartialType(
 /* ------------------------------------------------------------------------------------------------------------------ */
 export class CreateContentIngestionWorkflowStepRequest {
   @ApiProperty({
+    required: true,
     type: () => BaseContentIngestionWorkflowStep,
     description: "The details of the workflow step to create",
   })
@@ -120,6 +120,7 @@ export class CreateContentIngestionWorkflowStepRequest {
 
 export class UpdateContentIngestionWorkflowStepRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialContentIngestionWorkflowStep,
     description: "The details of the workflow step to update",
   })
@@ -131,6 +132,7 @@ export class UpdateContentIngestionWorkflowStepRequest {
 /* ------------------------------------------------------------------------------------------------------------------ */
 export class CreateContentIngestionWorkflowStepResponse {
   @ApiProperty({
+    required: true,
     type: () => ContentIngestionWorkflowStep,
     description: "The newly created workflow step",
   })
@@ -139,6 +141,7 @@ export class CreateContentIngestionWorkflowStepResponse {
 
 export class DescribeContentIngestionWorkflowStepResponse {
   @ApiProperty({
+    required: true,
     type: () => ContentIngestionWorkflowStep,
     description: "The workflow step",
   })
@@ -147,6 +150,7 @@ export class DescribeContentIngestionWorkflowStepResponse {
 
 export class UpdateContentIngestionWorkflowStepResponse {
   @ApiProperty({
+    required: true,
     type: () => ContentIngestionWorkflowStep,
     description: "The updated workflow step",
   })
@@ -155,6 +159,7 @@ export class UpdateContentIngestionWorkflowStepResponse {
 
 export class ListContentIngestionWorkflowStepsResponse {
   @ApiProperty({
+    required: true,
     type: () => ContentIngestionWorkflowStep,
     isArray: true,
     description: "A list of workflow steps associated with the workflow",

@@ -27,13 +27,18 @@ export enum FilterType {
 }
 
 export class FilterDefinition {
-  @ApiProperty({ enum: () => FilterType, enumName: "FilterType" })
+  @ApiProperty({
+    required: true,
+    enum: () => FilterType,
+    enumName: "FilterType",
+  })
   type: FilterType;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   name: string;
 
   @ApiProperty({
+    required: true,
     type: () => Object,
     oneOf: [
       { $ref: getSchemaPath(FilterDefinition) },

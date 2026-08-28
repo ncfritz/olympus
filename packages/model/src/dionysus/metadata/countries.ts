@@ -4,17 +4,17 @@ import { Moment } from "moment/moment";
 import { PaginatedResults } from "../../common";
 
 export class Country {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   id: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   name: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -26,20 +26,21 @@ export class PartialCountry extends OmitType(Country, [
 
 export class CreateCountryRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialCountry,
   })
   country: PartialCountry;
 }
 
 export class CountryAssociation {
-  @ApiProperty({ type: Country })
+  @ApiProperty({ required: true, type: Country })
   country: Country;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -49,18 +50,19 @@ export class PartialCountryAssociation extends OmitType(CountryAssociation, [
   "lastUpdatedTime",
   "country",
 ]) {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   countryCode: string;
 }
 
 export class CreateCountryResponse {
   @ApiProperty({
+    required: true,
     type: () => Country,
   })
   country: Country;
 }
 
 export class ListCountriesResponse extends PaginatedResults {
-  @ApiProperty({ type: () => Country, isArray: true })
+  @ApiProperty({ required: true, type: () => Country, isArray: true })
   countries: Country[];
 }

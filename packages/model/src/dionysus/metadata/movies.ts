@@ -42,31 +42,31 @@ import {
 } from "./propductionCompanies";
 
 export class BaseMovie {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   id: number;
 
-  @ApiProperty({ type: Boolean })
+  @ApiProperty({ required: true, type: Boolean })
   adult: boolean;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: false, type: String })
   backdropPath?: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   budget: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   homepage: string;
 
   @ApiProperty({ type: String, required: false })
   imdbId?: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   originalTitle: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   overview: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   popularity: number;
 
   @ApiProperty({ type: String, required: false })
@@ -76,28 +76,28 @@ export class BaseMovie {
   @Transform(({ value }) => (value ? value.toISOString() : undefined))
   releaseDate?: Moment;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   revenue: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   runtime: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   status: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   tagline: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   title: string;
 
-  @ApiProperty({ type: Boolean })
+  @ApiProperty({ required: true, type: Boolean })
   video: boolean;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   voteCount: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   voteAverage: number;
 }
 
@@ -108,15 +108,16 @@ export class SparseMovie extends BaseMovie {
   @ApiProperty({ type: () => MediaAsset, required: false })
   asset?: MediaAsset;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
   @ApiProperty({
+    required: true,
     type: () => GenreAssociation,
     isArray: true,
   })
@@ -131,57 +132,66 @@ export class SparseMovie extends BaseMovie {
 
 export class Movie extends SparseMovie {
   @ApiProperty({
+    required: true,
     type: () => AlternativeTitle,
     isArray: true,
   })
   alternativeTitles: AlternativeTitle[];
 
   @ApiProperty({
+    required: true,
     type: () => ExternalId,
     isArray: true,
   })
   externalIds: ExternalId[];
 
   @ApiProperty({
+    required: true,
     type: () => TypedImage,
     isArray: true,
   })
   images: TypedImage[];
 
   @ApiProperty({
+    required: true,
     type: () => KeywordAssociation,
     isArray: true,
   })
   keywords: KeywordAssociation[];
 
-  @ApiProperty({ type: Language })
+  @ApiProperty({ required: true, type: Language })
   originalLanguage: Language;
 
   @ApiProperty({
+    required: true,
     type: () => ProductionCompanyAssociation,
     isArray: true,
   })
   productionCompanies: ProductionCompanyAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => CountryAssociation,
     isArray: true,
   })
   productionCountries: CountryAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => MovieReleaseDate,
     isArray: true,
   })
   releaseDates: MovieReleaseDate[];
 
   @ApiProperty({
+    required: true,
     type: () => LanguageAssociation,
     isArray: true,
   })
   spokenLanguages: LanguageAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => Video,
     isArray: true,
   })
@@ -190,12 +200,14 @@ export class Movie extends SparseMovie {
 
 export class MovieWithCredits extends Movie {
   @ApiProperty({
+    required: true,
     type: () => MovieCastMember,
     isArray: true,
   })
   cast: MovieCastMember[];
 
   @ApiProperty({
+    required: true,
     type: () => MovieCrewMember,
     isArray: true,
   })
@@ -203,82 +215,95 @@ export class MovieWithCredits extends Movie {
 }
 
 export class PartialMovie extends BaseMovie {
-  @ApiProperty({ type: () => String })
+  @ApiProperty({ required: true, type: () => String })
   originalLanguageCode: string;
 
   @ApiProperty({
+    required: true,
     type: () => PartialAlternativeTitle,
     isArray: true,
   })
   alternativeTitles: PartialAlternativeTitle[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialMovieCastMember,
     isArray: true,
   })
   cast: PartialMovieCastMember[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialMovieCrewMember,
     isArray: true,
   })
   crew: PartialMovieCrewMember[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialExternalId,
     isArray: true,
   })
   externalIds: PartialExternalId[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialGenreAssociation,
     isArray: true,
   })
   genres: PartialGenreAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialTypedImage,
     isArray: true,
   })
   images: PartialTypedImage[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialKeywordAssociation,
     isArray: true,
   })
   keywords: PartialKeywordAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialProductionCompanyAssociation,
     isArray: true,
   })
   productionCompanies: PartialProductionCompanyAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialCountryAssociation,
     isArray: true,
   })
   productionCountries: PartialCountryAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialMovieRecommendation,
     isArray: true,
   })
   recommendations: PartialMovieRecommendation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialMovieReleaseDate,
     isArray: true,
   })
   releaseDates: PartialMovieReleaseDate[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialLanguageAssociation,
     isArray: true,
   })
   spokenLanguages: PartialLanguageAssociation[];
 
   @ApiProperty({
+    required: true,
     type: () => PartialVideo,
     isArray: true,
   })
@@ -286,32 +311,32 @@ export class PartialMovie extends BaseMovie {
 }
 
 export class SparseMovieCastMember {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   castId: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   originalName: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   creditId: string;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   order: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   character: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 
 export class MovieCastMember extends SparseMovieCastMember {
-  @ApiProperty({ type: BasePerson })
+  @ApiProperty({ required: true, type: BasePerson })
   person: BasePerson;
 }
 
@@ -320,34 +345,34 @@ export class PartialMovieCastMember extends OmitType(MovieCastMember, [
   "lastUpdatedTime",
   "person",
 ]) {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   personId: number;
 }
 
 export class SparseMovieCrewMember {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   creditId: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   originalName: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   department: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   job: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 
 export class MovieCrewMember extends SparseMovieCrewMember {
-  @ApiProperty({ type: BasePerson })
+  @ApiProperty({ required: true, type: BasePerson })
   person: BasePerson;
 }
 
@@ -356,35 +381,35 @@ export class PartialMovieCrewMember extends OmitType(MovieCrewMember, [
   "lastUpdatedTime",
   "person",
 ]) {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   personId: number;
 }
 
 export class MovieReleaseDate {
-  @ApiProperty({ type: Country })
+  @ApiProperty({ required: true, type: Country })
   country: Country;
 
-  @ApiProperty({ type: Language })
+  @ApiProperty({ required: false, type: Language })
   language?: Language;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: false, type: String })
   @Transform(({ value }) => value.toISOString())
   releaseDate?: Moment;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   type: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   note: string;
 
-  @ApiProperty({ type: Certification })
+  @ApiProperty({ required: false, type: Certification })
   certification?: Certification;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -396,38 +421,40 @@ export class PartialMovieReleaseDate extends OmitType(MovieReleaseDate, [
   "language",
   "certification",
 ]) {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   countryCode: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   languageCode: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   certificationId: string;
 }
 
 export class MovieRecommendation {
   @ApiProperty({
+    required: true,
     type: () => SparseMovie,
   })
   movie: SparseMovie;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 
 export class PartialMovieRecommendation {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   recommendationId: number;
 }
 
 export class CreateMovieRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialMovie,
   })
   movie: PartialMovie;
@@ -435,6 +462,7 @@ export class CreateMovieRequest {
 
 export class CreateMovieResponse {
   @ApiProperty({
+    required: true,
     type: () => SparseMovie,
   })
   movie: SparseMovie;
@@ -442,6 +470,7 @@ export class CreateMovieResponse {
 
 export class DescribeMovieResponse {
   @ApiProperty({
+    required: true,
     type: () => Movie,
   })
   movie: Movie;
@@ -449,6 +478,7 @@ export class DescribeMovieResponse {
 
 export class ListMoviesResponse extends PaginatedResults {
   @ApiProperty({
+    required: true,
     type: () => SparseMovie,
     isArray: true,
   })
@@ -457,6 +487,7 @@ export class ListMoviesResponse extends PaginatedResults {
 
 export class ListMovieCastResponse {
   @ApiProperty({
+    required: true,
     type: () => MovieCastMember,
     isArray: true,
   })
@@ -465,6 +496,7 @@ export class ListMovieCastResponse {
 
 export class ListMovieCrewResponse {
   @ApiProperty({
+    required: true,
     type: () => MovieCrewMember,
     isArray: true,
   })
@@ -473,6 +505,7 @@ export class ListMovieCrewResponse {
 
 export class ListMovieRecommendationsResponse {
   @ApiProperty({
+    required: true,
     type: () => SparseMovie,
     isArray: true,
   })
@@ -481,6 +514,7 @@ export class ListMovieRecommendationsResponse {
 
 export class ListMovieCollectionsResponse {
   @ApiProperty({
+    required: true,
     type: () => Collection,
     isArray: true,
   })
@@ -489,6 +523,7 @@ export class ListMovieCollectionsResponse {
 
 export class GetMovieLocationStatisticsResponse {
   @ApiProperty({
+    required: true,
     type: () => LocationStatistic,
     isArray: true,
   })
@@ -497,6 +532,7 @@ export class GetMovieLocationStatisticsResponse {
 
 export class GetMovieReleaseStatusStatisticsResponse {
   @ApiProperty({
+    required: true,
     type: () => StatusStatistic,
     isArray: true,
   })
@@ -505,6 +541,7 @@ export class GetMovieReleaseStatusStatisticsResponse {
 
 export class GetMovieReleaseYearStatisticsResponse {
   @ApiProperty({
+    required: true,
     type: () => YearStatistic,
     isArray: true,
   })
@@ -513,6 +550,7 @@ export class GetMovieReleaseYearStatisticsResponse {
 
 export class GetMovieRuntimeStatisticsResponse {
   @ApiProperty({
+    required: true,
     type: () => RuntimeStatistic,
     isArray: true,
   })
@@ -520,18 +558,18 @@ export class GetMovieRuntimeStatisticsResponse {
 }
 
 export class GetMovieAggregateStatisticsResponse {
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   count: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   averageBudget: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   averageRevenue: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   maxRevenue: number;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   averageRuntime: number;
 }

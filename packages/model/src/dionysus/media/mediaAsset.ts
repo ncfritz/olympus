@@ -48,7 +48,6 @@ export class BaseMediaAsset {
     required: true,
     description: "The size of the transcoded file, in bytes",
   })
-  @ApiProperty({ type: Number })
   newSizeBytes: number;
 
   @ApiProperty({
@@ -56,7 +55,6 @@ export class BaseMediaAsset {
     required: true,
     description: "The duration of the asset, in milliseconds",
   })
-  @ApiProperty({ type: Number })
   durationMs: number;
 
   @ApiProperty({
@@ -64,7 +62,6 @@ export class BaseMediaAsset {
     required: true,
     description: "TThe pixel width of the asset",
   })
-  @ApiProperty({ type: Number })
   width: number;
 
   @ApiProperty({
@@ -72,7 +69,6 @@ export class BaseMediaAsset {
     required: true,
     description: "TThe pixel height of the asset",
   })
-  @ApiProperty({ type: Number })
   height: number;
 }
 

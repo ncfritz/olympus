@@ -10,12 +10,14 @@ export enum WorkflowStepType {
 
 export class WorkflowStep {
   @ApiProperty({
+    required: true,
     type: String,
     description: "The unique identified for the workflow step",
   })
   id: string;
 
   @ApiProperty({
+    required: true,
     enum: () => WorkflowStepType,
     enumName: "WorkflowStepType",
     description: "The type of step",
@@ -23,6 +25,7 @@ export class WorkflowStep {
   type: WorkflowStepType;
 
   @ApiProperty({
+    required: true,
     type: String,
     description:
       "An ISO-8601 formatted string indicating when the workflow step was created.",
@@ -31,6 +34,7 @@ export class WorkflowStep {
   createdTime: Moment;
 
   @ApiProperty({
+    required: true,
     type: String,
     description:
       "An ISO-8601 formatted string indicating when the workflow step was last updated.",
@@ -46,6 +50,7 @@ export class WorkflowStep {
   job?: BatchJob;
 
   @ApiProperty({
+    required: true,
     type: "number",
     description: "The attempt count for this workflow step",
   })
@@ -59,6 +64,7 @@ export class PartialWorkflowStep extends OmitType(WorkflowStep, [
   "lastUpdatedTime",
 ]) {
   @ApiProperty({
+    required: true,
     enum: () => JobType,
     enumName: "JobType",
     description:
@@ -67,6 +73,7 @@ export class PartialWorkflowStep extends OmitType(WorkflowStep, [
   jobType: JobType;
 
   @ApiProperty({
+    required: true,
     type: Number,
     default: 0,
     description: "The number of records to skip when the BatchJob runs",
@@ -76,6 +83,7 @@ export class PartialWorkflowStep extends OmitType(WorkflowStep, [
 
 export class CreateWorkflowStepRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialWorkflowStep,
     description: "The details of the workflow step to create",
   })
@@ -84,6 +92,7 @@ export class CreateWorkflowStepRequest {
 
 export class CreateWorkflowStepResponse {
   @ApiProperty({
+    required: true,
     type: () => WorkflowStep,
     description: "The newly created workflow step",
   })
@@ -91,12 +100,17 @@ export class CreateWorkflowStepResponse {
 }
 
 export class DescribeWorkflowStepResponse {
-  @ApiProperty({ type: () => WorkflowStep, description: "The workflow step" })
+  @ApiProperty({
+    required: true,
+    type: () => WorkflowStep,
+    description: "The workflow step",
+  })
   step: WorkflowStep;
 }
 
 export class ListWorkflowStepsResponse {
   @ApiProperty({
+    required: true,
     type: () => WorkflowStep,
     isArray: true,
     description: "A list of workflow steps associated with the workflow",

@@ -10,26 +10,30 @@ export enum CertificationType {
 }
 
 export class Certification {
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   country: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   certification: string;
 
-  @ApiProperty({ enum: () => CertificationType, enumName: "CertificationType" })
+  @ApiProperty({
+    required: true,
+    enum: () => CertificationType,
+    enumName: "CertificationType",
+  })
   type: CertificationType;
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({ required: true, type: Number })
   order: number;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   meaning: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
@@ -40,20 +44,21 @@ export class PartialCertification extends OmitType(Certification, [
 ]) {}
 
 export class CertificationAssociation {
-  @ApiProperty({ type: Language })
+  @ApiProperty({ required: true, type: Language })
   certification: Certification;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ required: true, type: String })
   @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 
 export class CreateCertificationRequest {
   @ApiProperty({
+    required: true,
     type: () => PartialCertification,
   })
   certification: PartialCertification;
@@ -61,6 +66,7 @@ export class CreateCertificationRequest {
 
 export class CreateCertificationResponse {
   @ApiProperty({
+    required: true,
     type: () => Certification,
   })
   certification: Certification;
@@ -68,12 +74,13 @@ export class CreateCertificationResponse {
 
 export class GetCertificationResponse {
   @ApiProperty({
+    required: true,
     type: () => Certification,
   })
   certification: Certification;
 }
 
 export class ListCertificationsResponse extends PaginatedResults {
-  @ApiProperty({ type: () => Certification, isArray: true })
+  @ApiProperty({ required: true, type: () => Certification, isArray: true })
   certifications: Certification[];
 }

@@ -51,7 +51,7 @@ export class MediaAssetDownload {
     required: false,
     description: "The ID of the workflow this download belongs to.",
   })
-  workflowId: string;
+  workflowId?: string;
 
   @ApiProperty({
     type: String,
