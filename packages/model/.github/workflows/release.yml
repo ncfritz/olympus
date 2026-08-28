@@ -43,3 +43,15 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
+      - name: Trigger olympus-api build
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          VERSION=$(npm view @ncfritz/olympus-model version)
+          
+          gh api \
+            --method POST \
+            /repos/ncfritz/olympus-api/dispatches \
+            -f event_type='olympus-model-released' \
+            -f client_payload[version]="$VERSION"
