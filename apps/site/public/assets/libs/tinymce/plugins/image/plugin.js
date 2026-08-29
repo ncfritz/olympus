@@ -1,1 +1,1679 @@
-!function(){"use strict";let e;var t=tinymce.util.Tools.resolve("tinymce.PluginManager");let a=Object.getPrototypeOf,i=(e,t,a)=>!!a(e,t.prototype)||e.constructor?.name===t.name,r=e=>t=>(e=>{let t=typeof e;return null===e?"null":"object"===t&&Array.isArray(e)?"array":"object"===t&&i(e,String,(e,t)=>t.isPrototypeOf(e))?"string":t})(t)===e,l=e=>t=>typeof t===e,s=r("string"),n=r("object"),o=e=>{let t;return t=Object,n(e)&&i(e,t,(e,t)=>a(e)===t)},m=r("array"),c=e=>null===e,d=l("boolean"),g=e=>null!=e,u=l("function"),p=l("number"),h=()=>{};class b{tag;value;static singletonNone=new b(!1);constructor(e,t){this.tag=e,this.value=t}static some(e){return new b(!0,e)}static none(){return b.singletonNone}fold(e,t){return this.tag?t(this.value):e()}isSome(){return this.tag}isNone(){return!this.tag}map(e){return this.tag?b.some(e(this.value)):b.none()}bind(e){return this.tag?e(this.value):b.none()}exists(e){return this.tag&&e(this.value)}forall(e){return!this.tag||e(this.value)}filter(e){return!this.tag||e(this.value)?this:b.none()}getOr(e){return this.tag?this.value:e}or(e){return this.tag?this:e}getOrThunk(e){return this.tag?this.value:e()}orThunk(e){return this.tag?this:e()}getOrDie(e){if(this.tag)return this.value;throw Error(e??"Called getOrDie on None")}static from(e){return g(e)?b.some(e):b.none()}getOrNull(){return this.tag?this.value:null}getOrUndefined(){return this.value}each(e){this.tag&&e(this.value)}toArray(){return this.tag?[this.value]:[]}toString(){return this.tag?`some(${this.value})`:"none()"}}Array.prototype.slice;let y=Array.prototype.push,v=e=>{let t=[];for(let a=0,i=e.length;a<i;++a){if(!m(e[a]))throw Error("Arr.flatten item "+a+" was not an array, input: "+e);y.apply(t,e[a])}return t};u(Array.from);let f=Object.keys,A=Object.hasOwnProperty,w=(e,t)=>A.call(e,t),D=(e=(e,t)=>o(e)&&o(t)?D(e,t):t,(...t)=>{if(0===t.length)throw Error("Can't merge zero objects");let a={};for(let i=0;i<t.length;i++){let r=t[i];for(let t in r)w(r,t)&&(a[t]=e(a[t],r[t]))}return a}),_=e=>{if(null==e)throw Error("Node cannot be null or undefined");return{dom:e}},C=(e,t,a)=>{var i=e.dom;if(s(a)||d(a)||p(a))i.setAttribute(t,a+"");else throw console.error("Invalid call to Attribute.set. Key ",t,":: Value ",a,":: Element ",i),Error("Attribute value was not simple")};var S=tinymce.util.Tools.resolve("tinymce.dom.DOMUtils"),I=tinymce.util.Tools.resolve("tinymce.util.URI");let U=e=>t=>t.options.get(e),x=U("image_dimensions"),N=U("image_advtab"),T=U("image_uploadtab"),E=U("image_prepend_url"),O=U("image_class_list"),L=U("image_description"),j=U("image_title"),k=U("image_caption"),M=U("image_list"),R=U("a11y_advanced_options"),z=U("automatic_uploads"),B=e=>(e&&(e=e.replace(/px$/,"")),e),P=e=>(e.length>0&&/^[0-9]+$/.test(e)&&(e+="px"),e),F=e=>"IMG"===e.nodeName&&(e.hasAttribute("data-mce-object")||e.hasAttribute("data-mce-placeholder")),H=(e,t)=>{let a=e.options.get;return I.isDomSafe(t,"img",{allow_html_data_urls:a("allow_html_data_urls"),allow_script_urls:a("allow_script_urls"),allow_svg_data_urls:a("allow_svg_data_urls")})},G=S.DOM,W=e=>e.style.marginLeft&&e.style.marginRight&&e.style.marginLeft===e.style.marginRight?B(e.style.marginLeft):"",$=e=>e.style.marginTop&&e.style.marginBottom&&e.style.marginTop===e.style.marginBottom?B(e.style.marginTop):"",V=e=>e.style.borderWidth?B(e.style.borderWidth):"",K=(e,t)=>e.hasAttribute(t)?e.getAttribute(t)??"":"",Z=e=>null!==e.parentNode&&"FIGURE"===e.parentNode.nodeName,q=(e,t,a)=>{""===a||null===a?e.removeAttribute(t):e.setAttribute(t,a)},J=(e,t)=>{let a=e.getAttribute("style"),i=t(null!==a?a:"");i.length>0?(e.setAttribute("style",i),e.setAttribute("data-mce-style",i)):e.removeAttribute("style")},Q=(e,t)=>(e,a,i)=>{let r=e.style;r[a]?(r[a]=P(i),J(e,t)):q(e,a,i)},X=(e,t)=>e.style[t]?B(e.style[t]):K(e,t),Y=(e,t)=>{let a=P(t);e.style.marginLeft=a,e.style.marginRight=a},ee=(e,t)=>{let a=P(t);e.style.marginTop=a,e.style.marginBottom=a},et=(e,t)=>{let a=P(t);e.style.borderWidth=a},ea=(e,t)=>{e.style.borderStyle=t},ei=e=>g(e)&&"FIGURE"===e.nodeName,er=e=>{let t=G.getAttrib(e,"alt"),a=G.getAttrib(e,"role");return e.hasAttribute("alt")&&0===t.length||"presentation"===a||"none"===a},el=()=>({src:"",alt:"",title:"",width:"",height:"",class:"",style:"",caption:!1,hspace:"",vspace:"",border:"",borderStyle:"",isDecorative:!1}),es=(e,t)=>({src:K(t,"src"),alt:er(t)?"":K(t,"alt"),title:K(t,"title"),width:X(t,"width"),height:X(t,"height"),class:K(t,"class"),style:e(K(t,"style")),caption:Z(t),hspace:W(t),vspace:$(t),border:V(t),borderStyle:t.style.borderStyle??"",isDecorative:er(t)}),en=(e,t,a,i,r)=>{a[i]!==t[i]&&r(e,i,String(a[i]))},eo=(e,t,a)=>{if(a)G.setAttrib(e,"role","presentation"),C(_(e),"alt","");else{if(c(t))_(e).dom.removeAttribute("alt");else C(_(e),"alt",t);"presentation"===G.getAttrib(e,"role")&&G.setAttrib(e,"role","")}},em=(e,t)=>(a,i,r)=>{e(a,r),J(a,t)},ec=(e,t,a)=>{let i=es(e,a);en(a,i,t,"caption",(e,t,a)=>(e=>{if(Z(e)){let t=e.parentNode;g(t)&&(G.insertAfter(e,t),G.remove(t))}else{let t=G.create("figure",{class:"image"});G.insertAfter(t,e),t.appendChild(e),t.appendChild(G.create("figcaption",{contentEditable:"true"},"Caption")),t.contentEditable="false"}})(e)),en(a,i,t,"src",q),en(a,i,t,"title",q),en(a,i,t,"width",Q("width",e)),en(a,i,t,"height",Q("height",e)),en(a,i,t,"class",q),en(a,i,t,"style",em((e,t)=>q(e,"style",t),e)),en(a,i,t,"hspace",em(Y,e)),en(a,i,t,"vspace",em(ee,e)),en(a,i,t,"border",em(et,e)),en(a,i,t,"borderStyle",em(ea,e)),(t.alt!==i.alt||t.isDecorative!==i.isDecorative)&&eo(a,t.alt,t.isDecorative)},ed=(e,t)=>{let a=(e=>{if(e.margin){let t=String(e.margin).split(" ");switch(t.length){case 1:e["margin-top"]=e["margin-top"]||t[0],e["margin-right"]=e["margin-right"]||t[0],e["margin-bottom"]=e["margin-bottom"]||t[0],e["margin-left"]=e["margin-left"]||t[0];break;case 2:e["margin-top"]=e["margin-top"]||t[0],e["margin-right"]=e["margin-right"]||t[1],e["margin-bottom"]=e["margin-bottom"]||t[0],e["margin-left"]=e["margin-left"]||t[1];break;case 3:e["margin-top"]=e["margin-top"]||t[0],e["margin-right"]=e["margin-right"]||t[1],e["margin-bottom"]=e["margin-bottom"]||t[2],e["margin-left"]=e["margin-left"]||t[1];break;case 4:e["margin-top"]=e["margin-top"]||t[0],e["margin-right"]=e["margin-right"]||t[1],e["margin-bottom"]=e["margin-bottom"]||t[2],e["margin-left"]=e["margin-left"]||t[3]}delete e.margin}return e})(e.dom.styles.parse(t)),i=e.dom.styles.parse(e.dom.styles.serialize(a));return e.dom.styles.serialize(i)},eg=e=>{let t=e.selection.getNode(),a=e.dom.getParent(t,"figure.image");return a?e.dom.select("img",a)[0]:t&&("IMG"!==t.nodeName||F(t))?null:t},eu=(e,t)=>{let a=e.dom,i=((e,t)=>{var a;let i={};return a=(e,t)=>{i[t]=e},((e,t)=>{let a=f(e);for(let i=0,r=a.length;i<r;i++){let r=a[i];t(e[r],r)}})(e,(e,i)=>{(t(e,i)?a:h)(e,i)}),i})(e.schema.getTextBlockElements(),(t,a)=>!e.schema.isValidChild(a,"figure")),r=a.getParent(t.parentNode,e=>{let t;return w(i,t=e.nodeName)&&void 0!==i[t]&&null!==i[t]},e.getBody());return r?a.split(r,t)??t:t};var ep=tinymce.util.Tools.resolve("tinymce.util.ImageUploader"),eh=tinymce.util.Tools.resolve("tinymce.util.Tools");let eb=e=>s(e.value)?e.value:"",ey=(e,t)=>{let a=[];return eh.each(e,e=>{let i=s(e.text)?e.text:s(e.title)?e.title:"";if(void 0!==e.menu){let r=ey(e.menu,t);a.push({text:i,items:r})}else{let r=t(e);a.push({text:i,value:r})}}),a},ev=(e=eb)=>t=>t?b.from(t).map(t=>ey(t,e)):b.none(),ef=(e,t)=>((e,t)=>{for(let a=0;a<e.length;a++){let i=t(e[a],a);if(i.isSome())return i}return b.none()})(e,e=>w(e,"items")?ef(e.items,t):e.value===t?b.some(e):b.none()),eA=(e,t)=>e.bind(e=>ef(e,t)),ew=e=>{let t=e.imageList.map(e=>({name:"images",type:"listbox",label:"Image list",items:e})),a={name:"alt",type:"input",label:"Alternative description",enabled:!(e.hasAccessibilityOptions&&e.image.isDecorative)},i=e.classList.map(e=>({name:"classes",type:"listbox",label:"Class",items:e}));return v([[{name:"src",type:"urlinput",filetype:"image",label:"Source",picker_text:"Browse files"}],t.toArray(),e.hasAccessibilityOptions&&e.hasDescription?[{type:"label",label:"Accessibility",items:[{name:"isDecorative",type:"checkbox",label:"Image is decorative"}]}]:[],e.hasDescription?[a]:[],e.hasImageTitle?[{name:"title",type:"input",label:"Image title"}]:[],e.hasDimensions?[{name:"dimensions",type:"sizeinput"}]:[],[{...e.classList.isSome()&&e.hasImageCaption?{type:"grid",columns:2}:{type:"panel"},items:v([i.toArray(),e.hasImageCaption?[{type:"label",label:"Caption",items:[{type:"checkbox",name:"caption",label:"Show caption"}]}]:[]])}]])},eD=e=>({src:{value:e.src,meta:{}},images:e.src,alt:e.alt,title:e.title,dimensions:{width:e.width,height:e.height},classes:e.class,caption:e.caption,style:e.style,vspace:e.vspace,border:e.border,hspace:e.hspace,borderstyle:e.borderStyle,fileinput:[],isDecorative:e.isDecorative}),e_=(e,t)=>({src:e.src.value,alt:(null===e.alt||0===e.alt.length)&&t?null:e.alt,title:e.title,width:e.dimensions.width,height:e.dimensions.height,class:e.classes,style:e.style,caption:e.caption,hspace:e.hspace,vspace:e.vspace,border:e.border,borderStyle:e.borderstyle,isDecorative:e.isDecorative}),eC=(e,t,a,i)=>{var r;let l=i.getData();(r=l.src.value,!/^(?:[a-zA-Z]+:)?\/\//.test(r)?t.prependURL.bind(e=>r.substring(0,e.length)!==e?b.some(e+r):b.none()):b.none()).each(e=>{i.setData({src:{value:e,meta:l.src.meta}})}),((e,t)=>{let a=t.getData(),i=a.src.meta;if(void 0!==i){let r=D({},a);e.hasDescription&&s(i.alt)&&(r.alt=i.alt),e.hasAccessibilityOptions&&(r.isDecorative=i.isDecorative||r.isDecorative||!1),e.hasImageTitle&&s(i.title)&&(r.title=i.title),e.hasDimensions&&(s(i.width)&&(r.dimensions.width=i.width),s(i.height)&&(r.dimensions.height=i.height)),s(i.class)&&eA(e.classList,i.class).each(e=>{r.classes=e.value}),e.hasImageCaption&&d(i.caption)&&(r.caption=i.caption),e.hasAdvTab&&(s(i.style)&&(r.style=i.style),s(i.vspace)&&(r.vspace=i.vspace),s(i.border)&&(r.border=i.border),s(i.hspace)&&(r.hspace=i.hspace),s(i.borderstyle)&&(r.borderstyle=i.borderstyle)),t.setData(r)}})(t,i);let n=i.getData(),o=n.src.value,m=n.src.meta||{};m.width||m.height||!t.hasDimensions||(o.length>0?e.imageSize(o).then(e=>{a.open&&i.setData({dimensions:e})}).catch(e=>console.error(e)):i.setData({dimensions:{width:"",height:""}}));let c=i.getData(),g=eA(t.imageList,c.src.value);a.prevImage=g,i.setData({images:g.map(e=>e.value).getOr("")})},eS=e=>{let t={imageSize:t=>{let a;return H(e,t)?(a=e.documentBaseURI.toAbsolute(t),new Promise((e,t)=>{let i=document.createElement("img");i.addEventListener("load",()=>{e({width:i.naturalWidth,height:i.naturalHeight})}),i.addEventListener("error",()=>{t(`Failed to get image dimensions for: ${a}`)}),i.src=a})).then(e=>({width:String(e.width),height:String(e.height)})):Promise.resolve({width:"",height:""})},addToBlobCache:t=>{e.editorUpload.blobCache.add(t)},createBlobCache:(t,a,i)=>e.editorUpload.blobCache.create({blob:t,blobUri:a,name:t.name?.replace(/\.[^\.]+$/,""),filename:t.name,base64:i.split(",")[1]}),normalizeCss:t=>ed(e,t),parseStyle:t=>e.dom.parseStyle(t),serializeStyle:(t,a)=>e.dom.serializeStyle(t,a),uploadImage:t=>ep(e).upload([t],!1).then(e=>0===e.length?Promise.reject("Failed to upload image"):!1===e[0].status?Promise.reject(e[0].error?.message):e[0])};return{open:()=>{(e=>{let t,a=ev(t=>e.convertURL(t.value||t.url||"","src")),i=new Promise(t=>{var i=e=>{t(a(e).map(e=>v([[{text:"None",value:""}],e])))};let r=M(e);s(r)?fetch(r).then(e=>{e.ok&&e.json().then(i)}):u(r)?r(i):i(r)}),r=(t,a)=>{e.windowManager.alert(t,a)},l=(t=O(e),ev(eb)(t)),n=N(e),o=T(e),m=e.options.get("images_upload_url").length>0,c=g(e.options.get("images_upload_handler")),d=(e=>{let t=eg(e);return t?es(t=>ed(e,t),t):el()})(e),p=L(e),h=j(e),y=x(e),f=k(e),A=R(e),w=z(e),D=b.some(E(e)).filter(e=>s(e)&&e.length>0);return i.then(e=>({alertErr:r,image:d,imageList:e,classList:l,hasAdvTab:n,hasUploadTab:o,hasUploadUrl:m,hasUploadHandler:c,hasDescription:p,hasImageTitle:h,hasDimensions:y,hasImageCaption:f,prependURL:D,hasAccessibilityOptions:A,automaticUploads:w}))})(e).then(a=>{let i={prevImage:eA(a.imageList,a.image.src),prevAlt:a.image.alt,open:!0};return{title:"Insert/Edit Image",size:"normal",body:a.hasAdvTab||a.hasUploadUrl||a.hasUploadHandler?{type:"tabpanel",tabs:v([[{title:"General",name:"general",items:ew(a)}],a.hasAdvTab?[{title:"Advanced",name:"advanced",items:[{type:"grid",columns:2,items:[{type:"input",label:"Vertical space",name:"vspace",inputMode:"numeric"},{type:"input",label:"Horizontal space",name:"hspace",inputMode:"numeric"},{type:"input",label:"Border width",name:"border",inputMode:"numeric"},{type:"listbox",name:"borderstyle",label:"Border style",items:[{text:"Select...",value:""},{text:"Solid",value:"solid"},{text:"Dotted",value:"dotted"},{text:"Dashed",value:"dashed"},{text:"Double",value:"double"},{text:"Groove",value:"groove"},{text:"Ridge",value:"ridge"},{text:"Inset",value:"inset"},{text:"Outset",value:"outset"},{text:"None",value:"none"},{text:"Hidden",value:"hidden"}]}]}]}]:[],a.hasUploadTab&&(a.hasUploadUrl||a.hasUploadHandler)?[{title:"Upload",name:"upload",items:[{type:"dropzone",name:"fileinput",onInvalidFiles:()=>new Promise(e=>a.alertErr("Selected images do not have allowed extensions",e))}]}]:[]])}:{type:"panel",items:ew(a)},buttons:[{type:"cancel",name:"cancel",text:"Cancel"},{type:"submit",name:"save",text:"Save",primary:!0}],initialData:eD(a.image),onSubmit:i=>{let r=D(eD(a.image),i.getData()),l={...r,style:((e,t)=>{let a=document.createElement("img");return q(a,"style",t.style),(W(a)||""!==t.hspace)&&Y(a,t.hspace),($(a)||""!==t.vspace)&&ee(a,t.vspace),(V(a)||""!==t.border)&&et(a,t.border),(a.style.borderStyle||""!==t.borderStyle)&&ea(a,t.borderStyle),e(a.getAttribute("style")??"")})(t.normalizeCss,e_(r,!1))};e.execCommand("mceUpdateImage",!1,e_(l,a.hasAccessibilityOptions)),e.editorUpload.uploadImagesAuto(),i.close()},onChange:(e,r)=>{if("src"===r.name)eC(t,a,i,e);else if("images"===r.name){let r=e.getData(),l=eA(a.imageList,r.images);l.each(t=>{""===r.alt||i.prevImage.map(e=>e.text===r.alt).getOr(!1)?""===t.value?e.setData({src:t,alt:i.prevAlt}):e.setData({src:t,alt:t.text}):e.setData({src:t})}),i.prevImage=l,eC(t,a,i,e)}else if("alt"===r.name)i.prevAlt=e.getData().alt;else if("fileinput"===r.name){var l;let r=e.getData();e.block("Uploading image"),(l=r.fileinput,0<l.length?b.some(l[0]):b.none()).fold(()=>{e.unblock()},r=>{let l=URL.createObjectURL(r),s=()=>{e.unblock(),URL.revokeObjectURL(l)},n=r=>{e.setData({src:{value:r,meta:{}}}),e.showTab("general"),eC(t,a,i,e),e.focus("src")};new Promise((e,t)=>{let a=new FileReader;a.onload=()=>{e(a.result)},a.onerror=()=>{t(a.error?.message)},a.readAsDataURL(r)}).then(i=>{let o=t.createBlobCache(r,l,i);a.automaticUploads?t.uploadImage(o).then(e=>{n(e.url),s()}).catch(t=>{s(),a.alertErr(t,()=>{e.focus("fileinput")})}):(t.addToBlobCache(o),n(o.blobUri()),e.unblock())})})}else"isDecorative"===r.name&&e.setEnabled("alt",!e.getData().isDecorative)},onClose:()=>{i.open=!1}}}).then(e.windowManager.open)}}},eI=e=>{let t=e.attr("class");return g(t)&&/\bimage\b/.test(t)},eU=e=>t=>{let a=t.length,i=t=>{t.attr("contenteditable",e?"true":null)};for(;a--;){let r=t[a];eI(r)&&(r.attr("contenteditable",e?"false":null),eh.each(r.getAll("figcaption"),i))}},ex=e=>t=>{let a=()=>{t.setEnabled(e.selection.isEditable())};return e.on("NodeChange",a),a(),()=>{e.off("NodeChange",a)}};t.add("image",e=>{let t=e.options.register;t("image_dimensions",{processor:"boolean",default:!0}),t("image_advtab",{processor:"boolean",default:!1}),t("image_uploadtab",{processor:"boolean",default:!0}),t("image_prepend_url",{processor:"string",default:""}),t("image_class_list",{processor:"object[]"}),t("image_description",{processor:"boolean",default:!0}),t("image_title",{processor:"boolean",default:!1}),t("image_caption",{processor:"boolean",default:!1}),t("image_list",{processor:e=>{let t=!1===e||s(e)||((e,t)=>{if(m(e)){for(let a=0,i=e.length;a<i;++a)if(!t(e[a]))return!1;return!0}return!1})(e,n)||u(e);return t?{value:e,valid:t}:{valid:!1,message:"Must be false, a string, an array or a function."}},default:!1}),e.on("PreInit",()=>{e.parser.addNodeFilter("figure",eU(!0)),e.serializer.addNodeFilter("figure",eU(!1))}),e.ui.registry.addToggleButton("image",{icon:"image",tooltip:"Insert/edit image",onAction:eS(e).open,onSetup:t=>{t.setActive(g(eg(e)));let a=e.selection.selectorChangedWithUnbind("img:not([data-mce-object]):not([data-mce-placeholder]),figure.image",t.setActive).unbind,i=ex(e)(t);return()=>{a(),i()}}}),e.ui.registry.addMenuItem("image",{icon:"image",text:"Image...",onAction:eS(e).open,onSetup:ex(e)}),e.ui.registry.addContextMenu("image",{update:t=>e.selection.isEditable()&&(ei(t)||"IMG"===t.nodeName&&!F(t))?["image"]:[]}),e.addCommand("mceImage",eS(e).open),e.addCommand("mceUpdateImage",(t,a)=>{e.undoManager.transact(()=>((e,t)=>{let a=eg(e);if(a){let i={...es(t=>ed(e,t),a),...t},r=((e,t)=>{let a=t.src;return{...t,src:H(e,a)?a:""}})(e,i);if(i.src)((e,t)=>{let a=eg(e);if(a)if(ec(t=>ed(e,t),t,a),e.dom.setAttrib(a,"src",a.getAttribute("src")),ei(a.parentNode))e.dom.setStyle(a,"float",""),eu(e,a.parentNode),e.selection.select(a.parentNode);else{e.selection.select(a);let i=()=>{a.onload=a.onerror=null,e.selection&&(e.selection.select(a),e.nodeChanged())};a.onload=()=>{!t.width&&!t.height&&x(e)&&e.dom.setAttribs(a,{width:String(a.clientWidth),height:String(a.clientHeight)}),i()},a.onerror=i}})(e,r);else if(a){let t=e.dom.is(a.parentNode,"figure.image")?a.parentNode:a;e.dom.remove(t),e.focus(),e.nodeChanged(),e.dom.isEmpty(e.getBody())&&(e.setContent(""),e.selection.setCursorLocation())}}else t.src&&((e,t)=>{let a=((e,t)=>{let a=document.createElement("img");if(ec(e,{...t,caption:!1},a),eo(a,t.alt,t.isDecorative),!t.caption)return a;{let e=G.create("figure",{class:"image"});return e.appendChild(a),e.appendChild(G.create("figcaption",{contentEditable:"true"},"Caption")),e.contentEditable="false",e}})(t=>ed(e,t),t);e.dom.setAttrib(a,"data-mce-id","__mcenew"),e.focus(),e.insertContent(a.outerHTML);let i=e.dom.select('*[data-mce-id="__mcenew"]')[0];if(e.dom.setAttrib(i,"data-mce-id",null),ei(i)){let t=eu(e,i);e.selection.select(t)}else e.selection.select(i)})(e,{...el(),...t})})(e,a))})})}();
+/**
+ * TinyMCE version 8.8.2 (2026-07-27)
+ */
+
+(function () {
+    'use strict';
+
+    var global$4 = tinymce.util.Tools.resolve('tinymce.PluginManager');
+
+    /* eslint-disable @typescript-eslint/no-wrapper-object-types */
+    const getPrototypeOf = Object.getPrototypeOf;
+    const hasProto = (v, constructor, predicate) => {
+        if (predicate(v, constructor.prototype)) {
+            return true;
+        }
+        else {
+            // String-based fallback time
+            return v.constructor?.name === constructor.name;
+        }
+    };
+    const typeOf = (x) => {
+        const t = typeof x;
+        if (x === null) {
+            return 'null';
+        }
+        else if (t === 'object' && Array.isArray(x)) {
+            return 'array';
+        }
+        else if (t === 'object' && hasProto(x, String, (o, proto) => proto.isPrototypeOf(o))) {
+            return 'string';
+        }
+        else {
+            return t;
+        }
+    };
+    const isType = (type) => (value) => typeOf(value) === type;
+    const isSimpleType = (type) => (value) => typeof value === type;
+    const eq = (t) => (a) => t === a;
+    const is = (value, constructor) => isObject(value) && hasProto(value, constructor, (o, proto) => getPrototypeOf(o) === proto);
+    const isString = isType('string');
+    const isObject = isType('object');
+    const isPlainObject = (value) => is(value, Object);
+    const isArray = isType('array');
+    const isNull = eq(null);
+    const isBoolean = isSimpleType('boolean');
+    const isNullable = (a) => a === null || a === undefined;
+    const isNonNullable = (a) => !isNullable(a);
+    const isFunction = isSimpleType('function');
+    const isNumber = isSimpleType('number');
+    const isArrayOf = (value, pred) => {
+        if (isArray(value)) {
+            for (let i = 0, len = value.length; i < len; ++i) {
+                if (!(pred(value[i]))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    };
+
+    const noop = () => { };
+
+    /**
+     * The `Optional` type represents a value (of any type) that potentially does
+     * not exist. Any `Optional<T>` can either be a `Some<T>` (in which case the
+     * value does exist) or a `None` (in which case the value does not exist). This
+     * module defines a whole lot of FP-inspired utility functions for dealing with
+     * `Optional` objects.
+     *
+     * Comparison with null or undefined:
+     * - We don't get fancy null coalescing operators with `Optional`
+     * - We do get fancy helper functions with `Optional`
+     * - `Optional` support nesting, and allow for the type to still be nullable (or
+     * another `Optional`)
+     * - There is no option to turn off strict-optional-checks like there is for
+     * strict-null-checks
+     */
+    class Optional {
+        tag;
+        value;
+        // Sneaky optimisation: every instance of Optional.none is identical, so just
+        // reuse the same object
+        static singletonNone = new Optional(false);
+        // The internal representation has a `tag` and a `value`, but both are
+        // private: able to be console.logged, but not able to be accessed by code
+        constructor(tag, value) {
+            this.tag = tag;
+            this.value = value;
+        }
+        // --- Identities ---
+        /**
+         * Creates a new `Optional<T>` that **does** contain a value.
+         */
+        static some(value) {
+            return new Optional(true, value);
+        }
+        /**
+         * Create a new `Optional<T>` that **does not** contain a value. `T` can be
+         * any type because we don't actually have a `T`.
+         */
+        static none() {
+            return Optional.singletonNone;
+        }
+        /**
+         * Perform a transform on an `Optional` type. Regardless of whether this
+         * `Optional` contains a value or not, `fold` will return a value of type `U`.
+         * If this `Optional` does not contain a value, the `U` will be created by
+         * calling `onNone`. If this `Optional` does contain a value, the `U` will be
+         * created by calling `onSome`.
+         *
+         * For the FP enthusiasts in the room, this function:
+         * 1. Could be used to implement all of the functions below
+         * 2. Forms a catamorphism
+         */
+        fold(onNone, onSome) {
+            if (this.tag) {
+                return onSome(this.value);
+            }
+            else {
+                return onNone();
+            }
+        }
+        /**
+         * Determine if this `Optional` object contains a value.
+         */
+        isSome() {
+            return this.tag;
+        }
+        /**
+         * Determine if this `Optional` object **does not** contain a value.
+         */
+        isNone() {
+            return !this.tag;
+        }
+        // --- Functor (name stolen from Haskell / maths) ---
+        /**
+         * Perform a transform on an `Optional` object, **if** there is a value. If
+         * you provide a function to turn a T into a U, this is the function you use
+         * to turn an `Optional<T>` into an `Optional<U>`. If this **does** contain
+         * a value then the output will also contain a value (that value being the
+         * output of `mapper(this.value)`), and if this **does not** contain a value
+         * then neither will the output.
+         */
+        map(mapper) {
+            if (this.tag) {
+                return Optional.some(mapper(this.value));
+            }
+            else {
+                return Optional.none();
+            }
+        }
+        // --- Monad (name stolen from Haskell / maths) ---
+        /**
+         * Perform a transform on an `Optional` object, **if** there is a value.
+         * Unlike `map`, here the transform itself also returns an `Optional`.
+         */
+        bind(binder) {
+            if (this.tag) {
+                return binder(this.value);
+            }
+            else {
+                return Optional.none();
+            }
+        }
+        // --- Traversable (name stolen from Haskell / maths) ---
+        /**
+         * For a given predicate, this function finds out if there **exists** a value
+         * inside this `Optional` object that meets the predicate. In practice, this
+         * means that for `Optional`s that do not contain a value it returns false (as
+         * no predicate-meeting value exists).
+         */
+        exists(predicate) {
+            return this.tag && predicate(this.value);
+        }
+        /**
+         * For a given predicate, this function finds out if **all** the values inside
+         * this `Optional` object meet the predicate. In practice, this means that
+         * for `Optional`s that do not contain a value it returns true (as all 0
+         * objects do meet the predicate).
+         */
+        forall(predicate) {
+            return !this.tag || predicate(this.value);
+        }
+        filter(predicate) {
+            if (!this.tag || predicate(this.value)) {
+                return this;
+            }
+            else {
+                return Optional.none();
+            }
+        }
+        // --- Getters ---
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided `Optional` object does not contain a
+         * value.
+         */
+        getOr(replacement) {
+            return this.tag ? this.value : replacement;
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided `Optional` object does not contain a
+         * value.  Unlike `getOr`, in this method the `replacement` object is also
+         * `Optional` - meaning that this method will always return an `Optional`.
+         */
+        or(replacement) {
+            return this.tag ? this : replacement;
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided `Optional` object does not contain a
+         * value. Unlike `getOr`, in this method the `replacement` value is
+         * "thunked" - that is to say that you don't pass a value to `getOrThunk`, you
+         * pass a function which (if called) will **return** the `value` you want to
+         * use.
+         */
+        getOrThunk(thunk) {
+            return this.tag ? this.value : thunk();
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, using a default
+         * `replacement` value if the provided Optional object does not contain a
+         * value.
+         *
+         * Unlike `or`, in this method the `replacement` value is "thunked" - that is
+         * to say that you don't pass a value to `orThunk`, you pass a function which
+         * (if called) will **return** the `value` you want to use.
+         *
+         * Unlike `getOrThunk`, in this method the `replacement` value is also
+         * `Optional`, meaning that this method will always return an `Optional`.
+         */
+        orThunk(thunk) {
+            return this.tag ? this : thunk();
+        }
+        /**
+         * Get the value out of the inside of the `Optional` object, throwing an
+         * exception if the provided `Optional` object does not contain a value.
+         *
+         * WARNING:
+         * You should only be using this function if you know that the `Optional`
+         * object **is not** empty (otherwise you're throwing exceptions in production
+         * code, which is bad).
+         *
+         * In tests this is more acceptable.
+         *
+         * Prefer other methods to this, such as `.each`.
+         */
+        getOrDie(message) {
+            if (!this.tag) {
+                throw new Error(message ?? 'Called getOrDie on None');
+            }
+            else {
+                return this.value;
+            }
+        }
+        // --- Interop with null and undefined ---
+        /**
+         * Creates an `Optional` value from a nullable (or undefined-able) input.
+         * Null, or undefined, is converted to `None`, and anything else is converted
+         * to `Some`.
+         */
+        static from(value) {
+            return isNonNullable(value) ? Optional.some(value) : Optional.none();
+        }
+        /**
+         * Converts an `Optional` to a nullable type, by getting the value if it
+         * exists, or returning `null` if it does not.
+         */
+        getOrNull() {
+            return this.tag ? this.value : null;
+        }
+        /**
+         * Converts an `Optional` to an undefined-able type, by getting the value if
+         * it exists, or returning `undefined` if it does not.
+         */
+        getOrUndefined() {
+            return this.value;
+        }
+        // --- Utilities ---
+        /**
+         * If the `Optional` contains a value, perform an action on that value.
+         * Unlike the rest of the methods on this type, `.each` has side-effects. If
+         * you want to transform an `Optional<T>` **into** something, then this is not
+         * the method for you. If you want to use an `Optional<T>` to **do**
+         * something, then this is the method for you - provided you're okay with not
+         * doing anything in the case where the `Optional` doesn't have a value inside
+         * it. If you're not sure whether your use-case fits into transforming
+         * **into** something or **doing** something, check whether it has a return
+         * value. If it does, you should be performing a transform.
+         */
+        each(worker) {
+            if (this.tag) {
+                worker(this.value);
+            }
+        }
+        /**
+         * Turn the `Optional` object into an array that contains all of the values
+         * stored inside the `Optional`. In practice, this means the output will have
+         * either 0 or 1 elements.
+         */
+        toArray() {
+            return this.tag ? [this.value] : [];
+        }
+        /**
+         * Turn the `Optional` object into a string for debugging or printing. Not
+         * recommended for production code, but good for debugging. Also note that
+         * these days an `Optional` object can be logged to the console directly, and
+         * its inner value (if it exists) will be visible.
+         */
+        toString() {
+            return this.tag ? `some(${this.value})` : 'none()';
+        }
+    }
+
+    const nativeSlice = Array.prototype.slice;
+    const nativePush = Array.prototype.push;
+    const flatten = (xs) => {
+        // Note, this is possible because push supports multiple arguments:
+        // http://jsperf.com/concat-push/6
+        // Note that in the past, concat() would silently work (very slowly) for array-like objects.
+        // With this change it will throw an error.
+        const r = [];
+        for (let i = 0, len = xs.length; i < len; ++i) {
+            // Ensure that each value is an array itself
+            if (!isArray(xs[i])) {
+                throw new Error('Arr.flatten item ' + i + ' was not an array, input: ' + xs);
+            }
+            nativePush.apply(r, xs[i]);
+        }
+        return r;
+    };
+    const get = (xs, i) => i >= 0 && i < xs.length ? Optional.some(xs[i]) : Optional.none();
+    const head = (xs) => get(xs, 0);
+    isFunction(Array.from) ? Array.from : (x) => nativeSlice.call(x);
+    const findMap = (arr, f) => {
+        for (let i = 0; i < arr.length; i++) {
+            const r = f(arr[i], i);
+            if (r.isSome()) {
+                return r;
+            }
+        }
+        return Optional.none();
+    };
+
+    // There are many variations of Object iteration that are faster than the 'for-in' style:
+    // http://jsperf.com/object-keys-iteration/107
+    //
+    // Use the native keys if it is available (IE9+), otherwise fall back to manually filtering
+    const keys = Object.keys;
+    const hasOwnProperty = Object.hasOwnProperty;
+    const each = (obj, f) => {
+        const props = keys(obj);
+        for (let k = 0, len = props.length; k < len; k++) {
+            const i = props[k];
+            const x = obj[i];
+            f(x, i);
+        }
+    };
+    const objAcc = (r) => (x, i) => {
+        r[i] = x;
+    };
+    const internalFilter = (obj, pred, onTrue, onFalse) => {
+        each(obj, (x, i) => {
+            (pred(x, i) ? onTrue : onFalse)(x, i);
+        });
+    };
+    const filter = (obj, pred) => {
+        const t = {};
+        internalFilter(obj, pred, objAcc(t), noop);
+        return t;
+    };
+    const has = (obj, key) => hasOwnProperty.call(obj, key);
+    const hasNonNullableKey = (obj, key) => has(obj, key) && obj[key] !== undefined && obj[key] !== null;
+
+    const deep = (old, nu) => {
+        const bothObjects = isPlainObject(old) && isPlainObject(nu);
+        return bothObjects ? deepMerge(old, nu) : nu;
+    };
+    const baseMerge = (merger) => {
+        return (...objects) => {
+            if (objects.length === 0) {
+                throw new Error(`Can't merge zero objects`);
+            }
+            const ret = {};
+            for (let j = 0; j < objects.length; j++) {
+                const curObject = objects[j];
+                for (const key in curObject) {
+                    if (has(curObject, key)) {
+                        ret[key] = merger(ret[key], curObject[key]);
+                    }
+                }
+            }
+            return ret;
+        };
+    };
+    const deepMerge = baseMerge(deep);
+
+    const isNotEmpty = (s) => s.length > 0;
+
+    const fromHtml = (html, scope) => {
+        const doc = scope || document;
+        const div = doc.createElement('div');
+        div.innerHTML = html;
+        if (!div.hasChildNodes() || div.childNodes.length > 1) {
+            const message = 'HTML does not have a single root node';
+            // eslint-disable-next-line no-console
+            console.error(message, html);
+            throw new Error(message);
+        }
+        return fromDom(div.childNodes[0]);
+    };
+    const fromTag = (tag, scope) => {
+        const doc = scope || document;
+        const node = doc.createElement(tag);
+        return fromDom(node);
+    };
+    const fromText = (text, scope) => {
+        const doc = scope || document;
+        const node = doc.createTextNode(text);
+        return fromDom(node);
+    };
+    const fromDom = (node) => {
+        // TODO: Consider removing this check, but left atm for safety
+        if (node === null || node === undefined) {
+            throw new Error('Node cannot be null or undefined');
+        }
+        return {
+            dom: node
+        };
+    };
+    const fromPoint = (docElm, x, y) => Optional.from(docElm.dom.elementFromPoint(x, y)).map(fromDom);
+    // tslint:disable-next-line:variable-name
+    const SugarElement = {
+        fromHtml,
+        fromTag,
+        fromText,
+        fromDom,
+        fromPoint
+    };
+
+    const rawSet = (dom, key, value) => {
+        /*
+         * JQuery coerced everything to a string, and silently did nothing on text node/null/undefined.
+         *
+         * We fail on those invalid cases, only allowing numbers and booleans.
+         */
+        if (isString(value) || isBoolean(value) || isNumber(value)) {
+            dom.setAttribute(key, value + '');
+        }
+        else {
+            // eslint-disable-next-line no-console
+            console.error('Invalid call to Attribute.set. Key ', key, ':: Value ', value, ':: Element ', dom);
+            throw new Error('Attribute value was not simple');
+        }
+    };
+    const set = (element, key, value) => {
+        rawSet(element.dom, key, value);
+    };
+    const remove = (element, key) => {
+        element.dom.removeAttribute(key);
+    };
+
+    const getImageSize = (url) => new Promise((resolve, reject) => {
+        const img = document.createElement('img');
+        img.addEventListener('load', () => {
+            resolve({
+                width: img.naturalWidth,
+                height: img.naturalHeight
+            });
+        });
+        img.addEventListener('error', () => {
+            reject(`Failed to get image dimensions for: ${url}`);
+        });
+        img.src = url;
+    });
+
+    var global$3 = tinymce.util.Tools.resolve('tinymce.dom.DOMUtils');
+
+    var global$2 = tinymce.util.Tools.resolve('tinymce.util.URI');
+
+    const option = (name) => (editor) => editor.options.get(name);
+    const register$2 = (editor) => {
+        const registerOption = editor.options.register;
+        registerOption('image_dimensions', {
+            processor: 'boolean',
+            default: true
+        });
+        registerOption('image_advtab', {
+            processor: 'boolean',
+            default: false
+        });
+        registerOption('image_uploadtab', {
+            processor: 'boolean',
+            default: true
+        });
+        registerOption('image_prepend_url', {
+            processor: 'string',
+            default: ''
+        });
+        registerOption('image_class_list', {
+            processor: 'object[]'
+        });
+        registerOption('image_description', {
+            processor: 'boolean',
+            default: true
+        });
+        registerOption('image_title', {
+            processor: 'boolean',
+            default: false
+        });
+        registerOption('image_caption', {
+            processor: 'boolean',
+            default: false
+        });
+        registerOption('image_list', {
+            processor: (value) => {
+                const valid = value === false || isString(value) || isArrayOf(value, isObject) || isFunction(value);
+                return valid ? { value, valid } : { valid: false, message: 'Must be false, a string, an array or a function.' };
+            },
+            default: false
+        });
+    };
+    const hasDimensions = option('image_dimensions');
+    const hasAdvTab = option('image_advtab');
+    const hasUploadTab = option('image_uploadtab');
+    const getPrependUrl = option('image_prepend_url');
+    const getClassList = option('image_class_list');
+    const hasDescription = option('image_description');
+    const hasImageTitle = option('image_title');
+    const hasImageCaption = option('image_caption');
+    const getImageList = option('image_list');
+    const showAccessibilityOptions = option('a11y_advanced_options');
+    const isAutomaticUploadsEnabled = option('automatic_uploads');
+    const hasUploadUrl = (editor) => isNotEmpty(editor.options.get('images_upload_url'));
+    const hasUploadHandler = (editor) => isNonNullable(editor.options.get('images_upload_handler'));
+
+    const removePixelSuffix = (value) => {
+        if (value) {
+            value = value.replace(/px$/, '');
+        }
+        return value;
+    };
+    const addPixelSuffix = (value) => {
+        if (value.length > 0 && /^[0-9]+$/.test(value)) {
+            value += 'px';
+        }
+        return value;
+    };
+    const mergeMargins = (css) => {
+        if (css.margin) {
+            const splitMargin = String(css.margin).split(' ');
+            switch (splitMargin.length) {
+                case 1: // margin: toprightbottomleft;
+                    css['margin-top'] = css['margin-top'] || splitMargin[0];
+                    css['margin-right'] = css['margin-right'] || splitMargin[0];
+                    css['margin-bottom'] = css['margin-bottom'] || splitMargin[0];
+                    css['margin-left'] = css['margin-left'] || splitMargin[0];
+                    break;
+                case 2: // margin: topbottom rightleft;
+                    css['margin-top'] = css['margin-top'] || splitMargin[0];
+                    css['margin-right'] = css['margin-right'] || splitMargin[1];
+                    css['margin-bottom'] = css['margin-bottom'] || splitMargin[0];
+                    css['margin-left'] = css['margin-left'] || splitMargin[1];
+                    break;
+                case 3: // margin: top rightleft bottom;
+                    css['margin-top'] = css['margin-top'] || splitMargin[0];
+                    css['margin-right'] = css['margin-right'] || splitMargin[1];
+                    css['margin-bottom'] = css['margin-bottom'] || splitMargin[2];
+                    css['margin-left'] = css['margin-left'] || splitMargin[1];
+                    break;
+                case 4: // margin: top right bottom left;
+                    css['margin-top'] = css['margin-top'] || splitMargin[0];
+                    css['margin-right'] = css['margin-right'] || splitMargin[1];
+                    css['margin-bottom'] = css['margin-bottom'] || splitMargin[2];
+                    css['margin-left'] = css['margin-left'] || splitMargin[3];
+            }
+            delete css.margin;
+        }
+        return css;
+    };
+    // TODO: Input on this callback should really be validated
+    const createImageList = (editor, callback) => {
+        const imageList = getImageList(editor);
+        if (isString(imageList)) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            fetch(imageList)
+                .then((res) => {
+                if (res.ok) {
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                    res.json().then(callback);
+                }
+            });
+        }
+        else if (isFunction(imageList)) {
+            imageList(callback);
+        }
+        else {
+            callback(imageList);
+        }
+    };
+    const waitLoadImage = (editor, data, imgElm) => {
+        const selectImage = () => {
+            imgElm.onload = imgElm.onerror = null;
+            if (editor.selection) {
+                editor.selection.select(imgElm);
+                editor.nodeChanged();
+            }
+        };
+        imgElm.onload = () => {
+            if (!data.width && !data.height && hasDimensions(editor)) {
+                editor.dom.setAttribs(imgElm, {
+                    width: String(imgElm.clientWidth),
+                    height: String(imgElm.clientHeight)
+                });
+            }
+            selectImage();
+        };
+        imgElm.onerror = selectImage;
+    };
+    const blobToDataUri = (blob) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            resolve(reader.result);
+        };
+        reader.onerror = () => {
+            reject(reader.error?.message);
+        };
+        reader.readAsDataURL(blob);
+    });
+    const isPlaceholderImage = (imgElm) => imgElm.nodeName === 'IMG' && (imgElm.hasAttribute('data-mce-object') || imgElm.hasAttribute('data-mce-placeholder'));
+    const isSafeImageUrl = (editor, src) => {
+        const getOption = editor.options.get;
+        return global$2.isDomSafe(src, 'img', {
+            allow_html_data_urls: getOption('allow_html_data_urls'),
+            allow_script_urls: getOption('allow_script_urls'),
+            allow_svg_data_urls: getOption('allow_svg_data_urls')
+        });
+    };
+
+    const DOM = global$3.DOM;
+    const getHspace = (image) => {
+        if (image.style.marginLeft && image.style.marginRight && image.style.marginLeft === image.style.marginRight) {
+            return removePixelSuffix(image.style.marginLeft);
+        }
+        else {
+            return '';
+        }
+    };
+    const getVspace = (image) => {
+        if (image.style.marginTop && image.style.marginBottom && image.style.marginTop === image.style.marginBottom) {
+            return removePixelSuffix(image.style.marginTop);
+        }
+        else {
+            return '';
+        }
+    };
+    const getBorder = (image) => {
+        if (image.style.borderWidth) {
+            return removePixelSuffix(image.style.borderWidth);
+        }
+        else {
+            return '';
+        }
+    };
+    const getAttrib = (image, name) => {
+        if (image.hasAttribute(name)) {
+            return image.getAttribute(name) ?? '';
+        }
+        else {
+            return '';
+        }
+    };
+    const hasCaption = (image) => image.parentNode !== null && image.parentNode.nodeName === 'FIGURE';
+    const updateAttrib = (image, name, value) => {
+        if (value === '' || value === null) {
+            image.removeAttribute(name);
+        }
+        else {
+            image.setAttribute(name, value);
+        }
+    };
+    const wrapInFigure = (image) => {
+        const figureElm = DOM.create('figure', { class: 'image' });
+        DOM.insertAfter(figureElm, image);
+        figureElm.appendChild(image);
+        figureElm.appendChild(DOM.create('figcaption', { contentEditable: 'true' }, 'Caption'));
+        figureElm.contentEditable = 'false';
+    };
+    const removeFigure = (image) => {
+        const figureElm = image.parentNode;
+        if (isNonNullable(figureElm)) {
+            DOM.insertAfter(image, figureElm);
+            DOM.remove(figureElm);
+        }
+    };
+    const toggleCaption = (image) => {
+        if (hasCaption(image)) {
+            removeFigure(image);
+        }
+        else {
+            wrapInFigure(image);
+        }
+    };
+    const normalizeStyle = (image, normalizeCss) => {
+        const attrValue = image.getAttribute('style');
+        const value = normalizeCss(attrValue !== null ? attrValue : '');
+        if (value.length > 0) {
+            image.setAttribute('style', value);
+            image.setAttribute('data-mce-style', value);
+        }
+        else {
+            image.removeAttribute('style');
+        }
+    };
+    const setSize = (name, normalizeCss) => (image, name, value) => {
+        const styles = image.style;
+        if (styles[name]) {
+            styles[name] = addPixelSuffix(value);
+            normalizeStyle(image, normalizeCss);
+        }
+        else {
+            updateAttrib(image, name, value);
+        }
+    };
+    const getSize = (image, name) => {
+        if (image.style[name]) {
+            return removePixelSuffix(image.style[name]);
+        }
+        else {
+            return getAttrib(image, name);
+        }
+    };
+    const setHspace = (image, value) => {
+        const pxValue = addPixelSuffix(value);
+        image.style.marginLeft = pxValue;
+        image.style.marginRight = pxValue;
+    };
+    const setVspace = (image, value) => {
+        const pxValue = addPixelSuffix(value);
+        image.style.marginTop = pxValue;
+        image.style.marginBottom = pxValue;
+    };
+    const setBorder = (image, value) => {
+        const pxValue = addPixelSuffix(value);
+        image.style.borderWidth = pxValue;
+    };
+    const setBorderStyle = (image, value) => {
+        image.style.borderStyle = value;
+    };
+    const getBorderStyle = (image) => image.style.borderStyle ?? '';
+    const isFigure = (elm) => isNonNullable(elm) && elm.nodeName === 'FIGURE';
+    const isImage = (elm) => elm.nodeName === 'IMG';
+    const getIsDecorative = (image) => {
+        const alt = DOM.getAttrib(image, 'alt');
+        const role = DOM.getAttrib(image, 'role');
+        // WCAG Technique H67: Using null alt text and no title attribute on img elements for images that AT should ignore
+        // Source: https://www.w3.org/TR/WCAG20-TECHS/H67.html
+        // Key point: Decorative images should have alt="" and either no title or empty title (title="")
+        // ARIA 1.2 Specification: Defines role="presentation" and role="none" as synonymous roles
+        // Source: https://www.w3.org/TR/wai-aria-1.2/
+        // Key point: These roles remove semantic meaning and prohibit aria-label and aria-labelledby
+        const hasAlt = image.hasAttribute('alt');
+        return (hasAlt && alt.length === 0) || (role === 'presentation') || (role === 'none');
+    };
+    const getAlt = (image) => {
+        if (getIsDecorative(image)) {
+            return '';
+        }
+        else {
+            return getAttrib(image, 'alt');
+        }
+    };
+    const defaultData = () => ({
+        src: '',
+        alt: '',
+        title: '',
+        width: '',
+        height: '',
+        class: '',
+        style: '',
+        caption: false,
+        hspace: '',
+        vspace: '',
+        border: '',
+        borderStyle: '',
+        isDecorative: false
+    });
+    const getStyleValue = (normalizeCss, data) => {
+        const image = document.createElement('img');
+        updateAttrib(image, 'style', data.style);
+        if (getHspace(image) || data.hspace !== '') {
+            setHspace(image, data.hspace);
+        }
+        if (getVspace(image) || data.vspace !== '') {
+            setVspace(image, data.vspace);
+        }
+        if (getBorder(image) || data.border !== '') {
+            setBorder(image, data.border);
+        }
+        if (getBorderStyle(image) || data.borderStyle !== '') {
+            setBorderStyle(image, data.borderStyle);
+        }
+        return normalizeCss(image.getAttribute('style') ?? '');
+    };
+    const create = (normalizeCss, data) => {
+        const image = document.createElement('img');
+        write(normalizeCss, { ...data, caption: false }, image);
+        // Always set alt even if data.alt is an empty string
+        setAlt(image, data.alt, data.isDecorative);
+        if (data.caption) {
+            const figure = DOM.create('figure', { class: 'image' });
+            figure.appendChild(image);
+            figure.appendChild(DOM.create('figcaption', { contentEditable: 'true' }, 'Caption'));
+            figure.contentEditable = 'false';
+            return figure;
+        }
+        else {
+            return image;
+        }
+    };
+    const read = (normalizeCss, image) => ({
+        src: getAttrib(image, 'src'),
+        alt: getAlt(image),
+        title: getAttrib(image, 'title'),
+        width: getSize(image, 'width'),
+        height: getSize(image, 'height'),
+        class: getAttrib(image, 'class'),
+        style: normalizeCss(getAttrib(image, 'style')),
+        caption: hasCaption(image),
+        hspace: getHspace(image),
+        vspace: getVspace(image),
+        border: getBorder(image),
+        borderStyle: getBorderStyle(image),
+        isDecorative: getIsDecorative(image)
+    });
+    const updateProp = (image, oldData, newData, name, set) => {
+        if (newData[name] !== oldData[name]) {
+            set(image, name, String(newData[name]));
+        }
+    };
+    const setAlt = (image, alt, isDecorative) => {
+        if (isDecorative) {
+            DOM.setAttrib(image, 'role', 'presentation');
+            // unfortunately can't set "" attr value with domutils
+            const sugarImage = SugarElement.fromDom(image);
+            set(sugarImage, 'alt', '');
+        }
+        else {
+            if (isNull(alt)) {
+                const sugarImage = SugarElement.fromDom(image);
+                remove(sugarImage, 'alt');
+            }
+            else {
+                // unfortunately can't set "" attr value with domutils
+                const sugarImage = SugarElement.fromDom(image);
+                set(sugarImage, 'alt', alt);
+            }
+            if (DOM.getAttrib(image, 'role') === 'presentation') {
+                DOM.setAttrib(image, 'role', '');
+            }
+        }
+    };
+    const updateAlt = (image, oldData, newData) => {
+        if (newData.alt !== oldData.alt || newData.isDecorative !== oldData.isDecorative) {
+            setAlt(image, newData.alt, newData.isDecorative);
+        }
+    };
+    const normalized = (set, normalizeCss) => (image, name, value) => {
+        set(image, value);
+        normalizeStyle(image, normalizeCss);
+    };
+    const write = (normalizeCss, newData, image) => {
+        const oldData = read(normalizeCss, image);
+        updateProp(image, oldData, newData, 'caption', (image, _name, _value) => toggleCaption(image));
+        updateProp(image, oldData, newData, 'src', updateAttrib);
+        updateProp(image, oldData, newData, 'title', updateAttrib);
+        updateProp(image, oldData, newData, 'width', setSize('width', normalizeCss));
+        updateProp(image, oldData, newData, 'height', setSize('height', normalizeCss));
+        updateProp(image, oldData, newData, 'class', updateAttrib);
+        updateProp(image, oldData, newData, 'style', normalized((image, value) => updateAttrib(image, 'style', value), normalizeCss));
+        updateProp(image, oldData, newData, 'hspace', normalized(setHspace, normalizeCss));
+        updateProp(image, oldData, newData, 'vspace', normalized(setVspace, normalizeCss));
+        updateProp(image, oldData, newData, 'border', normalized(setBorder, normalizeCss));
+        updateProp(image, oldData, newData, 'borderStyle', normalized(setBorderStyle, normalizeCss));
+        updateAlt(image, oldData, newData);
+    };
+
+    const normalizeCss$1 = (editor, cssText) => {
+        const css = editor.dom.styles.parse(cssText);
+        const mergedCss = mergeMargins(css);
+        const compressed = editor.dom.styles.parse(editor.dom.styles.serialize(mergedCss));
+        return editor.dom.styles.serialize(compressed);
+    };
+    const getSelectedImage = (editor) => {
+        const imgElm = editor.selection.getNode();
+        const figureElm = editor.dom.getParent(imgElm, 'figure.image');
+        if (figureElm) {
+            return editor.dom.select('img', figureElm)[0];
+        }
+        if (imgElm && (imgElm.nodeName !== 'IMG' || isPlaceholderImage(imgElm))) {
+            return null;
+        }
+        return imgElm;
+    };
+    const splitTextBlock = (editor, figure) => {
+        const dom = editor.dom;
+        const textBlockElements = filter(editor.schema.getTextBlockElements(), (_, parentElm) => !editor.schema.isValidChild(parentElm, 'figure'));
+        const textBlock = dom.getParent(figure.parentNode, (node) => hasNonNullableKey(textBlockElements, node.nodeName), editor.getBody());
+        if (textBlock) {
+            return dom.split(textBlock, figure) ?? figure;
+        }
+        else {
+            return figure;
+        }
+    };
+    const readImageDataFromSelection = (editor) => {
+        const image = getSelectedImage(editor);
+        return image ? read((css) => normalizeCss$1(editor, css), image) : defaultData();
+    };
+    const insertImageAtCaret = (editor, data) => {
+        const elm = create((css) => normalizeCss$1(editor, css), data);
+        editor.dom.setAttrib(elm, 'data-mce-id', '__mcenew');
+        editor.focus();
+        editor.insertContent(elm.outerHTML);
+        const insertedElm = editor.dom.select('*[data-mce-id="__mcenew"]')[0];
+        editor.dom.setAttrib(insertedElm, 'data-mce-id', null);
+        if (isFigure(insertedElm)) {
+            const figure = splitTextBlock(editor, insertedElm);
+            editor.selection.select(figure);
+        }
+        else {
+            editor.selection.select(insertedElm);
+        }
+    };
+    const syncSrcAttr = (editor, image) => {
+        editor.dom.setAttrib(image, 'src', image.getAttribute('src'));
+    };
+    const deleteImage = (editor, image) => {
+        if (image) {
+            const elm = editor.dom.is(image.parentNode, 'figure.image') ? image.parentNode : image;
+            editor.dom.remove(elm);
+            editor.focus();
+            editor.nodeChanged();
+            if (editor.dom.isEmpty(editor.getBody())) {
+                editor.setContent('');
+                editor.selection.setCursorLocation();
+            }
+        }
+    };
+    const writeImageDataToSelection = (editor, data) => {
+        const image = getSelectedImage(editor);
+        if (image) {
+            write((css) => normalizeCss$1(editor, css), data, image);
+            syncSrcAttr(editor, image);
+            if (isFigure(image.parentNode)) {
+                editor.dom.setStyle(image, 'float', '');
+                const figure = image.parentNode;
+                splitTextBlock(editor, figure);
+                editor.selection.select(image.parentNode);
+            }
+            else {
+                editor.selection.select(image);
+                waitLoadImage(editor, data, image);
+            }
+        }
+    };
+    const sanitizeImageData = (editor, data) => {
+        // Sanitize the URL
+        const src = data.src;
+        return {
+            ...data,
+            src: isSafeImageUrl(editor, src) ? src : ''
+        };
+    };
+    const insertOrUpdateImage = (editor, partialData) => {
+        const image = getSelectedImage(editor);
+        if (image) {
+            const selectedImageData = read((css) => normalizeCss$1(editor, css), image);
+            const data = { ...selectedImageData, ...partialData };
+            const sanitizedData = sanitizeImageData(editor, data);
+            if (data.src) {
+                writeImageDataToSelection(editor, sanitizedData);
+            }
+            else {
+                deleteImage(editor, image);
+            }
+        }
+        else if (partialData.src) {
+            insertImageAtCaret(editor, { ...defaultData(), ...partialData });
+        }
+    };
+
+    var global$1 = tinymce.util.Tools.resolve('tinymce.util.ImageUploader');
+
+    var global = tinymce.util.Tools.resolve('tinymce.util.Tools');
+
+    const getValue = (item) => isString(item.value) ? item.value : '';
+    const getText = (item) => {
+        if (isString(item.text)) {
+            return item.text;
+        }
+        else if (isString(item.title)) {
+            return item.title;
+        }
+        else {
+            return '';
+        }
+    };
+    const sanitizeList = (list, extractValue) => {
+        const out = [];
+        global.each(list, (item) => {
+            const text = getText(item);
+            if (item.menu !== undefined) {
+                const items = sanitizeList(item.menu, extractValue);
+                out.push({ text, items }); // list group
+            }
+            else {
+                const value = extractValue(item);
+                out.push({ text, value }); // list value
+            }
+        });
+        return out;
+    };
+    const sanitizer = (extractor = getValue) => (list) => {
+        if (list) {
+            return Optional.from(list).map((list) => sanitizeList(list, extractor));
+        }
+        else {
+            return Optional.none();
+        }
+    };
+    const sanitize = (list) => sanitizer(getValue)(list);
+    const isGroup = (item) => has(item, 'items');
+    const findEntryDelegate = (list, value) => findMap(list, (item) => {
+        if (isGroup(item)) {
+            return findEntryDelegate(item.items, value);
+        }
+        else if (item.value === value) {
+            return Optional.some(item);
+        }
+        else {
+            return Optional.none();
+        }
+    });
+    const findEntry = (optList, value) => optList.bind((list) => findEntryDelegate(list, value));
+    const ListUtils = {
+        sanitizer,
+        sanitize,
+        findEntry
+    };
+
+    const makeTab$2 = (_info) => ({
+        title: 'Advanced',
+        name: 'advanced',
+        items: [
+            {
+                type: 'grid',
+                columns: 2,
+                items: [
+                    {
+                        type: 'input',
+                        label: 'Vertical space',
+                        name: 'vspace',
+                        inputMode: 'numeric'
+                    },
+                    {
+                        type: 'input',
+                        label: 'Horizontal space',
+                        name: 'hspace',
+                        inputMode: 'numeric'
+                    },
+                    {
+                        type: 'input',
+                        label: 'Border width',
+                        name: 'border',
+                        inputMode: 'numeric'
+                    },
+                    {
+                        type: 'listbox',
+                        name: 'borderstyle',
+                        label: 'Border style',
+                        items: [
+                            { text: 'Select...', value: '' },
+                            { text: 'Solid', value: 'solid' },
+                            { text: 'Dotted', value: 'dotted' },
+                            { text: 'Dashed', value: 'dashed' },
+                            { text: 'Double', value: 'double' },
+                            { text: 'Groove', value: 'groove' },
+                            { text: 'Ridge', value: 'ridge' },
+                            { text: 'Inset', value: 'inset' },
+                            { text: 'Outset', value: 'outset' },
+                            { text: 'None', value: 'none' },
+                            { text: 'Hidden', value: 'hidden' }
+                        ]
+                    }
+                ]
+            }
+        ]
+    });
+    const AdvTab = {
+        makeTab: makeTab$2
+    };
+
+    const collect = (editor) => {
+        const urlListSanitizer = ListUtils.sanitizer((item) => editor.convertURL(item.value || item.url || '', 'src'));
+        const futureImageList = new Promise((completer) => {
+            createImageList(editor, (imageList) => {
+                completer(urlListSanitizer(imageList).map((items) => flatten([
+                    [{ text: 'None', value: '' }],
+                    items
+                ])));
+            });
+        });
+        const alertErr = (message, callback) => {
+            editor.windowManager.alert(message, callback);
+        };
+        const classList = ListUtils.sanitize(getClassList(editor));
+        const hasAdvTab$1 = hasAdvTab(editor);
+        const hasUploadTab$1 = hasUploadTab(editor);
+        const hasUploadUrl$1 = hasUploadUrl(editor);
+        const hasUploadHandler$1 = hasUploadHandler(editor);
+        const image = readImageDataFromSelection(editor);
+        const hasDescription$1 = hasDescription(editor);
+        const hasImageTitle$1 = hasImageTitle(editor);
+        const hasDimensions$1 = hasDimensions(editor);
+        const hasImageCaption$1 = hasImageCaption(editor);
+        const hasAccessibilityOptions = showAccessibilityOptions(editor);
+        const automaticUploads = isAutomaticUploadsEnabled(editor);
+        const prependURL = Optional.some(getPrependUrl(editor)).filter((preUrl) => isString(preUrl) && preUrl.length > 0);
+        return futureImageList.then((imageList) => ({
+            alertErr,
+            image,
+            imageList,
+            classList,
+            hasAdvTab: hasAdvTab$1,
+            hasUploadTab: hasUploadTab$1,
+            hasUploadUrl: hasUploadUrl$1,
+            hasUploadHandler: hasUploadHandler$1,
+            hasDescription: hasDescription$1,
+            hasImageTitle: hasImageTitle$1,
+            hasDimensions: hasDimensions$1,
+            hasImageCaption: hasImageCaption$1,
+            prependURL,
+            hasAccessibilityOptions,
+            automaticUploads
+        }));
+    };
+
+    const makeItems = (info) => {
+        const imageUrl = {
+            name: 'src',
+            type: 'urlinput',
+            filetype: 'image',
+            label: 'Source',
+            picker_text: 'Browse files'
+        };
+        const imageList = info.imageList.map((items) => ({
+            name: 'images',
+            type: 'listbox',
+            label: 'Image list',
+            items
+        }));
+        const imageDescription = {
+            name: 'alt',
+            type: 'input',
+            label: 'Alternative description',
+            enabled: !(info.hasAccessibilityOptions && info.image.isDecorative)
+        };
+        const imageTitle = {
+            name: 'title',
+            type: 'input',
+            label: 'Image title'
+        };
+        const imageDimensions = {
+            name: 'dimensions',
+            type: 'sizeinput'
+        };
+        const isDecorative = {
+            type: 'label',
+            label: 'Accessibility',
+            items: [{
+                    name: 'isDecorative',
+                    type: 'checkbox',
+                    label: 'Image is decorative'
+                }]
+        };
+        // TODO: the original listbox supported styled items but bridge does not seem to support this
+        const classList = info.classList.map((items) => ({
+            name: 'classes',
+            type: 'listbox',
+            label: 'Class',
+            items
+        }));
+        const caption = {
+            type: 'label',
+            label: 'Caption',
+            items: [
+                {
+                    type: 'checkbox',
+                    name: 'caption',
+                    label: 'Show caption'
+                }
+            ]
+        };
+        const getDialogContainerType = (useColumns) => useColumns ? { type: 'grid', columns: 2 } : { type: 'panel' };
+        return flatten([
+            [imageUrl],
+            imageList.toArray(),
+            info.hasAccessibilityOptions && info.hasDescription ? [isDecorative] : [],
+            info.hasDescription ? [imageDescription] : [],
+            info.hasImageTitle ? [imageTitle] : [],
+            info.hasDimensions ? [imageDimensions] : [],
+            [{
+                    ...getDialogContainerType(info.classList.isSome() && info.hasImageCaption),
+                    items: flatten([
+                        classList.toArray(),
+                        info.hasImageCaption ? [caption] : []
+                    ])
+                }]
+        ]);
+    };
+    const makeTab$1 = (info) => ({
+        title: 'General',
+        name: 'general',
+        items: makeItems(info)
+    });
+    const MainTab = {
+        makeTab: makeTab$1,
+        makeItems
+    };
+
+    const makeTab = (_info, onInvalidFiles) => {
+        const items = [
+            {
+                type: 'dropzone',
+                name: 'fileinput',
+                onInvalidFiles
+            }
+        ];
+        return {
+            title: 'Upload',
+            name: 'upload',
+            items
+        };
+    };
+    const UploadTab = {
+        makeTab
+    };
+
+    const createState = (info) => ({
+        prevImage: ListUtils.findEntry(info.imageList, info.image.src),
+        prevAlt: info.image.alt,
+        open: true
+    });
+    const fromImageData = (image) => ({
+        src: {
+            value: image.src,
+            meta: {}
+        },
+        images: image.src,
+        alt: image.alt,
+        title: image.title,
+        dimensions: {
+            width: image.width,
+            height: image.height
+        },
+        classes: image.class,
+        caption: image.caption,
+        style: image.style,
+        vspace: image.vspace,
+        border: image.border,
+        hspace: image.hspace,
+        borderstyle: image.borderStyle,
+        fileinput: [],
+        isDecorative: image.isDecorative
+    });
+    const toImageData = (data, removeEmptyAlt) => ({
+        src: data.src.value,
+        alt: (data.alt === null || data.alt.length === 0) && removeEmptyAlt ? null : data.alt,
+        title: data.title,
+        width: data.dimensions.width,
+        height: data.dimensions.height,
+        class: data.classes,
+        style: data.style,
+        caption: data.caption,
+        hspace: data.hspace,
+        vspace: data.vspace,
+        border: data.border,
+        borderStyle: data.borderstyle,
+        isDecorative: data.isDecorative
+    });
+    const addPrependUrl2 = (info, srcURL) => {
+        // Add the prependURL
+        if (!/^(?:[a-zA-Z]+:)?\/\//.test(srcURL)) {
+            return info.prependURL.bind((prependUrl) => {
+                if (srcURL.substring(0, prependUrl.length) !== prependUrl) {
+                    return Optional.some(prependUrl + srcURL);
+                }
+                return Optional.none();
+            });
+        }
+        return Optional.none();
+    };
+    const addPrependUrl = (info, api) => {
+        const data = api.getData();
+        addPrependUrl2(info, data.src.value).each((srcURL) => {
+            api.setData({ src: { value: srcURL, meta: data.src.meta } });
+        });
+    };
+    const formFillFromMeta2 = (info, data, meta) => {
+        if (info.hasDescription && isString(meta.alt)) {
+            data.alt = meta.alt;
+        }
+        if (info.hasAccessibilityOptions) {
+            data.isDecorative = meta.isDecorative || data.isDecorative || false;
+        }
+        if (info.hasImageTitle && isString(meta.title)) {
+            data.title = meta.title;
+        }
+        if (info.hasDimensions) {
+            if (isString(meta.width)) {
+                data.dimensions.width = meta.width;
+            }
+            if (isString(meta.height)) {
+                data.dimensions.height = meta.height;
+            }
+        }
+        if (isString(meta.class)) {
+            ListUtils.findEntry(info.classList, meta.class).each((entry) => {
+                data.classes = entry.value;
+            });
+        }
+        if (info.hasImageCaption) {
+            if (isBoolean(meta.caption)) {
+                data.caption = meta.caption;
+            }
+        }
+        if (info.hasAdvTab) {
+            if (isString(meta.style)) {
+                data.style = meta.style;
+            }
+            if (isString(meta.vspace)) {
+                data.vspace = meta.vspace;
+            }
+            if (isString(meta.border)) {
+                data.border = meta.border;
+            }
+            if (isString(meta.hspace)) {
+                data.hspace = meta.hspace;
+            }
+            if (isString(meta.borderstyle)) {
+                data.borderstyle = meta.borderstyle;
+            }
+        }
+    };
+    const formFillFromMeta = (info, api) => {
+        const data = api.getData();
+        const meta = data.src.meta;
+        if (meta !== undefined) {
+            const newData = deepMerge({}, data);
+            formFillFromMeta2(info, newData, meta);
+            api.setData(newData);
+        }
+    };
+    const calculateImageSize = (helpers, info, state, api) => {
+        const data = api.getData();
+        const url = data.src.value;
+        const meta = data.src.meta || {};
+        if (!meta.width && !meta.height && info.hasDimensions) {
+            if (isNotEmpty(url)) {
+                helpers.imageSize(url)
+                    .then((size) => {
+                    if (state.open) {
+                        api.setData({ dimensions: size });
+                    }
+                })
+                    // eslint-disable-next-line no-console
+                    .catch((e) => console.error(e));
+            }
+            else {
+                api.setData({ dimensions: { width: '', height: '' } });
+            }
+        }
+    };
+    const updateImagesDropdown = (info, state, api) => {
+        const data = api.getData();
+        const image = ListUtils.findEntry(info.imageList, data.src.value);
+        state.prevImage = image;
+        api.setData({ images: image.map((entry) => entry.value).getOr('') });
+    };
+    const changeSrc = (helpers, info, state, api) => {
+        addPrependUrl(info, api);
+        formFillFromMeta(info, api);
+        calculateImageSize(helpers, info, state, api);
+        updateImagesDropdown(info, state, api);
+    };
+    const changeImages = (helpers, info, state, api) => {
+        const data = api.getData();
+        const image = ListUtils.findEntry(info.imageList, data.images);
+        image.each((img) => {
+            const updateAlt = data.alt === '' || state.prevImage.map((image) => image.text === data.alt).getOr(false);
+            if (updateAlt) {
+                if (img.value === '') {
+                    api.setData({ src: img, alt: state.prevAlt });
+                }
+                else {
+                    api.setData({ src: img, alt: img.text });
+                }
+            }
+            else {
+                api.setData({ src: img });
+            }
+        });
+        state.prevImage = image;
+        changeSrc(helpers, info, state, api);
+    };
+    const changeFileInput = (helpers, info, state, api) => {
+        const data = api.getData();
+        api.block('Uploading image'); // What msg do we pass to the lock?
+        head(data.fileinput)
+            .fold(() => {
+            api.unblock();
+        }, (file) => {
+            const blobUri = URL.createObjectURL(file);
+            const finalize = () => {
+                api.unblock();
+                URL.revokeObjectURL(blobUri);
+            };
+            const updateSrcAndSwitchTab = (url) => {
+                api.setData({ src: { value: url, meta: {} } });
+                api.showTab('general');
+                changeSrc(helpers, info, state, api);
+                api.focus('src');
+            };
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            blobToDataUri(file).then((dataUrl) => {
+                const blobInfo = helpers.createBlobCache(file, blobUri, dataUrl);
+                if (info.automaticUploads) {
+                    helpers.uploadImage(blobInfo).then((result) => {
+                        updateSrcAndSwitchTab(result.url);
+                        finalize();
+                    }).catch((err) => {
+                        finalize();
+                        info.alertErr(err, () => {
+                            api.focus('fileinput');
+                        });
+                    });
+                }
+                else {
+                    helpers.addToBlobCache(blobInfo);
+                    updateSrcAndSwitchTab(blobInfo.blobUri());
+                    api.unblock();
+                }
+            });
+        });
+    };
+    const changeHandler = (helpers, info, state) => (api, evt) => {
+        if (evt.name === 'src') {
+            changeSrc(helpers, info, state, api);
+        }
+        else if (evt.name === 'images') {
+            changeImages(helpers, info, state, api);
+        }
+        else if (evt.name === 'alt') {
+            state.prevAlt = api.getData().alt;
+        }
+        else if (evt.name === 'fileinput') {
+            changeFileInput(helpers, info, state, api);
+        }
+        else if (evt.name === 'isDecorative') {
+            api.setEnabled('alt', !api.getData().isDecorative);
+        }
+    };
+    const closeHandler = (state) => () => {
+        state.open = false;
+    };
+    const makeDialogBody = (info) => {
+        if (info.hasAdvTab || info.hasUploadUrl || info.hasUploadHandler) {
+            const tabPanel = {
+                type: 'tabpanel',
+                tabs: flatten([
+                    [MainTab.makeTab(info)],
+                    info.hasAdvTab ? [AdvTab.makeTab(info)] : [],
+                    info.hasUploadTab && (info.hasUploadUrl || info.hasUploadHandler) ? [UploadTab.makeTab(info, () => new Promise((r) => info.alertErr('Selected images do not have allowed extensions', r)))] : []
+                ])
+            };
+            return tabPanel;
+        }
+        else {
+            const panel = {
+                type: 'panel',
+                items: MainTab.makeItems(info)
+            };
+            return panel;
+        }
+    };
+    const submitHandler = (editor, info, helpers) => (api) => {
+        const data = deepMerge(fromImageData(info.image), api.getData());
+        // The data architecture relies on passing everything through the style field for validation.
+        // Since the style field was removed that process must be simulated on submit.
+        const finalData = {
+            ...data,
+            style: getStyleValue(helpers.normalizeCss, toImageData(data, false))
+        };
+        editor.execCommand('mceUpdateImage', false, toImageData(finalData, info.hasAccessibilityOptions));
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        editor.editorUpload.uploadImagesAuto();
+        api.close();
+    };
+    const imageSize = (editor) => (url) => {
+        // If the URL isn't safe then don't attempt to load it to get the sizes
+        if (!isSafeImageUrl(editor, url)) {
+            return Promise.resolve({ width: '', height: '' });
+        }
+        else {
+            return getImageSize(editor.documentBaseURI.toAbsolute(url)).then((dimensions) => ({
+                width: String(dimensions.width),
+                height: String(dimensions.height)
+            }));
+        }
+    };
+    const createBlobCache = (editor) => (file, blobUri, dataUrl) => editor.editorUpload.blobCache.create({
+        blob: file,
+        blobUri,
+        name: file.name?.replace(/\.[^\.]+$/, ''),
+        filename: file.name,
+        base64: dataUrl.split(',')[1]
+    });
+    const addToBlobCache = (editor) => (blobInfo) => {
+        editor.editorUpload.blobCache.add(blobInfo);
+    };
+    const normalizeCss = (editor) => (cssText) => normalizeCss$1(editor, cssText);
+    const parseStyle = (editor) => (cssText) => editor.dom.parseStyle(cssText);
+    const serializeStyle = (editor) => (stylesArg, name) => editor.dom.serializeStyle(stylesArg, name);
+    const uploadImage = (editor) => (blobInfo) => global$1(editor).upload([blobInfo], false).then((results) => {
+        if (results.length === 0) {
+            return Promise.reject('Failed to upload image');
+        }
+        else if (results[0].status === false) {
+            return Promise.reject(results[0].error?.message);
+        }
+        else {
+            return results[0];
+        }
+    });
+    const Dialog = (editor) => {
+        const helpers = {
+            imageSize: imageSize(editor),
+            addToBlobCache: addToBlobCache(editor),
+            createBlobCache: createBlobCache(editor),
+            normalizeCss: normalizeCss(editor),
+            parseStyle: parseStyle(editor),
+            serializeStyle: serializeStyle(editor),
+            uploadImage: uploadImage(editor)
+        };
+        const open = () => {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            collect(editor)
+                .then((info) => {
+                const state = createState(info);
+                return {
+                    title: 'Insert/Edit Image',
+                    size: 'normal',
+                    body: makeDialogBody(info),
+                    buttons: [
+                        {
+                            type: 'cancel',
+                            name: 'cancel',
+                            text: 'Cancel'
+                        },
+                        {
+                            type: 'submit',
+                            name: 'save',
+                            text: 'Save',
+                            primary: true
+                        }
+                    ],
+                    initialData: fromImageData(info.image),
+                    onSubmit: submitHandler(editor, info, helpers),
+                    onChange: changeHandler(helpers, info, state),
+                    onClose: closeHandler(state)
+                };
+            })
+                .then(editor.windowManager.open);
+        };
+        return {
+            open
+        };
+    };
+
+    const register$1 = (editor) => {
+        editor.addCommand('mceImage', Dialog(editor).open);
+        // TODO: This command is likely to be short lived we only need it until we expose the rtc model though a new api so it shouldn't be documented
+        // it's just a command since that is a convenient method for the rtc plugin to override the default dom mutation behaviour
+        editor.addCommand('mceUpdateImage', (_ui, data) => {
+            editor.undoManager.transact(() => insertOrUpdateImage(editor, data));
+        });
+    };
+
+    const hasImageClass = (node) => {
+        const className = node.attr('class');
+        return isNonNullable(className) && /\bimage\b/.test(className);
+    };
+    const toggleContentEditableState = (state) => (nodes) => {
+        let i = nodes.length;
+        const toggleContentEditable = (node) => {
+            node.attr('contenteditable', state ? 'true' : null);
+        };
+        while (i--) {
+            const node = nodes[i];
+            if (hasImageClass(node)) {
+                node.attr('contenteditable', state ? 'false' : null);
+                global.each(node.getAll('figcaption'), toggleContentEditable);
+            }
+        }
+    };
+    const setup = (editor) => {
+        editor.on('PreInit', () => {
+            editor.parser.addNodeFilter('figure', toggleContentEditableState(true));
+            editor.serializer.addNodeFilter('figure', toggleContentEditableState(false));
+        });
+    };
+
+    const onSetupEditable = (editor) => (api) => {
+        const nodeChanged = () => {
+            api.setEnabled(editor.selection.isEditable());
+        };
+        editor.on('NodeChange', nodeChanged);
+        nodeChanged();
+        return () => {
+            editor.off('NodeChange', nodeChanged);
+        };
+    };
+    const register = (editor) => {
+        editor.ui.registry.addToggleButton('image', {
+            icon: 'image',
+            tooltip: 'Insert/edit image',
+            onAction: Dialog(editor).open,
+            onSetup: (buttonApi) => {
+                // Set the initial state and then bind to selection changes to update the state when the selection changes
+                buttonApi.setActive(isNonNullable(getSelectedImage(editor)));
+                const unbindSelectorChanged = editor.selection.selectorChangedWithUnbind('img:not([data-mce-object]):not([data-mce-placeholder]),figure.image', buttonApi.setActive).unbind;
+                const unbindEditable = onSetupEditable(editor)(buttonApi);
+                return () => {
+                    unbindSelectorChanged();
+                    unbindEditable();
+                };
+            }
+        });
+        editor.ui.registry.addMenuItem('image', {
+            icon: 'image',
+            text: 'Image...',
+            onAction: Dialog(editor).open,
+            onSetup: onSetupEditable(editor)
+        });
+        editor.ui.registry.addContextMenu('image', {
+            update: (element) => editor.selection.isEditable() && (isFigure(element) || (isImage(element) && !isPlaceholderImage(element))) ? ['image'] : []
+        });
+    };
+
+    var Plugin = () => {
+        global$4.add('image', (editor) => {
+            register$2(editor);
+            setup(editor);
+            register(editor);
+            register$1(editor);
+        });
+    };
+
+    Plugin();
+    /** *****
+     * DO NOT EXPORT ANYTHING
+     *
+     * IF YOU DO ROLLUP WILL LEAVE A GLOBAL ON THE PAGE
+     *******/
+
+})();

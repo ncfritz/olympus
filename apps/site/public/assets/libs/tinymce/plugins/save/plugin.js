@@ -1,1 +1,136 @@
-!function(){"use strict";var e=tinymce.util.Tools.resolve("tinymce.PluginManager"),t=tinymce.util.Tools.resolve("tinymce.dom.DOMUtils"),n=tinymce.util.Tools.resolve("tinymce.util.Tools");let o=e=>t=>t.options.get(e),a=o("save_enablewhendirty"),i=o("save_onsavecallback"),c=o("save_oncancelcallback"),r=(e,t)=>{e.notificationManager.open({text:t,type:"error"})},l=e=>t=>{let n=()=>{t.setEnabled(!a(e)||e.isDirty())};return n(),e.on("NodeChange dirty",n),()=>e.off("NodeChange dirty",n)};e.add("save",e=>{let o=e.options.register;o("save_enablewhendirty",{processor:"boolean",default:!0}),o("save_onsavecallback",{processor:"function"}),o("save_oncancelcallback",{processor:"function"}),e.ui.registry.addButton("save",{icon:"save",tooltip:"Save",enabled:!1,onAction:()=>e.execCommand("mceSave"),onSetup:l(e),shortcut:"Meta+S"}),e.ui.registry.addButton("cancel",{icon:"cancel",tooltip:"Cancel",enabled:!1,onAction:()=>e.execCommand("mceCancel"),onSetup:l(e)}),e.addShortcut("Meta+S","","mceSave"),e.addCommand("mceSave",()=>{(e=>{let n=t.DOM.getParent(e.id,"form");if(a(e)&&!e.isDirty())return;e.save();let o=i(e);if("function"==typeof o){o.call(e,e),e.nodeChanged();return}n?(e.setDirty(!1),(!n.onsubmit||n.onsubmit())&&("function"==typeof n.submit?n.submit():r(e,"Error: Form submit field collision.")),e.nodeChanged()):r(e,"Error: No form element found.")})(e)}),e.addCommand("mceCancel",()=>{(e=>{let t=n.trim(e.startContent),o=c(e);if("function"==typeof o)return o.call(e,e);e.resetContent(t)})(e)})})}();
+/**
+ * TinyMCE version 8.8.2 (2026-07-27)
+ */
+
+(function () {
+    'use strict';
+
+    var global$2 = tinymce.util.Tools.resolve('tinymce.PluginManager');
+
+    /* eslint-disable @typescript-eslint/no-wrapper-object-types */
+    const isSimpleType = (type) => (value) => typeof value === type;
+    const isFunction = isSimpleType('function');
+
+    var global$1 = tinymce.util.Tools.resolve('tinymce.dom.DOMUtils');
+
+    var global = tinymce.util.Tools.resolve('tinymce.util.Tools');
+
+    const option = (name) => (editor) => editor.options.get(name);
+    const register$2 = (editor) => {
+        const registerOption = editor.options.register;
+        registerOption('save_enablewhendirty', {
+            processor: 'boolean',
+            default: true
+        });
+        registerOption('save_onsavecallback', {
+            processor: 'function'
+        });
+        registerOption('save_oncancelcallback', {
+            processor: 'function'
+        });
+    };
+    const enableWhenDirty = option('save_enablewhendirty');
+    const getOnSaveCallback = option('save_onsavecallback');
+    const getOnCancelCallback = option('save_oncancelcallback');
+
+    const displayErrorMessage = (editor, message) => {
+        editor.notificationManager.open({
+            text: message,
+            type: 'error'
+        });
+    };
+    const save = (editor) => {
+        const formObj = global$1.DOM.getParent(editor.id, 'form');
+        if (enableWhenDirty(editor) && !editor.isDirty()) {
+            return;
+        }
+        editor.save();
+        // Use callback instead
+        const onSaveCallback = getOnSaveCallback(editor);
+        if (isFunction(onSaveCallback)) {
+            onSaveCallback.call(editor, editor);
+            editor.nodeChanged();
+            return;
+        }
+        if (formObj) {
+            editor.setDirty(false);
+            // TODO: TINY-6105 this is probably broken, as an event should be passed to `onsubmit`
+            // so we need to investigate this at some point
+            if (!formObj.onsubmit || formObj.onsubmit()) {
+                if (typeof formObj.submit === 'function') {
+                    formObj.submit();
+                }
+                else {
+                    displayErrorMessage(editor, 'Error: Form submit field collision.');
+                }
+            }
+            editor.nodeChanged();
+        }
+        else {
+            displayErrorMessage(editor, 'Error: No form element found.');
+        }
+    };
+    const cancel = (editor) => {
+        const h = global.trim(editor.startContent);
+        // Use callback instead
+        const onCancelCallback = getOnCancelCallback(editor);
+        if (isFunction(onCancelCallback)) {
+            onCancelCallback.call(editor, editor);
+            return;
+        }
+        // Reset the editor content back to the initial state
+        editor.resetContent(h);
+    };
+
+    const register$1 = (editor) => {
+        editor.addCommand('mceSave', () => {
+            save(editor);
+        });
+        editor.addCommand('mceCancel', () => {
+            cancel(editor);
+        });
+    };
+
+    const stateToggle = (editor) => (api) => {
+        const handler = () => {
+            api.setEnabled(!enableWhenDirty(editor) || editor.isDirty());
+        };
+        handler();
+        editor.on('NodeChange dirty', handler);
+        return () => editor.off('NodeChange dirty', handler);
+    };
+    const register = (editor) => {
+        editor.ui.registry.addButton('save', {
+            icon: 'save',
+            tooltip: 'Save',
+            enabled: false,
+            onAction: () => editor.execCommand('mceSave'),
+            onSetup: stateToggle(editor),
+            shortcut: 'Meta+S'
+        });
+        editor.ui.registry.addButton('cancel', {
+            icon: 'cancel',
+            tooltip: 'Cancel',
+            enabled: false,
+            onAction: () => editor.execCommand('mceCancel'),
+            onSetup: stateToggle(editor)
+        });
+        editor.addShortcut('Meta+S', '', 'mceSave');
+    };
+
+    var Plugin = () => {
+        global$2.add('save', (editor) => {
+            register$2(editor);
+            register(editor);
+            register$1(editor);
+        });
+    };
+
+    Plugin();
+    /** *****
+     * DO NOT EXPORT ANYTHING
+     *
+     * IF YOU DO ROLLUP WILL LEAVE A GLOBAL ON THE PAGE
+     *******/
+
+})();
