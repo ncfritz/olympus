@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Categorical fields (sensitivity, importance, occurrenceType, type, response,
+// status) are plain strings validated at the application boundary rather than
+// native Prisma enums, so this schema works unmodified when the `provider`
+// above is later switched to "postgresql" (SQLite has no native enum type).
+model Event {
+  id             String   @id
+  source         String
+  uid            String
+  subject        String
+  sensitivity    String
+  importance     String
+  occurrenceType String
+  type           String
+  reminder       Boolean
+  response       String
+  startTime      DateTime
+  endTime        DateTime
+  duration       Int
+  allDay         Boolean
+  status         String
+  location       String?
+  cancelled      Boolean  @default(false)
+  organizerEmail String?
+  deleted        Boolean  @default(false)
+  recurrenceId   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([source, uid], name: "source_uid")
+  @@index([source, deleted])
+}
+
+// Per-calendar incremental sync cursor + push-channel bookkeeping.
+model SyncState {
+  calendarId        String    @id
+  syncToken         String?
+  channelId         String?
+  resourceId        String?
+  channelExpiration DateTime?
+  updatedAt         DateTime  @updatedAt
+}

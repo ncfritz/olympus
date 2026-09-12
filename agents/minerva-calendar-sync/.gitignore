@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.next/
+.turbo/
+*.log
+.env
+.env.local
+*.sqlite
+*.sqlite-journal
+apps/api/prisma/*.db
+apps/api/prisma/*.db-journal
+.DS_Store
