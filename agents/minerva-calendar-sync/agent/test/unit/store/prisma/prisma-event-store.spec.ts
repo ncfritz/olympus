@@ -2,11 +2,11 @@ import { execSync } from "child_process";
 import { mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { CanonicalCalendarEvent } from "../../domain/canonical-event";
-import { PrismaEventStore } from "./prisma-event-store";
-import { PrismaService } from "./prisma.service";
+import { CanonicalCalendarEvent } from "../../../../src/domain/canonical-event";
+import { PrismaEventStore } from "../../../../src/store/prisma/prisma-event-store";
+import { PrismaService } from "../../../../src/store/prisma/prisma.service";
 
-const API_ROOT = join(__dirname, "..", "..", "..");
+const API_ROOT = join(__dirname, "..", "..", "..", "..");
 
 function fixtureEvent(overrides: Partial<CanonicalCalendarEvent> = {}): CanonicalCalendarEvent {
   const uid = overrides.uid ?? "uid-1";
