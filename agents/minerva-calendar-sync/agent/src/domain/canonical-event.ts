@@ -38,7 +38,7 @@ export type FreeBusyStatus = (typeof FREE_BUSY_STATUS_VALUES)[number];
  * implementation. Field numbering in comments matches the original spec.
  */
 export interface CanonicalCalendarEvent {
-  /** 1. Stable internal id — uuid v5 of `${source}:${uid}`. */
+  /** 1. Stable internal id — see `buildCanonicalEventId`. */
   id: string;
   /** 2. */
   subject: string;
@@ -78,6 +78,11 @@ export interface CanonicalCalendarEvent {
   recurrenceId: string | null;
   /** 19. The configured calendar/account label this event came from. */
   source: string;
+}
+
+/** `source` and `uid` already guarantee uniqueness, so the id is just their composite — no hash needed. */
+export function buildCanonicalEventId(source: string, uid: string): string {
+  return `${source}:${uid}`;
 }
 
 export interface EventFilter {

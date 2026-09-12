@@ -9,4 +9,5 @@ dist/
 *.sqlite-journal
 apps/api/prisma/*.db
 apps/api/prisma/*.db-journal
+apps/api/.credentials/
 .DS_Store
