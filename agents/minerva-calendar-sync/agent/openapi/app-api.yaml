@@ -16,6 +16,10 @@ paths:
       responses:
         '200':
           description: The currently authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUserDto'
       security:
         - bearer: []
       tags:
@@ -33,6 +37,10 @@ paths:
       responses:
         '200':
           description: A fresh access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenDto'
       tags:
         - auth
   /auth/logout:
@@ -194,6 +202,13 @@ components:
       bearerFormat: JWT
       type: http
   schemas:
+    CurrentUserDto:
+      type: object
+      properties:
+        email:
+          type: string
+      required:
+        - email
     RefreshDto:
       type: object
       properties:
@@ -201,6 +216,13 @@ components:
           type: string
       required:
         - refreshToken
+    AccessTokenDto:
+      type: object
+      properties:
+        accessToken:
+          type: string
+      required:
+        - accessToken
     EventResponseDto:
       type: object
       properties:

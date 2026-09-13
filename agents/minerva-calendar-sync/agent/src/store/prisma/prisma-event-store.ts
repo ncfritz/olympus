@@ -63,7 +63,10 @@ export class PrismaEventStore implements EventStore {
 
     const rows = await this.prisma.event.findMany({
       where,
-      orderBy: { startTime: "asc" },
+      // Most recent/upcoming first: with years of history on a real
+      // calendar, an ascending default combined with `limit` would silently
+      // bury anything recent under old events instead of ever reaching them.
+      orderBy: { startTime: "desc" },
       take: filter.limit ?? 100,
       ...(filter.cursor ? { skip: 1, cursor: { id: filter.cursor } } : {}),
     });

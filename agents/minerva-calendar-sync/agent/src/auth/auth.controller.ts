@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, ForbiddenException, Get, HttpCode, Param, Post, Req, Res } from "@nestjs/common";
+import { BadRequestException, Body, Controller, ForbiddenException, Get, HttpCode, Param, Post, Query, Req, Res } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ApiBearerAuth, ApiExcludeEndpoint, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { Request, Response } from "express";
@@ -7,10 +7,13 @@ import { AuthTokenService } from "./auth-token.service";
 import { AuthUser } from "./auth-user";
 import { ACCESS_TOKEN_COOKIE, OIDC_TXN_COOKIE } from "./auth.constants";
 import { CurrentUser } from "./current-user.decorator";
+import { AccessTokenDto } from "./dto/access-token.dto";
+import { CurrentUserDto } from "./dto/current-user.dto";
 import { RefreshDto } from "./dto/refresh.dto";
 import { OidcProviderRegistry } from "./oidc-provider-registry";
 import { loadOpenIdClient } from "./openid-client-loader";
 import { Public } from "./public.decorator";
+import { sanitizeReturnTo } from "./sanitize-return-to";
 
 const OIDC_TXN_COOKIE_TTL_MS = 5 * 60 * 1000;
 const ACCESS_TOKEN_COOKIE_TTL_MS = 60 * 60 * 1000;
@@ -20,12 +23,15 @@ interface OidcTransaction {
   state: string;
   nonce: string;
   codeVerifier: string;
+  /** Where to redirect the browser after a successful login. Absent for non-browser (Bearer) callers, which get the tokens as JSON instead. */
+  returnTo?: string;
 }
 
 @ApiTags("auth")
 @Controller("auth")
 export class AuthController {
   private readonly baseUrl: string;
+  private readonly webAppUrl?: string;
 
   constructor(
     private readonly providers: OidcProviderRegistry,
@@ -34,12 +40,17 @@ export class AuthController {
     config: ConfigService,
   ) {
     this.baseUrl = config.get<string>("AUTH_BASE_URL") ?? "http://localhost:3000";
+    this.webAppUrl = config.get<string>("WEB_APP_URL");
   }
 
   @Public()
   @Get("login/:provider")
   @ApiExcludeEndpoint() // a redirect, not a JSON API response — not meaningful in the OpenAPI doc
-  async login(@Param("provider") providerName: string, @Res() res: Response): Promise<void> {
+  async login(
+    @Param("provider") providerName: string,
+    @Query("returnTo") returnTo: string | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
     const client = await loadOpenIdClient();
     const oidcConfig = await this.providers.getOidcConfig(providerName);
 
@@ -57,7 +68,13 @@ export class AuthController {
       nonce,
     });
 
-    const txn: OidcTransaction = { provider: providerName, state, nonce, codeVerifier };
+    const txn: OidcTransaction = {
+      provider: providerName,
+      state,
+      nonce,
+      codeVerifier,
+      returnTo: sanitizeReturnTo(returnTo, this.webAppUrl),
+    };
     res.cookie(OIDC_TXN_COOKIE, JSON.stringify(txn), {
       httpOnly: true,
       sameSite: "lax",
@@ -104,12 +121,20 @@ export class AuthController {
       secure: req.secure,
       maxAge: ACCESS_TOKEN_COOKIE_TTL_MS,
     });
+
+    // Browser-based web login: the cookie above is all the web app needs —
+    // redirect back into it rather than showing raw JSON. Non-browser
+    // callers (no returnTo) get the tokens directly, e.g. for Bearer use.
+    if (txn.returnTo) {
+      res.redirect(txn.returnTo);
+      return;
+    }
     res.json({ accessToken, refreshToken, tokenType: "Bearer" });
   }
 
   @Get("me")
   @ApiBearerAuth()
-  @ApiOkResponse({ description: "The currently authenticated user" })
+  @ApiOkResponse({ type: CurrentUserDto, description: "The currently authenticated user" })
   me(@CurrentUser() user: AuthUser): AuthUser {
     return user;
   }
@@ -117,7 +142,7 @@ export class AuthController {
   @Public()
   @Post("refresh")
   @HttpCode(200)
-  @ApiOkResponse({ description: "A fresh access token" })
+  @ApiOkResponse({ type: AccessTokenDto, description: "A fresh access token" })
   refresh(@Body() body: RefreshDto): { accessToken: string } {
     const email = this.tokens.verifyRefreshToken(body.refreshToken);
     if (!this.allowlist.isAllowed(email)) {

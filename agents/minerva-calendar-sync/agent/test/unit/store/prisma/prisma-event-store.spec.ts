@@ -119,6 +119,15 @@ describe("PrismaEventStore", () => {
     expect(cancelledOnly.map((e) => e.uid)).toEqual(["uid-b"]);
   });
 
+  it("orders listEvents by most recent/upcoming first, so a capped limit doesn't bury recent events under old history", async () => {
+    await store.upsertEvent(fixtureEvent({ uid: "old", startTime: "2009-01-01T00:00:00.000Z" }));
+    await store.upsertEvent(fixtureEvent({ uid: "recent", startTime: "2026-01-01T00:00:00.000Z" }));
+    await store.upsertEvent(fixtureEvent({ uid: "middle", startTime: "2018-01-01T00:00:00.000Z" }));
+
+    const capped = await store.listEvents({ source: "personal-gmail", limit: 2 });
+    expect(capped.map((e) => e.uid)).toEqual(["recent", "middle"]);
+  });
+
   it("round-trips sync state", async () => {
     const calendarId = "primary";
     expect(await store.getSyncState(calendarId)).toBeNull();
