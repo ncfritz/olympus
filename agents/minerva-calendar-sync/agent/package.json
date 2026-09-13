@@ -21,7 +21,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "google:auth": "ts-node -r tsconfig-paths/register scripts/google-oauth-setup.ts",
-    "google:verify": "ts-node -r tsconfig-paths/register scripts/google-verify-sync.ts"
+    "google:verify": "ts-node -r tsconfig-paths/register scripts/google-verify-sync.ts",
+    "openapi:generate": "ts-node -r tsconfig-paths/register scripts/generate-openapi.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.3",
@@ -49,6 +50,8 @@
     "@types/supertest": "^7.2.1",
     "eslint": "^10.10.0",
     "dotenv": "^17.4.2",
+    "js-yaml": "^5.4.2",
+    "@types/js-yaml": "^4.0.9",
     "eslint-config-prettier": "^10.1.8",
     "jest": "^30.5.1",
     "prettier": "^3.9.6",

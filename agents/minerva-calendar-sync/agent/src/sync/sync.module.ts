@@ -10,6 +10,6 @@ import { SyncEngine } from "./sync-engine";
 @Module({
   imports: [ScheduleModule.forRoot(), StoreModule],
   providers: [SyncEngine, SyncConfigService, CalendarProviderRegistry, PollingNotifier, SyncBootstrapService],
-  exports: [SyncEngine],
+  exports: [SyncEngine, SyncConfigService],
 })
 export class SyncModule {}

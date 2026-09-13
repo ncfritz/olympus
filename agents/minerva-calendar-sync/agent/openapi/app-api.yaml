@@ -1,0 +1,267 @@
+openapi: 3.0.0
+paths:
+  /:
+    get:
+      operationId: AppController_getHello
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - App
+  /events:
+    get:
+      operationId: EventsController_list
+      parameters:
+        - name: source
+          required: false
+          in: query
+          description: Filter to events from this configured calendar's source label
+          schema:
+            type: string
+        - name: startsAfter
+          required: false
+          in: query
+          description: ISO-8601 — only events starting at or after this instant
+          schema:
+            type: string
+        - name: startsBefore
+          required: false
+          in: query
+          description: ISO-8601 — only events starting at or before this instant
+          schema:
+            type: string
+        - name: cancelled
+          required: false
+          in: query
+          schema:
+            type: boolean
+        - name: deleted
+          required: false
+          in: query
+          schema:
+            type: boolean
+        - name: occurrenceType
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - single
+              - occurrence
+              - series_master
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 1000
+            default: 100
+            type: number
+        - name: cursor
+          required: false
+          in: query
+          description: Internal event id to page from (exclusive)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventResponseDto'
+      tags:
+        - events
+  /events/{source}/{uid}:
+    get:
+      operationId: EventsController_getOne
+      parameters:
+        - name: source
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: uid
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponseDto'
+        '404':
+          description: No event for that source/uid
+      tags:
+        - events
+  /calendars:
+    get:
+      operationId: CalendarsController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CalendarStatusDto'
+      tags:
+        - calendars
+  /calendars/{calendarId}/sync:
+    post:
+      operationId: CalendarsController_triggerSync
+      parameters:
+        - name: calendarId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Sync triggered — runs in the background
+        '404':
+          description: No configured calendar with that id
+      tags:
+        - calendars
+info:
+  title: Minerva Calendar Sync API
+  description: Read API over synchronized calendar events and calendar sync status.
+  version: 0.1.0
+  contact: {}
+tags:
+  - name: events
+    description: ''
+  - name: calendars
+    description: ''
+servers: []
+components:
+  schemas:
+    EventResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        subject:
+          type: string
+        sensitivity:
+          type: string
+          enum:
+            - normal
+            - personal
+            - private
+            - confidential
+        importance:
+          type: string
+          enum:
+            - low
+            - normal
+            - high
+        occurrenceType:
+          type: string
+          enum:
+            - single
+            - occurrence
+            - series_master
+        type:
+          type: string
+          enum:
+            - appointment
+            - meeting
+            - other
+        reminder:
+          type: boolean
+        response:
+          type: string
+          enum:
+            - organizer
+            - accepted
+            - declined
+            - tentative
+            - needs_action
+        startTime:
+          type: string
+          description: ISO-8601
+        endTime:
+          type: string
+          description: ISO-8601
+        duration:
+          type: number
+          description: Minutes
+        allDay:
+          type: boolean
+        status:
+          type: string
+          enum:
+            - free
+            - busy
+            - tentative
+            - out_of_office
+            - working_elsewhere
+        location:
+          type: string
+          nullable: true
+        cancelled:
+          type: boolean
+        organizerEmail:
+          type: string
+          nullable: true
+        deleted:
+          type: boolean
+          description: Soft-delete flag
+        uid:
+          type: string
+        recurrenceId:
+          type: string
+          nullable: true
+        source:
+          type: string
+      required:
+        - id
+        - subject
+        - sensitivity
+        - importance
+        - occurrenceType
+        - type
+        - reminder
+        - response
+        - startTime
+        - endTime
+        - duration
+        - allDay
+        - status
+        - cancelled
+        - deleted
+        - uid
+        - source
+    CalendarStatusDto:
+      type: object
+      properties:
+        provider:
+          type: string
+          description: Which CalendarProvider implementation this calendar uses
+        accountLabel:
+          type: string
+          description: Which stored OAuth credential this calendar authorizes with
+        calendarId:
+          type: string
+          description: The provider's own calendar id
+        source:
+          type: string
+          description: The source label written onto this calendar's event rows
+        synced:
+          type: boolean
+          description: True once at least one full sync has completed
+      required:
+        - provider
+        - accountLabel
+        - calendarId
+        - source
+        - synced
