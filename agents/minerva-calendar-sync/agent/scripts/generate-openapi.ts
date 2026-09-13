@@ -17,11 +17,14 @@ import { buildOpenApiDocument } from "../src/openapi";
 const OUTPUT_PATH = join(__dirname, "..", "..", "..", "openapi", "app-api.yaml");
 
 async function main(): Promise<void> {
-  // SYNCED_CALENDARS must not drive any real syncing here — this script
-  // only introspects controller/DTO metadata, so an empty config keeps it
-  // from touching live Google credentials at all (same reasoning as the
-  // e2e test's env-setup).
+  // SYNCED_CALENDARS/AUTH_OIDC_PROVIDERS must not drive any real syncing or
+  // login here — this script only introspects controller/DTO metadata, so
+  // empty config keeps it from touching live credentials at all (same
+  // reasoning as the e2e test's env-setup). AUTH_JWT_SECRET only needs to be
+  // *set* — AuthModule requires it at boot, but no token is ever issued here.
   process.env.SYNCED_CALENDARS = "[]";
+  process.env.AUTH_OIDC_PROVIDERS ??= "[]";
+  process.env.AUTH_JWT_SECRET ??= "openapi-generation-placeholder";
 
   const app = await NestFactory.create(AppModule, { logger: false });
   const document = buildOpenApiDocument(app, new DocumentBuilder());

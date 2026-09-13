@@ -1,10 +1,11 @@
 import { Controller, Get, HttpCode, Inject, Logger, NotFoundException, Param, Post } from "@nestjs/common";
-import { ApiAcceptedResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import { ApiAcceptedResponse, ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { EVENT_STORE, EventStore } from "../store/event-store";
 import { SyncConfigService } from "../sync/sync-config.service";
 import { SyncEngine } from "../sync/sync-engine";
 import { CalendarStatusDto } from "./dto/calendar-status.dto";
 
+@ApiBearerAuth()
 @ApiTags("calendars")
 @Controller("calendars")
 export class CalendarsController {

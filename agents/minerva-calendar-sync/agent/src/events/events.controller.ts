@@ -1,9 +1,10 @@
 import { Controller, Get, Inject, NotFoundException, Param, Query } from "@nestjs/common";
-import { ApiNotFoundResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { EVENT_STORE, EventStore } from "../store/event-store";
 import { EventResponseDto } from "./dto/event-response.dto";
 import { ListEventsQueryDto } from "./dto/list-events-query.dto";
 
+@ApiBearerAuth()
 @ApiTags("events")
 @Controller("events")
 export class EventsController {

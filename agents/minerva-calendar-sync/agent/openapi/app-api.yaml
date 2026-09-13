@@ -9,6 +9,41 @@ paths:
           description: ''
       tags:
         - App
+  /auth/me:
+    get:
+      operationId: AuthController_me
+      parameters: []
+      responses:
+        '200':
+          description: The currently authenticated user
+      security:
+        - bearer: []
+      tags:
+        - auth
+  /auth/refresh:
+    post:
+      operationId: AuthController_refresh
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshDto'
+      responses:
+        '200':
+          description: A fresh access token
+      tags:
+        - auth
+  /auth/logout:
+    post:
+      operationId: AuthController_logout
+      parameters: []
+      responses:
+        '204':
+          description: ''
+      tags:
+        - auth
   /events:
     get:
       operationId: EventsController_list
@@ -73,6 +108,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/EventResponseDto'
+      security:
+        - bearer: []
       tags:
         - events
   /events/{source}/{uid}:
@@ -98,6 +135,8 @@ paths:
                 $ref: '#/components/schemas/EventResponseDto'
         '404':
           description: No event for that source/uid
+      security:
+        - bearer: []
       tags:
         - events
   /calendars:
@@ -113,6 +152,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CalendarStatusDto'
+      security:
+        - bearer: []
       tags:
         - calendars
   /calendars/{calendarId}/sync:
@@ -129,6 +170,8 @@ paths:
           description: Sync triggered — runs in the background
         '404':
           description: No configured calendar with that id
+      security:
+        - bearer: []
       tags:
         - calendars
 info:
@@ -141,9 +184,23 @@ tags:
     description: ''
   - name: calendars
     description: ''
+  - name: auth
+    description: ''
 servers: []
 components:
+  securitySchemes:
+    bearer:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
   schemas:
+    RefreshDto:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+      required:
+        - refreshToken
     EventResponseDto:
       type: object
       properties:
