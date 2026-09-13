@@ -6,9 +6,10 @@ import {
   IncrementalResult,
   ProviderCalendar,
   RawEventBatch,
+  RemovalTombstone,
   SyncTokenExpiredError,
 } from "../calendar-provider";
-import { mapGoogleEventToCanonical } from "./google-event-mapper";
+import { isGoogleRemoval, mapGoogleEventToCanonical, resolveGoogleRemoval } from "./google-event-mapper";
 
 const PAGE_SIZE = 250;
 
@@ -90,6 +91,14 @@ export class GoogleCalendarProvider implements CalendarProvider {
 
   normalizeEvent(raw: unknown, ctx: { source: string }): CanonicalCalendarEvent {
     return mapGoogleEventToCanonical(raw as calendar_v3.Schema$Event, ctx);
+  }
+
+  isRemoval(raw: unknown): boolean {
+    return isGoogleRemoval(raw as calendar_v3.Schema$Event);
+  }
+
+  resolveRemoval(raw: unknown): RemovalTombstone {
+    return resolveGoogleRemoval(raw as calendar_v3.Schema$Event);
   }
 
   supportsPush(): boolean {

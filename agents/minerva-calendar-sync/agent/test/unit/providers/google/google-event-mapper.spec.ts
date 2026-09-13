@@ -151,10 +151,15 @@ describe("mapGoogleEventToCanonical", () => {
     expect(mapGoogleEventToCanonical(baseEvent({ status: "cancelled" }), ctx).cancelled).toBe(true);
   });
 
-  it("throws when iCalUID is missing", () => {
-    expect(() => mapGoogleEventToCanonical(baseEvent({ iCalUID: undefined }), ctx)).toThrow(
-      /iCalUID/,
-    );
+  it("derives a uid from Google's id when iCalUID is missing (legacy/malformed events)", () => {
+    const result = mapGoogleEventToCanonical(baseEvent({ iCalUID: undefined, id: "raw-id-1" }), ctx);
+    expect(result.uid).toBe("raw-id-1@google.com");
+  });
+
+  it("throws when both id and iCalUID are missing", () => {
+    expect(() =>
+      mapGoogleEventToCanonical(baseEvent({ id: undefined, iCalUID: undefined }), ctx),
+    ).toThrow(/no id/);
   });
 
   it("throws when start or end is missing", () => {

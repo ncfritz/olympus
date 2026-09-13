@@ -10,8 +10,37 @@ import {
   ResponseStatus,
   Sensitivity,
 } from "../../domain/canonical-event";
+import { RemovalTombstone } from "../calendar-provider";
 
 type GoogleEvent = calendar_v3.Schema$Event;
+
+/**
+ * Incremental sync reports removed events as minimal records — Google's docs
+ * guarantee only `id` and `status: "cancelled"`, so these must be checked
+ * before `mapGoogleEventToCanonical`, which needs far more than that.
+ */
+export function isGoogleRemoval(raw: GoogleEvent): boolean {
+  return raw.status === "cancelled";
+}
+
+/**
+ * Google's own convention for events it created is `iCalUID = "<id>@google.com"`
+ * (this does NOT hold for events imported from another system, e.g. via ICS —
+ * their iCalUID is whatever the source system assigned). A removal record
+ * usually lacks iCalUID entirely, so we derive it with that convention as a
+ * documented best-effort heuristic. If a stored row doesn't actually match
+ * (imported event, convention doesn't hold), the mark-as-removed call is a
+ * harmless no-op — the next full resync's diff pass catches it regardless.
+ */
+export function resolveGoogleRemoval(raw: GoogleEvent): RemovalTombstone {
+  if (!raw.id) {
+    throw new Error("Google removal record has no id");
+  }
+  return {
+    uid: raw.iCalUID ?? `${raw.id}@google.com`,
+    isOccurrence: Boolean(raw.recurringEventId),
+  };
+}
 
 /**
  * Google Calendar's API has no native equivalent for several of our fields
@@ -22,11 +51,15 @@ export function mapGoogleEventToCanonical(
   raw: GoogleEvent,
   ctx: { source: string },
 ): CanonicalCalendarEvent {
-  if (!raw.iCalUID) {
-    throw new Error(`Google event ${raw.id ?? "<unknown id>"} has no iCalUID`);
+  if (!raw.id) {
+    throw new Error("Google event has no id");
   }
 
-  const uid = raw.iCalUID;
+  // Normally always present, but some legacy/malformed recurring instances
+  // come back without it even when not cancelled — same documented
+  // derivation heuristic as resolveGoogleRemoval, rather than failing the
+  // whole sync over one odd event.
+  const uid = raw.iCalUID ?? `${raw.id}@google.com`;
   const { startTime, endTime, allDay } = mapTimes(raw);
 
   return {

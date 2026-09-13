@@ -37,6 +37,17 @@ export interface PushChannel {
   expiration: string;
 }
 
+/** Resolved identity for a raw event that represents a removal (see `isRemoval`). */
+export interface RemovalTombstone {
+  uid: string;
+  /**
+   * True when only one occurrence of a recurring series was called off (the
+   * series itself continues) — callers should soft-cancel, not delete.
+   * False for a standalone event or an entire series being removed.
+   */
+  isOccurrence: boolean;
+}
+
 /**
  * Talks to one calendar backend (Google today, Office 365 later). SyncEngine
  * depends only on this interface, never on a concrete provider.
@@ -54,6 +65,17 @@ export interface CalendarProvider {
 
   /** Converts one provider-native raw event into the canonical shape. */
   normalizeEvent(raw: unknown, ctx: { source: string }): CanonicalCalendarEvent;
+
+  /**
+   * True when `raw` is a minimal removal record, as incremental/delta sync
+   * APIs return for deleted events (often little more than an id and a
+   * status flag) — too little data for `normalizeEvent`. Callers must check
+   * this before calling `normalizeEvent` and use `resolveRemoval` instead.
+   */
+  isRemoval(raw: unknown): boolean;
+
+  /** Resolves identity for a raw event that `isRemoval` returned true for. */
+  resolveRemoval(raw: unknown): RemovalTombstone;
 
   supportsPush(): boolean;
   watch?(calendarId: string, webhookUrl: string): Promise<PushChannel>;

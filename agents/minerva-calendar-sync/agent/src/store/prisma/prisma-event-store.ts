@@ -28,15 +28,18 @@ export class PrismaEventStore implements EventStore {
   }
 
   async markCancelled(source: string, uid: string): Promise<void> {
-    await this.prisma.event.update({
-      where: { source_uid: { source, uid } },
+    // updateMany rather than update: callers may resolve `uid` heuristically
+    // (see resolveGoogleRemoval) and a miss should be a harmless no-op, not a
+    // thrown "record not found".
+    await this.prisma.event.updateMany({
+      where: { source, uid },
       data: { cancelled: true },
     });
   }
 
   async markDeleted(source: string, uid: string): Promise<void> {
-    await this.prisma.event.update({
-      where: { source_uid: { source, uid } },
+    await this.prisma.event.updateMany({
+      where: { source, uid },
       data: { deleted: true },
     });
   }
