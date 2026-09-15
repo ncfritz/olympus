@@ -26,7 +26,6 @@ export async function triggerCalendarSync(calendarId: string): Promise<boolean> 
 }
 
 export interface EventFilters {
-  source?: string;
   showCancelled: boolean;
   showDeleted: boolean;
   limit: number;
@@ -36,7 +35,6 @@ export async function fetchEvents(filters: EventFilters): Promise<EventDto[]> {
   const { data } = await apiClient.GET("/events", {
     params: {
       query: {
-        source: filters.source,
         cancelled: filters.showCancelled ? undefined : false,
         deleted: filters.showDeleted ? undefined : false,
         limit: filters.limit,
