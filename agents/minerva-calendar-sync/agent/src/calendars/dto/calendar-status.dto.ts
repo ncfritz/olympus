@@ -15,4 +15,7 @@ export class CalendarStatusDto {
 
   @ApiProperty({ description: "True once at least one full sync has completed" })
   synced: boolean;
+
+  @ApiProperty({ description: "Whether a Google push notification channel is configured for this calendar" })
+  enablePush: boolean;
 }

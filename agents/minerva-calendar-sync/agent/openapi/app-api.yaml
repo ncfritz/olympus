@@ -338,9 +338,15 @@ components:
         synced:
           type: boolean
           description: True once at least one full sync has completed
+        enablePush:
+          type: boolean
+          description: >-
+            Whether a Google push notification channel is configured for this
+            calendar
       required:
         - provider
         - accountLabel
         - calendarId
         - source
         - synced
+        - enablePush

@@ -103,4 +103,6 @@ export interface SyncState {
   channelId: string | null;
   resourceId: string | null;
   channelExpiration: string | null;
+  /** Shared secret echoed back on every push notification for that channel, to reject forged requests. */
+  channelToken: string | null;
 }

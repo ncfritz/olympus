@@ -8,4 +8,15 @@ export interface SyncedCalendarConfig {
   calendarId: string;
   /** The `source` label written onto every CanonicalCalendarEvent row for this calendar. */
   source: string;
+  /**
+   * Opt into push notifications for this calendar, in addition to polling
+   * (which always stays on as the safety net — push delivery is never
+   * fully guaranteed). Requires WEBHOOK_BASE_URL to be a real HTTPS
+   * endpoint Google can reach; ignored otherwise.
+   *
+   * Required (not optional) here because this is the normalized, in-app
+   * shape — SyncConfigService's parser is what makes the field optional in
+   * SYNCED_CALENDARS itself, defaulting it to false.
+   */
+  enablePush: boolean;
 }

@@ -12,6 +12,7 @@ const FAKE_CALENDAR = {
   accountLabel: 'e2e-fake-account',
   calendarId: 'cal-e2e',
   source: 'e2e-source',
+  enablePush: false,
 };
 
 describe('Calendars (e2e)', () => {

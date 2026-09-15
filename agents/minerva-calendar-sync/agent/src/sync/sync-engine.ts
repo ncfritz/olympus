@@ -48,7 +48,7 @@ export class SyncEngine {
     const state = await this.store.getSyncState(config.calendarId);
 
     if (!state?.syncToken) {
-      await this.runFullSync(provider, config);
+      await this.runFullSync(provider, config, state);
       return;
     }
 
@@ -57,14 +57,18 @@ export class SyncEngine {
     } catch (error) {
       if (error instanceof SyncTokenExpiredError) {
         this.logger.warn(`Sync token expired for "${config.calendarId}" — falling back to a full sync`);
-        await this.runFullSync(provider, config);
+        await this.runFullSync(provider, config, state);
         return;
       }
       throw error;
     }
   }
 
-  private async runFullSync(provider: CalendarProvider, config: SyncedCalendarConfig): Promise<void> {
+  private async runFullSync(
+    provider: CalendarProvider,
+    config: SyncedCalendarConfig,
+    existingState: SyncState | null,
+  ): Promise<void> {
     const seenUids = new Set<string>();
     let nextSyncToken: string | undefined;
 
@@ -87,12 +91,17 @@ export class SyncEngine {
       return;
     }
 
+    // A push channel (if any) is unaffected by a full resync — e.g. this can
+    // run because the incremental sync token expired while a channel is
+    // still perfectly valid, so its bookkeeping is carried over rather than
+    // wiped.
     await this.store.saveSyncState(config.calendarId, {
       calendarId: config.calendarId,
       syncToken: nextSyncToken,
-      channelId: null,
-      resourceId: null,
-      channelExpiration: null,
+      channelId: existingState?.channelId ?? null,
+      resourceId: existingState?.resourceId ?? null,
+      channelExpiration: existingState?.channelExpiration ?? null,
+      channelToken: existingState?.channelToken ?? null,
     });
 
     this.logger.log(`Full sync of "${config.calendarId}" complete: ${seenUids.size} events`);

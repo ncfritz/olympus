@@ -84,6 +84,7 @@ export class PrismaEventStore implements EventStore {
       channelId: row.channelId,
       resourceId: row.resourceId,
       channelExpiration: row.channelExpiration?.toISOString() ?? null,
+      channelToken: row.channelToken,
     };
   }
 
@@ -93,6 +94,7 @@ export class PrismaEventStore implements EventStore {
       channelId: state.channelId,
       resourceId: state.resourceId,
       channelExpiration: state.channelExpiration ? new Date(state.channelExpiration) : null,
+      channelToken: state.channelToken,
     };
 
     await this.prisma.syncState.upsert({

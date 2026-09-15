@@ -46,5 +46,6 @@ model SyncState {
   channelId         String?
   resourceId        String?
   channelExpiration DateTime?
+  channelToken      String?
   updatedAt         DateTime  @updatedAt
 }

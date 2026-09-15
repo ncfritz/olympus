@@ -39,7 +39,7 @@ export class AuthController {
     private readonly tokens: AuthTokenService,
     config: ConfigService,
   ) {
-    this.baseUrl = config.get<string>("AUTH_BASE_URL") ?? "http://localhost:3000";
+    this.baseUrl = config.get<string>("AUTH_BASE_URL") ?? "http://localhost:4432";
     this.webAppUrl = config.get<string>("WEB_APP_URL");
   }
 

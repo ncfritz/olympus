@@ -24,6 +24,7 @@ const CONFIG: SyncedCalendarConfig = {
   accountLabel: "test-account",
   calendarId: "cal-1",
   source: "test-source",
+  enablePush: false,
 };
 
 function fixtureEvent(overrides: Partial<CanonicalCalendarEvent> = {}): CanonicalCalendarEvent {
@@ -176,6 +177,7 @@ describe("SyncEngine", () => {
       channelId: null,
       resourceId: null,
       channelExpiration: null,
+      channelToken: null,
     });
     provider.incrementalQueue = [
       { events: [fixtureEvent({ uid: "a", subject: "Updated" })], nextSyncToken: "token-2" },
@@ -195,6 +197,7 @@ describe("SyncEngine", () => {
       channelId: null,
       resourceId: null,
       channelExpiration: null,
+      channelToken: null,
     });
     provider.incrementalQueue = [
       { events: [removalRaw({ uid: "occ-1", isOccurrence: true })], nextSyncToken: "token-2" },
@@ -215,6 +218,7 @@ describe("SyncEngine", () => {
       channelId: null,
       resourceId: null,
       channelExpiration: null,
+      channelToken: null,
     });
     provider.incrementalQueue = [
       { events: [removalRaw({ uid: "solo-1", isOccurrence: false })], nextSyncToken: "token-2" },
@@ -232,6 +236,7 @@ describe("SyncEngine", () => {
       channelId: null,
       resourceId: null,
       channelExpiration: null,
+      channelToken: null,
     });
     provider.incrementalQueue = [new SyncTokenExpiredError(CONFIG.calendarId)];
     provider.fullSyncBatches = [{ events: [fixtureEvent({ uid: "a" })], nextSyncToken: "fresh-token" }];

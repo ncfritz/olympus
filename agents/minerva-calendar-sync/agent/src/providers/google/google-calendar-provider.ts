@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { OAuth2Client } from "google-auth-library";
 import { calendar_v3, google } from "googleapis";
 import { CanonicalCalendarEvent } from "../../domain/canonical-event";
@@ -5,6 +6,7 @@ import {
   CalendarProvider,
   IncrementalResult,
   ProviderCalendar,
+  PushChannel,
   RawEventBatch,
   RemovalTombstone,
   SyncTokenExpiredError,
@@ -102,9 +104,36 @@ export class GoogleCalendarProvider implements CalendarProvider {
   }
 
   supportsPush(): boolean {
-    // Google supports push via `channels.watch`, but that's wired up in the
-    // WebhookNotifier phase — not implemented here yet.
-    return false;
+    return true;
+  }
+
+  async watch(calendarId: string, webhookUrl: string, token: string): Promise<PushChannel> {
+    const { data } = await this.calendar.events.watch({
+      calendarId,
+      requestBody: {
+        id: randomUUID(),
+        type: "web_hook",
+        address: webhookUrl,
+        token,
+      },
+    });
+
+    if (!data.id || !data.resourceId || !data.expiration) {
+      throw new Error(`Google watch() for "${calendarId}" returned an incomplete channel`);
+    }
+
+    return {
+      id: data.id,
+      resourceId: data.resourceId,
+      // Google returns this as a string of milliseconds since epoch.
+      expiration: new Date(Number(data.expiration)).toISOString(),
+    };
+  }
+
+  async stopWatch(channel: PushChannel): Promise<void> {
+    await this.calendar.channels.stop({
+      requestBody: { id: channel.id, resourceId: channel.resourceId },
+    });
   }
 }
 

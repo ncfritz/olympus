@@ -138,6 +138,7 @@ describe("PrismaEventStore", () => {
       channelId: "chan-1",
       resourceId: "res-1",
       channelExpiration: "2026-02-01T00:00:00.000Z",
+      channelToken: "secret-1",
     });
 
     const state = await store.getSyncState(calendarId);
@@ -147,6 +148,7 @@ describe("PrismaEventStore", () => {
       channelId: "chan-1",
       resourceId: "res-1",
       channelExpiration: "2026-02-01T00:00:00.000Z",
+      channelToken: "secret-1",
     });
 
     await store.saveSyncState(calendarId, { ...state!, syncToken: "token-2" });

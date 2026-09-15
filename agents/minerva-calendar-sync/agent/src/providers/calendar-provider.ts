@@ -78,6 +78,7 @@ export interface CalendarProvider {
   resolveRemoval(raw: unknown): RemovalTombstone;
 
   supportsPush(): boolean;
-  watch?(calendarId: string, webhookUrl: string): Promise<PushChannel>;
+  /** `token` is an opaque secret the caller generates and later verifies against each incoming notification, to reject forged ones. */
+  watch?(calendarId: string, webhookUrl: string, token: string): Promise<PushChannel>;
   stopWatch?(channel: PushChannel): Promise<void>;
 }

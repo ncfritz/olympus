@@ -30,12 +30,12 @@ function parseCalendars(raw: string): SyncedCalendarConfig[] {
   }
 
   return parsed.map((entry, index) => {
-    const { provider, accountLabel, calendarId, source } = entry as Partial<SyncedCalendarConfig>;
+    const { provider, accountLabel, calendarId, source, enablePush } = entry as Partial<SyncedCalendarConfig>;
     if (provider !== "google" || !accountLabel || !calendarId || !source) {
       throw new Error(
         `SYNCED_CALENDARS[${index}] must have { provider: "google", accountLabel, calendarId, source }`,
       );
     }
-    return { provider, accountLabel, calendarId, source };
+    return { provider, accountLabel, calendarId, source, enablePush: enablePush === true };
   });
 }
