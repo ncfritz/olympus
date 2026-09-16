@@ -49,3 +49,27 @@ model SyncState {
   channelToken      String?
   updatedAt         DateTime  @updatedAt
 }
+
+// Per-meeting availability override, keyed by the canonical event id
+// ("source:uid") rather than a foreign key into Event — deliberately not a
+// Prisma relation, so this survives Event being fully wiped and re-synced.
+model EventOverride {
+  eventId   String   @id
+  status    String
+  updatedAt DateTime @updatedAt
+}
+
+// An independent block of time on the internal "Overrides" calendar (not
+// tied to any synced meeting) that overrides the computed availability
+// status for everything it covers.
+model OverrideBlock {
+  id        String   @id @default(cuid())
+  startTime DateTime
+  endTime   DateTime
+  status    String
+  label     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([startTime, endTime])
+}

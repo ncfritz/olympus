@@ -74,6 +74,18 @@ export class PrismaEventStore implements EventStore {
     return rows.map(fromRow);
   }
 
+  async listEventsOverlapping(start: string, end: string): Promise<CanonicalCalendarEvent[]> {
+    const rows = await this.prisma.event.findMany({
+      where: {
+        cancelled: false,
+        deleted: false,
+        startTime: { lt: new Date(end) },
+        endTime: { gt: new Date(start) },
+      },
+    });
+    return rows.map(fromRow);
+  }
+
   async getSyncState(calendarId: string): Promise<SyncState | null> {
     const row = await this.prisma.syncState.findUnique({ where: { calendarId } });
     if (!row) return null;

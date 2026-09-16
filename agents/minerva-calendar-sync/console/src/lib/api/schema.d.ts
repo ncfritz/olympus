@@ -84,6 +84,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events/overrides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EventsController_listOverrides"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events/{source}/{uid}": {
         parameters: {
             query?: never;
@@ -95,6 +111,22 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{source}/{uid}/override": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EventsController_getOverride"];
+        put: operations["EventsController_setOverride"];
+        post?: never;
+        delete: operations["EventsController_clearOverride"];
         options?: never;
         head?: never;
         patch?: never;
@@ -127,6 +159,54 @@ export interface paths {
         put?: never;
         post: operations["CalendarsController_triggerSync"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/freebusy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AvailabilityController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/overrides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OverridesController_list"];
+        put?: never;
+        post: operations["OverridesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/overrides/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["OverridesController_updateStatus"];
+        post?: never;
+        delete: operations["OverridesController_remove"];
         options?: never;
         head?: never;
         patch?: never;
@@ -177,6 +257,15 @@ export interface components {
             recurrenceId?: string | null;
             source: string;
         };
+        EventOverrideResponseDto: {
+            eventId: string;
+            /** @enum {string} */
+            status: "none" | "free" | "interruptable" | "busy";
+        };
+        SetEventOverrideDto: {
+            /** @enum {string} */
+            status: "none" | "free" | "interruptable" | "busy";
+        };
         CalendarStatusDto: {
             /** @description Which CalendarProvider implementation this calendar uses */
             provider: string;
@@ -188,6 +277,39 @@ export interface components {
             source: string;
             /** @description True once at least one full sync has completed */
             synced: boolean;
+            /** @description Whether a Google push notification channel is configured for this calendar */
+            enablePush: boolean;
+        };
+        AvailabilitySlotDto: {
+            /** @description ISO-8601 */
+            startTime: string;
+            /** @description ISO-8601 */
+            endTime: string;
+            /** @enum {string} */
+            status: "none" | "free" | "interruptable" | "busy";
+        };
+        CreateOverrideBlockDto: {
+            /** @description ISO-8601 */
+            startTime: string;
+            /** @description ISO-8601 */
+            endTime: string;
+            /** @enum {string} */
+            status: "none" | "free" | "interruptable" | "busy";
+            label?: string | null;
+        };
+        OverrideBlockResponseDto: {
+            id: string;
+            /** @description ISO-8601 */
+            startTime: string;
+            /** @description ISO-8601 */
+            endTime: string;
+            /** @enum {string} */
+            status: "none" | "free" | "interruptable" | "busy";
+            label?: string | null;
+        };
+        UpdateOverrideBlockStatusDto: {
+            /** @enum {string} */
+            status: "none" | "free" | "interruptable" | "busy";
         };
     };
     responses: never;
@@ -308,6 +430,28 @@ export interface operations {
             };
         };
     };
+    EventsController_listOverrides: {
+        parameters: {
+            query: {
+                /** @description Comma-separated canonical event ids to look up overrides for */
+                ids: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOverrideResponseDto"][];
+                };
+            };
+        };
+    };
     EventsController_getOne: {
         parameters: {
             query?: never;
@@ -327,6 +471,95 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["EventResponseDto"];
                 };
+            };
+            /** @description No event for that source/uid */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsController_getOverride: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source: string;
+                uid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOverrideResponseDto"];
+                };
+            };
+            /** @description No event for that source/uid, or no override is set for it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsController_setOverride: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source: string;
+                uid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetEventOverrideDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOverrideResponseDto"];
+                };
+            };
+            /** @description No event for that source/uid */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsController_clearOverride: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source: string;
+                uid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description No event for that source/uid */
             404: {
@@ -376,6 +609,129 @@ export interface operations {
             };
             /** @description No configured calendar with that id */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AvailabilityController_list: {
+        parameters: {
+            query: {
+                /** @description ISO-8601 — inclusive start of the computed range */
+                start: string;
+                /** @description ISO-8601 — exclusive end of the computed range */
+                end: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Computed 15-minute availability slots */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilitySlotDto"][];
+                };
+            };
+        };
+    };
+    OverridesController_list: {
+        parameters: {
+            query: {
+                /** @description ISO-8601 — inclusive start of the range to list */
+                start: string;
+                /** @description ISO-8601 — exclusive end of the range to list */
+                end: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverrideBlockResponseDto"][];
+                };
+            };
+        };
+    };
+    OverridesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOverrideBlockDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverrideBlockResponseDto"];
+                };
+            };
+        };
+    };
+    OverridesController_updateStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOverrideBlockStatusDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverrideBlockResponseDto"];
+                };
+            };
+            /** @description No override block with that id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OverridesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

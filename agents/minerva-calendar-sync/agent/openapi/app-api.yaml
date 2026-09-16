@@ -120,6 +120,29 @@ paths:
         - bearer: []
       tags:
         - events
+  /events/overrides:
+    get:
+      operationId: EventsController_listOverrides
+      parameters:
+        - name: ids
+          required: true
+          in: query
+          description: Comma-separated canonical event ids to look up overrides for
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventOverrideResponseDto'
+      security:
+        - bearer: []
+      tags:
+        - events
   /events/{source}/{uid}:
     get:
       operationId: EventsController_getOne
@@ -141,6 +164,87 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EventResponseDto'
+        '404':
+          description: No event for that source/uid
+      security:
+        - bearer: []
+      tags:
+        - events
+  /events/{source}/{uid}/override:
+    get:
+      operationId: EventsController_getOverride
+      parameters:
+        - name: source
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: uid
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventOverrideResponseDto'
+        '404':
+          description: No event for that source/uid, or no override is set for it
+      security:
+        - bearer: []
+      tags:
+        - events
+    put:
+      operationId: EventsController_setOverride
+      parameters:
+        - name: source
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: uid
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetEventOverrideDto'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventOverrideResponseDto'
+        '404':
+          description: No event for that source/uid
+      security:
+        - bearer: []
+      tags:
+        - events
+    delete:
+      operationId: EventsController_clearOverride
+      parameters:
+        - name: source
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: uid
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '204':
+          description: ''
         '404':
           description: No event for that source/uid
       security:
@@ -182,6 +286,127 @@ paths:
         - bearer: []
       tags:
         - calendars
+  /freebusy:
+    get:
+      operationId: AvailabilityController_list
+      parameters:
+        - name: start
+          required: true
+          in: query
+          description: ISO-8601 — inclusive start of the computed range
+          schema:
+            type: string
+        - name: end
+          required: true
+          in: query
+          description: ISO-8601 — exclusive end of the computed range
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Computed 15-minute availability slots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AvailabilitySlotDto'
+      security:
+        - bearer: []
+      tags:
+        - availability
+  /overrides:
+    post:
+      operationId: OverridesController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOverrideBlockDto'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverrideBlockResponseDto'
+      security:
+        - bearer: []
+      tags:
+        - overrides
+    get:
+      operationId: OverridesController_list
+      parameters:
+        - name: start
+          required: true
+          in: query
+          description: ISO-8601 — inclusive start of the range to list
+          schema:
+            type: string
+        - name: end
+          required: true
+          in: query
+          description: ISO-8601 — exclusive end of the range to list
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OverrideBlockResponseDto'
+      security:
+        - bearer: []
+      tags:
+        - overrides
+  /overrides/{id}:
+    put:
+      operationId: OverridesController_updateStatus
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOverrideBlockStatusDto'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverrideBlockResponseDto'
+        '404':
+          description: No override block with that id
+      security:
+        - bearer: []
+      tags:
+        - overrides
+    delete:
+      operationId: OverridesController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '204':
+          description: ''
+      security:
+        - bearer: []
+      tags:
+        - overrides
 info:
   title: Minerva Calendar Sync API
   description: Read API over synchronized calendar events and calendar sync status.
@@ -320,6 +545,33 @@ components:
         - deleted
         - uid
         - source
+    EventOverrideResponseDto:
+      type: object
+      properties:
+        eventId:
+          type: string
+        status:
+          type: string
+          enum:
+            - none
+            - free
+            - interruptable
+            - busy
+      required:
+        - eventId
+        - status
+    SetEventOverrideDto:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - none
+            - free
+            - interruptable
+            - busy
+      required:
+        - status
     CalendarStatusDto:
       type: object
       properties:
@@ -350,3 +602,84 @@ components:
         - source
         - synced
         - enablePush
+    AvailabilitySlotDto:
+      type: object
+      properties:
+        startTime:
+          type: string
+          description: ISO-8601
+        endTime:
+          type: string
+          description: ISO-8601
+        status:
+          type: string
+          enum:
+            - none
+            - free
+            - interruptable
+            - busy
+      required:
+        - startTime
+        - endTime
+        - status
+    CreateOverrideBlockDto:
+      type: object
+      properties:
+        startTime:
+          type: string
+          description: ISO-8601
+        endTime:
+          type: string
+          description: ISO-8601
+        status:
+          type: string
+          enum:
+            - none
+            - free
+            - interruptable
+            - busy
+        label:
+          type: string
+          nullable: true
+      required:
+        - startTime
+        - endTime
+        - status
+    OverrideBlockResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        startTime:
+          type: string
+          description: ISO-8601
+        endTime:
+          type: string
+          description: ISO-8601
+        status:
+          type: string
+          enum:
+            - none
+            - free
+            - interruptable
+            - busy
+        label:
+          type: string
+          nullable: true
+      required:
+        - id
+        - startTime
+        - endTime
+        - status
+    UpdateOverrideBlockStatusDto:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - none
+            - free
+            - interruptable
+            - busy
+      required:
+        - status

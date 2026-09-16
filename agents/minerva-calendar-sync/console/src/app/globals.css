@@ -13,3 +13,7 @@ body {
 .clickable-row {
   cursor: pointer;
 }
+
+.fc-event {
+  margin: 3px;
+}

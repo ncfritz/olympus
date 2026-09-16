@@ -95,4 +95,80 @@ describe('Events (e2e)', () => {
   it('rejects an unknown query parameter', () => {
     return request(app.getHttpServer()).get('/events?bogus=1').set('Authorization', authHeader).expect(400);
   });
+
+  it('GET /events/overrides bulk-looks-up overrides for the given ids', async () => {
+    await store.upsertEvent(fixtureEvent({ uid: 'bulk-a' }));
+    await store.upsertEvent(fixtureEvent({ uid: 'bulk-b' }));
+    await request(app.getHttpServer())
+      .put('/events/test-source/bulk-a/override')
+      .set('Authorization', authHeader)
+      .send({ status: 'busy' })
+      .expect(200);
+
+    const res = await request(app.getHttpServer())
+      .get('/events/overrides?ids=test-source:bulk-a,test-source:bulk-b,test-source:missing')
+      .set('Authorization', authHeader)
+      .expect(200);
+    expect(res.body).toEqual([{ eventId: 'test-source:bulk-a', status: 'busy' }]);
+  });
+
+  it('GET /events/overrides returns an empty array for an empty ids list', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/events/overrides?ids=')
+      .set('Authorization', authHeader)
+      .expect(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('GET /events/:source/:uid/override 404s for an unknown event', () => {
+    return request(app.getHttpServer()).get('/events/nope/nope/override').set('Authorization', authHeader).expect(404);
+  });
+
+  it('GET /events/:source/:uid/override 404s when no override is set', async () => {
+    await store.upsertEvent(fixtureEvent({ uid: 'a' }));
+
+    return request(app.getHttpServer()).get('/events/test-source/a/override').set('Authorization', authHeader).expect(404);
+  });
+
+  it('sets, reads, and clears a per-event override', async () => {
+    await store.upsertEvent(fixtureEvent({ uid: 'a' }));
+
+    const set = await request(app.getHttpServer())
+      .put('/events/test-source/a/override')
+      .set('Authorization', authHeader)
+      .send({ status: 'interruptable' })
+      .expect(200);
+    expect(set.body).toEqual({ eventId: 'test-source:a', status: 'interruptable' });
+
+    const get = await request(app.getHttpServer())
+      .get('/events/test-source/a/override')
+      .set('Authorization', authHeader)
+      .expect(200);
+    expect(get.body).toEqual({ eventId: 'test-source:a', status: 'interruptable' });
+
+    await request(app.getHttpServer())
+      .delete('/events/test-source/a/override')
+      .set('Authorization', authHeader)
+      .expect(204);
+
+    await request(app.getHttpServer()).get('/events/test-source/a/override').set('Authorization', authHeader).expect(404);
+  });
+
+  it('PUT /events/:source/:uid/override 404s for an unknown event', () => {
+    return request(app.getHttpServer())
+      .put('/events/nope/nope/override')
+      .set('Authorization', authHeader)
+      .send({ status: 'busy' })
+      .expect(404);
+  });
+
+  it('rejects an invalid override status', async () => {
+    await store.upsertEvent(fixtureEvent({ uid: 'a' }));
+
+    return request(app.getHttpServer())
+      .put('/events/test-source/a/override')
+      .set('Authorization', authHeader)
+      .send({ status: 'bogus' })
+      .expect(400);
+  });
 });
