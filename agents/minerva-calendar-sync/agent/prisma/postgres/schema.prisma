@@ -1,24 +1,20 @@
+// Postgres counterpart of ../schema.prisma, kept in sync deliberately by
+// hand rather than generated — Prisma has no way to share model
+// definitions across two `datasource` blocks with different `provider`s in
+// one file. The two files' model bodies must stay identical (a unit test
+// in test/unit/domain asserts this); only the `datasource` block differs.
+// Selected explicitly via `--schema` (see the `*:postgres` scripts in
+// package.json) — the default `prisma/schema.prisma` (SQLite) is what dev
+// and the regular test suite use unless you opt into this one.
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// The default schema — dev and the regular (fast, zero-dependency) test
-// suite both use this SQLite database. For production, or to exercise the
-// real thing in integration tests, see prisma/postgres/schema.prisma: an
-// identical model set (kept in sync by hand — Prisma can't share models
-// across two `datasource` blocks in one file) behind `provider =
-// "postgresql"`, selected explicitly via the `*:postgres` scripts in
-// package.json.
-//
-// Categorical fields (sensitivity, importance, occurrenceType, type, response,
-// status) are plain strings validated at the application boundary rather than
-// native Prisma enums — deliberately, so the two schemas' models can stay
-// identical (SQLite has no native enum type).
 model Event {
   id             String   @id
   source         String

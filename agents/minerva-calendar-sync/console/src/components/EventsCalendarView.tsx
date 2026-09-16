@@ -43,6 +43,8 @@ export interface CalendarEntry {
   isOverrideBlock: boolean;
   /** For a real event: the effective override applied to it, if any (block wins over a per-event override). For a pseudo row: the block's own status. */
   overrideStatus?: AvailabilityStatus;
+  /** True only when `overrideStatus` comes from a per-event override — never true for a pseudo row, and false when an overlapping block is what's actually in effect, since clearing the (dominated) per-event override wouldn't change anything visible. Gates the right-click menu's "Clear" item. */
+  hasEventOverride?: boolean;
 }
 
 const INITIAL_VIEW: Record<CalendarViewMode, string> = {
@@ -127,6 +129,7 @@ export function EventsCalendarView({
   onSelectRange,
   onSetStatus,
   onDelete,
+  onClear,
 }: {
   mode: CalendarViewMode;
   events: CalendarEntry[];
@@ -137,6 +140,8 @@ export function EventsCalendarView({
   onSetStatus: (entry: CalendarEntry, status: AvailabilityStatus) => void;
   /** Right-click menu: delete — only ever offered for pure override blocks. */
   onDelete: (entry: CalendarEntry) => void;
+  /** Right-click menu: clear a per-event override — only ever offered when `hasEventOverride` is true. */
+  onClear: (entry: CalendarEntry) => void;
 }) {
   // A single controlled menu instance, positioned at the click point and
   // targeting whichever entry was last right-clicked — rather than one
@@ -221,7 +226,9 @@ export function EventsCalendarView({
             { type: "divider" as const },
             { key: "delete", label: "Delete", danger: true },
           ]
-        : []),
+        : entry.hasEventOverride
+          ? [{ type: "divider" as const }, { key: "clear", label: "Clear" }]
+          : []),
     ];
   }
 
@@ -382,6 +389,7 @@ export function EventsCalendarView({
             const { entry } = contextMenu;
             setContextMenu(null);
             if (key === "delete") onDelete(entry);
+            else if (key === "clear") onClear(entry);
             else onSetStatus(entry, key as AvailabilityStatus);
           },
         }}

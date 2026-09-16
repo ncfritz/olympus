@@ -165,10 +165,10 @@ export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
 
     const realEntries: CalendarEntry[] = events.map((event) => {
       const blockStatuses = blockStatusesByEventId.get(event.id);
-      const overrideStatus =
-        blockStatuses && blockStatuses.length > 0
-          ? combineAvailability(blockStatuses)
-          : eventOverrideByEventId.get(event.id);
+      const hasBlockOverride = !!blockStatuses && blockStatuses.length > 0;
+      const overrideStatus = hasBlockOverride
+        ? combineAvailability(blockStatuses)
+        : eventOverrideByEventId.get(event.id);
       return {
         id: event.id,
         subject: event.subject,
@@ -182,6 +182,8 @@ export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
         freeBusyStatus: event.status,
         isOverrideBlock: false,
         overrideStatus,
+        hasEventOverride:
+          !hasBlockOverride && eventOverrideByEventId.has(event.id),
       };
     });
 
@@ -288,6 +290,19 @@ export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
       mutateOverrideBlocks();
     } catch (error) {
       message.error("Failed to delete the override");
+      console.error(error);
+    }
+  }
+
+  async function handleContextClear(entry: CalendarEntry) {
+    if (entry.isOverrideBlock) return;
+    const event = events.find((e) => e.id === entry.id);
+    if (!event) return;
+    try {
+      await clearEventOverride(event.source, event.uid);
+      mutateEventOverrides();
+    } catch (error) {
+      message.error("Failed to clear the override");
       console.error(error);
     }
   }
@@ -450,6 +465,7 @@ export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
               onSelectRange={handleSelectRange}
               onSetStatus={handleContextSetStatus}
               onDelete={handleContextDelete}
+              onClear={handleContextClear}
             />
           )}
           {events.length >= EVENT_LIMIT && (

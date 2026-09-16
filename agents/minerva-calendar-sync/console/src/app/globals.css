@@ -16,4 +16,18 @@ body {
 
 .fc-event {
   margin: 3px;
+  border-radius: 6px;
+  /* Without this, the left status flag (an absolutely-positioned child
+     inset to the event's edges) keeps square corners that poke out past
+     the now-rounded event box. With it, the flag is also clipped to the
+     rounded corners below, rather than needing its own border-radius. */
+  overflow: hidden;
+  /* The flag is meant to read as the card's own left edge, not a bar
+     floating inside it — drop the left border so nothing but the flag's
+     own color shows there. FullCalendar's default `.fc-event` CSS is what
+     sets border-width (the inline style it renders only sets border-color),
+     and its injected stylesheet isn't guaranteed to land before this one in
+     the DOM, so !important guarantees this side always wins regardless of
+     injection order. */
+  border-left-width: 0 !important;
 }
