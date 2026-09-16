@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Checkbox,
+  ColorPicker,
   Flex,
   message,
   Segmented,
@@ -29,11 +30,17 @@ import {
   type OverrideBlockDto,
 } from "@/lib/api/queries";
 import {
-  availabilityColor,
   combineAvailability,
+  flagFor,
   mapFreeBusyToAvailability,
   overlaps,
+  statusLabelFor,
 } from "@/lib/availability";
+import {
+  defaultColorFor,
+  loadCalendarColors,
+  saveCalendarColors,
+} from "@/lib/calendarColors";
 import { EventDetailDrawer } from "./EventDetailDrawer";
 import {
   EventsCalendarView,
@@ -41,6 +48,7 @@ import {
   type CalendarViewMode,
 } from "./EventsCalendarView";
 import { OverrideBlockDrawer } from "./OverrideBlockDrawer";
+import { StatusChip } from "./StatusChip";
 
 const EVENT_LIMIT = 200;
 /** The non-synced pseudo-calendar that surfaces override blocks with no underlying tracked-calendar event. */
@@ -100,6 +108,27 @@ export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
     range: { start: string; end: string };
     status: AvailabilityStatus;
   } | null>(null);
+  // Per-viewer color customization for each calendar source, persisted to
+  // localStorage (see lib/calendarColors) — there's no backend concept of
+  // a calendar's color. This whole panel only ever renders meaningfully
+  // once calendars/events have loaded client-side (via SWR, gated behind
+  // auth), so reading localStorage in the lazy initializer — rather than
+  // an effect — doesn't risk a visible SSR/client mismatch in practice.
+  const [calendarColors, setCalendarColors] = useState<Record<string, string>>(
+    () => (typeof window === "undefined" ? {} : loadCalendarColors()),
+  );
+
+  function colorForSource(source: string): string {
+    return calendarColors[source] ?? defaultColorFor(source);
+  }
+
+  function setSourceColor(source: string, color: string) {
+    setCalendarColors((prev) => {
+      const next = { ...prev, [source]: color };
+      saveCalendarColors(next);
+      return next;
+    });
+  }
 
   const availableSources = useMemo(
     () => [...calendars.map((c) => c.source), OVERRIDES_SOURCE],
@@ -393,12 +422,42 @@ export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
               </Typography.Link>
             </Space>
           </Flex>
-          <Checkbox.Group
-            style={{ display: "flex", flexDirection: "column", gap: 8 }}
-            value={selectedSources}
-            onChange={(values) => setSelectedSources(values as string[])}
-            options={availableSources.map((s) => ({ label: s, value: s }))}
-          />
+          <Flex vertical gap={8}>
+            {availableSources.map((source) => (
+              <Flex key={source} justify="space-between" align="center" gap={8}>
+                <Checkbox
+                  checked={selectedSources.includes(source)}
+                  onChange={(e) =>
+                    setSelectedSources((prev) =>
+                      e.target.checked
+                        ? [...prev, source]
+                        : prev.filter((s) => s !== source),
+                    )
+                  }
+                >
+                  {source}
+                </Checkbox>
+                <ColorPicker
+                  value={colorForSource(source)}
+                  onChange={(color) =>
+                    setSourceColor(source, color.toHexString())
+                  }
+                >
+                  <div
+                    style={{
+                      width: 16,
+                      height: 16,
+                      flexShrink: 0,
+                      borderRadius: 6,
+                      backgroundColor: colorForSource(source),
+                      border: "1px solid rgba(0, 0, 0, 0.15)",
+                      cursor: "pointer",
+                    }}
+                  />
+                </ColorPicker>
+              </Flex>
+            ))}
+          </Flex>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           {view === "list" ? (
@@ -414,18 +473,49 @@ export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
                 {
                   title: "Subject",
                   dataIndex: "subject",
+                  onCell: () => ({ style: { padding: 0 } }),
                   render: (value: string, record) => (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "stretch",
+                        minHeight: 32,
+                      }}
+                    >
+                      <div
+                        style={{ width: 4, flexShrink: 0, ...flagFor(record) }}
+                      />
+                      <span
+                        style={{
+                          padding: "0 8px",
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        {value}
+                      </span>
+                    </div>
+                  ),
+                },
+                {
+                  title: "Source",
+                  dataIndex: "source",
+                  render: (value: string) => (
                     <Space size="small">
-                      {!record.isOverrideBlock && record.overrideStatus && (
-                        <Tag color={availabilityColor(record.overrideStatus)}>
-                          {record.overrideStatus}
-                        </Tag>
-                      )}
+                      <span
+                        style={{
+                          display: "inline-block",
+                          width: 10,
+                          height: 10,
+                          borderRadius: 6,
+                          backgroundColor: colorForSource(value),
+                          flexShrink: 0,
+                        }}
+                      />
                       {value}
                     </Space>
                   ),
                 },
-                { title: "Source", dataIndex: "source" },
                 {
                   title: "Start",
                   dataIndex: "startTime",
@@ -437,22 +527,18 @@ export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
                 {
                   title: "Status",
                   key: "status",
-                  render: (_, record) =>
-                    record.isOverrideBlock ? (
-                      <Tag color={availabilityColor(record.overrideStatus!)}>
-                        {record.overrideStatus}
-                      </Tag>
-                    ) : (
-                      <Space size="small">
-                        {record.cancelled && (
-                          <Tag color="orange">Cancelled</Tag>
-                        )}
-                        {record.deleted && <Tag color="red">Deleted</Tag>}
-                        {!record.cancelled && !record.deleted && (
-                          <Tag color="blue">{record.freeBusyStatus}</Tag>
-                        )}
-                      </Space>
-                    ),
+                  render: (_, record) => (
+                    <Space size="small">
+                      {record.cancelled && <Tag color="orange">Cancelled</Tag>}
+                      {record.deleted && <Tag color="red">Deleted</Tag>}
+                      {!record.cancelled && !record.deleted && (
+                        <StatusChip
+                          flag={flagFor(record)}
+                          label={statusLabelFor(record)}
+                        />
+                      )}
+                    </Space>
+                  ),
                 },
                 { title: "Type", dataIndex: "type" },
               ]}
@@ -466,6 +552,7 @@ export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
               onSetStatus={handleContextSetStatus}
               onDelete={handleContextDelete}
               onClear={handleContextClear}
+              colorForSource={colorForSource}
             />
           )}
           {events.length >= EVENT_LIMIT && (

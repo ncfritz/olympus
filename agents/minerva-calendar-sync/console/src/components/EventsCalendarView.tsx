@@ -12,40 +12,18 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import { Dropdown, Space } from "antd";
 import type { MenuProps } from "antd";
 import { useEffect, useRef, useState } from "react";
-import type { AvailabilityStatus, FreeBusyStatus } from "@/lib/api/queries";
+import type { AvailabilityStatus } from "@/lib/api/queries";
 import {
   AVAILABILITY_STATUSES,
-  mapFreeBusyToAvailability,
+  flagFor,
   STATUS_LABEL,
   statusDotColor,
+  type CalendarEntry,
 } from "@/lib/availability";
 
-export type CalendarViewMode = "month" | "week" | "day";
+export type { CalendarEntry } from "@/lib/availability";
 
-/**
- * A unified row for both real tracked-calendar events and the synthetic
- * entries synthesized for override blocks with no underlying tracked
- * event (the "Overrides" pseudo-source) — see EventsPanel.
- */
-export interface CalendarEntry {
-  id: string;
-  subject: string;
-  source: string;
-  startTime: string;
-  endTime: string;
-  allDay: boolean;
-  cancelled: boolean;
-  deleted: boolean;
-  type: string;
-  /** Only set for real events (isOverrideBlock: false) — the synced free/busy status. */
-  freeBusyStatus?: FreeBusyStatus;
-  /** True for a synthetic "Overrides" pseudo-source row (an override block with no associated tracked event). */
-  isOverrideBlock: boolean;
-  /** For a real event: the effective override applied to it, if any (block wins over a per-event override). For a pseudo row: the block's own status. */
-  overrideStatus?: AvailabilityStatus;
-  /** True only when `overrideStatus` comes from a per-event override — never true for a pseudo row, and false when an overlapping block is what's actually in effect, since clearing the (dominated) per-event override wouldn't change anything visible. Gates the right-click menu's "Clear" item. */
-  hasEventOverride?: boolean;
-}
+export type CalendarViewMode = "month" | "week" | "day";
 
 const INITIAL_VIEW: Record<CalendarViewMode, string> = {
   month: "dayGridMonth",
@@ -54,6 +32,8 @@ const INITIAL_VIEW: Record<CalendarViewMode, string> = {
 };
 
 const FLAG_WIDTH_PX = 10;
+/** Diameter of the small per-calendar color dot in an event's bottom-right corner. */
+const CALENDAR_DOT_PX = 6;
 
 /**
  * Tracks the native contextmenu listener attached to each event's root
@@ -61,66 +41,6 @@ const FLAG_WIDTH_PX = 10;
  * right one. Keyed by element rather than stashed as a DOM property.
  */
 const contextMenuHandlers = new WeakMap<HTMLElement, (e: MouseEvent) => void>();
-
-/**
- * Left-bar flag colors for un-overridden synced events, following
- * Outlook's own free/busy convention
- * (https://learn.microsoft.com/en-us/answers/questions/4524589): Free is
- * blank, Busy is solid blue, Tentative is blue stripes, and Out of
- * Office/Working Elsewhere is solid purple. Our 4-value model maps "none"
- * (which is exactly OOO + working elsewhere) onto that purple.
- */
-const BUSY_FLAG = "#0078d4";
-const TENTATIVE_STRIPE = stripe("#0078d4");
-const OOO_FLAG = "#7719aa";
-const FREE_FLAG = "#e6e6e6";
-
-function stripe(color: string): string {
-  return `repeating-linear-gradient(45deg, ${color}, ${color} 3px, #ffffff 3px, #ffffff 6px)`;
-}
-
-function syncedFlagStyle(status: AvailabilityStatus): {
-  backgroundColor?: string;
-  backgroundImage?: string;
-} {
-  switch (status) {
-    case "busy":
-      return { backgroundColor: BUSY_FLAG };
-    case "interruptable":
-      return { backgroundImage: TENTATIVE_STRIPE };
-    case "none":
-      return { backgroundColor: OOO_FLAG };
-    case "free":
-      return { backgroundColor: FREE_FLAG };
-  }
-}
-
-/**
- * The left-bar flag style for an entry. An override — whether a standalone
- * block or one applied to a real event — is a deliberate user decision, not
- * a synced provider status, so it always gets a striped pattern (distinct
- * from the solid/blank Outlook palette used for un-overridden synced events
- * below), colored per the same none/free/interruptable/busy palette as the
- * drawer's status dot (statusDotColor) — except "none", whose dot color is
- * white and would be invisible as a stripe on the white event body, so it
- * gets a plain grey stripe instead.
- */
-function flagFor(entry: CalendarEntry): {
-  backgroundColor?: string;
-  backgroundImage?: string;
-} {
-  const isOverridden =
-    entry.isOverrideBlock || entry.overrideStatus !== undefined;
-  if (isOverridden) {
-    const status = entry.overrideStatus!;
-    return {
-      backgroundImage: stripe(
-        status === "none" ? "#8c8c8c" : statusDotColor(status),
-      ),
-    };
-  }
-  return syncedFlagStyle(mapFreeBusyToAvailability(entry.freeBusyStatus!));
-}
 
 export function EventsCalendarView({
   mode,
@@ -130,6 +50,7 @@ export function EventsCalendarView({
   onSetStatus,
   onDelete,
   onClear,
+  colorForSource,
 }: {
   mode: CalendarViewMode;
   events: CalendarEntry[];
@@ -142,6 +63,8 @@ export function EventsCalendarView({
   onDelete: (entry: CalendarEntry) => void;
   /** Right-click menu: clear a per-event override — only ever offered when `hasEventOverride` is true. */
   onClear: (entry: CalendarEntry) => void;
+  /** The user's chosen (or default) color for a calendar source — shown as a small dot in each event's bottom-right corner. */
+  colorForSource: (source: string) => string;
 }) {
   // A single controlled menu instance, positioned at the click point and
   // targeting whichever entry was last right-clicked — rather than one
@@ -240,6 +163,11 @@ export function EventsCalendarView({
         initialView={INITIAL_VIEW[mode]}
         headerToolbar={{ left: "prev,next today", center: "title", right: "" }}
         height={700}
+        // Without this, dayGridMonth renders timed events in its default
+        // compact "list-item" style (a dot + time, no background/border) —
+        // forcing "block" keeps month view's events visually identical to
+        // week/day's (same custom eventContent, same white body/border).
+        eventDisplay="block"
         nowIndicator
         selectable
         selectMirror
@@ -275,6 +203,7 @@ export function EventsCalendarView({
             overrideStatus: entry.overrideStatus,
             cancelled: entry.cancelled,
             deleted: entry.deleted,
+            calendarColor: colorForSource(entry.source),
           },
         }))}
         eventContent={(arg: EventContentArg) => {
@@ -288,6 +217,7 @@ export function EventsCalendarView({
             AvailabilityStatus | undefined;
           const cancelled = arg.event.extendedProps.cancelled as boolean;
           const deleted = arg.event.extendedProps.deleted as boolean;
+          const calendarColor = arg.event.extendedProps.calendarColor as string;
 
           return (
             <div
@@ -305,6 +235,18 @@ export function EventsCalendarView({
                   bottom: 0,
                   width: FLAG_WIDTH_PX,
                   ...flag,
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 2,
+                  right: 2,
+                  width: CALENDAR_DOT_PX,
+                  height: CALENDAR_DOT_PX,
+                  borderRadius: "50%",
+                  backgroundColor: calendarColor,
+                  border: "1px solid rgba(0, 0, 0, 0.15)",
                 }}
               />
               <div
