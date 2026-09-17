@@ -3,11 +3,17 @@ dist/
 .next/
 .turbo/
 *.log
+*.swp
 .env
 .env.local
 *.sqlite
 *.sqlite-journal
+apps/api/*.db
+apps/api/*.db-journal
 apps/api/prisma/*.db
 apps/api/prisma/*.db-journal
 apps/api/.credentials/
+apps/api/.credentials-microsoft/
 .DS_Store
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
