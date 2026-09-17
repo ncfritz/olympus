@@ -77,3 +77,12 @@ model OverrideBlock {
 
   @@index([startTime, endTime])
 }
+
+// A viewer-assigned display color for a calendar source, keyed by the
+// source label rather than a foreign key — sources include the "Overrides"
+// pseudo-calendar, which has no row in any configured-calendar table.
+model CalendarColor {
+  source    String   @id
+  color     String
+  updatedAt DateTime @updatedAt
+}
