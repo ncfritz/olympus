@@ -9,12 +9,11 @@ import { SyncConfigService } from "../../../src/sync/sync-config.service";
 
 jest.mock("../../../src/providers/google/google-credential-store");
 jest.mock("../../../src/providers/google/google-loopback-auth");
-// Microsoft's own strategy is exercised by its own tests — mocked here (just
-// its credential store, not its OAuth flow, since no Microsoft test in this
-// file drives a loopback/token exchange) purely so listStoredAccountLabels
-// doesn't fall through to the real filesystem and pick up whatever's
-// actually been authorized on this machine, the same concern
-// GOOGLE_CREDENTIALS_DIR isolation addresses for e2e tests.
+// Mocked here (just the credential store, not the OAuth flow, since no test
+// in this file drives a loopback/token exchange for either provider) purely
+// so listStoredAccountLabels doesn't fall through to the real filesystem
+// and pick up whatever's actually been authorized on this machine, the same
+// concern GOOGLE_CREDENTIALS_DIR isolation addresses for e2e tests.
 jest.mock("../../../src/providers/microsoft/microsoft-credential-store");
 
 const mockedStore = jest.mocked(credentialStore);
