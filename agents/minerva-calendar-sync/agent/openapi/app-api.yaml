@@ -519,6 +519,30 @@ paths:
         - bearer: []
       tags:
         - calendars
+  /calendars/{calendarId}/backfill:
+    post:
+      operationId: CalendarsController_backfill
+      parameters:
+        - name: calendarId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackfillResultDto'
+        '404':
+          description: No configured calendar with that id
+        '409':
+          description: Outbound sync isn't configured (RABBITMQ_URL unset)
+      security:
+        - bearer: []
+      tags:
+        - calendars
   /calendar-accounts:
     get:
       operationId: CalendarAuthController_list
@@ -887,6 +911,89 @@ paths:
         - bearer: []
       tags:
         - overrides
+  /outbox/summary:
+    get:
+      operationId: OutboxController_summary
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboxSummaryDto'
+      security:
+        - bearer: []
+      tags:
+        - outbox
+  /outbox/failed:
+    get:
+      operationId: OutboxController_listFailed
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 200
+            default: 50
+            type: number
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OutboxRecordDto'
+      security:
+        - bearer: []
+      tags:
+        - outbox
+  /outbox/failed/{id}/requeue:
+    post:
+      operationId: OutboxController_requeue
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Requeued — the dispatcher will retry it on its next tick
+        '404':
+          description: No failed outbox row with that id
+      security:
+        - bearer: []
+      tags:
+        - outbox
+  /outbox/events/{source}/{uid}:
+    get:
+      operationId: OutboxController_eventStatus
+      parameters:
+        - name: source
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: uid
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventPublishStatusDto'
+      security:
+        - bearer: []
+      tags:
+        - outbox
 info:
   title: Minerva Calendar Sync API
   description: Read API over synchronized calendar events and calendar sync status.
@@ -1342,6 +1449,22 @@ components:
             calculation
       required:
         - includedInBusy
+    BackfillResultDto:
+      type: object
+      properties:
+        enqueued:
+          type: number
+          description: >-
+            How many of this calendar's events were enqueued for redelivery to
+            the outbound broker
+        truncated:
+          type: boolean
+          description: >-
+            True if this calendar has more non-deleted events than the backfill
+            cap — only the most recent ones (by start time) were enqueued
+      required:
+        - enqueued
+        - truncated
     CalendarAccountStatusDto:
       type: object
       properties:
@@ -1560,3 +1683,108 @@ components:
             - busy
       required:
         - status
+    OutboxSourceStatsDto:
+      type: object
+      properties:
+        source:
+          type: string
+          description: The source label this row's stats are for
+        calendarId:
+          type: string
+          description: >-
+            The configured calendar this source belongs to, if it's still
+            configured
+          nullable: true
+        pending:
+          type: number
+        sent:
+          type: number
+        failed:
+          type: number
+        oldestPendingAt:
+          type: string
+          description: >-
+            createdAt of the oldest still-pending row — a growing age is the
+            signal something downstream is stuck
+          nullable: true
+      required:
+        - source
+        - pending
+        - sent
+        - failed
+    OutboxSummaryDto:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether outbound sync is configured at all (RABBITMQ_URL set)
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/OutboxSourceStatsDto'
+      required:
+        - enabled
+        - sources
+    OutboxRecordDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Outbox row id
+        eventId:
+          type: string
+          description: The canonical event id (source:uid) this row describes
+        source:
+          type: string
+          description: The source label this row's event belongs to
+        subject:
+          type: string
+          description: Lifted from the row's payload for display
+        action:
+          type: string
+          enum:
+            - upsert
+            - delete
+            - backfill
+        status:
+          type: string
+          enum:
+            - pending
+            - sent
+            - failed
+        attempts:
+          type: number
+          description: How many delivery attempts have been made
+        lastError:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        sentAt:
+          type: string
+          nullable: true
+      required:
+        - id
+        - eventId
+        - source
+        - subject
+        - action
+        - status
+        - attempts
+        - createdAt
+    EventPublishStatusDto:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether outbound sync is configured at all (RABBITMQ_URL set)
+        latest:
+          nullable: true
+          description: >-
+            The most recent outbox row for this event, or null if it's never
+            been queued (e.g. it predates outbound sync being enabled)
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/OutboxRecordDto'
+      required:
+        - enabled

@@ -8,6 +8,7 @@ import { CalendarAuthModule } from "./calendar-auth/calendar-auth.module";
 import { CalendarColorsModule } from "./calendar-colors/calendar-colors.module";
 import { CalendarsModule } from "./calendars/calendars.module";
 import { EventsModule } from "./events/events.module";
+import { OutboxModule } from "./outbox/outbox.module";
 import { OverridesModule } from "./overrides/overrides.module";
 import { StoreModule } from "./store/store.module";
 import { SyncModule } from "./sync/sync.module";
@@ -24,6 +25,7 @@ import { SyncModule } from "./sync/sync.module";
     CalendarColorsModule,
     AvailabilityModule,
     OverridesModule,
+    OutboxModule.register(),
   ],
   controllers: [AppController],
   providers: [AppService],

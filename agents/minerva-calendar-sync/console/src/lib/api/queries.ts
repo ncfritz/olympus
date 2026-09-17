@@ -18,6 +18,11 @@ export type SyncRunDetail = components["schemas"]["SyncRunDetailDto"];
 export type SyncRunEventChange =
   components["schemas"]["SyncRunEventChangeDto"];
 export type SyncRunDailyStat = components["schemas"]["SyncRunDailyStatDto"];
+export type OutboxSummary = components["schemas"]["OutboxSummaryDto"];
+export type OutboxSourceStats = components["schemas"]["OutboxSourceStatsDto"];
+export type OutboxRecord = components["schemas"]["OutboxRecordDto"];
+export type EventPublishStatus = components["schemas"]["EventPublishStatusDto"];
+export type BackfillResult = components["schemas"]["BackfillResultDto"];
 
 /** Keyed by each 15-minute chunk's start time, in minutes since epoch (as a string, since JSON object keys always are). */
 export type StatusTimeline = Record<string, AvailabilityStatus>;
@@ -321,4 +326,48 @@ export async function deleteOverrideBlock(id: string): Promise<void> {
     throw new Error(
       `Failed to delete override block: ${JSON.stringify(error)}`,
     );
+}
+
+export async function fetchOutboxSummary(): Promise<OutboxSummary> {
+  const { data } = await apiClient.GET("/outbox/summary");
+  return data ?? { enabled: false, sources: [] };
+}
+
+export async function fetchFailedOutboxRecords(
+  limit?: number,
+): Promise<OutboxRecord[]> {
+  const { data } = await apiClient.GET("/outbox/failed", {
+    params: { query: { limit } },
+  });
+  return data ?? [];
+}
+
+export async function requeueOutboxRecord(id: string): Promise<void> {
+  const { error } = await apiClient.POST("/outbox/failed/{id}/requeue", {
+    params: { path: { id } },
+  });
+  if (error)
+    throw new Error(`Failed to requeue outbox row: ${JSON.stringify(error)}`);
+}
+
+export async function fetchEventPublishStatus(
+  source: string,
+  uid: string,
+): Promise<EventPublishStatus> {
+  const { data } = await apiClient.GET("/outbox/events/{source}/{uid}", {
+    params: { path: { source, uid } },
+  });
+  return data ?? { enabled: false, latest: null };
+}
+
+export async function backfillCalendar(
+  calendarId: string,
+): Promise<BackfillResult> {
+  const { data, error } = await apiClient.POST(
+    "/calendars/{calendarId}/backfill",
+    { params: { path: { calendarId } } },
+  );
+  if (error || !data)
+    throw new Error(`Failed to start backfill: ${JSON.stringify(error)}`);
+  return data;
 }

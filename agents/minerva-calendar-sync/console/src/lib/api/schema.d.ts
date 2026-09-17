@@ -260,6 +260,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/calendars/{calendarId}/backfill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CalendarsController_backfill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/calendar-accounts": {
         parameters: {
             query?: never;
@@ -431,6 +447,70 @@ export interface paths {
         put: operations["OverridesController_updateStatus"];
         post?: never;
         delete: operations["OverridesController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/outbox/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OutboxController_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/outbox/failed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OutboxController_listFailed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/outbox/failed/{id}/requeue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["OutboxController_requeue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/outbox/events/{source}/{uid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OutboxController_eventStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -620,6 +700,12 @@ export interface components {
             /** @description Whether this calendar's events should count toward the busy/free calculation */
             includedInBusy: boolean;
         };
+        BackfillResultDto: {
+            /** @description How many of this calendar's events were enqueued for redelivery to the outbound broker */
+            enqueued: number;
+            /** @description True if this calendar has more non-deleted events than the backfill cap — only the most recent ones (by start time) were enqueued */
+            truncated: boolean;
+        };
         CalendarAccountStatusDto: {
             /** @description The stored-credential label this status describes (see google-credential-store / microsoft-credential-store) */
             accountLabel: string;
@@ -717,6 +803,47 @@ export interface components {
         UpdateOverrideBlockStatusDto: {
             /** @enum {string} */
             status: "none" | "free" | "interruptable" | "busy";
+        };
+        OutboxSourceStatsDto: {
+            /** @description The source label this row's stats are for */
+            source: string;
+            /** @description The configured calendar this source belongs to, if it's still configured */
+            calendarId?: string | null;
+            pending: number;
+            sent: number;
+            failed: number;
+            /** @description createdAt of the oldest still-pending row — a growing age is the signal something downstream is stuck */
+            oldestPendingAt?: string | null;
+        };
+        OutboxSummaryDto: {
+            /** @description Whether outbound sync is configured at all (RABBITMQ_URL set) */
+            enabled: boolean;
+            sources: components["schemas"]["OutboxSourceStatsDto"][];
+        };
+        OutboxRecordDto: {
+            /** @description Outbox row id */
+            id: string;
+            /** @description The canonical event id (source:uid) this row describes */
+            eventId: string;
+            /** @description The source label this row's event belongs to */
+            source: string;
+            /** @description Lifted from the row's payload for display */
+            subject: string;
+            /** @enum {string} */
+            action: "upsert" | "delete" | "backfill";
+            /** @enum {string} */
+            status: "pending" | "sent" | "failed";
+            /** @description How many delivery attempts have been made */
+            attempts: number;
+            lastError?: string | null;
+            createdAt: string;
+            sentAt?: string | null;
+        };
+        EventPublishStatusDto: {
+            /** @description Whether outbound sync is configured at all (RABBITMQ_URL set) */
+            enabled: boolean;
+            /** @description The most recent outbox row for this event, or null if it's never been queued (e.g. it predates outbound sync being enabled) */
+            latest?: components["schemas"]["OutboxRecordDto"] | null;
         };
     };
     responses: never;
@@ -1230,6 +1357,41 @@ export interface operations {
             };
         };
     };
+    CalendarsController_backfill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                calendarId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackfillResultDto"];
+                };
+            };
+            /** @description No configured calendar with that id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Outbound sync isn't configured (RABBITMQ_URL unset) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CalendarAuthController_list: {
         parameters: {
             query?: never;
@@ -1564,6 +1726,95 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    OutboxController_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutboxSummaryDto"];
+                };
+            };
+        };
+    };
+    OutboxController_listFailed: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutboxRecordDto"][];
+                };
+            };
+        };
+    };
+    OutboxController_requeue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Requeued — the dispatcher will retry it on its next tick */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No failed outbox row with that id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OutboxController_eventStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source: string;
+                uid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventPublishStatusDto"];
+                };
             };
         };
     };

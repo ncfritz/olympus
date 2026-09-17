@@ -18,12 +18,13 @@ describe("PrismaEventStore (Postgres)", () => {
     await prisma.onModuleInit();
     await prisma.event.deleteMany();
     await prisma.syncState.deleteMany();
-    store = new PrismaEventStore(prisma);
+    await prisma.outboxEvent.deleteMany();
+    store = new PrismaEventStore(prisma, true);
   });
 
   afterEach(async () => {
     await prisma.onModuleDestroy();
   });
 
-  testPrismaEventStoreContract(() => store);
+  testPrismaEventStoreContract(() => store, () => prisma);
 });

@@ -46,6 +46,7 @@ const NAV_ITEMS = [
   { key: "/", label: <Link href="/">Events</Link> },
   { key: "/calendars", label: <Link href="/calendars">Calendars</Link> },
   { key: "/sync", label: <Link href="/sync">Sync</Link> },
+  { key: "/publish", label: <Link href="/publish">Publish</Link> },
 ];
 
 const THEME_MODE_OPTIONS: { value: ThemeMode; label: ReactNode; title: string }[] = [
@@ -127,7 +128,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             theme="dark"
             mode="horizontal"
             selectedKeys={[
-              pathname === "/calendars" ? "/calendars" : pathname === "/sync" ? "/sync" : "/",
+              ["/calendars", "/sync", "/publish"].includes(pathname) ? pathname : "/",
             ]}
             items={NAV_ITEMS}
             style={{ flex: 1, minWidth: 0 }}

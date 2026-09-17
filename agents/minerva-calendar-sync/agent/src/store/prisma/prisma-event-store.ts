@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { Event as EventRow, Prisma } from "@prisma/client";
 import {
   CanonicalCalendarEvent,
@@ -12,11 +12,15 @@ import {
   SyncState,
 } from "../../domain/canonical-event";
 import { EventStore, UpsertResult } from "../event-store";
+import { OUTBOX_ENABLED } from "../outbox-store";
 import { PrismaService } from "./prisma.service";
 
 @Injectable()
 export class PrismaEventStore implements EventStore {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(OUTBOX_ENABLED) private readonly outboxEnabled: boolean = false,
+  ) {}
 
   async upsertEvent(event: CanonicalCalendarEvent): Promise<UpsertResult> {
     const data = toRow(event);
@@ -24,20 +28,20 @@ export class PrismaEventStore implements EventStore {
       where: { source_uid: { source: event.source, uid: event.uid } },
     });
 
-    if (!existing) {
-      await this.prisma.event.create({ data });
-      return "created";
-    }
-
-    if (rowsEqual(existing, data)) {
+    if (existing && rowsEqual(existing, data)) {
       return "unchanged";
     }
 
-    await this.prisma.event.update({
-      where: { source_uid: { source: event.source, uid: event.uid } },
-      data,
-    });
-    return "updated";
+    const result: UpsertResult = existing ? "updated" : "created";
+    await this.prisma.$transaction(
+      this.withOutbox(
+        event,
+        existing
+          ? this.prisma.event.update({ where: { source_uid: { source: event.source, uid: event.uid } }, data })
+          : this.prisma.event.create({ data }),
+      ),
+    );
+    return result;
   }
 
   async markCancelled(source: string, uid: string): Promise<boolean> {
@@ -45,19 +49,50 @@ export class PrismaEventStore implements EventStore {
     // (see resolveGoogleRemoval) and a miss should be a harmless no-op, not a
     // thrown "record not found". Excluding already-cancelled rows from the
     // where clause is what lets the caller tell a real flip from a no-op.
-    const result = await this.prisma.event.updateMany({
-      where: { source, uid, cancelled: false },
-      data: { cancelled: true },
-    });
-    return result.count > 0;
+    return this.flipAndEnqueue(source, uid, "cancelled");
   }
 
   async markDeleted(source: string, uid: string): Promise<boolean> {
-    const result = await this.prisma.event.updateMany({
-      where: { source, uid, deleted: false },
-      data: { deleted: true },
+    return this.flipAndEnqueue(source, uid, "deleted");
+  }
+
+  /**
+   * Shared by markCancelled/markDeleted: flips `field` from false to true,
+   * and — only when it actually changed a row — enqueues the resulting full
+   * row to the outbox in the same transaction, matching upsertEvent's
+   * guarantee that an outbox row is written exactly when, and atomically
+   * with, an Event row actually changes.
+   */
+  private async flipAndEnqueue(source: string, uid: string, field: "cancelled" | "deleted"): Promise<boolean> {
+    const existing = await this.prisma.event.findUnique({ where: { source_uid: { source, uid } } });
+    if (!existing || existing[field]) return false;
+
+    const updated: EventRow = { ...existing, [field]: true };
+    await this.prisma.$transaction(
+      this.withOutbox(fromRow(updated), this.prisma.event.updateMany({ where: { source, uid, [field]: false }, data: { [field]: true } })),
+    );
+    return true;
+  }
+
+  /**
+   * Bundles `write` with an outbox row queuing a full snapshot of `event`
+   * for OutboxDispatcherService, so both land in the same `$transaction` —
+   * unless outbound sync isn't configured (OUTBOX_ENABLED false), in which
+   * case no outbox row is written at all rather than accumulating forever
+   * unconsumed.
+   */
+  private withOutbox(event: CanonicalCalendarEvent, write: Prisma.PrismaPromise<unknown>): Prisma.PrismaPromise<unknown>[] {
+    if (!this.outboxEnabled) return [write];
+
+    const enqueue = this.prisma.outboxEvent.create({
+      data: {
+        eventId: event.id,
+        source: event.source,
+        action: event.deleted ? "delete" : "upsert",
+        payload: JSON.stringify(event),
+      },
     });
-    return result.count > 0;
+    return [write, enqueue];
   }
 
   async getEvent(source: string, uid: string): Promise<CanonicalCalendarEvent | null> {

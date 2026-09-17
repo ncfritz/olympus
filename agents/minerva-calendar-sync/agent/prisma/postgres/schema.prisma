@@ -159,3 +159,31 @@ model SyncRunEventChange {
 
   @@index([syncRunId])
 }
+
+// A durable record of one local event change to publish to the external
+// (Hasura-backed) system over RabbitMQ — see OutboxDispatcherService.
+// Written in the same transaction as the Event row it describes (see
+// PrismaEventStore), so a crash or broker outage between the two delays a
+// change but never loses it. `payload` is a full CanonicalCalendarEvent
+// snapshot taken at write time, not a pointer back to Event — that keeps
+// each row an immutable fact the dispatcher can send as-is, with no risk of
+// racing a later write to the same event.
+model OutboxEvent {
+  id          String    @id @default(cuid())
+  eventId     String
+  // Denormalized from the Event this row describes (same reasoning as
+  // SyncRun.source above) — lets per-calendar publish stats group directly
+  // on this table without a join back to Event.
+  source      String
+  action      String
+  payload     String
+  status      String    @default("pending")
+  attempts    Int       @default(0)
+  lastError   String?
+  availableAt DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  sentAt      DateTime?
+
+  @@index([status, availableAt])
+  @@index([source, status])
+}

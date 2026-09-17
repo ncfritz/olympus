@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Inject, Logger, NotFoundException, Param, Post, Put } from "@nestjs/common";
+import { Body, ConflictException, Controller, Delete, Get, HttpCode, Inject, Logger, NotFoundException, Param, Post, Put } from "@nestjs/common";
 import {
   ApiAcceptedResponse,
   ApiBearerAuth,
@@ -10,16 +10,25 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { CalendarAuthService } from "../calendar-auth/calendar-auth.service";
+import { CanonicalCalendarEvent } from "../domain/canonical-event";
 import { CALENDAR_BUSY_INCLUSION_STORE, CalendarBusyInclusionStore } from "../store/calendar-busy-inclusion-store";
 import { CALENDAR_ENABLEMENT_STORE, CalendarEnablementStore } from "../store/calendar-enablement-store";
 import { EVENT_STORE, EventStore } from "../store/event-store";
+import { OUTBOX_ENABLED, OUTBOX_STORE, OutboxStore } from "../store/outbox-store";
 import { SyncConfigService } from "../sync/sync-config.service";
 import { SyncEngine } from "../sync/sync-engine";
 import { SyncedCalendarConfig } from "../sync/synced-calendar-config";
 import { AddCalendarDto } from "./dto/add-calendar.dto";
+import { BackfillResultDto } from "./dto/backfill-result.dto";
 import { CalendarStatusDto } from "./dto/calendar-status.dto";
 import { SetCalendarBusyInclusionDto } from "./dto/set-calendar-busy-inclusion.dto";
 import { SetCalendarEnabledDto } from "./dto/set-calendar-enabled.dto";
+
+// Pragmatic cap on one backfill request, same reasoning (and same order of
+// magnitude) as SyncEngine's FULL_SYNC_DIFF_LIMIT: fine for a personal/
+// small-team calendar, would need real pagination well beyond this scale.
+const BACKFILL_LIMIT = 10_000;
+const BACKFILL_PAGE_SIZE = 500;
 
 @ApiBearerAuth()
 @ApiTags("calendars")
@@ -32,6 +41,8 @@ export class CalendarsController {
     @Inject(EVENT_STORE) private readonly store: EventStore,
     @Inject(CALENDAR_ENABLEMENT_STORE) private readonly enablement: CalendarEnablementStore,
     @Inject(CALENDAR_BUSY_INCLUSION_STORE) private readonly busyInclusion: CalendarBusyInclusionStore,
+    @Inject(OUTBOX_STORE) private readonly outbox: OutboxStore,
+    @Inject(OUTBOX_ENABLED) private readonly outboxEnabled: boolean,
     private readonly engine: SyncEngine,
     private readonly calendarAuth: CalendarAuthService,
   ) {}
@@ -137,6 +148,45 @@ export class CalendarsController {
         `Manually triggered sync failed for "${calendarId}": ${error instanceof Error ? error.message : error}`,
       );
     });
+  }
+
+  /**
+   * Re-queues this calendar's current, non-deleted events onto the outbound
+   * broker as a "backfill" resend — for standing up a fresh downstream
+   * database, or recovering one that fell too far behind for its own
+   * retries to catch up. Synchronous rather than fire-and-forget like
+   * triggerSync: enqueuing is a handful of bulk inserts, not a slow
+   * round trip to a calendar provider, so the caller can just wait for the
+   * count.
+   */
+  @Post(":calendarId/backfill")
+  @ApiOkResponse({ type: BackfillResultDto })
+  @ApiNotFoundResponse({ description: "No configured calendar with that id" })
+  @ApiConflictResponse({ description: "Outbound sync isn't configured (RABBITMQ_URL unset)" })
+  async backfill(@Param("calendarId") calendarId: string): Promise<BackfillResultDto> {
+    const calendar = await this.assertConfigured(calendarId);
+    if (!this.outboxEnabled) {
+      throw new ConflictException("Outbound sync isn't configured — set RABBITMQ_URL to enable it");
+    }
+
+    let cursor: string | undefined;
+    let enqueued = 0;
+
+    while (enqueued < BACKFILL_LIMIT) {
+      const page: CanonicalCalendarEvent[] = await this.store.listEvents({
+        source: calendar.source,
+        deleted: false,
+        limit: BACKFILL_PAGE_SIZE,
+        cursor,
+      });
+      if (page.length === 0) break;
+
+      enqueued += await this.outbox.enqueueBackfill(calendar.source, page);
+      cursor = page[page.length - 1].id;
+      if (page.length < BACKFILL_PAGE_SIZE) break;
+    }
+
+    return { enqueued, truncated: enqueued >= BACKFILL_LIMIT };
   }
 
   private async assertConfigured(calendarId: string): Promise<SyncedCalendarConfig> {

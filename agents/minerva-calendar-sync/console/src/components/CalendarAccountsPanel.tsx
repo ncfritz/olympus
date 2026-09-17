@@ -27,7 +27,7 @@ import {
   Typography,
 } from "antd";
 import Link from "next/link";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
 import {
   addCalendar,
@@ -45,6 +45,7 @@ import {
   type CalendarStatus,
 } from "@/lib/api/queries";
 import { useCalendarColors } from "@/lib/useCalendarColors";
+import { PROVIDER_META } from "@/lib/providerMeta";
 
 const STATUS_TAG: Record<
   CalendarAccountStatus["status"],
@@ -71,12 +72,6 @@ const POLL_WHILE_SYNCING_MS = 3000;
 
 /** How often to poll a new-account authorization while it's waiting on the user to finish signing in. */
 const POLL_NEW_ACCOUNT_AUTH_MS = 2000;
-
-/** Icon + display name for each connected provider — extend as new connectors ship. */
-const PROVIDER_META: Record<CalendarAccountStatus["provider"], { label: string; icon: ReactNode }> = {
-  google: { label: "Google", icon: <GoogleOutlined /> },
-  microsoft: { label: "Microsoft 365", icon: <WindowsOutlined /> },
-};
 
 /**
  * accountLabel alone isn't a unique account identity — the same label

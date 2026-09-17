@@ -1,8 +1,10 @@
 "use client";
 
 import { Descriptions, Divider, Drawer, Flex, Space, Tag, theme, Typography } from "antd";
+import useSWR from "swr";
 import type { components } from "@/lib/api/schema";
 import type { AvailabilityStatus } from "@/lib/api/queries";
+import { fetchEventPublishStatus } from "@/lib/api/queries";
 import { statusDotColor } from "@/lib/availability";
 import { OverrideStatusPicker } from "./OverrideStatusPicker";
 
@@ -13,6 +15,12 @@ const STATUS_LABEL: Record<AvailabilityStatus, string> = {
   free: "Free",
   interruptable: "Interruptable",
   busy: "Busy",
+};
+
+const PUBLISH_STATUS_TAG: Record<string, string> = {
+  pending: "processing",
+  sent: "success",
+  failed: "error",
 };
 
 export function EventDetailDrawer({
@@ -35,6 +43,10 @@ export function EventDetailDrawer({
   onClose: () => void;
 }) {
   const { token } = theme.useToken();
+  const { data: publishStatus } = useSWR(
+    event ? ["/outbox/events", event.source, event.uid] : null,
+    ([, source, uid]) => fetchEventPublishStatus(source, uid),
+  );
 
   return (
     <Drawer title={event?.subject} open={event !== null} onClose={onClose} size={480}>
@@ -95,6 +107,17 @@ export function EventDetailDrawer({
             <Descriptions.Item label="Deleted">
               {event.deleted ? <Tag color="red">Deleted</Tag> : "No"}
             </Descriptions.Item>
+            {publishStatus?.enabled && (
+              <Descriptions.Item label="Publish status">
+                {publishStatus.latest ? (
+                  <Tag color={PUBLISH_STATUS_TAG[publishStatus.latest.status] ?? "default"}>
+                    {publishStatus.latest.status}
+                  </Tag>
+                ) : (
+                  <Typography.Text type="secondary">Not yet queued</Typography.Text>
+                )}
+              </Descriptions.Item>
+            )}
             <Descriptions.Item label="UID">{event.uid}</Descriptions.Item>
           </Descriptions>
         </>

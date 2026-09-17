@@ -32,12 +32,46 @@ describe("PrismaEventStore (SQLite)", () => {
     await prisma.onModuleInit();
     await prisma.event.deleteMany();
     await prisma.syncState.deleteMany();
-    store = new PrismaEventStore(prisma);
+    await prisma.outboxEvent.deleteMany();
+    store = new PrismaEventStore(prisma, true);
   });
 
   afterEach(async () => {
     await prisma.onModuleDestroy();
   });
 
-  testPrismaEventStoreContract(() => store);
+  testPrismaEventStoreContract(() => store, () => prisma);
+
+  it("writes no outbox rows at all when outbound sync isn't configured", async () => {
+    const disabledStore = new PrismaEventStore(prisma, false);
+    const event = {
+      id: "personal-gmail:uid-disabled",
+      subject: "Team sync",
+      sensitivity: "normal" as const,
+      importance: "normal" as const,
+      occurrenceType: "single" as const,
+      type: "meeting" as const,
+      reminder: true,
+      response: "accepted" as const,
+      startTime: "2026-01-05T15:00:00.000Z",
+      endTime: "2026-01-05T15:30:00.000Z",
+      duration: 30,
+      allDay: false,
+      status: "busy" as const,
+      location: null,
+      cancelled: false,
+      organizerEmail: null,
+      deleted: false,
+      uid: "uid-disabled",
+      recurrenceId: null,
+      source: "personal-gmail",
+    };
+
+    await disabledStore.upsertEvent(event);
+    await disabledStore.upsertEvent({ ...event, subject: "Renamed" });
+    await disabledStore.markCancelled(event.source, event.uid);
+    await disabledStore.markDeleted(event.source, event.uid);
+
+    expect(await prisma.outboxEvent.count()).toBe(0);
+  });
 });
