@@ -1,5 +1,3 @@
-const STORAGE_KEY = "minerva:calendarColors";
-
 /** A generic categorical palette (AntD-ish hues), not tied to any particular status meaning. */
 const PALETTE = [
   "#1677ff",
@@ -25,22 +23,4 @@ function hashString(value: string): number {
 
 export function defaultColorFor(source: string): string {
   return PALETTE[hashString(source) % PALETTE.length];
-}
-
-/** Per-viewer preference only — there's no backend concept of a calendar's color, so this lives in localStorage. */
-export function loadCalendarColors(): Record<string, string> {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, string>) : {};
-  } catch {
-    return {};
-  }
-}
-
-export function saveCalendarColors(colors: Record<string, string>): void {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(colors));
-  } catch {
-    // Best-effort — a private window or blocked storage just means the customization doesn't survive a reload.
-  }
 }

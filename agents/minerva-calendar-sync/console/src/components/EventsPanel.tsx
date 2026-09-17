@@ -36,11 +36,8 @@ import {
   overlaps,
   statusLabelFor,
 } from "@/lib/availability";
-import {
-  defaultColorFor,
-  loadCalendarColors,
-  saveCalendarColors,
-} from "@/lib/calendarColors";
+import { useTimelineSettings } from "@/lib/TimelineSettingsContext";
+import { loadViewPreference, saveViewPreference } from "@/lib/viewPreference";
 import { EventDetailDrawer } from "./EventDetailDrawer";
 import {
   EventsCalendarView,
@@ -86,8 +83,25 @@ function overrideBlockLabel(block: OverrideBlockDto): string {
   return block.label?.trim() || `Override — ${block.status}`;
 }
 
-export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
-  const [view, setView] = useState<ViewMode>("week");
+export function EventsPanel({
+  calendars,
+  colorForSource,
+  onSetSourceColor,
+}: {
+  calendars: CalendarStatus[];
+  colorForSource: (source: string) => string;
+  onSetSourceColor: (source: string, color: string) => void;
+}) {
+  // Lazy-initialized the same way as timelineSettings below: this panel only
+  // ever renders meaningfully once auth/data have loaded client-side.
+  const [view, setView] = useState<ViewMode>(() =>
+    typeof window === "undefined" ? "week" : loadViewPreference(),
+  );
+
+  function changeView(next: ViewMode) {
+    setView(next);
+    saveViewPreference(next);
+  }
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const knownSources = useRef<Set<string>>(new Set());
   const [showCancelled, setShowCancelled] = useState(true);
@@ -108,27 +122,11 @@ export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
     range: { start: string; end: string };
     status: AvailabilityStatus;
   } | null>(null);
-  // Per-viewer color customization for each calendar source, persisted to
-  // localStorage (see lib/calendarColors) — there's no backend concept of
-  // a calendar's color. This whole panel only ever renders meaningfully
-  // once calendars/events have loaded client-side (via SWR, gated behind
-  // auth), so reading localStorage in the lazy initializer — rather than
-  // an effect — doesn't risk a visible SSR/client mismatch in practice.
-  const [calendarColors, setCalendarColors] = useState<Record<string, string>>(
-    () => (typeof window === "undefined" ? {} : loadCalendarColors()),
-  );
-
-  function colorForSource(source: string): string {
-    return calendarColors[source] ?? defaultColorFor(source);
-  }
-
-  function setSourceColor(source: string, color: string) {
-    setCalendarColors((prev) => {
-      const next = { ...prev, [source]: color };
-      saveCalendarColors(next);
-      return next;
-    });
-  }
+  // Day-start/day-end window, weekend handling, and timezone for the
+  // calendar's status timeline strip — persisted to localStorage (see
+  // lib/settings) and edited via the Settings drawer in the page header
+  // (see AppLayout), so it's shared app-wide rather than owned here.
+  const { settings: timelineSettings } = useTimelineSettings();
 
   const availableSources = useMemo(
     () => [...calendars.map((c) => c.source), OVERRIDES_SOURCE],
@@ -375,7 +373,7 @@ export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
           <Segmented
             options={VIEW_OPTIONS}
             value={view}
-            onChange={(value) => setView(value as ViewMode)}
+            onChange={(value) => changeView(value as ViewMode)}
           />
           <Space size="small">
             <Switch
@@ -440,7 +438,7 @@ export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
                 <ColorPicker
                   value={colorForSource(source)}
                   onChange={(color) =>
-                    setSourceColor(source, color.toHexString())
+                    onSetSourceColor(source, color.toHexString())
                   }
                 >
                   <div
@@ -553,6 +551,7 @@ export function EventsPanel({ calendars }: { calendars: CalendarStatus[] }) {
               onDelete={handleContextDelete}
               onClear={handleContextClear}
               colorForSource={colorForSource}
+              timelineSettings={timelineSettings}
             />
           )}
           {events.length >= EVENT_LIMIT && (

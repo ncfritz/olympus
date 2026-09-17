@@ -1,9 +1,11 @@
 "use client";
 
 import type {
+  DatesSetArg,
   DateSelectArg,
   EventContentArg,
   EventMountArg,
+  EventInput,
 } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -12,7 +14,11 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import { Dropdown, Space } from "antd";
 import type { MenuProps } from "antd";
 import { useEffect, useRef, useState } from "react";
-import type { AvailabilityStatus } from "@/lib/api/queries";
+import useSWR from "swr";
+import {
+  fetchStatusTimeline,
+  type AvailabilityStatus,
+} from "@/lib/api/queries";
 import {
   AVAILABILITY_STATUSES,
   flagFor,
@@ -20,6 +26,8 @@ import {
   statusDotColor,
   type CalendarEntry,
 } from "@/lib/availability";
+import { mergeTimelineChunks, mutedTimelineColor } from "@/lib/statusTimeline";
+import type { TimelineSettings } from "@/lib/settings";
 
 export type { CalendarEntry } from "@/lib/availability";
 
@@ -51,6 +59,7 @@ export function EventsCalendarView({
   onDelete,
   onClear,
   colorForSource,
+  timelineSettings,
 }: {
   mode: CalendarViewMode;
   events: CalendarEntry[];
@@ -65,7 +74,32 @@ export function EventsCalendarView({
   onClear: (entry: CalendarEntry) => void;
   /** The user's chosen (or default) color for a calendar source — shown as a small dot in each event's bottom-right corner. */
   colorForSource: (source: string) => string;
+  /** Day-start/day-end window, weekend handling, and timezone for the status timeline strip — see lib/settings. */
+  timelineSettings: TimelineSettings;
 }) {
+  // Drives the per-15-minute status timeline strip (week/day only — see
+  // globals.css's ".status-timeline-event" rules; month view doesn't get
+  // one, since FullCalendar's dayGrid only renders all-day background
+  // events, and a month cell has no room for sub-day granularity anyway).
+  // Tracks whatever range FullCalendar is currently showing, via datesSet,
+  // since that changes on prev/next/today navigation independently of the
+  // `events` prop. Keying the fetch on `events` too (not just the range)
+  // means an override change elsewhere in the panel — which changes
+  // `events`' content, not just its reference — revalidates this
+  // alongside it; SWR compares keys by value, so a same-content new array
+  // reference doesn't refetch.
+  const [visibleRange, setVisibleRange] = useState<{
+    start: string;
+    end: string;
+  } | null>(null);
+  const { data: statusTimeline } = useSWR(
+    mode !== "month" && visibleRange
+      ? ["/freebusy/timeline", visibleRange, events, timelineSettings]
+      : null,
+    ([, range]) =>
+      fetchStatusTimeline(range.start, range.end, timelineSettings),
+  );
+
   // A single controlled menu instance, positioned at the click point and
   // targeting whichever entry was last right-clicked — rather than one
   // Dropdown per rendered event. FullCalendar re-creates event DOM nodes as
@@ -172,6 +206,12 @@ export function EventsCalendarView({
         selectable
         selectMirror
         unselectAuto
+        datesSet={(arg: DatesSetArg) => {
+          setVisibleRange({
+            start: arg.start.toISOString(),
+            end: arg.end.toISOString(),
+          });
+        }}
         select={(info: DateSelectArg) => {
           // `.start`/`.end` are real Date instants — toISOString() always
           // emits UTC, unlike `.startStr`/`.endStr`, which are ambiguous
@@ -182,30 +222,49 @@ export function EventsCalendarView({
           });
           info.view.calendar.unselect();
         }}
-        events={events.map((entry) => ({
-          id: entry.id,
-          title: entry.subject,
-          start: entry.startTime,
-          end: entry.endTime,
-          allDay: entry.allDay,
-          // White body regardless of status — these are first-class
-          // FullCalendar props, reactively re-applied whenever the event's
-          // data changes (unlike DOM edits made in eventDidMount, which only
-          // ever runs once per mount and won't pick up e.g. an override that
-          // loads in after the event first renders).
-          backgroundColor: "#ffffff",
-          borderColor: "#d9d9d9",
-          textColor: "#1f1f1f",
-          extendedProps: {
-            flag: flagFor(entry),
-            hasOverrideBadge:
-              !entry.isOverrideBlock && entry.overrideStatus !== undefined,
-            overrideStatus: entry.overrideStatus,
-            cancelled: entry.cancelled,
-            deleted: entry.deleted,
-            calendarColor: colorForSource(entry.source),
-          },
-        }))}
+        events={[
+          // A muted, title-less "background" event per merged status-
+          // timeline range — FullCalendar renders these as a plain rect
+          // (no eventContent, no title) rather than a real event box, and
+          // globals.css constrains that rect to a narrow strip on the day
+          // column's left edge instead of its full width.
+          ...(statusTimeline
+            ? mergeTimelineChunks(statusTimeline).map(
+                (chunk, index): EventInput => ({
+                  id: `status-timeline:${index}`,
+                  start: chunk.start,
+                  end: chunk.end,
+                  display: "background",
+                  backgroundColor: mutedTimelineColor(chunk.status),
+                  classNames: ["status-timeline-event"],
+                }),
+              )
+            : []),
+          ...events.map((entry) => ({
+            id: entry.id,
+            title: entry.subject,
+            start: entry.startTime,
+            end: entry.endTime,
+            allDay: entry.allDay,
+            // White body regardless of status — these are first-class
+            // FullCalendar props, reactively re-applied whenever the event's
+            // data changes (unlike DOM edits made in eventDidMount, which only
+            // ever runs once per mount and won't pick up e.g. an override that
+            // loads in after the event first renders).
+            backgroundColor: "#ffffff",
+            borderColor: "#d9d9d9",
+            textColor: "#1f1f1f",
+            extendedProps: {
+              flag: flagFor(entry),
+              hasOverrideBadge:
+                !entry.isOverrideBlock && entry.overrideStatus !== undefined,
+              overrideStatus: entry.overrideStatus,
+              cancelled: entry.cancelled,
+              deleted: entry.deleted,
+              calendarColor: colorForSource(entry.source),
+            },
+          })),
+        ]}
         eventContent={(arg: EventContentArg) => {
           const flag = arg.event.extendedProps.flag as {
             backgroundColor?: string;

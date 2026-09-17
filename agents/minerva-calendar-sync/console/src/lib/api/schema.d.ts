@@ -68,6 +68,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sync-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SyncHistoryController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync-runs/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SyncHistoryController_dailyStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync-runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SyncHistoryController_getOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events": {
         parameters: {
             query?: never;
@@ -141,6 +189,54 @@ export interface paths {
         };
         get: operations["CalendarsController_list"];
         put?: never;
+        post: operations["CalendarsController_add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendars/{calendarId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["CalendarsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendars/{calendarId}/enabled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["CalendarsController_setEnabled"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendars/{calendarId}/included-in-busy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["CalendarsController_setIncludedInBusy"];
         post?: never;
         delete?: never;
         options?: never;
@@ -164,6 +260,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/calendar-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CalendarAuthController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendar-accounts/new": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CalendarAuthController_startNewAccountAuth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendar-accounts/new/{transactionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CalendarAuthController_getNewAccountAuthStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendar-accounts/{accountLabel}/reauth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CalendarAuthController_startReauth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendar-accounts/{accountLabel}/available-calendars": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CalendarAuthController_listAvailableCalendars"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendar-colors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CalendarColorsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendar-colors/{source}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["CalendarColorsController_setColor"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/freebusy": {
         parameters: {
             query?: never;
@@ -172,6 +380,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["AvailabilityController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/freebusy/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AvailabilityController_timeline"];
         put?: never;
         post?: never;
         delete?: never;
@@ -225,6 +449,90 @@ export interface components {
         AccessTokenDto: {
             accessToken: string;
         };
+        SyncRunDto: {
+            /** @description Sync history entry id */
+            id: string;
+            /** @description The provider's own calendar id this run synced */
+            calendarId: string;
+            /** @description The source label this calendar's events are stored under */
+            source: string;
+            /**
+             * @description Whether this run re-fetched everything or applied a delta
+             * @enum {string}
+             */
+            type: "full" | "incremental";
+            /**
+             * @description What kicked this run off
+             * @enum {string}
+             */
+            trigger: "manual" | "poll" | "webhook";
+            /** @enum {string} */
+            status: "success" | "error";
+            startedAt: string;
+            finishedAt: string;
+            /** @description Events processed during this run */
+            totalCount: number;
+            addedCount: number;
+            updatedCount: number;
+            deletedCount: number;
+            errorMessage?: string | null;
+        };
+        SyncRunDailyStatDto: {
+            /** @description YYYY-MM-DD, UTC */
+            date: string;
+            /** @description The provider's own calendar id this day's stats are for */
+            calendarId: string;
+            /** @description The source label this calendar's events are stored under */
+            source: string;
+            /** @description How many sync attempts ran against this calendar this day */
+            runCount: number;
+            successCount: number;
+            errorCount: number;
+            /** @description Mean run duration in milliseconds, across this day's runs */
+            avgDurationMs: number;
+            /** @description Events processed, summed across this day's runs */
+            totalCount: number;
+            addedCount: number;
+            updatedCount: number;
+            deletedCount: number;
+        };
+        SyncRunEventChangeDto: {
+            /** @enum {string} */
+            action: "added" | "updated" | "deleted";
+            /** @description The canonical event id (source:uid) this change applied to */
+            eventId: string;
+            subject: string;
+            startTime?: string | null;
+        };
+        SyncRunDetailDto: {
+            /** @description Sync history entry id */
+            id: string;
+            /** @description The provider's own calendar id this run synced */
+            calendarId: string;
+            /** @description The source label this calendar's events are stored under */
+            source: string;
+            /**
+             * @description Whether this run re-fetched everything or applied a delta
+             * @enum {string}
+             */
+            type: "full" | "incremental";
+            /**
+             * @description What kicked this run off
+             * @enum {string}
+             */
+            trigger: "manual" | "poll" | "webhook";
+            /** @enum {string} */
+            status: "success" | "error";
+            startedAt: string;
+            finishedAt: string;
+            /** @description Events processed during this run */
+            totalCount: number;
+            addedCount: number;
+            updatedCount: number;
+            deletedCount: number;
+            errorMessage?: string | null;
+            changes: components["schemas"]["SyncRunEventChangeDto"][];
+        };
         EventResponseDto: {
             id: string;
             subject: string;
@@ -267,8 +575,11 @@ export interface components {
             status: "none" | "free" | "interruptable" | "busy";
         };
         CalendarStatusDto: {
-            /** @description Which CalendarProvider implementation this calendar uses */
-            provider: string;
+            /**
+             * @description Which CalendarProvider implementation this calendar uses
+             * @enum {string}
+             */
+            provider: "google" | "microsoft";
             /** @description Which stored OAuth credential this calendar authorizes with */
             accountLabel: string;
             /** @description The provider's own calendar id */
@@ -277,8 +588,104 @@ export interface components {
             source: string;
             /** @description True once at least one full sync has completed */
             synced: boolean;
-            /** @description Whether a Google push notification channel is configured for this calendar */
+            /** @description Whether a provider push-notification channel is configured for this calendar */
             enablePush: boolean;
+            /** @description Whether this calendar's sync is turned on — a disabled calendar is skipped by polling, push, and manual sync alike */
+            enabled: boolean;
+            /** @description When a full or incremental sync last completed for this calendar */
+            lastSyncedAt?: string;
+            /** @description True while a sync (from any trigger — poll, push, or manual) is in progress for this calendar */
+            syncing: boolean;
+            /** @description Whether this calendar's events count toward the busy/free calculation (GET /freebusy, /freebusy/timeline) — off lets a calendar stay synced and visible without affecting computed availability, e.g. a shared holidays calendar */
+            includedInBusy: boolean;
+        };
+        AddCalendarDto: {
+            /**
+             * @description Which provider this calendar's account authorizes with
+             * @enum {string}
+             */
+            provider: "google" | "microsoft";
+            /** @description Which stored OAuth credential this calendar authorizes with — must already be a connected account for this provider */
+            accountLabel: string;
+            /** @description The provider's own calendar id, from GET /calendar-accounts/{accountLabel}/available-calendars?provider=... */
+            calendarId: string;
+            /** @description The source label to write onto this calendar's event rows */
+            source: string;
+        };
+        SetCalendarEnabledDto: {
+            /** @description Whether this calendar's sync should run */
+            enabled: boolean;
+        };
+        SetCalendarBusyInclusionDto: {
+            /** @description Whether this calendar's events should count toward the busy/free calculation */
+            includedInBusy: boolean;
+        };
+        CalendarAccountStatusDto: {
+            /** @description The stored-credential label this status describes (see google-credential-store / microsoft-credential-store) */
+            accountLabel: string;
+            /**
+             * @description Which provider this account authorizes with
+             * @enum {string}
+             */
+            provider: "google" | "microsoft";
+            /** @description Source labels of the configured calendars that authorize with this account */
+            sources: string[];
+            /**
+             * @description Status of the device-flow OAuth credential backing this account's sync
+             * @enum {string}
+             */
+            status: "ok" | "expired" | "reauth_pending" | "not_connected" | "error";
+            /** @description OAuth scopes granted the last time this account completed the login flow */
+            scope?: string;
+            /** @description When the stored refresh token was obtained */
+            obtainedAt?: string;
+            /** @description Expiry of the access token minted from the most recent check — google-auth-library mints a fresh one automatically around this time whenever sync next runs, so this doubles as the 'next refresh' time. */
+            accessTokenExpiresAt?: string;
+            /** @description Human-readable detail when status is 'expired' or 'error' */
+            error?: string;
+        };
+        StartNewAccountAuthDto: {
+            /**
+             * @description Which provider to authorize a new account with
+             * @enum {string}
+             */
+            provider: "google" | "microsoft";
+        };
+        StartNewAccountAuthResponseDto: {
+            /** @description Opaque id — poll GET /calendar-accounts/new/{transactionId} with this to learn the outcome */
+            transactionId: string;
+            /** @description Open this URL in a browser and sign in to authorize a new account */
+            authUrl: string;
+        };
+        NewAccountAuthStatusDto: {
+            /**
+             * @description pending: waiting on the user to finish signing in. success: the account is connected — see accountLabel. error: the flow failed — see error.
+             * @enum {string}
+             */
+            status: "pending" | "success" | "error";
+            /** @description The newly authorized account's label (its email address), once status is 'success' */
+            accountLabel?: string;
+            /** @description Human-readable detail when status is 'error' */
+            error?: string;
+        };
+        StartReauthResponseDto: {
+            /** @description Open this URL in a browser and sign in to grant Minerva access again */
+            authUrl: string;
+        };
+        AvailableCalendarDto: {
+            /** @description The provider's own calendar id (e.g. "primary" or a shared calendar's id) */
+            id: string;
+            /** @description The calendar's display name, as the provider shows it */
+            summary: string;
+            /** @description Whether this calendar is already configured to sync */
+            alreadySynced: boolean;
+        };
+        SetCalendarColorDto: {
+            /**
+             * @description Hex color, e.g. #1677ff
+             * @example #1677ff
+             */
+            color: string;
         };
         AvailabilitySlotDto: {
             /** @description ISO-8601 */
@@ -391,6 +798,89 @@ export interface operations {
         requestBody?: never;
         responses: {
             204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SyncHistoryController_list: {
+        parameters: {
+            query?: {
+                /** @description Filter to sync history for this configured calendar only */
+                calendarId?: string;
+                type?: "full" | "incremental";
+                trigger?: "manual" | "poll" | "webhook";
+                status?: "success" | "error";
+                limit?: number;
+                /** @description Sync run id to page from (exclusive) */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncRunDto"][];
+                };
+            };
+        };
+    };
+    SyncHistoryController_dailyStats: {
+        parameters: {
+            query?: {
+                /** @description Filter to sync history for this configured calendar only */
+                calendarId?: string;
+                type?: "full" | "incremental";
+                trigger?: "manual" | "poll" | "webhook";
+                status?: "success" | "error";
+                /** @description Trailing window size, in days */
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncRunDailyStatDto"][];
+                };
+            };
+        };
+    };
+    SyncHistoryController_getOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncRunDetailDto"];
+                };
+            };
+            /** @description No sync run with that id */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -589,6 +1079,130 @@ export interface operations {
             };
         };
     };
+    CalendarsController_add: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddCalendarDto"];
+            };
+        };
+        responses: {
+            /** @description The newly added calendar — an initial sync is kicked off in the background */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarStatusDto"];
+                };
+            };
+            /** @description That account isn't connected yet */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This calendar is already being synced */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalendarsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                calendarId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No configured calendar with that id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalendarsController_setEnabled: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                calendarId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetCalendarEnabledDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No configured calendar with that id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalendarsController_setIncludedInBusy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                calendarId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetCalendarBusyInclusionDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No configured calendar with that id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CalendarsController_triggerSync: {
         parameters: {
             query?: never;
@@ -609,6 +1223,185 @@ export interface operations {
             };
             /** @description No configured calendar with that id */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalendarAuthController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarAccountStatusDto"][];
+                };
+            };
+        };
+    };
+    CalendarAuthController_startNewAccountAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartNewAccountAuthDto"];
+            };
+        };
+        responses: {
+            /** @description A URL to open in a browser to authorize a new account */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartNewAccountAuthResponseDto"];
+                };
+            };
+        };
+    };
+    CalendarAuthController_getNewAccountAuthStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transactionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewAccountAuthStatusDto"];
+                };
+            };
+            /** @description No such new-account authorization */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalendarAuthController_startReauth: {
+        parameters: {
+            query?: {
+                /** @description Disambiguates which provider's account to reauthorize when the same accountLabel is connected under more than one — omit only when it's known not to collide. */
+                provider?: "google" | "microsoft";
+            };
+            header?: never;
+            path: {
+                accountLabel: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A URL to open in a browser to (re-)grant access */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartReauthResponseDto"];
+                };
+            };
+            /** @description No configured calendar uses that account label */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalendarAuthController_listAvailableCalendars: {
+        parameters: {
+            query?: {
+                /** @description Disambiguates which provider's account to list calendars for when the same accountLabel is connected under more than one — omit only when it's known not to collide. */
+                provider?: "google" | "microsoft";
+            };
+            header?: never;
+            path: {
+                accountLabel: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailableCalendarDto"][];
+                };
+            };
+            /** @description No configured calendar uses that account label, or it hasn't signed in yet */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalendarColorsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All stored colors, keyed by source label */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    CalendarColorsController_setColor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetCalendarColorDto"];
+            };
+        };
+        responses: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -637,6 +1430,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AvailabilitySlotDto"][];
+                };
+            };
+        };
+    };
+    AvailabilityController_timeline: {
+        parameters: {
+            query: {
+                /** @description ISO-8601 — inclusive start of the computed range */
+                start: string;
+                /** @description ISO-8601 — exclusive end of the computed range */
+                end: string;
+                /** @description HH:mm, 24-hour, in `timezone` — start of the working-hours window */
+                dayStart?: string;
+                /** @description HH:mm, 24-hour, in `timezone` — end of the working-hours window (exclusive) */
+                dayEnd?: string;
+                /** @description Compute Saturday/Sunday the same as weekdays instead of showing them as "none" except where an override applies */
+                treatWeekendsAsWorking?: boolean;
+                /** @description IANA timezone name (e.g. "America/Los_Angeles") used to evaluate dayStart/dayEnd and weekday */
+                timezone?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Computed status per 15-minute chunk across the requested range, keyed by each chunk's start time in minutes since epoch */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: "none" | "free" | "interruptable" | "busy";
+                    };
                 };
             };
         };

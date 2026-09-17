@@ -31,3 +31,50 @@ body {
      injection order. */
   border-left-width: 0 !important;
 }
+
+/* The per-15-minute status timeline strip (week/day views only — see
+   EventsCalendarView.tsx and lib/statusTimeline.ts; month view doesn't get
+   one, see EventsCalendarView's comment on why). FullCalendar renders a
+   "background" event as a rect filling the day column's full width;
+   constraining it keeps it left-anchored (background events start flush
+   left same as foreground ones) as a solid bar instead. Margin and
+   border-radius are inherited from the general ".fc-event" rule above (3px
+   margin, 6px radius) — zeroed here so this reads as one continuous flush
+   bar rather than a rounded pill inset from the column's edge. Opacity is
+   below 1 so the grid lines under it stay visible. The compound selector
+   (not just .status-timeline-event) already outranks both that single-class
+   ".fc-event" rule and FullCalendar's own same-specificity ".fc-bg-event"
+   one, regardless of which stylesheet lands later in the DOM. 12px here is
+   day view's width — day has no more specific override below, so it falls
+   through to this base rule. */
+.fc-bg-event.status-timeline-event {
+  width: 12px;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  opacity: 0.5;
+}
+
+/* Shifts real events 12px right (matching day view's strip width above) so
+   it's never covered — foreground event harnesses live in a sibling
+   container from background events, so this doesn't touch the strip
+   itself. FullCalendar's own ".fc-direction-ltr .fc-timegrid-col-events"
+   rule sets a 2px left margin at higher specificity (two classes vs. one
+   here), so !important is what actually wins here, not selector order. */
+.fc-timegrid-col-events {
+  margin-left: 12px !important;
+}
+
+/* Week view gets a narrower 8px strip than day's 12px. ".fc-timeGridWeek-
+   view" is FullCalendar's own class for the current view's root, scoping
+   this to week only; its extra ancestor class is what outranks the base
+   12px rules above, not rule order (and ties FullCalendar's own
+   same-specificity rule on the second selector, so !important still
+   applies there too). */
+.fc-timeGridWeek-view .fc-bg-event.status-timeline-event {
+  width: 8px;
+}
+
+.fc-timeGridWeek-view .fc-timegrid-col-events {
+  margin-left: 8px !important;
+}
