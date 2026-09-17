@@ -1,5 +1,4 @@
 import { NotFoundException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { CalendarAuthService } from "../../../src/calendar-auth/calendar-auth.service";
 import { CalendarProviderRegistry } from "../../../src/providers/calendar-provider-registry";
 import * as credentialStore from "../../../src/providers/google/google-credential-store";
@@ -32,16 +31,15 @@ function flushPromises(times = 3): Promise<void> {
   return times <= 0 ? Promise.resolve() : new Promise((resolve) => setImmediate(resolve)).then(() => flushPromises(times - 1));
 }
 
-const emptyCalendarStore: SyncedCalendarStore = {
-  listAll: async () => [],
+const seededCalendarStore: SyncedCalendarStore = {
+  listAll: async () => CALENDARS,
   add: async () => {},
   remove: async () => {},
 };
 
 function makeService(providers: Partial<CalendarProviderRegistry> = {}): CalendarAuthService {
-  const config = { get: () => JSON.stringify(CALENDARS) } as unknown as ConfigService;
   return new CalendarAuthService(
-    new SyncConfigService(config, emptyCalendarStore),
+    new SyncConfigService(seededCalendarStore),
     providers as CalendarProviderRegistry,
   );
 }
@@ -87,6 +85,40 @@ describe("CalendarAuthService", () => {
         { accountLabel: "work", provider: "google", sources: ["Work", "Work Shared"], status: "not_connected" },
         { accountLabel: "work", provider: "microsoft", sources: [], status: "not_connected" },
       ]);
+    });
+  });
+
+  describe("isConnected", () => {
+    it("is true when the provider's strategy has a stored credential for the account", () => {
+      mockedStore.tryLoadGoogleCredential.mockReturnValue({
+        accountLabel: "work",
+        refreshToken: "refresh-token",
+        scope: "scope",
+        obtainedAt: "2026-01-01T00:00:00.000Z",
+      });
+
+      expect(makeService().isConnected("work", "google")).toBe(true);
+    });
+
+    it("is false when there's no stored credential", () => {
+      mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
+
+      expect(makeService().isConnected("work", "google")).toBe(false);
+    });
+
+    it("checks the given provider's strategy specifically, not just any provider with that label", () => {
+      // "work" has a google credential but not a microsoft one.
+      mockedStore.tryLoadGoogleCredential.mockReturnValue({
+        accountLabel: "work",
+        refreshToken: "refresh-token",
+        scope: "scope",
+        obtainedAt: "2026-01-01T00:00:00.000Z",
+      });
+      mockedMicrosoftStore.tryLoadMicrosoftCredential.mockReturnValue(undefined);
+
+      const service = makeService();
+      expect(service.isConnected("work", "google")).toBe(true);
+      expect(service.isConnected("work", "microsoft")).toBe(false);
     });
   });
 
