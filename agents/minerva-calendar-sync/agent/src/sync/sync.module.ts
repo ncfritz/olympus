@@ -7,11 +7,13 @@ import { PollingNotifier } from "./polling-notifier";
 import { SyncBootstrapService } from "./sync-bootstrap.service";
 import { SyncConfigService } from "./sync-config.service";
 import { SyncEngine } from "./sync-engine";
+import { SyncHistoryController } from "./sync-history.controller";
+import { SyncHistoryPrunerService } from "./sync-history-pruner.service";
 import { WebhookNotifier } from "./webhook-notifier";
 
 @Module({
   imports: [ScheduleModule.forRoot(), StoreModule],
-  controllers: [WebhooksController],
+  controllers: [WebhooksController, SyncHistoryController],
   providers: [
     SyncEngine,
     SyncConfigService,
@@ -19,6 +21,7 @@ import { WebhookNotifier } from "./webhook-notifier";
     PollingNotifier,
     WebhookNotifier,
     SyncBootstrapService,
+    SyncHistoryPrunerService,
   ],
   exports: [SyncEngine, SyncConfigService],
 })

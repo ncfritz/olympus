@@ -105,4 +105,6 @@ export interface SyncState {
   channelExpiration: string | null;
   /** Shared secret echoed back on every push notification for that channel, to reject forged requests. */
   channelToken: string | null;
+  /** When this row was last written — i.e. when a full or incremental sync last completed. Absent when constructing a state to save (the store stamps it). */
+  lastSyncedAt?: string;
 }

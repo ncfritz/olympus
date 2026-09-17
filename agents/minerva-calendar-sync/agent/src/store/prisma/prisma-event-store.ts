@@ -11,37 +11,53 @@ import {
   Sensitivity,
   SyncState,
 } from "../../domain/canonical-event";
-import { EventStore } from "../event-store";
+import { EventStore, UpsertResult } from "../event-store";
 import { PrismaService } from "./prisma.service";
 
 @Injectable()
 export class PrismaEventStore implements EventStore {
   constructor(private readonly prisma: PrismaService) {}
 
-  async upsertEvent(event: CanonicalCalendarEvent): Promise<void> {
+  async upsertEvent(event: CanonicalCalendarEvent): Promise<UpsertResult> {
     const data = toRow(event);
-    await this.prisma.event.upsert({
+    const existing = await this.prisma.event.findUnique({
       where: { source_uid: { source: event.source, uid: event.uid } },
-      create: data,
-      update: data,
     });
+
+    if (!existing) {
+      await this.prisma.event.create({ data });
+      return "created";
+    }
+
+    if (rowsEqual(existing, data)) {
+      return "unchanged";
+    }
+
+    await this.prisma.event.update({
+      where: { source_uid: { source: event.source, uid: event.uid } },
+      data,
+    });
+    return "updated";
   }
 
-  async markCancelled(source: string, uid: string): Promise<void> {
+  async markCancelled(source: string, uid: string): Promise<boolean> {
     // updateMany rather than update: callers may resolve `uid` heuristically
     // (see resolveGoogleRemoval) and a miss should be a harmless no-op, not a
-    // thrown "record not found".
-    await this.prisma.event.updateMany({
-      where: { source, uid },
+    // thrown "record not found". Excluding already-cancelled rows from the
+    // where clause is what lets the caller tell a real flip from a no-op.
+    const result = await this.prisma.event.updateMany({
+      where: { source, uid, cancelled: false },
       data: { cancelled: true },
     });
+    return result.count > 0;
   }
 
-  async markDeleted(source: string, uid: string): Promise<void> {
-    await this.prisma.event.updateMany({
-      where: { source, uid },
+  async markDeleted(source: string, uid: string): Promise<boolean> {
+    const result = await this.prisma.event.updateMany({
+      where: { source, uid, deleted: false },
       data: { deleted: true },
     });
+    return result.count > 0;
   }
 
   async getEvent(source: string, uid: string): Promise<CanonicalCalendarEvent | null> {
@@ -97,6 +113,7 @@ export class PrismaEventStore implements EventStore {
       resourceId: row.resourceId,
       channelExpiration: row.channelExpiration?.toISOString() ?? null,
       channelToken: row.channelToken,
+      lastSyncedAt: row.updatedAt.toISOString(),
     };
   }
 
@@ -115,6 +132,29 @@ export class PrismaEventStore implements EventStore {
       update: data,
     });
   }
+}
+
+/** Field-by-field comparison used to tell a real change from an untouched event a full resync re-fetched anyway. */
+function rowsEqual(existing: EventRow, next: ReturnType<typeof toRow>): boolean {
+  return (
+    existing.subject === next.subject &&
+    existing.sensitivity === next.sensitivity &&
+    existing.importance === next.importance &&
+    existing.occurrenceType === next.occurrenceType &&
+    existing.type === next.type &&
+    existing.reminder === next.reminder &&
+    existing.response === next.response &&
+    existing.startTime.getTime() === next.startTime.getTime() &&
+    existing.endTime.getTime() === next.endTime.getTime() &&
+    existing.duration === next.duration &&
+    existing.allDay === next.allDay &&
+    existing.status === next.status &&
+    existing.location === next.location &&
+    existing.cancelled === next.cancelled &&
+    existing.organizerEmail === next.organizerEmail &&
+    existing.deleted === next.deleted &&
+    existing.recurrenceId === next.recurrenceId
+  );
 }
 
 function toRow(event: CanonicalCalendarEvent) {

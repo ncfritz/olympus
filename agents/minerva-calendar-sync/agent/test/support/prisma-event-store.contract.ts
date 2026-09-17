@@ -57,24 +57,35 @@ export function testPrismaEventStoreContract(getStore: () => PrismaEventStore): 
     expect(all[0].subject).toBe("Team sync (rescheduled)");
   });
 
-  it("marks an event cancelled without deleting the row", async () => {
+  it("upsertEvent reports created, unchanged, and updated", async () => {
+    const store = getStore();
+    const event = fixtureEvent();
+
+    expect(await store.upsertEvent(event)).toBe("created");
+    expect(await store.upsertEvent(event)).toBe("unchanged");
+    expect(await store.upsertEvent({ ...event, subject: "Renamed" })).toBe("updated");
+  });
+
+  it("marks an event cancelled without deleting the row, reporting whether it actually flipped", async () => {
     const store = getStore();
     const event = fixtureEvent();
     await store.upsertEvent(event);
 
-    await store.markCancelled(event.source, event.uid);
+    expect(await store.markCancelled(event.source, event.uid)).toBe(true);
+    expect(await store.markCancelled(event.source, event.uid)).toBe(false);
 
     const found = await store.getEvent(event.source, event.uid);
     expect(found?.cancelled).toBe(true);
     expect(found?.deleted).toBe(false);
   });
 
-  it("soft-deletes an event: the row stays with deleted = true", async () => {
+  it("soft-deletes an event: the row stays with deleted = true, reporting whether it actually flipped", async () => {
     const store = getStore();
     const event = fixtureEvent();
     await store.upsertEvent(event);
 
-    await store.markDeleted(event.source, event.uid);
+    expect(await store.markDeleted(event.source, event.uid)).toBe(true);
+    expect(await store.markDeleted(event.source, event.uid)).toBe(false);
 
     const found = await store.getEvent(event.source, event.uid);
     expect(found).not.toBeNull();
@@ -119,6 +130,7 @@ export function testPrismaEventStoreContract(getStore: () => PrismaEventStore): 
     });
 
     const state = await store.getSyncState(calendarId);
+    expect(state?.lastSyncedAt).toEqual(expect.any(String));
     expect(state).toEqual({
       calendarId,
       syncToken: "token-1",
@@ -126,6 +138,7 @@ export function testPrismaEventStoreContract(getStore: () => PrismaEventStore): 
       resourceId: "res-1",
       channelExpiration: "2026-02-01T00:00:00.000Z",
       channelToken: "secret-1",
+      lastSyncedAt: state?.lastSyncedAt,
     });
 
     await store.saveSyncState(calendarId, { ...state!, syncToken: "token-2" });

@@ -33,7 +33,7 @@ export class WebhookNotifier implements ChangeNotifier {
   private readonly webhookBaseUrl?: string;
   private readonly channelsByCalendarId = new Map<string, ChannelRegistration>();
   private readonly calendarIdByChannelId = new Map<string, string>();
-  private onChange?: (calendarId: string) => void;
+  private onChange?: (calendarId: string, trigger: "webhook") => void;
   private startupPromise: Promise<void> = Promise.resolve();
 
   constructor(
@@ -46,10 +46,13 @@ export class WebhookNotifier implements ChangeNotifier {
     this.webhookBaseUrl = config.get<string>("WEBHOOK_BASE_URL");
   }
 
-  start(onChange: (calendarId: string) => void): void {
+  start(onChange: (calendarId: string, trigger: "webhook") => void): void {
     this.onChange = onChange;
+    this.startupPromise = this.setUp();
+  }
 
-    const pushCalendars = this.syncConfig.getAll().filter((c) => c.enablePush);
+  private async setUp(): Promise<void> {
+    const pushCalendars = (await this.syncConfig.getAll()).filter((c) => c.enablePush);
     if (pushCalendars.length === 0) return;
 
     if (!this.webhookBaseUrl?.startsWith("https://")) {
@@ -60,7 +63,7 @@ export class WebhookNotifier implements ChangeNotifier {
       return;
     }
 
-    this.startupPromise = this.registerAll(pushCalendars);
+    await this.registerAll(pushCalendars);
 
     const timer = setInterval(() => this.renewExpiringChannels(pushCalendars), RENEWAL_CHECK_INTERVAL_MS);
     this.scheduler.addInterval(RENEWAL_TIMER_NAME, timer);
@@ -108,7 +111,7 @@ export class WebhookNotifier implements ChangeNotifier {
       return;
     }
 
-    this.onChange?.(calendarId);
+    this.onChange?.(calendarId, "webhook");
   }
 
   private async registerChannel(calendar: SyncedCalendarConfig): Promise<void> {

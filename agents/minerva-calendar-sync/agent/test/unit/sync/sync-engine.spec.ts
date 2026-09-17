@@ -4,6 +4,14 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { CanonicalCalendarEvent } from "../../../src/domain/canonical-event";
 import {
+  NewSyncRun,
+  SyncRun,
+  SyncRunDailyStat,
+  SyncRunFilter,
+  SyncRunStatsFilter,
+  SyncRunWithChanges,
+} from "../../../src/domain/sync-run";
+import {
   CalendarProvider,
   IncrementalResult,
   ProviderCalendar,
@@ -12,8 +20,10 @@ import {
   SyncTokenExpiredError,
 } from "../../../src/providers/calendar-provider";
 import { CalendarProviderRegistry } from "../../../src/providers/calendar-provider-registry";
+import { CalendarEnablementStore } from "../../../src/store/calendar-enablement-store";
 import { PrismaEventStore } from "../../../src/store/prisma/prisma-event-store";
 import { PrismaService } from "../../../src/store/prisma/prisma.service";
+import { SyncRunStore } from "../../../src/store/sync-run-store";
 import { SyncEngine } from "../../../src/sync/sync-engine";
 import { SyncedCalendarConfig } from "../../../src/sync/synced-calendar-config";
 
@@ -102,11 +112,54 @@ function removalRaw(tombstone: RemovalTombstone): unknown {
   return { __removal: tombstone };
 }
 
+/** In-memory stand-in — a mutable map the test can flip mid-run rather than a real store. */
+class FakeEnablementStore implements CalendarEnablementStore {
+  overrides: Record<string, boolean> = {};
+
+  async listOverrides(): Promise<Record<string, boolean>> {
+    return this.overrides;
+  }
+
+  async setEnabled(calendarId: string, enabled: boolean): Promise<void> {
+    this.overrides[calendarId] = enabled;
+  }
+}
+
+/** In-memory stand-in — records every run SyncEngine persisted, in order, for the test to assert on. */
+class FakeSyncRunStore implements SyncRunStore {
+  runs: SyncRun[] = [];
+  private nextId = 1;
+
+  async create(run: NewSyncRun): Promise<SyncRun> {
+    const saved: SyncRun = { ...run, id: `run-${this.nextId++}` };
+    this.runs.push(saved);
+    return saved;
+  }
+
+  async list(_filter: SyncRunFilter): Promise<SyncRun[]> {
+    return this.runs;
+  }
+
+  async get(_id: string): Promise<SyncRunWithChanges | null> {
+    throw new Error("not implemented in FakeSyncRunStore");
+  }
+
+  async dailyStats(_filter: SyncRunStatsFilter): Promise<SyncRunDailyStat[]> {
+    throw new Error("not implemented in FakeSyncRunStore");
+  }
+
+  async pruneFinishedBefore(_cutoff: Date): Promise<number> {
+    return 0;
+  }
+}
+
 describe("SyncEngine", () => {
   let tempDir: string;
   let prisma: PrismaService;
   let store: PrismaEventStore;
   let provider: FakeCalendarProvider;
+  let enablement: FakeEnablementStore;
+  let syncRuns: FakeSyncRunStore;
   let engine: SyncEngine;
 
   beforeAll(() => {
@@ -127,8 +180,10 @@ describe("SyncEngine", () => {
     store = new PrismaEventStore(prisma);
 
     provider = new FakeCalendarProvider();
+    enablement = new FakeEnablementStore();
+    syncRuns = new FakeSyncRunStore();
     const registry = { resolve: () => provider } as unknown as CalendarProviderRegistry;
-    engine = new SyncEngine(store, registry);
+    engine = new SyncEngine(store, enablement, registry, syncRuns);
   });
 
   afterEach(async () => {
@@ -140,7 +195,7 @@ describe("SyncEngine", () => {
       { events: [fixtureEvent({ uid: "a" }), fixtureEvent({ uid: "b" })], nextSyncToken: "token-1" },
     ];
 
-    await engine.syncOne(CONFIG);
+    await engine.syncOne(CONFIG, "manual");
 
     const events = await store.listEvents({ source: CONFIG.source });
     expect(events.map((e) => e.uid).sort()).toEqual(["a", "b"]);
@@ -152,7 +207,7 @@ describe("SyncEngine", () => {
       { events: [{ __fail: true }, fixtureEvent({ uid: "good" })], nextSyncToken: "token-1" },
     ];
 
-    await engine.syncOne(CONFIG);
+    await engine.syncOne(CONFIG, "manual");
 
     const events = await store.listEvents({ source: CONFIG.source });
     expect(events.map((e) => e.uid)).toEqual(["good"]);
@@ -163,7 +218,7 @@ describe("SyncEngine", () => {
     await store.upsertEvent(fixtureEvent({ uid: "stale" }));
     provider.fullSyncBatches = [{ events: [fixtureEvent({ uid: "fresh" })], nextSyncToken: "token-1" }];
 
-    await engine.syncOne(CONFIG);
+    await engine.syncOne(CONFIG, "manual");
 
     expect((await store.getEvent(CONFIG.source, "stale"))?.deleted).toBe(true);
     expect((await store.getEvent(CONFIG.source, "fresh"))?.deleted).toBe(false);
@@ -183,7 +238,7 @@ describe("SyncEngine", () => {
       { events: [fixtureEvent({ uid: "a", subject: "Updated" })], nextSyncToken: "token-2" },
     ];
 
-    await engine.syncOne(CONFIG);
+    await engine.syncOne(CONFIG, "manual");
 
     expect((await store.getEvent(CONFIG.source, "a"))?.subject).toBe("Updated");
     expect((await store.getSyncState(CONFIG.calendarId))?.syncToken).toBe("token-2");
@@ -203,7 +258,7 @@ describe("SyncEngine", () => {
       { events: [removalRaw({ uid: "occ-1", isOccurrence: true })], nextSyncToken: "token-2" },
     ];
 
-    await engine.syncOne(CONFIG);
+    await engine.syncOne(CONFIG, "manual");
 
     const event = await store.getEvent(CONFIG.source, "occ-1");
     expect(event?.cancelled).toBe(true);
@@ -224,7 +279,7 @@ describe("SyncEngine", () => {
       { events: [removalRaw({ uid: "solo-1", isOccurrence: false })], nextSyncToken: "token-2" },
     ];
 
-    await engine.syncOne(CONFIG);
+    await engine.syncOne(CONFIG, "manual");
 
     expect((await store.getEvent(CONFIG.source, "solo-1"))?.deleted).toBe(true);
   });
@@ -241,10 +296,20 @@ describe("SyncEngine", () => {
     provider.incrementalQueue = [new SyncTokenExpiredError(CONFIG.calendarId)];
     provider.fullSyncBatches = [{ events: [fixtureEvent({ uid: "a" })], nextSyncToken: "fresh-token" }];
 
-    await engine.syncOne(CONFIG);
+    await engine.syncOne(CONFIG, "manual");
 
     expect((await store.getEvent(CONFIG.source, "a"))?.uid).toBe("a");
     expect((await store.getSyncState(CONFIG.calendarId))?.syncToken).toBe("fresh-token");
+  });
+
+  it("skips sync entirely for a calendar the user has disabled", async () => {
+    enablement.overrides[CONFIG.calendarId] = false;
+    provider.fullSyncBatches = [{ events: [fixtureEvent({ uid: "a" })], nextSyncToken: "token-1" }];
+
+    await engine.syncOne(CONFIG, "manual");
+
+    expect(provider.fullSyncCallCount).toBe(0);
+    expect(await store.getSyncState(CONFIG.calendarId)).toBeNull();
   });
 
   it("skips an overlapping sync for the same calendar rather than running concurrently", async () => {
@@ -252,8 +317,8 @@ describe("SyncEngine", () => {
     provider.fullSyncGate = new Promise((resolve) => (releaseGate = resolve));
     provider.fullSyncBatches = [{ events: [fixtureEvent({ uid: "a" })], nextSyncToken: "token-1" }];
 
-    const first = engine.syncOne(CONFIG);
-    const second = engine.syncOne(CONFIG);
+    const first = engine.syncOne(CONFIG, "manual");
+    const second = engine.syncOne(CONFIG, "manual");
     // `first` cannot finish until releaseGate() is called below, so `second`
     // resolving here proves it returned early rather than waiting on `first`.
     await second;
@@ -263,5 +328,102 @@ describe("SyncEngine", () => {
 
     expect(provider.fullSyncCallCount).toBe(1);
     expect((await store.getEvent(CONFIG.source, "a"))?.uid).toBe("a");
+  });
+
+  describe("sync history", () => {
+    it("records a full sync with accurate added/deleted counts and per-event changes", async () => {
+      await store.upsertEvent(fixtureEvent({ uid: "stale" }));
+      provider.fullSyncBatches = [
+        { events: [fixtureEvent({ uid: "a" }), fixtureEvent({ uid: "b" })], nextSyncToken: "token-1" },
+      ];
+
+      await engine.syncOne(CONFIG, "manual");
+
+      expect(syncRuns.runs).toHaveLength(1);
+      const run = syncRuns.runs[0];
+      expect(run).toMatchObject({
+        calendarId: CONFIG.calendarId,
+        source: CONFIG.source,
+        type: "full",
+        trigger: "manual",
+        status: "success",
+        totalCount: 2,
+        addedCount: 2,
+        updatedCount: 0,
+        deletedCount: 1,
+      });
+    });
+
+    it("reports 'updated' only for an event whose fields actually changed on an otherwise-unchanged full resync", async () => {
+      await store.upsertEvent(fixtureEvent({ uid: "a", subject: "Original" }));
+      provider.fullSyncBatches = [
+        { events: [fixtureEvent({ uid: "a", subject: "Renamed" })], nextSyncToken: "token-1" },
+      ];
+
+      await engine.syncOne(CONFIG, "manual");
+
+      expect(syncRuns.runs[0]).toMatchObject({ addedCount: 0, updatedCount: 1, deletedCount: 0 });
+    });
+
+    it("records a poll-triggered sync even when it found nothing new", async () => {
+      await store.saveSyncState(CONFIG.calendarId, {
+        calendarId: CONFIG.calendarId,
+        syncToken: "token-1",
+        channelId: null,
+        resourceId: null,
+        channelExpiration: null,
+        channelToken: null,
+      });
+      provider.incrementalQueue = [{ events: [], nextSyncToken: "token-2" }];
+
+      await engine.syncOne(CONFIG, "poll");
+
+      expect(syncRuns.runs).toHaveLength(1);
+      expect(syncRuns.runs[0]).toMatchObject({ trigger: "poll", status: "success", totalCount: 0 });
+    });
+
+    it("still records a manually-triggered sync even when it turns out to be a no-op", async () => {
+      await store.saveSyncState(CONFIG.calendarId, {
+        calendarId: CONFIG.calendarId,
+        syncToken: "token-1",
+        channelId: null,
+        resourceId: null,
+        channelExpiration: null,
+        channelToken: null,
+      });
+      provider.incrementalQueue = [{ events: [], nextSyncToken: "token-2" }];
+
+      await engine.syncOne(CONFIG, "manual");
+
+      expect(syncRuns.runs).toHaveLength(1);
+      expect(syncRuns.runs[0]).toMatchObject({ trigger: "manual", status: "success", totalCount: 0 });
+    });
+
+    it("records an errored run with the failure message, and still propagates the error", async () => {
+      provider.fullSyncBatches = [];
+      const failure = Promise.reject(new Error("boom"));
+      failure.catch(() => {}); // avoid an unhandled-rejection warning between assignment and the await inside fullSync
+      provider.fullSyncGate = failure;
+
+      await expect(engine.syncOne(CONFIG, "poll")).rejects.toThrow("boom");
+
+      expect(syncRuns.runs).toHaveLength(1);
+      expect(syncRuns.runs[0]).toMatchObject({ status: "error", errorMessage: "boom" });
+    });
+
+    it("reports isSyncing while a sync is in flight and clears it once done", async () => {
+      let releaseGate!: () => void;
+      provider.fullSyncGate = new Promise((resolve) => (releaseGate = resolve));
+      provider.fullSyncBatches = [{ events: [fixtureEvent({ uid: "a" })], nextSyncToken: "token-1" }];
+
+      expect(engine.isSyncing(CONFIG.calendarId)).toBe(false);
+      const pending = engine.syncOne(CONFIG, "manual");
+      expect(engine.isSyncing(CONFIG.calendarId)).toBe(true);
+
+      releaseGate();
+      await pending;
+
+      expect(engine.isSyncing(CONFIG.calendarId)).toBe(false);
+    });
   });
 });

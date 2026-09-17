@@ -1,10 +1,16 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { SyncRunTrigger } from "../domain/sync-run";
 import { PollingNotifier } from "./polling-notifier";
 import { SyncConfigService } from "./sync-config.service";
 import { SyncEngine } from "./sync-engine";
 import { WebhookNotifier } from "./webhook-notifier";
 
-/** Starts the configured ChangeNotifier(s) at boot and routes their signals into SyncEngine. */
+/**
+ * Starts the ChangeNotifier(s) at boot and routes their signals into
+ * SyncEngine — unconditionally, even with nothing configured yet, since a
+ * calendar can be added later through the Sync page's discovery UI and
+ * polling needs to already be running to pick it up.
+ */
 @Injectable()
 export class SyncBootstrapService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(SyncBootstrapService.name);
@@ -16,17 +22,16 @@ export class SyncBootstrapService implements OnModuleInit, OnModuleDestroy {
     private readonly webhook: WebhookNotifier,
   ) {}
 
-  onModuleInit(): void {
-    if (this.config.getAll().length === 0) {
-      this.logger.warn("No calendars configured (SYNCED_CALENDARS is empty) — nothing to sync");
-      return;
+  async onModuleInit(): Promise<void> {
+    if ((await this.config.getAll()).length === 0) {
+      this.logger.warn("No calendars configured yet — nothing to sync until one is added");
     }
 
-    const onChange = (calendarId: string) => {
-      const calendar = this.config.getAll().find((c) => c.calendarId === calendarId);
+    const onChange = async (calendarId: string, trigger: SyncRunTrigger) => {
+      const calendar = (await this.config.getAll()).find((c) => c.calendarId === calendarId);
       if (!calendar) return;
 
-      this.engine.syncOne(calendar).catch((error) => {
+      await this.engine.syncOne(calendar, trigger).catch((error) => {
         this.logger.error(`Sync failed for "${calendarId}": ${error instanceof Error ? error.message : error}`);
       });
     };

@@ -68,7 +68,7 @@ function fakeConfigService(webhookBaseUrl: string | undefined): ConfigService {
 }
 
 function fakeSyncConfig(calendars: SyncedCalendarConfig[]): SyncConfigService {
-  return { getAll: () => calendars } as unknown as SyncConfigService;
+  return { getAll: async () => calendars } as unknown as SyncConfigService;
 }
 
 describe("WebhookNotifier", () => {
@@ -171,7 +171,7 @@ describe("WebhookNotifier", () => {
     const state = await store.getSyncState(PUSH_CALENDAR.calendarId);
     notifier.handleNotification("chan-1", state!.channelToken!);
 
-    expect(onChange).toHaveBeenCalledWith(PUSH_CALENDAR.calendarId);
+    expect(onChange).toHaveBeenCalledWith(PUSH_CALENDAR.calendarId, "webhook");
   });
 
   it("ignores a notification with the wrong token", async () => {
@@ -213,7 +213,7 @@ describe("WebhookNotifier", () => {
     expect(state?.channelId).toBe("chan-2");
 
     const onChange = jest.fn();
-    (notifier as unknown as { onChange: (id: string) => void }).onChange = onChange;
+    (notifier as unknown as { onChange: (id: string, trigger: string) => void }).onChange = onChange;
     notifier.handleNotification("chan-1", "anything");
     expect(onChange).not.toHaveBeenCalled();
   });
