@@ -35,7 +35,7 @@ const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
 const NAV_ITEMS = [
-  { key: "/", label: <Link href="/">Calendar</Link> },
+  { key: "/", label: <Link href="/">Events</Link> },
   { key: "/calendars", label: <Link href="/calendars">Calendars</Link> },
   { key: "/sync", label: <Link href="/sync">Sync</Link> },
 ];
@@ -92,8 +92,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <TimelineSettingsProvider>
-      <Layout style={{ minHeight: "100vh" }}>
-        <Header style={{ display: "flex", alignItems: "center", gap: 24 }}>
+      <Layout style={{ height: "100vh", overflow: "hidden" }}>
+        <Header
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 24,
+            flexShrink: 0,
+          }}
+        >
           <Title
             level={4}
             style={{ color: "white", margin: 0, whiteSpace: "nowrap" }}
@@ -138,7 +145,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
             />
           </Space>
         </Header>
-        <Content style={{ padding: 24 }}>{children}</Content>
+        <Content
+          style={{
+            padding: 24,
+            flex: 1,
+            minHeight: 0,
+            overflow: "auto",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {children}
+        </Content>
         <TimelineSettingsDrawer
           open={settingsOpen}
           onClose={() => setSettingsOpen(false)}

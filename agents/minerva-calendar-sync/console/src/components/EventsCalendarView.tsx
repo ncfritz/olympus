@@ -196,7 +196,7 @@ export function EventsCalendarView({
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView={INITIAL_VIEW[mode]}
         headerToolbar={{ left: "prev,next today", center: "title", right: "" }}
-        height={700}
+        height="100%"
         // Without this, dayGridMonth renders timed events in its default
         // compact "list-item" style (a dot + time, no background/border) —
         // forcing "block" keeps month view's events visually identical to

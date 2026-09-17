@@ -1,5 +1,6 @@
 "use client";
 
+import { ReloadOutlined } from "@ant-design/icons";
 import {
   Button,
   Card,
@@ -391,14 +392,27 @@ export function EventsPanel({
             />
             <span>Deleted</span>
           </Space>
-          <Button onClick={() => mutate()} loading={isLoading}>
-            Refresh
-          </Button>
+          <Button
+            type="text"
+            icon={<ReloadOutlined />}
+            onClick={() => mutate()}
+            loading={isLoading}
+            aria-label="Refresh"
+          />
         </Space>
       }
+      style={{ height: "100%", display: "flex", flexDirection: "column" }}
+      styles={{
+        body: {
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+        },
+      }}
     >
-      <Flex gap="large" align="flex-start">
-        <div style={{ width: 180, flexShrink: 0 }}>
+      <Flex gap="large" align="stretch" style={{ flex: 1, minHeight: 0 }}>
+        <div style={{ width: 240, flexShrink: 0, overflow: "auto" }}>
           <Flex
             justify="space-between"
             align="center"
@@ -457,7 +471,14 @@ export function EventsPanel({
             ))}
           </Flex>
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           {view === "list" ? (
             <Table<CalendarEntry>
               rowKey="id"
@@ -542,20 +563,22 @@ export function EventsPanel({
               ]}
             />
           ) : (
-            <EventsCalendarView
-              mode={view}
-              events={filteredEntries}
-              onSelectEvent={handleSelect}
-              onSelectRange={handleSelectRange}
-              onSetStatus={handleContextSetStatus}
-              onDelete={handleContextDelete}
-              onClear={handleContextClear}
-              colorForSource={colorForSource}
-              timelineSettings={timelineSettings}
-            />
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <EventsCalendarView
+                mode={view}
+                events={filteredEntries}
+                onSelectEvent={handleSelect}
+                onSelectRange={handleSelectRange}
+                onSetStatus={handleContextSetStatus}
+                onDelete={handleContextDelete}
+                onClear={handleContextClear}
+                colorForSource={colorForSource}
+                timelineSettings={timelineSettings}
+              />
+            </div>
           )}
           {events.length >= EVENT_LIMIT && (
-            <p style={{ marginTop: 8, color: "#888" }}>
+            <p style={{ marginTop: 8, color: "#888", flexShrink: 0 }}>
               Showing the first {EVENT_LIMIT} matching events — narrow the
               filters above to see more specific results.
             </p>
