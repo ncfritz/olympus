@@ -63,6 +63,11 @@ export class CalendarAuthService {
     );
   }
 
+  /** Whether `accountLabel` has a stored, usable credential for `provider` — CalendarsController checks this before adding a calendar for it. */
+  isConnected(accountLabel: string, provider: CalendarProviderName): boolean {
+    return this.strategies[provider].tryLoadCredential(accountLabel) !== undefined;
+  }
+
   async getStatus(accountLabel: string, provider?: CalendarProviderName): Promise<CalendarAccountStatusDto> {
     const strategy = await this.resolveStrategy(accountLabel, provider);
     return this.buildStatus(accountLabel, strategy);

@@ -7,5 +7,6 @@ import { CalendarAuthService } from "./calendar-auth.service";
   imports: [SyncModule],
   controllers: [CalendarAuthController],
   providers: [CalendarAuthService],
+  exports: [CalendarAuthService],
 })
 export class CalendarAuthModule {}

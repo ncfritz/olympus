@@ -52,6 +52,147 @@ paths:
           description: ''
       tags:
         - auth
+  /sync-runs:
+    get:
+      operationId: SyncHistoryController_list
+      parameters:
+        - name: calendarId
+          required: false
+          in: query
+          description: Filter to sync history for this configured calendar only
+          schema:
+            type: string
+        - name: type
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - full
+              - incremental
+        - name: trigger
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - manual
+              - poll
+              - webhook
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - success
+              - error
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 200
+            default: 50
+            type: number
+        - name: cursor
+          required: false
+          in: query
+          description: Sync run id to page from (exclusive)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SyncRunDto'
+      security:
+        - bearer: []
+      tags:
+        - sync-runs
+  /sync-runs/stats:
+    get:
+      operationId: SyncHistoryController_dailyStats
+      parameters:
+        - name: calendarId
+          required: false
+          in: query
+          description: Filter to sync history for this configured calendar only
+          schema:
+            type: string
+        - name: type
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - full
+              - incremental
+        - name: trigger
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - manual
+              - poll
+              - webhook
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - success
+              - error
+        - name: days
+          required: false
+          in: query
+          description: Trailing window size, in days
+          schema:
+            minimum: 1
+            maximum: 90
+            default: 30
+            type: number
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SyncRunDailyStatDto'
+      security:
+        - bearer: []
+      tags:
+        - sync-runs
+  /sync-runs/{id}:
+    get:
+      operationId: SyncHistoryController_getOne
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncRunDetailDto'
+        '404':
+          description: No sync run with that id
+      security:
+        - bearer: []
+      tags:
+        - sync-runs
   /events:
     get:
       operationId: EventsController_list
@@ -268,6 +409,98 @@ paths:
         - bearer: []
       tags:
         - calendars
+    post:
+      operationId: CalendarsController_add
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCalendarDto'
+      responses:
+        '201':
+          description: >-
+            The newly added calendar — an initial sync is kicked off in the
+            background
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarStatusDto'
+        '404':
+          description: That account isn't connected yet
+        '409':
+          description: This calendar is already being synced
+      security:
+        - bearer: []
+      tags:
+        - calendars
+  /calendars/{calendarId}:
+    delete:
+      operationId: CalendarsController_remove
+      parameters:
+        - name: calendarId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '204':
+          description: ''
+        '404':
+          description: No configured calendar with that id
+      security:
+        - bearer: []
+      tags:
+        - calendars
+  /calendars/{calendarId}/enabled:
+    put:
+      operationId: CalendarsController_setEnabled
+      parameters:
+        - name: calendarId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetCalendarEnabledDto'
+      responses:
+        '204':
+          description: ''
+        '404':
+          description: No configured calendar with that id
+      security:
+        - bearer: []
+      tags:
+        - calendars
+  /calendars/{calendarId}/included-in-busy:
+    put:
+      operationId: CalendarsController_setIncludedInBusy
+      parameters:
+        - name: calendarId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetCalendarBusyInclusionDto'
+      responses:
+        '204':
+          description: ''
+        '404':
+          description: No configured calendar with that id
+      security:
+        - bearer: []
+      tags:
+        - calendars
   /calendars/{calendarId}/sync:
     post:
       operationId: CalendarsController_triggerSync
@@ -286,6 +519,180 @@ paths:
         - bearer: []
       tags:
         - calendars
+  /calendar-accounts:
+    get:
+      operationId: CalendarAuthController_list
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CalendarAccountStatusDto'
+      security:
+        - bearer: []
+      tags:
+        - calendar-auth
+  /calendar-accounts/new:
+    post:
+      operationId: CalendarAuthController_startNewAccountAuth
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartNewAccountAuthDto'
+      responses:
+        '200':
+          description: A URL to open in a browser to authorize a new account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartNewAccountAuthResponseDto'
+      security:
+        - bearer: []
+      tags:
+        - calendar-auth
+  /calendar-accounts/new/{transactionId}:
+    get:
+      operationId: CalendarAuthController_getNewAccountAuthStatus
+      parameters:
+        - name: transactionId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewAccountAuthStatusDto'
+        '404':
+          description: No such new-account authorization
+      security:
+        - bearer: []
+      tags:
+        - calendar-auth
+  /calendar-accounts/{accountLabel}/reauth:
+    post:
+      operationId: CalendarAuthController_startReauth
+      parameters:
+        - name: accountLabel
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: provider
+          required: false
+          in: query
+          description: >-
+            Disambiguates which provider's account to reauthorize when the same
+            accountLabel is connected under more than one — omit only when it's
+            known not to collide.
+          schema:
+            enum:
+              - google
+              - microsoft
+            type: string
+      responses:
+        '200':
+          description: A URL to open in a browser to (re-)grant access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartReauthResponseDto'
+        '404':
+          description: No configured calendar uses that account label
+      security:
+        - bearer: []
+      tags:
+        - calendar-auth
+  /calendar-accounts/{accountLabel}/available-calendars:
+    get:
+      operationId: CalendarAuthController_listAvailableCalendars
+      parameters:
+        - name: accountLabel
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: provider
+          required: false
+          in: query
+          description: >-
+            Disambiguates which provider's account to list calendars for when
+            the same accountLabel is connected under more than one — omit only
+            when it's known not to collide.
+          schema:
+            enum:
+              - google
+              - microsoft
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AvailableCalendarDto'
+        '404':
+          description: >-
+            No configured calendar uses that account label, or it hasn't signed
+            in yet
+      security:
+        - bearer: []
+      tags:
+        - calendar-auth
+  /calendar-colors:
+    get:
+      operationId: CalendarColorsController_list
+      parameters: []
+      responses:
+        '200':
+          description: All stored colors, keyed by source label
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                example:
+                  personal-gmail: '#1677ff'
+                  Overrides: '#f5222d'
+      security:
+        - bearer: []
+      tags:
+        - calendar-colors
+  /calendar-colors/{source}:
+    put:
+      operationId: CalendarColorsController_setColor
+      parameters:
+        - name: source
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetCalendarColorDto'
+      responses:
+        '204':
+          description: ''
+      security:
+        - bearer: []
+      tags:
+        - calendar-colors
   /freebusy:
     get:
       operationId: AvailabilityController_list
@@ -311,6 +718,79 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AvailabilitySlotDto'
+      security:
+        - bearer: []
+      tags:
+        - availability
+  /freebusy/timeline:
+    get:
+      operationId: AvailabilityController_timeline
+      parameters:
+        - name: start
+          required: true
+          in: query
+          description: ISO-8601 — inclusive start of the computed range
+          schema:
+            type: string
+        - name: end
+          required: true
+          in: query
+          description: ISO-8601 — exclusive end of the computed range
+          schema:
+            type: string
+        - name: dayStart
+          required: false
+          in: query
+          description: HH:mm, 24-hour, in `timezone` — start of the working-hours window
+          schema:
+            default: '08:00'
+            type: string
+        - name: dayEnd
+          required: false
+          in: query
+          description: >-
+            HH:mm, 24-hour, in `timezone` — end of the working-hours window
+            (exclusive)
+          schema:
+            default: '18:00'
+            type: string
+        - name: treatWeekendsAsWorking
+          required: false
+          in: query
+          description: >-
+            Compute Saturday/Sunday the same as weekdays instead of showing them
+            as "none" except where an override applies
+          schema:
+            default: false
+            type: boolean
+        - name: timezone
+          required: false
+          in: query
+          description: >-
+            IANA timezone name (e.g. "America/Los_Angeles") used to evaluate
+            dayStart/dayEnd and weekday
+          schema:
+            default: UTC
+            type: string
+      responses:
+        '200':
+          description: >-
+            Computed status per 15-minute chunk across the requested range,
+            keyed by each chunk's start time in minutes since epoch
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                  enum:
+                    - none
+                    - free
+                    - interruptable
+                    - busy
+                example:
+                  '28564020': busy
+                  '28564035': none
       security:
         - bearer: []
       tags:
@@ -417,6 +897,8 @@ tags:
     description: ''
   - name: calendars
     description: ''
+  - name: calendar-auth
+    description: ''
   - name: auth
     description: ''
 servers: []
@@ -448,6 +930,193 @@ components:
           type: string
       required:
         - accessToken
+    SyncRunDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Sync history entry id
+        calendarId:
+          type: string
+          description: The provider's own calendar id this run synced
+        source:
+          type: string
+          description: The source label this calendar's events are stored under
+        type:
+          type: string
+          enum:
+            - full
+            - incremental
+          description: Whether this run re-fetched everything or applied a delta
+        trigger:
+          type: string
+          enum:
+            - manual
+            - poll
+            - webhook
+          description: What kicked this run off
+        status:
+          type: string
+          enum:
+            - success
+            - error
+        startedAt:
+          type: string
+        finishedAt:
+          type: string
+        totalCount:
+          type: number
+          description: Events processed during this run
+        addedCount:
+          type: number
+        updatedCount:
+          type: number
+        deletedCount:
+          type: number
+        errorMessage:
+          type: string
+          nullable: true
+      required:
+        - id
+        - calendarId
+        - source
+        - type
+        - trigger
+        - status
+        - startedAt
+        - finishedAt
+        - totalCount
+        - addedCount
+        - updatedCount
+        - deletedCount
+    SyncRunDailyStatDto:
+      type: object
+      properties:
+        date:
+          type: string
+          description: YYYY-MM-DD, UTC
+        calendarId:
+          type: string
+          description: The provider's own calendar id this day's stats are for
+        source:
+          type: string
+          description: The source label this calendar's events are stored under
+        runCount:
+          type: number
+          description: How many sync attempts ran against this calendar this day
+        successCount:
+          type: number
+        errorCount:
+          type: number
+        avgDurationMs:
+          type: number
+          description: Mean run duration in milliseconds, across this day's runs
+        totalCount:
+          type: number
+          description: Events processed, summed across this day's runs
+        addedCount:
+          type: number
+        updatedCount:
+          type: number
+        deletedCount:
+          type: number
+      required:
+        - date
+        - calendarId
+        - source
+        - runCount
+        - successCount
+        - errorCount
+        - avgDurationMs
+        - totalCount
+        - addedCount
+        - updatedCount
+        - deletedCount
+    SyncRunEventChangeDto:
+      type: object
+      properties:
+        action:
+          type: string
+          enum:
+            - added
+            - updated
+            - deleted
+        eventId:
+          type: string
+          description: The canonical event id (source:uid) this change applied to
+        subject:
+          type: string
+        startTime:
+          type: string
+          nullable: true
+      required:
+        - action
+        - eventId
+        - subject
+    SyncRunDetailDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Sync history entry id
+        calendarId:
+          type: string
+          description: The provider's own calendar id this run synced
+        source:
+          type: string
+          description: The source label this calendar's events are stored under
+        type:
+          type: string
+          enum:
+            - full
+            - incremental
+          description: Whether this run re-fetched everything or applied a delta
+        trigger:
+          type: string
+          enum:
+            - manual
+            - poll
+            - webhook
+          description: What kicked this run off
+        status:
+          type: string
+          enum:
+            - success
+            - error
+        startedAt:
+          type: string
+        finishedAt:
+          type: string
+        totalCount:
+          type: number
+          description: Events processed during this run
+        addedCount:
+          type: number
+        updatedCount:
+          type: number
+        deletedCount:
+          type: number
+        errorMessage:
+          type: string
+          nullable: true
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncRunEventChangeDto'
+      required:
+        - id
+        - calendarId
+        - source
+        - type
+        - trigger
+        - status
+        - startedAt
+        - finishedAt
+        - totalCount
+        - addedCount
+        - updatedCount
+        - deletedCount
+        - changes
     EventResponseDto:
       type: object
       properties:
@@ -578,6 +1247,9 @@ components:
         provider:
           type: string
           description: Which CalendarProvider implementation this calendar uses
+          enum:
+            - google
+            - microsoft
         accountLabel:
           type: string
           description: Which stored OAuth credential this calendar authorizes with
@@ -593,8 +1265,28 @@ components:
         enablePush:
           type: boolean
           description: >-
-            Whether a Google push notification channel is configured for this
+            Whether a provider push-notification channel is configured for this
             calendar
+        enabled:
+          type: boolean
+          description: >-
+            Whether this calendar's sync is turned on — a disabled calendar is
+            skipped by polling, push, and manual sync alike
+        lastSyncedAt:
+          type: string
+          description: When a full or incremental sync last completed for this calendar
+        syncing:
+          type: boolean
+          description: >-
+            True while a sync (from any trigger — poll, push, or manual) is in
+            progress for this calendar
+        includedInBusy:
+          type: boolean
+          description: >-
+            Whether this calendar's events count toward the busy/free
+            calculation (GET /freebusy, /freebusy/timeline) — off lets a
+            calendar stay synced and visible without affecting computed
+            availability, e.g. a shared holidays calendar
       required:
         - provider
         - accountLabel
@@ -602,6 +1294,191 @@ components:
         - source
         - synced
         - enablePush
+        - enabled
+        - syncing
+        - includedInBusy
+    AddCalendarDto:
+      type: object
+      properties:
+        provider:
+          type: string
+          description: Which provider this calendar's account authorizes with
+          enum:
+            - google
+            - microsoft
+        accountLabel:
+          type: string
+          description: >-
+            Which stored OAuth credential this calendar authorizes with — must
+            already be a connected account for this provider
+        calendarId:
+          type: string
+          description: >-
+            The provider's own calendar id, from GET
+            /calendar-accounts/{accountLabel}/available-calendars?provider=...
+        source:
+          type: string
+          description: The source label to write onto this calendar's event rows
+      required:
+        - provider
+        - accountLabel
+        - calendarId
+        - source
+    SetCalendarEnabledDto:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether this calendar's sync should run
+      required:
+        - enabled
+    SetCalendarBusyInclusionDto:
+      type: object
+      properties:
+        includedInBusy:
+          type: boolean
+          description: >-
+            Whether this calendar's events should count toward the busy/free
+            calculation
+      required:
+        - includedInBusy
+    CalendarAccountStatusDto:
+      type: object
+      properties:
+        accountLabel:
+          type: string
+          description: >-
+            The stored-credential label this status describes (see
+            google-credential-store / microsoft-credential-store)
+        provider:
+          type: string
+          description: Which provider this account authorizes with
+          enum:
+            - google
+            - microsoft
+        sources:
+          description: >-
+            Source labels of the configured calendars that authorize with this
+            account
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          description: >-
+            Status of the device-flow OAuth credential backing this account's
+            sync
+          enum:
+            - ok
+            - expired
+            - reauth_pending
+            - not_connected
+            - error
+        scope:
+          type: string
+          description: >-
+            OAuth scopes granted the last time this account completed the login
+            flow
+        obtainedAt:
+          type: string
+          description: When the stored refresh token was obtained
+        accessTokenExpiresAt:
+          type: string
+          description: >-
+            Expiry of the access token minted from the most recent check —
+            google-auth-library mints a fresh one automatically around this time
+            whenever sync next runs, so this doubles as the 'next refresh' time.
+        error:
+          type: string
+          description: Human-readable detail when status is 'expired' or 'error'
+      required:
+        - accountLabel
+        - provider
+        - sources
+        - status
+    StartNewAccountAuthDto:
+      type: object
+      properties:
+        provider:
+          type: string
+          description: Which provider to authorize a new account with
+          enum:
+            - google
+            - microsoft
+      required:
+        - provider
+    StartNewAccountAuthResponseDto:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          description: >-
+            Opaque id — poll GET /calendar-accounts/new/{transactionId} with
+            this to learn the outcome
+        authUrl:
+          type: string
+          description: Open this URL in a browser and sign in to authorize a new account
+      required:
+        - transactionId
+        - authUrl
+    NewAccountAuthStatusDto:
+      type: object
+      properties:
+        status:
+          type: string
+          description: >-
+            pending: waiting on the user to finish signing in. success: the
+            account is connected — see accountLabel. error: the flow failed —
+            see error.
+          enum:
+            - pending
+            - success
+            - error
+        accountLabel:
+          type: string
+          description: >-
+            The newly authorized account's label (its email address), once
+            status is 'success'
+        error:
+          type: string
+          description: Human-readable detail when status is 'error'
+      required:
+        - status
+    StartReauthResponseDto:
+      type: object
+      properties:
+        authUrl:
+          type: string
+          description: Open this URL in a browser and sign in to grant Minerva access again
+      required:
+        - authUrl
+    AvailableCalendarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: >-
+            The provider's own calendar id (e.g. "primary" or a shared
+            calendar's id)
+        summary:
+          type: string
+          description: The calendar's display name, as the provider shows it
+        alreadySynced:
+          type: boolean
+          description: Whether this calendar is already configured to sync
+      required:
+        - id
+        - summary
+        - alreadySynced
+    SetCalendarColorDto:
+      type: object
+      properties:
+        color:
+          type: string
+          description: 'Hex color, e.g. #1677ff'
+          example: '#1677ff'
+      required:
+        - color
     AvailabilitySlotDto:
       type: object
       properties:

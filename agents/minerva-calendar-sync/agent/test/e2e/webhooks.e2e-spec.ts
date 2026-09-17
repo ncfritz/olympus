@@ -14,7 +14,6 @@ describe('Webhooks (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
-    process.env.SYNCED_CALENDARS = '[]';
     const moduleFixture: TestingModule = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = moduleFixture.createNestApplication();
     await app.init();

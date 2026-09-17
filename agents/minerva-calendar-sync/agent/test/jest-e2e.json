@@ -4,6 +4,7 @@
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "setupFiles": ["<rootDir>/e2e/env-setup.ts"],
+  "setupFilesAfterEnv": ["<rootDir>/e2e/reset-synced-calendars.ts"],
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   }

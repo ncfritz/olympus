@@ -4,12 +4,12 @@ import {
   ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
-  ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags,
 } from "@nestjs/swagger";
+import { CalendarAuthService } from "../calendar-auth/calendar-auth.service";
 import { CALENDAR_BUSY_INCLUSION_STORE, CalendarBusyInclusionStore } from "../store/calendar-busy-inclusion-store";
 import { CALENDAR_ENABLEMENT_STORE, CalendarEnablementStore } from "../store/calendar-enablement-store";
 import { EVENT_STORE, EventStore } from "../store/event-store";
@@ -33,6 +33,7 @@ export class CalendarsController {
     @Inject(CALENDAR_ENABLEMENT_STORE) private readonly enablement: CalendarEnablementStore,
     @Inject(CALENDAR_BUSY_INCLUSION_STORE) private readonly busyInclusion: CalendarBusyInclusionStore,
     private readonly engine: SyncEngine,
+    private readonly calendarAuth: CalendarAuthService,
   ) {}
 
   @Get()
@@ -52,7 +53,6 @@ export class CalendarsController {
           enabled: enabledOverrides[calendar.calendarId] ?? true,
           includedInBusy: busyOverrides[calendar.calendarId] ?? true,
           lastSyncedAt: state?.lastSyncedAt,
-          removable: this.config.isRemovable(calendar.calendarId),
           syncing: this.engine.isSyncing(calendar.calendarId),
         };
       }),
@@ -62,10 +62,14 @@ export class CalendarsController {
   @Post()
   @ApiCreatedResponse({ type: CalendarStatusDto, description: "The newly added calendar — an initial sync is kicked off in the background" })
   @ApiConflictResponse({ description: "This calendar is already being synced" })
-  @ApiNotFoundResponse({ description: "No configured calendar uses that account yet" })
+  @ApiNotFoundResponse({ description: "That account isn't connected yet" })
   async add(@Body() body: AddCalendarDto): Promise<CalendarStatusDto> {
+    if (!this.calendarAuth.isConnected(body.accountLabel, body.provider)) {
+      throw new NotFoundException(`Account "${body.accountLabel}" (${body.provider}) isn't connected yet`);
+    }
+
     const calendar: SyncedCalendarConfig = {
-      provider: "google",
+      provider: body.provider,
       accountLabel: body.accountLabel,
       calendarId: body.calendarId,
       source: body.source,
@@ -86,7 +90,6 @@ export class CalendarsController {
       synced: false,
       enabled: true,
       includedInBusy: true,
-      removable: true,
       syncing: this.engine.isSyncing(calendar.calendarId),
     };
   }
@@ -95,7 +98,6 @@ export class CalendarsController {
   @HttpCode(204)
   @ApiNoContentResponse()
   @ApiNotFoundResponse({ description: "No configured calendar with that id" })
-  @ApiForbiddenResponse({ description: "This calendar is configured via SYNCED_CALENDARS and can't be removed here" })
   async remove(@Param("calendarId") calendarId: string): Promise<void> {
     await this.config.remove(calendarId);
   }
