@@ -2,12 +2,10 @@
 
 import {
   CheckOutlined,
-  GoogleOutlined,
   PlusOutlined,
   ReloadOutlined,
   StopOutlined,
   SyncOutlined,
-  WindowsOutlined,
 } from "@ant-design/icons";
 import {
   Alert,
@@ -45,7 +43,7 @@ import {
   type CalendarStatus,
 } from "@/lib/api/queries";
 import { useCalendarColors } from "@/lib/useCalendarColors";
-import { PROVIDER_META } from "@/lib/providerMeta";
+import { PROVIDER_META, ProviderIcon, ProviderLogo } from "@/lib/providerMeta";
 
 const STATUS_TAG: Record<
   CalendarAccountStatus["status"],
@@ -317,8 +315,8 @@ export function CalendarAccountsPanel() {
             render: (_, record) => {
               const meta = PROVIDER_META[record.provider];
               return (
-                <Space size="small">
-                  {meta.icon}
+                <Space size="small" align="center">
+                  <ProviderIcon provider={record.provider} size={16} />
                   <span>{meta.label}</span>
                 </Space>
               );
@@ -450,19 +448,17 @@ function AddAccountModal({
           {flow.phase === "error" && <Alert type="error" showIcon message={flow.message} />}
           <Button
             size="large"
-            icon={<GoogleOutlined />}
             onClick={() => handleSelectProvider("google")}
-            style={{ justifyContent: "flex-start" }}
+            style={{ height: 104, display: "flex", alignItems: "center", justifyContent: "center" }}
           >
-            Google
+            <ProviderLogo provider="google" height={80} />
           </Button>
           <Button
             size="large"
-            icon={<WindowsOutlined />}
             onClick={() => handleSelectProvider("microsoft")}
-            style={{ justifyContent: "flex-start" }}
+            style={{ height: 104, display: "flex", alignItems: "center", justifyContent: "center" }}
           >
-            Office 365
+            <ProviderLogo provider="microsoft" height={80} />
           </Button>
         </Flex>
       )}

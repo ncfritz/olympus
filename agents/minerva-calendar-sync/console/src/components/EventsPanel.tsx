@@ -15,6 +15,7 @@ import {
   Tag,
   Typography,
 } from "antd";
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import {
@@ -37,6 +38,7 @@ import {
   overlaps,
   statusLabelFor,
 } from "@/lib/availability";
+import { ProviderIcon, type Provider } from "@/lib/providerMeta";
 import { useTimelineSettings } from "@/lib/TimelineSettingsContext";
 import { loadViewPreference, saveViewPreference } from "@/lib/viewPreference";
 import { EventDetailDrawer } from "./EventDetailDrawer";
@@ -130,7 +132,11 @@ export function EventsPanel({
   const { settings: timelineSettings } = useTimelineSettings();
 
   const availableSources = useMemo(
-    () => [...calendars.map((c) => c.source), OVERRIDES_SOURCE],
+    () => [OVERRIDES_SOURCE, ...calendars.map((c) => c.source)],
+    [calendars],
+  );
+  const providerBySource = useMemo(
+    () => new Map(calendars.map((c) => [c.source, c.provider as Provider])),
     [calendars],
   );
 
@@ -452,7 +458,25 @@ export function EventsPanel({
                     )
                   }
                 >
-                  {source}
+                  <Space size={6} align="center">
+                    {source === OVERRIDES_SOURCE ? (
+                      <Image
+                        src="/minerva.webp"
+                        alt="Overrides"
+                        width={16}
+                        height={16}
+                        style={{ flexShrink: 0, objectFit: "contain" }}
+                      />
+                    ) : providerBySource.has(source) ? (
+                      <ProviderIcon provider={providerBySource.get(source)!} size={16} />
+                    ) : (
+                      // Keeps the same icon-width slot reserved so this
+                      // row's text lines up with the ones that do have a
+                      // provider icon, instead of starting flush left.
+                      <span style={{ display: "inline-block", width: 16 }} />
+                    )}
+                    {source}
+                  </Space>
                 </Checkbox>
                 <ColorPicker
                   value={colorForSource(source)}

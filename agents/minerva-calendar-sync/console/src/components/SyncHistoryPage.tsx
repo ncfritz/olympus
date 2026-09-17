@@ -23,6 +23,7 @@ import {
   type SyncRunEventChange,
   type SyncRunFilterParams,
 } from "@/lib/api/queries";
+import { PROVIDER_META, ProviderIcon, type Provider } from "@/lib/providerMeta";
 import { useCalendarColors } from "@/lib/useCalendarColors";
 import { AppLayout } from "./AppLayout";
 import { SyncStatsCharts } from "./SyncStatsCharts";
@@ -58,6 +59,7 @@ type FilterKey = "calendarId" | "type" | "trigger" | "status";
 
 const SOURCE_SWATCH_SIZE = 16;
 const CALENDAR_COLUMN_WIDTH = 400;
+const PROVIDER_COLUMN_WIDTH = 160;
 const STARTED_COLUMN_WIDTH = 180;
 const TYPE_COLUMN_WIDTH = 110;
 const TRIGGER_COLUMN_WIDTH = 100;
@@ -85,6 +87,10 @@ export function SyncHistoryPage() {
 
   const { data: calendars = [] } = useSWR("/calendars", fetchCalendars);
   const { colorForSource } = useCalendarColors();
+  const providerBySource = useMemo(
+    () => new Map(calendars.map((c) => [c.source, c.provider as Provider])),
+    [calendars],
+  );
   const {
     data: runs = [],
     isLoading,
@@ -159,6 +165,21 @@ export function SyncHistoryPage() {
                   <span>{value}</span>
                 </Flex>
               ),
+            },
+            {
+              title: "Provider",
+              key: "provider",
+              width: PROVIDER_COLUMN_WIDTH,
+              render: (_, run) => {
+                const provider = providerBySource.get(run.source);
+                if (!provider) return "—";
+                return (
+                  <Flex align="center" gap={8}>
+                    <ProviderIcon provider={provider} size={16} />
+                    <span>{PROVIDER_META[provider].label}</span>
+                  </Flex>
+                );
+              },
             },
             {
               title: "Started",

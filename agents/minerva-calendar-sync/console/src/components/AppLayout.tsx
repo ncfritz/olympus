@@ -26,6 +26,7 @@ import {
   theme,
   Typography,
 } from "antd";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
@@ -116,14 +117,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
             alignItems: "center",
             gap: 24,
             flexShrink: 0,
+            // antd's default Header padding (0 50px) leaves a lot of dead
+            // space before the logo — the nav/right-side controls still get
+            // that same 50px on the right, only the left side is tightened.
+            paddingLeft: 16,
           }}
         >
-          <Title
-            level={4}
-            style={{ color: "white", margin: 0, whiteSpace: "nowrap" }}
-          >
-            Minerva Calendar Sync
-          </Title>
+          <Image
+            src="/header.webp"
+            alt="Minerva Calendar Sync"
+            width={164}
+            height={40}
+            priority
+            style={{ flexShrink: 0 }}
+          />
           <Menu
             theme="dark"
             mode="horizontal"

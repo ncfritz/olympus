@@ -25,7 +25,7 @@ import {
   type OutboxRecord,
   type OutboxSourceStats,
 } from "@/lib/api/queries";
-import { PROVIDER_META, type Provider } from "@/lib/providerMeta";
+import { PROVIDER_META, ProviderIcon, type Provider } from "@/lib/providerMeta";
 import { useCalendarColors } from "@/lib/useCalendarColors";
 import { AppLayout } from "./AppLayout";
 
@@ -117,11 +117,10 @@ export function PublishPage() {
   const renderProvider = (source: string) => {
     const provider = providerBySource.get(source);
     if (!provider) return "—";
-    const meta = PROVIDER_META[provider];
     return (
-      <Space size="small">
-        {meta.icon}
-        <span>{meta.label}</span>
+      <Space size="small" align="center">
+        <ProviderIcon provider={provider} size={16} />
+        <span>{PROVIDER_META[provider].label}</span>
       </Space>
     );
   };
