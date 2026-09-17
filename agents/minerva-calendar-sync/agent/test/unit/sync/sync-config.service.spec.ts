@@ -39,6 +39,26 @@ describe("SyncConfigService", () => {
     expect(await service.getAll()).toEqual([]);
   });
 
+  it("accepts a microsoft-provider entry from SYNCED_CALENDARS", async () => {
+    const msCalendar: SyncedCalendarConfig = {
+      provider: "microsoft",
+      accountLabel: "work-o365",
+      calendarId: "primary",
+      source: "Work O365",
+      enablePush: false,
+    };
+    const config = { get: () => JSON.stringify([msCalendar]) } as unknown as ConfigService;
+    const service = new SyncConfigService(config, new FakeSyncedCalendarStore());
+
+    expect(await service.getAll()).toEqual([msCalendar]);
+  });
+
+  it("rejects a SYNCED_CALENDARS entry with an unknown provider", () => {
+    const config = { get: () => JSON.stringify([{ ...ENV_CALENDAR, provider: "outlook-legacy" }]) } as unknown as ConfigService;
+
+    expect(() => new SyncConfigService(config, new FakeSyncedCalendarStore())).toThrow(/must have/);
+  });
+
   it("merges env-declared and runtime-added calendars", async () => {
     const { service, store } = makeService([ENV_CALENDAR]);
     const added: SyncedCalendarConfig = {

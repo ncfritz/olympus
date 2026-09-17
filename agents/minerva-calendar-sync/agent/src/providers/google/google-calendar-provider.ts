@@ -30,7 +30,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
     do {
       const { data } = await this.calendar.calendarList.list({ pageToken });
       for (const item of data.items ?? []) {
-        if (item.id) calendars.push({ id: item.id, summary: item.summary ?? item.id });
+        if (item.id) calendars.push({ id: item.id, summary: item.summary ?? item.id, primary: item.primary === true });
       }
       pageToken = data.nextPageToken ?? undefined;
     } while (pageToken);

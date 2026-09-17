@@ -4,6 +4,7 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { AuthModule } from "./auth/auth.module";
 import { AvailabilityModule } from "./availability/availability.module";
+import { CalendarAuthModule } from "./calendar-auth/calendar-auth.module";
 import { CalendarColorsModule } from "./calendar-colors/calendar-colors.module";
 import { CalendarsModule } from "./calendars/calendars.module";
 import { EventsModule } from "./events/events.module";
@@ -19,6 +20,7 @@ import { SyncModule } from "./sync/sync.module";
     SyncModule,
     EventsModule,
     CalendarsModule,
+    CalendarAuthModule,
     CalendarColorsModule,
     AvailabilityModule,
     OverridesModule,

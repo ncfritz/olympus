@@ -3,6 +3,8 @@ import { CanonicalCalendarEvent } from "../domain/canonical-event";
 export interface ProviderCalendar {
   id: string;
   summary: string;
+  /** True for the account's own primary calendar — Google reports it under its real id (the account email), not the "primary" alias SyncedCalendarConfig accepts as a shorthand for it. */
+  primary: boolean;
 }
 
 /** One page of raw, provider-native events from a full (from-scratch) sync. */

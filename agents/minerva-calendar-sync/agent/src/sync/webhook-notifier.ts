@@ -18,14 +18,18 @@ interface ChannelRegistration {
 }
 
 /**
- * Google push notifications only ever carry a channel id and resource
- * state — never the actual change — so, like PollingNotifier, this only
- * ever signals "something may have changed" for SyncEngine to handle.
+ * Provider push notifications (Google channels, Microsoft Graph
+ * subscriptions) only ever carry a channel/subscription id — never the
+ * actual change — so, like PollingNotifier, this only ever signals
+ * "something may have changed" for SyncEngine to handle. Each provider gets
+ * its own receiving endpoint at `/webhooks/{provider.id}` (see
+ * WebhooksController, MicrosoftWebhooksController), both funneling into
+ * `handleNotification` below.
  *
- * Requires WEBHOOK_BASE_URL to be a real, publicly reachable HTTPS
- * endpoint (Google will not deliver to plain HTTP or to localhost); if
- * it's missing, this is a no-op and polling alone still covers every
- * calendar per ChangeNotifier's contract.
+ * Requires WEBHOOK_BASE_URL to be a real, publicly reachable HTTPS endpoint
+ * (neither provider will deliver to plain HTTP or to localhost); if it's
+ * missing, this is a no-op and polling alone still covers every calendar
+ * per ChangeNotifier's contract.
  */
 @Injectable()
 export class WebhookNotifier implements ChangeNotifier {
@@ -97,7 +101,7 @@ export class WebhookNotifier implements ChangeNotifier {
     }
   }
 
-  /** Called by WebhooksController for every incoming Google push notification. */
+  /** Called by WebhooksController/MicrosoftWebhooksController for every incoming push notification. */
   handleNotification(channelId: string, token: string | undefined): void {
     const calendarId = this.calendarIdByChannelId.get(channelId);
     if (!calendarId) {
@@ -122,7 +126,7 @@ export class WebhookNotifier implements ChangeNotifier {
     }
 
     const token = randomBytes(24).toString("hex");
-    const webhookUrl = `${this.webhookBaseUrl}/webhooks/google`;
+    const webhookUrl = `${this.webhookBaseUrl}/webhooks/${provider.id}`;
     const channel = await provider.watch(calendar.calendarId, webhookUrl, token);
 
     this.channelsByCalendarId.set(calendar.calendarId, { token });

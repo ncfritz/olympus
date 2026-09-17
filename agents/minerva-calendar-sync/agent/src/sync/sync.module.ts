@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ScheduleModule } from "@nestjs/schedule";
 import { CalendarProviderRegistry } from "../providers/calendar-provider-registry";
 import { StoreModule } from "../store/store.module";
+import { MicrosoftWebhooksController } from "../webhooks/microsoft-webhooks.controller";
 import { WebhooksController } from "../webhooks/webhooks.controller";
 import { PollingNotifier } from "./polling-notifier";
 import { SyncBootstrapService } from "./sync-bootstrap.service";
@@ -13,7 +14,7 @@ import { WebhookNotifier } from "./webhook-notifier";
 
 @Module({
   imports: [ScheduleModule.forRoot(), StoreModule],
-  controllers: [WebhooksController, SyncHistoryController],
+  controllers: [WebhooksController, MicrosoftWebhooksController, SyncHistoryController],
   providers: [
     SyncEngine,
     SyncConfigService,
@@ -23,6 +24,6 @@ import { WebhookNotifier } from "./webhook-notifier";
     SyncBootstrapService,
     SyncHistoryPrunerService,
   ],
-  exports: [SyncEngine, SyncConfigService],
+  exports: [SyncEngine, SyncConfigService, CalendarProviderRegistry],
 })
 export class SyncModule {}

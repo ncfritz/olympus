@@ -10,28 +10,28 @@
  * .credentials/<label>.json (gitignored).
  */
 import "dotenv/config";
-import { OAuth2Client } from "google-auth-library";
-import { createServer } from "http";
-import { AddressInfo } from "net";
 import { saveGoogleCredential, requireEnv } from "../src/providers/google/google-credential-store";
-
-const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
+import { createLoopbackClient, waitForAuthorizationCode } from "../src/providers/google/google-loopback-auth";
+import { GOOGLE_CALENDAR_SCOPES } from "../src/providers/google/google-oauth-scopes";
 
 async function main(): Promise<void> {
   const label = parseLabelArg();
 
-  const { client, redirectUri } = await createLoopbackClient();
+  const { client, redirectUri } = await createLoopbackClient(
+    requireEnv("GOOGLE_OAUTH_CLIENT_ID"),
+    requireEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
+  );
   const authUrl = client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
-    scope: SCOPES,
+    scope: GOOGLE_CALENDAR_SCOPES,
   });
 
   console.log("\nOpen this URL in a browser and sign in with the Google account to sync:\n");
   console.log(authUrl);
   console.log(`\nWaiting for the OAuth redirect on ${redirectUri} ...\n`);
 
-  const code = await waitForAuthorizationCode(client, redirectUri);
+  const code = await waitForAuthorizationCode(redirectUri);
   const { tokens } = await client.getToken(code);
 
   if (!tokens.refresh_token) {
@@ -44,7 +44,7 @@ async function main(): Promise<void> {
   saveGoogleCredential({
     accountLabel: label,
     refreshToken: tokens.refresh_token,
-    scope: tokens.scope ?? SCOPES.join(" "),
+    scope: tokens.scope ?? GOOGLE_CALENDAR_SCOPES.join(" "),
     obtainedAt: new Date().toISOString(),
   });
 
@@ -58,59 +58,6 @@ function parseLabelArg(): string {
     throw new Error("Usage: pnpm google:auth -- --label <account-label>");
   }
   return label;
-}
-
-async function createLoopbackClient(): Promise<{ client: OAuth2Client; redirectUri: string }> {
-  const port = await findFreePort();
-  const redirectUri = `http://127.0.0.1:${port}`;
-  const client = new OAuth2Client(
-    requireEnv("GOOGLE_OAUTH_CLIENT_ID"),
-    requireEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
-    redirectUri,
-  );
-  return { client, redirectUri };
-}
-
-function findFreePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const probe = createServer();
-    probe.listen(0, "127.0.0.1", () => {
-      const port = (probe.address() as AddressInfo).port;
-      probe.close(() => resolve(port));
-    });
-    probe.on("error", reject);
-  });
-}
-
-function waitForAuthorizationCode(client: OAuth2Client, redirectUri: string): Promise<string> {
-  const port = Number(new URL(redirectUri).port);
-
-  return new Promise((resolve, reject) => {
-    const server = createServer((req, res) => {
-      const url = new URL(req.url ?? "/", redirectUri);
-      const code = url.searchParams.get("code");
-      const error = url.searchParams.get("error");
-
-      res.setHeader("Content-Type", "text/html");
-      if (error) {
-        res.end(`<html><body>Authorization failed: ${error}. You can close this window.</body></html>`);
-        server.close();
-        reject(new Error(`Google returned an error: ${error}`));
-        return;
-      }
-      if (!code) {
-        res.end("<html><body>Waiting for authorization...</body></html>");
-        return;
-      }
-
-      res.end("<html><body>Authorized — you can close this window and return to the terminal.</body></html>");
-      server.close();
-      resolve(code);
-    });
-
-    server.listen(port, "127.0.0.1");
-    server.on("error", reject);
-  });
 }
 
 main().catch((error) => {

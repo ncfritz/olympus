@@ -1,0 +1,185 @@
+import { CanonicalCalendarEvent } from "../../domain/canonical-event";
+import {
+  CalendarProvider,
+  IncrementalResult,
+  ProviderCalendar,
+  PushChannel,
+  RawEventBatch,
+  RemovalTombstone,
+  SyncTokenExpiredError,
+} from "../calendar-provider";
+import { isMicrosoftRemoval, mapMicrosoftEventToCanonical, MicrosoftGraphEvent, resolveMicrosoftRemoval } from "./microsoft-event-mapper";
+import { MicrosoftAccessTokenProvider } from "./microsoft-oauth";
+
+const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
+const PAGE_SIZE = 250;
+// Graph's own max subscription lifetime for the /events resource is ~4230
+// minutes (just under 3 days) — request a hair under that as a safety margin.
+const SUBSCRIPTION_TTL_MS = 3 * 24 * 60 * 60 * 1000 - 10 * 60 * 1000;
+
+interface GraphCalendarListResponse {
+  value: Array<{ id: string; name?: string; isDefaultCalendar?: boolean }>;
+  "@odata.nextLink"?: string;
+}
+
+interface GraphEventDeltaResponse {
+  value: MicrosoftGraphEvent[];
+  "@odata.nextLink"?: string;
+  "@odata.deltaLink"?: string;
+}
+
+interface GraphSubscriptionResponse {
+  id: string;
+  resource: string;
+  expirationDateTime: string;
+}
+
+class GraphRequestError extends Error {
+  constructor(readonly status: number, message: string) {
+    super(message);
+    this.name = "GraphRequestError";
+  }
+}
+
+export class MicrosoftCalendarProvider implements CalendarProvider {
+  readonly id = "microsoft";
+
+  constructor(private readonly auth: MicrosoftAccessTokenProvider) {}
+
+  async listCalendars(): Promise<ProviderCalendar[]> {
+    const calendars: ProviderCalendar[] = [];
+    let url: string | undefined = `${GRAPH_BASE}/me/calendars?$top=${PAGE_SIZE}`;
+
+    while (url) {
+      const data: GraphCalendarListResponse = await this.request(url);
+      for (const item of data.value) {
+        calendars.push({ id: item.id, summary: item.name ?? item.id, primary: item.isDefaultCalendar === true });
+      }
+      url = data["@odata.nextLink"];
+    }
+
+    return calendars;
+  }
+
+  async *fullSync(calendarId: string): AsyncIterable<RawEventBatch> {
+    let url: string | undefined = this.deltaUrl(calendarId);
+
+    while (url) {
+      const data: GraphEventDeltaResponse = await this.request(url);
+      url = data["@odata.nextLink"];
+      yield {
+        events: data.value,
+        nextPageToken: url,
+        // Only present on the final page, same contract as Google's nextSyncToken.
+        nextSyncToken: url ? undefined : data["@odata.deltaLink"],
+      };
+    }
+  }
+
+  async incrementalSync(calendarId: string, syncToken: string): Promise<IncrementalResult> {
+    const events: MicrosoftGraphEvent[] = [];
+    let url: string | undefined = syncToken;
+    let deltaLink: string | undefined;
+
+    while (url) {
+      let data: GraphEventDeltaResponse;
+      try {
+        data = await this.request(url);
+      } catch (error) {
+        if (isGone(error)) {
+          throw new SyncTokenExpiredError(calendarId, error);
+        }
+        throw error;
+      }
+
+      events.push(...data.value);
+      url = data["@odata.nextLink"];
+      deltaLink = data["@odata.deltaLink"] ?? deltaLink;
+    }
+
+    if (!deltaLink) {
+      throw new Error(`Microsoft incrementalSync for "${calendarId}" did not return a deltaLink`);
+    }
+
+    return { events, nextSyncToken: deltaLink };
+  }
+
+  normalizeEvent(raw: unknown, ctx: { source: string }): CanonicalCalendarEvent {
+    return mapMicrosoftEventToCanonical(raw as MicrosoftGraphEvent, ctx);
+  }
+
+  isRemoval(raw: unknown): boolean {
+    return isMicrosoftRemoval(raw as MicrosoftGraphEvent);
+  }
+
+  resolveRemoval(raw: unknown): RemovalTombstone {
+    return resolveMicrosoftRemoval(raw as MicrosoftGraphEvent);
+  }
+
+  supportsPush(): boolean {
+    return true;
+  }
+
+  async watch(calendarId: string, webhookUrl: string, token: string): Promise<PushChannel> {
+    const data = await this.request<GraphSubscriptionResponse>(`${GRAPH_BASE}/subscriptions`, {
+      method: "POST",
+      body: JSON.stringify({
+        changeType: "created,updated,deleted",
+        notificationUrl: webhookUrl,
+        resource: this.eventsResource(calendarId),
+        expirationDateTime: new Date(Date.now() + SUBSCRIPTION_TTL_MS).toISOString(),
+        clientState: token,
+      }),
+    });
+
+    return { id: data.id, resourceId: data.resource, expiration: data.expirationDateTime };
+  }
+
+  async stopWatch(channel: PushChannel): Promise<void> {
+    await this.request(`${GRAPH_BASE}/subscriptions/${channel.id}`, { method: "DELETE" });
+  }
+
+  private deltaUrl(calendarId: string): string {
+    // Unlike a plain collection endpoint, delta/change-tracking queries
+    // reject $top outright (400 ErrorInvalidUrlQuery) — page size is instead
+    // requested via the Prefer: odata.maxpagesize= header (see request()),
+    // which every subsequent @odata.nextLink/@odata.deltaLink-driven call
+    // must keep resending since it's a header, not part of the URL.
+    return `${GRAPH_BASE}/${this.eventsResource(calendarId)}/delta`;
+  }
+
+  private eventsResource(calendarId: string): string {
+    // SyncedCalendarConfig accepts "primary" as a shorthand for the account's default calendar.
+    return calendarId === "primary" ? "me/events" : `me/calendars/${calendarId}/events`;
+  }
+
+  private async request<T>(url: string, init?: RequestInit): Promise<T> {
+    const accessToken = await this.auth.getAccessToken();
+    const response = await fetch(url, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        // outlook.timezone: see microsoft-event-mapper.ts's UTC assumption.
+        // odata.maxpagesize: the only way to request a page size on a delta
+        // query (see deltaUrl()) — sent unconditionally since other Graph
+        // endpoints just ignore Prefer directives they don't recognize.
+        Prefer: `outlook.timezone="UTC", odata.maxpagesize=${PAGE_SIZE}`,
+        ...init?.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      throw new GraphRequestError(response.status, `Microsoft Graph request to ${url} failed (${response.status}): ${body}`);
+    }
+    if (response.status === 204) {
+      return undefined as T;
+    }
+    return (await response.json()) as T;
+  }
+}
+
+function isGone(error: unknown): boolean {
+  return error instanceof GraphRequestError && error.status === 410;
+}

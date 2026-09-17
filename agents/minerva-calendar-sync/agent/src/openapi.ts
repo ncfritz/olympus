@@ -13,6 +13,7 @@ export function buildOpenApiDocument(app: INestApplication, builder: DocumentBui
     .setVersion("0.1.0")
     .addTag("events")
     .addTag("calendars")
+    .addTag("calendar-auth")
     .addTag("auth")
     .addBearerAuth()
     .build();
