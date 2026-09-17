@@ -18,7 +18,7 @@ import {
   Flex,
   Layout,
   Menu,
-  Radio,
+  Segmented,
   Select,
   Space,
   Spin,
@@ -50,10 +50,10 @@ const NAV_ITEMS = [
   { key: "/publish", label: <Link href="/publish">Publish</Link> },
 ];
 
-const THEME_MODE_OPTIONS: { value: ThemeMode; label: ReactNode; title: string }[] = [
-  { value: "light", label: <SunOutlined />, title: "Light" },
-  { value: "dark", label: <MoonOutlined />, title: "Dark" },
-  { value: "system", label: <DesktopOutlined />, title: "System" },
+const THEME_MODE_OPTIONS: { value: ThemeMode; icon: ReactNode; tooltip: string }[] = [
+  { value: "light", icon: <SunOutlined />, tooltip: "Light" },
+  { value: "dark", icon: <MoonOutlined />, tooltip: "Dark" },
+  { value: "system", icon: <DesktopOutlined />, tooltip: "System" },
 ];
 
 /** Falls back to just the browser's own zone if the (widely, but not universally, supported) enumeration API isn't available. */
@@ -145,29 +145,33 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 override) so it reads as part of the dark header bar — same
                 treatment the nav Menu above gets via its own theme="dark" — rather
                 than as a separate light-themed widget sitting on top of it. A
-                transparent button background (vs. a hardcoded hex) keeps it
-                exactly matching the header regardless of theme/algorithm. */}
+                transparent track (vs. a hardcoded hex) keeps it exactly
+                matching the header regardless of theme/algorithm. Segmented
+                (not Radio.Group) is deliberate here: its pill track and
+                sliding thumb between options is the same visual language as
+                the Switch above, which a row of separate toggle buttons
+                didn't read as. */}
             <ConfigProvider
               theme={{
                 components: {
-                  Radio: {
-                    buttonBg: "transparent",
-                    buttonColor: "rgba(255, 255, 255, 0.65)",
-                    buttonCheckedBg: "rgba(255, 255, 255, 0.15)",
-                    colorBorder: "rgba(255, 255, 255, 0.25)",
-                    colorPrimary: "#fff",
-                    colorPrimaryHover: "#fff",
-                    colorPrimaryActive: "#fff",
+                  Segmented: {
+                    trackBg: "rgba(255, 255, 255, 0.08)",
+                    itemColor: "rgba(255, 255, 255, 0.65)",
+                    itemHoverColor: "rgba(255, 255, 255, 0.85)",
+                    itemHoverBg: "rgba(255, 255, 255, 0.08)",
+                    itemSelectedBg: "rgba(255, 255, 255, 0.2)",
+                    itemSelectedColor: "#fff",
+                    itemActiveBg: "rgba(255, 255, 255, 0.25)",
                   },
                 },
               }}
             >
-              <Radio.Group
+              <Segmented
                 size="small"
-                optionType="button"
+                shape="round"
                 options={THEME_MODE_OPTIONS}
                 value={mode}
-                onChange={(e) => setMode(e.target.value as ThemeMode)}
+                onChange={(value) => setMode(value as ThemeMode)}
               />
             </ConfigProvider>
             <Dropdown
