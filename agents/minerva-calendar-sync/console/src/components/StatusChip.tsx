@@ -1,5 +1,6 @@
 "use client";
 
+import { theme } from "antd";
 import type { FlagStyle } from "@/lib/availability";
 
 /**
@@ -15,16 +16,18 @@ export function StatusChip({
   flag: FlagStyle;
   label: string;
 }) {
+  const { token } = theme.useToken();
+
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "stretch",
         height: 20,
-        border: "1px solid #d9d9d9",
+        border: `1px solid ${token.colorBorderSecondary}`,
         borderRadius: 6,
         overflow: "hidden",
-        background: "#ffffff",
+        background: token.colorBgElevated,
         verticalAlign: "middle",
       }}
     >
@@ -37,7 +40,7 @@ export function StatusChip({
           fontSize: 12,
           lineHeight: "18px",
           whiteSpace: "nowrap",
-          color: "#1f1f1f",
+          color: token.colorText,
         }}
       >
         {label}

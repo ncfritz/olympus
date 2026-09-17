@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircleFilled, CheckCircleOutlined, CloseCircleFilled } from "@ant-design/icons";
-import { message, Space } from "antd";
+import { message, Space, theme } from "antd";
 import { useState } from "react";
 import type { AvailabilityStatus } from "@/lib/api/queries";
 import { AVAILABILITY_STATUSES, statusDotColor, STATUS_LABEL } from "@/lib/availability";
@@ -25,6 +25,7 @@ export function OverrideStatusPicker({
   /** Called when the current row is clicked — should remove the override. */
   onClear: () => Promise<void>;
 }) {
+  const { token } = theme.useToken();
   const [hovered, setHovered] = useState<AvailabilityStatus | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -65,7 +66,7 @@ export function OverrideStatusPicker({
               padding: "8px 12px",
               borderRadius: 6,
               cursor: pending ? "default" : "pointer",
-              background: isHovered ? "#f5f5f5" : "transparent",
+              background: isHovered ? token.colorFillTertiary : "transparent",
             }}
           >
             <Space size="small">
@@ -75,7 +76,7 @@ export function OverrideStatusPicker({
                   height: 14,
                   borderRadius: "50%",
                   backgroundColor: statusDotColor(status),
-                  border: "1px solid #d9d9d9",
+                  border: `1px solid ${token.colorBorderSecondary}`,
                 }}
               />
               <span>{STATUS_LABEL[status]}</span>
@@ -87,7 +88,7 @@ export function OverrideStatusPicker({
                 <CheckCircleFilled style={{ color: "#52c41a", fontSize: 18 }} />
               )
             ) : (
-              <CheckCircleOutlined style={{ color: "#d9d9d9", fontSize: 18 }} />
+              <CheckCircleOutlined style={{ color: token.colorBorder, fontSize: 18 }} />
             )}
           </div>
         );

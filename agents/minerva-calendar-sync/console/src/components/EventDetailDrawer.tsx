@@ -1,6 +1,6 @@
 "use client";
 
-import { Descriptions, Divider, Drawer, Flex, Space, Tag, Typography } from "antd";
+import { Descriptions, Divider, Drawer, Flex, Space, Tag, theme, Typography } from "antd";
 import type { components } from "@/lib/api/schema";
 import type { AvailabilityStatus } from "@/lib/api/queries";
 import { statusDotColor } from "@/lib/availability";
@@ -34,6 +34,8 @@ export function EventDetailDrawer({
   onClearOverride: () => Promise<void>;
   onClose: () => void;
 }) {
+  const { token } = theme.useToken();
+
   return (
     <Drawer title={event?.subject} open={event !== null} onClose={onClose} size={480}>
       {event && (
@@ -47,7 +49,7 @@ export function EventDetailDrawer({
                     height: 24,
                     borderRadius: "50%",
                     backgroundColor: statusDotColor(status),
-                    border: "1px solid #d9d9d9",
+                    border: `1px solid ${token.colorBorderSecondary}`,
                     flexShrink: 0,
                   }}
                 />

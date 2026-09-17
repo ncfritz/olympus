@@ -173,7 +173,7 @@ export function EventsCalendarView({
                 height: 10,
                 borderRadius: "50%",
                 backgroundColor: statusDotColor(status),
-                border: "1px solid #d9d9d9",
+                border: `1px solid ${token.colorBorderSecondary}`,
               }}
             />
             {STATUS_LABEL[status]}
@@ -202,6 +202,13 @@ export function EventsCalendarView({
           // FullCalendar's hardcoded default (#ddd), which reads as too
           // light against a dark background.
           "--fc-border-color": token.colorBorderSecondary,
+          // Also backs the "+N more" popover and the timegrid's sticky
+          // column header — FullCalendar's own hardcoded white default,
+          // unthemed, same as --fc-border-color above. (Week/day view's
+          // separator ring around overlapping events reads this too, but
+          // that's overridden separately below to match the grid border
+          // instead, per globals.css.)
+          "--fc-page-bg-color": token.colorBgContainer,
         } as CSSProperties
       }
     >
@@ -260,14 +267,17 @@ export function EventsCalendarView({
             start: entry.startTime,
             end: entry.endTime,
             allDay: entry.allDay,
-            // White body regardless of status — these are first-class
+            // Same body regardless of status (color comes from the flag bar
+            // instead — see eventContent below) — these are first-class
             // FullCalendar props, reactively re-applied whenever the event's
             // data changes (unlike DOM edits made in eventDidMount, which only
             // ever runs once per mount and won't pick up e.g. an override that
-            // loads in after the event first renders).
-            backgroundColor: "#ffffff",
-            borderColor: "#d9d9d9",
-            textColor: "#1f1f1f",
+            // loads in after the event first renders). Themed via antd's
+            // tokens rather than a hardcoded white/black so events read as
+            // cards floating above the grid in both light and dark mode.
+            backgroundColor: token.colorBgElevated,
+            borderColor: token.colorBorderSecondary,
+            textColor: token.colorText,
             extendedProps: {
               flag: flagFor(entry),
               hasOverrideBadge:
@@ -319,7 +329,7 @@ export function EventsCalendarView({
                   height: CALENDAR_DOT_PX,
                   borderRadius: "50%",
                   backgroundColor: calendarColor,
-                  border: "1px solid rgba(0, 0, 0, 0.15)",
+                  border: `1px solid ${token.colorBorderSecondary}`,
                 }}
               />
               <div
@@ -339,7 +349,7 @@ export function EventsCalendarView({
                       height: 8,
                       borderRadius: "50%",
                       backgroundColor: statusDotColor(overrideStatus),
-                      border: "1px solid rgba(0, 0, 0, 0.25)",
+                      border: `1px solid ${token.colorBorderSecondary}`,
                       flexShrink: 0,
                     }}
                   />
