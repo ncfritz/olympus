@@ -11,9 +11,9 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { Dropdown, Space } from "antd";
+import { Dropdown, Space, theme } from "antd";
 import type { MenuProps } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import useSWR from "swr";
 import {
   fetchStatusTimeline,
@@ -77,6 +77,8 @@ export function EventsCalendarView({
   /** Day-start/day-end window, weekend handling, and timezone for the status timeline strip — see lib/settings. */
   timelineSettings: TimelineSettings;
 }) {
+  const { token } = theme.useToken();
+
   // Drives the per-15-minute status timeline strip (week/day only — see
   // globals.css's ".status-timeline-event" rules; month view doesn't get
   // one, since FullCalendar's dayGrid only renders all-day background
@@ -190,7 +192,19 @@ export function EventsCalendarView({
   }
 
   return (
-    <>
+    <div
+      style={
+        {
+          height: "100%",
+          // FullCalendar's own stylesheet reads this custom property for
+          // every grid/cell border — overriding it here is the only way to
+          // keep the grid in step with antd's border color token instead of
+          // FullCalendar's hardcoded default (#ddd), which reads as too
+          // light against a dark background.
+          "--fc-border-color": token.colorBorderSecondary,
+        } as CSSProperties
+      }
+    >
       <FullCalendar
         key={mode}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -410,6 +424,6 @@ export function EventsCalendarView({
           }}
         />
       </Dropdown>
-    </>
+    </div>
   );
 }

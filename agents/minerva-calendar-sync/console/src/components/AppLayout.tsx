@@ -1,19 +1,24 @@
 "use client";
 
 import {
+  DesktopOutlined,
   DownOutlined,
   GoogleOutlined,
   LogoutOutlined,
+  MoonOutlined,
   SettingOutlined,
+  SunOutlined,
 } from "@ant-design/icons";
 import {
   Button,
   Card,
+  ConfigProvider,
   Drawer,
   Dropdown,
   Flex,
   Layout,
   Menu,
+  Radio,
   Select,
   Space,
   Spin,
@@ -25,11 +30,13 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { loginUrl } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/use-auth";
+import { useThemeMode } from "@/lib/ThemeModeContext";
 import {
   TimelineSettingsProvider,
   useTimelineSettings,
 } from "@/lib/TimelineSettingsContext";
 import { defaultTimelineSettings } from "@/lib/settings";
+import type { ThemeMode } from "@/lib/theme";
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -38,6 +45,12 @@ const NAV_ITEMS = [
   { key: "/", label: <Link href="/">Events</Link> },
   { key: "/calendars", label: <Link href="/calendars">Calendars</Link> },
   { key: "/sync", label: <Link href="/sync">Sync</Link> },
+];
+
+const THEME_MODE_OPTIONS: { value: ThemeMode; label: ReactNode; title: string }[] = [
+  { value: "light", label: <SunOutlined />, title: "Light" },
+  { value: "dark", label: <MoonOutlined />, title: "Dark" },
+  { value: "system", label: <DesktopOutlined />, title: "System" },
 ];
 
 /** Falls back to just the browser's own zone if the (widely, but not universally, supported) enumeration API isn't available. */
@@ -61,6 +74,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const auth = useAuth();
   const pathname = usePathname();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { mode, setMode } = useThemeMode();
 
   if (auth.status === "loading") {
     return (
@@ -117,6 +131,35 @@ export function AppLayout({ children }: { children: ReactNode }) {
             style={{ flex: 1, minWidth: 0 }}
           />
           <Space>
+            {/* Scoped to just this control (not a global colorPrimary/colorBorder
+                override) so it reads as part of the dark header bar — same
+                treatment the nav Menu above gets via its own theme="dark" — rather
+                than as a separate light-themed widget sitting on top of it. A
+                transparent button background (vs. a hardcoded hex) keeps it
+                exactly matching the header regardless of theme/algorithm. */}
+            <ConfigProvider
+              theme={{
+                components: {
+                  Radio: {
+                    buttonBg: "transparent",
+                    buttonColor: "rgba(255, 255, 255, 0.65)",
+                    buttonCheckedBg: "rgba(255, 255, 255, 0.15)",
+                    colorBorder: "rgba(255, 255, 255, 0.25)",
+                    colorPrimary: "#fff",
+                    colorPrimaryHover: "#fff",
+                    colorPrimaryActive: "#fff",
+                  },
+                },
+              }}
+            >
+              <Radio.Group
+                size="small"
+                optionType="button"
+                options={THEME_MODE_OPTIONS}
+                value={mode}
+                onChange={(e) => setMode(e.target.value as ThemeMode)}
+              />
+            </ConfigProvider>
             <Dropdown
               menu={{
                 items: [
