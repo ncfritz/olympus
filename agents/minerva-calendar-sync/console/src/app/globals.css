@@ -7,7 +7,9 @@ body {
 
 body {
   margin: 0;
-  background: #f5f5f5;
+  /* Matches antd's colorBgContainer (Table/Card background) — see
+     AppLayout's Content — rather than its colorBgLayout default. */
+  background: #ffffff;
 }
 
 /* Set by ThemeModeContext on <html> — covers the sliver of body background

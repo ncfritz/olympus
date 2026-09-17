@@ -119,6 +119,7 @@ export function SyncHistoryPage() {
       <SyncStatsCharts filter={filter} />
       <Card
         title="Sync History"
+        style={{ borderRadius: 0 }}
         extra={
           <Button icon={<ReloadOutlined />} onClick={() => mutate()} loading={isLoading} aria-label="Refresh" />
         }

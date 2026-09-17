@@ -401,7 +401,12 @@ export function EventsPanel({
           />
         </Space>
       }
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}
+      style={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        borderRadius: 0,
+      }}
       styles={{
         body: {
           flex: 1,

@@ -23,6 +23,7 @@ import {
   Space,
   Spin,
   Switch,
+  theme,
   Typography,
 } from "antd";
 import Link from "next/link";
@@ -75,6 +76,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { mode, setMode } = useThemeMode();
+  const { token } = theme.useToken();
 
   if (auth.status === "loading") {
     return (
@@ -190,12 +192,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </Header>
         <Content
           style={{
-            padding: 24,
             flex: 1,
             minHeight: 0,
             overflow: "auto",
             display: "flex",
             flexDirection: "column",
+            // Matches Table/Card's own background (colorBgContainer) rather
+            // than Layout's default colorBgLayout, so the page background
+            // isn't a subtly different shade from the panels sitting on it.
+            background: token.colorBgContainer,
           }}
         >
           {children}

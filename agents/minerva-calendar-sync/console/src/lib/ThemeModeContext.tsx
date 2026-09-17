@@ -81,6 +81,13 @@ export function ThemeModeProvider({ children }: { children: ReactNode }) {
             resolvedMode === "dark"
               ? antdTheme.darkAlgorithm
               : antdTheme.defaultAlgorithm,
+          components: {
+            // Pinned to light mode's default rather than left to the
+            // algorithm — the dark algorithm darkens component tokens
+            // (including this one) same as everything else, which would
+            // otherwise make the header a different color per mode.
+            Layout: { headerBg: "#001529" },
+          },
         }}
       >
         {children}

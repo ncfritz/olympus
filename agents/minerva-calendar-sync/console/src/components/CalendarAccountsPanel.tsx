@@ -265,6 +265,7 @@ export function CalendarAccountsPanel() {
   return (
     <Card
       title="Calendar Accounts"
+      style={{ borderRadius: 0 }}
       extra={
         <Space size="small">
           <Tooltip title="Add account">
