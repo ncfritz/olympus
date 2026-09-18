@@ -181,6 +181,8 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
       const toSrc = path.relative(controllerDir, api).split(path.sep).join("/");
       const idParam = `${camel(a.entity)}Id`;
       const numericId = a.idType === "Int";
+      const testDir = path.join(repo, "apps/api/test/api", a.domain);
+      const specFile = path.join(testDir, `${a.operationId}.spec.ts`);
       const data = {
         ...a,
         isPaginated: a.verb === "List" && a.paginated,
@@ -204,8 +206,21 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
           Delete: "Delete",
         }[a.verb],
         usesConverter: a.verb !== "Delete" && a.verb !== "Get",
+        // HTTP test: path params become sample values.
+        testUrl: `/v1/${a.domain}${a.route}`.replace(
+          /:(\w+)/g,
+          numericId ? "1" : "missing-$1",
+        ),
+        toTestSupport: path
+          .relative(testDir, path.join(repo, "apps/api/test/support"))
+          .split(path.sep)
+          .join("/"),
         [`is${a.verb}`]: true,
       };
+      Object.assign(data, {
+        httpMethod: data.nestMethod.toLowerCase(),
+        nestMethodUpper: data.nestMethod.toUpperCase(),
+      });
 
       const controllerFile = path.join(controllerDir, `${a.operationId}.ts`);
       const converterFile = path.join(
@@ -216,12 +231,7 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
       );
       const modelFile = path.join(model, a.modelFile);
       const moduleFile = path.join(api, "module", `${a.module}.ts`);
-      const touched = [
-        controllerFile,
-        controllerFile.replace(/\.ts$/, ".spec.ts"),
-        modelFile,
-        moduleFile,
-      ];
+      const touched = [controllerFile, specFile, modelFile, moduleFile];
 
       return [
         {
@@ -233,7 +243,7 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
         },
         {
           type: "add",
-          path: controllerFile.replace(/\.ts$/, ".spec.ts"),
+          path: specFile,
           templateFile: "templates/api-operation/controller.spec.ts.hbs",
           data,
         },

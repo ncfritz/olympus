@@ -231,6 +231,15 @@ The status sent must match the success decorator. **[checked]**
 the model shapes and a converter stub
 ([guide](../guides/api-operation-generator.md)).
 
+## Tests
+
+- Every operation has an endpoint test under `test/api/<domain>/`
+  covering its success path, 404 when it takes an ID, and 400 for every
+  query parameter that reaches a GraphQL document
+  ([guide](../guides/api-testing.md)).
+- Query parameters are parsed with a Nest pipe or `filterUtil`, never
+  interpolated into a GraphQL document as received.
+
 ## Checks
 
 | Check                                                | Command                                                |

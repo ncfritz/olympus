@@ -60,8 +60,10 @@ Route defaults:
    operation, a typed `GraphQl<operationId>Response`, not-found handling
    for `*_by_pk` roots, and `buildPaginationExpression` /
    `buildFilterExpression` for paginated lists.
-2. `<operationId>.spec.ts` next to it: a 404 test for operations that take
-   an ID, `it.todo` placeholders otherwise.
+2. `apps/api/test/api/<domain>/<operationId>.spec.ts`: an endpoint test
+   on the shared harness ([API tests](api-testing.md)) with a 404 test for
+   operations that take an ID, a 400 test for paginated lists and an
+   `it.todo` for the happy path.
 3. `apps/api/src/convert/<domain>/<Entity>Converter.ts` with a
    `GraphQl<Entity>` / `toDomainObject` stub, if it doesn't exist.
 4. `<operationId>Request` / `<operationId>Response` appended to the model

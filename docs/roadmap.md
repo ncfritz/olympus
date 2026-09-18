@@ -14,6 +14,7 @@
 | 7   | Theme package; inline-style migration; `packages/ui`                                                 |                       |
 | 8   | Minerva calendar sync import and Hasura integration                                                  |                       |
 | —   | Tests are added in every phase (ADR 0010)                                                            | ongoing               |
+| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | next                  |
 
 ## Open decisions
 

@@ -28,3 +28,12 @@ the OpenAPI specs during `postbuild`.
 ## Open
 
 - Exact Testcontainers setup (the Mac Mini runs Docker; CI location TBD).
+
+## Update (2026-09-18)
+
+Before Testcontainers is set up (layer 3), API endpoint tests run the real
+`AppModule` against an in-memory Hasura double keyed by GraphQL operation
+name, with RabbitMQ stubbed. See
+[the API testing guide](../guides/api-testing.md). Testcontainers tests
+remain the target for checking the GraphQL documents against the real
+schema, which the double cannot do.

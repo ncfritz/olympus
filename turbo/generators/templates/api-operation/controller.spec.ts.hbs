@@ -1,40 +1,54 @@
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
 {{#if hasId}}
-import type { GraphQLClient } from "graphql-request";
-import { describe, expect, it, vi } from "vitest";
-import { {{operationId}}Controller } from "./{{operationId}}";
+  expect,
+{{else if isPaginated}}
+  expect,
+{{/if}}
+  it,
+} from "vitest";
+import { createTestApp, type TestApp } from "{{toTestSupport}}/testApp";
 
-const mockResponse = () => {
-  const response = { status: vi.fn(), send: vi.fn(), end: vi.fn() };
-  response.status.mockReturnValue(response);
-  return response;
-};
+// See docs/guides/api-testing.md. Register a Hasura response per GraphQL
+// operation with t.graphql.on("<OperationName>", ...); unregistered
+// operations fail the request.
+describe("{{nestMethodUpper}} /v1/{{domain}}{{route}} ({{operationId}})", () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp();
+  });
+  afterAll(async () => {
+    await t.app.close();
+  });
+  beforeEach(() => t.reset());
 
-describe("{{operationId}}Controller", () => {
-  it.todo("responds with the {{#if isDelete}}deletion{{else}}converted {{words entity}}{{/if}}");
+  it.todo("responds with the {{#if isDelete}}deletion{{else}}{{#if isList}}converted {{words entityPlural}}{{else}}{{#if isCreate}}created {{words entity}}{{else}}{{#if isGet}}computed result{{else}}converted {{words entity}}{{/if}}{{/if}}{{/if}}{{/if}}");
+{{#if isPaginated}}
+
+  it("rejects an invalid sort field", async () => {
+    await t.http().get("{{testUrl}}?sortBy=bad%20field").expect(400);
+    expect(t.graphql.calls("{{operationId}}")).toHaveLength(0);
+  });
+{{/if}}
+{{#if hasId}}
 
   it("responds 404 when the {{words entity}} does not exist", async () => {
-    const graphQLClient = {
-      request: vi.fn().mockResolvedValue({
-        {{#if isDescribe}}{{hasuraTable}}_by_pk{{/if}}{{#if isUpdate}}update_{{hasuraTable}}_by_pk{{/if}}{{#if isDelete}}delete_{{hasuraTable}}_by_pk{{/if}}: null,
-      }),
-    } as unknown as GraphQLClient;
-    const controller = new {{operationId}}Controller(graphQLClient);
+    t.graphql.on("{{operationId}}", {
+      {{#if isDescribe}}{{hasuraTable}}_by_pk{{/if}}{{#if isUpdate}}update_{{hasuraTable}}_by_pk{{/if}}{{#if isDelete}}delete_{{hasuraTable}}_by_pk{{/if}}: null,
+    });
 
-    await expect(
-      controller.handle(
-        {{#if numericId}}1{{else}}"missing"{{/if}},
+    await t
+      .http()
+      .{{httpMethod}}("{{testUrl}}")
 {{#if hasBody}}
-        { {{entityCamel}}: {} } as never,
+      .send({ {{entityCamel}}: {} })
 {{/if}}
-        mockResponse() as never,
-      ),
-    ).rejects.toThrow("not found");
+      .expect(404);
+    // A 404 from an unregistered route would not reach Hasura.
+    expect(t.graphql.calls("{{operationId}}")).toHaveLength(1);
   });
-});
-{{else}}
-import { describe, it } from "vitest";
-
-describe("{{operationId}}Controller", () => {
-  it.todo("responds with the {{#if isList}}converted {{words entityPlural}}{{else}}{{#if isCreate}}created {{words entity}}{{else}}computed result{{/if}}{{/if}}");
-});
 {{/if}}
+});
