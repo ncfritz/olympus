@@ -4,6 +4,7 @@ dist/
 out/
 coverage/
 test-report/
+.openapi-check/
 .turbo/
 *.tsbuildinfo
 logs/
