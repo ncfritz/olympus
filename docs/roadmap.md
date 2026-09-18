@@ -48,30 +48,31 @@ record them as accepted deviations.
 
 ### API
 
-- **Lint does not pass (pre-existing).** `eslint src` in `apps/api`
-  reports 30 errors (`no-explicit-any` and `no-unused-vars`, plus 2
-  `no-useless-assignment`), mostly in `NotificationsGateway.ts` and the
-  batch-job controllers.
-- The API `Dockerfile` still targets the old single-repo layout (npm +
-  GitHub Packages token). Rebuilt with ADR 0011.
-- OpenAPI `info.version` is now `0.0.0` (the workspace package version)
-  instead of the published release number.
-- `ApiStandardErrorResponses({ exclude })`: the filter uses
-  `key in options.exclude`, which tests array indices, not values, so
-  `exclude` doesn't work as intended.
-- `UpdateCalendarItem`: sends `304 Not Modified` for an empty change set
-  but doesn't `return`, so execution continues. Its `summary`/`description`
-  were copied from the notes operation ("Updates an existing note",
-  "CUpdates an existing node").
-- 38 operations declare `@ApiCreatedResponse` but only one sends
-  `201 Created`. The documented and actual status codes disagree.
-- `GetNotesSummary.ts` exports `GetMonthlySummaryController` (file, class
-  and operation names should agree).
+The controller convention check (`apps/api/test/conventions`) and
+Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
+
+- **Deletes that answer `410 Gone`.** `DeleteContentAssetChannel`,
+  `DeleteContentAssetTagFromAsset` and `DeleteMediaFavorite` respond 410
+  instead of a 2xx (`DeleteMediaFavorite` also documents 201). With the
+  SDK's `throwOnError`, callers see these as errors. Decision pending:
+  switch to `204 No Content`.
+- **`SendNotification` documents `207 Multi-Status`** for partial delivery
+  but never sends it (only 202 or 400). Decision pending: implement or
+  drop from the docs.
+- **`UploadAssets`** doesn't follow the controller pattern (`uploadFile`
+  returning the Multer file list, no `@Res()`); it documents 200 with an
+  empty body but Nest answers 201 with the file list.
+- **operationId typo** `ListNotificationsTypes` (class
+  `ListNotificationTypesController`). Fix with the SDK import, since it
+  renames an SDK function.
 - Meeting operations use `SingleCalendarItemResponse { item }` /
   `ListCalendarItemsResponse { items }` instead of
   `<OperationId>Response` with entity-named properties.
 - `ValidationPipe` is commented out; `class-validator` is unused.
-- The API's OpenAPI specs are produced by a Jest test in `postbuild`.
+- The API `Dockerfile` still targets the old single-repo layout (npm +
+  GitHub Packages token). Rebuilt with ADR 0011.
+- OpenAPI `info.version` is `0.0.0` (the workspace package version)
+  instead of a release number.
 
 ### Agents
 

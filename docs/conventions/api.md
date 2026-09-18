@@ -129,6 +129,8 @@ Apply decorators in this order, omitting the ones that don't apply:
    - `summary`: short phrase, sentence case, no trailing period
    - `description`: one or more full sentences
    - `tags`: one tag, the area in Title Case plural (`"Notes"`, `"Meetings"`)
+   - no two operations share a summary or a description (a sign of
+     copy-paste). **[checked]**
 3. `@ApiConsumes("application/json")`: when there is a body
 4. `@ApiProduces("application/json")`
 5. `@ApiParam(...)`: one per path parameter, with `description` and `type`
@@ -222,3 +224,15 @@ The status sent must match the success decorator. **[checked]**
 
 `pnpm gen api-operation` does steps 1 and 3 and creates the controller,
 model shapes and converter stub.
+
+## Checks
+
+| Check                                                | Command                                                |
+| ---------------------------------------------------- | ------------------------------------------------------ |
+| Controller conventions (this document)               | `pnpm --filter @ncfritz/olympus-api check:conventions` |
+| Committed OpenAPI documents match the code           | `check:openapi` (part of the above)                    |
+| Spectral on the OpenAPI documents (`.spectral.yaml`) | `lint:openapi` (part of the above)                     |
+
+Known deviations are listed in `test/conventions/controllers.allow.json`
+and may only shrink. `pnpm --filter @ncfritz/olympus-api check:allow-update`
+rewrites it (review the diff).

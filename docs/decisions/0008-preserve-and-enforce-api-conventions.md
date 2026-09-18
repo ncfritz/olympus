@@ -27,8 +27,11 @@ help.
      `operationId`, `summary` and `description` present, every operation
      tagged, standard error responses documented, `components.schemas` names
      PascalCase.
-   - **Spec diff** (`oasdiff`) against the committed spec. Breaking changes
-     fail unless acknowledged.
+   - **Committed spec is current**: regenerating the OpenAPI documents
+     must reproduce the committed files, so every API change shows up as
+     a reviewable diff of `apps/api/openapi/*.json`. Automated
+     breaking-change detection (`oasdiff`) is deferred: it ships as a Go
+     binary, not an npm package.
    - **Model check**: every exported class property in `packages/model`
      carries `@ApiProperty` with `description` and explicit `required`.
 3. **Improve without replacing.** Additions that keep the pattern (typed
