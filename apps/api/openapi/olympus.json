@@ -825,7 +825,8 @@
         "type": "object",
         "properties": {
           "payload": {
-            "type": "object"
+            "type": "object",
+            "description": "The message payload to publish"
           }
         },
         "required": [
@@ -1310,7 +1311,8 @@
         "type": "object",
         "properties": {
           "count": {
-            "type": "number"
+            "type": "number",
+            "description": "The total number of matching items across all pages"
           },
           "notifications": {
             "description": "A list of notifications present in the notification group.",

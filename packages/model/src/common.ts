@@ -12,7 +12,11 @@ export enum SortDirection {
 export class EmptyResponse {}
 
 export class PaginatedResults {
-  @ApiProperty({ required: true, type: Number })
+  @ApiProperty({
+    required: true,
+    type: Number,
+    description: "The total number of matching items across all pages",
+  })
   count: number;
 }
 
@@ -42,7 +46,11 @@ export class PingResponse {
 }
 
 export class TestRequest {
-  @ApiProperty({ required: true, type: () => Object })
+  @ApiProperty({
+    required: true,
+    type: () => Object,
+    description: "The message payload to publish",
+  })
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- arbitrary payload echoed by the AMQP test endpoint
   payload: any;
 }

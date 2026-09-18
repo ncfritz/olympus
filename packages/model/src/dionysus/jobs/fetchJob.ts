@@ -38,13 +38,18 @@ export enum MetadataJobType {
 export class FetchJobContext<K extends keyof never, T> {}
 
 export class MetadataFetchJob {
-  @ApiProperty({ required: true, type: String })
+  @ApiProperty({
+    required: true,
+    type: String,
+    description: "The TMDB ID of the entity to fetch; unique per job type",
+  })
   id: string;
 
   @ApiProperty({
     required: true,
     enum: () => MetadataJobType,
     enumName: "MetadataJobType",
+    description: "The kind of entity to fetch",
   })
   type: MetadataJobType;
 
@@ -52,27 +57,50 @@ export class MetadataFetchJob {
     required: true,
     enum: () => MetadataFetchJobStatus,
     enumName: "MetadataFetchJobStatus",
+    description: "The status of the fetch job",
   })
   status: MetadataFetchJobStatus;
 
-  @ApiTimestamp({ required: true })
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the metadata fetch job was created",
+  })
   createdTime: Moment;
 
-  @ApiTimestamp({ required: true })
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the metadata fetch job was last updated",
+  })
   lastUpdatedTime: Moment;
 
-  @ApiTimestamp({ required: false })
+  @ApiTimestamp({
+    required: false,
+    description:
+      "An ISO-8601 formatted string indicating when the metadata was last fetched",
+  })
   lastFetchedTime?: Moment;
 
-  @ApiProperty({ required: true, type: Number })
+  @ApiProperty({
+    required: true,
+    type: Number,
+    description: "The number of days fetched metadata stays fresh",
+  })
   ttl: number;
 
-  @ApiProperty({ required: true, type: Number })
+  @ApiProperty({
+    required: true,
+    type: Number,
+    description:
+      "The number of minutes added to the expiry to spread out refetches",
+  })
   jitter: number;
 
   @ApiProperty({
     required: true,
     type: () => FetchJobContext,
+    description: "Type-specific context passed to the metadata agent",
   })
   context: FetchJobContext<string, never>;
 }
@@ -126,7 +154,13 @@ export class CreateMetadataFetchJobRequest {
   })
   status?: MetadataFetchJobStatus;
 
-  @ApiProperty({ type: String, required: false, default: undefined })
+  @ApiProperty({
+    type: String,
+    required: false,
+    default: undefined,
+    description:
+      "An ISO-8601 formatted string indicating when the metadata was last fetched, if known",
+  })
   @Transform(({ value }) => (value ? moment(value) : undefined))
   lastFetchedTime?: Moment;
 
@@ -134,6 +168,7 @@ export class CreateMetadataFetchJobRequest {
     type: Boolean,
     required: false,
     default: true,
+    description: "Whether to publish a notification when the fetch completes",
   })
   publishNotification?: boolean;
 
@@ -141,12 +176,15 @@ export class CreateMetadataFetchJobRequest {
     type: Boolean,
     required: false,
     default: false,
+    description:
+      "Whether to fetch from TMDB even when a cached response is available",
   })
   bypassCache?: boolean;
 
   @ApiProperty({
     type: () => FetchJobContext,
     required: false,
+    description: "Type-specific context passed to the metadata agent",
   })
   context?: FetchJobContext<string, never>;
 }
@@ -155,6 +193,7 @@ export class CreateMetadataFetchJobResponse {
   @ApiProperty({
     required: true,
     type: () => MetadataFetchJob,
+    description: "The created metadata fetch job",
   })
   job: MetadataFetchJob;
 }
@@ -163,6 +202,7 @@ export class DescribeMetadataFetchJobResponse {
   @ApiProperty({
     required: true,
     type: () => MetadataFetchJob,
+    description: "The requested metadata fetch job",
   })
   job: MetadataFetchJob;
 }
@@ -171,6 +211,7 @@ export class DeleteMetadataFetchJobResponse {
   @ApiProperty({
     required: true,
     type: () => MetadataFetchJob,
+    description: "The deleted metadata fetch job",
   })
   job: MetadataFetchJob;
 }
@@ -179,6 +220,7 @@ export class UpdateMetadataFetchJobRequest {
   @ApiProperty({
     required: true,
     type: () => MetadatFetchJobUpdate,
+    description: "The changes to apply to the metadata fetch job",
   })
   job: MetadatFetchJobUpdate;
 
@@ -186,6 +228,7 @@ export class UpdateMetadataFetchJobRequest {
     type: Boolean,
     required: false,
     default: true,
+    description: "Whether to publish a notification when the fetch completes",
   })
   publishNotification?: boolean;
 
@@ -193,6 +236,8 @@ export class UpdateMetadataFetchJobRequest {
     type: Boolean,
     required: false,
     default: false,
+    description:
+      "Whether to fetch from TMDB even when a cached response is available",
   })
   bypassCache?: boolean;
 }
@@ -201,6 +246,7 @@ export class UpdateMetadataFetchJobResponse {
   @ApiProperty({
     required: true,
     type: () => MetadataFetchJob,
+    description: "The updated metadata fetch job",
   })
   job: MetadataFetchJob;
 }
@@ -254,6 +300,11 @@ export class GetMetadataFetchJobStatusStatisticsResponse {
 }
 
 export class ListMetadataFetchJobsResponse extends PaginatedResults {
-  @ApiProperty({ required: true, type: () => MetadataFetchJob, isArray: true })
+  @ApiProperty({
+    required: true,
+    type: () => MetadataFetchJob,
+    isArray: true,
+    description: "The metadata fetch jobs on the requested page",
+  })
   jobs: MetadataFetchJob[];
 }

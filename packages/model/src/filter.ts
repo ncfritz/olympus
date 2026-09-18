@@ -31,10 +31,15 @@ export class FilterDefinition {
     required: true,
     enum: () => FilterType,
     enumName: "FilterType",
+    description: "The filter operator",
   })
   type: FilterType;
 
-  @ApiProperty({ required: true, type: String })
+  @ApiProperty({
+    required: true,
+    type: String,
+    description: "The name of the field to filter on; ignored for and/or/not",
+  })
   name: string;
 
   @ApiProperty({

@@ -29,57 +29,113 @@ export enum Gender {
 }
 
 export class BasePerson {
-  @ApiProperty({ required: true, type: Number })
+  @ApiProperty({
+    required: true,
+    type: Number,
+    description: "The TMDB ID of the person",
+  })
   id: number;
 
-  @ApiProperty({ required: true, type: String })
+  @ApiProperty({
+    required: true,
+    type: String,
+    description: "The name of the person",
+  })
   name: string;
 
-  @ApiProperty({ required: true, type: Boolean })
+  @ApiProperty({
+    required: true,
+    type: Boolean,
+    description: "Whether the person is flagged as adult content",
+  })
   adult: boolean;
 
-  @ApiTimestamp({ required: false })
+  @ApiTimestamp({
+    required: false,
+    description:
+      "An ISO-8601 formatted string indicating the person's date of birth",
+  })
   birthday?: Moment;
 
-  @ApiProperty({ required: false, type: String })
+  @ApiProperty({
+    required: false,
+    type: String,
+    description: "The place of birth",
+  })
   birthplace?: string;
 
-  @ApiTimestamp({ required: false })
+  @ApiTimestamp({
+    required: false,
+    description:
+      "An ISO-8601 formatted string indicating the person's date of death",
+  })
   deathday?: Moment;
 
-  @ApiProperty({ required: true, enum: () => Gender, enumName: "Gender" })
+  @ApiProperty({
+    required: true,
+    enum: () => Gender,
+    enumName: "Gender",
+    description: "The gender recorded by TMDB",
+  })
   gender: Gender;
 
-  @ApiProperty({ required: true, type: String })
+  @ApiProperty({
+    required: true,
+    type: String,
+    description: "The URL of the official homepage",
+  })
   homepage: string;
 
-  @ApiProperty({ required: true, type: String })
+  @ApiProperty({ required: true, type: String, description: "The IMDb ID" })
   imdbId: string;
 
-  @ApiProperty({ required: true, type: String })
+  @ApiProperty({
+    required: true,
+    type: String,
+    description:
+      "The department the person is best known for, e.g. Acting or Directing",
+  })
   knownForDepartment: string;
 
-  @ApiProperty({ required: false, type: String })
+  @ApiProperty({
+    required: false,
+    type: String,
+    description: "The TMDB path of the profile image",
+  })
   profilePath?: string;
 
-  @ApiProperty({ required: true, type: Number })
+  @ApiProperty({
+    required: true,
+    type: Number,
+    description: "The TMDB popularity score",
+  })
   popularity: number;
 
-  @ApiTimestamp({ required: true })
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the person was created",
+  })
   createdTime: Moment;
 
-  @ApiTimestamp({ required: true })
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the person was last updated",
+  })
   lastUpdatedTime: Moment;
 }
 
 export class Person extends BasePerson {
-  @ApiProperty({ required: true, type: String })
+  @ApiProperty({ required: true, type: String, description: "The biography" })
   biography: string;
 
   @ApiProperty({
     required: true,
     type: () => ExternalId,
     isArray: true,
+    description:
+      "IDs of the person in other databases (IMDb, TVDB, social media, ...)",
   })
   externalIds: ExternalId[];
 
@@ -87,21 +143,29 @@ export class Person extends BasePerson {
     required: true,
     type: () => PersonAlsoKnownAs,
     isArray: true,
+    description: "Other names the person is known by",
   })
   alsoKnownAs: PersonAlsoKnownAs[];
 
-  @ApiProperty({ required: true, type: () => BaseImage, isArray: true })
+  @ApiProperty({
+    required: true,
+    type: () => BaseImage,
+    isArray: true,
+    description: "Images of the person",
+  })
   images: BaseImage[];
 }
 
 export class PartialPerson extends OmitType(BasePerson, [...AUDIT_FIELDS]) {
-  @ApiProperty({ required: true, type: String })
+  @ApiProperty({ required: true, type: String, description: "The biography" })
   biography: string;
 
   @ApiProperty({
     required: true,
     type: () => PartialExternalId,
     isArray: true,
+    description:
+      "IDs of the person in other databases (IMDb, TVDB, social media, ...)",
   })
   externalIds: PartialExternalId[];
 
@@ -109,21 +173,39 @@ export class PartialPerson extends OmitType(BasePerson, [...AUDIT_FIELDS]) {
     required: true,
     type: () => PartialPersonAlsoKnownAs,
     isArray: true,
+    description: "Other names the person is known by",
   })
   alsoKnownAs: PartialPersonAlsoKnownAs[];
 
-  @ApiProperty({ required: true, type: () => PartialBaseImage, isArray: true })
+  @ApiProperty({
+    required: true,
+    type: () => PartialBaseImage,
+    isArray: true,
+    description: "Images of the person",
+  })
   images: PartialBaseImage[];
 }
 
 export class PersonAlsoKnownAs {
-  @ApiProperty({ required: true, type: String })
+  @ApiProperty({
+    required: true,
+    type: String,
+    description: "The alternative name",
+  })
   name: string;
 
-  @ApiTimestamp({ required: true })
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the person also known as was created",
+  })
   createdTime: Moment;
 
-  @ApiTimestamp({ required: true })
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the person also known as was last updated",
+  })
   lastUpdatedTime: Moment;
 }
 
@@ -223,29 +305,49 @@ export class PersonTvEpisodeGuestAppearance {
 }
 
 export class PersonAssociation {
-  @ApiProperty({ required: true, type: () => BasePerson })
+  @ApiProperty({
+    required: true,
+    type: () => BasePerson,
+    description: "The associated person",
+  })
   person: BasePerson;
 
-  @ApiTimestamp({ required: true })
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the person association was created",
+  })
   createdTime: Moment;
 
-  @ApiTimestamp({ required: true })
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the person association was last updated",
+  })
   lastUpdatedTime: Moment;
 }
 
 export class PersonLifeStatistic {
-  @ApiProperty({ required: true, type: Number })
+  @ApiProperty({ required: true, type: Number, description: "The year" })
   year: number;
 
-  @ApiProperty({ required: true, type: Number })
+  @ApiProperty({
+    required: true,
+    type: Number,
+    description: "The number of people in the year",
+  })
   count: number;
 }
 
 export class PersonDepartmentStatistic {
-  @ApiProperty({ required: true, type: String })
+  @ApiProperty({ required: true, type: String, description: "The department" })
   department: string;
 
-  @ApiProperty({ required: true, type: Number })
+  @ApiProperty({
+    required: true,
+    type: Number,
+    description: "The number of people known for the department",
+  })
   count: number;
 }
 
@@ -253,7 +355,11 @@ export class PartialPersonAssociation extends OmitType(PersonAssociation, [
   ...AUDIT_FIELDS,
   "person",
 ]) {
-  @ApiProperty({ required: true, type: Number })
+  @ApiProperty({
+    required: true,
+    type: Number,
+    description: "The TMDB ID of the person",
+  })
   personId: number;
 }
 
@@ -261,12 +367,17 @@ export class CreatePersonRequest {
   @ApiProperty({
     required: true,
     type: () => PartialPerson,
+    description: "The person to create",
   })
   person: PartialPerson;
 }
 
 export class CreatePersonResponse {
-  @ApiProperty({ type: Number, required: true })
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The TMDB ID of the created person",
+  })
   id: number;
 }
 
@@ -274,6 +385,7 @@ export class DescribePersonResponse {
   @ApiProperty({
     required: true,
     type: () => Person,
+    description: "The requested person",
   })
   person: Person;
 }
@@ -283,6 +395,7 @@ export class ListPeopleResponse extends PaginatedResults {
     type: () => BasePerson,
     isArray: true,
     required: true,
+    description: "The people on the requested page",
   })
   people: BasePerson[];
 }
@@ -292,6 +405,7 @@ export class ListMovieCastRolesForPersonResponse {
     type: () => PersonMovieCastCredit,
     isArray: true,
     required: true,
+    description: "The person's movie cast credits",
   })
   credits: PersonMovieCastCredit[];
 }
@@ -301,6 +415,7 @@ export class ListMovieCrewJobsForPersonResponse {
     type: () => PersonMovieCrewCredit,
     isArray: true,
     required: true,
+    description: "The person's movie crew credits",
   })
   credits: PersonMovieCrewCredit[];
 }
@@ -310,6 +425,7 @@ export class ListTvSeriesCastRolesForPersonResponse {
     type: () => PersonTvSeriesCastCredit,
     isArray: true,
     required: true,
+    description: "The person's TV series cast credits",
   })
   credits: PersonTvSeriesCastCredit[];
 }
@@ -319,6 +435,7 @@ export class ListTvGuestAppearancesForPersonResponse {
     type: () => PersonTvEpisodeGuestAppearance,
     isArray: true,
     required: true,
+    description: "The person's TV guest appearances",
   })
   credits: PersonTvEpisodeGuestAppearance[];
 }
@@ -328,6 +445,7 @@ export class ListTvSeriesCrewJobsForPersonResponse {
     type: () => PersonTvSeriesCrewCredit,
     isArray: true,
     required: true,
+    description: "The person's TV series crew credits",
   })
   credits: PersonTvSeriesCrewCredit[];
 }
@@ -337,6 +455,7 @@ export class GetPersonLifeStaticsResponse {
     type: () => PersonLifeStatistic,
     isArray: true,
     required: true,
+    description: "People counts by year",
   })
   statistics: PersonLifeStatistic[];
 }
@@ -346,6 +465,7 @@ export class GetPersonDepartmentStaticsResponse {
     type: () => PersonDepartmentStatistic,
     isArray: true,
     required: true,
+    description: "People counts by department",
   })
   statistics: PersonDepartmentStatistic[];
 }
