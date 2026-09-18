@@ -23,7 +23,9 @@ export class GraphQLMock {
   });
 
   /** Respond to `operation` with `response` (or the result of a function). */
-  on(operation: string, response: unknown | Handler): this {
+  on(operation: string, response: Handler): this;
+  on(operation: string, response: unknown): this;
+  on(operation: string, response: unknown): this {
     this.handlers.set(
       operation,
       typeof response === "function"

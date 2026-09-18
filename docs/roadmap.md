@@ -27,6 +27,15 @@
 - Styles mechanism for the theme migration (`antd-style` vs. CSS modules).
 - Turning on full TypeScript `strict`.
 - How AI agents interact with the platform (API-backed tools / MCP).
+- Content black curtain: the `x-dionysus-content-bc` header lets any
+  client turn the curtain off (`false`), and the site always sends `true`
+  (`active || true`), so its settings toggle has no effect on the API.
+  Decide whether the curtain is enforced server-side for every
+  unauthenticated request. Channel endpoints and the asset statistics do
+  not apply the curtain at all.
+- `GetUntaggedContentAsset` treats an asset with one non-system tag as both
+  untagged (`_not` count `_gt: 1`) and tagged (count `_gte: 1`). Confirm
+  which is intended.
 
 ## Model backlog
 

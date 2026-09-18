@@ -1,5 +1,8 @@
 import { FilterDefinition, FilterType } from "@ncfritz/olympus-model";
-import { UnauthorizedException } from "@nestjs/common";
+import {
+  InternalServerErrorException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { Request } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { jwtVerify, JWTVerifyOptions } from "jose";
@@ -10,7 +13,7 @@ export type GraphQlGetContentAuthResponse = {
     key: string;
     key_id: string;
     createdTime: string;
-  };
+  } | null;
 };
 
 export const BC_FILTER: FilterDefinition = {
@@ -39,8 +42,8 @@ export abstract class BaseAuthenticatedContentController {
 
   async getAuthenticationKey(type: string): Promise<string> {
     const fetchJwtKeyRequest = gql`
-      query FetchContentAuthJWTKey {
-        dionysus_content_auth_by_pk(key_id: "${type}") {
+      query FetchContentAuthKey($keyId: String!) {
+        dionysus_content_auth_by_pk(key_id: $keyId) {
           key
           key_id
           createdTime
@@ -51,7 +54,14 @@ export abstract class BaseAuthenticatedContentController {
     const fetchJwtKeyResponse =
       await this.graphQLClient.request<GraphQlGetContentAuthResponse>(
         fetchJwtKeyRequest,
+        { keyId: type },
       );
+
+    if (!fetchJwtKeyResponse.dionysus_content_auth_by_pk) {
+      throw new InternalServerErrorException(
+        `Content auth key "${type}" is not configured`,
+      );
+    }
 
     return fetchJwtKeyResponse.dionysus_content_auth_by_pk.key;
   }
@@ -66,6 +76,7 @@ export abstract class BaseAuthenticatedContentController {
       if (!silent) {
         throw new UnauthorizedException();
       }
+      return false;
     }
 
     const signingKey = createSecretKey(

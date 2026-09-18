@@ -2,7 +2,14 @@ import {
   DescribeContentAssetChannelResponse,
   FullContentAssetChannel,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Res,
+} from "@nestjs/common";
 import {
   ApiConsumes,
   ApiOkResponse,
@@ -17,7 +24,7 @@ import { GraphQlFullContentAssetChannel } from "../../../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 export type GraphQlDescribeContentAssetChannelResponse = {
-  dionysus_content_asset_channel_by_pk: GraphQlFullContentAssetChannel;
+  dionysus_content_asset_channel_by_pk: GraphQlFullContentAssetChannel | null;
 };
 
 @Controller({ version: "1" })
@@ -91,6 +98,10 @@ export class DescribeContentAssetChannelController {
           channelId: channelId,
         },
       );
+
+    if (!queryResponse.dionysus_content_asset_channel_by_pk) {
+      throw new NotFoundException();
+    }
 
     const channel: FullContentAssetChannel = toFullDomainObject(
       queryResponse.dionysus_content_asset_channel_by_pk,

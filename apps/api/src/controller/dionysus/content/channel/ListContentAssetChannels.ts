@@ -75,7 +75,7 @@ export class ListContentAssetChannelsController {
     });
 
     const fetchRequest = gql`
-      query ListContentAssetChannel {
+      query ListContentAssetChannels {
         dionysus_content_asset_channel(${[paginationExpression, whereExpression].join(", ")}) {
           ttl
           name

@@ -43,7 +43,7 @@ export class GetContentAssetSizeStatisticsController {
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query GetContentAssetDurationStatistics {
+      query GetContentAssetSizeStatistics {
         dionysus_content_asset_size_statistics(order_by: { bucket: asc }) {
           bucket
           bucket_width

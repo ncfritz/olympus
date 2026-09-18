@@ -61,7 +61,7 @@ export class GetUntaggedContentAssetController extends BaseAuthenticatedContentC
     }
 
     const fetchRequest = gql`
-      query GetContentAssets {
+      query GetUntaggedContentAsset {
         dionysus_content_assets(
           where: {
             _not: {

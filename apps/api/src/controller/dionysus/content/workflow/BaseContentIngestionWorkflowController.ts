@@ -2,7 +2,7 @@ import {
   ContentIngestionWorkflowAssetLocation,
   ContentIngestionWorkflowStatus,
 } from "@ncfritz/olympus-model";
-import { BadRequestException } from "@nestjs/common";
+import { NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/content/workflow/ContentIngestionWorkflowConverter";
 import { GraphQLContentIngestionWorkflow } from "../../../../types/dionysus/content/workflow";
@@ -78,7 +78,7 @@ export class BaseContentIngestionWorkflowController {
 
   protected async verifyWorkflowExists(workflowId: string) {
     const checkParentWorkflowRequest = gql`
-      query GetTargetWorkflow($id: uuid!) {
+      query GetParentContentIngestionWorkflow($id: uuid!) {
         dionysus_content_asset_ingest_workflows_by_pk(id: $id) {
           id
         }
@@ -95,7 +95,7 @@ export class BaseContentIngestionWorkflowController {
       !checkParentWorkflowResponse.dionysus_content_asset_ingest_workflows_by_pk
         ?.id
     ) {
-      throw new BadRequestException();
+      throw new NotFoundException(`Workflow ${workflowId} not found`);
     }
   }
 
@@ -104,7 +104,10 @@ export class BaseContentIngestionWorkflowController {
     workflowStepId: string,
   ) {
     const checkWorkflowStepRequest = gql`
-      query GetTargetWorkflowStep($id: uuid!, $workflowId: uuid!) {
+      query GetParentContentIngestionWorkflowStep(
+        $id: uuid!
+        $workflowId: uuid!
+      ) {
         dionysus_content_asset_ingest_workflow_steps_by_pk(
           id: $id
           workflow_id: $workflowId
@@ -124,7 +127,9 @@ export class BaseContentIngestionWorkflowController {
       !checkWorkflowStepResponse
         .dionysus_content_asset_ingest_workflow_steps_by_pk?.id
     ) {
-      throw new BadRequestException();
+      throw new NotFoundException(
+        `Workflow step ${workflowId}/${workflowStepId} not found`,
+      );
     }
   }
 }

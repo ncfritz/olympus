@@ -62,6 +62,8 @@ export class UpdateContentAssetChannelController extends BaseContentAssetChannel
     @Body() request: UpdateContentAssetChannelRequest,
     @Res() response: Response,
   ): Promise<void> {
+    // 404 before touching the cache of a channel that does not exist.
+    await this.fetchChannelFilter(channelId);
     await this.clearContentAssetChannelCache(channelId);
     const assetCache = await this.buildAssetCacheEntries(
       request.channel.filterDefinition,

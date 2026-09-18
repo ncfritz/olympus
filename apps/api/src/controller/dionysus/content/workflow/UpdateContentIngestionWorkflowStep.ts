@@ -77,7 +77,7 @@ export class UpdateContentIngestionWorkflowStepController extends BaseContentIng
     await this.verifyWorkflowStepExists(workflowId, workflowStepId);
 
     const updateRequest = gql`
-      mutation UpdateWorkflow(
+      mutation UpdateContentIngestionWorkflowStep(
         $id: uuid!
         $workflowId: uuid!
         $changes: dionysus_content_asset_ingest_workflow_steps_set_input = {}

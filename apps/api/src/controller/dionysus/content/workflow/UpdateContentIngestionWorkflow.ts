@@ -8,6 +8,7 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
+  NotFoundException,
   Param,
   Put,
   Res,
@@ -29,7 +30,7 @@ import { toDomainObject } from "../../../../convert/dionysus/content/workflow/Co
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlUpdateContentIngestionWorkflowResponse = {
-  update_dionysus_content_asset_ingest_workflows_by_pk: GraphQLContentIngestionWorkflow;
+  update_dionysus_content_asset_ingest_workflows_by_pk: GraphQLContentIngestionWorkflow | null;
 };
 
 @Controller({ version: "1" })
@@ -66,7 +67,7 @@ export class UpdateContentIngestionWorkflowController {
     @Res() response: Response,
   ): Promise<void> {
     const updateRequest = gql`
-      mutation UpdateWorkflow(
+      mutation UpdateContentIngestionWorkflow(
         $id: uuid!
         $changes: dionysus_content_asset_ingest_workflows_set_input = {}
       ) {
@@ -119,6 +120,10 @@ export class UpdateContentIngestionWorkflowController {
           changes: updates,
         },
       );
+
+    if (!updateResponse.update_dionysus_content_asset_ingest_workflows_by_pk) {
+      throw new NotFoundException();
+    }
 
     const updatedWorkflow = toDomainObject(
       updateResponse.update_dionysus_content_asset_ingest_workflows_by_pk,

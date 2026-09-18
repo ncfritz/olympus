@@ -1,17 +1,6 @@
 {
   "class-name ListNotificationTypesController": "src/controller/olympus/notifications/ListNotificationTypes.ts: class ListNotificationTypesController for operation ListNotificationsTypes",
   "file-name ListNotificationTypesController": "src/controller/olympus/notifications/ListNotificationTypes.ts: file ListNotificationTypes.ts for operation ListNotificationsTypes",
-  "graphql-unique CreateContentAssetChannelController": "GraphQL operation \"ListContentAssets\" names 2 different documents (RefreshContentAssetChannelController, UpdateContentAssetChannelController, ListContentAssetsController)",
-  "graphql-unique FavoriteContentAssetChannelController": "GraphQL operation \"UpdateContentAssetChannel\" names 2 different documents (UpdateContentAssetChannelController)",
-  "graphql-unique GetContentAssetController": "GraphQL operation \"GetContentAssets\" names 2 different documents (GetUntaggedContentAssetController)",
-  "graphql-unique GetContentAssetDurationStatisticsController": "GraphQL operation \"GetContentAssetDurationStatistics\" names 2 different documents (GetContentAssetSizeStatisticsController)",
-  "graphql-unique GetContentAssetSizeStatisticsController": "GraphQL operation \"GetContentAssetDurationStatistics\" names 2 different documents (GetContentAssetDurationStatisticsController)",
   "graphql-unique GetMovieGenreCountStatisticsController": "GraphQL operation \"GetTvSeriesGenreCountStatistics\" names 2 different documents (GetTvSeriesGenreCountStatisticsController)",
-  "graphql-unique GetTvSeriesGenreCountStatisticsController": "GraphQL operation \"GetTvSeriesGenreCountStatistics\" names 2 different documents (GetMovieGenreCountStatisticsController)",
-  "graphql-unique GetUntaggedContentAssetController": "GraphQL operation \"GetContentAssets\" names 2 different documents (GetContentAssetController)",
-  "graphql-unique ListContentAssetsController": "GraphQL operation \"ListContentAssets\" names 2 different documents (CreateContentAssetChannelController, RefreshContentAssetChannelController, UpdateContentAssetChannelController)",
-  "graphql-unique RefreshContentAssetChannelController": "GraphQL operation \"ListContentAssets\" names 2 different documents (CreateContentAssetChannelController, UpdateContentAssetChannelController, ListContentAssetsController)",
-  "graphql-unique UpdateContentAssetChannelController": "GraphQL operation \"UpdateContentAssetChannel\" names 2 different documents (FavoriteContentAssetChannelController)",
-  "graphql-unique UpdateContentIngestionWorkflowController": "GraphQL operation \"UpdateWorkflow\" names 3 different documents (UpdateContentIngestionWorkflowStepController, UpdateMetadataWorkflowController)",
-  "graphql-unique UpdateContentIngestionWorkflowStepController": "GraphQL operation \"UpdateWorkflow\" names 3 different documents (UpdateContentIngestionWorkflowController, UpdateMetadataWorkflowController)"
+  "graphql-unique GetTvSeriesGenreCountStatisticsController": "GraphQL operation \"GetTvSeriesGenreCountStatistics\" names 2 different documents (GetMovieGenreCountStatisticsController)"
 }

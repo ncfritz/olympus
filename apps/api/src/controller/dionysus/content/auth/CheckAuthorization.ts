@@ -63,10 +63,15 @@ export class CheckAuthorizationController {
       fetchJwtKeyResponse.dionysus_content_auth_by_pk.key,
     );
 
-    await jose.jwtVerify(cookiejwt, jwtKey, {
-      issuer: "ncfritz.dionysus.content",
-      maxTokenAge: "30m",
-    });
+    try {
+      await jose.jwtVerify(cookiejwt, jwtKey, {
+        issuer: "ncfritz.dionysus.content",
+        maxTokenAge: "30m",
+      });
+    } catch {
+      response.status(HttpStatus.UNAUTHORIZED).send({ authorized: false });
+      return;
+    }
 
     const responseBody: CheckAuthResponse = { authorized: true };
 

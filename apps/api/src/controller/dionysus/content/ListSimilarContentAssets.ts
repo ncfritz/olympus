@@ -82,6 +82,10 @@ export class ListSimilarContentAssetsController {
     @Headers("x-dionysus-content-bc") blackCurtain: string = "true",
     @Res() response: Response,
   ): Promise<void> {
+    if (!tagNames || !tagTypes) {
+      throw new BadRequestException("tagType and tagName are required");
+    }
+
     const splitTagNames = tagNames.split(",");
     const splitTagTypes = tagTypes.split(",");
 
@@ -100,10 +104,10 @@ export class ListSimilarContentAssetsController {
 
     for (let i = 0; i < splitTagTypes.length; i++) {
       tagFilters.push(
-        `{ asset_tags: {tag: {_and: { name: { _ilike: "${splitTagNames[i]}" }, type: { _eq: "${splitTagTypes[i]}" } } } } }`,
+        `{ asset_tags: {tag: {_and: { name: { _ilike: ${JSON.stringify(splitTagNames[i])} }, type: { _eq: ${JSON.stringify(splitTagTypes[i])} } } } } }`,
       );
       aggregateTagFilters.push(
-        `{ tag: {_and: { name: { _ilike: "${splitTagNames[i]}" }, type: { _eq: "${splitTagTypes[i]}" } } } }`,
+        `{ tag: {_and: { name: { _ilike: ${JSON.stringify(splitTagNames[i])} }, type: { _eq: ${JSON.stringify(splitTagTypes[i])} } } } }`,
       );
     }
 

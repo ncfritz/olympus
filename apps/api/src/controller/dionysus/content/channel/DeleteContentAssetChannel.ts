@@ -1,5 +1,12 @@
 import { EmptyResponse } from "@ncfritz/olympus-model";
-import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Delete,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Res,
+} from "@nestjs/common";
 import {
   ApiConsumes,
   ApiGoneResponse,
@@ -16,7 +23,7 @@ export type GraphQlDeleteContentAssetChannelResponse = {
   insert_dionysus_content_asset_channel_cache: {
     affected_rows: number;
   };
-  delete_dionysus_content_asset_channel_by_pk: GraphQlContentAssetChannel;
+  delete_dionysus_content_asset_channel_by_pk: GraphQlContentAssetChannel | null;
 };
 
 @Controller({ version: "1" })
@@ -47,24 +54,29 @@ export class DeleteContentAssetChannelController {
     @Res() response: Response,
   ): Promise<void> {
     const deleteRequest = gql`
-      mutation DeleteContentChannel($channelId: uuid!) {
-        delete_dionysus_content_asset_channel_by_pk(id: $channelId) {
-          id
-        }
+      mutation DeleteContentAssetChannel($channelId: uuid!) {
         delete_dionysus_content_asset_channel_cache(
           where: { channel_id: { _eq: $channelId } }
         ) {
           affected_rows
         }
+        delete_dionysus_content_asset_channel_by_pk(id: $channelId) {
+          id
+        }
       }
     `;
 
-    await this.graphQLClient.request<GraphQlDeleteContentAssetChannelResponse>(
-      deleteRequest,
-      {
-        channelId: channelId,
-      },
-    );
+    const deleteResponse =
+      await this.graphQLClient.request<GraphQlDeleteContentAssetChannelResponse>(
+        deleteRequest,
+        {
+          channelId: channelId,
+        },
+      );
+
+    if (!deleteResponse.delete_dionysus_content_asset_channel_by_pk) {
+      throw new NotFoundException();
+    }
 
     response.status(HttpStatus.GONE).send({});
   }

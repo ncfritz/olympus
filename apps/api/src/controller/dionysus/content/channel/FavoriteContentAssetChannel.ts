@@ -4,7 +4,15 @@ import {
   FavoriteContentAssetChannelResponse,
   UpdateContentAssetChannelResponse,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Param, Put, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Put,
+  Res,
+} from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -20,7 +28,7 @@ import { GraphQlFullContentAssetChannel } from "../../../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 export type GraphQlFavoriteContentAssetChannelResponse = {
-  update_dionysus_content_asset_channel_by_pk: GraphQlFullContentAssetChannel;
+  update_dionysus_content_asset_channel_by_pk: GraphQlFullContentAssetChannel | null;
 };
 
 @Controller({ version: "1" })
@@ -58,7 +66,7 @@ export class FavoriteContentAssetChannelController {
     @Res() response: Response,
   ): Promise<void> {
     const updateRequest = gql`
-      mutation UpdateContentAssetChannel(
+      mutation FavoriteContentAssetChannel(
         $channelId: uuid!
         $favorite: Boolean!
       ) {
@@ -108,6 +116,10 @@ export class FavoriteContentAssetChannelController {
           favorite: request.favorite,
         },
       );
+
+    if (!updateResponse.update_dionysus_content_asset_channel_by_pk) {
+      throw new NotFoundException();
+    }
 
     const updatedCategory: FullContentAssetChannel = toFullDomainObject(
       updateResponse.update_dionysus_content_asset_channel_by_pk,

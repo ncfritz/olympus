@@ -2,7 +2,14 @@ import {
   DescribeContentAssetChannelCategoryResponse,
   FullContentAssetChannelCategory,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Res,
+} from "@nestjs/common";
 import {
   ApiConsumes,
   ApiOkResponse,
@@ -17,7 +24,7 @@ import { GraphQlFullContentAssetChannelCategory } from "../../../../types/conten
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 export type GraphQlDescribeContentAssetChannelResponse = {
-  dionysus_content_asset_channel_category_by_pk: GraphQlFullContentAssetChannelCategory;
+  dionysus_content_asset_channel_category_by_pk: GraphQlFullContentAssetChannelCategory | null;
 };
 
 @Controller({ version: "1" })
@@ -48,7 +55,7 @@ export class DescribeContentAssetChannelCategoryController {
     @Res() response: Response,
   ): Promise<void> {
     const queryRequest = gql`
-      query DescribeContentAssetChannelCateogry($categoryId: uuid!) {
+      query DescribeContentAssetChannelCategory($categoryId: uuid!) {
         dionysus_content_asset_channel_category_by_pk(id: $categoryId) {
           createdTime
           id
@@ -89,6 +96,10 @@ export class DescribeContentAssetChannelCategoryController {
           categoryId: categoryId,
         },
       );
+
+    if (!queryResponse.dionysus_content_asset_channel_category_by_pk) {
+      throw new NotFoundException();
+    }
 
     const category: FullContentAssetChannelCategory = toFullDomainObject(
       queryResponse.dionysus_content_asset_channel_category_by_pk,

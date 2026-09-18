@@ -93,7 +93,7 @@ export class ListContentAssetsController extends BaseAuthenticatedContentControl
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const authenticated = this.authenticateRequest(request, true);
+    const authenticated = await this.authenticateRequest(request, true);
     const parsedFilters = parseFilterDefinition(filters);
     let queryFilters: FilterDefinition | undefined = parsedFilters;
 
@@ -104,7 +104,7 @@ export class ListContentAssetsController extends BaseAuthenticatedContentControl
             name: "__base",
             value: [BC_FILTER, parsedFilters],
           }
-        : parsedFilters;
+        : BC_FILTER;
     }
 
     const whereExpression = buildFilterExpression(queryFilters);

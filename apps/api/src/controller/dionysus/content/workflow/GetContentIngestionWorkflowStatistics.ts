@@ -7,7 +7,12 @@ import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import moment, { Moment } from "moment";
+import moment from "moment";
+import {
+  dailyIndex,
+  emptyDailySeries,
+  startOfTodayUtc,
+} from "../../../../utils/dailySeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlGetContentIngestionWorkflowStats = {
@@ -76,25 +81,15 @@ export class GetContentIngestionWorkflowStatisticsController {
         fetchRequest,
       );
 
-    const now = moment
-      .utc()
-      .set({ milliseconds: 0, seconds: 0, minutes: 0, hours: 0 });
+    const today = startOfTodayUtc();
 
     const statusSeries = {
-      [ContentIngestionWorkflowStatus.QUEUED]: this.emptyTimingMap(moment(now)),
-      [ContentIngestionWorkflowStatus.RUNNING]: this.emptyTimingMap(
-        moment(now),
-      ),
-      [ContentIngestionWorkflowStatus.SUCCESS]: this.emptyTimingMap(
-        moment(now),
-      ),
-      [ContentIngestionWorkflowStatus.FAILED]: this.emptyTimingMap(moment(now)),
-      [ContentIngestionWorkflowStatus.SKIPPED]: this.emptyTimingMap(
-        moment(now),
-      ),
-      [ContentIngestionWorkflowStatus.DUPLICATE]: this.emptyTimingMap(
-        moment(now),
-      ),
+      [ContentIngestionWorkflowStatus.QUEUED]: emptyDailySeries(today),
+      [ContentIngestionWorkflowStatus.RUNNING]: emptyDailySeries(today),
+      [ContentIngestionWorkflowStatus.SUCCESS]: emptyDailySeries(today),
+      [ContentIngestionWorkflowStatus.FAILED]: emptyDailySeries(today),
+      [ContentIngestionWorkflowStatus.SKIPPED]: emptyDailySeries(today),
+      [ContentIngestionWorkflowStatus.DUPLICATE]: emptyDailySeries(today),
     };
     const statusAggregateSeries: Record<
       ContentIngestionWorkflowStatus,
@@ -118,7 +113,8 @@ export class GetContentIngestionWorkflowStatisticsController {
     fetchResponse.dionysus_content_asset_ingest_workflow_status_statistics.forEach(
       (data) => {
         const dataTime = moment.utc(data.createdTime);
-        const dateIndex = 30 - now.diff(dataTime, "days");
+        const dateIndex = dailyIndex(today, dataTime);
+        if (dateIndex === undefined || !(data.status in statusSeries)) return;
 
         statusSeries[data.status][dateIndex] = [dataTime.valueOf(), data.count];
       },
@@ -159,16 +155,5 @@ export class GetContentIngestionWorkflowStatisticsController {
     };
 
     response.status(HttpStatus.OK).send(modeledResponse);
-  }
-
-  emptyTimingMap(now: Moment): number[][] {
-    const valuesTemplate = [];
-
-    for (let i = 30; i > 0; i--) {
-      const ts = moment(now).subtract({ days: i }).valueOf();
-      valuesTemplate.push([ts, 0]);
-    }
-
-    return [...valuesTemplate];
   }
 }

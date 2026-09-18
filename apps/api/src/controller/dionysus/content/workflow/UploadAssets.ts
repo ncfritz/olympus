@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+import * as path from "node:path";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   ContentIngestionWorkflow,
@@ -5,6 +7,7 @@ import {
   UploadAssetsResponse,
 } from "@ncfritz/olympus-model";
 import {
+  BadRequestException,
   Controller,
   HttpStatus,
   Post,
@@ -24,6 +27,18 @@ import { GraphQLClient } from "graphql-request";
 import { diskStorage } from "multer";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { BaseContentIngestionWorkflowController } from "./BaseContentIngestionWorkflowController";
+
+/**
+ * `<random>-<name>` where name is the client's file name reduced to a safe
+ * base name, so an upload cannot be written outside the upload directory.
+ */
+export const storedFilename = (originalName: string): string => {
+  const base = path
+    .basename(originalName.replace(/\\/g, "/"))
+    .replace(/[^A-Za-z0-9._ -]/g, "_")
+    .replace(/^\.+/, "_");
+  return `${randomBytes(16).toString("hex")}-${base || "upload"}`;
+};
 
 const destinationDir = (
   req: Request,
@@ -63,11 +78,7 @@ export class UploadAssetsController extends BaseContentIngestionWorkflowControll
       storage: diskStorage({
         destination: destinationDir,
         filename: (req, file, cb) => {
-          const randomName = Array(32)
-            .fill(null)
-            .map(() => Math.round(Math.random() * 16).toString(16))
-            .join("");
-          cb(null, `${randomName}-${file.originalname}`);
+          cb(null, storedFilename(file.originalname));
         },
       }),
     }),
@@ -76,6 +87,10 @@ export class UploadAssetsController extends BaseContentIngestionWorkflowControll
     @UploadedFiles() files: Express.Multer.File[],
     @Res() response: Response,
   ): Promise<void> {
+    if (!files || files.length === 0) {
+      throw new BadRequestException("No files were uploaded");
+    }
+
     const workflows: ContentIngestionWorkflow[] = [];
 
     for (const file of files) {

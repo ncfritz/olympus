@@ -18,12 +18,6 @@ import { GraphQlFullContentAssetChannel } from "../../../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { BaseContentAssetChannelController } from "./BaseContentAssetChannelController";
 
-type GraphQlChannelFilterResponse = {
-  dionysus_content_asset_channel_by_pk: {
-    encodedFilter: string;
-  };
-};
-
 export type GraphQlRefreshContentAssetChannelResponse = {
   insert_dionysus_content_asset_channel_cache: {
     affected_rows: number;
@@ -60,23 +54,10 @@ export class RefreshContentAssetChannelController extends BaseContentAssetChanne
     @Param("channelId") channelId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const getFilterRequest = gql`
-      query GetContentAssetChannelFilter($id: uuid!) {
-        dionysus_content_asset_channel_by_pk(id: $id) {
-          encodedFilter
-        }
-      }
-    `;
-
-    const getChannelFilterResponse =
-      await this.graphQLClient.request<GraphQlChannelFilterResponse>(
-        getFilterRequest,
-        { id: channelId },
-      );
+    const encodedFilter = await this.fetchChannelFilter(channelId);
 
     const assetCache = await this.buildAssetCacheEntries(
-      getChannelFilterResponse.dionysus_content_asset_channel_by_pk
-        .encodedFilter,
+      encodedFilter,
       channelId,
     );
     await this.clearContentAssetChannelCache(channelId);

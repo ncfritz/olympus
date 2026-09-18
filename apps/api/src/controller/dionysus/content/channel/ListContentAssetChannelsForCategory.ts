@@ -4,7 +4,15 @@ import {
   ListContentAssetChannelsForCategoryResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Query,
+  Res,
+} from "@nestjs/common";
 import {
   ApiExtraModels,
   ApiOkResponse,
@@ -34,7 +42,7 @@ type GraphQlListContentAssetChannelsForCategoryResponse = {
         count: number;
       };
     };
-  };
+  } | null;
 };
 
 @Controller({ version: "1" })
@@ -117,19 +125,21 @@ export class ListContentAssetChannelsForCategoryController {
         fetchRequest,
         { categoryId: categoryId },
       );
+    if (!fetchResponse.dionysus_content_asset_channel_category_by_pk) {
+      throw new NotFoundException();
+    }
+    const category =
+      fetchResponse.dionysus_content_asset_channel_category_by_pk;
+
     const fetched: ContentAssetChannel[] = [];
 
-    fetchResponse.dionysus_content_asset_channel_category_by_pk.channels.forEach(
-      (result) => {
-        fetched.push(toDomainObject(result));
-      },
-    );
+    category.channels.forEach((result) => {
+      fetched.push(toDomainObject(result));
+    });
 
     const responseBody: ListContentAssetChannelsForCategoryResponse = {
       channels: fetched,
-      count:
-        fetchResponse.dionysus_content_asset_channel_category_by_pk
-          .channels_aggregate.aggregate.count,
+      count: category.channels_aggregate.aggregate.count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

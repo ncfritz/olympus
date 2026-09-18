@@ -3,7 +3,15 @@ import {
   UpdateContentAssetChannelCategoryRequest,
   UpdateContentAssetChannelCategoryResponse,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Param, Put, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Put,
+  Res,
+} from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -19,7 +27,7 @@ import { GraphQlFullContentAssetChannelCategory } from "../../../../types/conten
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 export type GraphQlUpdateContentAssetChannelResponse = {
-  update_dionysus_content_asset_channel_category_by_pk: GraphQlFullContentAssetChannelCategory;
+  update_dionysus_content_asset_channel_category_by_pk: GraphQlFullContentAssetChannelCategory | null;
 };
 
 @Controller({ version: "1" })
@@ -104,6 +112,10 @@ export class UpdateContentAssetChannelCategoryController {
           name: request.category.name,
         },
       );
+
+    if (!updateResponse.update_dionysus_content_asset_channel_category_by_pk) {
+      throw new NotFoundException();
+    }
 
     const updatedCategory: FullContentAssetChannelCategory = toFullDomainObject(
       updateResponse.update_dionysus_content_asset_channel_category_by_pk,

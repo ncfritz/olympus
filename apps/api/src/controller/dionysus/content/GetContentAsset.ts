@@ -70,7 +70,7 @@ export class GetContentAssetController extends BaseAuthenticatedContentControlle
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const authenticated = this.authenticateRequest(request, true);
+    const authenticated = await this.authenticateRequest(request, true);
     const itemFilter: FilterDefinition = {
       type: FilterType.EQUALS,
       name: "content_id",
@@ -88,7 +88,7 @@ export class GetContentAssetController extends BaseAuthenticatedContentControlle
     const whereExpression = buildFilterExpression(queryFilter);
 
     const fetchRequest = gql`
-      query GetContentAssets {
+      query GetContentAsset {
         dionysus_content_assets(${whereExpression}) {
           content_id
           asset_sha

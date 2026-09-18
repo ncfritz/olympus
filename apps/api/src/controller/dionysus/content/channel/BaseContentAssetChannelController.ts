@@ -1,3 +1,4 @@
+import { NotFoundException } from "@nestjs/common";
 import { FilterDefinition, SortDirection } from "@ncfritz/olympus-model";
 import { gql, GraphQLClient } from "graphql-request";
 import {
@@ -52,7 +53,7 @@ export abstract class BaseContentAssetChannelController {
     });
 
     const assetCacheRequest = gql`
-      query ListContentAssets {
+      query ListContentAssetChannelCandidates {
         dionysus_content_assets(${[paginationExpression, whereExpression].join(", ")}) {
           content_id
           width
@@ -86,6 +87,27 @@ export abstract class BaseContentAssetChannelController {
         assetCacheResponseResponse.dionysus_content_assets_aggregate.aggregate
           .count,
     };
+  }
+
+  /** Returns the channel's stored (base64) filter, or 404s. */
+  protected async fetchChannelFilter(channelId: string): Promise<string> {
+    const getFilterRequest = gql`
+      query GetContentAssetChannelFilter($id: uuid!) {
+        dionysus_content_asset_channel_by_pk(id: $id) {
+          encodedFilter
+        }
+      }
+    `;
+
+    const getFilterResponse = await this.graphQLClient.request<{
+      dionysus_content_asset_channel_by_pk: { encodedFilter: string } | null;
+    }>(getFilterRequest, { id: channelId });
+
+    if (!getFilterResponse.dionysus_content_asset_channel_by_pk) {
+      throw new NotFoundException(`Channel ${channelId} not found`);
+    }
+
+    return getFilterResponse.dionysus_content_asset_channel_by_pk.encodedFilter;
   }
 
   protected async clearContentAssetChannelCache(channelId: string) {
