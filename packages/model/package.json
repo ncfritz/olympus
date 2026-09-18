@@ -17,7 +17,9 @@
     "check:conventions": "vitest run test/api-property.spec.ts",
     "clean": "rm -rf dist",
     "check:allow-update": "UPDATE_ALLOW_LIST=1 vitest run test/api-property.spec.ts",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui --coverage",
+    "test:report": "vitest run --coverage --reporter=default --reporter=html"
   },
   "dependencies": {
     "@nestjs/common": "catalog:",
@@ -34,6 +36,7 @@
     "@swc/core": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "@vitest/ui": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:",

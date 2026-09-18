@@ -170,6 +170,8 @@ decorators until that decision is made (tracked in the roadmap).
 ```sh
 pnpm --filter @ncfritz/olympus-model test          # all of the above
 pnpm --filter @ncfritz/olympus-model test:coverage # plus coverage; open coverage/index.html
+pnpm --filter @ncfritz/olympus-model test:ui       # interactive Vitest UI (watch mode, with a Coverage tab)
+pnpm --filter @ncfritz/olympus-model test:report   # static HTML test report in test-report/
 pnpm --filter @ncfritz/olympus-model test:update   # accept a snapshot change (review the diff)
 pnpm --filter @ncfritz/olympus-model check:allow-update  # rewrite the allow-list (review the diff)
 ```

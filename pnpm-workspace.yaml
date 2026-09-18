@@ -18,6 +18,7 @@ catalog:
   globals: ^17.6.0
   vitest: ^4.1.11
   "@vitest/coverage-v8": ^4.1.11
+  "@vitest/ui": ^4.1.11
   unplugin-swc: ^1.6.0
   "@swc/core": ^1.16.2
   "@types/node": ^25.9.1

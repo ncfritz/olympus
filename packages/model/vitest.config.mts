@@ -20,5 +20,8 @@ export default defineConfig({
     include: ["test/**/*.spec.ts"],
     environment: "node",
     coverage,
+    // `pnpm test:report` writes a static test report here (viewable
+    // without a running server); `pnpm test:ui` serves the interactive UI.
+    outputFile: { html: "test-report/index.html" },
   },
 });
