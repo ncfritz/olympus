@@ -28,5 +28,6 @@ export class PingResponse {
 
 export class TestRequest {
   @ApiProperty({ required: true, type: () => Object })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- arbitrary payload echoed by the AMQP test endpoint
   payload: any;
 }

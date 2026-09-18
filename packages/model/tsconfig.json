@@ -1,43 +1,15 @@
 {
+  "extends": "@ncfritz/olympus-config/tsconfig/nest.json",
   "compilerOptions": {
-    "experimentalDecorators": true,
-    "baseUrl": "./",
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "module": "commonjs",
-    "target": "es5",
-    "lib": [
-      "es6",
-      "dom"
-    ],
-    "sourceMap": true,
-    "allowJs": true,
-    "jsx": "preserve",
-    "moduleResolution": "node",
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noImplicitAny": true,
-    "importHelpers": true,
-    "strictNullChecks": true,
-    "noUnusedLocals": true,
-    "skipLibCheck": true,
-    "strict": false,
-    "noEmit": false,
-    "incremental": true,
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
+    // The model is consumed as a library, so it emits CommonJS with
+    // declarations (the Nest preset turns declarations off for apps).
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "declaration": true,
-  },
-  "exclude": [
-    "node_modules",
-    "build",
-    "scripts",
-    "webpack",
-    "jest"
-  ],
-  "include": [
-    "src/**/*.ts",
-  ]
+    "declarationMap": true,
+    // As before the import: every @ApiProperty names its type explicitly,
+    // so design-time type metadata is not needed (and would require
+    // type-only imports for Moment).
+    "emitDecoratorMetadata": false
+  }
 }
