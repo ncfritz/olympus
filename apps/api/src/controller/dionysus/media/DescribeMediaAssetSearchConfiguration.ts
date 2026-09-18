@@ -2,7 +2,15 @@ import {
   MediaAssetSearchType,
   SingleMediaAssetSearchConfigurationResponse,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  ParseEnumPipe,
+  ParseIntPipe,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -46,8 +54,9 @@ export class DescribeMediaAssetSearchConfigurationController extends BaseMediaAs
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchedSearchConfiguration =

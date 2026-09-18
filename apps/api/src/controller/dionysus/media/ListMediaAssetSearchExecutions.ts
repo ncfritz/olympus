@@ -6,7 +6,16 @@ import {
   MediaAssetSearchType,
   SortDirection,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  ParseEnumPipe,
+  ParseIntPipe,
+  Query,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -73,12 +82,13 @@ export class ListMediaAssetSearchExecutionsController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
     @Query("pageSize") pageSize = 24,
     @Query("startPage") startPage = 0,
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
-    @Query("sortBy") sortField = "popularity",
+    @Query("sortBy") sortField = "startedTime",
     @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
@@ -117,7 +127,7 @@ export class ListMediaAssetSearchExecutionsController {
     });
 
     const fetchRequest = gql`
-      query DescribeMediaAssetSearchExecution {
+      query ListMediaAssetSearchExecutions {
         dionysus_media_asset_search_execution(${[paginationExpression, whereExpression].join(", ")}) {
           ${BASE_SEARCH_EXECUTION}
         }

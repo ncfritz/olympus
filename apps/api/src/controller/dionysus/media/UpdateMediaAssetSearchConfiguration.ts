@@ -12,8 +12,11 @@ import {
   Controller,
   DefaultValuePipe,
   HttpStatus,
+  NotFoundException,
   Param,
   ParseBoolPipe,
+  ParseEnumPipe,
+  ParseIntPipe,
   Put,
   Query,
   Res,
@@ -39,7 +42,7 @@ import { buildFilterExpression } from "../../../utils/filterUtil";
 import { logger } from "../../../utils/logger";
 
 type GraphQlUpdateMediaAssetSearchConfigurationResponse = {
-  update_dionysus_media_asset_search_configuration_by_pk: GraphQlDecoratedMediaAssetSearchConfiguration;
+  update_dionysus_media_asset_search_configuration_by_pk: GraphQlDecoratedMediaAssetSearchConfiguration | null;
 };
 type GraphQlUpdateChildMediaAssetSearchConfigurationsResponse = {
   update_dionysus_media_asset_search_configuration: {
@@ -92,8 +95,9 @@ export class UpdateMediaAssetSearchConfigurationController {
   @ApiStandardErrorResponses()
   @UseInterceptors(ClassSerializerInterceptor)
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
     @Query("recursive", new DefaultValuePipe(false), ParseBoolPipe)
     recursive: boolean,
     @Body() request: UpdateMediaAssetSearchConfigurationRequest,
@@ -136,6 +140,12 @@ export class UpdateMediaAssetSearchConfigurationController {
           changes: changes,
         },
       );
+
+    if (
+      !updateResponse.update_dionysus_media_asset_search_configuration_by_pk
+    ) {
+      throw new NotFoundException();
+    }
 
     const updatedSearchConfiguration = toDecoratedDomainObject(
       updateResponse.update_dionysus_media_asset_search_configuration_by_pk,
@@ -191,7 +201,7 @@ export class UpdateMediaAssetSearchConfigurationController {
     }
 
     const updateChildrenRequest = gql`
-      mutation UpdateChildSearchConfigurations(
+      mutation EnableChildSearchConfigurations(
         $enabled: Boolean
       ) {
         update_dionysus_media_asset_search_configuration(

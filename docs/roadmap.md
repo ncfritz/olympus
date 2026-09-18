@@ -62,6 +62,11 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
   `ListCalendarItemsResponse { items }` instead of
   `<OperationId>Response` with entity-named properties.
 - `ValidationPipe` is commented out; `class-validator` is unused.
+- Route shapes kept for SDK compatibility, to revisit with the SDK import:
+  `GetMediaAssetSearchConfigurationsRunningCount` is a `PUT` but only
+  reads; `CreateMediaAssetWorkflow` is
+  `POST .../workflow/:resultId/workflow` (its `Location` says
+  `.../result/:resultId/workflow/:id`).
 - The API `Dockerfile` still targets the old single-repo layout (npm +
   GitHub Packages token). Rebuilt with ADR 0011.
 - OpenAPI `info.version` is `0.0.0` (the workspace package version)

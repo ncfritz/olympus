@@ -11,6 +11,8 @@ import {
   Controller,
   HttpStatus,
   Param,
+  ParseEnumPipe,
+  ParseIntPipe,
   Put,
   Query,
   Res,
@@ -78,9 +80,11 @@ export class GetMediaAssetSearchConfigurationsRunningCountController {
   @ApiStandardErrorResponses()
   @UseInterceptors(ClassSerializerInterceptor)
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
-    @Query("seasonNumber") seasonNumber: number | undefined = undefined,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
+    @Query("seasonNumber", new ParseIntPipe({ optional: true }))
+    seasonNumber: number | undefined,
     @Res() response: Response,
   ): Promise<void> {
     if (
@@ -138,7 +142,7 @@ export class GetMediaAssetSearchConfigurationsRunningCountController {
     };
 
     const countRequest = gql`
-      query GetSearchConfigurationsCount {
+      query GetMediaAssetSearchConfigurationsRunningCount {
         dionysus_media_asset_search_configuration_aggregate(${buildFilterExpression(filter)}) {
           aggregate {
             count

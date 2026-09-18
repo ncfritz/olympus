@@ -7,6 +7,7 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
+  NotFoundException,
   Param,
   Put,
   Res,
@@ -28,7 +29,7 @@ import { GraphQlDecoratedMediaAssetWorkflow } from "../../../types/dionysus/medi
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlUpdateChildMediaAssetWorkflowResponse = {
-  update_dionysus_media_asset_workflow_by_pk: GraphQlDecoratedMediaAssetWorkflow;
+  update_dionysus_media_asset_workflow_by_pk: GraphQlDecoratedMediaAssetWorkflow | null;
 };
 
 @Controller({ version: "1" })
@@ -86,6 +87,10 @@ export class UpdateMediaAssetWorkflowController {
           changes: request.workflow,
         },
       );
+
+    if (!updateResponse.update_dionysus_media_asset_workflow_by_pk) {
+      throw new NotFoundException();
+    }
 
     const updatedWorkflow = toDecoratedDomainObject(
       updateResponse.update_dionysus_media_asset_workflow_by_pk,

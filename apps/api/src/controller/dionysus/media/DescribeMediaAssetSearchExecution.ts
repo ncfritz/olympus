@@ -8,6 +8,8 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseEnumPipe,
+  ParseIntPipe,
   Res,
 } from "@nestjs/common";
 import {
@@ -24,7 +26,7 @@ import { GraphQlMediaAssetSearchExecution } from "../../../types/dionysus/media/
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlGetMediaAssetSearchExecutionResponse = {
-  dionysus_media_asset_search_execution_by_pk: GraphQlMediaAssetSearchExecution;
+  dionysus_media_asset_search_execution_by_pk: GraphQlMediaAssetSearchExecution | null;
 };
 
 @Controller({ version: "1" })
@@ -62,8 +64,9 @@ export class DescribeMediaAssetSearchExecutionController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
     @Param("executionId") executionId: string,
     @Res() response: Response,
   ): Promise<void> {
@@ -82,19 +85,21 @@ export class DescribeMediaAssetSearchExecutionController {
     const fetchResponse =
       await this.graphQLClient.request<GraphQlGetMediaAssetSearchExecutionResponse>(
         fetchRequest,
-        {
-          assetType: mediaType,
-          mediaId: mediaId,
-        },
+        { executionId: executionId },
       );
 
-    if (!fetchResponse.dionysus_media_asset_search_execution_by_pk) {
+    const execution = fetchResponse.dionysus_media_asset_search_execution_by_pk;
+
+    // Executions are addressed under their search configuration.
+    if (
+      !execution ||
+      execution.searchType !== mediaType ||
+      Number(execution.mediaId) !== mediaId
+    ) {
       throw new NotFoundException();
     }
 
-    const fetchedSearchExecution = toDomainObject(
-      fetchResponse.dionysus_media_asset_search_execution_by_pk,
-    );
+    const fetchedSearchExecution = toDomainObject(execution);
 
     const responseBody: SingleMediaAssetSearchExecutionResponse = {
       searchExecution: fetchedSearchExecution,

@@ -51,7 +51,7 @@ export class DescribeMediaAssetWorkflowController {
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query DescribeMediaWorkflowResult(
+      query DescribeMediaAssetWorkflow(
         $workflowId: uuid!
       ) {
         dionysus_media_asset_workflow_by_pk(

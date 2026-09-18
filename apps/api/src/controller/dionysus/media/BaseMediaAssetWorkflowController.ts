@@ -4,7 +4,7 @@ import {
   MediaAssetWorkflowStepType,
   PartialMediaAssetWorkflowStep,
 } from "@ncfritz/olympus-model";
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { toDecoratedDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowStepConverter";
@@ -49,7 +49,7 @@ export class BaseMediaAssetWorkflowController {
     workflowId: string,
   ): Promise<MediaWorkflowDetails> {
     const checkParentWorkflowRequest = gql`
-      query GetTargetWorkflow($id: uuid!) {
+      query GetParentMediaAssetWorkflow($id: uuid!) {
         dionysus_media_asset_workflow_by_pk(id: $id) {
           id
           type
@@ -65,7 +65,7 @@ export class BaseMediaAssetWorkflowController {
       );
 
     if (!checkParentWorkflowResponse.dionysus_media_asset_workflow_by_pk?.id) {
-      throw new BadRequestException();
+      throw new NotFoundException(`Workflow ${workflowId} not found`);
     }
 
     return {
@@ -83,7 +83,7 @@ export class BaseMediaAssetWorkflowController {
     requiredStepType?: MediaAssetWorkflowStepType,
   ): Promise<MediaWorkflowStepDetails> {
     const checkWorkflowStepRequest = gql`
-      query GetTargetWorkflowStep($id: uuid!, $workflowId: uuid!) {
+      query GetParentMediaAssetWorkflowStep($id: uuid!, $workflowId: uuid!) {
         dionysus_media_asset_workflow_step_by_pk(
           id: $id
           workflowId: $workflowId
@@ -107,7 +107,9 @@ export class BaseMediaAssetWorkflowController {
     if (
       !checkWorkflowStepResponse.dionysus_media_asset_workflow_step_by_pk?.id
     ) {
-      throw new BadRequestException();
+      throw new NotFoundException(
+        `Workflow step ${workflowId}/${workflowStepId} not found`,
+      );
     }
 
     if (
@@ -115,7 +117,9 @@ export class BaseMediaAssetWorkflowController {
       requiredStepType !==
         checkWorkflowStepResponse.dionysus_media_asset_workflow_step_by_pk?.type
     ) {
-      throw new BadRequestException();
+      throw new BadRequestException(
+        `Workflow step ${workflowStepId} is not a ${requiredStepType} step`,
+      );
     }
 
     return {
@@ -163,7 +167,7 @@ export class BaseMediaAssetWorkflowController {
         requestParams["workflowFinishedTime"] = moment().utc().toISOString();
       }
 
-      workflowUpdateParamsFragment = gql`
+      workflowUpdateParamsFragment = `
         $workflowStatus: String!
         ${
           workflowStatus === MediaAssetWorkflowStatus.SUCCESS
@@ -171,7 +175,7 @@ export class BaseMediaAssetWorkflowController {
             : ""
         }`;
 
-      workflowUpdateFragment = gql`
+      workflowUpdateFragment = `
         update_dionysus_media_asset_workflow_by_pk(
           pk_columns: {id: $workflowId}
           _set: {
@@ -187,7 +191,7 @@ export class BaseMediaAssetWorkflowController {
     }
 
     const updateRequest = gql`
-      mutation UpdateWorkflowStep(
+      mutation UpdateMediaAssetWorkflowStep(
         $id: uuid!
         $workflowId: uuid!
         $changes: dionysus_media_asset_workflow_step_set_input = {}

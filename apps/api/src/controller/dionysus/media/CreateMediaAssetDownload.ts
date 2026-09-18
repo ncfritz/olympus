@@ -6,7 +6,15 @@ import {
   SearchResultStatus,
   SingleMediaAssetDownloadResponse,
 } from "@ncfritz/olympus-model";
-import { Controller, HttpStatus, Param, Post, Res } from "@nestjs/common";
+import {
+  Controller,
+  HttpStatus,
+  Param,
+  ParseEnumPipe,
+  ParseIntPipe,
+  Post,
+  Res,
+} from "@nestjs/common";
 import {
   ApiConsumes,
   ApiCreatedResponse,
@@ -77,8 +85,9 @@ export class CreateMediaAssetDownloadController extends BaseMediaAssetSearchResu
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
     @Param("resultId") resultId: string,
     @Res() response: Response,
   ): Promise<void> {
@@ -92,8 +101,6 @@ export class CreateMediaAssetDownloadController extends BaseMediaAssetSearchResu
         $assetType: String!
         $mediaId: numeric!
         $searchResultStatus: String!
-        $assetType: String!
-        $mediaId: numeric!
       ) {
         insert_dionysus_media_asset_download_one(
           object: {

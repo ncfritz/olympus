@@ -9,6 +9,8 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseEnumPipe,
+  ParseIntPipe,
   Post,
   Res,
 } from "@nestjs/common";
@@ -29,7 +31,7 @@ import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 type GraphQlGetMediaIdResponse = {
   dionysus_media_id_one: {
     id: number;
-  };
+  } | null;
 };
 
 type GraphQlCreateMediaFavoriteResponse = {
@@ -72,8 +74,9 @@ export class CreateMediaFavoriteController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
     @Res() response: Response,
   ): Promise<void> {
     let mediaIdQueryRoot;
@@ -107,7 +110,7 @@ export class CreateMediaFavoriteController {
         { id: mediaId },
       );
 
-    if (!findMediaIdResponse.dionysus_media_id_one.id) {
+    if (!findMediaIdResponse.dionysus_media_id_one?.id) {
       throw new NotFoundException("Media asset not found");
     }
 

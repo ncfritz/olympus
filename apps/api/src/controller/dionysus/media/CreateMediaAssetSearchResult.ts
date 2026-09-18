@@ -4,7 +4,16 @@ import {
   MediaAssetSearchType,
   SingleMediaAssetSearchResultResponse,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Param, Post, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  HttpStatus,
+  Param,
+  ParseEnumPipe,
+  ParseIntPipe,
+  Post,
+  Res,
+} from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -69,8 +78,9 @@ export class CreateMediaAssetSearchResultController extends BaseMediaAssetSearch
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
     @Body() request: CreateMediaAssetSearchResultRequest,
     @Res() response: Response,
   ): Promise<void> {

@@ -12,6 +12,8 @@ import {
   Controller,
   HttpStatus,
   Param,
+  ParseEnumPipe,
+  ParseIntPipe,
   Put,
   Res,
   UseInterceptors,
@@ -81,8 +83,9 @@ export class TriggerMediaAssetSearchController extends BaseMediaAssetSearchConfi
   @ApiStandardErrorResponses()
   @UseInterceptors(ClassSerializerInterceptor)
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
     @Res()
     response: Response,
   ): Promise<void> {
@@ -90,7 +93,7 @@ export class TriggerMediaAssetSearchController extends BaseMediaAssetSearchConfi
       await this.fetchMediaAssetSearchConfiguration(mediaType, mediaId);
 
     const updateRequest = gql`
-      mutation UpdateMediaAssetSearchConfiguration(
+      mutation ScheduleMediaAssetSearch(
         $mediaType: String!
         $mediaId: numeric!
         $changes: dionysus_media_asset_search_configuration_set_input = {}
@@ -217,7 +220,7 @@ export class TriggerMediaAssetSearchController extends BaseMediaAssetSearchConfi
     }
 
     const updateChildrenRequest = gql`
-      mutation UpdateChildSearchConfigurations(
+      mutation MarkChildSearchConfigurationsRunning(
         $status: String!
       ) {
         update_dionysus_media_asset_search_configuration(

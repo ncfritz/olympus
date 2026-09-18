@@ -8,7 +8,10 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
+  NotFoundException,
   Param,
+  ParseEnumPipe,
+  ParseIntPipe,
   Put,
   Res,
   UseInterceptors,
@@ -29,7 +32,7 @@ import { GraphQlMediaAssetSearchExecution } from "../../../types/dionysus/media/
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlUpdateMediaAssetSearchExecutionResponse = {
-  update_dionysus_media_asset_search_execution_by_pk: GraphQlMediaAssetSearchExecution;
+  update_dionysus_media_asset_search_execution_by_pk: GraphQlMediaAssetSearchExecution | null;
 };
 
 @Controller({ version: "1" })
@@ -73,8 +76,9 @@ export class UpdateMediaAssetSearchExecutionController {
   @ApiStandardErrorResponses()
   @UseInterceptors(ClassSerializerInterceptor)
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
     @Param("executionId") executionId: string,
     @Body() request: UpdateMediaAssetSearchExecutionRequest,
     @Res() response: Response,
@@ -101,6 +105,10 @@ export class UpdateMediaAssetSearchExecutionController {
           changes: request.searchExecution,
         },
       );
+
+    if (!updateResponse.update_dionysus_media_asset_search_execution_by_pk) {
+      throw new NotFoundException();
+    }
 
     const updatedSearchExecution = toDomainObject(
       updateResponse.update_dionysus_media_asset_search_execution_by_pk,

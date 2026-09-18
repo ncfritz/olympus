@@ -5,6 +5,7 @@ import {
   DefaultValuePipe,
   Delete,
   HttpStatus,
+  NotFoundException,
   Param,
   ParseBoolPipe,
   Query,
@@ -83,9 +84,15 @@ export class DeleteMediaAssetWorkflowController {
         }
       `;
 
-      await this.graphQLClient.request(deleteRequest, {
+      const deleteResponse = await this.graphQLClient.request<{
+        delete_dionysus_media_asset_workflow_by_pk: { id: string } | null;
+      }>(deleteRequest, {
         workflowId: workflowId,
       });
+
+      if (!deleteResponse.delete_dionysus_media_asset_workflow_by_pk) {
+        throw new NotFoundException();
+      }
 
       responseCode = HttpStatus.NO_CONTENT;
     } else {
@@ -104,10 +111,16 @@ export class DeleteMediaAssetWorkflowController {
       `;
       const now = moment.utc();
 
-      await this.graphQLClient.request(deleteRequest, {
+      const deleteResponse = await this.graphQLClient.request<{
+        update_dionysus_media_asset_workflow_by_pk: { id: string } | null;
+      }>(deleteRequest, {
         workflowId: workflowId,
         deletionTime: now.toISOString(),
       });
+
+      if (!deleteResponse.update_dionysus_media_asset_workflow_by_pk) {
+        throw new NotFoundException();
+      }
 
       await this.amqpConnection.publish(
         "media.trigger",

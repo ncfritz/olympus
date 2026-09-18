@@ -1,5 +1,5 @@
 import { MediaAssetSearchType } from "@ncfritz/olympus-model";
-import { BadRequestException } from "@nestjs/common";
+import { NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 
 type GraphQlVerifySearchResultResponse = {
@@ -7,7 +7,7 @@ type GraphQlVerifySearchResultResponse = {
     assetType: MediaAssetSearchType;
     mediaId: number;
     id: string;
-  };
+  } | null;
 };
 
 export abstract class BaseMediaAssetSearchResultController {
@@ -46,13 +46,9 @@ export abstract class BaseMediaAssetSearchResultController {
         },
       );
 
-    if (!(
-      verifyResponse.dionysus_media_asset_search_result_by_pk.assetType &&
-      verifyResponse.dionysus_media_asset_search_result_by_pk.mediaId &&
-      verifyResponse.dionysus_media_asset_search_result_by_pk.id
-    )) {
-      throw new BadRequestException(
-        "Source search result definition could not be found",
+    if (!verifyResponse.dionysus_media_asset_search_result_by_pk) {
+      throw new NotFoundException(
+        `Search result ${mediaType}/${mediaId}/${id} not found`,
       );
     }
   }

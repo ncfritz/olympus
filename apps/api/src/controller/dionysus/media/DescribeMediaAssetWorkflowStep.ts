@@ -57,7 +57,7 @@ export class DescribeMediaAssetWorkflowStepController {
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query DescribeMediaWorkflowStepResult(
+      query DescribeMediaAssetWorkflowStep(
         $workflowId: uuid!
         $workflowStepId: uuid!
       ) {

@@ -12,6 +12,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Put,
   Res,
   UseInterceptors,
@@ -81,7 +82,7 @@ export class UpdateMediaAssetDownloadByNzbIdController {
   @ApiStandardErrorResponses()
   @UseInterceptors(ClassSerializerInterceptor)
   async handle(
-    @Param("nzbId") nzbId: number,
+    @Param("nzbId", ParseIntPipe) nzbId: number,
     @Body() request: UpdateMediaAssetDownloadByNzbIdRequest,
     @Res() response: Response,
   ): Promise<void> {
@@ -126,7 +127,7 @@ export class UpdateMediaAssetDownloadByNzbIdController {
     const downloadId = locateDownloadResponse.dionysus_media_asset_download[0];
 
     const updateRequest = gql`
-      mutation UpdateMediaAssetDownload(
+      mutation UpdateMediaAssetDownloadByNzbId(
         $downloadId: uuid!
         $searchResultId: String!
         $assetType: String!

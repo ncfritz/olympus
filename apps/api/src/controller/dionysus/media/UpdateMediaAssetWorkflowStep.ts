@@ -118,9 +118,12 @@ export class UpdateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
       workflowStatus = MediaAssetWorkflowStatus.SUCCESS;
     }
 
-    if (request.step.progress && request.step.progress > stepDetails.progress) {
+    if (
+      request.step.progress !== undefined &&
+      request.step.progress < stepDetails.progress
+    ) {
       logger.debug(
-        `Progress for step ID ${workflowStepId} is ${request.step.progress}, but download progress is ${stepDetails.progress}. Request progress will be ignored`,
+        `Progress ${request.step.progress} for step ${workflowStepId} is behind the stored ${stepDetails.progress}; keeping the stored value`,
       );
 
       request.step.progress = stepDetails.progress;

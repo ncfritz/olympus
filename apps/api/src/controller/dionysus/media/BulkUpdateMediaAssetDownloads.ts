@@ -54,33 +54,49 @@ export class BulkUpdateMediaAssetDownloadsController {
     @Body() request: BulkUpdateMediaAssetDownloadStatusRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const updates: string[] = [];
+    // An update without an nzbId would match every download (Hasura v2
+    // treats `_eq: null` as true), so those are skipped.
+    const updates = request.updates.filter(
+      (update) => update.nzbId !== undefined && update.nzbId !== null,
+    );
+    const appliedUpdates: MediaAssetDownload[] = [];
 
-    request.updates.forEach((update, index) => {
-      updates.push(
-        `update${index}: update_dionysus_media_asset_download(where: {nzbId: {_eq: ${update.nzbId}}}, _set: {progress: ${update.progress}, status: "${update.status}"}) {
+    if (updates.length > 0) {
+      const variables: Record<string, unknown> = {};
+      const declarations: string[] = [];
+      const fields = updates.map((update, index) => {
+        variables[`nzbId${index}`] = update.nzbId;
+        variables[`progress${index}`] = update.progress;
+        variables[`status${index}`] = update.status;
+        declarations.push(
+          `$nzbId${index}: numeric!, $progress${index}: numeric, $status${index}: String`,
+        );
+        return `update${index}: update_dionysus_media_asset_download(
+          where: { nzbId: { _eq: $nzbId${index} } }
+          _set: { progress: $progress${index}, status: $status${index} }
+        ) {
           returning {
             ${BASE_MEDIA_DOWNLOAD}
           }
-        }`,
-      );
-    });
+        }`;
+      });
 
-    const updateRequest = gql`
-      mutation BulkUpdateMediaAssetDownload {
-        ${updates.join("\n")}
-      }
-    `;
+      const updateRequest = gql`
+        mutation BulkUpdateMediaAssetDownloads(${declarations.join(", ")}) {
+          ${fields.join("\n")}
+        }
+      `;
 
-    const updateResponse =
-      await this.graphQLClient.request<
+      const updateResponse = await this.graphQLClient.request<
         Record<string, { returning: GraphQlMediaAssetDownload[] }>
-      >(updateRequest);
-    const appliedUpdates: MediaAssetDownload[] = [];
+      >(updateRequest, variables);
 
-    Object.values(updateResponse).forEach((update) => {
-      appliedUpdates.push(toDomainObject(update.returning[0]));
-    });
+      Object.values(updateResponse).forEach((update) => {
+        update.returning.forEach((download) =>
+          appliedUpdates.push(toDomainObject(download)),
+        );
+      });
+    }
 
     const responseBody: BulkUpdateMediaAssetDownloadsResponse = {
       updates: appliedUpdates,

@@ -3,7 +3,16 @@ import {
   MediaAssetSearchType,
   SingleMediaFavoriteResponse,
 } from "@ncfritz/olympus-model";
-import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Delete,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  ParseEnumPipe,
+  ParseIntPipe,
+  Res,
+} from "@nestjs/common";
 import {
   ApiConsumes,
   ApiGoneResponse,
@@ -19,7 +28,7 @@ import { GraphQlMediaFavorite } from "../../../types/dionysus/media/mediaFavorit
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlDeleteMediaFavoriteResponse = {
-  delete_dionysus_media_favorite_by_pk: GraphQlMediaFavorite;
+  delete_dionysus_media_favorite_by_pk: GraphQlMediaFavorite | null;
 };
 
 @Controller({ version: "1" })
@@ -52,8 +61,9 @@ export class DeleteMediaFavoriteController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
     @Res() response: Response,
   ): Promise<void> {
     const deleteRequest = gql`
@@ -75,6 +85,10 @@ export class DeleteMediaFavoriteController {
           mediaId: mediaId,
         },
       );
+
+    if (!deleteResponse.delete_dionysus_media_favorite_by_pk) {
+      throw new NotFoundException();
+    }
 
     const deletedFavorite: MediaFavorite = toDomainObject(
       deleteResponse.delete_dionysus_media_favorite_by_pk,

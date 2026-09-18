@@ -2,7 +2,7 @@ import {
   DecoratedMediaAssetSearchConfiguration,
   MediaAssetSearchType,
 } from "@ncfritz/olympus-model";
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDecoratedDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
 import { BASE_DECORATED_SEARCH_CONFIGURATION } from "../../../query/dionysus/media/searchConfigutation";
@@ -15,7 +15,7 @@ type GraphQlVerifySearchConfigResponse = {
   dionysus_media_asset_search_configuration_by_pk: {
     assetType: MediaAssetSearchType;
     mediaId: number;
-  };
+  } | null;
 };
 
 export abstract class BaseMediaAssetSearchConfigurationController {
@@ -85,13 +85,9 @@ export abstract class BaseMediaAssetSearchConfigurationController {
         },
       );
 
-    if (!(
-      verifyResponse.dionysus_media_asset_search_configuration_by_pk
-        .assetType &&
-      verifyResponse.dionysus_media_asset_search_configuration_by_pk.mediaId
-    )) {
-      throw new BadRequestException(
-        "Source search configuration definition could not be found",
+    if (!verifyResponse.dionysus_media_asset_search_configuration_by_pk) {
+      throw new NotFoundException(
+        `Search configuration ${mediaType}/${mediaId} not found`,
       );
     }
   }

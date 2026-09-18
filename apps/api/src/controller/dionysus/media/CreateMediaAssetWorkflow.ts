@@ -7,7 +7,15 @@ import {
   SearchResultStatus,
   SingleMediaAssetWorkflowResponse,
 } from "@ncfritz/olympus-model";
-import { Controller, HttpStatus, Param, Post, Res } from "@nestjs/common";
+import {
+  Controller,
+  HttpStatus,
+  Param,
+  ParseEnumPipe,
+  ParseIntPipe,
+  Post,
+  Res,
+} from "@nestjs/common";
 import {
   ApiConsumes,
   ApiCreatedResponse,
@@ -83,8 +91,9 @@ export class CreateMediaAssetWorkflowController extends BaseMediaAssetSearchResu
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
     @Param("resultId") resultId: string,
     @Res() response: Response,
   ): Promise<void> {

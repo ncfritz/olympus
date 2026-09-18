@@ -8,6 +8,8 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseEnumPipe,
+  ParseIntPipe,
   Res,
 } from "@nestjs/common";
 import {
@@ -62,8 +64,9 @@ export class DescribeMediaAssetSearchResultController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
     @Param("resultId") resultId: string,
     @Res() response: Response,
   ): Promise<void> {

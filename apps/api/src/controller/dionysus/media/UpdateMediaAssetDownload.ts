@@ -8,7 +8,10 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
+  NotFoundException,
   Param,
+  ParseEnumPipe,
+  ParseIntPipe,
   Put,
   Res,
   UseInterceptors,
@@ -29,7 +32,7 @@ import { GraphQlMediaAssetDownload } from "../../../types/dionysus/media/mediaDo
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlUpdateChildMediaAssetDownloadResponse = {
-  update_dionysus_media_asset_download_by_pk: GraphQlMediaAssetDownload;
+  update_dionysus_media_asset_download_by_pk: GraphQlMediaAssetDownload | null;
 };
 
 @Controller({ version: "1" })
@@ -79,8 +82,9 @@ export class UpdateMediaAssetDownloadController {
   @ApiStandardErrorResponses()
   @UseInterceptors(ClassSerializerInterceptor)
   async handle(
-    @Param("mediaType") mediaType: MediaAssetSearchType,
-    @Param("mediaId") mediaId: number,
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
     @Param("resultId") resultId: string,
     @Param("downloadId") downloadId: string,
     @Body() request: UpdateMediaAssetDownloadRequest,
@@ -110,6 +114,10 @@ export class UpdateMediaAssetDownloadController {
           changes: request.download,
         },
       );
+
+    if (!updateResponse.update_dionysus_media_asset_download_by_pk) {
+      throw new NotFoundException();
+    }
 
     const updatedDownload = toDomainObject(
       updateResponse.update_dionysus_media_asset_download_by_pk,
