@@ -45,6 +45,7 @@ export class CreateMediaAssetController {
     type: SingleMediaAssetResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created asset",
       },
     },

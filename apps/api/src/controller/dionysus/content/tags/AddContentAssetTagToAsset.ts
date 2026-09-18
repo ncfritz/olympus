@@ -46,10 +46,9 @@ export class AddContentAssetTagToAssetController {
 
   @Put("/content/asset/:assetId/tags")
   @ApiOperation({
-    summary: "Adds a teg to a content asset",
+    summary: "Adds a tag to a content asset",
     description:
-      "Adds a new tag to a content asset.  If the tag does not exist, it will be created prior " +
-      "to attaching it to the content asset",
+      "Adds a tag to a content asset. If the tag does not exist, it is created before it is attached to the content asset.",
     operationId: "AddContentAssetTagToAsset",
     tags: ["Content"],
   })

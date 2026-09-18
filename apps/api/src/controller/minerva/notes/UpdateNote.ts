@@ -42,7 +42,7 @@ export class UpdateNoteController {
   @Put("/note/:noteId")
   @ApiOperation({
     summary: "Updates an existing note",
-    description: "CUpdates an existing node.",
+    description: "Applies the given changes to a note.",
     operationId: "UpdateNote",
     tags: ["Notes"],
   })

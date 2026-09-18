@@ -49,6 +49,7 @@ export class CreateMetadataWorkflowController {
     type: CreateWorkflowResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created job",
       },
     },

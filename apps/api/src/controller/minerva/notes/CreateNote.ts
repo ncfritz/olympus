@@ -39,6 +39,7 @@ export class CreateNoteController extends BaseNoteController {
     type: SingleNoteResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created note",
       },
     },

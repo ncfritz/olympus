@@ -29,8 +29,9 @@ export class DescribeMetadataWorkflowStepController {
 
   @Get("/workflow/:workflowId/step/:stepId")
   @ApiOperation({
-    summary: "Describes an existing metadate workflow",
-    description: "Retrieves the details of a metadata workflow.",
+    summary: "Describes a step of a metadata workflow",
+    description:
+      "Retrieves the details of a single step of a metadata workflow.",
     operationId: "DescribeMetadataWorkflowStep",
     tags: ["Workflow"],
   })

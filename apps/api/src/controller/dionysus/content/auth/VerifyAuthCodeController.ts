@@ -28,8 +28,9 @@ export class VerifyAuthCodeController extends BaseAuthenticatedContentController
 
   @Get("/content/auth/verify")
   @ApiOperation({
-    summary: "Issues a JWT authorizing black curtain access",
-    description: "",
+    summary: "Verifies a one-time code and grants black curtain access",
+    description:
+      "Verifies the TOTP code and, if it is valid, sets a 15-minute x-dionysus-content-auth cookie that authorizes black curtain access.",
     operationId: "VerifyAuthCode",
     tags: ["Content"],
   })

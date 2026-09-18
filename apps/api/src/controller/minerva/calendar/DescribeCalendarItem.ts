@@ -32,7 +32,7 @@ export class DescribeCalendarItemController {
   @Get("/meeting/:meetingId")
   @ApiOperation({
     summary: "Gets a single calendar item by ID",
-    description: "Gets a single calendar item by ID",
+    description: "Gets a single calendar item by ID.",
     operationId: "DescribeCalendarItem",
     tags: ["Meetings"],
   })

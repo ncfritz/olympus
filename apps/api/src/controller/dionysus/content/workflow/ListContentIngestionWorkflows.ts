@@ -38,7 +38,7 @@ export class ListContentIngestionWorkflowsController {
 
   @Get("/content/workflows")
   @ApiOperation({
-    summary: "Lists metadata workflows",
+    summary: "Lists content ingestion workflows",
     description:
       "Lists content ingestion workflows.  This API accepts pagination and filter parameters to refine the " +
       "refine the list of workflows fetched.  When filtering, any changes in the filter parameters will " +

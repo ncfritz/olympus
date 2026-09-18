@@ -63,6 +63,7 @@ export class CreateMediaAssetSearchExecutionController extends BaseMediaAssetSea
     type: SingleMediaAssetSearchExecutionResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created search execution",
       },
     },

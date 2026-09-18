@@ -29,8 +29,8 @@ export class CreateCalendarItemController {
 
   @Post("/meetings")
   @ApiOperation({
-    summary: "Creates a new note",
-    description: "Creates a new note.",
+    summary: "Creates a new calendar item",
+    description: "Creates a new calendar item.",
     operationId: "CreateCalendarItem",
     tags: ["Meetings"],
   })
@@ -46,6 +46,7 @@ export class CreateCalendarItemController {
     type: SingleCalendarItemResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created job",
       },
     },

@@ -35,8 +35,8 @@ export class GetUntaggedContentAssetController extends BaseAuthenticatedContentC
 
   @Get("/content/assets/untagged")
   @ApiOperation({
-    summary: "Get a single content asset",
-    description: "Gets a single content asset by ID.",
+    summary: "Gets a content asset that has no tags",
+    description: "Gets a single content asset that has not been tagged yet.",
     operationId: "GetUntaggedContentAsset",
     tags: ["Content"],
   })

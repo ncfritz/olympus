@@ -41,8 +41,9 @@ export class UploadAssetsController extends BaseContentIngestionWorkflowControll
 
   @Post("/content/upload")
   @ApiOperation({
-    summary: "Issues a JWT authorizing black curtain access",
-    description: "",
+    summary: "Uploads content assets for ingestion",
+    description:
+      "Accepts one or more files as multipart form data, stores them in the upload directory and starts a content ingestion workflow for each.",
     operationId: "UploadAssets",
     tags: ["Content"],
   })

@@ -40,7 +40,7 @@ export class UpdateBatchJobController {
   @Put("/job/batch/:jobId")
   @ApiOperation({
     summary: "Updates an existing batch job",
-    description: "Description",
+    description: "Applies the given changes to a batch job.",
     operationId: "UpdateBatchJob",
     tags: ["Batch"],
   })

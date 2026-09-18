@@ -45,6 +45,7 @@ export class CreateContentAssetController {
     type: CreateContentAssetResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created content asset",
       },
     },

@@ -30,7 +30,8 @@ export class ListContentAssetTagsForAssetController {
   @Get("/content/asset/:assetId/tags")
   @ApiOperation({
     summary: "Lists the content asset tags for a content asset",
-    description: "Lists the content asset tags associated with a content asset",
+    description:
+      "Lists the content asset tags associated with a content asset.",
     operationId: "ListContentAssetTagsForAsset",
     tags: ["Content"],
   })

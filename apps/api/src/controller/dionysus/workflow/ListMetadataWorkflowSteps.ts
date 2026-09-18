@@ -25,11 +25,8 @@ export class ListMetadataWorkflowStepsController {
 
   @Get("/workflow/:workflowId/steps")
   @ApiOperation({
-    summary: "Lists the steps for a metadata workflows",
-    description:
-      "Lists metadata workflows.  This API accepts pagination and filter parameters to refine the " +
-      "refine the list of workflows fetched.  When filtering, any changes in the filter parameters will " +
-      "reset the pagination state.",
+    summary: "Lists the steps of a metadata workflow",
+    description: "Lists the steps of a metadata workflow.",
     operationId: "ListMetadataWorkflowSteps",
     tags: ["Workflow"],
   })

@@ -3,7 +3,7 @@
   "paths": {
     "/olympus/ping": {
       "get": {
-        "description": "Ping",
+        "description": "Checks that the API is running and returns the hosts it is configured to use.",
         "operationId": "Ping",
         "parameters": [],
         "responses": {
@@ -38,7 +38,7 @@
             }
           }
         },
-        "summary": "Ping",
+        "summary": "Checks that the API is running",
         "tags": [
           "Admin"
         ]
@@ -46,7 +46,7 @@
     },
     "/olympus/amqp/test/{exchange}": {
       "post": {
-        "description": "SentAmqpTestMessage",
+        "description": "Publishes the request body as a message to the given RabbitMQ exchange, for testing.",
         "operationId": "SendAmqpTestMessage",
         "parameters": [
           {
@@ -111,7 +111,7 @@
             }
           }
         },
-        "summary": "SentAmqpTestMessage",
+        "summary": "Publishes a test message to RabbitMQ",
         "tags": [
           "Admin"
         ]
@@ -479,7 +479,7 @@
             }
           }
         },
-        "summary": "Lists current notifications and statistics",
+        "summary": "Lists the notifications in a notification group",
         "tags": [
           "Notifications"
         ]
@@ -541,7 +541,7 @@
     },
     "/olympus/notifications/settings": {
       "get": {
-        "description": "Lists the notification settings a user has configured.  This API returns notification settings across allchannels ",
+        "description": "Lists the notification settings a user has configured, across all channels.",
         "operationId": "ListNotificationSettings",
         "parameters": [],
         "responses": {
@@ -768,6 +768,12 @@
     {
       "name": "Olympus",
       "description": ""
+    },
+    {
+      "name": "Admin"
+    },
+    {
+      "name": "Notifications"
     }
   ],
   "servers": [],

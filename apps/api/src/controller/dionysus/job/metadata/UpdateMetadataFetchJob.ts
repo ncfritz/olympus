@@ -44,7 +44,8 @@ export class UpdateMetadataFetchJobController {
   @Put("/metadata/fetchJob/:entityId/:entityType")
   @ApiOperation({
     summary: "Updates an existing metadata fetch job",
-    description: "Description",
+    description:
+      "Applies the given changes to a metadata fetch job. If the job ends up queued and `publishNotification` is set, a fetch message is published.",
     operationId: "UpdateMetadataFetchJob",
     tags: ["Metadata"],
   })

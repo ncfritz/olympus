@@ -40,8 +40,9 @@ export class ApproveMediaAssetTranscodeConfigurationController extends BaseMedia
 
   @Put("/media/workflow/:workflowId/steps/:workflowStepId/approveConfig")
   @ApiOperation({
-    summary: "Updates an existing media asset workflow step",
-    description: "Description",
+    summary: "Approves the transcode configuration for a media workflow",
+    description:
+      "Marks the transcode configuration step as running and publishes a transcode job. `verificationRequired` controls whether the transcode output must be verified before the workflow continues.",
     operationId: "ApproveMediaAssetTranscodeConfiguration",
     tags: ["Content"],
   })

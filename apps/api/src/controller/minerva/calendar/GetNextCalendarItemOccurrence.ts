@@ -40,7 +40,7 @@ export class GetNextCalendarItemOccurrenceController {
   @Get("/meeting/:meetingId/next")
   @ApiOperation({
     summary: "Gets the next occurrence of a meeting in a series",
-    description: "Gets the next occurrence of a meeting in a series",
+    description: "Gets the next occurrence of a meeting in a series.",
     operationId: "GetNextCalendarItemOccurrence",
     tags: ["Meetings"],
   })

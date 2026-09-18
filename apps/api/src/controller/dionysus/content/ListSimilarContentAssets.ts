@@ -51,7 +51,7 @@ export class ListSimilarContentAssetsController {
     name: "assetId",
     description: "The ID of the content asset to find similar assets for",
     type: String,
-    required: false,
+    required: true,
   })
   @ApiQuery({
     name: "tagType",

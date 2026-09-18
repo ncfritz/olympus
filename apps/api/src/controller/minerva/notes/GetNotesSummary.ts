@@ -72,7 +72,7 @@ export class GetMonthlySummaryController {
   @Get("/notes/summary/:start")
   @ApiOperation({
     summary: "Gets the monthly summary for notes",
-    description: "Gets monthly summary for notes",
+    description: "Gets a monthly summary of notes.",
     operationId: "GetNotesSummary",
     tags: ["Notes"],
   })

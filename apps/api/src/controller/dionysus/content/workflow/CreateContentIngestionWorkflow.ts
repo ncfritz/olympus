@@ -44,6 +44,7 @@ export class CreateContentIngestionWorkflowController extends BaseContentIngesti
     type: CreateContentIngestionWorkflowResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created job",
       },
     },

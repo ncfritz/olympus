@@ -48,8 +48,9 @@ export class GetMeetingsSummaryController {
 
   @Get("/meetings/summary/:start")
   @ApiOperation({
-    summary: "Gets the monthly summary for meetings",
-    description: "Gets monthly summary for meetings",
+    summary: "Gets a daily summary of meetings",
+    description:
+      "Gets meeting counts by status for each day of the requested period, in the caller's timezone.",
     operationId: "GetMeetingsSummary",
     tags: ["Meetings"],
   })

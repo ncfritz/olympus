@@ -29,7 +29,7 @@ export class DescribeMetadataWorkflowController {
 
   @Get("/workflow/:workflowId")
   @ApiOperation({
-    summary: "Describes an existing metadate workflow",
+    summary: "Describes an existing metadata workflow",
     description: "Retrieves the details of a metadata workflow.",
     operationId: "DescribeMetadataWorkflow",
     tags: ["Workflow"],

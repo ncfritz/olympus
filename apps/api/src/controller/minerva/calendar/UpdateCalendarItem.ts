@@ -38,8 +38,8 @@ export class UpdateCalendarItemController {
 
   @Put("/meeting/:meetingId")
   @ApiOperation({
-    summary: "Updates an existing note",
-    description: "CUpdates an existing node.",
+    summary: "Updates an existing calendar item",
+    description: "Applies the given changes to a calendar item.",
     operationId: "UpdateCalendarItem",
     tags: ["Meetings"],
   })
@@ -67,6 +67,7 @@ export class UpdateCalendarItemController {
   ): Promise<void> {
     if (Object.keys(request.item).length === 0) {
       response.status(HttpStatus.NOT_MODIFIED).end();
+      return;
     }
 
     const updateRequest = gql`

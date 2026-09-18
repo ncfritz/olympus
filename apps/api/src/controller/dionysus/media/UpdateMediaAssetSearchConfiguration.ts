@@ -55,11 +55,7 @@ export class UpdateMediaAssetSearchConfigurationController {
   @ApiOperation({
     summary: "Updates an existing media search configuration",
     description:
-      "Updates an existing media search configuration.  When setting the `enabled` status of a search configuration, " +
-      "the status will be propagated to any child configurations if the `recursive` parameter is set to `true` - " +
-      "i.e. disabling a search configuration for a TV season will disable any search configurations for episodes of " +
-      "that season.  If the `recursive` parameter is set to `false` or not specified, only the directly identified" +
-      "search configuration will be updated",
+      "Updates an existing media search configuration. When `recursive` is `true`, a change to the `enabled` status is also applied to child configurations (for example, disabling a TV season's configuration disables its episodes' configurations). Otherwise only the identified configuration is updated.",
     operationId: "UpdateMediaAssetSearchConfiguration",
     tags: ["Media"],
   })

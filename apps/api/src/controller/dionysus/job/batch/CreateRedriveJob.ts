@@ -29,11 +29,9 @@ export class CreateRedriveJobController extends BaseCreateBatchJobController<Cre
 
   @Post("/jobs/batch/redrive")
   @ApiOperation({
-    summary: "Creates a new batch job",
+    summary: "Creates a new redrive batch job",
     description:
-      "Creates a batch re-drive job.  The re-drive processor will query for all fetch jobs of the specified type " +
-      "that are in the requested status and update their status in the database.  If `publishNotification` is set " +
-      "to `true`, a notification to re-process each fetch job identified will be published.",
+      "Creates a batch job that republishes metadata fetch jobs in a given status for reprocessing.",
     operationId: "CreateRedriveJob",
     tags: ["Batch"],
   })
@@ -49,6 +47,7 @@ export class CreateRedriveJobController extends BaseCreateBatchJobController<Cre
     type: CreateBatchJobResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created job",
       },
     },

@@ -22,8 +22,9 @@ export class CheckAuthController {
 
   @Get("/content/auth/status")
   @ApiOperation({
-    summary: "Issues a JWT authorizing black curtain access",
-    description: "",
+    summary: "Checks whether the caller has black curtain access",
+    description:
+      "Checks the x-dionysus-content-auth cookie and reports whether it holds a valid black curtain token issued in the last 30 minutes.",
     operationId: "CheckAuthorization",
     tags: ["Content"],
   })

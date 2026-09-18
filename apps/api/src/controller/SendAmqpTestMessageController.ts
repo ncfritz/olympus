@@ -26,8 +26,9 @@ export class SendAmqpTestMessageController {
 
   @Post("/amqp/test/:exchange")
   @ApiOperation({
-    summary: "SentAmqpTestMessage",
-    description: "SentAmqpTestMessage",
+    summary: "Publishes a test message to RabbitMQ",
+    description:
+      "Publishes the request body as a message to the given RabbitMQ exchange, for testing.",
     operationId: "SendAmqpTestMessage",
     tags: ["Admin"],
   })

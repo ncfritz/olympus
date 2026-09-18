@@ -89,6 +89,7 @@ export class CreateMediaAssetSearchConfigurationController {
     type: SingleMediaAssetSearchConfigurationResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created search configuration",
       },
     },

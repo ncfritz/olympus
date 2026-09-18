@@ -9,8 +9,9 @@ import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 export class GenerateAuthKeyController {
   @Get("/content/auth/secret")
   @ApiOperation({
-    summary: "Issues a JWT authorizing black curtain access",
-    description: "",
+    summary: "Generates a new TOTP secret",
+    description:
+      "Generates a new TOTP secret for setting up black curtain access. The secret is returned to the caller and is not stored.",
     operationId: "GenerateAuthKey",
     tags: ["Content"],
   })

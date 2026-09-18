@@ -33,9 +33,7 @@ export class DeleteMediaWorkflowController {
   @ApiOperation({
     summary: "Deletes a media workflow",
     description:
-      "Deletes a media workflow.  By default the workflow will be soft deleted.  When the `hardDelete` parameter" +
-      "is set to `true` the workflow will be removed from the database.  It is important to ensure any physical file" +
-      "cleanup has completed before issuing a hard delete",
+      "Deletes a media workflow. By default the workflow is soft deleted. When the `hardDelete` parameter is `true`, the workflow is removed from the database; make sure any physical file cleanup has completed before issuing a hard delete.",
     operationId: "DeleteMediaAssetWorkflow",
     tags: ["Batch"],
   })

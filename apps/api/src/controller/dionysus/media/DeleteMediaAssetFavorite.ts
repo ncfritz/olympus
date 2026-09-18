@@ -28,8 +28,8 @@ export class DeleteMediaFavoriteController {
 
   @Delete("/media/favorite/:mediaType/:mediaId")
   @ApiOperation({
-    summary: "Creates a new media favorite",
-    description: "Creates a new media favorite.",
+    summary: "Removes a media favorite",
+    description: "Removes a media item from the favorites.",
     operationId: "DeleteMediaFavorite",
     tags: ["Media"],
   })
@@ -51,6 +51,7 @@ export class DeleteMediaFavoriteController {
     type: SingleMediaFavoriteResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the media favorite record",
       },
     },

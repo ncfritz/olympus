@@ -22,7 +22,7 @@ export class SetContentAssetRatingController {
   @Put("/content/asset/:assetId/rating")
   @ApiOperation({
     summary: "Sets the rating for a content asset",
-    description: "Sets the rating for a content asset",
+    description: "Sets the rating for a content asset.",
     operationId: "SetContentAssetRating",
     tags: ["Content"],
   })

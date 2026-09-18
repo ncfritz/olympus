@@ -19,7 +19,8 @@ export class CreateContentJobController {
   @Post("/content/asset/:assetId/jobs")
   @ApiOperation({
     summary: "Creates a new content processing job",
-    description: "",
+    description:
+      "Publishes a processing job of the requested type for a content asset.",
     operationId: "CreateContentJob",
     tags: ["Content"],
   })

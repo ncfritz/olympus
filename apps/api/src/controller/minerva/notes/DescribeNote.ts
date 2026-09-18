@@ -35,7 +35,7 @@ export class DescribeNoteController {
     summary: "Gets a single note by ID",
     description:
       "Gets a single note by ID.  The note returned will be a fully populated note including " +
-      "any associations, as well as parent and child notes",
+      "any associations, as well as parent and child notes.",
     operationId: "DescribeNote",
     tags: ["Notes"],
   })

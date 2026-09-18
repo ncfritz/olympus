@@ -35,9 +35,9 @@ export class CreateContentAssetTagController {
 
   @Post("/content/assetTags")
   @ApiOperation({
-    summary: "Creates a new content asset",
+    summary: "Creates a new content asset tag",
     description:
-      "Creates a new content asset.  New assets are assigned their ID by the ingestion process.",
+      "Creates a new content asset tag that can then be added to content assets.",
     operationId: "CreateContentAssetTag",
     tags: ["Content"],
   })
@@ -53,6 +53,7 @@ export class CreateContentAssetTagController {
     type: CreateContentAssetTagResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created content asset",
       },
     },

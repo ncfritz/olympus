@@ -41,7 +41,7 @@ export class UpdateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
   @Put("/media/workflow/:workflowId/steps/:workflowStepId")
   @ApiOperation({
     summary: "Updates an existing media asset workflow step",
-    description: "Description",
+    description: "Applies the given changes to a media asset workflow step.",
     operationId: "UpdateMediaAssetWorkflowStep",
     tags: ["Content"],
   })

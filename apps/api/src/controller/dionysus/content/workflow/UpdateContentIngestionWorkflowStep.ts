@@ -40,7 +40,8 @@ export class UpdateContentIngestionWorkflowStepController extends BaseContentIng
   @Put("/content/workflow/:workflowId/steps/:workflowStepId")
   @ApiOperation({
     summary: "Updates an existing content ingestion workflow step",
-    description: "Description",
+    description:
+      "Applies the given changes to a step of a content ingestion workflow.",
     operationId: "UpdateContentIngestionWorkflowStep",
     tags: ["Content"],
   })

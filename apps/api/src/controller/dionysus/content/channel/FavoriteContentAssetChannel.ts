@@ -29,8 +29,9 @@ export class FavoriteContentAssetChannelController {
 
   @Put("/content/channel/:channelId/favorite")
   @ApiOperation({
-    summary: "Updates an existing content asset channel",
-    description: "Updates an existing content asset channel.",
+    summary: "Marks a content asset channel as a favorite or not",
+    description:
+      "Marks a content asset channel as a favorite, or removes it from the favorites.",
     operationId: "FavoriteContentAssetChannel",
     tags: ["Content"],
   })

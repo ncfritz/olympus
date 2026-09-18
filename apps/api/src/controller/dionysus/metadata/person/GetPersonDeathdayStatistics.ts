@@ -21,8 +21,9 @@ export class GetPeopleDeathdayStatisticsController {
 
   @Get("/metadata/person/stats/deathday")
   @ApiOperation({
-    summary: "Gets a histogram of birthyears for people",
-    description: "Gets a map of year to the number of people born that year.",
+    summary: "Gets a histogram of death years for people",
+    description:
+      "Gets a map of year to the number of people who died that year.",
     operationId: "GetPeopleDeathdayStatistics",
     tags: ["Metadata"],
   })

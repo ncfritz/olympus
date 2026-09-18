@@ -36,7 +36,7 @@ export class GetBatchJobStatisticsController {
 
   @Get("/jobs/batch/stats")
   @ApiOperation({
-    summary: "Gets stats for Dionysus batch jobs.",
+    summary: "Gets stats for Dionysus batch jobs",
     description:
       "Gets the last 90 days worth of Dionysus batch job executions.  This API only returns the " +
       "execution status of the jobs.  For actual execution statistics, callers should use the " +

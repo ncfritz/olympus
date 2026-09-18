@@ -62,6 +62,7 @@ export class CreateMediaAssetSearchResultController extends BaseMediaAssetSearch
     type: SingleMediaAssetSearchResultResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created search result",
       },
     },

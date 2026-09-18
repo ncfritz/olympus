@@ -30,8 +30,8 @@ export class GetTvEpisodeByIdController {
 
   @Get("/metadata/tvEpisodes/:episodeId")
   @ApiOperation({
-    summary: "Describes a TV episode in Dionysus",
-    description: "Retrieves the details of a TV episode in Dionysus.",
+    summary: "Describes a TV episode by its ID",
+    description: "Retrieves the details of a TV episode by its TMDB ID.",
     operationId: "GetTvEpisodeById",
     tags: ["Metadata"],
   })

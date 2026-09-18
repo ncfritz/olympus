@@ -26,7 +26,7 @@ export class GetMetadataWorkflowStatisticsController {
   @ApiOperation({
     summary: "Get workflow status counts and timing statistics",
     description:
-      "Retrieves stats for metadat fetch jobs broken down by job type and status.",
+      "Retrieves status counts and timing statistics for metadata workflows.",
     operationId: "GetMetadataWorkflowStatistics",
     tags: ["Metadata"],
   })

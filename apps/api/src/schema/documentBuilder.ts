@@ -28,6 +28,22 @@ export const buildOpenApiDocument = (
     include: config.modules,
   });
 
+  // Declare every tag an operation uses, so the document lists them all
+  // (not only the document-level tag added above).
+  const declared = new Set((document.tags ?? []).map((tag) => tag.name));
+  const used = Object.values(document.paths).flatMap((pathItem) =>
+    Object.values(pathItem).flatMap(
+      (operation: { tags?: string[] }) => operation?.tags ?? [],
+    ),
+  );
+  document.tags = [
+    ...(document.tags ?? []),
+    ...[...new Set(used)]
+      .filter((name) => !declared.has(name))
+      .sort()
+      .map((name) => ({ name })),
+  ];
+
   if (register) {
     SwaggerModule.setup(`${config.route}/api-spec`, app, document);
   }

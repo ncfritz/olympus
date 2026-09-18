@@ -26,8 +26,9 @@ export class ListCalendarItemsController {
 
   @Get("/meetings/:start")
   @ApiOperation({
-    summary: "Gets a single calendar item by ID",
-    description: "Gets a single calendar item by ID",
+    summary: "Lists calendar items for a period",
+    description:
+      "Lists the calendar items starting on the given day and continuing for the requested number of days.",
     operationId: "ListCalendarItems",
     tags: ["Meetings"],
   })

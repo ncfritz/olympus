@@ -22,6 +22,9 @@
             "description": "The note has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created note"
               }
             },
@@ -91,6 +94,9 @@
             "description": "The note has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created note"
               }
             },
@@ -182,7 +188,7 @@
     },
     "/minerva/note/{noteId}": {
       "get": {
-        "description": "Gets a single note by ID.  The note returned will be a fully populated note including any associations, as well as parent and child notes",
+        "description": "Gets a single note by ID.  The note returned will be a fully populated note including any associations, as well as parent and child notes.",
         "operationId": "DescribeNote",
         "parameters": [
           {
@@ -233,7 +239,7 @@
         ]
       },
       "put": {
-        "description": "CUpdates an existing node.",
+        "description": "Applies the given changes to a note.",
         "operationId": "UpdateNote",
         "parameters": [
           {
@@ -474,7 +480,7 @@
     },
     "/minerva/notes/summary/{start}": {
       "get": {
-        "description": "Gets monthly summary for notes",
+        "description": "Gets a monthly summary of notes.",
         "operationId": "GetNotesSummary",
         "parameters": [
           {
@@ -606,7 +612,7 @@
     },
     "/minerva/meetings": {
       "post": {
-        "description": "Creates a new note.",
+        "description": "Creates a new calendar item.",
         "operationId": "CreateCalendarItem",
         "parameters": [],
         "requestBody": {
@@ -625,6 +631,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created job"
               }
             },
@@ -657,7 +666,7 @@
             }
           }
         },
-        "summary": "Creates a new note",
+        "summary": "Creates a new calendar item",
         "tags": [
           "Meetings"
         ]
@@ -665,7 +674,7 @@
     },
     "/minerva/meetings/statistics/{start}": {
       "get": {
-        "description": "Gets monthly summary for meetings",
+        "description": "Gets meeting counts by status for each hour of the day and each day of the week over the requested period, in the caller's timezone.",
         "operationId": "GetMeetingsStatistics",
         "parameters": [
           {
@@ -727,7 +736,7 @@
             }
           }
         },
-        "summary": "Gets the monthly summary for meetings",
+        "summary": "Gets meeting statistics by hour and weekday",
         "tags": [
           "Meetings"
         ]
@@ -735,7 +744,7 @@
     },
     "/minerva/meetings/summary/{start}": {
       "get": {
-        "description": "Gets monthly summary for meetings",
+        "description": "Gets meeting counts by status for each day of the requested period, in the caller's timezone.",
         "operationId": "GetMeetingsSummary",
         "parameters": [
           {
@@ -797,7 +806,7 @@
             }
           }
         },
-        "summary": "Gets the monthly summary for meetings",
+        "summary": "Gets a daily summary of meetings",
         "tags": [
           "Meetings"
         ]
@@ -805,7 +814,7 @@
     },
     "/minerva/meeting/{meetingId}/next": {
       "get": {
-        "description": "Gets the next occurrence of a meeting in a series",
+        "description": "Gets the next occurrence of a meeting in a series.",
         "operationId": "GetNextCalendarItemOccurrence",
         "parameters": [
           {
@@ -909,7 +918,7 @@
         ]
       },
       "get": {
-        "description": "Gets a single calendar item by ID",
+        "description": "Gets a single calendar item by ID.",
         "operationId": "DescribeCalendarItem",
         "parameters": [
           {
@@ -960,7 +969,7 @@
         ]
       },
       "put": {
-        "description": "CUpdates an existing node.",
+        "description": "Applies the given changes to a calendar item.",
         "operationId": "UpdateCalendarItem",
         "parameters": [
           {
@@ -1016,7 +1025,7 @@
             }
           }
         },
-        "summary": "Updates an existing note",
+        "summary": "Updates an existing calendar item",
         "tags": [
           "Meetings"
         ]
@@ -1024,7 +1033,7 @@
     },
     "/minerva/meetings/{start}": {
       "get": {
-        "description": "Gets a single calendar item by ID",
+        "description": "Lists the calendar items starting on the given day and continuing for the requested number of days.",
         "operationId": "ListCalendarItems",
         "parameters": [
           {
@@ -1078,7 +1087,7 @@
             }
           }
         },
-        "summary": "Gets a single calendar item by ID",
+        "summary": "Lists calendar items for a period",
         "tags": [
           "Meetings"
         ]
@@ -1086,7 +1095,7 @@
     },
     "/minerva/meeting/{meetingId}/previous": {
       "get": {
-        "description": "Gets the next occurrence of a meeting in a series",
+        "description": "Lists earlier occurrences of a recurring meeting, up to the requested limit.",
         "operationId": "ListPreviousCalendarItemOccurrences",
         "parameters": [
           {
@@ -1140,7 +1149,7 @@
             }
           }
         },
-        "summary": "Gets the next occurrence of a meeting in a series",
+        "summary": "Lists previous occurrences of a meeting in a series",
         "tags": [
           "Meetings"
         ]
@@ -1161,6 +1170,12 @@
     {
       "name": "Minerva",
       "description": ""
+    },
+    {
+      "name": "Meetings"
+    },
+    {
+      "name": "Notes"
     }
   ],
   "servers": [],

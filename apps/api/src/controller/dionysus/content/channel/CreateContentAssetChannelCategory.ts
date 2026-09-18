@@ -44,6 +44,7 @@ export class CreatContentAssetChannelCategoryController {
     type: CreateContentAssetChannelCategoryResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created job",
       },
     },

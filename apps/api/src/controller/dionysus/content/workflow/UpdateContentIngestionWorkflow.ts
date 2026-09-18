@@ -39,7 +39,7 @@ export class UpdateContentIngestionWorkflowController {
   @Put("/content/workflow/:workflowId")
   @ApiOperation({
     summary: "Updates an existing content ingestion workflow",
-    description: "Description",
+    description: "Applies the given changes to a content ingestion workflow.",
     operationId: "UpdateContentIngestionWorkflow",
     tags: ["Content"],
   })

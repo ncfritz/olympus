@@ -32,8 +32,9 @@ export class DescribeTvEpisodeController {
     "/metadata/tvSeries/:tvSeriesId/seasons/:seasonNumber/episodes/:episodeNumber",
   )
   @ApiOperation({
-    summary: "Describes a TV episode in Dionysus",
-    description: "Retrieves the details of a TV episode in Dionysus.",
+    summary: "Describes a TV episode by series, season and episode number",
+    description:
+      "Retrieves the details of a TV episode identified by series, season number and episode number.",
     operationId: "DescribeTvEpisode",
     tags: ["Metadata"],
   })

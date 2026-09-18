@@ -57,6 +57,7 @@ export class CreateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
     type: CreateMediaAssetWorkflowStepResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created workflow step",
       },
     },

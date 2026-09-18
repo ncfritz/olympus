@@ -22,6 +22,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created job"
               }
             },
@@ -149,7 +152,7 @@
     },
     "/dionysus/jobs/batch/redrive": {
       "post": {
-        "description": "Creates a batch re-drive job.  The re-drive processor will query for all fetch jobs of the specified type that are in the requested status and update their status in the database.  If `publishNotification` is set to `true`, a notification to re-process each fetch job identified will be published.",
+        "description": "Creates a batch job that republishes metadata fetch jobs in a given status for reprocessing.",
         "operationId": "CreateRedriveJob",
         "parameters": [],
         "requestBody": {
@@ -168,6 +171,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created job"
               }
             },
@@ -200,7 +206,7 @@
             }
           }
         },
-        "summary": "Creates a new batch job",
+        "summary": "Creates a new redrive batch job",
         "tags": [
           "Batch"
         ]
@@ -310,7 +316,7 @@
         ]
       },
       "put": {
-        "description": "Description",
+        "description": "Applies the given changes to a batch job.",
         "operationId": "UpdateBatchJob",
         "parameters": [
           {
@@ -409,7 +415,7 @@
             }
           }
         },
-        "summary": "Gets stats for Dionysus batch jobs.",
+        "summary": "Gets stats for Dionysus batch jobs",
         "tags": [
           "Batch"
         ]
@@ -568,7 +574,7 @@
     },
     "/dionysus/content/asset/{assetId}/tags": {
       "put": {
-        "description": "Adds a new tag to a content asset.  If the tag does not exist, it will be created prior to attaching it to the content asset",
+        "description": "Adds a tag to a content asset. If the tag does not exist, it is created before it is attached to the content asset.",
         "operationId": "AddContentAssetTagToAsset",
         "parameters": [
           {
@@ -634,13 +640,13 @@
             }
           }
         },
-        "summary": "Adds a teg to a content asset",
+        "summary": "Adds a tag to a content asset",
         "tags": [
           "Content"
         ]
       },
       "get": {
-        "description": "Lists the content asset tags associated with a content asset",
+        "description": "Lists the content asset tags associated with a content asset.",
         "operationId": "ListContentAssetTagsForAsset",
         "parameters": [
           {
@@ -693,7 +699,7 @@
     },
     "/dionysus/content/auth/secret": {
       "get": {
-        "description": "",
+        "description": "Generates a new TOTP secret for setting up black curtain access. The secret is returned to the caller and is not stored.",
         "operationId": "GenerateAuthKey",
         "parameters": [],
         "responses": {
@@ -728,7 +734,7 @@
             }
           }
         },
-        "summary": "Issues a JWT authorizing black curtain access",
+        "summary": "Generates a new TOTP secret",
         "tags": [
           "Content"
         ]
@@ -849,7 +855,7 @@
         ]
       },
       "get": {
-        "description": "Updates an existing content asset channel.",
+        "description": "Retrieves the details of a content asset channel.",
         "operationId": "DescribeContentAssetChannel",
         "parameters": [
           {
@@ -894,7 +900,7 @@
             }
           }
         },
-        "summary": "Updates an existing content asset channel",
+        "summary": "Describes a content asset channel",
         "tags": [
           "Content"
         ]
@@ -966,7 +972,7 @@
     },
     "/dionysus/content/channel/{channelId}/favorite": {
       "put": {
-        "description": "Updates an existing content asset channel.",
+        "description": "Marks a content asset channel as a favorite, or removes it from the favorites.",
         "operationId": "FavoriteContentAssetChannel",
         "parameters": [
           {
@@ -1022,7 +1028,7 @@
             }
           }
         },
-        "summary": "Updates an existing content asset channel",
+        "summary": "Marks a content asset channel as a favorite or not",
         "tags": [
           "Content"
         ]
@@ -1083,7 +1089,7 @@
     },
     "/dionysus/content/auth/status": {
       "get": {
-        "description": "",
+        "description": "Checks the x-dionysus-content-auth cookie and reports whether it holds a valid black curtain token issued in the last 30 minutes.",
         "operationId": "CheckAuthorization",
         "parameters": [],
         "responses": {
@@ -1118,7 +1124,7 @@
             }
           }
         },
-        "summary": "Issues a JWT authorizing black curtain access",
+        "summary": "Checks whether the caller has black curtain access",
         "tags": [
           "Content"
         ]
@@ -1145,6 +1151,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created content asset"
               }
             },
@@ -1300,6 +1309,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created job"
               }
             },
@@ -1419,7 +1431,7 @@
             }
           }
         },
-        "summary": "Lists content asset channel ",
+        "summary": "Lists content asset channels",
         "tags": [
           "Content"
         ]
@@ -1446,6 +1458,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created job"
               }
             },
@@ -1573,7 +1588,7 @@
     },
     "/dionysus/content/assetTags": {
       "post": {
-        "description": "Creates a new content asset.  New assets are assigned their ID by the ingestion process.",
+        "description": "Creates a new content asset tag that can then be added to content assets.",
         "operationId": "CreateContentAssetTag",
         "parameters": [],
         "requestBody": {
@@ -1592,6 +1607,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created content asset"
               }
             },
@@ -1627,7 +1645,7 @@
             "description": "A tag with the same name and type already exists"
           }
         },
-        "summary": "Creates a new content asset",
+        "summary": "Creates a new content asset tag",
         "tags": [
           "Content"
         ]
@@ -1723,6 +1741,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created job"
               }
             },
@@ -1841,7 +1862,7 @@
             }
           }
         },
-        "summary": "Lists metadata workflows",
+        "summary": "Lists content ingestion workflows",
         "tags": [
           "Content"
         ]
@@ -1878,6 +1899,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created workflow step"
               }
             },
@@ -1918,7 +1942,7 @@
     },
     "/dionysus/content/asset/{assetId}/jobs": {
       "post": {
-        "description": "",
+        "description": "Publishes a processing job of the requested type for a content asset.",
         "operationId": "CreateContentJob",
         "parameters": [
           {
@@ -1982,7 +2006,7 @@
     },
     "/dionysus/content/asset/{assetId}/tag/{tagId}": {
       "delete": {
-        "description": "Removes a content asset tag from a content asset",
+        "description": "Removes a content asset tag from a content asset.",
         "operationId": "DeleteContentAssetTagFromAsset",
         "parameters": [
           {
@@ -2138,7 +2162,7 @@
         ]
       },
       "put": {
-        "description": "Description",
+        "description": "Applies the given changes to a content ingestion workflow.",
         "operationId": "UpdateContentIngestionWorkflow",
         "parameters": [
           {
@@ -2256,7 +2280,7 @@
             }
           }
         },
-        "summary": "Get a single content asset",
+        "summary": "Gets a single content asset",
         "tags": [
           "Content"
         ]
@@ -2362,7 +2386,7 @@
             }
           }
         },
-        "summary": "Gets height statistics",
+        "summary": "Gets duration statistics",
         "tags": [
           "Content"
         ]
@@ -2521,7 +2545,7 @@
             }
           }
         },
-        "summary": "Gets height statistics",
+        "summary": "Gets width statistics",
         "tags": [
           "Content"
         ]
@@ -2529,7 +2553,7 @@
     },
     "/dionysus/content/assets/untagged": {
       "get": {
-        "description": "Gets a single content asset by ID.",
+        "description": "Gets a single content asset that has not been tagged yet.",
         "operationId": "GetUntaggedContentAsset",
         "parameters": [
           {
@@ -2574,7 +2598,7 @@
             }
           }
         },
-        "summary": "Get a single content asset",
+        "summary": "Gets a content asset that has no tags",
         "tags": [
           "Content"
         ]
@@ -2582,7 +2606,7 @@
     },
     "/dionysus/content/channels/category/{categoryId}/channels": {
       "get": {
-        "description": "Lists content asset channels.  This API accepts pagination and filter parameters to refine the refine the list of  fetched.  When filtering, any changes in the filter parameters will reset the pagination state.",
+        "description": "Lists the content asset channels in a channel category.",
         "operationId": "ListContentAssetChannelsForCategory",
         "parameters": [
           {
@@ -2672,7 +2696,7 @@
             }
           }
         },
-        "summary": "Lists content asset channel ",
+        "summary": "Lists the content asset channels in a category",
         "tags": [
           "Content"
         ]
@@ -2738,7 +2762,7 @@
         "parameters": [
           {
             "name": "assetId",
-            "required": false,
+            "required": true,
             "in": "path",
             "description": "The ID of the content asset to find similar assets for",
             "schema": {
@@ -2872,7 +2896,7 @@
     },
     "/dionysus/content/asset/{assetId}/rating": {
       "put": {
-        "description": "Sets the rating for a content asset",
+        "description": "Sets the rating for a content asset.",
         "operationId": "SetContentAssetRating",
         "parameters": [
           {
@@ -2936,7 +2960,7 @@
     },
     "/dionysus/content/workflow/{workflowId}/steps/{workflowStepId}": {
       "put": {
-        "description": "Description",
+        "description": "Applies the given changes to a step of a content ingestion workflow.",
         "operationId": "UpdateContentIngestionWorkflowStep",
         "parameters": [
           {
@@ -3009,7 +3033,7 @@
     },
     "/dionysus/content/upload": {
       "post": {
-        "description": "",
+        "description": "Accepts one or more files as multipart form data, stores them in the upload directory and starts a content ingestion workflow for each.",
         "operationId": "UploadAssets",
         "parameters": [],
         "responses": {
@@ -3044,7 +3068,7 @@
             }
           }
         },
-        "summary": "Issues a JWT authorizing black curtain access",
+        "summary": "Uploads content assets for ingestion",
         "tags": [
           "Content"
         ]
@@ -3052,7 +3076,7 @@
     },
     "/dionysus/content/auth/verify": {
       "get": {
-        "description": "",
+        "description": "Verifies the TOTP code and, if it is valid, sets a 15-minute x-dionysus-content-auth cookie that authorizes black curtain access.",
         "operationId": "VerifyAuthCode",
         "parameters": [
           {
@@ -3097,7 +3121,7 @@
             }
           }
         },
-        "summary": "Issues a JWT authorizing black curtain access",
+        "summary": "Verifies a one-time code and grants black curtain access",
         "tags": [
           "Content"
         ]
@@ -3105,7 +3129,7 @@
     },
     "/dionysus/media/workflow/{workflowId}/steps/{workflowStepId}/approveConfig": {
       "put": {
-        "description": "Description",
+        "description": "Marks the transcode configuration step as running and publishes a transcode job. `verificationRequired` controls whether the transcode output must be verified before the workflow continues.",
         "operationId": "ApproveMediaAssetTranscodeConfiguration",
         "parameters": [
           {
@@ -3170,7 +3194,7 @@
             }
           }
         },
-        "summary": "Updates an existing media asset workflow step",
+        "summary": "Approves the transcode configuration for a media workflow",
         "tags": [
           "Content"
         ]
@@ -3251,6 +3275,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created asset"
               }
             },
@@ -3310,6 +3337,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created search configuration"
               }
             },
@@ -3475,6 +3505,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created search execution"
               }
             },
@@ -3658,6 +3691,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created search result"
               }
             },
@@ -3839,6 +3875,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the media download record"
               }
             },
@@ -3915,6 +3954,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the media download record"
               }
             },
@@ -3984,6 +4026,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created workflow step"
               }
             },
@@ -4062,6 +4107,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created workflow step"
               }
             },
@@ -4129,6 +4177,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the media favorite record"
               }
             },
@@ -4167,7 +4218,7 @@
         ]
       },
       "delete": {
-        "description": "Creates a new media favorite.",
+        "description": "Removes a media item from the favorites.",
         "operationId": "DeleteMediaFavorite",
         "parameters": [
           {
@@ -4194,6 +4245,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the media favorite record"
               }
             },
@@ -4226,7 +4280,7 @@
             }
           }
         },
-        "summary": "Creates a new media favorite",
+        "summary": "Removes a media favorite",
         "tags": [
           "Media"
         ]
@@ -4234,7 +4288,7 @@
     },
     "/dionysus/media/workflow/{workflowId}": {
       "delete": {
-        "description": "Deletes a media workflow.  By default the workflow will be soft deleted.  When the `hardDelete` parameteris set to `true` the workflow will be removed from the database.  It is important to ensure any physical filecleanup has completed before issuing a hard delete",
+        "description": "Deletes a media workflow. By default the workflow is soft deleted. When the `hardDelete` parameter is `true`, the workflow is removed from the database; make sure any physical file cleanup has completed before issuing a hard delete.",
         "operationId": "DeleteMediaAssetWorkflow",
         "parameters": [
           {
@@ -4410,7 +4464,7 @@
     },
     "/dionysus/metadata/tvEpisodes/{episodeId}": {
       "get": {
-        "description": "Retrieves the details of a TV episode in Dionysus.",
+        "description": "Retrieves the details of a TV episode by its TMDB ID.",
         "operationId": "GetTvEpisodeById",
         "parameters": [
           {
@@ -4455,7 +4509,7 @@
             }
           }
         },
-        "summary": "Describes a TV episode in Dionysus",
+        "summary": "Describes a TV episode by its ID",
         "tags": [
           "Metadata"
         ]
@@ -4594,7 +4648,7 @@
         ]
       },
       "put": {
-        "description": "Updates an existing media search configuration.  When setting the `enabled` status of a search configuration, the status will be propagated to any child configurations if the `recursive` parameter is set to `true` - i.e. disabling a search configuration for a TV season will disable any search configurations for episodes of that season.  If the `recursive` parameter is set to `false` or not specified, only the directly identifiedsearch configuration will be updated",
+        "description": "Updates an existing media search configuration. When `recursive` is `true`, a change to the `enabled` status is also applied to child configurations (for example, disabling a TV season's configuration disables its episodes' configurations). Otherwise only the identified configuration is updated.",
         "operationId": "UpdateMediaAssetSearchConfiguration",
         "parameters": [
           {
@@ -5228,7 +5282,7 @@
     },
     "/dionysus/media/searchConfiguration/{mediaType}/{mediaId}/trigger": {
       "put": {
-        "description": "Triggers an existing media search configuration.  The search will be enqueued immediately for execution, ignoring any existing `nextExecutionTime` stamped on the search configuration",
+        "description": "Triggers an existing media search configuration. The search is enqueued for execution immediately, ignoring any `nextExecutionTime` on the search configuration.",
         "operationId": "TriggerMediaAssetSearch",
         "parameters": [
           {
@@ -5445,7 +5499,7 @@
     },
     "/dionysus/media/workflow/{workflowId}/steps/{workflowStepId}": {
       "put": {
-        "description": "Description",
+        "description": "Applies the given changes to a media asset workflow step.",
         "operationId": "UpdateMediaAssetWorkflowStep",
         "parameters": [
           {
@@ -5528,7 +5582,7 @@
     },
     "/dionysus/media/workflow/{workflowId}/steps/{workflowStepId}/verifyConfig": {
       "put": {
-        "description": "Description",
+        "description": "Marks the transcode verification step as complete (or leaves it skipped) and publishes the transcode job.",
         "operationId": "VerifyMediaAssetTranscodeConfiguration",
         "parameters": [
           {
@@ -5582,7 +5636,7 @@
             }
           }
         },
-        "summary": "Updates an existing media asset workflow step",
+        "summary": "Completes transcode verification for a media workflow",
         "tags": [
           "Content"
         ]
@@ -5609,6 +5663,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created job"
               }
             },
@@ -5755,6 +5812,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created collection"
               }
             },
@@ -5814,6 +5874,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created job"
               }
             },
@@ -5951,6 +6014,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created job"
               }
             },
@@ -6097,6 +6163,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created job"
               }
             },
@@ -6234,6 +6303,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created job"
               }
             },
@@ -6371,6 +6443,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created job"
               }
             },
@@ -6430,6 +6505,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created network"
               }
             },
@@ -6575,6 +6653,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created movie1"
               }
             },
@@ -6721,6 +6802,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created person"
               }
             },
@@ -6867,6 +6951,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created production company1"
               }
             },
@@ -7029,6 +7116,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created TV episode"
               }
             },
@@ -7097,6 +7187,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created TV series"
               }
             },
@@ -7156,6 +7249,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created TV series"
               }
             },
@@ -7359,15 +7455,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "The record has been successfully deleted.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteMetadataFetchJobResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "The record has been successfully deleted."
           },
           "400": {
             "description": "The request presented was not valid",
@@ -7456,7 +7545,7 @@
         ]
       },
       "put": {
-        "description": "Description",
+        "description": "Applies the given changes to a metadata fetch job. If the job ends up queued and `publishNotification` is set, a fetch message is published.",
         "operationId": "UpdateMetadataFetchJob",
         "parameters": [
           {
@@ -7741,7 +7830,7 @@
     },
     "/dionysus/metadata/tvSeries/{tvSeriesId}/seasons/{seasonNumber}/episodes/{episodeNumber}": {
       "get": {
-        "description": "Retrieves the details of a TV episode in Dionysus.",
+        "description": "Retrieves the details of a TV episode identified by series, season number and episode number.",
         "operationId": "DescribeTvEpisode",
         "parameters": [
           {
@@ -7804,7 +7893,7 @@
             }
           }
         },
-        "summary": "Describes a TV episode in Dionysus",
+        "summary": "Describes a TV episode by series, season and episode number",
         "tags": [
           "Metadata"
         ]
@@ -8306,7 +8395,7 @@
             }
           }
         },
-        "summary": "Gets a histogram of birthyears for people",
+        "summary": "Gets a histogram of birth years for people",
         "tags": [
           "Metadata"
         ]
@@ -8314,7 +8403,7 @@
     },
     "/dionysus/metadata/person/stats/deathday": {
       "get": {
-        "description": "Gets a map of year to the number of people born that year.",
+        "description": "Gets a map of year to the number of people who died that year.",
         "operationId": "GetPeopleDeathdayStatistics",
         "parameters": [],
         "responses": {
@@ -8349,7 +8438,7 @@
             }
           }
         },
-        "summary": "Gets a histogram of birthyears for people",
+        "summary": "Gets a histogram of death years for people",
         "tags": [
           "Metadata"
         ]
@@ -8357,7 +8446,7 @@
     },
     "/dionysus/metadata/person/stats/department": {
       "get": {
-        "description": "Gets a map of year to the number of people born that year.",
+        "description": "Gets the number of people known for each department.",
         "operationId": "GetPeopleDepartmentStatistics",
         "parameters": [],
         "responses": {
@@ -8392,7 +8481,7 @@
             }
           }
         },
-        "summary": "Gets a histogram of birthyears for people",
+        "summary": "Gets people counts by department",
         "tags": [
           "Metadata"
         ]
@@ -10041,7 +10130,7 @@
     },
     "/dionysus/workflow/stats": {
       "get": {
-        "description": "Retrieves stats for metadat fetch jobs broken down by job type and status.",
+        "description": "Retrieves status counts and timing statistics for metadata workflows.",
         "operationId": "GetMetadataWorkflowStatistics",
         "parameters": [],
         "responses": {
@@ -10103,6 +10192,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created job"
               }
             },
@@ -10258,6 +10350,9 @@
             "description": "The record has been successfully created.",
             "headers": {
               "Location": {
+                "schema": {
+                  "type": "string"
+                },
                 "description": "The location of the created workflow step"
               }
             },
@@ -10296,7 +10391,7 @@
         ]
       },
       "get": {
-        "description": "Lists metadata workflows.  This API accepts pagination and filter parameters to refine the refine the list of workflows fetched.  When filtering, any changes in the filter parameters will reset the pagination state.",
+        "description": "Lists the steps of a metadata workflow.",
         "operationId": "ListMetadataWorkflowSteps",
         "parameters": [
           {
@@ -10341,7 +10436,7 @@
             }
           }
         },
-        "summary": "Lists the steps for a metadata workflows",
+        "summary": "Lists the steps of a metadata workflow",
         "tags": [
           "Workflow"
         ]
@@ -10394,13 +10489,13 @@
             }
           }
         },
-        "summary": "Describes an existing metadate workflow",
+        "summary": "Describes an existing metadata workflow",
         "tags": [
           "Workflow"
         ]
       },
       "put": {
-        "description": "Description",
+        "description": "Applies the given changes to a metadata workflow.",
         "operationId": "UpdateMetadataWorkflow",
         "parameters": [
           {
@@ -10464,7 +10559,7 @@
     },
     "/dionysus/workflow/{workflowId}/step/{stepId}": {
       "get": {
-        "description": "Retrieves the details of a metadata workflow.",
+        "description": "Retrieves the details of a single step of a metadata workflow.",
         "operationId": "DescribeMetadataWorkflowStep",
         "parameters": [
           {
@@ -10518,7 +10613,7 @@
             }
           }
         },
-        "summary": "Describes an existing metadate workflow",
+        "summary": "Describes a step of a metadata workflow",
         "tags": [
           "Workflow"
         ]
@@ -10539,6 +10634,21 @@
     {
       "name": "Dionysus",
       "description": ""
+    },
+    {
+      "name": "Batch"
+    },
+    {
+      "name": "Content"
+    },
+    {
+      "name": "Media"
+    },
+    {
+      "name": "Metadata"
+    },
+    {
+      "name": "Workflow"
     }
   ],
   "servers": [],
@@ -18528,22 +18638,6 @@
         },
         "required": [
           "collection"
-        ]
-      },
-      "DeleteMetadataFetchJobResponse": {
-        "type": "object",
-        "properties": {
-          "job": {
-            "description": "The deleted metadata fetch job",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/MetadataFetchJob"
-              }
-            ]
-          }
-        },
-        "required": [
-          "job"
         ]
       },
       "DescribeMetadataFetchJobResponse": {

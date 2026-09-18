@@ -22,7 +22,7 @@ export class GetContentAssetDurationStatisticsController {
 
   @Get("/content/assets/statistics/duration")
   @ApiOperation({
-    summary: "Gets height statistics",
+    summary: "Gets duration statistics",
     description: "Gets statistics on the content duration.",
     operationId: "GetContentAssetDurationStatistics",
     tags: ["Content"],

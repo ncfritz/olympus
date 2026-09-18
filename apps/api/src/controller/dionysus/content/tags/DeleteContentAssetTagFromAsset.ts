@@ -18,7 +18,7 @@ export class DeleteContentAssetTagFromAssetController {
   @Delete("/content/asset/:assetId/tag/:tagId")
   @ApiOperation({
     summary: "Removes a content asset tag from a content asset",
-    description: "Removes a content asset tag from a content asset",
+    description: "Removes a content asset tag from a content asset.",
     operationId: "DeleteContentAssetTagFromAsset",
     tags: ["Content"],
   })

@@ -26,8 +26,7 @@ export class ListNotificationSettingsController {
   @ApiOperation({
     summary: "Lists notification settings for a user",
     description:
-      "Lists the notification settings a user has configured.  This API returns notification settings across all" +
-      "channels ",
+      "Lists the notification settings a user has configured, across all channels.",
     operationId: "ListNotificationSettings",
     tags: ["Notifications"],
   })

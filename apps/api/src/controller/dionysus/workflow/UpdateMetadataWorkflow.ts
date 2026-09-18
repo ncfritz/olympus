@@ -37,7 +37,7 @@ export class UpdateWorkflowController {
   @Put("/workflow/:workflowId")
   @ApiOperation({
     summary: "Updates an existing metadata workflow",
-    description: "Description",
+    description: "Applies the given changes to a metadata workflow.",
     operationId: "UpdateMetadataWorkflow",
     tags: ["Workflow"],
   })

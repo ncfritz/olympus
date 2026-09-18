@@ -49,6 +49,7 @@ export class CreateBatchJobController extends BaseCreateBatchJobController<Creat
     type: CreateBatchJobResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created job",
       },
     },

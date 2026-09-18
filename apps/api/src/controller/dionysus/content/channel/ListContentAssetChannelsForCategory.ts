@@ -44,11 +44,8 @@ export class ListContentAssetChannelsForCategoryController {
 
   @Get("/content/channels/category/:categoryId/channels")
   @ApiOperation({
-    summary: "Lists content asset channel ",
-    description:
-      "Lists content asset channels.  This API accepts pagination and filter parameters to refine the " +
-      "refine the list of  fetched.  When filtering, any changes in the filter parameters will " +
-      "reset the pagination state.",
+    summary: "Lists the content asset channels in a category",
+    description: "Lists the content asset channels in a channel category.",
     operationId: "ListContentAssetChannelsForCategory",
     tags: ["Content"],
   })

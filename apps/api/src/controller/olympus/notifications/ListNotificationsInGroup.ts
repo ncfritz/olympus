@@ -36,7 +36,7 @@ export class ListNotificationInGroupController {
 
   @Get("/notifications/group/:groupId/notifications")
   @ApiOperation({
-    summary: "Lists current notifications and statistics",
+    summary: "Lists the notifications in a notification group",
     description:
       "Lists the top `N` notifications and provides statistics for a specific notification group.  Notifications are " +
       "listed regardless of their acknowledged status.",

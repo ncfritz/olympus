@@ -42,6 +42,7 @@ export class CreateMovieController {
     type: CreateMovieResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created movie1",
       },
     },

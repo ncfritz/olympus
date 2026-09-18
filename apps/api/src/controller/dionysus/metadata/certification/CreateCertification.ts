@@ -44,6 +44,7 @@ export class CreateCertificationController {
     description: "The record has been successfully created.",
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created job",
       },
     },

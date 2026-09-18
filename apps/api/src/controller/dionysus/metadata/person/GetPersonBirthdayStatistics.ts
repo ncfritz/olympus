@@ -21,7 +21,7 @@ export class GetPeopleBirthdayStatisticsController {
 
   @Get("/metadata/person/stats/birthday")
   @ApiOperation({
-    summary: "Gets a histogram of birthyears for people",
+    summary: "Gets a histogram of birth years for people",
     description: "Gets a map of year to the number of people born that year.",
     operationId: "GetPeopleBirthdayStatistics",
     tags: ["Metadata"],

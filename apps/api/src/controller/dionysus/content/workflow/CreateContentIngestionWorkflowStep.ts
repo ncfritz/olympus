@@ -56,6 +56,7 @@ export class CreateContentIngestionWorkflowStepController extends BaseContentIng
     type: CreateContentIngestionWorkflowStepResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created workflow step",
       },
     },

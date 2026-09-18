@@ -21,8 +21,8 @@ export class GetPeopleDepartmentStatisticsController {
 
   @Get("/metadata/person/stats/department")
   @ApiOperation({
-    summary: "Gets a histogram of birthyears for people",
-    description: "Gets a map of year to the number of people born that year.",
+    summary: "Gets people counts by department",
+    description: "Gets the number of people known for each department.",
     operationId: "GetPeopleDepartmentStatistics",
     tags: ["Metadata"],
   })

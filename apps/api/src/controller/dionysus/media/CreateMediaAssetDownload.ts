@@ -70,6 +70,7 @@ export class CreateMediaAssetDownloadController extends BaseMediaAssetSearchResu
     type: SingleMediaAssetDownloadResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the media download record",
       },
     },

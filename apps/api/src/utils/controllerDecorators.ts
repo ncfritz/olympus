@@ -25,7 +25,7 @@ export function ApiStandardErrorResponses(
   const apiResponses: (typeof ApiResponse)[] = [];
 
   for (const key in ERROR_DESCRIPTIONS) {
-    if (!options || !options.exclude || key in options.exclude) {
+    if (!options?.exclude?.includes(Number(key) as HttpStatus)) {
       apiResponses.push(
         ApiResponse({
           status: key as unknown as number,

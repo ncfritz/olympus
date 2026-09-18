@@ -10,6 +10,8 @@
  *   class-name         class name is `<operationId>Controller`
  *   file-name          file name is `<operationId>.ts`
  *   operation-unique   operationId is unique across the API
+ *   summary-unique     no two operations share a summary (copy-paste guard)
+ *   description-unique no two operations share a description
  *   standard-errors    @ApiStandardErrorResponses() (400 and 404 documented)
  *   success-response   at least one 2xx response documented
  *   status-sent        every documented 2xx/304 status is sent somewhere
@@ -36,6 +38,10 @@ const HTTP_STATUS: Record<string, number> = {
 export function checkControllers(controllers: ControllerInfo[]): Finding[] {
   const findings: Finding[] = [];
   const operationOwners = new Map<string, string[]>();
+  const summaryOwners = new Map<string, string[]>();
+  const descriptionOwners = new Map<string, string[]>();
+  const own = (map: Map<string, string[]>, key: string, owner: string) =>
+    map.set(key, [...(map.get(key) ?? []), owner]);
 
   for (const c of controllers) {
     const report = (rule: string, message: string) =>
@@ -86,6 +92,8 @@ export function checkControllers(controllers: ControllerInfo[]): Finding[] {
         );
       }
     }
+    if (summary) own(summaryOwners, summary, c.className);
+    if (description) own(descriptionOwners, description, c.className);
     if (summary && /\.\s*$/.test(summary)) {
       report("summary-style", `summary ends with a period: "${summary}"`);
     }
@@ -128,16 +136,24 @@ export function checkControllers(controllers: ControllerInfo[]): Finding[] {
     }
   }
 
-  for (const [operationId, owners] of operationOwners) {
-    if (owners.length > 1) {
+  const duplicates = (
+    map: Map<string, string[]>,
+    rule: string,
+    what: string,
+  ) => {
+    for (const [value, owners] of map) {
+      if (owners.length < 2) continue;
       for (const owner of owners) {
         findings.push({
-          rule: "operation-unique",
+          rule,
           target: owner,
-          message: `operationId ${operationId} also used by ${owners.filter((o) => o !== owner).join(", ")}`,
+          message: `${what} "${value}" also used by ${owners.filter((o) => o !== owner).join(", ")}`,
         });
       }
     }
-  }
+  };
+  duplicates(operationOwners, "operation-unique", "operationId");
+  duplicates(summaryOwners, "summary-unique", "summary");
+  duplicates(descriptionOwners, "description-unique", "description");
   return findings;
 }

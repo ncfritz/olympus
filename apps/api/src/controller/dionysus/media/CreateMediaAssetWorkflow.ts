@@ -76,6 +76,7 @@ export class CreateMediaAssetWorkflowController extends BaseMediaAssetSearchResu
     type: SingleMediaAssetWorkflowResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the media download record",
       },
     },

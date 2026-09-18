@@ -1,0 +1,47 @@
+# Lints the generated OpenAPI documents (apps/api/openapi/*.json).
+# `pnpm lint:openapi`, also part of `pnpm check:conventions`.
+extends: ["spectral:oas"]
+
+rules:
+  # Clients (SDK consumers) set the base URL themselves; the documents
+  # intentionally declare no servers.
+  oas3-api-servers: off
+
+  # Promote the built-in checks we rely on to errors; `lint:openapi` fails
+  # on errors only.
+  operation-description: error
+  operation-tag-defined: error
+  operation-operationId: error
+  info-contact: error
+
+  # Stays a warning while two DELETE operations answer 410 Gone instead of
+  # a 2xx (see docs/roadmap.md). Promote to error once they return 204.
+  operation-success-response: warn
+
+  operation-operationId-pascal-case:
+    description: operationId must be PascalCase (docs/conventions/api.md).
+    severity: error
+    given: "$.paths[*][get,put,post,delete,patch]"
+    then:
+      field: operationId
+      function: pattern
+      functionOptions:
+        match: "^[A-Z][A-Za-z0-9]*$"
+
+  operation-summary-present:
+    description: Every operation has a summary.
+    severity: error
+    given: "$.paths[*][get,put,post,delete,patch]"
+    then:
+      field: summary
+      function: truthy
+
+  operation-single-tag:
+    description: Every operation has exactly one tag.
+    severity: error
+    given: "$.paths[*][get,put,post,delete,patch].tags"
+    then:
+      function: length
+      functionOptions:
+        min: 1
+        max: 1

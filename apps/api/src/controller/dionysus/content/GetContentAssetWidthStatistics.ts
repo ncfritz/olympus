@@ -21,7 +21,7 @@ export class GetContentAssetWidthStatisticsController {
 
   @Get("/content/assets/statistics/width")
   @ApiOperation({
-    summary: "Gets height statistics",
+    summary: "Gets width statistics",
     description: "Gets statistics on the content widths.",
     operationId: "GetContentAssetWidthStatistics",
     tags: ["Content"],

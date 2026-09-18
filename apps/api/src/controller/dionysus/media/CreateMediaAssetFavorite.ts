@@ -65,6 +65,7 @@ export class CreateMediaFavoriteController {
     type: SingleMediaFavoriteResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the media favorite record",
       },
     },

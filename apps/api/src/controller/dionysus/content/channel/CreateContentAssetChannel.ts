@@ -48,6 +48,7 @@ export class CreatContentAssetChannelController extends BaseContentAssetChannelC
     type: CreateContentAssetChannelResponse,
     headers: {
       Location: {
+        schema: { type: "string" },
         description: "The location of the created job",
       },
     },

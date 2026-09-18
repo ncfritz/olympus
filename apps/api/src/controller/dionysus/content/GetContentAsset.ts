@@ -43,7 +43,7 @@ export class GetContentAssetController extends BaseAuthenticatedContentControlle
 
   @Get("/content/asset/:assetId")
   @ApiOperation({
-    summary: "Get a single content asset",
+    summary: "Gets a single content asset",
     description: "Gets a single content asset by ID.",
     operationId: "GetContentAsset",
     tags: ["Content"],

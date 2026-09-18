@@ -42,8 +42,9 @@ export class ListPreviousCalendarItemOccurrencesController {
 
   @Get("/meeting/:meetingId/previous")
   @ApiOperation({
-    summary: "Gets the next occurrence of a meeting in a series",
-    description: "Gets the next occurrence of a meeting in a series",
+    summary: "Lists previous occurrences of a meeting in a series",
+    description:
+      "Lists earlier occurrences of a recurring meeting, up to the requested limit.",
     operationId: "ListPreviousCalendarItemOccurrences",
     tags: ["Meetings"],
   })

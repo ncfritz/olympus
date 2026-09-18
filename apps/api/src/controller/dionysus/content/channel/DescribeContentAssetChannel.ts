@@ -26,8 +26,8 @@ export class DescribeContentAssetChannelController {
 
   @Get("/content/channel/:channelId")
   @ApiOperation({
-    summary: "Updates an existing content asset channel",
-    description: "Updates an existing content asset channel.",
+    summary: "Describes a content asset channel",
+    description: "Retrieves the details of a content asset channel.",
     operationId: "DescribeContentAssetChannel",
     tags: ["Content"],
   })

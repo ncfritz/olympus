@@ -11,8 +11,9 @@ export class PingController {
 
   @Get("/ping")
   @ApiOperation({
-    summary: "Ping",
-    description: "Ping",
+    summary: "Checks that the API is running",
+    description:
+      "Checks that the API is running and returns the hosts it is configured to use.",
     operationId: "Ping",
     tags: ["Admin"],
   })

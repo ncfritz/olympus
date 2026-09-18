@@ -38,8 +38,9 @@ export class VerifyMediaAssetTranscodeConfigurationController extends BaseMediaA
 
   @Put("/media/workflow/:workflowId/steps/:workflowStepId/verifyConfig")
   @ApiOperation({
-    summary: "Updates an existing media asset workflow step",
-    description: "Description",
+    summary: "Completes transcode verification for a media workflow",
+    description:
+      "Marks the transcode verification step as complete (or leaves it skipped) and publishes the transcode job.",
     operationId: "VerifyMediaAssetTranscodeConfiguration",
     tags: ["Content"],
   })

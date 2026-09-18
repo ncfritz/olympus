@@ -12,7 +12,7 @@ import {
   Res,
 } from "@nestjs/common";
 import {
-  ApiOkResponse,
+  ApiNoContentResponse,
   ApiOperation,
   ApiParam,
   ApiProduces,
@@ -51,8 +51,7 @@ export class DeleteMetadataFetchJobController {
     enum: MetadataJobType,
     enumName: "MetadataJobType",
   })
-  @ApiOkResponse({
-    type: DeleteMetadataFetchJobResponse,
+  @ApiNoContentResponse({
     description: "The record has been successfully deleted.",
   })
   @ApiStandardErrorResponses()

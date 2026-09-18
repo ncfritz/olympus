@@ -56,8 +56,7 @@ export class TriggerMediaAssetSearchController extends BaseMediaAssetSearchConfi
   @ApiOperation({
     summary: "Triggers an existing media search configuration",
     description:
-      "Triggers an existing media search configuration.  The search will be enqueued immediately for execution, " +
-      "ignoring any existing `nextExecutionTime` stamped on the search configuration",
+      "Triggers an existing media search configuration. The search is enqueued for execution immediately, ignoring any `nextExecutionTime` on the search configuration.",
     operationId: "TriggerMediaAssetSearch",
     tags: ["Media"],
   })
