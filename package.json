@@ -1,0 +1,29 @@
+{
+  "name": "olympus",
+  "private": true,
+  "description": "Olympus monorepo: API, model, SDK, site, agents and shared packages",
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "check:conventions": "turbo run check:conventions",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "gen": "turbo gen",
+    "clean": "turbo run clean && rm -rf node_modules .turbo"
+  },
+  "devDependencies": {
+    "@turbo/gen": "catalog:",
+    "prettier": "catalog:",
+    "turbo": "catalog:",
+    "typescript": "catalog:"
+  }
+}

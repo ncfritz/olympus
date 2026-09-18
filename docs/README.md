@@ -1,0 +1,9 @@
+# Olympus documentation
+
+| Section                                   | What's in it                                                                                                                                                                  |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [architecture/](architecture/overview.md) | How the pieces fit together: services, build graph, deployment                                                                                                                |
+| [conventions/](conventions/README.md)     | How code is written: general, model, API, agent, UX                                                                                                                           |
+| [decisions/](decisions/README.md)         | Architecture Decision Records: what was decided and why                                                                                                                       |
+| [guides/](guides/)                        | Step-by-step procedures: [repo import](guides/repo-import.md), [API operation generator](guides/api-operation-generator.md), [convention checks](guides/convention-checks.md) |
+| [roadmap.md](roadmap.md)                  | Phases, open decisions, known issues                                                                                                                                          |
