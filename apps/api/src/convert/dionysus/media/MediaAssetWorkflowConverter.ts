@@ -2,7 +2,7 @@ import {
   DecoratedMediaAssetWorkflow,
   MediaAssetWorkflow,
   MediaAssetWorkflowDecoration,
-  MediaAssetWorkflowStep
+  MediaAssetWorkflowStep,
 } from "@ncfritz/olympus-model";
 import moment from "moment";
 import {

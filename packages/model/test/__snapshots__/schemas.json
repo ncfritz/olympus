@@ -3014,7 +3014,7 @@
       "step": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/MediaAssetWorkflowStep"
+            "$ref": "#/components/schemas/DecoratedMediaAssetWorkflowStep"
           }
         ],
         "description": "The newly created workflow step"
@@ -3675,6 +3675,85 @@
     ],
     "type": "object"
   },
+  "DecoratedMediaAssetWorkflow": {
+    "properties": {
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the workflow was created.",
+        "type": "string"
+      },
+      "decoration": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MediaAssetWorkflowDecoration"
+          }
+        ],
+        "description": "Decoration details used for list items display"
+      },
+      "download": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MediaAssetDownload"
+          }
+        ],
+        "description": "The download that spawned the workflow.  The workflow will track the download's progress fromacquisition to transcode to final delivery to the media library"
+      },
+      "finishedTime": {
+        "description": "An ISO-8601 formatted string indicating when the workflow finished.",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the workflow",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the workflow was last updated.",
+        "type": "string"
+      },
+      "mediaId": {
+        "description": "The primary ID of the media asset search configuration.  This should be the canonical ID of the media sourceand should not include the season or episode IDs if requesting a TV Season or TV Episode.",
+        "type": "number"
+      },
+      "startedTime": {
+        "description": "An ISO-8601 formatted string indicating when the workflow was started.",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MediaAssetWorkflowStatus"
+          }
+        ],
+        "description": "The status of the workflow"
+      },
+      "steps": {
+        "description": "A list of the steps that have been performed, or are being performed, by the workflow",
+        "items": {
+          "$ref": "#/components/schemas/MediaAssetWorkflowStep"
+        },
+        "type": "array"
+      },
+      "type": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MediaAssetSearchType"
+          }
+        ],
+        "description": "The type of media asset"
+      }
+    },
+    "required": [
+      "createdTime",
+      "decoration",
+      "download",
+      "id",
+      "lastUpdatedTime",
+      "mediaId",
+      "status",
+      "steps",
+      "type"
+    ],
+    "type": "object"
+  },
   "DecoratedMediaAssetWorkflowStep": {
     "properties": {
       "assetType": {
@@ -3927,7 +4006,7 @@
       "step": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/MediaAssetWorkflowStep"
+            "$ref": "#/components/schemas/DecoratedMediaAssetWorkflowStep"
           }
         ],
         "description": "The workflow step"
@@ -6048,7 +6127,7 @@
       "workflows": {
         "description": "A list of workflows",
         "items": {
-          "$ref": "#/components/schemas/MediaAssetWorkflowListItem"
+          "$ref": "#/components/schemas/DecoratedMediaAssetWorkflow"
         },
         "type": "array"
       }
@@ -7291,85 +7370,6 @@
     },
     "required": [
       "name"
-    ],
-    "type": "object"
-  },
-  "MediaAssetWorkflowListItem": {
-    "properties": {
-      "createdTime": {
-        "description": "An ISO-8601 formatted string indicating when the workflow was created.",
-        "type": "string"
-      },
-      "decoration": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/MediaAssetWorkflowDecoration"
-          }
-        ],
-        "description": "Decoration details used for list items display"
-      },
-      "download": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/MediaAssetDownload"
-          }
-        ],
-        "description": "The download that spawned the workflow.  The workflow will track the download's progress fromacquisition to transcode to final delivery to the media library"
-      },
-      "finishedTime": {
-        "description": "An ISO-8601 formatted string indicating when the workflow finished.",
-        "type": "string"
-      },
-      "id": {
-        "description": "The unique ID of the workflow",
-        "type": "string"
-      },
-      "lastUpdatedTime": {
-        "description": "An ISO-8601 formatted string indicating when the workflow was last updated.",
-        "type": "string"
-      },
-      "mediaId": {
-        "description": "The primary ID of the media asset search configuration.  This should be the canonical ID of the media sourceand should not include the season or episode IDs if requesting a TV Season or TV Episode.",
-        "type": "number"
-      },
-      "startedTime": {
-        "description": "An ISO-8601 formatted string indicating when the workflow was started.",
-        "type": "string"
-      },
-      "status": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/MediaAssetWorkflowStatus"
-          }
-        ],
-        "description": "The status of the workflow"
-      },
-      "steps": {
-        "description": "A list of the steps that have been performed, or are being performed, by the workflow",
-        "items": {
-          "$ref": "#/components/schemas/MediaAssetWorkflowStep"
-        },
-        "type": "array"
-      },
-      "type": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/MediaAssetSearchType"
-          }
-        ],
-        "description": "The type of media asset"
-      }
-    },
-    "required": [
-      "createdTime",
-      "decoration",
-      "download",
-      "id",
-      "lastUpdatedTime",
-      "mediaId",
-      "status",
-      "steps",
-      "type"
     ],
     "type": "object"
   },
@@ -13349,7 +13349,7 @@
       "workflow": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/MediaAssetWorkflow"
+            "$ref": "#/components/schemas/DecoratedMediaAssetWorkflow"
           }
         ],
         "description": "The newly created workflow"
@@ -15595,7 +15595,7 @@
       "step": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/MediaAssetWorkflowStep"
+            "$ref": "#/components/schemas/DecoratedMediaAssetWorkflowStep"
           }
         ],
         "description": "The updated workflow step"

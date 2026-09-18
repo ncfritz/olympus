@@ -254,7 +254,7 @@ export class ApproveMediaAssetTranscodeConfigurationRequest {
 export class CreateMediaAssetWorkflowStepResponse {
   @ApiProperty({
     required: true,
-    type: () => MediaAssetWorkflowStep,
+    type: () => DecoratedMediaAssetWorkflowStep,
     description: "The newly created workflow step",
   })
   step: DecoratedMediaAssetWorkflowStep;
@@ -272,7 +272,7 @@ export class CreateMediaAssetWorkflowSubStepResponse {
 export class DescribeMediaAssetWorkflowStepResponse {
   @ApiProperty({
     required: true,
-    type: () => MediaAssetWorkflowStep,
+    type: () => DecoratedMediaAssetWorkflowStep,
     description: "The workflow step",
   })
   step: DecoratedMediaAssetWorkflowStep;
@@ -281,7 +281,7 @@ export class DescribeMediaAssetWorkflowStepResponse {
 export class UpdateMediaAssetWorkflowStepResponse {
   @ApiProperty({
     required: true,
-    type: () => MediaAssetWorkflowStep,
+    type: () => DecoratedMediaAssetWorkflowStep,
     description: "The updated workflow step",
   })
   step: DecoratedMediaAssetWorkflowStep;
