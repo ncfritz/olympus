@@ -16,7 +16,8 @@
     "test:update": "vitest run -u",
     "check:conventions": "vitest run test/api-property.spec.ts",
     "clean": "rm -rf dist",
-    "check:allow-update": "UPDATE_ALLOW_LIST=1 vitest run test/api-property.spec.ts"
+    "check:allow-update": "UPDATE_ALLOW_LIST=1 vitest run test/api-property.spec.ts",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@nestjs/common": "catalog:",
@@ -32,6 +33,7 @@
     "@ncfritz/olympus-config": "workspace:*",
     "@swc/core": "catalog:",
     "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:",

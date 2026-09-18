@@ -13,7 +13,8 @@
     "./eslint/node": "./eslint/node.js",
     "./eslint/react": "./eslint/react.js",
     "./vitest/nest": "./vitest/nest.js",
-    "./vitest/node": "./vitest/node.js"
+    "./vitest/node": "./vitest/node.js",
+    "./vitest/coverage": "./vitest/coverage.js"
   },
   "dependencies": {
     "@eslint/js": "catalog:",

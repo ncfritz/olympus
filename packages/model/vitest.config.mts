@@ -1,4 +1,5 @@
 import swc from "unplugin-swc";
+import { coverage } from "@ncfritz/olympus-config/vitest/coverage";
 import { defineConfig } from "vitest/config";
 
 // Same as @ncfritz/olympus-config/vitest/nest, except decorator metadata is
@@ -18,5 +19,6 @@ export default defineConfig({
   test: {
     include: ["test/**/*.spec.ts"],
     environment: "node",
+    coverage,
   },
 });

@@ -12859,6 +12859,7 @@
         "description": "Determines what type of chat notification is sent.  A Bot will be a direct conversation with an individual.A Channel will broadcast the message to all members of the channel."
       },
       "users": {
+        "default": [],
         "description": "The Synology Chat user ID associated with the logged in user.  This is not the username or email used to authenticate but is an internal identifier that needs to be determined by looking at network traffic.",
         "items": {
           "type": "number"

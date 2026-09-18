@@ -145,6 +145,7 @@ export class SynoChatDestination {
     type: Number,
     required: false,
     isArray: true,
+    default: [],
     description:
       "The Synology Chat user ID associated with the logged in user.  This is not the username or email used to " +
       "authenticate but is an internal identifier that needs to be determined by looking at network traffic.",
