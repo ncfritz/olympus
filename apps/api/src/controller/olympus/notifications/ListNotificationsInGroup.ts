@@ -31,7 +31,7 @@ type GraphQlListNotificationsInGroupResponse = {
 };
 
 @Controller({ version: "1" })
-export class ListNotificationInGroupController {
+export class ListNotificationsInGroupController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/notifications/group/:groupId/notifications")

@@ -3,7 +3,7 @@ import { CreateBatchJobController } from "../controller/dionysus/job/batch/Creat
 import { CreateRedriveJobController } from "../controller/dionysus/job/batch/CreateRedriveJob";
 import { DeleteBatchJobController } from "../controller/dionysus/job/batch/DeleteBatchJob";
 import { DescribeBatchJobController } from "../controller/dionysus/job/batch/DescribeBatchJob";
-import { GetBatchJobStatisticsController } from "../controller/dionysus/job/batch/GetBatchJobStatistics";
+import { GetBatchJobStatsController } from "../controller/dionysus/job/batch/GetBatchJobStats";
 import { GetBatchJobStatsByTypeController } from "../controller/dionysus/job/batch/GetBatchJobStatsByType";
 import { ListBatchJobsController } from "../controller/dionysus/job/batch/ListBatchJobs";
 import { ListBatchJobsByTypeController } from "../controller/dionysus/job/batch/ListBatchJobsByType";
@@ -20,7 +20,7 @@ import { RabbitModule } from "./RabbitModule";
     CreateRedriveJobController,
     DeleteBatchJobController,
     DescribeBatchJobController,
-    GetBatchJobStatisticsController,
+    GetBatchJobStatsController,
     GetBatchJobStatsByTypeController,
     ListBatchJobsController,
     ListBatchJobsByTypeController,

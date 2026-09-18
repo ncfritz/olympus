@@ -6,7 +6,7 @@ import { DescribeMetadataWorkflowStepController } from "../controller/dionysus/w
 import { GetMetadataWorkflowStatisticsController } from "../controller/dionysus/workflow/GetMetadataWorkflowStatistics";
 import { ListMetadataWorkflowsController } from "../controller/dionysus/workflow/ListMetadataWorkflows";
 import { ListMetadataWorkflowStepsController } from "../controller/dionysus/workflow/ListMetadataWorkflowSteps";
-import { UpdateWorkflowController } from "../controller/dionysus/workflow/UpdateMetadataWorkflow";
+import { UpdateMetadataWorkflowController } from "../controller/dionysus/workflow/UpdateMetadataWorkflow";
 import { GraphQLClientModule } from "./GraphQLClientModule";
 import { RabbitModule } from "./RabbitModule";
 
@@ -22,7 +22,7 @@ import { RabbitModule } from "./RabbitModule";
     DescribeMetadataWorkflowStepController,
     ListMetadataWorkflowsController,
     ListMetadataWorkflowStepsController,
-    UpdateWorkflowController,
+    UpdateMetadataWorkflowController,
   ],
 })
 export class WorkflowApiModule {}

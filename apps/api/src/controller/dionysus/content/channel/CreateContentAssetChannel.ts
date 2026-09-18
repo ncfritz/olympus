@@ -24,7 +24,7 @@ export type GraphQlMutateContentAssetChannelResponse = {
 };
 
 @Controller({ version: "1" })
-export class CreatContentAssetChannelController extends BaseContentAssetChannelController {
+export class CreateContentAssetChannelController extends BaseContentAssetChannelController {
   constructor(protected readonly graphQLClient: GraphQLClient) {
     super(graphQLClient);
   }

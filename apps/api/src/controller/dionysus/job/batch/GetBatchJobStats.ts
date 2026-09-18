@@ -31,7 +31,7 @@ type GraphQlBatchJobStatisticsResponse = {
 };
 
 @Controller({ version: "1" })
-export class GetBatchJobStatisticsController {
+export class GetBatchJobStatsController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/jobs/batch/stats")

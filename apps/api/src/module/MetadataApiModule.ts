@@ -40,9 +40,9 @@ import { ListNetworksController } from "../controller/dionysus/metadata/network/
 import { ListNetworkTvSeriesController } from "../controller/dionysus/metadata/network/ListNetworkTvSeries";
 import { CreatePersonController } from "../controller/dionysus/metadata/person/CreatePerson";
 import { DescribePersonController } from "../controller/dionysus/metadata/person/DescribePerson";
-import { GetPeopleBirthdayStatisticsController } from "../controller/dionysus/metadata/person/GetPersonBirthdayStatistics";
-import { GetPeopleDeathdayStatisticsController } from "../controller/dionysus/metadata/person/GetPersonDeathdayStatistics";
-import { GetPeopleDepartmentStatisticsController } from "../controller/dionysus/metadata/person/GetPersonDepartmentStatistics";
+import { GetPeopleBirthdayStatisticsController } from "../controller/dionysus/metadata/person/GetPeopleBirthdayStatistics";
+import { GetPeopleDeathdayStatisticsController } from "../controller/dionysus/metadata/person/GetPeopleDeathdayStatistics";
+import { GetPeopleDepartmentStatisticsController } from "../controller/dionysus/metadata/person/GetPeopleDepartmentStatistics";
 import { ListMovieCastRolesForPersonController } from "../controller/dionysus/metadata/person/ListMovieCastRolesForPerson";
 import { ListMovieCrewJobsForPersonController } from "../controller/dionysus/metadata/person/ListMovieCrewJobsForPerson";
 import { ListPeopleController } from "../controller/dionysus/metadata/person/ListPeople";
@@ -51,8 +51,8 @@ import { DescribeProductionCompanyController } from "../controller/dionysus/meta
 import { ListProductionCompaniesController } from "../controller/dionysus/metadata/productionCompany/ListProductionCompanies";
 import { ListProductionCompanyMoviesController } from "../controller/dionysus/metadata/productionCompany/ListProductionCompanyMovies";
 import { ListProductionCompanyTvSeriesController } from "../controller/dionysus/metadata/productionCompany/ListProductionCompanyTvSeries";
-import { CreateTVEpisodeController } from "../controller/dionysus/metadata/tv/CreateTVEpisode";
-import { CreateTVSeasonController } from "../controller/dionysus/metadata/tv/CreateTVSeason";
+import { CreateTVSeriesEpisodeController } from "../controller/dionysus/metadata/tv/CreateTVSeriesEpisode";
+import { CreateTVSeriesSeasonController } from "../controller/dionysus/metadata/tv/CreateTVSeriesSeason";
 import { CreateTVSeriesController } from "../controller/dionysus/metadata/tv/CreateTVSeries";
 import { DescribeTvEpisodeController } from "../controller/dionysus/metadata/tv/DescribeTvEpisode";
 import { DescribeTvSeasonController } from "../controller/dionysus/metadata/tv/DescribeTvSeason";
@@ -91,8 +91,8 @@ import { RabbitModule } from "./RabbitModule";
     CreateMovieController,
     CreatePersonController,
     CreateProductionCompanyController,
-    CreateTVEpisodeController,
-    CreateTVSeasonController,
+    CreateTVSeriesEpisodeController,
+    CreateTVSeriesSeasonController,
     CreateTVSeriesController,
     DescribeCollectionController,
     DeleteMetadataFetchJobController,

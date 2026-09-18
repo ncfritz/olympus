@@ -23,7 +23,7 @@ import moment from "moment";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 @Controller({ version: "1" })
-export class DeleteMediaWorkflowController {
+export class DeleteMediaAssetWorkflowController {
   constructor(
     private readonly graphQLClient: GraphQLClient,
     protected readonly amqpConnection: AmqpConnection,

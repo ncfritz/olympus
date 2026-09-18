@@ -6,7 +6,7 @@ import { GetUnreadNotificationCountController } from "../controller/olympus/noti
 import { ListNotificationGroupsController } from "../controller/olympus/notifications/ListNotificationGroups";
 import { ListNotificationsController } from "../controller/olympus/notifications/ListNotifications";
 import { ListNotificationSettingsController } from "../controller/olympus/notifications/ListNotificationSettings";
-import { ListNotificationInGroupController } from "../controller/olympus/notifications/ListNotificationsInGroup";
+import { ListNotificationsInGroupController } from "../controller/olympus/notifications/ListNotificationsInGroup";
 import { ListNotificationTypesController } from "../controller/olympus/notifications/ListNotificationTypes";
 import { SendNotificationController } from "../controller/olympus/notifications/SendNotification";
 import { UpdateNotificationSettingController } from "../controller/olympus/notifications/UpdateNotificationSetting";
@@ -24,7 +24,7 @@ import { WebSocketModule } from "./WebSocketModule";
     DeleteNotificationController,
     GetUnreadNotificationCountController,
     ListNotificationsController,
-    ListNotificationInGroupController,
+    ListNotificationsInGroupController,
     ListNotificationGroupsController,
     ListNotificationSettingsController,
     ListNotificationTypesController,

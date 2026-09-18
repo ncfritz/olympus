@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { CreatContentAssetChannelController } from "../controller/dionysus/content/channel/CreateContentAssetChannel";
-import { CreatContentAssetChannelCategoryController } from "../controller/dionysus/content/channel/CreateContentAssetChannelCategory";
+import { CreateContentAssetChannelController } from "../controller/dionysus/content/channel/CreateContentAssetChannel";
+import { CreateContentAssetChannelCategoryController } from "../controller/dionysus/content/channel/CreateContentAssetChannelCategory";
 import { DeleteContentAssetChannelController } from "../controller/dionysus/content/channel/DeleteContentAssetChannel";
 import { DescribeContentAssetChannelController } from "../controller/dionysus/content/channel/DescribeContentAssetChannel";
 import { DescribeContentAssetChannelCategoryController } from "../controller/dionysus/content/channel/DescribeContentAssetChannelCategory";
@@ -12,12 +12,12 @@ import { RefreshContentAssetChannelController } from "../controller/dionysus/con
 import { UpdateContentAssetChannelController } from "../controller/dionysus/content/channel/UpdateContentAssetChannel";
 import { UpdateContentAssetChannelCategoryController } from "../controller/dionysus/content/channel/UpdateContentAssetChannelCategory";
 import { AddContentAssetTagToAssetController } from "../controller/dionysus/content/tags/AddContentAssetTagToAsset";
-import { CheckAuthController } from "../controller/dionysus/content/auth/CheckAuthController";
+import { CheckAuthorizationController } from "../controller/dionysus/content/auth/CheckAuthorization";
 import { CreateContentAssetController } from "../controller/dionysus/content/CreateContentAsset";
 import { CreateContentAssetTagController } from "../controller/dionysus/content/tags/CreateContentAssetTag";
 import { CreateContentJobController } from "../controller/dionysus/content/CreateContentJob";
 import { DeleteContentAssetTagFromAssetController } from "../controller/dionysus/content/tags/DeleteContentAssetTagFromAsset";
-import { GenerateAuthKeyController } from "../controller/dionysus/content/GenerateAuthKeyController";
+import { GenerateAuthKeyController } from "../controller/dionysus/content/GenerateAuthKey";
 import { GetContentAssetController } from "../controller/dionysus/content/GetContentAsset";
 import { GetContentAssetAggregateStatisticsController } from "../controller/dionysus/content/GetContentAssetAggregateStatistics";
 import { GetContentAssetDurationStatisticsController } from "../controller/dionysus/content/GetContentAssetDurationStatistics";
@@ -39,7 +39,7 @@ import { ListContentIngestionWorkflowsController } from "../controller/dionysus/
 import { UpdateContentIngestionWorkflowController } from "../controller/dionysus/content/workflow/UpdateContentIngestionWorkflow";
 import { UpdateContentIngestionWorkflowStepController } from "../controller/dionysus/content/workflow/UpdateContentIngestionWorkflowStep";
 import { UploadAssetsController } from "../controller/dionysus/content/workflow/UploadAssets";
-import { VerifyAuthCodeController } from "../controller/dionysus/content/auth/VerifyAuthCodeController";
+import { VerifyAuthCodeController } from "../controller/dionysus/content/auth/VerifyAuthCode";
 
 import { GraphQLClientModule } from "./GraphQLClientModule";
 import { RabbitModule } from "./RabbitModule";
@@ -55,10 +55,10 @@ import { RabbitModule } from "./RabbitModule";
     UpdateContentAssetChannelCategoryController,
     FavoriteContentAssetChannelController,
     DescribeContentAssetChannelCategoryController,
-    CheckAuthController,
+    CheckAuthorizationController,
     CreateContentAssetController,
-    CreatContentAssetChannelController,
-    CreatContentAssetChannelCategoryController,
+    CreateContentAssetChannelController,
+    CreateContentAssetChannelCategoryController,
     CreateContentAssetTagController,
     CreateContentIngestionWorkflowController,
     CreateContentIngestionWorkflowStepController,

@@ -4,7 +4,7 @@ import { CreateNoteController } from "../controller/minerva/notes/CreateNote";
 import { DeleteNoteController } from "../controller/minerva/notes/DeleteNote";
 import { DescribeNoteController } from "../controller/minerva/notes/DescribeNote";
 import { GetNotesForEntityController } from "../controller/minerva/notes/GetNotesForEntity";
-import { GetMonthlySummaryController } from "../controller/minerva/notes/GetNotesSummary";
+import { GetNotesSummaryController } from "../controller/minerva/notes/GetNotesSummary";
 import { ListChildNotesController } from "../controller/minerva/notes/ListChildNotes";
 import { ListNotesForDayController } from "../controller/minerva/notes/ListNotesForDay";
 import { RestoreNoteController } from "../controller/minerva/notes/RestoreNote";
@@ -24,7 +24,7 @@ import { GraphQLClientModule } from "./GraphQLClientModule";
     RestoreNoteController,
     ListChildNotesController,
     ListNotesForDayController,
-    GetMonthlySummaryController,
+    GetNotesSummaryController,
     GetNotesForEntityController,
   ],
 })

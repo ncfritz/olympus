@@ -31,7 +31,7 @@ type GraphQlUpdateMetadataWorkflowResponse = {
 };
 
 @Controller({ version: "1" })
-export class UpdateWorkflowController {
+export class UpdateMetadataWorkflowController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/workflow/:workflowId")

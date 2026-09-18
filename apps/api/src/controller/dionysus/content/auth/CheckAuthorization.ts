@@ -17,7 +17,7 @@ type FetchJwtQueryResponse = {
 };
 
 @Controller({ version: "1" })
-export class CheckAuthController {
+export class CheckAuthorizationController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Get("/content/auth/status")

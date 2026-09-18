@@ -22,7 +22,7 @@ type GraphQlCreateContentAssetChannelCategoryResponse = {
 };
 
 @Controller({ version: "1" })
-export class CreatContentAssetChannelCategoryController {
+export class CreateContentAssetChannelCategoryController {
   constructor(protected readonly graphQLClient: GraphQLClient) {}
 
   @Post("/content/channels/categories")

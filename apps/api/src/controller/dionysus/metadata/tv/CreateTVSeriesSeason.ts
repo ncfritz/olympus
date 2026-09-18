@@ -25,7 +25,7 @@ type GraphQlCreateTVSeasonResponse = {
 };
 
 @Controller({ version: "1" })
-export class CreateTVSeasonController {
+export class CreateTVSeriesSeasonController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
   @Put("/metadata/tvSeries/:seriesId/seasons")
