@@ -163,10 +163,13 @@ decorators until that decision is made (tracked in the roadmap).
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `test/schemas.spec.ts`      | Snapshot of the OpenAPI schema of every exported class. A refactor must leave it unchanged; a contract change updates it and the diff shows what the SDK will see. |
 | `test/enums.spec.ts`        | Snapshot of every enum's values (persisted in Hasura, sent over RabbitMQ).                                                                                         |
+| `test/decorators.spec.ts`   | `@ApiTimestamp` serialization.                                                                                                                                     |
+| `test/defaults.spec.ts`     | Property initializers match the documented `default`.                                                                                                              |
 | `test/api-property.spec.ts` | The decorator/type rules above (`pnpm check:conventions`). Exceptions live in `test/api-property.allow.json` and may only shrink.                                  |
 
 ```sh
 pnpm --filter @ncfritz/olympus-model test          # all of the above
+pnpm --filter @ncfritz/olympus-model test:coverage # plus coverage; open coverage/index.html
 pnpm --filter @ncfritz/olympus-model test:update   # accept a snapshot change (review the diff)
 pnpm --filter @ncfritz/olympus-model check:allow-update  # rewrite the allow-list (review the diff)
 ```

@@ -72,6 +72,10 @@ workflows, jobs), **Minerva** (personal productivity: notes, meetings).
 - Vitest, with the presets from `@ncfritz/olympus-config/vitest/*`.
   Import `describe`, `it`, `expect` and `vi` from `"vitest"` explicitly;
   test globals are off.
+- Coverage: `pnpm test:coverage` at the root (or per package) writes
+  `coverage/index.html` (HTML), `lcov.info` and `coverage-summary.json` in
+  each package. Settings are shared in
+  `@ncfritz/olympus-config/vitest/coverage`.
 - See ADR 0010 for which kinds of tests to write first.
 
 ## Documentation
