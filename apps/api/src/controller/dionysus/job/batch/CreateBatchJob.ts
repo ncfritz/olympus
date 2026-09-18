@@ -61,7 +61,10 @@ export class CreateBatchJobController extends BaseCreateBatchJobController<Creat
     await this.processRequest(request, response);
   }
 
-  protected buildMessage(request: CreateBatchJobRequest, job: BatchJob): any {
+  protected buildMessage(
+    request: CreateBatchJobRequest,
+    job: BatchJob,
+  ): Record<string, unknown> {
     return {
       jobType: job.type,
       jobId: job.id,

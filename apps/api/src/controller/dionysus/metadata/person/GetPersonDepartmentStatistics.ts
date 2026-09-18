@@ -77,7 +77,7 @@ export class GetPeopleDepartmentStatisticsController {
 
     departmentStats.unshift({
       department: "Acting",
-      count: unknownCount,
+      count: actingCount,
     });
 
     const responseBody: GetPersonDepartmentStaticsResponse = {

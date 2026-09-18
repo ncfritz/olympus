@@ -23,23 +23,23 @@ export class NotificationsGateway
   @WebSocketServer()
   server: Server;
 
-  handleConnection(client: any, ...args: any[]): any {
+  handleConnection(client: Socket): void {
     client.emit("message", "Welcome to the server!");
     logger.info(`Client connected...${client.id}`);
   }
 
-  afterInit(server: Server): any {
+  afterInit(_server: Server): void {
     logger.info("Init complete...");
   }
 
-  handleDisconnect(client: any): any {
+  handleDisconnect(client: Socket): void {
     logger.info(`Client disconnect...${client.id}`);
   }
 
   @SubscribeMessage("notification.proxy_to_frontend")
   handleProxyNotificationEvent(
     @MessageBody() data: string,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() _client: Socket,
   ): void {
     this.send("notification.push", data);
   }
@@ -47,12 +47,12 @@ export class NotificationsGateway
   @SubscribeMessage("notification.client_refresh")
   handleClientRefreshEvent(
     @MessageBody() data: string,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() _client: Socket,
   ): void {
     this.send("notification.refresh", data);
   }
 
-  send(messageName: string, message: any) {
+  send(messageName: string, message: unknown) {
     logger.debug(`Sending "${messageName}" message via WebSocketGateway`);
 
     this.server.emit(messageName, message);

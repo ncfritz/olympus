@@ -26,6 +26,16 @@ export default [
       globals: { ...globals.browser, ...globals.node },
     },
     rules: {
+      // A leading underscore marks an intentionally unused name
+      // (interface-mandated parameters, bound-but-unused decorators).
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
       "no-restricted-syntax": [
         "warn",
         {

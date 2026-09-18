@@ -72,13 +72,14 @@ export class BulkUpdateMediaAssetDownloadsController {
       }
     `;
 
-    const updateResponse = await this.graphQLClient.request(updateRequest);
+    const updateResponse =
+      await this.graphQLClient.request<
+        Record<string, { returning: GraphQlMediaAssetDownload[] }>
+      >(updateRequest);
     const appliedUpdates: MediaAssetDownload[] = [];
 
-    Object.values(updateResponse).forEach((update: any) => {
-      appliedUpdates.push(
-        toDomainObject(update.returning[0] as GraphQlMediaAssetDownload),
-      );
+    Object.values(updateResponse).forEach((update) => {
+      appliedUpdates.push(toDomainObject(update.returning[0]));
     });
 
     const responseBody: BulkUpdateMediaAssetDownloadsResponse = {

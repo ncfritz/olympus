@@ -61,7 +61,10 @@ export class CreateRedriveJobController extends BaseCreateBatchJobController<Cre
     await this.processRequest(request, response);
   }
 
-  protected buildMessage(request: CreateRedriveJobRequest, job: BatchJob): any {
+  protected buildMessage(
+    request: CreateRedriveJobRequest,
+    job: BatchJob,
+  ): Record<string, unknown> {
     return {
       jobId: job.id,
       jobType: request.metadataType,
@@ -72,12 +75,12 @@ export class CreateRedriveJobController extends BaseCreateBatchJobController<Cre
     };
   }
 
-  protected getJobType(request: CreateRedriveJobRequest): JobType {
+  protected getJobType(_request: CreateRedriveJobRequest): JobType {
     return JobType.REDRIVE;
   }
 
   protected shouldPublishMessage(
-    request: CreateRedriveJobRequest,
+    _request: CreateRedriveJobRequest,
   ): boolean | undefined {
     return true;
   }

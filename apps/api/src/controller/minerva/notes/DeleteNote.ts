@@ -77,7 +77,7 @@ export class DeleteNoteController {
     @Param("noteId") noteId: string,
     @Res() response: Response,
   ): Promise<void> {
-    let responseCode = HttpStatus.NOT_MODIFIED;
+    let responseCode: HttpStatus;
     let note: Note;
 
     const getDeletedTimeRequest = gql`

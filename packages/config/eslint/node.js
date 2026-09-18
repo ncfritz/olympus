@@ -13,6 +13,18 @@ export default [
   eslintPluginPrettierRecommended,
   {
     files: ["**/*.{js,mjs,cjs,ts}"],
+    rules: {
+      // A leading underscore marks an intentionally unused name
+      // (interface-mandated parameters, bound-but-unused decorators).
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
     languageOptions: {
       globals: { ...globals.node },
     },

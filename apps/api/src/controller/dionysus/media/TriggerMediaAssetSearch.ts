@@ -135,7 +135,7 @@ export class TriggerMediaAssetSearchController extends BaseMediaAssetSearchConfi
       await this.updateChildSearchConfigurations(fetchedSearchConfiguration);
     }
 
-    const msg: any = {
+    const msg: Record<string, unknown> = {
       mediaId: updatedSearchConfiguration.mediaId,
       propagateImmediately: true,
       initiatingAsset: {

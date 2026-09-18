@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
+import { Module } from "@nestjs/common";
 import { RouterModule } from "@nestjs/core";
 import { ReporterModule } from "nestjs-metrics-reporter";
 import {
@@ -62,6 +62,4 @@ import { appName } from "../utils/logger";
   providers: [],
   controllers: [],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {}
-}
+export class AppModule {}

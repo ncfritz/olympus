@@ -160,14 +160,10 @@ export class AddContentAssetTagToAssetController {
         }
       `;
 
-      const insertResponse =
-        await this.graphQLClient.request<InputQueryResponse>(insertQuery, {
-          content_id: assetId,
-          ...findTagsQueryInput,
-        });
-
-      tagId =
-        insertResponse.insert_dionysus_content_tags.returning[0].content_tag_id;
+      await this.graphQLClient.request<InputQueryResponse>(insertQuery, {
+        content_id: assetId,
+        ...findTagsQueryInput,
+      });
     }
 
     response.status(status).send({});

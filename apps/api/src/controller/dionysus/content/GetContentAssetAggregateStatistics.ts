@@ -58,7 +58,7 @@ export class GetContentAssetAggregateStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Headers("x-dionysus-content-bc") blackCurtain: string = "true",
+    @Headers("x-dionysus-content-bc") _blackCurtain: string = "true",
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`

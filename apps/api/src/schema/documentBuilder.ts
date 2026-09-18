@@ -1,4 +1,4 @@
-import { INestApplication } from "@nestjs/common";
+import { INestApplication, Type } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 
 export type OpenApiDocumentConfig = {
@@ -6,7 +6,7 @@ export type OpenApiDocumentConfig = {
   description?: string;
   route: string;
   title?: string;
-  modules: any[];
+  modules: Type<unknown>[];
 };
 
 export const buildOpenApiDocument = (

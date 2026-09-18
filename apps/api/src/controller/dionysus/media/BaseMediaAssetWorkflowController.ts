@@ -146,7 +146,7 @@ export class BaseMediaAssetWorkflowController {
     let workflowUpdateParamsFragment = "";
     let workflowUpdateFragment = "";
 
-    const requestParams: Record<string, any> = {
+    const requestParams: Record<string, unknown> = {
       id: workflowStepId,
       workflowId: workflowId,
       changes: update,

@@ -28,7 +28,10 @@ export abstract class BaseCreateBatchJobController<I> {
 
   protected abstract getJobType(request: I): JobType;
   protected abstract shouldPublishMessage(request: I): boolean | undefined;
-  protected abstract buildMessage(request: I, job: BatchJob): any;
+  protected abstract buildMessage(
+    request: I,
+    job: BatchJob,
+  ): Record<string, unknown>;
 
   async processRequest(
     @Body() request: I,
