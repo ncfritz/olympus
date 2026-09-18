@@ -1,6 +1,6 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import { FilterDefinition } from "../../filter";
 
@@ -21,22 +21,18 @@ export class ContentAssetChannelCategory extends BaseContentAssetChannelCategory
   })
   id: string;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the category was created.",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the category was last updated.",
   })
-  @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
   @ApiProperty({
@@ -72,13 +68,11 @@ export class BaseContentAssetCacheEntry {
 }
 
 export class ContentAssetChannelCacheEntry extends BaseContentAssetCacheEntry {
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the asset association was cached.",
   })
-  @Transform(({ value }) => value.toISOString())
   lastFetchedTime: Moment;
 }
 
@@ -155,13 +149,11 @@ export class ContentAssetChannel extends OmitType(BaseContentAssetChannel, [
   })
   encodedFilter: string;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the channel was created.",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
   @ApiProperty({
@@ -185,22 +177,18 @@ export class ContentAssetChannel extends OmitType(BaseContentAssetChannel, [
   })
   assetCount: number;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the channel's asset cache was last updated.",
   })
-  @Transform(({ value }) => value.toISOString())
   lastFetchedTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the channel was last updated.",
   })
-  @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
   @ApiProperty({

@@ -1,6 +1,6 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 import { MediaAssetSearchType } from "./searchConfiguration";
 
 export class BaseMediaAsset {
@@ -73,22 +73,18 @@ export class BaseMediaAsset {
 }
 
 export class MediaAsset extends BaseMediaAsset {
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the asset was created",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the asset was last updated",
   })
-  @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 

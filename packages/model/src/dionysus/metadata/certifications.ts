@@ -1,6 +1,7 @@
+import { AUDIT_FIELDS } from "../../common";
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import { Language } from "./languages";
 
@@ -29,30 +30,25 @@ export class Certification {
   @ApiProperty({ required: true, type: String })
   meaning: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialCertification extends OmitType(Certification, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
 ]) {}
 
 export class CertificationAssociation {
   @ApiProperty({ required: true, type: Language })
   certification: Certification;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 

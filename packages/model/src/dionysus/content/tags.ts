@@ -1,6 +1,6 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 
 export enum ContentTagType {
   SOURCE = "source",
@@ -31,13 +31,11 @@ export class ContentAssetTag extends BaseContentAssetTag {
   })
   id: string;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the tag was created",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 }
 

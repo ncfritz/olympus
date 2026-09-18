@@ -1,3 +1,4 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import moment, { Moment } from "moment";
@@ -50,16 +51,13 @@ export class MetadataFetchJob {
   })
   status: MetadataFetchJobStatus;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 
-  @ApiProperty({ required: false, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: false })
   lastFetchedTime?: Moment;
 
   @ApiProperty({ required: true, type: Number })

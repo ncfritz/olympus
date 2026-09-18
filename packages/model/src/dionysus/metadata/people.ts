@@ -1,6 +1,7 @@
+import { AUDIT_FIELDS } from "../../common";
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import {
   BaseImage,
@@ -38,15 +39,13 @@ export class BasePerson {
   @ApiProperty({ required: true, type: Boolean })
   adult: boolean;
 
-  @ApiProperty({ type: String, required: false })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  @ApiTimestamp({ required: false })
   birthday?: Moment;
 
   @ApiProperty({ required: false, type: String })
   birthplace?: string;
 
-  @ApiProperty({ type: String, required: false })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  @ApiTimestamp({ required: false })
   deathday?: Moment;
 
   @ApiProperty({ required: true, enum: () => Gender, enumName: "Gender" })
@@ -67,12 +66,10 @@ export class BasePerson {
   @ApiProperty({ required: true, type: Number })
   popularity: number;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
@@ -98,10 +95,7 @@ export class Person extends BasePerson {
   images: BaseImage[];
 }
 
-export class PartialPerson extends OmitType(BasePerson, [
-  "createdTime",
-  "lastUpdatedTime",
-]) {
+export class PartialPerson extends OmitType(BasePerson, [...AUDIT_FIELDS]) {
   @ApiProperty({ required: true, type: String })
   biography: string;
 
@@ -127,18 +121,15 @@ export class PersonAlsoKnownAs {
   @ApiProperty({ required: true, type: String })
   name: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialPersonAlsoKnownAs extends OmitType(PersonAlsoKnownAs, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
 ]) {}
 
 export class PersonMovieCastCredit {
@@ -236,12 +227,10 @@ export class PersonAssociation {
   @ApiProperty({ required: true, type: () => BasePerson })
   person: BasePerson;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
@@ -262,8 +251,7 @@ export class PersonDepartmentStatistic {
 }
 
 export class PartialPersonAssociation extends OmitType(PersonAssociation, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "person",
 ]) {
   @ApiProperty({ required: true, type: Number })

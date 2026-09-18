@@ -1,11 +1,11 @@
+import { ApiTimestamp } from "../decorators";
 import {
   ApiExtraModels,
   ApiProperty,
   getSchemaPath,
   OmitType,
 } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../common";
 
 export enum WebSocketNotificationLevel {
@@ -293,13 +293,11 @@ export class Notification {
   })
   notificationId: string;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the event occurred",
   })
-  @Transform(({ value }) => value.toISOString())
   eventTime: Moment;
 
   @ApiProperty({
@@ -325,13 +323,11 @@ export class Notification {
   })
   acknowledged: boolean;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: false,
     description:
       "If the notification has been acknowledged, the timestamp when it was acknowledged",
   })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
   acknowledgedTime?: Moment;
 
   @ApiProperty({
@@ -341,31 +337,25 @@ export class Notification {
   })
   notificationGroup?: NotificationGroup;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: false,
     description:
       "An ISO-8601 formatted string indicating when the notification will expire.",
   })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
   expirationTime?: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: false,
     description:
       "An ISO-8601 formatted string indicating when the notification will be eligible for deletion.",
   })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
   deletionTime?: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the notification was created.",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
   @ApiProperty({
@@ -441,13 +431,11 @@ export class NotificationType {
   })
   defaultGroup?: NotificationGroup;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the notification type was created.",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 }
 
@@ -562,22 +550,18 @@ export class NotificationSetting {
   })
   emailEnabled: boolean;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the notification setting was created.",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: false,
     description:
       "An ISO-8601 formatted string indicating when the notification setting was last updated.",
   })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
   lastUpdatedTime?: Moment;
 }
 
@@ -610,13 +594,11 @@ export class NotificationGroup {
   })
   description: string;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the notification group was created.",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
   @ApiProperty({
@@ -686,13 +668,11 @@ export class SendNotificationRequest {
   })
   type: string;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: false,
     description:
       "An ISO-8601 formatted string indicating when a message should expire and subsequently be dropped from delivery.",
   })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
   expirationTime?: Moment;
 
   @ApiProperty({

@@ -1,6 +1,6 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 import { BatchJob, JobType } from "../jobs";
 
 export enum WorkflowStepType {
@@ -24,22 +24,18 @@ export class WorkflowStep {
   })
   type: WorkflowStepType;
 
-  @ApiProperty({
+  @ApiTimestamp({
     required: true,
-    type: String,
     description:
       "An ISO-8601 formatted string indicating when the workflow step was created.",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({
+  @ApiTimestamp({
     required: true,
-    type: String,
     description:
       "An ISO-8601 formatted string indicating when the workflow step was last updated.",
   })
-  @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
   @ApiProperty({

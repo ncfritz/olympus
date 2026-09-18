@@ -1,6 +1,7 @@
+import { AUDIT_FIELDS } from "../../common";
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import {
   AlternativeName,
@@ -33,12 +34,10 @@ export class BaseProductionCompany {
 }
 
 export class SparseProductionCompany extends BaseProductionCompany {
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 
   @ApiProperty({
@@ -106,18 +105,16 @@ export class ProductionCompanyAssociation {
   @ApiProperty({ required: true, type: SparseProductionCompany })
   productionCompany: SparseProductionCompany;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialProductionCompanyAssociation extends OmitType(
   ProductionCompanyAssociation,
-  ["createdTime", "lastUpdatedTime", "productionCompany"],
+  [...AUDIT_FIELDS, "productionCompany"],
 ) {
   @ApiProperty({ required: true, type: Number })
   productionCompanyId: number;

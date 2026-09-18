@@ -1,6 +1,6 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import { WorkflowStep } from "./workflowStep";
 
@@ -20,40 +20,32 @@ export class Workflow {
   })
   id: string;
 
-  @ApiProperty({
+  @ApiTimestamp({
     required: true,
-    type: String,
     description:
       "An ISO-8601 formatted string indicating when the workflow was created.",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({
+  @ApiTimestamp({
     required: true,
-    type: String,
     description:
       "An ISO-8601 formatted string indicating when the workflow was last updated.",
   })
-  @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
+    required: false,
     description:
       "An ISO-8601 formatted string indicating when the workflow was started.",
-    required: false,
   })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
   startedTime?: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
+    required: false,
     description:
       "An ISO-8601 formatted string indicating when the workflow finished.",
-    required: false,
   })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
   finishedTime?: Moment;
 
   @ApiProperty({

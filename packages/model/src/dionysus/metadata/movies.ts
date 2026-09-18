@@ -1,6 +1,7 @@
+import { AUDIT_FIELDS } from "../../common";
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import {
   MediaAsset,
@@ -72,8 +73,7 @@ export class BaseMovie {
   @ApiProperty({ type: String, required: false })
   posterPath?: string;
 
-  @ApiProperty({ type: String, required: false })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  @ApiTimestamp({ required: false })
   releaseDate?: Moment;
 
   @ApiProperty({ required: true, type: Number })
@@ -108,12 +108,10 @@ export class SparseMovie extends BaseMovie {
   @ApiProperty({ type: () => MediaAsset, required: false })
   asset?: MediaAsset;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 
   @ApiProperty({
@@ -326,12 +324,10 @@ export class SparseMovieCastMember {
   @ApiProperty({ required: true, type: String })
   character: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
@@ -341,8 +337,7 @@ export class MovieCastMember extends SparseMovieCastMember {
 }
 
 export class PartialMovieCastMember extends OmitType(MovieCastMember, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "person",
 ]) {
   @ApiProperty({ required: true, type: Number })
@@ -362,12 +357,10 @@ export class SparseMovieCrewMember {
   @ApiProperty({ required: true, type: String })
   job: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
@@ -377,8 +370,7 @@ export class MovieCrewMember extends SparseMovieCrewMember {
 }
 
 export class PartialMovieCrewMember extends OmitType(MovieCrewMember, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "person",
 ]) {
   @ApiProperty({ required: true, type: Number })
@@ -392,8 +384,7 @@ export class MovieReleaseDate {
   @ApiProperty({ required: false, type: Language })
   language?: Language;
 
-  @ApiProperty({ required: false, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: false })
   releaseDate?: Moment;
 
   @ApiProperty({ required: true, type: Number })
@@ -405,18 +396,15 @@ export class MovieReleaseDate {
   @ApiProperty({ required: false, type: Certification })
   certification?: Certification;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialMovieReleaseDate extends OmitType(MovieReleaseDate, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "country",
   "language",
   "certification",
@@ -438,12 +426,10 @@ export class MovieRecommendation {
   })
   movie: SparseMovie;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 

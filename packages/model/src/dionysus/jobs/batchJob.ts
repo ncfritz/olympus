@@ -1,6 +1,6 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import { MetadataFetchJobStatus, MetadataJobType } from "./fetchJob";
 
@@ -39,20 +39,16 @@ export class BatchJob {
   @ApiProperty({ required: true, enum: () => JobStatus, enumName: "JobStatus" })
   status: JobStatus;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 
-  @ApiProperty({ type: String, required: false })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  @ApiTimestamp({ required: false })
   startedTime?: Moment;
 
-  @ApiProperty({ type: String, required: false })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  @ApiTimestamp({ required: false })
   finishedTime?: Moment;
 
   @ApiProperty({ type: Number, required: false })

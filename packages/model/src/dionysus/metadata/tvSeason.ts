@@ -1,6 +1,6 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 import { MediaAssetSearchConfiguration, SparseMediaFavorite } from "../media";
 import {
   ExternalId,
@@ -23,8 +23,7 @@ export class BaseSeason {
   @ApiProperty({ required: true, type: Number })
   id: number;
 
-  @ApiProperty({ type: String, required: false })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: false })
   airDate?: Moment;
 
   @ApiProperty({ required: true, type: String })
@@ -53,12 +52,10 @@ export class SparseSeason extends BaseSeason {
   })
   favorite?: SparseMediaFavorite;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 
   @ApiProperty({ required: true, type: Number })

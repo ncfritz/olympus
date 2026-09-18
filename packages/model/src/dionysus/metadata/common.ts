@@ -1,6 +1,7 @@
+import { AUDIT_FIELDS } from "../../common";
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 import { Country } from "./countries";
 import { Language } from "./languages";
 
@@ -11,18 +12,15 @@ export class ExternalId {
   @ApiProperty({ required: true, type: String })
   externalId: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialExternalId extends OmitType(ExternalId, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
 ]) {}
 
 export class AlternativeTitle {
@@ -35,18 +33,15 @@ export class AlternativeTitle {
   @ApiProperty({ required: true, type: Country })
   country: Country;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialAlternativeTitle extends OmitType(AlternativeTitle, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "country",
 ]) {
   @ApiProperty({ required: true, type: String })
@@ -60,18 +55,15 @@ export class AlternativeName {
   @ApiProperty({ required: true, type: String })
   type: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialAlternativeName extends OmitType(AlternativeName, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
 ]) {}
 
 export class BaseImage {
@@ -84,19 +76,14 @@ export class BaseImage {
   @ApiProperty({ required: true, type: String })
   filePath: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
-export class PartialBaseImage extends OmitType(BaseImage, [
-  "createdTime",
-  "lastUpdatedTime",
-]) {
+export class PartialBaseImage extends OmitType(BaseImage, [...AUDIT_FIELDS]) {
   @ApiProperty({ required: true, type: String })
   languageCode: string;
 }
@@ -110,8 +97,7 @@ export class TypedImage extends BaseImage {
 }
 
 export class PartialTypedImage extends OmitType(TypedImage, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "language",
 ]) {
   @ApiProperty({ required: true, type: String })
@@ -127,8 +113,7 @@ export class IdentifiableImage extends BaseImage {
 }
 
 export class PartialIdentifiableImage extends OmitType(IdentifiableImage, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
 ]) {}
 
 export class Video {
@@ -159,22 +144,18 @@ export class Video {
   @ApiProperty({ required: true, type: Boolean })
   official: boolean;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   publishedTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialVideo extends OmitType(Video, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "language",
   "country",
 ]) {

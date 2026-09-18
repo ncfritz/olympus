@@ -1,6 +1,6 @@
+import { ApiTimestamp } from "../decorators";
 import { ApiProperty, PartialType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 
 export enum MeetingSensitivity {
   Normal = "Normal",
@@ -115,22 +115,18 @@ export class Meeting {
   })
   response: string;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the meeting starts",
   })
-  @Transform(({ value }) => value.toISOString())
   startTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: false,
     description:
       "An ISO-8601 formatted string indicating when the meeting ends",
   })
-  @Transform(({ value }) => value.toISOString())
   endTime?: Moment;
 
   @ApiProperty({

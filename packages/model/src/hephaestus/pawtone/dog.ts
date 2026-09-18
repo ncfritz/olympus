@@ -1,6 +1,6 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 
 export enum DogType {
@@ -89,22 +89,18 @@ export class Dog extends BaseDog {
   })
   id: string;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the dog was created",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the dog was last updated",
   })
-  @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 

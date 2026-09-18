@@ -1,6 +1,7 @@
+import { AUDIT_FIELDS } from "../../common";
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 
 export class Country {
@@ -10,19 +11,14 @@ export class Country {
   @ApiProperty({ required: true, type: String })
   name: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
-export class PartialCountry extends OmitType(Country, [
-  "createdTime",
-  "lastUpdatedTime",
-]) {}
+export class PartialCountry extends OmitType(Country, [...AUDIT_FIELDS]) {}
 
 export class CreateCountryRequest {
   @ApiProperty({
@@ -36,18 +32,15 @@ export class CountryAssociation {
   @ApiProperty({ required: true, type: Country })
   country: Country;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialCountryAssociation extends OmitType(CountryAssociation, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "country",
 ]) {
   @ApiProperty({ required: true, type: String })

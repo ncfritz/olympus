@@ -1,6 +1,6 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import { MediaAssetWorkflowDecoration } from "./mediaWorkflow";
 import { MediaAssetSearchType } from "./searchConfiguration";
@@ -81,40 +81,32 @@ class InternalBaseMediaAssetWorkflowStep {
   })
   progress: number;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the workflow was created.",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the workflow was last updated.",
   })
-  @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: false,
     description:
       "An ISO-8601 formatted string indicating when the workflow was started.",
   })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
   startedTime?: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: false,
     description:
       "An ISO-8601 formatted string indicating when the workflow finished.",
   })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
   finishedTime?: Moment;
 }
 

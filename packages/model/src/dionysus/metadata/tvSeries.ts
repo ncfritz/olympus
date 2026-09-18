@@ -1,6 +1,7 @@
+import { AUDIT_FIELDS } from "../../common";
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import { MediaAssetSearchConfiguration, SparseMediaFavorite } from "../media";
 import {
@@ -50,8 +51,7 @@ export class BaseTVSeries {
   @ApiProperty({ required: true, type: String })
   backdropPath: string;
 
-  @ApiProperty({ required: false, type: String })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  @ApiTimestamp({ required: false })
   firstAirDate?: Moment;
 
   @ApiProperty({ required: true, type: String })
@@ -60,8 +60,7 @@ export class BaseTVSeries {
   @ApiProperty({ required: true, type: Boolean })
   inProduction: boolean;
 
-  @ApiProperty({ type: String, required: false })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
+  @ApiTimestamp({ required: false })
   lastAirDate?: Moment;
 
   @ApiProperty({ required: true, type: String })
@@ -116,12 +115,10 @@ export class BaseTVSeries {
   })
   favorite?: SparseMediaFavorite;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
@@ -398,18 +395,16 @@ export class TVSeriesCastMemberRole {
   @ApiProperty({ required: true, type: Number })
   episodeCount: number;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialTVSeriesCastMemberRole extends OmitType(
   TVSeriesCastMemberRole,
-  ["createdTime", "lastUpdatedTime"],
+  [...AUDIT_FIELDS],
 ) {}
 
 export class SparseTVSeriesCastMember {
@@ -429,12 +424,10 @@ export class SparseTVSeriesCastMember {
   @ApiProperty({ required: true, type: Number })
   totalEpisodeCount: number;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
@@ -444,8 +437,7 @@ export class TVSeriesCastMember extends SparseTVSeriesCastMember {
 }
 
 export class PartialTVSeriesCastMember extends OmitType(TVSeriesCastMember, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "person",
   "roles",
 ]) {
@@ -470,18 +462,16 @@ export class TVSeriesCrewMemberJob {
   @ApiProperty({ required: true, type: Number })
   episodeCount: number;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialTVSeriesCrewMemberJob extends OmitType(
   TVSeriesCrewMemberJob,
-  ["createdTime", "lastUpdatedTime"],
+  [...AUDIT_FIELDS],
 ) {}
 
 export class SparseTVSeriesCrewMember {
@@ -501,12 +491,10 @@ export class SparseTVSeriesCrewMember {
   @ApiProperty({ required: true, type: Number })
   totalEpisodeCount: number;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
@@ -516,8 +504,7 @@ export class TVSeriesCrewMember extends SparseTVSeriesCrewMember {
 }
 
 export class PartialTVSeriesCrewMember extends OmitType(TVSeriesCrewMember, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "person",
   "jobs",
 ]) {
@@ -536,18 +523,15 @@ export class TVSeriesRuntime {
   @ApiProperty({ required: true, type: Number })
   runTime: number;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialTVSeriesRuntime extends OmitType(TVSeriesRuntime, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
 ]) {}
 
 export class PartialTVSeriesCertification extends OmitType(
@@ -565,18 +549,15 @@ export class TvSeriesCreatedBy {
   @ApiProperty({ type: String, required: true })
   creditId: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialTvSeriesCreatedBy extends OmitType(TvSeriesCreatedBy, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "person",
 ]) {
   @ApiProperty({ required: true, type: Number })
@@ -590,12 +571,10 @@ export class TvSeriesRecommendation {
   })
   tvSeries: BaseTVSeries;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 

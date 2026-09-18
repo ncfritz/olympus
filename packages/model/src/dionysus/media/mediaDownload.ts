@@ -1,6 +1,7 @@
+import { AUDIT_FIELDS } from "../../common";
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import { MediaAssetWorkflowDecoration } from "./mediaWorkflow";
 import { MediaAssetSearchType } from "./searchConfiguration";
@@ -75,50 +76,37 @@ export class MediaAssetDownload {
   })
   progress: number;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: false,
     description:
       "An ISO-8601 formatted string indicating when the download started",
   })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
   startedTime?: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: false,
     description:
       "An ISO-8601 formatted string indicating when the download finished",
   })
-  @Transform(({ value }) => (value ? value.toISOString() : undefined))
   finishedTime?: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the download was created",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the download was last updated",
   })
-  @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 
 export class PartialMediaAssetDownload extends PartialType(
-  OmitType(MediaAssetDownload, [
-    "createdTime",
-    "lastUpdatedTime",
-    "id",
-    "workflowId",
-  ]),
+  OmitType(MediaAssetDownload, [...AUDIT_FIELDS, "id", "workflowId"]),
 ) {}
 
 export class MediaAssetDownloadStatusUpdate {

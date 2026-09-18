@@ -1,6 +1,6 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import { ContentAssetTag } from "./tags";
 
@@ -84,13 +84,11 @@ export class ContentAsset extends BaseContentAsset {
   })
   name?: string;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the asset was created",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
   @ApiProperty({

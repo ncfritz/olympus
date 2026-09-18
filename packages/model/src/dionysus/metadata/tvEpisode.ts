@@ -1,6 +1,7 @@
+import { AUDIT_FIELDS } from "../../common";
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 import {
   MediaAsset,
   MediaAssetSearchConfiguration,
@@ -22,8 +23,7 @@ export class BaseEpisode {
   @ApiProperty({ required: true, type: Number })
   id: number;
 
-  @ApiProperty({ type: String, required: false })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: false })
   airDate?: Moment;
 
   @ApiProperty({ required: true, type: Number })
@@ -67,12 +67,10 @@ export class SparseEpisode extends BaseEpisode {
   @ApiProperty({ type: () => MediaAsset, required: false })
   asset?: MediaAsset;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
@@ -171,18 +169,15 @@ export class TVEpisodeCrewMember {
   @ApiProperty({ required: true, type: String })
   originalName: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialTVEpisodeCrewMember extends OmitType(TVEpisodeCrewMember, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "person",
 ]) {
   @ApiProperty({ required: true, type: Number })
@@ -202,12 +197,10 @@ export class SparseTVEpisodeCastMember {
   @ApiProperty({ required: true, type: String })
   originalName: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
@@ -217,8 +210,7 @@ export class TVEpisodeCastMember extends SparseTVEpisodeCastMember {
 }
 
 export class PartialTVEpisodeCastMember extends OmitType(TVEpisodeCastMember, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "person",
 ]) {
   @ApiProperty({ required: true, type: Number })

@@ -1,17 +1,15 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import { MediaAssetWorkflowDecoration } from "./mediaWorkflow";
 
 export class BaseMediaFavorite {
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the search result was created",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 }
 

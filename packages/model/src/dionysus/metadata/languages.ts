@@ -1,6 +1,7 @@
+import { AUDIT_FIELDS } from "../../common";
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 
 export class Language {
@@ -13,36 +14,28 @@ export class Language {
   @ApiProperty({ required: true, type: String })
   nativeName: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
-export class PartialLanguage extends OmitType(Language, [
-  "createdTime",
-  "lastUpdatedTime",
-]) {}
+export class PartialLanguage extends OmitType(Language, [...AUDIT_FIELDS]) {}
 
 export class LanguageAssociation {
   @ApiProperty({ required: true, type: Language })
   language: Language;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialLanguageAssociation extends OmitType(LanguageAssociation, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "language",
 ]) {
   @ApiProperty({ required: true, type: String })

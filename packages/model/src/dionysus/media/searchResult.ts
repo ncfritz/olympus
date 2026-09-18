@@ -1,6 +1,6 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import { MediaAssetDownload } from "./mediaDownload";
 import { MediaAssetSearchType } from "./searchConfiguration";
@@ -58,13 +58,11 @@ export class BaseSearchResultTag {
 }
 
 export class SearchResultTag extends BaseSearchResultTag {
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the search result tag was created",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 }
 
@@ -156,22 +154,18 @@ export class BaseMediaAssetSearchResult {
   })
   repack: boolean;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the search result was posted to Usenet",
   })
-  @Transform(({ value }) => value.toISOString())
   postedTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the search result was created",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 }
 

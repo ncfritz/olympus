@@ -1,6 +1,7 @@
+import { AUDIT_FIELDS } from "../../common";
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 
 export class Keyword {
@@ -10,36 +11,28 @@ export class Keyword {
   @ApiProperty({ required: true, type: String })
   value: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
-export class PartialKeyword extends OmitType(Keyword, [
-  "createdTime",
-  "lastUpdatedTime",
-]) {}
+export class PartialKeyword extends OmitType(Keyword, [...AUDIT_FIELDS]) {}
 
 export class KeywordAssociation {
   @ApiProperty({ required: true, type: Keyword })
   keyword: Keyword;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialKeywordAssociation extends OmitType(KeywordAssociation, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "keyword",
 ]) {
   @ApiProperty({ required: true, type: Number })

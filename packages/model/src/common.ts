@@ -31,3 +31,9 @@ export class TestRequest {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- arbitrary payload echoed by the AMQP test endpoint
   payload: any;
 }
+
+/**
+ * Server-managed audit timestamps. Omit them when deriving create/update
+ * shapes: `OmitType(Entity, [...AUDIT_FIELDS, "otherField"])`.
+ */
+export const AUDIT_FIELDS = ["createdTime", "lastUpdatedTime"] as const;

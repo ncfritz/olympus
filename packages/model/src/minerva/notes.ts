@@ -1,3 +1,4 @@
+import { ApiTimestamp } from "../decorators";
 import {
   ApiExtraModels,
   ApiProperty,
@@ -5,8 +6,7 @@ import {
   OmitType,
   PartialType,
 } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 
 export enum NoteType {
   NOTE = 0,
@@ -34,13 +34,11 @@ export class NoteAssociation {
   })
   itemType: string;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the association was created",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 }
 
@@ -119,31 +117,25 @@ export class Note extends BaseNote {
   })
   id: string;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the note was created",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the note was last updated",
   })
-  @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: false,
     description:
       "An ISO-8601 formatted string indicating when the note was marked as deleted",
   })
-  @Transform(({ value }) => value.toISOString())
   deletedTime?: Moment;
 
   @ApiProperty({

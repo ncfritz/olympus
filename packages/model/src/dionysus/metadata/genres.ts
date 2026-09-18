@@ -1,6 +1,7 @@
+import { AUDIT_FIELDS } from "../../common";
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment/moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import { GenreCountStatistic, GenreStatistic } from "./common";
 
@@ -19,36 +20,28 @@ export class Genre {
   @ApiProperty({ required: true, type: String })
   name: string;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
-export class PartialGenre extends OmitType(Genre, [
-  "createdTime",
-  "lastUpdatedTime",
-]) {}
+export class PartialGenre extends OmitType(Genre, [...AUDIT_FIELDS]) {}
 
 export class GenreAssociation {
   @ApiProperty({ required: true, type: Genre })
   genre: Genre;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   createdTime: Moment;
 
-  @ApiProperty({ required: true, type: String })
-  @Transform(({ value }) => value.toISOString())
+  @ApiTimestamp({ required: true })
   lastUpdatedTime: Moment;
 }
 
 export class PartialGenreAssociation extends OmitType(GenreAssociation, [
-  "createdTime",
-  "lastUpdatedTime",
+  ...AUDIT_FIELDS,
   "genre",
 ]) {
   @ApiProperty({ required: true, type: Number })

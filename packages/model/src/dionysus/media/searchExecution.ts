@@ -1,6 +1,6 @@
+import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { Moment } from "moment";
+import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 
 export enum SearchExecutionStatus {
@@ -26,22 +26,18 @@ export class MediaAssetSearchExecution {
   })
   status: SearchExecutionStatus;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the search execution stated",
   })
-  @Transform(({ value }) => value.toISOString())
   startedTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: false,
     description:
       "An ISO-8601 formatted string indicating when the search execution finished",
   })
-  @Transform(({ value }) => value.toISOString())
   finishedTime?: Moment;
 
   @ApiProperty({
@@ -72,22 +68,18 @@ export class MediaAssetSearchExecution {
   })
   totalRecords: number;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the search configuration was created",
   })
-  @Transform(({ value }) => value.toISOString())
   createdTime: Moment;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the search configuration was last updated",
   })
-  @Transform(({ value }) => value.toISOString())
   lastUpdatedTime: Moment;
 }
 
