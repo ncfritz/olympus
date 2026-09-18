@@ -48,11 +48,10 @@ record them as accepted deviations.
 
 ### API
 
-- **Lint does not pass (pre-existing).** `eslint src` reports 32 errors
-  (15 `no-explicit-any`, 13 `no-unused-vars`, 2 `no-useless-assignment`,
-  2 Prettier), the same set the old repo reported. Most are in
-  `NotificationsGateway.ts` and the batch-job controllers.
-  `UpdateMediaAssetWorkflowStep.ts` also fails `pnpm format:check`.
+- **Lint does not pass (pre-existing).** `eslint src` in `apps/api`
+  reports 30 errors (`no-explicit-any` and `no-unused-vars`, plus 2
+  `no-useless-assignment`), mostly in `NotificationsGateway.ts` and the
+  batch-job controllers.
 - The API `Dockerfile` still targets the old single-repo layout (npm +
   GitHub Packages token). Rebuilt with ADR 0011.
 - OpenAPI `info.version` is now `0.0.0` (the workspace package version)
