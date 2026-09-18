@@ -1,8 +1,7 @@
-import { AUDIT_FIELDS } from "../../common";
+import { AUDIT_FIELDS, PaginatedResults } from "../../common";
 import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import type { Moment } from "moment";
-import { PaginatedResults } from "../../common";
 import {
   AlternativeName,
   IdentifiableImage,
