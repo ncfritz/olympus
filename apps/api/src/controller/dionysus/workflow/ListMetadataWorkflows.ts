@@ -76,7 +76,7 @@ export class ListMetadataWorkflowsController {
     });
 
     const fetchRequest = gql`
-      query ListWorkflows {
+      query ListMetadataWorkflows {
         dionysus_metadata_workflow(${[paginationExpression, whereExpression].join(", ")}) {
           createdTime
           finishedTime

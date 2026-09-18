@@ -48,7 +48,7 @@ export class ListMetadataWorkflowStepsController {
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query ListMetadataWorkflowStep($workflowId: uuid!) {
+      query ListMetadataWorkflowSteps($workflowId: uuid!) {
         dionysus_metadata_workflow_step(
           where: { workflow_id: { _eq: $workflowId } }
         ) {

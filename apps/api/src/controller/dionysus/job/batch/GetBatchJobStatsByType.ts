@@ -13,10 +13,15 @@ import {
 } from "@nestjs/swagger";
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import moment, { Moment } from "moment";
+import moment from "moment";
 import { GraphQlBulkLoadJobStat } from "../../../../types/batchJobs";
 import { METADATA_CATEGORY_MAP } from "../../../../utils/constants";
 
+import {
+  dailyIndex,
+  emptyDailySeries,
+  startOfTodayUtc,
+} from "../../../../utils/dailySeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 export type GraphQlBatchJobStatisticsResponse = {
@@ -80,26 +85,24 @@ export class GetBatchJobStatsByTypeController {
         { type: type },
       );
 
-    const now = moment
-      .utc()
-      .set({ milliseconds: 0, seconds: 0, minutes: 0, hours: 0 });
+    const today = startOfTodayUtc();
 
     const recordSeries: BatchJobRecordStats = {
-      total: this.emptyTimingMap(moment(now)),
-      new: this.emptyTimingMap(moment(now)),
-      expired: this.emptyTimingMap(moment(now)),
-      noop: this.emptyTimingMap(moment(now)),
-      skipped: this.emptyTimingMap(moment(now)),
-      processed: this.emptyTimingMap(moment(now)),
+      total: emptyDailySeries(today),
+      new: emptyDailySeries(today),
+      expired: emptyDailySeries(today),
+      noop: emptyDailySeries(today),
+      skipped: emptyDailySeries(today),
+      processed: emptyDailySeries(today),
     };
 
-    const queueTimeSeries: number[][] = this.emptyTimingMap(moment(now));
-    const runtimeSeries: number[][] = this.emptyTimingMap(moment(now));
+    const queueTimeSeries: number[][] = emptyDailySeries(today);
+    const runtimeSeries: number[][] = emptyDailySeries(today);
 
     fetchResponse.dionysus_bulk_load_jobs_statistics.forEach((data) => {
       const dataTime = moment.utc(data.created_date);
-      const dateIndex = 29 - now.diff(dataTime, "days");
-      if (dateIndex < 0 || dateIndex >= 30) return;
+      const dateIndex = dailyIndex(today, dataTime);
+      if (dateIndex === undefined) return;
 
       const seriesIndex = Object.keys(METADATA_CATEGORY_MAP).indexOf(data.type);
 
@@ -147,17 +150,5 @@ export class GetBatchJobStatsByTypeController {
     };
 
     response.status(HttpStatus.OK).json(responseBody);
-  }
-
-  emptyTimingMap(now: Moment): number[][] {
-    const valuesTemplate = [];
-
-    // The 30 days ending today (index 29).
-    for (let i = 29; i >= 0; i--) {
-      const ts = moment(now).subtract({ days: i }).valueOf();
-      valuesTemplate.push([ts, 0]);
-    }
-
-    return [...valuesTemplate];
   }
 }

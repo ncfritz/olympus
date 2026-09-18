@@ -51,7 +51,7 @@ export class DescribeMetadataWorkflowController {
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query DescribeWorkflow($id: uuid!) {
+      query DescribeMetadataWorkflow($id: uuid!) {
         dionysus_metadata_workflow_by_pk(id: $id) {
           createdTime
           finishedTime

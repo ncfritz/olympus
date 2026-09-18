@@ -23,6 +23,11 @@ import {
   METADATA_CATEGORY_MAP,
 } from "../../../../utils/constants";
 
+import {
+  dailyIndex,
+  emptyDailySeries,
+  startOfTodayUtc,
+} from "../../../../utils/dailySeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlBatchJobStatisticsResponse = {
@@ -52,13 +57,8 @@ export class GetBatchJobStatsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const currentTime = moment.utc().set({
-      hours: 0,
-      minutes: 0,
-      seconds: 0,
-      milliseconds: 0,
-    });
-    const lastMonth = currentTime.subtract(30, "days");
+    const today = startOfTodayUtc();
+    const lastMonth = today.clone().subtract(30, "days");
 
     const fetchRequest = gql`
       query GetBatchJobStatistics($lastMonth: String!) {
@@ -94,7 +94,6 @@ export class GetBatchJobStatsController {
         },
       );
 
-    const statusCategories: string[] = Object.keys(BATCH_JOB_STATUSES_MAP);
     const metadataCategories: string[] = Object.keys(METADATA_CATEGORY_MAP);
 
     const statusSeries: Record<JobStatus, number[]> = {
@@ -113,22 +112,16 @@ export class GetBatchJobStatsController {
       }
     });
 
-    const now = moment
-      .utc()
-      .set({ milliseconds: 0, seconds: 0, minutes: 0, hours: 0 });
-
-    const queueTimeSeries: Record<MetadataJobType, number[][]> =
-      this.emptyTimingMap(statusCategories.length, moment(now));
-    const runtimeSeries: Record<MetadataJobType, number[][]> =
-      this.emptyTimingMap(statusCategories.length, moment(now));
+    const queueTimeSeries = this.emptySeriesPerType(today);
+    const runtimeSeries = this.emptySeriesPerType(today);
 
     fetchResponse.dionysus_bulk_load_jobs_statistics.forEach((data) => {
       const dataTime = moment.utc(data.created_date);
-      const dateIndex = 29 - now.diff(dataTime, "days");
+      const dateIndex = dailyIndex(today, dataTime);
 
       const seriesIndex = Object.keys(METADATA_CATEGORY_MAP).indexOf(data.type);
 
-      if (seriesIndex > -1 && dateIndex >= 0 && dateIndex < 30) {
+      if (seriesIndex > -1 && dateIndex !== undefined) {
         queueTimeSeries[data.type][dateIndex] = [
           dataTime.valueOf(),
           data.queue_time as number,
@@ -157,32 +150,14 @@ export class GetBatchJobStatsController {
     response.status(HttpStatus.OK).send(responseBody);
   }
 
-  emptyTimingMap(
-    length: number,
-    now: Moment,
+  private emptySeriesPerType(
+    today: Moment,
   ): Record<MetadataJobType, number[][]> {
-    const valuesTemplate = [];
-
-    // The 30 days ending today (index 29).
-    for (let i = 29; i >= 0; i--) {
-      const ts = moment(now).subtract({ days: i }).valueOf();
-      valuesTemplate.push([ts, 0]);
-    }
-
-    return {
-      [MetadataJobType.CERTIFICATIONS]: [...valuesTemplate],
-      [MetadataJobType.COLLECTIONS]: [...valuesTemplate],
-      [MetadataJobType.COUNTRIES]: [...valuesTemplate],
-      [MetadataJobType.GENRES]: [...valuesTemplate],
-      [MetadataJobType.KEYWORDS]: [...valuesTemplate],
-      [MetadataJobType.LANGUAGES]: [...valuesTemplate],
-      [MetadataJobType.MOVIES]: [...valuesTemplate],
-      [MetadataJobType.PEOPLE]: [...valuesTemplate],
-      [MetadataJobType.PRODUCTION_COMPANIES]: [...valuesTemplate],
-      [MetadataJobType.TV_EPISODES]: [...valuesTemplate],
-      [MetadataJobType.TV_NETWORKS]: [...valuesTemplate],
-      [MetadataJobType.TV_SEASONS]: [...valuesTemplate],
-      [MetadataJobType.TV_SERIES]: [...valuesTemplate],
-    };
+    return Object.fromEntries(
+      Object.values(MetadataJobType).map((type) => [
+        type,
+        emptyDailySeries(today),
+      ]),
+    ) as Record<MetadataJobType, number[][]>;
   }
 }

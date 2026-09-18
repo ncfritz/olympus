@@ -6,11 +6,11 @@ import {
   WorkflowStep,
 } from "@ncfritz/olympus-model";
 import {
-  BadRequestException,
   Body,
   Controller,
   HttpStatus,
   InternalServerErrorException,
+  NotFoundException,
   Param,
   Post,
   Res,
@@ -83,7 +83,7 @@ export class CreateMetadataWorkflowStepController {
     @Res() response: Response,
   ): Promise<void> {
     const checkParentWorkflowRequest = gql`
-      query GetTargetWorkflow($id: uuid!) {
+      query GetParentMetadataWorkflow($id: uuid!) {
         dionysus_metadata_workflow_by_pk(id: $id) {
           id
         }
@@ -97,7 +97,7 @@ export class CreateMetadataWorkflowStepController {
       );
 
     if (!checkParentWorkflowResponse.dionysus_metadata_workflow_by_pk?.id) {
-      throw new BadRequestException();
+      throw new NotFoundException(`Workflow ${workflowId} not found`);
     }
 
     const insertRequest = gql`

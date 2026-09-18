@@ -4,11 +4,17 @@ import {
   JobType,
   MetadataFetchJobStatus,
   MetadataJobType,
+  WorkflowStatus,
+  WorkflowStepType,
 } from "@ncfritz/olympus-model";
 import type {
   GraphQlBatchJob,
   GraphQlMetadataFetchJob,
 } from "../../src/types/batchJobs";
+import type {
+  GraphQLWorkflow,
+  GraphQlWorkflowStep,
+} from "../../src/types/workflow";
 import { base64Json } from "./olympus";
 
 export const BATCH_JOB_ID = "6b1f0a52-0000-4000-8000-00000000b001";
@@ -49,3 +55,31 @@ export const graphQlMetadataFetchJob = (
 });
 
 export const aggregate = (count: number) => ({ aggregate: { count } });
+
+export const WORKFLOW_ID = "0f3c9e6a-0000-4000-8000-00000000f001";
+export const STEP_ID = "0f3c9e6a-0000-4000-8000-00000000f101";
+
+export const graphQlWorkflowStep = (
+  overrides: Partial<GraphQlWorkflowStep> = {},
+): GraphQlWorkflowStep => ({
+  id: STEP_ID,
+  type: WorkflowStepType.JOB_EXECUTION,
+  attempt: 1,
+  createdTime: "2026-09-18T10:00:00Z",
+  lastUpdatedTime: "2026-09-18T10:00:00Z",
+  job: graphQlBatchJob(),
+  ...overrides,
+});
+
+export const graphQlWorkflow = (
+  overrides: Partial<GraphQLWorkflow> = {},
+): GraphQLWorkflow => ({
+  id: WORKFLOW_ID,
+  status: WorkflowStatus.STARTED,
+  createdTime: "2026-09-18T09:00:00Z",
+  lastUpdatedTime: "2026-09-18T10:00:00Z",
+  startedTime: "2026-09-18T09:00:05Z",
+  finishedTime: "",
+  steps: [graphQlWorkflowStep()],
+  ...overrides,
+});

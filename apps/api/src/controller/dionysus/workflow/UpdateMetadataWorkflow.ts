@@ -7,6 +7,7 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
+  NotFoundException,
   Param,
   Put,
   Res,
@@ -27,7 +28,7 @@ import { GraphQLWorkflow } from "../../../types/workflow";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlUpdateMetadataWorkflowResponse = {
-  update_dionysus_metadata_workflow_by_pk: GraphQLWorkflow;
+  update_dionysus_metadata_workflow_by_pk: GraphQLWorkflow | null;
 };
 
 @Controller({ version: "1" })
@@ -64,7 +65,7 @@ export class UpdateMetadataWorkflowController {
     @Res() response: Response,
   ): Promise<void> {
     const updateRequest = gql`
-      mutation UpdateWorkflow(
+      mutation UpdateMetadataWorkflow(
         $id: uuid!
         $changes: dionysus_metadata_workflow_set_input = {}
       ) {
@@ -114,6 +115,10 @@ export class UpdateMetadataWorkflowController {
           changes: request.workflow,
         },
       );
+
+    if (!updateResponse.update_dionysus_metadata_workflow_by_pk) {
+      throw new NotFoundException();
+    }
 
     const updatedWorkflow = toDomainObject(
       updateResponse.update_dionysus_metadata_workflow_by_pk,
