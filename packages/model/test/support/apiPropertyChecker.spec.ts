@@ -22,6 +22,7 @@ describe("checkApiProperties", () => {
     ["requiredMissing", "required-missing"],
     ["requiredMismatch", "required-mismatch"],
     ["descriptionMissing", "description-missing"],
+    ["descriptionTodo", "description-todo"],
     ["arrayMismatch", "array-mismatch"],
     ["enumMismatch", "enum-mismatch"],
     ["enumNameMissing", "enumName-missing"],

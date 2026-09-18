@@ -222,8 +222,9 @@ The status sent must match the success decorator. **[checked]**
 3. Run `pnpm turbo run generate --filter=@ncfritz/olympus-sdk` to
    regenerate the SDK.
 
-`pnpm gen api-operation` does steps 1 and 3 and creates the controller,
-model shapes and converter stub.
+`pnpm gen api-operation` does step 1 and creates the controller, a test,
+the model shapes and a converter stub
+([guide](../guides/api-operation-generator.md)).
 
 ## Checks
 

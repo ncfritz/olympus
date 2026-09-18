@@ -1,0 +1,40 @@
+{{#if hasId}}
+import type { GraphQLClient } from "graphql-request";
+import { describe, expect, it, vi } from "vitest";
+import { {{operationId}}Controller } from "./{{operationId}}";
+
+const mockResponse = () => {
+  const response = { status: vi.fn(), send: vi.fn(), end: vi.fn() };
+  response.status.mockReturnValue(response);
+  return response;
+};
+
+describe("{{operationId}}Controller", () => {
+  it.todo("responds with the {{#if isDelete}}deletion{{else}}converted {{words entity}}{{/if}}");
+
+  it("responds 404 when the {{words entity}} does not exist", async () => {
+    const graphQLClient = {
+      request: vi.fn().mockResolvedValue({
+        {{#if isDescribe}}{{hasuraTable}}_by_pk{{/if}}{{#if isUpdate}}update_{{hasuraTable}}_by_pk{{/if}}{{#if isDelete}}delete_{{hasuraTable}}_by_pk{{/if}}: null,
+      }),
+    } as unknown as GraphQLClient;
+    const controller = new {{operationId}}Controller(graphQLClient);
+
+    await expect(
+      controller.handle(
+        {{#if numericId}}1{{else}}"missing"{{/if}},
+{{#if hasBody}}
+        { {{entityCamel}}: {} } as never,
+{{/if}}
+        mockResponse() as never,
+      ),
+    ).rejects.toThrow("not found");
+  });
+});
+{{else}}
+import { describe, it } from "vitest";
+
+describe("{{operationId}}Controller", () => {
+  it.todo("responds with the {{#if isList}}converted {{words entityPlural}}{{else}}{{#if isCreate}}created {{words entity}}{{else}}computed result{{/if}}{{/if}}");
+});
+{{/if}}

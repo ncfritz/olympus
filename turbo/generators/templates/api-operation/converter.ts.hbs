@@ -1,0 +1,15 @@
+import { {{entity}} } from "@ncfritz/olympus-model";
+
+/** The {{words entity}} as Hasura returns it (snake_case columns). */
+export type GraphQl{{entity}} = {
+  id: string;
+  // TODO: the columns the operations select
+};
+
+/** Maps a Hasura row to the model's {{entity}}. */
+export const toDomainObject = (input: GraphQl{{entity}}): {{entity}} => {
+  // TODO: map every field; parse timestamps with moment()
+  return {
+    id: input.id,
+  } as unknown as {{entity}};
+};

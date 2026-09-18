@@ -18,7 +18,7 @@ lists the existing deviations in [`../roadmap.md`](../roadmap.md).
 | Mechanism                                                 | Covers                                  | Status                                         |
 | --------------------------------------------------------- | --------------------------------------- | ---------------------------------------------- |
 | Shared ESLint + Prettier (`packages/config`)              | Formatting, general lint                | Present                                        |
-| `pnpm gen api-operation`                                  | New API operations start out conforming | Planned (ADR 0009)                             |
+| `pnpm gen api-operation`                                  | New API operations start out conforming | Present                                        |
 | Model decorator/type check (`check:conventions`)          | `packages/model`                        | Present                                        |
 | Model schema and enum snapshots                           | `packages/model`                        | Present                                        |
 | API controller check (`check:conventions`)                | `apps/api`                              | Present                                        |

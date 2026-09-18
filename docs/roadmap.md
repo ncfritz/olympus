@@ -2,18 +2,18 @@
 
 ## Phases
 
-| #   | Phase                                                                                                | Status                                       |
-| --- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)                        |
-| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | in progress: imports and `openapi` task done |
-| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       |                                              |
-| 3   | Import site and desktop shell                                                                        |                                              |
-| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         |                                              |
-| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                              |
-| 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                                              |
-| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                              |
-| 8   | Minerva calendar sync import and Hasura integration                                                  |                                              |
-| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                      |
+| #   | Phase                                                                                                | Status                |
+| --- | ---------------------------------------------------------------------------------------------------- | --------------------- |
+| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18) |
+| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**              |
+| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       |                       |
+| 3   | Import site and desktop shell                                                                        |                       |
+| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         |                       |
+| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                       |
+| 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                       |
+| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                       |
+| 8   | Minerva calendar sync import and Hasura integration                                                  |                       |
+| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing               |
 
 ## Open decisions
 

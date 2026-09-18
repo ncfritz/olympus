@@ -12,6 +12,7 @@
  *   required-missing     no explicit `required`
  *   required-mismatch    `required` disagrees with the `?` on the property
  *   description-missing  no `description`
+ *   description-todo     `description` still contains a TODO
  *   array-mismatch       `isArray` / array `type` disagrees with the declared type
  *   enum-mismatch        `enum` names a different enum than the declared type
  *   enumName-missing     `enum` without `enumName`
@@ -105,8 +106,11 @@ export function checkApiProperties(packageRoot: string): Finding[] {
           "`required: false` on a non-optional property",
         );
       }
-      if (!options.description)
+      if (!options.description) {
         report("description-missing", "no `description`");
+      } else if (/\bTODO\b/.test(options.description.getText(sf))) {
+        report("description-todo", "`description` still contains a TODO");
+      }
 
       const declared = withoutUndefined(checker.getTypeAtLocation(prop));
       const declaredText = typeText(declared);

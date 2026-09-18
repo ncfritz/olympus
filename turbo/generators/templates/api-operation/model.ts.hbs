@@ -1,0 +1,62 @@
+{{#if hasBody}}
+export class {{requestClass}} {
+  @ApiProperty({
+    type: () => {{bodyType}},
+    required: true,
+    description: "TODO: describe the {{words entity}} {{#if isCreate}}to create{{else}}changes to apply{{/if}}",
+  })
+  {{entityCamel}}: {{bodyType}};
+}
+
+{{/if}}
+{{#if isDescribe}}
+export class {{responseClass}} {
+  @ApiProperty({
+    type: () => {{entity}},
+    required: true,
+    description: "The requested {{words entity}}",
+  })
+  {{entityCamel}}: {{entity}};
+}
+{{/if}}
+{{#if isCreate}}
+export class {{responseClass}} {
+  @ApiProperty({
+    type: () => {{entity}},
+    required: true,
+    description: "The created {{words entity}}",
+  })
+  {{entityCamel}}: {{entity}};
+}
+{{/if}}
+{{#if isUpdate}}
+export class {{responseClass}} {
+  @ApiProperty({
+    type: () => {{entity}},
+    required: true,
+    description: "The updated {{words entity}}",
+  })
+  {{entityCamel}}: {{entity}};
+}
+{{/if}}
+{{#if isList}}
+export class {{responseClass}}{{#if isPaginated}} extends PaginatedResults{{/if}} {
+  @ApiProperty({
+    type: () => {{entity}},
+    isArray: true,
+    required: true,
+    description: "The {{words entityPlural}}{{#if isPaginated}} on the requested page{{/if}}",
+  })
+  {{entitiesCamel}}: {{entity}}[];
+}
+{{/if}}
+{{#if isGet}}
+export class {{responseClass}} {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "TODO: describe the result",
+  })
+  count: number;
+}
+{{/if}}

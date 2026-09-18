@@ -115,4 +115,7 @@ export class Cases {
 
   @ApiTimestamp({ required: true, description: "d" })
   timestampType: string;
+
+  @ApiProperty({ type: String, required: true, description: "TODO: describe" })
+  descriptionTodo: string;
 }

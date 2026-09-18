@@ -20,6 +20,8 @@
  *   summary-style      summary has no trailing period
  *   description-style  description is a sentence ending in a period
  *   tag-style          the tag is Title Case
+ *   todo               summary or description still contains a TODO
+ *                      (left by `pnpm gen api-operation`)
  */
 import * as path from "path";
 import type { ControllerInfo } from "./controllers";
@@ -94,6 +96,9 @@ export function checkControllers(controllers: ControllerInfo[]): Finding[] {
     }
     if (summary) own(summaryOwners, summary, c.className);
     if (description) own(descriptionOwners, description, c.className);
+    if (/\bTODO\b/.test(`${summary ?? ""} ${description ?? ""}`)) {
+      report("todo", "summary or description still contains a TODO");
+    }
     if (summary && /\.\s*$/.test(summary)) {
       report("summary-style", `summary ends with a period: "${summary}"`);
     }
