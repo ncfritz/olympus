@@ -1,5 +1,12 @@
 import { SingleNoteResponse } from "@ncfritz/olympus-model";
-import { Controller, HttpStatus, Param, Patch, Res } from "@nestjs/common";
+import {
+  Controller,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Patch,
+  Res,
+} from "@nestjs/common";
 import {
   ApiConsumes,
   ApiOkResponse,
@@ -17,7 +24,7 @@ import { NOTE_WITH_ASSOCIATIONS } from "../../../query/minerva/notes";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlRestoreNoteResponse = {
-  update_minerva_notes_by_pk: GraphQlNote & { affected_rows: number };
+  update_minerva_notes_by_pk: (GraphQlNote & { affected_rows: number }) | null;
 };
 
 @Controller({ version: "1" })
@@ -26,8 +33,8 @@ export class RestoreNoteController {
 
   @Patch("/note/:noteId")
   @ApiOperation({
-    summary: "Restore an existing note",
-    description: "Restore an existing node.",
+    summary: "Restores a deleted note",
+    description: "Restores a soft-deleted note by clearing its deleted time.",
     operationId: "RestoreNote",
     tags: ["Notes"],
   })
@@ -63,6 +70,10 @@ export class RestoreNoteController {
         restoreNoteRequest,
         { id: noteId },
       );
+
+    if (restoreNoteResponse.update_minerva_notes_by_pk === null) {
+      throw new NotFoundException(`Note with id ${noteId} not found`);
+    }
 
     const note = toDomainObject(restoreNoteResponse.update_minerva_notes_by_pk);
     const responseBody: SingleNoteResponse = {

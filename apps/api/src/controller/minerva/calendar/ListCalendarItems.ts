@@ -1,5 +1,14 @@
 import { ListCalendarItemsResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
+import {
+  Controller,
+  DefaultValuePipe,
+  Get,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Query,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -51,7 +60,7 @@ export class ListCalendarItemsController {
   @ApiStandardErrorResponses()
   async handle(
     @Param("start") start: string,
-    @Query("days") days: number = 1,
+    @Query("days", new DefaultValuePipe(1), ParseIntPipe) days: number,
     @Res() response: Response,
   ): Promise<void> {
     const startTime = moment(start);

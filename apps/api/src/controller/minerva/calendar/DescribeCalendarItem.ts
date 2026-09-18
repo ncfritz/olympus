@@ -103,12 +103,6 @@ export class DescribeCalendarItemController {
         },
       );
 
-    if (queryResponse.minerva_meetings_by_pk === null) {
-      throw new NotFoundException(
-        `Calendar Item with id ${meetingId} not found`,
-      );
-    }
-
     if (!queryResponse.minerva_meetings_by_pk) {
       throw new NotFoundException(
         `Calendar Item with id ${meetingId} not found`,

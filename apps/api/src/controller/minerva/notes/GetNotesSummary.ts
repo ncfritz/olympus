@@ -1,5 +1,13 @@
 import { GetSummaryResponse, NoteTypeCounts } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Query,
+  Res,
+} from "@nestjs/common";
 import {
   ApiHeader,
   ApiOkResponse,
@@ -99,7 +107,7 @@ export class GetNotesSummaryController {
   async handle(
     @HeaderTimezone() tz: string,
     @Param("start") start: string,
-    @Query("days") days: number,
+    @Query("days", ParseIntPipe) days: number,
     @Res() response: Response,
   ): Promise<void> {
     const endDate = moment(start);

@@ -1,10 +1,12 @@
 import { ListCalendarItemsResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
+  DefaultValuePipe,
   Get,
   HttpStatus,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Query,
   Res,
   UsePipes,
@@ -68,7 +70,7 @@ export class ListPreviousCalendarItemOccurrencesController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async handle(
     @Param("meetingId") meetingId: string,
-    @Query("limit") limit: number = 5,
+    @Query("limit", new DefaultValuePipe(5), ParseIntPipe) limit: number,
     @Res() response: Response,
   ): Promise<void> {
     const currentMeetingQueryRequest = gql`
@@ -94,14 +96,8 @@ export class ListPreviousCalendarItemOccurrencesController {
       );
     }
 
-    if (!currentMeetingQueryResponse.minerva_meetings_by_pk) {
-      throw new NotFoundException(
-        `Calendar Item with id ${meetingId} not found`,
-      );
-    }
-
     const queryRequest = gql`
-      query DescribeCalendarItem(
+      query ListPreviousCalendarItemOccurrences(
         $uid: String!
         $current_start_time: timestamptz!
         $limit: Int!

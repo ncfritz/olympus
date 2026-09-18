@@ -15,7 +15,6 @@ import {
 } from "@nestjs/swagger";
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { NotFoundError } from "rxjs";
 import {
   GraphQlMeeting,
   toDomainObject,
@@ -82,12 +81,8 @@ export class GetNextCalendarItemOccurrenceController {
       );
     }
 
-    if (!currentMeetingQueryResponse.minerva_meetings_by_pk) {
-      throw new NotFoundError(`Calendar Item with id ${meetingId} not found`);
-    }
-
     const queryRequest = gql`
-      query DescribeCalendarItem(
+      query GetNextCalendarItemOccurrence(
         $uid: String!
         $current_start_time: timestamptz!
       ) {

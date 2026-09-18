@@ -75,6 +75,7 @@ export class UpdateNoteController {
   ): Promise<void> {
     if (Object.keys(request.note).length === 0) {
       response.status(HttpStatus.NOT_MODIFIED).end();
+      return;
     }
 
     const updateRequest = gql`

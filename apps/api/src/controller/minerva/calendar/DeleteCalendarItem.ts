@@ -1,5 +1,12 @@
 import { Meeting, SingleCalendarItemResponse } from "@ncfritz/olympus-model";
-import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Delete,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -15,7 +22,7 @@ import {
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlDeleteCalendarItemResponse = {
-  update_minerva_meetings_by_pk: GraphQlMeeting;
+  update_minerva_meetings_by_pk: GraphQlMeeting | null;
 };
 
 @Controller({ version: "1" })
@@ -100,12 +107,18 @@ export class DeleteCalendarItemController {
         },
       );
 
-    const createdMeeting: Meeting = toDomainObject(
+    if (deleteResponse.update_minerva_meetings_by_pk === null) {
+      throw new NotFoundException(
+        `Calendar Item with id ${meetingId} not found`,
+      );
+    }
+
+    const deletedMeeting: Meeting = toDomainObject(
       deleteResponse.update_minerva_meetings_by_pk,
     );
 
     const responseBody: SingleCalendarItemResponse = {
-      item: createdMeeting,
+      item: deletedMeeting,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

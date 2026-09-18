@@ -365,7 +365,7 @@
         ]
       },
       "patch": {
-        "description": "Restore an existing node.",
+        "description": "Restores a soft-deleted note by clearing its deleted time.",
         "operationId": "RestoreNote",
         "parameters": [
           {
@@ -410,7 +410,7 @@
             }
           }
         },
-        "summary": "Restore an existing note",
+        "summary": "Restores a deleted note",
         "tags": [
           "Notes"
         ]

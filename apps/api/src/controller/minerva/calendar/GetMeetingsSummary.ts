@@ -3,7 +3,15 @@ import {
   MeetingStatus,
   MeetingStatusStatistics,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Query,
+  Res,
+} from "@nestjs/common";
 import {
   ApiHeader,
   ApiOkResponse,
@@ -77,7 +85,7 @@ export class GetMeetingsSummaryController {
   async handle(
     @HeaderTimezone() tz: string,
     @Param("start") start: string,
-    @Query("days") days: number,
+    @Query("days", ParseIntPipe) days: number,
     @Res() response: Response,
   ): Promise<void> {
     const startDate = moment(start);
@@ -94,7 +102,7 @@ export class GetMeetingsSummaryController {
     }
 
     const statisticsRequest = gql`
-      query GetMeetingStatistics(
+      query GetMeetingsSummary(
         $tz: String!
         $start: timestamptz!
         $end: timestamptz!
