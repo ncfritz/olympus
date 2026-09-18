@@ -119,7 +119,7 @@
     },
     "/olympus/notification/{notificationId}/acknowledge": {
       "put": {
-        "description": "This API will acknowledge or un-acknowledge a notification, based on the user input.  By default when a notification is marked as acknowledged, it will be marked for deletion three days after the acknowledgement time.  The expiration time will remain unchanged in the event that a notification is un-acknowledged before the deletion sweep occurs.",
+        "description": "This API will acknowledge or un-acknowledge a notification, based on the user input.  By default when a notification is marked as acknowledged, it expires after the requested `ttl` (three days by default) and is marked for deletion seven days after that.  The expiration time will remain unchanged in the event that a notification is un-acknowledged before the deletion sweep occurs.",
         "operationId": "AcknowledgeNotification",
         "parameters": [
           {

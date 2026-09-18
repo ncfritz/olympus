@@ -83,7 +83,10 @@ export class CreateNotificationController extends BaseNotificationsController {
     @Res() response: Response,
   ): Promise<void> {
     const duplicateQueryRequest = gql`
-      query ListNotifications($notificationId: uuid!, $eventId: uuid!) {
+      query CountDuplicateNotifications(
+        $notificationId: uuid!
+        $eventId: uuid!
+      ) {
         olympus_notifications_aggregate(
           where: {
             _or: {
@@ -177,8 +180,8 @@ export class CreateNotificationController extends BaseNotificationsController {
 
     if (request.notification.ttl) {
       const ttlDuration = moment.duration(request.notification.ttl);
-      expirationTime = now.add(ttlDuration);
-      deletionTime = expirationTime.add(7, "days");
+      expirationTime = now.clone().add(ttlDuration);
+      deletionTime = expirationTime.clone().add(7, "days");
     }
 
     let group = "general";

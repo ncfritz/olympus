@@ -3,7 +3,15 @@ import {
   ListNotificationsResponse,
   NotificationStatistics,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
+import {
+  Controller,
+  DefaultValuePipe,
+  Get,
+  HttpStatus,
+  ParseIntPipe,
+  Query,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -58,7 +66,7 @@ export class ListNotificationsController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Query("count") count = 10,
+    @Query("count", new DefaultValuePipe(10), ParseIntPipe) count: number,
     @Res() response: Response,
   ): Promise<void> {
     // TODO: Filter by username once plumbed in
@@ -112,7 +120,7 @@ export class ListNotificationsController {
     queryResponse.olympus_notification_statistics.forEach((statistic) => {
       if (!(statistic.group in statistics)) {
         statistics[statistic.group] = {
-          total: statistic.count,
+          total: 0,
           unread: 0,
           info: 0,
           success: 0,
@@ -121,6 +129,7 @@ export class ListNotificationsController {
         };
       }
 
+      statistics[statistic.group].total += statistic.count;
       statistics[statistic.group][
         statistic.level as keyof NotificationStatistics
       ] += statistic.count;

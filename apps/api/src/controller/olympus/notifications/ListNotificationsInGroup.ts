@@ -20,6 +20,7 @@ import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../utils/controllerDecorators";
+import { buildPaginationExpression } from "../../../utils/filterUtil";
 
 type GraphQlListNotificationsInGroupResponse = {
   olympus_notifications: GraphQlNotification[];
@@ -63,13 +64,18 @@ export class ListNotificationsInGroupController {
     @Query("sortBy") sortField = "createdTime",
     @Res() response: Response,
   ): Promise<void> {
+    const paginationExpression = buildPaginationExpression({
+      pageSize,
+      startPage,
+      sortField,
+      sortDirection,
+    });
+
     // TODO: Filter based on username when this is plumbed in
     const queryRequest = gql`
       query ListNotificationsInGroup($group: String!) {
         olympus_notifications(
-          limit: ${pageSize}
-          offset: ${pageSize * startPage}
-          order_by: {${sortField}: ${sortDirection}}
+          ${paginationExpression}
           where: { group: { _eq: $group } }
         ) {
           acknowledged

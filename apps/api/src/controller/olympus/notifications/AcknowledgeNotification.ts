@@ -52,8 +52,8 @@ export class AcknowledgeNotificationController extends BaseNotificationsControll
     summary: "Sets a notification's ACK status",
     description:
       "This API will acknowledge or un-acknowledge a notification, based on the user input.  By default when a " +
-      "notification is marked as acknowledged, it will be marked for deletion three days after the acknowledgement " +
-      "time.  The expiration time will remain unchanged in the event that a notification is un-acknowledged before " +
+      "notification is marked as acknowledged, it expires after the requested `ttl` (three days by " +
+      "default) and is marked for deletion seven days after that.  The expiration time will remain unchanged in the event that a notification is un-acknowledged before " +
       "the deletion sweep occurs.",
     operationId: "AcknowledgeNotification",
     tags: ["Notifications"],
@@ -146,23 +146,25 @@ export class AcknowledgeNotificationController extends BaseNotificationsControll
 
     const now = moment.utc();
     let deletionTime: Moment | undefined = undefined;
-    let expirationTime: Moment | undefined = undefined;
+    let expirationTime: Moment | undefined;
 
     // If the notification is being acknowledged, set the expiration according to the TTL.  The final deletion time
     // is system enforced at seven days.  If the notification is being un-acknowledged, use the stamped deletionTime
     // to back off the seven-day soft deletion period.
     if (request.acknowledged) {
-      expirationTime = now.add(moment.duration(request.ttl));
-      deletionTime = expirationTime.add(7, "days");
+      expirationTime = now.clone().add(moment.duration(request.ttl ?? "P3D"));
+      deletionTime = expirationTime.clone().add(7, "days");
     } else if (target.deletionTime) {
-      expirationTime = target.deletionTime.subtract(7, "days");
+      expirationTime = target.deletionTime.clone().subtract(7, "days");
+    } else {
+      expirationTime = target.expirationTime;
     }
 
     const updateRequest = gql`
       mutation UpdateNotification(
         $eventId: uuid!
         $acknowledged: Boolean!
-        $expirationTime: timestamptz!
+        $expirationTime: timestamptz
         $deletionTime: timestamptz
       ) {
         update_olympus_notifications_by_pk(

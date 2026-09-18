@@ -2,7 +2,15 @@ import {
   ListNotificationGroupsResponse,
   NotificationGroup,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
+import {
+  Controller,
+  DefaultValuePipe,
+  Get,
+  HttpStatus,
+  ParseBoolPipe,
+  Query,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -48,8 +56,12 @@ export class ListNotificationGroupsController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Query("includeNotificationTypes")
-    includeNotificationTypes: boolean = false,
+    @Query(
+      "includeNotificationTypes",
+      new DefaultValuePipe(false),
+      ParseBoolPipe,
+    )
+    includeNotificationTypes: boolean,
     @Res() response: Response,
   ): Promise<void> {
     const typesClause = includeNotificationTypes
