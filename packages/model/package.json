@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:update": "vitest run -u",
     "check:conventions": "vitest run test/api-property.spec.ts",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "check:allow-update": "UPDATE_ALLOW_LIST=1 vitest run test/api-property.spec.ts"
   },
   "dependencies": {
     "@nestjs/common": "catalog:",

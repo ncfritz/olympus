@@ -3,4 +3,5 @@ export * from "./hephaestus";
 export * from "./minerva";
 export * from "./olympus";
 export * from "./common";
+export * from "./decorators";
 export * from "./filter";
