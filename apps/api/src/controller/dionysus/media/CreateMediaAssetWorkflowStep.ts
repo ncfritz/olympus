@@ -1,8 +1,8 @@
 import {
-  MediaAssetWorkflowStep,
   MediaAssetWorkflowStepStatus,
   CreateMediaAssetWorkflowStepRequest,
   CreateMediaAssetWorkflowStepResponse,
+  DecoratedMediaAssetWorkflowStep,
 } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Param, Post, Res } from "@nestjs/common";
 import {
@@ -16,14 +16,14 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
-import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowStepConverter";
-import { BASE_MEDIA_ASSET_WORKFLOW_STEP } from "../../../query/dionysus/media/mediaAssetWorkflow";
-import { GraphQlMediaAssetWorkflowStep } from "../../../types/dionysus/media/mediaAssetWorkflow";
+import { toDecoratedDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowStepConverter";
+import { BASE_DECORATED_MEDIA_ASSET_WORKFLOW_STEP } from "../../../query/dionysus/media/mediaAssetWorkflow";
+import { GraphQlDecoratedMediaAssetWorkflowStep } from "../../../types/dionysus/media/mediaAssetWorkflow";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { BaseMediaAssetWorkflowController } from "./BaseMediaAssetWorkflowController";
 
 type GraphQlCreateMediaAssetWorkflowStepResponse = {
-  insert_dionysus_media_asset_workflow_step_one: GraphQlMediaAssetWorkflowStep;
+  insert_dionysus_media_asset_workflow_step_one: GraphQlDecoratedMediaAssetWorkflowStep;
 };
 
 @Controller({ version: "1" })
@@ -90,7 +90,7 @@ export class CreateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
             startedTime: $startedTime
           }
         ) {
-          ${BASE_MEDIA_ASSET_WORKFLOW_STEP}
+          ${BASE_DECORATED_MEDIA_ASSET_WORKFLOW_STEP}
         }
       }
     `;
@@ -109,9 +109,10 @@ export class CreateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
         },
       );
 
-    const createdWorkflowStep: MediaAssetWorkflowStep = toDomainObject(
-      insertResponse.insert_dionysus_media_asset_workflow_step_one,
-    );
+    const createdWorkflowStep: DecoratedMediaAssetWorkflowStep =
+      toDecoratedDomainObject(
+        insertResponse.insert_dionysus_media_asset_workflow_step_one,
+      );
 
     const responseBody: CreateMediaAssetWorkflowStepResponse = {
       step: createdWorkflowStep,

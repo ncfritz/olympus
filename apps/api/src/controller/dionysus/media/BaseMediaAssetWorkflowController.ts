@@ -7,8 +7,9 @@ import {
 import { BadRequestException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
-import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowStepConverter";
-import { GraphQlMediaAssetWorkflowStep } from "../../../types/dionysus/media/mediaAssetWorkflow";
+import { toDecoratedDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowStepConverter";
+import { BASE_DECORATED_MEDIA_ASSET_WORKFLOW_STEP } from "../../../query/dionysus/media/mediaAssetWorkflow";
+import { GraphQlDecoratedMediaAssetWorkflowStep } from "../../../types/dionysus/media/mediaAssetWorkflow";
 import { logger } from "../../../utils/logger";
 
 export type MediaWorkflowDetails = {
@@ -35,7 +36,7 @@ type GraphQlGetParentMediaAssetWorkflowStepIdResponse = {
 };
 
 type GraphQlUpdateMediaAssetWorkflowStepResponse = {
-  update_dionysus_media_asset_workflow_step_by_pk: GraphQlMediaAssetWorkflowStep;
+  update_dionysus_media_asset_workflow_step_by_pk: GraphQlDecoratedMediaAssetWorkflowStep;
   update_dionysus_media_asset_workflow_by_pk: {
     id: string;
   };
@@ -196,14 +197,7 @@ export class BaseMediaAssetWorkflowController {
           pk_columns: { id: $id, workflowId: $workflowId }
           _set: $changes
         ) {
-          id
-          type
-          status
-          progress
-          startedTime
-          finishedTime
-          createdTime
-          lastUpdatedTime
+          ${BASE_DECORATED_MEDIA_ASSET_WORKFLOW_STEP}
         }
         ${workflowUpdateFragment}
       }
@@ -215,7 +209,7 @@ export class BaseMediaAssetWorkflowController {
         requestParams,
       );
 
-    return toDomainObject(
+    return toDecoratedDomainObject(
       updateResponse.update_dionysus_media_asset_workflow_step_by_pk,
     );
   }

@@ -144,7 +144,7 @@ export class MediaAssetWorkflow extends BaseMediaAssetWorkflow {
   steps: MediaAssetWorkflowStep[];
 }
 
-export class MediaAssetWorkflowListItem extends MediaAssetWorkflow {
+export class DecoratedMediaAssetWorkflow extends MediaAssetWorkflow {
   @ApiProperty({
     type: () => MediaAssetWorkflowDecoration,
     required: true,
@@ -184,18 +184,18 @@ export class UpdateMediaAssetWorkflowRequest {
 export class SingleMediaAssetWorkflowResponse {
   @ApiProperty({
     required: true,
-    type: () => MediaAssetWorkflow,
+    type: () => DecoratedMediaAssetWorkflow,
     description: "The newly created workflow",
   })
-  workflow: MediaAssetWorkflow;
+  workflow: DecoratedMediaAssetWorkflow;
 }
 
 export class ListMediaAssetWorkflowsResponse extends PaginatedResults {
   @ApiProperty({
     required: true,
-    type: () => MediaAssetWorkflowListItem,
+    type: () => DecoratedMediaAssetWorkflow,
     isArray: true,
     description: "A list of workflows",
   })
-  workflows: MediaAssetWorkflowListItem[];
+  workflows: DecoratedMediaAssetWorkflow[];
 }

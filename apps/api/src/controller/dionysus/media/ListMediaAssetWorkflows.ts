@@ -1,15 +1,15 @@
 import {
   ListMediaAssetWorkflowsResponse,
-  MediaAssetWorkflowListItem,
+  DecoratedMediaAssetWorkflow,
   SortDirection,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toMediaAssetWorkflowListItemDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowConverter";
-import { MEDIA_ASSET_WORKFLOW_LIST_ITEM } from "../../../query/dionysus/media/mediaAssetWorkflow";
-import { GraphQlMediaAssetWorkflowListItem } from "../../../types/dionysus/media/mediaAssetWorkflow";
+import { toDecoratedDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowConverter";
+import { DECORATED_MEDIA_ASSET_WORKFLOW } from "../../../query/dionysus/media/mediaAssetWorkflow";
+import { GraphQlDecoratedMediaAssetWorkflow } from "../../../types/dionysus/media/mediaAssetWorkflow";
 import {
   ApiFilterParams,
   ApiPaginationParams,
@@ -22,7 +22,7 @@ import {
 } from "../../../utils/filterUtil";
 
 export type GraphQlListMediaAssetWorkflowsResponse = {
-  dionysus_media_asset_workflow: GraphQlMediaAssetWorkflowListItem[];
+  dionysus_media_asset_workflow: GraphQlDecoratedMediaAssetWorkflow[];
   dionysus_media_asset_workflow_aggregate: {
     aggregate: {
       count: number;
@@ -74,7 +74,7 @@ export class ListMediaAssetWorkflowsController {
           paginationExpression,
           whereExpression,
         ].join(", ")}) {
-          ${MEDIA_ASSET_WORKFLOW_LIST_ITEM}
+          ${DECORATED_MEDIA_ASSET_WORKFLOW}
         }
         dionysus_media_asset_workflow_aggregate${
           whereExpression ? `(${whereExpression})` : ""
@@ -90,10 +90,10 @@ export class ListMediaAssetWorkflowsController {
       await this.graphQLClient.request<GraphQlListMediaAssetWorkflowsResponse>(
         fetchRequest,
       );
-    const fetchedWorkflows: MediaAssetWorkflowListItem[] = [];
+    const fetchedWorkflows: DecoratedMediaAssetWorkflow[] = [];
 
     fetchResponse.dionysus_media_asset_workflow.forEach((result) => {
-      fetchedWorkflows.push(toMediaAssetWorkflowListItemDomainObject(result));
+      fetchedWorkflows.push(toDecoratedDomainObject(result));
     });
 
     const responseBody: ListMediaAssetWorkflowsResponse = {

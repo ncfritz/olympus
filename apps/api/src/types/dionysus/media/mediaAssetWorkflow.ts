@@ -59,6 +59,6 @@ export type GraphQlDecoratedMediaAssetWorkflowStep =
     decoration: GraphQlMediaAssetWorkflowDecoration;
   };
 
-export type GraphQlMediaAssetWorkflowListItem = GraphQlMediaAssetWorkflow & {
+export type GraphQlDecoratedMediaAssetWorkflow = GraphQlMediaAssetWorkflow & {
   decoration: GraphQlMediaAssetWorkflowDecoration;
 };

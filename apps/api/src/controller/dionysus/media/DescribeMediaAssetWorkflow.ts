@@ -15,13 +15,13 @@ import {
 } from "@nestjs/swagger";
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowConverter";
-import { BASE_MEDIA_ASSET_WORKFLOW } from "../../../query/dionysus/media/mediaAssetWorkflow";
-import { GraphQlMediaAssetWorkflow } from "../../../types/dionysus/media/mediaAssetWorkflow";
+import { toDecoratedDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowConverter";
+import { DECORATED_MEDIA_ASSET_WORKFLOW } from "../../../query/dionysus/media/mediaAssetWorkflow";
+import { GraphQlDecoratedMediaAssetWorkflow } from "../../../types/dionysus/media/mediaAssetWorkflow";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlGetMediaAssetWorkflowResponse = {
-  dionysus_media_asset_workflow_by_pk: GraphQlMediaAssetWorkflow;
+  dionysus_media_asset_workflow_by_pk: GraphQlDecoratedMediaAssetWorkflow;
 };
 
 @Controller({ version: "1" })
@@ -57,7 +57,7 @@ export class DescribeMediaAssetWorkflowController {
         dionysus_media_asset_workflow_by_pk(
           id: $workflowId
         ) {
-          ${BASE_MEDIA_ASSET_WORKFLOW}
+          ${DECORATED_MEDIA_ASSET_WORKFLOW}
         }
       }
     `;
@@ -74,7 +74,7 @@ export class DescribeMediaAssetWorkflowController {
       throw new NotFoundException();
     }
 
-    const fetchedWorkflow = toDomainObject(
+    const fetchedWorkflow = toDecoratedDomainObject(
       fetchResponse.dionysus_media_asset_workflow_by_pk,
     );
 

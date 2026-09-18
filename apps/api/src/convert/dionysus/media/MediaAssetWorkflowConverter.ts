@@ -1,14 +1,14 @@
 import {
+  DecoratedMediaAssetWorkflow,
   MediaAssetWorkflow,
   MediaAssetWorkflowDecoration,
-  MediaAssetWorkflowListItem,
-  MediaAssetWorkflowStep,
+  MediaAssetWorkflowStep
 } from "@ncfritz/olympus-model";
 import moment from "moment";
 import {
   GraphQlMediaAssetWorkflow,
   GraphQlMediaAssetWorkflowDecoration,
-  GraphQlMediaAssetWorkflowListItem,
+  GraphQlDecoratedMediaAssetWorkflow,
 } from "../../../types/dionysus/media/mediaAssetWorkflow";
 import { toDomainObject as toDownloadDomainObject } from "./MediaAssetDownloadConverter";
 import { toDomainObject as toWorkflowStepDomainObject } from "./MediaAssetWorkflowStepConverter";
@@ -52,9 +52,9 @@ export const toMediaWorkflowDecorationDomainObject = (
   };
 };
 
-export const toMediaAssetWorkflowListItemDomainObject = (
-  input: GraphQlMediaAssetWorkflowListItem,
-): MediaAssetWorkflowListItem => {
+export const toDecoratedDomainObject = (
+  input: GraphQlDecoratedMediaAssetWorkflow,
+): DecoratedMediaAssetWorkflow => {
   return {
     ...toDomainObject(input),
     decoration: toMediaWorkflowDecorationDomainObject(input.decoration),

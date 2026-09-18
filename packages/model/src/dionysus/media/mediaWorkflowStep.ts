@@ -257,7 +257,7 @@ export class CreateMediaAssetWorkflowStepResponse {
     type: () => MediaAssetWorkflowStep,
     description: "The newly created workflow step",
   })
-  step: MediaAssetWorkflowStep;
+  step: DecoratedMediaAssetWorkflowStep;
 }
 
 export class CreateMediaAssetWorkflowSubStepResponse {
@@ -275,7 +275,7 @@ export class DescribeMediaAssetWorkflowStepResponse {
     type: () => MediaAssetWorkflowStep,
     description: "The workflow step",
   })
-  step: MediaAssetWorkflowStep;
+  step: DecoratedMediaAssetWorkflowStep;
 }
 
 export class UpdateMediaAssetWorkflowStepResponse {
@@ -284,7 +284,7 @@ export class UpdateMediaAssetWorkflowStepResponse {
     type: () => MediaAssetWorkflowStep,
     description: "The updated workflow step",
   })
-  step: MediaAssetWorkflowStep;
+  step: DecoratedMediaAssetWorkflowStep;
 }
 
 export class ListMediaAssetWorkflowStepsResponse {

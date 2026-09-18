@@ -1,7 +1,7 @@
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   MediaAssetSearchType,
-  MediaAssetWorkflow,
+  DecoratedMediaAssetWorkflow,
   MediaAssetWorkflowStatus,
   MediaDownloadStatus,
   SearchResultStatus,
@@ -18,9 +18,9 @@ import {
 import { type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
-import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowConverter";
-import { BASE_MEDIA_ASSET_WORKFLOW } from "../../../query/dionysus/media/mediaAssetWorkflow";
-import { GraphQlMediaAssetWorkflow } from "../../../types/dionysus/media/mediaAssetWorkflow";
+import { toDecoratedDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowConverter";
+import { DECORATED_MEDIA_ASSET_WORKFLOW } from "../../../query/dionysus/media/mediaAssetWorkflow";
+import { GraphQlDecoratedMediaAssetWorkflow } from "../../../types/dionysus/media/mediaAssetWorkflow";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { BaseMediaAssetSearchResultController } from "./BaseMediaAssetSearchResultController";
 import { v4 as uuidv4 } from "uuid";
@@ -29,7 +29,7 @@ type GraphQlCreateMediaAssetWorkflowResponse = {
   insert_dionysus_media_asset_download_one: {
     status: string;
   };
-  insert_dionysus_media_asset_workflow_one: GraphQlMediaAssetWorkflow;
+  insert_dionysus_media_asset_workflow_one: GraphQlDecoratedMediaAssetWorkflow;
   update_dionysus_media_asset_search_result_by_pk: {
     status: string;
   };
@@ -122,7 +122,7 @@ export class CreateMediaAssetWorkflowController extends BaseMediaAssetSearchResu
           status: $workflowStatus 
           startedTime: $startedTime
         }) {
-          ${BASE_MEDIA_ASSET_WORKFLOW}
+          ${DECORATED_MEDIA_ASSET_WORKFLOW}
         }
         update_dionysus_media_asset_search_result_by_pk(
           pk_columns: {
@@ -154,9 +154,10 @@ export class CreateMediaAssetWorkflowController extends BaseMediaAssetSearchResu
         },
       );
 
-    const createdWorkflow: MediaAssetWorkflow = toDomainObject(
-      insertResponse.insert_dionysus_media_asset_workflow_one,
-    );
+    const createdWorkflow: DecoratedMediaAssetWorkflow =
+      toDecoratedDomainObject(
+        insertResponse.insert_dionysus_media_asset_workflow_one,
+      );
 
     await this.amqpConnection.publish(
       "download.trigger",
