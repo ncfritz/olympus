@@ -6,3 +6,4 @@ pnpm-lock.yaml
 **/src/generated/**
 infra/hasura/metadata
 apps/api/openapi
+**/__snapshots__

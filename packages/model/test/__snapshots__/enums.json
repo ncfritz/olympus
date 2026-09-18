@@ -1,0 +1,328 @@
+{
+  "CertificationType": {
+    "MOVIE": "Movie",
+    "TV": "TV"
+  },
+  "ContentIngestionWorkflowAssetLocation": {
+    "LOCAL": "local",
+    "REMOTE": "remote"
+  },
+  "ContentIngestionWorkflowStatus": {
+    "DUPLICATE": "duplicate",
+    "FAILED": "failed",
+    "QUEUED": "queued",
+    "RUNNING": "running",
+    "SKIPPED": "skipped",
+    "SUCCESS": "success"
+  },
+  "ContentIngestionWorkflowStepStatus": {
+    "FAILED": "failed",
+    "RUNNING": "running",
+    "SUCCESS": "success"
+  },
+  "ContentIngestionWorkflowStepType": {
+    "CALCULATE_INPUT_SHA": "calculate_input_sha",
+    "CALCULATE_OUTPUT_SHA": "calculate_output_sha",
+    "CLEANUP": "cleanup",
+    "COPY": "copy",
+    "DOWNLOAD": "download",
+    "EXTRACT_NEW_METADATA": "extract_new_metadata",
+    "EXTRACT_ORIGINAL_METADATA": "extract_original_metadata",
+    "GENERATE_HLS": "generate_hls",
+    "GENERATE_SAMPLE_VIDEO": "generate_sample_video",
+    "GENERATE_SCREENSHOTS": "generate_screenshots",
+    "GENERATE_THUMBNAILS": "generate_thumbnails",
+    "GENERATE_TIME_LAPSE": "generate_time_lapse",
+    "GENERATE_VIDEO_THUMBNAILS": "generate_video_thumbnails",
+    "TRANSCODE": "transcode",
+    "UPLOAD": "upload"
+  },
+  "ContentJobType": {
+    "DELETE": "delete",
+    "HLS": "hls",
+    "THUMBNAIL": "thumbnail"
+  },
+  "ContentTagType": {
+    "MODEL": "model",
+    "SOURCE": "source",
+    "SYSTEM": "system",
+    "TYPE": "type",
+    "USER": "user"
+  },
+  "DeliveryState": {
+    "FAILURE": "failure",
+    "SKIPPED": "skipped",
+    "SUCCESS": "success",
+    "UNKNOWN": "unknown"
+  },
+  "DogType": {
+    "CUSTOM": "custom",
+    "CUSTOMER": "customer",
+    "STANDARD": "standard"
+  },
+  "FilterType": {
+    "AND": "and",
+    "EQUALS": "eq",
+    "EXISTS": "exists",
+    "GREATER_THAN": "gt",
+    "GREATER_THAN_EQUAL": "gte",
+    "IN": "in",
+    "IS_NULL": "is_null",
+    "LESS_THAN": "lt",
+    "LESS_THAN_EQUAL": "lte",
+    "LIKE": "like",
+    "LIKE_IGNORE_CASE": "ilike",
+    "NOT": "not",
+    "NOT_EQUAL": "neq",
+    "NOT_IN": "nin",
+    "NOT_LIKE": "nlike",
+    "NOT_LIKE_IGNORE_CASE": "nilike",
+    "NOT_REGEX": "nregex",
+    "NOT_REGEX_IGNORE_CASE": "niregex",
+    "NOT_SIMILAR": "nsimilar",
+    "OR": "or",
+    "REGEX": "regex",
+    "REGEX_IGNORE_CASE": "iregex",
+    "SIMILAR": "similar"
+  },
+  "Gender": {
+    "0": "UNKNOWN",
+    "1": "FEMALE",
+    "2": "MALE",
+    "3": "NON_BINARY",
+    "FEMALE": 1,
+    "MALE": 2,
+    "NON_BINARY": 3,
+    "UNKNOWN": 0
+  },
+  "GenreType": {
+    "MOVIE": "Movie",
+    "TV": "TV"
+  },
+  "GroupType": {
+    "FOUNDATION_STOCK_SERVICE": "FS",
+    "HERDING": "HD",
+    "HOUND": "HN",
+    "MISCELLANEOUS_CLASS": "MC",
+    "NON_SPORTING": "NS",
+    "SPORTING": "SP",
+    "TERRIER": "TR",
+    "TOY": "TY",
+    "WORKING": "WK"
+  },
+  "JobStatus": {
+    "CANCELLED": "cancelled",
+    "CREATED": "created",
+    "FAILED": "failed",
+    "STARTED": "started",
+    "SUCCESS": "success"
+  },
+  "JobType": {
+    "CERTIFICATIONS": "certifications",
+    "COLLECTIONS": "collections",
+    "COUNTRIES": "countries",
+    "GENRES": "genres",
+    "KEYWORDS": "keywords",
+    "LANGUAGES": "languages",
+    "MOVIES": "movies",
+    "PEOPLE": "people",
+    "PRODUCTION_COMPANIES": "production_companies",
+    "REDRIVE": "redrive",
+    "TV_EPISODES": "tv_episodes",
+    "TV_NETWORKS": "tv_networks",
+    "TV_SEASONS": "tv_seasons",
+    "TV_SERIES": "tv_series"
+  },
+  "MediaAssetSearchConfigurationStatus": {
+    "ERROR": "error",
+    "OK": "ok",
+    "UPDATING": "running"
+  },
+  "MediaAssetSearchType": {
+    "MOVIE": "movie",
+    "TV_EPISODE": "tv_episode",
+    "TV_SEASON": "tv_season",
+    "TV_SERIES": "tv_series"
+  },
+  "MediaAssetWorkflowStatus": {
+    "FAILED": "failed",
+    "PENDING_INPUT": "pending_input",
+    "QUEUED": "queued",
+    "RUNNING": "running",
+    "SUCCESS": "success"
+  },
+  "MediaAssetWorkflowStepStatus": {
+    "FAILED": "failed",
+    "PENDING": "pending",
+    "RUNNING": "running",
+    "SKIPPED": "skipped",
+    "SUCCESS": "success"
+  },
+  "MediaAssetWorkflowStepType": {
+    "CLEANUP": "cleanup",
+    "CONFIGURE_TRANSCODE": "configure_transcode",
+    "EXTRACT_NEW_METADATA": "extract_new_metadata",
+    "EXTRACT_ORIGINAL_METADATA": "extract_original_metadata",
+    "TRANSCODE": "transcode",
+    "UPLOAD": "upload",
+    "VERIFY_TRANSCODE": "verify_transcode"
+  },
+  "MediaAssetWorkflowSubStepType": {
+    "ADD_TO_LIBRARY": "add_to_library",
+    "CLEANUP": "cleanup",
+    "EXTRACT_SRT": "extract_srt",
+    "SAMPLE_0": "sample_0",
+    "SAMPLE_1": "sample_1",
+    "SAMPLE_2": "sample_2",
+    "SAMPLE_3": "sample_3",
+    "SAMPLE_4": "sample_4",
+    "SAMPLE_5": "sample_5",
+    "TRANSFER_SOURCE": "transfer_source",
+    "UPDATE_SEARCH_CONFIGURATION": "update_search_configuration",
+    "UPLOAD_ARTIFACTS": "upload_artifacts"
+  },
+  "MediaDownloadStatus": {
+    "CANCELLED": "cancelled",
+    "DOWNLOADING": "downloading",
+    "FAILED": "failed",
+    "PENDING": "pending",
+    "SUCCESS": "success"
+  },
+  "MeetingImportance": {
+    "High": "High",
+    "Low": "Low",
+    "Normal": "Normal"
+  },
+  "MeetingOccurrenceType": {
+    "Exception": "Exception",
+    "Occurrence": "Occurrence",
+    "RecurringMaster": "RecurringMaster",
+    "Single": "Single"
+  },
+  "MeetingSensitivity": {
+    "Confidential": "Confidential",
+    "Normal": "Normal",
+    "Personal": "Personal",
+    "Private": "Private"
+  },
+  "MeetingSource": {
+    "AMZN": "amzn",
+    "UNKNOWN": "unknown"
+  },
+  "MeetingStatus": {
+    "Busy": "Busy",
+    "Free": "Free",
+    "NoData": "NoData",
+    "OOF": "OOF",
+    "Tentative": "Tentative",
+    "WorkingElsewhere": "WorkingElsewhere"
+  },
+  "MetadataFetchJobStatus": {
+    "CANCELLED": "cancelled",
+    "FAILED": "failed",
+    "FETCHED": "fetched",
+    "FETCHING": "fetching",
+    "INVALIDATED": "invalidated",
+    "NOT_FOUND": "not_found",
+    "QUEUED": "queued"
+  },
+  "MetadataJobType": {
+    "CERTIFICATIONS": "certifications",
+    "COLLECTIONS": "collections",
+    "COUNTRIES": "countries",
+    "GENRES": "genres",
+    "KEYWORDS": "keywords",
+    "LANGUAGES": "languages",
+    "MOVIES": "movies",
+    "PEOPLE": "people",
+    "PRODUCTION_COMPANIES": "production_companies",
+    "TV_EPISODES": "tv_episodes",
+    "TV_NETWORKS": "tv_networks",
+    "TV_SEASONS": "tv_seasons",
+    "TV_SERIES": "tv_series"
+  },
+  "NoteType": {
+    "0": "NOTE",
+    "1": "IDEA",
+    "2": "THOUGHT",
+    "3": "ACTION",
+    "4": "PRAISE",
+    "5": "QUESTION",
+    "ACTION": 3,
+    "IDEA": 1,
+    "NOTE": 0,
+    "PRAISE": 4,
+    "QUESTION": 5,
+    "THOUGHT": 2
+  },
+  "PasswordType": {
+    "0": "NONE",
+    "1": "RAR_PASS",
+    "2": "INNER_ARCHIVE",
+    "INNER_ARCHIVE": 2,
+    "NONE": 0,
+    "RAR_PASS": 1
+  },
+  "SMTPPriority": {
+    "High": "2",
+    "Highest": "1",
+    "Low": "4",
+    "Lowest": "5",
+    "Normal": "3"
+  },
+  "SearchExecutionStatus": {
+    "FAILED": "failed",
+    "RUNNING": "running",
+    "SKIPPED": "skipped",
+    "SUCCESS": "success"
+  },
+  "SearchResultStatus": {
+    "BLOCKED": "blocked",
+    "DOWNLOADED": "downloaded",
+    "DOWNLOADING": "downloading",
+    "DOWNLOAD_FAILED": "download_failed",
+    "DOWNLOAD_REQUESTED": "download_requested",
+    "NONE": "none"
+  },
+  "SearchResultTagType": {
+    "AUDIO_CHANNEL": "audioChannel",
+    "AUDIO_FORMAT": "audioFormat",
+    "HDR": "hdr",
+    "MISC": "misc",
+    "MOVIE_VERSION": "movieVersion",
+    "RELEASE_GROUPS": "releaseGroups",
+    "RESOLUTION": "resolution",
+    "STREAMING_SERVICES": "streamingServices",
+    "UNWANTED": "unwanted",
+    "VIDEO_CODEC": "videoCodec"
+  },
+  "SortDirection": {
+    "ASC": "asc",
+    "ASC_NULL_FIRST": "asc_nulls_first",
+    "ASC_NULL_LAST": "asc_nulls_last",
+    "DESC": "desc",
+    "DESC_NULL_FIRST": "desc_nulls_first",
+    "DESC_NULL_LAST": "desc_nulls_last"
+  },
+  "SynoChatDestinationType": {
+    "BOT": "bot",
+    "CHANNEL": "channel"
+  },
+  "WebSocketNotificationLevel": {
+    "ERROR": "error",
+    "INFO": "info",
+    "SUCCESS": "success",
+    "WARNING": "warning"
+  },
+  "WorkflowStatus": {
+    "CANCELLED": "cancelled",
+    "CREATED": "created",
+    "FAILED": "failed",
+    "STARTED": "started",
+    "SUCCESS": "success"
+  },
+  "WorkflowStepType": {
+    "JOB_EXECUTION": "job_execution",
+    "RETRY": "retry"
+  }
+}

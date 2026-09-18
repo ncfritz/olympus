@@ -9,9 +9,12 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint src",
-    "lintfix": "eslint src --fix",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
+    "lint": "eslint src test",
+    "lintfix": "eslint src test --fix",
+    "test": "vitest run",
+    "test:update": "vitest run -u",
+    "check:conventions": "vitest run test/api-property.spec.ts",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -26,9 +29,12 @@
   },
   "devDependencies": {
     "@ncfritz/olympus-config": "workspace:*",
+    "@swc/core": "catalog:",
     "@types/node": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "unplugin-swc": "catalog:",
+    "vitest": "catalog:"
   }
 }
