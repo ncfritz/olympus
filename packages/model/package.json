@@ -1,0 +1,75 @@
+{
+  "name": "@ncfritz/olympus-model",
+  "description": "Contains the model and request/response types for Olympus",
+  "version": "1.25.7",
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ncfritz/olympus-model.git"
+  },
+  "readmeFilename": "README.md",
+  "license": "Apache-2.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
+  ],
+  "scripts": {
+    "prepare": "is-ci || husky install",
+    "clean": "rimraf dist && rimraf tsconfig.tsbuildinfo",
+    "prebuild": "rimraf dist",
+    "build": "tsc --incremental false",
+    "lint": "eslint ./src",
+    "lintfix": "eslint ./src --fix"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.9",
+    "@nestjs/core": "^11.1.9",
+    "@nestjs/swagger": "^11.2.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3",
+    "moment": "^2.30.1",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@nestjs/cli": "^11.0.14",
+    "@nestjs/schematics": "^11.0.9",
+    "@semantic-release/git": "^10.0.1",
+    "@types/node": "^25.0.1",
+    "@types/nodemailer": "^7.0.4",
+    "@typescript-eslint/eslint-plugin": "^8.49.0",
+    "@typescript-eslint/parser": "^8.49.0",
+    "commitizen": "^4.3.1",
+    "conventional-changelog-conventionalcommits": "^9.1.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "is-ci": "^4.1.0",
+    "prettier": "^3.7.4",
+    "rimraf": "^6.1.2",
+    "rxjs": "^7.8.2",
+    "semantic-release": "^25.0.2",
+    "source-map-support": "^0.5.21",
+    "ts-loader": "^9.5.4",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.49.0"
+  },
+  "peerDependencies": {
+    "nodemailer": "^7.0.11"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
