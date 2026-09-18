@@ -17,7 +17,7 @@ import {
 } from "./common";
 import { BasePerson } from "./people";
 import { SparseSeason } from "./tvSeason";
-import { BaseTVSeries, SparseTvSeries } from "./tvSeries";
+import { BaseTVSeries } from "./tvSeries";
 
 export class BaseEpisode {
   @ApiProperty({ required: true, type: Number })
@@ -77,7 +77,7 @@ export class SparseEpisode extends BaseEpisode {
 export class Episode extends SparseEpisode {
   @ApiProperty({
     required: true,
-    type: () => SparseTvSeries,
+    type: () => BaseTVSeries,
   })
   series: BaseTVSeries;
 

@@ -3,7 +3,6 @@ import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
-import { Language } from "./languages";
 
 export enum CertificationType {
   TV = "TV",
@@ -42,7 +41,7 @@ export class PartialCertification extends OmitType(Certification, [
 ]) {}
 
 export class CertificationAssociation {
-  @ApiProperty({ required: true, type: Language })
+  @ApiProperty({ required: true, type: () => Certification })
   certification: Certification;
 
   @ApiTimestamp({ required: true })

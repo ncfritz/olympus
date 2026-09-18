@@ -10781,20 +10781,109 @@
           "job"
         ]
       },
+      "BatchJobStatsCategories": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "array",
+            "description": "The categories (x-axis) of the status chart",
+            "items": {
+              "$ref": "#/components/schemas/MetadataJobType"
+            }
+          },
+          "timing": {
+            "type": "array",
+            "description": "The categories of the timing charts",
+            "items": {
+              "$ref": "#/components/schemas/JobType"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "timing"
+        ]
+      },
+      "BatchJobStatsTiming": {
+        "type": "object",
+        "properties": {
+          "queueTime": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "description": "Queue time series, keyed by metadata job type"
+          },
+          "runtime": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "description": "Run time series, keyed by metadata job type"
+          }
+        },
+        "required": [
+          "queueTime",
+          "runtime"
+        ]
+      },
+      "BatchJobStatsSeries": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "description": "Job counts per category, keyed by job status"
+          },
+          "timing": {
+            "description": "Queue and run time series",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BatchJobStatsTiming"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "timing"
+        ]
+      },
       "GetBatchJobStatsResponse": {
         "type": "object",
         "properties": {
           "categories": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "BatchJobStats"
-            }
+            "description": "The categories associated with each statistics series",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BatchJobStatsCategories"
+              }
+            ]
           },
           "series": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "BatchJobStats"
-            }
+            "description": "The series data",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BatchJobStatsSeries"
+              }
+            ]
           }
         },
         "required": [
@@ -12200,22 +12289,84 @@
           "type"
         ]
       },
+      "ContentIngestionWorkflowStatisticsCategories": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "array",
+            "description": "The workflow statuses charted",
+            "items": {
+              "$ref": "#/components/schemas/ContentIngestionWorkflowStatus"
+            }
+          },
+          "source": {
+            "type": "array",
+            "description": "The asset sources charted",
+            "items": {
+              "$ref": "#/components/schemas/ContentIngestionWorkflowAssetLocation"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "source"
+        ]
+      },
+      "ContentIngestionWorkflowStatisticsSeries": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "description": "Time series of workflow counts, keyed by status"
+          },
+          "statusAggregate": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Total workflow count, keyed by status"
+          },
+          "sourceAggregate": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Total workflow count, keyed by asset source"
+          }
+        },
+        "required": [
+          "status",
+          "statusAggregate",
+          "sourceAggregate"
+        ]
+      },
       "GetContentIngestionWorkflowStatisticsResponse": {
         "type": "object",
         "properties": {
           "categories": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "ContentIngestionWorkflowStats"
-            },
-            "description": "The categories associated with each statistics series"
+            "description": "The categories associated with each statistics series",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContentIngestionWorkflowStatisticsCategories"
+              }
+            ]
           },
           "series": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "ContentIngestionWorkflowStats"
-            },
-            "description": "The series data"
+            "description": "The series data",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContentIngestionWorkflowStatisticsSeries"
+              }
+            ]
           }
         },
         "required": [
@@ -14205,252 +14356,7 @@
           "lastUpdatedTime"
         ]
       },
-      "Language": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "nativeName": {
-            "type": "string"
-          },
-          "createdTime": {
-            "type": "string"
-          },
-          "lastUpdatedTime": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "nativeName",
-          "createdTime",
-          "lastUpdatedTime"
-        ]
-      },
-      "Country": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "createdTime": {
-            "type": "string"
-          },
-          "lastUpdatedTime": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "createdTime",
-          "lastUpdatedTime"
-        ]
-      },
-      "AlternativeTitle": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "country": {
-            "$ref": "#/components/schemas/Country"
-          },
-          "createdTime": {
-            "type": "string"
-          },
-          "lastUpdatedTime": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "title",
-          "type",
-          "country",
-          "createdTime",
-          "lastUpdatedTime"
-        ]
-      },
-      "CertificationType": {
-        "type": "string",
-        "enum": [
-          "TV",
-          "Movie"
-        ]
-      },
-      "Certification": {
-        "type": "object",
-        "properties": {
-          "country": {
-            "type": "string"
-          },
-          "certification": {
-            "type": "string"
-          },
-          "type": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/CertificationType"
-              }
-            ]
-          },
-          "order": {
-            "type": "number"
-          },
-          "meaning": {
-            "type": "string"
-          },
-          "createdTime": {
-            "type": "string"
-          },
-          "lastUpdatedTime": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "country",
-          "certification",
-          "type",
-          "order",
-          "meaning",
-          "createdTime",
-          "lastUpdatedTime"
-        ]
-      },
-      "TVSeriesRuntime": {
-        "type": "object",
-        "properties": {
-          "runTime": {
-            "type": "number"
-          },
-          "createdTime": {
-            "type": "string"
-          },
-          "lastUpdatedTime": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "runTime",
-          "createdTime",
-          "lastUpdatedTime"
-        ]
-      },
-      "ExternalId": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string"
-          },
-          "externalId": {
-            "type": "string"
-          },
-          "createdTime": {
-            "type": "string"
-          },
-          "lastUpdatedTime": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "type",
-          "externalId",
-          "createdTime",
-          "lastUpdatedTime"
-        ]
-      },
-      "Keyword": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          },
-          "createdTime": {
-            "type": "string"
-          },
-          "lastUpdatedTime": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "value",
-          "createdTime",
-          "lastUpdatedTime"
-        ]
-      },
-      "KeywordAssociation": {
-        "type": "object",
-        "properties": {
-          "keyword": {
-            "$ref": "#/components/schemas/Keyword"
-          },
-          "createdTime": {
-            "type": "string"
-          },
-          "lastUpdatedTime": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "keyword",
-          "createdTime",
-          "lastUpdatedTime"
-        ]
-      },
-      "LanguageAssociation": {
-        "type": "object",
-        "properties": {
-          "language": {
-            "$ref": "#/components/schemas/Language"
-          },
-          "createdTime": {
-            "type": "string"
-          },
-          "lastUpdatedTime": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "language",
-          "createdTime",
-          "lastUpdatedTime"
-        ]
-      },
-      "CountryAssociation": {
-        "type": "object",
-        "properties": {
-          "country": {
-            "$ref": "#/components/schemas/Country"
-          },
-          "createdTime": {
-            "type": "string"
-          },
-          "lastUpdatedTime": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "country",
-          "createdTime",
-          "lastUpdatedTime"
-        ]
-      },
-      "SparseTvSeries": {
+      "BaseTVSeries": {
         "type": "object",
         "properties": {
           "id": {
@@ -14527,57 +14433,6 @@
           },
           "lastUpdatedTime": {
             "type": "string"
-          },
-          "originalLanguage": {
-            "$ref": "#/components/schemas/Language"
-          },
-          "alternativeTitles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AlternativeTitle"
-            }
-          },
-          "certifications": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Certification"
-            }
-          },
-          "runtimes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TVSeriesRuntime"
-            }
-          },
-          "externalIds": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ExternalId"
-            }
-          },
-          "keywords": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/KeywordAssociation"
-            }
-          },
-          "languages": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LanguageAssociation"
-            }
-          },
-          "originCountries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CountryAssociation"
-            }
-          },
-          "spokenLanguages": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LanguageAssociation"
-            }
           }
         },
         "required": [
@@ -14599,16 +14454,7 @@
           "voteAverage",
           "genres",
           "createdTime",
-          "lastUpdatedTime",
-          "originalLanguage",
-          "alternativeTitles",
-          "certifications",
-          "runtimes",
-          "externalIds",
-          "keywords",
-          "languages",
-          "originCountries",
-          "spokenLanguages"
+          "lastUpdatedTime"
         ]
       },
       "SparseSeason": {
@@ -14662,6 +14508,56 @@
           "episodeCount"
         ]
       },
+      "ExternalId": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "createdTime": {
+            "type": "string"
+          },
+          "lastUpdatedTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "externalId",
+          "createdTime",
+          "lastUpdatedTime"
+        ]
+      },
+      "Language": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nativeName": {
+            "type": "string"
+          },
+          "createdTime": {
+            "type": "string"
+          },
+          "lastUpdatedTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "nativeName",
+          "createdTime",
+          "lastUpdatedTime"
+        ]
+      },
       "TypedImage": {
         "type": "object",
         "properties": {
@@ -14694,6 +14590,29 @@
           "createdTime",
           "lastUpdatedTime",
           "type"
+        ]
+      },
+      "Country": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdTime": {
+            "type": "string"
+          },
+          "lastUpdatedTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "createdTime",
+          "lastUpdatedTime"
         ]
       },
       "Video": {
@@ -14803,7 +14722,7 @@
             "type": "string"
           },
           "series": {
-            "$ref": "#/components/schemas/SparseTvSeries"
+            "$ref": "#/components/schemas/BaseTVSeries"
           },
           "season": {
             "$ref": "#/components/schemas/SparseSeason"
@@ -15633,6 +15552,13 @@
           "step"
         ]
       },
+      "CertificationType": {
+        "type": "string",
+        "enum": [
+          "TV",
+          "Movie"
+        ]
+      },
       "PartialCertification": {
         "type": "object",
         "properties": {
@@ -15673,6 +15599,45 @@
         },
         "required": [
           "certification"
+        ]
+      },
+      "Certification": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string"
+          },
+          "certification": {
+            "type": "string"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificationType"
+              }
+            ]
+          },
+          "order": {
+            "type": "number"
+          },
+          "meaning": {
+            "type": "string"
+          },
+          "createdTime": {
+            "type": "string"
+          },
+          "lastUpdatedTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "country",
+          "certification",
+          "type",
+          "order",
+          "meaning",
+          "createdTime",
+          "lastUpdatedTime"
         ]
       },
       "CreateCertificationResponse": {
@@ -15893,6 +15858,29 @@
         },
         "required": [
           "keyword"
+        ]
+      },
+      "Keyword": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "createdTime": {
+            "type": "string"
+          },
+          "lastUpdatedTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "value",
+          "createdTime",
+          "lastUpdatedTime"
         ]
       },
       "CreateKeywordResponse": {
@@ -17880,6 +17868,52 @@
           "job"
         ]
       },
+      "AlternativeTitle": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "country": {
+            "$ref": "#/components/schemas/Country"
+          },
+          "createdTime": {
+            "type": "string"
+          },
+          "lastUpdatedTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "type",
+          "country",
+          "createdTime",
+          "lastUpdatedTime"
+        ]
+      },
+      "KeywordAssociation": {
+        "type": "object",
+        "properties": {
+          "keyword": {
+            "$ref": "#/components/schemas/Keyword"
+          },
+          "createdTime": {
+            "type": "string"
+          },
+          "lastUpdatedTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "keyword",
+          "createdTime",
+          "lastUpdatedTime"
+        ]
+      },
       "ProductionCompanyAssociation": {
         "type": "object",
         "properties": {
@@ -17895,6 +17929,25 @@
         },
         "required": [
           "productionCompany",
+          "createdTime",
+          "lastUpdatedTime"
+        ]
+      },
+      "CountryAssociation": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "$ref": "#/components/schemas/Country"
+          },
+          "createdTime": {
+            "type": "string"
+          },
+          "lastUpdatedTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "country",
           "createdTime",
           "lastUpdatedTime"
         ]
@@ -17931,6 +17984,25 @@
           "country",
           "type",
           "note",
+          "createdTime",
+          "lastUpdatedTime"
+        ]
+      },
+      "LanguageAssociation": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "createdTime": {
+            "type": "string"
+          },
+          "lastUpdatedTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "language",
           "createdTime",
           "lastUpdatedTime"
         ]
@@ -18462,107 +18534,6 @@
           "company"
         ]
       },
-      "BaseTVSeries": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "adult": {
-            "type": "boolean"
-          },
-          "backdropPath": {
-            "type": "string"
-          },
-          "firstAirDate": {
-            "type": "string"
-          },
-          "homepage": {
-            "type": "string"
-          },
-          "inProduction": {
-            "type": "boolean"
-          },
-          "lastAirDate": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "numberOfEpisodes": {
-            "type": "number"
-          },
-          "numberOfSeasons": {
-            "type": "number"
-          },
-          "originalName": {
-            "type": "string"
-          },
-          "popularity": {
-            "type": "number"
-          },
-          "overview": {
-            "type": "string"
-          },
-          "posterPath": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "tagline": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "voteCount": {
-            "type": "number"
-          },
-          "voteAverage": {
-            "type": "number"
-          },
-          "genres": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GenreAssociation"
-            }
-          },
-          "searchConfiguration": {
-            "$ref": "#/components/schemas/MediaAssetSearchConfiguration"
-          },
-          "favorite": {
-            "$ref": "#/components/schemas/SparseMediaFavorite"
-          },
-          "createdTime": {
-            "type": "string"
-          },
-          "lastUpdatedTime": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "adult",
-          "backdropPath",
-          "homepage",
-          "inProduction",
-          "name",
-          "numberOfEpisodes",
-          "numberOfSeasons",
-          "originalName",
-          "popularity",
-          "overview",
-          "status",
-          "tagline",
-          "type",
-          "voteCount",
-          "voteAverage",
-          "genres",
-          "createdTime",
-          "lastUpdatedTime"
-        ]
-      },
       "SparseEpisode": {
         "type": "object",
         "properties": {
@@ -18721,6 +18692,44 @@
         },
         "required": [
           "season"
+        ]
+      },
+      "CertificationAssociation": {
+        "type": "object",
+        "properties": {
+          "certification": {
+            "$ref": "#/components/schemas/Certification"
+          },
+          "createdTime": {
+            "type": "string"
+          },
+          "lastUpdatedTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "certification",
+          "createdTime",
+          "lastUpdatedTime"
+        ]
+      },
+      "TVSeriesRuntime": {
+        "type": "object",
+        "properties": {
+          "runTime": {
+            "type": "number"
+          },
+          "createdTime": {
+            "type": "string"
+          },
+          "lastUpdatedTime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "runTime",
+          "createdTime",
+          "lastUpdatedTime"
         ]
       },
       "BasePerson": {
@@ -18918,7 +18927,7 @@
           "certifications": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Certification"
+              "$ref": "#/components/schemas/CertificationAssociation"
             }
           },
           "runtimes": {
@@ -19055,9 +19064,95 @@
           "tvSeries"
         ]
       },
+      "MetadataFetchJobStatusStatistics": {
+        "type": "object",
+        "properties": {
+          "categories": {
+            "description": "The metadata categories (x-axis)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "series": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "description": "Job counts per category, keyed by fetch job status"
+          }
+        },
+        "required": [
+          "categories",
+          "series"
+        ]
+      },
+      "ChartSeries": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the series"
+          },
+          "data": {
+            "description": "The values of the series, one per category",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "type": {
+            "type": "string",
+            "description": "The chart type used to render the series"
+          }
+        },
+        "required": [
+          "name",
+          "data"
+        ]
+      },
+      "MetadataFetchJobExpirationStatistics": {
+        "type": "object",
+        "properties": {
+          "series": {
+            "description": "One series per metadata category; values by days until expiry",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChartSeries"
+            }
+          }
+        },
+        "required": [
+          "series"
+        ]
+      },
       "GetMetadataFetchJobStatusStatisticsResponse": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "status": {
+            "description": "Fetch job counts by status and category",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MetadataFetchJobStatusStatistics"
+              }
+            ]
+          },
+          "expiration": {
+            "description": "Fetched entries by days until they expire",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MetadataFetchJobExpirationStatistics"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "expiration"
+        ]
       },
       "GetMovieAggregateStatisticsResponse": {
         "type": "object",
@@ -20358,20 +20453,109 @@
           "job"
         ]
       },
+      "WorkflowStatus": {
+        "type": "string",
+        "enum": [
+          "created",
+          "started",
+          "success",
+          "failed",
+          "cancelled"
+        ],
+        "description": "The workflow statuses charted"
+      },
+      "MetadataWorkflowStatisticsCategories": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "array",
+            "description": "The workflow statuses charted",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowStatus"
+            }
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "MetadataWorkflowStatisticsTiming": {
+        "type": "object",
+        "properties": {
+          "queueTime": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "description": "Queue time series as [timestamp, value] pairs"
+          },
+          "runtime": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "description": "Run time series as [timestamp, value] pairs"
+          }
+        },
+        "required": [
+          "queueTime",
+          "runtime"
+        ]
+      },
+      "MetadataWorkflowStatisticsSeries": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "description": "Time series of workflow counts, keyed by status"
+          },
+          "timing": {
+            "description": "Queue and run time series",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MetadataWorkflowStatisticsTiming"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "timing"
+        ]
+      },
       "GetMetadataWorkflowStatisticsResponse": {
         "type": "object",
         "properties": {
           "categories": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "MetadataWorkflowStats"
-            }
+            "description": "The categories associated with each statistics series",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MetadataWorkflowStatisticsCategories"
+              }
+            ]
           },
           "series": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "MetadataWorkflowStats"
-            }
+            "description": "The series data",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MetadataWorkflowStatisticsSeries"
+              }
+            ]
           }
         },
         "required": [
@@ -20382,17 +20566,6 @@
       "CreateWorkflowRequest": {
         "type": "object",
         "properties": {}
-      },
-      "WorkflowStatus": {
-        "type": "string",
-        "enum": [
-          "created",
-          "started",
-          "success",
-          "failed",
-          "cancelled"
-        ],
-        "description": "The status of the workflow."
       },
       "WorkflowStepType": {
         "type": "string",

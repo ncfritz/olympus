@@ -2,7 +2,11 @@ import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import moment, { Moment } from "moment";
-import { PaginatedResults } from "../../common";
+import {
+  ChartSeries,
+  NUMBER_ARRAY_SCHEMA,
+  PaginatedResults,
+} from "../../common";
 
 export enum MetadataFetchJobStatus {
   QUEUED = "queued",
@@ -201,20 +205,52 @@ export class UpdateMetadataFetchJobResponse {
   job: MetadataFetchJob;
 }
 
-export interface Series {
-  name: string;
-  data: number[];
-  type?: string;
+/** @deprecated Use ChartSeries. Kept so existing imports compile. */
+export type Series = ChartSeries;
+
+export class MetadataFetchJobStatusStatistics {
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description: "The metadata categories (x-axis)",
+  })
+  categories: string[];
+
+  @ApiProperty({
+    type: Object,
+    additionalProperties: NUMBER_ARRAY_SCHEMA,
+    required: true,
+    description: "Job counts per category, keyed by fetch job status",
+  })
+  series: Record<MetadataFetchJobStatus, number[]>;
+}
+
+export class MetadataFetchJobExpirationStatistics {
+  @ApiProperty({
+    type: () => ChartSeries,
+    isArray: true,
+    required: true,
+    description:
+      "One series per metadata category; values by days until expiry",
+  })
+  series: ChartSeries[];
 }
 
 export class GetMetadataFetchJobStatusStatisticsResponse {
-  status: {
-    categories: string[];
-    series: Record<MetadataFetchJobStatus, number[]>;
-  };
-  expiration: {
-    series: Series[];
-  };
+  @ApiProperty({
+    type: () => MetadataFetchJobStatusStatistics,
+    required: true,
+    description: "Fetch job counts by status and category",
+  })
+  status: MetadataFetchJobStatusStatistics;
+
+  @ApiProperty({
+    type: () => MetadataFetchJobExpirationStatistics,
+    required: true,
+    description: "Fetched entries by days until they expire",
+  })
+  expiration: MetadataFetchJobExpirationStatistics;
 }
 
 export class ListMetadataFetchJobsResponse extends PaginatedResults {

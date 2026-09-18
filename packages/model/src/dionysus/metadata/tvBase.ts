@@ -1,3 +1,4 @@
+import { ApiProperty } from "@nestjs/swagger";
 import {
   PartialTVSeriesCastMember,
   PartialTVSeriesCastMemberRole,
@@ -16,10 +17,20 @@ export type PartialTVSeriesCrewMemberJobWithKey = PartialTVSeriesCrewMemberJob &
   BaseCastCrewCredit;
 
 export class PartialTVSeasonCastMember extends PartialTVSeriesCastMember {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The ID of the TV series the season belongs to",
+  })
   seriesId: number;
 }
 
 export class PartialTVSeasonCrewMember extends PartialTVSeriesCrewMember {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The ID of the TV series the season belongs to",
+  })
   seriesId: number;
 }
 

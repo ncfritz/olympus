@@ -5,7 +5,6 @@ import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import { MediaAssetSearchConfiguration, SparseMediaFavorite } from "../media";
 import {
-  Certification,
   CertificationAssociation,
   PartialCertification,
 } from "./certifications";
@@ -135,7 +134,7 @@ export class SparseTvSeries extends BaseTVSeries {
 
   @ApiProperty({
     required: true,
-    type: () => Certification,
+    type: () => CertificationAssociation,
     isArray: true,
   })
   certifications: CertificationAssociation[];

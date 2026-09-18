@@ -1,7 +1,11 @@
 import { ApiTimestamp } from "../../decorators";
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import type { Moment } from "moment";
-import { PaginatedResults } from "../../common";
+import {
+  NUMBER_ARRAY_SCHEMA,
+  NUMBER_MATRIX_SCHEMA,
+  PaginatedResults,
+} from "../../common";
 import { MetadataFetchJobStatus, MetadataJobType } from "./fetchJob";
 
 export enum JobType {
@@ -245,29 +249,75 @@ export class DescribeBatchJobResponse {
   job: BatchJob;
 }
 
-export class GetBatchJobStatsResponse {
+export class BatchJobStatsCategories {
   @ApiProperty({
+    enum: () => MetadataJobType,
+    enumName: "MetadataJobType",
+    isArray: true,
     required: true,
-    type: Object,
-    additionalProperties: { type: "BatchJobStats" },
+    description: "The categories (x-axis) of the status chart",
   })
-  categories: {
-    status: MetadataJobType[];
-    timing: JobType[];
-  };
+  status: MetadataJobType[];
 
   @ApiProperty({
+    enum: () => JobType,
+    enumName: "JobType",
+    isArray: true,
     required: true,
-    type: Object,
-    additionalProperties: { type: "BatchJobStats" },
+    description: "The categories of the timing charts",
   })
-  series: {
-    status: Record<JobStatus, number[]>;
-    timing: {
-      queueTime: Record<MetadataJobType, number[][]>;
-      runtime: Record<MetadataJobType, number[][]>;
-    };
-  };
+  timing: JobType[];
+}
+
+export class BatchJobStatsTiming {
+  @ApiProperty({
+    type: Object,
+    additionalProperties: NUMBER_MATRIX_SCHEMA,
+    required: true,
+    description: "Queue time series, keyed by metadata job type",
+  })
+  queueTime: Record<MetadataJobType, number[][]>;
+
+  @ApiProperty({
+    type: Object,
+    additionalProperties: NUMBER_MATRIX_SCHEMA,
+    required: true,
+    description: "Run time series, keyed by metadata job type",
+  })
+  runtime: Record<MetadataJobType, number[][]>;
+}
+
+export class BatchJobStatsSeries {
+  @ApiProperty({
+    type: Object,
+    additionalProperties: NUMBER_ARRAY_SCHEMA,
+    required: true,
+    description: "Job counts per category, keyed by job status",
+  })
+  status: Record<JobStatus, number[]>;
+
+  @ApiProperty({
+    type: () => BatchJobStatsTiming,
+    required: true,
+    description: "Queue and run time series",
+  })
+  timing: BatchJobStatsTiming;
+}
+
+export class GetBatchJobStatsResponse {
+  @ApiProperty({
+    type: () => BatchJobStatsCategories,
+    required: true,
+    description: "The categories associated with each statistics series",
+  })
+  categories: BatchJobStatsCategories;
+
+  @ApiProperty({
+    type: () => BatchJobStatsSeries,
+    required: true,
+    description: "The series data",
+  })
+  series: BatchJobStatsSeries;
 }
 
 export class GetBatchJobStatsByTypeResponse {

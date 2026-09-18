@@ -777,18 +777,29 @@
         "type": "object",
         "properties": {
           "hasura.host": {
-            "type": "string"
+            "type": "string",
+            "description": "The Hasura host the API is configured to use"
+          },
+          "amqp.host": {
+            "type": "string",
+            "description": "The RabbitMQ host the API is configured to use"
           }
         },
         "required": [
-          "hasura.host"
+          "hasura.host",
+          "amqp.host"
         ]
       },
       "PingResponse": {
         "type": "object",
         "properties": {
           "config": {
-            "$ref": "#/components/schemas/SystemConfiguration"
+            "description": "The API's effective configuration",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SystemConfiguration"
+              }
+            ]
           }
         },
         "required": [

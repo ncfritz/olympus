@@ -1331,6 +1331,91 @@
     ],
     "type": "object"
   },
+  "BatchJobStatsCategories": {
+    "properties": {
+      "status": {
+        "description": "The categories (x-axis) of the status chart",
+        "items": {
+          "$ref": "#/components/schemas/MetadataJobType"
+        },
+        "type": "array"
+      },
+      "timing": {
+        "description": "The categories of the timing charts",
+        "items": {
+          "$ref": "#/components/schemas/JobType"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "status",
+      "timing"
+    ],
+    "type": "object"
+  },
+  "BatchJobStatsSeries": {
+    "properties": {
+      "status": {
+        "additionalProperties": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "description": "Job counts per category, keyed by job status",
+        "type": "object"
+      },
+      "timing": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BatchJobStatsTiming"
+          }
+        ],
+        "description": "Queue and run time series"
+      }
+    },
+    "required": [
+      "status",
+      "timing"
+    ],
+    "type": "object"
+  },
+  "BatchJobStatsTiming": {
+    "properties": {
+      "queueTime": {
+        "additionalProperties": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "description": "Queue time series, keyed by metadata job type",
+        "type": "object"
+      },
+      "runtime": {
+        "additionalProperties": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "description": "Run time series, keyed by metadata job type",
+        "type": "object"
+      }
+    },
+    "required": [
+      "queueTime",
+      "runtime"
+    ],
+    "type": "object"
+  },
   "BatchJobTimingStatistics": {
     "properties": {
       "queueTime": {
@@ -1430,7 +1515,7 @@
   "CertificationAssociation": {
     "properties": {
       "certification": {
-        "$ref": "#/components/schemas/Language"
+        "$ref": "#/components/schemas/Certification"
       },
       "createdTime": {
         "type": "string"
@@ -1452,6 +1537,30 @@
       "Movie"
     ],
     "type": "string"
+  },
+  "ChartSeries": {
+    "properties": {
+      "data": {
+        "description": "The values of the series, one per category",
+        "items": {
+          "type": "number"
+        },
+        "type": "array"
+      },
+      "name": {
+        "description": "The name of the series",
+        "type": "string"
+      },
+      "type": {
+        "description": "The chart type used to render the series",
+        "type": "string"
+      }
+    },
+    "required": [
+      "data",
+      "name"
+    ],
+    "type": "object"
   },
   "CheckAuthResponse": {
     "properties": {
@@ -1905,6 +2014,66 @@
       "remote"
     ],
     "type": "string"
+  },
+  "ContentIngestionWorkflowStatisticsCategories": {
+    "properties": {
+      "source": {
+        "description": "The asset sources charted",
+        "items": {
+          "$ref": "#/components/schemas/ContentIngestionWorkflowAssetLocation"
+        },
+        "type": "array"
+      },
+      "status": {
+        "description": "The workflow statuses charted",
+        "items": {
+          "$ref": "#/components/schemas/ContentIngestionWorkflowStatus"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "source",
+      "status"
+    ],
+    "type": "object"
+  },
+  "ContentIngestionWorkflowStatisticsSeries": {
+    "properties": {
+      "sourceAggregate": {
+        "additionalProperties": {
+          "type": "number"
+        },
+        "description": "Total workflow count, keyed by asset source",
+        "type": "object"
+      },
+      "status": {
+        "additionalProperties": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "description": "Time series of workflow counts, keyed by status",
+        "type": "object"
+      },
+      "statusAggregate": {
+        "additionalProperties": {
+          "type": "number"
+        },
+        "description": "Total workflow count, keyed by status",
+        "type": "object"
+      }
+    },
+    "required": [
+      "sourceAggregate",
+      "status",
+      "statusAggregate"
+    ],
+    "type": "object"
   },
   "ContentIngestionWorkflowStatus": {
     "description": "The status of the workflow",
@@ -3700,7 +3869,7 @@
         "type": "number"
       },
       "series": {
-        "$ref": "#/components/schemas/SparseTvSeries"
+        "$ref": "#/components/schemas/BaseTVSeries"
       },
       "stillPath": {
         "type": "string"
@@ -4181,16 +4350,20 @@
   "GetBatchJobStatsResponse": {
     "properties": {
       "categories": {
-        "additionalProperties": {
-          "type": "BatchJobStats"
-        },
-        "type": "object"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BatchJobStatsCategories"
+          }
+        ],
+        "description": "The categories associated with each statistics series"
       },
       "series": {
-        "additionalProperties": {
-          "type": "BatchJobStats"
-        },
-        "type": "object"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BatchJobStatsSeries"
+          }
+        ],
+        "description": "The series data"
       }
     },
     "required": [
@@ -4255,18 +4428,20 @@
   "GetContentIngestionWorkflowStatisticsResponse": {
     "properties": {
       "categories": {
-        "additionalProperties": {
-          "type": "ContentIngestionWorkflowStats"
-        },
-        "description": "The categories associated with each statistics series",
-        "type": "object"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ContentIngestionWorkflowStatisticsCategories"
+          }
+        ],
+        "description": "The categories associated with each statistics series"
       },
       "series": {
-        "additionalProperties": {
-          "type": "ContentIngestionWorkflowStats"
-        },
-        "description": "The series data",
-        "type": "object"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ContentIngestionWorkflowStatisticsSeries"
+          }
+        ],
+        "description": "The series data"
       }
     },
     "required": [
@@ -4290,20 +4465,18 @@
   "GetMeetingStatisticsResponse": {
     "properties": {
       "dayOfWeekStatistics": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/MeetingStatusStatistics"
-          }
-        ],
-        "description": "A map of day of the week to meeting statistics"
+        "additionalProperties": {
+          "$ref": "#/components/schemas/MeetingStatusStatistics"
+        },
+        "description": "A map of day of the week to meeting statistics",
+        "type": "object"
       },
       "hourOfDayStatistics": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/MeetingStatusStatistics"
-          }
-        ],
-        "description": "A map of hours of the day to meeting statistics"
+        "additionalProperties": {
+          "$ref": "#/components/schemas/MeetingStatusStatistics"
+        },
+        "description": "A map of hours of the day to meeting statistics",
+        "type": "object"
       }
     },
     "type": "object"
@@ -4311,33 +4484,57 @@
   "GetMeetingSummaryResponse": {
     "properties": {
       "statusStatistics": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/MeetingStatusStatistics"
-          }
-        ],
-        "description": "A map of ISO-8601 date strings to meeting statistics"
+        "additionalProperties": {
+          "$ref": "#/components/schemas/MeetingStatusStatistics"
+        },
+        "description": "A map of ISO-8601 date strings to meeting statistics",
+        "type": "object"
       }
     },
     "type": "object"
   },
   "GetMetadataFetchJobStatusStatisticsResponse": {
-    "properties": {},
+    "properties": {
+      "expiration": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MetadataFetchJobExpirationStatistics"
+          }
+        ],
+        "description": "Fetched entries by days until they expire"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MetadataFetchJobStatusStatistics"
+          }
+        ],
+        "description": "Fetch job counts by status and category"
+      }
+    },
+    "required": [
+      "expiration",
+      "status"
+    ],
     "type": "object"
   },
   "GetMetadataWorkflowStatisticsResponse": {
     "properties": {
       "categories": {
-        "additionalProperties": {
-          "type": "MetadataWorkflowStats"
-        },
-        "type": "object"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MetadataWorkflowStatisticsCategories"
+          }
+        ],
+        "description": "The categories associated with each statistics series"
       },
       "series": {
-        "additionalProperties": {
-          "type": "MetadataWorkflowStats"
-        },
-        "type": "object"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MetadataWorkflowStatisticsSeries"
+          }
+        ],
+        "description": "The series data"
       }
     },
     "required": [
@@ -7205,6 +7402,21 @@
     ],
     "type": "object"
   },
+  "MetadataFetchJobExpirationStatistics": {
+    "properties": {
+      "series": {
+        "description": "One series per metadata category; values by days until expiry",
+        "items": {
+          "$ref": "#/components/schemas/ChartSeries"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "series"
+    ],
+    "type": "object"
+  },
   "MetadataFetchJobStatus": {
     "description": "The initial status of the job",
     "enum": [
@@ -7218,8 +7430,34 @@
     ],
     "type": "string"
   },
+  "MetadataFetchJobStatusStatistics": {
+    "properties": {
+      "categories": {
+        "description": "The metadata categories (x-axis)",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "series": {
+        "additionalProperties": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "description": "Job counts per category, keyed by fetch job status",
+        "type": "object"
+      }
+    },
+    "required": [
+      "categories",
+      "series"
+    ],
+    "type": "object"
+  },
   "MetadataJobType": {
-    "description": "The type of metadata fetch job to create",
+    "description": "The categories (x-axis) of the status chart",
     "enum": [
       "movies",
       "tv_series",
@@ -7236,6 +7474,80 @@
       "languages"
     ],
     "type": "string"
+  },
+  "MetadataWorkflowStatisticsCategories": {
+    "properties": {
+      "status": {
+        "description": "The workflow statuses charted",
+        "items": {
+          "$ref": "#/components/schemas/WorkflowStatus"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "status"
+    ],
+    "type": "object"
+  },
+  "MetadataWorkflowStatisticsSeries": {
+    "properties": {
+      "status": {
+        "additionalProperties": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "description": "Time series of workflow counts, keyed by status",
+        "type": "object"
+      },
+      "timing": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MetadataWorkflowStatisticsTiming"
+          }
+        ],
+        "description": "Queue and run time series"
+      }
+    },
+    "required": [
+      "status",
+      "timing"
+    ],
+    "type": "object"
+  },
+  "MetadataWorkflowStatisticsTiming": {
+    "properties": {
+      "queueTime": {
+        "description": "Queue time series as [timestamp, value] pairs",
+        "items": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "type": "array"
+      },
+      "runtime": {
+        "description": "Run time series as [timestamp, value] pairs",
+        "items": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "queueTime",
+      "runtime"
+    ],
+    "type": "object"
   },
   "Movie": {
     "properties": {
@@ -10238,6 +10550,10 @@
         },
         "type": "array"
       },
+      "seriesId": {
+        "description": "The ID of the TV series the season belongs to",
+        "type": "number"
+      },
       "totalEpisodeCount": {
         "type": "number"
       }
@@ -10245,6 +10561,7 @@
     "required": [
       "order",
       "personId",
+      "seriesId",
       "totalEpisodeCount"
     ],
     "type": "object"
@@ -10266,6 +10583,10 @@
       "personId": {
         "type": "number"
       },
+      "seriesId": {
+        "description": "The ID of the TV series the season belongs to",
+        "type": "number"
+      },
       "totalEpisodeCount": {
         "type": "number"
       }
@@ -10273,6 +10594,7 @@
     "required": [
       "department",
       "personId",
+      "seriesId",
       "totalEpisodeCount"
     ],
     "type": "object"
@@ -11082,7 +11404,12 @@
   "PingResponse": {
     "properties": {
       "config": {
-        "$ref": "#/components/schemas/SystemConfiguration"
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SystemConfiguration"
+          }
+        ],
+        "description": "The API's effective configuration"
       }
     },
     "required": [
@@ -12356,7 +12683,7 @@
       },
       "certifications": {
         "items": {
-          "$ref": "#/components/schemas/Certification"
+          "$ref": "#/components/schemas/CertificationAssociation"
         },
         "type": "array"
       },
@@ -12555,11 +12882,17 @@
   },
   "SystemConfiguration": {
     "properties": {
+      "amqp.host": {
+        "description": "The RabbitMQ host the API is configured to use",
+        "type": "string"
+      },
       "hasura.host": {
+        "description": "The Hasura host the API is configured to use",
         "type": "string"
       }
     },
     "required": [
+      "amqp.host",
       "hasura.host"
     ],
     "type": "object"
@@ -12650,7 +12983,7 @@
       },
       "certifications": {
         "items": {
-          "$ref": "#/components/schemas/Certification"
+          "$ref": "#/components/schemas/CertificationAssociation"
         },
         "type": "array"
       },
@@ -13019,7 +13352,7 @@
       },
       "certifications": {
         "items": {
-          "$ref": "#/components/schemas/Certification"
+          "$ref": "#/components/schemas/CertificationAssociation"
         },
         "type": "array"
       },

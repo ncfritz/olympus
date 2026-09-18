@@ -1883,20 +1883,18 @@
         "type": "object",
         "properties": {
           "hourOfDayStatistics": {
-            "description": "A map of hours of the day to meeting statistics",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/MeetingStatusStatistics"
-              }
-            ]
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MeetingStatusStatistics"
+            },
+            "description": "A map of hours of the day to meeting statistics"
           },
           "dayOfWeekStatistics": {
-            "description": "A map of day of the week to meeting statistics",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/MeetingStatusStatistics"
-              }
-            ]
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MeetingStatusStatistics"
+            },
+            "description": "A map of day of the week to meeting statistics"
           }
         }
       },
@@ -1904,12 +1902,11 @@
         "type": "object",
         "properties": {
           "statusStatistics": {
-            "description": "A map of ISO-8601 date strings to meeting statistics",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/MeetingStatusStatistics"
-              }
-            ]
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MeetingStatusStatistics"
+            },
+            "description": "A map of ISO-8601 date strings to meeting statistics"
           }
         }
       },

@@ -1,5 +1,10 @@
 import { ApiTimestamp } from "../decorators";
-import { ApiProperty, PartialType } from "@nestjs/swagger";
+import {
+  ApiExtraModels,
+  ApiProperty,
+  getSchemaPath,
+  PartialType,
+} from "@nestjs/swagger";
 import type { Moment } from "moment";
 
 export enum MeetingSensitivity {
@@ -357,25 +362,30 @@ export class ListCalendarItemsResponse {
   items: Meeting[];
 }
 
+@ApiExtraModels(MeetingStatusStatistics)
 export class GetMeetingStatisticsResponse {
   @ApiProperty({
-    type: () => MeetingStatusStatistics,
+    type: Object,
+    additionalProperties: { $ref: getSchemaPath(MeetingStatusStatistics) },
     required: false,
     description: "A map of hours of the day to meeting statistics",
   })
   hourOfDayStatistics?: Record<string, MeetingStatusStatistics>;
 
   @ApiProperty({
-    type: () => MeetingStatusStatistics,
+    type: Object,
+    additionalProperties: { $ref: getSchemaPath(MeetingStatusStatistics) },
     required: false,
     description: "A map of day of the week to meeting statistics",
   })
   dayOfWeekStatistics?: Record<string, MeetingStatusStatistics>;
 }
 
+@ApiExtraModels(MeetingStatusStatistics)
 export class GetMeetingSummaryResponse {
   @ApiProperty({
-    type: () => MeetingStatusStatistics,
+    type: Object,
+    additionalProperties: { $ref: getSchemaPath(MeetingStatusStatistics) },
     required: false,
     description: "A map of ISO-8601 date strings to meeting statistics",
   })
