@@ -35,18 +35,31 @@ src/
 - Plain classes (not interfaces) so decorators apply. Property names are
   camelCase. The API converts from Hasura's snake_case (see
   [api.md](api.md#converters)).
-- **Every property has `@ApiProperty`** with an explicit `required` and a
-  `description` sentence. **[checked]** once the model check exists.
+- **Every property has `@ApiProperty`** (or `@ApiTimestamp`) with an
+  explicit `required` and a `description` sentence. **[checked]**
+- **The decorator must describe the declared type.** `type` names the same
+  class or primitive, `isArray` matches arrays, `enum` names the declared
+  enum. **[checked]**
 - Optional properties are `required: false` **and** declared optional
-  (`uid?: string`). The two must agree.
+  (`uid?: string`). The two must agree. **[checked]**
 - Reference other classes lazily: `type: () => Meeting`. Arrays add
-  `isArray: true`.
+  `isArray: true`. Nested arrays use
+  `type: "array", items: NUMBER_MATRIX_SCHEMA.items`.
 - Enums are string enums whose values are the wire values. Decorate as
   `enum: () => MeetingStatus, enumName: "MeetingStatus"`. `enumName` is
-  required so the SDK gets a named type.
-- Timestamps are typed `Moment` in the class, documented as
-  `type: String` with a description that says "ISO-8601", and serialized
-  with `@Transform(({ value }) => value.toISOString())`.
+  required and must equal the enum's name. **[checked]**
+- **Timestamps** are typed `Moment` and decorated with
+  `@ApiTimestamp({ required, description })` from `src/decorators.ts`. It
+  documents an ISO-8601 string and adds a null-safe `@Transform`. Do not
+  hand-write `@ApiProperty({ type: String })` + `@Transform` pairs.
+- **Maps** (`Record<K, V>`) are documented with `type: Object` and
+  `additionalProperties`: a schema constant (`NUMBER_ARRAY_SCHEMA`), or
+  `{ $ref: getSchemaPath(V) }` plus `@ApiExtraModels(V)` on the class.
+  Never document a map as a single `V`. **[checked]**
+- **No `type: Object`** for structured data. Give the structure a class
+  (see the `…Categories` / `…Series` classes behind the statistics
+  responses). Chart series use `ChartSeries` from `common.ts`. **[checked]**
+- **Unions** of different types need `oneOf`. **[checked]**
 
 ```ts
 export class Meeting {
@@ -65,15 +78,20 @@ export class Meeting {
   })
   status: MeetingStatus;
 
-  @ApiProperty({
-    type: String,
+  @ApiTimestamp({
     required: true,
     description:
       "An ISO-8601 formatted string indicating when the meeting starts",
   })
-  @Transform(({ value }) => value.toISOString())
   startTime: Moment;
 }
+```
+
+Create/update shapes that drop the server-managed audit timestamps use the
+`AUDIT_FIELDS` constant:
+
+```ts
+export class PartialGenre extends OmitType(Genre, [...AUDIT_FIELDS]) {}
 ```
 
 ### Entity variants
@@ -138,3 +156,17 @@ export class UpdateNotificationSettingResponse {
 `class-validator` is a dependency but no decorators are used, and the API's
 global `ValidationPipe` is commented out. New shapes do not need validation
 decorators until that decision is made (tracked in the roadmap).
+
+## Tests and checks
+
+| Test                        | What it protects                                                                                                                                                   |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `test/schemas.spec.ts`      | Snapshot of the OpenAPI schema of every exported class. A refactor must leave it unchanged; a contract change updates it and the diff shows what the SDK will see. |
+| `test/enums.spec.ts`        | Snapshot of every enum's values (persisted in Hasura, sent over RabbitMQ).                                                                                         |
+| `test/api-property.spec.ts` | The decorator/type rules above (`pnpm check:conventions`). Exceptions live in `test/api-property.allow.json` and may only shrink.                                  |
+
+```sh
+pnpm --filter @ncfritz/olympus-model test          # all of the above
+pnpm --filter @ncfritz/olympus-model test:update   # accept a snapshot change (review the diff)
+pnpm --filter @ncfritz/olympus-model check:allow-update  # rewrite the allow-list (review the diff)
+```

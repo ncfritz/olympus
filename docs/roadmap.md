@@ -27,6 +27,23 @@
 - Turning on full TypeScript `strict`.
 - How AI agents interact with the platform (API-backed tools / MCP).
 
+## Model backlog
+
+- 599 properties have no `description` (the whole allow-list). Fill in by
+  file; `pnpm --filter @ncfritz/olympus-model check:allow-update` then
+  shrinks the list.
+- Description typos (e.g. "TThe amount of progress", "unique identified")
+  are fixed with the description pass; each changes the schema snapshot.
+- Deferred: base classes for the shared workflow lifecycle fields
+  (content/media/metadata workflows and steps) and for movie/TV credits.
+  They already extend other bases, so this needs `IntersectionType`;
+  worth doing when those areas are next changed.
+- Deferred until the SDK is imported: rename
+  `LiatNotificationSettingsResponse` (changes an SDK export name).
+- Consider documenting timestamps with `format: "date-time"`. This makes
+  the Hey API SDK return `Date` objects instead of strings, a breaking
+  change for the site and agents.
+
 ## Known issues found while writing the conventions
 
 These are the starting allow-list for the convention checks. Fix them, or

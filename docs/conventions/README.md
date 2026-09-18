@@ -15,14 +15,16 @@ lists the existing deviations in [`../roadmap.md`](../roadmap.md).
 
 ## How the conventions are enforced
 
-| Mechanism                                    | Covers                                  | Status                          |
-| -------------------------------------------- | --------------------------------------- | ------------------------------- |
-| Shared ESLint + Prettier (`packages/config`) | Formatting, general lint                | Present                         |
-| `pnpm gen api-operation`                     | New API operations start out conforming | Planned (ADR 0009)              |
-| Architecture test (`check:conventions`)      | Controller and model structure          | Planned (ADR 0008)              |
-| Spectral ruleset                             | Generated OpenAPI documents             | Planned (ADR 0008)              |
-| `oasdiff`                                    | Breaking API changes                    | Planned (ADR 0008)              |
-| Inline-style lint rule                       | UX styling                              | Present as a warning (ADR 0012) |
+| Mechanism                                        | Covers                                  | Status                          |
+| ------------------------------------------------ | --------------------------------------- | ------------------------------- |
+| Shared ESLint + Prettier (`packages/config`)     | Formatting, general lint                | Present                         |
+| `pnpm gen api-operation`                         | New API operations start out conforming | Planned (ADR 0009)              |
+| Model decorator/type check (`check:conventions`) | `packages/model`                        | Present                         |
+| Model schema and enum snapshots                  | `packages/model`                        | Present                         |
+| Architecture test (`check:conventions`)          | API controller structure                | Planned (ADR 0008)              |
+| Spectral ruleset                                 | Generated OpenAPI documents             | Planned (ADR 0008)              |
+| `oasdiff`                                        | Breaking API changes                    | Planned (ADR 0008)              |
+| Inline-style lint rule                           | UX styling                              | Present as a warning (ADR 0012) |
 
 Each rule in these documents that is checked automatically is marked
 **[checked]** once the check exists. A rule without the mark is enforced by
