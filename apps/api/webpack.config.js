@@ -13,7 +13,11 @@ console.log("--- Webpack Build Initializing ---");
 console.log("Current Mode:", mode);
 
 module.exports = {
-  entry: "./src/main.ts",
+  // main: the server. openapi: writes the OpenAPI documents (pnpm openapi).
+  entry: {
+    main: "./src/main.ts",
+    openapi: "./src/openapi.ts",
+  },
   mode: mode,
   target: "node",
   plugins: [
@@ -39,7 +43,7 @@ module.exports = {
   ].filter(Boolean),
   output: {
     path: path.resolve(__dirname, "dist"),
-    filename: "main.js",
+    filename: "[name].js",
     chunkFormat: "commonjs",
     library: {
       type: "commonjs",

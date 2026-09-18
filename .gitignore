@@ -6,6 +6,7 @@ coverage/
 .turbo/
 *.tsbuildinfo
 logs/
+graph.json
 *.log
 .DS_Store
 .idea/

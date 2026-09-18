@@ -1,0 +1,1758 @@
+{
+  "openapi": "3.1.1",
+  "paths": {
+    "/olympus/ping": {
+      "get": {
+        "description": "Ping",
+        "operationId": "Ping",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The calendar items have been successfully fetched.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Ping",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/olympus/amqp/test/{exchange}": {
+      "post": {
+        "description": "SentAmqpTestMessage",
+        "operationId": "SendAmqpTestMessage",
+        "parameters": [
+          {
+            "name": "exchange",
+            "required": true,
+            "in": "path",
+            "description": "The exchange to publish the message to",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "routingKey",
+            "required": false,
+            "in": "query",
+            "description": "The routing key to use when sending the test message",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The payload to send",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test message sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "SentAmqpTestMessage",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/olympus/notification/{notificationId}/acknowledge": {
+      "put": {
+        "description": "This API will acknowledge or un-acknowledge a notification, based on the user input.  By default when a notification is marked as acknowledged, it will be marked for deletion three days after the acknowledgement time.  The expiration time will remain unchanged in the event that a notification is un-acknowledged before the deletion sweep occurs.",
+        "operationId": "AcknowledgeNotification",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the notification to set acknowledgement for",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the SendNotification operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcknowledgeNotificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The notification's acknowledge state has been updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcknowledgeNotificationResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The supplied acknowledged state did not require updating the notification",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcknowledgeNotificationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sets a notification's ACK status",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/olympus/notifications": {
+      "post": {
+        "description": "This API is used internally to create a notification in the notification store.",
+        "operationId": "CreateNotification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateNotification operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNotificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The notification was created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateNotificationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The supplied `notificationId` or `eventId` conflicted with another notification in the notification store"
+          }
+        },
+        "summary": "Creates a persistent notification",
+        "tags": [
+          "Notifications"
+        ]
+      },
+      "get": {
+        "description": "Lists the top `N` notifications and provides statistics for all notification groups.  Notifications are listed regardless of their group or acknowledged status.  For all notification groups, a entry containing the number of unread notifications as well as a breakdown of notification count by status will be provided.",
+        "operationId": "ListNotifications",
+        "parameters": [
+          {
+            "name": "count",
+            "required": true,
+            "in": "query",
+            "description": "The number of notifications to fetch for the initial list view",
+            "schema": {
+              "default": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The notification list has been fetched successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListNotificationsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists current notifications and statistics",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/olympus/notification/{notificationId}": {
+      "delete": {
+        "description": "This API hard deletes a notification.  This action will directly remove the notification from the notificationstore and is a non-recoverable operation.  If you need to soft delete a notification, it is recommended to use the `AcknowledgeNotification` API with a `ttl` value of `0`.",
+        "operationId": "DeleteNotification",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the notification to delete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The notification has been successfully deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteNotificationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Deletes a notification",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/olympus/notifications/unreadCount": {
+      "get": {
+        "description": "Gets the number of unread notifications for the user regardless of what channel they are in.",
+        "operationId": "GetUnreadNotificationCount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The notification count has been fetched successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetUnreadNotificationCountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets the current unread notifications count",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/olympus/notifications/group/{groupId}/notifications": {
+      "get": {
+        "description": "Lists the top `N` notifications and provides statistics for a specific notification group.  Notifications are listed regardless of their acknowledged status.",
+        "operationId": "ListNotificationsInGroup",
+        "parameters": [
+          {
+            "name": "groupId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the group to list notifications for.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "The sort order to apply to the results",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "The field to sort on",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "The number of results to return per page",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "startPage",
+            "required": false,
+            "in": "query",
+            "description": "The results page to start from",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The notification list has been fetched successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListNotificationsInGroupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists current notifications and statistics",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/olympus/notifications/groups": {
+      "get": {
+        "description": "Lists all available notification groups.  This API does not enumerate or provide any information about the number of notifications or notification status for the groups.",
+        "operationId": "ListNotificationGroups",
+        "parameters": [
+          {
+            "name": "includeNotificationTypes",
+            "required": true,
+            "in": "query",
+            "description": "When `true`, supported notification types information will be included with each group",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The notification group list has been fetched successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListNotificationGroupsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists current notification groups",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/olympus/notifications/settings": {
+      "get": {
+        "description": "Lists the notification settings a user has configured.  This API returns notification settings across allchannels ",
+        "operationId": "ListNotificationSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The notification settings were successfully fetched.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiatNotificationSettingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists notification settings for a user",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/olympus/notifications/types": {
+      "get": {
+        "description": "Lists currently supported notification types.  This API returns the full set of notifications supported and the supported, and default enabled, notification channels for each.",
+        "operationId": "ListNotificationsTypes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The notification type list has been fetched successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListNotificationTypesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists notifications types",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/olympus/notifications/publish": {
+      "post": {
+        "description": "This API employs an optimistic send strategy and will fail open.  Internally, each destination may retry one or more times on failure, but any notification destination that reports a permanent failure will NOT be retried after the API returns.Notifications sent to the WebSocket destination CAN be persisted for in-app retrieval after initial notification.  There are various mechanisms to control the in-app display and notification lifetime.  It is recommended that a notification's TTL be set to a reasonable value where applicable.This API will report success or failure for each destination provided in the request.  This does not indicate delivery of the notification to the final provider, only whether the notification was successfully enqueued for further processing.",
+        "operationId": "SendNotification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the SendNotification operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendNotificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The notification was successfully enqueued to all destinations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendNotificationResponse"
+                }
+              }
+            }
+          },
+          "207": {
+            "description": "Enqueuing with some or all notification destinations failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendNotificationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sends a notification to one or more destinations",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/olympus/notifications/settings/{notificationType}": {
+      "put": {
+        "description": "Creates or updates a single notification setting for a user.  This API will update the notification settings for all notification channels supported by the notification settings.",
+        "operationId": "UpdateNotificationSetting",
+        "parameters": [
+          {
+            "name": "notificationType",
+            "required": true,
+            "in": "path",
+            "description": "The notification type to set the channel settings for",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateNotification operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationSettingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The notification settings were successfully updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateNotificationSettingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Creates or updates a single notification setting",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Olympus API",
+    "description": "API documentation for Olympus",
+    "version": "0.0.0",
+    "contact": {
+      "name": "Neil Fritz",
+      "url": "https://ncfritz.net",
+      "email": "ncfritz@ncfritz.net"
+    }
+  },
+  "tags": [
+    {
+      "name": "Olympus",
+      "description": ""
+    }
+  ],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "SystemConfiguration": {
+        "type": "object",
+        "properties": {
+          "hasura.host": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "hasura.host"
+        ]
+      },
+      "PingResponse": {
+        "type": "object",
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/SystemConfiguration"
+          }
+        },
+        "required": [
+          "config"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "statusCode": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "message",
+          "statusCode"
+        ]
+      },
+      "TestRequest": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "payload"
+        ]
+      },
+      "EmptyResponse": {
+        "type": "object",
+        "properties": {}
+      },
+      "AcknowledgeNotificationRequest": {
+        "type": "object",
+        "properties": {
+          "acknowledged": {
+            "type": "boolean",
+            "default": false,
+            "description": "The ID of the notification.  The notification ID will be stable across all delivery channels."
+          },
+          "ttl": {
+            "type": "string",
+            "description": "An ISO-8601 duration string - i.e. PT24H or P1D, indicating how long before the acknowledged notification should be deleted.  Note: this has no effect if the `acknowledged` parameter is `false`.",
+            "default": "P3D"
+          }
+        }
+      },
+      "NotificationTypeWithProtocols": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the notification type."
+          },
+          "name": {
+            "type": "string",
+            "description": "The display name for the notification type"
+          },
+          "description": {
+            "type": "string",
+            "description": "A description of the notification type.  This may indicate what the notification is used for or give additional information about the system that published such notifications."
+          },
+          "defaultGroup": {
+            "description": "The group that notifications of this type should belong to.  This grouping will be used when no group is supplied when creating a notification.  If the default group is undefined, the system default will be used.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationGroup"
+              }
+            ]
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the notification type was created."
+          },
+          "supportsWebSocket": {
+            "type": "boolean",
+            "description": "Indicates if the notification type can be delivered via WebSocket."
+          },
+          "supportsSynoChat": {
+            "type": "boolean",
+            "description": "Indicates if the notification type can be delivered via Synology Chat."
+          },
+          "supportsSynoMail": {
+            "type": "boolean",
+            "description": "Indicates if the notification type can be delivered via Synology Mail."
+          },
+          "supportsEmail": {
+            "type": "boolean",
+            "description": "Indicates if the notification type can be delivered via SMTP (i.e. Gmail)."
+          },
+          "webSocketDefault": {
+            "type": "boolean",
+            "description": "Indicates whether WebSocket notifications will be enabled by default.  This value will have no effect if `supportsWebSocket` is `false`.  Any user configured settings will override this."
+          },
+          "synoChatDefault": {
+            "type": "boolean",
+            "description": "Indicates whether Synology Chat notifications will be enabled by default.  This value will have no effect if `supportsSynoChat` is `false`.  Any user configured settings will override this."
+          },
+          "synoMailDefault": {
+            "type": "boolean",
+            "description": "Indicates whether Synology Mail notifications will be enabled by default.  This value will have no effect if `supportsSynoMail` is `false`.  Any user configured settings will override this."
+          },
+          "emailDefault": {
+            "type": "boolean",
+            "description": "Indicates whether SMTP notifications will be enabled by default.  This value will have no effect if `supportsEmail` is `false`.  Any user configured settings will override this."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "createdTime",
+          "supportsWebSocket",
+          "supportsSynoChat",
+          "supportsSynoMail",
+          "supportsEmail",
+          "webSocketDefault",
+          "synoChatDefault",
+          "synoMailDefault",
+          "emailDefault"
+        ]
+      },
+      "NotificationGroup": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID associated with the notification group."
+          },
+          "name": {
+            "type": "string",
+            "description": "The display name for the notification group."
+          },
+          "description": {
+            "type": "string",
+            "description": "A description indicating the purpose for the notification group."
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the notification group was created."
+          },
+          "notificationTypes": {
+            "description": "The set of notification types associated with the notification group.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationTypeWithProtocols"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "createdTime"
+        ]
+      },
+      "NotificationType": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the notification type."
+          },
+          "name": {
+            "type": "string",
+            "description": "The display name for the notification type"
+          },
+          "description": {
+            "type": "string",
+            "description": "A description of the notification type.  This may indicate what the notification is used for or give additional information about the system that published such notifications."
+          },
+          "defaultGroup": {
+            "description": "The group that notifications of this type should belong to.  This grouping will be used when no group is supplied when creating a notification.  If the default group is undefined, the system default will be used.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationGroup"
+              }
+            ]
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the notification type was created."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "createdTime"
+        ]
+      },
+      "WebSocketNotificationLevel": {
+        "type": "string",
+        "enum": [
+          "success",
+          "info",
+          "warning",
+          "error"
+        ],
+        "description": "The severity level for the notification."
+      },
+      "NotificationPayload": {
+        "type": "object",
+        "properties": {}
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "description": "The unique ID for the notification event"
+          },
+          "notificationId": {
+            "type": "string",
+            "description": "The unique ID for the notification.  This ID is stable across notification channels"
+          },
+          "eventTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the event occurred"
+          },
+          "notificationType": {
+            "description": "The notification type definition for the notification.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationType"
+              }
+            ]
+          },
+          "level": {
+            "description": "The severity level for the notification.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebSocketNotificationLevel"
+              }
+            ]
+          },
+          "acknowledged": {
+            "type": "boolean",
+            "description": "Indicated whether the notification has been acknowledged by a user"
+          },
+          "acknowledgedTime": {
+            "type": "string",
+            "description": "If the notification has been acknowledged, the timestamp when it was acknowledged"
+          },
+          "notificationGroup": {
+            "description": "The group the notification belongs to.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationGroup"
+              }
+            ]
+          },
+          "expirationTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the notification will expire."
+          },
+          "deletionTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the notification will be eligible for deletion."
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the notification was created."
+          },
+          "payload": {
+            "description": "The payload for the notification.  This contains all information needed to render a notification.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationPayload"
+              }
+            ]
+          },
+          "ttl": {
+            "type": "string",
+            "description": "An ISO-8601 duration string - i.e. PT24H or P1D indicating when the notification will expire."
+          }
+        },
+        "required": [
+          "eventId",
+          "notificationId",
+          "eventTime",
+          "notificationType",
+          "level",
+          "acknowledged",
+          "createdTime",
+          "payload"
+        ]
+      },
+      "AcknowledgeNotificationResponse": {
+        "type": "object",
+        "properties": {
+          "notification": {
+            "description": "The updated notification",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Notification"
+              }
+            ]
+          }
+        },
+        "required": [
+          "notification"
+        ]
+      },
+      "PartialNotification": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "description": "The unique ID for the notification event"
+          },
+          "notificationId": {
+            "type": "string",
+            "description": "The unique ID for the notification.  This ID is stable across notification channels"
+          },
+          "level": {
+            "description": "The severity level for the notification.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebSocketNotificationLevel"
+              }
+            ]
+          },
+          "acknowledged": {
+            "type": "boolean",
+            "description": "Indicated whether the notification has been acknowledged by a user"
+          },
+          "notificationGroup": {
+            "description": "The group the notification belongs to.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationGroup"
+              }
+            ]
+          },
+          "expirationTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the notification will expire."
+          },
+          "deletionTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the notification will be eligible for deletion."
+          },
+          "payload": {
+            "description": "The payload for the notification.  This contains all information needed to render a notification.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationPayload"
+              }
+            ]
+          },
+          "ttl": {
+            "type": "string",
+            "description": "An ISO-8601 duration string - i.e. PT24H or P1D indicating when the notification will expire."
+          },
+          "group": {
+            "type": "string",
+            "description": "The Id of the notification group the notification should belong to."
+          },
+          "notificationType": {
+            "type": "string",
+            "description": "The notification type ID indicating what type of notification is being created."
+          }
+        },
+        "required": [
+          "eventId",
+          "notificationId",
+          "level",
+          "acknowledged",
+          "payload",
+          "notificationType"
+        ]
+      },
+      "CreateNotificationRequest": {
+        "type": "object",
+        "properties": {
+          "notification": {
+            "description": "The details of the notification to create.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialNotification"
+              }
+            ]
+          }
+        },
+        "required": [
+          "notification"
+        ]
+      },
+      "CreateNotificationResponse": {
+        "type": "object",
+        "properties": {
+          "notification": {
+            "description": "The full notification as it was created.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Notification"
+              }
+            ]
+          }
+        },
+        "required": [
+          "notification"
+        ]
+      },
+      "DeleteNotificationResponse": {
+        "type": "object",
+        "properties": {
+          "notification": {
+            "description": "The notification that was removed.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Notification"
+              }
+            ]
+          }
+        },
+        "required": [
+          "notification"
+        ]
+      },
+      "GetUnreadNotificationCountResponse": {
+        "type": "object",
+        "properties": {
+          "unreadCount": {
+            "type": "number",
+            "description": "The number of notifications that are currently marked as unread."
+          }
+        },
+        "required": [
+          "unreadCount"
+        ]
+      },
+      "NotificationStatistics": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "description": "The total number of notifications, regardless of read status."
+          },
+          "unread": {
+            "type": "number",
+            "description": "The total number of notifications that are unread."
+          },
+          "info": {
+            "type": "number",
+            "description": "The total number of notifications that are at an informational level."
+          },
+          "success": {
+            "type": "number",
+            "description": "The total number of notifications that are at an success level."
+          },
+          "warning": {
+            "type": "number",
+            "description": "The total number of notifications that are at an warning level."
+          },
+          "error": {
+            "type": "number",
+            "description": "The total number of notifications that are at an error level."
+          }
+        },
+        "required": [
+          "total",
+          "unread",
+          "info",
+          "success",
+          "warning",
+          "error"
+        ]
+      },
+      "ListNotificationsResponse": {
+        "type": "object",
+        "properties": {
+          "recent": {
+            "description": "A list of recent notifications.  These may belong to any notification group.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
+          },
+          "statistics": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/NotificationStatistics"
+            },
+            "description": "A map of notification group IDs to statistics for the group."
+          }
+        },
+        "required": [
+          "recent",
+          "statistics"
+        ]
+      },
+      "SortDirection": {
+        "type": "string",
+        "enum": [
+          "asc",
+          "asc_nulls_first",
+          "asc_nulls_last",
+          "desc",
+          "desc_nulls_first",
+          "desc_nulls_last"
+        ]
+      },
+      "ListNotificationsInGroupResponse": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "notifications": {
+            "description": "A list of notifications present in the notification group.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "notifications"
+        ]
+      },
+      "ListNotificationGroupsResponse": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "description": "A list of notification groups.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationGroup"
+            }
+          }
+        },
+        "required": [
+          "groups"
+        ]
+      },
+      "NotificationSetting": {
+        "type": "object",
+        "properties": {
+          "notificationType": {
+            "description": "The default settings for the notification type this setting overrides.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationTypeWithProtocols"
+              }
+            ]
+          },
+          "webSocketEnabled": {
+            "type": "boolean",
+            "description": "Indicates if the user wishes to receive WebSocket notifications for this notification type."
+          },
+          "synoChatEnabled": {
+            "type": "boolean",
+            "description": "Indicates if the user wishes to receive Synology Chat notifications for this notification type."
+          },
+          "synoMailEnabled": {
+            "type": "boolean",
+            "description": "Indicates if the user wishes to receive Synology Mail notifications for this notification type."
+          },
+          "emailEnabled": {
+            "type": "boolean",
+            "description": "Indicates if the user wishes to receive SMTP notifications for this notification type."
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the notification setting was created."
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the notification setting was last updated."
+          }
+        },
+        "required": [
+          "notificationType",
+          "webSocketEnabled",
+          "synoChatEnabled",
+          "synoMailEnabled",
+          "emailEnabled",
+          "createdTime"
+        ]
+      },
+      "LiatNotificationSettingsResponse": {
+        "type": "object",
+        "properties": {
+          "notificationSettings": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/NotificationSetting"
+            },
+            "description": "The notification settings for the user."
+          }
+        },
+        "required": [
+          "notificationSettings"
+        ]
+      },
+      "ListNotificationTypesResponse": {
+        "type": "object",
+        "properties": {
+          "notificationTypes": {
+            "description": "The set of all notification types supported.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationTypeWithProtocols"
+            }
+          }
+        },
+        "required": [
+          "notificationTypes"
+        ]
+      },
+      "NotificationContext": {
+        "type": "object",
+        "properties": {}
+      },
+      "WebSocketDestination": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "default": "info",
+            "description": "The severity of the notification to show in the UX.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebSocketNotificationLevel"
+              }
+            ]
+          },
+          "durable": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the notification should be persisted in the notification store."
+          },
+          "ghost": {
+            "type": "boolean",
+            "default": false,
+            "description": "When `durable` is set to `true`, this flag determines whether the notification popup is displayed.  When set to`true`, the notification will be persisted to the notification store but will not be displayed as a popup inthe UX."
+          },
+          "closable": {
+            "type": "boolean",
+            "default": false,
+            "description": "Determines if the notification popup can be dismissed by the user."
+          },
+          "deleteOnClose": {
+            "type": "boolean",
+            "default": false,
+            "description": "When `closeable` is set to `true` AND `durable` is set to `true`, this flag determines if the notification should be removed from the notifications store on close.  Setting this to `false` will cause the close action to only dismiss the notification popup."
+          },
+          "visibleDuration": {
+            "type": "number",
+            "default": 4.5,
+            "description": "The amount of time, in seconds, to display the notification in the UX."
+          },
+          "group": {
+            "type": "string",
+            "description": "An optional group name to add the notification to in the notification store."
+          },
+          "ttl": {
+            "type": "string",
+            "description": "When `durable` is set to `true` determines how long the notification will remain in the notification store before being automatically cleaned up.  Note that the TTL will cause a notification to be deleted from the notification store whether it was read by the user or not.  This field should be specified as an ISO-8601 duration string - i.e. PT24H or P1D"
+          }
+        }
+      },
+      "SynoChatDestinationType": {
+        "type": "string",
+        "enum": [
+          "bot",
+          "channel"
+        ],
+        "description": "Determines what type of chat notification is sent.  A Bot will be a direct conversation with an individual.A Channel will broadcast the message to all members of the channel."
+      },
+      "SynoChatDestination": {
+        "type": "object",
+        "properties": {
+          "destinationType": {
+            "default": "channel",
+            "description": "Determines what type of chat notification is sent.  A Bot will be a direct conversation with an individual.A Channel will broadcast the message to all members of the channel.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SynoChatDestinationType"
+              }
+            ]
+          },
+          "users": {
+            "description": "The Synology Chat user ID associated with the logged in user.  This is not the username or email used to authenticate but is an internal identifier that needs to be determined by looking at network traffic.",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "destination": {
+            "type": "string",
+            "description": "The name of the Bot or Channel to deliver the notification to."
+          }
+        },
+        "required": [
+          "destinationType",
+          "destination"
+        ]
+      },
+      "SMTPPriority": {
+        "type": "string",
+        "enum": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "description": "The priority to mark the message with in the user's inbox."
+      },
+      "EmailValueField": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "The email address.  This can be specified as a single address specification or as an angle enclosed address, which contains a display name.  See https://datatracker.ietf.org/doc/html/rfc5322#section-3.4 for details."
+          }
+        },
+        "required": [
+          "value"
+        ]
+      },
+      "SMTPDestinationFormInput": {
+        "type": "object",
+        "properties": {
+          "priority": {
+            "default": "3",
+            "description": "The priority to mark the message with in the user's inbox.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SMTPPriority"
+              }
+            ]
+          },
+          "from": {
+            "type": "string",
+            "description": "The from address for the message.  This can be specified as a single address specification or as an angle enclosed address, which contains a display name.  See https://datatracker.ietf.org/doc/html/rfc5322#section-3.4 for details."
+          },
+          "replyTo": {
+            "type": "string",
+            "description": "The optional reply to address for the message.  This can be specified as a single address specification or as an angle enclosed address, which contains a display name.  See https://datatracker.ietf.org/doc/html/rfc5322#section-3.4 for details."
+          },
+          "to": {
+            "description": "See `SMTPDestination` for details.  This variation of the class is tailored for form input, which requires a wrapper with a `value` field.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailValueField"
+            }
+          },
+          "cc": {
+            "description": "See `SMTPDestination` for details.  This variation of the class is tailored for form input, which requires a wrapper with a `value` field.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailValueField"
+            }
+          },
+          "bcc": {
+            "description": "See `SMTPDestination` for details.  This variation of the class is tailored for form input, which requires a wrapper with a `value` field.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailValueField"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ]
+      },
+      "SendNotificationRequest": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of message to enqueue."
+          },
+          "expirationTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when a message should expire and subsequently be dropped from delivery."
+          },
+          "context": {
+            "default": {},
+            "description": "A free-form key/value store, which can contain multiple nested levels of data if needed.  The context should generally contain fixed/immutable data such as identifiers or other stable data components.  Notifications handlers and processors use the context to understand what data to fetch from upstream systems for inclusion in notifications.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationContext"
+              }
+            ]
+          },
+          "webSocketDestination": {
+            "description": "When included, will cause the notification to be delivered in Olympus via WebSocket.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebSocketDestination"
+              }
+            ]
+          },
+          "synoChatDestination": {
+            "description": "When included, will cause the notification to be delivered via Synology Chat",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SynoChatDestination"
+              }
+            ]
+          },
+          "synoMailDestination": {
+            "description": "When included, will cause the notification to be delivered via Synology Email",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SMTPDestinationFormInput"
+              }
+            ]
+          },
+          "smtpDestination": {
+            "description": "When included, will cause the notification to be delivered via external email",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SMTPDestinationFormInput"
+              }
+            ]
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "DeliveryState": {
+        "type": "string",
+        "enum": [
+          "success",
+          "failure",
+          "skipped",
+          "unknown"
+        ],
+        "description": "The status of the delivery to the associated notification channel"
+      },
+      "DeliveryStatus": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "description": "The unique identifier for the notification on a specific delivery channel"
+          },
+          "status": {
+            "description": "The status of the delivery to the associated notification channel",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeliveryState"
+              }
+            ]
+          }
+        },
+        "required": [
+          "eventId",
+          "status"
+        ]
+      },
+      "SendNotificationResponse": {
+        "type": "object",
+        "properties": {
+          "notificationId": {
+            "type": "string",
+            "description": "The ID of the notification.  The notification ID will be stable across all delivery channels."
+          },
+          "webSocketDestination": {
+            "description": "Status information for delivery to the WebSocket channel",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeliveryStatus"
+              }
+            ]
+          },
+          "synoChatDestination": {
+            "description": "Status information for delivery to the Synology Chat channel",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeliveryStatus"
+              }
+            ]
+          },
+          "synoMailDestination": {
+            "description": "Status information for delivery to the Synology email channel",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeliveryStatus"
+              }
+            ]
+          },
+          "externalMailDestination": {
+            "description": "Status information for delivery to the SMTP channel",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeliveryStatus"
+              }
+            ]
+          }
+        },
+        "required": [
+          "notificationId"
+        ]
+      },
+      "PartialNotificationSetting": {
+        "type": "object",
+        "properties": {
+          "webSocketEnabled": {
+            "type": "boolean",
+            "description": "Indicates if the user wishes to receive WebSocket notifications for this notification type."
+          },
+          "synoChatEnabled": {
+            "type": "boolean",
+            "description": "Indicates if the user wishes to receive Synology Chat notifications for this notification type."
+          },
+          "synoMailEnabled": {
+            "type": "boolean",
+            "description": "Indicates if the user wishes to receive Synology Mail notifications for this notification type."
+          },
+          "emailEnabled": {
+            "type": "boolean",
+            "description": "Indicates if the user wishes to receive SMTP notifications for this notification type."
+          }
+        },
+        "required": [
+          "webSocketEnabled",
+          "synoChatEnabled",
+          "synoMailEnabled",
+          "emailEnabled"
+        ]
+      },
+      "UpdateNotificationSettingRequest": {
+        "type": "object",
+        "properties": {
+          "notificationSetting": {
+            "description": "The notification setting to update.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialNotificationSetting"
+              }
+            ]
+          }
+        },
+        "required": [
+          "notificationSetting"
+        ]
+      },
+      "UpdateNotificationSettingResponse": {
+        "type": "object",
+        "properties": {
+          "notificationSetting": {
+            "description": "The notification setting with updates applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationSetting"
+              }
+            ]
+          }
+        },
+        "required": [
+          "notificationSetting"
+        ]
+      }
+    }
+  }
+}

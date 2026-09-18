@@ -5,3 +5,4 @@ node_modules
 pnpm-lock.yaml
 **/src/generated/**
 infra/hasura/metadata
+apps/api/openapi

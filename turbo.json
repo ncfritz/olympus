@@ -4,11 +4,13 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "inputs": ["$TURBO_DEFAULT$", "!openapi/**", "!src/generated/**"]
     },
     "openapi": {
-      "dependsOn": ["^build"],
-      "outputs": ["openapi/**"]
+      "dependsOn": ["build"],
+      "outputs": ["openapi/**"],
+      "inputs": ["$TURBO_DEFAULT$", "!openapi/**"]
     },
     "generate": {
       "dependsOn": ["^openapi", "^build"],
