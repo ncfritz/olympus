@@ -9,6 +9,7 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
+  NotFoundException,
   Param,
   Put,
   Res,
@@ -30,7 +31,7 @@ import { GraphQlBatchJob } from "../../../../types/batchJobs";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlUpdateMetadataFetchJobResponse = {
-  update_dionysus_bulk_load_jobs_by_pk: GraphQlBatchJob;
+  update_dionysus_bulk_load_jobs_by_pk: GraphQlBatchJob | null;
 };
 
 @Controller({ version: "1" })
@@ -113,6 +114,10 @@ export class UpdateBatchJobController {
           changes: updates,
         },
       );
+
+    if (!updateResponse.update_dionysus_bulk_load_jobs_by_pk) {
+      throw new NotFoundException();
+    }
 
     const updatedJob: BatchJob = toDomainObject(
       updateResponse.update_dionysus_bulk_load_jobs_by_pk,

@@ -90,7 +90,7 @@ export class ListBatchJobsByTypeController {
     });
 
     const fetchRequest = gql`
-      query ListBatchJobs {
+      query ListBatchJobsByType {
       dionysus_bulk_load_jobs(${[paginationExpression, whereExpression].join(", ")}) {
         id
         type

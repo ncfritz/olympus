@@ -181,10 +181,16 @@ The status sent must match the success decorator. **[checked]**
 
 - Use the injected `GraphQLClient`. Do not create other clients.
 - Write the document inline with `gql`. **Name the GraphQL operation after
-  the API operation** (`mutation UpdateCalendarItem(...)`).
+  the API operation** (`mutation UpdateCalendarItem(...)`). A controller
+  with a second document names it after what it does
+  (`query GetCalendarItemSeries`). Every document is named, and a name
+  means the same document everywhere it appears: Hasura logs and the test
+  double route by it. **[checked]**
 - Pass values as GraphQL variables, not string interpolation. Interpolation
-  is allowed only for shared selection sets and for `where` expressions
-  produced by `buildFilterExpression()`.
+  is allowed only for shared selection sets and for the `where` / paging
+  expressions produced by `buildFilterExpression()` and
+  `buildPaginationExpression()`. A `where` built in code is passed as a
+  `_bool_exp` variable.
 - Declare the response type next to the controller:
   `type GraphQl<OperationId>Response = { <root_field>: GraphQl<Entity> }`.
 - Selection sets reused across operations are UPPER_SNAKE constants in

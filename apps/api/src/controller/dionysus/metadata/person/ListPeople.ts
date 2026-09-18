@@ -68,7 +68,7 @@ export class ListPeopleController {
     });
 
     const fetchRequest = gql`
-      query ListBatchJobs {
+      query ListPeople {
         dionysus_people(${[paginationExpression, whereExpression].join(", ")}) {
           id
           name

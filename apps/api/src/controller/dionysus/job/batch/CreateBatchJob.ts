@@ -81,6 +81,6 @@ export class CreateBatchJobController extends BaseCreateBatchJobController<Creat
   protected shouldPublishMessage(
     request: CreateBatchJobRequest,
   ): boolean | undefined {
-    return request.publishNotification;
+    return request.publishNotification ?? true;
   }
 }

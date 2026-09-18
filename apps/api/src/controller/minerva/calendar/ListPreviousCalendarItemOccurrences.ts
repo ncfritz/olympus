@@ -74,7 +74,7 @@ export class ListPreviousCalendarItemOccurrencesController {
     @Res() response: Response,
   ): Promise<void> {
     const currentMeetingQueryRequest = gql`
-      query DescribeCalendarItem($id: String!) {
+      query GetCalendarItemSeries($id: String!) {
         minerva_meetings_by_pk(id: $id) {
           start_time
           uid

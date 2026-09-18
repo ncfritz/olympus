@@ -69,7 +69,7 @@ export class CreateRedriveJobController extends BaseCreateBatchJobController<Cre
       jobType: request.metadataType,
       status: request.status,
       targetStatus: request.targetStatus,
-      republish: request.publishNotification,
+      republish: request.publishNotification ?? true,
       offset: 0,
     };
   }

@@ -191,7 +191,7 @@ describe("Minerva calendar API", () => {
   describe("GET /v1/minerva/meeting/:meetingId/next (GetNextCalendarItemOccurrence)", () => {
     it("returns the next occurrence in the series", async () => {
       t.graphql
-        .on("DescribeCalendarItem", {
+        .on("GetCalendarItemSeries", {
           minerva_meetings_by_pk: {
             uid: "uid-1",
             start_time: "2026-09-18T16:00:00Z",
@@ -217,7 +217,7 @@ describe("Minerva calendar API", () => {
 
     it("returns no item after the last occurrence", async () => {
       t.graphql
-        .on("DescribeCalendarItem", {
+        .on("GetCalendarItemSeries", {
           minerva_meetings_by_pk: {
             uid: "uid-1",
             start_time: "2026-09-18T16:00:00Z",
@@ -232,7 +232,7 @@ describe("Minerva calendar API", () => {
     });
 
     it("answers 404 for a meeting that is not part of a series", async () => {
-      t.graphql.on("DescribeCalendarItem", { minerva_meetings_by_pk: null });
+      t.graphql.on("GetCalendarItemSeries", { minerva_meetings_by_pk: null });
 
       expect((await t.http().get("/v1/minerva/meeting/nope/next")).status).toBe(
         404,
@@ -243,7 +243,7 @@ describe("Minerva calendar API", () => {
   describe("GET /v1/minerva/meeting/:meetingId/previous (ListPreviousCalendarItemOccurrences)", () => {
     beforeEach(() => {
       t.graphql
-        .on("DescribeCalendarItem", {
+        .on("GetCalendarItemSeries", {
           minerva_meetings_by_pk: {
             uid: "uid-1",
             start_time: "2026-09-18T16:00:00Z",

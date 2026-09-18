@@ -2,7 +2,16 @@ import {
   ListMetadataFetchJobsResponse,
   MetadataFetchJob,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
+import {
+  BadRequestException,
+  Controller,
+  DefaultValuePipe,
+  Get,
+  HttpStatus,
+  ParseIntPipe,
+  Query,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -22,6 +31,43 @@ type GraphQlListMetadataJobsResponse = {
       count: number;
     };
   };
+};
+
+const FIELD = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/**
+ * `filters` is base64-encoded JSON mapping a column to the values it may
+ * take, e.g. `{"status": ["queued"], "type": ["movies"]}`.
+ */
+const parseScrollFilters = (
+  filters: string | undefined,
+): Record<string, (string | number)[]> => {
+  if (!filters) {
+    return {};
+  }
+
+  let decoded: unknown;
+  try {
+    decoded = JSON.parse(Buffer.from(filters, "base64").toString("utf-8"));
+  } catch {
+    throw new BadRequestException("`filters` must be base64-encoded JSON");
+  }
+
+  if (!decoded || typeof decoded !== "object" || Array.isArray(decoded)) {
+    throw new BadRequestException("`filters` must be a JSON object");
+  }
+
+  for (const [field, values] of Object.entries(decoded)) {
+    if (
+      !FIELD.test(field) ||
+      !Array.isArray(values) ||
+      !values.every((v) => typeof v === "string" || typeof v === "number")
+    ) {
+      throw new BadRequestException(`Invalid filter "${field}"`);
+    }
+  }
+
+  return decoded as Record<string, (string | number)[]>;
 };
 
 @Controller({ version: "1" })
@@ -62,64 +108,59 @@ export class ScrollMetadataFetchJobsController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Query("filters") filters = undefined,
-    @Query("pageSize") pageSize = 100,
-    @Query("lastSeenId") lastSeenId = undefined,
+    @Query("filters") filters: string | undefined,
+    @Query("pageSize", new DefaultValuePipe(100), ParseIntPipe)
+    pageSize: number,
+    @Query("lastSeenId") lastSeenId: string | undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const queryParams = [`limit: ${pageSize}, order_by: {id: asc}`];
-    const filterOptions = [];
+    if (pageSize < 0) {
+      throw new BadRequestException(`Invalid page size "${pageSize}"`);
+    }
+
+    const conditions: Record<string, unknown>[] = [];
 
     if (lastSeenId) {
-      filterOptions.push(`id: {_gt: "${lastSeenId}"}`);
+      conditions.push({ id: { _gt: lastSeenId } });
     }
 
-    let where = undefined;
-
-    if (filters) {
-      const decodedOptions = JSON.parse(
-        Buffer.from(filters, "base64").toString("utf-8"),
-      );
-
-      for (const key in decodedOptions) {
-        if (decodedOptions[key] && decodedOptions[key].length > 0) {
-          const values = decodedOptions[key].map((value: string) => {
-            return `"${value}"`;
-          });
-
-          filterOptions.push(`${key}: { _in: [${values.join(", ")}]}`);
-        }
+    for (const [field, values] of Object.entries(parseScrollFilters(filters))) {
+      if (values.length > 0) {
+        conditions.push({ [field]: { _in: values } });
       }
-    }
-
-    if (filterOptions.length > 0) {
-      where = `where: {_and: {${filterOptions.join(", ")}}}`;
-      queryParams.push(where);
     }
 
     const fetchRequest = gql`
-      query ListMetadataFetchJobs {
-      dionysus_metadata_fetch_status(${queryParams.join(", ")}) {
-        createdTime
-        id
-        jitter
-        lastFetchedTime
-        lastUpdatedTime
-        status
-        ttl
-        type
-      }
-      dionysus_metadata_fetch_status_aggregate${where ? `(${where})` : ""} {
-        aggregate {
-          count
+      query ScrollMetadataFetchJobs(
+        $limit: Int!
+        $where: dionysus_metadata_fetch_status_bool_exp!
+      ) {
+        dionysus_metadata_fetch_status(
+          limit: $limit
+          order_by: { id: asc }
+          where: $where
+        ) {
+          createdTime
+          id
+          jitter
+          lastFetchedTime
+          lastUpdatedTime
+          status
+          ttl
+          type
+        }
+        dionysus_metadata_fetch_status_aggregate(where: $where) {
+          aggregate {
+            count
+          }
         }
       }
-    }
     `;
 
     const fetchResponse =
       await this.graphQLClient.request<GraphQlListMetadataJobsResponse>(
         fetchRequest,
+        { limit: pageSize, where: { _and: conditions } },
       );
     const fetchedJobs: MetadataFetchJob[] = [];
 

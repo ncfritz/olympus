@@ -53,7 +53,7 @@ export class GetBatchJobStatsByTypeController {
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query GetBatchJobStatistics($type: String!) {
+      query GetBatchJobStatisticsByType($type: String!) {
         dionysus_bulk_load_jobs_statistics(
           where: { type: { _eq: $type } }
           order_by: { created_date: asc }
@@ -98,7 +98,8 @@ export class GetBatchJobStatsByTypeController {
 
     fetchResponse.dionysus_bulk_load_jobs_statistics.forEach((data) => {
       const dataTime = moment.utc(data.created_date);
-      const dateIndex = 30 - now.diff(dataTime, "days");
+      const dateIndex = 29 - now.diff(dataTime, "days");
+      if (dateIndex < 0 || dateIndex >= 30) return;
 
       const seriesIndex = Object.keys(METADATA_CATEGORY_MAP).indexOf(data.type);
 
@@ -151,7 +152,8 @@ export class GetBatchJobStatsByTypeController {
   emptyTimingMap(now: Moment): number[][] {
     const valuesTemplate = [];
 
-    for (let i = 30; i > 0; i--) {
+    // The 30 days ending today (index 29).
+    for (let i = 29; i >= 0; i--) {
       const ts = moment(now).subtract({ days: i }).valueOf();
       valuesTemplate.push([ts, 0]);
     }

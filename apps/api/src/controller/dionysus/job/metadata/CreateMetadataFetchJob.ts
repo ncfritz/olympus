@@ -61,10 +61,8 @@ export class CreateMetadataFetchJobController {
     @Body() request: CreateMetadataFetchJobRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const ttl = request.ttl ? request.ttl : 30;
-    const jitter = request.jitter
-      ? request.jitter
-      : Math.floor(Math.random() * 3 * 24 * 60); // 3 days
+    const ttl = request.ttl ?? 30;
+    const jitter = request.jitter ?? Math.floor(Math.random() * 3 * 24 * 60); // 3 days
 
     const insertRequest = gql`
       mutation CreateMetadataFetchJob(
@@ -126,7 +124,7 @@ export class CreateMetadataFetchJobController {
       insertResponse.insert_dionysus_metadata_fetch_status_one,
     );
 
-    if (request.publishNotification) {
+    if (request.publishNotification ?? true) {
       await this.amqpConnection.publish(
         "metadataJob.trigger",
         `jobType.${createdJob.type}`,

@@ -24,6 +24,9 @@
  *   tag-style          the tag is Title Case
  *   todo               summary or description still contains a TODO
  *                      (left by `pnpm gen api-operation`)
+ *   graphql-named      every gql document names its operation
+ *   graphql-unique     a GraphQL operation name means one document across
+ *                      the API (the test double and Hasura logs route by it)
  */
 import * as path from "path";
 import type { ControllerInfo } from "./controllers";
@@ -45,6 +48,8 @@ export function checkControllers(controllers: ControllerInfo[]): Finding[] {
   const operationOwners = new Map<string, string[]>();
   const summaryOwners = new Map<string, string[]>();
   const descriptionOwners = new Map<string, string[]>();
+  // GraphQL operation name -> normalized document -> controllers using it
+  const graphqlDocuments = new Map<string, Map<string, Set<string>>>();
   const own = (map: Map<string, string[]>, key: string, owner: string) =>
     map.set(key, [...(map.get(key) ?? []), owner]);
 
@@ -142,6 +147,25 @@ export function checkControllers(controllers: ControllerInfo[]): Finding[] {
       );
     }
 
+    for (const source of c.sources) {
+      for (const [, body] of source.matchAll(/\bgql`([\s\S]*?)`/g)) {
+        const name = /\b(?:query|mutation|subscription)\s+(\w+)/.exec(
+          body,
+        )?.[1];
+        if (!name) {
+          report("graphql-named", "a gql document has no operation name");
+          continue;
+        }
+        const documents = graphqlDocuments.get(name) ?? new Map();
+        const text = body.replace(/\s+/g, " ").trim();
+        documents.set(
+          text,
+          (documents.get(text) ?? new Set()).add(c.className),
+        );
+        graphqlDocuments.set(name, documents);
+      }
+    }
+
     if (c.documents.length === 0) {
       report("registered", "not in any *ApiModule of an OpenAPI document");
     }
@@ -164,6 +188,17 @@ export function checkControllers(controllers: ControllerInfo[]): Finding[] {
     }
   };
   duplicates(operationOwners, "operation-unique", "operationId");
+  for (const [name, documents] of graphqlDocuments) {
+    if (documents.size < 2) continue;
+    const owners = [...documents.values()].flatMap((set) => [...set]);
+    for (const owner of new Set(owners)) {
+      findings.push({
+        rule: "graphql-unique",
+        target: owner,
+        message: `GraphQL operation "${name}" names ${documents.size} different documents (${[...new Set(owners)].filter((o) => o !== owner).join(", ")})`,
+      });
+    }
+  }
   duplicates(summaryOwners, "summary-unique", "summary");
   duplicates(descriptionOwners, "description-unique", "description");
   return findings;

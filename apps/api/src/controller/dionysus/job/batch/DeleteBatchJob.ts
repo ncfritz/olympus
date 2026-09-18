@@ -1,5 +1,12 @@
 import { DeleteBatchJobResponse } from "@ncfritz/olympus-model";
-import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Delete,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Res,
+} from "@nestjs/common";
 import {
   ApiNoContentResponse,
   ApiOperation,
@@ -48,12 +55,14 @@ export class DeleteBatchJobController {
       }
     `;
 
-    const deleteResponse = await this.graphQLClient.request(deleteRequest, {
+    const deleteResponse = await this.graphQLClient.request<{
+      delete_dionysus_bulk_load_jobs_by_pk: { id: string } | null;
+    }>(deleteRequest, {
       id: jobId,
     });
 
-    if (!deleteResponse) {
-      /*nothing*/
+    if (!deleteResponse.delete_dionysus_bulk_load_jobs_by_pk) {
+      throw new NotFoundException();
     }
 
     const responseBody: DeleteBatchJobResponse = {};

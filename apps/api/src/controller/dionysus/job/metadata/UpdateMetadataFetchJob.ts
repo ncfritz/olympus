@@ -11,6 +11,7 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
+  NotFoundException,
   Param,
   Put,
   Res,
@@ -31,7 +32,7 @@ import { GraphQlMetadataFetchJob } from "../../../../types/batchJobs";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 
 type GraphQlUpdateMetadataFetchJobResponse = {
-  update_dionysus_metadata_fetch_status_by_pk: GraphQlMetadataFetchJob;
+  update_dionysus_metadata_fetch_status_by_pk: GraphQlMetadataFetchJob | null;
 };
 
 @Controller({ version: "1" })
@@ -45,7 +46,7 @@ export class UpdateMetadataFetchJobController {
   @ApiOperation({
     summary: "Updates an existing metadata fetch job",
     description:
-      "Applies the given changes to a metadata fetch job. If the job ends up queued and `publishNotification` is set, a fetch message is published.",
+      "Applies the given changes to a metadata fetch job. If the job ends up queued and `publishNotification` is not `false`, a fetch message is published.",
     operationId: "UpdateMetadataFetchJob",
     tags: ["Metadata"],
   })
@@ -73,7 +74,7 @@ export class UpdateMetadataFetchJobController {
   @ApiStandardErrorResponses()
   @UseInterceptors(ClassSerializerInterceptor)
   async handle(
-    @Param("entityId") entityId: number,
+    @Param("entityId") entityId: string,
     @Param("entityType") entityType: MetadataJobType,
     @Body() request: Partial<UpdateMetadataFetchJobRequest>,
     @Res() response: Response,
@@ -111,13 +112,17 @@ export class UpdateMetadataFetchJobController {
         },
       );
 
+    if (!updateResponse.update_dionysus_metadata_fetch_status_by_pk) {
+      throw new NotFoundException();
+    }
+
     const updatedJob: MetadataFetchJob = toDomainObject(
       updateResponse.update_dionysus_metadata_fetch_status_by_pk,
     );
 
     if (
       updatedJob.status === MetadataFetchJobStatus.QUEUED &&
-      request.publishNotification
+      (request.publishNotification ?? true)
     ) {
       await this.amqpConnection.publish(
         "metadataJob.trigger",
