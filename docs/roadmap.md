@@ -29,11 +29,8 @@
 
 ## Model backlog
 
-- 599 properties have no `description` (the whole allow-list). Fill in by
-  file; `pnpm --filter @ncfritz/olympus-model check:allow-update` then
-  shrinks the list.
-- Description typos (e.g. "TThe amount of progress", "unique identified")
-  are fixed with the description pass; each changes the schema snapshot.
+- Description typos in pre-existing descriptions (e.g. "TThe amount of
+  progress", "unique identified"); each fix changes the schema snapshot.
 - Deferred: base classes for the shared workflow lifecycle fields
   (content/media/metadata workflows and steps) and for movie/TV credits.
   They already extend other bases, so this needs `IntersectionType`;
