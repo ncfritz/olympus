@@ -51,17 +51,9 @@ record them as accepted deviations.
 The controller convention check (`apps/api/test/conventions`) and
 Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
 
-- **Deletes that answer `410 Gone`.** `DeleteContentAssetChannel`,
-  `DeleteContentAssetTagFromAsset` and `DeleteMediaFavorite` respond 410
-  instead of a 2xx (`DeleteMediaFavorite` also documents 201). With the
-  SDK's `throwOnError`, callers see these as errors. Decision pending:
-  switch to `204 No Content`.
-- **`SendNotification` documents `207 Multi-Status`** for partial delivery
-  but never sends it (only 202 or 400). Decision pending: implement or
-  drop from the docs.
-- **`UploadAssets`** doesn't follow the controller pattern (`uploadFile`
-  returning the Multer file list, no `@Res()`); it documents 200 with an
-  empty body but Nest answers 201 with the file list.
+- Decided (2026-09-18): the content channel, content tag and media
+  favorite deletes keep answering `410 Gone`; the convention allows it for
+  `DELETE` only.
 - **operationId typo** `ListNotificationsTypes` (class
   `ListNotificationTypesController`). Fix with the SDK import, since it
   renames an SDK function.

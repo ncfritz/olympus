@@ -13,7 +13,9 @@
  *   summary-unique     no two operations share a summary (copy-paste guard)
  *   description-unique no two operations share a description
  *   standard-errors    @ApiStandardErrorResponses() (400 and 404 documented)
- *   success-response   at least one 2xx response documented
+ *   success-response   at least one 2xx response documented (DELETE
+ *                      operations may answer 410 Gone instead; see
+ *                      docs/conventions/api.md)
  *   status-sent        every documented 2xx/304 status is sent somewhere
  *                      (in the controller or a base class it extends)
  *   registered         listed in an *ApiModule that is in an OpenAPI document
@@ -33,6 +35,7 @@ const HTTP_STATUS: Record<string, number> = {
   CREATED: 201,
   ACCEPTED: 202,
   NO_CONTENT: 204,
+  GONE: 410,
   MULTI_STATUS: 207,
   NOT_MODIFIED: 304,
 };
@@ -119,8 +122,11 @@ export function checkControllers(controllers: ControllerInfo[]): Finding[] {
         "400/404 not documented (@ApiStandardErrorResponses)",
       );
     }
-    const success = codes.filter((s) => (s >= 200 && s < 300) || s === 304);
-    if (!success.some((s) => s < 300)) {
+    const isDelete = route.method === "DELETE";
+    const success = codes.filter(
+      (s) => (s >= 200 && s < 300) || s === 304 || (isDelete && s === 410),
+    );
+    if (!success.some((s) => s < 300 || s === 410)) {
       report("success-response", "no 2xx response documented");
     }
     const sent = new Set(

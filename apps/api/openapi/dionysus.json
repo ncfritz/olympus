@@ -3037,12 +3037,12 @@
         "operationId": "UploadAssets",
         "parameters": [],
         "responses": {
-          "200": {
-            "description": "If authentication was successful.",
+          "201": {
+            "description": "The files were stored and an ingestion workflow was started for each.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EmptyResponse"
+                  "$ref": "#/components/schemas/UploadAssetsResponse"
                 }
               }
             }
@@ -4241,24 +4241,6 @@
           }
         ],
         "responses": {
-          "201": {
-            "description": "The record has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the media favorite record"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SingleMediaFavoriteResponse"
-                }
-              }
-            }
-          },
           "400": {
             "description": "The request presented was not valid",
             "content": {
@@ -4275,6 +4257,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The media favorite was removed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleMediaFavoriteResponse"
                 }
               }
             }
@@ -12978,6 +12970,21 @@
         },
         "required": [
           "step"
+        ]
+      },
+      "UploadAssetsResponse": {
+        "type": "object",
+        "properties": {
+          "workflows": {
+            "description": "The content ingestion workflows started, one per uploaded file",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentIngestionWorkflow"
+            }
+          }
+        },
+        "required": [
+          "workflows"
         ]
       },
       "VerifyAuthResponse": {

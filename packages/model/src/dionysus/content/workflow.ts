@@ -184,3 +184,14 @@ export class ListContentIngestionWorkflowsResponse extends PaginatedResults {
   })
   workflows: ContentIngestionWorkflow[];
 }
+
+export class UploadAssetsResponse {
+  @ApiProperty({
+    type: () => ContentIngestionWorkflow,
+    isArray: true,
+    required: true,
+    description:
+      "The content ingestion workflows started, one per uploaded file",
+  })
+  workflows: ContentIngestionWorkflow[];
+}

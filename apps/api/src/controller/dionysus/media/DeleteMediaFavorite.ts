@@ -6,7 +6,7 @@ import {
 import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiConsumes,
-  ApiCreatedResponse,
+  ApiGoneResponse,
   ApiOperation,
   ApiParam,
   ApiProduces,
@@ -46,15 +46,9 @@ export class DeleteMediaFavoriteController {
     description: "The ID of the media that the download is targeting.",
     type: Number,
   })
-  @ApiCreatedResponse({
-    description: "The record has been successfully created.",
+  @ApiGoneResponse({
+    description: "The media favorite was removed.",
     type: SingleMediaFavoriteResponse,
-    headers: {
-      Location: {
-        schema: { type: "string" },
-        description: "The location of the media favorite record",
-      },
-    },
   })
   @ApiStandardErrorResponses()
   async handle(

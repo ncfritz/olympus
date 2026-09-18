@@ -96,8 +96,9 @@ export class SendNotificationController {
   })
   @ApiResponse({
     type: SendNotificationResponse,
-    status: 207,
-    description: "Enqueuing with some or all notification destinations failed.",
+    status: HttpStatus.MULTI_STATUS,
+    description:
+      "Enqueuing failed for at least one destination; each destination's status is in the body.",
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -198,7 +199,19 @@ export class SendNotificationController {
 
     await Promise.allSettled(enqueueTasks);
 
-    response.status(HttpStatus.ACCEPTED).send(responseBody);
+    const deliveries = [
+      responseBody.webSocketDestination,
+      responseBody.synoChatDestination,
+      responseBody.synoMailDestination,
+      responseBody.externalMailDestination,
+    ].filter((delivery): delivery is DeliveryStatus => delivery !== undefined);
+    const anyFailed = deliveries.some(
+      (delivery) => delivery.status !== DeliveryState.SUCCESS,
+    );
+
+    response
+      .status(anyFailed ? HttpStatus.MULTI_STATUS : HttpStatus.ACCEPTED)
+      .send(responseBody);
   }
 
   private async enqueueWebSocketNotification(
@@ -271,7 +284,7 @@ export class SendNotificationController {
         "notifications.trigger",
         "notifications.type.synochat",
         {
-          eventId: uuidv4(),
+          eventId: eventId,
           notificationId: notificationId,
           notificationType: request.type,
           expirationTime: request.expirationTime,
@@ -321,7 +334,7 @@ export class SendNotificationController {
         "notifications.trigger",
         `notifications.type.${mailType}`,
         {
-          eventId: uuidv4(),
+          eventId: eventId,
           notificationId: notificationId,
           notificationType: request.type,
           expirationTime: request.expirationTime,

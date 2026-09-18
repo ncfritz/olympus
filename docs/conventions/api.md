@@ -142,13 +142,18 @@ Apply decorators in this order, omitting the ones that don't apply:
 
 ### Status codes
 
-| Situation                        | Status             | Decorator                       |
-| -------------------------------- | ------------------ | ------------------------------- |
-| Read, update, action with a body | `200 OK`           | `@ApiOkResponse`                |
-| Create                           | `201 Created`      | `@ApiCreatedResponse`           |
-| Success with no body             | `204 No Content`   | `@ApiNoContentResponse`         |
-| Accepted for async processing    | `202 Accepted`     | `@ApiResponse({ status: 202 })` |
-| Update with an empty change set  | `304 Not Modified` |                                 |
+| Situation                                           | Status                             | Decorator                       |
+| --------------------------------------------------- | ---------------------------------- | ------------------------------- |
+| Read, update, action with a body                    | `200 OK`                           | `@ApiOkResponse`                |
+| Create                                              | `201 Created`                      | `@ApiCreatedResponse`           |
+| Success with no body                                | `204 No Content`                   | `@ApiNoContentResponse`         |
+| Accepted for async processing                       | `202 Accepted`                     | `@ApiResponse({ status: 202 })` |
+| Update with an empty change set                     | `304 Not Modified`                 |                                 |
+| Delete (existing content, tag and favorite deletes) | `410 Gone` with the removed record | `@ApiGoneResponse`              |
+
+New deletes use `204 No Content` (the generator's default). A few existing
+deletes answer `410 Gone` with the removed record; that is accepted for
+`DELETE` operations only.
 
 The status sent must match the success decorator. **[checked]**
 

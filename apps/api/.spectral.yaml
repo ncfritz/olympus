@@ -14,9 +14,10 @@ rules:
   operation-operationId: error
   info-contact: error
 
-  # Stays a warning while two DELETE operations answer 410 Gone instead of
-  # a 2xx (see docs/roadmap.md). Promote to error once they return 204.
-  operation-success-response: warn
+  # Off: several DELETE operations deliberately answer 410 Gone (see
+  # docs/conventions/api.md). The controller convention check enforces a
+  # documented success response instead, allowing 410 for DELETE only.
+  operation-success-response: off
 
   operation-operationId-pascal-case:
     description: operationId must be PascalCase (docs/conventions/api.md).

@@ -653,7 +653,7 @@
             }
           },
           "207": {
-            "description": "Enqueuing with some or all notification destinations failed.",
+            "description": "Enqueuing failed for at least one destination; each destination's status is in the body.",
             "content": {
               "application/json": {
                 "schema": {

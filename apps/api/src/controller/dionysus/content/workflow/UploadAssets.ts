@@ -1,22 +1,25 @@
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
+  ContentIngestionWorkflow,
   ContentIngestionWorkflowAssetLocation,
-  EmptyResponse,
+  UploadAssetsResponse,
 } from "@ncfritz/olympus-model";
 import {
   Controller,
+  HttpStatus,
   Post,
+  Res,
   UploadedFiles,
   UseInterceptors,
 } from "@nestjs/common";
 import { FilesInterceptor } from "@nestjs/platform-express";
 import {
   ApiConsumes,
-  ApiOkResponse,
+  ApiCreatedResponse,
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { Request } from "express";
+import { type Request, type Response } from "express";
 import { GraphQLClient } from "graphql-request";
 import { diskStorage } from "multer";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
@@ -49,9 +52,10 @@ export class UploadAssetsController extends BaseContentIngestionWorkflowControll
   })
   @ApiConsumes("multipart/form-data")
   @ApiProduces("application/json")
-  @ApiOkResponse({
-    description: "If authentication was successful.",
-    type: () => EmptyResponse,
+  @ApiCreatedResponse({
+    description:
+      "The files were stored and an ingestion workflow was started for each.",
+    type: () => UploadAssetsResponse,
   })
   @ApiStandardErrorResponses()
   @UseInterceptors(
@@ -68,13 +72,17 @@ export class UploadAssetsController extends BaseContentIngestionWorkflowControll
       }),
     }),
   )
-  public async uploadFile(@UploadedFiles() files: Express.Multer.File[]) {
+  async handle(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Res() response: Response,
+  ): Promise<void> {
+    const workflows: ContentIngestionWorkflow[] = [];
+
     for (const file of files) {
       const workflow = await this.createContentIngestionWorkflow(
         file.originalname,
         ContentIngestionWorkflowAssetLocation.LOCAL,
       );
-
       await this.amqpConnection.publish(
         "content.trigger",
         "jobType.rawIngest",
@@ -85,8 +93,11 @@ export class UploadAssetsController extends BaseContentIngestionWorkflowControll
           skipWorkflow: false,
         },
       );
+      workflows.push(workflow);
     }
 
-    return files;
+    const responseBody: UploadAssetsResponse = { workflows };
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

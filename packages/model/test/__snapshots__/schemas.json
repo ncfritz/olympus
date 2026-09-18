@@ -15728,6 +15728,21 @@
     ],
     "type": "object"
   },
+  "UploadAssetsResponse": {
+    "properties": {
+      "workflows": {
+        "description": "The content ingestion workflows started, one per uploaded file",
+        "items": {
+          "$ref": "#/components/schemas/ContentIngestionWorkflow"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "workflows"
+    ],
+    "type": "object"
+  },
   "VerifyAuthResponse": {
     "properties": {
       "authorized": {

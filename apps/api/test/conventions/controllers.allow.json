@@ -1,11 +1,4 @@
 {
   "class-name ListNotificationTypesController": "src/controller/olympus/notifications/ListNotificationTypes.ts: class ListNotificationTypesController for operation ListNotificationsTypes",
-  "file-name ListNotificationTypesController": "src/controller/olympus/notifications/ListNotificationTypes.ts: file ListNotificationTypes.ts for operation ListNotificationsTypes",
-  "handler-name UploadAssetsController": "src/controller/dionysus/content/workflow/UploadAssets.ts: route method is uploadFile",
-  "response-object UploadAssetsController": "src/controller/dionysus/content/workflow/UploadAssets.ts: no @Res() parameter",
-  "status-sent DeleteMediaFavoriteController": "src/controller/dionysus/media/DeleteMediaAssetFavorite.ts: documents 201 but sends nothing detectable",
-  "status-sent SendNotificationController": "src/controller/olympus/notifications/SendNotification.ts: documents 207 but sends 202",
-  "status-sent UploadAssetsController": "src/controller/dionysus/content/workflow/UploadAssets.ts: documents 200 but sends nothing detectable",
-  "success-response DeleteContentAssetChannelController": "src/controller/dionysus/content/channel/DeleteContentAssetChannel.ts: no 2xx response documented",
-  "success-response DeleteContentAssetTagFromAssetController": "src/controller/dionysus/content/tags/DeleteContentAssetTagFromAsset.ts: no 2xx response documented"
+  "file-name ListNotificationTypesController": "src/controller/olympus/notifications/ListNotificationTypes.ts: file ListNotificationTypes.ts for operation ListNotificationsTypes"
 }
