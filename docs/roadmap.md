@@ -2,18 +2,18 @@
 
 ## Phases
 
-| #   | Phase                                                                                                | Status                |
-| --- | ---------------------------------------------------------------------------------------------------- | --------------------- |
-| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18) |
-| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | next                  |
-| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       |                       |
-| 3   | Import site and desktop shell                                                                        |                       |
-| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         |                       |
-| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                       |
-| 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                       |
-| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                       |
-| 8   | Minerva calendar sync import and Hasura integration                                                  |                       |
-| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing               |
+| #   | Phase                                                                                                | Status                                       |
+| --- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)                        |
+| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | in progress: imports and `openapi` task done |
+| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       |                                              |
+| 3   | Import site and desktop shell                                                                        |                                              |
+| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         |                                              |
+| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                              |
+| 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                                              |
+| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                              |
+| 8   | Minerva calendar sync import and Hasura integration                                                  |                                              |
+| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                      |
 
 ## Open decisions
 
@@ -34,6 +34,15 @@ record them as accepted deviations.
 
 ### API
 
+- **Lint does not pass (pre-existing).** `eslint src` reports 32 errors
+  (15 `no-explicit-any`, 13 `no-unused-vars`, 2 `no-useless-assignment`,
+  2 Prettier), the same set the old repo reported. Most are in
+  `NotificationsGateway.ts` and the batch-job controllers.
+  `UpdateMediaAssetWorkflowStep.ts` also fails `pnpm format:check`.
+- The API `Dockerfile` still targets the old single-repo layout (npm +
+  GitHub Packages token). Rebuilt with ADR 0011.
+- OpenAPI `info.version` is now `0.0.0` (the workspace package version)
+  instead of the published release number.
 - `ApiStandardErrorResponses({ exclude })`: the filter uses
   `key in options.exclude`, which tests array indices, not values, so
   `exclude` doesn't work as intended.

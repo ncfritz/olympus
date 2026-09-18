@@ -4,7 +4,7 @@ Deployable applications that serve HTTP or UI.
 
 | Directory | Source repo                  | Status           |
 | --------- | ---------------------------- | ---------------- |
-| `api`     | olympus-api                  | not yet imported |
+| `api`     | olympus-api                  | imported         |
 | `site`    | olympus-site                 | not yet imported |
 | `desktop` | olympus-app (Electron shell) | not yet imported |
 

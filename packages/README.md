@@ -6,7 +6,7 @@ Nothing here is published to a registry.
 | Directory | Package                   | Status           |
 | --------- | ------------------------- | ---------------- |
 | `config`  | `@ncfritz/olympus-config` | present          |
-| `model`   | `@ncfritz/olympus-model`  | not yet imported |
+| `model`   | `@ncfritz/olympus-model`  | imported         |
 | `sdk`     | `@ncfritz/olympus-sdk`    | not yet imported |
 | `ui`      | `@ncfritz/olympus-ui`     | planned          |
 | `theme`   | `@ncfritz/olympus-theme`  | planned          |

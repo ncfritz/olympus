@@ -22,6 +22,10 @@ Dependencies first, so each import can switch to `workspace:*` right away:
 
 ## Before importing
 
+- Inspect the source repos read-only. Use `git --no-optional-locks status`;
+  a plain `git status` from the Cowork VM can leave a stale
+  `.git/index.lock` behind.
+
 - Commit or stash outstanding work in the source repo. Only committed
   history is imported. As of 2026-09-18 several repos have uncommitted
   changes (olympus-api: 10 files, olympus-notification-agent: 21).
@@ -33,7 +37,7 @@ Dependencies first, so each import can switch to `workspace:*` right away:
 
 ```sh
 # 1. Rewrite a fresh clone so every path sits under the target directory
-git clone <source> /tmp/import-<name>
+git clone --no-tags --single-branch -b main <source> /tmp/import-<name>
 cd /tmp/import-<name>
 git filter-repo --to-subdirectory-filter <target-dir>   # e.g. packages/model
 
@@ -59,6 +63,14 @@ Then, in a follow-up commit ("Adapt <name> to workspace"):
   `*.iml`, `.github/workflows/*` publishing jobs.
 - Add `*.env.example` for every env file the package reads.
 - `pnpm install && pnpm turbo run build lint --filter=<name>...` passes.
+
+Tags are not imported: each repo has its own `vX.Y.Z` tags, and they would
+collide.
+
+Uncommitted changes in the source repo are carried over as uncommitted
+changes in the monorepo working tree (`git diff` in the source with
+`--src-prefix/--dst-prefix` set to the target directory, then
+`git apply`), so in-progress work continues there.
 
 ## After importing
 

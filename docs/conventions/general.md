@@ -53,7 +53,8 @@ workflows, jobs), **Minerva** (personal productivity: notes, meetings).
 - Nest apps log through Winston (`nest-winston`), created in
   `src/util(s)/logger.ts`, shipped to Loki via `winston-loki`.
 - Use the module-level `logger` (`logger.info/warn/error`). No
-  `console.log` in committed code.
+  `console.log` in application code. Command-line scripts (such as the
+  API's `src/openapi.ts`) may print to the console.
 - Prometheus metrics go through the app's `Prometheus*Interceptor` and
   `nestjs-metrics-reporter`.
 
