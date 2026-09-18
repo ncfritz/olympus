@@ -1,12 +1,9 @@
 import "source-map-support/register";
 
-import { VersioningType } from "@nestjs/common";
-import { NestFactory, PartialGraphHost, Reflector } from "@nestjs/core";
-import cookieParser from "cookie-parser";
-import * as bodyParser from "body-parser";
+import { NestFactory, PartialGraphHost } from "@nestjs/core";
 import * as fs from "fs";
 import { WinstonModule } from "nest-winston";
-import { PrometheusMetricsInterceptor } from "./middleware/PrometheusOperationMetricsInterceptor";
+import { configureApp } from "./configureApp";
 import { AppModule } from "./module/AppModule";
 import { buildOpenApiDocument } from "./schema/documentBuilder";
 import {
@@ -28,21 +25,8 @@ async function bootstrap() {
       instance: logger,
     }),
   });
-  //app.useGlobalPipes(new ValidationPipe());
-  app.use(cookieParser());
-  // Allow larger body size
-  app.use(bodyParser.json({ limit: 1024 * 1024 * 10, inflate: true }));
-  app.use(bodyParser.urlencoded({ limit: 1024 * 1024 * 200, extended: true }));
-  app.enableCors({
-    origin: ["http://localhost:3000"],
-    credentials: true,
-    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
-  });
-  app.enableVersioning({
-    type: VersioningType.URI,
-  });
+  configureApp(app);
   app.getHttpServer().setTimeout(2 * 60 * 1000);
-  app.useGlobalInterceptors(new PrometheusMetricsInterceptor(new Reflector()));
 
   if (enableApiExplorer) {
     buildOpenApiDocument(app, OlympusApiConfig);

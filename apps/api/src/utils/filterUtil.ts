@@ -3,6 +3,7 @@ import {
   FilterType,
   SortDirection,
 } from "@ncfritz/olympus-model";
+import { BadRequestException } from "@nestjs/common";
 
 export interface PaginationParams {
   pageSize: number;
@@ -16,9 +17,38 @@ export interface PaginationParams {
 }
 
 const ARRAY_OPERATIONS: FilterType[] = [FilterType.IN, FilterType.NOT_IN];
+
+// Field names and sort directions are interpolated into GraphQL documents,
+// so they are restricted to identifier syntax / known values.
+const FIELD_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$/;
+const SORT_DIRECTIONS = new Set<string>(Object.values(SortDirection));
+const FILTER_TYPES = new Set<string>(Object.values(FilterType));
+
+const assertField = (name: string, what: string): void => {
+  if (!FIELD_PATTERN.test(name)) {
+    throw new BadRequestException(`Invalid ${what} "${name}"`);
+  }
+};
 const JOINING_OPERATIONS: FilterType[] = [FilterType.AND, FilterType.OR];
 
 export const buildPaginationExpression = (params: PaginationParams): string => {
+  for (const sort of [params, params.fallbackSort]) {
+    if (!sort) continue;
+    assertField(sort.sortField, "sort field");
+    if (!SORT_DIRECTIONS.has(sort.sortDirection)) {
+      throw new BadRequestException(
+        `Invalid sort direction "${sort.sortDirection}"`,
+      );
+    }
+  }
+  const pageSize = Number(params.pageSize);
+  const startPage = Number(params.startPage);
+  if (!Number.isInteger(pageSize) || pageSize < 0) {
+    throw new BadRequestException(`Invalid page size "${params.pageSize}"`);
+  }
+  if (!Number.isInteger(startPage) || startPage < 0) {
+    throw new BadRequestException(`Invalid start page "${params.startPage}"`);
+  }
   const sortOptions = [`{${params.sortField}: ${params.sortDirection}}`];
 
   if (
@@ -33,7 +63,7 @@ export const buildPaginationExpression = (params: PaginationParams): string => {
   const sortExpression =
     sortOptions.length > 0 ? `[${sortOptions.join(", ")}]` : sortOptions[0];
 
-  return `limit: ${params.pageSize}, offset: ${params.pageSize * params.startPage}, order_by: ${sortExpression}`;
+  return `limit: ${pageSize}, offset: ${pageSize * startPage}, order_by: ${sortExpression}`;
 };
 
 export const buildFilterExpression = (
@@ -59,6 +89,11 @@ const buildFilterInternal = (
       filter.push(buildFilterInternal(subDefinition, wrapFilter));
     });
   } else {
+    if (!FILTER_TYPES.has(definition.type)) {
+      throw new BadRequestException(`Invalid filter type "${definition.type}"`);
+    }
+    // "_" is the conventional placeholder name for joining filters.
+    if (definition.name !== "_") assertField(definition.name, "filter field");
     const fieldParts = definition.name.split(".");
     let fieldName = fieldParts[0];
     let fieldSuffix = "";
@@ -128,7 +163,15 @@ const buildFilterInternal = (
 
 const formatValue = (value: string | number | boolean): string => {
   if (typeof value === "string") {
-    return `"${value}"`;
+    // JSON string syntax is valid GraphQL string syntax and escapes quotes,
+    // backslashes and control characters.
+    return JSON.stringify(value);
+  }
+  if (typeof value === "number" && !Number.isFinite(value)) {
+    throw new BadRequestException(`Invalid filter value "${value}"`);
+  }
+  if (typeof value !== "number" && typeof value !== "boolean") {
+    throw new BadRequestException("Invalid filter value");
   }
 
   return value.toString();
@@ -144,10 +187,17 @@ export const parseFilterDefinition = (
   if (!definition) {
     return undefined;
   }
+  if (typeof definition !== "string") {
+    return definition;
+  }
 
-  return typeof definition === "string"
-    ? (JSON.parse(
-        Buffer.from(definition, "base64").toString("utf-8"),
-      ) as unknown as FilterDefinition)
-    : definition;
+  try {
+    return JSON.parse(
+      Buffer.from(definition, "base64").toString("utf-8"),
+    ) as unknown as FilterDefinition;
+  } catch {
+    throw new BadRequestException(
+      "`filters` must be a base64-encoded JSON FilterDefinition",
+    );
+  }
 };

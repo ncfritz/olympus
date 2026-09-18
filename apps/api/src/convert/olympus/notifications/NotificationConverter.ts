@@ -32,7 +32,9 @@ export const toDomainObject = (input: GraphQlNotification): Notification => {
     notificationType: input.notificationType,
     level: input.level,
     acknowledged: input.acknowledged || false,
-    expirationTime: moment(input.expirationTime),
+    expirationTime: input.expirationTime
+      ? moment(input.expirationTime)
+      : undefined,
     deletionTime: input.deletionTime ? moment(input.deletionTime) : undefined,
     createdTime: moment(input.createdTime),
     payload: input.payload

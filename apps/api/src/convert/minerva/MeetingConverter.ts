@@ -92,7 +92,7 @@ export const toDomainObject = (input: GraphQlMeeting): Meeting => {
     occurrenceType: input.occurrence_type,
     location: input.location,
     importance: input.importance,
-    duration: moment.duration(input.duration).minutes(),
+    duration: moment.duration(input.duration).asMinutes(),
     isDeleted: input.deleted,
     isCancelled: input.cancelled,
     isAllDay: input.all_day,
