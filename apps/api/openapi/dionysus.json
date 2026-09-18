@@ -16322,7 +16322,7 @@
           "bypassCache": {
             "type": "boolean",
             "default": false,
-            "description": "Whether to fetch from TMDB even when a cached response is available"
+            "description": "Whether to skip the local status cache and read the status directly from the database"
           },
           "context": {
             "description": "Type-specific context passed to the metadata agent",
@@ -21767,7 +21767,7 @@
           "bypassCache": {
             "type": "boolean",
             "default": false,
-            "description": "Whether to fetch from TMDB even when a cached response is available"
+            "description": "Whether to skip the local status cache and read the status directly from the database"
           }
         },
         "required": [

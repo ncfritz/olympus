@@ -3061,7 +3061,7 @@
     "properties": {
       "bypassCache": {
         "default": false,
-        "description": "Whether to fetch from TMDB even when a cached response is available",
+        "description": "Whether to skip the local status cache and read the status directly from the database",
         "type": "boolean"
       },
       "context": {
@@ -15610,7 +15610,7 @@
     "properties": {
       "bypassCache": {
         "default": false,
-        "description": "Whether to fetch from TMDB even when a cached response is available",
+        "description": "Whether to skip the local status cache and read the status directly from the database",
         "type": "boolean"
       },
       "job": {

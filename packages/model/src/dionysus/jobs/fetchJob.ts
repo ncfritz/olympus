@@ -177,7 +177,7 @@ export class CreateMetadataFetchJobRequest {
     required: false,
     default: false,
     description:
-      "Whether to fetch from TMDB even when a cached response is available",
+      "Whether to skip the local status cache and read the status directly from the database",
   })
   bypassCache?: boolean;
 
@@ -237,7 +237,7 @@ export class UpdateMetadataFetchJobRequest {
     required: false,
     default: false,
     description:
-      "Whether to fetch from TMDB even when a cached response is available",
+      "Whether to skip the local status cache and read the status directly from the database",
   })
   bypassCache?: boolean;
 }
