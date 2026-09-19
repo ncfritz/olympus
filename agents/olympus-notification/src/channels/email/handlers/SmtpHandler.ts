@@ -25,7 +25,7 @@ export abstract class SmtpHandler extends DeliveryHandler<
 
   protected async send(msg: SmtpEvent, payload: SmtpPayload): Promise<void> {
     const message: Mail.Options = {
-      from: msg.from || "Unknown <no-reply@internal.ncfritz.net",
+      from: msg.from || "Unknown <no-reply@internal.ncfritz.net>",
       to: msg.to,
       cc: msg.cc,
       bcc: msg.bcc,

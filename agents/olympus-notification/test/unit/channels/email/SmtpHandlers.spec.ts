@@ -67,7 +67,7 @@ describe("SMTP handlers", () => {
     );
     expect(sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: "Unknown <no-reply@internal.ncfritz.net",
+        from: "Unknown <no-reply@internal.ncfritz.net>",
         headers: { "x-priority": "3" },
       }),
     );

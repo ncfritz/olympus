@@ -1,15 +1,15 @@
 Workflow: {{workflow.id}}
  Started: {{date workflow.startedTime "MM/DD/YYYY hh:mm:ss A"}}
-Finished: {{date workflow.finished "MM/DD/YYYY hh:mm:ss A"}}
+Finished: {{date workflow.finishedTime "MM/DD/YYYY hh:mm:ss A"}}
   Status: {{workflow.status}}
 
 Download:
 ==============================================================================
-Step ID: {{workdlow.download.id}}
-Metadata Type: Doewnload
-Started: {{date workdlow.download.startedTime "MM/DD/YYYY hh:mm:ss A"}}
-Finished: {{date workdlow.download.finishedTime "MM/DD/YYYY hh:mm:ss A"}}
-Status: {{workdlow.download.status}}
+Step ID: {{workflow.download.id}}
+Type: Download
+Started: {{date workflow.download.startedTime "MM/DD/YYYY hh:mm:ss A"}}
+Finished: {{date workflow.download.finishedTime "MM/DD/YYYY hh:mm:ss A"}}
+Status: {{workflow.download.status}}
 
 Steps:
 ==============================================================================

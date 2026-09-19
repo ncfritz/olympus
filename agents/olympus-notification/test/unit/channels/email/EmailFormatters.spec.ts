@@ -73,6 +73,7 @@ describe("EmailFormatters", () => {
     expect(workflowApi.describeWorkflow).toHaveBeenCalledWith("wf-1");
     expect(email.subject).toContain("completed successfully");
     expect(email.htmlPart).toContain("wf-1");
+    expect(email.plaintextPart).toMatch(/Finished: 09\/19\/2026 \d\d:00:00/);
     // The general layout, with its inline images, wraps the template.
     expect(email.htmlPart).toContain("<title>Olympus</title>");
     const cids = email.attachments!.map((a) => a.cid);
@@ -89,6 +90,8 @@ describe("EmailFormatters", () => {
       id: "tw-1",
       type: "movie",
       status: "failed",
+      finishedTime: "2026-09-19T11:00:00Z",
+      download: { id: "dl-1", status: "success" },
       decoration: { name: "Some Movie", posterPath },
       steps: [],
     });
@@ -100,6 +103,9 @@ describe("EmailFormatters", () => {
       });
       expect(email.subject).toContain("Some Movie");
       expect(email.subject).toContain("failed");
+      expect(email.plaintextPart).toContain("Step ID: dl-1");
+      expect(email.plaintextPart).toContain("Status: success");
+      expect(email.plaintextPart).toMatch(/Finished: 09\/19\/2026/);
       const poster = email.attachments!.find((a) => a.cid === "media_poster")!;
       expect(poster.path).toMatch(/templates\/images\/no_poster_[1-6]\.png$/);
       expect(fs.existsSync(poster.path as string)).toBe(true);
