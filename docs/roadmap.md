@@ -157,8 +157,8 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     contracts come from `@ncfritz/olympus-messages`. Fixed on the way:
     the AMQP password in the logs, `console.log` of failed searches,
     bootstrap failures writing to `/logs`.
-  - Bugs, one commit each: the NZBGeek API key reaches logs in Axios
-    errors (it's in the request URL); `finishedTime` records the start
+  - Fixed after the restructure, one commit each: the NZBGeek API key
+    reaching logs in Axios errors; `finishedTime` records the start
     time; season searches send `episode` instead of `episodeNumber` in
     `initiatingAsset`; an episode search with no results is marked
     failed (a movie's is skipped).
