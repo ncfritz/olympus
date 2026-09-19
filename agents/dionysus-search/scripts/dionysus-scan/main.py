@@ -28,7 +28,7 @@ def do_work():
         "nzbName": os.getenv("NZBNP_NZBNAME"),
         "nzbUrl": os.getenv("NZBNP_URL"),
         "category": os.getenv("NZBNP_CATEGORY"),
-        "priority": os.getenv("NZBNA_PRIORITY"),
+        "priority": os.getenv("NZBNP_PRIORITY"),
         "top": os.getenv("NZBNP_TOP"),
         "paused": os.getenv("NZBNP_PAUSED"),
         "dupeKey": os.getenv("NZBNP_DUPEKEY"),
