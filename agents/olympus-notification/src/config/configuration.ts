@@ -15,8 +15,6 @@ export { ConfigValidationError };
 export type OlympusConfig = {
   /** Base URL for SDK calls, including `/v1`. */
   apiBaseUrl: string;
-  /** API host that durable WebSocket notifications are stored through. */
-  apiHost: string;
   /** Socket.IO server that relays notifications to browsers. */
   webSocketHost: string;
 };
@@ -65,7 +63,6 @@ export const readConfig = (
     logging: readLoggingConfig(read, runtime.isProduction),
     olympus: {
       apiBaseUrl: read.string("API_BASE_URL", "http://localhost:3001/v1"),
-      apiHost: read.string("API_HOST", "http:localhost:3001"),
       webSocketHost: read.string("WSS_HOST", "ws://localhost:3000"),
     },
     synologyMail: {

@@ -4,6 +4,7 @@ import { Global, Inject, Logger, Module, OnModuleInit } from "@nestjs/common";
 import { olympusConfig } from "../config/configuration";
 import type { OlympusConfigType } from "../config/configuration";
 import { MediaApi } from "./MediaApi";
+import { NotificationApi } from "./NotificationApi";
 import { WorkflowApi } from "./WorkflowApi";
 
 /**
@@ -12,8 +13,8 @@ import { WorkflowApi } from "./WorkflowApi";
  */
 @Global()
 @Module({
-  providers: [MediaApi, WorkflowApi],
-  exports: [MediaApi, WorkflowApi],
+  providers: [MediaApi, NotificationApi, WorkflowApi],
+  exports: [MediaApi, NotificationApi, WorkflowApi],
 })
 export class OlympusApiModule implements OnModuleInit {
   constructor(

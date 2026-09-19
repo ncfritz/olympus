@@ -1,27 +1,22 @@
-import axios from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WebSocketFormatters } from "../../../../src/channels/websocket/formatters/WebSocketFormatters";
 import { WebSocketHandler } from "../../../../src/channels/websocket/handlers/WebSocketHandler";
+import type { NotificationApi } from "../../../../src/api/NotificationApi";
 import type { WebSocketPublisher } from "../../../../src/channels/websocket/services/WebSocketPublisher";
 import { webSocketEvent } from "../../../fixtures/events";
 
-vi.mock("axios");
-
 describe("WebSocketHandler", () => {
   const publish = vi.fn();
+  const createNotification = vi.fn();
   const handler = new WebSocketHandler(
     new WebSocketFormatters(),
     { publish } as unknown as WebSocketPublisher,
-    {
-      apiBaseUrl: "http://api.test/v1",
-      apiHost: "http://api.test",
-      webSocketHost: "ws://ws.test",
-    },
+    { createNotification } as unknown as NotificationApi,
   );
 
   beforeEach(() => {
     publish.mockReset();
-    vi.mocked(axios.post).mockReset();
+    createNotification.mockReset();
   });
 
   it("relays the formatted notification to browsers", async () => {
@@ -41,26 +36,26 @@ describe("WebSocketHandler", () => {
         },
       }),
     );
-    expect(axios.post).not.toHaveBeenCalled();
+    expect(createNotification).not.toHaveBeenCalled();
   });
 
-  it("stores durable notifications in the API", async () => {
+  it("stores durable notifications through the SDK", async () => {
     await handler.handle(
       webSocketEvent({ durable: true, group: "g-1", ttl: "P1D" }),
     );
-    expect(axios.post).toHaveBeenCalledWith(
-      "http://api.test/v1/notifications",
-      {
-        notification: expect.objectContaining({
-          acknowledged: false,
-          notificationId: "notification-1",
-          notificationType: "system_test",
-          eventId: "event-1",
-          group: "g-1",
-          ttl: "P1D",
-        }),
+    expect(createNotification).toHaveBeenCalledWith({
+      acknowledged: false,
+      notificationId: "notification-1",
+      notificationType: "system_test",
+      level: "info",
+      payload: {
+        type: "plain",
+        value: { title: "Test", message: "This is a test message" },
       },
-    );
+      eventId: "event-1",
+      group: "g-1",
+      ttl: "P1D",
+    });
   });
 
   it("does not throw when the relay fails", async () => {

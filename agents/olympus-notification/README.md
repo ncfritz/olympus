@@ -111,11 +111,10 @@ Environment variables are used to configure the NestJS modules that connect to v
 
 ##### Olympus
 
-| Variable     | Usage                                                   | Default Value              |
-| ------------ | ------------------------------------------------------- | -------------------------- |
-| WSS_HOST     | The destination to use for WebSocket notifications      | `ws://localhost:3000`      |
-| API_HOST     | The Olympus API host (WebSocket notification callbacks) | `http:localhost:3001`      |
-| API_BASE_URL | Base URL for SDK calls, including `/v1`                 | `http://localhost:3001/v1` |
+| Variable     | Usage                                              | Default Value              |
+| ------------ | -------------------------------------------------- | -------------------------- |
+| WSS_HOST     | The destination to use for WebSocket notifications | `ws://localhost:3000`      |
+| API_BASE_URL | Base URL for SDK calls, including `/v1`            | `http://localhost:3001/v1` |
 
 ##### Delivery channels
 

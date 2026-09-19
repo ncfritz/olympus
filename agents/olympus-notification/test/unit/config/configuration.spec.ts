@@ -16,7 +16,6 @@ describe("readConfig", () => {
     );
     expect(config.olympus).toEqual({
       apiBaseUrl: "http://localhost:3001/v1",
-      apiHost: "http:localhost:3001",
       webSocketHost: "ws://localhost:3000",
     });
     expect(config.synologyChat).toEqual({

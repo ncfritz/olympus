@@ -1,15 +1,12 @@
 import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
-import {
-  CreateNotificationRequest,
+import type {
   NotificationContext,
   NotificationPayload,
 } from "@ncfritz/olympus-sdk/olympus";
-import { Inject, Injectable } from "@nestjs/common";
-import axios from "axios";
+import { Injectable } from "@nestjs/common";
 import moment from "moment";
 import { v4 as uuidv4 } from "uuid";
-import { olympusConfig } from "../../../config/configuration";
-import type { OlympusConfigType } from "../../../config/configuration";
+import { NotificationApi } from "../../../api/NotificationApi";
 import { DeliveryHandler } from "../../../delivery/DeliveryHandler";
 import type { WebSocketNotificationEvent } from "../../../delivery/events";
 import {
@@ -36,7 +33,7 @@ export class WebSocketHandler extends DeliveryHandler<
   constructor(
     private readonly formatters: WebSocketFormatters,
     private readonly publisher: WebSocketPublisher,
-    @Inject(olympusConfig.KEY) private readonly olympus: OlympusConfigType,
+    private readonly notifications: NotificationApi,
   ) {
     super();
   }
@@ -79,23 +76,16 @@ export class WebSocketHandler extends DeliveryHandler<
 
       // Attempt to persist the notification to the notification store.
       if (msg.durable) {
-        const createNotificationRequest: CreateNotificationRequest = {
-          notification: {
-            acknowledged: false,
-            notificationId: msg.notificationId,
-            notificationType: msg.notificationType,
-            level: msg.level ?? "info",
-            payload: payload as unknown as NotificationPayload,
-            eventId: msg.eventId,
-            group: msg.group,
-            ttl: msg.ttl,
-          },
-        };
-
-        await axios.post(
-          `${this.olympus.apiHost}/v1/notifications`,
-          createNotificationRequest,
-        );
+        await this.notifications.createNotification({
+          acknowledged: false,
+          notificationId: msg.notificationId,
+          notificationType: msg.notificationType,
+          level: msg.level ?? "info",
+          payload: payload as unknown as NotificationPayload,
+          eventId: msg.eventId,
+          group: msg.group,
+          ttl: msg.ttl,
+        });
       }
     } catch (e) {
       this.logger.error(

@@ -1,4 +1,4 @@
-import {
+import type {
   DecoratedMediaAssetWorkflow,
   JobStatus,
   JobType,
@@ -8,8 +8,8 @@ import {
   WorkflowStatus,
   WorkflowStep,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
-import { Attachment } from "nodemailer/lib/mailer";
+import type { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
+import type { Attachment } from "nodemailer/lib/mailer";
 
 export interface AttachmentAwareMessageContext {
   attachments?: Attachment[];

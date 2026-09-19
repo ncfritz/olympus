@@ -18,7 +18,6 @@ describe("WebSocketPublisher", () => {
   const publisher = () =>
     new WebSocketPublisher({
       apiBaseUrl: "http://api.test/v1",
-      apiHost: "http://api.test",
       webSocketHost: "ws://ws.test",
     });
 
