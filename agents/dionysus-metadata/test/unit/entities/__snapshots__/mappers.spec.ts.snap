@@ -1,0 +1,580 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`toCollection > maps the collection 1`] = `
+{
+  "backdropPath": "/cb.jpg",
+  "id": 2344,
+  "images": [
+    {
+      "filePath": "/c.jpg",
+      "height": 1500,
+      "languageCode": "en",
+      "type": "poster",
+      "width": 1000,
+    },
+    {
+      "filePath": "/c2.jpg",
+      "height": 1500,
+      "languageCode": "en",
+      "type": "poster",
+      "width": 1000,
+    },
+    {
+      "filePath": "/cb.jpg",
+      "height": 1500,
+      "languageCode": "en",
+      "type": "backdrop",
+      "width": 1000,
+    },
+  ],
+  "name": "The Matrix Collection",
+  "overview": "",
+  "parts": [
+    {
+      "movieId": 603,
+    },
+    {
+      "movieId": 604,
+    },
+  ],
+  "posterPath": "/c.jpg",
+}
+`;
+
+exports[`toMovie > maps the movie 1`] = `
+{
+  "adult": false,
+  "alternativeTitles": [
+    {
+      "countryCode": "DE",
+      "title": "Matrix",
+      "type": "",
+    },
+  ],
+  "backdropPath": "/backdrop.jpg",
+  "budget": 63000000,
+  "cast": [
+    {
+      "castId": 34,
+      "character": "Neo",
+      "creditId": "c1",
+      "order": 0,
+      "originalName": "Keanu Reeves",
+      "personId": 6384,
+    },
+  ],
+  "crew": [
+    {
+      "creditId": "c2",
+      "department": "Directing",
+      "job": "Director",
+      "originalName": "Lilly Wachowski",
+      "personId": 9339,
+    },
+  ],
+  "externalIds": [
+    {
+      "externalId": "tt0133093",
+      "type": "imdb",
+    },
+    {
+      "externalId": "Q83495",
+      "type": "wikidata",
+    },
+  ],
+  "genres": [
+    {
+      "genreId": 28,
+    },
+    {
+      "genreId": 878,
+    },
+  ],
+  "homepage": "https://example.test/matrix",
+  "id": 603,
+  "images": [
+    {
+      "filePath": "/logo.png",
+      "height": 1500,
+      "languageCode": "en",
+      "type": "logo",
+      "width": 1000,
+    },
+    {
+      "filePath": "/b1.jpg",
+      "height": 1500,
+      "languageCode": "en",
+      "type": "backdrop",
+      "width": 1000,
+    },
+    {
+      "filePath": "/p1.jpg",
+      "height": 1500,
+      "languageCode": "en",
+      "type": "poster",
+      "width": 1000,
+    },
+  ],
+  "imdbId": "tt0133093",
+  "keywords": [
+    {
+      "keywordId": 310,
+    },
+  ],
+  "originalLanguageCode": "en",
+  "originalTitle": "The Matrix",
+  "overview": "A hacker learns the truth.",
+  "popularity": 80.5,
+  "posterPath": "/poster.jpg",
+  "productionCompanies": [
+    {
+      "productionCompanyId": 79,
+    },
+  ],
+  "productionCountries": [
+    {
+      "countryCode": "US",
+    },
+  ],
+  "recommendations": [
+    {
+      "recommendationId": 604,
+    },
+    {
+      "recommendationId": 605,
+    },
+  ],
+  "releaseDate": "1999-03-31T00:00:00.000Z",
+  "releaseDates": [
+    {
+      "certificationId": "R",
+      "countryCode": "US",
+      "languageCode": "",
+      "note": "",
+      "releaseDate": "1999-03-31T00:00:00.000Z",
+      "type": 3,
+    },
+  ],
+  "revenue": 463517383,
+  "runtime": 136,
+  "spokenLanguages": [
+    {
+      "languageCode": "en",
+    },
+  ],
+  "status": "Released",
+  "tagline": "Welcome to the Real World.",
+  "title": "The Matrix",
+  "video": false,
+  "videos": [
+    {
+      "countryCode": "US",
+      "id": "v1",
+      "key": "abc123",
+      "languageCode": "en",
+      "name": "Official Trailer",
+      "official": true,
+      "publishedDate": "2024-01-02T03:04:05.000Z",
+      "site": "YouTube",
+      "size": 1080,
+      "type": "Trailer",
+    },
+  ],
+  "voteAverage": 8.2,
+  "voteCount": 25000,
+}
+`;
+
+exports[`toPerson > maps the person 1`] = `
+{
+  "adult": false,
+  "alsoKnownAs": [
+    {
+      "name": "Киану Ривз",
+    },
+  ],
+  "biography": "",
+  "birthday": "1964-09-02T00:00:00.000Z",
+  "birthplace": "Beirut, Lebanon",
+  "deathday": undefined,
+  "externalIds": [
+    {
+      "externalId": "nm0000206",
+      "type": "imdb",
+    },
+  ],
+  "gender": 2,
+  "homepage": null,
+  "id": 6384,
+  "images": [
+    {
+      "filePath": "/k.jpg",
+      "height": 1500,
+      "languageCode": "en",
+      "width": 1000,
+    },
+  ],
+  "imdbId": "nm0000206",
+  "knownForDepartment": "Acting",
+  "name": "Keanu Reeves",
+  "popularity": 50,
+  "profilePath": "/k.jpg",
+}
+`;
+
+exports[`toProductionCompany > maps the company 1`] = `
+{
+  "alternativeNames": [
+    {
+      "name": "NBC",
+      "type": "",
+    },
+  ],
+  "description": "",
+  "headquarters": "Burbank",
+  "homepage": "",
+  "id": 79,
+  "logoPath": "/v.png",
+  "logos": [
+    {
+      "filePath": "/l.svg",
+      "fileType": ".svg",
+      "height": 1,
+      "id": "l1",
+      "width": 1,
+    },
+  ],
+  "name": "Village Roadshow Pictures",
+  "originCountry": "US",
+  "parentCompanyId": 1,
+}
+`;
+
+exports[`toTvEpisode > maps the episode, in its season from the fetch job's context 1`] = `
+{
+  "airDate": "2005-03-24T00:00:00.000Z",
+  "cast": [
+    {
+      "character": "Michael",
+      "creditId": "e1",
+      "order": 0,
+      "originalName": "Steve",
+      "personId": 17,
+    },
+  ],
+  "crew": [
+    {
+      "creditId": "e2",
+      "department": "Directing",
+      "job": "Director",
+      "originalName": "Ken",
+      "personId": 18,
+    },
+  ],
+  "episodeNumber": 1,
+  "externalIds": [
+    {
+      "externalId": "tt0664521",
+      "type": "imdb",
+    },
+    {
+      "externalId": "110413",
+      "type": "tvdb",
+    },
+  ],
+  "guestStars": [
+    {
+      "character": "Guest",
+      "creditId": "e3",
+      "order": 1,
+      "originalName": "Someone",
+      "personId": 19,
+    },
+  ],
+  "id": 9001,
+  "images": [
+    {
+      "filePath": "/still.jpg",
+      "height": 1500,
+      "languageCode": "en",
+      "type": "still",
+      "width": 1000,
+    },
+  ],
+  "name": "Pilot",
+  "overview": "",
+  "productionCode": "",
+  "runtime": 23,
+  "seasonId": 3812,
+  "seasonNumber": 1,
+  "stillPath": undefined,
+  "videos": [],
+  "voteAverage": 7.5,
+  "voteCount": 100,
+}
+`;
+
+exports[`toTvNetwork > maps the network (alternative names as TMDB lists them) 1`] = `
+{
+  "alternativeNames": [
+    {
+      "name": "NBC",
+      "type": "",
+    },
+    {
+      "name": "NBC",
+      "type": "",
+    },
+  ],
+  "headquarters": "New York City",
+  "homepage": "https://www.nbc.com",
+  "id": 6,
+  "images": [
+    {
+      "filePath": "/l.svg",
+      "fileType": ".svg",
+      "height": 1,
+      "id": "l1",
+      "width": 1,
+    },
+  ],
+  "logoPath": "/nbc.png",
+  "name": "NBC",
+  "originCountry": "US",
+}
+`;
+
+exports[`toTvSeason > maps the season 1`] = `
+{
+  "airDate": "2005-03-24T00:00:00.000Z",
+  "cast": [
+    {
+      "order": 0,
+      "originalName": "Lead",
+      "personId": 17,
+      "roles": [
+        {
+          "character": "Hero",
+          "creditId": "r1",
+          "episodeCount": 10,
+        },
+      ],
+      "totalEpisodeCount": 10,
+    },
+  ],
+  "crew": [
+    {
+      "department": "Writing",
+      "jobs": [
+        {
+          "creditId": "j1",
+          "episodeCount": 10,
+          "job": "Writer",
+        },
+      ],
+      "originalName": "Showrunner",
+      "personId": 18,
+      "totalEpisodeCount": 10,
+    },
+  ],
+  "externalIds": [
+    {
+      "externalId": "16",
+      "type": "tvdb",
+    },
+  ],
+  "id": 3812,
+  "images": [
+    {
+      "filePath": "/s1.jpg",
+      "height": 1500,
+      "languageCode": "en",
+      "type": "poster",
+      "width": 1000,
+    },
+  ],
+  "name": "Season 1",
+  "overview": "",
+  "posterPath": undefined,
+  "seasonNumber": 1,
+  "videos": [],
+  "voteAverage": 7.9,
+}
+`;
+
+exports[`toTvSeries > maps the series 1`] = `
+{
+  "adult": false,
+  "alternativeTitles": [
+    {
+      "countryCode": "US",
+      "title": "Office",
+      "type": "",
+    },
+  ],
+  "backdropPath": "/b.jpg",
+  "cast": [
+    {
+      "order": 0,
+      "originalName": "Lead",
+      "personId": 17,
+      "roles": [
+        {
+          "character": "Hero",
+          "creditId": "r1",
+          "episodeCount": 10,
+        },
+      ],
+      "totalEpisodeCount": 10,
+    },
+  ],
+  "certifications": [
+    {
+      "country": "US",
+      "rating": "TV-14",
+      "type": "TV",
+    },
+  ],
+  "createdBy": [
+    {
+      "creditId": "cb1",
+      "personId": 1,
+    },
+  ],
+  "crew": [
+    {
+      "department": "Writing",
+      "jobs": [
+        {
+          "creditId": "j1",
+          "episodeCount": 10,
+          "job": "Writer",
+        },
+      ],
+      "originalName": "Showrunner",
+      "personId": 18,
+      "totalEpisodeCount": 10,
+    },
+  ],
+  "externalIds": [
+    {
+      "externalId": "tt0386676",
+      "type": "imdb",
+    },
+    {
+      "externalId": "73244",
+      "type": "tvdb",
+    },
+  ],
+  "firstAirDate": "2005-03-24T00:00:00.000Z",
+  "genres": [
+    {
+      "genreId": 35,
+    },
+  ],
+  "homepage": "https://example.test/office",
+  "id": 2316,
+  "images": [
+    {
+      "filePath": "/l.png",
+      "height": 1500,
+      "languageCode": "en",
+      "type": "logo",
+      "width": 1000,
+    },
+    {
+      "filePath": "/b.jpg",
+      "height": 1500,
+      "languageCode": "en",
+      "type": "backdrop",
+      "width": 1000,
+    },
+    {
+      "filePath": "/p.jpg",
+      "height": 1500,
+      "languageCode": "en",
+      "type": "poster",
+      "width": 1000,
+    },
+  ],
+  "inProduction": false,
+  "keywords": [
+    {
+      "keywordId": 1,
+    },
+  ],
+  "languages": [
+    {
+      "languageCode": "en",
+    },
+  ],
+  "lastAirDate": "2013-05-16T00:00:00.000Z",
+  "lastEpisodeToAirId": 9001,
+  "name": "The Office",
+  "networks": [
+    {
+      "networkId": 6,
+    },
+  ],
+  "nextEpisodeToAirId": undefined,
+  "numberOfEpisodes": 201,
+  "numberOfSeasons": 9,
+  "originCountries": [
+    {
+      "countryCode": "US",
+    },
+  ],
+  "originalLanguageCode": "en",
+  "originalName": "The Office",
+  "overview": "A mockumentary.",
+  "popularity": 300,
+  "posterPath": "/p.jpg",
+  "productionCompanies": [
+    {
+      "productionCompanyId": 2,
+    },
+  ],
+  "productionCountries": [
+    {
+      "countryCode": "US",
+    },
+  ],
+  "recommendations": [
+    {
+      "recommendationId": 604,
+    },
+    {
+      "recommendationId": 605,
+    },
+  ],
+  "runtimes": [
+    {
+      "runTime": 22,
+    },
+  ],
+  "spokenLanguages": [
+    {
+      "languageCode": "en",
+    },
+  ],
+  "status": "Ended",
+  "tagline": "",
+  "type": "Scripted",
+  "videos": [
+    {
+      "countryCode": "US",
+      "id": "v1",
+      "key": "abc123",
+      "languageCode": "en",
+      "name": "Official Trailer",
+      "official": true,
+      "publishedDate": "2024-01-02T03:04:05.000Z",
+      "site": "YouTube",
+      "size": 1080,
+      "type": "Trailer",
+    },
+  ],
+  "voteAverage": 8.6,
+  "voteCount": 4000,
+}
+`;

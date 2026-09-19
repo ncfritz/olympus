@@ -42,6 +42,7 @@ describe("ExecuteWithMetrics", () => {
       client_Op_error: 0,
       client_Op_fatal: 0,
       client_Op_exception: 0,
+      client_Op_throttles: 0,
       client_Op_1xx: 0,
       client_Op_2xx: 1,
       client_Op_3xx: 0,
@@ -59,6 +60,17 @@ describe("ExecuteWithMetrics", () => {
     client.next = async () => ({ status: 503 });
     await client.call();
     expect(counters()).toMatchObject({ client_Op_5xx: 1, client_Op_fatal: 1 });
+  });
+
+  it("counts throttled calls", async () => {
+    const client = new Client();
+    client.next = async () => ({ status: 429 });
+    await client.call();
+    expect(counters()).toMatchObject({
+      client_Op_throttles: 1,
+      client_Op_4xx: 1,
+      client_Op_error: 1,
+    });
   });
 
   it("resolves a 404 to undefined", async () => {

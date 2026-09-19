@@ -1,0 +1,224 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`subscriptions > keeps the queue names, routing keys and channels 1`] = `
+{
+  "batch": {
+    "certifications": {
+      "errorBehavior": "NACK",
+      "exchange": "batchJob.trigger",
+      "queue": "batchJob.certifications.trigger",
+      "queueOptions": {
+        "channel": "batchJobsChannel",
+      },
+      "routingKey": "jobType.certifications",
+    },
+    "collections": {
+      "errorBehavior": "NACK",
+      "exchange": "batchJob.trigger",
+      "queue": "batchJob.collections.trigger",
+      "queueOptions": {
+        "channel": "batchJobsChannel",
+      },
+      "routingKey": "jobType.collections",
+    },
+    "countries": {
+      "errorBehavior": "NACK",
+      "exchange": "batchJob.trigger",
+      "queue": "batchJob.countries.trigger",
+      "queueOptions": {
+        "channel": "batchJobsChannel",
+      },
+      "routingKey": "jobType.countries",
+    },
+    "genres": {
+      "errorBehavior": "NACK",
+      "exchange": "batchJob.trigger",
+      "queue": "batchJob.genres.trigger",
+      "queueOptions": {
+        "channel": "batchJobsChannel",
+      },
+      "routingKey": "jobType.genres",
+    },
+    "keywords": {
+      "errorBehavior": "NACK",
+      "exchange": "batchJob.trigger",
+      "queue": "batchJob.keywords.trigger",
+      "queueOptions": {
+        "channel": "batchJobsChannel",
+      },
+      "routingKey": "jobType.keywords",
+    },
+    "languages": {
+      "errorBehavior": "NACK",
+      "exchange": "batchJob.trigger",
+      "queue": "batchJob.languages.trigger",
+      "queueOptions": {
+        "channel": "batchJobsChannel",
+      },
+      "routingKey": "jobType.languages",
+    },
+    "movies": {
+      "errorBehavior": "NACK",
+      "exchange": "batchJob.trigger",
+      "queue": "batchJob.movies.trigger",
+      "queueOptions": {
+        "arguments": {
+          "x-consumer-timeout": 14400000,
+        },
+        "channel": "batchJobsChannel",
+      },
+      "routingKey": "jobType.movies",
+    },
+    "people": {
+      "errorBehavior": "NACK",
+      "exchange": "batchJob.trigger",
+      "queue": "batchJob.people.trigger",
+      "queueOptions": {
+        "arguments": {
+          "x-consumer-timeout": 43200000,
+        },
+        "channel": "batchJobsChannel",
+      },
+      "routingKey": "jobType.people",
+    },
+    "production_companies": {
+      "errorBehavior": "NACK",
+      "exchange": "batchJob.trigger",
+      "queue": "batchJob.production_companies.trigger",
+      "queueOptions": {
+        "channel": "batchJobsChannel",
+      },
+      "routingKey": "jobType.production_companies",
+    },
+    "tv_networks": {
+      "errorBehavior": "NACK",
+      "exchange": "batchJob.trigger",
+      "queue": "batchJob.tv_networks.trigger",
+      "queueOptions": {
+        "channel": "batchJobsChannel",
+      },
+      "routingKey": "jobType.tv_networks",
+    },
+    "tv_series": {
+      "errorBehavior": "NACK",
+      "exchange": "batchJob.trigger",
+      "queue": "batchJob.tv_series.trigger",
+      "queueOptions": {
+        "channel": "batchJobsChannel",
+      },
+      "routingKey": "jobType.tv_series",
+    },
+  },
+  "channels": {
+    "batchJobsChannel": 1,
+    "metadataChannel": 30,
+    "tvEpisodesChannel": 70,
+    "tvSeasonsChannel": 15,
+    "tvSeriesChannel": 10,
+    "workflowChannel": 1,
+  },
+  "entities": {
+    "collections": {
+      "errorBehavior": "ACK",
+      "exchange": "metadataJob.trigger",
+      "queue": "metadataJob.collections.trigger",
+      "queueOptions": {
+        "channel": "metadataChannel",
+      },
+      "routingKey": "jobType.collections",
+    },
+    "movies": {
+      "errorBehavior": "ACK",
+      "exchange": "metadataJob.trigger",
+      "queue": "metadataJob.movies.trigger",
+      "queueOptions": {
+        "channel": "metadataChannel",
+      },
+      "routingKey": "jobType.movies",
+    },
+    "people": {
+      "errorBehavior": "ACK",
+      "exchange": "metadataJob.trigger",
+      "queue": "metadataJob.people.trigger",
+      "queueOptions": {
+        "channel": "metadataChannel",
+      },
+      "routingKey": "jobType.people",
+    },
+    "production_companies": {
+      "errorBehavior": "ACK",
+      "exchange": "metadataJob.trigger",
+      "queue": "metadataJob.production_companies.trigger",
+      "queueOptions": {
+        "channel": "metadataChannel",
+      },
+      "routingKey": "jobType.production_companies",
+    },
+    "tv_episodes": {
+      "errorBehavior": "ACK",
+      "exchange": "metadataJob.trigger",
+      "queue": "metadataJob.tv_episodes.trigger",
+      "queueOptions": {
+        "channel": "tvEpisodesChannel",
+      },
+      "routingKey": "jobType.tv_episodes",
+    },
+    "tv_networks": {
+      "errorBehavior": "ACK",
+      "exchange": "metadataJob.trigger",
+      "queue": "metadataJob.tv_networks.trigger",
+      "queueOptions": {
+        "channel": "metadataChannel",
+      },
+      "routingKey": "jobType.tv_networks",
+    },
+    "tv_seasons": {
+      "errorBehavior": "ACK",
+      "exchange": "metadataJob.trigger",
+      "queue": "metadataJob.tv_seasons.trigger",
+      "queueOptions": {
+        "channel": "tvSeasonsChannel",
+      },
+      "routingKey": "jobType.tv_seasons",
+    },
+    "tv_series": {
+      "errorBehavior": "ACK",
+      "exchange": "metadataJob.trigger",
+      "queue": "metadataJob.tv_series.trigger",
+      "queueOptions": {
+        "channel": "tvSeriesChannel",
+      },
+      "routingKey": "jobType.tv_series",
+    },
+  },
+  "jobCompletion": {
+    "errorBehavior": "ACK",
+    "exchange": "batchJob.workflow",
+    "queue": "metadataJob.workflow.jobNotification",
+    "queueOptions": {
+      "channel": "workflowChannel",
+    },
+    "routingKey": "jobCompletion",
+  },
+  "redrive": {
+    "exchange": "batchJob.trigger",
+    "queue": "batchJob.redrive.trigger",
+    "queueOptions": {
+      "arguments": {
+        "x-consumer-timeout": 10800000,
+      },
+      "channel": "batchJobsChannel",
+    },
+    "routingKey": "jobType.redrive",
+  },
+  "startWorkflow": {
+    "errorBehavior": "ACK",
+    "exchange": "batchJob.workflow",
+    "queue": "metadataJob.workflow.trigger",
+    "queueOptions": {
+      "channel": "workflowChannel",
+    },
+    "routingKey": "workflowCreated",
+  },
+}
+`;

@@ -2,21 +2,21 @@
 
 ## Phases
 
-| #   | Phase                                                                                                | Status                                                    |
-| --- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)                                     |
-| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**                                                  |
-| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       | SDK, notification and search agents **done**; others next |
-| 3   | Import site and desktop shell                                                                        |                                                           |
-| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         |                                                           |
-| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                                           |
-| 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                                                           |
-| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                                           |
-| 8   | Minerva calendar sync import and Hasura integration                                                  |                                                           |
-| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                                   |
-| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                                                  |
-| —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                                                  |
-| —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | **done**                                                  |
+| #   | Phase                                                                                                | Status                                                                   |
+| --- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)                                                    |
+| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**                                                                 |
+| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       | SDK, notification, search and metadata agents **done**; asset agent next |
+| 3   | Import site and desktop shell                                                                        |                                                                          |
+| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         |                                                                          |
+| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                                                          |
+| 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                                                                          |
+| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                                                          |
+| 8   | Minerva calendar sync import and Hasura integration                                                  |                                                                          |
+| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                                                  |
+| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                                                                 |
+| —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                                                                 |
+| —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | **done**                                                                 |
 
 ## Open decisions
 
@@ -152,6 +152,28 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     partials reloaded per email, attachment selection, template typos.
   - SMTP transports set `tls.rejectUnauthorized: false`.
   - Failed deliveries are logged and acknowledged; nothing retries.
+- Metadata agent (imported 2026-09-19):
+  - On the agent conventions (ADR 0015), with tests; contracts from
+    `@ncfritz/olympus-messages`, `ExecuteWithMetrics` from
+    `@ncfritz/olympus-nest`. Each batch run gets its own record source
+    (the handlers kept one job's state in instance fields), the TMDB →
+    API mapping is in pure mappers, and the SQLite cache is one
+    connection per process (it was opened per message). Fixed on the way:
+    the AMQP password in the logs, bootstrap failures writing to `/logs`.
+  - Bugs, one commit each: metric names with dots (Prometheus rejects
+    them: no client metrics, an error per call); production company
+    alternative names fetched from the network endpoint; series → season
+    and season → episode freshness checks using the parent's TTL and
+    jitter; graceful shutdown never running (async work in a synchronous
+    exit hook); jobs that aren't new registered as running; `max`
+    processing one record too many (`it.fails` in
+    `test/unit/batch`); a workflow failing after its last retry sends no
+    notification; an unset `DIONYSUS_CACHE_PATH` failing every job.
+  - Several TTLs are `Math.max(n, random × m)` with m < n, which is always
+    n (e.g. upcoming movies: 7 days).
+  - TMDB dates (`1999-03-31`) are parsed in the process's time zone.
+  - The fetch job `context` is stored as base64 JSON in a column (API and
+    model).
 - Search agent (imported 2026-09-19):
   - On the agent conventions (ADR 0015), with tests; the RabbitMQ
     contracts come from `@ncfritz/olympus-messages`. Fixed on the way:
@@ -188,9 +210,11 @@ check the consumers when the metadata and asset agents are imported.
 - Transcode messages never carry `mediaExtension`.
 - Downloads started on their own (CreateMediaAssetDownload) have no
   `workflowId`; the asset agents may assume one.
-- `bypassCache` is optional on batch and metadata job messages.
-- Batch jobs for `tv_seasons` and `tv_episodes`, and several metadata job
-  types, have no consumer.
+- `bypassCache` is optional on batch and metadata job messages (the
+  metadata agent treats absent as false).
+- The API accepts batch jobs for `tv_seasons` and `tv_episodes`, which no
+  agent consumes (by design: series and season fetches queue them), so
+  such a job stays `created`.
 - The NZBGet scripts publish every event with routing key `update.queue`;
   scan events have no `nzbId` to match a download by.
 - Non-TypeScript publishers (the NZBGet scripts) are checked against

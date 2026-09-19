@@ -1,88 +1,56 @@
-import { ValidationPipe } from "@nestjs/common";
+import "source-map-support/register";
+
+import { createWinstonLogger } from "@ncfritz/olympus-nest";
+import { Logger } from "@nestjs/common";
 import { NestFactory, PartialGraphHost } from "@nestjs/core";
-import cookieParser from "cookie-parser";
-import fs from "fs";
-import moment from "moment";
+import * as fs from "fs";
 import { WinstonModule } from "nest-winston";
-import batchJobApi from "./api/batchJobApi";
-import workflowApi from "./api/workflowApi";
-import { PrometheusMetricsInterceptor } from "./middleware/PrometheusMetricsInterceptor";
-import { AppModule } from "./module/AppModule";
-import { getExecutions } from "./util/executionHolder";
-import { logger } from "./util/logger";
-
 import { onExit } from "signal-exit";
-import { sendWorkflowNotification } from "./util/notification";
+import { AppModule } from "./AppModule";
+import { readConfig } from "./config/configuration";
+import { ExecutionRegistry } from "./workflow/services/ExecutionRegistry";
 
-const timestamp = moment.utc();
+const logger = new Logger("Bootstrap");
 
 async function bootstrap() {
+  // Fails fast, listing every invalid variable, before anything connects.
+  const config = readConfig(process.env);
+
   const app = await NestFactory.create(AppModule, {
     snapshot: true,
     abortOnError: false,
     logger: WinstonModule.createLogger({
-      instance: logger,
+      instance: createWinstonLogger(config.logging, config.runtime.appName),
     }),
   });
-  app.useGlobalPipes(new ValidationPipe());
-  app.use(cookieParser());
-  app.enableCors({
-    origin: [
-      "http://localhost:3000",
-      "https://olympus.dev.ncfritz.net",
-      "https://olympus.internal.ncfritz.net",
-    ],
-    credentials: true,
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  });
-  app.useGlobalInterceptors(new PrometheusMetricsInterceptor());
 
-  await app.listen(process.env.LISTEN_PORT || 3100);
+  // The HTTP listener only serves /metrics.
+  await app.listen(config.runtime.port);
+  return app;
 }
 
 bootstrap()
-  .then(() => {
-    logger.info("Installing signal handler...");
+  .then((app) => {
+    logger.log("Installing signal handler...");
     onExit((code, signal) => {
       logger.error(
         `Exit handler triggered on signal ${signal} with code ${code}`,
       );
-      (async () => {
-        const outstandingTasks = getExecutions();
-        logger.info(
-          `${outstandingTasks.length} outstanding tasks, attempting graceful shutdown`,
-        );
-
-        for (const execution of outstandingTasks) {
-          try {
-            if (execution.type === "workflow") {
-              await workflowApi.updateWorkflow(execution.id, {
-                status: "failed",
-              });
-              await sendWorkflowNotification(execution.id, "failed");
-            } else if (execution.type === "batch") {
-              await batchJobApi.updateBatchJob(execution.id, {
-                status: "failed",
-              });
-            }
-          } catch (e) {
-            logger.error(
-              `Unable to finalize execution ${execution.type}/${execution.id}`,
-              e,
-            );
-          }
-        }
-      })();
+      // Mark the workflows and batch jobs still running as failed.
+      void app.get(ExecutionRegistry).failOutstanding();
     });
 
-    logger.info("🔥🔥🔥 Olympus Metadata Agent bootstrap complete.");
+    logger.log("🔥🔥🔥 Olympus Metadata Agent bootstrap complete.");
   })
-  .catch((e) => {
-    logger.error("🤯🤯🤯 Error during bootstrap!", e);
-
-    fs.writeFileSync(
-      `/logs/${timestamp.unix()}-graph.json`,
-      PartialGraphHost.toString() ?? "",
+  .catch((e: unknown) => {
+    logger.error(
+      "🤯🤯🤯 Error during bootstrap!",
+      e instanceof Error ? e.stack : String(e),
     );
+
+    if (process.env.NODE_ENV !== "production") {
+      fs.writeFileSync("graph.json", PartialGraphHost.toString() ?? "");
+    }
+
     process.exit(1);
   });

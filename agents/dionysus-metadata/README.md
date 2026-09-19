@@ -57,6 +57,34 @@ Copy `dev.env.example` to `dev.env` (git-ignored) and fill in the values.
 The entity cache is SQLite (`better-sqlite3`, a native module built at
 install), so `dist/main.js` runs against the installed `node_modules`.
 
+## Layout
+
+```
+src/
+  main.ts, AppModule.ts
+  config/configuration.ts     typed, validated configuration (see below)
+  messaging.ts                queues, subscriptions and channel prefetch;
+                              routes and payloads from @ncfritz/olympus-messages
+  infra/                      RabbitModule, metrics content type
+  api/                        OlympusApiModule: BatchJobApi, WorkflowApi,
+                              MetadataApi, NotificationApi
+  tmdb/                       TmdbModule: TmdbClient (retries, metrics),
+                              endpoints tmdb-ts lacks, TMDB types
+  fetchJobs/                  FetchJobs: metadata fetch jobs through the
+                              SQLite cache
+  batch/                      BatchModule: handlers/ (one per job type, on
+                              BatchHandler), sources/ (TMDB exports and
+                              lists, redrive), mappers/
+  entities/                   EntitiesModule: handlers/ (one per entity, on
+                              EntityHandler, with its refresh policy),
+                              mappers/ (TMDB → API entities)
+  workflow/                   WorkflowModule: start and job completion
+                              handlers, JobNotifier, ExecutionRegistry
+```
+
+`pnpm --filter @ncfritz/dionysus-metadata-agents test` runs the unit and
+convention tests.
+
 > The Dockerfile still expects the pre-monorepo layout (npm, GitHub
 > Packages token). It is rebuilt with the Docker work in ADR 0011.
 

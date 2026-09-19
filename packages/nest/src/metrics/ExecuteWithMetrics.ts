@@ -13,8 +13,8 @@ const logger = new Logger("ExecuteWithMetrics");
  *
  * - `client_<operation>_count` and `_latency` (milliseconds)
  * - `client_<operation>_1xx` ... `_5xx`, by the response status
- * - `client_<operation>_error` (4xx), `_fatal` (5xx) and `_exception`
- *   (the call threw)
+ * - `client_<operation>_error` (4xx), `_fatal` (5xx), `_throttles` (429)
+ *   and `_exception` (the call threw)
  *
  * A call that fails with 404 resolves to `undefined` instead of throwing.
  */
@@ -62,6 +62,11 @@ export function ExecuteWithMetrics(
         ReporterService.counter(`client_${operation}_error`, {}, inRange(400));
         ReporterService.counter(`client_${operation}_fatal`, {}, inRange(500));
         ReporterService.counter(`client_${operation}_exception`, {}, exception);
+        ReporterService.counter(
+          `client_${operation}_throttles`,
+          {},
+          status === 429 ? 1 : 0,
+        );
         ReporterService.counter(`client_${operation}_1xx`, {}, inRange(100));
         ReporterService.counter(`client_${operation}_2xx`, {}, inRange(200));
         ReporterService.counter(`client_${operation}_3xx`, {}, inRange(300));

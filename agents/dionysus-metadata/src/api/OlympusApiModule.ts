@@ -1,0 +1,36 @@
+import { client as dionysusClient } from "@ncfritz/olympus-sdk/dionysus";
+import { client as olympusClient } from "@ncfritz/olympus-sdk/olympus";
+import { Global, Inject, Logger, Module, OnModuleInit } from "@nestjs/common";
+import type { OlympusConfigType } from "../config/configuration";
+import { olympusConfig } from "../config/configuration";
+import { BatchJobApi } from "./BatchJobApi";
+import { MetadataApi } from "./MetadataApi";
+import { NotificationApi } from "./NotificationApi";
+import { WorkflowApi } from "./WorkflowApi";
+
+/**
+ * The Olympus API, reached only through the SDK: configures the SDK
+ * clients once from API_BASE_URL and provides the wrappers.
+ */
+@Global()
+@Module({
+  providers: [BatchJobApi, MetadataApi, NotificationApi, WorkflowApi],
+  exports: [BatchJobApi, MetadataApi, NotificationApi, WorkflowApi],
+})
+export class OlympusApiModule implements OnModuleInit {
+  constructor(
+    @Inject(olympusConfig.KEY) private readonly olympus: OlympusConfigType,
+  ) {}
+
+  onModuleInit(): void {
+    for (const client of [dionysusClient, olympusClient]) {
+      client.setConfig({
+        baseURL: this.olympus.apiBaseUrl,
+        throwOnError: true,
+      });
+    }
+    new Logger(OlympusApiModule.name).log(
+      `Using the Olympus API at ${this.olympus.apiBaseUrl}`,
+    );
+  }
+}
