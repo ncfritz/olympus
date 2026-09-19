@@ -3,12 +3,11 @@ import { UserConfig } from "@hey-api/openapi-ts";
 export const buildConfigForNamedApi = (api: string): UserConfig => {
   return {
     input: {
-      path: `./node_modules/@ncfritz/olympus-api/dist/${api}-openapi-spec.json`,
+      path: `../../apps/api/openapi/${api}.json`,
     },
     output: {
       format: "prettier",
-      lint: "eslint",
-      path: `./src/${api}`,
+      path: `./src/generated/${api}`,
     },
     parser: {
       transforms: {

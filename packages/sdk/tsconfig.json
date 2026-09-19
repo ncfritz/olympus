@@ -1,41 +1,17 @@
 {
+  "extends": "@ncfritz/olympus-config/tsconfig/library.json",
   "compilerOptions": {
-    "experimentalDecorators": true,
-    "baseUrl": "./",
-    "rootDir": "./src",
-    "outDir": "dist",
-    "module": "commonjs",
-    "target": "esnext",
-    "sourceMap": true,
-    "allowJs": true,
-    "jsx": "preserve",
-    "moduleResolution": "node",
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noImplicitAny": true,
-    "importHelpers": true,
-    "strictNullChecks": true,
-    "noUnusedLocals": true,
-    "skipLibCheck": true,
-    "strict": false,
-    "noEmit": false,
-    "incremental": true,
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "declaration": true,
-    "downlevelIteration": true,
+    // Everything under src/ is generated (src/generated/<api>, not in git);
+    // dist/<api> matches the package's exports.
+    "rootDir": "src/generated",
+    // The client runs in browsers (site) and Node (API tests, agents) and
+    // uses fetch-era globals (Headers, URLSearchParams, AbortController).
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    // As in the old SDK repo; the generated client's @ts-expect-error
+    // directives rely on it.
     "strictFunctionTypes": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext"
   },
-  "exclude": [
-    "node_modules",
-    "build",
-    "scripts",
-    "webpack",
-    "jest"
-  ],
-  "include": [
-    "./src/**/*.ts"
-  ]
+  "include": ["src/generated/**/*.ts"]
 }
