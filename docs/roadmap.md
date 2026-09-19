@@ -48,6 +48,13 @@ Planned work outside the phases, in no particular order.
 
 ## Model backlog
 
+- Phase 4 (first migrations): replace the metadata fetch job `context`
+  (base64 JSON in a text column, `FetchJobContext` in the model) with
+  columns. Only the episode fetch reads it, for its season's id, so a
+  `seasonId` column on fetch jobs covers it; the season count that
+  season fetch jobs carry is never read. Then drop `context` from the
+  column, the model and the API, and update the metadata agent.
+
 - Description typos in pre-existing descriptions (e.g. "TThe amount of
   progress", "unique identified"); each fix changes the schema snapshot.
 - Deferred: base classes for the shared workflow lifecycle fields
@@ -169,11 +176,11 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     registered as running; `max` processing one record too many; no
     notification for a workflow failing after its last retry; an unset
     `DIONYSUS_CACHE_PATH` failing every job (now `./cache`).
-  - Several TTLs are `Math.max(n, random × m)` with m < n, which is always
-    n (e.g. upcoming movies: 7 days).
-  - TMDB dates (`1999-03-31`) are parsed in the process's time zone.
-  - The fetch job `context` is stored as base64 JSON in a column (API and
-    model).
+  - Also fixed: movie TTLs that were always the same value
+    (`Math.max(n, random × m)` with m < n), and TMDB dates parsed in the
+    host's time zone.
+  - The fetch job `context` is base64 JSON in a column: see the model
+    backlog (phase 4).
 - Search agent (imported 2026-09-19):
   - On the agent conventions (ADR 0015), with tests; the RabbitMQ
     contracts come from `@ncfritz/olympus-messages`. Fixed on the way:
