@@ -42,19 +42,19 @@ export class StartDownloadHandler {
     const stagingDir = this.media.stagingDirectory;
     const nzbFilename = `/tmp/${msg.nzbId}.nzb`;
 
-    const writer = fs.createWriteStream(nzbFilename);
-    const nzbStream = await this.nzbGeek.getNzb(msg.nzbId);
-    nzbStream.pipe(writer);
-    await finished(writer);
-
-    this.logger.debug(`NZB file downloaded to ${nzbFilename}`);
-    this.logger.debug("Parsing NZB...");
-
-    const rawNzb = fs.readFileSync(nzbFilename, "utf8");
-    const nzb = parse(rawNzb);
-    const metadata = nzbMetadata(nzb);
-
     try {
+      const nzbStream = await this.nzbGeek.getNzb(msg.nzbId);
+      const writer = fs.createWriteStream(nzbFilename);
+      nzbStream.pipe(writer);
+      await finished(writer);
+
+      this.logger.debug(`NZB file downloaded to ${nzbFilename}`);
+      this.logger.debug("Parsing NZB...");
+
+      const rawNzb = fs.readFileSync(nzbFilename, "utf8");
+      const nzb = parse(rawNzb);
+      const metadata = nzbMetadata(nzb);
+
       const rpcResponse = await this.nzbGet.append(nzb.file.name, rawNzb);
 
       this.logger.debug(

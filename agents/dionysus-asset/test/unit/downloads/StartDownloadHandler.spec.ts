@@ -28,13 +28,13 @@ describe("StartDownloadHandler", () => {
     nzbId: `test-${process.pid}`,
   };
 
+  let nzbGeek: { getNzb: ReturnType<typeof vi.fn> };
+
   const handler = () =>
     new StartDownloadHandler(
       { stagingDirectory } as MediaConfigType,
       mediaApi as unknown as MediaApi,
-      {
-        getNzb: vi.fn(async () => Readable.from([NZB_XML])),
-      } as unknown as NzbGeekClient,
+      nzbGeek as unknown as NzbGeekClient,
       nzbGet as unknown as NzbGetClient,
     );
 
@@ -45,6 +45,7 @@ describe("StartDownloadHandler", () => {
       updateMediaAssetWorkflow: vi.fn(),
     };
     nzbGet = { url: "http://nzbget/jsonrpc", append: vi.fn() };
+    nzbGeek = { getNzb: vi.fn(async () => Readable.from([NZB_XML])) };
   });
 
   afterEach(() => {
@@ -83,6 +84,32 @@ describe("StartDownloadHandler", () => {
 
     await handler().handle(msg);
 
+    expect(mediaApi.updateMediaAssetDownload).toHaveBeenCalledWith(
+      "movie",
+      42,
+      "result-1",
+      "download-1",
+      expect.objectContaining({ status: "failed" }),
+    );
+    expect(mediaApi.updateMediaAssetWorkflow).toHaveBeenCalledWith(
+      "wf-1",
+      expect.objectContaining({ status: "failed" }),
+    );
+  });
+
+  it.each([
+    ["NZBGeek fails", () => nzbGeek.getNzb.mockRejectedValue(new Error("503"))],
+    [
+      "the NZB is malformed",
+      () =>
+        nzbGeek.getNzb.mockImplementation(async () => Readable.from(["<nzb>"])),
+    ],
+  ])("fails the download and workflow when %s", async (_, arrange) => {
+    arrange();
+
+    await expect(handler().handle(msg)).resolves.toBeUndefined();
+
+    expect(nzbGet.append).not.toHaveBeenCalled();
     expect(mediaApi.updateMediaAssetDownload).toHaveBeenCalledWith(
       "movie",
       42,
