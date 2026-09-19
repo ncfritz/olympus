@@ -129,13 +129,15 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     password is in older history. They are redacted from the imported
     history and now come from the environment, but they remain in the
     olympus-notification-agent repository.
-  - The `API_HOST` default is `http:localhost:3001` (missing `//`).
+  - On the agent conventions (ADR 0015), with tests. Fixed on the way:
+    Synology Chat bot messages going to the channel (message contract),
+    the webhook body, a Socket.IO connection per notification, durable
+    notifications posted to a dead route, system_test emails failing,
+    partials reloaded per email, attachment selection, template typos.
   - SMTP transports set `tls.rejectUnauthorized: false`.
-  - Hard-coded CORS origins in `main.ts`; the agent serves no browser
-    routes.
-  - Not yet on the agent conventions (`handler/<area>/<Name>Handler.ts`,
-    PascalCase files, typed config, Nest `Logger`); no tests.
-- `RabbitModule` logs the full AMQP URI, including the password.
+  - Failed deliveries are logged and acknowledged; nothing retries.
+- `RabbitModule` logs the full AMQP URI, including the password
+  (not-yet-imported agents).
 - No explicit nack / dead-letter strategy for failed messages.
 - `dionysus-asset-agents` handler files are camelCase
   (`rawIngestionHandler.ts`); other agents use PascalCase.

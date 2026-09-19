@@ -79,6 +79,11 @@ changes in the monorepo working tree (`git diff` in the source with
 
 ## After importing
 
+- Bring the package onto its conventions (ADR 0014 for the API, ADR 0015
+  for agents): first a behaviour-preserving restructure with tests, then
+  one commit per bug found, each with a test. For agents, move shared
+  message contracts to `@ncfritz/olympus-messages` and infrastructure to
+  `@ncfritz/olympus-nest`.
 - Archive the source repository on GitHub, with a README pointing here.
 - Update the status tables in `apps/README.md`, `agents/README.md` or
   `packages/README.md`.

@@ -21,7 +21,7 @@ src/
   configureApp.ts            Express middleware, CORS, versioning (shared with the tests)
   AppModule.ts               config, infrastructure, the three domains, APP_* providers
   config/                    configuration.ts: typed, validated config namespaces
-  infra/                     GraphQLClientModule (Hasura), RabbitModule (AMQP), logging, metrics
+  infra/                     GraphQLClientModule (Hasura), RabbitModule (AMQP), metrics
   schema/                    OpenAPI document definitions (schemas.ts, documentBuilder.ts)
   utils/                     controllerDecorators, filterUtil, location, routes, ...
   <domain>/
@@ -303,7 +303,8 @@ response.status(HttpStatus.CREATED).send(responseBody);
   to `dev.env.example` and to the README table. Invalid values stop the
   API at boot with every problem listed.
 - Log through Nest: `private readonly logger = new Logger(MyService.name)`.
-  Winston (console, Loki, files) sits behind it (`infra/logging.ts`).
+  Winston (console, Loki, files) sits behind it (`createWinstonLogger`
+  from `@ncfritz/olympus-nest`, which also provides the config readers).
   Never log secrets; `amqp.redactedUri` exists for that.
 
 ## Messaging
