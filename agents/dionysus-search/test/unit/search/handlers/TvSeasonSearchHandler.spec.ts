@@ -70,10 +70,12 @@ describe("TvSeasonSearchHandler", () => {
       },
     );
     expect(f.amqp.publish).toHaveBeenCalledTimes(1);
-    expect(f.amqp.publish.mock.lastCall?.slice(0, 2)).toEqual([
+    expect(f.amqp.publish).toHaveBeenCalledWith(
       "search.execution.trigger",
       "jobType.tv_episode",
-    ]);
+      { mediaId: 203, propagateImmediately: undefined },
+      { persistent: true },
+    );
     // The current season of a returning series keeps the daily defaults.
     expect(f.mediaApi.updateMediaAssetSearchConfiguration).toHaveBeenCalledWith(
       "tv_season",
@@ -103,17 +105,16 @@ describe("TvSeasonSearchHandler", () => {
       initiatingAsset,
     });
 
-    // Sends `episode` rather than InitiatingAsset's `episodeNumber`.
     expect(f.amqp.publish.mock.calls.map((call) => call[2])).toEqual([
       {
         mediaId: 203,
         propagateImmediately: true,
-        initiatingAsset: { ...initiatingAsset, episode: 3 },
+        initiatingAsset: { ...initiatingAsset, episodeNumber: 3 },
       },
       {
         mediaId: 204,
         propagateImmediately: true,
-        initiatingAsset: { ...initiatingAsset, episode: 4 },
+        initiatingAsset: { ...initiatingAsset, episodeNumber: 4 },
       },
     ]);
     expect(

@@ -10,7 +10,6 @@ import { MediaApi } from "../../api/MediaApi";
 import { MetadataApi } from "../../api/MetadataApi";
 import { NotificationApi } from "../../api/NotificationApi";
 import {
-  type InitiatingAsset,
   SEARCH_SUBSCRIPTIONS,
   type SearchExecutionMessage,
   searchExecutionRoute,
@@ -127,12 +126,10 @@ export class TvSeasonSearchHandler extends SearchHandler {
             {
               mediaId: episodeSearchConfiguration.mediaId,
               propagateImmediately: msg.propagateImmediately,
-              // Sends `episode`, which InitiatingAsset doesn't have: see
-              // the next commit.
-              initiatingAsset: {
+              initiatingAsset: msg.initiatingAsset && {
                 ...msg.initiatingAsset,
-                episode: episode.episodeNumber,
-              } as unknown as InitiatingAsset,
+                episodeNumber: episode.episodeNumber,
+              },
             },
             {
               persistent: true,
