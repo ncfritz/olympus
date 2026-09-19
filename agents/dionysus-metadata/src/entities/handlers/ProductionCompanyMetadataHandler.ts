@@ -29,7 +29,7 @@ export class ProductionCompanyMetadataHandler extends EntityHandler<
     const companyResponse =
       await this.tmdbClient.getProductionCompanyDetails(companyId);
     const alternativeNamesResponse =
-      await this.tmdbClient.getNetworkAlternativeNames(companyId);
+      await this.tmdbClient.getProductionCompanyAlternativeNames(companyId);
     const imagesResponse =
       await this.tmdbClient.getProductionCompanyImages(companyId);
 

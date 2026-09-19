@@ -11,7 +11,7 @@ export const toProductionCompany = (
     ReturnType<TmdbClient["getProductionCompanyDetails"]>
   >,
   alternativeNamesResponse: Awaited<
-    ReturnType<TmdbClient["getNetworkAlternativeNames"]>
+    ReturnType<TmdbClient["getProductionCompanyAlternativeNames"]>
   >,
   imagesResponse: Awaited<ReturnType<TmdbClient["getProductionCompanyImages"]>>,
 ): PartialProductionCompany => {

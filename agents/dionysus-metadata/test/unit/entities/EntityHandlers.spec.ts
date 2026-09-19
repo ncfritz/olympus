@@ -3,6 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MetadataApi } from "../../../src/api/MetadataApi";
 import { EntityHandler } from "../../../src/entities/handlers/EntityHandler";
 import { MovieMetadataHandler } from "../../../src/entities/handlers/MovieMetadataHandler";
+import { ProductionCompanyMetadataHandler } from "../../../src/entities/handlers/ProductionCompanyMetadataHandler";
 import { PersonMetadataHandler } from "../../../src/entities/handlers/PersonMetadataHandler";
 import { TvEpisodeMetadataHandler } from "../../../src/entities/handlers/TvEpisodeMetadataHandler";
 import { TvSeasonMetadataHandler } from "../../../src/entities/handlers/TvSeasonMetadataHandler";
@@ -29,6 +30,12 @@ const fakeTmdb = () => ({
   getTvSeasonDetails: vi.fn(async () => tmdb.tvSeasonDetails()),
   getTvEpisodeDetails: vi.fn(async () => tmdb.tvEpisodeDetails()),
   getPersonDetails: vi.fn(async () => tmdb.personDetails()),
+  getProductionCompanyDetails: vi.fn(async () => tmdb.companyDetails()),
+  getProductionCompanyAlternativeNames: vi.fn(async () =>
+    tmdb.alternativeNames(),
+  ),
+  getProductionCompanyImages: vi.fn(async () => tmdb.logos()),
+  getNetworkAlternativeNames: vi.fn(async () => ({ results: [] })),
 });
 
 describe("entity handlers", () => {
@@ -139,6 +146,27 @@ describe("entity handlers", () => {
         "603",
         "movies",
         true,
+      );
+    });
+  });
+
+  describe("production companies", () => {
+    it("stores the company with its own alternative names", async () => {
+      store = fakeStore([fetchJob({ id: "79", type: "production_companies" })]);
+      await create(ProductionCompanyMetadataHandler).handle({
+        entityId: "79",
+        entityType: "production_companies",
+      });
+
+      expect(
+        tmdbClient.getProductionCompanyAlternativeNames,
+      ).toHaveBeenCalledWith(79);
+      expect(tmdbClient.getNetworkAlternativeNames).not.toHaveBeenCalled();
+      expect(metadataApi.createProductionCompany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 79,
+          alternativeNames: [{ name: "NBC", type: "" }],
+        }),
       );
     });
   });
