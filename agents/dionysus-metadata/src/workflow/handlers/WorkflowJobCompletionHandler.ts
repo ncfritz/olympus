@@ -107,10 +107,14 @@ export class WorkflowJobCompletionHandler {
       // the number of records processed so far and increment the attempt.
       if (msg.attempt >= 3) {
         this.executions.remove(msg.workflowId);
-        await this.workflowApi.updateWorkflow(msg.workflowId, {
+        const workflow = await this.workflowApi.updateWorkflow(msg.workflowId, {
           status: "failed",
           finishedTime: moment.utc().toISOString(),
         });
+        await this.jobNotifier.sendWorkflowNotification(
+          workflow.id,
+          workflow.status,
+        );
       } else {
         await this.batchJobApi.updateBatchJob(msg.jobId, {
           status: "cancelled",

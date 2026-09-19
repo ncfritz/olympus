@@ -130,6 +130,10 @@ describe("workflows", () => {
       finishedTime: expect.any(String),
     });
     expect(workflowApi.createWorkflowStep).not.toHaveBeenCalled();
+    expect(notifier.sendWorkflowNotification).toHaveBeenCalledWith(
+      "wf-1",
+      "failed",
+    );
   });
 
   it("fails the workflow when a job is cancelled", async () => {
