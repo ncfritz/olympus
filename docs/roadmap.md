@@ -165,11 +165,8 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     REPACK/PROPER marked a repack (shared `DEFAULT_REVISION`); 2160p
     remuxes parsed as Remux-1080p; custom formats matching on any one
     title or group condition (every DV release was "Generated Dynamic
-    HDR", −10000; resolution/source-only formats never matched).
-  - Release scoring (`releases/`, `it.fails` cases in
-    `test/unit/releases`):
-    - Release groups aren't parsed; group conditions test the quality
-      group ("WEBDL", "Bluray"), so the tier formats never match.
+    HDR", −10000; resolution/source-only formats never matched);
+    release groups not parsed, so the group tier formats never matched.
   - TV series searches update the series' search configuration once per
     season, inside the loop (and not at all without seasons).
   - Nothing in the monorepo or the imported repositories publishes

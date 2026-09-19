@@ -12,7 +12,11 @@ const test = (input: QualityModel, spec: TagSpecification): boolean => {
     case TagSource.QualityModifierSpecification:
       return input.quality.modifier === Number(value);
     case TagSource.ReleaseGroupSpecification:
-      return new RegExp(String(value), "i").test(input.quality.group);
+      // No group, no match (so a negated "." means "no group").
+      return (
+        input.releaseGroup !== undefined &&
+        new RegExp(String(value), "i").test(input.releaseGroup)
+      );
     case TagSource.ReleaseTitleSpecification:
       return new RegExp(String(value), "i").test(input.title);
     case TagSource.ResolutionSpecification:

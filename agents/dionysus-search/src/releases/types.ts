@@ -55,6 +55,8 @@ export type Revision = {
 
 export type QualityModel = {
   title: string;
+  /** The release group, when the title names one. */
+  releaseGroup?: string;
   quality: Quality;
   revision: Revision;
   sourceDetectionSource?: QualityDetectionSource;

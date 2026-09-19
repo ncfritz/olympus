@@ -1,3 +1,4 @@
+import { parseReleaseGroup } from "./releaseGroup";
 import {
   DEFAULT_REVISION,
   EXTENSION_QUALITIES,
@@ -56,6 +57,7 @@ export const parseTitle = (title: string): QualityModel => {
   }
 
   const result = parseTitleInternal(normalizedTitle);
+  result.releaseGroup = parseReleaseGroup(normalizedTitle);
 
   if (
     result.quality === Qualities.Unknown &&

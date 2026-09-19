@@ -43,7 +43,8 @@ src/
                               on SearchHandler), services/NzbGeekClient
   fanout/                     FanoutModule: the periodic fanout of due
                               search configurations
-  releases/                   release title parsing (detector) and tag
+  releases/                   release title parsing (detector,
+                              releaseGroup) and tag
                               scoring (tag/spec: TRaSH custom formats)
 ```
 

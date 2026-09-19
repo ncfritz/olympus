@@ -6,9 +6,7 @@ const tagsOf = (title: string) =>
   scoreRelease(title).tags.map((t) => `${t.type}:${t.value}:${t.score}`);
 
 /**
- * Release titles as NZBGeek returns them, parsed and scored. The it.fails
- * cases are known scoring bugs (docs/roadmap.md, search agent): each fix
- * turns its case into a plain `it`.
+ * Release titles as NZBGeek returns them, parsed and scored.
  */
 describe("scoreRelease", () => {
   it.each([
@@ -108,8 +106,6 @@ describe("scoreRelease", () => {
     ).not.toContain("unwanted:x265 (HD):-10000");
   });
 
-  // Known bugs
-
   it("tags resolution-only formats", () => {
     expect(tagsOf("The.Matrix.1999.1080p.BluRay.x264-SPARKS")).toContain(
       "resolution:1080p:50",
@@ -123,7 +119,16 @@ describe("scoreRelease", () => {
     ).not.toContain("unwanted:Generated Dynamic HDR:-10000");
   });
 
-  it.fails("tags release groups", () => {
+  it("penalises releases without a group", () => {
+    expect(tagsOf("Some.Movie.2020.1080p.WEB-DL.DDP5.1.H.264")).toContain(
+      "releaseGroups:No-RlsGroup:-10000",
+    );
+    expect(tagsOf("The.Matrix.1999.1080p.BluRay.x264-SPARKS")).not.toContain(
+      "releaseGroups:No-RlsGroup:-10000",
+    );
+  });
+
+  it("tags release groups", () => {
     expect(
       tagsOf("The.Office.US.S05E14.720p.WEB-DL.DD5.1.H.264-NTb"),
     ).toContain("releaseGroups:WEB Tier 01:1700");
