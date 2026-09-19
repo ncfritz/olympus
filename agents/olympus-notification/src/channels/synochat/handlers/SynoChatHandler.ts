@@ -98,13 +98,12 @@ export class SynoChatHandler extends DeliveryHandler<
       endpoint = this.endpoints.channel[msg.destination];
     }
 
-    this.logger.debug(`payload=${JSON.stringify(data)}"}`);
+    const body = `payload=${JSON.stringify(data)}`;
+    this.logger.debug(body);
 
-    const response = await axios.post(
-      endpoint,
-      `payload=${JSON.stringify(data)}"}`,
-      { headers: { "Content-Type": "text/plain" } },
-    );
+    const response = await axios.post(endpoint, body, {
+      headers: { "Content-Type": "text/plain" },
+    });
 
     this.logger.debug(
       `Got response from SynologyChat: ${JSON.stringify(response.data)}`,

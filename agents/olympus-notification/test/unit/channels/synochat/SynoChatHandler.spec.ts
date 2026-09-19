@@ -24,7 +24,7 @@ describe("SynoChatHandler", () => {
     await handler.handle(synoChatEvent());
     expect(axios.post).toHaveBeenCalledWith(
       `${CHAT}&method=incoming&token=%22channel-token%22`,
-      expect.stringContaining('payload={"text":"This is a test message"}'),
+      'payload={"text":"This is a test message"}',
       { headers: { "Content-Type": "text/plain" } },
     );
   });
@@ -35,7 +35,7 @@ describe("SynoChatHandler", () => {
     );
     expect(axios.post).toHaveBeenCalledWith(
       `${CHAT}&method=chatbot&token=%22bot-token%22`,
-      expect.stringContaining('"user_ids":[4,7]'),
+      'payload={"text":"This is a test message","user_ids":[4,7]}',
       expect.anything(),
     );
   });
