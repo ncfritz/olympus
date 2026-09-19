@@ -171,6 +171,14 @@ describe("BatchHandler", () => {
     await handler.handle(message());
     expect(store.createMetadataFetchJob).not.toHaveBeenCalled();
     expect(batchJobApi.updateBatchJob).not.toHaveBeenCalled();
+    // Someone else's job: a shutdown here must not fail it.
+    expect(executions.add).not.toHaveBeenCalled();
+  });
+
+  it("ignores jobs that don't exist", async () => {
+    batchJobApi.getBatchJob.mockResolvedValue(undefined as never);
+    await expect(handler.handle(message())).resolves.toBeUndefined();
+    expect(executions.add).not.toHaveBeenCalled();
   });
 
   it("fails the job, keeping its counts, when a record fails", async () => {

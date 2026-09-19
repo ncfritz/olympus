@@ -55,7 +55,6 @@ export abstract class BatchHandler<
 
   protected async run(message: M): Promise<void> {
     let job = await this.batchJobApi.getBatchJob(message.jobId);
-    this.executions.add({ id: job.id, type: "batch" });
 
     if (!job) {
       this.logger.log("No job record found, aborting");
@@ -68,6 +67,8 @@ export abstract class BatchHandler<
       );
       return;
     }
+
+    this.executions.add({ id: job.id, type: "batch" });
 
     const metadataManager = await this.fetchJobs.store({
       readCachingEnabled: this.shouldUseReadCache(),
