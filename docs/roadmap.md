@@ -160,15 +160,15 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     API mapping is in pure mappers, and the SQLite cache is one
     connection per process (it was opened per message). Fixed on the way:
     the AMQP password in the logs, bootstrap failures writing to `/logs`.
-  - Bugs, one commit each: metric names with dots (Prometheus rejects
-    them: no client metrics, an error per call); production company
-    alternative names fetched from the network endpoint; series → season
-    and season → episode freshness checks using the parent's TTL and
-    jitter; graceful shutdown never running (async work in a synchronous
-    exit hook); jobs that aren't new registered as running; `max`
-    processing one record too many (`it.fails` in
-    `test/unit/batch`); a workflow failing after its last retry sends no
-    notification; an unset `DIONYSUS_CACHE_PATH` failing every job.
+  - Fixed after the restructure, one commit each: metric names with dots
+    (Prometheus rejects them: no client metrics, an error per call);
+    production company alternative names fetched from the network
+    endpoint; series → season and season → episode freshness judged by
+    the parent's TTL; graceful shutdown never running (async work in a
+    synchronous exit hook, now Nest shutdown hooks); jobs that aren't new
+    registered as running; `max` processing one record too many; no
+    notification for a workflow failing after its last retry; an unset
+    `DIONYSUS_CACHE_PATH` failing every job (now `./cache`).
   - Several TTLs are `Math.max(n, random × m)` with m < n, which is always
     n (e.g. upcoming movies: 7 days).
   - TMDB dates (`1999-03-31`) are parsed in the process's time zone.

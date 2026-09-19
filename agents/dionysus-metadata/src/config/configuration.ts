@@ -24,7 +24,7 @@ export type TmdbConfig = {
 
 export type CacheConfig = {
   /** Directory of the SQLite metadata fetch job cache (jobCache.db). */
-  path?: string;
+  path: string;
 };
 
 export type AgentConfig = {
@@ -57,7 +57,7 @@ export const readConfig = (
       apiKey: read.optional("TMDB_API_KEY"),
     },
     cache: {
-      path: read.optional("DIONYSUS_CACHE_PATH"),
+      path: read.string("DIONYSUS_CACHE_PATH", "./cache"),
     },
   };
   if (read.problems.length) throw new ConfigValidationError(read.problems);

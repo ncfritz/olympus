@@ -14,7 +14,7 @@ describe("readConfig", () => {
     );
     expect(config.olympus).toEqual({ apiBaseUrl: "http://localhost:3001/v1" });
     expect(config.tmdb).toEqual({ apiKey: undefined });
-    expect(config.cache).toEqual({ path: undefined });
+    expect(config.cache).toEqual({ path: "./cache" });
   });
 
   it("reads the TMDB key and cache path", () => {

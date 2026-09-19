@@ -27,7 +27,7 @@ export class SqliteFetchJobCache implements FetchJobCache, OnModuleDestroy {
   private upsert: (key: string, value: MetadataFetchJob) => void;
 
   constructor(@Inject(cacheConfig.KEY) cache: CacheConfigType) {
-    this.cacheLocation = cache.path!;
+    this.cacheLocation = cache.path;
   }
 
   /**

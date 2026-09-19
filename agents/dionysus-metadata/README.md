@@ -146,7 +146,7 @@ Environment variables are used to configure the NestJS modules that connect to v
 
 | Variable            | Usage                              | Default Value |
 | ------------------- | ---------------------------------- | ------------- |
-| DIONYSUS_CACHE_PATH | The path to write the entity cache |               |
+| DIONYSUS_CACHE_PATH | The path to write the entity cache | `./cache`     |
 
 ##### Olympus
 

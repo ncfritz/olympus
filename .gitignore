@@ -27,3 +27,6 @@ graph.json
 # Python
 __pycache__/
 *.pyc
+
+# The metadata agent's fetch job cache (DIONYSUS_CACHE_PATH default)
+agents/dionysus-metadata/cache/
