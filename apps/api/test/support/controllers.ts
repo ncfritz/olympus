@@ -199,3 +199,30 @@ export const controllers: ControllerInfo[] = Object.entries(files)
       });
   })
   .sort((a, b) => a.className.localeCompare(b.className));
+
+export type SourceInfo = {
+  /** File name without extension, e.g. NoteService. */
+  owner: string;
+  /** Path relative to apps/api. */
+  file: string;
+  source: string;
+};
+
+/** Every non-spec source file under src that is not a controller file. */
+export const otherSources: SourceInfo[] = (() => {
+  const all = (dir: string): string[] =>
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) return all(full);
+      return entry.name.endsWith(".ts") && !entry.name.endsWith(".spec.ts")
+        ? [full]
+        : [];
+    });
+  return all(SOURCE_ROOT)
+    .filter((file) => !(file in files))
+    .map((file) => ({
+      owner: path.basename(file, ".ts"),
+      file: path.relative(API_ROOT, file).split(path.sep).join("/"),
+      source: sourceOf(file),
+    }));
+})();

@@ -1,12 +1,5 @@
 import { SingleNoteResponse } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -14,18 +7,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { GraphQlNote, toDomainObject } from "../converters/NoteConverter";
-import { NOTE_WITH_ASSOCIATIONS } from "../queries/notes";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlDescribeNoteResponse = {
-  minerva_notes_by_pk: GraphQlNote;
-};
+import { NoteService } from "../services/NoteService";
 
 @Controller({ version: "1" })
 export class DescribeNoteController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly notes: NoteService) {}
 
   @Get("/note/:noteId")
   @ApiOperation({
@@ -51,31 +38,9 @@ export class DescribeNoteController {
     @Param("noteId") noteId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const queryRequest = gql`
-      query DescribeNote($id: uuid!) {
-        minerva_notes_by_pk(id: $id) {
-          ${NOTE_WITH_ASSOCIATIONS}
-        }
-      }
-    `;
-
-    const queryResponse =
-      await this.graphQLClient.request<GraphQlDescribeNoteResponse>(
-        queryRequest,
-        {
-          id: noteId,
-        },
-      );
-
-    if (!queryResponse.minerva_notes_by_pk) {
-      throw new NotFoundException(`Note with id ${noteId} not found`);
-    }
-
-    const note = toDomainObject(queryResponse.minerva_notes_by_pk);
     const responseBody: SingleNoteResponse = {
-      note: note,
+      note: await this.notes.describe(noteId),
     };
-
     response.status(HttpStatus.OK).send(responseBody);
   }
 }

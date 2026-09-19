@@ -34,13 +34,17 @@
  *                      this route's path (/workflow/stats) for the same
  *                      method; Express would send the request to the
  *                      earlier route. List static routes first.
- *   graphql-named      every gql document names its operation
+ *   thin-controller    the controller (and its base classes) neither
+ *                      writes gql nor injects GraphQLClient, AmqpConnection
+ *                      or NotificationsGateway: that belongs in a service
+ *   graphql-named      every gql document names its operation (services
+ *                      and other files included)
  *   graphql-unique     a GraphQL operation name means one document across
  *                      the API (the test double and Hasura logs route by it)
  */
 import * as fs from "fs";
 import * as path from "path";
-import type { ControllerInfo } from "./controllers";
+import type { ControllerInfo, SourceInfo } from "./controllers";
 
 const API_ROOT = path.resolve(__dirname, "../..");
 
@@ -56,13 +60,42 @@ const HTTP_STATUS: Record<string, number> = {
   NOT_MODIFIED: 304,
 };
 
-export function checkControllers(controllers: ControllerInfo[]): Finding[] {
+export function checkControllers(
+  controllers: ControllerInfo[],
+  otherSources: SourceInfo[] = [],
+): Finding[] {
   const findings: Finding[] = [];
   const operationOwners = new Map<string, string[]>();
   const summaryOwners = new Map<string, string[]>();
   const descriptionOwners = new Map<string, string[]>();
   // GraphQL operation name -> normalized document -> controllers using it
   const graphqlDocuments = new Map<string, Map<string, Set<string>>>();
+  const collectGraphql = (
+    source: string,
+    owner: string,
+    unnamed: (message: string) => void,
+  ) => {
+    for (const [, body] of source.matchAll(/\bgql`([\s\S]*?)`/g)) {
+      const name = /\b(?:query|mutation|subscription)\s+(\w+)/.exec(body)?.[1];
+      if (!name) {
+        unnamed("a gql document has no operation name");
+        continue;
+      }
+      const documents = graphqlDocuments.get(name) ?? new Map();
+      const text = body.replace(/\s+/g, " ").trim();
+      documents.set(text, (documents.get(text) ?? new Set()).add(owner));
+      graphqlDocuments.set(name, documents);
+    }
+  };
+  for (const other of otherSources) {
+    collectGraphql(other.source, other.owner, (message) =>
+      findings.push({
+        rule: "graphql-named",
+        target: other.owner,
+        message: `${other.file}: ${message}`,
+      }),
+    );
+  }
   const own = (map: Map<string, string[]>, key: string, owner: string) =>
     map.set(key, [...(map.get(key) ?? []), owner]);
 
@@ -179,22 +212,23 @@ export function checkControllers(controllers: ControllerInfo[]): Finding[] {
     }
 
     for (const source of c.sources) {
-      for (const [, body] of source.matchAll(/\bgql`([\s\S]*?)`/g)) {
-        const name = /\b(?:query|mutation|subscription)\s+(\w+)/.exec(
-          body,
-        )?.[1];
-        if (!name) {
-          report("graphql-named", "a gql document has no operation name");
-          continue;
-        }
-        const documents = graphqlDocuments.get(name) ?? new Map();
-        const text = body.replace(/\s+/g, " ").trim();
-        documents.set(
-          text,
-          (documents.get(text) ?? new Set()).add(c.className),
-        );
-        graphqlDocuments.set(name, documents);
-      }
+      collectGraphql(source, c.className, (message) =>
+        report("graphql-named", message),
+      );
+    }
+    if (
+      c.sources.some(
+        (source) =>
+          /\bgql`/.test(source) ||
+          /\b(GraphQLClient|AmqpConnection|NotificationsGateway)\b/.test(
+            source,
+          ),
+      )
+    ) {
+      report(
+        "thin-controller",
+        "uses Hasura, RabbitMQ or the gateway directly; move that to a service",
+      );
     }
 
     if (c.documents.length === 0) {

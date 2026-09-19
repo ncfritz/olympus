@@ -1,0 +1,8 @@
+import { Injectable } from "@nestjs/common";
+import { GraphQLClient } from "graphql-request";
+
+/** {{entityPlural}} in Hasura: data access for the {{words entity}} operations. */
+@Injectable()
+export class {{service}} {
+  constructor(private readonly graphQLClient: GraphQLClient) {}
+}

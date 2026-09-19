@@ -55,27 +55,31 @@ Route defaults:
 
 ## Output
 
-1. `apps/api/src/<domain>/<area>/controllers/<operationId>Controller.ts`: the
-   controller in house style, with a GraphQL document named after the
-   operation, a typed `GraphQl<operationId>Response`, not-found handling
-   for `*_by_pk` roots, and `buildPaginationExpression` /
-   `buildFilterExpression` for paginated lists.
-2. `apps/api/test/api/<domain>/<operationId>.spec.ts`: an endpoint test
+1. `apps/api/src/<domain>/<area>/controllers/<operationId>Controller.ts`: a
+   thin controller in house style that calls the entity service.
+2. A method on `apps/api/src/<domain>/<area>/services/<Entity>Service.ts`
+   (the service is created if needed): a GraphQL document named after the
+   operation, a typed result, not-found handling for `*_by_pk` roots, and
+   `buildPaginationExpression` / `buildFilterExpression` for paginated
+   lists. The method is `describe`, `list`, `create`, `update` or `delete`
+   when the operationId is the default one and the name is free, otherwise
+   the operationId in camelCase.
+3. `apps/api/test/api/<domain>/<operationId>.spec.ts`: an endpoint test
    on the shared harness ([API tests](api-testing.md)) with a 404 test for
    operations that take an ID, a 400 test for paginated lists and an
    `it.todo` for the happy path.
-3. `apps/api/src/<domain>/<area>/converters/<Entity>Converter.ts` with a
+4. `apps/api/src/<domain>/<area>/converters/<Entity>Converter.ts` with a
    `GraphQl<Entity>` / `toDomainObject` stub, if it doesn't exist.
-4. `<operationId>Request` / `<operationId>Response` appended to the model
+5. `<operationId>Request` / `<operationId>Response` appended to the model
    file, with imports added for the entity, body class and
    `PaginatedResults` as needed. A new model file is exported from its
    domain index.
-5. The controller imported and registered in the feature module. For a
+6. The controller, and the service as a provider, registered in the feature module. For a
    new feature folder the module is created (importing
    `GraphQLClientModule`) and added to the domain's `<DOMAIN>_MODULES`,
    which serves it under the domain prefix and puts it in the OpenAPI
    document.
-6. Everything formatted with Prettier.
+7. Everything formatted with Prettier.
 
 ## Finishing an operation
 

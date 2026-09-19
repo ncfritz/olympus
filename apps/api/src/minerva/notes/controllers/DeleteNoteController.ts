@@ -1,12 +1,5 @@
-import { Note, SingleNoteResponse } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Delete,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { SingleNoteResponse } from "@ncfritz/olympus-model";
+import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiConsumes,
   ApiNoContentResponse,
@@ -16,33 +9,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import moment from "moment";
-import { GraphQlNote, toDomainObject } from "../converters/NoteConverter";
-import { NOTE_WITH_ASSOCIATIONS } from "../queries/notes";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-import { logger } from "../../../utils/logger";
-
-type GraphQlGetDeletedTimeResponse = {
-  minerva_notes_by_pk: {
-    deletedTime: string;
-  };
-};
-
-type GraphQlSoftDeleteNoteResponse = {
-  update_minerva_notes_by_pk: GraphQlNote;
-};
-
-type GraphQlHardDeleteNoteResponse = {
-  update_minerva_notes: {
-    affected_rows: number;
-  };
-  delete_minerva_notes_by_pk: GraphQlNote;
-};
+import { NoteService } from "../services/NoteService";
 
 @Controller({ version: "1" })
 export class DeleteNoteController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly notes: NoteService) {}
 
   @Delete("/note/:noteId")
   @ApiOperation({
@@ -74,81 +46,10 @@ export class DeleteNoteController {
     @Param("noteId") noteId: string,
     @Res() response: Response,
   ): Promise<void> {
-    let responseCode: HttpStatus;
-    let note: Note;
-
-    const getDeletedTimeRequest = gql`
-      query GetDeletedTime($id: uuid!) {
-        minerva_notes_by_pk(id: $id) {
-          deletedTime
-        }
-      }
-    `;
-
-    const getDeletedTimeResponse =
-      await this.graphQLClient.request<GraphQlGetDeletedTimeResponse>(
-        getDeletedTimeRequest,
-        { id: noteId },
-      );
-
-    if (getDeletedTimeResponse.minerva_notes_by_pk === null) {
-      throw new NotFoundException(`Note with id ${noteId} not found`);
-    }
-
-    logger.debug(
-      `Note ${noteId} deletedTime: ${getDeletedTimeResponse.minerva_notes_by_pk.deletedTime}`,
-    );
-
-    if (getDeletedTimeResponse.minerva_notes_by_pk.deletedTime === null) {
-      const softDeleteNoteRequest = gql`
-        mutation SoftDeleteNote($id: uuid!, $timestamp: timestamptz!) {
-          update_minerva_notes_by_pk(
-            pk_columns: { id: $id }
-            _set: { deletedTime: $timestamp }
-          ) {
-            ${NOTE_WITH_ASSOCIATIONS}
-          }
-        }
-      `;
-
-      const softDeleteNoteResponse =
-        await this.graphQLClient.request<GraphQlSoftDeleteNoteResponse>(
-          softDeleteNoteRequest,
-          { id: noteId, timestamp: moment.utc() },
-        );
-
-      note = toDomainObject(softDeleteNoteResponse.update_minerva_notes_by_pk);
-      responseCode = HttpStatus.OK;
-    } else {
-      const hardDeleteNoteRequest = gql`
-        mutation HardDeleteNote($id: uuid!) {
-          update_minerva_notes(where: {parent_id: {_eq: $id}}, _set: {parent_id: null}) {
-            affected_rows
-          }
-          delete_minerva_notes_by_pk(id: $id) {
-            ${NOTE_WITH_ASSOCIATIONS}
-          }
-        }
-      `;
-
-      const hardDeleteNoteResponse =
-        await this.graphQLClient.request<GraphQlHardDeleteNoteResponse>(
-          hardDeleteNoteRequest,
-          { id: noteId },
-        );
-
-      logger.info(
-        `Disassociated ${hardDeleteNoteResponse.update_minerva_notes.affected_rows} child notes.`,
-      );
-
-      note = toDomainObject(hardDeleteNoteResponse.delete_minerva_notes_by_pk);
-      responseCode = HttpStatus.NO_CONTENT;
-    }
-
-    const responseBody: SingleNoteResponse = {
-      note: note,
-    };
-
-    response.status(responseCode).json(responseBody);
+    const { note, hardDeleted } = await this.notes.delete(noteId);
+    const responseBody: SingleNoteResponse = { note };
+    response
+      .status(hardDeleted ? HttpStatus.NO_CONTENT : HttpStatus.OK)
+      .json(responseBody);
   }
 }

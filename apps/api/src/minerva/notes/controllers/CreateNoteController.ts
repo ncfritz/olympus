@@ -8,17 +8,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-import { BaseNoteController } from "./BaseNoteController";
 import { DescribeNoteController } from "./DescribeNoteController";
 import { setLocation } from "../../../utils/location";
+import { NoteService } from "../services/NoteService";
 
 @Controller({ version: "1" })
-export class CreateNoteController extends BaseNoteController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class CreateNoteController {
+  constructor(private readonly notes: NoteService) {}
 
   @Post("/notes")
   @ApiOperation({
@@ -52,16 +49,11 @@ export class CreateNoteController extends BaseNoteController {
     @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const createdNote = await this.createNote(request.note);
-
-    const responseBody: SingleNoteResponse = {
-      note: createdNote,
-    };
-
+    const note = await this.notes.create(request.note);
     setLocation(response, httpRequest, DescribeNoteController, {
-      noteId: createdNote.id,
+      noteId: note.id,
     });
-
+    const responseBody: SingleNoteResponse = { note };
     response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

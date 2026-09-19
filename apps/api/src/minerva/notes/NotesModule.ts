@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { NoteService } from "./services/NoteService";
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
 import { CreateChildNoteController } from "./controllers/CreateChildNoteController";
 import { CreateNoteController } from "./controllers/CreateNoteController";
@@ -13,6 +14,7 @@ import { UpdateNoteController } from "./controllers/UpdateNoteController";
 
 @Module({
   imports: [GraphQLClientModule],
+  providers: [NoteService],
   controllers: [
     CreateChildNoteController,
     CreateNoteController,

@@ -58,6 +58,35 @@ const existingModule = (dir: string): string | undefined =>
         ?.replace(/\.ts$/, "")
     : undefined;
 
+/**
+ * Adds `names` to the import from `from`, or a new import after the last
+ * one. Prettier tidies the result.
+ */
+const ensureImport = (source: string, names: string[], from: string) => {
+  const existing = new RegExp(
+    `import \\{([^}]*)\\} from "${from.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}";`,
+  ).exec(source);
+  if (existing) {
+    const current = existing[1]
+      .split(",")
+      .map((n) => n.trim())
+      .filter(Boolean);
+    const merged = [...new Set([...current, ...names])];
+    return source.replace(
+      existing[0],
+      `import { ${merged.join(", ")} } from "${from}";`,
+    );
+  }
+  const line = `import { ${names.join(", ")} } from "${from}";\n`;
+  const imports = [...source.matchAll(/^import [\s\S]*?;\n/gm)];
+  const last = imports.pop();
+  return last
+    ? source.slice(0, last.index + last[0].length) +
+        line +
+        source.slice(last.index + last[0].length)
+    : line + source;
+};
+
 /** An array literal's contents, ready for one more element. */
 const appendable = (list: string) =>
   list.trim() ? list.trimEnd().replace(/,?$/, ",") : "";
@@ -199,6 +228,21 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
       const numericId = a.idType === "Int";
       const testDir = path.join(repo, "apps/api/test/api", a.domain);
       const specFile = path.join(testDir, `${a.operationId}.spec.ts`);
+      const service = `${a.entity}Service`;
+      const serviceFile = path.join(areaDir, "services", `${service}.ts`);
+      const existingService = fs.existsSync(serviceFile)
+        ? fs.readFileSync(serviceFile, "utf8")
+        : "";
+      const isDefaultOperationId =
+        a.operationId ===
+        (a.verb === "List" ? `List${a.entityPlural}` : `${a.verb}${a.entity}`);
+      const shortMethod = a.verb.toLowerCase();
+      const method =
+        isDefaultOperationId &&
+        a.verb !== "Get" &&
+        !new RegExp(`\\basync ${shortMethod}\\(`).test(existingService)
+          ? shortMethod
+          : camel(a.operationId);
       const data = {
         ...a,
         isPaginated: a.verb === "List" && a.paginated,
@@ -213,6 +257,9 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
         requestClass: `${a.operationId}Request`,
         responseClass: `${a.operationId}Response`,
         converter: `${a.entity}Converter`,
+        service,
+        serviceProp: camel(a.entityPlural),
+        method,
         nestMethod: {
           Describe: "Get",
           List: "Get",
@@ -252,6 +299,7 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
       const domainModule = `${pascal(a.domain)}Module`;
       const domainModuleFile = path.join(api, a.domain, `${domainModule}.ts`);
       const touched = [
+        serviceFile,
         controllerFile,
         specFile,
         modelFile,
@@ -395,7 +443,69 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
           fs.writeFileSync(domainModuleFile, source);
           return `created ${a.module} and added it to ${domainModule}`;
         },
-        // Register the controller in its module.
+        // The data access goes in the entity's service: create it if needed,
+        // append the method and add the imports it uses.
+        () => {
+          let source =
+            existingService ||
+            plop.renderString(
+              fs.readFileSync(
+                path.join(__dirname, "templates/api-operation/service.ts.hbs"),
+                "utf8",
+              ),
+              data,
+            );
+          const methodText = plop.renderString(
+            fs.readFileSync(
+              path.join(
+                __dirname,
+                "templates/api-operation/service-method.ts.hbs",
+              ),
+              "utf8",
+            ),
+            data,
+          );
+          const close = source.lastIndexOf("}");
+          source = `${source.slice(0, close).trimEnd()}\n\n${methodText.trimEnd()}\n}\n`;
+          const nest = ["Injectable"];
+          if (["Describe", "Update", "Delete"].includes(a.verb))
+            nest.push("NotFoundException");
+          source = ensureImport(source, nest, "@nestjs/common");
+          source = ensureImport(
+            source,
+            ["gql", "GraphQLClient"],
+            "graphql-request",
+          );
+          const modelNames = [
+            ...(a.verb === "Delete" ? [] : [a.entity]),
+            ...(data.hasBody ? [a.bodyType] : []),
+          ];
+          if (modelNames.length)
+            source = ensureImport(source, modelNames, "@ncfritz/olympus-model");
+          if (a.verb !== "Delete" && a.verb !== "Get")
+            source = ensureImport(
+              source,
+              [`GraphQl${a.entity}`, "toDomainObject"],
+              `../converters/${a.entity}Converter`,
+            );
+          if (data.isPaginated)
+            source = ensureImport(
+              source,
+              [
+                "buildFilterExpression",
+                "buildPaginationExpression",
+                "PaginationParams",
+              ],
+              `${path
+                .relative(path.dirname(serviceFile), path.join(api, "utils"))
+                .split(path.sep)
+                .join("/")}/filterUtil`,
+            );
+          fs.mkdirSync(path.dirname(serviceFile), { recursive: true });
+          fs.writeFileSync(serviceFile, source);
+          return `${existingService ? "added" : "created"} ${service}.${method}()`;
+        },
+        // Register the controller (and the service) in the feature module.
         () => {
           let source = fs.readFileSync(moduleFile, "utf8");
           const importPath = `./${path
@@ -418,6 +528,19 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
             (_, list: string) =>
               `controllers: [${appendable(list)}\n    ${className},\n  ]`,
           );
+          if (!new RegExp(`\\b${service}\\b`).test(source)) {
+            source = ensureImport(source, [service], `./services/${service}`);
+            source = /providers:\s*\[/.test(source)
+              ? source.replace(
+                  /providers:\s*\[([\s\S]*?)\]/,
+                  (_, list: string) =>
+                    `providers: [${appendable(list)} ${service}]`,
+                )
+              : source.replace(
+                  /controllers:\s*\[/,
+                  `providers: [${service}],\n  controllers: [`,
+                );
+          }
           fs.writeFileSync(moduleFile, source);
           return `registered ${className} in ${a.module}`;
         },

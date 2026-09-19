@@ -2,14 +2,14 @@ import * as path from "path";
 import { describe, expect, it } from "vitest";
 import { loadAllowList } from "../support/allowList";
 import { checkControllers } from "../support/controllerRules";
-import { controllers } from "../support/controllers";
+import { controllers, otherSources } from "../support/controllers";
 
 /**
  * Every controller follows docs/conventions/api.md. Known exceptions live
  * in controllers.allow.json and may only shrink.
  */
 describe("API controller conventions", () => {
-  const findings = checkControllers(controllers);
+  const findings = checkControllers(controllers, otherSources);
   const { unexpected, stale } = loadAllowList(
     path.join(__dirname, "controllers.allow.json"),
     findings,

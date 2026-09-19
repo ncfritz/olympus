@@ -1,4 +1,4 @@
-import { ListNotesResponse, Note } from "@ncfritz/olympus-model";
+import { ListNotesResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -7,20 +7,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { GraphQlNote, toDomainObject } from "../converters/NoteConverter";
-import { NOTE_WITH_ASSOCIATIONS_WITH_NOTE_ID } from "../queries/notes";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlListNotesResponse = {
-  minerva_note_associations: {
-    note: GraphQlNote;
-  }[];
-};
+import { NoteService } from "../services/NoteService";
 
 @Controller({ version: "1" })
 export class GetNotesForEntityController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly notes: NoteService) {}
 
   @Get("/notes/entity/:entityType/:entityId")
   @ApiOperation({
@@ -51,36 +43,9 @@ export class GetNotesForEntityController {
     @Param("entityId") entityId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const queryRequest = gql`
-      query GetNotesForEntity($entityId: String!, $entityType: String!) {
-        minerva_note_associations(
-          where: {
-            _and: { itemId: { _eq: $entityId }, itemType: { _eq: $entityType } }
-          }
-          order_by: { createdTime: desc }
-        ) {
-          note {
-            ${NOTE_WITH_ASSOCIATIONS_WITH_NOTE_ID}
-          }
-        }
-      }
-    `;
-
-    const queryResponse =
-      await this.graphQLClient.request<GraphQlListNotesResponse>(queryRequest, {
-        entityType: entityType,
-        entityId: entityId,
-      });
-
-    const notes: Note[] = [];
-    queryResponse.minerva_note_associations.forEach((associatedNote) => {
-      notes.push(toDomainObject(associatedNote.note));
-    });
-
     const responseBody: ListNotesResponse = {
-      notes: notes,
+      notes: await this.notes.listForEntity(entityType, entityId),
     };
-
     response.status(HttpStatus.OK).send(responseBody);
   }
 }

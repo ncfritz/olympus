@@ -91,7 +91,7 @@ A group of features (`dionysus/content`, `dionysus/media`,
 ```ts
 @Controller({ version: "1" })
 export class DescribeNoteController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly notes: NoteService) {}
 
   @Get("/note/:noteId")
   @ApiOperation({
@@ -111,11 +111,10 @@ export class DescribeNoteController {
     @Param("noteId") noteId: string,
     @Res() response: Response,
   ): Promise<void> {
-    // 1. build the gql document
-    // 2. request it
-    // 3. null → NotFoundException
-    // 4. convert with toDomainObject
-    // 5. response.status(HttpStatus.OK).send(body)
+    const responseBody: SingleNoteResponse = {
+      note: await this.notes.describe(noteId),
+    };
+    response.status(HttpStatus.OK).send(responseBody);
   }
 }
 ```
@@ -129,11 +128,29 @@ Rules:
 - After any early `response...send()/end()`, `return`. Never send twice.
 - The response body is typed with the model class
   (`const body: DescribeNoteResponse = { note }`).
-- Constructor parameters are `private readonly`. Inject `GraphQLClient` for
-  Hasura, `AmqpConnection` to publish messages, `ConfigService` for config.
-- Logic shared by several operations in an area goes in an abstract
-  `Base<Area>Controller` in the same folder (e.g. `BaseNoteController`),
-  which the operation controllers extend.
+- Controllers are thin: they parse the request, call one service method
+  and write the response. They do not write `gql`, and do not inject
+  `GraphQLClient`, `AmqpConnection` or `NotificationsGateway`.
+  **[checked]** (`thin-controller`; controllers not yet moved to services
+  are on the allow-list, which shrinks feature by feature.)
+- Constructor parameters are `private readonly`; a service is named after
+  its entities (`private readonly notes: NoteService`).
+
+### Services
+
+- One `@Injectable()` service per entity:
+  `services/<Entity>Service.ts`, listed in the feature module's
+  `providers`. It injects `GraphQLClient`, `AmqpConnection` or the gateway
+  as needed.
+- One public method per operation, named for what it does: `describe`,
+  `list`, `create`, `update`, `delete`, `restore`, or a longer name
+  (`listForEntity`, `getSummary`) when an entity has several. Methods take
+  and return model classes, never Hasura rows or HTTP objects.
+- The service owns the `gql` documents (named after the API operation, as
+  below), row types, conversion and not-found handling: a missing row
+  throws `NotFoundException` with `<Entity> with id <id> not found`.
+- Logic shared by several operations is a private method or module-level
+  helper in the service, not a base controller.
 
 ### Decorator order
 
@@ -230,8 +247,8 @@ response.status(HttpStatus.CREATED).send(responseBody);
   expressions produced by `buildFilterExpression()` and
   `buildPaginationExpression()`. A `where` built in code is passed as a
   `_bool_exp` variable.
-- Declare the response type next to the controller:
-  `type GraphQl<OperationId>Response = { <root_field>: GraphQl<Entity> }`.
+- Declare the response type next to the service method that requests it
+  (`type Result = { <root_field>: GraphQl<Entity> | null }`).
 - Selection sets reused across operations are UPPER_SNAKE constants in
   the feature's `queries/<entity>.ts` (`BASE_NOTE`,
   `NOTE_WITH_ASSOCIATIONS`).

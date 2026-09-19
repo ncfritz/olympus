@@ -1,9 +1,4 @@
-import {
-  FilterDefinition,
-  FilterType,
-  ListNotesResponse,
-  Note,
-} from "@ncfritz/olympus-model";
+import { ListNotesResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -12,19 +7,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { GraphQlNote, toDomainObject } from "../converters/NoteConverter";
-import { NOTE_WITH_ASSOCIATIONS } from "../queries/notes";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-import { buildFilterExpression } from "../../../utils/filterUtil";
-
-type GraphQlListNotesResponse = {
-  minerva_notes: GraphQlNote[];
-};
+import { NoteService } from "../services/NoteService";
 
 @Controller({ version: "1" })
 export class ListChildNotesController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly notes: NoteService) {}
 
   @Get("/note/:noteId/children")
   @ApiOperation({
@@ -48,47 +36,9 @@ export class ListChildNotesController {
     @Param("noteId") noteId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const authorFilter: FilterDefinition = {
-      name: "author",
-      type: FilterType.EQUALS,
-      value: "ncfritz",
-    };
-    const parentFilter: FilterDefinition = {
-      name: "parent_id",
-      type: FilterType.EQUALS,
-      value: noteId,
-    };
-    const filters: FilterDefinition = {
-      name: "_",
-      type: FilterType.AND,
-      value: [authorFilter, parentFilter],
-    };
-
-    const whereExpression = buildFilterExpression(filters);
-
-    const queryRequest = gql`
-      query ListChildNotes {
-        minerva_notes(
-          ${whereExpression},
-          order_by: { createdTime: desc }
-        ) {
-          ${NOTE_WITH_ASSOCIATIONS}
-        }
-      }
-    `;
-
-    const queryResponse =
-      await this.graphQLClient.request<GraphQlListNotesResponse>(queryRequest);
-
-    const notes: Note[] = [];
-    queryResponse.minerva_notes.forEach((note) => {
-      notes.push(toDomainObject(note));
-    });
-
     const responseBody: ListNotesResponse = {
-      notes: notes,
+      notes: await this.notes.listChildren(noteId),
     };
-
     response.status(HttpStatus.OK).send(responseBody);
   }
 }

@@ -17,7 +17,6 @@ import {
   {{nestMethod}},
   HttpStatus,
 {{#if hasId}}
-  NotFoundException,
   Param,
 {{#if numericId}}
   ParseIntPipe,
@@ -49,13 +48,6 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-{{#if usesConverter}}
-import {
-  GraphQl{{entity}},
-  toDomainObject,
-} from "../converters/{{converter}}";
-{{/if}}
 import {
 {{#if isPaginated}}
   ApiFilterParams,
@@ -63,41 +55,11 @@ import {
 {{/if}}
   ApiStandardErrorResponses,
 } from "{{toSrc}}/utils/controllerDecorators";
-{{#if isPaginated}}
-import {
-  buildFilterExpression,
-  buildPaginationExpression,
-} from "{{toSrc}}/utils/filterUtil";
-{{/if}}
-
-type GraphQl{{operationId}}Response = {
-{{#if isDescribe}}
-  {{hasuraTable}}_by_pk: GraphQl{{entity}} | null;
-{{/if}}
-{{#if isList}}
-  {{hasuraTable}}: GraphQl{{entity}}[];
-{{#if isPaginated}}
-  {{hasuraTable}}_aggregate: { aggregate: { count: number } };
-{{/if}}
-{{/if}}
-{{#if isCreate}}
-  insert_{{hasuraTable}}_one: GraphQl{{entity}};
-{{/if}}
-{{#if isUpdate}}
-  update_{{hasuraTable}}_by_pk: GraphQl{{entity}} | null;
-{{/if}}
-{{#if isDelete}}
-  delete_{{hasuraTable}}_by_pk: { id: {{idTsType}} } | null;
-{{/if}}
-{{#if isGet}}
-  // TODO: the root field(s) this operation queries
-  {{hasuraTable}}_aggregate: { aggregate: { count: number } };
-{{/if}}
-};
+import { {{service}} } from "../services/{{service}}";
 
 @Controller({ version: "1" })
 export class {{operationId}}Controller {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly {{serviceProp}}: {{service}}) {}
 
   @{{nestMethod}}("{{route}}")
   @ApiOperation({
@@ -181,166 +143,48 @@ export class {{operationId}}Controller {
     @Res() response: Response,
   ): Promise<void> {
 {{#if isDescribe}}
-    const query = gql`
-      query {{operationId}}($id: {{idType}}!) {
-        {{hasuraTable}}_by_pk(id: $id) {
-          # TODO: select the fields toDomainObject reads
-          id
-        }
-      }
-    `;
-
-    const result =
-      await this.graphQLClient.request<GraphQl{{operationId}}Response>(query, {
-        id: {{idParam}},
-      });
-
-    if (result.{{hasuraTable}}_by_pk === null) {
-      throw new NotFoundException(`{{entity}} with id ${ {{~idParam~}} } not found`);
-    }
-
     const responseBody: {{responseClass}} = {
-      {{entityCamel}}: toDomainObject(result.{{hasuraTable}}_by_pk),
+      {{entityCamel}}: await this.{{serviceProp}}.{{method}}({{idParam}}),
     };
-
     response.status(HttpStatus.OK).send(responseBody);
 {{/if}}
 {{#if isList}}
 {{#if isPaginated}}
-    const pagination = buildPaginationExpression({
-      pageSize,
-      startPage,
-      sortField,
-      sortDirection,
-    });
-    const where = buildFilterExpression(filters);
-
-    const query = gql`
-      query {{operationId}} {
-        {{hasuraTable}}(${[pagination, where].filter(Boolean).join(", ")}) {
-          # TODO: select the fields toDomainObject reads
-          id
-        }
-        {{hasuraTable}}_aggregate${where ? `(${where})` : ""} {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
+    const { {{entitiesCamel}}, count } = await this.{{serviceProp}}.{{method}}(
+      { pageSize, startPage, sortField, sortDirection },
+      filters,
+    );
+    const responseBody: {{responseClass}} = { {{entitiesCamel}}, count };
 {{else}}
-    const query = gql`
-      query {{operationId}} {
-        {{hasuraTable}} {
-          # TODO: select the fields toDomainObject reads
-          id
-        }
-      }
-    `;
-{{/if}}
-
-    const result =
-      await this.graphQLClient.request<GraphQl{{operationId}}Response>(query);
-
     const responseBody: {{responseClass}} = {
-      {{entitiesCamel}}: result.{{hasuraTable}}.map((row) => toDomainObject(row)),
-{{#if isPaginated}}
-      count: result.{{hasuraTable}}_aggregate.aggregate.count,
-{{/if}}
+      {{entitiesCamel}}: await this.{{serviceProp}}.{{method}}(),
     };
-
+{{/if}}
     response.status(HttpStatus.OK).send(responseBody);
 {{/if}}
 {{#if isCreate}}
-    const mutation = gql`
-      mutation {{operationId}}($object: {{hasuraTable}}_insert_input!) {
-        insert_{{hasuraTable}}_one(object: $object) {
-          # TODO: select the fields toDomainObject reads
-          id
-        }
-      }
-    `;
-
-    // TODO: map request.{{entityCamel}} (camelCase) to the table's columns
-    const result =
-      await this.graphQLClient.request<GraphQl{{operationId}}Response>(
-        mutation,
-        { object: request.{{entityCamel}} },
-      );
-
     const responseBody: {{responseClass}} = {
-      {{entityCamel}}: toDomainObject(result.insert_{{hasuraTable}}_one),
+      {{entityCamel}}: await this.{{serviceProp}}.{{method}}(request.{{entityCamel}}),
     };
-
     response.status(HttpStatus.CREATED).send(responseBody);
 {{/if}}
 {{#if isUpdate}}
-    const mutation = gql`
-      mutation {{operationId}}($id: {{idType}}!, $changes: {{hasuraTable}}_set_input!) {
-        update_{{hasuraTable}}_by_pk(pk_columns: { id: $id }, _set: $changes) {
-          # TODO: select the fields toDomainObject reads
-          id
-        }
-      }
-    `;
-
-    // TODO: map request.{{entityCamel}} (camelCase) to the table's columns
-    const result =
-      await this.graphQLClient.request<GraphQl{{operationId}}Response>(
-        mutation,
-        { id: {{idParam}}, changes: request.{{entityCamel}} },
-      );
-
-    if (result.update_{{hasuraTable}}_by_pk === null) {
-      throw new NotFoundException(`{{entity}} with id ${ {{~idParam~}} } not found`);
-    }
-
     const responseBody: {{responseClass}} = {
-      {{entityCamel}}: toDomainObject(result.update_{{hasuraTable}}_by_pk),
+      {{entityCamel}}: await this.{{serviceProp}}.{{method}}(
+        {{idParam}},
+        request.{{entityCamel}},
+      ),
     };
-
     response.status(HttpStatus.OK).send(responseBody);
 {{/if}}
 {{#if isDelete}}
-    const mutation = gql`
-      mutation {{operationId}}($id: {{idType}}!) {
-        delete_{{hasuraTable}}_by_pk(id: $id) {
-          id
-        }
-      }
-    `;
-
-    const result =
-      await this.graphQLClient.request<GraphQl{{operationId}}Response>(
-        mutation,
-        { id: {{idParam}} },
-      );
-
-    if (result.delete_{{hasuraTable}}_by_pk === null) {
-      throw new NotFoundException(`{{entity}} with id ${ {{~idParam~}} } not found`);
-    }
-
+    await this.{{serviceProp}}.{{method}}({{idParam}});
     response.status(HttpStatus.NO_CONTENT).end();
 {{/if}}
 {{#if isGet}}
-    // TODO: query and compute the result
-    const query = gql`
-      query {{operationId}} {
-        {{hasuraTable}}_aggregate {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
-
-    const result =
-      await this.graphQLClient.request<GraphQl{{operationId}}Response>(query);
-
     const responseBody: {{responseClass}} = {
-      count: result.{{hasuraTable}}_aggregate.aggregate.count,
+      count: await this.{{serviceProp}}.{{method}}(),
     };
-
     response.status(HttpStatus.OK).send(responseBody);
 {{/if}}
   }

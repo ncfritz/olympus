@@ -1,12 +1,5 @@
 import { SingleNoteResponse } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Patch,
-  Res,
-} from "@nestjs/common";
+import { Controller, HttpStatus, Param, Patch, Res } from "@nestjs/common";
 import {
   ApiConsumes,
   ApiOkResponse,
@@ -15,18 +8,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { GraphQlNote, toDomainObject } from "../converters/NoteConverter";
-import { NOTE_WITH_ASSOCIATIONS } from "../queries/notes";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlRestoreNoteResponse = {
-  update_minerva_notes_by_pk: (GraphQlNote & { affected_rows: number }) | null;
-};
+import { NoteService } from "../services/NoteService";
 
 @Controller({ version: "1" })
 export class RestoreNoteController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly notes: NoteService) {}
 
   @Patch("/note/:noteId")
   @ApiOperation({
@@ -51,32 +38,9 @@ export class RestoreNoteController {
     @Param("noteId") noteId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const restoreNoteRequest = gql`
-      mutation RestoreNote($id: uuid!) {
-        update_minerva_notes_by_pk(
-          pk_columns: { id: $id }
-          _set: { deletedTime: null }
-        ) {
-          ${NOTE_WITH_ASSOCIATIONS}
-        }
-      }
-    `;
-
-    const restoreNoteResponse =
-      await this.graphQLClient.request<GraphQlRestoreNoteResponse>(
-        restoreNoteRequest,
-        { id: noteId },
-      );
-
-    if (restoreNoteResponse.update_minerva_notes_by_pk === null) {
-      throw new NotFoundException(`Note with id ${noteId} not found`);
-    }
-
-    const note = toDomainObject(restoreNoteResponse.update_minerva_notes_by_pk);
     const responseBody: SingleNoteResponse = {
-      note: note,
+      note: await this.notes.restore(noteId),
     };
-
     response.status(HttpStatus.OK).json(responseBody);
   }
 }

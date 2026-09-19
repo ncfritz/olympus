@@ -1,0 +1,153 @@
+{{#if isDescribe}}
+  /** {{operationId}}. @throws NotFoundException */
+  async {{method}}(id: {{idTsType}}): Promise<{{entity}}> {
+    type Result = { {{hasuraTable}}_by_pk: GraphQl{{entity}} | null };
+    const query = gql`
+      query {{operationId}}($id: {{idType}}!) {
+        {{hasuraTable}}_by_pk(id: $id) {
+          # TODO: select the fields toDomainObject reads
+          id
+        }
+      }
+    `;
+
+    const result = await this.graphQLClient.request<Result>(query, { id });
+    if (result.{{hasuraTable}}_by_pk === null) {
+      throw new NotFoundException(`{{entity}} with id ${id} not found`);
+    }
+    return toDomainObject(result.{{hasuraTable}}_by_pk);
+  }
+{{/if}}
+{{#if isList}}
+{{#if isPaginated}}
+  /** {{operationId}}: one page of {{words entityPlural}} and the total count. */
+  async {{method}}(
+    pagination: PaginationParams,
+    filters: string | undefined,
+  ): Promise<{ {{entitiesCamel}}: {{entity}}[]; count: number }> {
+    type Result = {
+      {{hasuraTable}}: GraphQl{{entity}}[];
+      {{hasuraTable}}_aggregate: { aggregate: { count: number } };
+    };
+    const page = buildPaginationExpression(pagination);
+    const where = buildFilterExpression(filters);
+
+    const query = gql`
+      query {{operationId}} {
+        {{hasuraTable}}(${[page, where].filter(Boolean).join(", ")}) {
+          # TODO: select the fields toDomainObject reads
+          id
+        }
+        {{hasuraTable}}_aggregate${where ? `(${where})` : ""} {
+          aggregate {
+            count
+          }
+        }
+      }
+    `;
+
+    const result = await this.graphQLClient.request<Result>(query);
+    return {
+      {{entitiesCamel}}: result.{{hasuraTable}}.map(toDomainObject),
+      count: result.{{hasuraTable}}_aggregate.aggregate.count,
+    };
+  }
+{{else}}
+  /** {{operationId}}. */
+  async {{method}}(): Promise<{{entity}}[]> {
+    type Result = { {{hasuraTable}}: GraphQl{{entity}}[] };
+    const query = gql`
+      query {{operationId}} {
+        {{hasuraTable}} {
+          # TODO: select the fields toDomainObject reads
+          id
+        }
+      }
+    `;
+
+    const result = await this.graphQLClient.request<Result>(query);
+    return result.{{hasuraTable}}.map(toDomainObject);
+  }
+{{/if}}
+{{/if}}
+{{#if isCreate}}
+  /** {{operationId}}. */
+  async {{method}}(input: {{bodyType}}): Promise<{{entity}}> {
+    type Result = { insert_{{hasuraTable}}_one: GraphQl{{entity}} };
+    const mutation = gql`
+      mutation {{operationId}}($object: {{hasuraTable}}_insert_input!) {
+        insert_{{hasuraTable}}_one(object: $object) {
+          # TODO: select the fields toDomainObject reads
+          id
+        }
+      }
+    `;
+
+    // TODO: map input (camelCase) to the table's columns
+    const result = await this.graphQLClient.request<Result>(mutation, {
+      object: input,
+    });
+    return toDomainObject(result.insert_{{hasuraTable}}_one);
+  }
+{{/if}}
+{{#if isUpdate}}
+  /** {{operationId}}. @throws NotFoundException */
+  async {{method}}(id: {{idTsType}}, changes: {{bodyType}}): Promise<{{entity}}> {
+    type Result = { update_{{hasuraTable}}_by_pk: GraphQl{{entity}} | null };
+    const mutation = gql`
+      mutation {{operationId}}($id: {{idType}}!, $changes: {{hasuraTable}}_set_input!) {
+        update_{{hasuraTable}}_by_pk(pk_columns: { id: $id }, _set: $changes) {
+          # TODO: select the fields toDomainObject reads
+          id
+        }
+      }
+    `;
+
+    // TODO: map changes (camelCase) to the table's columns
+    const result = await this.graphQLClient.request<Result>(mutation, {
+      id,
+      changes,
+    });
+    if (result.update_{{hasuraTable}}_by_pk === null) {
+      throw new NotFoundException(`{{entity}} with id ${id} not found`);
+    }
+    return toDomainObject(result.update_{{hasuraTable}}_by_pk);
+  }
+{{/if}}
+{{#if isDelete}}
+  /** {{operationId}}. @throws NotFoundException */
+  async {{method}}(id: {{idTsType}}): Promise<void> {
+    type Result = { delete_{{hasuraTable}}_by_pk: { id: {{idTsType}} } | null };
+    const mutation = gql`
+      mutation {{operationId}}($id: {{idType}}!) {
+        delete_{{hasuraTable}}_by_pk(id: $id) {
+          id
+        }
+      }
+    `;
+
+    const result = await this.graphQLClient.request<Result>(mutation, { id });
+    if (result.delete_{{hasuraTable}}_by_pk === null) {
+      throw new NotFoundException(`{{entity}} with id ${id} not found`);
+    }
+  }
+{{/if}}
+{{#if isGet}}
+  /** {{operationId}}. */
+  async {{method}}(): Promise<number> {
+    // TODO: query and compute the result
+    type Result = { {{hasuraTable}}_aggregate: { aggregate: { count: number } } };
+    const query = gql`
+      query {{operationId}} {
+        {{hasuraTable}}_aggregate {
+          aggregate {
+            count
+          }
+        }
+      }
+    `;
+
+    const result = await this.graphQLClient.request<Result>(query);
+    return result.{{hasuraTable}}_aggregate.aggregate.count;
+  }
+{{/if}}

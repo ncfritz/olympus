@@ -1,18 +1,9 @@
 import {
   EmptyResponse,
-  Note,
   UpdateNoteRequest,
   SingleNoteResponse,
 } from "@ncfritz/olympus-model";
-import {
-  Body,
-  Controller,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Put,
-  Res,
-} from "@nestjs/common";
+import { Body, Controller, HttpStatus, Param, Put, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -23,18 +14,12 @@ import {
   ApiResponse,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { GraphQlNote, toDomainObject } from "../converters/NoteConverter";
-import { NOTE_WITH_ASSOCIATIONS } from "../queries/notes";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlUpdateNoteResponse = {
-  update_minerva_notes_by_pk: GraphQlNote;
-};
+import { NoteService } from "../services/NoteService";
 
 @Controller({ version: "1" })
 export class UpdateNoteController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly notes: NoteService) {}
 
   @Put("/note/:noteId")
   @ApiOperation({
@@ -74,33 +59,9 @@ export class UpdateNoteController {
       response.status(HttpStatus.NOT_MODIFIED).end();
       return;
     }
-
-    const updateRequest = gql`
-      mutation UpdateNote($id: uuid!, $changes: minerva_notes_set_input = {}) {
-        update_minerva_notes_by_pk(pk_columns: { id: $id }, _set: $changes) {
-          ${NOTE_WITH_ASSOCIATIONS}
-        }
-      }
-    `;
-
-    const updateResponse =
-      await this.graphQLClient.request<GraphQlUpdateNoteResponse>(
-        updateRequest,
-        { id: noteId, changes: request.note },
-      );
-
-    if (updateResponse.update_minerva_notes_by_pk === null) {
-      throw new NotFoundException();
-    }
-
-    const updatedNote: Note = toDomainObject(
-      updateResponse.update_minerva_notes_by_pk,
-    );
-
     const responseBody: SingleNoteResponse = {
-      note: updatedNote,
+      note: await this.notes.update(noteId, request.note),
     };
-
     response.status(HttpStatus.OK).send(responseBody);
   }
 }
