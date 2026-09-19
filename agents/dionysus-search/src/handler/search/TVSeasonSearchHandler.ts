@@ -64,7 +64,7 @@ export class TVSeasonSearchHandler extends BaseSearchHandler {
     result.totalRecords = tvSeason.episodes.length;
 
     logger.info(
-      `Found TV Season - ID: ${tvSeason.id} / season ${tvSeason.seasonNumber} for series ID: ${tvSeason.series.id}`,
+      `Found TV Season - ID: ${tvSeason.id} / season ${tvSeason.seasonNumber} for series ID: ${seasonSearchConfiguration.seriesId}`,
     );
 
     for (const episode of tvSeason.episodes) {
@@ -77,7 +77,7 @@ export class TVSeasonSearchHandler extends BaseSearchHandler {
 
       if (!episodeSearchConfiguration) {
         logger.info(
-          `No search configuration for episode ${episode.episodeNumber}/season ${episode.seasonNumber} - series ID: ${tvSeason.series.id} found, creating...`,
+          `No search configuration for episode ${episode.episodeNumber}/season ${episode.seasonNumber} - series ID: ${seasonSearchConfiguration.seriesId} found, creating...`,
         );
 
         await mediaApi.createMediaAssetSearchConfiguration({
@@ -87,7 +87,7 @@ export class TVSeasonSearchHandler extends BaseSearchHandler {
           jitter: 300,
           enabled: true,
           status: "ok",
-          seriesId: tvSeason.series.id,
+          seriesId: seasonSearchConfiguration.seriesId,
           seasonNumber: tvSeason.seasonNumber,
           episodeNumber: episode.episodeNumber,
         });
@@ -161,24 +161,31 @@ export class TVSeasonSearchHandler extends BaseSearchHandler {
     let backoff = 24;
     let jitter = 300;
 
+    // The series can be missing (no referential integrity yet); keep the
+    // defaults then.
+    const series = season.series;
+    if (!series) {
+      return [backoff, jitter];
+    }
+
     if (
-      season.series.status === "Cancelled" ||
-      season.series.status === "Ended" ||
-      season.series.status === "Planned"
+      series.status === "Cancelled" ||
+      series.status === "Ended" ||
+      series.status === "Planned"
     ) {
       backoff = 7 * 24;
       jitter = 60 * 24 * 2;
     } else if (
-      season.series.status === "In Production" ||
-      season.series.status === "Returning Series"
+      series.status === "In Production" ||
+      series.status === "Returning Series"
     ) {
-      if (season.seasonNumber !== season.series.numberOfSeasons) {
+      if (season.seasonNumber !== series.numberOfSeasons) {
         backoff = 7 * 24;
         jitter = 60 * 24 * 2;
       }
 
-      if (season.series.lastAirDate) {
-        const lastAirDate = moment(season.series.lastAirDate);
+      if (series.lastAirDate) {
+        const lastAirDate = moment(series.lastAirDate);
         const lastAirAge = Math.abs(moment.utc().diff(lastAirDate, "days"));
 
         if (lastAirAge > 30) {

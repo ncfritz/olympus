@@ -132,7 +132,10 @@ export abstract class BaseSearchHandler {
     }
   }
 
-  protected findAttribute(name: string, attrs: any[]): string | undefined {
+  protected findAttribute(
+    name: string,
+    attrs: { "@attributes": { name: string; value: string } }[],
+  ): string | undefined {
     for (const item of attrs) {
       if (item["@attributes"].name === name) {
         return item["@attributes"].value;

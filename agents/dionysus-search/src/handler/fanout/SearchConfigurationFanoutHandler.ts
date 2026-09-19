@@ -63,7 +63,7 @@ export class SearchConfigurationFanoutHandler {
         );
 
         for (const configuration of configurationsToTrigger) {
-          const msg: any = {
+          const msg: Record<string, unknown> = {
             mediaId: configuration.mediaId,
             propagateImmediately: true,
             initiatingAsset: {

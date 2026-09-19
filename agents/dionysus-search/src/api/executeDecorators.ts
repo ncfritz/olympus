@@ -2,21 +2,21 @@ import moment from "moment";
 import { ReporterService } from "nestjs-metrics-reporter";
 import { logger } from "../util/logger";
 
-export interface ExecuteWithMetricsOptions {}
+export type ExecuteWithMetricsOptions = Record<string, never>;
 
 export function ExecuteWithMetrics(
   operation: string,
-  options?: ExecuteWithMetricsOptions,
+  _options?: ExecuteWithMetricsOptions,
 ) {
   return function (
-    target: any,
+    _target: object,
     propertyKey: string,
     descriptor: PropertyDescriptor,
   ) {
     const originalFunction = descriptor.value;
 
-    descriptor.value = async function (...args: any[]) {
-      let response: any;
+    descriptor.value = async function (...args: unknown[]) {
+      let response: { status?: number } | undefined;
 
       const start = moment.now();
       let error = 0;
@@ -29,7 +29,8 @@ export function ExecuteWithMetrics(
       let status5xx = 0;
 
       try {
-        return await originalFunction.apply(this, args);
+        response = await originalFunction.apply(this, args);
+        return response;
       } catch (e) {
         exception = 1;
 
@@ -45,7 +46,7 @@ export function ExecuteWithMetrics(
       } finally {
         const end = moment.now();
 
-        if (response && response && response.status) {
+        if (response?.status) {
           const status = response.status;
 
           if (status >= 100 && status <= 199) {

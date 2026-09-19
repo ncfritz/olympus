@@ -1,26 +1,38 @@
 # dionysus-search-agents
 
-[![Release](https://github.com/ncfritz/dionysus-search-agents/actions/workflows/release.yml/badge.svg)](https://github.com/ncfritz/dionysus-search-agents/actions/workflows/release.yml)
+`@ncfritz/dionysus-search-agents`, imported from the dionysus-search-agents
+repository with its history.
 
-Asynchronous agents for performing media asset search tasks.  These agents primarily handle executing NzbGeek
-search tasks for movie and TV episodes on a scheduled and ad0hoc basis.  These also include the fanout workers
+Asynchronous agents for performing media asset search tasks. These agents primarily handle executing NzbGeek
+search tasks for movie and TV episodes on a scheduled and ad0hoc basis. These also include the fanout workers
 that handle cascading search configurations from a TV series or TV season to the individual episodes and seasons.
 The agents are triggered regularly to identify search configurations whose TTLs have expired and enqueue them
 for processing.
 
 # Development
-* `npm run dev` - Starts the development server (watched for changes).  Environment variables are populated from
-  `dev.env`
-* `npm run dev:local` - Starts the development server (watched for changes).  Environment variables are populated from
-  `local.env`
-* `npm run start` - Starts the development server.  Environment variables are populated from
-  `dev.env`
-* `npm run start:local` - Starts the development server.  Environment variables are populated from
-  `local.env`
+
+Run from the repository root (`pnpm install` once):
+
+- `pnpm --filter @ncfritz/dionysus-search-agents dev`: watch mode,
+  environment from `dev.env` (`dev:local` reads `local.env`).
+- `pnpm --filter @ncfritz/dionysus-search-agents build`, then `start` /
+  `start:local` / `start:prod`.
+
+Copy `dev.env.example` to `dev.env` (git-ignored) and fill in the values.
+
+Requires Node 23 or later (the workspace baseline is 26): the source
+detector's regular expressions use inline modifiers (`(?-i:WEB)`).
+
+`scripts/` holds the NZBGet extension scripts (Python) that publish
+download events to RabbitMQ.
+
+> The Dockerfile still expects the pre-monorepo layout (npm, GitHub
+> Packages token). It is rebuilt with the Docker work in ADR 0011.
 
 ## Monitoring
+
 These agents expose a Prometheus metrics endpoint at `/metrics/` providing basic NodeJS memory, loop timing, and GC
-statistics.  As sample Prometheus scrape configuration is as follows:
+statistics. As sample Prometheus scrape configuration is as follows:
 
 ```yaml
 scrape_configs:
@@ -34,20 +46,24 @@ scrape_configs:
 ```
 
 ## Docker Image
-The Docker image will expose port 3100 for metrics scraping.  Environment variables should be specified in
+
+The Docker image will expose port 3100 for metrics scraping. Environment variables should be specified in
 `production.env`.
 
 ### Environment Variables
+
 Environment variables are used to configure the NestJS modules that connect to various external data sources:
 
 ##### General
-| Variable               | Usage                                                    | Default Value |
-|------------------------|----------------------------------------------------------|---------------|
-| LISTEN_PORT            | The port to listen on, this is where metrics are exposed | `3100`        |
+
+| Variable    | Usage                                                    | Default Value |
+| ----------- | -------------------------------------------------------- | ------------- |
+| LISTEN_PORT | The port to listen on, this is where metrics are exposed | `3100`        |
 
 ##### Loki / Logging
+
 | Variable               | Usage                                         | Default Value                 |
-|------------------------|-----------------------------------------------|-------------------------------|
+| ---------------------- | --------------------------------------------- | ----------------------------- |
 | LOKI_URL               | The URL of the Loki server to push logs to    |                               |
 | LOKI_LOGGING_LEVEL     | The minimum log level to push to Loki         | `info`                        |
 | ENABLE_CONSOLE_LOGGING | Whether to log to the console                 | `true` (dev) / `false` (prod) |
@@ -57,8 +73,9 @@ Environment variables are used to configure the NestJS modules that connect to v
 | FILE_LOGGING_PATH      | The path to write logs to                     | `./logs`                      |
 
 ##### AMQP - RabbitMQ
+
 | Variable      | Usage                                        | Default Value   |
-|---------------|----------------------------------------------|-----------------|
+| ------------- | -------------------------------------------- | --------------- |
 | AMQP_PROTOCOL | How to connect to the AMQP broker            | `amqp`          |
 | AMQP_HOST     | The host, or container name running RabbitMQ | `localhost`     |
 | AMQP_PORT     | The port to connect on                       | `5672`          |
@@ -66,17 +83,14 @@ Environment variables are used to configure the NestJS modules that connect to v
 | AMQP_PASSWORD | The password to use                          | `admin`         |
 | AMQP_VHOST    | The virtual host to use                      | `/dionysus-dev` |
 
-##### Dionysus
-| Variable         | Usage                                | Default Value |
-|------------------|--------------------------------------|---------------|
-| EVENTS_DIRECTORY | The path to write NzbGet messages to |               |
-
 ##### Olympus
-| Variable   | Usage                                              | Default Value            |
-|------------|----------------------------------------------------|--------------------------|
-| API_HOST   | The Olympus API host                               | `http://localhost:3001`  |      
+
+| Variable     | Usage                                   | Default Value              |
+| ------------ | --------------------------------------- | -------------------------- |
+| API_BASE_URL | Base URL for SDK calls, including `/v1` | `http://localhost:3001/v1` |
 
 ##### NzbGeek
+
 | Variable        | Usage                                             | Default Value |
-|-----------------|---------------------------------------------------|---------------|
+| --------------- | ------------------------------------------------- | ------------- |
 | NZBGEEK_API_KEY | The API key to use when authenticating to NzbGeek |               |

@@ -9,7 +9,6 @@ import { WinstonModule } from "nest-winston";
 import { PrometheusMetricsInterceptor } from "./middleware/PrometheusMetricsInterceptor";
 import { AppModule } from "./module/AppModule";
 import { logger } from "./util/logger";
-import "dotenv/config";
 import { onExit } from "signal-exit";
 
 const timestamp = moment.utc();

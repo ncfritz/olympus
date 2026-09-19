@@ -23,3 +23,7 @@ graph.json
 # Local certs / keys
 *.pem
 !**/ca_roots.pem
+
+# Python
+__pycache__/
+*.pyc

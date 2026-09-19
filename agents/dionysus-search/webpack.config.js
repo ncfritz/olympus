@@ -50,9 +50,7 @@ module.exports = {
     extensions: [".ts", ".js", ".json"],
   },
   module: {
-    rules: [
-      { test: /\.ts$/, loader: "ts-loader" },
-    ],
+    rules: [{ test: /\.ts$/, loader: "ts-loader" }],
   },
   optimization: {
     splitChunks: false,

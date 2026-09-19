@@ -1,31 +1,8 @@
 {
+  "extends": "@ncfritz/olympus-config/tsconfig/nest.json",
   "compilerOptions": {
-    "allowJs": true,
-    "emitDecoratorMetadata": true,
-    "esModuleInterop": true,
-    "experimentalDecorators": true,
-    "forceConsistentCasingInFileNames": true,
-    "importHelpers": true,
-    "incremental": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "lib": ["es6", "dom", "ES2018"],
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "noEmit": false,
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "skipLibCheck": true,
-    "sourceMap": true,
-    "strict": false,
-    "strictNullChecks": true,
-    "target": "esnext",
-    "resolveJsonModule": true
-  },
-  "exclude": ["node_modules", "build", "scripts", "webpack", "jest"],
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
+    // Bundled by webpack (nest build); these match the pre-import settings.
+    "lib": ["ES2023", "DOM"],
+    "allowJs": true
+  }
 }
