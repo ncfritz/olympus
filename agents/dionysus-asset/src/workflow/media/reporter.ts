@@ -6,6 +6,7 @@ import {
 } from "@ncfritz/olympus-sdk/dionysus";
 import moment from "moment";
 import mediaApi from "../../api/mediaApi";
+import notificationsApi from "../../api/notificationsApi";
 
 export const createStep = async (
   workflowId: string,
@@ -57,4 +58,31 @@ export const updateStepStatus = async (
     update,
     updateWorkflow,
   );
+
+  if ((status === "success" && updateWorkflow) || status === "failed") {
+    const workflow = await mediaApi.describeMediaAssetWorkflow(workflowId);
+
+    await notificationsApi.sendNotification({
+      type: "dionysus_transcode_complete",
+      // The notification agent looks the workflow (and its decoration) up.
+      context: {
+        workflowId: workflowId,
+        workflowStatus: workflow.status,
+      },
+      webSocketDestination: {
+        closable: true,
+        level: status === "success" ? "success" : "error",
+        durable: true,
+        ttl: "P7D",
+      },
+      synoMailDestination: {
+        from: "dionysus@internal.ncfritz.net",
+        to: [
+          {
+            value: "ncfritz@internal.ncfritz.net",
+          },
+        ],
+      },
+    });
+  }
 };
