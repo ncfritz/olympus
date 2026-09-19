@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MovieSearchHandler } from "../../../../src/search/handlers/MovieSearchHandler";
 import { as, executionUpdate, fakes, release } from "../../../fixtures/fakes";
 import type { Fakes } from "../../../fixtures/fakes";
@@ -78,6 +78,35 @@ describe("MovieSearchHandler", () => {
         totalRecords: 0,
       }),
     ]);
+  });
+
+  describe("timing", () => {
+    afterEach(() => vi.useRealTimers());
+
+    it("records when the search finished", async () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+      f.nzbGeek.searchMovie.mockImplementation(async () => {
+        vi.setSystemTime(new Date("2026-01-01T00:00:42Z"));
+        return { status: 200, data: { channel: {} } };
+      });
+
+      await handler.handle({
+        mediaId: 7,
+        initiatingAsset: { assetType: "movie", mediaId: 7 },
+      });
+
+      expect(executionUpdate(f)[3]).toMatchObject({
+        finishedTime: "2026-01-01T00:00:42.000Z",
+      });
+      // The search configuration's last execution is when it started.
+      expect(
+        f.mediaApi.updateMediaAssetSearchConfiguration,
+      ).toHaveBeenCalledWith("movie", 7, {
+        status: "ok",
+        lastExecutionTime: "2026-01-01T00:00:00.000Z",
+      });
+    });
   });
 
   it("skips movies without an IMDb ID", async () => {

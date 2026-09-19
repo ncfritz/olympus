@@ -80,7 +80,7 @@ export abstract class SearchHandler {
             duplicateRecords: result.duplicateResults,
             skippedRecords: result.skippedRecords,
             totalRecords: result.totalRecords,
-            finishedTime: now.toISOString(),
+            finishedTime: moment.utc().toISOString(),
           },
         );
 
