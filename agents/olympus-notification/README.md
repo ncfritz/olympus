@@ -26,9 +26,34 @@ Copy `dev.env.example` to `dev.env` (git-ignored) and fill in the values.
 > The Dockerfile still expects the pre-monorepo layout (npm, GitHub
 > Packages token). It is rebuilt with the Docker work in ADR 0011.
 
-## Adding a New Notification Handler
+## Layout
 
-TODO
+```
+src/
+  main.ts, AppModule.ts
+  config/configuration.ts     typed, validated configuration (see below)
+  messaging.ts                exchange, queues and routing keys
+  infra/                      RabbitModule, metrics content type
+  api/                        OlympusApiModule: SDK client setup, WorkflowApi, MediaApi
+  delivery/                   DeliveryHandler (expiry, formatter lookup, send),
+                              NotificationFormatter, message and context types
+  channels/<channel>/         <Channel>Module, handlers/, formatters/, services/
+templates/                    Handlebars email templates, partials and images
+```
+
+Channels: `websocket` (browsers, through the API's Socket.IO gateway),
+`email` (Synology mail and Gmail), `synochat` (Synology Chat webhooks).
+
+## Adding a notification type to a channel
+
+1. Write a formatter in `channels/<channel>/formatters/` implementing
+   `NotificationFormatter` (email: extend `HandlebarsEmailFormatter` and
+   add `templates/email/<type>/{subject,html,css,plaintext}.handlebars`).
+2. Register it by notification type in the channel's `<Channel>Formatters`.
+3. Add a test under `test/unit/channels/<channel>/`.
+
+`pnpm --filter @ncfritz/olympus-notification-agent test` runs the unit and
+convention tests.
 
 ## Monitoring
 
