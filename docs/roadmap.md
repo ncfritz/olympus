@@ -162,11 +162,10 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     time; season searches send `episode` instead of `episodeNumber` in
     `initiatingAsset`; an episode search with no results is marked
     failed (a movie's is skipped); every release parsed after a
-    REPACK/PROPER marked a repack (shared `DEFAULT_REVISION`).
+    REPACK/PROPER marked a repack (shared `DEFAULT_REVISION`); 2160p
+    remuxes parsed as Remux-1080p.
   - Release scoring (`releases/`, `it.fails` cases in
     `test/unit/releases`):
-    - 2160p remuxes are parsed as Remux-1080p (so they also get the
-      "x265 (HD)" −10000).
     - The tag evaluator matches a custom format when any one release
       title or group condition matches. TRaSH formats need one match per
       condition type (and all required ones), so every DV release gets

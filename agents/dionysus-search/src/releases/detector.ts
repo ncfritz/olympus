@@ -108,12 +108,13 @@ const parseTitleInternal = (title: string): QualityModel => {
         getReGroup(codexMatches, "divx")
       ) {
         result.quality = Qualities.Bluray480p;
-      } else if (remuxMatch && resolution !== Resolution.r720p) {
-        result.quality = Qualities.Remux1080p;
       } else if (resolution === Resolution.r2160p) {
         result.quality = remuxMatch
           ? Qualities.Remux2160p
           : Qualities.Bluray2160p;
+      } else if (remuxMatch && resolution !== Resolution.r720p) {
+        // A remux of unknown resolution is taken as 1080p.
+        result.quality = Qualities.Remux1080p;
       } else if (resolution === Resolution.r1080p) {
         result.quality = remuxMatch
           ? Qualities.Remux1080p

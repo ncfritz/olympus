@@ -88,15 +88,27 @@ describe("scoreRelease", () => {
     ).toBe(false);
   });
 
-  // Known bugs
-
-  it.fails("detects 2160p remuxes", () => {
-    expect(
-      scoreRelease(
-        "Oppenheimer.2023.2160p.UHD.BluRay.REMUX.HDR.HEVC.TrueHD.Atmos.7.1-FraMeSToR",
-      ).titleInfo.quality.name,
-    ).toBe("Remux-2160p");
+  it.each([
+    [
+      "Oppenheimer.2023.2160p.UHD.BluRay.REMUX.HDR.HEVC.TrueHD.Atmos.7.1-FraMeSToR",
+      "Remux-2160p",
+    ],
+    ["The.Matrix.1999.1080p.BluRay.REMUX.AVC.DTS-HD.MA.5.1-FGT", "Remux-1080p"],
+    ["The.Matrix.1999.BluRay.REMUX.AVC-FGT", "Remux-1080p"],
+    ["The.Matrix.1999.2160p.UHD.BluRay.x265-TERMiNAL", "Bluray-2160p"],
+  ])("detects the remux quality of %s", (title, name) => {
+    expect(scoreRelease(title).titleInfo.quality.name).toBe(name);
   });
+
+  it("doesn't treat a UHD remux as HD x265", () => {
+    expect(
+      tagsOf(
+        "Oppenheimer.2023.2160p.UHD.BluRay.REMUX.HDR.HEVC.TrueHD.Atmos.7.1-FraMeSToR",
+      ),
+    ).not.toContain("unwanted:x265 (HD):-10000");
+  });
+
+  // Known bugs
 
   it.fails("tags resolution-only formats", () => {
     expect(tagsOf("The.Matrix.1999.1080p.BluRay.x264-SPARKS")).toContain(
