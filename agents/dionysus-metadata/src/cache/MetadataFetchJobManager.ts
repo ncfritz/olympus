@@ -63,7 +63,7 @@ export class MetadataFetchJobManager {
     jitter: number,
     status: MetadataFetchJobStatus,
     publishNotification: boolean,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
   ): Promise<MetadataFetchJob> {
     const metadataFetchJob = await metadataApi.createMetadataFetchJob(
       entityId,

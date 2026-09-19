@@ -11,7 +11,7 @@ import { tap } from "rxjs/operators";
 export class PrometheusMetricsInterceptor implements NestInterceptor {
   constructor() {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const httpContext = context.switchToHttp();
     const request = httpContext.getRequest();
     const response = httpContext.getResponse();

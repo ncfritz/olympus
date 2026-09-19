@@ -63,7 +63,7 @@ export class GenresBatchHandler extends BaseBatchHandler {
     try {
       await metadataApi.createGenre(line);
       return "fetched";
-    } catch (e) {
+    } catch {
       return "failed";
     }
   }

@@ -49,4 +49,5 @@ overrides:
 # pnpm 10 blocks dependency install scripts unless listed here.
 onlyBuiltDependencies:
   - "@swc/core"
+  - better-sqlite3
   - esbuild

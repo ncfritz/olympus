@@ -84,22 +84,22 @@ export class RedriveBatchHandler extends BaseBatchHandler {
   }
 
   protected async preCreateMetadataFetchJob(
-    id: string,
-    type: string,
-    line: any,
+    _id: string,
+    _type: string,
+    _line: any,
   ): Promise<MetadataFetchJobStatus> {
     return this.targetStatus;
   }
 
   protected async preUpdateMetadataFetchJob(
-    id: string,
-    type: string,
-    line: any,
+    _id: string,
+    _type: string,
+    _line: any,
   ): Promise<MetadataFetchJobStatus> {
     return this.targetStatus;
   }
 
-  protected async init(initTime: moment.Moment): Promise<void> {
+  protected async init(_initTime: moment.Moment): Promise<void> {
     logger.debug("Initializing redrive... will fetch first page of records");
 
     const listResponse = await this.fetchJobs();

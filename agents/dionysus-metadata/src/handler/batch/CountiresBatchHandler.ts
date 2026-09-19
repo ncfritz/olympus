@@ -54,7 +54,7 @@ export class CountriesBatchHandler extends BaseBatchHandler {
     try {
       await metadataApi.createCountry(line);
       return "fetched";
-    } catch (e) {
+    } catch {
       return "failed";
     }
   }

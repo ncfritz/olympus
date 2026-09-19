@@ -47,7 +47,7 @@ const DEFAULT_RETRY_OPTIONS: RetryOptions = {
     maxInterval: 2000,
     multiplier: 2,
   },
-  doRetry: (error: any) => {
+  doRetry: (error: { status_code?: number }) => {
     return RETRYABLE_ERRORS.includes(error?.status_code || 0);
   },
 };

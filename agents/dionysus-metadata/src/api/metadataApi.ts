@@ -68,7 +68,7 @@ class MetadataApi {
     jitter: number,
     status: MetadataFetchJobStatus,
     publishNotification: boolean,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
   ): Promise<MetadataFetchJob> {
     const response = await createMetadataFetchJob({
       body: {

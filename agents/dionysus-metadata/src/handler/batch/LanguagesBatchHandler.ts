@@ -55,7 +55,7 @@ export class LanguagesBatchHandler extends BaseBatchHandler {
     try {
       await metadataApi.createLanguage(line);
       return "fetched";
-    } catch (e) {
+    } catch {
       return "failed";
     }
   }

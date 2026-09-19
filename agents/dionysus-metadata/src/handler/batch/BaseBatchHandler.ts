@@ -37,7 +37,7 @@ export abstract class BaseBatchHandler {
 
   protected async doFetch(
     message: BatchJobMessage,
-    amqpMessage: Message,
+    _amqpMessage: Message,
   ): Promise<SubscribeResponse> {
     let job = await batchJobApi.getBatchJob(message.jobId);
     addExecution({ id: job.id, type: "batch" });
@@ -382,10 +382,10 @@ export abstract class BaseBatchHandler {
   }
 
   protected async preUpdateMetadataFetchJob(
-    id: string,
-    type: string,
+    _id: string,
+    _type: string,
     currentStatus: MetadataFetchJobStatus,
-    line: any,
+    _line: any,
   ): Promise<MetadataFetchJobStatus> {
     switch (currentStatus) {
       case "invalidated":
@@ -396,27 +396,27 @@ export abstract class BaseBatchHandler {
   }
 
   protected async postUpdateMetadataFetchJob(
-    id: string,
-    type: string,
-    line: any,
-    job: MetadataFetchJob,
+    _id: string,
+    _type: string,
+    _line: any,
+    _job: MetadataFetchJob,
   ): Promise<void> {
     // Do nothing - override me
   }
 
   protected async preCreateMetadataFetchJob(
-    id: string,
-    type: string,
-    line: any,
+    _id: string,
+    _type: string,
+    _line: any,
   ): Promise<MetadataFetchJobStatus> {
     return "queued";
   }
 
   protected async postCreateMetadataFetchJob(
-    id: string,
-    type: string,
-    line: any,
-    job: MetadataFetchJob,
+    _id: string,
+    _type: string,
+    _line: any,
+    _job: MetadataFetchJob,
   ): Promise<void> {
     // Do nothing - override me
   }

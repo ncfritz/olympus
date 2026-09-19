@@ -10,7 +10,7 @@ import { PrometheusMetricsInterceptor } from "./middleware/PrometheusMetricsInte
 import { AppModule } from "./module/AppModule";
 import { getExecutions } from "./util/executionHolder";
 import { logger } from "./util/logger";
-import "dotenv/config";
+
 import { onExit } from "signal-exit";
 import { sendWorkflowNotification } from "./util/notification";
 

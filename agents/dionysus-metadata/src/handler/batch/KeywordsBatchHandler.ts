@@ -71,7 +71,7 @@ export class KeywordsBatchHandler extends BaseExportBatchHandler {
         value: line.name,
       });
       return "fetched";
-    } catch (e) {
+    } catch {
       return "failed";
     }
   }

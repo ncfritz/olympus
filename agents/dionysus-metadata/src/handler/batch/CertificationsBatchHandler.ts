@@ -74,7 +74,7 @@ export class CertificationsBatchHandler extends BaseBatchHandler {
     try {
       await metadataApi.createCertification(line);
       return "fetched";
-    } catch (e) {
+    } catch {
       return "failed";
     }
   }
