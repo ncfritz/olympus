@@ -1,0 +1,71 @@
+{
+  "main": "main.py",
+  "name": "dionysus-queue",
+  "homepage": "https://github.com/ncfritz/dionysus-search-agents",
+  "kind": "QUEUE",
+  "displayName": "Dionysus QUEUE publisher",
+  "version": "1.0",
+  "command": "cd .. && python3 -m dionysus-queue.main",
+  "category": "Queue",
+  "nzbgetMinVersion": "24",
+  "author": "Neil Fritz",
+  "license": "Apache 2.0",
+  "about": "Publishes all queue events to a RabbbitMQ exchange.",
+  "queueEvents": "NZB_DOWNLOADED, NZB_ADDED, NZB_PAUSED, NZB_RESUMED, NZB_DELETED, NZB_COMPLETED, NZB_FAILED",
+  "taskTime": "",
+  "requirements": [
+    "This script requires Python 3.10 or later and the pika (https://github.com/pika/pika) library."
+  ],
+  "description": [
+    "This script proxies all QUEUE events to a RabbitMQ exchange."
+  ],
+  "options": [
+    {
+      "name": "RABBITMQ_HOST",
+      "displayName": "AMQP Server",
+      "value": "",
+      "description": ["The AMQP host to publish messages to"],
+      "select": []
+    },
+    {
+      "name": "RABBITMQ_PORT",
+      "displayName": "AMQP Server Port",
+      "value": 5672,
+      "description": ["The AMQP server port to connect to"],
+      "select": [1, 65535]
+    },
+    {
+      "name": "RABBITMQ_VHOST",
+      "displayName": "AMQP Virtual Host",
+      "value": "/dionysus",
+      "description": ["The virtual host to publish messages to"],
+      "select": []
+    },
+    {
+      "name": "RABBITMQ_USERNAME",
+      "displayName": "AMQP Username",
+      "value": "",
+      "description": [
+        "The username to sue when connecting to to the AMQP host"
+      ],
+      "select": []
+    },
+    {
+      "name": "RABBITMQ_PASSWORD",
+      "displayName": "AMQP Password",
+      "value": "",
+      "description": [
+        "The password to sue when connecting to to the AMQP host"
+      ],
+      "select": []
+    }
+  ],
+  "commands": [
+    {
+      "name": "ConnectionTest",
+      "action": "Test AMQP connection",
+      "displayName": "Connection Test",
+      "description": ["Check the connection to the AMQP server"]
+    }
+  ]
+}
