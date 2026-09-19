@@ -2,7 +2,7 @@ import {
   DescribeContentAssetChannelCategoryResponse,
   FullContentAssetChannelCategory,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Req, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiConsumes,
   ApiOkResponse,
@@ -10,10 +10,11 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Request, type Response } from "express";
+import { ContentAuth, Curtain } from "../../auth/contentAuthDecorators";
+import { ContentCurtain } from "../../auth/ContentCurtain";
+import { type Response } from "express";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { ContentAssetChannelCategoryService } from "../services/ContentAssetChannelCategoryService";
-import { contentAuthToken } from "../../auth/contentAuth";
 
 @Controller({ version: "1" })
 export class DescribeContentAssetChannelCategoryController {
@@ -40,16 +41,14 @@ export class DescribeContentAssetChannelCategoryController {
     type: DescribeContentAssetChannelCategoryResponse,
   })
   @ApiStandardErrorResponses()
+  @ContentAuth()
   async handle(
     @Param("categoryId") categoryId: string,
-    @Req() request: Request,
+    @Curtain() curtain: ContentCurtain,
     @Res() response: Response,
   ): Promise<void> {
     const category: FullContentAssetChannelCategory =
-      await this.contentAssetChannelCategories.describe(
-        categoryId,
-        contentAuthToken(request),
-      );
+      await this.contentAssetChannelCategories.describe(categoryId, curtain);
 
     const responseBody: DescribeContentAssetChannelCategoryResponse = {
       category: category,

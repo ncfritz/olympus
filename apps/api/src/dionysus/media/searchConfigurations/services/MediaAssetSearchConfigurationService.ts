@@ -13,6 +13,7 @@ import {
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
@@ -36,7 +37,6 @@ import {
   buildPaginationExpression,
   PaginationParams,
 } from "../../../../utils/filterUtil";
-import { logger } from "../../../../utils/logger";
 
 type GraphQlGetMediaAssetSearchConfigurationResponse = {
   dionysus_media_asset_search_configuration_by_pk: GraphQlDecoratedMediaAssetSearchConfiguration;
@@ -114,6 +114,10 @@ export type MediaAssetSearchConfigurationList = {
 /** Media asset search configurations in Hasura, and search triggering. */
 @Injectable()
 export class MediaAssetSearchConfigurationService {
+  private readonly logger = new Logger(
+    MediaAssetSearchConfigurationService.name,
+  );
+
   constructor(
     private readonly graphQLClient: GraphQLClient,
     private readonly amqpConnection: AmqpConnection,
@@ -630,7 +634,7 @@ export class MediaAssetSearchConfigurationService {
   private async enableChildSearchConfigurations(
     configuration: MediaAssetSearchConfiguration,
   ) {
-    logger.debug(
+    this.logger.debug(
       `Updating child search configuration statuses to ${configuration.enabled}`,
     );
 
@@ -677,7 +681,7 @@ export class MediaAssetSearchConfigurationService {
         { enabled: configuration.enabled },
       );
 
-    logger.info(
+    this.logger.log(
       `Updated ${updateChildrenResponse.update_dionysus_media_asset_search_configuration.affected_rows} child search configurations`,
     );
   }
@@ -736,7 +740,7 @@ export class MediaAssetSearchConfigurationService {
         { status: MediaAssetSearchConfigurationStatus.UPDATING },
       );
 
-    logger.info(
+    this.logger.log(
       `Updated ${updateChildrenResponse.update_dionysus_media_asset_search_configuration.affected_rows} child search configurations`,
     );
   }

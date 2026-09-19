@@ -3,15 +3,7 @@ import {
   ListContentAssetChannelsForCategoryResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  Param,
-  Query,
-  Req,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
 import {
   ApiExtraModels,
   ApiOkResponse,
@@ -19,7 +11,9 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Request, type Response } from "express";
+import { ContentAuth, Curtain } from "../../auth/contentAuthDecorators";
+import { ContentCurtain } from "../../auth/ContentCurtain";
+import { type Response } from "express";
 import {
   ApiFilterParams,
   ApiPaginationParams,
@@ -27,7 +21,6 @@ import {
 } from "../../../../utils/controllerDecorators";
 import { parseFilterDefinition } from "../../../../utils/filterUtil";
 import { ContentAssetChannelService } from "../services/ContentAssetChannelService";
-import { contentAuthToken } from "../../auth/contentAuth";
 
 @Controller({ version: "1" })
 @ApiExtraModels(FilterDefinition)
@@ -57,6 +50,7 @@ export class ListContentAssetChannelsForCategoryController {
     type: () => ListContentAssetChannelsForCategoryResponse,
   })
   @ApiStandardErrorResponses()
+  @ContentAuth()
   async handle(
     @Param("categoryId") categoryId: string,
     @Query("pageSize") pageSize = 100,
@@ -64,7 +58,7 @@ export class ListContentAssetChannelsForCategoryController {
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
     @Query("sortBy") sortField = "createdTime",
     @Query("filters") filters = undefined,
-    @Req() request: Request,
+    @Curtain() curtain: ContentCurtain,
     @Res() response: Response,
   ): Promise<void> {
     const responseBody: ListContentAssetChannelsForCategoryResponse =
@@ -77,7 +71,7 @@ export class ListContentAssetChannelsForCategoryController {
           sortDirection: sortDirection,
           sortField: sortField,
         },
-        contentAuthToken(request),
+        curtain,
       );
 
     response.status(HttpStatus.OK).send(responseBody);

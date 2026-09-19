@@ -1,15 +1,16 @@
 import { ContentStatisticsResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Req, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import {
   ApiHeader,
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Request, type Response } from "express";
+import { ContentAuth, Curtain } from "../../auth/contentAuthDecorators";
+import { ContentCurtain } from "../../auth/ContentCurtain";
+import { type Response } from "express";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { ContentAssetService } from "../services/ContentAssetService";
-import { contentAuthToken } from "../../auth/contentAuth";
 
 @Controller({ version: "1" })
 export class GetContentAssetAggregateStatisticsController {
@@ -35,16 +36,13 @@ export class GetContentAssetAggregateStatisticsController {
     type: () => ContentStatisticsResponse,
   })
   @ApiStandardErrorResponses()
+  @ContentAuth()
   async handle(
-    @Req() request: Request,
+    @Curtain() curtain: ContentCurtain,
     @Res() response: Response,
   ): Promise<void> {
     response
       .status(HttpStatus.OK)
-      .send(
-        await this.contentAssets.getAggregateStatistics(
-          contentAuthToken(request),
-        ),
-      );
+      .send(await this.contentAssets.getAggregateStatistics(curtain));
   }
 }

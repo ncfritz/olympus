@@ -6,7 +6,6 @@ import {
   HttpStatus,
   Param,
   Query,
-  Req,
   Res,
 } from "@nestjs/common";
 import {
@@ -17,10 +16,11 @@ import {
   ApiProduces,
   ApiQuery,
 } from "@nestjs/swagger";
-import { type Request, type Response } from "express";
+import { ContentAuth, Curtain } from "../../auth/contentAuthDecorators";
+import { ContentCurtain } from "../../auth/ContentCurtain";
+import { type Response } from "express";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { ContentAssetService } from "../services/ContentAssetService";
-import { contentAuthToken } from "../../auth/contentAuth";
 
 @Controller({ version: "1" })
 export class ListSimilarContentAssetsController {
@@ -64,11 +64,12 @@ export class ListSimilarContentAssetsController {
     type: () => ListSimilarContentAssetsResponse,
   })
   @ApiStandardErrorResponses()
+  @ContentAuth()
   async handle(
     @Param("assetId") assetId: string,
     @Query("tagType") tagTypes: string,
     @Query("tagName") tagNames: string,
-    @Req() request: Request,
+    @Curtain() curtain: ContentCurtain,
     @Res() response: Response,
   ): Promise<void> {
     if (!tagNames || !tagTypes) {
@@ -91,7 +92,7 @@ export class ListSimilarContentAssetsController {
         assetId,
         splitTagTypes,
         splitTagNames,
-        contentAuthToken(request),
+        curtain,
       ),
     };
 

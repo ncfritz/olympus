@@ -17,7 +17,32 @@ const specsUnder = (dir: string): string[] =>
       : [];
   });
 
+/** Files that may read process.env: config loading and bootstrap only. */
+const ENV_READERS = new Set([
+  "config/configuration.ts", // the typed namespaces
+  "main.ts", // validates the configuration before Nest starts
+  "AppModule.ts", // envFilePath from NODE_ENV
+  "openapiEnv.ts", // placeholders for OpenAPI generation
+  "schema/documentBuilder.ts", // npm_package_version for info.version
+]);
+
+const sourcesUnder = (dir: string): string[] =>
+  fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) return sourcesUnder(full);
+    return entry.name.endsWith(".ts") ? [path.relative(SRC, full)] : [];
+  });
+
 describe("API source layout", () => {
+  it("reads process.env only through src/config", () => {
+    const readers = sourcesUnder(SRC).filter(
+      (file) =>
+        !ENV_READERS.has(file.split(path.sep).join("/")) &&
+        /\bprocess\.env\b/.test(fs.readFileSync(path.join(SRC, file), "utf8")),
+    );
+    expect(readers).toEqual([]);
+  });
+
   it("keeps tests out of src", () => {
     expect(specsUnder(SRC)).toEqual([]);
   });

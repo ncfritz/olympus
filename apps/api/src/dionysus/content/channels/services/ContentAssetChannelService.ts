@@ -7,6 +7,7 @@ import {
   ListContentAssetChannelsResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
+import { ContentCurtain } from "../../auth/ContentCurtain";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
@@ -16,7 +17,6 @@ import {
   PaginationParams,
 } from "../../../../utils/filterUtil";
 import { BC_CHANNEL_FILTER } from "../../auth/contentAuth";
-import { ContentAuthService } from "../../auth/services/ContentAuthService";
 import {
   GraphQlContentAssetChannel,
   GraphQlFullContentAssetChannel,
@@ -112,15 +112,12 @@ type GraphQlDeleteContentAssetChannelResponse = {
 
 /**
  * Content asset channels in Hasura: saved asset filters with a cache of
- * their newest assets. Methods taking an `authToken` (the content auth
- * cookie) apply the channel curtain when it is missing or invalid.
+ * their newest assets. Methods taking a ContentCurtain apply the channel
+ * curtain unless the request carries valid content auth.
  */
 @Injectable()
 export class ContentAssetChannelService {
-  constructor(
-    private readonly graphQLClient: GraphQLClient,
-    private readonly contentAuth: ContentAuthService,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   /**
    * 404s for a missing channel, and for a channel that is not bcCompliant
@@ -128,7 +125,7 @@ export class ContentAssetChannelService {
    */
   async describe(
     channelId: string,
-    authToken: string | undefined,
+    curtain: ContentCurtain,
   ): Promise<FullContentAssetChannel> {
     const queryRequest = gql`
       query DescribeContentAssetChannel($channelId: uuid!) {
@@ -181,7 +178,7 @@ export class ContentAssetChannelService {
 
     if (
       !queryResponse.dionysus_content_asset_channel_by_pk.bcCompliant &&
-      !(await this.contentAuth.authenticate(authToken, true))
+      !curtain.authenticated
     ) {
       throw new NotFoundException();
     }
@@ -195,10 +192,10 @@ export class ContentAssetChannelService {
   async list(
     filter: FilterDefinition | undefined,
     pagination: PaginationParams,
-    authToken: string | undefined,
+    curtain: ContentCurtain,
   ): Promise<ListContentAssetChannelsResponse> {
     const whereExpression = buildFilterExpression(
-      await this.contentAuth.applyCurtain(authToken, filter, BC_CHANNEL_FILTER),
+      curtain.restrict(filter, BC_CHANNEL_FILTER),
     );
     const paginationExpression = buildPaginationExpression(pagination);
     const fetchRequest = gql`
@@ -268,10 +265,10 @@ export class ContentAssetChannelService {
     categoryId: string,
     filter: FilterDefinition | undefined,
     pagination: PaginationParams,
-    authToken: string | undefined,
+    curtain: ContentCurtain,
   ): Promise<ListContentAssetChannelsForCategoryResponse> {
     const whereExpression = buildFilterExpression(
-      await this.contentAuth.applyCurtain(authToken, filter, BC_CHANNEL_FILTER),
+      curtain.restrict(filter, BC_CHANNEL_FILTER),
     );
     const paginationExpression = buildPaginationExpression(pagination);
     const fetchRequest = gql`

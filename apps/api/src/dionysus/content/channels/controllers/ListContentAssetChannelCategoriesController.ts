@@ -3,21 +3,22 @@ import {
   ListContentAssetChannelCategoriesResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Query, Req, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
   ApiExtraModels,
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Request, type Response } from "express";
+import { ContentAuth, Curtain } from "../../auth/contentAuthDecorators";
+import { ContentCurtain } from "../../auth/ContentCurtain";
+import { type Response } from "express";
 import {
   ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
 import { ContentAssetChannelCategoryService } from "../services/ContentAssetChannelCategoryService";
-import { contentAuthToken } from "../../auth/contentAuth";
 
 @Controller({ version: "1" })
 @ApiExtraModels(FilterDefinition)
@@ -45,13 +46,14 @@ export class ListContentAssetChannelCategoriesController {
     type: () => ListContentAssetChannelCategoriesResponse,
   })
   @ApiStandardErrorResponses()
+  @ContentAuth()
   async handle(
     @Query("pageSize") pageSize = 100,
     @Query("startPage") startPage = 0,
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
     @Query("sortBy") sortField = "createdTime",
     @Query("filters") filters = undefined,
-    @Req() request: Request,
+    @Curtain() curtain: ContentCurtain,
     @Res() response: Response,
   ): Promise<void> {
     const responseBody: ListContentAssetChannelCategoriesResponse =
@@ -63,7 +65,7 @@ export class ListContentAssetChannelCategoriesController {
           sortDirection: sortDirection,
           sortField: sortField,
         },
-        contentAuthToken(request),
+        curtain,
       );
 
     response.status(HttpStatus.OK).send(responseBody);

@@ -1,5 +1,5 @@
 import { GetContentAssetResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Req, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiHeader,
   ApiOkResponse,
@@ -7,10 +7,11 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response, type Request } from "express";
+import { ContentAuth, Curtain } from "../../auth/contentAuthDecorators";
+import { ContentCurtain } from "../../auth/ContentCurtain";
+import { type Response } from "express";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { ContentAssetService } from "../services/ContentAssetService";
-import { contentAuthToken } from "../../auth/contentAuth";
 
 @Controller({ version: "1" })
 export class GetContentAssetController {
@@ -40,16 +41,14 @@ export class GetContentAssetController {
     type: () => GetContentAssetResponse,
   })
   @ApiStandardErrorResponses()
+  @ContentAuth()
   async handle(
     @Param("assetId") assetId: string,
-    @Req() request: Request,
+    @Curtain() curtain: ContentCurtain,
     @Res() response: Response,
   ): Promise<void> {
     const responseBody: GetContentAssetResponse = {
-      asset: await this.contentAssets.describe(
-        assetId,
-        contentAuthToken(request),
-      ),
+      asset: await this.contentAssets.describe(assetId, curtain),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

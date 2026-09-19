@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   HttpStatus,
   Injectable,
+  Logger,
   NestInterceptor,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
@@ -10,10 +11,11 @@ import moment from "moment";
 import { Observable } from "rxjs";
 import { tap } from "rxjs/operators";
 import { ReporterService } from "nestjs-metrics-reporter";
-import { logger } from "../utils/logger";
 
 @Injectable()
 export class PrometheusMetricsInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(PrometheusMetricsInterceptor.name);
+
   constructor(private reflector: Reflector) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
@@ -54,7 +56,7 @@ export class PrometheusMetricsInterceptor implements NestInterceptor {
                 operation = "GetPrometheusMetrics";
                 response.set("content-type", "text/plain");
               } else {
-                logger.debug(
+                this.logger.debug(
                   `Skipping metrics, request with no Swagger OperationId encountered - ${request.path}`,
                 );
                 return;

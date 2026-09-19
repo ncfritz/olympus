@@ -1,13 +1,20 @@
 import { PingResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { Controller, Get, HttpStatus, Inject, Res } from "@nestjs/common";
+import { amqpConfig, hasuraConfig } from "../../../config/configuration";
+import type {
+  AmqpConfigType,
+  HasuraConfigType,
+} from "../../../config/configuration";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 @Controller({ version: "1" })
 export class PingController {
-  constructor(private configService: ConfigService) {}
+  constructor(
+    @Inject(hasuraConfig.KEY) private readonly hasura: HasuraConfigType,
+    @Inject(amqpConfig.KEY) private readonly amqp: AmqpConfigType,
+  ) {}
 
   @Get("/ping")
   @ApiOperation({
@@ -26,8 +33,8 @@ export class PingController {
   async handle(@Res() response: Response): Promise<void> {
     const responseBody: PingResponse = {
       config: {
-        "hasura.host": this.configService.get<string>("HASURA_HOST")!,
-        "amqp.host": this.configService.get<string>("AMQP_HOST")!,
+        "hasura.host": this.hasura.host,
+        "amqp.host": this.amqp.host,
       },
     };
 

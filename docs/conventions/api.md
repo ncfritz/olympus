@@ -18,11 +18,12 @@ names instead of Nest's `operation.controller.ts` style
 ```
 src/
   main.ts                    bootstrap: versioning, CORS, interceptors, OpenAPI explorer
-  configureApp.ts            app-wide middleware and pipes (shared with the tests)
-  AppModule.ts               infrastructure + the three domain modules, RouterModule prefixes
-  infra/                     GraphQLClientModule (Hasura), RabbitModule (AMQP), metrics interceptor
+  configureApp.ts            Express middleware, CORS, versioning (shared with the tests)
+  AppModule.ts               config, infrastructure, the three domains, APP_* providers
+  config/                    configuration.ts: typed, validated config namespaces
+  infra/                     GraphQLClientModule (Hasura), RabbitModule (AMQP), logging, metrics
   schema/                    OpenAPI document definitions (schemas.ts, documentBuilder.ts)
-  utils/                     controllerDecorators, filterUtil, location, logger, routes, ...
+  utils/                     controllerDecorators, filterUtil, location, routes, ...
   <domain>/
     <Domain>Module.ts        <DOMAIN>_MODULES: the feature modules served under /<domain>
     types/ ...               shared by several features of the domain
@@ -134,6 +135,21 @@ Rules:
   **[checked]** (`thin-controller`)
 - Constructor parameters are `private readonly`; a service is named after
   its entities (`private readonly notes: NoteService`).
+- Cross-cutting behaviour is Nest machinery, not controller code: guards
+  (`@ContentAuth()`), parameter decorators (`@Curtain()`), interceptors
+  and pipes. App-wide ones are `APP_INTERCEPTOR` / `APP_GUARD` /
+  `APP_PIPE` providers in `AppModule`, so tests get them too;
+  `configureApp` only holds Express-level setup.
+
+### Content auth (Dionysus)
+
+- `@ContentAuth()` on a route runs `ContentAuthGuard`, which checks the
+  `x-dionysus-content-auth` cookie. `@ContentAuth({ required: true })`
+  answers 401 without valid auth.
+- Otherwise the handler takes `@Curtain() curtain: ContentCurtain` and
+  passes it to the service, which restricts its filters with
+  `curtain.restrict(filter)` (the black curtain) or checks
+  `curtain.authenticated`. Services never read cookies or tokens.
 
 ### Services
 
@@ -170,7 +186,9 @@ Apply decorators in this order, omitting the ones that don't apply:
 7. `@ApiBody({ type, required, description })`
 8. Success response: `@ApiOkResponse`, `@ApiCreatedResponse` or
    `@ApiNoContentResponse`, with `description` and `type`
-9. `@ApiStandardErrorResponses()`: always, last. **[checked]**
+9. `@ApiStandardErrorResponses()`: always, last among the OpenAPI
+   decorators. **[checked]**
+10. Behaviour decorators: `@ContentAuth()`, `@UseInterceptors(...)`.
 
 ### Status codes
 
@@ -269,6 +287,21 @@ response.status(HttpStatus.CREATED).send(responseBody);
 - Nested objects get their own `build<Thing>` helper in the same file.
 - Converters are pure functions: no I/O and no Nest injection. They are
   the first thing to unit-test.
+
+## Configuration and logging
+
+- Configuration comes from environment variables through the typed
+  namespaces in `src/config/configuration.ts` (`serverConfig`,
+  `hasuraConfig`, `amqpConfig`, `loggingConfig`, `dionysusConfig`).
+  Inject one with `@Inject(hasuraConfig.KEY) hasura: HasuraConfigType`, or
+  list its `KEY` in a factory provider's `inject`. Never read
+  `process.env` elsewhere.
+- New variables are added to `readConfig()` with a default or as required,
+  to `dev.env.example` and to the README table. Invalid values stop the
+  API at boot with every problem listed.
+- Log through Nest: `private readonly logger = new Logger(MyService.name)`.
+  Winston (console, Loki, files) sits behind it (`infra/logging.ts`).
+  Never log secrets; `amqp.redactedUri` exists for that.
 
 ## Messaging
 

@@ -20,6 +20,7 @@ import {
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
@@ -46,7 +47,6 @@ import {
   buildPaginationExpression,
   PaginationParams,
 } from "../../../../utils/filterUtil";
-import { logger } from "../../../../utils/logger";
 
 type MediaWorkflowDetails = {
   id: string;
@@ -147,6 +147,8 @@ const STEP_TYPE_FILTER: FilterDefinition = {
 /** Media asset workflows and their steps in Hasura, and the jobs they start. */
 @Injectable()
 export class MediaAssetWorkflowService {
+  private readonly logger = new Logger(MediaAssetWorkflowService.name);
+
   constructor(
     private readonly graphQLClient: GraphQLClient,
     private readonly amqpConnection: AmqpConnection,
@@ -596,7 +598,7 @@ export class MediaAssetWorkflowService {
     step: PartialMediaAssetWorkflowStep,
     updateWorkflowStatus: boolean,
   ): Promise<DecoratedMediaAssetWorkflowStep> {
-    logger.info(
+    this.logger.log(
       `Updating workflow step ${workflowStepId} to status ${step.status} - workflow update: ${updateWorkflowStatus}`,
     );
 
@@ -619,7 +621,7 @@ export class MediaAssetWorkflowService {
       workflowStatus = MediaAssetWorkflowStatus.RUNNING;
     }
 
-    logger.debug(
+    this.logger.debug(
       `UpdateWorkflowStatus: ${updateWorkflowStatus} - currentStatus: ${workflowStatus}`,
     );
 
@@ -631,7 +633,7 @@ export class MediaAssetWorkflowService {
     }
 
     if (step.progress !== undefined && step.progress < stepDetails.progress) {
-      logger.debug(
+      this.logger.debug(
         `Progress ${step.progress} for step ${workflowStepId} is behind the stored ${stepDetails.progress}; keeping the stored value`,
       );
 
@@ -721,7 +723,7 @@ export class MediaAssetWorkflowService {
       },
     );
 
-    logger.debug(
+    this.logger.debug(
       `Workflow step ${workflowStepId} updated to status ${newStatus}`,
     );
     await this.amqpConnection.publish(
@@ -907,7 +909,7 @@ export class MediaAssetWorkflowService {
     };
 
     if (workflowStatus) {
-      logger.info(
+      this.logger.log(
         `Updating workflow ${workflowId} to status ${workflowStatus}`,
       );
 

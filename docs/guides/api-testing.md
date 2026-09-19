@@ -19,7 +19,7 @@ pnpm --filter @ncfritz/olympus-api exec vitest test/api/olympus   # one folder, 
 ## Endpoint tests
 
 `createTestApp()` (`test/support/testApp.ts`) boots the real `AppModule`
-through `configureApp`, the same pipeline `main.ts` uses, so URI
+through `configureApp`, the same Express setup `main.ts` uses, so URI
 versioning, route prefixes, pipes and interceptors behave as in
 production. Two providers are replaced:
 

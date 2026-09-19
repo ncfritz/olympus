@@ -1,3 +1,5 @@
+import { dionysusConfig } from "../../../../config/configuration";
+import type { DionysusConfigType } from "../../../../config/configuration";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   BaseContentIngestionWorkflowStep,
@@ -11,7 +13,7 @@ import {
   PartialContentIngestionWorkflow,
   PartialContentIngestionWorkflowStep,
 } from "@ncfritz/olympus-model";
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import {
@@ -109,6 +111,8 @@ export class ContentIngestionWorkflowService {
   constructor(
     private readonly graphQLClient: GraphQLClient,
     private readonly amqpConnection: AmqpConnection,
+    @Inject(dionysusConfig.KEY)
+    private readonly dionysus: DionysusConfigType,
   ) {}
 
   /** Creates a workflow for `source` and publishes its rawIngest job. */
@@ -149,7 +153,7 @@ export class ContentIngestionWorkflowService {
         "jobType.rawIngest",
         {
           workflowId: workflow.id,
-          assetLocation: `${process.env.DIONYSUS_PUBLISH_PATH}/${file.filename}`,
+          assetLocation: `${this.dionysus.publishPath}/${file.filename}`,
           originalFilename: file.originalName,
           skipWorkflow: false,
         },

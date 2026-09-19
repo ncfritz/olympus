@@ -1,3 +1,4 @@
+import { Logger } from "@nestjs/common";
 import {
   ConnectedSocket,
   MessageBody,
@@ -9,7 +10,6 @@ import {
   WebSocketServer,
 } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
-import { logger } from "../../../utils/logger";
 
 @WebSocketGateway({
   cors: {
@@ -20,20 +20,22 @@ import { logger } from "../../../utils/logger";
 export class NotificationsGateway
   implements OnGatewayConnection, OnGatewayInit, OnGatewayDisconnect
 {
+  private readonly logger = new Logger(NotificationsGateway.name);
+
   @WebSocketServer()
   server: Server;
 
   handleConnection(client: Socket): void {
     client.emit("message", "Welcome to the server!");
-    logger.info(`Client connected...${client.id}`);
+    this.logger.log(`Client connected...${client.id}`);
   }
 
   afterInit(_server: Server): void {
-    logger.info("Init complete...");
+    this.logger.log("Init complete...");
   }
 
   handleDisconnect(client: Socket): void {
-    logger.info(`Client disconnect...${client.id}`);
+    this.logger.log(`Client disconnect...${client.id}`);
   }
 
   @SubscribeMessage("notification.proxy_to_frontend")
@@ -53,7 +55,7 @@ export class NotificationsGateway
   }
 
   send(messageName: string, message: unknown) {
-    logger.debug(`Sending "${messageName}" message via WebSocketGateway`);
+    this.logger.debug(`Sending "${messageName}" message via WebSocketGateway`);
 
     this.server.emit(messageName, message);
   }

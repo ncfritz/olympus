@@ -1,4 +1,3 @@
-import { FilterDefinition, FilterType } from "@ncfritz/olympus-model";
 import {
   Injectable,
   InternalServerErrorException,
@@ -8,7 +7,6 @@ import { gql, GraphQLClient } from "graphql-request";
 import * as jose from "jose";
 import { createSecretKey } from "node:crypto";
 import * as speakeasy from "speakeasy";
-import { BC_FILTER } from "../contentAuth";
 
 type GraphQlGetContentAuthResponse = {
   dionysus_content_auth_by_pk: {
@@ -96,23 +94,6 @@ export class ContentAuthService {
     }
 
     return false;
-  }
-
-  /**
-   * The black curtain: requests without content auth only see assets tagged
-   * bcCompliant. Returns `filter` restricted accordingly (or the curtain alone).
-   */
-  async applyCurtain(
-    token: string | undefined,
-    filter: FilterDefinition | undefined,
-    curtain: FilterDefinition = BC_FILTER,
-  ): Promise<FilterDefinition | undefined> {
-    if (await this.authenticate(token, true)) {
-      return filter;
-    }
-    return filter
-      ? { type: FilterType.AND, name: "_", value: [curtain, filter] }
-      : curtain;
   }
 
   /**

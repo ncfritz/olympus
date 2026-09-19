@@ -9,7 +9,7 @@ import {
   it,
   vi,
 } from "vitest";
-import { storedFilename } from "../../../src/dionysus/content/workflows/controllers/UploadAssetsController";
+import { storedFilename } from "../../../src/dionysus/content/workflows/uploadStorage";
 import {
   graphQlIngestStep,
   graphQlIngestWorkflow,

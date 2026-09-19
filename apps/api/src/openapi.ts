@@ -7,6 +7,8 @@
  * connection is stubbed so no broker is needed.
  */
 import "source-map-support/register";
+// First: AppModule validates the configuration when it is loaded.
+import "./openapiEnv";
 
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import { NestFactory } from "@nestjs/core";
@@ -30,7 +32,7 @@ const DOCUMENTS = [
 ];
 
 async function generate(outDir: string): Promise<void> {
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const app = await NestFactory.create(AppModule, { logger: ["error"] });
   await app.init();
 
   fs.mkdirSync(outDir, { recursive: true });

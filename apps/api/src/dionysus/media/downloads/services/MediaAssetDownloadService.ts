@@ -11,7 +11,7 @@ import {
   UpdateMediaAssetDownloadByNzbIdRequest,
 } from "@ncfritz/olympus-model";
 import { MediaAssetSearchResultService } from "../../searchResults/services/MediaAssetSearchResultService";
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import {
   buildFilterExpression,
@@ -19,7 +19,6 @@ import {
   PaginationParams,
   parseFilterDefinition,
 } from "../../../../utils/filterUtil";
-import { logger } from "../../../../utils/logger";
 import {
   toDecoratedDomainObject,
   toDomainObject,
@@ -82,6 +81,8 @@ export type MediaAssetDownloadPage = {
 /** Dionysus media asset downloads in Hasura, and their start messages. */
 @Injectable()
 export class MediaAssetDownloadService {
+  private readonly logger = new Logger(MediaAssetDownloadService.name);
+
   constructor(
     private readonly searchResults: MediaAssetSearchResultService,
     private readonly graphQLClient: GraphQLClient,
@@ -242,7 +243,7 @@ export class MediaAssetDownloadService {
       request.download.progress <
         locateDownloadResponse.dionysus_media_asset_download[0].progress
     ) {
-      logger.debug(
+      this.logger.debug(
         `Download progress for NZB ID ${nzbId} is ${request.download.progress}, but download progress is ${locateDownloadResponse.dionysus_media_asset_download[0].progress}. Request progress will be ignored`,
       );
 

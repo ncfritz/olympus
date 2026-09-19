@@ -1,6 +1,6 @@
 # 0014. Feature-folder layout and service layer for the API
 
-- **Status:** Accepted (folders and services done; cross-cutting pieces next)
+- **Status:** Accepted (done; `ValidationPipe` decided separately)
 - **Date:** 2026-09-19
 
 ## Context
@@ -54,7 +54,11 @@ Work happens in three steps, each with all tests green:
 3. Cross-cutting: content authentication as a guard and the curtain as a
    parameter decorator; `APP_INTERCEPTOR` / `APP_PIPE` providers instead
    of `configureApp`; typed, validated configuration; Nest's `Logger`
-   backed by Winston. `ValidationPipe` is decided separately.
+   backed by Winston. `ValidationPipe` is decided separately. **Done:**
+   `@ContentAuth()` / `@Curtain()` with `ContentCurtain`, the metrics
+   interceptor as `APP_INTERCEPTOR`, `src/config/configuration.ts`
+   (validated at boot; the AMQP password is no longer logged), and
+   `new Logger(Class.name)` everywhere.
 
 ## Consequences
 

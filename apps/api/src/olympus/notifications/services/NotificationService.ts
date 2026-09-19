@@ -14,6 +14,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
@@ -23,7 +24,6 @@ import {
   buildPaginationExpression,
   PaginationParams,
 } from "../../../utils/filterUtil";
-import { logger } from "../../../utils/logger";
 import {
   GraphQlNotification,
   toDomainObject,
@@ -149,6 +149,8 @@ const NOTIFICATION_TRIGGER_EXCHANGE = "notifications.trigger";
 /** Olympus notifications: the notification store and delivery triggers. */
 @Injectable()
 export class NotificationService {
+  private readonly logger = new Logger(NotificationService.name);
+
   constructor(
     private readonly graphQLClient: GraphQLClient,
     private readonly amqpConnection: AmqpConnection,
@@ -732,7 +734,7 @@ export class NotificationService {
           ),
         );
       } else {
-        logger.info(
+        this.logger.log(
           `Notification type "${notificationId}" does not support the WebSocket channel or the user has disabled the WebSocket channel for this notification type.`,
         );
       }
@@ -748,7 +750,7 @@ export class NotificationService {
           ),
         );
       } else {
-        logger.info(
+        this.logger.log(
           `Notification type "${notificationId}" does not support the SynoChat channel or the user has disabled the SynoChat channel for this notification type.`,
         );
       }
@@ -765,7 +767,7 @@ export class NotificationService {
           ),
         );
       } else {
-        logger.info(
+        this.logger.log(
           `Notification type "${notificationId}" does not support the SynoMail channel or the user has disabled the SynoMail channel for this notification type.`,
         );
       }
@@ -782,7 +784,7 @@ export class NotificationService {
           ),
         );
       } else {
-        logger.info(
+        this.logger.log(
           `Notification type "${notificationId}" does not support the Email channel or the user has disabled the Email channel for this notification type.`,
         );
       }
@@ -810,9 +812,8 @@ export class NotificationService {
         unreadCount: await this.getUnreadCount(),
       });
     } catch (e) {
-      logger.warn(
-        `Unable to send WS notification for notificationId ${notification.notificationId} delete operation`,
-        e,
+      this.logger.warn(
+        `Unable to send WS notification for notificationId ${notification.notificationId} delete operation: ${String(e)}`,
       );
     }
   }
@@ -858,9 +859,9 @@ export class NotificationService {
     } catch (e) {
       deliveryStatus.status = DeliveryState.FAILURE;
 
-      logger.error(
+      this.logger.error(
         `Failed to enqueue notification ${notificationId} with AMQP exchange ${NOTIFICATION_TRIGGER_EXCHANGE}`,
-        e,
+        e instanceof Error ? e.stack : String(e),
       );
     } finally {
       responseBody.webSocketDestination = deliveryStatus;
@@ -902,9 +903,9 @@ export class NotificationService {
     } catch (e) {
       deliveryStatus.status = DeliveryState.FAILURE;
 
-      logger.error(
+      this.logger.error(
         `Failed to enqueue notification ${notificationId} with AMQP exchange ${NOTIFICATION_TRIGGER_EXCHANGE}`,
-        e,
+        e instanceof Error ? e.stack : String(e),
       );
     } finally {
       responseBody.synoChatDestination = deliveryStatus;
@@ -958,9 +959,9 @@ export class NotificationService {
     } catch (e) {
       deliveryStatus.status = DeliveryState.FAILURE;
 
-      logger.error(
+      this.logger.error(
         `Failed to enqueue notification ${notificationId} with AMQP exchange ${NOTIFICATION_TRIGGER_EXCHANGE}`,
-        e,
+        e instanceof Error ? e.stack : String(e),
       );
     } finally {
       if (mailType === "synomail") {

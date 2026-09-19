@@ -1,15 +1,15 @@
 import { GetContentAssetWithStatsResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Req, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import {
   ApiHeader,
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response, type Request } from "express";
+import { ContentAuth } from "../../auth/contentAuthDecorators";
+import { type Response } from "express";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { ContentAssetService } from "../services/ContentAssetService";
-import { contentAuthToken } from "../../auth/contentAuth";
 
 @Controller({ version: "1" })
 export class GetUntaggedContentAssetController {
@@ -34,12 +34,10 @@ export class GetUntaggedContentAssetController {
     type: () => GetContentAssetWithStatsResponse,
   })
   @ApiStandardErrorResponses()
-  async handle(
-    @Req() request: Request,
-    @Res() response: Response,
-  ): Promise<void> {
+  @ContentAuth({ required: true })
+  async handle(@Res() response: Response): Promise<void> {
     const responseBody: GetContentAssetWithStatsResponse =
-      await this.contentAssets.getUntagged(contentAuthToken(request));
+      await this.contentAssets.getUntagged();
 
     response.status(HttpStatus.OK).send(responseBody);
   }

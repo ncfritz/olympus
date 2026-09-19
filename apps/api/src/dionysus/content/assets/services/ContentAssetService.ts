@@ -9,6 +9,7 @@ import {
   GetContentAssetWithStatsResponse,
   ListContentAssetsResponse,
 } from "@ncfritz/olympus-model";
+import { ContentCurtain } from "../../auth/ContentCurtain";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import prettyBytes from "pretty-bytes";
@@ -18,7 +19,6 @@ import {
   buildPaginationExpression,
   PaginationParams,
 } from "../../../../utils/filterUtil";
-import { ContentAuthService } from "../../auth/services/ContentAuthService";
 import {
   GraphQLContentAsset,
   GraphQLContentAssetBucketStatistic,
@@ -143,21 +143,20 @@ const toStatistics = (
 };
 
 /**
- * Content assets in Hasura. Methods taking an `authToken` (the content auth
- * cookie) apply the black curtain when it is missing or invalid.
+ * Content assets in Hasura. Methods taking a ContentCurtain apply the black
+ * curtain unless the request carries valid content auth.
  */
 @Injectable()
 export class ContentAssetService {
   constructor(
     private readonly graphQLClient: GraphQLClient,
     private readonly amqpConnection: AmqpConnection,
-    private readonly contentAuth: ContentAuthService,
   ) {}
 
   /** @throws NotFoundException */
   async describe(
     assetId: string,
-    authToken: string | undefined,
+    curtain: ContentCurtain,
   ): Promise<ContentAsset> {
     const itemFilter: FilterDefinition = {
       type: FilterType.EQUALS,
@@ -165,9 +164,7 @@ export class ContentAssetService {
       value: assetId,
     };
 
-    const whereExpression = buildFilterExpression(
-      await this.contentAuth.applyCurtain(authToken, itemFilter),
-    );
+    const whereExpression = buildFilterExpression(curtain.restrict(itemFilter));
 
     const fetchRequest = gql`
       query GetContentAsset {
@@ -212,9 +209,9 @@ export class ContentAssetService {
   async list(
     filter: FilterDefinition | undefined,
     pagination: PaginationParams,
-    authToken: string | undefined,
+    curtain: ContentCurtain,
   ): Promise<ListContentAssetsResponse> {
-    const queryFilters = await this.contentAuth.applyCurtain(authToken, filter);
+    const queryFilters = curtain.restrict(filter);
 
     const whereExpression = buildFilterExpression(queryFilters);
     const paginationExpression = buildPaginationExpression(pagination);
@@ -271,11 +268,7 @@ export class ContentAssetService {
    * Tagging shows any asset, so it always requires content auth.
    * @throws UnauthorizedException, NotFoundException
    */
-  async getUntagged(
-    authToken: string | undefined,
-  ): Promise<GetContentAssetWithStatsResponse> {
-    await this.contentAuth.authenticate(authToken);
-
+  async getUntagged(): Promise<GetContentAssetWithStatsResponse> {
     const fetchRequest = gql`
       query GetUntaggedContentAsset {
         dionysus_content_assets(
@@ -370,7 +363,7 @@ export class ContentAssetService {
     assetId: string,
     tagTypes: string[],
     tagNames: string[],
-    authToken: string | undefined,
+    curtain: ContentCurtain,
   ): Promise<ContentAsset[]> {
     const tagFilters: string[] = [];
     const aggregateTagFilters: string[] = [];
@@ -386,7 +379,7 @@ export class ContentAssetService {
       );
     }
 
-    if (!(await this.contentAuth.authenticate(authToken, true))) {
+    if (!curtain.authenticated) {
       blackCurtainClause =
         '{ asset_tags: {tag: {_and: {type: {_eq: "system"}, name: {_ilike: "bcCompliant"}}}}}';
       blackCurtainAggregateClause =
@@ -594,11 +587,9 @@ export class ContentAssetService {
   }
 
   async getAggregateStatistics(
-    authToken: string | undefined,
+    curtain: ContentCurtain,
   ): Promise<ContentAssetAggregateStatistics> {
-    const whereExpression = buildFilterExpression(
-      await this.contentAuth.applyCurtain(authToken, undefined),
-    );
+    const whereExpression = buildFilterExpression(curtain.restrict(undefined));
 
     const fetchRequest = gql`
       query GetContentAssetAggregateStatistics {

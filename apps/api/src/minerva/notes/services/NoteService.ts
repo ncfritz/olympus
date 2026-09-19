@@ -7,11 +7,10 @@ import {
   NoteTypeCounts,
   PartialNote,
 } from "@ncfritz/olympus-model";
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { buildFilterExpression } from "../../../utils/filterUtil";
-import { logger } from "../../../utils/logger";
 import { GraphQlNote, toDomainObject } from "../converters/NoteConverter";
 import {
   NOTE_WITH_ASSOCIATIONS,
@@ -95,6 +94,8 @@ const notFound = (noteId: string) =>
 /** Minerva notes in Hasura: every note operation's data access. */
 @Injectable()
 export class NoteService {
+  private readonly logger = new Logger(NoteService.name);
+
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
   /** Creates a note, as a child of `parentId` when given. */
@@ -212,7 +213,7 @@ export class NoteService {
 
     if (!current.minerva_notes_by_pk) throw notFound(noteId);
 
-    logger.debug(
+    this.logger.debug(
       `Note ${noteId} deletedTime: ${current.minerva_notes_by_pk.deletedTime}`,
     );
 
@@ -258,7 +259,7 @@ export class NoteService {
         { id: noteId },
       );
 
-    logger.info(
+    this.logger.log(
       `Disassociated ${response.update_minerva_notes.affected_rows} child notes.`,
     );
 

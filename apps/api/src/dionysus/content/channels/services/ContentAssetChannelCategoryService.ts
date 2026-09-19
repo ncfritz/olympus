@@ -3,6 +3,7 @@ import {
   FullContentAssetChannelCategory,
   ListContentAssetChannelCategoriesResponse,
 } from "@ncfritz/olympus-model";
+import { ContentCurtain } from "../../auth/ContentCurtain";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import {
@@ -11,7 +12,6 @@ import {
   PaginationParams,
 } from "../../../../utils/filterUtil";
 import { BC_CHANNEL_FILTER } from "../../auth/contentAuth";
-import { ContentAuthService } from "../../auth/services/ContentAuthService";
 import { GraphQlFullContentAssetChannelCategory } from "../../types/content";
 import { toFullDomainObject } from "../converters/ContentAssetChannelCategoryConverter";
 
@@ -37,23 +37,20 @@ type GraphQlUpdateContentAssetChannelCategoryResponse = {
 };
 
 /**
- * Content asset channel categories in Hasura. Methods taking an `authToken`
- * (the content auth cookie) only include bcCompliant channels when it is
- * missing or invalid.
+ * Content asset channel categories in Hasura. Methods taking a
+ * ContentCurtain only include bcCompliant channels unless the request
+ * carries valid content auth.
  */
 @Injectable()
 export class ContentAssetChannelCategoryService {
-  constructor(
-    private readonly graphQLClient: GraphQLClient,
-    private readonly contentAuth: ContentAuthService,
-  ) {}
+  constructor(private readonly graphQLClient: GraphQLClient) {}
 
   /** A category with its first 10 channels. @throws NotFoundException */
   async describe(
     categoryId: string,
-    authToken: string | undefined,
+    curtain: ContentCurtain,
   ): Promise<FullContentAssetChannelCategory> {
-    const channelWhere = (await this.contentAuth.authenticate(authToken, true))
+    const channelWhere = curtain.authenticated
       ? ""
       : (buildFilterExpression(BC_CHANNEL_FILTER) ?? "");
     const queryRequest = gql`
@@ -115,9 +112,9 @@ export class ContentAssetChannelCategoryService {
   async list(
     filters: string | undefined,
     pagination: PaginationParams,
-    authToken: string | undefined,
+    curtain: ContentCurtain,
   ): Promise<ListContentAssetChannelCategoriesResponse> {
-    const channelWhere = (await this.contentAuth.authenticate(authToken, true))
+    const channelWhere = curtain.authenticated
       ? ""
       : (buildFilterExpression(BC_CHANNEL_FILTER) ?? "");
 
