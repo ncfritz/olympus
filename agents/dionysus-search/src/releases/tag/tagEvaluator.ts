@@ -1,65 +1,62 @@
 import { Logger } from "@nestjs/common";
 import { QualityModel } from "../types";
-import { TagDefinition, TagResult, TagSource } from "./types";
+import { TagDefinition, TagResult, TagSource, TagSpecification } from "./types";
 
 const logger = new Logger("TagEvaluator");
 
+/** Whether the release meets one condition, before `negate`. */
+const test = (input: QualityModel, spec: TagSpecification): boolean => {
+  const value = spec.fields.value;
+
+  switch (spec.implementation) {
+    case TagSource.QualityModifierSpecification:
+      return input.quality.modifier === Number(value);
+    case TagSource.ReleaseGroupSpecification:
+      return new RegExp(String(value), "i").test(input.quality.group);
+    case TagSource.ReleaseTitleSpecification:
+      return new RegExp(String(value), "i").test(input.title);
+    case TagSource.ResolutionSpecification:
+      return input.quality.resolution === Number(value);
+    case TagSource.SourceSpecification:
+      return input.quality.source === Number(value);
+    default:
+      return false;
+  }
+};
+
+/**
+ * Evaluates a custom format (tag) as Radarr does: its conditions are
+ * grouped by type; every group needs at least one condition met, and every
+ * required condition must be met. `negate` inverts a condition. Formats
+ * with conditions this evaluator can't check (languages) never match.
+ */
 export const evaluate = (
   input: QualityModel,
   definition: TagDefinition,
 ): TagResult | undefined => {
-  logger.debug(`Evaluating tag ${definition.name}`);
-  let anyMatch = false;
+  const groups = new Map<TagSource, { met: boolean; required: boolean }[]>();
 
-  for (let i = 0; i < definition.specifications.length; i++) {
-    const spec = definition.specifications[i];
-
-    let result = false;
-
+  for (const spec of definition.specifications) {
     if (spec.implementation === TagSource.LanguageSpecification) {
       // Not implemented
       return;
-    } else if (spec.implementation === TagSource.QualityModifierSpecification) {
-      result =
-        input.quality.modifier === (spec.fields.value as unknown as number);
-    } else if (spec.implementation === TagSource.ReleaseGroupSpecification) {
-      const re = new RegExp(spec.fields.value as unknown as string, "i");
-      result = re.test(input.quality.group);
-    } else if (spec.implementation === TagSource.ReleaseTitleSpecification) {
-      const re = new RegExp(spec.fields.value as unknown as string, "i");
-      result = re.test(input.title);
-    } else if (spec.implementation === TagSource.ResolutionSpecification) {
-      result =
-        input.quality.resolution === (spec.fields.value as unknown as number);
-    } else if (spec.implementation === TagSource.SourceSpecification) {
-      result =
-        input.quality.source === (spec.fields.value as unknown as number);
     }
 
-    logger.debug(
-      `  Evaluation: [required=${spec.required}][negate=${spec.negate}][result=${result}] - ${spec.name}`,
-    );
-
-    if (
-      spec.required &&
-      ((spec.negate && result) || (!spec.negate && !result))
-    ) {
-      logger.debug("  Bailing on evaluation, required condition not met!");
-      return;
-    }
-
-    if (
-      (spec.implementation === TagSource.ReleaseTitleSpecification ||
-        spec.implementation === TagSource.ReleaseGroupSpecification) &&
-      !spec.negate &&
-      result
-    ) {
-      anyMatch = true;
-    }
+    const met = test(input, spec) !== spec.negate;
+    const group = groups.get(spec.implementation) ?? [];
+    group.push({ met, required: spec.required });
+    groups.set(spec.implementation, group);
   }
 
-  if (!anyMatch) {
-    logger.debug(`Final evaluation: ${anyMatch}`);
+  const matches = [...groups.values()].every(
+    (group) =>
+      group.some((condition) => condition.met) &&
+      group.every((condition) => condition.met || !condition.required),
+  );
+
+  logger.debug(`Tag ${definition.name}: ${matches ? "matches" : "no match"}`);
+
+  if (!matches || groups.size === 0) {
     return;
   }
 

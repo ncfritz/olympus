@@ -110,13 +110,13 @@ describe("scoreRelease", () => {
 
   // Known bugs
 
-  it.fails("tags resolution-only formats", () => {
+  it("tags resolution-only formats", () => {
     expect(tagsOf("The.Matrix.1999.1080p.BluRay.x264-SPARKS")).toContain(
       "resolution:1080p:50",
     );
   });
 
-  it.fails("requires every condition of a format, not any one", () => {
+  it("requires every condition of a format, not any one", () => {
     // Generated Dynamic HDR is a listed group AND HDR10+/DV; FLUX isn't one.
     expect(
       tagsOf("Dune.Part.Two.2024.2160p.WEB-DL.DDP5.1.Atmos.DV.HDR.H.265-FLUX"),

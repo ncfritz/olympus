@@ -163,14 +163,11 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     `initiatingAsset`; an episode search with no results is marked
     failed (a movie's is skipped); every release parsed after a
     REPACK/PROPER marked a repack (shared `DEFAULT_REVISION`); 2160p
-    remuxes parsed as Remux-1080p.
+    remuxes parsed as Remux-1080p; custom formats matching on any one
+    title or group condition (every DV release was "Generated Dynamic
+    HDR", −10000; resolution/source-only formats never matched).
   - Release scoring (`releases/`, `it.fails` cases in
     `test/unit/releases`):
-    - The tag evaluator matches a custom format when any one release
-      title or group condition matches. TRaSH formats need one match per
-      condition type (and all required ones), so every DV release gets
-      "Generated Dynamic HDR" (−10000), and formats with only
-      resolution/source conditions never match.
     - Release groups aren't parsed; group conditions test the quality
       group ("WEBDL", "Bluray"), so the tier formats never match.
   - TV series searches update the series' search configuration once per
