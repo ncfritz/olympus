@@ -42,6 +42,38 @@ Copy `dev.env.example` to `dev.env` (git-ignored) and fill in the values.
 FFmpeg and HandBrakeCLI must be installed (`FFMPEG_PATH`, `FFPROBE_PATH`,
 `HANDBRAKE_PATH`); `sharp` is a native module built at install.
 
+## Layout
+
+```
+src/
+  main.ts, AppModule.ts       handlers switched off by DISABLE_<HANDLER>
+  config/configuration.ts     typed, validated configuration (see below)
+  messaging.ts                queues, subscriptions and channel prefetch;
+                              routes and payloads from @ncfritz/olympus-messages
+  infra/                      RabbitModule, ProxyHttpModule (SOCKS),
+                              metrics content type
+  api/                        OlympusApiModule: ContentApi, MediaApi,
+                              MetadataApi, NotificationApi
+  tools/                      ToolsModule: Handbrake (HandBrakeCLI), FFmpeg
+                              paths; HandBrake scan and job file types
+  content/                    ContentModule: handlers/ (raw ingestion, HLS,
+                              thumbnails, deletion), services/
+                              (AssetWorkflow, ContentReporter),
+                              extractors/ (one per site, local files)
+  media/                      MediaModule: handlers/ (metadata, transcode
+                              configuration and verification, transcode,
+                              cleanup, deletion), services/ (MediaWorkflow,
+                              MediaReporter), planning/ (pure: track
+                              selection, HandBrake job, samples, library
+                              paths)
+  downloads/                  DownloadsModule: start and NZBGet update
+                              handlers, DownloadStatusPoller, NZBGeek and
+                              NZBGet clients, nzb/ (NZB parser)
+```
+
+`pnpm --filter @ncfritz/dionysus-asset-agents test` runs the unit and
+convention tests.
+
 > The Dockerfile still expects the pre-monorepo layout (npm, GitHub
 > Packages token). It is rebuilt with the Docker work in ADR 0011.
 

@@ -1,54 +1,44 @@
 import "source-map-support/register";
 
-import { ValidationPipe } from "@nestjs/common";
+import { createWinstonLogger } from "@ncfritz/olympus-nest";
+import { Logger } from "@nestjs/common";
 import { NestFactory, PartialGraphHost } from "@nestjs/core";
-import cookieParser from "cookie-parser";
-import Ffmpeg from "fluent-ffmpeg";
-import fs from "fs";
-import moment from "moment";
-import { AppModule } from "./module/AppModule";
-import { logger } from "./util/logger";
-import { onExit } from "signal-exit";
+import * as fs from "fs";
+import { WinstonModule } from "nest-winston";
+import { AppModule } from "./AppModule";
+import { readConfig } from "./config/configuration";
 
-Ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH!);
-Ffmpeg.setFfprobePath(process.env.FFPROBE_PATH!);
+const logger = new Logger("Bootstrap");
 
-const timestamp = moment.utc();
+async function bootstrap(): Promise<void> {
+  // Fails fast, listing every invalid variable, before anything connects.
+  const config = readConfig(process.env);
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe());
-  app.use(cookieParser());
-  app.enableCors({
-    origin: [
-      "http://localhost:3000",
-      "https://olympus.dev.ncfritz.net",
-      "https://olympus.internal.ncfritz.net",
-    ],
-    credentials: true,
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  const app = await NestFactory.create(AppModule, {
+    snapshot: true,
+    abortOnError: false,
+    logger: WinstonModule.createLogger({
+      instance: createWinstonLogger(config.logging, config.runtime.appName),
+    }),
   });
 
-  await app.listen(3102);
+  // The HTTP listener only serves /metrics.
+  await app.listen(config.runtime.port);
 }
 
 bootstrap()
   .then(() => {
-    logger.info("Installing signal handler...");
-    onExit((code, signal) => {
-      logger.error(
-        `Exit handler triggered on signal ${signal} with code ${code}`,
-      );
-    });
-
-    logger.info("🔥🔥🔥 Olympus Asser Agent bootstrap complete.");
+    logger.log("🔥🔥🔥 Olympus Asset Agent bootstrap complete.");
   })
-  .catch((e) => {
-    logger.error("🤯🤯🤯 Error during bootstrap!", e);
-
-    fs.writeFileSync(
-      `/logs/${timestamp.unix()}-graph.json`,
-      PartialGraphHost.toString() ?? "",
+  .catch((e: unknown) => {
+    logger.error(
+      "🤯🤯🤯 Error during bootstrap!",
+      e instanceof Error ? e.stack : String(e),
     );
+
+    if (process.env.NODE_ENV !== "production") {
+      fs.writeFileSync("graph.json", PartialGraphHost.toString() ?? "");
+    }
+
     process.exit(1);
   });
