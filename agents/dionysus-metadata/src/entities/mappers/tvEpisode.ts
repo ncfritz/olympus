@@ -96,7 +96,7 @@ export const toTvEpisode = (
       // @ts-expect-error external api
       official: value["official"] as boolean,
       // @ts-expect-error external api
-      publishedDate: moment(value["published_at"]),
+      publishedDate: moment.utc(value["published_at"]),
     });
   });
 
@@ -105,7 +105,7 @@ export const toTvEpisode = (
     // @ts-expect-error this is a known key in this instance
     seasonId: parseInt(metadataFetchJob.context["seasonId"]),
     airDate: episodeResponse.air_date
-      ? moment(episodeResponse.air_date).toISOString()
+      ? moment.utc(episodeResponse.air_date).toISOString()
       : undefined,
     name: episodeResponse.name,
     overview: episodeResponse.overview,

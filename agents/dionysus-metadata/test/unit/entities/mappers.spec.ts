@@ -1,5 +1,5 @@
 import type { MetadataFetchJob } from "@ncfritz/olympus-sdk/dionysus";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { toCollection } from "../../../src/entities/mappers/collection";
 import { toMovie } from "../../../src/entities/mappers/movie";
 import { toPerson } from "../../../src/entities/mappers/person";
@@ -42,6 +42,25 @@ describe("toMovie", () => {
       expect.objectContaining({ type: "backdrop", languageCode: "en" }),
     );
     expect(movie.releaseDate).toBe("1999-03-31T00:00:00.000Z");
+  });
+});
+
+describe("dates", () => {
+  const hostTimeZone = process.env.TZ;
+  afterEach(() => {
+    if (hostTimeZone === undefined) delete process.env.TZ;
+    else process.env.TZ = hostTimeZone;
+  });
+
+  it("reads TMDB's dates as UTC days, whatever the host's time zone", () => {
+    process.env.TZ = "America/Los_Angeles";
+    const movie = toMovie(tmdb.movieDetails(), tmdb.recommendations());
+    const series = toTvSeries(tmdb.tvSeriesDetails(), tmdb.recommendations());
+    const person = toPerson(tmdb.personDetails());
+
+    expect(movie.releaseDate).toBe("1999-03-31T00:00:00.000Z");
+    expect(series.firstAirDate).toBe("2005-03-24T00:00:00.000Z");
+    expect(person.birthday).toBe("1964-09-02T00:00:00.000Z");
   });
 });
 

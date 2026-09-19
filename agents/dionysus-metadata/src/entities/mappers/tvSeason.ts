@@ -92,14 +92,14 @@ export const toTvSeason = (
       // @ts-expect-error external api
       official: value["official"] as boolean,
       // @ts-expect-error external api
-      publishedDate: moment(value["published_at"]),
+      publishedDate: moment.utc(value["published_at"]),
     });
   });
 
   const season: PartialSeason = {
     id: seasonResponse.id,
     airDate: seasonResponse.air_date
-      ? moment(seasonResponse.air_date).toISOString()
+      ? moment.utc(seasonResponse.air_date).toISOString()
       : undefined,
     name: seasonResponse.name,
     overview: seasonResponse.overview,

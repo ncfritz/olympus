@@ -54,11 +54,11 @@ export const toPerson = (
     adult: personResponse.adult,
     biography: personResponse.biography,
     birthday: personResponse.birthday
-      ? moment(personResponse.birthday).toISOString()
+      ? moment.utc(personResponse.birthday).toISOString()
       : undefined,
     birthplace: personResponse.place_of_birth,
     deathday: personResponse.deathday
-      ? moment(personResponse.deathday).toISOString()
+      ? moment.utc(personResponse.deathday).toISOString()
       : undefined,
     gender: personResponse.gender as Gender,
     homepage: personResponse.homepage,

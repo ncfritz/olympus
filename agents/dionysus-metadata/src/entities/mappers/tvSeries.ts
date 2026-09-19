@@ -242,7 +242,7 @@ export const toTvSeries = (
       // @ts-expect-error external api
       official: value["official"] as boolean,
       // @ts-expect-error external api
-      publishedDate: moment(value["published_at"]),
+      publishedDate: moment.utc(value["published_at"]),
     });
   });
 
@@ -251,11 +251,11 @@ export const toTvSeries = (
     // @ts-expect-error not present in provided type
     adult: seriesResponse["adult"] as boolean,
     backdropPath: seriesResponse.backdrop_path,
-    firstAirDate: moment(seriesResponse.first_air_date).toISOString(),
+    firstAirDate: moment.utc(seriesResponse.first_air_date).toISOString(),
     homepage: seriesResponse.homepage,
     inProduction: seriesResponse.in_production,
     lastAirDate: seriesResponse.last_air_date
-      ? moment(seriesResponse.last_air_date).toISOString()
+      ? moment.utc(seriesResponse.last_air_date).toISOString()
       : undefined,
     lastEpisodeToAirId: seriesResponse.last_episode_to_air?.id,
     name: seriesResponse.name,

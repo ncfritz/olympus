@@ -158,7 +158,7 @@ export const toMovie = (
       releaseDates.add({
         type: value.type,
         countryCode: countryCode,
-        releaseDate: moment(value.release_date).toISOString(),
+        releaseDate: moment.utc(value.release_date).toISOString(),
         languageCode: value.iso_639_1,
         certificationId: value.certification,
         note: value.note,
@@ -190,7 +190,7 @@ export const toMovie = (
       // @ts-expect-error external api
       official: value["official"] as boolean,
       // @ts-expect-error external api
-      publishedDate: moment(value["published_at"]),
+      publishedDate: moment.utc(value["published_at"]),
     });
   });
 
@@ -206,7 +206,7 @@ export const toMovie = (
     overview: movieResponse.overview,
     popularity: movieResponse.popularity,
     posterPath: movieResponse.poster_path,
-    releaseDate: moment(movieResponse.release_date).toISOString(),
+    releaseDate: moment.utc(movieResponse.release_date).toISOString(),
     revenue: movieResponse.revenue,
     runtime: movieResponse.runtime,
     status: movieResponse.status,

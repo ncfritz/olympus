@@ -88,7 +88,7 @@ export class TvSeasonMetadataHandler extends EntityHandler<
       );
     }
 
-    return [season, { lastEpisodeAirDate: moment(lastEpisodeAirDate) }];
+    return [season, { lastEpisodeAirDate: moment.utc(lastEpisodeAirDate) }];
   }
 
   protected getTtl(metadata: PartialSeason, context: TvSeasonContext): number {
