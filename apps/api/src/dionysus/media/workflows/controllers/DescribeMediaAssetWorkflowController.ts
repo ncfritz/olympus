@@ -1,12 +1,5 @@
 import { SingleMediaAssetWorkflowResponse } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -14,19 +7,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDecoratedDomainObject } from "../converters/MediaAssetWorkflowConverter";
-import { DECORATED_MEDIA_ASSET_WORKFLOW } from "../queries/mediaAssetWorkflow";
-import { GraphQlDecoratedMediaAssetWorkflow } from "../types/mediaAssetWorkflow";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetMediaAssetWorkflowResponse = {
-  dionysus_media_asset_workflow_by_pk: GraphQlDecoratedMediaAssetWorkflow;
-};
+import { MediaAssetWorkflowService } from "../services/MediaAssetWorkflowService";
 
 @Controller({ version: "1" })
 export class DescribeMediaAssetWorkflowController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly workflows: MediaAssetWorkflowService) {}
 
   @Get("/media/workflow/:workflowId")
   @ApiOperation({
@@ -50,36 +36,8 @@ export class DescribeMediaAssetWorkflowController {
     @Param("workflowId") workflowId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query DescribeMediaAssetWorkflow(
-        $workflowId: uuid!
-      ) {
-        dionysus_media_asset_workflow_by_pk(
-          id: $workflowId
-        ) {
-          ${DECORATED_MEDIA_ASSET_WORKFLOW}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetMediaAssetWorkflowResponse>(
-        fetchRequest,
-        {
-          workflowId: workflowId,
-        },
-      );
-
-    if (!fetchResponse.dionysus_media_asset_workflow_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const fetchedWorkflow = toDecoratedDomainObject(
-      fetchResponse.dionysus_media_asset_workflow_by_pk,
-    );
-
     const responseBody: SingleMediaAssetWorkflowResponse = {
-      workflow: fetchedWorkflow,
+      workflow: await this.workflows.describe(workflowId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

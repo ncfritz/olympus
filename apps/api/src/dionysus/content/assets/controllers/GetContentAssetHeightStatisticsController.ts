@@ -7,17 +7,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { GraphQLContentAssetBucketStatistic } from "../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlContentAssetHeightQueryResponse = {
-  dionysus_content_asset_height_statistics: GraphQLContentAssetBucketStatistic[];
-};
+import { ContentAssetService } from "../services/ContentAssetService";
 
 @Controller({ version: "1" })
 export class GetContentAssetHeightStatisticsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly contentAssets: ContentAssetService) {}
 
   @Get("/content/assets/statistics/height")
   @ApiOperation({
@@ -39,37 +34,8 @@ export class GetContentAssetHeightStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const fetchRequest = gql`
-      query GetContentAssetHeightStatistics {
-        dionysus_content_asset_height_statistics(order_by: { bucket: asc }) {
-          bucket
-          bucket_width
-          count
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlContentAssetHeightQueryResponse>(
-        fetchRequest,
-      );
-    const categories: string[] = [];
-    const data: number[] = [];
-
-    fetchResponse.dionysus_content_asset_height_statistics.forEach((entry) => {
-      categories.push(`${entry.bucket}px`);
-      data.push(entry.count);
-    });
-
-    const responseBody: ContentStatisticsResponse = {
-      categories: categories,
-      series: [
-        {
-          name: "Height",
-          data: data,
-        },
-      ],
-    };
+    const responseBody: ContentStatisticsResponse =
+      await this.contentAssets.getHeightStatistics();
 
     response.status(HttpStatus.OK).send(responseBody);
   }

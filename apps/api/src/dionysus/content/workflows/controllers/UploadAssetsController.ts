@@ -1,11 +1,6 @@
 import { randomBytes } from "node:crypto";
 import * as path from "node:path";
-import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
-import {
-  ContentIngestionWorkflow,
-  ContentIngestionWorkflowAssetLocation,
-  UploadAssetsResponse,
-} from "@ncfritz/olympus-model";
+import { UploadAssetsResponse } from "@ncfritz/olympus-model";
 import {
   BadRequestException,
   Controller,
@@ -23,10 +18,9 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { GraphQLClient } from "graphql-request";
 import { diskStorage } from "multer";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseContentIngestionWorkflowController } from "./BaseContentIngestionWorkflowController";
+import { ContentIngestionWorkflowService } from "../services/ContentIngestionWorkflowService";
 
 /**
  * `<random>-<name>` where name is the client's file name reduced to a safe
@@ -49,13 +43,10 @@ const destinationDir = (
 };
 
 @Controller({ version: "1" })
-export class UploadAssetsController extends BaseContentIngestionWorkflowController {
+export class UploadAssetsController {
   constructor(
-    protected readonly graphQLClient: GraphQLClient,
-    private readonly amqpConnection: AmqpConnection,
-  ) {
-    super(graphQLClient);
-  }
+    private readonly contentIngestionWorkflows: ContentIngestionWorkflowService,
+  ) {}
 
   @Post("/content/upload")
   @ApiOperation({
@@ -91,25 +82,12 @@ export class UploadAssetsController extends BaseContentIngestionWorkflowControll
       throw new BadRequestException("No files were uploaded");
     }
 
-    const workflows: ContentIngestionWorkflow[] = [];
-
-    for (const file of files) {
-      const workflow = await this.createContentIngestionWorkflow(
-        file.originalname,
-        ContentIngestionWorkflowAssetLocation.LOCAL,
-      );
-      await this.amqpConnection.publish(
-        "content.trigger",
-        "jobType.rawIngest",
-        {
-          workflowId: workflow.id,
-          assetLocation: `${process.env.DIONYSUS_PUBLISH_PATH}/${file.filename}`,
-          originalFilename: file.originalname,
-          skipWorkflow: false,
-        },
-      );
-      workflows.push(workflow);
-    }
+    const workflows = await this.contentIngestionWorkflows.createForUploads(
+      files.map((file) => ({
+        originalName: file.originalname,
+        filename: file.filename,
+      })),
+    );
 
     const responseBody: UploadAssetsResponse = { workflows };
 

@@ -1,12 +1,5 @@
 import { DeleteNotificationResponse } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Delete,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -14,29 +7,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import {
-  GraphQlNotification,
-  toDomainObject,
-} from "../converters/NotificationConverter";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-import { NotificationsGateway } from "../gateway/NotificationsGateway";
-import { BaseNotificationsController } from "./BaseNotificationsController";
-
-type GraphQlDeleteNotificationResponse = {
-  delete_olympus_notifications: {
-    returning: GraphQlNotification[];
-  };
-};
+import { NotificationService } from "../services/NotificationService";
 
 @Controller({ version: "1" })
-export class DeleteNotificationController extends BaseNotificationsController {
-  constructor(
-    private readonly graphQLClient: GraphQLClient,
-    private readonly notificationsGateway: NotificationsGateway,
-  ) {
-    super();
-  }
+export class DeleteNotificationController {
+  constructor(private readonly notifications: NotificationService) {}
 
   @Delete("/notification/:notificationId")
   @ApiOperation({
@@ -63,66 +39,8 @@ export class DeleteNotificationController extends BaseNotificationsController {
     @Param("notificationId") notificationId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const deleteRequest = gql`
-      mutation DeleteNotification($notificationId: uuid!) {
-        delete_olympus_notifications(
-          where: { notificationId: { _eq: $notificationId } }
-        ) {
-          returning {
-            acknowledged
-            acknowledgedTime
-            createdTime
-            deletionTime
-            eventId
-            eventTime
-            expirationTime
-            level
-            notificationId
-            payload
-            ttl
-            notificationGroup {
-              createdTime
-              description
-              id
-              name
-            }
-            notificationType {
-              createdTime
-              defaultGroupId
-              id
-              description
-              name
-            }
-          }
-        }
-      }
-    `;
-
-    const deleteResponse =
-      await this.graphQLClient.request<GraphQlDeleteNotificationResponse>(
-        deleteRequest,
-        {
-          notificationId: notificationId,
-        },
-      );
-
-    if (deleteResponse.delete_olympus_notifications.returning.length <= 0) {
-      throw new NotFoundException();
-    }
-
-    const notification = toDomainObject(
-      deleteResponse.delete_olympus_notifications.returning[0],
-    );
-
-    // Push a WebSocket notification to inform the UX that an update is needed.
-    await this.sendRefreshMessage(
-      notification,
-      this.notificationsGateway,
-      this.graphQLClient,
-    );
-
     const responseBody: DeleteNotificationResponse = {
-      notification: notification,
+      notification: await this.notifications.delete(notificationId),
     };
 
     // We don't send a 204 here as the framework, or Axios strips the response body when a 204 is encountered.

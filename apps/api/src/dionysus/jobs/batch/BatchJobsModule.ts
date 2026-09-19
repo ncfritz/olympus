@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { BatchJobService } from "./services/BatchJobService";
 import { RabbitModule } from "../../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../../infra/GraphQLClientModule";
 import { CreateBatchJobController } from "./controllers/CreateBatchJobController";
@@ -13,6 +14,7 @@ import { UpdateBatchJobController } from "./controllers/UpdateBatchJobController
 
 @Module({
   imports: [RabbitModule, GraphQLClientModule],
+  providers: [BatchJobService],
   controllers: [
     CreateBatchJobController,
     CreateRedriveJobController,

@@ -1,11 +1,8 @@
-import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
-  BatchJob,
   CreateBatchJobRequest,
   CreateBatchJobResponse,
-  JobType,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, Post, Req, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -14,18 +11,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseCreateBatchJobController } from "./BaseCreateBatchJobController";
+import { BatchJobService } from "../services/BatchJobService";
+import { setLocation } from "../../../../utils/location";
+import { DescribeBatchJobController } from "./DescribeBatchJobController";
 
 @Controller({ version: "1" })
-export class CreateBatchJobController extends BaseCreateBatchJobController<CreateBatchJobRequest> {
-  constructor(
-    protected readonly graphQLClient: GraphQLClient,
-    protected readonly amqpConnection: AmqpConnection,
-  ) {
-    super(graphQLClient, amqpConnection);
-  }
+export class CreateBatchJobController {
+  constructor(private readonly batchJobs: BatchJobService) {}
 
   @Post("/jobs/batch")
   @ApiOperation({
@@ -60,28 +53,15 @@ export class CreateBatchJobController extends BaseCreateBatchJobController<Creat
     @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    await this.processRequest(request, httpRequest, response);
-  }
-
-  protected buildMessage(
-    request: CreateBatchJobRequest,
-    job: BatchJob,
-  ): Record<string, unknown> {
-    return {
-      jobType: job.type,
-      jobId: job.id,
-      offset: request.offset,
-      max: request.maxRecordsToProcess,
+    const job = await this.batchJobs.create(request);
+    const responseBody: CreateBatchJobResponse = {
+      job,
     };
-  }
 
-  protected getJobType(request: CreateBatchJobRequest): JobType {
-    return request.type;
-  }
+    setLocation(response, httpRequest, DescribeBatchJobController, {
+      jobId: job.id,
+    });
 
-  protected shouldPublishMessage(
-    request: CreateBatchJobRequest,
-  ): boolean | undefined {
-    return request.publishNotification ?? true;
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

@@ -1,6 +1,9 @@
 import { Module } from "@nestjs/common";
 import { RabbitModule } from "../../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../../infra/GraphQLClientModule";
+import { ContentAuthModule } from "../auth/ContentAuthModule";
+import { ContentAssetChannelCategoryService } from "./services/ContentAssetChannelCategoryService";
+import { ContentAssetChannelService } from "./services/ContentAssetChannelService";
 import { CreateContentAssetChannelCategoryController } from "./controllers/CreateContentAssetChannelCategoryController";
 import { CreateContentAssetChannelController } from "./controllers/CreateContentAssetChannelController";
 import { DeleteContentAssetChannelController } from "./controllers/DeleteContentAssetChannelController";
@@ -15,7 +18,8 @@ import { UpdateContentAssetChannelCategoryController } from "./controllers/Updat
 import { UpdateContentAssetChannelController } from "./controllers/UpdateContentAssetChannelController";
 
 @Module({
-  imports: [RabbitModule, GraphQLClientModule],
+  imports: [RabbitModule, GraphQLClientModule, ContentAuthModule],
+  providers: [ContentAssetChannelService, ContentAssetChannelCategoryService],
   controllers: [
     CreateContentAssetChannelCategoryController,
     CreateContentAssetChannelController,

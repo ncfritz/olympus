@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { GenreService } from "./services/GenreService";
 import { RabbitModule } from "../../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../../infra/GraphQLClientModule";
 import { CreateGenreController } from "./controllers/CreateGenreController";
@@ -10,6 +11,7 @@ import { ListGenresController } from "./controllers/ListGenresController";
 
 @Module({
   imports: [RabbitModule, GraphQLClientModule],
+  providers: [GenreService],
   controllers: [
     CreateGenreController,
     GetMovieGenreCountStatisticsController,

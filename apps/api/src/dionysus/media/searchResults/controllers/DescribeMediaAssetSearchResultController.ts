@@ -6,7 +6,6 @@ import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseEnumPipe,
   ParseIntPipe,
@@ -19,19 +18,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/MediaAssetSearchResultConverter";
-import { BASE_SEARCH_RESULT } from "../queries/searchResult";
-import { GraphQlMediaAssetSearchResult } from "../types/searchResult";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetMediaAssetSearchResultResponse = {
-  dionysus_media_asset_search_result_by_pk: GraphQlMediaAssetSearchResult;
-};
+import { MediaAssetSearchResultService } from "../services/MediaAssetSearchResultService";
 
 @Controller({ version: "1" })
 export class DescribeMediaAssetSearchResultController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly searchResults: MediaAssetSearchResultService) {}
 
   @Get("/media/searchConfiguration/:mediaType/:mediaId/result/:resultId")
   @ApiOperation({
@@ -71,42 +63,12 @@ export class DescribeMediaAssetSearchResultController {
     @Param("resultId") resultId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query DescribeMediaAssetSearchResult(
-        $resultId: String!
-        $assetType: String!
-        $mediaId: numeric!
-      ) {
-        dionysus_media_asset_search_result_by_pk(
-          id: $resultId
-          assetType: $assetType
-          mediaId: $mediaId
-        ) {
-          ${BASE_SEARCH_RESULT}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetMediaAssetSearchResultResponse>(
-        fetchRequest,
-        {
-          resultId: resultId,
-          assetType: mediaType,
-          mediaId: mediaId,
-        },
-      );
-
-    if (!fetchResponse.dionysus_media_asset_search_result_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const fetchedSearchResult = toDomainObject(
-      fetchResponse.dionysus_media_asset_search_result_by_pk,
-    );
-
     const responseBody: SingleMediaAssetSearchResultResponse = {
-      searchResult: fetchedSearchResult,
+      searchResult: await this.searchResults.describe(
+        mediaType,
+        mediaId,
+        resultId,
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

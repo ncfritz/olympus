@@ -1,8 +1,4 @@
-import {
-  GetMeetingSummaryResponse,
-  MeetingStatus,
-  MeetingStatusStatistics,
-} from "@ncfritz/olympus-model";
+import { GetMeetingSummaryResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -21,38 +17,15 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import moment from "moment-timezone";
 import {
   ApiStandardErrorResponses,
   HeaderTimezone,
 } from "../../../utils/controllerDecorators";
-
-type GraphQlGetMonthlyCountsResponse = {
-  minerva_meeting_status_statistics: [
-    {
-      count: number;
-      duration: number;
-      start_date: string;
-      status: MeetingStatus;
-    },
-  ];
-};
-
-const EMPTY_COUNTS = (): MeetingStatusStatistics => {
-  return {
-    [MeetingStatus.Free]: { count: 0, totalDurationMin: 0 },
-    [MeetingStatus.Busy]: { count: 0, totalDurationMin: 0 },
-    [MeetingStatus.Tentative]: { count: 0, totalDurationMin: 0 },
-    [MeetingStatus.OOF]: { count: 0, totalDurationMin: 0 },
-    [MeetingStatus.NoData]: { count: 0, totalDurationMin: 0 },
-    [MeetingStatus.WorkingElsewhere]: { count: 0, totalDurationMin: 0 },
-  };
-};
+import { MeetingService } from "../services/MeetingService";
 
 @Controller({ version: "1" })
 export class GetMeetingsSummaryController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly meetings: MeetingService) {}
 
   @Get("/meetings/summary/:start")
   @ApiOperation({
@@ -88,55 +61,8 @@ export class GetMeetingsSummaryController {
     @Query("days", ParseIntPipe) days: number,
     @Res() response: Response,
   ): Promise<void> {
-    const startDate = moment(start);
-    const endDate = moment(startDate).add(days + 1, "days");
-    const queryInput = {
-      start: startDate,
-      end: endDate,
-      tz: tz,
-    };
-    const statusStatistics: Record<string, MeetingStatusStatistics> = {};
-
-    for (let m = moment(startDate), i = 0; i <= days; m.add(1, "days"), i++) {
-      statusStatistics[m.format("YYYY-MM-DD")] = EMPTY_COUNTS();
-    }
-
-    const statisticsRequest = gql`
-      query GetMeetingsSummary(
-        $tz: String!
-        $start: timestamptz!
-        $end: timestamptz!
-      ) {
-        minerva_meeting_status_statistics(
-          args: { start_date: $start, end_date: $end, tz: $tz }
-        ) {
-          count
-          duration
-          status
-          start_date
-        }
-      }
-    `;
-
-    const statisticsResponse =
-      await this.graphQLClient.request<GraphQlGetMonthlyCountsResponse>(
-        statisticsRequest,
-        queryInput,
-      );
-
-    statisticsResponse.minerva_meeting_status_statistics.forEach((entry) => {
-      if (!(entry.start_date in statusStatistics)) {
-        return;
-      }
-
-      statusStatistics[entry.start_date][entry.status].count += entry.count;
-      statusStatistics[entry.start_date][entry.status].totalDurationMin +=
-        entry.duration;
-    });
-
-    const responseBody: GetMeetingSummaryResponse = {
-      statusStatistics: statusStatistics,
-    };
+    const responseBody: GetMeetingSummaryResponse =
+      await this.meetings.getSummary(tz, start, days);
 
     response.status(HttpStatus.OK).send(responseBody);
   }

@@ -1,11 +1,8 @@
-import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
-  BatchJob,
   CreateBatchJobResponse,
   CreateRedriveJobRequest,
-  JobType,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, Post, Req, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -14,18 +11,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseCreateBatchJobController } from "./BaseCreateBatchJobController";
+import { BatchJobService } from "../services/BatchJobService";
+import { setLocation } from "../../../../utils/location";
+import { DescribeBatchJobController } from "./DescribeBatchJobController";
 
 @Controller({ version: "1" })
-export class CreateRedriveJobController extends BaseCreateBatchJobController<CreateRedriveJobRequest> {
-  constructor(
-    protected readonly graphQLClient: GraphQLClient,
-    protected readonly amqpConnection: AmqpConnection,
-  ) {
-    super(graphQLClient, amqpConnection);
-  }
+export class CreateRedriveJobController {
+  constructor(private readonly batchJobs: BatchJobService) {}
 
   @Post("/jobs/batch/redrive")
   @ApiOperation({
@@ -58,30 +51,15 @@ export class CreateRedriveJobController extends BaseCreateBatchJobController<Cre
     @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    await this.processRequest(request, httpRequest, response);
-  }
-
-  protected buildMessage(
-    request: CreateRedriveJobRequest,
-    job: BatchJob,
-  ): Record<string, unknown> {
-    return {
-      jobId: job.id,
-      jobType: request.metadataType,
-      status: request.status,
-      targetStatus: request.targetStatus,
-      republish: request.publishNotification ?? true,
-      offset: 0,
+    const job = await this.batchJobs.createRedrive(request);
+    const responseBody: CreateBatchJobResponse = {
+      job,
     };
-  }
 
-  protected getJobType(_request: CreateRedriveJobRequest): JobType {
-    return JobType.REDRIVE;
-  }
+    setLocation(response, httpRequest, DescribeBatchJobController, {
+      jobId: job.id,
+    });
 
-  protected shouldPublishMessage(
-    _request: CreateRedriveJobRequest,
-  ): boolean | undefined {
-    return true;
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

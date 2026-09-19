@@ -1,6 +1,4 @@
 import {
-  MediaAssetWorkflowStatus,
-  MediaAssetWorkflowStepStatus,
   UpdateMediaAssetWorkflowStepRequest,
   UpdateMediaAssetWorkflowStepResponse,
 } from "@ncfritz/olympus-model";
@@ -27,16 +25,12 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { logger } from "../../../../utils/logger";
-import { BaseMediaAssetWorkflowController } from "./BaseMediaAssetWorkflowController";
+import { MediaAssetWorkflowService } from "../services/MediaAssetWorkflowService";
 
 @Controller({ version: "1" })
-export class UpdateMediaAssetWorkflowStepController extends BaseMediaAssetWorkflowController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class UpdateMediaAssetWorkflowStepController {
+  constructor(private readonly workflows: MediaAssetWorkflowService) {}
 
   @Put("/media/workflow/:workflowId/steps/:workflowStepId")
   @ApiOperation({
@@ -84,60 +78,13 @@ export class UpdateMediaAssetWorkflowStepController extends BaseMediaAssetWorkfl
     @Body() request: UpdateMediaAssetWorkflowStepRequest,
     @Res() response: Response,
   ): Promise<void> {
-    logger.info(
-      `Updating workflow step ${workflowStepId} to status ${request.step.status} - workflow update: ${updateWorkflowStatus}`,
-    );
-
-    await this.verifyWorkflowExists(workflowId);
-    const stepDetails = await this.verifyWorkflowStepExists(
-      workflowId,
-      workflowStepId,
-    );
-
-    let workflowStatus: MediaAssetWorkflowStatus | undefined = undefined;
-
-    if (request.step.status === MediaAssetWorkflowStepStatus.PENDING) {
-      workflowStatus = MediaAssetWorkflowStatus.PENDING_INPUT;
-    } else if (request.step.status === MediaAssetWorkflowStepStatus.FAILED) {
-      workflowStatus = MediaAssetWorkflowStatus.FAILED;
-    } else if (
-      request.step.status === MediaAssetWorkflowStepStatus.SKIPPED ||
-      request.step.status === MediaAssetWorkflowStepStatus.RUNNING
-    ) {
-      workflowStatus = MediaAssetWorkflowStatus.RUNNING;
-    }
-
-    logger.debug(
-      `UpdateWorkflowStatus: ${updateWorkflowStatus} - currentStatus: ${workflowStatus}`,
-    );
-
-    if (
-      updateWorkflowStatus &&
-      request.step.status === MediaAssetWorkflowStepStatus.SUCCESS
-    ) {
-      workflowStatus = MediaAssetWorkflowStatus.SUCCESS;
-    }
-
-    if (
-      request.step.progress !== undefined &&
-      request.step.progress < stepDetails.progress
-    ) {
-      logger.debug(
-        `Progress ${request.step.progress} for step ${workflowStepId} is behind the stored ${stepDetails.progress}; keeping the stored value`,
-      );
-
-      request.step.progress = stepDetails.progress;
-    }
-
-    const updatedWorkflowStep = await this.updateWorkflowStep(
-      workflowId,
-      workflowStepId,
-      request.step,
-      workflowStatus,
-    );
-
     const responseBody: UpdateMediaAssetWorkflowStepResponse = {
-      step: updatedWorkflowStep,
+      step: await this.workflows.updateStep(
+        workflowId,
+        workflowStepId,
+        request.step,
+        updateWorkflowStatus,
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

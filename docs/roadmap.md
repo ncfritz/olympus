@@ -2,21 +2,21 @@
 
 ## Phases
 
-| #   | Phase                                                                                                | Status                    |
-| --- | ---------------------------------------------------------------------------------------------------- | ------------------------- |
-| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)     |
-| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**                  |
-| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       | SDK **done**; agents next |
-| 3   | Import site and desktop shell                                                                        |                           |
-| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         |                           |
-| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                           |
-| 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                           |
-| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                           |
-| 8   | Minerva calendar sync import and Hasura integration                                                  |                           |
-| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                   |
-| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                  |
-| —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                  |
-| —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | folders **done**          |
+| #   | Phase                                                                                                | Status                     |
+| --- | ---------------------------------------------------------------------------------------------------- | -------------------------- |
+| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)      |
+| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**                   |
+| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       | SDK **done**; agents next  |
+| 3   | Import site and desktop shell                                                                        |                            |
+| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         |                            |
+| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                            |
+| 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                            |
+| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                            |
+| 8   | Minerva calendar sync import and Hasura integration                                                  |                            |
+| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                    |
+| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                   |
+| —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                   |
+| —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | folders, services **done** |
 
 ## Open decisions
 
@@ -87,6 +87,37 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
   GitHub Packages token). Rebuilt with ADR 0011.
 - OpenAPI `info.version` is `0.0.0` (the workspace package version)
   instead of a release number.
+- Found while extracting services (2026-09-19; behaviour kept as is):
+  - Many not-found errors are a bare `NotFoundException()`, or use other
+    wording, not `<Entity> with id <id> not found`.
+  - `204`/`304` responses sent with a body (DeleteBatchJob,
+    DeleteMetadataFetchJob, AcknowledgeNotification, AddContentAssetTagToAsset).
+  - Updates that mutate the incoming request object (UpdateBatchJob,
+    UpdateMediaAssetDownloadByNzbId, UpdateMediaAssetWorkflowStep,
+    UpdateContentIngestionWorkflow, CreateTVSeries/Season cast and crew).
+  - Data bugs: CreateTVSeriesEpisode never sends `$runtime`;
+    CreateNotification ignores `eventTime`; Describe/UpdateBatchJob don't
+    select `maxRecordsToProcess`; UpdateMediaAssetSearchExecution ignores
+    `mediaType`/`mediaId`; the NZB-ID progress guard skips progress 0;
+    CreateMediaAssetDownload publishes `nzbId: resultId`;
+    UpdateContentIngestionWorkflowStep never checks for a missing row;
+    ListCalendarItems misses meetings overlapping one end of the range;
+    GetNextCalendarItemOccurrence answers 200 with no item; genre
+    histograms drop titles with more than 19 genres.
+  - Response/document mismatches: CreateMovie sends `{ id }` but documents
+    `{ movie }`; GetContentAssetAggregateStatistics sends an untyped body
+    (the model's `ContentAggregateStatisticsResponse` fits);
+    DeleteMediaAssetWorkflow documents 204 but a soft delete answers 200;
+    person cast/crew lists document pagination they ignore.
+  - Content auth: CheckAuthorization verifies the token differently (own
+    query, no audience check, 30-minute max age vs. a 15-minute cookie) and
+    500s with a TypeError when the key row is missing.
+  - Two `filters` formats (base64 `FilterDefinition` vs. `parseInFilters`).
+  - OpenAPI text: copy-paste descriptions and typos (ping, people
+    statistics, "cunt", "movie1", "production company1", "CreateCLanguage",
+    "refine the refine the"), and wrong tags (ListPeople "Batch", media
+    workflow steps "Content", DeleteMediaAssetWorkflow "Batch").
+  - Metadata modules import `RabbitModule` without using it.
 
 ### Agents
 

@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { PersonService } from "./services/PersonService";
 import { RabbitModule } from "../../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../../infra/GraphQLClientModule";
 import { CreatePersonController } from "./controllers/CreatePersonController";
@@ -12,6 +13,7 @@ import { ListPeopleController } from "./controllers/ListPeopleController";
 
 @Module({
   imports: [RabbitModule, GraphQLClientModule],
+  providers: [PersonService],
   controllers: [
     CreatePersonController,
     DescribePersonController,

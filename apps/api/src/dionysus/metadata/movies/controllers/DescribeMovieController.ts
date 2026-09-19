@@ -1,9 +1,8 @@
-import { DescribeMovieResponse, Movie } from "@ncfritz/olympus-model";
+import { DescribeMovieResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Res,
@@ -15,19 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { MOVIE } from "../queries/movies";
-import { GraphQlMovie } from "../types/movie";
-import { toDomainObject } from "../converters/MovieConverter";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetMovieResponse = {
-  dionysus_movies_by_pk: GraphQlMovie;
-};
+import { MovieService } from "../services/MovieService";
 
 @Controller({ version: "1" })
 export class DescribeMovieController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly movies: MovieService) {}
 
   @Get("/metadata/movie/:movieId")
   @ApiOperation({
@@ -52,29 +44,8 @@ export class DescribeMovieController {
     @Param("movieId", ParseIntPipe) movieId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query DescribeMovie($id: numeric!) {
-        dionysus_movies_by_pk(id: $id) {
-          ${MOVIE}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetMovieResponse>(fetchRequest, {
-        id: movieId,
-      });
-
-    if (!fetchResponse.dionysus_movies_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const fetchedMovie: Movie = toDomainObject(
-      fetchResponse.dionysus_movies_by_pk,
-    );
-
     const responseBody: DescribeMovieResponse = {
-      movie: fetchedMovie,
+      movie: await this.movies.describe(movieId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

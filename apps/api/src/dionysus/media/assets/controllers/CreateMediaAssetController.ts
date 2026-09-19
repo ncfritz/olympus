@@ -1,6 +1,5 @@
 import {
   CreateMediaAssetRequest,
-  MediaAsset,
   SingleMediaAssetResponse,
 } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
@@ -12,19 +11,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/MediaAssetConverter";
-import { BASE_MEDIA_ASSET } from "../queries/mediaAsset";
-import { GraphQlMediaAsset } from "../types/mediaAsset";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlCreateMediaAssetResponse = {
-  insert_dionysus_media_asset_one: GraphQlMediaAsset;
-};
+import { MediaAssetService } from "../services/MediaAssetService";
 
 @Controller({ version: "1" })
 export class CreateMediaAssetController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly mediaAssets: MediaAssetService) {}
 
   @Post("/media/assets")
   @ApiOperation({
@@ -49,70 +41,8 @@ export class CreateMediaAssetController {
     @Body() request: CreateMediaAssetRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const insertRequest = gql`
-      mutation CreateMediaAsset(
-        $assetType: String!
-        $mediaId: numeric!
-        $filePath: String!
-        $assetSha: String!
-        $originalSize: numeric!
-        $newSize: numeric!
-        $duration: numeric!
-        $width: numeric!
-        $height: numeric!
-      ) {
-        insert_dionysus_media_asset_one(
-          object: {
-            assetType: $assetType
-            mediaId: $mediaId
-            filePath: $filePath
-            assetSha: $assetSha
-            originalSize: $originalSize
-            newSize: $newSize
-            duration: $duration
-            width: $width
-            height: $height
-          }
-          on_conflict: {
-            constraint: media_asset_pkey
-            update_columns: [
-              filePath
-              assetSha
-              originalSize
-              newSize
-              duration
-              width
-              height
-            ]
-          }
-        ) {
-          ${BASE_MEDIA_ASSET}
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateMediaAssetResponse>(
-        insertRequest,
-        {
-          assetType: request.asset.type,
-          mediaId: request.asset.mediaId,
-          filePath: request.asset.filePath,
-          assetSha: request.asset.assetSha,
-          originalSize: request.asset.originalSizeBytes,
-          newSize: request.asset.newSizeBytes,
-          duration: request.asset.durationMs,
-          width: request.asset.width,
-          height: request.asset.height,
-        },
-      );
-
-    const createdMediaAsset: MediaAsset = toDomainObject(
-      insertResponse.insert_dionysus_media_asset_one,
-    );
-
     const responseBody: SingleMediaAssetResponse = {
-      asset: createdMediaAsset,
+      asset: await this.mediaAssets.create(request.asset),
     };
 
     response.status(HttpStatus.CREATED).send(responseBody);

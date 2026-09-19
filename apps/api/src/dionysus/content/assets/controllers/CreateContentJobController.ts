@@ -1,4 +1,3 @@
-import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import { CreateContentJobRequest, EmptyResponse } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Param, Post, Res } from "@nestjs/common";
 import {
@@ -11,10 +10,11 @@ import {
 } from "@nestjs/swagger";
 import { type Response } from "express";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { ContentAssetService } from "../services/ContentAssetService";
 
 @Controller({ version: "1" })
 export class CreateContentJobController {
-  constructor(private readonly amqpConnection: AmqpConnection) {}
+  constructor(private readonly contentAssets: ContentAssetService) {}
 
   @Post("/content/asset/:assetId/jobs")
   @ApiOperation({
@@ -47,13 +47,7 @@ export class CreateContentJobController {
     @Body() request: CreateContentJobRequest,
     @Res() response: Response,
   ): Promise<void> {
-    await this.amqpConnection.publish(
-      "content.trigger",
-      `jobType.${request.type}`,
-      {
-        assetId: assetId,
-      },
-    );
+    await this.contentAssets.createJob(assetId, request.type);
 
     const responseBody: EmptyResponse = {};
 

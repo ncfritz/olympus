@@ -7,18 +7,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import prettyMilliseconds from "pretty-ms";
-import { GraphQLContentAssetBucketStatistic } from "../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlContentAssetDurationQueryResponse = {
-  dionysus_content_asset_duration_statistics: GraphQLContentAssetBucketStatistic[];
-};
+import { ContentAssetService } from "../services/ContentAssetService";
 
 @Controller({ version: "1" })
 export class GetContentAssetDurationStatisticsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly contentAssets: ContentAssetService) {}
 
   @Get("/content/assets/statistics/duration")
   @ApiOperation({
@@ -40,39 +34,8 @@ export class GetContentAssetDurationStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const fetchRequest = gql`
-      query GetContentAssetDurationStatistics {
-        dionysus_content_asset_duration_statistics(order_by: { bucket: asc }) {
-          bucket
-          bucket_width
-          count
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlContentAssetDurationQueryResponse>(
-        fetchRequest,
-      );
-    const categories: string[] = [];
-    const data: number[] = [];
-
-    fetchResponse.dionysus_content_asset_duration_statistics.forEach(
-      (entry) => {
-        categories.push(`${prettyMilliseconds(entry.bucket * 60 * 1000)}`);
-        data.push(entry.count);
-      },
-    );
-
-    const responseBody: ContentStatisticsResponse = {
-      categories: categories,
-      series: [
-        {
-          name: "duration",
-          data: data,
-        },
-      ],
-    };
+    const responseBody: ContentStatisticsResponse =
+      await this.contentAssets.getDurationStatistics();
 
     response.status(HttpStatus.OK).send(responseBody);
   }

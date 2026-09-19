@@ -1,16 +1,8 @@
 import {
-  MetadataFetchJob,
   DescribeMetadataFetchJobResponse,
   MetadataJobType,
 } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -18,18 +10,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/MetadataFetchJobConverter";
-import { GraphQlMetadataFetchJob } from "../../types/batchJobs";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetMetadataFetchJobResponse = {
-  dionysus_metadata_fetch_status_by_pk: GraphQlMetadataFetchJob;
-};
+import { MetadataFetchJobService } from "../services/MetadataFetchJobService";
 
 @Controller({ version: "1" })
 export class DescribeMetadataFetchJobController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly metadataFetchJobs: MetadataFetchJobService) {}
 
   @Get("/metadata/fetchJob/:entityId/:entityType")
   @ApiOperation({
@@ -64,41 +50,8 @@ export class DescribeMetadataFetchJobController {
     @Param("entityType") entityType: MetadataJobType,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query FetchMetadataFetchJob($id: String!, $type: String!) {
-        dionysus_metadata_fetch_status_by_pk(id: $id, type: $type) {
-          id
-          type
-          status
-          createdTime
-          lastUpdatedTime
-          lastFetchedTime
-          ttl
-          jitter
-          context
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetMetadataFetchJobResponse>(
-        fetchRequest,
-        {
-          id: entityId,
-          type: entityType,
-        },
-      );
-
-    if (!fetchResponse.dionysus_metadata_fetch_status_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const fetchedJob: MetadataFetchJob = toDomainObject(
-      fetchResponse.dionysus_metadata_fetch_status_by_pk,
-    );
-
     const responseBody: DescribeMetadataFetchJobResponse = {
-      job: fetchedJob,
+      job: await this.metadataFetchJobs.describe(entityId, entityType),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

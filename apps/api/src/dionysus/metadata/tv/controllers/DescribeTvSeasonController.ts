@@ -1,9 +1,8 @@
-import { DescribeTVSeasonResponse, Season } from "@ncfritz/olympus-model";
+import { DescribeTVSeasonResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Res,
@@ -15,19 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/tvSeasonConverter";
-import { TV_SEASON } from "../queries/tvSeries";
-import { GraphQlTvSeason } from "../types/tvSeason";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetTvSeasonResponse = {
-  dionysus_tv_seasons: GraphQlTvSeason[];
-};
+import { TvSeasonService } from "../services/TvSeasonService";
 
 @Controller({ version: "1" })
 export class DescribeTvSeasonController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly tvSeasons: TvSeasonService) {}
 
   @Get("/metadata/tvSeries/:tvSeriesId/seasons/:seasonNumber")
   @ApiOperation({
@@ -57,43 +49,8 @@ export class DescribeTvSeasonController {
     @Param("seasonNumber", ParseIntPipe) seasonNumber: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query DescribeTvSeason($seriesId: numeric!, $seasonNumber: numeric!) {
-        dionysus_tv_seasons(
-          where: {
-            _and: {
-              seriesId: { _eq: $seriesId }
-              seasonNumber: { _eq: $seasonNumber }
-            }
-          }
-        ) {
-          ${TV_SEASON}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetTvSeasonResponse>(
-        fetchRequest,
-        {
-          seriesId: tvSeriesId,
-          seasonNumber: seasonNumber,
-        },
-      );
-
-    if (
-      !fetchResponse.dionysus_tv_seasons ||
-      fetchResponse.dionysus_tv_seasons.length <= 0
-    ) {
-      throw new NotFoundException();
-    }
-
-    const fetchedTvSeason: Season = toDomainObject(
-      fetchResponse.dionysus_tv_seasons[0],
-    );
-
     const responseBody: DescribeTVSeasonResponse = {
-      season: fetchedTvSeason,
+      season: await this.tvSeasons.describe(tvSeriesId, seasonNumber),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

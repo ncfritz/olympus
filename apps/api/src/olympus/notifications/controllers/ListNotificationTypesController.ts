@@ -1,24 +1,13 @@
-import {
-  NotificationTypeWithProtocols,
-  ListNotificationTypesResponse,
-} from "@ncfritz/olympus-model";
+import { ListNotificationTypesResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import {
-  GraphQlFullNotificationType,
-  toFullDomainObject,
-} from "../converters/NotificationTypeConverter";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlListNotificationTypesResponse = {
-  olympus_notification_type: GraphQlFullNotificationType[];
-};
+import { NotificationTypeService } from "../services/NotificationTypeService";
 
 @Controller({ version: "1" })
 export class ListNotificationTypesController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly notificationTypes: NotificationTypeService) {}
 
   @Get("/notifications/types")
   @ApiOperation({
@@ -36,44 +25,8 @@ export class ListNotificationTypesController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const queryRequest = gql`
-      query ListNotificationTypes {
-        olympus_notification_type {
-          createdTime
-          defaultGroup {
-            createdTime
-            description
-            id
-            name
-          }
-          description
-          id
-          name
-          emailDefault
-          supportsEmail
-          supportsSynoChat
-          supportsSynoMail
-          supportsWebSocket
-          synoChatDefault
-          synoMailDefault
-          webSocketDefault
-        }
-      }
-    `;
-
-    const queryResponse =
-      await this.graphQLClient.request<GraphQlListNotificationTypesResponse>(
-        queryRequest,
-      );
-
-    const notificationTypes: NotificationTypeWithProtocols[] = [];
-
-    queryResponse.olympus_notification_type.forEach((entry) => {
-      notificationTypes.push(toFullDomainObject(entry));
-    });
-
     const responseBody: ListNotificationTypesResponse = {
-      notificationTypes: notificationTypes,
+      notificationTypes: await this.notificationTypes.list(),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

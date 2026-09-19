@@ -1,7 +1,4 @@
-import {
-  ContentAssetTag,
-  ListAvailableContentAssetTagsResponse,
-} from "@ncfritz/olympus-model";
+import { ListAvailableContentAssetTagsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -10,18 +7,12 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/ContentAssetTagConverter";
-import { GraphQlContentAssetTag } from "../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQListContentAssetTagsResponse = {
-  dionysus_content_tags: GraphQlContentAssetTag[];
-};
+import { ContentAssetTagService } from "../services/ContentAssetTagService";
 
 @Controller({ version: "1" })
 export class ListAvailableContentAssetTagsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly contentAssetTags: ContentAssetTagService) {}
 
   @Get("/content/assetTags")
   @ApiOperation({
@@ -62,65 +53,8 @@ export class ListAvailableContentAssetTagsController {
     @Query("name") name: string | undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const queryPlaceholders = [];
-    const queryFilters = [];
-    const queryVariables: Record<string, string> = {};
-
-    if (assetId) {
-      queryPlaceholders.push("$contentId: uuid!");
-      queryVariables.contentId = assetId;
-      queryFilters.push(
-        "_not: { tagged_content: { content_id: { _eq: $contentId } } }",
-      );
-    }
-
-    if (type) {
-      queryPlaceholders.push("$type: String");
-      queryVariables.type = type;
-      queryFilters.push("type: { _eq: $type }");
-    }
-
-    if (name) {
-      queryPlaceholders.push("$name: String");
-      queryVariables.name = `%${name}%`;
-      queryFilters.push("name: { _ilike: $name }");
-    }
-
-    const placeholders =
-      queryPlaceholders.length > 0 ? `(${queryPlaceholders.join("\n")})` : "";
-    let whereClause = "";
-
-    if (queryFilters.length > 0) {
-      whereClause =
-        queryFilters.length > 1
-          ? `(where: { _and: {${queryFilters.join("\n")}}})`
-          : `(where: {${queryFilters[0]}})`;
-    }
-
-    const queryRequest = gql`
-      query ListContentAssetTags${placeholders} {
-        dionysus_content_tags${whereClause} {
-          type
-          name
-          content_tag_id
-          createdTime
-        }
-      }
-    `;
-
-    const queryResponse = await this.graphQLClient.request<
-      GraphQListContentAssetTagsResponse,
-      Record<string, string>
-    >(queryRequest, queryVariables);
-
-    const tags: ContentAssetTag[] = [];
-
-    queryResponse.dionysus_content_tags.forEach((responseTag) => {
-      tags.push(toDomainObject(responseTag));
-    });
-
     const responseBody: ListAvailableContentAssetTagsResponse = {
-      tags: tags,
+      tags: await this.contentAssetTags.listAvailable(assetId, type, name),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

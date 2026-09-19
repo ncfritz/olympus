@@ -1,5 +1,4 @@
 import {
-  Genre,
   CreateGenreRequest,
   CreateGenreResponse,
 } from "@ncfritz/olympus-model";
@@ -12,18 +11,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/GenreConverter";
-import { GraphQlGenre } from "../types/genre";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlCreateGenreResponse = {
-  insert_dionysus_genres_one: GraphQlGenre;
-};
+import { GenreService } from "../services/GenreService";
 
 @Controller({ version: "1" })
 export class CreateGenreController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly genres: GenreService) {}
 
   @Put("/metadata/genres")
   @ApiOperation({
@@ -48,37 +41,8 @@ export class CreateGenreController {
     @Body() request: CreateGenreRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const insertRequest = gql`
-      mutation CreateGenre($id: numeric!, $name: String!, $type: String!) {
-        insert_dionysus_genres_one(
-          object: { id: $id, name: $name, type: $type }
-          on_conflict: { constraint: genres_pkey, update_columns: [name] }
-        ) {
-          id
-          name
-          createdTime
-          type
-          lastUpdatedTime
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateGenreResponse>(
-        insertRequest,
-        {
-          id: request.genre.id,
-          name: request.genre.name,
-          type: request.genre.type,
-        },
-      );
-
-    const createdGenre: Genre = toDomainObject(
-      insertResponse.insert_dionysus_genres_one,
-    );
-
     const responseBody: CreateGenreResponse = {
-      genre: createdGenre,
+      genre: await this.genres.create(request.genre),
     };
 
     response.status(HttpStatus.CREATED).send(responseBody);

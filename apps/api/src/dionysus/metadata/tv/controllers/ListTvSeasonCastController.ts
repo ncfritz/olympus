@@ -1,7 +1,4 @@
-import {
-  ListTvSeasonCastResponse,
-  TVSeriesCastMember,
-} from "@ncfritz/olympus-model";
+import { ListTvSeasonCastResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -17,22 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toTvSeriesCastMember } from "../converters/tvSeriesConverter";
-import { TV_SERIES_CAST_MEMBER } from "../queries/tvSeries";
-import { GraphQlTvSeriesCastMember } from "../types/tvSeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseTVController } from "./BaseTVController";
-
-type GraphQlListTvSeasonCastResponse = {
-  dionysus_tv_season_cast: GraphQlTvSeriesCastMember[];
-};
+import { TvSeasonService } from "../services/TvSeasonService";
 
 @Controller({ version: "1" })
-export class ListTvSeasonCastController extends BaseTVController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class ListTvSeasonCastController {
+  constructor(private readonly tvSeasons: TvSeasonService) {}
 
   @Get("/metadata/tvSeries/:tvSeriesId/seasons/:seasonNumber/cast")
   @ApiOperation({
@@ -59,34 +46,8 @@ export class ListTvSeasonCastController extends BaseTVController {
 
     @Res() response: Response,
   ): Promise<void> {
-    const seasonId = await this.lookupMediaIdForTvSeason(
-      tvSeriesId,
-      seasonNumber,
-    );
-
-    const fetchRequest = gql`
-      query ListTvSeasonCast($id: numeric!) {
-        dionysus_tv_season_cast(where: { seasonId: { _eq: $id } }) {
-          ${TV_SERIES_CAST_MEMBER}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListTvSeasonCastResponse>(
-        fetchRequest,
-        { id: seasonId },
-      );
-    const cast: TVSeriesCastMember[] = [];
-
-    fetchResponse.dionysus_tv_season_cast.forEach((result) => {
-      if (result.person) {
-        cast.push(toTvSeriesCastMember(result));
-      }
-    });
-
     const responseBody: ListTvSeasonCastResponse = {
-      cast: cast,
+      cast: await this.tvSeasons.listCast(tvSeriesId, seasonNumber),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

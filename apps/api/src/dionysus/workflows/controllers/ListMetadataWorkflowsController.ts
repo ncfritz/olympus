@@ -1,8 +1,4 @@
-import {
-  ListWorkflowsResponse,
-  SortDirection,
-  Workflow,
-} from "@ncfritz/olympus-model";
+import { ListWorkflowsResponse, SortDirection } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -11,30 +7,15 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/WorkflowConverter";
-import { GraphQLWorkflow } from "../types/workflow";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../utils/controllerDecorators";
-import {
-  buildFilterExpression,
-  buildPaginationExpression,
-} from "../../../utils/filterUtil";
-
-type GraphQLListMetadataWorkflowsResponse = {
-  dionysus_metadata_workflow: GraphQLWorkflow[];
-  dionysus_metadata_workflow_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { MetadataWorkflowService } from "../services/MetadataWorkflowService";
 
 @Controller({ version: "1" })
 export class ListMetadataWorkflowsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly metadataWorkflows: MetadataWorkflowService) {}
 
   @Get("/workflows")
   @ApiOperation({
@@ -67,50 +48,19 @@ export class ListMetadataWorkflowsController {
     @Query("filters") filters: string | undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const whereExpression = buildFilterExpression(filters);
-    const paginationExpression = buildPaginationExpression({
-      pageSize: pageSize,
-      startPage: startPage,
-      sortDirection: sortDirection,
-      sortField: sortField,
-    });
-
-    const fetchRequest = gql`
-      query ListMetadataWorkflows {
-        dionysus_metadata_workflow(${[paginationExpression, whereExpression].join(", ")}) {
-          createdTime
-          finishedTime
-          id
-          lastUpdatedTime
-          startedTime
-          status
-          steps_aggregate {
-            aggregate {
-              count
-            }
-          }
-        }
-        dionysus_metadata_workflow_aggregate${whereExpression ? `(${whereExpression})` : ""} {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQLListMetadataWorkflowsResponse>(
-        fetchRequest,
-      );
-    const fetchedWorkflows: Workflow[] = [];
-
-    fetchResponse.dionysus_metadata_workflow.forEach((result) => {
-      fetchedWorkflows.push(toDomainObject(result));
-    });
+    const { workflows, count } = await this.metadataWorkflows.list(
+      {
+        pageSize: pageSize,
+        startPage: startPage,
+        sortDirection: sortDirection,
+        sortField: sortField,
+      },
+      filters,
+    );
 
     const responseBody: ListWorkflowsResponse = {
-      workflows: fetchedWorkflows,
-      count: fetchResponse.dionysus_metadata_workflow_aggregate.aggregate.count,
+      workflows,
+      count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

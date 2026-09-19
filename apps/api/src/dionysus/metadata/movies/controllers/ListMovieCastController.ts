@@ -1,4 +1,4 @@
-import { ListMovieCastResponse, MovieCastMember } from "@ncfritz/olympus-model";
+import { ListMovieCastResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -14,19 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toMovieCastDomainObject } from "../../converters/CastConverter";
-import { MOVIE_CAST_MEMBER } from "../queries/movies";
-import { GraphQlMovieCastMember } from "../../types/metadata";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlListMovieCastResponse = {
-  dionysus_movie_cast: GraphQlMovieCastMember[];
-};
+import { MovieService } from "../services/MovieService";
 
 @Controller({ version: "1" })
 export class ListMovieCastController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly movies: MovieService) {}
 
   @Get("/metadata/movie/:movieId/cast")
   @ApiOperation({
@@ -51,32 +44,8 @@ export class ListMovieCastController {
     @Param("movieId", ParseIntPipe) movieId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query ListMovieCast($id: numeric!) {
-        dionysus_movie_cast(
-          order_by: { order: asc }
-          where: { movieId: { _eq: $id } }
-        ) {
-          ${MOVIE_CAST_MEMBER}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListMovieCastResponse>(
-        fetchRequest,
-        { id: movieId },
-      );
-    const cast: MovieCastMember[] = [];
-
-    fetchResponse.dionysus_movie_cast.forEach((result) => {
-      if (result.person) {
-        cast.push(toMovieCastDomainObject(result));
-      }
-    });
-
     const responseBody: ListMovieCastResponse = {
-      cast: cast,
+      cast: await this.movies.listCast(movieId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

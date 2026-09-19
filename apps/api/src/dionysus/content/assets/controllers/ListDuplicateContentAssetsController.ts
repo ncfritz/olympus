@@ -1,7 +1,4 @@
-import {
-  ContentAsset,
-  ListDuplicateContentAssetsResponse,
-} from "@ncfritz/olympus-model";
+import { ListDuplicateContentAssetsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -10,22 +7,12 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/ContentAssetConverter";
-import { GraphQLContentAsset } from "../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlListDuplicateContentAssetsInput = {
-  sha: string;
-};
-
-type GraphQlListDuplicateContentAssetsResponse = {
-  dionysus_content_assets: GraphQLContentAsset[];
-};
+import { ContentAssetService } from "../services/ContentAssetService";
 
 @Controller({ version: "1" })
 export class ListDuplicateContentAssetsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly contentAssets: ContentAssetService) {}
 
   @Get("/content/assets/duplicates")
   @ApiOperation({
@@ -52,50 +39,8 @@ export class ListDuplicateContentAssetsController {
     @Query("digest") digest: string,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query ListDuplicateContentAssets($sha: String) {
-        dionysus_content_assets(
-          where: {
-            _or: [{ asset_sha: { _eq: $sha } }, { original_sha: { _eq: $sha } }]
-          }
-        ) {
-          content_id
-          original_sha
-          original_size
-          asset_sha
-          asset_size
-          createdTime
-          duration
-          height
-          name
-          original_name
-          rating
-          width
-          asset_tags {
-            tag {
-              content_tag_id
-              name
-              type
-            }
-          }
-        }
-      }
-    `;
-
-    const fetchResponse = await this.graphQLClient.request<
-      GraphQlListDuplicateContentAssetsResponse,
-      GraphQlListDuplicateContentAssetsInput
-    >(fetchRequest, {
-      sha: digest,
-    });
-    const fetchedAssets: ContentAsset[] = [];
-
-    fetchResponse.dionysus_content_assets.forEach((result) => {
-      fetchedAssets.push(toDomainObject(result));
-    });
-
     const responseBody: ListDuplicateContentAssetsResponse = {
-      assets: fetchedAssets,
+      assets: await this.contentAssets.listDuplicates(digest),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

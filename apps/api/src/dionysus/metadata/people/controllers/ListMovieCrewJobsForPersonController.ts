@@ -1,7 +1,4 @@
-import {
-  ListMovieCrewJobsForPersonResponse,
-  PersonMovieCrewCredit,
-} from "@ncfritz/olympus-model";
+import { ListMovieCrewJobsForPersonResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -17,23 +14,15 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toBaseMovieCrewDomainObject } from "../../converters/CrewConverter";
-import { toSparseDomainObject } from "../../movies/converters/MovieConverter";
-import { SEARCH_CONFIGURATION } from "../../../media/searchConfigurations/queries/searchConfiguration";
-import { GraphQlPersonMovieCrewCredit } from "../../types/metadata";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-
-type GraphQlListPersonCrewCreditsResponse = {
-  dionysus_movie_crew: GraphQlPersonMovieCrewCredit[];
-};
+import { PersonService } from "../services/PersonService";
 
 @Controller({ version: "1" })
 export class ListMovieCrewJobsForPersonController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly people: PersonService) {}
 
   @Get("/metadata/person/:personId/movie/crew")
   @ApiOperation({
@@ -59,69 +48,8 @@ export class ListMovieCrewJobsForPersonController {
     @Param("personId", ParseIntPipe) personId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query ListMovieCrewJobsForPerson($id: numeric!) {
-        dionysus_movie_crew(
-          where: { personId: { _eq: $id } }
-          order_by: { movie: { releaseDate: desc } }
-        ) {
-          createdTime
-          creditId
-          department
-          job
-          lastUpdatedTime
-          movie {
-            id
-            adult
-            backdropPath
-            budget
-            createdTime
-            homepage
-            imdbId
-            lastUpdatedTime
-            originalTitle
-            overview
-            posterPath
-            releaseDate
-            revenue
-            runtime
-            status
-            tagline
-            title
-            video
-            ${SEARCH_CONFIGURATION}
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListPersonCrewCreditsResponse>(
-        fetchRequest,
-        { id: personId },
-      );
-    const credits: Map<number, PersonMovieCrewCredit> = new Map();
-
-    fetchResponse.dionysus_movie_crew.forEach((result) => {
-      if (!result.movie) {
-        return;
-      }
-
-      if (!credits.has(result.movie.id)) {
-        credits.set(result.movie.id, {
-          movie: toSparseDomainObject(result.movie),
-          jobs: [],
-        });
-      }
-
-      // A person can have several jobs on one movie.
-      credits
-        .get(result.movie.id)!
-        .jobs.push(toBaseMovieCrewDomainObject(result));
-    });
-
     const responseBody: ListMovieCrewJobsForPersonResponse = {
-      credits: [...credits.values()],
+      credits: await this.people.listMovieCrewJobs(personId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

@@ -1,8 +1,4 @@
-import {
-  Genre,
-  ListGenresResponse,
-  SortDirection,
-} from "@ncfritz/olympus-model";
+import { ListGenresResponse, SortDirection } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -11,31 +7,16 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/GenreConverter";
-import { GraphQlGenre } from "../types/genre";
 import {
   ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import {
-  buildFilterExpression,
-  buildPaginationExpression,
-} from "../../../../utils/filterUtil";
-
-type GraphQlListGenresResponse = {
-  dionysus_genres: GraphQlGenre[];
-  dionysus_genres_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { GenreService } from "../services/GenreService";
 
 @Controller({ version: "1" })
 export class ListGenresController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly genres: GenreService) {}
 
   @Get("/metadata/genres")
   @ApiOperation({
@@ -68,42 +49,19 @@ export class ListGenresController {
     @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const whereExpression = buildFilterExpression(filters);
-    const paginationExpression = buildPaginationExpression({
-      pageSize: pageSize,
-      startPage: startPage,
-      sortDirection: sortDirection,
-      sortField: sortField,
-    });
-
-    const fetchRequest = gql`
-      query ListGenres {
-        dionysus_genres(${[paginationExpression, whereExpression].join(", ")}) {
-          id
-          type
-          name
-          createdTime
-          lastUpdatedTime
-        }
-        dionysus_genres_aggregate${whereExpression ? `(${whereExpression})` : ""} {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListGenresResponse>(fetchRequest);
-    const fetchedGenres: Genre[] = [];
-
-    fetchResponse.dionysus_genres.forEach((result) => {
-      fetchedGenres.push(toDomainObject(result));
-    });
+    const { genres, count } = await this.genres.list(
+      {
+        pageSize: pageSize,
+        startPage: startPage,
+        sortDirection: sortDirection,
+        sortField: sortField,
+      },
+      filters,
+    );
 
     const responseBody: ListGenresResponse = {
-      genres: fetchedGenres,
-      count: fetchResponse.dionysus_genres_aggregate.aggregate.count,
+      genres: genres,
+      count: count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

@@ -1,12 +1,5 @@
 import { DeleteBatchJobResponse } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Delete,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiNoContentResponse,
   ApiOperation,
@@ -14,12 +7,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { BatchJobService } from "../services/BatchJobService";
 
 @Controller({ version: "1" })
 export class DeleteBatchJobController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly batchJobs: BatchJobService) {}
 
   @Delete("/job/batch/:jobId")
   @ApiOperation({
@@ -47,23 +40,7 @@ export class DeleteBatchJobController {
     @Param("jobId") jobId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const deleteRequest = gql`
-      mutation DeleteBatchJob($id: uuid!) {
-        delete_dionysus_bulk_load_jobs_by_pk(id: $id) {
-          id
-        }
-      }
-    `;
-
-    const deleteResponse = await this.graphQLClient.request<{
-      delete_dionysus_bulk_load_jobs_by_pk: { id: string } | null;
-    }>(deleteRequest, {
-      id: jobId,
-    });
-
-    if (!deleteResponse.delete_dionysus_bulk_load_jobs_by_pk) {
-      throw new NotFoundException();
-    }
+    await this.batchJobs.delete(jobId);
 
     const responseBody: DeleteBatchJobResponse = {};
 

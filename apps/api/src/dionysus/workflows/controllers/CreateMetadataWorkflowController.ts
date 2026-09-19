@@ -1,9 +1,6 @@
-import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   CreateWorkflowRequest,
   CreateWorkflowResponse,
-  WorkflowStatus,
-  Workflow,
 } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
 import {
@@ -14,23 +11,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/WorkflowConverter";
-import { GraphQLWorkflow } from "../types/workflow";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { DescribeMetadataWorkflowController } from "./DescribeMetadataWorkflowController";
 import { setLocation } from "../../../utils/location";
-
-type GraphQlCreateMetadataWorkflowResponse = {
-  insert_dionysus_metadata_workflow_one: GraphQLWorkflow;
-};
+import { MetadataWorkflowService } from "../services/MetadataWorkflowService";
 
 @Controller({ version: "1" })
 export class CreateMetadataWorkflowController {
-  constructor(
-    private readonly graphQLClient: GraphQLClient,
-    private readonly amqpConnection: AmqpConnection,
-  ) {}
+  constructor(private readonly metadataWorkflows: MetadataWorkflowService) {}
 
   @Post("/workflows")
   @ApiOperation({
@@ -62,49 +50,7 @@ export class CreateMetadataWorkflowController {
     @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const insertRequest = gql`
-      mutation CreateMetadataWorkflow($status: String!) {
-        insert_dionysus_metadata_workflow_one(object: { status: $status }) {
-          createdTime
-          finishedTime
-          id
-          lastUpdatedTime
-          startedTime
-          status
-          steps {
-            attempt
-            createdTime
-            id
-            lastUpdatedTime
-            type
-          }
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateMetadataWorkflowResponse>(
-        insertRequest,
-        { status: WorkflowStatus.CREATED },
-      );
-
-    const createdWorkflow: Workflow = toDomainObject(
-      insertResponse.insert_dionysus_metadata_workflow_one,
-    );
-
-    await this.amqpConnection.publish(
-      "batchJob.workflow",
-      `workflowCreated`,
-      {
-        workflowId: createdWorkflow.id,
-      },
-      {
-        persistent: true,
-        headers: {
-          "x-delay": 15000,
-        },
-      },
-    );
+    const createdWorkflow = await this.metadataWorkflows.create();
 
     const responseBody: CreateWorkflowResponse = {
       workflow: createdWorkflow,

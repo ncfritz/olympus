@@ -1,12 +1,8 @@
-import {
-  DescribeProductionCompanyResponse,
-  FullProductionCompany,
-} from "@ncfritz/olympus-model";
+import { DescribeProductionCompanyResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Res,
@@ -18,18 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { GraphQlFullProductionCompany } from "../types/productionCompany";
-import { toFullDomainObject } from "../converters/ProductionCompanyConverter";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetProductionCompanyResponse = {
-  dionysus_production_companies_by_pk: GraphQlFullProductionCompany;
-};
+import { ProductionCompanyService } from "../services/ProductionCompanyService";
 
 @Controller({ version: "1" })
 export class DescribeProductionCompanyController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly productionCompanies: ProductionCompanyService) {}
 
   @Get("/metadata/productionCompany/:productionCompanyId")
   @ApiOperation({
@@ -53,113 +43,8 @@ export class DescribeProductionCompanyController {
     @Param("productionCompanyId", ParseIntPipe) productionCompanyId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query DescribeProductionCompany($id: numeric!) {
-        dionysus_production_companies_by_pk(id: $id) {
-          alternativeNames {
-            createdTime
-            lastUpdatedTime
-            name
-            type
-          }
-          country {
-            id
-            createdTime
-            lastUpdatedTime
-            name
-          }
-          createdTime
-          description
-          headquarters
-          homepage
-          id
-          lastUpdatedTime
-          logo
-          name
-          logos {
-            createdTime
-            filePath
-            fileType
-            height
-            id
-            lastUpdatedTime
-            width
-          }
-          children {
-            alternativeNames {
-              createdTime
-              lastUpdatedTime
-              name
-              type
-            }
-            country {
-              id
-              createdTime
-              lastUpdatedTime
-              name
-            }
-            createdTime
-            description
-            headquarters
-            homepage
-            id
-            lastUpdatedTime
-            logo
-            name
-            movies_aggregate {
-              aggregate {
-                count
-              }
-            }
-            tvSeries_aggregate {
-              aggregate {
-                count
-              }
-            }
-          }
-          parent {
-            alternativeNames {
-              createdTime
-              lastUpdatedTime
-              name
-              type
-            }
-            country {
-              createdTime
-              lastUpdatedTime
-              name
-            }
-            createdTime
-            description
-            headquarters
-            homepage
-            id
-            lastUpdatedTime
-            logo
-            name
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetProductionCompanyResponse>(
-        fetchRequest,
-        {
-          id: productionCompanyId,
-        },
-      );
-
-    if (!fetchResponse.dionysus_production_companies_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const fetchedProductionCompany: FullProductionCompany = toFullDomainObject(
-      fetchResponse.dionysus_production_companies_by_pk,
-    );
-
     const responseBody: DescribeProductionCompanyResponse = {
-      company: fetchedProductionCompany,
+      company: await this.productionCompanies.describe(productionCompanyId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

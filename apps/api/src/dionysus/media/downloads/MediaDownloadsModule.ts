@@ -1,4 +1,6 @@
 import { Module } from "@nestjs/common";
+import { MediaSearchResultsModule } from "../searchResults/MediaSearchResultsModule";
+import { MediaAssetDownloadService } from "./services/MediaAssetDownloadService";
 import { RabbitModule } from "../../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../../infra/GraphQLClientModule";
 import { BulkUpdateMediaAssetDownloadsController } from "./controllers/BulkUpdateMediaAssetDownloadsController";
@@ -8,7 +10,8 @@ import { UpdateMediaAssetDownloadByNzbIdController } from "./controllers/UpdateM
 import { UpdateMediaAssetDownloadController } from "./controllers/UpdateMediaAssetDownloadController";
 
 @Module({
-  imports: [RabbitModule, GraphQLClientModule],
+  imports: [RabbitModule, GraphQLClientModule, MediaSearchResultsModule],
+  providers: [MediaAssetDownloadService],
   controllers: [
     BulkUpdateMediaAssetDownloadsController,
     CreateMediaAssetDownloadController,

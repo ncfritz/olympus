@@ -1,9 +1,8 @@
-import { DescribeTVEpisodeResponse, Episode } from "@ncfritz/olympus-model";
+import { DescribeTVEpisodeResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Res,
@@ -15,19 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/tvEpisodeConverter";
-import { TV_EPISODE } from "../queries/tvSeries";
-import { GraphQlTvEpisode } from "../types/tvEpisode";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetTvEpisodeResponse = {
-  dionysus_tv_episodes: GraphQlTvEpisode[];
-};
+import { TvEpisodeService } from "../services/TvEpisodeService";
 
 @Controller({ version: "1" })
 export class DescribeTvEpisodeController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly tvEpisodes: TvEpisodeService) {}
 
   @Get(
     "/metadata/tvSeries/:tvSeriesId/seasons/:seasonNumber/episodes/:episodeNumber",
@@ -66,49 +58,12 @@ export class DescribeTvEpisodeController {
     @Param("episodeNumber", ParseIntPipe) episodeNumber: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query DescribeTvEpisode(
-        $seriesId: numeric!
-        $seasonNumber: numeric!
-        $episodeNumber: numeric!
-      ) {
-        dionysus_tv_episodes(
-          where: {
-            _and: {
-              seriesId: { _eq: $seriesId }
-              seasonNumber: { _eq: $seasonNumber }
-              episodeNumber: { _eq: $episodeNumber }
-            }
-          }
-        ) {
-          ${TV_EPISODE}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetTvEpisodeResponse>(
-        fetchRequest,
-        {
-          seriesId: tvSeriesId,
-          seasonNumber: seasonNumber,
-          episodeNumber: episodeNumber,
-        },
-      );
-
-    if (
-      !fetchResponse.dionysus_tv_episodes ||
-      fetchResponse.dionysus_tv_episodes.length <= 0
-    ) {
-      throw new NotFoundException();
-    }
-
-    const fetchedTvEpisode: Episode = toDomainObject(
-      fetchResponse.dionysus_tv_episodes[0],
-    );
-
     const responseBody: DescribeTVEpisodeResponse = {
-      episode: fetchedTvEpisode,
+      episode: await this.tvEpisodes.describe(
+        tvSeriesId,
+        seasonNumber,
+        episodeNumber,
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

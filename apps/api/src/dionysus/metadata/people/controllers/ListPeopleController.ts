@@ -1,36 +1,17 @@
-import {
-  BasePerson,
-  ListPeopleResponse,
-  SortDirection,
-} from "@ncfritz/olympus-model";
+import { ListPeopleResponse, SortDirection } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toBaseDomainObject as toDomainObject } from "../converters/PersonConverter";
-import { GraphQlBasePerson } from "../types/person";
 import {
   ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import {
-  buildFilterExpression,
-  buildPaginationExpression,
-} from "../../../../utils/filterUtil";
-
-export type GraphQlListPeopleResponse = {
-  dionysus_people: GraphQlBasePerson[];
-  dionysus_people_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { PersonService } from "../services/PersonService";
 
 @Controller({ version: "1" })
 export class ListPeopleController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly people: PersonService) {}
 
   @Get("/metadata/people")
   @ApiOperation({
@@ -59,51 +40,19 @@ export class ListPeopleController {
     @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const whereExpression = buildFilterExpression(filters);
-    const paginationExpression = buildPaginationExpression({
-      pageSize: pageSize,
-      startPage: startPage,
-      sortDirection: sortDirection,
-      sortField: sortField,
-    });
-
-    const fetchRequest = gql`
-      query ListPeople {
-        dionysus_people(${[paginationExpression, whereExpression].join(", ")}) {
-          id
-          name
-          adult
-          birthday
-          birthplace
-          deathday
-          gender
-          homepage
-          imdbId
-          knownForDepartment
-          profilePath
-          popularity
-          createdTime
-          lastUpdatedTime
-        }
-        dionysus_people_aggregate${whereExpression ? `(${whereExpression})` : ""} {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListPeopleResponse>(fetchRequest);
-    const fetchedPeople: BasePerson[] = [];
-
-    fetchResponse.dionysus_people.forEach((result) => {
-      fetchedPeople.push(toDomainObject(result));
-    });
+    const { people, count } = await this.people.list(
+      {
+        pageSize: pageSize,
+        startPage: startPage,
+        sortDirection: sortDirection,
+        sortField: sortField,
+      },
+      filters,
+    );
 
     const responseBody: ListPeopleResponse = {
-      people: fetchedPeople,
-      count: fetchResponse.dionysus_people_aggregate.aggregate.count,
+      people: people,
+      count: count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

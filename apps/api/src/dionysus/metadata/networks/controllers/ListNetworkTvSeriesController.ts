@@ -1,5 +1,4 @@
 import {
-  BaseTVSeries,
   ListNetworkTvSeriesResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
@@ -7,7 +6,6 @@ import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Query,
@@ -20,31 +18,15 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toBaseDomainObject } from "../../tv/converters/tvSeriesConverter";
-import { GraphQlBaseTvSeries } from "../../tv/types/tvSeries";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import { buildPaginationExpression } from "../../../../utils/filterUtil";
-
-type GraphQlListNetworkTvSeriesResponse = {
-  dionysus_networks_by_pk: {
-    tvSeries: {
-      tvSeries: GraphQlBaseTvSeries;
-    }[];
-    tvSeries_aggregate: {
-      aggregate: {
-        count: number;
-      };
-    };
-  };
-};
+import { NetworkService } from "../services/NetworkService";
 
 @Controller({ version: "1" })
 export class ListNetworkTvSeriesController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly networks: NetworkService) {}
 
   @Get("/metadata/network/:networkId/tvSeries")
   @ApiOperation({
@@ -77,75 +59,16 @@ export class ListNetworkTvSeriesController {
     @Query("sortBy") sortField = "createdTime",
     @Res() response: Response,
   ): Promise<void> {
-    const paginationExpression = buildPaginationExpression({
+    const { tvSeries, count } = await this.networks.listTvSeries(networkId, {
       pageSize,
       startPage,
       sortField,
       sortDirection,
     });
-    const queryParams = [paginationExpression];
-
-    const fetchRequest = gql`
-      query ListNetworkTvSeries($id: numeric!) {
-        dionysus_networks_by_pk(id: $id) {
-          tvSeries(${queryParams.join(", ")}) {
-            tvSeries {
-              adult
-              backdropPath
-              createdTime
-              firstAirDate
-              homepage
-              id
-              inProduction
-              lastAirDate
-              lastEpisodeToAirId
-              lastUpdatedTime
-              name
-              numberOfEpisodes
-              numberOfSeasons
-              originalName
-              original_language
-              overview
-              posterPath
-              status
-              tagline
-              type
-            }
-          }
-          tvSeries_aggregate {
-            aggregate {
-              count
-            }
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListNetworkTvSeriesResponse>(
-        fetchRequest,
-        {
-          id: networkId,
-        },
-      );
-    if (!fetchResponse.dionysus_networks_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const tvSeries: BaseTVSeries[] = [];
-
-    fetchResponse.dionysus_networks_by_pk.tvSeries.forEach((result) => {
-      // Skip links to rows that are not in the database (yet).
-      if (result.tvSeries) {
-        tvSeries.push(toBaseDomainObject(result.tvSeries));
-      }
-    });
 
     const responseBody: ListNetworkTvSeriesResponse = {
       tvSeries: tvSeries,
-      count:
-        fetchResponse.dionysus_networks_by_pk.tvSeries_aggregate.aggregate
-          .count,
+      count: count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

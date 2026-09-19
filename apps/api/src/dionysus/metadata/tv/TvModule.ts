@@ -1,4 +1,7 @@
 import { Module } from "@nestjs/common";
+import { TvEpisodeService } from "./services/TvEpisodeService";
+import { TvSeasonService } from "./services/TvSeasonService";
+import { TvSeriesService } from "./services/TvSeriesService";
 import { RabbitModule } from "../../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../../infra/GraphQLClientModule";
 import { CreateTVSeriesController } from "./controllers/CreateTVSeriesController";
@@ -26,6 +29,7 @@ import { ListTvSeriesRecommendationsController } from "./controllers/ListTvSerie
 
 @Module({
   imports: [RabbitModule, GraphQLClientModule],
+  providers: [TvSeriesService, TvSeasonService, TvEpisodeService],
   controllers: [
     CreateTVSeriesController,
     CreateTVSeriesEpisodeController,

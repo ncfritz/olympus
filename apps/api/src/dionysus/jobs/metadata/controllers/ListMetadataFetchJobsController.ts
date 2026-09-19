@@ -1,7 +1,6 @@
 import {
   FilterDefinition,
   ListMetadataFetchJobsResponse,
-  MetadataFetchJob,
   SortDirection,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
@@ -12,32 +11,17 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/MetadataFetchJobConverter";
-import { GraphQlMetadataFetchJob } from "../../types/batchJobs";
 import {
   ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import {
-  buildFilterExpression,
-  buildPaginationExpression,
-} from "../../../../utils/filterUtil";
-
-type GraphQlListMetadataJobsResponse = {
-  dionysus_metadata_fetch_status: GraphQlMetadataFetchJob[];
-  dionysus_metadata_fetch_status_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { MetadataFetchJobService } from "../services/MetadataFetchJobService";
 
 @Controller({ version: "1" })
 @ApiExtraModels(FilterDefinition)
 export class ListMetadataFetchJobsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly metadataFetchJobs: MetadataFetchJobService) {}
 
   @Get("/jobs/metadata")
   @ApiOperation({
@@ -66,48 +50,19 @@ export class ListMetadataFetchJobsController {
     @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const whereExpression = buildFilterExpression(filters);
-    const paginationExpression = buildPaginationExpression({
-      pageSize: pageSize,
-      startPage: startPage,
-      sortDirection: sortDirection,
-      sortField: sortField,
-    });
-
-    const fetchRequest = gql`
-      query ListMetadataFetchJobs {
-      dionysus_metadata_fetch_status(${[paginationExpression, whereExpression].join(", ")}) {
-        createdTime
-        id
-        jitter
-        lastFetchedTime
-        lastUpdatedTime
-        status
-        ttl
-        type
-      }
-      dionysus_metadata_fetch_status_aggregate${whereExpression ? `(${whereExpression})` : ""} {
-        aggregate {
-          count
-        }
-      }
-    }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListMetadataJobsResponse>(
-        fetchRequest,
-      );
-    const fetchedJobs: MetadataFetchJob[] = [];
-
-    fetchResponse.dionysus_metadata_fetch_status.forEach((result) => {
-      fetchedJobs.push(toDomainObject(result));
-    });
+    const { jobs, count } = await this.metadataFetchJobs.list(
+      {
+        pageSize: pageSize,
+        startPage: startPage,
+        sortDirection: sortDirection,
+        sortField: sortField,
+      },
+      filters,
+    );
 
     const responseBody: ListMetadataFetchJobsResponse = {
-      jobs: fetchedJobs,
-      count:
-        fetchResponse.dionysus_metadata_fetch_status_aggregate.aggregate.count,
+      jobs,
+      count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

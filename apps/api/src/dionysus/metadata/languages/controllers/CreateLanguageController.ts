@@ -1,5 +1,4 @@
 import {
-  Language,
   CreateLanguageRequest,
   CreateLanguageResponse,
 } from "@ncfritz/olympus-model";
@@ -12,18 +11,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/LanguageConverter";
-import { GraphQlLanguage } from "../types/language";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlCreateLanguageResponse = {
-  insert_dionysus_languages_one: GraphQlLanguage;
-};
+import { LanguageService } from "../services/LanguageService";
 
 @Controller({ version: "1" })
 export class CreateLanguageController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly languages: LanguageService) {}
 
   @Put("/metadata/languages")
   @ApiOperation({
@@ -48,44 +41,8 @@ export class CreateLanguageController {
     @Body() request: CreateLanguageRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const insertRequest = gql`
-      mutation CreateLanguage(
-        $id: String!
-        $name: String!
-        $nativeName: String!
-      ) {
-        insert_dionysus_languages_one(
-          object: { id: $id, name: $name, nativeName: $nativeName }
-          on_conflict: {
-            constraint: languages_pkey
-            update_columns: [name, nativeName]
-          }
-        ) {
-          id
-          name
-          nativeName
-          createdTime
-          lastUpdatedTime
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateLanguageResponse>(
-        insertRequest,
-        {
-          id: request.language.id,
-          name: request.language.name,
-          nativeName: request.language.nativeName,
-        },
-      );
-
-    const createdLanguage: Language = toDomainObject(
-      insertResponse.insert_dionysus_languages_one,
-    );
-
     const responseBody: CreateLanguageResponse = {
-      language: createdLanguage,
+      language: await this.languages.create(request.language),
     };
 
     response.status(HttpStatus.CREATED).send(responseBody);

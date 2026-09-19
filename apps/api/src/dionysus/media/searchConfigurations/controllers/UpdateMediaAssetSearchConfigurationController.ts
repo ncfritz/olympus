@@ -1,7 +1,4 @@
 import {
-  FilterDefinition,
-  FilterType,
-  MediaAssetSearchConfiguration,
   MediaAssetSearchType,
   SingleMediaAssetSearchConfigurationResponse,
   UpdateMediaAssetSearchConfigurationRequest,
@@ -12,7 +9,6 @@ import {
   Controller,
   DefaultValuePipe,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseBoolPipe,
   ParseEnumPipe,
@@ -32,27 +28,14 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import moment from "moment";
-import { toDecoratedDomainObject } from "../converters/MediaAssetSearchConfigurationConverter";
-import { BASE_DECORATED_SEARCH_CONFIGURATION } from "../queries/searchConfiguration";
-import { GraphQlDecoratedMediaAssetSearchConfiguration } from "../types/searchConfiguration";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { buildFilterExpression } from "../../../../utils/filterUtil";
-import { logger } from "../../../../utils/logger";
-
-type GraphQlUpdateMediaAssetSearchConfigurationResponse = {
-  update_dionysus_media_asset_search_configuration_by_pk: GraphQlDecoratedMediaAssetSearchConfiguration | null;
-};
-type GraphQlUpdateChildMediaAssetSearchConfigurationsResponse = {
-  update_dionysus_media_asset_search_configuration: {
-    affected_rows: number;
-  };
-};
+import { MediaAssetSearchConfigurationService } from "../services/MediaAssetSearchConfigurationService";
 
 @Controller({ version: "1" })
 export class UpdateMediaAssetSearchConfigurationController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly searchConfigurations: MediaAssetSearchConfigurationService,
+  ) {}
 
   @Put("/media/searchConfiguration/:mediaType/:mediaId")
   @ApiOperation({
@@ -104,124 +87,15 @@ export class UpdateMediaAssetSearchConfigurationController {
     @Body() request: UpdateMediaAssetSearchConfigurationRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const updateRequest = gql`
-      mutation UpdateMediaAssetSearchConfiguration(
-        $mediaType: String!
-        $mediaId: numeric!
-        $changes: dionysus_media_asset_search_configuration_set_input = {}
-      ) {
-        update_dionysus_media_asset_search_configuration_by_pk(
-          pk_columns: { assetType: $mediaType, mediaId: $mediaId }
-          _set: $changes
-        ) {
-          ${BASE_DECORATED_SEARCH_CONFIGURATION}
-        }
-      }
-    `;
-
-    const changes = { ...request.searchConfiguration };
-
-    if (!request.searchConfiguration.nextExecutionTime) {
-      changes.nextExecutionTime = moment
-        .utc()
-        .add(
-          Math.floor(
-            Math.random() * (request.searchConfiguration.jitter || 300),
-          ),
-          "minutes",
-        );
-    }
-
-    const updateResponse =
-      await this.graphQLClient.request<GraphQlUpdateMediaAssetSearchConfigurationResponse>(
-        updateRequest,
-        {
-          mediaType: mediaType,
-          mediaId: mediaId,
-          changes: changes,
-        },
-      );
-
-    if (
-      !updateResponse.update_dionysus_media_asset_search_configuration_by_pk
-    ) {
-      throw new NotFoundException();
-    }
-
-    const updatedSearchConfiguration = toDecoratedDomainObject(
-      updateResponse.update_dionysus_media_asset_search_configuration_by_pk,
-    );
-
-    // If the update property set contains the "enabled" property and the media assetType is a TV season or TV series
-    // cascade the enabled status to all child configurations
-    if (
-      Object.keys(request.searchConfiguration).includes("enabled") &&
-      (updatedSearchConfiguration.type === MediaAssetSearchType.TV_SERIES ||
-        updatedSearchConfiguration.type === MediaAssetSearchType.TV_SEASON) &&
-      recursive
-    ) {
-      await this.updateChildSearchConfigurations(updatedSearchConfiguration);
-    }
-
     const responseBody: SingleMediaAssetSearchConfigurationResponse = {
-      searchConfiguration: updatedSearchConfiguration,
+      searchConfiguration: await this.searchConfigurations.update(
+        mediaType,
+        mediaId,
+        request.searchConfiguration,
+        recursive,
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);
-  }
-
-  private async updateChildSearchConfigurations(
-    configuration: MediaAssetSearchConfiguration,
-  ) {
-    logger.debug(
-      `Updating child search configuration statuses to ${configuration.enabled}`,
-    );
-
-    let filter: FilterDefinition = {
-      type: FilterType.EQUALS,
-      name: "seriesId",
-      value:
-        configuration.type === MediaAssetSearchType.TV_SEASON
-          ? configuration.seriesId!
-          : configuration.mediaId,
-    };
-
-    if (configuration.type === MediaAssetSearchType.TV_SEASON) {
-      filter = {
-        type: FilterType.AND,
-        name: "_",
-        value: [
-          filter,
-          {
-            type: FilterType.EQUALS,
-            name: "seasonNumber",
-            value: configuration.seasonNumber!,
-          },
-        ],
-      };
-    }
-
-    const updateChildrenRequest = gql`
-      mutation EnableChildSearchConfigurations(
-        $enabled: Boolean
-      ) {
-        update_dionysus_media_asset_search_configuration(
-          ${buildFilterExpression(filter)} 
-          _set: { enabled: $enabled }
-        ) {
-          affected_rows
-        }
-      }
-    `;
-
-    const updateChildrenResponse =
-      await this.graphQLClient.request<GraphQlUpdateChildMediaAssetSearchConfigurationsResponse>(
-        updateChildrenRequest,
-        { enabled: configuration.enabled },
-      );
-
-    logger.info(
-      `Updated ${updateChildrenResponse.update_dionysus_media_asset_search_configuration.affected_rows} child search configurations`,
-    );
   }
 }

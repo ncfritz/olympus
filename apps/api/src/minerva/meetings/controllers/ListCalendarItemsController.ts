@@ -17,18 +17,12 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import moment from "moment";
-import { GraphQlMeeting, toDomainObject } from "../converters/MeetingConverter";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlListCalendarItemsResponse = {
-  minerva_meetings: GraphQlMeeting[];
-};
+import { MeetingService } from "../services/MeetingService";
 
 @Controller({ version: "1" })
 export class ListCalendarItemsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly meetings: MeetingService) {}
 
   @Get("/meetings/:start")
   @ApiOperation({
@@ -60,86 +54,8 @@ export class ListCalendarItemsController {
     @Query("days", new DefaultValuePipe(1), ParseIntPipe) days: number,
     @Res() response: Response,
   ): Promise<void> {
-    const startTime = moment(start);
-    const endTime = moment(startTime).add({ days: days });
-    //               {
-    //                 _and: { start_time: { _lte: $start }, end_time: { _lte: $end } }
-    //               },
-    //               {
-    //                 _and: { start_time: { _gte: $start }, end_time: { _gte: $end } }
-    //               }
-
-    const queryRequest = gql`
-      query ListCalendarItems($start: timestamptz!, $end: timestamptz!) {
-        minerva_meetings(
-          where: {
-            _or: [
-              {
-                _and: { start_time: { _gte: $start }, end_time: { _lte: $end } }
-              }
-              {
-                _and: { start_time: { _lte: $start }, end_time: { _gte: $end } }
-              }
-            ]
-          }
-        ) {
-          all_day
-          type
-          subject
-          status
-          source
-          start_time
-          sensitivity
-          response
-          reminder
-          organizer {
-            alias
-            email
-            given_name
-            surname
-            type
-          }
-          occurrence_type
-          location
-          importance
-          id
-          uid
-          recurrence_id
-          end_time
-          deleted
-          duration
-          cancelled
-          attendees {
-            attendance
-            attendee_email
-            response
-            user {
-              alias
-              email
-              given_name
-              surname
-              type
-            }
-          }
-        }
-      }
-    `;
-
-    const queryResponse =
-      await this.graphQLClient.request<GraphQlListCalendarItemsResponse>(
-        queryRequest,
-        {
-          start: startTime,
-          end: endTime,
-        },
-      );
-
-    const meetings = queryResponse.minerva_meetings.map((meeting) => {
-      return toDomainObject(meeting);
-    });
-
     const responseBody: ListCalendarItemsResponse = {
-      items: meetings,
+      items: await this.meetings.list(start, days),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

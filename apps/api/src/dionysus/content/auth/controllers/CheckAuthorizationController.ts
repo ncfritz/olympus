@@ -2,23 +2,13 @@ import { CheckAuthResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Req, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response, type Request } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import * as jose from "jose";
+import { contentAuthToken } from "../contentAuth";
+import { ContentAuthService } from "../services/ContentAuthService";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type FetchJwtQueryInput = Record<string, never>;
-
-type FetchJwtQueryResponse = {
-  dionysus_content_auth_by_pk: {
-    key: string;
-    key_id: string;
-    creationTime: string;
-  };
-};
 
 @Controller({ version: "1" })
 export class CheckAuthorizationController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly contentAuth: ContentAuthService) {}
 
   @Get("/content/auth/status")
   @ApiOperation({
@@ -38,37 +28,9 @@ export class CheckAuthorizationController {
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const cookiejwt = request.cookies["x-dionysus-content-auth"];
-
-    if (!cookiejwt) {
-      response.status(HttpStatus.UNAUTHORIZED).send({ authorized: false });
-      return;
-    }
-
-    const fetchJwtKeyRequest = gql`
-      query CheckAuthorization {
-        dionysus_content_auth_by_pk(key_id: "jwt.key") {
-          key
-          key_id
-          createdTime
-        }
-      }
-    `;
-
-    const fetchJwtKeyResponse = await this.graphQLClient.request<
-      FetchJwtQueryResponse,
-      FetchJwtQueryInput
-    >(fetchJwtKeyRequest);
-    const jwtKey = new TextEncoder().encode(
-      fetchJwtKeyResponse.dionysus_content_auth_by_pk.key,
-    );
-
-    try {
-      await jose.jwtVerify(cookiejwt, jwtKey, {
-        issuer: "ncfritz.dionysus.content",
-        maxTokenAge: "30m",
-      });
-    } catch {
+    if (
+      !(await this.contentAuth.checkAuthorization(contentAuthToken(request)))
+    ) {
       response.status(HttpStatus.UNAUTHORIZED).send({ authorized: false });
       return;
     }

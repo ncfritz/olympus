@@ -8,7 +8,6 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseEnumPipe,
   ParseIntPipe,
@@ -25,19 +24,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/MediaAssetSearchExecutionConverter";
-import { BASE_SEARCH_EXECUTION } from "../queries/searchExecution";
-import { GraphQlMediaAssetSearchExecution } from "../types/searchExecution";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlUpdateMediaAssetSearchExecutionResponse = {
-  update_dionysus_media_asset_search_execution_by_pk: GraphQlMediaAssetSearchExecution | null;
-};
+import { MediaAssetSearchExecutionService } from "../services/MediaAssetSearchExecutionService";
 
 @Controller({ version: "1" })
 export class UpdateMediaAssetSearchExecutionController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly searchExecutions: MediaAssetSearchExecutionService,
+  ) {}
 
   @Put("/media/searchConfiguration/:mediaType/:mediaId/execution/:executionId")
   @ApiOperation({
@@ -84,39 +78,11 @@ export class UpdateMediaAssetSearchExecutionController {
     @Body() request: UpdateMediaAssetSearchExecutionRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const updateRequest = gql`
-      mutation UpdateMediaAssetSearchExecution(
-        $executionId: uuid!
-        $changes: dionysus_media_asset_search_execution_set_input = {}
-      ) {
-        update_dionysus_media_asset_search_execution_by_pk(
-          pk_columns: { id: $executionId }
-          _set: $changes
-        ) {
-          ${BASE_SEARCH_EXECUTION}
-        }
-      }
-    `;
-
-    const updateResponse =
-      await this.graphQLClient.request<GraphQlUpdateMediaAssetSearchExecutionResponse>(
-        updateRequest,
-        {
-          executionId: executionId,
-          changes: request.searchExecution,
-        },
-      );
-
-    if (!updateResponse.update_dionysus_media_asset_search_execution_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const updatedSearchExecution = toDomainObject(
-      updateResponse.update_dionysus_media_asset_search_execution_by_pk,
-    );
-
     const responseBody: SingleMediaAssetSearchExecutionResponse = {
-      searchExecution: updatedSearchExecution,
+      searchExecution: await this.searchExecutions.update(
+        executionId,
+        request.searchExecution,
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

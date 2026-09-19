@@ -1,16 +1,8 @@
 import {
-  MetadataFetchJob,
   DeleteMetadataFetchJobResponse,
   MetadataJobType,
 } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Delete,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { Controller, Delete, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiNoContentResponse,
   ApiOperation,
@@ -18,18 +10,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/MetadataFetchJobConverter";
-import { GraphQlMetadataFetchJob } from "../../types/batchJobs";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlDeleteMetadataFetchJobRespons = {
-  delete_dionysus_metadata_fetch_status_by_pk: GraphQlMetadataFetchJob;
-};
+import { MetadataFetchJobService } from "../services/MetadataFetchJobService";
 
 @Controller({ version: "1" })
 export class DeleteMetadataFetchJobController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly metadataFetchJobs: MetadataFetchJobService) {}
 
   @Delete("/metadata/fetchJob/:entityId/:entityType")
   @ApiOperation({
@@ -63,40 +49,8 @@ export class DeleteMetadataFetchJobController {
     @Param("entityType") entityType: string,
     @Res() response: Response,
   ): Promise<void> {
-    const deleteRequest = gql`
-      mutation DeleteFetchJob($id: String!, $type: String!) {
-        delete_dionysus_metadata_fetch_status_by_pk(id: $id, type: $type) {
-          createdTime
-          id
-          jitter
-          lastFetchedTime
-          lastUpdatedTime
-          status
-          ttl
-          type
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlDeleteMetadataFetchJobRespons>(
-        deleteRequest,
-        {
-          id: entityId,
-          type: entityType,
-        },
-      );
-
-    if (!fetchResponse.delete_dionysus_metadata_fetch_status_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const deletedJob: MetadataFetchJob = toDomainObject(
-      fetchResponse.delete_dionysus_metadata_fetch_status_by_pk,
-    );
-
     const responseBody: DeleteMetadataFetchJobResponse = {
-      job: deletedJob,
+      job: await this.metadataFetchJobs.delete(entityId, entityType),
     };
 
     response.status(HttpStatus.NO_CONTENT).send(responseBody);

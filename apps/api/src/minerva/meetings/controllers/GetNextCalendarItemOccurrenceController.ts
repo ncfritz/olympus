@@ -1,12 +1,5 @@
 import { SingleCalendarItemResponse } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -14,24 +7,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { GraphQlMeeting, toDomainObject } from "../converters/MeetingConverter";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlGetMeetingStartTimeResponse = {
-  minerva_meetings_by_pk: {
-    start_time: string;
-    uid?: string;
-  };
-};
-
-type GraphQlDescribeCalendarItemResponse = {
-  minerva_meetings: GraphQlMeeting[];
-};
+import { MeetingService } from "../services/MeetingService";
 
 @Controller({ version: "1" })
 export class GetNextCalendarItemOccurrenceController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly meetings: MeetingService) {}
 
   @Get("/meeting/:meetingId/next")
   @ApiOperation({
@@ -55,101 +36,8 @@ export class GetNextCalendarItemOccurrenceController {
     @Param("meetingId") meetingId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const currentMeetingQueryRequest = gql`
-      query GetCalendarItemSeries($id: String!) {
-        minerva_meetings_by_pk(id: $id) {
-          start_time
-          uid
-        }
-      }
-    `;
-
-    const currentMeetingQueryResponse =
-      await this.graphQLClient.request<GraphQlGetMeetingStartTimeResponse>(
-        currentMeetingQueryRequest,
-        {
-          id: meetingId,
-        },
-      );
-
-    if (!currentMeetingQueryResponse.minerva_meetings_by_pk?.uid) {
-      throw new NotFoundException(
-        `Calendar Item with id ${meetingId} not found`,
-      );
-    }
-
-    const queryRequest = gql`
-      query GetNextCalendarItemOccurrence(
-        $uid: String!
-        $current_start_time: timestamptz!
-      ) {
-        minerva_meetings(
-          where: {
-            _and: {
-              uid: { _eq: $uid }
-              start_time: { _gt: $current_start_time }
-            }
-          }
-          limit: 1
-          order_by: { start_time: asc }
-        ) {
-          all_day
-          type
-          subject
-          status
-          source
-          start_time
-          sensitivity
-          response
-          reminder
-          organizer {
-            alias
-            email
-            given_name
-            surname
-            type
-          }
-          occurrence_type
-          location
-          importance
-          id
-          uid
-          recurrence_id
-          end_time
-          deleted
-          duration
-          cancelled
-          attendees {
-            attendance
-            response
-            user {
-              alias
-              email
-              given_name
-              surname
-              type
-            }
-          }
-        }
-      }
-    `;
-
-    const queryResponse =
-      await this.graphQLClient.request<GraphQlDescribeCalendarItemResponse>(
-        queryRequest,
-        {
-          uid: currentMeetingQueryResponse.minerva_meetings_by_pk.uid,
-          current_start_time:
-            currentMeetingQueryResponse.minerva_meetings_by_pk.start_time,
-        },
-      );
-
-    const meeting =
-      queryResponse.minerva_meetings.length > 0
-        ? toDomainObject(queryResponse.minerva_meetings[0])
-        : undefined;
     const responseBody: SingleCalendarItemResponse = {
-      item: meeting,
+      item: await this.meetings.getNextOccurrence(meetingId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

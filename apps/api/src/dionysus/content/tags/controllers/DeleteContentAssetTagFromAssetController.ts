@@ -8,12 +8,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { ContentAssetTagService } from "../services/ContentAssetTagService";
 
 @Controller({ version: "1" })
 export class DeleteContentAssetTagFromAssetController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly contentAssetTags: ContentAssetTagService) {}
 
   @Delete("/content/asset/:assetId/tag/:tagId")
   @ApiOperation({
@@ -47,25 +47,7 @@ export class DeleteContentAssetTagFromAssetController {
     @Param("tagId") tagId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const updateRequest = gql`
-      mutation RemoveContentAssetTag($content_id: uuid, $content_tag_id: uuid) {
-        delete_dionysus_content_asset_tags(
-          where: {
-            _and: {
-              content_id: { _eq: $content_id }
-              content_tag_id: { _eq: $content_tag_id }
-            }
-          }
-        ) {
-          affected_rows
-        }
-      }
-    `;
-
-    await this.graphQLClient.request(updateRequest, {
-      content_id: assetId,
-      content_tag_id: tagId,
-    });
+    await this.contentAssetTags.removeFromAsset(assetId, tagId);
 
     response.status(HttpStatus.GONE).send({});
   }

@@ -131,8 +131,7 @@ Rules:
 - Controllers are thin: they parse the request, call one service method
   and write the response. They do not write `gql`, and do not inject
   `GraphQLClient`, `AmqpConnection` or `NotificationsGateway`.
-  **[checked]** (`thin-controller`; controllers not yet moved to services
-  are on the allow-list, which shrinks feature by feature.)
+  **[checked]** (`thin-controller`)
 - Constructor parameters are `private readonly`; a service is named after
   its entities (`private readonly notes: NoteService`).
 

@@ -1,8 +1,4 @@
-import {
-  Notification,
-  ListNotificationsResponse,
-  NotificationStatistics,
-} from "@ncfritz/olympus-model";
+import { ListNotificationsResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   DefaultValuePipe,
@@ -19,28 +15,12 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import {
-  GraphQlNotification,
-  toDomainObject,
-} from "../converters/NotificationConverter";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlNotificationStatistic = {
-  acknowledged: boolean;
-  count: number;
-  group: string;
-  level: string;
-};
-
-type GraphQlDescribeNotificationResponse = {
-  olympus_notifications: GraphQlNotification[];
-  olympus_notification_statistics: GraphQlNotificationStatistic[];
-};
+import { NotificationService } from "../services/NotificationService";
 
 @Controller({ version: "1" })
 export class ListNotificationsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly notifications: NotificationService) {}
 
   @Get("/notifications")
   @ApiOperation({
@@ -69,79 +49,7 @@ export class ListNotificationsController {
     @Query("count", new DefaultValuePipe(10), ParseIntPipe) count: number,
     @Res() response: Response,
   ): Promise<void> {
-    // TODO: Filter by username once plumbed in
-    const queryRequest = gql`
-      query ListNotifications {
-        olympus_notifications(
-        where: { acknowledged: { _neq: true } }
-        order_by: { createdTime: desc }, limit: ${count}) {
-          acknowledged
-          acknowledgedTime
-          createdTime
-          deletionTime
-          eventId
-          eventTime
-          expirationTime
-          level
-          notificationId
-          payload
-          ttl
-          notificationGroup {
-            createdTime
-            description
-            id
-            name
-          }
-          notificationType {
-            createdTime
-            defaultGroupId
-            id
-            description
-            name
-          }
-        }
-        olympus_notification_statistics {
-          acknowledged
-          count
-          group
-          level
-        }
-      }
-    `;
-
-    const queryResponse =
-      await this.graphQLClient.request<GraphQlDescribeNotificationResponse>(
-        queryRequest,
-      );
-
-    const notifications: Notification[] = [];
-    const statistics: Record<string, NotificationStatistics> = {};
-
-    queryResponse.olympus_notification_statistics.forEach((statistic) => {
-      if (!(statistic.group in statistics)) {
-        statistics[statistic.group] = {
-          total: 0,
-          unread: 0,
-          info: 0,
-          success: 0,
-          warning: 0,
-          error: 0,
-        };
-      }
-
-      statistics[statistic.group].total += statistic.count;
-      statistics[statistic.group][
-        statistic.level as keyof NotificationStatistics
-      ] += statistic.count;
-
-      if (!statistic.acknowledged) {
-        statistics[statistic.group].unread += statistic.count;
-      }
-    });
-
-    queryResponse.olympus_notifications.forEach((entry) => {
-      notifications.push(toDomainObject(entry));
-    });
+    const { notifications, statistics } = await this.notifications.list(count);
 
     const responseBody: ListNotificationsResponse = {
       recent: notifications,

@@ -1,11 +1,9 @@
-import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import { EmptyResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   DefaultValuePipe,
   Delete,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseBoolPipe,
   Query,
@@ -19,16 +17,12 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import moment from "moment";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { MediaAssetWorkflowService } from "../services/MediaAssetWorkflowService";
 
 @Controller({ version: "1" })
 export class DeleteMediaAssetWorkflowController {
-  constructor(
-    private readonly graphQLClient: GraphQLClient,
-    protected readonly amqpConnection: AmqpConnection,
-  ) {}
+  constructor(private readonly workflows: MediaAssetWorkflowService) {}
 
   @Delete("/media/workflow/:workflowId")
   @ApiOperation({
@@ -63,74 +57,9 @@ export class DeleteMediaAssetWorkflowController {
     hardDelete: boolean,
     @Res() response: Response,
   ): Promise<void> {
-    let responseCode = HttpStatus.OK;
+    await this.workflows.delete(workflowId, hardDelete);
 
-    if (hardDelete) {
-      const deleteRequest = gql`
-        mutation HardDeleteMediaAssetWorkflow($workflowId: uuid!) {
-          delete_dionysus_media_asset_workflow_step(
-            where: { workflowId: { _eq: $workflowId } }
-          ) {
-            affected_rows
-          }
-          delete_dionysus_media_asset_download(
-            where: { workflowId: { _eq: $workflowId } }
-          ) {
-            affected_rows
-          }
-          delete_dionysus_media_asset_workflow_by_pk(id: $workflowId) {
-            id
-          }
-        }
-      `;
-
-      const deleteResponse = await this.graphQLClient.request<{
-        delete_dionysus_media_asset_workflow_by_pk: { id: string } | null;
-      }>(deleteRequest, {
-        workflowId: workflowId,
-      });
-
-      if (!deleteResponse.delete_dionysus_media_asset_workflow_by_pk) {
-        throw new NotFoundException();
-      }
-
-      responseCode = HttpStatus.NO_CONTENT;
-    } else {
-      const deleteRequest = gql`
-        mutation SoftDeleteMediaAssetWorkflow(
-          $workflowId: uuid!
-          $deletionTime: timestamptz!
-        ) {
-          update_dionysus_media_asset_workflow_by_pk(
-            pk_columns: { id: $workflowId }
-            _set: { deleted: true, deleted_at: $deletionTime }
-          ) {
-            id
-          }
-        }
-      `;
-      const now = moment.utc();
-
-      const deleteResponse = await this.graphQLClient.request<{
-        update_dionysus_media_asset_workflow_by_pk: { id: string } | null;
-      }>(deleteRequest, {
-        workflowId: workflowId,
-        deletionTime: now.toISOString(),
-      });
-
-      if (!deleteResponse.update_dionysus_media_asset_workflow_by_pk) {
-        throw new NotFoundException();
-      }
-
-      await this.amqpConnection.publish(
-        "media.trigger",
-        "jobType.deleteWorkflow",
-        {
-          workflowId: workflowId,
-        },
-      );
-    }
-
+    const responseCode = hardDelete ? HttpStatus.NO_CONTENT : HttpStatus.OK;
     const responseBody: EmptyResponse = {};
 
     response.status(responseCode).send(responseBody);

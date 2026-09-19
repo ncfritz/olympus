@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { ProductionCompanyService } from "./services/ProductionCompanyService";
 import { RabbitModule } from "../../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../../infra/GraphQLClientModule";
 import { CreateProductionCompanyController } from "./controllers/CreateProductionCompanyController";
@@ -9,6 +10,7 @@ import { ListProductionCompanyTvSeriesController } from "./controllers/ListProdu
 
 @Module({
   imports: [RabbitModule, GraphQLClientModule],
+  providers: [ProductionCompanyService],
   controllers: [
     CreateProductionCompanyController,
     DescribeProductionCompanyController,

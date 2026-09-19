@@ -1,6 +1,8 @@
 import { Module } from "@nestjs/common";
 import { RabbitModule } from "../../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../../infra/GraphQLClientModule";
+import { MediaSearchResultsModule } from "../searchResults/MediaSearchResultsModule";
+import { MediaAssetWorkflowService } from "./services/MediaAssetWorkflowService";
 import { ApproveMediaAssetTranscodeConfigurationController } from "./controllers/ApproveMediaAssetTranscodeConfigurationController";
 import { CreateMediaAssetWorkflowController } from "./controllers/CreateMediaAssetWorkflowController";
 import { CreateMediaAssetWorkflowStepController } from "./controllers/CreateMediaAssetWorkflowStepController";
@@ -15,7 +17,8 @@ import { UpdateMediaAssetWorkflowStepController } from "./controllers/UpdateMedi
 import { VerifyMediaAssetTranscodeConfigurationController } from "./controllers/VerifyMediaAssetTranscodeConfigurationController";
 
 @Module({
-  imports: [RabbitModule, GraphQLClientModule],
+  imports: [RabbitModule, GraphQLClientModule, MediaSearchResultsModule],
+  providers: [MediaAssetWorkflowService],
   controllers: [
     ApproveMediaAssetTranscodeConfigurationController,
     CreateMediaAssetWorkflowController,

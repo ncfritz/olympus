@@ -1,4 +1,3 @@
-import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   CreateContentIngestionWorkflowRequest,
   CreateContentIngestionWorkflowResponse,
@@ -12,20 +11,16 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseContentIngestionWorkflowController } from "./BaseContentIngestionWorkflowController";
 import { DescribeContentIngestionWorkflowController } from "./DescribeContentIngestionWorkflowController";
 import { setLocation } from "../../../../utils/location";
+import { ContentIngestionWorkflowService } from "../services/ContentIngestionWorkflowService";
 
 @Controller({ version: "1" })
-export class CreateContentIngestionWorkflowController extends BaseContentIngestionWorkflowController {
+export class CreateContentIngestionWorkflowController {
   constructor(
-    protected readonly graphQLClient: GraphQLClient,
-    private readonly amqpConnection: AmqpConnection,
-  ) {
-    super(graphQLClient);
-  }
+    private readonly contentIngestionWorkflows: ContentIngestionWorkflowService,
+  ) {}
 
   @Post("/content/workflows")
   @ApiOperation({
@@ -57,16 +52,10 @@ export class CreateContentIngestionWorkflowController extends BaseContentIngesti
     @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const createdWorkflow = await this.createContentIngestionWorkflow(
+    const createdWorkflow = await this.contentIngestionWorkflows.create(
       request.workflow.source,
       request.workflow.sourceType,
     );
-
-    await this.amqpConnection.publish("content.trigger", "jobType.rawIngest", {
-      workflowId: createdWorkflow.id,
-      assetLocation: request.workflow.source,
-      skipWorkflow: false,
-    });
 
     const responseBody: CreateContentIngestionWorkflowResponse = {
       workflow: createdWorkflow,

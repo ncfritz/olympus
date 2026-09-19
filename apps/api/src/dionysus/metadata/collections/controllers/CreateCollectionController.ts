@@ -1,8 +1,6 @@
 import {
   CreateCollectionRequest,
   CreateCollectionResponse,
-  PartialCollectionPart,
-  PartialTypedImage,
 } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Put, Req, Res } from "@nestjs/common";
 import {
@@ -13,30 +11,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { DescribeCollectionController } from "./DescribeCollectionController";
 import { setLocation } from "../../../../utils/location";
-
-type GraphQlCreateCollectionInput = {
-  id: number;
-  name: string;
-  overview: string;
-  posterPath: string;
-  backdropPath: string;
-  parts: PartialCollectionPart[];
-  images: PartialTypedImage[];
-};
-
-type GraphQlCreateCollectionResponse = {
-  insert_dionysus_collections_one: {
-    id: number;
-  };
-};
+import { CollectionService } from "../services/CollectionService";
 
 @Controller({ version: "1" })
 export class CreateCollectionController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly collections: CollectionService) {}
 
   @Put("/metadata/collections")
   @ApiOperation({
@@ -68,67 +50,14 @@ export class CreateCollectionController {
     @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const insertRequest = gql`
-      mutation CreateCollection(
-        $id: numeric!
-        $name: String!
-        $overview: String!
-        $posterPath: String
-        $backdropPath: String
-        $parts: [dionysus_collection_parts_insert_input!]!
-        $images: [dionysus_collection_images_insert_input!]!
-      ) {
-        insert_dionysus_collections_one(
-          object: {
-            id: $id
-            name: $name
-            overview: $overview
-            posterPath: $posterPath
-            backdropPath: $backdropPath
-            parts: {
-              on_conflict: {
-                constraint: collection_parts_pkey
-                update_columns: [movieId]
-              }
-              data: $parts
-            }
-            images: {
-              on_conflict: {
-                constraint: collection_images_pkey
-                update_columns: [width, height, languageCode]
-              }
-              data: $images
-            }
-          }
-          on_conflict: {
-            constraint: collections_pkey
-            update_columns: [name, overview, posterPath, backdropPath]
-          }
-        ) {
-          id
-        }
-      }
-    `;
-
-    const insertResponse = await this.graphQLClient.request<
-      GraphQlCreateCollectionResponse,
-      GraphQlCreateCollectionInput
-    >(insertRequest, {
-      id: request.collection.id,
-      name: request.collection.name,
-      overview: request.collection.overview,
-      posterPath: request.collection.posterPath,
-      backdropPath: request.collection.backdropPath,
-      parts: request.collection.parts,
-      images: request.collection.images,
-    });
+    const id = await this.collections.create(request.collection);
 
     const responseBody: CreateCollectionResponse = {
-      id: insertResponse.insert_dionysus_collections_one.id,
+      id: id,
     };
 
     setLocation(response, httpRequest, DescribeCollectionController, {
-      collectionId: insertResponse.insert_dionysus_collections_one.id,
+      collectionId: id,
     });
 
     response.status(HttpStatus.CREATED).send(responseBody);

@@ -7,18 +7,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import prettyBytes from "pretty-bytes";
-import { GraphQLContentAssetBucketStatistic } from "../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlContentAssetSizeQueryResponse = {
-  dionysus_content_asset_size_statistics: GraphQLContentAssetBucketStatistic[];
-};
+import { ContentAssetService } from "../services/ContentAssetService";
 
 @Controller({ version: "1" })
 export class GetContentAssetSizeStatisticsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly contentAssets: ContentAssetService) {}
 
   @Get("/content/assets/statistics/size")
   @ApiOperation({
@@ -40,39 +34,8 @@ export class GetContentAssetSizeStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const fetchRequest = gql`
-      query GetContentAssetSizeStatistics {
-        dionysus_content_asset_size_statistics(order_by: { bucket: asc }) {
-          bucket
-          bucket_width
-          count
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlContentAssetSizeQueryResponse>(
-        fetchRequest,
-      );
-    const categories: string[] = [];
-    const data: number[] = [];
-
-    fetchResponse.dionysus_content_asset_size_statistics.forEach((entry) => {
-      categories.push(
-        `${prettyBytes(entry.bucket, { maximumFractionDigits: 1 })}`,
-      );
-      data.push(entry.count);
-    });
-
-    const responseBody: ContentStatisticsResponse = {
-      categories: categories,
-      series: [
-        {
-          name: "Size",
-          data: data,
-        },
-      ],
-    };
+    const responseBody: ContentStatisticsResponse =
+      await this.contentAssets.getSizeStatistics();
 
     response.status(HttpStatus.OK).send(responseBody);
   }

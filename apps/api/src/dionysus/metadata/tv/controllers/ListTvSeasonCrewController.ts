@@ -1,7 +1,4 @@
-import {
-  ListTvSeasonCrewResponse,
-  TVSeriesCrewMember,
-} from "@ncfritz/olympus-model";
+import { ListTvSeasonCrewResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -17,22 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toTvSeriesCrewMember } from "../converters/tvSeriesConverter";
-import { TV_SERIES_CREW_MEMBER } from "../queries/tvSeries";
-import { GraphQlTvSeriesCrewMember } from "../types/tvSeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseTVController } from "./BaseTVController";
-
-type GraphQlListTvSeasonCrewResponse = {
-  dionysus_tv_season_crew: GraphQlTvSeriesCrewMember[];
-};
+import { TvSeasonService } from "../services/TvSeasonService";
 
 @Controller({ version: "1" })
-export class ListTvSeasonCrewController extends BaseTVController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class ListTvSeasonCrewController {
+  constructor(private readonly tvSeasons: TvSeasonService) {}
 
   @Get("/metadata/tvSeries/:tvSeriesId/seasons/:seasonNumber/crew")
   @ApiOperation({
@@ -59,34 +46,8 @@ export class ListTvSeasonCrewController extends BaseTVController {
 
     @Res() response: Response,
   ): Promise<void> {
-    const seasonId = await this.lookupMediaIdForTvSeason(
-      tvSeriesId,
-      seasonNumber,
-    );
-
-    const fetchRequest = gql`
-      query ListTvSeasonCrew($id: numeric!) {
-        dionysus_tv_season_crew(where: { seasonId: { _eq: $id } }) {
-         ${TV_SERIES_CREW_MEMBER}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListTvSeasonCrewResponse>(
-        fetchRequest,
-        { id: seasonId },
-      );
-    const crew: TVSeriesCrewMember[] = [];
-
-    fetchResponse.dionysus_tv_season_crew.forEach((result) => {
-      if (result.person) {
-        crew.push(toTvSeriesCrewMember(result));
-      }
-    });
-
     const responseBody: ListTvSeasonCrewResponse = {
-      crew: crew,
+      crew: await this.tvSeasons.listCrew(tvSeriesId, seasonNumber),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

@@ -21,21 +21,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { GraphQlContentIngestionWorkflowStep } from "../types/workflow";
-import { toDomainObject } from "../converters/ContentIngestionWorkflowStepConverter";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseContentIngestionWorkflowController } from "./BaseContentIngestionWorkflowController";
-
-type GraphQlUpdateContentIngestionWorkflowStepResponse = {
-  update_dionysus_content_asset_ingest_workflow_steps_by_pk: GraphQlContentIngestionWorkflowStep;
-};
+import { ContentIngestionWorkflowService } from "../services/ContentIngestionWorkflowService";
 
 @Controller({ version: "1" })
-export class UpdateContentIngestionWorkflowStepController extends BaseContentIngestionWorkflowController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class UpdateContentIngestionWorkflowStepController {
+  constructor(
+    private readonly contentIngestionWorkflows: ContentIngestionWorkflowService,
+  ) {}
 
   @Put("/content/workflow/:workflowId/steps/:workflowStepId")
   @ApiOperation({
@@ -73,47 +66,12 @@ export class UpdateContentIngestionWorkflowStepController extends BaseContentIng
     @Body() request: UpdateContentIngestionWorkflowStepRequest,
     @Res() response: Response,
   ): Promise<void> {
-    await this.verifyWorkflowExists(workflowId);
-    await this.verifyWorkflowStepExists(workflowId, workflowStepId);
-
-    const updateRequest = gql`
-      mutation UpdateContentIngestionWorkflowStep(
-        $id: uuid!
-        $workflowId: uuid!
-        $changes: dionysus_content_asset_ingest_workflow_steps_set_input = {}
-      ) {
-        update_dionysus_content_asset_ingest_workflow_steps_by_pk(
-          pk_columns: { id: $id, workflow_id: $workflowId }
-          _set: $changes
-        ) {
-          id
-          type
-          status
-          progress
-          startedTime
-          finishedTime
-          createdTime
-          lastUpdatedTime
-        }
-      }
-    `;
-
-    const updateResponse =
-      await this.graphQLClient.request<GraphQlUpdateContentIngestionWorkflowStepResponse>(
-        updateRequest,
-        {
-          id: workflowStepId,
-          workflowId: workflowId,
-          changes: request.step,
-        },
-      );
-
-    const updatedWorkflowStep = toDomainObject(
-      updateResponse.update_dionysus_content_asset_ingest_workflow_steps_by_pk,
-    );
-
     const responseBody: UpdateContentIngestionWorkflowStepResponse = {
-      step: updatedWorkflowStep,
+      step: await this.contentIngestionWorkflows.updateStep(
+        workflowId,
+        workflowStepId,
+        request.step,
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

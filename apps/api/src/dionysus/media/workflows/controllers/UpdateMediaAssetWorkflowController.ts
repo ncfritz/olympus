@@ -7,7 +7,6 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
-  NotFoundException,
   Param,
   Put,
   Res,
@@ -22,19 +21,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDecoratedDomainObject } from "../converters/MediaAssetWorkflowConverter";
-import { DECORATED_MEDIA_ASSET_WORKFLOW } from "../queries/mediaAssetWorkflow";
-import { GraphQlDecoratedMediaAssetWorkflow } from "../types/mediaAssetWorkflow";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlUpdateChildMediaAssetWorkflowResponse = {
-  update_dionysus_media_asset_workflow_by_pk: GraphQlDecoratedMediaAssetWorkflow | null;
-};
+import { MediaAssetWorkflowService } from "../services/MediaAssetWorkflowService";
 
 @Controller({ version: "1" })
 export class UpdateMediaAssetWorkflowController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly workflows: MediaAssetWorkflowService) {}
 
   @Put("/media/workflow/:workflowId")
   @ApiOperation({
@@ -65,39 +57,8 @@ export class UpdateMediaAssetWorkflowController {
     @Body() request: UpdateMediaAssetWorkflowRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const updateRequest = gql`
-      mutation UpdateMediaAssetWorkflow(
-        $workflowId: uuid!
-        $changes: dionysus_media_asset_workflow_set_input = {}
-      ) {
-        update_dionysus_media_asset_workflow_by_pk(
-          pk_columns: { id: $workflowId }
-          _set: $changes
-        ) {
-          ${DECORATED_MEDIA_ASSET_WORKFLOW}
-        }
-      }
-    `;
-
-    const updateResponse =
-      await this.graphQLClient.request<GraphQlUpdateChildMediaAssetWorkflowResponse>(
-        updateRequest,
-        {
-          workflowId: workflowId,
-          changes: request.workflow,
-        },
-      );
-
-    if (!updateResponse.update_dionysus_media_asset_workflow_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const updatedWorkflow = toDecoratedDomainObject(
-      updateResponse.update_dionysus_media_asset_workflow_by_pk,
-    );
-
     const responseBody: SingleMediaAssetWorkflowResponse = {
-      workflow: updatedWorkflow,
+      workflow: await this.workflows.update(workflowId, request.workflow),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

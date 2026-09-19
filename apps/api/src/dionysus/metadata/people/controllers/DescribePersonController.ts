@@ -1,9 +1,8 @@
-import { DescribePersonResponse, Person } from "@ncfritz/olympus-model";
+import { DescribePersonResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Res,
@@ -15,18 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { GraphQlPerson } from "../types/person";
-import { toDomainObject } from "../converters/PersonConverter";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetPersonResponse = {
-  dionysus_people_by_pk: GraphQlPerson;
-};
+import { PersonService } from "../services/PersonService";
 
 @Controller({ version: "1" })
 export class DescribePersonController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly people: PersonService) {}
 
   @Get("/metadata/person/:personId")
   @ApiOperation({
@@ -50,70 +43,8 @@ export class DescribePersonController {
     @Param("personId", ParseIntPipe) personId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query DescribePerson($id: numeric!) {
-        dionysus_people_by_pk(id: $id) {
-          adult
-          alsoKnownAs {
-            createdTime
-            id
-            lastUpdatedTime
-            name
-          }
-          biography
-          birthday
-          birthplace
-          createdTime
-          deathday
-          popularity
-          externalIds {
-            createdTime
-            externalId
-            id
-            lastUpdatedTime
-            type
-          }
-          gender
-          homepage
-          id
-          images {
-            language {
-              createdTime
-              id
-              lastUpdatedTime
-              name
-            }
-            createdTime
-            filePath
-            height
-            id
-            lastUpdatedTime
-            width
-          }
-          imdbId
-          knownForDepartment
-          lastUpdatedTime
-          name
-          profilePath
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetPersonResponse>(fetchRequest, {
-        id: personId,
-      });
-
-    if (!fetchResponse.dionysus_people_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const fetchedPerson: Person = toDomainObject(
-      fetchResponse.dionysus_people_by_pk,
-    );
-
     const responseBody: DescribePersonResponse = {
-      person: fetchedPerson,
+      person: await this.people.describe(personId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

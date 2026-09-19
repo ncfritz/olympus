@@ -1,8 +1,6 @@
 import {
-  MediaAssetWorkflowStepStatus,
   CreateMediaAssetWorkflowSubStepRequest,
   CreateMediaAssetWorkflowSubStepResponse,
-  MediaAssetWorkflowSubStep,
 } from "@ncfritz/olympus-model";
 import {
   Body,
@@ -22,25 +20,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import moment from "moment";
-import { toSubStepDomainObject } from "../converters/MediaAssetWorkflowStepConverter";
-import { BASE_MEDIA_ASSET_WORKFLOW_STEP } from "../queries/mediaAssetWorkflow";
-import { GraphQlMediaAssetWorkflowSubStep } from "../types/mediaAssetWorkflow";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseMediaAssetWorkflowController } from "./BaseMediaAssetWorkflowController";
 import { DescribeMediaAssetWorkflowStepController } from "./DescribeMediaAssetWorkflowStepController";
 import { setLocation } from "../../../../utils/location";
-
-type GraphQlCreateMediaAssetWorkflowSubStepResponse = {
-  insert_dionysus_media_asset_workflow_step_one: GraphQlMediaAssetWorkflowSubStep;
-};
+import { MediaAssetWorkflowService } from "../services/MediaAssetWorkflowService";
 
 @Controller({ version: "1" })
-export class CreateMediaAssetWorkflowSubStepController extends BaseMediaAssetWorkflowController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class CreateMediaAssetWorkflowSubStepController {
+  constructor(private readonly workflows: MediaAssetWorkflowService) {}
 
   @Post("/media/workflow/:workflowId/step/:workflowStepId/subSteps")
   @ApiOperation({
@@ -86,58 +73,11 @@ export class CreateMediaAssetWorkflowSubStepController extends BaseMediaAssetWor
     @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const stepDetails = await this.verifyWorkflowStepExists(
+    const createdWorkflowStep = await this.workflows.createSubStep(
       workflowId,
       workflowStepId,
+      request.step,
     );
-
-    const insertRequest = gql`
-      mutation CreateMediaAssetWorkflowSubStep(
-        $workflowId: uuid!
-        $assetType: String!
-        $mediaId: numeric!
-        $workflowStepId: uuid!
-        $workflowStepType: String!
-        $workflowStepStatus: String!
-        $progress: numeric!
-        $startedTime: timestamptz!
-      ) {
-        insert_dionysus_media_asset_workflow_step_one(
-          object: {
-            workflowId: $workflowId
-            assetType: $assetType
-            mediaId: $mediaId
-            type: $workflowStepType
-            status: $workflowStepStatus
-            progress: $progress
-            startedTime: $startedTime
-            parent_step_id: $workflowStepId
-          }
-        ) {
-          ${BASE_MEDIA_ASSET_WORKFLOW_STEP}
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateMediaAssetWorkflowSubStepResponse>(
-        insertRequest,
-        {
-          workflowId: workflowId,
-          assetType: stepDetails.assetType,
-          mediaId: stepDetails.mediaId,
-          workflowStepId: workflowStepId,
-          workflowStepType: request.step.type,
-          workflowStepStatus: MediaAssetWorkflowStepStatus.RUNNING,
-          startedTime: moment().utc().toISOString(),
-          progress: 0,
-        },
-      );
-
-    const createdWorkflowStep: MediaAssetWorkflowSubStep =
-      toSubStepDomainObject(
-        insertResponse.insert_dionysus_media_asset_workflow_step_one,
-      );
 
     const responseBody: CreateMediaAssetWorkflowSubStepResponse = {
       step: createdWorkflowStep,

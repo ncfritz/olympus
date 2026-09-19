@@ -1,5 +1,4 @@
 import {
-  Certification,
   CreateCertificationRequest,
   CreateCertificationResponse,
 } from "@ncfritz/olympus-model";
@@ -12,18 +11,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/CertificationConverter";
-import { GraphQlCertification } from "../types/certification";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlCreateCertificationResponse = {
-  insert_dionysus_certifications_one: GraphQlCertification;
-};
+import { CertificationService } from "../services/CertificationService";
 
 @Controller({ version: "1" })
 export class CreateCertificationController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly certifications: CertificationService) {}
 
   @Put("/metadata/certifications")
   @ApiOperation({
@@ -48,56 +41,8 @@ export class CreateCertificationController {
     @Body() request: CreateCertificationRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const insertRequest = gql`
-      mutation CreateCertification(
-        $country: String!
-        $certification: String!
-        $type: String!
-        $meaning: String!
-        $order: numeric
-      ) {
-        insert_dionysus_certifications_one(
-          object: {
-            certification: $certification
-            country: $country
-            meaning: $meaning
-            order: $order
-            type: $type
-          }
-          on_conflict: {
-            constraint: certifications_pkey
-            update_columns: [meaning, order]
-          }
-        ) {
-          certification
-          country
-          createdTime
-          meaning
-          order
-          type
-          lastUpdatedTime
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateCertificationResponse>(
-        insertRequest,
-        {
-          country: request.certification.country,
-          certification: request.certification.certification,
-          type: request.certification.type,
-          order: request.certification.order,
-          meaning: request.certification.meaning,
-        },
-      );
-
-    const createdCertification: Certification = toDomainObject(
-      insertResponse.insert_dionysus_certifications_one,
-    );
-
     const responseBody: CreateCertificationResponse = {
-      certification: createdCertification,
+      certification: await this.certifications.create(request.certification),
     };
 
     response.status(HttpStatus.CREATED).send(responseBody);

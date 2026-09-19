@@ -1,8 +1,4 @@
-import {
-  Language,
-  ListLanguagesResponse,
-  SortDirection,
-} from "@ncfritz/olympus-model";
+import { ListLanguagesResponse, SortDirection } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -11,27 +7,15 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/LanguageConverter";
-import { GraphQlLanguage } from "../types/language";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import { buildPaginationExpression } from "../../../../utils/filterUtil";
-
-type GraphQlListLanguagesResponse = {
-  dionysus_languages: GraphQlLanguage[];
-  dionysus_languages_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { LanguageService } from "../services/LanguageService";
 
 @Controller({ version: "1" })
 export class ListLanguagesController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly languages: LanguageService) {}
 
   @Get("/metadata/languages")
   @ApiOperation({
@@ -62,42 +46,16 @@ export class ListLanguagesController {
     @Query("sortBy") sortField = "createdTime",
     @Res() response: Response,
   ): Promise<void> {
-    const paginationExpression = buildPaginationExpression({
+    const { languages, count } = await this.languages.list({
       pageSize,
       startPage,
       sortField,
       sortDirection,
     });
-    const fetchRequest = gql`
-      query ListLanguages {
-      dionysus_languages(${paginationExpression}) {
-        createdTime
-        id
-        lastUpdatedTime
-        name
-        nativeName
-      }
-      dionysus_languages_aggregate {
-        aggregate {
-          count
-        }
-      }
-    }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListLanguagesResponse>(
-        fetchRequest,
-      );
-    const fetchedLanguages: Language[] = [];
-
-    fetchResponse.dionysus_languages.forEach((result) => {
-      fetchedLanguages.push(toDomainObject(result));
-    });
 
     const responseBody: ListLanguagesResponse = {
-      languages: fetchedLanguages,
-      count: fetchResponse.dionysus_languages_aggregate.aggregate.count,
+      languages: languages,
+      count: count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

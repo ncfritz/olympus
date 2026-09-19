@@ -1,38 +1,21 @@
 import {
   ListMediaAssetWorkflowsResponse,
-  DecoratedMediaAssetWorkflow,
   SortDirection,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDecoratedDomainObject } from "../converters/MediaAssetWorkflowConverter";
-import { DECORATED_MEDIA_ASSET_WORKFLOW } from "../queries/mediaAssetWorkflow";
-import { GraphQlDecoratedMediaAssetWorkflow } from "../types/mediaAssetWorkflow";
 import {
   ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import {
-  buildFilterExpression,
-  buildPaginationExpression,
-  parseFilterDefinition,
-} from "../../../../utils/filterUtil";
-
-export type GraphQlListMediaAssetWorkflowsResponse = {
-  dionysus_media_asset_workflow: GraphQlDecoratedMediaAssetWorkflow[];
-  dionysus_media_asset_workflow_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { parseFilterDefinition } from "../../../../utils/filterUtil";
+import { MediaAssetWorkflowService } from "../services/MediaAssetWorkflowService";
 
 @Controller({ version: "1" })
 export class ListMediaAssetWorkflowsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly workflows: MediaAssetWorkflowService) {}
 
   @Get("/media/workflows")
   @ApiOperation({
@@ -60,47 +43,16 @@ export class ListMediaAssetWorkflowsController {
     @Res() response: Response,
   ): Promise<void> {
     const userFilters = parseFilterDefinition(filters);
-    const whereExpression = buildFilterExpression(userFilters);
-    const paginationExpression = buildPaginationExpression({
-      pageSize: pageSize,
-      startPage: startPage,
-      sortDirection: sortDirection,
-      sortField: sortField,
-    });
-
-    const fetchRequest = gql`
-      query ListMediaAssetWorkflows {
-        dionysus_media_asset_workflow(${[
-          paginationExpression,
-          whereExpression,
-        ].join(", ")}) {
-          ${DECORATED_MEDIA_ASSET_WORKFLOW}
-        }
-        dionysus_media_asset_workflow_aggregate${
-          whereExpression ? `(${whereExpression})` : ""
-        } {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListMediaAssetWorkflowsResponse>(
-        fetchRequest,
+    const responseBody: ListMediaAssetWorkflowsResponse =
+      await this.workflows.list(
+        {
+          pageSize: pageSize,
+          startPage: startPage,
+          sortDirection: sortDirection,
+          sortField: sortField,
+        },
+        userFilters,
       );
-    const fetchedWorkflows: DecoratedMediaAssetWorkflow[] = [];
-
-    fetchResponse.dionysus_media_asset_workflow.forEach((result) => {
-      fetchedWorkflows.push(toDecoratedDomainObject(result));
-    });
-
-    const responseBody: ListMediaAssetWorkflowsResponse = {
-      workflows: fetchedWorkflows,
-      count:
-        fetchResponse.dionysus_media_asset_workflow_aggregate.aggregate.count,
-    };
 
     response.status(HttpStatus.OK).send(responseBody);
   }

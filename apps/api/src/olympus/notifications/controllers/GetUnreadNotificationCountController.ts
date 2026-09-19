@@ -2,15 +2,12 @@ import { GetUnreadNotificationCountResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-import { BaseNotificationsController } from "./BaseNotificationsController";
+import { NotificationService } from "../services/NotificationService";
 
 @Controller({ version: "1" })
-export class GetUnreadNotificationCountController extends BaseNotificationsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {
-    super();
-  }
+export class GetUnreadNotificationCountController {
+  constructor(private readonly notifications: NotificationService) {}
 
   @Get("/notifications/unreadCount")
   @ApiOperation({
@@ -28,7 +25,7 @@ export class GetUnreadNotificationCountController extends BaseNotificationsContr
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
     const responseBody: GetUnreadNotificationCountResponse = {
-      unreadCount: await this.getUnreadNotificationsCount(this.graphQLClient),
+      unreadCount: await this.notifications.getUnreadCount(),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

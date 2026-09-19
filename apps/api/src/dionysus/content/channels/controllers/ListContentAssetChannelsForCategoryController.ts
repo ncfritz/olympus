@@ -1,5 +1,4 @@
 import {
-  ContentAssetChannel,
   FilterDefinition,
   ListContentAssetChannelsForCategoryResponse,
   SortDirection,
@@ -8,7 +7,6 @@ import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   Query,
   Req,
@@ -22,39 +20,21 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/ContentAssetChannelConverter";
-import { GraphQlFullContentAssetChannel } from "../../types/content";
 import {
   ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import {
-  buildFilterExpression,
-  buildPaginationExpression,
-  parseFilterDefinition,
-} from "../../../../utils/filterUtil";
-import {
-  BC_CHANNEL_FILTER,
-  withContentCurtain,
-} from "../../auth/controllers/BaseAuthenticatedContentController";
-
-type GraphQlListContentAssetChannelsForCategoryResponse = {
-  dionysus_content_asset_channel_category_by_pk: {
-    channels: GraphQlFullContentAssetChannel[];
-    channels_aggregate: {
-      aggregate: {
-        count: number;
-      };
-    };
-  } | null;
-};
+import { parseFilterDefinition } from "../../../../utils/filterUtil";
+import { ContentAssetChannelService } from "../services/ContentAssetChannelService";
+import { contentAuthToken } from "../../auth/contentAuth";
 
 @Controller({ version: "1" })
 @ApiExtraModels(FilterDefinition)
 export class ListContentAssetChannelsForCategoryController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly contentAssetChannels: ContentAssetChannelService,
+  ) {}
 
   @Get("/content/channels/category/:categoryId/channels")
   @ApiOperation({
@@ -87,74 +67,18 @@ export class ListContentAssetChannelsForCategoryController {
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const whereExpression = buildFilterExpression(
-      await withContentCurtain(
-        this.graphQLClient,
-        request,
+    const responseBody: ListContentAssetChannelsForCategoryResponse =
+      await this.contentAssetChannels.listForCategory(
+        categoryId,
         parseFilterDefinition(filters),
-        BC_CHANNEL_FILTER,
-      ),
-    );
-    const paginationExpression = buildPaginationExpression({
-      pageSize: pageSize,
-      startPage: startPage,
-      sortDirection: sortDirection,
-      sortField: sortField,
-    });
-
-    const fetchRequest = gql`
-      query ListContentAssetChannelsForCategory($categoryId: uuid!) {
-        dionysus_content_asset_channel_category_by_pk(id: $categoryId) {
-          channels(${[paginationExpression, whereExpression].join(", ")}) {
-            bcCompliant
-            categoryId
-            createdTime
-            description
-            encodedFilter
-            favorite
-            filterInput
-            id
-            jitter
-            lastFetchedTime
-            lastUpdatedTime
-            name
-            ttl
-            assetCount
-            assetCache {
-              assetId
-              createdTime
-            }
-          }
-          channels_aggregate${whereExpression ? `(${whereExpression})` : ""} {
-            aggregate {
-              count
-            }
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListContentAssetChannelsForCategoryResponse>(
-        fetchRequest,
-        { categoryId: categoryId },
+        {
+          pageSize: pageSize,
+          startPage: startPage,
+          sortDirection: sortDirection,
+          sortField: sortField,
+        },
+        contentAuthToken(request),
       );
-    if (!fetchResponse.dionysus_content_asset_channel_category_by_pk) {
-      throw new NotFoundException();
-    }
-    const category =
-      fetchResponse.dionysus_content_asset_channel_category_by_pk;
-
-    const fetched: ContentAssetChannel[] = [];
-
-    category.channels.forEach((result) => {
-      fetched.push(toDomainObject(result));
-    });
-
-    const responseBody: ListContentAssetChannelsForCategoryResponse = {
-      channels: fetched,
-      count: category.channels_aggregate.aggregate.count,
-    };
 
     response.status(HttpStatus.OK).send(responseBody);
   }

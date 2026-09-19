@@ -1,9 +1,8 @@
-import { Collection, DescribeCollectionResponse } from "@ncfritz/olympus-model";
+import { DescribeCollectionResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Res,
@@ -15,18 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { GraphQlCollection } from "../../types/metadata";
-import { toDomainObject } from "../converters/CollectionConverter";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetCollectionResponse = {
-  dionysus_collections_by_pk: GraphQlCollection;
-};
+import { CollectionService } from "../services/CollectionService";
 
 @Controller({ version: "1" })
 export class DescribeCollectionController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly collections: CollectionService) {}
 
   @Get("/metadata/collection/:collectionId")
   @ApiOperation({
@@ -50,78 +43,8 @@ export class DescribeCollectionController {
     @Param("collectionId", ParseIntPipe) collectionId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query DescribeCollection($id: numeric!) {
-        dionysus_collections_by_pk(id: $id) {
-          backdropPath
-          createdTime
-          id
-          images {
-            createdTime
-            filePath
-            height
-            language {
-              id
-              createdTime
-              lastUpdatedTime
-              name
-              nativeName
-            }
-            lastUpdatedTime
-            type
-            width
-          }
-          lastUpdatedTime
-          name
-          overview
-          parts {
-            createdTime
-            lastUpdatedTime
-            movie {
-              adult
-              backdropPath
-              budget
-              createdTime
-              homepage
-              id
-              imdbId
-              lastUpdatedTime
-              originalLanguageCode
-              originalTitle
-              overview
-              posterPath
-              releaseDate
-              revenue
-              runtime
-              status
-              tagline
-              title
-              video
-            }
-          }
-          posterPath
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetCollectionResponse>(
-        fetchRequest,
-        {
-          id: collectionId,
-        },
-      );
-
-    if (!fetchResponse.dionysus_collections_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const fetchedCollection: Collection = toDomainObject(
-      fetchResponse.dionysus_collections_by_pk,
-    );
-
     const responseBody: DescribeCollectionResponse = {
-      collection: fetchedCollection,
+      collection: await this.collections.describe(collectionId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

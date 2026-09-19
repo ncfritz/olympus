@@ -1,7 +1,4 @@
-import {
-  ListTvSeriesCrewResponse,
-  TVSeriesCrewMember,
-} from "@ncfritz/olympus-model";
+import { ListTvSeriesCrewResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -17,19 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toTvSeriesCrewMember } from "../converters/tvSeriesConverter";
-import { TV_SERIES_CREW_MEMBER } from "../queries/tvSeries";
-import { GraphQlTvSeriesCrewMember } from "../types/tvSeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlListTvSeriesCrewResponse = {
-  dionysus_tv_series_crew: GraphQlTvSeriesCrewMember[];
-};
+import { TvSeriesService } from "../services/TvSeriesService";
 
 @Controller({ version: "1" })
 export class ListTvSeriesCrewController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly tvSeries: TvSeriesService) {}
 
   @Get("/metadata/tvSeries/:tvSeriesId/crew")
   @ApiOperation({
@@ -54,29 +44,8 @@ export class ListTvSeriesCrewController {
     @Param("tvSeriesId", ParseIntPipe) tvSeriesId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query ListTvSeriesCrew($id: numeric!) {
-        dionysus_tv_series_crew(where: { seriesId: { _eq: $id } }) {
-          ${TV_SERIES_CREW_MEMBER}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListTvSeriesCrewResponse>(
-        fetchRequest,
-        { id: tvSeriesId },
-      );
-    const crew: TVSeriesCrewMember[] = [];
-
-    fetchResponse.dionysus_tv_series_crew.forEach((result) => {
-      if (result.person) {
-        crew.push(toTvSeriesCrewMember(result));
-      }
-    });
-
     const responseBody: ListTvSeriesCrewResponse = {
-      crew: crew,
+      crew: await this.tvSeries.listCrew(tvSeriesId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

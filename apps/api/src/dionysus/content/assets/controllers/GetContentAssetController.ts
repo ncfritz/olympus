@@ -1,17 +1,5 @@
-import {
-  FilterDefinition,
-  FilterType,
-  GetContentAssetResponse,
-} from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Req,
-  Res,
-} from "@nestjs/common";
+import { GetContentAssetResponse } from "@ncfritz/olympus-model";
+import { Controller, Get, HttpStatus, Param, Req, Res } from "@nestjs/common";
 import {
   ApiHeader,
   ApiOkResponse,
@@ -20,22 +8,13 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response, type Request } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/ContentAssetConverter";
-import { GraphQLContentAsset } from "../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { buildFilterExpression } from "../../../../utils/filterUtil";
-import { BaseAuthenticatedContentController } from "../../auth/controllers/BaseAuthenticatedContentController";
-
-type GraphQlGerContentAssetQueryResponse = {
-  dionysus_content_assets: GraphQLContentAsset[];
-};
+import { ContentAssetService } from "../services/ContentAssetService";
+import { contentAuthToken } from "../../auth/contentAuth";
 
 @Controller({ version: "1" })
-export class GetContentAssetController extends BaseAuthenticatedContentController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class GetContentAssetController {
+  constructor(private readonly contentAssets: ContentAssetService) {}
 
   @Get("/content/asset/:assetId")
   @ApiOperation({
@@ -66,54 +45,11 @@ export class GetContentAssetController extends BaseAuthenticatedContentControlle
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const itemFilter: FilterDefinition = {
-      type: FilterType.EQUALS,
-      name: "content_id",
-      value: assetId,
-    };
-
-    const whereExpression = buildFilterExpression(
-      await this.applyCurtain(request, itemFilter),
-    );
-
-    const fetchRequest = gql`
-      query GetContentAsset {
-        dionysus_content_assets(${whereExpression}) {
-          content_id
-          asset_sha
-          asset_size
-          createdTime
-          duration
-          height
-          name
-          original_name
-          original_sha
-          original_size
-          rating
-          width
-          asset_tags {
-            tag {
-              content_tag_id
-              createdTime
-              name
-              type
-            }
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGerContentAssetQueryResponse>(
-        fetchRequest,
-      );
-
-    if (fetchResponse.dionysus_content_assets.length <= 0) {
-      throw new NotFoundException(`Asset with ID ${assetId} not found`);
-    }
-
     const responseBody: GetContentAssetResponse = {
-      asset: toDomainObject(fetchResponse.dionysus_content_assets[0]),
+      asset: await this.contentAssets.describe(
+        assetId,
+        contentAuthToken(request),
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

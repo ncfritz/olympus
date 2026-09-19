@@ -1,8 +1,4 @@
-import {
-  ListNetworksResponse,
-  NetworkWithContentCounts,
-  SortDirection,
-} from "@ncfritz/olympus-model";
+import { ListNetworksResponse, SortDirection } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -11,31 +7,15 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObjectWithContentCounts } from "../converters/NetworkConverter";
-import { GraphQlNetworkWithContentCounts } from "../types/tvNetworks";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import {
-  buildPaginationExpression,
-  buildFilterExpression,
-  parseInFilters,
-} from "../../../../utils/filterUtil";
-
-type GraphQlListNetworksResponse = {
-  dionysus_networks: GraphQlNetworkWithContentCounts[];
-  dionysus_networks_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { NetworkService } from "../services/NetworkService";
 
 @Controller({ version: "1" })
 export class ListNetworksController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly networks: NetworkService) {}
 
   @Get("/metadata/networks")
   @ApiOperation({
@@ -68,77 +48,14 @@ export class ListNetworksController {
     @Query("filters") filters: string | undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const paginationExpression = buildPaginationExpression({
-      pageSize,
-      startPage,
-      sortField,
-      sortDirection,
-    });
-    const queryParams = [paginationExpression];
-    const where = buildFilterExpression(parseInFilters(filters));
-
-    if (where) {
-      queryParams.push(where);
-    }
-
-    const fetchRequest = gql`
-      query ListNetworks {
-        dionysus_networks(${queryParams.join(", ")}) {
-          country {
-            createdTime
-            lastUpdatedTime
-            name
-            id
-          }
-          alternativeNames {
-            createdTime
-            lastUpdatedTime
-            name
-            type
-          }
-          createdTime
-          headquarters
-          homepage
-          id
-          logo
-          name
-          lastUpdatedTime
-          images {
-            createdTime
-            filePath
-            fileType
-            height
-            id
-            lastUpdatedTime
-            width
-          }
-          tvSeries_aggregate {
-            aggregate {
-              count
-            }
-          }
-        }
-        dionysus_networks_aggregate${where ? `(${where})` : ""} {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListNetworksResponse>(
-        fetchRequest,
-      );
-    const networks: NetworkWithContentCounts[] = [];
-
-    fetchResponse.dionysus_networks.forEach((result) => {
-      networks.push(toDomainObjectWithContentCounts(result));
-    });
+    const { networks, count } = await this.networks.list(
+      { pageSize, startPage, sortField, sortDirection },
+      filters,
+    );
 
     const responseBody: ListNetworksResponse = {
       networks: networks,
-      count: fetchResponse.dionysus_networks_aggregate.aggregate.count,
+      count: count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

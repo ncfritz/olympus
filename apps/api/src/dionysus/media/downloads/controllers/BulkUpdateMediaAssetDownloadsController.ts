@@ -1,7 +1,6 @@
 import {
   BulkUpdateMediaAssetDownloadsResponse,
   BulkUpdateMediaAssetDownloadStatusRequest,
-  MediaAssetDownload,
 } from "@ncfritz/olympus-model";
 import {
   Body,
@@ -20,15 +19,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/MediaAssetDownloadConverter";
-import { BASE_MEDIA_DOWNLOAD } from "../queries/mediaDownload";
-import { GraphQlMediaAssetDownload } from "../types/mediaDownload";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { MediaAssetDownloadService } from "../services/MediaAssetDownloadService";
 
 @Controller({ version: "1" })
 export class BulkUpdateMediaAssetDownloadsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly mediaAssetDownloads: MediaAssetDownloadService,
+  ) {}
 
   @Put("/media/downloads/bulk")
   @ApiOperation({
@@ -54,52 +52,8 @@ export class BulkUpdateMediaAssetDownloadsController {
     @Body() request: BulkUpdateMediaAssetDownloadStatusRequest,
     @Res() response: Response,
   ): Promise<void> {
-    // An update without an nzbId would match every download (Hasura v2
-    // treats `_eq: null` as true), so those are skipped.
-    const updates = request.updates.filter(
-      (update) => update.nzbId !== undefined && update.nzbId !== null,
-    );
-    const appliedUpdates: MediaAssetDownload[] = [];
-
-    if (updates.length > 0) {
-      const variables: Record<string, unknown> = {};
-      const declarations: string[] = [];
-      const fields = updates.map((update, index) => {
-        variables[`nzbId${index}`] = update.nzbId;
-        variables[`progress${index}`] = update.progress;
-        variables[`status${index}`] = update.status;
-        declarations.push(
-          `$nzbId${index}: numeric!, $progress${index}: numeric, $status${index}: String`,
-        );
-        return `update${index}: update_dionysus_media_asset_download(
-          where: { nzbId: { _eq: $nzbId${index} } }
-          _set: { progress: $progress${index}, status: $status${index} }
-        ) {
-          returning {
-            ${BASE_MEDIA_DOWNLOAD}
-          }
-        }`;
-      });
-
-      const updateRequest = gql`
-        mutation BulkUpdateMediaAssetDownloads(${declarations.join(", ")}) {
-          ${fields.join("\n")}
-        }
-      `;
-
-      const updateResponse = await this.graphQLClient.request<
-        Record<string, { returning: GraphQlMediaAssetDownload[] }>
-      >(updateRequest, variables);
-
-      Object.values(updateResponse).forEach((update) => {
-        update.returning.forEach((download) =>
-          appliedUpdates.push(toDomainObject(download)),
-        );
-      });
-    }
-
     const responseBody: BulkUpdateMediaAssetDownloadsResponse = {
-      updates: appliedUpdates,
+      updates: await this.mediaAssetDownloads.bulkUpdate(request),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

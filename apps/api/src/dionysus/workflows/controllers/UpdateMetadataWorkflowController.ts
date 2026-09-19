@@ -7,7 +7,6 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
-  NotFoundException,
   Param,
   Put,
   Res,
@@ -22,18 +21,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/WorkflowConverter";
-import { GraphQLWorkflow } from "../types/workflow";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlUpdateMetadataWorkflowResponse = {
-  update_dionysus_metadata_workflow_by_pk: GraphQLWorkflow | null;
-};
+import { MetadataWorkflowService } from "../services/MetadataWorkflowService";
 
 @Controller({ version: "1" })
 export class UpdateMetadataWorkflowController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly metadataWorkflows: MetadataWorkflowService) {}
 
   @Put("/workflow/:workflowId")
   @ApiOperation({
@@ -64,68 +57,11 @@ export class UpdateMetadataWorkflowController {
     @Body() request: UpdateWorkflowRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const updateRequest = gql`
-      mutation UpdateMetadataWorkflow(
-        $id: uuid!
-        $changes: dionysus_metadata_workflow_set_input = {}
-      ) {
-        update_dionysus_metadata_workflow_by_pk(
-          pk_columns: { id: $id }
-          _set: $changes
-        ) {
-          createdTime
-          finishedTime
-          id
-          lastUpdatedTime
-          startedTime
-          status
-          steps {
-            attempt
-            createdTime
-            id
-            lastUpdatedTime
-            type
-            job {
-              createdTime
-              duplicateRecords
-              expiredRecords
-              finishedTime
-              id
-              lastUpdatedTime
-              maxRecordsToProcess
-              newRecords
-              noOpRecords
-              processedRecords
-              skippedRecords
-              startedTime
-              status
-              totalRecords
-              type
-            }
-          }
-        }
-      }
-    `;
-
-    const updateResponse =
-      await this.graphQLClient.request<GraphQlUpdateMetadataWorkflowResponse>(
-        updateRequest,
-        {
-          id: workflowId,
-          changes: request.workflow,
-        },
-      );
-
-    if (!updateResponse.update_dionysus_metadata_workflow_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const updatedWorkflow = toDomainObject(
-      updateResponse.update_dionysus_metadata_workflow_by_pk,
-    );
-
     const responseBody: UpdateWorkflowResponse = {
-      workflow: updatedWorkflow,
+      workflow: await this.metadataWorkflows.update(
+        workflowId,
+        request.workflow,
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { MeetingService } from "./services/MeetingService";
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
 import { CreateCalendarItemController } from "./controllers/CreateCalendarItemController";
 import { DeleteCalendarItemController } from "./controllers/DeleteCalendarItemController";
@@ -12,6 +13,7 @@ import { UpdateCalendarItemController } from "./controllers/UpdateCalendarItemCo
 
 @Module({
   imports: [GraphQLClientModule],
+  providers: [MeetingService],
   controllers: [
     CreateCalendarItemController,
     DeleteCalendarItemController,

@@ -1,7 +1,6 @@
 import {
   CreateContentAssetRequest,
   CreateContentAssetResponse,
-  ContentAsset,
 } from "@ncfritz/olympus-model";
 import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
 import {
@@ -12,20 +11,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/ContentAssetConverter";
-import { GraphQLContentAsset } from "../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { GetContentAssetController } from "./GetContentAssetController";
 import { setLocation } from "../../../../utils/location";
-
-type GraphQLCreateContentAssetResponse = {
-  insert_dionysus_content_assets_one: GraphQLContentAsset;
-};
+import { ContentAssetService } from "../services/ContentAssetService";
 
 @Controller({ version: "1" })
 export class CreateContentAssetController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly contentAssets: ContentAssetService) {}
 
   @Post("/content/assets")
   @ApiOperation({
@@ -58,66 +51,7 @@ export class CreateContentAssetController {
     @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const insertRequest = gql`
-      mutation CreateContentAsset(
-        $asset_sha: String
-        $asset_size: numeric
-        $content_id: uuid
-        $duration: numeric
-        $height: numeric
-        $original_name: String
-        $original_sha: String
-        $original_size: numeric
-        $width: numeric
-      ) {
-        insert_dionysus_content_assets_one(
-          object: {
-            asset_sha: $asset_sha
-            asset_size: $asset_size
-            content_id: $content_id
-            duration: $duration
-            height: $height
-            original_name: $original_name
-            original_sha: $original_sha
-            original_size: $original_size
-            width: $width
-          }
-        ) {
-          asset_sha
-          asset_size
-          content_id
-          createdTime
-          duration
-          height
-          name
-          original_name
-          original_sha
-          original_size
-          rating
-          width
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQLCreateContentAssetResponse>(
-        insertRequest,
-        {
-          asset_sha: request.asset.newSha,
-          asset_size: request.asset.newSizeBytes,
-          content_id: request.asset.id,
-          duration: request.asset.durationMs,
-          height: request.asset.height,
-          original_name: request.asset.originalName,
-          original_sha: request.asset.originalSha,
-          original_size: request.asset.originalSizeBytes,
-          width: request.asset.width,
-        },
-      );
-
-    const createdContentAsset: ContentAsset = toDomainObject(
-      insertResponse.insert_dionysus_content_assets_one,
-    );
+    const createdContentAsset = await this.contentAssets.create(request.asset);
 
     const responseBody: CreateContentAssetResponse = {
       asset: createdContentAsset,

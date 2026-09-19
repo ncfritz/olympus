@@ -1,6 +1,5 @@
 import {
   FilterDefinition,
-  FullContentAssetChannel,
   ListContentAssetChannelsResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
@@ -12,37 +11,21 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toFullDomainObject } from "../converters/ContentAssetChannelConverter";
-import { GraphQlFullContentAssetChannel } from "../../types/content";
 import {
   ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import {
-  buildFilterExpression,
-  buildPaginationExpression,
-  parseFilterDefinition,
-} from "../../../../utils/filterUtil";
-import {
-  BC_CHANNEL_FILTER,
-  withContentCurtain,
-} from "../../auth/controllers/BaseAuthenticatedContentController";
-
-type GraphQlListContentAssetChannelResponse = {
-  dionysus_content_asset_channel: GraphQlFullContentAssetChannel[];
-  dionysus_content_asset_channel_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { parseFilterDefinition } from "../../../../utils/filterUtil";
+import { ContentAssetChannelService } from "../services/ContentAssetChannelService";
+import { contentAuthToken } from "../../auth/contentAuth";
 
 @Controller({ version: "1" })
 @ApiExtraModels(FilterDefinition)
 export class ListContentAssetChannelsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly contentAssetChannels: ContentAssetChannelService,
+  ) {}
 
   @Get("/content/channels")
   @ApiOperation({
@@ -72,78 +55,17 @@ export class ListContentAssetChannelsController {
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const whereExpression = buildFilterExpression(
-      await withContentCurtain(
-        this.graphQLClient,
-        request,
+    const responseBody: ListContentAssetChannelsResponse =
+      await this.contentAssetChannels.list(
         parseFilterDefinition(filters),
-        BC_CHANNEL_FILTER,
-      ),
-    );
-    const paginationExpression = buildPaginationExpression({
-      pageSize: pageSize,
-      startPage: startPage,
-      sortDirection: sortDirection,
-      sortField: sortField,
-    });
-
-    const fetchRequest = gql`
-      query ListContentAssetChannels {
-        dionysus_content_asset_channel(${[paginationExpression, whereExpression].join(", ")}) {
-          ttl
-          name
-          lastUpdatedTime
-          lastFetchedTime
-          jitter
-          id
-          filterInput
-          favorite
-          encodedFilter
-          description
-          createdTime
-          category {
-            createdTime
-            id
-            lastUpdatedTime
-            name
-            channels_aggregate {
-              aggregate {
-                count
-              }
-            }
-          }
-          bcCompliant
-          assetCount
-          assetCache {
-            assetId
-            width
-            height
-            createdTime
-          }
-        }
-        dionysus_content_asset_channel_aggregate${whereExpression ? `(${whereExpression})` : ""} {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListContentAssetChannelResponse>(
-        fetchRequest,
+        {
+          pageSize: pageSize,
+          startPage: startPage,
+          sortDirection: sortDirection,
+          sortField: sortField,
+        },
+        contentAuthToken(request),
       );
-    const fetched: FullContentAssetChannel[] = [];
-
-    fetchResponse.dionysus_content_asset_channel.forEach((result) => {
-      fetched.push(toFullDomainObject(result));
-    });
-
-    const responseBody: ListContentAssetChannelsResponse = {
-      channels: fetched,
-      count:
-        fetchResponse.dionysus_content_asset_channel_aggregate.aggregate.count,
-    };
 
     response.status(HttpStatus.OK).send(responseBody);
   }

@@ -1,5 +1,4 @@
 import {
-  Country,
   CreateCountryRequest,
   CreateCountryResponse,
 } from "@ncfritz/olympus-model";
@@ -12,18 +11,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/CountryConverter";
-import { GraphQlCountry } from "../types/country";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlCreateCountryResponse = {
-  insert_dionysus_countries_one: GraphQlCountry;
-};
+import { CountryService } from "../services/CountryService";
 
 @Controller({ version: "1" })
 export class CreateCountryController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly countries: CountryService) {}
 
   @Put("/metadata/countries")
   @ApiOperation({
@@ -48,35 +41,8 @@ export class CreateCountryController {
     @Body() request: CreateCountryRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const insertRequest = gql`
-      mutation CreateCountry($id: String!, $name: String!) {
-        insert_dionysus_countries_one(
-          object: { id: $id, name: $name }
-          on_conflict: { constraint: countries_pkey, update_columns: [name] }
-        ) {
-          id
-          name
-          createdTime
-          lastUpdatedTime
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateCountryResponse>(
-        insertRequest,
-        {
-          id: request.country.id,
-          name: request.country.name,
-        },
-      );
-
-    const createdCountry: Country = toDomainObject(
-      insertResponse.insert_dionysus_countries_one,
-    );
-
     const responseBody: CreateCountryResponse = {
-      country: createdCountry,
+      country: await this.countries.create(request.country),
     };
 
     response.status(HttpStatus.CREATED).send(responseBody);

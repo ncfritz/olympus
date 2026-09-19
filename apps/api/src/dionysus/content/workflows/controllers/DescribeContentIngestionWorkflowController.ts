@@ -1,12 +1,5 @@
 import { DescribeContentIngestionWorkflowResponse } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -14,18 +7,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { GraphQLContentIngestionWorkflow } from "../types/workflow";
-import { toDomainObject } from "../converters/ContentIngestionWorkflowConverter";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetContentIngestionWorkflowResponse = {
-  dionysus_content_asset_ingest_workflows_by_pk: GraphQLContentIngestionWorkflow;
-};
+import { ContentIngestionWorkflowService } from "../services/ContentIngestionWorkflowService";
 
 @Controller({ version: "1" })
 export class DescribeContentIngestionWorkflowController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly contentIngestionWorkflows: ContentIngestionWorkflowService,
+  ) {}
 
   @Get("/content/workflow/:workflowId")
   @ApiOperation({
@@ -50,54 +39,8 @@ export class DescribeContentIngestionWorkflowController {
     @Param("workflowId") workflowId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query DescribeContentIngestionWorkflow($id: uuid!) {
-        dionysus_content_asset_ingest_workflows_by_pk(id: $id) {
-          createdTime
-          finishedTime
-          id
-          lastUpdatedTime
-          source
-          sourceType
-          startedTime
-          status
-          steps_aggregate {
-            aggregate {
-              count
-            }
-          }
-          steps(order_by: { createdTime: asc }) {
-            createdTime
-            finishedTime
-            id
-            lastUpdatedTime
-            progress
-            startedTime
-            status
-            type
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetContentIngestionWorkflowResponse>(
-        fetchRequest,
-        {
-          id: workflowId,
-        },
-      );
-
-    if (!fetchResponse.dionysus_content_asset_ingest_workflows_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const fetchedWorkflow = toDomainObject(
-      fetchResponse.dionysus_content_asset_ingest_workflows_by_pk,
-    );
-
     const responseBody: DescribeContentIngestionWorkflowResponse = {
-      workflow: fetchedWorkflow,
+      workflow: await this.contentIngestionWorkflows.describe(workflowId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

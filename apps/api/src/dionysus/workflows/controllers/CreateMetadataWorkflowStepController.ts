@@ -1,16 +1,11 @@
-import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   CreateWorkflowStepRequest,
   CreateWorkflowStepResponse,
-  WorkflowStatus,
-  WorkflowStep,
 } from "@ncfritz/olympus-model";
 import {
   Body,
   Controller,
   HttpStatus,
-  InternalServerErrorException,
-  NotFoundException,
   Param,
   Post,
   Req,
@@ -25,28 +20,15 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/WorkflowStepConverter";
-import { GraphQlWorkflowStep } from "../types/workflow";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { DescribeMetadataWorkflowStepController } from "./DescribeMetadataWorkflowStepController";
 import { setLocation } from "../../../utils/location";
-
-type GraphQlGetParentWorkflowIdResponse = {
-  dionysus_metadata_workflow_by_pk: {
-    id: string;
-  };
-};
-
-type GraphQlCreateMetadataWorkflowStepResponse = {
-  insert_dionysus_metadata_workflow_step_one: GraphQlWorkflowStep;
-};
+import { MetadataWorkflowStepService } from "../services/MetadataWorkflowStepService";
 
 @Controller({ version: "1" })
 export class CreateMetadataWorkflowStepController {
   constructor(
-    private readonly graphQLClient: GraphQLClient,
-    private readonly amqpConnection: AmqpConnection,
+    private readonly metadataWorkflowSteps: MetadataWorkflowStepService,
   ) {}
 
   @Post("/workflow/:workflowId/steps")
@@ -86,98 +68,9 @@ export class CreateMetadataWorkflowStepController {
     @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const checkParentWorkflowRequest = gql`
-      query GetParentMetadataWorkflow($id: uuid!) {
-        dionysus_metadata_workflow_by_pk(id: $id) {
-          id
-        }
-      }
-    `;
-
-    const checkParentWorkflowResponse =
-      await this.graphQLClient.request<GraphQlGetParentWorkflowIdResponse>(
-        checkParentWorkflowRequest,
-        { id: workflowId },
-      );
-
-    if (!checkParentWorkflowResponse.dionysus_metadata_workflow_by_pk?.id) {
-      throw new NotFoundException(`Workflow ${workflowId} not found`);
-    }
-
-    const insertRequest = gql`
-      mutation CreateMetadataWorkflowStep(
-        $workflowId: uuid!
-        $attempt: numeric!
-        $workflowStepType: String!
-        $batchJobType: String!
-        $batchJobStatus: String!
-      ) {
-        insert_dionysus_metadata_workflow_step_one(
-          object: {
-            attempt: $attempt
-            job: { data: { type: $batchJobType, status: $batchJobStatus } }
-            type: $workflowStepType
-            workflow_id: $workflowId
-          }
-        ) {
-          attempt
-          createdTime
-          id
-          job {
-            createdTime
-            duplicateRecords
-            expiredRecords
-            finishedTime
-            id
-            lastUpdatedTime
-            maxRecordsToProcess
-            newRecords
-            noOpRecords
-            processedRecords
-            skippedRecords
-            startedTime
-            status
-            totalRecords
-            type
-          }
-          lastUpdatedTime
-          type
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateMetadataWorkflowStepResponse>(
-        insertRequest,
-        {
-          workflowId: workflowId,
-          workflowStepType: request.step.type,
-          attempt: request.step.attempt,
-          batchJobType: request.step.jobType,
-          batchJobStatus: WorkflowStatus.CREATED,
-        },
-      );
-
-    const createdWorkflowStep: WorkflowStep = toDomainObject(
-      insertResponse.insert_dionysus_metadata_workflow_step_one,
-    );
-    const createdBatchJob = createdWorkflowStep.job;
-
-    if (!createdBatchJob) {
-      throw new InternalServerErrorException();
-    }
-
-    await this.amqpConnection.publish(
-      "batchJob.trigger",
-      `jobType.${createdBatchJob.type}`,
-      {
-        jobType: createdBatchJob.type,
-        jobId: createdBatchJob.id,
-        workflowId: workflowId,
-        stepId: createdWorkflowStep.id,
-        offset: request.step.offset,
-        attempt: request.step.attempt,
-      },
+    const createdWorkflowStep = await this.metadataWorkflowSteps.create(
+      workflowId,
+      request.step,
     );
 
     const responseBody: CreateWorkflowStepResponse = {

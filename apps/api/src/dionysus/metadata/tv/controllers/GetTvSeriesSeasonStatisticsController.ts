@@ -1,23 +1,13 @@
-import {
-  GetTvSeriesSeasonStatisticsResponse,
-  SeasonStatistic,
-} from "@ncfritz/olympus-model";
+import { GetTvSeriesSeasonStatisticsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetTvSeriesSeasonStatisticsResponse = {
-  dionysus_tv_series_season_statistics: {
-    count: number;
-    seasons: number;
-  }[];
-};
+import { TvSeriesService } from "../services/TvSeriesService";
 
 @Controller({ version: "1" })
 export class GetTvSeriesSeasonStatisticsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly tvSeries: TvSeriesService) {}
 
   @Get("/metadata/tv/series/stats/seasons")
   @ApiOperation({
@@ -34,27 +24,8 @@ export class GetTvSeriesSeasonStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const fetchRequest = gql`
-      query GetTvSeriesSeasonStatistics {
-        dionysus_tv_series_season_statistics {
-          count
-          seasons
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetTvSeriesSeasonStatisticsResponse>(
-        fetchRequest,
-      );
-    const seasonStatistics: SeasonStatistic[] = [];
-
-    fetchResponse.dionysus_tv_series_season_statistics.forEach((result) => {
-      seasonStatistics.push(result);
-    });
-
     const responseBody: GetTvSeriesSeasonStatisticsResponse = {
-      statistics: seasonStatistics,
+      statistics: await this.tvSeries.getSeasonStatistics(),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

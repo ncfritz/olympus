@@ -1,7 +1,4 @@
-import {
-  ListTvSeriesCastResponse,
-  TVSeriesCastMember,
-} from "@ncfritz/olympus-model";
+import { ListTvSeriesCastResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -17,19 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toTvSeriesCastMember } from "../converters/tvSeriesConverter";
-import { TV_SERIES_CAST_MEMBER } from "../queries/tvSeries";
-import { GraphQlTvSeriesCastMember } from "../types/tvSeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlListTvSeriesCastResponse = {
-  dionysus_tv_series_cast: GraphQlTvSeriesCastMember[];
-};
+import { TvSeriesService } from "../services/TvSeriesService";
 
 @Controller({ version: "1" })
 export class ListTvSeriesCastController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly tvSeries: TvSeriesService) {}
 
   @Get("/metadata/tvSeries/:tvSeriesId/cast")
   @ApiOperation({
@@ -54,32 +44,8 @@ export class ListTvSeriesCastController {
     @Param("tvSeriesId", ParseIntPipe) tvSeriesId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query ListTvSeriesCast($id: numeric!) {
-        dionysus_tv_series_cast(
-          order_by: { order: asc }
-          where: { seriesId: { _eq: $id } }
-        ) {
-          ${TV_SERIES_CAST_MEMBER}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListTvSeriesCastResponse>(
-        fetchRequest,
-        { id: tvSeriesId },
-      );
-    const cast: TVSeriesCastMember[] = [];
-
-    fetchResponse.dionysus_tv_series_cast.forEach((result) => {
-      if (result.person) {
-        cast.push(toTvSeriesCastMember(result));
-      }
-    });
-
     const responseBody: ListTvSeriesCastResponse = {
-      cast: cast,
+      cast: await this.tvSeries.listCast(tvSeriesId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

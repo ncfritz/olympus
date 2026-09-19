@@ -1,23 +1,13 @@
-import {
-  GetTvSeriesLocationStatisticsResponse,
-  LocationStatistic,
-} from "@ncfritz/olympus-model";
+import { GetTvSeriesLocationStatisticsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlTvSeriesLocationStatistics = {
-  dionysus_tv_series_location_statistics: {
-    countryCode: string;
-    count: number;
-  }[];
-};
+import { TvSeriesService } from "../services/TvSeriesService";
 
 @Controller({ version: "1" })
 export class GetTvSeriesLocationStatisticsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly tvSeries: TvSeriesService) {}
 
   @Get("/metadata/tv/series/stats/locations")
   @ApiOperation({
@@ -35,30 +25,8 @@ export class GetTvSeriesLocationStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const fetchRequest = gql`
-      query GetTvSeriesLocationStatistics {
-        dionysus_tv_series_location_statistics {
-          countryCode
-          count
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlTvSeriesLocationStatistics>(
-        fetchRequest,
-      );
-    const statistics: LocationStatistic[] = [];
-
-    fetchResponse.dionysus_tv_series_location_statistics.forEach((result) => {
-      statistics.push({
-        countryCode: result.countryCode,
-        count: result.count,
-      });
-    });
-
     const responseBody: GetTvSeriesLocationStatisticsResponse = {
-      statistics: statistics,
+      statistics: await this.tvSeries.getLocationStatistics(),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

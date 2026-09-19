@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { RabbitModule } from "../../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../../infra/GraphQLClientModule";
+import { ContentIngestionWorkflowService } from "./services/ContentIngestionWorkflowService";
 import { CreateContentIngestionWorkflowController } from "./controllers/CreateContentIngestionWorkflowController";
 import { CreateContentIngestionWorkflowStepController } from "./controllers/CreateContentIngestionWorkflowStepController";
 import { DescribeContentIngestionWorkflowController } from "./controllers/DescribeContentIngestionWorkflowController";
@@ -12,6 +13,7 @@ import { UploadAssetsController } from "./controllers/UploadAssetsController";
 
 @Module({
   imports: [RabbitModule, GraphQLClientModule],
+  providers: [ContentIngestionWorkflowService],
   controllers: [
     // Before the /:workflowId routes, which would otherwise match /stats.
     GetContentIngestionWorkflowStatisticsController,

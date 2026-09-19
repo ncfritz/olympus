@@ -13,25 +13,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import moment from "moment";
-import { toFullDomainObject } from "../converters/ContentAssetChannelConverter";
-import { GraphQlFullContentAssetChannel } from "../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseContentAssetChannelController } from "./BaseContentAssetChannelController";
-
-export type GraphQlUpdateContentAssetChannelResponse = {
-  insert_dionysus_content_asset_channel_cache: {
-    affected_rows: number;
-  };
-  update_dionysus_content_asset_channel_by_pk: GraphQlFullContentAssetChannel;
-};
+import { ContentAssetChannelService } from "../services/ContentAssetChannelService";
 
 @Controller({ version: "1" })
-export class UpdateContentAssetChannelController extends BaseContentAssetChannelController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class UpdateContentAssetChannelController {
+  constructor(
+    private readonly contentAssetChannels: ContentAssetChannelService,
+  ) {}
 
   @Put("/content/channel/:channelId")
   @ApiOperation({
@@ -62,96 +51,8 @@ export class UpdateContentAssetChannelController extends BaseContentAssetChannel
     @Body() request: UpdateContentAssetChannelRequest,
     @Res() response: Response,
   ): Promise<void> {
-    // 404 before touching the cache of a channel that does not exist.
-    await this.fetchChannelFilter(channelId);
-    await this.clearContentAssetChannelCache(channelId);
-    const assetCache = await this.buildAssetCacheEntries(
-      request.channel.filterDefinition,
-      channelId,
-    );
-
-    const updateRequest = gql`
-      mutation UpdateContentAssetChannel(
-        $channelId: uuid!
-        $name: String!
-        $description: String!
-        $bcCompliant: Boolean!
-        $filterInput: String!
-        $encodedFilter: String!
-        $lastFetchedTime: timestamptz!
-        $assetCount: numeric
-        $assetCache: [dionysus_content_asset_channel_cache_insert_input!]!
-      ) {
-        insert_dionysus_content_asset_channel_cache(objects: $assetCache) {
-          affected_rows
-        }
-        update_dionysus_content_asset_channel_by_pk(
-          pk_columns: { id: $channelId }
-          _set: {
-            lastFetchedTime: $lastFetchedTime
-            name: $name
-            description: $description
-            bcCompliant: $bcCompliant
-            filterInput: $filterInput
-            encodedFilter: $encodedFilter
-            assetCount: $assetCount
-          }
-        ) {
-          ttl
-          name
-          lastUpdatedTime
-          lastFetchedTime
-          jitter
-          id
-          filterInput
-          favorite
-          encodedFilter
-          description
-          createdTime
-          category {
-            createdTime
-            id
-            lastUpdatedTime
-            name
-            channels_aggregate {
-              aggregate {
-                count
-              }
-            }
-          }
-          bcCompliant
-          assetCount
-          assetCache {
-            assetId
-            width
-            height
-            createdTime
-          }
-        }
-      }
-    `;
-
-    const updateResponse =
-      await this.graphQLClient.request<GraphQlUpdateContentAssetChannelResponse>(
-        updateRequest,
-        {
-          channelId: channelId,
-          name: request.channel.name,
-          description: request.channel.description,
-          bcCompliant: request.channel.bcCompliant,
-          filterInput: request.channel.filterInput,
-          encodedFilter: Buffer.from(
-            JSON.stringify(request.channel.filterDefinition),
-          ).toString("base64"),
-          lastFetchedTime: moment.utc().toISOString(),
-          assetCount: assetCache.assetCount,
-          assetCache: assetCache.entries,
-        },
-      );
-
-    const updatedCategory: FullContentAssetChannel = toFullDomainObject(
-      updateResponse.update_dionysus_content_asset_channel_by_pk,
-    );
+    const updatedCategory: FullContentAssetChannel =
+      await this.contentAssetChannels.update(channelId, request.channel);
 
     const responseBody: UpdateContentAssetChannelResponse = {
       channel: updatedCategory,

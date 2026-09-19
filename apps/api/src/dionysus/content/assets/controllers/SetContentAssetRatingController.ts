@@ -12,12 +12,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { ContentAssetService } from "../services/ContentAssetService";
 
 @Controller({ version: "1" })
 export class SetContentAssetRatingController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly contentAssets: ContentAssetService) {}
 
   @Put("/content/asset/:assetId/rating")
   @ApiOperation({
@@ -49,21 +49,7 @@ export class SetContentAssetRatingController {
     @Body() request: SetContentAssetRatingRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const updateRequest = gql`
-      mutation SetContentAssetRating($content_id: uuid!, $rating: numeric) {
-        update_dionysus_content_assets_by_pk(
-          pk_columns: { content_id: $content_id }
-          _set: { rating: $rating }
-        ) {
-          rating
-        }
-      }
-    `;
-
-    await this.graphQLClient.request(updateRequest, {
-      content_id: assetId,
-      rating: request.rating,
-    });
+    await this.contentAssets.setRating(assetId, request.rating);
 
     response.status(HttpStatus.OK).send({});
   }

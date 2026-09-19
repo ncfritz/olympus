@@ -1,6 +1,8 @@
 import { Module } from "@nestjs/common";
 import { RabbitModule } from "../../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../../infra/GraphQLClientModule";
+import { ContentAuthModule } from "../auth/ContentAuthModule";
+import { ContentAssetService } from "./services/ContentAssetService";
 import { CreateContentAssetController } from "./controllers/CreateContentAssetController";
 import { CreateContentJobController } from "./controllers/CreateContentJobController";
 import { GetContentAssetAggregateStatisticsController } from "./controllers/GetContentAssetAggregateStatisticsController";
@@ -16,7 +18,8 @@ import { ListSimilarContentAssetsController } from "./controllers/ListSimilarCon
 import { SetContentAssetRatingController } from "./controllers/SetContentAssetRatingController";
 
 @Module({
-  imports: [RabbitModule, GraphQLClientModule],
+  imports: [RabbitModule, GraphQLClientModule, ContentAuthModule],
+  providers: [ContentAssetService],
   controllers: [
     CreateContentAssetController,
     CreateContentJobController,

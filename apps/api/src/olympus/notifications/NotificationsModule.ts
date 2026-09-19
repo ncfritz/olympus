@@ -1,6 +1,10 @@
 import { Module } from "@nestjs/common";
 import { RabbitModule } from "../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
+import { NotificationService } from "./services/NotificationService";
+import { NotificationGroupService } from "./services/NotificationGroupService";
+import { NotificationSettingService } from "./services/NotificationSettingService";
+import { NotificationTypeService } from "./services/NotificationTypeService";
 import { NotificationsGatewayModule } from "./gateway/NotificationsGatewayModule";
 import { AcknowledgeNotificationController } from "./controllers/AcknowledgeNotificationController";
 import { CreateNotificationController } from "./controllers/CreateNotificationController";
@@ -16,6 +20,12 @@ import { UpdateNotificationSettingController } from "./controllers/UpdateNotific
 
 @Module({
   imports: [RabbitModule, GraphQLClientModule, NotificationsGatewayModule],
+  providers: [
+    NotificationService,
+    NotificationGroupService,
+    NotificationSettingService,
+    NotificationTypeService,
+  ],
   controllers: [
     AcknowledgeNotificationController,
     CreateNotificationController,

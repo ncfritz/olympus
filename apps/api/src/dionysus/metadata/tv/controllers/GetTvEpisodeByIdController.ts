@@ -1,9 +1,8 @@
-import { DescribeTVEpisodeResponse, Episode } from "@ncfritz/olympus-model";
+import { DescribeTVEpisodeResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Res,
@@ -15,19 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/tvEpisodeConverter";
-import { TV_EPISODE } from "../queries/tvSeries";
-import { GraphQlTvEpisode } from "../types/tvEpisode";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetTvEpisodeResponse = {
-  dionysus_tv_episodes_by_pk: GraphQlTvEpisode;
-};
+import { TvEpisodeService } from "../services/TvEpisodeService";
 
 @Controller({ version: "1" })
 export class GetTvEpisodeByIdController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly tvEpisodes: TvEpisodeService) {}
 
   @Get("/metadata/tvEpisodes/:episodeId")
   @ApiOperation({
@@ -51,34 +43,8 @@ export class GetTvEpisodeByIdController {
     @Param("episodeId", ParseIntPipe) episodeId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query GetTvEpisodeById(
-        $episodeId: numeric!
-      ) {
-        dionysus_tv_episodes_by_pk(id: $episodeId) {
-          ${TV_EPISODE}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetTvEpisodeResponse>(
-        fetchRequest,
-        {
-          episodeId: episodeId,
-        },
-      );
-
-    if (!fetchResponse.dionysus_tv_episodes_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const fetchedTvEpisode: Episode = toDomainObject(
-      fetchResponse.dionysus_tv_episodes_by_pk,
-    );
-
     const responseBody: DescribeTVEpisodeResponse = {
-      episode: fetchedTvEpisode,
+      episode: await this.tvEpisodes.describeById(episodeId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

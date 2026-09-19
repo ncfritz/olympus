@@ -1,24 +1,13 @@
-import {
-  GetTvSeriesEpisodeStatisticsResponse,
-  RuntimeStatistic,
-} from "@ncfritz/olympus-model";
+import { GetTvSeriesEpisodeStatisticsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import prettyMilliseconds from "pretty-ms";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetTvSeriesEpisodeRuntimesResponse = {
-  dionysus_tv_series_episode_runtime_statistics: {
-    rt: number;
-    count: number;
-  }[];
-};
+import { TvSeriesService } from "../services/TvSeriesService";
 
 @Controller({ version: "1" })
 export class GetTvSeriesEpisodeRuntimeStatisticsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly tvSeries: TvSeriesService) {}
 
   @Get("/metadata/tv/series/stats/runtime")
   @ApiOperation({
@@ -35,33 +24,8 @@ export class GetTvSeriesEpisodeRuntimeStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const fetchRequest = gql`
-      query GetTvSeriesEpisodeRuntimeStatistics {
-        dionysus_tv_series_episode_runtime_statistics {
-          rt
-          count
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetTvSeriesEpisodeRuntimesResponse>(
-        fetchRequest,
-      );
-    const runtimeStatistics: RuntimeStatistic[] = [];
-
-    fetchResponse.dionysus_tv_series_episode_runtime_statistics.forEach(
-      (result) => {
-        runtimeStatistics.push({
-          runtime: result.rt,
-          label: prettyMilliseconds(result.rt * 60 * 1000, { unitCount: 2 }),
-          count: result.count,
-        });
-      },
-    );
-
     const responseBody: GetTvSeriesEpisodeStatisticsResponse = {
-      statistics: runtimeStatistics,
+      statistics: await this.tvSeries.getEpisodeRuntimeStatistics(),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

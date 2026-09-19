@@ -1,7 +1,6 @@
 import {
   ListProductionCompaniesResponse,
   SortDirection,
-  SparseProductionCompanyWithContentCounts,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
@@ -11,31 +10,15 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toSparseDomainObjectWithContentCounts } from "../converters/ProductionCompanyConverter";
-import { GraphQlSparseProductionCompanyWithContentCounts } from "../types/productionCompany";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import {
-  buildPaginationExpression,
-  buildFilterExpression,
-  parseInFilters,
-} from "../../../../utils/filterUtil";
-
-type GraphQlListProductionCompaniesResponse = {
-  dionysus_production_companies: GraphQlSparseProductionCompanyWithContentCounts[];
-  dionysus_production_companies_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { ProductionCompanyService } from "../services/ProductionCompanyService";
 
 @Controller({ version: "1" })
 export class ListProductionCompaniesController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly productionCompanies: ProductionCompanyService) {}
 
   @Get("/metadata/productionCompanies")
   @ApiOperation({
@@ -68,75 +51,14 @@ export class ListProductionCompaniesController {
     @Query("filters") filters: string | undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const paginationExpression = buildPaginationExpression({
-      pageSize,
-      startPage,
-      sortField,
-      sortDirection,
-    });
-    const queryParams = [paginationExpression];
-    const where = buildFilterExpression(parseInFilters(filters));
-
-    if (where) {
-      queryParams.push(where);
-    }
-
-    const fetchRequest = gql`
-      query ListProductionCompanies {
-        dionysus_production_companies(${queryParams.join(", ")}) {
-          alternativeNames {
-            createdTime
-            lastUpdatedTime
-            name
-            type
-          }
-          country {
-            createdTime
-            id
-            lastUpdatedTime
-            name
-          }
-          createdTime
-          description
-          headquarters
-          homepage
-          id
-          lastUpdatedTime
-          logo
-          name
-          movies_aggregate {
-            aggregate {
-              count
-            }
-          }
-          tvSeries_aggregate {
-            aggregate {
-              count
-            }
-          }
-        }
-        dionysus_production_companies_aggregate${where ? `(${where})` : ""} {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListProductionCompaniesResponse>(
-        fetchRequest,
-      );
-    const companies: SparseProductionCompanyWithContentCounts[] = [];
-
-    fetchResponse.dionysus_production_companies.forEach((result) => {
-      companies.push(toSparseDomainObjectWithContentCounts(result));
-    });
+    const { companies, count } = await this.productionCompanies.list(
+      { pageSize, startPage, sortField, sortDirection },
+      filters,
+    );
 
     const responseBody: ListProductionCompaniesResponse = {
       companies: companies,
-      count:
-        fetchResponse.dionysus_production_companies_aggregate.aggregate.count,
+      count: count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

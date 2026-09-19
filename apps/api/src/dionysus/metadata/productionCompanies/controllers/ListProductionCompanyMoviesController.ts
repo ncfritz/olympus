@@ -1,13 +1,11 @@
 import {
   ListProductionCompanyMoviesResponse,
   SortDirection,
-  SparseMovie,
 } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Query,
@@ -20,31 +18,15 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toSparseDomainObject } from "../../movies/converters/MovieConverter";
-import { GraphQlSparseMovie } from "../../movies/types/movie";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import { buildPaginationExpression } from "../../../../utils/filterUtil";
-
-type GraphQlListProductionCompanyMoviesResponse = {
-  dionysus_production_companies_by_pk: {
-    movies: {
-      movie: GraphQlSparseMovie;
-    }[];
-    movies_aggregate: {
-      aggregate: {
-        count: number;
-      };
-    };
-  };
-};
+import { ProductionCompanyService } from "../services/ProductionCompanyService";
 
 @Controller({ version: "1" })
 export class ListProductionCompanyMoviesController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly productionCompanies: ProductionCompanyService) {}
 
   @Get("/metadata/productionCompany/:productionCompanyId/movies")
   @ApiOperation({
@@ -76,79 +58,14 @@ export class ListProductionCompanyMoviesController {
     @Query("sortBy") sortField = "createdTime",
     @Res() response: Response,
   ): Promise<void> {
-    const paginationExpression = buildPaginationExpression({
-      pageSize,
-      startPage,
-      sortField,
-      sortDirection,
-    });
-    const queryParams = [paginationExpression];
-
-    const fetchRequest = gql`
-      query ListProductionCompanyMovies($id: numeric!) {
-        dionysus_production_companies_by_pk(id: $id) {
-          movies(${queryParams.join(", ")}) {
-            movie {
-              adult
-              backdropPath
-              budget
-              createdTime
-              homepage
-              id
-              imdbId
-              lastUpdatedTime
-              originalLanguageCode
-              originalTitle
-              overview
-              popularity
-              posterPath
-              releaseDate
-              revenue
-              runtime
-              status
-              tagline
-              title
-              voteAverage
-              voteCount
-              video
-            }
-          }
-          movies_aggregate {
-            aggregate {
-              count
-            }
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListProductionCompanyMoviesResponse>(
-        fetchRequest,
-        {
-          id: productionCompanyId,
-        },
-      );
-    if (!fetchResponse.dionysus_production_companies_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const movies: SparseMovie[] = [];
-
-    fetchResponse.dionysus_production_companies_by_pk.movies.forEach(
-      (result) => {
-        // Skip links to rows that are not in the database (yet).
-        if (result.movie) {
-          movies.push(toSparseDomainObject(result.movie));
-        }
-      },
+    const { movies, count } = await this.productionCompanies.listMovies(
+      productionCompanyId,
+      { pageSize, startPage, sortField, sortDirection },
     );
 
     const responseBody: ListProductionCompanyMoviesResponse = {
       movies: movies,
-      count:
-        fetchResponse.dionysus_production_companies_by_pk.movies_aggregate
-          .aggregate.count,
+      count: count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

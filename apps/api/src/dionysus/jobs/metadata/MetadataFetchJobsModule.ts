@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { MetadataFetchJobService } from "./services/MetadataFetchJobService";
 import { RabbitModule } from "../../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../../infra/GraphQLClientModule";
 import { CreateMetadataFetchJobController } from "./controllers/CreateMetadataFetchJobController";
@@ -11,6 +12,7 @@ import { UpdateMetadataFetchJobController } from "./controllers/UpdateMetadataFe
 
 @Module({
   imports: [RabbitModule, GraphQLClientModule],
+  providers: [MetadataFetchJobService],
   controllers: [
     CreateMetadataFetchJobController,
     DeleteMetadataFetchJobController,

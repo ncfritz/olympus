@@ -1,5 +1,4 @@
 import {
-  Certification,
   ListCertificationsResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
@@ -11,31 +10,16 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/CertificationConverter";
-import { GraphQlCertification } from "../types/certification";
 import {
   ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import {
-  buildFilterExpression,
-  buildPaginationExpression,
-} from "../../../../utils/filterUtil";
-
-type GraphQlListCertificationsResponse = {
-  dionysus_certifications: GraphQlCertification[];
-  dionysus_certifications_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { CertificationService } from "../services/CertificationService";
 
 @Controller({ version: "1" })
 export class ListCertificationsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly certifications: CertificationService) {}
 
   @Get("/metadata/certifications")
   @ApiOperation({
@@ -68,45 +52,19 @@ export class ListCertificationsController {
     @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const whereExpression = buildFilterExpression(filters);
-    const paginationExpression = buildPaginationExpression({
-      pageSize: pageSize,
-      startPage: startPage,
-      sortDirection: sortDirection,
-      sortField: sortField,
-    });
-
-    const fetchRequest = gql`
-      query ListCertifications {
-        dionysus_certifications(${[paginationExpression, whereExpression].join(", ")}) {
-          certification
-          country
-          createdTime
-          lastUpdatedTime
-          meaning
-          order
-          type
-        }
-        dionysus_certifications_aggregate${whereExpression ? `(${whereExpression})` : ""} {
-          aggregate {
-            count
-          }
-       }
-      }`;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListCertificationsResponse>(
-        fetchRequest,
-      );
-    const fetchedCertifications: Certification[] = [];
-
-    fetchResponse.dionysus_certifications.forEach((result) => {
-      fetchedCertifications.push(toDomainObject(result));
-    });
+    const { certifications, count } = await this.certifications.list(
+      {
+        pageSize: pageSize,
+        startPage: startPage,
+        sortDirection: sortDirection,
+        sortField: sortField,
+      },
+      filters,
+    );
 
     const responseBody: ListCertificationsResponse = {
-      certifications: fetchedCertifications,
-      count: fetchResponse.dionysus_certifications_aggregate.aggregate.count,
+      certifications: certifications,
+      count: count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

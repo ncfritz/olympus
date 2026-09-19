@@ -1,8 +1,4 @@
-import {
-  Keyword,
-  ListKeywordsResponse,
-  SortDirection,
-} from "@ncfritz/olympus-model";
+import { ListKeywordsResponse, SortDirection } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -11,27 +7,15 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/KeywordConverter";
-import { GraphQlKeyword } from "../types/keyword";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import { buildPaginationExpression } from "../../../../utils/filterUtil";
-
-type GraphQlListKeywordsResponse = {
-  dionysus_keywords: GraphQlKeyword[];
-  dionysus_keywords_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { KeywordService } from "../services/KeywordService";
 
 @Controller({ version: "1" })
 export class ListKeywordsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly keywords: KeywordService) {}
 
   @Get("/metadata/keywords")
   @ApiOperation({
@@ -62,41 +46,16 @@ export class ListKeywordsController {
     @Query("sortBy") sortField = "createdTime",
     @Res() response: Response,
   ): Promise<void> {
-    const paginationExpression = buildPaginationExpression({
+    const { keywords, count } = await this.keywords.list({
       pageSize,
       startPage,
       sortField,
       sortDirection,
     });
-    const fetchRequest = gql`
-      query ListKeywords {
-      dionysus_keywords(${paginationExpression}) {
-        id
-        value
-        createdTime
-        lastUpdatedTime
-      }
-      dionysus_keywords_aggregate {
-        aggregate {
-          count
-        }
-      }
-    }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListKeywordsResponse>(
-        fetchRequest,
-      );
-    const fetchedKeywords: Keyword[] = [];
-
-    fetchResponse.dionysus_keywords.forEach((result) => {
-      fetchedKeywords.push(toDomainObject(result));
-    });
 
     const responseBody: ListKeywordsResponse = {
-      keywords: fetchedKeywords,
-      count: fetchResponse.dionysus_keywords_aggregate.aggregate.count,
+      keywords: keywords,
+      count: count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

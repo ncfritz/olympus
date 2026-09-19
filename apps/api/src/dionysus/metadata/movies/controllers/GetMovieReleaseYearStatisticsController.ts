@@ -1,23 +1,13 @@
-import {
-  GetMovieReleaseYearStatisticsResponse,
-  YearStatistic,
-} from "@ncfritz/olympus-model";
+import { GetMovieReleaseYearStatisticsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetMovieReleaseYearStatisticsResponse = {
-  dionysus_movie_release_date_statistics: {
-    year: number;
-    count: number;
-  }[];
-};
+import { MovieService } from "../services/MovieService";
 
 @Controller({ version: "1" })
 export class GetMovieReleaseYearStatisticsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly movies: MovieService) {}
 
   @Get("/metadata/movies/stats/releaseYear")
   @ApiOperation({
@@ -35,27 +25,8 @@ export class GetMovieReleaseYearStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const fetchRequest = gql`
-      query GetMovieReleaseYearStatistics {
-        dionysus_movie_release_date_statistics(order_by: { year: asc }) {
-          count
-          year
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetMovieReleaseYearStatisticsResponse>(
-        fetchRequest,
-      );
-    const releaseYearStatistics: YearStatistic[] = [];
-
-    fetchResponse.dionysus_movie_release_date_statistics.forEach((result) => {
-      releaseYearStatistics.push(result);
-    });
-
     const responseBody: GetMovieReleaseYearStatisticsResponse = {
-      statistics: releaseYearStatistics,
+      statistics: await this.movies.getReleaseYearStatistics(),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

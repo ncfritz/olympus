@@ -1,8 +1,6 @@
 import {
   CreateMediaAssetSearchExecutionRequest,
-  MediaAssetSearchExecution,
   MediaAssetSearchType,
-  SearchExecutionStatus,
   SingleMediaAssetSearchExecutionResponse,
 } from "@ncfritz/olympus-model";
 import {
@@ -25,24 +23,16 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/MediaAssetSearchExecutionConverter";
-import { BASE_SEARCH_EXECUTION } from "../queries/searchExecution";
-import { GraphQlMediaAssetSearchExecution } from "../types/searchExecution";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseMediaAssetSearchConfigurationController } from "../../searchConfigurations/controllers/BaseMediaAssetSearchConfigurationController";
 import { DescribeMediaAssetSearchExecutionController } from "./DescribeMediaAssetSearchExecutionController";
 import { setLocation } from "../../../../utils/location";
-
-type GraphQlCreateMediaAssetSearchExecutionResponse = {
-  insert_dionysus_media_asset_search_execution_one: GraphQlMediaAssetSearchExecution;
-};
+import { MediaAssetSearchExecutionService } from "../services/MediaAssetSearchExecutionService";
 
 @Controller({ version: "1" })
-export class CreateMediaAssetSearchExecutionController extends BaseMediaAssetSearchConfigurationController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class CreateMediaAssetSearchExecutionController {
+  constructor(
+    private readonly searchExecutions: MediaAssetSearchExecutionService,
+  ) {}
 
   @Post("/media/searchConfiguration/:mediaType/:mediaId/executions")
   @ApiOperation({
@@ -90,38 +80,9 @@ export class CreateMediaAssetSearchExecutionController extends BaseMediaAssetSea
     @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    await this.verifySearchConfiguration(mediaType, mediaId);
-
-    const insertRequest = gql`
-      mutation CreateMediaAssetSearchExecution(
-        $status: String!
-        $searchType: String!
-        $mediaId: numeric!
-      ) {
-        insert_dionysus_media_asset_search_execution_one(
-          object: {
-            status: $status
-            searchType: $searchType
-            mediaId: $mediaId
-          }
-        ) {
-          ${BASE_SEARCH_EXECUTION}
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateMediaAssetSearchExecutionResponse>(
-        insertRequest,
-        {
-          searchType: mediaType,
-          mediaId: mediaId,
-          status: SearchExecutionStatus.RUNNING,
-        },
-      );
-
-    const createdSearchExecution: MediaAssetSearchExecution = toDomainObject(
-      insertResponse.insert_dionysus_media_asset_search_execution_one,
+    const createdSearchExecution = await this.searchExecutions.create(
+      mediaType,
+      mediaId,
     );
 
     const responseBody: SingleMediaAssetSearchExecutionResponse = {

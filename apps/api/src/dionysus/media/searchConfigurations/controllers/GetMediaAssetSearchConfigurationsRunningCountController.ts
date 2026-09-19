@@ -1,12 +1,8 @@
 import {
-  FilterDefinition,
-  FilterType,
   GetMediaAssetSearchConfigurationsRunningCountResponse,
-  MediaAssetSearchConfigurationStatus,
   MediaAssetSearchType,
 } from "@ncfritz/olympus-model";
 import {
-  BadRequestException,
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
@@ -27,21 +23,14 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { buildFilterExpression } from "../../../../utils/filterUtil";
-
-type GraphQlCountMediaAssetSearchConfigurationsResponse = {
-  dionysus_media_asset_search_configuration_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { MediaAssetSearchConfigurationService } from "../services/MediaAssetSearchConfigurationService";
 
 @Controller({ version: "1" })
 export class GetMediaAssetSearchConfigurationsRunningCountController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly searchConfigurations: MediaAssetSearchConfigurationService,
+  ) {}
 
   @Put("/media/searchConfiguration/:mediaType/:mediaId/running")
   @ApiOperation({
@@ -88,80 +77,13 @@ export class GetMediaAssetSearchConfigurationsRunningCountController {
     seasonNumber: number | undefined,
     @Res() response: Response,
   ): Promise<void> {
-    if (
-      ![
-        MediaAssetSearchType.TV_SERIES,
-        MediaAssetSearchType.TV_SEASON,
-      ].includes(mediaType)
-    ) {
-      throw new BadRequestException("mediatype must be tv_series or tv_season");
-    }
-
-    let targetTypes: MediaAssetSearchType[] = [];
-    const filters: FilterDefinition[] = [
-      {
-        type: FilterType.EQUALS,
-        name: "status",
-        value: MediaAssetSearchConfigurationStatus.UPDATING,
-      },
-      {
-        type: FilterType.EQUALS,
-        name: "seriesId",
-        value: mediaId,
-      },
-    ];
-
-    if (mediaType === MediaAssetSearchType.TV_SERIES) {
-      targetTypes = [
-        MediaAssetSearchType.TV_SEASON,
-        MediaAssetSearchType.TV_EPISODE,
-      ];
-    } else if (mediaType === MediaAssetSearchType.TV_SEASON) {
-      if (!seasonNumber) {
-        throw new BadRequestException("seasonNumber must be provided");
-      }
-
-      filters.push({
-        type: FilterType.EQUALS,
-        name: "seasonNumber",
-        value: seasonNumber!,
-      });
-      targetTypes = [MediaAssetSearchType.TV_EPISODE];
-    }
-
-    const filter: FilterDefinition = {
-      type: FilterType.AND,
-      name: "_",
-      value: [
-        ...filters,
-        {
-          type: FilterType.IN,
-          name: "assetType",
-          value: targetTypes,
-        },
-      ],
-    };
-
-    const countRequest = gql`
-      query GetMediaAssetSearchConfigurationsRunningCount {
-        dionysus_media_asset_search_configuration_aggregate(${buildFilterExpression(filter)}) {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
-
-    const countResponse =
-      await this.graphQLClient.request<GraphQlCountMediaAssetSearchConfigurationsResponse>(
-        countRequest,
-      );
-
     const responseBody: GetMediaAssetSearchConfigurationsRunningCountResponse =
       {
-        count:
-          countResponse.dionysus_media_asset_search_configuration_aggregate
-            .aggregate.count,
+        count: await this.searchConfigurations.getRunningCount(
+          mediaType,
+          mediaId,
+          seasonNumber,
+        ),
       };
 
     response.status(HttpStatus.OK).send(responseBody);

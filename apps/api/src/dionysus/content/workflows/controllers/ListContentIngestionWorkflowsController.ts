@@ -1,5 +1,4 @@
 import {
-  ContentIngestionWorkflow,
   ListContentIngestionWorkflowsResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
@@ -11,30 +10,17 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/ContentIngestionWorkflowConverter";
-import { GraphQLContentIngestionWorkflow } from "../types/workflow";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import {
-  buildFilterExpression,
-  buildPaginationExpression,
-} from "../../../../utils/filterUtil";
-
-type GraphQLListContentIngestionWorkflowsResponse = {
-  dionysus_content_asset_ingest_workflows: GraphQLContentIngestionWorkflow[];
-  dionysus_content_asset_ingest_workflows_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { ContentIngestionWorkflowService } from "../services/ContentIngestionWorkflowService";
 
 @Controller({ version: "1" })
 export class ListContentIngestionWorkflowsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly contentIngestionWorkflows: ContentIngestionWorkflowService,
+  ) {}
 
   @Get("/content/workflows")
   @ApiOperation({
@@ -67,55 +53,13 @@ export class ListContentIngestionWorkflowsController {
     @Query("filters") filters: string | undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const whereExpression = buildFilterExpression(filters);
-    const paginationExpression = buildPaginationExpression({
-      pageSize: pageSize,
-      startPage: startPage,
-      sortDirection: sortDirection,
-      sortField: sortField,
-    });
-
-    const fetchRequest = gql`
-      query ListContentIngestionWorkflows {
-        dionysus_content_asset_ingest_workflows(${[paginationExpression, whereExpression].join(", ")}) {
-          createdTime
-          finishedTime
-          id
-          lastUpdatedTime
-          source
-          sourceType
-          startedTime
-          status
-          steps_aggregate {
-            aggregate {
-              count
-            }
-          }
-        }
-        dionysus_content_asset_ingest_workflows_aggregate${whereExpression ? `(${whereExpression})` : ""} {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQLListContentIngestionWorkflowsResponse>(
-        fetchRequest,
-      );
-    const fetchedWorkflows: ContentIngestionWorkflow[] = [];
-
-    fetchResponse.dionysus_content_asset_ingest_workflows.forEach((result) => {
-      fetchedWorkflows.push(toDomainObject(result));
-    });
-
-    const responseBody: ListContentIngestionWorkflowsResponse = {
-      workflows: fetchedWorkflows,
-      count:
-        fetchResponse.dionysus_content_asset_ingest_workflows_aggregate
-          .aggregate.count,
-    };
+    const responseBody: ListContentIngestionWorkflowsResponse =
+      await this.contentIngestionWorkflows.list(filters, {
+        pageSize: pageSize,
+        startPage: startPage,
+        sortDirection: sortDirection,
+        sortField: sortField,
+      });
 
     response.status(HttpStatus.OK).send(responseBody);
   }

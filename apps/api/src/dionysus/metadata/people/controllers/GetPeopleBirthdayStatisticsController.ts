@@ -1,23 +1,13 @@
-import {
-  GetPersonLifeStaticsResponse,
-  PersonLifeStatistic,
-} from "@ncfritz/olympus-model";
+import { GetPersonLifeStaticsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQGetPeopleBirthdayStatisticsResponse = {
-  dionysus_people_birthday_statistics: {
-    year: number;
-    count: number;
-  }[];
-};
+import { PersonService } from "../services/PersonService";
 
 @Controller({ version: "1" })
 export class GetPeopleBirthdayStatisticsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly people: PersonService) {}
 
   @Get("/metadata/person/stats/birthday")
   @ApiOperation({
@@ -34,27 +24,8 @@ export class GetPeopleBirthdayStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const fetchRequest = gql`
-      query GetPeopleBirthdayStatistics {
-        dionysus_people_birthday_statistics(order_by: { year: asc }) {
-          count
-          year
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQGetPeopleBirthdayStatisticsResponse>(
-        fetchRequest,
-      );
-    const birthyearStats: PersonLifeStatistic[] = [];
-
-    fetchResponse.dionysus_people_birthday_statistics.forEach((result) => {
-      birthyearStats.push(result);
-    });
-
     const responseBody: GetPersonLifeStaticsResponse = {
-      statistics: birthyearStats,
+      statistics: await this.people.getBirthdayStatistics(),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

@@ -1,6 +1,4 @@
 import {
-  BatchJob,
-  JobStatus,
   UpdateBatchJobRequest,
   UpdateBatchJobResponse,
 } from "@ncfritz/olympus-model";
@@ -9,7 +7,6 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
-  NotFoundException,
   Param,
   Put,
   Res,
@@ -24,19 +21,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import moment from "moment";
-import { toDomainObject } from "../converters/BatchJobConverter";
-import { GraphQlBatchJob } from "../../types/batchJobs";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlUpdateMetadataFetchJobResponse = {
-  update_dionysus_bulk_load_jobs_by_pk: GraphQlBatchJob | null;
-};
+import { BatchJobService } from "../services/BatchJobService";
 
 @Controller({ version: "1" })
 export class UpdateBatchJobController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly batchJobs: BatchJobService) {}
 
   @Put("/job/batch/:jobId")
   @ApiOperation({
@@ -67,64 +57,8 @@ export class UpdateBatchJobController {
     @Body() request: UpdateBatchJobRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const updateRequest = gql`
-      mutation UpdateBatchJob(
-        $id: uuid!
-        $changes: dionysus_bulk_load_jobs_set_input = {}
-      ) {
-        update_dionysus_bulk_load_jobs_by_pk(
-          pk_columns: { id: $id }
-          _set: $changes
-        ) {
-          id
-          type
-          status
-          createdTime
-          lastUpdatedTime
-          startedTime
-          finishedTime
-          totalRecords
-          processedRecords
-          duplicateRecords
-          noOpRecords
-          newRecords
-          expiredRecords
-          skippedRecords
-        }
-      }
-    `;
-
-    const updates = request.job;
-
-    if (
-      updates.status &&
-      [JobStatus.CANCELLED, JobStatus.FAILED, JobStatus.SUCCESS].includes(
-        updates.status,
-      ) &&
-      !updates.finishedTime
-    ) {
-      updates.finishedTime = moment().utc();
-    }
-
-    const updateResponse =
-      await this.graphQLClient.request<GraphQlUpdateMetadataFetchJobResponse>(
-        updateRequest,
-        {
-          id: jobId,
-          changes: updates,
-        },
-      );
-
-    if (!updateResponse.update_dionysus_bulk_load_jobs_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const updatedJob: BatchJob = toDomainObject(
-      updateResponse.update_dionysus_bulk_load_jobs_by_pk,
-    );
-
     const responseBody: UpdateBatchJobResponse = {
-      job: updatedJob,
+      job: await this.batchJobs.update(jobId, request.job),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

@@ -1,5 +1,4 @@
 import {
-  ContentIngestionWorkflowStatus,
   UpdateContentIngestionWorkflowRequest,
   UpdateContentIngestionWorkflowResponse,
 } from "@ncfritz/olympus-model";
@@ -8,7 +7,6 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
-  NotFoundException,
   Param,
   Put,
   Res,
@@ -23,19 +21,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import moment from "moment";
-import { GraphQLContentIngestionWorkflow } from "../types/workflow";
-import { toDomainObject } from "../converters/ContentIngestionWorkflowConverter";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlUpdateContentIngestionWorkflowResponse = {
-  update_dionysus_content_asset_ingest_workflows_by_pk: GraphQLContentIngestionWorkflow | null;
-};
+import { ContentIngestionWorkflowService } from "../services/ContentIngestionWorkflowService";
 
 @Controller({ version: "1" })
 export class UpdateContentIngestionWorkflowController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly contentIngestionWorkflows: ContentIngestionWorkflowService,
+  ) {}
 
   @Put("/content/workflow/:workflowId")
   @ApiOperation({
@@ -66,71 +59,11 @@ export class UpdateContentIngestionWorkflowController {
     @Body() request: UpdateContentIngestionWorkflowRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const updateRequest = gql`
-      mutation UpdateContentIngestionWorkflow(
-        $id: uuid!
-        $changes: dionysus_content_asset_ingest_workflows_set_input = {}
-      ) {
-        update_dionysus_content_asset_ingest_workflows_by_pk(
-          pk_columns: { id: $id }
-          _set: $changes
-        ) {
-          id
-          source
-          sourceType
-          tempLocation
-          status
-          startedTime
-          finishedTime
-          createdTime
-          lastUpdatedTime
-          steps {
-            id
-            type
-            status
-            progress
-            startedTime
-            finishedTime
-            createdTime
-            lastUpdatedTime
-          }
-        }
-      }
-    `;
-
-    const updates = request.workflow;
-
-    if (
-      updates.status &&
-      [
-        ContentIngestionWorkflowStatus.SKIPPED,
-        ContentIngestionWorkflowStatus.FAILED,
-        ContentIngestionWorkflowStatus.SUCCESS,
-      ].includes(updates.status) &&
-      !updates.finishedTime
-    ) {
-      updates.finishedTime = moment().utc();
-    }
-
-    const updateResponse =
-      await this.graphQLClient.request<GraphQlUpdateContentIngestionWorkflowResponse>(
-        updateRequest,
-        {
-          id: workflowId,
-          changes: updates,
-        },
-      );
-
-    if (!updateResponse.update_dionysus_content_asset_ingest_workflows_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const updatedWorkflow = toDomainObject(
-      updateResponse.update_dionysus_content_asset_ingest_workflows_by_pk,
-    );
-
     const responseBody: UpdateContentIngestionWorkflowResponse = {
-      workflow: updatedWorkflow,
+      workflow: await this.contentIngestionWorkflows.update(
+        workflowId,
+        request.workflow,
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

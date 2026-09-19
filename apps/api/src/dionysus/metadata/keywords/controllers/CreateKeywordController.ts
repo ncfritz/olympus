@@ -1,5 +1,4 @@
 import {
-  Keyword,
   CreateKeywordRequest,
   CreateKeywordResponse,
 } from "@ncfritz/olympus-model";
@@ -12,18 +11,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/KeywordConverter";
-import { GraphQlKeyword } from "../types/keyword";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlCreateKeywordResponse = {
-  insert_dionysus_keywords_one: GraphQlKeyword;
-};
+import { KeywordService } from "../services/KeywordService";
 
 @Controller({ version: "1" })
 export class CreateKeywordController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly keywords: KeywordService) {}
 
   @Put("/metadata/keywords")
   @ApiOperation({
@@ -48,35 +41,8 @@ export class CreateKeywordController {
     @Body() request: CreateKeywordRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const insertRequest = gql`
-      mutation CreateKeyword($id: numeric!, $value: String!) {
-        insert_dionysus_keywords_one(
-          object: { id: $id, value: $value }
-          on_conflict: { constraint: keywords_pkey, update_columns: [value] }
-        ) {
-          id
-          value
-          createdTime
-          lastUpdatedTime
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateKeywordResponse>(
-        insertRequest,
-        {
-          id: request.keyword.id,
-          value: request.keyword.value,
-        },
-      );
-
-    const createdKeyword: Keyword = toDomainObject(
-      insertResponse.insert_dionysus_keywords_one,
-    );
-
     const responseBody: CreateKeywordResponse = {
-      keyword: createdKeyword,
+      keyword: await this.keywords.create(request.keyword),
     };
 
     response.status(HttpStatus.CREATED).send(responseBody);

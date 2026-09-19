@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { MovieService } from "./services/MovieService";
 import { RabbitModule } from "../../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../../infra/GraphQLClientModule";
 import { CreateMovieController } from "./controllers/CreateMovieController";
@@ -16,6 +17,7 @@ import { ListMoviesController } from "./controllers/ListMoviesController";
 
 @Module({
   imports: [RabbitModule, GraphQLClientModule],
+  providers: [MovieService],
   controllers: [
     CreateMovieController,
     DescribeMovieController,

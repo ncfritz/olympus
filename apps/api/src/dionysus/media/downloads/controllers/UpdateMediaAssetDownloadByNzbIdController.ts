@@ -1,7 +1,4 @@
 import {
-  MediaAssetSearchType,
-  MediaDownloadStatus,
-  SearchResultStatus,
   SingleMediaAssetDownloadResponse,
   UpdateMediaAssetDownloadByNzbIdRequest,
 } from "@ncfritz/olympus-model";
@@ -10,7 +7,6 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Put,
@@ -26,36 +22,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/MediaAssetDownloadConverter";
-import { BASE_MEDIA_DOWNLOAD } from "../queries/mediaDownload";
-import { GraphQlMediaAssetDownload } from "../types/mediaDownload";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { logger } from "../../../../utils/logger";
-
-type GraphQlLookupDownloadByNzbIdResponse = {
-  dionysus_media_asset_download: {
-    id: string;
-    progress: number;
-    status: MediaDownloadStatus;
-    searchResult: {
-      assetType: MediaAssetSearchType;
-      mediaId: number;
-      id: string;
-    };
-  }[];
-};
-
-type GraphQlUpdateChildMediaAssetDownloadResponse = {
-  update_dionysus_media_asset_download_by_pk: GraphQlMediaAssetDownload;
-  update_dionysus_media_asset_search_result_by_pk: {
-    status: SearchResultStatus;
-  };
-};
+import { MediaAssetDownloadService } from "../services/MediaAssetDownloadService";
 
 @Controller({ version: "1" })
 export class UpdateMediaAssetDownloadByNzbIdController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly mediaAssetDownloads: MediaAssetDownloadService,
+  ) {}
 
   @Put("/media/download/:nzbId")
   @ApiOperation({
@@ -86,89 +60,8 @@ export class UpdateMediaAssetDownloadByNzbIdController {
     @Body() request: UpdateMediaAssetDownloadByNzbIdRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const locateDownloadRequest = gql`
-      query LookupDownloadByNzbId($nzbId: numeric!) {
-        dionysus_media_asset_download(where: { nzbId: { _eq: $nzbId } }) {
-          id
-          progress
-          status
-          searchResult {
-            assetType
-            mediaId
-            id
-          }
-        }
-      }
-    `;
-
-    const locateDownloadResponse =
-      await this.graphQLClient.request<GraphQlLookupDownloadByNzbIdResponse>(
-        locateDownloadRequest,
-        { nzbId: nzbId },
-      );
-
-    if (locateDownloadResponse.dionysus_media_asset_download.length === 0) {
-      throw new NotFoundException(`No download found for NZB ID ${nzbId}`);
-    }
-
-    if (
-      request.download.progress &&
-      request.download.progress <
-        locateDownloadResponse.dionysus_media_asset_download[0].progress
-    ) {
-      logger.debug(
-        `Download progress for NZB ID ${nzbId} is ${request.download.progress}, but download progress is ${locateDownloadResponse.dionysus_media_asset_download[0].progress}. Request progress will be ignored`,
-      );
-
-      request.download.progress =
-        locateDownloadResponse.dionysus_media_asset_download[0].progress;
-    }
-
-    const downloadId = locateDownloadResponse.dionysus_media_asset_download[0];
-
-    const updateRequest = gql`
-      mutation UpdateMediaAssetDownloadByNzbId(
-        $downloadId: uuid!
-        $searchResultId: String!
-        $assetType: String!
-        $mediaId: numeric!
-        $searchResultStatus: String!
-        $changes: dionysus_media_asset_download_set_input = {}
-      ) {
-        update_dionysus_media_asset_download_by_pk(
-          pk_columns: { id: $downloadId, searchResultId: $searchResultId }
-          _set: $changes
-        ) {
-          ${BASE_MEDIA_DOWNLOAD}
-        }
-        update_dionysus_media_asset_search_result_by_pk(
-          pk_columns: {assetType: $assetType, id: $searchResultId, mediaId: $mediaId},
-          _set: {status: $searchResultStatus}
-        ) {
-          status
-        }
-      }
-    `;
-
-    const updateResponse =
-      await this.graphQLClient.request<GraphQlUpdateChildMediaAssetDownloadResponse>(
-        updateRequest,
-        {
-          downloadId: downloadId.id,
-          searchResultId: downloadId.searchResult.id,
-          assetType: downloadId.searchResult.assetType,
-          mediaId: downloadId.searchResult.mediaId,
-          searchResultStatus: request.searchResultStatus,
-          changes: request.download,
-        },
-      );
-
-    const updatedDownload = toDomainObject(
-      updateResponse.update_dionysus_media_asset_download_by_pk,
-    );
-
     const responseBody: SingleMediaAssetDownloadResponse = {
-      download: updatedDownload,
+      download: await this.mediaAssetDownloads.updateByNzbId(nzbId, request),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

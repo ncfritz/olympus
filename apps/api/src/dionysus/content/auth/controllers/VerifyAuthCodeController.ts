@@ -1,12 +1,5 @@
 import { VerifyAuthResponse } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  Query,
-  Res,
-  UnauthorizedException,
-} from "@nestjs/common";
+import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -14,17 +7,13 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { GraphQLClient } from "graphql-request";
-import * as speakeasy from "speakeasy";
-import * as jose from "jose";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseAuthenticatedContentController } from "./BaseAuthenticatedContentController";
+import { CONTENT_AUTH_COOKIE } from "../contentAuth";
+import { ContentAuthService } from "../services/ContentAuthService";
 
 @Controller({ version: "1" })
-export class VerifyAuthCodeController extends BaseAuthenticatedContentController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class VerifyAuthCodeController {
+  constructor(private readonly contentAuth: ContentAuthService) {}
 
   @Get("/content/auth/verify")
   @ApiOperation({
@@ -49,27 +38,9 @@ export class VerifyAuthCodeController extends BaseAuthenticatedContentController
     @Query("otp") otp: string,
     @Res() response: Response,
   ): Promise<void> {
-    const otpKey = await this.getAuthenticationKey("bc.key");
-    const verified = speakeasy.totp.verify({
-      secret: otpKey,
-      encoding: "base32",
-      token: otp,
-    });
+    const jwt = await this.contentAuth.verifyCode(otp);
 
-    if (!verified) {
-      throw new UnauthorizedException();
-    }
-    const jwtKey = await this.getAuthenticationKey("jwt.key");
-    const alg = "HS256";
-    const jwt = await new jose.SignJWT({ "urn:example:claim": true })
-      .setProtectedHeader({ alg })
-      .setIssuedAt()
-      .setIssuer("ncfritz.dionysus.content")
-      .setAudience("test")
-      .setExpirationTime("15m")
-      .sign(new TextEncoder().encode(jwtKey));
-
-    response.cookie("x-dionysus-content-auth", jwt, {
+    response.cookie(CONTENT_AUTH_COOKIE, jwt, {
       secure: true,
       sameSite: "strict",
       httpOnly: false,

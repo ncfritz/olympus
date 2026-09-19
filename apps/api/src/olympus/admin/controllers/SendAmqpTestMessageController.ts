@@ -1,4 +1,3 @@
-import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import { EmptyResponse, TestRequest } from "@ncfritz/olympus-model";
 import {
   Body,
@@ -19,10 +18,11 @@ import {
 } from "@nestjs/swagger";
 import { type Response } from "express";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { TestMessageService } from "../services/TestMessageService";
 
 @Controller({ version: "1" })
 export class SendAmqpTestMessageController {
-  constructor(private amqpConnection: AmqpConnection) {}
+  constructor(private readonly testMessages: TestMessageService) {}
 
   @Post("/amqp/test/:exchange")
   @ApiOperation({
@@ -61,7 +61,7 @@ export class SendAmqpTestMessageController {
     @Body() request: TestRequest,
     @Res() response: Response,
   ): Promise<void> {
-    await this.amqpConnection.publish(exchange, routingKey, request);
+    await this.testMessages.send(exchange, routingKey, request);
 
     response.status(HttpStatus.OK).send();
   }

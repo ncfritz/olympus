@@ -1,12 +1,8 @@
-import {
-  BaseTVSeries,
-  ListTvSeriesRecommendationsResponse,
-} from "@ncfritz/olympus-model";
+import { ListTvSeriesRecommendationsResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Res,
@@ -18,21 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toBaseDomainObject as toTvSeriesDomainObject } from "../converters/tvSeriesConverter";
-import { BASE_TV_SERIES } from "../queries/tvSeries";
-import { GraphQlTvSeriesRecommendation } from "../types/tvSeries";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlListTvSeriesRecommendationsResponse = {
-  dionysus_tv_series_by_pk: {
-    recommendations: GraphQlTvSeriesRecommendation[];
-  };
-};
+import { TvSeriesService } from "../services/TvSeriesService";
 
 @Controller({ version: "1" })
 export class ListTvSeriesRecommendationsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly tvSeries: TvSeriesService) {}
 
   @Get("/metadata/tvSeries/:tvSeriesId/recommendations")
   @ApiOperation({
@@ -57,38 +44,8 @@ export class ListTvSeriesRecommendationsController {
     @Param("tvSeriesId", ParseIntPipe) tvSeriesId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query ListTvSeriesRecommendations($id: numeric!) {
-        dionysus_tv_series_by_pk(id: $id) {
-          recommendations {
-            tvSeries {
-              ${BASE_TV_SERIES}
-            }
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListTvSeriesRecommendationsResponse>(
-        fetchRequest,
-        { id: tvSeriesId },
-      );
-    if (!fetchResponse.dionysus_tv_series_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const recommendations: BaseTVSeries[] = [];
-
-    fetchResponse.dionysus_tv_series_by_pk.recommendations.forEach((result) => {
-      // Skip links to rows that are not in the database (yet).
-      if (result.tvSeries) {
-        recommendations.push(toTvSeriesDomainObject(result.tvSeries));
-      }
-    });
-
     const responseBody: ListTvSeriesRecommendationsResponse = {
-      recommendations: recommendations,
+      recommendations: await this.tvSeries.listRecommendations(tvSeriesId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

@@ -1,23 +1,13 @@
-import {
-  GetMovieLocationStatisticsResponse,
-  LocationStatistic,
-} from "@ncfritz/olympus-model";
+import { GetMovieLocationStatisticsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlMovieLocationStatistics = {
-  dionysus_movie_location_statistics: {
-    countryCode: string;
-    count: number;
-  }[];
-};
+import { MovieService } from "../services/MovieService";
 
 @Controller({ version: "1" })
 export class GetMovieLocationStatisticsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly movies: MovieService) {}
 
   @Get("/metadata/movies/stats/locations")
   @ApiOperation({
@@ -35,30 +25,8 @@ export class GetMovieLocationStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const fetchRequest = gql`
-      query GetMovieLocationStatistics {
-        dionysus_movie_location_statistics {
-          countryCode
-          count
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlMovieLocationStatistics>(
-        fetchRequest,
-      );
-    const statistics: LocationStatistic[] = [];
-
-    fetchResponse.dionysus_movie_location_statistics.forEach((result) => {
-      statistics.push({
-        countryCode: result.countryCode,
-        count: result.count,
-      });
-    });
-
     const responseBody: GetMovieLocationStatisticsResponse = {
-      statistics: statistics,
+      statistics: await this.movies.getLocationStatistics(),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

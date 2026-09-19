@@ -1,37 +1,17 @@
-import {
-  BaseTVSeries,
-  ListTvSeriesResponse,
-  SortDirection,
-} from "@ncfritz/olympus-model";
+import { ListTvSeriesResponse, SortDirection } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toBaseDomainObject as toTvSeriesDomainObject } from "../converters/tvSeriesConverter";
-import { BASE_TV_SERIES } from "../queries/tvSeries";
-import { GraphQlBaseTvSeries } from "../types/tvSeries";
 import {
   ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import {
-  buildFilterExpression,
-  buildPaginationExpression,
-} from "../../../../utils/filterUtil";
-
-type GraphQlListTvSeriesResponse = {
-  dionysus_tv_series: GraphQlBaseTvSeries[];
-  dionysus_tv_series_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { TvSeriesService } from "../services/TvSeriesService";
 
 @Controller({ version: "1" })
 export class ListTvSeriesController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly tvSeries: TvSeriesService) {}
 
   @Get("/metadata/tvSeries")
   @ApiOperation({
@@ -56,40 +36,17 @@ export class ListTvSeriesController {
     @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const whereExpression = buildFilterExpression(filters);
-    const paginationExpression = buildPaginationExpression({
-      pageSize: pageSize,
-      startPage: startPage,
-      sortDirection: sortDirection,
-      sortField: sortField,
-    });
-
-    const fetchRequest = gql`
-      query ListTvSeries {
-        dionysus_tv_series(${[paginationExpression, whereExpression].join(", ")}) {
-          ${BASE_TV_SERIES}
-        }
-        dionysus_tv_series_aggregate${whereExpression ? `(${whereExpression})` : ""} {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListTvSeriesResponse>(
-        fetchRequest,
-      );
-    const tvSeries: BaseTVSeries[] = [];
-
-    fetchResponse.dionysus_tv_series.forEach((result) => {
-      tvSeries.push(toTvSeriesDomainObject(result));
+    const page = await this.tvSeries.list({
+      pageSize,
+      startPage,
+      sortDirection,
+      sortField,
+      filters,
     });
 
     const responseBody: ListTvSeriesResponse = {
-      tvSeries: tvSeries,
-      count: fetchResponse.dionysus_tv_series_aggregate.aggregate.count,
+      tvSeries: page.tvSeries,
+      count: page.count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

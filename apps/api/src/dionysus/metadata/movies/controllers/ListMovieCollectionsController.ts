@@ -1,12 +1,8 @@
-import {
-  Collection,
-  ListMovieCollectionsResponse,
-} from "@ncfritz/olympus-model";
+import { ListMovieCollectionsResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Res,
@@ -18,25 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../../collections/converters/CollectionConverter";
-import { MEDIA_ASSET } from "../../../media/assets/queries/mediaAsset";
-import { SEARCH_CONFIGURATION } from "../../../media/searchConfigurations/queries/searchConfiguration";
-import { GraphQlCollection, Timestamped } from "../../types/metadata";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlListMovieCollectionsResponse = {
-  dionysus_movies_by_pk: {
-    collections: Timestamped &
-      {
-        collection: GraphQlCollection;
-      }[];
-  };
-};
+import { MovieService } from "../services/MovieService";
 
 @Controller({ version: "1" })
 export class ListMovieCollectionsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly movies: MovieService) {}
 
   @Get("/metadata/movie/:movieId/collections")
   @ApiOperation({
@@ -62,84 +45,8 @@ export class ListMovieCollectionsController {
     @Param("movieId", ParseIntPipe) movieId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query ListMovieCollections($id: numeric!) {
-        dionysus_movies_by_pk(id: $id) {
-          collections {
-            createdTime
-            lastUpdatedTime
-            collection {
-              backdropPath
-              createdTime
-              id
-              images {
-                createdTime
-                filePath
-                height
-                language {
-                  createdTime
-                  id
-                  lastUpdatedTime
-                  name
-                  nativeName
-                }
-                lastUpdatedTime
-                type
-                width
-              }
-              name
-              overview
-              posterPath
-              parts {
-                createdTime
-                lastUpdatedTime
-                movie {
-                  adult
-                  backdropPath
-                  budget
-                  createdTime
-                  homepage
-                  id
-                  imdbId
-                  lastUpdatedTime
-                  originalLanguageCode
-                  originalTitle
-                  overview
-                  posterPath
-                  releaseDate
-                  revenue
-                  runtime
-                  status
-                  tagline
-                  title
-                  video
-                  ${SEARCH_CONFIGURATION}
-                  ${MEDIA_ASSET}
-                }
-              }
-            }
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListMovieCollectionsResponse>(
-        fetchRequest,
-        { id: movieId },
-      );
-    if (!fetchResponse.dionysus_movies_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const collections: Collection[] = [];
-
-    fetchResponse.dionysus_movies_by_pk.collections.forEach((result) => {
-      collections.push(toDomainObject(result.collection));
-    });
-
     const responseBody: ListMovieCollectionsResponse = {
-      collections: collections,
+      collections: await this.movies.listCollections(movieId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

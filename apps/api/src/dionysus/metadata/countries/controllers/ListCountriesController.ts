@@ -1,8 +1,4 @@
-import {
-  Country,
-  ListCountriesResponse,
-  SortDirection,
-} from "@ncfritz/olympus-model";
+import { ListCountriesResponse, SortDirection } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -11,27 +7,15 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/CountryConverter";
-import { GraphQlCountry } from "../types/country";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import { buildPaginationExpression } from "../../../../utils/filterUtil";
-
-type GraphQlListCountriesResponse = {
-  dionysus_countries: GraphQlCountry[];
-  dionysus_countries_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { CountryService } from "../services/CountryService";
 
 @Controller({ version: "1" })
 export class ListCountriesController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly countries: CountryService) {}
 
   @Get("/metadata/countries")
   @ApiOperation({
@@ -62,41 +46,16 @@ export class ListCountriesController {
     @Query("sortBy") sortField = "createdTime",
     @Res() response: Response,
   ): Promise<void> {
-    const paginationExpression = buildPaginationExpression({
+    const { countries, count } = await this.countries.list({
       pageSize,
       startPage,
       sortField,
       sortDirection,
     });
-    const fetchRequest = gql`
-      query ListCountries {
-      dionysus_countries(${paginationExpression}) {
-        createdTime
-        id
-        lastUpdatedTime
-        name
-      }
-      dionysus_countries_aggregate {
-        aggregate {
-          count
-        }
-      }
-    }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListCountriesResponse>(
-        fetchRequest,
-      );
-    const fetchedCountries: Country[] = [];
-
-    fetchResponse.dionysus_countries.forEach((result) => {
-      fetchedCountries.push(toDomainObject(result));
-    });
 
     const responseBody: ListCountriesResponse = {
-      countries: fetchedCountries,
-      count: fetchResponse.dionysus_countries_aggregate.aggregate.count,
+      countries: countries,
+      count: count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

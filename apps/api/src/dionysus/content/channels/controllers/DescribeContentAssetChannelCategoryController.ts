@@ -2,15 +2,7 @@ import {
   DescribeContentAssetChannelCategoryResponse,
   FullContentAssetChannelCategory,
 } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Req,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, HttpStatus, Param, Req, Res } from "@nestjs/common";
 import {
   ApiConsumes,
   ApiOkResponse,
@@ -19,23 +11,15 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toFullDomainObject } from "../converters/ContentAssetChannelCategoryConverter";
-import { GraphQlFullContentAssetChannelCategory } from "../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import {
-  authenticateContentRequest,
-  BC_CHANNEL_FILTER,
-} from "../../auth/controllers/BaseAuthenticatedContentController";
-import { buildFilterExpression } from "../../../../utils/filterUtil";
-
-export type GraphQlDescribeContentAssetChannelResponse = {
-  dionysus_content_asset_channel_category_by_pk: GraphQlFullContentAssetChannelCategory | null;
-};
+import { ContentAssetChannelCategoryService } from "../services/ContentAssetChannelCategoryService";
+import { contentAuthToken } from "../../auth/contentAuth";
 
 @Controller({ version: "1" })
 export class DescribeContentAssetChannelCategoryController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly contentAssetChannelCategories: ContentAssetChannelCategoryService,
+  ) {}
 
   @Get("/content/channel/category/:categoryId")
   @ApiOperation({
@@ -61,64 +45,11 @@ export class DescribeContentAssetChannelCategoryController {
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const channelWhere = (await authenticateContentRequest(
-      this.graphQLClient,
-      request,
-      true,
-    ))
-      ? ""
-      : (buildFilterExpression(BC_CHANNEL_FILTER) ?? "");
-
-    const queryRequest = gql`
-      query DescribeContentAssetChannelCategory($categoryId: uuid!) {
-        dionysus_content_asset_channel_category_by_pk(id: $categoryId) {
-          createdTime
-          id
-          lastUpdatedTime
-          name
-          channels(limit: 10${channelWhere ? `, ${channelWhere}` : ""}) {
-            bcCompliant
-            categoryId
-            createdTime
-            description
-            encodedFilter
-            favorite
-            filterInput
-            id
-            jitter
-            lastFetchedTime
-            lastUpdatedTime
-            name
-            ttl
-            assetCache {
-              assetId
-              createdTime
-            }
-          }
-          channels_aggregate${channelWhere ? `(${channelWhere})` : ""} {
-            aggregate {
-              count
-            }
-          }
-        }
-      }
-    `;
-
-    const queryResponse =
-      await this.graphQLClient.request<GraphQlDescribeContentAssetChannelResponse>(
-        queryRequest,
-        {
-          categoryId: categoryId,
-        },
+    const category: FullContentAssetChannelCategory =
+      await this.contentAssetChannelCategories.describe(
+        categoryId,
+        contentAuthToken(request),
       );
-
-    if (!queryResponse.dionysus_content_asset_channel_category_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const category: FullContentAssetChannelCategory = toFullDomainObject(
-      queryResponse.dionysus_content_asset_channel_category_by_pk,
-    );
 
     const responseBody: DescribeContentAssetChannelCategoryResponse = {
       category: category,

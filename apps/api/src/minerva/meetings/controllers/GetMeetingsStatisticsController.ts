@@ -1,8 +1,4 @@
-import {
-  GetMeetingStatisticsResponse,
-  MeetingStatus,
-  MeetingStatusStatistics,
-} from "@ncfritz/olympus-model";
+import { GetMeetingStatisticsResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -21,46 +17,15 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import moment from "moment-timezone";
 import {
   ApiStandardErrorResponses,
   HeaderTimezone,
 } from "../../../utils/controllerDecorators";
-
-type GraphQlGetMonthlyCountsResponse = {
-  minerva_meeting_hour_statistics: [
-    {
-      count: number;
-      duration: number;
-      hour: string;
-      status: MeetingStatus;
-    },
-  ];
-  minerva_meeting_day_statistics: [
-    {
-      count: number;
-      duration: number;
-      day: string;
-      status: MeetingStatus;
-    },
-  ];
-};
-
-const EMPTY_COUNTS = (): MeetingStatusStatistics => {
-  return {
-    [MeetingStatus.Free]: { count: 0, totalDurationMin: 0 },
-    [MeetingStatus.Busy]: { count: 0, totalDurationMin: 0 },
-    [MeetingStatus.Tentative]: { count: 0, totalDurationMin: 0 },
-    [MeetingStatus.OOF]: { count: 0, totalDurationMin: 0 },
-    [MeetingStatus.NoData]: { count: 0, totalDurationMin: 0 },
-    [MeetingStatus.WorkingElsewhere]: { count: 0, totalDurationMin: 0 },
-  };
-};
+import { MeetingService } from "../services/MeetingService";
 
 @Controller({ version: "1" })
 export class GetMeetingsStatisticsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly meetings: MeetingService) {}
 
   @Get("/meetings/statistics/:start")
   @ApiOperation({
@@ -96,74 +61,8 @@ export class GetMeetingsStatisticsController {
     @Query("days", ParseIntPipe) days: number,
     @Res() response: Response,
   ): Promise<void> {
-    const startDate = moment(start);
-    const endDate = moment(startDate)
-      .add(days + 1, "days")
-      .subtract(1, "second");
-    const queryInput = {
-      start: startDate,
-      end: endDate,
-      tz: tz,
-    };
-
-    const hourOfDayStatistics: Record<string, MeetingStatusStatistics> = {};
-    const dayOfWeekStatistics: Record<string, MeetingStatusStatistics> = {};
-
-    for (let i = 0; i < 24; i++) {
-      hourOfDayStatistics[i.toString().padStart(2, "0")] = EMPTY_COUNTS();
-    }
-
-    for (let i = 1; i <= 7; i++) {
-      dayOfWeekStatistics[i.toString()] = EMPTY_COUNTS();
-    }
-
-    const statisticsRequest = gql`
-      query GetMeetingsStatistics(
-        $tz: String!
-        $start: timestamptz!
-        $end: timestamptz!
-      ) {
-        minerva_meeting_hour_statistics(
-          args: { start_date: $start, end_date: $end, tz: $tz }
-        ) {
-          count
-          duration
-          hour
-          status
-        }
-        minerva_meeting_day_statistics(
-          args: { start_date: $start, end_date: $end, tz: $tz }
-        ) {
-          count
-          day
-          duration
-          status
-        }
-      }
-    `;
-
-    const statisticsResponse =
-      await this.graphQLClient.request<GraphQlGetMonthlyCountsResponse>(
-        statisticsRequest,
-        queryInput,
-      );
-
-    statisticsResponse.minerva_meeting_hour_statistics.forEach((entry) => {
-      hourOfDayStatistics[entry.hour][entry.status].count += entry.count;
-      hourOfDayStatistics[entry.hour][entry.status].totalDurationMin +=
-        entry.duration;
-    });
-
-    statisticsResponse.minerva_meeting_day_statistics.forEach((entry) => {
-      dayOfWeekStatistics[entry.day][entry.status].count += entry.count;
-      dayOfWeekStatistics[entry.day][entry.status].totalDurationMin +=
-        entry.duration;
-    });
-
-    const responseBody: GetMeetingStatisticsResponse = {
-      hourOfDayStatistics: hourOfDayStatistics,
-      dayOfWeekStatistics: dayOfWeekStatistics,
-    };
+    const responseBody: GetMeetingStatisticsResponse =
+      await this.meetings.getStatistics(tz, start, days);
 
     response.status(HttpStatus.OK).send(responseBody);
   }

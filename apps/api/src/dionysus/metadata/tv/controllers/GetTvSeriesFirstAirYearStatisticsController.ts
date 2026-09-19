@@ -1,23 +1,13 @@
-import {
-  GetTvSeriesFirstAirYearStatisticsResponse,
-  YearStatistic,
-} from "@ncfritz/olympus-model";
+import { GetTvSeriesFirstAirYearStatisticsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetTvSeriesFirstAirYearStatisticsResponse = {
-  dionysus_tv_series_first_air_date_statistics: {
-    year: number;
-    count: number;
-  }[];
-};
+import { TvSeriesService } from "../services/TvSeriesService";
 
 @Controller({ version: "1" })
 export class GetTvSeriesFirstAirYearStatisticsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly tvSeries: TvSeriesService) {}
 
   @Get("/metadata/tv/series/stats/firstAirYear")
   @ApiOperation({
@@ -35,29 +25,8 @@ export class GetTvSeriesFirstAirYearStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const fetchRequest = gql`
-      query GetTvSeriesFirstAirYearStatistics {
-        dionysus_tv_series_first_air_date_statistics(order_by: { year: asc }) {
-          count
-          year
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetTvSeriesFirstAirYearStatisticsResponse>(
-        fetchRequest,
-      );
-    const releaseYearStatistics: YearStatistic[] = [];
-
-    fetchResponse.dionysus_tv_series_first_air_date_statistics.forEach(
-      (result) => {
-        releaseYearStatistics.push(result);
-      },
-    );
-
     const responseBody: GetTvSeriesFirstAirYearStatisticsResponse = {
-      statistics: releaseYearStatistics,
+      statistics: await this.tvSeries.getFirstAirYearStatistics(),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

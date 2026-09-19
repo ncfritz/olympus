@@ -1,7 +1,4 @@
-import {
-  ListTVEpisodeGuestStarsResponse,
-  TVEpisodeCastMember,
-} from "@ncfritz/olympus-model";
+import { ListTVEpisodeGuestStarsResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -17,22 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toTvEpisodeCastMember } from "../converters/tvEpisodeConverter";
-import { TV_EPISODE_CAST_MEMBER } from "../queries/tvSeries";
-import { GraphQlTvEpisodeCastMember } from "../types/tvEpisode";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseTVController } from "./BaseTVController";
-
-type GraphQlListTvEpisodeCastResponse = {
-  dionysus_tv_episode_guest_stars: GraphQlTvEpisodeCastMember[];
-};
+import { TvEpisodeService } from "../services/TvEpisodeService";
 
 @Controller({ version: "1" })
-export class ListTvEpisodeGuestStarsController extends BaseTVController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class ListTvEpisodeGuestStarsController {
+  constructor(private readonly tvEpisodes: TvEpisodeService) {}
 
   @Get(
     "/metadata/tvSeries/:tvSeriesId/seasons/:seasonNumber/episodes/:episodeNumber/guestStars",
@@ -71,37 +58,12 @@ export class ListTvEpisodeGuestStarsController extends BaseTVController {
     @Param("episodeNumber", ParseIntPipe) episodeNumber: number,
     @Res() response: Response,
   ): Promise<void> {
-    const episodeId = await this.lookupMediaIdForTvEpisode(
-      tvSeriesId,
-      seasonNumber,
-      episodeNumber,
-    );
-
-    const fetchRequest = gql`
-      query ListTvEpisodeGuestStars($episodeId: numeric!) {
-        dionysus_tv_episode_guest_stars(
-          where: { episodeId: { _eq: $episodeId } }
-        ) {
-          ${TV_EPISODE_CAST_MEMBER}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListTvEpisodeCastResponse>(
-        fetchRequest,
-        { episodeId: episodeId },
-      );
-    const guestStars: TVEpisodeCastMember[] = [];
-
-    fetchResponse.dionysus_tv_episode_guest_stars.forEach((result) => {
-      if (result.person) {
-        guestStars.push(toTvEpisodeCastMember(result));
-      }
-    });
-
     const responseBody: ListTVEpisodeGuestStarsResponse = {
-      guestStars: guestStars,
+      guestStars: await this.tvEpisodes.listGuestStars(
+        tvSeriesId,
+        seasonNumber,
+        episodeNumber,
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

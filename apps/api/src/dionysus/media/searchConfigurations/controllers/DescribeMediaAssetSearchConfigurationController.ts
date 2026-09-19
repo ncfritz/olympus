@@ -18,15 +18,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseMediaAssetSearchConfigurationController } from "./BaseMediaAssetSearchConfigurationController";
+import { MediaAssetSearchConfigurationService } from "../services/MediaAssetSearchConfigurationService";
 
 @Controller({ version: "1" })
-export class DescribeMediaAssetSearchConfigurationController extends BaseMediaAssetSearchConfigurationController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class DescribeMediaAssetSearchConfigurationController {
+  constructor(
+    private readonly searchConfigurations: MediaAssetSearchConfigurationService,
+  ) {}
 
   @Get("/media/searchConfiguration/:mediaType/:mediaId")
   @ApiOperation({
@@ -60,11 +59,11 @@ export class DescribeMediaAssetSearchConfigurationController extends BaseMediaAs
     @Param("mediaId", ParseIntPipe) mediaId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchedSearchConfiguration =
-      await this.fetchMediaAssetSearchConfiguration(mediaType, mediaId);
-
     const responseBody: SingleMediaAssetSearchConfigurationResponse = {
-      searchConfiguration: fetchedSearchConfiguration,
+      searchConfiguration: await this.searchConfigurations.describe(
+        mediaType,
+        mediaId,
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

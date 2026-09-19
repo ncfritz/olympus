@@ -8,7 +8,6 @@ import {
   ClassSerializerInterceptor,
   Controller,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseEnumPipe,
   ParseIntPipe,
@@ -25,19 +24,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/MediaAssetDownloadConverter";
-import { BASE_MEDIA_DOWNLOAD } from "../queries/mediaDownload";
-import { GraphQlMediaAssetDownload } from "../types/mediaDownload";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlUpdateChildMediaAssetDownloadResponse = {
-  update_dionysus_media_asset_download_by_pk: GraphQlMediaAssetDownload | null;
-};
+import { MediaAssetDownloadService } from "../services/MediaAssetDownloadService";
 
 @Controller({ version: "1" })
 export class UpdateMediaAssetDownloadController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly mediaAssetDownloads: MediaAssetDownloadService,
+  ) {}
 
   @Put(
     "/media/searchConfiguration/:mediaType/:mediaId/result/:resultId/download/:downloadId",
@@ -91,41 +85,12 @@ export class UpdateMediaAssetDownloadController {
     @Body() request: UpdateMediaAssetDownloadRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const updateRequest = gql`
-      mutation UpdateMediaAssetDownload(
-        $downloadId: uuid!
-        $searchResultId: String!
-        $changes: dionysus_media_asset_download_set_input = {}
-      ) {
-        update_dionysus_media_asset_download_by_pk(
-          pk_columns: { id: $downloadId, searchResultId: $searchResultId }
-          _set: $changes
-        ) {
-          ${BASE_MEDIA_DOWNLOAD}
-        }
-      }
-    `;
-
-    const updateResponse =
-      await this.graphQLClient.request<GraphQlUpdateChildMediaAssetDownloadResponse>(
-        updateRequest,
-        {
-          downloadId: downloadId,
-          searchResultId: resultId,
-          changes: request.download,
-        },
-      );
-
-    if (!updateResponse.update_dionysus_media_asset_download_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const updatedDownload = toDomainObject(
-      updateResponse.update_dionysus_media_asset_download_by_pk,
-    );
-
     const responseBody: SingleMediaAssetDownloadResponse = {
-      download: updatedDownload,
+      download: await this.mediaAssetDownloads.update(
+        resultId,
+        downloadId,
+        request.download,
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

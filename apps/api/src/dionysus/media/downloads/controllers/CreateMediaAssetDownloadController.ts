@@ -1,9 +1,5 @@
-import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
-  MediaAssetDownload,
   MediaAssetSearchType,
-  MediaDownloadStatus,
-  SearchResultStatus,
   SingleMediaAssetDownloadResponse,
 } from "@ncfritz/olympus-model";
 import {
@@ -23,28 +19,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/MediaAssetDownloadConverter";
-import { BASE_MEDIA_DOWNLOAD } from "../queries/mediaDownload";
-import { GraphQlMediaAssetDownload } from "../types/mediaDownload";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseMediaAssetSearchResultController } from "../../searchResults/controllers/BaseMediaAssetSearchResultController";
-
-type GraphQlCreateMediaAssetDownloadResponse = {
-  insert_dionysus_media_asset_download_one: GraphQlMediaAssetDownload;
-  update_dionysus_media_asset_search_result_by_pk: {
-    status: string;
-  };
-};
+import { MediaAssetDownloadService } from "../services/MediaAssetDownloadService";
 
 @Controller({ version: "1" })
-export class CreateMediaAssetDownloadController extends BaseMediaAssetSearchResultController {
+export class CreateMediaAssetDownloadController {
   constructor(
-    protected readonly graphQLClient: GraphQLClient,
-    private readonly amqpConnection: AmqpConnection,
-  ) {
-    super(graphQLClient);
-  }
+    private readonly mediaAssetDownloads: MediaAssetDownloadService,
+  ) {}
 
   @Post(
     "/media/searchConfiguration/:mediaType/:mediaId/result/:resultId/download",
@@ -86,71 +68,12 @@ export class CreateMediaAssetDownloadController extends BaseMediaAssetSearchResu
     @Param("resultId") resultId: string,
     @Res() response: Response,
   ): Promise<void> {
-    await this.verifySearchResult(mediaType, mediaId, resultId);
-
-    const insertRequest = gql`
-      mutation CreateMediaAssetDownload(
-        $status: String!
-        $searchResultId: String!
-        $progress: numeric!
-        $assetType: String!
-        $mediaId: numeric!
-        $searchResultStatus: String!
-      ) {
-        insert_dionysus_media_asset_download_one(
-          object: {
-            status: $status
-            searchResultId: $searchResultId
-            progress: $progress
-            assetType: $assetType
-            mediaId: $mediaId
-          }
-        ) {
-          ${BASE_MEDIA_DOWNLOAD}
-        }
-        update_dionysus_media_asset_search_result_by_pk(pk_columns: {assetType: $assetType, id: $searchResultId, mediaId: $mediaId}, _set: {status: $searchResultStatus}) {
-          status
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateMediaAssetDownloadResponse>(
-        insertRequest,
-        {
-          status: MediaDownloadStatus.PENDING,
-          progress: 0,
-          searchResultId: resultId,
-          assetType: mediaType,
-          mediaId: mediaId,
-          searchResultStatus: SearchResultStatus.DOWNLOAD_REQUESTED,
-        },
-      );
-
-    const createdDownload: MediaAssetDownload = toDomainObject(
-      insertResponse.insert_dionysus_media_asset_download_one,
-    );
-
-    await this.amqpConnection.publish(
-      "download.trigger",
-      "download.start",
-      {
-        mediaType: mediaType,
-        mediaId: mediaId,
-        resultId: resultId,
-        downloadId: createdDownload.id,
-        nzbId: resultId,
-      },
-      {
-        persistent: true,
-        headers: {
-          "x-delay": 10000,
-        },
-      },
-    );
-
     const responseBody: SingleMediaAssetDownloadResponse = {
-      download: createdDownload,
+      download: await this.mediaAssetDownloads.create(
+        mediaType,
+        mediaId,
+        resultId,
+      ),
     };
 
     response.status(HttpStatus.CREATED).send(responseBody);

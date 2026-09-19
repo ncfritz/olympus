@@ -1,12 +1,5 @@
-import { BatchJob, DescribeBatchJobResponse } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { DescribeBatchJobResponse } from "@ncfritz/olympus-model";
+import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -14,18 +7,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/BatchJobConverter";
-import { GraphQlBatchJob } from "../../types/batchJobs";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetBatchJobResponse = {
-  dionysus_bulk_load_jobs_by_pk: GraphQlBatchJob;
-};
+import { BatchJobService } from "../services/BatchJobService";
 
 @Controller({ version: "1" })
 export class DescribeBatchJobController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly batchJobs: BatchJobService) {}
 
   @Get("/job/batch/:jobId")
   @ApiOperation({
@@ -50,45 +37,8 @@ export class DescribeBatchJobController {
     @Param("jobId") jobId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query FetchBatchJob($id: uuid!) {
-        dionysus_bulk_load_jobs_by_pk(id: $id) {
-          id
-          type
-          status
-          createdTime
-          lastUpdatedTime
-          startedTime
-          finishedTime
-          totalRecords
-          processedRecords
-          duplicateRecords
-          noOpRecords
-          newRecords
-          expiredRecords
-          skippedRecords
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetBatchJobResponse>(
-        fetchRequest,
-        {
-          id: jobId,
-        },
-      );
-
-    if (!fetchResponse.dionysus_bulk_load_jobs_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const fetchedJob: BatchJob = toDomainObject(
-      fetchResponse.dionysus_bulk_load_jobs_by_pk,
-    );
-
     const responseBody: DescribeBatchJobResponse = {
-      job: fetchedJob,
+      job: await this.batchJobs.describe(jobId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

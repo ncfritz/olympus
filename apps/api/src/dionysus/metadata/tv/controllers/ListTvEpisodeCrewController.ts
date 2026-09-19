@@ -1,7 +1,4 @@
-import {
-  ListTVEpisodeCrewResponse,
-  TVEpisodeCrewMember,
-} from "@ncfritz/olympus-model";
+import { ListTVEpisodeCrewResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -17,22 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toTvEpisodeCrewMember } from "../converters/tvEpisodeConverter";
-import { BASE_TV_EPISODE_CREW_MEMBER } from "../queries/tvSeries";
-import { GraphQlTvEpisodeCrewMember } from "../types/tvEpisode";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseTVController } from "./BaseTVController";
-
-type GraphQlListTvEpisodeCrewResponse = {
-  dionysus_tv_episode_crew: GraphQlTvEpisodeCrewMember[];
-};
+import { TvEpisodeService } from "../services/TvEpisodeService";
 
 @Controller({ version: "1" })
-export class ListTvEpisodeCrewController extends BaseTVController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class ListTvEpisodeCrewController {
+  constructor(private readonly tvEpisodes: TvEpisodeService) {}
 
   @Get(
     "/metadata/tvSeries/:tvSeriesId/seasons/:seasonNumber/episodes/:episodeNumber/crew",
@@ -71,35 +58,12 @@ export class ListTvEpisodeCrewController extends BaseTVController {
     @Param("episodeNumber", ParseIntPipe) episodeNumber: number,
     @Res() response: Response,
   ): Promise<void> {
-    const episodeId = await this.lookupMediaIdForTvEpisode(
-      tvSeriesId,
-      seasonNumber,
-      episodeNumber,
-    );
-
-    const fetchRequest = gql`
-      query ListTvEpisodeCrew($episodeId: numeric!) {
-        dionysus_tv_episode_crew(where: { episodeId: { _eq: $episodeId } }) {
-          ${BASE_TV_EPISODE_CREW_MEMBER}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListTvEpisodeCrewResponse>(
-        fetchRequest,
-        { episodeId: episodeId },
-      );
-    const crew: TVEpisodeCrewMember[] = [];
-
-    fetchResponse.dionysus_tv_episode_crew.forEach((result) => {
-      if (result.person) {
-        crew.push(toTvEpisodeCrewMember(result));
-      }
-    });
-
     const responseBody: ListTVEpisodeCrewResponse = {
-      crew: crew,
+      crew: await this.tvEpisodes.listCrew(
+        tvSeriesId,
+        seasonNumber,
+        episodeNumber,
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

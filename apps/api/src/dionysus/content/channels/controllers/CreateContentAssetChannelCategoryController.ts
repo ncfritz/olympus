@@ -12,20 +12,16 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toFullDomainObject } from "../converters/ContentAssetChannelCategoryConverter";
-import { GraphQlFullContentAssetChannelCategory } from "../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { DescribeContentAssetChannelCategoryController } from "./DescribeContentAssetChannelCategoryController";
 import { setLocation } from "../../../../utils/location";
-
-type GraphQlCreateContentAssetChannelCategoryResponse = {
-  insert_dionysus_content_asset_channel_category_one: GraphQlFullContentAssetChannelCategory;
-};
+import { ContentAssetChannelCategoryService } from "../services/ContentAssetChannelCategoryService";
 
 @Controller({ version: "1" })
 export class CreateContentAssetChannelCategoryController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly contentAssetChannelCategories: ContentAssetChannelCategoryService,
+  ) {}
 
   @Post("/content/channels/categories")
   @ApiOperation({
@@ -57,54 +53,8 @@ export class CreateContentAssetChannelCategoryController {
     @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const insertRequest = gql`
-      mutation CreateContentAssetChannelCategory($name: String!) {
-        insert_dionysus_content_asset_channel_category_one(
-          object: { name: $name }
-        ) {
-          createdTime
-          id
-          lastUpdatedTime
-          name
-          channels(limit: 10) {
-            bcCompliant
-            categoryId
-            createdTime
-            description
-            encodedFilter
-            favorite
-            filterInput
-            id
-            jitter
-            lastFetchedTime
-            lastUpdatedTime
-            name
-            ttl
-            assetCache {
-              assetId
-              createdTime
-            }
-          }
-          channels_aggregate {
-            aggregate {
-              count
-            }
-          }
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateContentAssetChannelCategoryResponse>(
-        insertRequest,
-        {
-          name: request.category.name,
-        },
-      );
-
-    const createdCategory: FullContentAssetChannelCategory = toFullDomainObject(
-      insertResponse.insert_dionysus_content_asset_channel_category_one,
-    );
+    const createdCategory: FullContentAssetChannelCategory =
+      await this.contentAssetChannelCategories.create(request.category);
 
     const responseBody: CreateContentAssetChannelCategoryResponse = {
       category: createdCategory,

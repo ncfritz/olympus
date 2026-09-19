@@ -1,6 +1,6 @@
 # 0014. Feature-folder layout and service layer for the API
 
-- **Status:** Accepted (phase 1 done; services and cross-cutting pieces in progress)
+- **Status:** Accepted (folders and services done; cross-cutting pieces next)
 - **Date:** 2026-09-19
 
 ## Context
@@ -47,10 +47,10 @@ Work happens in three steps, each with all tests green:
 
 1. Move files to feature folders, rename controller files and create the
    feature modules. No behaviour change. **Done.**
-2. Extract services one feature at a time. The `thin-controller` check
-   (no `gql`, `GraphQLClient`, `AmqpConnection` or gateway in a controller)
-   is in place; the controllers still to move are on its allow-list, which
-   shrinks with each feature. Minerva notes is the reference feature.
+2. Extract services one feature at a time, enforced by the
+   `thin-controller` check (no `gql`, `GraphQLClient`, `AmqpConnection` or
+   gateway in a controller). **Done:** 37 services, every `Base*Controller`
+   removed; Minerva notes is the reference feature.
 3. Cross-cutting: content authentication as a guard and the curtain as a
    parameter decorator; `APP_INTERCEPTOR` / `APP_PIPE` providers instead
    of `configureApp`; typed, validated configuration; Nest's `Logger`

@@ -1,8 +1,5 @@
 import {
-  FilterDefinition,
-  FilterType,
   ListMediaAssetSearchResultsResponse,
-  MediaAssetSearchResult,
   MediaAssetSearchType,
   SortDirection,
 } from "@ncfritz/olympus-model";
@@ -23,33 +20,17 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/MediaAssetSearchResultConverter";
-import { BASE_SEARCH_RESULT } from "../queries/searchResult";
-import { GraphQlMediaAssetSearchResult } from "../types/searchResult";
 import {
   ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import {
-  buildFilterExpression,
-  buildPaginationExpression,
-  parseFilterDefinition,
-} from "../../../../utils/filterUtil";
-
-export type GraphQlListMediaAssetSearchResultResponse = {
-  dionysus_media_asset_search_result: GraphQlMediaAssetSearchResult[];
-  dionysus_media_asset_search_result_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { parseFilterDefinition } from "../../../../utils/filterUtil";
+import { MediaAssetSearchResultService } from "../services/MediaAssetSearchResultService";
 
 @Controller({ version: "1" })
 export class ListMediaAssetSearchResultsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly searchResults: MediaAssetSearchResultService) {}
 
   @Get("/media/searchConfiguration/:mediaType/:mediaId/results")
   @ApiOperation({
@@ -93,68 +74,18 @@ export class ListMediaAssetSearchResultsController {
     @Res() response: Response,
   ): Promise<void> {
     const userFilters = parseFilterDefinition(filters);
-    const searchConfigurationFilter: FilterDefinition = {
-      type: FilterType.AND,
-      name: "_",
-      value: [
+    const responseBody: ListMediaAssetSearchResultsResponse =
+      await this.searchResults.list(
+        mediaType,
+        mediaId,
         {
-          type: FilterType.EQUALS,
-          name: "assetType",
-          value: mediaType,
+          pageSize: pageSize,
+          startPage: startPage,
+          sortDirection: sortDirection,
+          sortField: sortField,
         },
-        {
-          type: FilterType.EQUALS,
-          name: "mediaId",
-          value: mediaId,
-        },
-      ],
-    };
-
-    const listFilters: FilterDefinition = userFilters
-      ? {
-          type: FilterType.AND,
-          name: "_",
-          value: [searchConfigurationFilter, userFilters],
-        }
-      : searchConfigurationFilter;
-
-    const whereExpression = buildFilterExpression(listFilters);
-    const paginationExpression = buildPaginationExpression({
-      pageSize: pageSize,
-      startPage: startPage,
-      sortDirection: sortDirection,
-      sortField: sortField,
-    });
-
-    const fetchRequest = gql`
-      query ListMediaAssetSearchResults {
-        dionysus_media_asset_search_result(${[paginationExpression, whereExpression].join(", ")}) {
-          ${BASE_SEARCH_RESULT}
-        }
-        dionysus_media_asset_search_result_aggregate${whereExpression ? `(${whereExpression})` : ""} {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListMediaAssetSearchResultResponse>(
-        fetchRequest,
+        userFilters,
       );
-    const fetchedResults: MediaAssetSearchResult[] = [];
-
-    fetchResponse.dionysus_media_asset_search_result.forEach((result) => {
-      fetchedResults.push(toDomainObject(result));
-    });
-
-    const responseBody: ListMediaAssetSearchResultsResponse = {
-      searchResults: fetchedResults,
-      count:
-        fetchResponse.dionysus_media_asset_search_result_aggregate.aggregate
-          .count,
-    };
 
     response.status(HttpStatus.OK).send(responseBody);
   }

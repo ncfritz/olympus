@@ -3,7 +3,6 @@ import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Res,
@@ -15,18 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObjectWithContentCounts } from "../converters/NetworkConverter";
-import { GraphQlNetworkWithContentCounts } from "../types/tvNetworks";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetNetworkResponse = {
-  dionysus_networks_by_pk: GraphQlNetworkWithContentCounts;
-};
+import { NetworkService } from "../services/NetworkService";
 
 @Controller({ version: "1" })
 export class DescribeNetworkController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly networks: NetworkService) {}
 
   @Get("/metadata/network/:networkId")
   @ApiOperation({
@@ -50,64 +43,8 @@ export class DescribeNetworkController {
     @Param("networkId", ParseIntPipe) networkId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query DescribeNetwork($id: numeric!) {
-        dionysus_networks_by_pk(id: $id) {
-          country {
-            createdTime
-            lastUpdatedTime
-            name
-            id
-          }
-          alternativeNames {
-            createdTime
-            lastUpdatedTime
-            name
-            type
-          }
-          createdTime
-          headquarters
-          homepage
-          id
-          logo
-          name
-          lastUpdatedTime
-          images {
-            createdTime
-            filePath
-            fileType
-            height
-            id
-            lastUpdatedTime
-            width
-          }
-          tvSeries_aggregate {
-            aggregate {
-              count
-            }
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetNetworkResponse>(
-        fetchRequest,
-        {
-          id: networkId,
-        },
-      );
-
-    if (!fetchResponse.dionysus_networks_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const fetchedNetwork = toDomainObjectWithContentCounts(
-      fetchResponse.dionysus_networks_by_pk,
-    );
-
     const responseBody: DescribeNetworkResponse = {
-      network: fetchedNetwork,
+      network: await this.networks.describe(networkId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

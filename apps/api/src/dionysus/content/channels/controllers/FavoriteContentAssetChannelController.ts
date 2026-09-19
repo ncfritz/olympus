@@ -4,15 +4,7 @@ import {
   FavoriteContentAssetChannelResponse,
   UpdateContentAssetChannelResponse,
 } from "@ncfritz/olympus-model";
-import {
-  Body,
-  Controller,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Put,
-  Res,
-} from "@nestjs/common";
+import { Body, Controller, HttpStatus, Param, Put, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -22,18 +14,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toFullDomainObject } from "../converters/ContentAssetChannelConverter";
-import { GraphQlFullContentAssetChannel } from "../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-export type GraphQlFavoriteContentAssetChannelResponse = {
-  update_dionysus_content_asset_channel_by_pk: GraphQlFullContentAssetChannel | null;
-};
+import { ContentAssetChannelService } from "../services/ContentAssetChannelService";
 
 @Controller({ version: "1" })
 export class FavoriteContentAssetChannelController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly contentAssetChannels: ContentAssetChannelService,
+  ) {}
 
   @Put("/content/channel/:channelId/favorite")
   @ApiOperation({
@@ -65,65 +53,8 @@ export class FavoriteContentAssetChannelController {
     @Body() request: FavoriteContentAssetChannelRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const updateRequest = gql`
-      mutation FavoriteContentAssetChannel(
-        $channelId: uuid!
-        $favorite: Boolean!
-      ) {
-        update_dionysus_content_asset_channel_by_pk(
-          pk_columns: { id: $channelId }
-          _set: { favorite: $favorite }
-        ) {
-          ttl
-          name
-          lastUpdatedTime
-          lastFetchedTime
-          jitter
-          id
-          filterInput
-          favorite
-          encodedFilter
-          description
-          createdTime
-          category {
-            createdTime
-            id
-            lastUpdatedTime
-            name
-            channels_aggregate {
-              aggregate {
-                count
-              }
-            }
-          }
-          bcCompliant
-          assetCount
-          assetCache {
-            assetId
-            width
-            height
-            createdTime
-          }
-        }
-      }
-    `;
-
-    const updateResponse =
-      await this.graphQLClient.request<GraphQlFavoriteContentAssetChannelResponse>(
-        updateRequest,
-        {
-          channelId: channelId,
-          favorite: request.favorite,
-        },
-      );
-
-    if (!updateResponse.update_dionysus_content_asset_channel_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const updatedCategory: FullContentAssetChannel = toFullDomainObject(
-      updateResponse.update_dionysus_content_asset_channel_by_pk,
-    );
+    const updatedCategory: FullContentAssetChannel =
+      await this.contentAssetChannels.setFavorite(channelId, request.favorite);
 
     const responseBody: UpdateContentAssetChannelResponse = {
       channel: updatedCategory,

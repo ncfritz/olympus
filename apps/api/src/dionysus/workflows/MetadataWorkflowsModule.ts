@@ -1,4 +1,6 @@
 import { Module } from "@nestjs/common";
+import { MetadataWorkflowService } from "./services/MetadataWorkflowService";
+import { MetadataWorkflowStepService } from "./services/MetadataWorkflowStepService";
 import { RabbitModule } from "../../infra/RabbitModule";
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
 import { CreateMetadataWorkflowController } from "./controllers/CreateMetadataWorkflowController";
@@ -12,6 +14,7 @@ import { UpdateMetadataWorkflowController } from "./controllers/UpdateMetadataWo
 
 @Module({
   imports: [RabbitModule, GraphQLClientModule],
+  providers: [MetadataWorkflowService, MetadataWorkflowStepService],
   controllers: [
     // Before the /:workflowId routes, which would otherwise match /stats.
     GetMetadataWorkflowStatisticsController,

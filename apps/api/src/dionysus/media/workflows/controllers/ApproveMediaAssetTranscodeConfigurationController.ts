@@ -1,8 +1,5 @@
-import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   ApproveMediaAssetTranscodeConfigurationRequest,
-  MediaAssetWorkflowStepStatus,
-  MediaAssetWorkflowStepType,
   UpdateMediaAssetWorkflowStepResponse,
 } from "@ncfritz/olympus-model";
 import {
@@ -24,19 +21,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { GraphQLClient } from "graphql-request";
-import moment from "moment";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseMediaAssetWorkflowController } from "./BaseMediaAssetWorkflowController";
+import { MediaAssetWorkflowService } from "../services/MediaAssetWorkflowService";
 
 @Controller({ version: "1" })
-export class ApproveMediaAssetTranscodeConfigurationController extends BaseMediaAssetWorkflowController {
-  constructor(
-    protected readonly graphQLClient: GraphQLClient,
-    protected readonly amqpConnection: AmqpConnection,
-  ) {
-    super(graphQLClient);
-  }
+export class ApproveMediaAssetTranscodeConfigurationController {
+  constructor(private readonly workflows: MediaAssetWorkflowService) {}
 
   @Put("/media/workflow/:workflowId/steps/:workflowStepId/approveConfig")
   @ApiOperation({
@@ -75,41 +65,12 @@ export class ApproveMediaAssetTranscodeConfigurationController extends BaseMedia
     @Body() request: ApproveMediaAssetTranscodeConfigurationRequest,
     @Res() response: Response,
   ): Promise<void> {
-    await this.verifyWorkflowExists(workflowId);
-    await this.verifyWorkflowStepExists(
-      workflowId,
-      workflowStepId,
-      MediaAssetWorkflowStepType.CONFIGURE_TRANSCODE,
-    );
-    const updatedWorkflowStep = await this.updateWorkflowStep(
-      workflowId,
-      workflowStepId,
-      {
-        status: MediaAssetWorkflowStepStatus.RUNNING,
-        progress: 100,
-        finishedTime: moment().utc(),
-      },
-    );
-
-    await this.amqpConnection.publish(
-      "media.trigger",
-      "jobType.transcodeConfiguration",
-      {
-        workflowId: workflowId,
-        configurationStepId: workflowStepId,
-        videoStreamIndex: request.videoTrackIndex,
-        audioStreamIndex: request.audioTrackIndex,
-        subtitleStreamIndex: request.subtitleTrackIndex,
-        mediaExtension: request.originalAssetExtension,
-        transcodeVerificationRequired: request.verificationRequired,
-      },
-      {
-        persistent: true,
-      },
-    );
-
     const responseBody: UpdateMediaAssetWorkflowStepResponse = {
-      step: updatedWorkflowStep,
+      step: await this.workflows.approveTranscodeConfiguration(
+        workflowId,
+        workflowStepId,
+        request,
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

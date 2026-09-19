@@ -1,12 +1,8 @@
-import {
-  ListMovieRecommendationsResponse,
-  SparseMovie,
-} from "@ncfritz/olympus-model";
+import { ListMovieRecommendationsResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Res,
@@ -18,21 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toSparseDomainObject as toMovieDomainObject } from "../converters/MovieConverter";
-import { BASE_MOVIE_RECOMMENDATION } from "../queries/movies";
-import { GraphQlMovieRecommendation } from "../types/movie";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlListMovieRecommendationsResponse = {
-  dionysus_movies_by_pk: {
-    recommendations: GraphQlMovieRecommendation[];
-  };
-};
+import { MovieService } from "../services/MovieService";
 
 @Controller({ version: "1" })
 export class ListMovieRecommendationsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly movies: MovieService) {}
 
   @Get("/metadata/movie/:movieId/recommendations")
   @ApiOperation({
@@ -57,36 +44,8 @@ export class ListMovieRecommendationsController {
     @Param("movieId", ParseIntPipe) movieId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query ListMovieRecommendations($id: numeric!) {
-        dionysus_movies_by_pk(id: $id) {
-          recommendations {
-            ${BASE_MOVIE_RECOMMENDATION}
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListMovieRecommendationsResponse>(
-        fetchRequest,
-        { id: movieId },
-      );
-    if (!fetchResponse.dionysus_movies_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const recommendations: SparseMovie[] = [];
-
-    fetchResponse.dionysus_movies_by_pk.recommendations.forEach((result) => {
-      // Skip links to rows that are not in the database (yet).
-      if (result.movie) {
-        recommendations.push(toMovieDomainObject(result.movie));
-      }
-    });
-
     const responseBody: ListMovieRecommendationsResponse = {
-      recommendations: recommendations,
+      recommendations: await this.movies.listRecommendations(movieId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

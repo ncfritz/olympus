@@ -12,20 +12,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import {
-  GraphQlNotificationSetting,
-  toDomainObject,
-} from "../converters/NotificationSettingConverter";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlInsertNotificationResponse = {
-  insert_olympus_notification_settings_one: GraphQlNotificationSetting;
-};
+import { NotificationSettingService } from "../services/NotificationSettingService";
 
 @Controller({ version: "1" })
 export class UpdateNotificationSettingController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly notificationSettings: NotificationSettingService,
+  ) {}
 
   @Put("/notifications/settings/:notificationType")
   @ApiOperation({
@@ -58,79 +52,10 @@ export class UpdateNotificationSettingController {
     @Body() request: UpdateNotificationSettingRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const updateRequest = gql`
-      mutation UpsertNotificationSetting(
-        $email: Boolean!
-        $synoChat: Boolean!
-        $synoMail: Boolean!
-        $username: String!
-        $webSocket: Boolean!
-        $notificationTypeId: String!
-      ) {
-        insert_olympus_notification_settings_one(
-          object: {
-            email: $email
-            synoMail: $synoMail
-            synoChat: $synoChat
-            webSocket: $webSocket
-            username: $username
-            notificationTypeId: $notificationTypeId
-          }
-          on_conflict: {
-            constraint: notification_settings_pkey
-            update_columns: [webSocket, synoChat, synoMail, email]
-          }
-        ) {
-          createdTime
-          email
-          lastUpdatedTime
-          notificationType {
-            createdTime
-            defaultGroup {
-              createdTime
-              description
-              id
-              name
-            }
-            description
-            emailDefault
-            id
-            name
-            supportsEmail
-            supportsSynoChat
-            supportsSynoMail
-            supportsWebSocket
-            synoChatDefault
-            synoMailDefault
-            webSocketDefault
-          }
-          synoChat
-          synoMail
-          username
-          webSocket
-        }
-      }
-    `;
-
-    // TODO: Plumb in username when available
-    const variables = {
-      notificationTypeId: notificationTypeId,
-      username: "ncfritz",
-      webSocket: request.notificationSetting.webSocketEnabled,
-      synoChat: request.notificationSetting.synoChatEnabled,
-      synoMail: request.notificationSetting.synoMailEnabled,
-      email: request.notificationSetting.emailEnabled,
-    };
-
-    const updateResponse =
-      await this.graphQLClient.request<GraphQlInsertNotificationResponse>(
-        updateRequest,
-        variables,
-      );
-
     const responseBody: UpdateNotificationSettingResponse = {
-      notificationSetting: toDomainObject(
-        updateResponse.insert_olympus_notification_settings_one,
+      notificationSetting: await this.notificationSettings.update(
+        notificationTypeId,
+        request.notificationSetting,
       ),
     };
 

@@ -1,5 +1,4 @@
 import {
-  MediaFavorite,
   MediaAssetSearchType,
   SingleMediaFavoriteResponse,
 } from "@ncfritz/olympus-model";
@@ -7,7 +6,6 @@ import {
   Controller,
   Delete,
   HttpStatus,
-  NotFoundException,
   Param,
   ParseEnumPipe,
   ParseIntPipe,
@@ -21,19 +19,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/MediaFavoriteConverter";
-import { DECORATED_MEDIA_FAVORITE } from "../queries/mediaFavorite";
-import { GraphQlMediaFavorite } from "../types/mediaFavorite";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlDeleteMediaFavoriteResponse = {
-  delete_dionysus_media_favorite_by_pk: GraphQlMediaFavorite | null;
-};
+import { MediaFavoriteService } from "../services/MediaFavoriteService";
 
 @Controller({ version: "1" })
 export class DeleteMediaFavoriteController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly mediaFavorites: MediaFavoriteService) {}
 
   @Delete("/media/favorite/:mediaType/:mediaId")
   @ApiOperation({
@@ -67,36 +58,8 @@ export class DeleteMediaFavoriteController {
     @Param("mediaId", ParseIntPipe) mediaId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const deleteRequest = gql`
-      mutation DeleteMediaFavorite($mediaId: numeric!, $assetType: String!) {
-        delete_dionysus_media_favorite_by_pk(
-          mediaId: $mediaId
-          type: $assetType
-        ) {
-          ${DECORATED_MEDIA_FAVORITE}
-        }
-      }
-    `;
-
-    const deleteResponse =
-      await this.graphQLClient.request<GraphQlDeleteMediaFavoriteResponse>(
-        deleteRequest,
-        {
-          assetType: mediaType,
-          mediaId: mediaId,
-        },
-      );
-
-    if (!deleteResponse.delete_dionysus_media_favorite_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const deletedFavorite: MediaFavorite = toDomainObject(
-      deleteResponse.delete_dionysus_media_favorite_by_pk,
-    );
-
     const responseBody: SingleMediaFavoriteResponse = {
-      favorite: deletedFavorite,
+      favorite: await this.mediaFavorites.delete(mediaType, mediaId),
     };
 
     response.status(HttpStatus.GONE).send(responseBody);

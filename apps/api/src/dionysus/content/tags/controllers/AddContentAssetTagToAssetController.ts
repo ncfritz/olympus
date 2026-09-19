@@ -13,36 +13,12 @@ import {
   ApiResponse,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type FindTagsQueryResponse = {
-  dionysus_content_tags: [
-    {
-      content_tag_id: string;
-    },
-  ];
-};
-
-type UpdateQueryResponse = {
-  insert_dionysus_content_asset_tags: {
-    affected_rows: number;
-  };
-};
-
-type InputQueryResponse = {
-  insert_dionysus_content_tags: {
-    returning: [
-      {
-        content_tag_id: string;
-      },
-    ];
-  };
-};
+import { ContentAssetTagService } from "../services/ContentAssetTagService";
 
 @Controller({ version: "1" })
 export class AddContentAssetTagToAssetController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly contentAssetTags: ContentAssetTagService) {}
 
   @Put("/content/asset/:assetId/tags")
   @ApiOperation({
@@ -79,91 +55,12 @@ export class AddContentAssetTagToAssetController {
     @Body() request: AddContentAssetTagToAssetRequest,
     @Res() response: Response,
   ): Promise<void> {
-    const findTagsQueryInput = {
-      name: request.tag.name,
-      type: request.tag.type,
-    };
-
-    const findTagQuery = gql`
-      query FindContentAssetTag($type: String, $name: String) {
-        dionysus_content_tags(
-          where: { _and: { type: { _eq: $type }, name: { _ilike: $name } } }
-          limit: 1
-        ) {
-          content_tag_id
-        }
-      }
-    `;
-
-    const queryResponse =
-      await this.graphQLClient.request<FindTagsQueryResponse>(
-        findTagQuery,
-        findTagsQueryInput,
-      );
-
-    let tagId: string;
-    let status = HttpStatus.OK;
-
-    if (queryResponse.dionysus_content_tags.length > 0) {
-      tagId = queryResponse.dionysus_content_tags[0].content_tag_id;
-
-      const updateQuery = gql`
-        mutation TagAssetOrIgnoreOnConflict(
-          $content_tag_id: uuid
-          $content_id: uuid
-        ) {
-          insert_dionysus_content_asset_tags(
-            objects: {
-              content_id: $content_id
-              content_tag_id: $content_tag_id
-            }
-            on_conflict: {
-              constraint: content_asset_tags_pkey
-              update_columns: []
-            }
-          ) {
-            affected_rows
-          }
-        }
-      `;
-
-      const updateResponse =
-        await this.graphQLClient.request<UpdateQueryResponse>(updateQuery, {
-          content_id: assetId,
-          content_tag_id: tagId,
-        });
-
-      if (
-        updateResponse.insert_dionysus_content_asset_tags.affected_rows <= 0
-      ) {
-        status = HttpStatus.NOT_MODIFIED;
-      }
-    } else {
-      const insertQuery = gql`
-        mutation CreateTagAndUpdateAsset(
-          $content_id: uuid
-          $type: String
-          $name: String
-        ) {
-          insert_dionysus_content_tags(
-            objects: {
-              type: $type
-              name: $name
-              tagged_content: { data: { content_id: $content_id } }
-            }
-          ) {
-            returning {
-              content_tag_id
-            }
-          }
-        }
-      `;
-
-      await this.graphQLClient.request<InputQueryResponse>(insertQuery, {
-        content_id: assetId,
-        ...findTagsQueryInput,
-      });
-    }
+    const status = (await this.contentAssetTags.addToAsset(
+      assetId,
+      request.tag,
+    ))
+      ? HttpStatus.OK
+      : HttpStatus.NOT_MODIFIED;
 
     response.status(status).send({});
   }

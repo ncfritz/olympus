@@ -1,5 +1,4 @@
 import {
-  BatchJob,
   FilterDefinition,
   ListBatchJobsResponse,
   SortDirection,
@@ -12,23 +11,17 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/BatchJobConverter";
-import { GraphQlListBatchJobsResponse } from "../../types/batchJobs";
 import {
   ApiFilterParams,
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
-import {
-  buildFilterExpression,
-  buildPaginationExpression,
-} from "../../../../utils/filterUtil";
+import { BatchJobService } from "../services/BatchJobService";
 
 @Controller({ version: "1" })
 @ApiExtraModels(FilterDefinition)
 export class ListBatchJobsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly batchJobs: BatchJobService) {}
 
   @Get("/jobs/batch")
   @ApiOperation({
@@ -57,53 +50,19 @@ export class ListBatchJobsController {
     @Query("filters") filters = undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const whereExpression = buildFilterExpression(filters);
-    const paginationExpression = buildPaginationExpression({
-      pageSize: pageSize,
-      startPage: startPage,
-      sortDirection: sortDirection,
-      sortField: sortField,
-    });
-
-    const fetchRequest = gql`
-      query ListBatchJobs {
-      dionysus_bulk_load_jobs(${[paginationExpression, whereExpression].join(", ")}) {
-        id
-        type
-        status
-        createdTime
-        lastUpdatedTime
-        startedTime
-        finishedTime
-        totalRecords
-        duplicateRecords
-        noOpRecords
-        newRecords
-        expiredRecords
-        skippedRecords
-        processedRecords
-      }
-      dionysus_bulk_load_jobs_aggregate${whereExpression ? `(${whereExpression})` : ""} {
-        aggregate {
-          count
-        }
-      }
-    }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListBatchJobsResponse>(
-        fetchRequest,
-      );
-    const fetchedJobs: BatchJob[] = [];
-
-    fetchResponse.dionysus_bulk_load_jobs.forEach((result) => {
-      fetchedJobs.push(toDomainObject(result));
-    });
+    const { jobs, count } = await this.batchJobs.list(
+      {
+        pageSize: pageSize,
+        startPage: startPage,
+        sortDirection: sortDirection,
+        sortField: sortField,
+      },
+      filters,
+    );
 
     const responseBody: ListBatchJobsResponse = {
-      jobs: fetchedJobs,
-      count: fetchResponse.dionysus_bulk_load_jobs_aggregate.aggregate.count,
+      jobs,
+      count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

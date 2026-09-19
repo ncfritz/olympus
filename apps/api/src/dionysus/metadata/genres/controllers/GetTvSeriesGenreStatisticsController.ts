@@ -1,23 +1,13 @@
-import {
-  GenreStatistic,
-  GetTvSeriesGenreStatisticsResponse,
-} from "@ncfritz/olympus-model";
+import { GetTvSeriesGenreStatisticsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlGetTvSeriesGenreResponse = {
-  dionysus_tv_series_genre_statistics: {
-    genre: string;
-    count: number;
-  }[];
-};
+import { GenreService } from "../services/GenreService";
 
 @Controller({ version: "1" })
 export class GetTvSeriesGenreStatisticsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly genres: GenreService) {}
 
   @Get("/metadata/genres/stats/tvSeries")
   @ApiOperation({
@@ -35,30 +25,8 @@ export class GetTvSeriesGenreStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const fetchRequest = gql`
-      query GetTvSeriesGenreStatistics {
-        dionysus_tv_series_genre_statistics {
-          count
-          genre
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetTvSeriesGenreResponse>(
-        fetchRequest,
-      );
-    const runtimeStatistics: GenreStatistic[] = [];
-
-    fetchResponse.dionysus_tv_series_genre_statistics.forEach((result) => {
-      runtimeStatistics.push({
-        genre: result.genre,
-        count: result.count,
-      });
-    });
-
     const responseBody: GetTvSeriesGenreStatisticsResponse = {
-      statistics: runtimeStatistics,
+      statistics: await this.genres.getTvSeriesGenreStatistics(),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

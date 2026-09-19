@@ -1,6 +1,5 @@
 import {
   ContentIngestionWorkflowStep,
-  ContentIngestionWorkflowStepStatus,
   CreateContentIngestionWorkflowStepRequest,
   CreateContentIngestionWorkflowStepResponse,
 } from "@ncfritz/olympus-model";
@@ -14,22 +13,14 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import moment from "moment";
-import { GraphQlContentIngestionWorkflowStep } from "../types/workflow";
-import { toDomainObject } from "../converters/ContentIngestionWorkflowStepConverter";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-import { BaseContentIngestionWorkflowController } from "./BaseContentIngestionWorkflowController";
-
-type GraphQlCreateContentIngestionWorkflowStepResponse = {
-  insert_dionysus_content_asset_ingest_workflow_steps_one: GraphQlContentIngestionWorkflowStep;
-};
+import { ContentIngestionWorkflowService } from "../services/ContentIngestionWorkflowService";
 
 @Controller({ version: "1" })
-export class CreateContentIngestionWorkflowStepController extends BaseContentIngestionWorkflowController {
-  constructor(protected readonly graphQLClient: GraphQLClient) {
-    super(graphQLClient);
-  }
+export class CreateContentIngestionWorkflowStepController {
+  constructor(
+    private readonly contentIngestionWorkflows: ContentIngestionWorkflowService,
+  ) {}
 
   @Post("/content/workflow/:workflowId/steps")
   @ApiOperation({
@@ -61,52 +52,8 @@ export class CreateContentIngestionWorkflowStepController extends BaseContentIng
     @Body() request: CreateContentIngestionWorkflowStepRequest,
     @Res() response: Response,
   ): Promise<void> {
-    await this.verifyWorkflowExists(workflowId);
-
-    const insertRequest = gql`
-      mutation CreateContentIngestionWorkflowStep(
-        $workflowId: uuid!
-        $workflowStepType: String!
-        $workflowStepStatus: String!
-        $progress: numeric!
-        $startedTime: timestamptz!
-      ) {
-        insert_dionysus_content_asset_ingest_workflow_steps_one(
-          object: {
-            workflow_id: $workflowId
-            type: $workflowStepType
-            status: $workflowStepStatus
-            progress: $progress
-            startedTime: $startedTime
-          }
-        ) {
-          id
-          type
-          status
-          progress
-          startedTime
-          finishedTime
-          createdTime
-          lastUpdatedTime
-        }
-      }
-    `;
-
-    const insertResponse =
-      await this.graphQLClient.request<GraphQlCreateContentIngestionWorkflowStepResponse>(
-        insertRequest,
-        {
-          workflowId: workflowId,
-          workflowStepType: request.step.type,
-          workflowStepStatus: ContentIngestionWorkflowStepStatus.RUNNING,
-          startedTime: moment().utc().toISOString(),
-          progress: 0,
-        },
-      );
-
-    const createdWorkflowStep: ContentIngestionWorkflowStep = toDomainObject(
-      insertResponse.insert_dionysus_content_asset_ingest_workflow_steps_one,
-    );
+    const createdWorkflowStep: ContentIngestionWorkflowStep =
+      await this.contentIngestionWorkflows.createStep(workflowId, request.step);
 
     const responseBody: CreateContentIngestionWorkflowStepResponse = {
       step: createdWorkflowStep,

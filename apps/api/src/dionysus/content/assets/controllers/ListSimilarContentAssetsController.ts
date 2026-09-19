@@ -1,7 +1,4 @@
-import {
-  ContentAsset,
-  ListSimilarContentAssetsResponse,
-} from "@ncfritz/olympus-model";
+import { ListSimilarContentAssetsResponse } from "@ncfritz/olympus-model";
 import {
   BadRequestException,
   Controller,
@@ -21,23 +18,13 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/ContentAssetConverter";
-import { GraphQLContentAsset } from "../../types/content";
-import { authenticateContentRequest } from "../../auth/controllers/BaseAuthenticatedContentController";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlListSimilarContentAssetsInput = {
-  content_id: string;
-};
-
-type GraphQlListSimilarContentAssetsResponse = {
-  dionysus_content_assets: GraphQLContentAsset[];
-};
+import { ContentAssetService } from "../services/ContentAssetService";
+import { contentAuthToken } from "../../auth/contentAuth";
 
 @Controller({ version: "1" })
 export class ListSimilarContentAssetsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly contentAssets: ContentAssetService) {}
 
   @Get("/content/asset/:assetId/similar")
   @ApiOperation({
@@ -99,95 +86,13 @@ export class ListSimilarContentAssetsController {
       throw new BadRequestException("Invalid tag specification");
     }
 
-    const tagFilters: string[] = [];
-    const aggregateTagFilters: string[] = [];
-    let blackCurtainClause = "";
-    let blackCurtainAggregateClause = "";
-
-    for (let i = 0; i < splitTagTypes.length; i++) {
-      tagFilters.push(
-        `{ asset_tags: {tag: {_and: { name: { _ilike: ${JSON.stringify(splitTagNames[i])} }, type: { _eq: ${JSON.stringify(splitTagTypes[i])} } } } } }`,
-      );
-      aggregateTagFilters.push(
-        `{ tag: {_and: { name: { _ilike: ${JSON.stringify(splitTagNames[i])} }, type: { _eq: ${JSON.stringify(splitTagTypes[i])} } } } }`,
-      );
-    }
-
-    if (
-      !(await authenticateContentRequest(this.graphQLClient, request, true))
-    ) {
-      blackCurtainClause =
-        '{ asset_tags: {tag: {_and: {type: {_eq: "system"}, name: {_ilike: "bcCompliant"}}}}}';
-      blackCurtainAggregateClause =
-        '{ tag: {_and: {type: {_eq: "system"}, name: {_ilike: "bcCompliant"}}}}';
-    }
-
-    const fetchRequest = gql`
-      query ListSimilarContentAssets($content_id: uuid) {
-        dionysus_content_assets(
-          where: {
-            _and: [
-              { _not: { content_id: { _eq: $content_id } } }
-              ${blackCurtainClause}
-            ]
-            _or: [
-              ${tagFilters.join("\n")}
-            ]
-          }
-          order_by: [{ asset_tags_aggregate: { count: desc } }]
-          limit: 25
-        ) {
-          name
-          rating
-          original_name
-          asset_tags_aggregate(
-            where: {
-              _and: [
-                { _not: { content_id: { _eq: $content_id } } }
-                ${blackCurtainAggregateClause}
-              ]
-              _or: [
-                ${aggregateTagFilters.join("\n")}
-              ]
-            }
-          ) {
-            aggregate {
-              count
-            }
-          }
-          width
-          original_size
-          original_sha
-          height
-          duration
-          createdTime
-          content_id
-          asset_tags {
-            tag {
-              content_tag_id
-              createdTime
-              name
-              type
-            }
-          }
-        }
-      }
-    `;
-
-    const fetchResponse = await this.graphQLClient.request<
-      GraphQlListSimilarContentAssetsResponse,
-      GraphQlListSimilarContentAssetsInput
-    >(fetchRequest, {
-      content_id: assetId,
-    });
-    const fetchedAssets: ContentAsset[] = [];
-
-    fetchResponse.dionysus_content_assets.forEach((result) => {
-      fetchedAssets.push(toDomainObject(result));
-    });
-
     const responseBody: ListSimilarContentAssetsResponse = {
-      assets: fetchedAssets,
+      assets: await this.contentAssets.listSimilar(
+        assetId,
+        splitTagTypes,
+        splitTagNames,
+        contentAuthToken(request),
+      ),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

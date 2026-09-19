@@ -1,12 +1,5 @@
 import { DescribeWorkflowResponse } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -14,18 +7,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toDomainObject } from "../converters/WorkflowConverter";
-import { GraphQLWorkflow } from "../types/workflow";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlGetMetadataWorkflowResponse = {
-  dionysus_metadata_workflow_by_pk: GraphQLWorkflow;
-};
+import { MetadataWorkflowService } from "../services/MetadataWorkflowService";
 
 @Controller({ version: "1" })
 export class DescribeMetadataWorkflowController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly metadataWorkflows: MetadataWorkflowService) {}
 
   @Get("/workflow/:workflowId")
   @ApiOperation({
@@ -50,61 +37,8 @@ export class DescribeMetadataWorkflowController {
     @Param("workflowId") workflowId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query DescribeMetadataWorkflow($id: uuid!) {
-        dionysus_metadata_workflow_by_pk(id: $id) {
-          createdTime
-          finishedTime
-          id
-          lastUpdatedTime
-          startedTime
-          status
-          steps {
-            attempt
-            createdTime
-            id
-            lastUpdatedTime
-            type
-            job {
-              createdTime
-              duplicateRecords
-              expiredRecords
-              finishedTime
-              id
-              lastUpdatedTime
-              maxRecordsToProcess
-              newRecords
-              noOpRecords
-              processedRecords
-              skippedRecords
-              startedTime
-              status
-              totalRecords
-              type
-            }
-          }
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlGetMetadataWorkflowResponse>(
-        fetchRequest,
-        {
-          id: workflowId,
-        },
-      );
-
-    if (!fetchResponse.dionysus_metadata_workflow_by_pk) {
-      throw new NotFoundException();
-    }
-
-    const fetchedWorkflow = toDomainObject(
-      fetchResponse.dionysus_metadata_workflow_by_pk,
-    );
-
     const responseBody: DescribeWorkflowResponse = {
-      workflow: fetchedWorkflow,
+      workflow: await this.metadataWorkflows.describe(workflowId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

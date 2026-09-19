@@ -3982,16 +3982,16 @@
         ]
       }
     },
-    "/dionysus/media/favorite/{mediaType}/{mediaId}": {
+    "/dionysus/media/searchConfiguration/{mediaType}/{mediaId}/results": {
       "post": {
-        "description": "Creates a new media favorite.",
-        "operationId": "CreateMediaFavorite",
+        "description": "Creates a new media asset search result.",
+        "operationId": "CreateMediaAssetSearchResult",
         "parameters": [
           {
             "name": "mediaType",
             "required": true,
             "in": "path",
-            "description": "The type of media asset the search download is for",
+            "description": "The type of media asset the search configuration is for",
             "schema": {
               "$ref": "#/components/schemas/MediaAssetSearchType"
             }
@@ -4000,19 +4000,38 @@
             "name": "mediaId",
             "required": true,
             "in": "path",
-            "description": "The ID of the media that the download is targeting.",
+            "description": "The ID of the media that the search configuration is targeting.",
             "schema": {
               "type": "number"
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateMediaAssetSearchResult operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMediaAssetSearchResultRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "The record has been successfully created.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the created search result"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SingleMediaFavoriteResponse"
+                  "$ref": "#/components/schemas/SingleMediaAssetSearchResultResponse"
                 }
               }
             }
@@ -4038,20 +4057,20 @@
             }
           }
         },
-        "summary": "Creates a new media favorite",
+        "summary": "Creates a new media asset search result",
         "tags": [
           "Media"
         ]
       },
-      "delete": {
-        "description": "Removes a media item from the favorites.",
-        "operationId": "DeleteMediaFavorite",
+      "get": {
+        "description": "Lists the search results for the specified search configuration.",
+        "operationId": "ListMediaAssetSearchResults",
         "parameters": [
           {
             "name": "mediaType",
             "required": true,
             "in": "path",
-            "description": "The type of media asset the search download is for",
+            "description": "The type of media asset the search configuration is for",
             "schema": {
               "$ref": "#/components/schemas/MediaAssetSearchType"
             }
@@ -4060,13 +4079,68 @@
             "name": "mediaId",
             "required": true,
             "in": "path",
-            "description": "The ID of the media that the download is targeting.",
+            "description": "The ID of the media that the search configuration is targeting.",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "The sort order to apply to the results",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "The field to sort on",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "The number of results to return per page",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "startPage",
+            "required": false,
+            "in": "query",
+            "description": "The results page to start from",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "filters",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "byte",
+              "type": "string"
             }
           }
         ],
         "responses": {
+          "200": {
+            "description": "The list of search results.  If there are more results to list, a pagination token will be present.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMediaAssetSearchResultsResponse"
+                }
+              }
+            }
+          },
           "400": {
             "description": "The request presented was not valid",
             "content": {
@@ -4086,19 +4160,80 @@
                 }
               }
             }
+          }
+        },
+        "summary": "Lists search results for a search configuration",
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/dionysus/media/searchConfiguration/{mediaType}/{mediaId}/result/{resultId}": {
+      "get": {
+        "description": "Retrieves the details of a media asset search result.",
+        "operationId": "DescribeMediaAssetSearchResult",
+        "parameters": [
+          {
+            "name": "mediaType",
+            "required": true,
+            "in": "path",
+            "description": "The type of media asset the search configuration is for",
+            "schema": {
+              "$ref": "#/components/schemas/MediaAssetSearchType"
+            }
           },
-          "410": {
-            "description": "The media favorite was removed.",
+          {
+            "name": "mediaId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the media that the search configuration is targeting.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "resultId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the result to describe.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The record has been successfully fetched.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SingleMediaFavoriteResponse"
+                  "$ref": "#/components/schemas/SingleMediaAssetSearchResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
           }
         },
-        "summary": "Removes a media favorite",
+        "summary": "Describes an existing media asset search result",
         "tags": [
           "Media"
         ]
@@ -4529,6 +4664,128 @@
         ]
       }
     },
+    "/dionysus/media/favorite/{mediaType}/{mediaId}": {
+      "post": {
+        "description": "Creates a new media favorite.",
+        "operationId": "CreateMediaFavorite",
+        "parameters": [
+          {
+            "name": "mediaType",
+            "required": true,
+            "in": "path",
+            "description": "The type of media asset the search download is for",
+            "schema": {
+              "$ref": "#/components/schemas/MediaAssetSearchType"
+            }
+          },
+          {
+            "name": "mediaId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the media that the download is targeting.",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The record has been successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleMediaFavoriteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Creates a new media favorite",
+        "tags": [
+          "Media"
+        ]
+      },
+      "delete": {
+        "description": "Removes a media item from the favorites.",
+        "operationId": "DeleteMediaFavorite",
+        "parameters": [
+          {
+            "name": "mediaType",
+            "required": true,
+            "in": "path",
+            "description": "The type of media asset the search download is for",
+            "schema": {
+              "$ref": "#/components/schemas/MediaAssetSearchType"
+            }
+          },
+          {
+            "name": "mediaId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the media that the download is targeting.",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The media favorite was removed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleMediaFavoriteResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Removes a media favorite",
+        "tags": [
+          "Media"
+        ]
+      }
+    },
     "/dionysus/media/searchConfiguration/{mediaType}/{mediaId}/executions": {
       "post": {
         "description": "Creates a new media asset search execution.",
@@ -4861,263 +5118,6 @@
           }
         },
         "summary": "Updates an existing media search execution",
-        "tags": [
-          "Media"
-        ]
-      }
-    },
-    "/dionysus/media/searchConfiguration/{mediaType}/{mediaId}/results": {
-      "post": {
-        "description": "Creates a new media asset search result.",
-        "operationId": "CreateMediaAssetSearchResult",
-        "parameters": [
-          {
-            "name": "mediaType",
-            "required": true,
-            "in": "path",
-            "description": "The type of media asset the search configuration is for",
-            "schema": {
-              "$ref": "#/components/schemas/MediaAssetSearchType"
-            }
-          },
-          {
-            "name": "mediaId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the media that the search configuration is targeting.",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "description": "Input for the CreateMediaAssetSearchResult operation",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateMediaAssetSearchResultRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "The record has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the created search result"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SingleMediaAssetSearchResultResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Creates a new media asset search result",
-        "tags": [
-          "Media"
-        ]
-      },
-      "get": {
-        "description": "Lists the search results for the specified search configuration.",
-        "operationId": "ListMediaAssetSearchResults",
-        "parameters": [
-          {
-            "name": "mediaType",
-            "required": true,
-            "in": "path",
-            "description": "The type of media asset the search configuration is for",
-            "schema": {
-              "$ref": "#/components/schemas/MediaAssetSearchType"
-            }
-          },
-          {
-            "name": "mediaId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the media that the search configuration is targeting.",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "description": "The sort order to apply to the results",
-            "schema": {
-              "$ref": "#/components/schemas/SortDirection"
-            }
-          },
-          {
-            "name": "sortBy",
-            "required": false,
-            "in": "query",
-            "description": "The field to sort on",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "description": "The number of results to return per page",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "startPage",
-            "required": false,
-            "in": "query",
-            "description": "The results page to start from",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "filters",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "byte",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The list of search results.  If there are more results to list, a pagination token will be present.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListMediaAssetSearchResultsResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Lists search results for a search configuration",
-        "tags": [
-          "Media"
-        ]
-      }
-    },
-    "/dionysus/media/searchConfiguration/{mediaType}/{mediaId}/result/{resultId}": {
-      "get": {
-        "description": "Retrieves the details of a media asset search result.",
-        "operationId": "DescribeMediaAssetSearchResult",
-        "parameters": [
-          {
-            "name": "mediaType",
-            "required": true,
-            "in": "path",
-            "description": "The type of media asset the search configuration is for",
-            "schema": {
-              "$ref": "#/components/schemas/MediaAssetSearchType"
-            }
-          },
-          {
-            "name": "mediaId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the media that the search configuration is targeting.",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "resultId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the result to describe.",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The record has been successfully fetched.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SingleMediaAssetSearchResultResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Describes an existing media asset search result",
         "tags": [
           "Media"
         ]
@@ -13810,41 +13810,340 @@
           "download"
         ]
       },
-      "MediaFavorite": {
+      "PasswordType": {
+        "type": "number",
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "description": "What type of password protection is present on the archive"
+      },
+      "SearchResultTagType": {
+        "type": "string",
+        "enum": [
+          "audioChannel",
+          "audioFormat",
+          "hdr",
+          "movieVersion",
+          "unwanted",
+          "streamingServices",
+          "releaseGroups",
+          "misc",
+          "resolution",
+          "videoCodec"
+        ],
+        "description": "The type of the tag"
+      },
+      "BaseSearchResultTag": {
         "type": "object",
         "properties": {
+          "type": {
+            "description": "The type of the tag",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchResultTagType"
+              }
+            ]
+          },
+          "value": {
+            "type": "string",
+            "description": "The tag value"
+          },
+          "score": {
+            "type": "number",
+            "description": "The score of the tag"
+          }
+        },
+        "required": [
+          "type",
+          "value",
+          "score"
+        ]
+      },
+      "PartialMediaAssetSearchResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The GUID of the search result.  This should be a pure GUID and not one encoded as a URL."
+          },
+          "status": {
+            "description": "The status of the search result",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchResultStatus"
+              }
+            ]
+          },
+          "score": {
+            "type": "number",
+            "description": "The overall score of the search result."
+          },
+          "title": {
+            "type": "string",
+            "description": "The title of the search result."
+          },
+          "size": {
+            "type": "number",
+            "description": "The size of the file the search result identifies."
+          },
+          "password": {
+            "description": "What type of password protection is present on the archive",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PasswordType"
+              }
+            ]
+          },
+          "qualityGroup": {
+            "type": "string",
+            "description": "The quality group the result belongs to."
+          },
+          "quality": {
+            "type": "string",
+            "description": "The quality of the result."
+          },
+          "resolution": {
+            "type": "number",
+            "description": "The resolution of the result."
+          },
+          "source": {
+            "type": "number",
+            "description": "The source of the result."
+          },
+          "modifier": {
+            "type": "number",
+            "description": "The modifier, if any, associated with the result."
+          },
+          "repack": {
+            "type": "boolean",
+            "description": "Whether the result is a repack."
+          },
+          "postedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the search result was posted to Usenet"
+          },
+          "assetType": {
+            "description": "The type of media asset",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaAssetSearchType"
+              }
+            ]
+          },
+          "mediaId": {
+            "type": "number",
+            "description": "The primary ID of the media asset search configuration.  This should be the canonical ID of the media sourceand should not include the season or episode IDs if requesting a TV Season or TV Episode."
+          },
+          "tags": {
+            "description": "The tags associated with the search result",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BaseSearchResultTag"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "score",
+          "title",
+          "size",
+          "password",
+          "qualityGroup",
+          "quality",
+          "resolution",
+          "source",
+          "modifier",
+          "repack",
+          "postedTime",
+          "assetType",
+          "mediaId"
+        ]
+      },
+      "CreateMediaAssetSearchResultRequest": {
+        "type": "object",
+        "properties": {
+          "searchResult": {
+            "description": "The media asset search result to create",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialMediaAssetSearchResult"
+              }
+            ]
+          }
+        },
+        "required": [
+          "searchResult"
+        ]
+      },
+      "SearchResultTag": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "The type of the tag",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchResultTagType"
+              }
+            ]
+          },
+          "value": {
+            "type": "string",
+            "description": "The tag value"
+          },
+          "score": {
+            "type": "number",
+            "description": "The score of the tag"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the search result tag was created"
+          }
+        },
+        "required": [
+          "type",
+          "value",
+          "score",
+          "createdTime"
+        ]
+      },
+      "MediaAssetSearchResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The GUID of the search result.  This should be a pure GUID and not one encoded as a URL."
+          },
+          "status": {
+            "description": "The status of the search result",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchResultStatus"
+              }
+            ]
+          },
+          "score": {
+            "type": "number",
+            "description": "The overall score of the search result."
+          },
+          "title": {
+            "type": "string",
+            "description": "The title of the search result."
+          },
+          "size": {
+            "type": "number",
+            "description": "The size of the file the search result identifies."
+          },
+          "password": {
+            "description": "What type of password protection is present on the archive",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PasswordType"
+              }
+            ]
+          },
+          "qualityGroup": {
+            "type": "string",
+            "description": "The quality group the result belongs to."
+          },
+          "quality": {
+            "type": "string",
+            "description": "The quality of the result."
+          },
+          "resolution": {
+            "type": "number",
+            "description": "The resolution of the result."
+          },
+          "source": {
+            "type": "number",
+            "description": "The source of the result."
+          },
+          "modifier": {
+            "type": "number",
+            "description": "The modifier, if any, associated with the result."
+          },
+          "repack": {
+            "type": "boolean",
+            "description": "Whether the result is a repack."
+          },
+          "postedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the search result was posted to Usenet"
+          },
           "createdTime": {
             "type": "string",
             "description": "An ISO-8601 formatted string indicating when the search result was created"
           },
-          "decoration": {
-            "description": "Decoration details used for list items display",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/MediaAssetWorkflowDecoration"
-              }
-            ]
+          "downloads": {
+            "description": "The set of downloads associated with the search result",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaAssetDownload"
+            }
+          },
+          "tags": {
+            "description": "The tags associated with the search result",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchResultTag"
+            }
           }
         },
         "required": [
+          "id",
+          "status",
+          "score",
+          "title",
+          "size",
+          "password",
+          "qualityGroup",
+          "quality",
+          "resolution",
+          "source",
+          "modifier",
+          "repack",
+          "postedTime",
           "createdTime",
-          "decoration"
+          "downloads",
+          "tags"
         ]
       },
-      "SingleMediaFavoriteResponse": {
+      "SingleMediaAssetSearchResultResponse": {
         "type": "object",
         "properties": {
-          "favorite": {
-            "description": "A media favorite that has been created, updated, or queried",
+          "searchResult": {
+            "description": "A search result that has been created, updated, or queried",
             "allOf": [
               {
-                "$ref": "#/components/schemas/MediaFavorite"
+                "$ref": "#/components/schemas/MediaAssetSearchResult"
               }
             ]
           }
         },
         "required": [
-          "favorite"
+          "searchResult"
+        ]
+      },
+      "ListMediaAssetSearchResultsResponse": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "The total number of matching items across all pages"
+          },
+          "searchResults": {
+            "description": "A list of search results",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaAssetSearchResult"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "searchResults"
         ]
       },
       "MediaAssetSearchConfigurationStatus": {
@@ -14286,6 +14585,43 @@
           "searchConfiguration"
         ]
       },
+      "MediaFavorite": {
+        "type": "object",
+        "properties": {
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the search result was created"
+          },
+          "decoration": {
+            "description": "Decoration details used for list items display",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaAssetWorkflowDecoration"
+              }
+            ]
+          }
+        },
+        "required": [
+          "createdTime",
+          "decoration"
+        ]
+      },
+      "SingleMediaFavoriteResponse": {
+        "type": "object",
+        "properties": {
+          "favorite": {
+            "description": "A media favorite that has been created, updated, or queried",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaFavorite"
+              }
+            ]
+          }
+        },
+        "required": [
+          "favorite"
+        ]
+      },
       "CreateMediaAssetSearchExecutionRequest": {
         "type": "object",
         "properties": {}
@@ -14373,342 +14709,6 @@
         },
         "required": [
           "searchExecution"
-        ]
-      },
-      "PasswordType": {
-        "type": "number",
-        "enum": [
-          0,
-          1,
-          2
-        ],
-        "description": "What type of password protection is present on the archive"
-      },
-      "SearchResultTagType": {
-        "type": "string",
-        "enum": [
-          "audioChannel",
-          "audioFormat",
-          "hdr",
-          "movieVersion",
-          "unwanted",
-          "streamingServices",
-          "releaseGroups",
-          "misc",
-          "resolution",
-          "videoCodec"
-        ],
-        "description": "The type of the tag"
-      },
-      "BaseSearchResultTag": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "description": "The type of the tag",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchResultTagType"
-              }
-            ]
-          },
-          "value": {
-            "type": "string",
-            "description": "The tag value"
-          },
-          "score": {
-            "type": "number",
-            "description": "The score of the tag"
-          }
-        },
-        "required": [
-          "type",
-          "value",
-          "score"
-        ]
-      },
-      "PartialMediaAssetSearchResult": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "The GUID of the search result.  This should be a pure GUID and not one encoded as a URL."
-          },
-          "status": {
-            "description": "The status of the search result",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchResultStatus"
-              }
-            ]
-          },
-          "score": {
-            "type": "number",
-            "description": "The overall score of the search result."
-          },
-          "title": {
-            "type": "string",
-            "description": "The title of the search result."
-          },
-          "size": {
-            "type": "number",
-            "description": "The size of the file the search result identifies."
-          },
-          "password": {
-            "description": "What type of password protection is present on the archive",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PasswordType"
-              }
-            ]
-          },
-          "qualityGroup": {
-            "type": "string",
-            "description": "The quality group the result belongs to."
-          },
-          "quality": {
-            "type": "string",
-            "description": "The quality of the result."
-          },
-          "resolution": {
-            "type": "number",
-            "description": "The resolution of the result."
-          },
-          "source": {
-            "type": "number",
-            "description": "The source of the result."
-          },
-          "modifier": {
-            "type": "number",
-            "description": "The modifier, if any, associated with the result."
-          },
-          "repack": {
-            "type": "boolean",
-            "description": "Whether the result is a repack."
-          },
-          "postedTime": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string indicating when the search result was posted to Usenet"
-          },
-          "assetType": {
-            "description": "The type of media asset",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/MediaAssetSearchType"
-              }
-            ]
-          },
-          "mediaId": {
-            "type": "number",
-            "description": "The primary ID of the media asset search configuration.  This should be the canonical ID of the media sourceand should not include the season or episode IDs if requesting a TV Season or TV Episode."
-          },
-          "tags": {
-            "description": "The tags associated with the search result",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BaseSearchResultTag"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "status",
-          "score",
-          "title",
-          "size",
-          "password",
-          "qualityGroup",
-          "quality",
-          "resolution",
-          "source",
-          "modifier",
-          "repack",
-          "postedTime",
-          "assetType",
-          "mediaId"
-        ]
-      },
-      "CreateMediaAssetSearchResultRequest": {
-        "type": "object",
-        "properties": {
-          "searchResult": {
-            "description": "The media asset search result to create",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PartialMediaAssetSearchResult"
-              }
-            ]
-          }
-        },
-        "required": [
-          "searchResult"
-        ]
-      },
-      "SearchResultTag": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "description": "The type of the tag",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchResultTagType"
-              }
-            ]
-          },
-          "value": {
-            "type": "string",
-            "description": "The tag value"
-          },
-          "score": {
-            "type": "number",
-            "description": "The score of the tag"
-          },
-          "createdTime": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string indicating when the search result tag was created"
-          }
-        },
-        "required": [
-          "type",
-          "value",
-          "score",
-          "createdTime"
-        ]
-      },
-      "MediaAssetSearchResult": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "The GUID of the search result.  This should be a pure GUID and not one encoded as a URL."
-          },
-          "status": {
-            "description": "The status of the search result",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SearchResultStatus"
-              }
-            ]
-          },
-          "score": {
-            "type": "number",
-            "description": "The overall score of the search result."
-          },
-          "title": {
-            "type": "string",
-            "description": "The title of the search result."
-          },
-          "size": {
-            "type": "number",
-            "description": "The size of the file the search result identifies."
-          },
-          "password": {
-            "description": "What type of password protection is present on the archive",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PasswordType"
-              }
-            ]
-          },
-          "qualityGroup": {
-            "type": "string",
-            "description": "The quality group the result belongs to."
-          },
-          "quality": {
-            "type": "string",
-            "description": "The quality of the result."
-          },
-          "resolution": {
-            "type": "number",
-            "description": "The resolution of the result."
-          },
-          "source": {
-            "type": "number",
-            "description": "The source of the result."
-          },
-          "modifier": {
-            "type": "number",
-            "description": "The modifier, if any, associated with the result."
-          },
-          "repack": {
-            "type": "boolean",
-            "description": "Whether the result is a repack."
-          },
-          "postedTime": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string indicating when the search result was posted to Usenet"
-          },
-          "createdTime": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string indicating when the search result was created"
-          },
-          "downloads": {
-            "description": "The set of downloads associated with the search result",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MediaAssetDownload"
-            }
-          },
-          "tags": {
-            "description": "The tags associated with the search result",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SearchResultTag"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "status",
-          "score",
-          "title",
-          "size",
-          "password",
-          "qualityGroup",
-          "quality",
-          "resolution",
-          "source",
-          "modifier",
-          "repack",
-          "postedTime",
-          "createdTime",
-          "downloads",
-          "tags"
-        ]
-      },
-      "SingleMediaAssetSearchResultResponse": {
-        "type": "object",
-        "properties": {
-          "searchResult": {
-            "description": "A search result that has been created, updated, or queried",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/MediaAssetSearchResult"
-              }
-            ]
-          }
-        },
-        "required": [
-          "searchResult"
-        ]
-      },
-      "ListMediaAssetSearchResultsResponse": {
-        "type": "object",
-        "properties": {
-          "count": {
-            "type": "number",
-            "description": "The total number of matching items across all pages"
-          },
-          "searchResults": {
-            "description": "A list of search results",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MediaAssetSearchResult"
-            }
-          }
-        },
-        "required": [
-          "count",
-          "searchResults"
         ]
       },
       "ApproveMediaAssetTranscodeConfigurationRequest": {

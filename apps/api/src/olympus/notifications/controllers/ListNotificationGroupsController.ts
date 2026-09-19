@@ -1,7 +1,4 @@
-import {
-  ListNotificationGroupsResponse,
-  NotificationGroup,
-} from "@ncfritz/olympus-model";
+import { ListNotificationGroupsResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   DefaultValuePipe,
@@ -18,20 +15,12 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import {
-  GraphQlNotificationGroup,
-  toDomainObject,
-} from "../converters/NotificationGroupConverter";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-
-type GraphQlListNotificationGroupsResponse = {
-  olympus_notification_groups: GraphQlNotificationGroup[];
-};
+import { NotificationGroupService } from "../services/NotificationGroupService";
 
 @Controller({ version: "1" })
 export class ListNotificationGroupsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly notificationGroups: NotificationGroupService) {}
 
   @Get("/notifications/groups")
   @ApiOperation({
@@ -64,44 +53,8 @@ export class ListNotificationGroupsController {
     includeNotificationTypes: boolean,
     @Res() response: Response,
   ): Promise<void> {
-    const typesClause = includeNotificationTypes
-      ? `notificationTypes {
-      createdTime
-      description
-      id
-      name
-      supportsEmail
-      supportsSynoChat
-      supportsSynoMail
-      supportsWebSocket
-    }`
-      : "";
-
-    const queryRequest = gql`
-      query ListNotificationGroups {
-        olympus_notification_groups {
-          createdTime
-          description
-          id
-          name
-          ${typesClause}
-        }
-      }
-    `;
-
-    const queryResponse =
-      await this.graphQLClient.request<GraphQlListNotificationGroupsResponse>(
-        queryRequest,
-      );
-
-    const notificationGroups: NotificationGroup[] = [];
-
-    queryResponse.olympus_notification_groups.forEach((entry) => {
-      notificationGroups.push(toDomainObject(entry));
-    });
-
     const responseBody: ListNotificationGroupsResponse = {
-      groups: notificationGroups,
+      groups: await this.notificationGroups.list(includeNotificationTypes),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

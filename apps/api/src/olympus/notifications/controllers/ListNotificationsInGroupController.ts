@@ -1,7 +1,6 @@
-import { SortDirection } from "@ncfritz/olympus-model";
 import {
-  Notification,
   ListNotificationsInGroupResponse,
+  SortDirection,
 } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
 import {
@@ -11,29 +10,15 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import {
-  GraphQlNotification,
-  toDomainObject,
-} from "../converters/NotificationConverter";
 import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../utils/controllerDecorators";
-import { buildPaginationExpression } from "../../../utils/filterUtil";
-
-type GraphQlListNotificationsInGroupResponse = {
-  olympus_notifications: GraphQlNotification[];
-  olympus_notifications_aggregate: {
-    aggregate: {
-      count: number;
-    };
-  };
-};
+import { NotificationService } from "../services/NotificationService";
 
 @Controller({ version: "1" })
 export class ListNotificationsInGroupController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly notifications: NotificationService) {}
 
   @Get("/notifications/group/:groupId/notifications")
   @ApiOperation({
@@ -64,68 +49,14 @@ export class ListNotificationsInGroupController {
     @Query("sortBy") sortField = "createdTime",
     @Res() response: Response,
   ): Promise<void> {
-    const paginationExpression = buildPaginationExpression({
-      pageSize,
-      startPage,
-      sortField,
-      sortDirection,
-    });
-
-    // TODO: Filter based on username when this is plumbed in
-    const queryRequest = gql`
-      query ListNotificationsInGroup($group: String!) {
-        olympus_notifications(
-          ${paginationExpression}
-          where: { group: { _eq: $group } }
-        ) {
-          acknowledged
-          acknowledgedTime
-          createdTime
-          deletionTime
-          eventId
-          eventTime
-          expirationTime
-          level
-          notificationId
-          payload
-          ttl
-          notificationGroup {
-            createdTime
-            description
-            id
-            name
-          }
-          notificationType {
-            createdTime
-            defaultGroupId
-            id
-            description
-            name
-          }
-        }
-        olympus_notifications_aggregate(where: {group: {_eq: $group}}) {
-          aggregate {
-            count
-          }
-        }
-      }
-    `;
-
-    const queryResponse =
-      await this.graphQLClient.request<GraphQlListNotificationsInGroupResponse>(
-        queryRequest,
-        { group: groupId },
-      );
-
-    const notifications: Notification[] = [];
-
-    queryResponse.olympus_notifications.forEach((entry) => {
-      notifications.push(toDomainObject(entry));
-    });
+    const { notifications, count } = await this.notifications.listInGroup(
+      groupId,
+      { pageSize, startPage, sortField, sortDirection },
+    );
 
     const responseBody: ListNotificationsInGroupResponse = {
       notifications: notifications,
-      count: queryResponse.olympus_notifications_aggregate.aggregate.count,
+      count: count,
     };
 
     response.status(HttpStatus.OK).send(responseBody);

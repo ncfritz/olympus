@@ -1,4 +1,4 @@
-import { ListMovieCrewResponse, MovieCrewMember } from "@ncfritz/olympus-model";
+import { ListMovieCrewResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -14,19 +14,12 @@ import {
   ApiProduces,
 } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
-import { toMovieCrewDomainObject } from "../../converters/CrewConverter";
-import { MOVIE_CREW_MEMBER } from "../queries/movies";
-import { GraphQlMovieCrewMember } from "../../types/metadata";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlListMovieCrewResponse = {
-  dionysus_movie_crew: GraphQlMovieCrewMember[];
-};
+import { MovieService } from "../services/MovieService";
 
 @Controller({ version: "1" })
 export class ListMovieCrewController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly movies: MovieService) {}
 
   @Get("/metadata/movie/:movieId/crew")
   @ApiOperation({
@@ -51,29 +44,8 @@ export class ListMovieCrewController {
     @Param("movieId", ParseIntPipe) movieId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const fetchRequest = gql`
-      query ListMovieCrew($id: numeric!) {
-        dionysus_movie_crew(where: { movieId: { _eq: $id } }) {
-          ${MOVIE_CREW_MEMBER}
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlListMovieCrewResponse>(
-        fetchRequest,
-        { id: movieId },
-      );
-    const crew: MovieCrewMember[] = [];
-
-    fetchResponse.dionysus_movie_crew.forEach((result) => {
-      if (result.person) {
-        crew.push(toMovieCrewDomainObject(result));
-      }
-    });
-
     const responseBody: ListMovieCrewResponse = {
-      crew: crew,
+      crew: await this.movies.listCrew(movieId),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

@@ -1,23 +1,13 @@
-import {
-  GetMovieReleaseStatusStatisticsResponse,
-  StatusStatistic,
-} from "@ncfritz/olympus-model";
+import { GetMovieReleaseStatusStatisticsResponse } from "@ncfritz/olympus-model";
 import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
-
-type GraphQlMovieReleaseStatusStatistics = {
-  dionysus_movie_release_status_statistics: {
-    status: string;
-    count: number;
-  }[];
-};
+import { MovieService } from "../services/MovieService";
 
 @Controller({ version: "1" })
 export class GetMovieReleaseStatusStatisticsController {
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(private readonly movies: MovieService) {}
 
   @Get("/metadata/movies/stats/releaseStatus")
   @ApiOperation({
@@ -33,30 +23,8 @@ export class GetMovieReleaseStatusStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
-    const fetchRequest = gql`
-      query GetMovieReleaseStatusStatistics {
-        dionysus_movie_release_status_statistics {
-          status
-          count
-        }
-      }
-    `;
-
-    const fetchResponse =
-      await this.graphQLClient.request<GraphQlMovieReleaseStatusStatistics>(
-        fetchRequest,
-      );
-    const statistics: StatusStatistic[] = [];
-
-    fetchResponse.dionysus_movie_release_status_statistics.forEach((result) => {
-      statistics.push({
-        status: result.status,
-        count: result.count,
-      });
-    });
-
     const responseBody: GetMovieReleaseStatusStatisticsResponse = {
-      statistics: statistics,
+      statistics: await this.movies.getReleaseStatusStatistics(),
     };
 
     response.status(HttpStatus.OK).send(responseBody);
