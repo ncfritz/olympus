@@ -6,7 +6,6 @@ import {
 import {
   Controller,
   Get,
-  Headers,
   HttpStatus,
   NotFoundException,
   Param,
@@ -26,10 +25,7 @@ import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetCo
 import { GraphQLContentAsset } from "../../../types/content";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { buildFilterExpression } from "../../../utils/filterUtil";
-import {
-  BaseAuthenticatedContentController,
-  BC_FILTER,
-} from "./auth/BaseAuthenticatedContentController";
+import { BaseAuthenticatedContentController } from "./auth/BaseAuthenticatedContentController";
 
 type GraphQlGerContentAssetQueryResponse = {
   dionysus_content_assets: GraphQLContentAsset[];
@@ -56,7 +52,8 @@ export class GetContentAssetController extends BaseAuthenticatedContentControlle
   })
   @ApiHeader({
     name: "x-dionysus-content-bc",
-    description: "Header indicating black curtain status",
+    description:
+      "Ignored; kept for SDK compatibility. The black curtain applies to every request without a valid content auth cookie.",
     required: false,
   })
   @ApiOkResponse({
@@ -66,26 +63,18 @@ export class GetContentAssetController extends BaseAuthenticatedContentControlle
   @ApiStandardErrorResponses()
   async handle(
     @Param("assetId") assetId: string,
-    @Headers("x-dionysus-content-bc") blackCurtain: string = "true",
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const authenticated = await this.authenticateRequest(request, true);
     const itemFilter: FilterDefinition = {
       type: FilterType.EQUALS,
       name: "content_id",
       value: assetId,
     };
 
-    const queryFilter: FilterDefinition =
-      blackCurtain === "true" && !authenticated
-        ? {
-            type: FilterType.AND,
-            name: "__and",
-            value: [itemFilter, BC_FILTER],
-          }
-        : itemFilter;
-    const whereExpression = buildFilterExpression(queryFilter);
+    const whereExpression = buildFilterExpression(
+      await this.applyCurtain(request, itemFilter),
+    );
 
     const fetchRequest = gql`
       query GetContentAsset {

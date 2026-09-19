@@ -28,7 +28,7 @@ type GraphQlGetNetworkResponse = {
 export class DescribeNetworkController {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  @Get("/dionysus/network/:networkId")
+  @Get("/metadata/network/:networkId")
   @ApiOperation({
     summary: "Describes a network in Dionysus",
     description: "Retrieves the details of a network in Dionysus.",

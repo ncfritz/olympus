@@ -8,6 +8,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  Req,
   Res,
 } from "@nestjs/common";
 import {
@@ -17,11 +18,16 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toFullDomainObject } from "../../../../convert/dionysus/content/channel/ContentAssetChannelCategoryConverter";
 import { GraphQlFullContentAssetChannelCategory } from "../../../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import {
+  authenticateContentRequest,
+  BC_CHANNEL_FILTER,
+} from "../auth/BaseAuthenticatedContentController";
+import { buildFilterExpression } from "../../../../utils/filterUtil";
 
 export type GraphQlDescribeContentAssetChannelResponse = {
   dionysus_content_asset_channel_category_by_pk: GraphQlFullContentAssetChannelCategory | null;
@@ -52,8 +58,17 @@ export class DescribeContentAssetChannelCategoryController {
   @ApiStandardErrorResponses()
   async handle(
     @Param("categoryId") categoryId: string,
+    @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
+    const channelWhere = (await authenticateContentRequest(
+      this.graphQLClient,
+      request,
+      true,
+    ))
+      ? ""
+      : (buildFilterExpression(BC_CHANNEL_FILTER) ?? "");
+
     const queryRequest = gql`
       query DescribeContentAssetChannelCategory($categoryId: uuid!) {
         dionysus_content_asset_channel_category_by_pk(id: $categoryId) {
@@ -61,7 +76,7 @@ export class DescribeContentAssetChannelCategoryController {
           id
           lastUpdatedTime
           name
-          channels(limit: 10) {
+          channels(limit: 10${channelWhere ? `, ${channelWhere}` : ""}) {
             bcCompliant
             categoryId
             createdTime
@@ -80,7 +95,7 @@ export class DescribeContentAssetChannelCategoryController {
               createdTime
             }
           }
-          channels_aggregate {
+          channels_aggregate${channelWhere ? `(${channelWhere})` : ""} {
             aggregate {
               count
             }

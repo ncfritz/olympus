@@ -1205,15 +1205,6 @@
             }
           },
           {
-            "name": "x-dionysus-content-bc",
-            "required": false,
-            "in": "header",
-            "description": "Header indicating black curtain status",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "sortBy",
             "required": false,
             "in": "query",
@@ -1246,6 +1237,15 @@
             "in": "query",
             "schema": {
               "format": "byte",
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dionysus-content-bc",
+            "in": "header",
+            "description": "Ignored; kept for SDK compatibility. The black curtain applies to every request without a valid content auth cookie.",
+            "required": false,
+            "schema": {
               "type": "string"
             }
           }
@@ -2240,9 +2240,9 @@
           },
           {
             "name": "x-dionysus-content-bc",
-            "required": false,
             "in": "header",
-            "description": "Header indicating black curtain status",
+            "description": "Ignored; kept for SDK compatibility. The black curtain applies to every request without a valid content auth cookie.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -2293,9 +2293,9 @@
         "parameters": [
           {
             "name": "x-dionysus-content-bc",
-            "required": false,
             "in": "header",
-            "description": "Header indicating black curtain status",
+            "description": "Ignored; kept for SDK compatibility. The black curtain applies to every request without a valid content auth cookie.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -2346,9 +2346,9 @@
         "parameters": [
           {
             "name": "x-dionysus-content-bc",
-            "required": false,
             "in": "header",
-            "description": "Header indicating black curtain status",
+            "description": "Ignored; kept for SDK compatibility. These buckets come from database views over every asset and are not curtained.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -2399,9 +2399,9 @@
         "parameters": [
           {
             "name": "x-dionysus-content-bc",
-            "required": false,
             "in": "header",
-            "description": "Header indicating black curtain status",
+            "description": "Ignored; kept for SDK compatibility. These buckets come from database views over every asset and are not curtained.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -2452,9 +2452,9 @@
         "parameters": [
           {
             "name": "x-dionysus-content-bc",
-            "required": false,
             "in": "header",
-            "description": "Header indicating black curtain status",
+            "description": "Ignored; kept for SDK compatibility. These buckets come from database views over every asset and are not curtained.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -2505,9 +2505,9 @@
         "parameters": [
           {
             "name": "x-dionysus-content-bc",
-            "required": false,
             "in": "header",
-            "description": "Header indicating black curtain status",
+            "description": "Ignored; kept for SDK compatibility. These buckets come from database views over every asset and are not curtained.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -2558,9 +2558,9 @@
         "parameters": [
           {
             "name": "x-dionysus-content-bc",
-            "required": false,
             "in": "header",
-            "description": "Header indicating black curtain status",
+            "description": "Ignored; kept for SDK compatibility. The black curtain applies to every request without a valid content auth cookie.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -2795,9 +2795,9 @@
           },
           {
             "name": "x-dionysus-content-bc",
-            "required": false,
             "in": "header",
-            "description": "Header indicating black curtain status",
+            "description": "Ignored; kept for SDK compatibility. The black curtain applies to every request without a valid content auth cookie.",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -7661,7 +7661,7 @@
         ]
       }
     },
-    "/dionysus/dionysus/network/{networkId}": {
+    "/dionysus/metadata/network/{networkId}": {
       "get": {
         "description": "Retrieves the details of a network in Dionysus.",
         "operationId": "DescribeNetwork",

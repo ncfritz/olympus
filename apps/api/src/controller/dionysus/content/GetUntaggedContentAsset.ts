@@ -2,7 +2,6 @@ import { GetContentAssetWithStatsResponse } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
-  Headers,
   HttpStatus,
   NotFoundException,
   Req,
@@ -43,7 +42,8 @@ export class GetUntaggedContentAssetController extends BaseAuthenticatedContentC
   @ApiProduces("application/json")
   @ApiHeader({
     name: "x-dionysus-content-bc",
-    description: "Header indicating black curtain status",
+    description:
+      "Ignored; kept for SDK compatibility. The black curtain applies to every request without a valid content auth cookie.",
     required: false,
   })
   @ApiOkResponse({
@@ -52,13 +52,11 @@ export class GetUntaggedContentAssetController extends BaseAuthenticatedContentC
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Headers("x-dionysus-content-bc") blackCurtain: string = "true",
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    if (blackCurtain === "true") {
-      await this.authenticateRequest(request);
-    }
+    // Tagging shows any asset, so it always requires content auth.
+    await this.authenticateRequest(request);
 
     const fetchRequest = gql`
       query GetUntaggedContentAsset {
@@ -67,7 +65,7 @@ export class GetUntaggedContentAssetController extends BaseAuthenticatedContentC
             _not: {
               asset_tags_aggregate: {
                 count: {
-                  predicate: { _gt: 1 }
+                  predicate: { _gt: 0 }
                   filter: { tag: { type: { _nin: "system" } } }
                 }
               }
@@ -101,7 +99,7 @@ export class GetUntaggedContentAssetController extends BaseAuthenticatedContentC
             _not: {
               asset_tags_aggregate: {
                 count: {
-                  predicate: { _gt: 1 }
+                  predicate: { _gt: 0 }
                   filter: { tag: { type: { _nin: "system" } } }
                 }
               }

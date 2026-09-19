@@ -33,6 +33,100 @@ export const BC_FILTER: FilterDefinition = {
   ],
 };
 
+/** Channels a request without content auth may see. */
+export const BC_CHANNEL_FILTER: FilterDefinition = {
+  type: FilterType.EQUALS,
+  name: "bcCompliant",
+  value: true,
+};
+
+export const getContentAuthKey = async (
+  graphQLClient: GraphQLClient,
+  type: string,
+): Promise<string> => {
+  const fetchKeyRequest = gql`
+    query FetchContentAuthKey($keyId: String!) {
+      dionysus_content_auth_by_pk(key_id: $keyId) {
+        key
+        key_id
+        createdTime
+      }
+    }
+  `;
+
+  const fetchKeyResponse =
+    await graphQLClient.request<GraphQlGetContentAuthResponse>(
+      fetchKeyRequest,
+      { keyId: type },
+    );
+
+  if (!fetchKeyResponse.dionysus_content_auth_by_pk) {
+    throw new InternalServerErrorException(
+      `Content auth key "${type}" is not configured`,
+    );
+  }
+
+  return fetchKeyResponse.dionysus_content_auth_by_pk.key;
+};
+
+/**
+ * True when the request carries a valid content auth cookie (issued by
+ * VerifyAuthCode). Otherwise false, or 401 unless `silent`.
+ */
+export const authenticateContentRequest = async (
+  graphQLClient: GraphQLClient,
+  request: Request,
+  silent: boolean = false,
+): Promise<boolean> => {
+  const token = request.cookies["x-dionysus-content-auth"];
+
+  if (!token) {
+    if (!silent) {
+      throw new UnauthorizedException();
+    }
+    return false;
+  }
+
+  const signingKey = createSecretKey(
+    await getContentAuthKey(graphQLClient, "jwt.key"),
+    "utf-8",
+  );
+  const options: JWTVerifyOptions = {
+    algorithms: ["HS256"],
+    issuer: "ncfritz.dionysus.content",
+    audience: "test",
+  };
+
+  try {
+    await jwtVerify(token, signingKey, options);
+    return true;
+  } catch (e) {
+    if (!silent) {
+      throw new UnauthorizedException(e);
+    }
+  }
+
+  return false;
+};
+
+/**
+ * The black curtain: requests without content auth only see assets tagged
+ * bcCompliant. Returns `filter` restricted accordingly (or the curtain alone).
+ */
+export const withContentCurtain = async (
+  graphQLClient: GraphQLClient,
+  request: Request,
+  filter: FilterDefinition | undefined,
+  curtain: FilterDefinition = BC_FILTER,
+): Promise<FilterDefinition | undefined> => {
+  if (await authenticateContentRequest(graphQLClient, request, true)) {
+    return filter;
+  }
+  return filter
+    ? { type: FilterType.AND, name: "_", value: [curtain, filter] }
+    : curtain;
+};
+
 export abstract class BaseAuthenticatedContentController {
   protected readonly graphQLClient: GraphQLClient;
 
@@ -40,65 +134,22 @@ export abstract class BaseAuthenticatedContentController {
     this.graphQLClient = graphQLClient;
   }
 
-  async getAuthenticationKey(type: string): Promise<string> {
-    const fetchJwtKeyRequest = gql`
-      query FetchContentAuthKey($keyId: String!) {
-        dionysus_content_auth_by_pk(key_id: $keyId) {
-          key
-          key_id
-          createdTime
-        }
-      }
-    `;
-
-    const fetchJwtKeyResponse =
-      await this.graphQLClient.request<GraphQlGetContentAuthResponse>(
-        fetchJwtKeyRequest,
-        { keyId: type },
-      );
-
-    if (!fetchJwtKeyResponse.dionysus_content_auth_by_pk) {
-      throw new InternalServerErrorException(
-        `Content auth key "${type}" is not configured`,
-      );
-    }
-
-    return fetchJwtKeyResponse.dionysus_content_auth_by_pk.key;
+  getAuthenticationKey(type: string): Promise<string> {
+    return getContentAuthKey(this.graphQLClient, type);
   }
 
-  async authenticateRequest(
+  authenticateRequest(
     request: Request,
     silent: boolean = false,
   ): Promise<boolean> {
-    const token = request.cookies["x-dionysus-content-auth"];
+    return authenticateContentRequest(this.graphQLClient, request, silent);
+  }
 
-    if (!token) {
-      if (!silent) {
-        throw new UnauthorizedException();
-      }
-      return false;
-    }
-
-    const signingKey = createSecretKey(
-      await this.getAuthenticationKey("jwt.key"),
-      "utf-8",
-    );
-    const alg = "HS256";
-    const options: JWTVerifyOptions = {
-      algorithms: [alg],
-      issuer: "ncfritz.dionysus.content",
-      audience: "test",
-    };
-
-    try {
-      await jwtVerify(token, signingKey, options);
-      return true;
-    } catch (e) {
-      if (!silent) {
-        throw new UnauthorizedException(e);
-      }
-    }
-
-    return false;
+  /** See withContentCurtain. */
+  applyCurtain(
+    request: Request,
+    filter: FilterDefinition | undefined,
+  ): Promise<FilterDefinition | undefined> {
+    return withContentCurtain(this.graphQLClient, request, filter);
   }
 }

@@ -1,13 +1,15 @@
 import { ContentStatisticsResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, Headers, HttpStatus, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Req, Res } from "@nestjs/common";
 import {
   ApiHeader,
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
+import { buildFilterExpression } from "../../../utils/filterUtil";
+import { withContentCurtain } from "./auth/BaseAuthenticatedContentController";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlAssetAggregationStatsResponse = {
@@ -49,7 +51,8 @@ export class GetContentAssetAggregateStatisticsController {
   @ApiProduces("application/json")
   @ApiHeader({
     name: "x-dionysus-content-bc",
-    description: "Header indicating black curtain status",
+    description:
+      "Ignored; kept for SDK compatibility. The black curtain applies to every request without a valid content auth cookie.",
     required: false,
   })
   @ApiOkResponse({
@@ -58,12 +61,16 @@ export class GetContentAssetAggregateStatisticsController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Headers("x-dionysus-content-bc") _blackCurtain: string = "true",
+    @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
+    const whereExpression = buildFilterExpression(
+      await withContentCurtain(this.graphQLClient, request, undefined),
+    );
+
     const fetchRequest = gql`
       query GetContentAssetAggregateStatistics {
-        dionysus_content_assets_aggregate {
+        dionysus_content_assets_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {
             count
             avg {

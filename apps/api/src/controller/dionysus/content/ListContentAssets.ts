@@ -1,19 +1,9 @@
 import {
   ContentAsset,
-  FilterDefinition,
-  FilterType,
   ListContentAssetsResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
-import {
-  Controller,
-  Get,
-  Headers,
-  HttpStatus,
-  Query,
-  Req,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, HttpStatus, Query, Req, Res } from "@nestjs/common";
 import {
   ApiHeader,
   ApiOkResponse,
@@ -35,10 +25,7 @@ import {
   buildPaginationExpression,
   parseFilterDefinition,
 } from "../../../utils/filterUtil";
-import {
-  BaseAuthenticatedContentController,
-  BC_FILTER,
-} from "./auth/BaseAuthenticatedContentController";
+import { BaseAuthenticatedContentController } from "./auth/BaseAuthenticatedContentController";
 
 type GraphQlListContentAssetsResponse = {
   dionysus_content_assets: GraphQLContentAsset[];
@@ -72,7 +59,8 @@ export class ListContentAssetsController extends BaseAuthenticatedContentControl
   })
   @ApiHeader({
     name: "x-dionysus-content-bc",
-    description: "Header indicating black curtain status",
+    description:
+      "Ignored; kept for SDK compatibility. The black curtain applies to every request without a valid content auth cookie.",
     required: false,
   })
   @ApiFilterParams()
@@ -89,23 +77,13 @@ export class ListContentAssetsController extends BaseAuthenticatedContentControl
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
     @Query("sortBy") sortField = "createdTime",
     @Query("filters") filters = undefined,
-    @Headers("x-dionysus-content-bc") blackCurtain: string = "true",
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const authenticated = await this.authenticateRequest(request, true);
-    const parsedFilters = parseFilterDefinition(filters);
-    let queryFilters: FilterDefinition | undefined = parsedFilters;
-
-    if (blackCurtain === "true" && !authenticated) {
-      queryFilters = parsedFilters
-        ? {
-            type: FilterType.AND,
-            name: "__base",
-            value: [BC_FILTER, parsedFilters],
-          }
-        : BC_FILTER;
-    }
+    const queryFilters = await this.applyCurtain(
+      request,
+      parseFilterDefinition(filters),
+    );
 
     const whereExpression = buildFilterExpression(queryFilters);
     const paginationExpression = buildPaginationExpression({

@@ -4,14 +4,14 @@ import {
   ListContentAssetChannelsResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Query, Req, Res } from "@nestjs/common";
 import {
   ApiExtraModels,
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toFullDomainObject } from "../../../../convert/dionysus/content/channel/ContentAssetChannelConverter";
 import { GraphQlFullContentAssetChannel } from "../../../../types/content";
@@ -23,7 +23,12 @@ import {
 import {
   buildFilterExpression,
   buildPaginationExpression,
+  parseFilterDefinition,
 } from "../../../../utils/filterUtil";
+import {
+  BC_CHANNEL_FILTER,
+  withContentCurtain,
+} from "../auth/BaseAuthenticatedContentController";
 
 type GraphQlListContentAssetChannelResponse = {
   dionysus_content_asset_channel: GraphQlFullContentAssetChannel[];
@@ -64,9 +69,17 @@ export class ListContentAssetChannelsController {
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
     @Query("sortBy") sortField = "createdTime",
     @Query("filters") filters = undefined,
+    @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const whereExpression = buildFilterExpression(filters);
+    const whereExpression = buildFilterExpression(
+      await withContentCurtain(
+        this.graphQLClient,
+        request,
+        parseFilterDefinition(filters),
+        BC_CHANNEL_FILTER,
+      ),
+    );
     const paginationExpression = buildPaginationExpression({
       pageSize: pageSize,
       startPage: startPage,

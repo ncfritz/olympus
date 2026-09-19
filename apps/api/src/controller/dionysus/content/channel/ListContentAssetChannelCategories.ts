@@ -4,14 +4,14 @@ import {
   ListContentAssetChannelCategoriesResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Query, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Query, Req, Res } from "@nestjs/common";
 import {
   ApiExtraModels,
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toFullDomainObject } from "../../../../convert/dionysus/content/channel/ContentAssetChannelCategoryConverter";
 import { GraphQlFullContentAssetChannelCategory } from "../../../../types/content";
@@ -24,6 +24,10 @@ import {
   buildFilterExpression,
   buildPaginationExpression,
 } from "../../../../utils/filterUtil";
+import {
+  authenticateContentRequest,
+  BC_CHANNEL_FILTER,
+} from "../auth/BaseAuthenticatedContentController";
 
 type GraphQlListContentAssetChannelCategoriesResponse = {
   dionysus_content_asset_channel_category: GraphQlFullContentAssetChannelCategory[];
@@ -64,8 +68,17 @@ export class ListContentAssetChannelCategoriesController {
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
     @Query("sortBy") sortField = "createdTime",
     @Query("filters") filters = undefined,
+    @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
+    const channelWhere = (await authenticateContentRequest(
+      this.graphQLClient,
+      request,
+      true,
+    ))
+      ? ""
+      : (buildFilterExpression(BC_CHANNEL_FILTER) ?? "");
+
     const whereExpression = buildFilterExpression(filters);
     const paginationExpression = buildPaginationExpression({
       pageSize: pageSize,
@@ -77,7 +90,7 @@ export class ListContentAssetChannelCategoriesController {
     const fetchRequest = gql`
       query ListContentAssetChannelCategories {
         dionysus_content_asset_channel_category(${[paginationExpression, whereExpression].join(", ")}) {
-          channels {
+          channels${channelWhere ? `(${channelWhere})` : ""} {
             assetCache {
               createdTime
               assetId
@@ -103,7 +116,7 @@ export class ListContentAssetChannelCategoriesController {
           id
           lastUpdatedTime
           name
-          channels_aggregate {
+          channels_aggregate${channelWhere ? `(${channelWhere})` : ""} {
             aggregate {
               count
             }

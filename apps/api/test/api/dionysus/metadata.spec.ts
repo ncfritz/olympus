@@ -40,7 +40,7 @@ const READS: [string, string, Row, Row | undefined][] = [
     { id: 603 },
   ],
   [
-    "/v1/dionysus/dionysus/network/49",
+    `${M}/network/49`,
     "DescribeNetwork",
     { dionysus_networks_by_pk: networkRow() },
     { id: 49 },
@@ -328,11 +328,7 @@ describe("Dionysus metadata API", () => {
         { dionysus_collections_by_pk: null },
       ],
       [`${M}/movie/1`, "DescribeMovie", { dionysus_movies_by_pk: null }],
-      [
-        "/v1/dionysus/dionysus/network/1",
-        "DescribeNetwork",
-        { dionysus_networks_by_pk: null },
-      ],
+      [`${M}/network/1`, "DescribeNetwork", { dionysus_networks_by_pk: null }],
       [`${M}/person/1`, "DescribePerson", { dionysus_people_by_pk: null }],
       [
         `${M}/productionCompany/1`,
@@ -400,7 +396,7 @@ describe("Dionysus metadata API", () => {
       `${M}/tvSeries/1399/seasons/one`,
       `${M}/tvSeries/1399/seasons/1/episodes/1e3x`,
       `${M}/productionCompany/abc/movies`,
-      "/v1/dionysus/dionysus/network/HBO",
+      `${M}/network/HBO`,
     ])("rejects the non-numeric ID in %s", async (url) => {
       await t.http().get(url).expect(400);
 

@@ -28,15 +28,6 @@
 - Styles mechanism for the theme migration (`antd-style` vs. CSS modules).
 - Turning on full TypeScript `strict`.
 - How AI agents interact with the platform (API-backed tools / MCP).
-- Content black curtain: the `x-dionysus-content-bc` header lets any
-  client turn the curtain off (`false`), and the site always sends `true`
-  (`active || true`), so its settings toggle has no effect on the API.
-  Decide whether the curtain is enforced server-side for every
-  unauthenticated request. Channel endpoints and the asset statistics do
-  not apply the curtain at all.
-- `GetUntaggedContentAsset` treats an asset with one non-system tag as both
-  untagged (`_not` count `_gt: 1`) and tagged (count `_gte: 1`). Confirm
-  which is intended.
 
 ## Model backlog
 
@@ -77,8 +68,15 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
   reads; `CreateMediaAssetWorkflow` is
   `POST .../workflow/:resultId/workflow` (its `Location` says
   `.../result/:resultId/workflow/:id`).
-- `DescribeNetwork` is served at `/v1/dionysus/dionysus/network/:networkId`
-  (its route repeats the domain prefix). Same SDK caveat.
+- Black curtain (decided 2026-09-18): enforced server-side for every
+  request without a valid content auth cookie; `x-dionysus-content-bc` is
+  ignored. Still open: the size/duration/width/height statistics come from
+  database views that can't be curtained without a view change (phase 4),
+  and channel mutations return the full channel even when it is not
+  curtain compliant.
+- `DescribeNetwork` moved from `/v1/dionysus/dionysus/network/:networkId`
+  to `/v1/dionysus/metadata/network/:networkId` (2026-09-18). The site
+  calls the old path until the SDK is regenerated (phase 2).
 - Metadata converters assume every object relationship is present
   (`originalLanguage`, a season's `series`, an episode's `season`). Without
   referential integrity (roadmap phase 5) a missing row makes the whole

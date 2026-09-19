@@ -8,6 +8,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  Req,
   Res,
 } from "@nestjs/common";
 import {
@@ -17,11 +18,12 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toFullDomainObject } from "../../../../convert/dionysus/content/channel/ContentAssetChannelConverter";
 import { GraphQlFullContentAssetChannel } from "../../../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { authenticateContentRequest } from "../auth/BaseAuthenticatedContentController";
 
 export type GraphQlDescribeContentAssetChannelResponse = {
   dionysus_content_asset_channel_by_pk: GraphQlFullContentAssetChannel | null;
@@ -52,6 +54,7 @@ export class DescribeContentAssetChannelController {
   @ApiStandardErrorResponses()
   async handle(
     @Param("channelId") channelId: string,
+    @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
     const queryRequest = gql`
@@ -100,6 +103,13 @@ export class DescribeContentAssetChannelController {
       );
 
     if (!queryResponse.dionysus_content_asset_channel_by_pk) {
+      throw new NotFoundException();
+    }
+
+    if (
+      !queryResponse.dionysus_content_asset_channel_by_pk.bcCompliant &&
+      !(await authenticateContentRequest(this.graphQLClient, request, true))
+    ) {
       throw new NotFoundException();
     }
 

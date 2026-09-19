@@ -11,6 +11,8 @@ import {
   ASSET_ID,
   CATEGORY_ID,
   CHANNEL_ID,
+  contentAuthKeys,
+  contentAuthToken,
   graphQlChannel,
   graphQlChannelCategory,
   graphQlContentTag,
@@ -21,6 +23,9 @@ import { base64Json } from "../../fixtures/olympus";
 import { createTestApp, type TestApp } from "../../support/testApp";
 
 const CHANNEL = `/v1/dionysus/content/channel/${CHANNEL_ID}`;
+const CHANNEL_CURTAIN = "bcCompliant: {_eq: true}";
+const authCookie = async () =>
+  `x-dionysus-content-auth=${await contentAuthToken()}`;
 const beachFilter = { type: "eq", name: "name", value: "beach" };
 const candidates = {
   dionysus_content_assets: [
@@ -40,6 +45,11 @@ describe("Dionysus content channels and tags API", () => {
   beforeEach(() => {
     t.reset();
     vi.restoreAllMocks();
+    t.graphql.on("FetchContentAuthKey", (variables) => ({
+      dionysus_content_auth_by_pk: {
+        key: contentAuthKeys[variables?.keyId as string],
+      },
+    }));
   });
 
   describe("channels", () => {
@@ -106,6 +116,21 @@ describe("Dionysus content channels and tags API", () => {
           id: CHANNEL_ID,
           name: "Beaches",
         });
+      });
+
+      it("hides a channel that is not curtain compliant unless authenticated", async () => {
+        t.graphql.on("DescribeContentAssetChannel", {
+          dionysus_content_asset_channel_by_pk: graphQlChannel({
+            bcCompliant: false,
+          }),
+        });
+
+        await t.http().get(CHANNEL).expect(404);
+        await t
+          .http()
+          .get(CHANNEL)
+          .set("Cookie", await authCookie())
+          .expect(200);
       });
 
       it("returns 404 for an unknown channel", async () => {
@@ -286,9 +311,28 @@ describe("Dionysus content channels and tags API", () => {
 
         expect(res.status).toBe(200);
         expect(res.body.count).toBe(1);
+        const { document } = t.graphql.calls("ListContentAssetChannels")[0];
+        expect(document).toContain("{favorite: {_eq: true}}");
+        expect(document).toContain(CHANNEL_CURTAIN);
+      });
+
+      it("lists every channel for an authenticated request", async () => {
+        t.graphql.on("ListContentAssetChannels", {
+          dionysus_content_asset_channel: [
+            graphQlChannel({ bcCompliant: false }),
+          ],
+          dionysus_content_asset_channel_aggregate: aggregate(1),
+        });
+
+        await t
+          .http()
+          .get("/v1/dionysus/content/channels")
+          .set("Cookie", await authCookie())
+          .expect(200);
+
         expect(
           t.graphql.calls("ListContentAssetChannels")[0].document,
-        ).toContain("where: {favorite: {_eq: true}}");
+        ).not.toContain(CHANNEL_CURTAIN);
       });
     });
   });
@@ -325,6 +369,18 @@ describe("Dionysus content channels and tags API", () => {
           .http()
           .get(`/v1/dionysus/content/channel/category/${CATEGORY_ID}`)
           .expect(200);
+        expect(
+          t.graphql.calls("DescribeContentAssetChannelCategory")[0].document,
+        ).toContain(`channels(limit: 10, where: {${CHANNEL_CURTAIN}})`);
+
+        await t
+          .http()
+          .get(`/v1/dionysus/content/channel/category/${CATEGORY_ID}`)
+          .set("Cookie", await authCookie())
+          .expect(200);
+        expect(
+          t.graphql.calls("DescribeContentAssetChannelCategory")[1].document,
+        ).toContain("channels(limit: 10) {");
       });
 
       it("returns 404 for an unknown category", async () => {
@@ -381,6 +437,13 @@ describe("Dionysus content channels and tags API", () => {
 
         expect(res.status).toBe(200);
         expect(res.body.count).toBe(4);
+        const { document } = t.graphql.calls(
+          "ListContentAssetChannelCategories",
+        )[0];
+        expect(document).toContain(`channels(where: {${CHANNEL_CURTAIN}})`);
+        expect(document).toContain(
+          `channels_aggregate(where: {${CHANNEL_CURTAIN}})`,
+        );
       });
     });
 
@@ -404,6 +467,13 @@ describe("Dionysus content channels and tags API", () => {
           count: 1,
           channels: [{ id: CHANNEL_ID }],
         });
+        const { document } = t.graphql.calls(
+          "ListContentAssetChannelsForCategory",
+        )[0];
+        expect(document).toContain(`where: {${CHANNEL_CURTAIN}}`);
+        expect(document).toContain(
+          `channels_aggregate(where: {${CHANNEL_CURTAIN}})`,
+        );
       });
 
       it("returns 404 for an unknown category", async () => {

@@ -54,6 +54,16 @@ describe("Dionysus content assets API", () => {
         expect(document()).toContain(CURTAIN);
       });
 
+      it("ignores a request to drop the curtain without auth", async () => {
+        await t
+          .http()
+          .get(`/v1/dionysus/content/asset/${ASSET_ID}`)
+          .set("x-dionysus-content-bc", "false")
+          .expect(200);
+
+        expect(document()).toContain(CURTAIN);
+      });
+
       it("lifts the curtain for a valid auth cookie", async () => {
         await t
           .http()
@@ -120,6 +130,16 @@ describe("Dionysus content assets API", () => {
         );
       });
 
+      it("ignores a request to drop the curtain without auth", async () => {
+        await t
+          .http()
+          .get("/v1/dionysus/content/assets")
+          .set("x-dionysus-content-bc", "false")
+          .expect(200);
+
+        expect(document()).toContain(CURTAIN);
+      });
+
       it("lists everything for an authenticated request", async () => {
         await t
           .http()
@@ -132,8 +152,38 @@ describe("Dionysus content assets API", () => {
     });
 
     describe("GET /v1/dionysus/content/assets/untagged (GetUntaggedContentAsset)", () => {
-      it("requires authentication", async () => {
+      it("requires authentication, whatever the curtain header says", async () => {
         await t.http().get("/v1/dionysus/content/assets/untagged").expect(401);
+        await t
+          .http()
+          .get("/v1/dionysus/content/assets/untagged")
+          .set("x-dionysus-content-bc", "false")
+          .expect(401);
+      });
+
+      it("counts assets with only system tags as untagged", async () => {
+        t.graphql.on("GetUntaggedContentAsset", {
+          dionysus_content_assets: [graphQlContentAsset()],
+          tagged: aggregate(1),
+          untagged: aggregate(1),
+        });
+
+        await t
+          .http()
+          .get("/v1/dionysus/content/assets/untagged")
+          .set("Cookie", await authCookie())
+          .expect(200);
+
+        const doc = t.graphql
+          .calls("GetUntaggedContentAsset")[0]
+          .document.replace(/\s+/g, " ");
+        // untagged: no non-system tag at all; tagged: at least one.
+        expect(
+          doc.match(
+            /_not: \{ asset_tags_aggregate: \{ count: \{ predicate: \{ _gt: 0 \}/g,
+          ),
+        ).toHaveLength(2);
+        expect(doc).toContain("predicate: { _gte: 1 }");
       });
 
       it("returns the next untagged asset with counts", async () => {
@@ -197,6 +247,25 @@ describe("Dionysus content assets API", () => {
           '{ name: { _ilike: "gopro" }, type: { _eq: "source" } }',
         );
         expect(call().document).toContain("bcCompliant");
+      });
+
+      it("drops the curtain for an authenticated request only", async () => {
+        await t
+          .http()
+          .get(`/v1/dionysus/content/asset/${ASSET_ID}/similar`)
+          .query({ tagType: "user", tagName: "beach" })
+          .set("x-dionysus-content-bc", "false")
+          .expect(200);
+        expect(call().document).toContain("bcCompliant");
+
+        t.graphql.request.mockClear();
+        await t
+          .http()
+          .get(`/v1/dionysus/content/asset/${ASSET_ID}/similar`)
+          .query({ tagType: "user", tagName: "beach" })
+          .set("Cookie", await authCookie())
+          .expect(200);
+        expect(call().document).not.toContain("bcCompliant");
       });
 
       it("escapes tag names and types", async () => {
@@ -404,6 +473,16 @@ describe("Dionysus content assets API", () => {
         .get("/v1/dionysus/content/assets/statistics/aggregate");
 
       expect(res.status).toBe(200);
+      const doc = () =>
+        t.graphql.calls("GetContentAssetAggregateStatistics").at(-1)!.document;
+      expect(doc()).toContain("dionysus_content_assets_aggregate(where:");
+      expect(doc()).toContain(CURTAIN);
+      await t
+        .http()
+        .get("/v1/dionysus/content/assets/statistics/aggregate")
+        .set("Cookie", await authCookie())
+        .expect(200);
+      expect(doc()).toContain("dionysus_content_assets_aggregate {");
       expect(res.body).toEqual({
         count: 3,
         minSize: 10,

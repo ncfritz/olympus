@@ -6,10 +6,10 @@ import {
   BadRequestException,
   Controller,
   Get,
-  Headers,
   HttpStatus,
   Param,
   Query,
+  Req,
   Res,
 } from "@nestjs/common";
 import {
@@ -20,10 +20,11 @@ import {
   ApiProduces,
   ApiQuery,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetConverter";
 import { GraphQLContentAsset } from "../../../types/content";
+import { authenticateContentRequest } from "./auth/BaseAuthenticatedContentController";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 
 type GraphQlListSimilarContentAssetsInput = {
@@ -67,7 +68,8 @@ export class ListSimilarContentAssetsController {
   })
   @ApiHeader({
     name: "x-dionysus-content-bc",
-    description: "Header indicating black curtain status",
+    description:
+      "Ignored; kept for SDK compatibility. The black curtain applies to every request without a valid content auth cookie.",
     required: false,
   })
   @ApiOkResponse({
@@ -79,7 +81,7 @@ export class ListSimilarContentAssetsController {
     @Param("assetId") assetId: string,
     @Query("tagType") tagTypes: string,
     @Query("tagName") tagNames: string,
-    @Headers("x-dionysus-content-bc") blackCurtain: string = "true",
+    @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
     if (!tagNames || !tagTypes) {
@@ -111,7 +113,9 @@ export class ListSimilarContentAssetsController {
       );
     }
 
-    if (blackCurtain === "true") {
+    if (
+      !(await authenticateContentRequest(this.graphQLClient, request, true))
+    ) {
       blackCurtainClause =
         '{ asset_tags: {tag: {_and: {type: {_eq: "system"}, name: {_ilike: "bcCompliant"}}}}}';
       blackCurtainAggregateClause =

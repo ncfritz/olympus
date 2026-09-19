@@ -1,5 +1,5 @@
 import { ContentStatisticsResponse } from "@ncfritz/olympus-model";
-import { Controller, Get, Headers, HttpStatus, Res } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import {
   ApiHeader,
   ApiOkResponse,
@@ -30,7 +30,8 @@ export class GetContentAssetSizeStatisticsController {
   @ApiProduces("application/json")
   @ApiHeader({
     name: "x-dionysus-content-bc",
-    description: "Header indicating black curtain status",
+    description:
+      "Ignored; kept for SDK compatibility. These buckets come from database views over every asset and are not curtained.",
     required: false,
   })
   @ApiOkResponse({
@@ -38,10 +39,7 @@ export class GetContentAssetSizeStatisticsController {
     type: () => ContentStatisticsResponse,
   })
   @ApiStandardErrorResponses()
-  async handle(
-    @Headers("x-dionysus-content-bc") _blackCurtain: string = "true",
-    @Res() response: Response,
-  ): Promise<void> {
+  async handle(@Res() response: Response): Promise<void> {
     const fetchRequest = gql`
       query GetContentAssetSizeStatistics {
         dionysus_content_asset_size_statistics(order_by: { bucket: asc }) {
