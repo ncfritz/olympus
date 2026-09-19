@@ -10,7 +10,7 @@ import { GraphQLClient } from "graphql-request";
 import request from "supertest";
 import { vi } from "vitest";
 import { configureApp } from "../../src/configureApp";
-import { AppModule } from "../../src/module/AppModule";
+import { AppModule } from "../../src/AppModule";
 import { GraphQLMock } from "./graphqlMock";
 
 // Never connect to a broker.

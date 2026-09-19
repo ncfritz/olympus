@@ -22,6 +22,7 @@ export class BaseMediaAssetSearchConfiguration {
   @ApiProperty({
     enum: () => MediaAssetSearchType,
     enumName: "MediaAssetSearchType",
+    enumSchema: { description: "The type of media asset" },
     required: true,
     description: "The type of media asset",
   })

@@ -4,7 +4,7 @@ import { NestFactory, PartialGraphHost } from "@nestjs/core";
 import * as fs from "fs";
 import { WinstonModule } from "nest-winston";
 import { configureApp } from "./configureApp";
-import { AppModule } from "./module/AppModule";
+import { AppModule } from "./AppModule";
 import { buildOpenApiDocument } from "./schema/documentBuilder";
 import {
   DionysusApiConfig,

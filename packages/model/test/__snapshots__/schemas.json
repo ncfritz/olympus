@@ -2188,7 +2188,7 @@
     "type": "object"
   },
   "ContentIngestionWorkflowAssetLocation": {
-    "description": "The type of location where the asset to ingest can be found",
+    "description": "Where the asset to ingest can be found",
     "enum": [
       "local",
       "remote"
@@ -2256,7 +2256,7 @@
     "type": "object"
   },
   "ContentIngestionWorkflowStatus": {
-    "description": "The status of the workflow",
+    "description": "The status of a content ingestion workflow",
     "enum": [
       "queued",
       "running",
@@ -5500,7 +5500,7 @@
     "type": "string"
   },
   "JobType": {
-    "description": "The kind of metadata the batch job processes",
+    "description": "The type of a batch job",
     "enum": [
       "movies",
       "tv_series",
@@ -7468,7 +7468,7 @@
     "type": "string"
   },
   "MediaAssetWorkflowStepType": {
-    "description": "The type of job the workflow step is performing",
+    "description": "The type of job a media asset workflow step performs",
     "enum": [
       "extract_original_metadata",
       "configure_transcode",
@@ -7548,7 +7548,7 @@
     "type": "object"
   },
   "MediaAssetWorkflowSubStepType": {
-    "description": "The type of sub step the workflow step is performing",
+    "description": "The type of job a media asset workflow sub step performs",
     "enum": [
       "transfer_source",
       "upload_artifacts",
@@ -7566,7 +7566,7 @@
     "type": "string"
   },
   "MediaDownloadStatus": {
-    "description": "The status of the download",
+    "description": "The status of a media asset download",
     "enum": [
       "pending",
       "downloading",
@@ -8041,7 +8041,7 @@
     "type": "object"
   },
   "MetadataFetchJobStatus": {
-    "description": "The initial status of the job",
+    "description": "The status of a metadata fetch job",
     "enum": [
       "queued",
       "invalidated",
@@ -8080,7 +8080,7 @@
     "type": "object"
   },
   "MetadataJobType": {
-    "description": "The categories (x-axis) of the status chart",
+    "description": "The type of entity a metadata fetch job retrieves",
     "enum": [
       "movies",
       "tv_series",
@@ -12801,7 +12801,7 @@
     "type": "string"
   },
   "SearchResultStatus": {
-    "description": "The status of the search result",
+    "description": "The status of a media asset search result",
     "enum": [
       "none",
       "download_requested",
@@ -15865,7 +15865,7 @@
     "type": "object"
   },
   "WebSocketNotificationLevel": {
-    "description": "The severity level for the notification.",
+    "description": "The severity level of a notification",
     "enum": [
       "success",
       "info",
@@ -15926,7 +15926,7 @@
     "type": "object"
   },
   "WorkflowStatus": {
-    "description": "The status of the workflow.",
+    "description": "The status of a workflow",
     "enum": [
       "created",
       "started",

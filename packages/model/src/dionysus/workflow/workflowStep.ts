@@ -63,6 +63,7 @@ export class PartialWorkflowStep extends OmitType(WorkflowStep, [
     required: true,
     enum: () => JobType,
     enumName: "JobType",
+    enumSchema: { description: "The type of a batch job" },
     description:
       "The type of BatchJob to create and associate with the workflow step",
   })

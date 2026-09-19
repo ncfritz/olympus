@@ -78,6 +78,7 @@ export class BaseMediaAssetSearchResult {
   @ApiProperty({
     enum: () => SearchResultStatus,
     enumName: "SearchResultStatus",
+    enumSchema: { description: "The status of a media asset search result" },
     required: true,
     description: "The status of the search result",
   })
@@ -194,6 +195,7 @@ export class PartialMediaAssetSearchResult extends OmitType(
   @ApiProperty({
     enum: () => MediaAssetSearchType,
     enumName: "MediaAssetSearchType",
+    enumSchema: { description: "The type of media asset" },
     required: true,
     description: "The type of media asset",
   })
@@ -233,6 +235,7 @@ export class UpdateMediaAssetSearchResultStatusRequest {
   @ApiProperty({
     type: () => SearchResultStatus,
     enumName: "SearchResultStatus",
+    enumSchema: { description: "The status of a media asset search result" },
     required: true,
     description: "The status to set the search result to",
   })

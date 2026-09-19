@@ -1,8 +1,8 @@
 /** Hasura rows for Olympus tables, as the API's queries receive them. */
-import type { GraphQlNotification } from "../../src/convert/olympus/notifications/NotificationConverter";
-import type { GraphQlNotificationGroup } from "../../src/convert/olympus/notifications/NotificationGroupConverter";
-import type { GraphQlNotificationSetting } from "../../src/convert/olympus/notifications/NotificationSettingConverter";
-import type { GraphQlFullNotificationType } from "../../src/convert/olympus/notifications/NotificationTypeConverter";
+import type { GraphQlNotification } from "../../src/olympus/notifications/converters/NotificationConverter";
+import type { GraphQlNotificationGroup } from "../../src/olympus/notifications/converters/NotificationGroupConverter";
+import type { GraphQlNotificationSetting } from "../../src/olympus/notifications/converters/NotificationSettingConverter";
+import type { GraphQlFullNotificationType } from "../../src/olympus/notifications/converters/NotificationTypeConverter";
 
 export const base64Json = (value: unknown) =>
   Buffer.from(JSON.stringify(value)).toString("base64");

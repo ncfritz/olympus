@@ -1,615 +1,6 @@
 {
   "openapi": "3.1.1",
   "paths": {
-    "/minerva/notes": {
-      "post": {
-        "description": "Creates a new note. After the note has been created, it will be enqueued for indexing and other potential asynchronous processing.",
-        "operationId": "CreateNote",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "description": "Input for the CreateNote operation",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateNoteRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "The note has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the created note"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SingleNoteResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Creates a new note",
-        "tags": [
-          "Notes"
-        ]
-      }
-    },
-    "/minerva/note/{noteId}/children": {
-      "post": {
-        "description": "Creates a new child note. After the note has been created, it will be enqueued for indexing and other potential asynchronous processing.",
-        "operationId": "CreateChildNote",
-        "parameters": [
-          {
-            "name": "noteId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the parent note.  The newly created note will be a child of this note.",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "description": "Input for the CreateChildNote operation",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateNoteRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "The note has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the created note"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SingleNoteResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Creates a new child note",
-        "tags": [
-          "Notes"
-        ]
-      },
-      "get": {
-        "description": "Lists notes that are a child of the specified note.",
-        "operationId": "ListChildNotes",
-        "parameters": [
-          {
-            "name": "noteId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the note to list children for",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The notes have been successfully fetched.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListNotesResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Lists child notes",
-        "tags": [
-          "Notes"
-        ]
-      }
-    },
-    "/minerva/note/{noteId}": {
-      "get": {
-        "description": "Gets a single note by ID.  The note returned will be a fully populated note including any associations, as well as parent and child notes.",
-        "operationId": "DescribeNote",
-        "parameters": [
-          {
-            "name": "noteId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the note to retrieve",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The notes have been successfully fetched.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SingleNoteResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Gets a single note by ID",
-        "tags": [
-          "Notes"
-        ]
-      },
-      "put": {
-        "description": "Applies the given changes to a note.",
-        "operationId": "UpdateNote",
-        "parameters": [
-          {
-            "name": "noteId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the note to retrieve",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "description": "Input for the UpdateNote operation",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateNoteRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "The record has been successfully created.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SingleNoteResponse"
-                }
-              }
-            }
-          },
-          "304": {
-            "description": "No updates to the record were required.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EmptyResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Updates an existing note",
-        "tags": [
-          "Notes"
-        ]
-      },
-      "delete": {
-        "description": "Deletes an existing node using a soft/hard deletion policy. A note is first soft-deleted by stamping a `deletedTime` on the entry.  In a soft-deletion state a note it recoverable.  If this API is called on a note that has already been soft-deleted, the note will be permanently removed from the database and will be unrecoverable.",
-        "operationId": "DeleteNote",
-        "parameters": [
-          {
-            "name": "noteId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the note to retrieve",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The note has been successfully soft deleted.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SingleNoteResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "The note has been successfully hard deleted."
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Deletes an existing note",
-        "tags": [
-          "Notes"
-        ]
-      },
-      "patch": {
-        "description": "Restores a soft-deleted note by clearing its deleted time.",
-        "operationId": "RestoreNote",
-        "parameters": [
-          {
-            "name": "noteId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the note to restore",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The record has been successfully restored.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SingleNoteResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Restores a deleted note",
-        "tags": [
-          "Notes"
-        ]
-      }
-    },
-    "/minerva/notes/{start}": {
-      "get": {
-        "description": "Lists notes for a particular day.",
-        "operationId": "ListNotesForDay",
-        "parameters": [
-          {
-            "name": "start",
-            "required": true,
-            "in": "path",
-            "description": "The timestamp to start from",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "days",
-            "required": false,
-            "in": "query",
-            "description": "The number of days to fetch",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The notes have been successfully fetched.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListNotesResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Lists notes for a particular day",
-        "tags": [
-          "Notes"
-        ]
-      }
-    },
-    "/minerva/notes/summary/{start}": {
-      "get": {
-        "description": "Gets a monthly summary of notes.",
-        "operationId": "GetNotesSummary",
-        "parameters": [
-          {
-            "name": "start",
-            "required": true,
-            "in": "path",
-            "description": "The date to start the summary at",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "days",
-            "required": true,
-            "in": "query",
-            "description": "The number of days to fetch statistics for",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "x-ncfritz-tz",
-            "in": "header",
-            "description": "The IANA timezone to execute the query in",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Monthly summary fetched.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetSummaryResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Gets the monthly summary for notes",
-        "tags": [
-          "Notes"
-        ]
-      }
-    },
-    "/minerva/notes/entity/{entityType}/{entityId}": {
-      "get": {
-        "description": "Lists all notes that are associated with an identified entity.",
-        "operationId": "GetNotesForEntity",
-        "parameters": [
-          {
-            "name": "entityType",
-            "required": true,
-            "in": "path",
-            "description": "The type of entity to get notes for",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "entityId",
-            "required": true,
-            "in": "path",
-            "description": "The id of the entity to get notes for",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The notes have been successfully fetched.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListNotesResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Lists notes associated with an entity",
-        "tags": [
-          "Notes"
-        ]
-      }
-    },
     "/minerva/meetings": {
       "post": {
         "description": "Creates a new calendar item.",
@@ -667,6 +58,172 @@
           }
         },
         "summary": "Creates a new calendar item",
+        "tags": [
+          "Meetings"
+        ]
+      }
+    },
+    "/minerva/meeting/{meetingId}": {
+      "delete": {
+        "description": "Soft deletes a meeting.",
+        "operationId": "DeleteCalendarItem",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the meeting to delete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The record has been successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleCalendarItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Soft deletes an existing meeting",
+        "tags": [
+          "Meetings"
+        ]
+      },
+      "get": {
+        "description": "Gets a single calendar item by ID.",
+        "operationId": "DescribeCalendarItem",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the meeting to retrieve",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The calendar item have been successfully fetched.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleCalendarItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets a single calendar item by ID",
+        "tags": [
+          "Meetings"
+        ]
+      },
+      "put": {
+        "description": "Applies the given changes to a calendar item.",
+        "operationId": "UpdateCalendarItem",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the meeting to update",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateCalendarItem operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCalendarItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The record has been successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleCalendarItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Updates an existing calendar item",
         "tags": [
           "Meetings"
         ]
@@ -865,172 +422,6 @@
         ]
       }
     },
-    "/minerva/meeting/{meetingId}": {
-      "delete": {
-        "description": "Soft deletes a meeting.",
-        "operationId": "DeleteCalendarItem",
-        "parameters": [
-          {
-            "name": "meetingId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the meeting to delete",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The record has been successfully created.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SingleCalendarItemResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Soft deletes an existing meeting",
-        "tags": [
-          "Meetings"
-        ]
-      },
-      "get": {
-        "description": "Gets a single calendar item by ID.",
-        "operationId": "DescribeCalendarItem",
-        "parameters": [
-          {
-            "name": "meetingId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the meeting to retrieve",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The calendar item have been successfully fetched.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SingleCalendarItemResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Gets a single calendar item by ID",
-        "tags": [
-          "Meetings"
-        ]
-      },
-      "put": {
-        "description": "Applies the given changes to a calendar item.",
-        "operationId": "UpdateCalendarItem",
-        "parameters": [
-          {
-            "name": "meetingId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the meeting to update",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "description": "Input for the UpdateCalendarItem operation",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateCalendarItemRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "The record has been successfully created.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SingleCalendarItemResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Updates an existing calendar item",
-        "tags": [
-          "Meetings"
-        ]
-      }
-    },
     "/minerva/meetings/{start}": {
       "get": {
         "description": "Lists the calendar items starting on the given day and continuing for the requested number of days.",
@@ -1154,6 +545,615 @@
           "Meetings"
         ]
       }
+    },
+    "/minerva/note/{noteId}/children": {
+      "post": {
+        "description": "Creates a new child note. After the note has been created, it will be enqueued for indexing and other potential asynchronous processing.",
+        "operationId": "CreateChildNote",
+        "parameters": [
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the parent note.  The newly created note will be a child of this note.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateChildNote operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The note has been successfully created.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the created note"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleNoteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Creates a new child note",
+        "tags": [
+          "Notes"
+        ]
+      },
+      "get": {
+        "description": "Lists notes that are a child of the specified note.",
+        "operationId": "ListChildNotes",
+        "parameters": [
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the note to list children for",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The notes have been successfully fetched.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListNotesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists child notes",
+        "tags": [
+          "Notes"
+        ]
+      }
+    },
+    "/minerva/notes": {
+      "post": {
+        "description": "Creates a new note. After the note has been created, it will be enqueued for indexing and other potential asynchronous processing.",
+        "operationId": "CreateNote",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateNote operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The note has been successfully created.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the created note"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleNoteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Creates a new note",
+        "tags": [
+          "Notes"
+        ]
+      }
+    },
+    "/minerva/note/{noteId}": {
+      "delete": {
+        "description": "Deletes an existing node using a soft/hard deletion policy. A note is first soft-deleted by stamping a `deletedTime` on the entry.  In a soft-deletion state a note it recoverable.  If this API is called on a note that has already been soft-deleted, the note will be permanently removed from the database and will be unrecoverable.",
+        "operationId": "DeleteNote",
+        "parameters": [
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the note to retrieve",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The note has been successfully soft deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleNoteResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The note has been successfully hard deleted."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Deletes an existing note",
+        "tags": [
+          "Notes"
+        ]
+      },
+      "get": {
+        "description": "Gets a single note by ID.  The note returned will be a fully populated note including any associations, as well as parent and child notes.",
+        "operationId": "DescribeNote",
+        "parameters": [
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the note to retrieve",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The notes have been successfully fetched.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleNoteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets a single note by ID",
+        "tags": [
+          "Notes"
+        ]
+      },
+      "patch": {
+        "description": "Restores a soft-deleted note by clearing its deleted time.",
+        "operationId": "RestoreNote",
+        "parameters": [
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the note to restore",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The record has been successfully restored.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleNoteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Restores a deleted note",
+        "tags": [
+          "Notes"
+        ]
+      },
+      "put": {
+        "description": "Applies the given changes to a note.",
+        "operationId": "UpdateNote",
+        "parameters": [
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the note to retrieve",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateNote operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The record has been successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleNoteResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "No updates to the record were required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Updates an existing note",
+        "tags": [
+          "Notes"
+        ]
+      }
+    },
+    "/minerva/notes/entity/{entityType}/{entityId}": {
+      "get": {
+        "description": "Lists all notes that are associated with an identified entity.",
+        "operationId": "GetNotesForEntity",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": true,
+            "in": "path",
+            "description": "The type of entity to get notes for",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "path",
+            "description": "The id of the entity to get notes for",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The notes have been successfully fetched.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListNotesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists notes associated with an entity",
+        "tags": [
+          "Notes"
+        ]
+      }
+    },
+    "/minerva/notes/summary/{start}": {
+      "get": {
+        "description": "Gets a monthly summary of notes.",
+        "operationId": "GetNotesSummary",
+        "parameters": [
+          {
+            "name": "start",
+            "required": true,
+            "in": "path",
+            "description": "The date to start the summary at",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": true,
+            "in": "query",
+            "description": "The number of days to fetch statistics for",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The IANA timezone to execute the query in",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Monthly summary fetched.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetSummaryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets the monthly summary for notes",
+        "tags": [
+          "Notes"
+        ]
+      }
+    },
+    "/minerva/notes/{start}": {
+      "get": {
+        "description": "Lists notes for a particular day.",
+        "operationId": "ListNotesForDay",
+        "parameters": [
+          {
+            "name": "start",
+            "required": true,
+            "in": "path",
+            "description": "The timestamp to start from",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "description": "The number of days to fetch",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The notes have been successfully fetched.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListNotesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists notes for a particular day",
+        "tags": [
+          "Notes"
+        ]
+      }
     }
   },
   "info": {
@@ -1181,358 +1181,6 @@
   "servers": [],
   "components": {
     "schemas": {
-      "NoteType": {
-        "type": "number",
-        "enum": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "description": "The type of then note"
-      },
-      "PartialNoteAssociation": {
-        "type": "object",
-        "properties": {
-          "itemId": {
-            "type": "string",
-            "description": "The ID of the item associated with the note.  It is up to the implementor to encode any compound IDs - A JSON serialized string, possibly Base64 encoded is recommended"
-          },
-          "itemType": {
-            "type": "string",
-            "description": "The type of item associated with the note."
-          }
-        }
-      },
-      "BaseNoteWithAssociations": {
-        "type": "object",
-        "properties": {
-          "author": {
-            "type": "string",
-            "description": "The author of the note.  This should be a user ID that can be traced back to a registered user"
-          },
-          "type": {
-            "description": "The type of then note",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoteType"
-              }
-            ]
-          },
-          "flagged": {
-            "type": "boolean",
-            "description": "`true` if the note has been flagged, `false` otherwise"
-          },
-          "title": {
-            "type": "string",
-            "description": "A short title describing the note"
-          },
-          "summary": {
-            "type": "string",
-            "description": "A Brief summary on the contents of the note. Use this when the note body may be long and a executive summary could be helpful for consumers of the note"
-          },
-          "value": {
-            "type": "string",
-            "description": "T actual content of the note"
-          },
-          "associations": {
-            "description": "The set of associations for the note",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PartialNoteAssociation"
-            }
-          }
-        },
-        "required": [
-          "author",
-          "type",
-          "flagged",
-          "value",
-          "associations"
-        ]
-      },
-      "CreateNoteRequest": {
-        "type": "object",
-        "properties": {
-          "note": {
-            "description": "The note to be created",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/BaseNoteWithAssociations"
-              }
-            ]
-          }
-        },
-        "required": [
-          "note"
-        ]
-      },
-      "NoteAssociation": {
-        "type": "object",
-        "properties": {
-          "itemId": {
-            "type": "string",
-            "description": "The ID of the item associated with the note.  It is up to the implementor to encode any compound IDs - A JSON serialized string, possibly Base64 encoded is recommended"
-          },
-          "itemType": {
-            "type": "string",
-            "description": "The type of item associated with the note."
-          },
-          "createdTime": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string indicating when the association was created"
-          }
-        },
-        "required": [
-          "itemId",
-          "itemType",
-          "createdTime"
-        ]
-      },
-      "Note": {
-        "type": "object",
-        "properties": {
-          "author": {
-            "type": "string",
-            "description": "The author of the note.  This should be a user ID that can be traced back to a registered user"
-          },
-          "type": {
-            "description": "The type of then note",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoteType"
-              }
-            ]
-          },
-          "flagged": {
-            "type": "boolean",
-            "description": "`true` if the note has been flagged, `false` otherwise"
-          },
-          "title": {
-            "type": "string",
-            "description": "A short title describing the note"
-          },
-          "summary": {
-            "type": "string",
-            "description": "A Brief summary on the contents of the note. Use this when the note body may be long and a executive summary could be helpful for consumers of the note"
-          },
-          "value": {
-            "type": "string",
-            "description": "T actual content of the note"
-          },
-          "id": {
-            "type": "string",
-            "description": "The unique ID of the note"
-          },
-          "createdTime": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string indicating when the note was created"
-          },
-          "lastUpdatedTime": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string indicating when the note was last updated"
-          },
-          "deletedTime": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string indicating when the note was marked as deleted"
-          },
-          "associations": {
-            "description": "The set of associations for the note",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/NoteAssociation"
-            }
-          },
-          "hasParent": {
-            "type": "boolean",
-            "description": "`true` if the note is a child - i.e. the note has a parent note, `false` otherwise`"
-          },
-          "childCount": {
-            "type": "number",
-            "description": "The number of children this note has.  This value only represents the direct children and does no account for a nested child note structure."
-          }
-        },
-        "required": [
-          "author",
-          "type",
-          "flagged",
-          "value",
-          "id",
-          "createdTime",
-          "lastUpdatedTime",
-          "hasParent",
-          "childCount"
-        ]
-      },
-      "SingleNoteResponse": {
-        "type": "object",
-        "properties": {
-          "note": {
-            "description": "A note that has been created, updated, or queried",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Note"
-              }
-            ]
-          }
-        },
-        "required": [
-          "note"
-        ]
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string"
-          },
-          "statusCode": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "message",
-          "statusCode"
-        ]
-      },
-      "PartialNote": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "description": "The type of then note",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NoteType"
-              }
-            ]
-          },
-          "flagged": {
-            "type": "boolean",
-            "description": "`true` if the note has been flagged, `false` otherwise"
-          },
-          "title": {
-            "type": "string",
-            "description": "A short title describing the note"
-          },
-          "summary": {
-            "type": "string",
-            "description": "A Brief summary on the contents of the note. Use this when the note body may be long and a executive summary could be helpful for consumers of the note"
-          },
-          "value": {
-            "type": "string",
-            "description": "T actual content of the note"
-          },
-          "associations": {
-            "description": "The set of associations for the note",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PartialNoteAssociation"
-            }
-          }
-        }
-      },
-      "UpdateNoteRequest": {
-        "type": "object",
-        "properties": {
-          "note": {
-            "description": "The a partial note containing the updated to be made",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PartialNote"
-              }
-            ]
-          }
-        },
-        "required": [
-          "note"
-        ]
-      },
-      "EmptyResponse": {
-        "type": "object",
-        "properties": {}
-      },
-      "ListNotesResponse": {
-        "type": "object",
-        "properties": {
-          "notes": {
-            "description": "A list of notes",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Note"
-            }
-          }
-        },
-        "required": [
-          "notes"
-        ]
-      },
-      "NoteTypeCounts": {
-        "type": "object",
-        "properties": {
-          "note": {
-            "type": "number",
-            "description": "The number of notes marked as `NOTE` for the requested time period"
-          },
-          "idea": {
-            "type": "number",
-            "description": "The number of notes marked as `IDEA` for the requested time period"
-          },
-          "thought": {
-            "type": "number",
-            "description": "The number of notes marked as `THOUGHT` for the requested time period"
-          },
-          "action": {
-            "type": "number",
-            "description": "The number of notes marked as `ACTION` for the requested time period"
-          },
-          "question": {
-            "type": "number",
-            "description": "The number of notes marked as `QUESTION` for the requested time period"
-          },
-          "praise": {
-            "type": "number",
-            "description": "The number of notes marked as `PRAISE` for the requested time period"
-          },
-          "total": {
-            "type": "number",
-            "description": "The total number of notes for the requested time period"
-          }
-        },
-        "required": [
-          "note",
-          "idea",
-          "thought",
-          "action",
-          "question",
-          "praise",
-          "total"
-        ]
-      },
-      "GetSummaryResponse": {
-        "type": "object",
-        "properties": {
-          "counts": {
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/NoteTypeCounts"
-            },
-            "description": "A mapping of ISO-8601 dates to note count statistics for each day"
-          },
-          "hourly": {
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/NoteTypeCounts"
-            },
-            "description": "A mapping of the hour of day to note count statistics for each hour of the day"
-          }
-        },
-        "required": [
-          "counts",
-          "hourly"
-        ]
-      },
       "MeetingSensitivity": {
         "type": "string",
         "enum": [
@@ -1816,6 +1464,21 @@
           }
         }
       },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "statusCode": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "message",
+          "statusCode"
+        ]
+      },
       "MeetingTimeStatistic": {
         "type": "object",
         "properties": {
@@ -2071,6 +1734,343 @@
         "required": [
           "item"
         ]
+      },
+      "NoteType": {
+        "type": "number",
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "description": "The type of then note"
+      },
+      "PartialNoteAssociation": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "The ID of the item associated with the note.  It is up to the implementor to encode any compound IDs - A JSON serialized string, possibly Base64 encoded is recommended"
+          },
+          "itemType": {
+            "type": "string",
+            "description": "The type of item associated with the note."
+          }
+        }
+      },
+      "BaseNoteWithAssociations": {
+        "type": "object",
+        "properties": {
+          "author": {
+            "type": "string",
+            "description": "The author of the note.  This should be a user ID that can be traced back to a registered user"
+          },
+          "type": {
+            "description": "The type of then note",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NoteType"
+              }
+            ]
+          },
+          "flagged": {
+            "type": "boolean",
+            "description": "`true` if the note has been flagged, `false` otherwise"
+          },
+          "title": {
+            "type": "string",
+            "description": "A short title describing the note"
+          },
+          "summary": {
+            "type": "string",
+            "description": "A Brief summary on the contents of the note. Use this when the note body may be long and a executive summary could be helpful for consumers of the note"
+          },
+          "value": {
+            "type": "string",
+            "description": "T actual content of the note"
+          },
+          "associations": {
+            "description": "The set of associations for the note",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartialNoteAssociation"
+            }
+          }
+        },
+        "required": [
+          "author",
+          "type",
+          "flagged",
+          "value",
+          "associations"
+        ]
+      },
+      "CreateNoteRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "description": "The note to be created",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseNoteWithAssociations"
+              }
+            ]
+          }
+        },
+        "required": [
+          "note"
+        ]
+      },
+      "NoteAssociation": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "The ID of the item associated with the note.  It is up to the implementor to encode any compound IDs - A JSON serialized string, possibly Base64 encoded is recommended"
+          },
+          "itemType": {
+            "type": "string",
+            "description": "The type of item associated with the note."
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the association was created"
+          }
+        },
+        "required": [
+          "itemId",
+          "itemType",
+          "createdTime"
+        ]
+      },
+      "Note": {
+        "type": "object",
+        "properties": {
+          "author": {
+            "type": "string",
+            "description": "The author of the note.  This should be a user ID that can be traced back to a registered user"
+          },
+          "type": {
+            "description": "The type of then note",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NoteType"
+              }
+            ]
+          },
+          "flagged": {
+            "type": "boolean",
+            "description": "`true` if the note has been flagged, `false` otherwise"
+          },
+          "title": {
+            "type": "string",
+            "description": "A short title describing the note"
+          },
+          "summary": {
+            "type": "string",
+            "description": "A Brief summary on the contents of the note. Use this when the note body may be long and a executive summary could be helpful for consumers of the note"
+          },
+          "value": {
+            "type": "string",
+            "description": "T actual content of the note"
+          },
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the note"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the note was created"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the note was last updated"
+          },
+          "deletedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the note was marked as deleted"
+          },
+          "associations": {
+            "description": "The set of associations for the note",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NoteAssociation"
+            }
+          },
+          "hasParent": {
+            "type": "boolean",
+            "description": "`true` if the note is a child - i.e. the note has a parent note, `false` otherwise`"
+          },
+          "childCount": {
+            "type": "number",
+            "description": "The number of children this note has.  This value only represents the direct children and does no account for a nested child note structure."
+          }
+        },
+        "required": [
+          "author",
+          "type",
+          "flagged",
+          "value",
+          "id",
+          "createdTime",
+          "lastUpdatedTime",
+          "hasParent",
+          "childCount"
+        ]
+      },
+      "SingleNoteResponse": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "description": "A note that has been created, updated, or queried",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Note"
+              }
+            ]
+          }
+        },
+        "required": [
+          "note"
+        ]
+      },
+      "ListNotesResponse": {
+        "type": "object",
+        "properties": {
+          "notes": {
+            "description": "A list of notes",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Note"
+            }
+          }
+        },
+        "required": [
+          "notes"
+        ]
+      },
+      "NoteTypeCounts": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "number",
+            "description": "The number of notes marked as `NOTE` for the requested time period"
+          },
+          "idea": {
+            "type": "number",
+            "description": "The number of notes marked as `IDEA` for the requested time period"
+          },
+          "thought": {
+            "type": "number",
+            "description": "The number of notes marked as `THOUGHT` for the requested time period"
+          },
+          "action": {
+            "type": "number",
+            "description": "The number of notes marked as `ACTION` for the requested time period"
+          },
+          "question": {
+            "type": "number",
+            "description": "The number of notes marked as `QUESTION` for the requested time period"
+          },
+          "praise": {
+            "type": "number",
+            "description": "The number of notes marked as `PRAISE` for the requested time period"
+          },
+          "total": {
+            "type": "number",
+            "description": "The total number of notes for the requested time period"
+          }
+        },
+        "required": [
+          "note",
+          "idea",
+          "thought",
+          "action",
+          "question",
+          "praise",
+          "total"
+        ]
+      },
+      "GetSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "counts": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/NoteTypeCounts"
+            },
+            "description": "A mapping of ISO-8601 dates to note count statistics for each day"
+          },
+          "hourly": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/NoteTypeCounts"
+            },
+            "description": "A mapping of the hour of day to note count statistics for each hour of the day"
+          }
+        },
+        "required": [
+          "counts",
+          "hourly"
+        ]
+      },
+      "PartialNote": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "The type of then note",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NoteType"
+              }
+            ]
+          },
+          "flagged": {
+            "type": "boolean",
+            "description": "`true` if the note has been flagged, `false` otherwise"
+          },
+          "title": {
+            "type": "string",
+            "description": "A short title describing the note"
+          },
+          "summary": {
+            "type": "string",
+            "description": "A Brief summary on the contents of the note. Use this when the note body may be long and a executive summary could be helpful for consumers of the note"
+          },
+          "value": {
+            "type": "string",
+            "description": "T actual content of the note"
+          },
+          "associations": {
+            "description": "The set of associations for the note",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartialNoteAssociation"
+            }
+          }
+        }
+      },
+      "UpdateNoteRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "description": "The a partial note containing the updated to be made",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialNote"
+              }
+            ]
+          }
+        },
+        "required": [
+          "note"
+        ]
+      },
+      "EmptyResponse": {
+        "type": "object",
+        "properties": {}
       }
     }
   }

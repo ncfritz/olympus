@@ -8,7 +8,7 @@
  *   response-object    the handler writes through @Res()
  *   operation-fields   operationId, summary, description and one tag
  *   class-name         class name is `<operationId>Controller`
- *   file-name          file name is `<operationId>.ts`
+ *   file-name          file name is `<operationId>Controller.ts`
  *   operation-unique   operationId is unique across the API
  *   summary-unique     no two operations share a summary (copy-paste guard)
  *   description-unique no two operations share a description
@@ -18,7 +18,10 @@
  *                      docs/conventions/api.md)
  *   status-sent        every documented 2xx/304 status is sent somewhere
  *                      (in the controller or a base class it extends)
- *   registered         listed in an *ApiModule that is in an OpenAPI document
+ *   registered         listed in a feature module that is in an OpenAPI document
+ *   feature-module     listed in the <Area>Module.ts beside its controllers/
+ *                      folder (src/<domain>/<area>/controllers/X.ts is
+ *                      registered by src/<domain>/<area>/<Area>Module.ts)
  *   summary-style      summary has no trailing period
  *   description-style  description is a sentence ending in a period
  *   tag-style          the tag is Title Case
@@ -26,12 +29,20 @@
  *                      (left by `pnpm gen api-operation`)
  *   location           Location is set with setLocation() (utils/location),
  *                      and documented on the 201 response exactly when set
+ *   route-shadow       no route registered earlier in the same document
+ *                      (a parameterised path such as /workflow/:id) matches
+ *                      this route's path (/workflow/stats) for the same
+ *                      method; Express would send the request to the
+ *                      earlier route. List static routes first.
  *   graphql-named      every gql document names its operation
  *   graphql-unique     a GraphQL operation name means one document across
  *                      the API (the test double and Hasura logs route by it)
  */
+import * as fs from "fs";
 import * as path from "path";
 import type { ControllerInfo } from "./controllers";
+
+const API_ROOT = path.resolve(__dirname, "../..");
 
 export type Finding = { rule: string; target: string; message: string };
 
@@ -97,7 +108,7 @@ export function checkControllers(controllers: ControllerInfo[]): Finding[] {
           `class ${c.className} for operation ${operationId}`,
         );
       }
-      if (path.basename(c.file, ".ts") !== operationId) {
+      if (path.basename(c.file, ".ts") !== `${operationId}Controller`) {
         report(
           "file-name",
           `file ${path.basename(c.file)} for operation ${operationId}`,
@@ -187,7 +198,54 @@ export function checkControllers(controllers: ControllerInfo[]): Finding[] {
     }
 
     if (c.documents.length === 0) {
-      report("registered", "not in any *ApiModule of an OpenAPI document");
+      report("registered", "not in any feature module of an OpenAPI document");
+    }
+    const areaDir = path.dirname(path.dirname(c.file));
+    const areaModules = fs
+      .readdirSync(path.join(API_ROOT, areaDir))
+      .filter((f) => /^[A-Z]\w*Module\.ts$/.test(f));
+    const listed = areaModules.some((f) =>
+      new RegExp(`\\b${c.className}\\b`).test(
+        fs.readFileSync(path.join(API_ROOT, areaDir, f), "utf8"),
+      ),
+    );
+    if (!listed) {
+      report(
+        "feature-module",
+        areaModules.length
+          ? `not listed in ${areaModules.join(", ")} in ${areaDir}`
+          : `no <Area>Module.ts in ${areaDir}`,
+      );
+    }
+  }
+
+  // route-shadow: Express tries routes in registration order, so an earlier
+  // parameterised route swallows a later static one with the same method.
+  const normalize = (p: string) => `/${p.replace(/^\/+|\/+$/g, "")}`;
+  const matcher = (p: string) =>
+    new RegExp(
+      `^${normalize(p)
+        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+        .replace(/:\w+/g, "[^/]+")}$`,
+    );
+  const registered = controllers
+    .filter((c) => c.registrationIndex >= 0)
+    .flatMap((c) => c.routes.map((r) => ({ c, r })));
+  for (const later of registered) {
+    for (const earlier of registered) {
+      if (
+        earlier.c !== later.c &&
+        earlier.c.documents[0] === later.c.documents[0] &&
+        earlier.c.registrationIndex < later.c.registrationIndex &&
+        earlier.r.method === later.r.method &&
+        matcher(earlier.r.path).test(normalize(later.r.path))
+      ) {
+        findings.push({
+          rule: "route-shadow",
+          target: later.c.className,
+          message: `${later.c.file}: ${later.r.method} ${normalize(later.r.path)} is shadowed by ${earlier.c.className} (${normalize(earlier.r.path)}), registered earlier`,
+        });
+      }
     }
   }
 

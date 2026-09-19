@@ -396,95 +396,6 @@
         ]
       }
     },
-    "/olympus/notifications/group/{groupId}/notifications": {
-      "get": {
-        "description": "Lists the top `N` notifications and provides statistics for a specific notification group.  Notifications are listed regardless of their acknowledged status.",
-        "operationId": "ListNotificationsInGroup",
-        "parameters": [
-          {
-            "name": "groupId",
-            "required": true,
-            "in": "path",
-            "description": "The ID of the group to list notifications for.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "description": "The sort order to apply to the results",
-            "schema": {
-              "$ref": "#/components/schemas/SortDirection"
-            }
-          },
-          {
-            "name": "sortBy",
-            "required": false,
-            "in": "query",
-            "description": "The field to sort on",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "description": "The number of results to return per page",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "startPage",
-            "required": false,
-            "in": "query",
-            "description": "The results page to start from",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The notification list has been fetched successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListNotificationsInGroupResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request presented was not valid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Lists the notifications in a notification group",
-        "tags": [
-          "Notifications"
-        ]
-      }
-    },
     "/olympus/notifications/groups": {
       "get": {
         "description": "Lists all available notification groups.  This API does not enumerate or provide any information about the number of notifications or notification status for the groups.",
@@ -620,6 +531,95 @@
           }
         },
         "summary": "Lists notifications types",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/olympus/notifications/group/{groupId}/notifications": {
+      "get": {
+        "description": "Lists the top `N` notifications and provides statistics for a specific notification group.  Notifications are listed regardless of their acknowledged status.",
+        "operationId": "ListNotificationsInGroup",
+        "parameters": [
+          {
+            "name": "groupId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the group to list notifications for.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "The sort order to apply to the results",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "The field to sort on",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "The number of results to return per page",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "startPage",
+            "required": false,
+            "in": "query",
+            "description": "The results page to start from",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The notification list has been fetched successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListNotificationsInGroupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the notifications in a notification group",
         "tags": [
           "Notifications"
         ]
@@ -1002,13 +1002,13 @@
       },
       "WebSocketNotificationLevel": {
         "type": "string",
+        "description": "The severity level of a notification",
         "enum": [
           "success",
           "info",
           "warning",
           "error"
-        ],
-        "description": "The severity level for the notification."
+        ]
       },
       "NotificationPayload": {
         "type": "object",
@@ -1242,6 +1242,96 @@
           "unreadCount"
         ]
       },
+      "ListNotificationGroupsResponse": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "description": "A list of notification groups.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationGroup"
+            }
+          }
+        },
+        "required": [
+          "groups"
+        ]
+      },
+      "NotificationSetting": {
+        "type": "object",
+        "properties": {
+          "notificationType": {
+            "description": "The default settings for the notification type this setting overrides.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationTypeWithProtocols"
+              }
+            ]
+          },
+          "webSocketEnabled": {
+            "type": "boolean",
+            "description": "Indicates if the user wishes to receive WebSocket notifications for this notification type."
+          },
+          "synoChatEnabled": {
+            "type": "boolean",
+            "description": "Indicates if the user wishes to receive Synology Chat notifications for this notification type."
+          },
+          "synoMailEnabled": {
+            "type": "boolean",
+            "description": "Indicates if the user wishes to receive Synology Mail notifications for this notification type."
+          },
+          "emailEnabled": {
+            "type": "boolean",
+            "description": "Indicates if the user wishes to receive SMTP notifications for this notification type."
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the notification setting was created."
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the notification setting was last updated."
+          }
+        },
+        "required": [
+          "notificationType",
+          "webSocketEnabled",
+          "synoChatEnabled",
+          "synoMailEnabled",
+          "emailEnabled",
+          "createdTime"
+        ]
+      },
+      "LiatNotificationSettingsResponse": {
+        "type": "object",
+        "properties": {
+          "notificationSettings": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/NotificationSetting"
+            },
+            "description": "The notification settings for the user."
+          }
+        },
+        "required": [
+          "notificationSettings"
+        ]
+      },
+      "ListNotificationTypesResponse": {
+        "type": "object",
+        "properties": {
+          "notificationTypes": {
+            "description": "The set of all notification types supported.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationTypeWithProtocols"
+            }
+          }
+        },
+        "required": [
+          "notificationTypes"
+        ]
+      },
       "NotificationStatistics": {
         "type": "object",
         "properties": {
@@ -1331,96 +1421,6 @@
         "required": [
           "count",
           "notifications"
-        ]
-      },
-      "ListNotificationGroupsResponse": {
-        "type": "object",
-        "properties": {
-          "groups": {
-            "description": "A list of notification groups.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/NotificationGroup"
-            }
-          }
-        },
-        "required": [
-          "groups"
-        ]
-      },
-      "NotificationSetting": {
-        "type": "object",
-        "properties": {
-          "notificationType": {
-            "description": "The default settings for the notification type this setting overrides.",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NotificationTypeWithProtocols"
-              }
-            ]
-          },
-          "webSocketEnabled": {
-            "type": "boolean",
-            "description": "Indicates if the user wishes to receive WebSocket notifications for this notification type."
-          },
-          "synoChatEnabled": {
-            "type": "boolean",
-            "description": "Indicates if the user wishes to receive Synology Chat notifications for this notification type."
-          },
-          "synoMailEnabled": {
-            "type": "boolean",
-            "description": "Indicates if the user wishes to receive Synology Mail notifications for this notification type."
-          },
-          "emailEnabled": {
-            "type": "boolean",
-            "description": "Indicates if the user wishes to receive SMTP notifications for this notification type."
-          },
-          "createdTime": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string indicating when the notification setting was created."
-          },
-          "lastUpdatedTime": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string indicating when the notification setting was last updated."
-          }
-        },
-        "required": [
-          "notificationType",
-          "webSocketEnabled",
-          "synoChatEnabled",
-          "synoMailEnabled",
-          "emailEnabled",
-          "createdTime"
-        ]
-      },
-      "LiatNotificationSettingsResponse": {
-        "type": "object",
-        "properties": {
-          "notificationSettings": {
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/NotificationSetting"
-            },
-            "description": "The notification settings for the user."
-          }
-        },
-        "required": [
-          "notificationSettings"
-        ]
-      },
-      "ListNotificationTypesResponse": {
-        "type": "object",
-        "properties": {
-          "notificationTypes": {
-            "description": "The set of all notification types supported.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/NotificationTypeWithProtocols"
-            }
-          }
-        },
-        "required": [
-          "notificationTypes"
         ]
       },
       "NotificationContext": {

@@ -52,6 +52,7 @@ export class Workflow {
     required: true,
     enum: () => WorkflowStatus,
     enumName: "WorkflowStatus",
+    enumSchema: { description: "The status of a workflow" },
     description: "The status of the workflow.",
   })
   status: WorkflowStatus;

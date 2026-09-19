@@ -6,6 +6,7 @@ export class MetadataWorkflowStatisticsCategories {
   @ApiProperty({
     enum: () => WorkflowStatus,
     enumName: "WorkflowStatus",
+    enumSchema: { description: "The status of a workflow" },
     isArray: true,
     required: true,
     description: "The workflow statuses charted",

@@ -1,4 +1,4 @@
 {
-  "class-name ListNotificationTypesController": "src/controller/olympus/notifications/ListNotificationTypes.ts: class ListNotificationTypesController for operation ListNotificationsTypes",
-  "file-name ListNotificationTypesController": "src/controller/olympus/notifications/ListNotificationTypes.ts: file ListNotificationTypes.ts for operation ListNotificationsTypes"
+  "class-name ListNotificationTypesController": "src/olympus/notifications/controllers/ListNotificationTypesController.ts: class ListNotificationTypesController for operation ListNotificationsTypes",
+  "file-name ListNotificationTypesController": "src/olympus/notifications/controllers/ListNotificationTypesController.ts: file ListNotificationTypesController.ts for operation ListNotificationsTypes"
 }

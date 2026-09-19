@@ -9,6 +9,7 @@ export class ContentIngestionWorkflowStatisticsCategories {
   @ApiProperty({
     enum: () => ContentIngestionWorkflowStatus,
     enumName: "ContentIngestionWorkflowStatus",
+    enumSchema: { description: "The status of a content ingestion workflow" },
     isArray: true,
     required: true,
     description: "The workflow statuses charted",
@@ -18,6 +19,7 @@ export class ContentIngestionWorkflowStatisticsCategories {
   @ApiProperty({
     enum: () => ContentIngestionWorkflowAssetLocation,
     enumName: "ContentIngestionWorkflowAssetLocation",
+    enumSchema: { description: "Where the asset to ingest can be found" },
     isArray: true,
     required: true,
     description: "The asset sources charted",

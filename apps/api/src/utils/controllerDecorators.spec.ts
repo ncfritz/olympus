@@ -1,7 +1,7 @@
 import { HttpStatus } from "@nestjs/common";
 import { DECORATORS } from "@nestjs/swagger";
 import { describe, expect, it } from "vitest";
-import { ErrorResponse } from "../types/error";
+import { ErrorResponse } from "./error";
 import { ApiStandardErrorResponses } from "./controllerDecorators";
 
 const responsesOf = (decorator: MethodDecorator) => {

@@ -10,23 +10,23 @@ import {
   SearchExecutionStatus,
   SearchResultStatus,
 } from "@ncfritz/olympus-model";
-import type { GraphQlMediaAsset } from "../../src/types/dionysus/media/mediaAsset";
+import type { GraphQlMediaAsset } from "../../src/dionysus/media/assets/types/mediaAsset";
 import type {
   GraphQlDecoratedMediaAssetWorkflow,
   GraphQlDecoratedMediaAssetWorkflowStep,
   GraphQlMediaAssetWorkflowDecoration,
-} from "../../src/types/dionysus/media/mediaAssetWorkflow";
+} from "../../src/dionysus/media/workflows/types/mediaAssetWorkflow";
 import type {
   GraphQlDecoratedMediaAssetDownload,
   GraphQlMediaAssetDownload,
-} from "../../src/types/dionysus/media/mediaDownload";
-import type { GraphQlMediaFavorite } from "../../src/types/dionysus/media/mediaFavorite";
+} from "../../src/dionysus/media/downloads/types/mediaDownload";
+import type { GraphQlMediaFavorite } from "../../src/dionysus/media/favorites/types/mediaFavorite";
 import type {
   GraphQlDecoratedMediaAssetSearchConfiguration,
   GraphQlDecoratedMediaAssetSearchConfigurationListItem,
-} from "../../src/types/dionysus/media/searchConfiguration";
-import type { GraphQlMediaAssetSearchExecution } from "../../src/types/dionysus/media/searchExecution";
-import type { GraphQlMediaAssetSearchResult } from "../../src/types/dionysus/media/searchResult";
+} from "../../src/dionysus/media/searchConfigurations/types/searchConfiguration";
+import type { GraphQlMediaAssetSearchExecution } from "../../src/dionysus/media/searchExecutions/types/searchExecution";
+import type { GraphQlMediaAssetSearchResult } from "../../src/dionysus/media/searchResults/types/searchResult";
 
 export const MOVIE_ID = 603;
 export const RESULT_ID = "nzb-603-1080p";

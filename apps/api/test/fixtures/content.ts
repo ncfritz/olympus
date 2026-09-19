@@ -12,11 +12,11 @@ import type {
   GraphQlContentAssetTag,
   GraphQlFullContentAssetChannel,
   GraphQlFullContentAssetChannelCategory,
-} from "../../src/types/content";
+} from "../../src/dionysus/content/types/content";
 import type {
   GraphQLContentIngestionWorkflow,
   GraphQlContentIngestionWorkflowStep,
-} from "../../src/types/dionysus/content/workflow";
+} from "../../src/dionysus/content/workflows/types/workflow";
 
 export const ASSET_ID = "c0a7e17e-0000-4000-8000-0000000c0001";
 export const TAG_ID = "c0a7e17e-0000-4000-8000-0000000c0101";

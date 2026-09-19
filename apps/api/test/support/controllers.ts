@@ -1,5 +1,6 @@
 /**
- * Inventory of every controller in src/controller, with the metadata the
+ * Inventory of every controller (every file in a `controllers/` folder under
+ * src, e.g. src/minerva/notes/controllers), with the metadata the
  * convention checks need. Loading the files only evaluates decorators; no
  * Nest application is created.
  */
@@ -40,7 +41,7 @@ export type RouteInfo = {
 
 export type ControllerInfo = {
   className: string;
-  /** Path relative to apps/api, e.g. src/controller/minerva/notes/CreateNote.ts */
+  /** Path relative to apps/api, e.g. src/minerva/notes/controllers/CreateNoteController.ts */
   file: string;
   /** Source of the controller file and of any base classes it extends. */
   sources: string[];
@@ -48,27 +49,34 @@ export type ControllerInfo = {
   routes: RouteInfo[];
   /** Name of the OpenAPI document (Olympus, Dionysus, Minerva) it appears in. */
   documents: string[];
+  /**
+   * Position in which Nest registers the controller's routes within its
+   * document: feature modules in document order, then each module's
+   * controllers in the order listed. -1 when it is not registered.
+   */
+  registrationIndex: number;
 };
 
 const API_ROOT = path.resolve(__dirname, "../..");
 
-const CONTROLLER_ROOT = path.join(API_ROOT, "src", "controller");
+const SOURCE_ROOT = path.join(API_ROOT, "src");
 
+/** Every non-spec .ts file in a `controllers` folder under `dir`. */
 const walk = (dir: string): string[] =>
   fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) return walk(full);
-    return entry.name.endsWith(".ts") && !entry.name.endsWith(".spec.ts")
+    return path.basename(dir) === "controllers" &&
+      entry.name.endsWith(".ts") &&
+      !entry.name.endsWith(".spec.ts")
       ? [full]
       : [];
   });
 
-/** Absolute file path -> module exports, for every file in src/controller. */
+/** Absolute file path -> module exports, for every controller file. */
 const files: Record<string, Record<string, unknown>> = Object.fromEntries(
   await Promise.all(
-    walk(CONTROLLER_ROOT).map(
-      async (file) => [file, await import(file)] as const,
-    ),
+    walk(SOURCE_ROOT).map(async (file) => [file, await import(file)] as const),
   ),
 );
 
@@ -78,21 +86,38 @@ const isRoute = (target: object, name: string) =>
     (target as Record<string, object>)[name],
   ) !== undefined;
 
-const documentsFor = (cls: Type<unknown>): string[] =>
-  [OlympusApiConfig, DionysusApiConfig, MinervaApiConfig]
-    .filter((config) =>
-      config.modules.some((module) =>
-        (
+const DOCUMENT_CONFIGS = [
+  OlympusApiConfig,
+  DionysusApiConfig,
+  MinervaApiConfig,
+];
+
+/** Controller -> registration position within its document. */
+const registrationIndex = new Map<Type<unknown>, number>(
+  DOCUMENT_CONFIGS.flatMap((config) =>
+    config.modules
+      .flatMap(
+        (module) =>
           (Reflect.getMetadata(MODULE_METADATA.CONTROLLERS, module) ??
-            []) as Type<unknown>[]
-        ).includes(cls),
-      ),
-    )
-    .map((config) => config.name);
+            []) as Type<unknown>[],
+      )
+      .map((cls, index) => [cls, index] as const),
+  ),
+);
+
+const documentsFor = (cls: Type<unknown>): string[] =>
+  DOCUMENT_CONFIGS.filter((config) =>
+    config.modules.some((module) =>
+      (
+        (Reflect.getMetadata(MODULE_METADATA.CONTROLLERS, module) ??
+          []) as Type<unknown>[]
+      ).includes(cls),
+    ),
+  ).map((config) => config.name);
 
 const sourceOf = (file: string) => fs.readFileSync(file, "utf8");
 
-/** Class name -> source file, for every class exported from src/controller. */
+/** Class name -> source file, for every class exported from a controller file. */
 const classFiles = new Map<string, string>(
   Object.entries(files).flatMap(([file, exports]) =>
     Object.values(exports)
@@ -169,6 +194,7 @@ export const controllers: ControllerInfo[] = Object.entries(files)
           version: Reflect.getMetadata(VERSION_METADATA, cls),
           routes,
           documents: documentsFor(cls),
+          registrationIndex: registrationIndex.get(cls) ?? -1,
         };
       });
   })

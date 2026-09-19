@@ -141,7 +141,7 @@ The metadata operations are covered by a table in
 minimal Hasura row from `test/fixtures/metadata.ts`) plus focused tests for
 paging, filters and upserts. Converter mappings, including missing related
 rows, are unit-tested in
-`src/convert/dionysus/metadata/MetadataConverters.spec.ts`.
+`src/dionysus/metadata/converters/MetadataConverters.spec.ts`.
 
 When a request unexpectedly answers 500, run the test with
 `TEST_NEST_LOGS=1` to see Nest's error log and stack.

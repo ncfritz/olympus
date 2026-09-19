@@ -54,6 +54,7 @@ export class WebSocketDestination {
   @ApiProperty({
     enum: () => WebSocketNotificationLevel,
     enumName: "WebSocketNotificationLevel",
+    enumSchema: { description: "The severity level of a notification" },
     required: false,
     default: WebSocketNotificationLevel.INFO,
     description: "The severity of the notification to show in the UX.",
@@ -312,6 +313,7 @@ export class Notification {
     enum: () => WebSocketNotificationLevel,
     required: true,
     enumName: "WebSocketNotificationLevel",
+    enumSchema: { description: "The severity level of a notification" },
     description: "The severity level for the notification.",
   })
   level: WebSocketNotificationLevel;

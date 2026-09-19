@@ -1,0 +1,158 @@
+import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
+import {
+  MediaAssetDownload,
+  MediaAssetSearchType,
+  MediaDownloadStatus,
+  SearchResultStatus,
+  SingleMediaAssetDownloadResponse,
+} from "@ncfritz/olympus-model";
+import {
+  Controller,
+  HttpStatus,
+  Param,
+  ParseEnumPipe,
+  ParseIntPipe,
+  Post,
+  Res,
+} from "@nestjs/common";
+import {
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiOperation,
+  ApiParam,
+  ApiProduces,
+} from "@nestjs/swagger";
+import { type Response } from "express";
+import { gql, GraphQLClient } from "graphql-request";
+import { toDomainObject } from "../converters/MediaAssetDownloadConverter";
+import { BASE_MEDIA_DOWNLOAD } from "../queries/mediaDownload";
+import { GraphQlMediaAssetDownload } from "../types/mediaDownload";
+import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { BaseMediaAssetSearchResultController } from "../../searchResults/controllers/BaseMediaAssetSearchResultController";
+
+type GraphQlCreateMediaAssetDownloadResponse = {
+  insert_dionysus_media_asset_download_one: GraphQlMediaAssetDownload;
+  update_dionysus_media_asset_search_result_by_pk: {
+    status: string;
+  };
+};
+
+@Controller({ version: "1" })
+export class CreateMediaAssetDownloadController extends BaseMediaAssetSearchResultController {
+  constructor(
+    protected readonly graphQLClient: GraphQLClient,
+    private readonly amqpConnection: AmqpConnection,
+  ) {
+    super(graphQLClient);
+  }
+
+  @Post(
+    "/media/searchConfiguration/:mediaType/:mediaId/result/:resultId/download",
+  )
+  @ApiOperation({
+    summary: "Creates a new media asset download",
+    description: "Creates a new media asset download.",
+    operationId: "CreateMediaAssetDownload",
+    tags: ["Media"],
+  })
+  @ApiConsumes("application/json")
+  @ApiProduces("application/json")
+  @ApiParam({
+    name: "mediaType",
+    description: "The type of media asset the search download is for",
+    enum: MediaAssetSearchType,
+    enumName: "MediaAssetSearchType",
+    enumSchema: { description: "The type of media asset" },
+  })
+  @ApiParam({
+    name: "mediaId",
+    description: "The ID of the media that the download is targeting.",
+    type: Number,
+  })
+  @ApiParam({
+    name: "resultId",
+    description: "The ID of the search result to download.",
+    type: String,
+  })
+  @ApiCreatedResponse({
+    description: "The record has been successfully created.",
+    type: SingleMediaAssetDownloadResponse,
+  })
+  @ApiStandardErrorResponses()
+  async handle(
+    @Param("mediaType", new ParseEnumPipe(MediaAssetSearchType))
+    mediaType: MediaAssetSearchType,
+    @Param("mediaId", ParseIntPipe) mediaId: number,
+    @Param("resultId") resultId: string,
+    @Res() response: Response,
+  ): Promise<void> {
+    await this.verifySearchResult(mediaType, mediaId, resultId);
+
+    const insertRequest = gql`
+      mutation CreateMediaAssetDownload(
+        $status: String!
+        $searchResultId: String!
+        $progress: numeric!
+        $assetType: String!
+        $mediaId: numeric!
+        $searchResultStatus: String!
+      ) {
+        insert_dionysus_media_asset_download_one(
+          object: {
+            status: $status
+            searchResultId: $searchResultId
+            progress: $progress
+            assetType: $assetType
+            mediaId: $mediaId
+          }
+        ) {
+          ${BASE_MEDIA_DOWNLOAD}
+        }
+        update_dionysus_media_asset_search_result_by_pk(pk_columns: {assetType: $assetType, id: $searchResultId, mediaId: $mediaId}, _set: {status: $searchResultStatus}) {
+          status
+        }
+      }
+    `;
+
+    const insertResponse =
+      await this.graphQLClient.request<GraphQlCreateMediaAssetDownloadResponse>(
+        insertRequest,
+        {
+          status: MediaDownloadStatus.PENDING,
+          progress: 0,
+          searchResultId: resultId,
+          assetType: mediaType,
+          mediaId: mediaId,
+          searchResultStatus: SearchResultStatus.DOWNLOAD_REQUESTED,
+        },
+      );
+
+    const createdDownload: MediaAssetDownload = toDomainObject(
+      insertResponse.insert_dionysus_media_asset_download_one,
+    );
+
+    await this.amqpConnection.publish(
+      "download.trigger",
+      "download.start",
+      {
+        mediaType: mediaType,
+        mediaId: mediaId,
+        resultId: resultId,
+        downloadId: createdDownload.id,
+        nzbId: resultId,
+      },
+      {
+        persistent: true,
+        headers: {
+          "x-delay": 10000,
+        },
+      },
+    );
+
+    const responseBody: SingleMediaAssetDownloadResponse = {
+      download: createdDownload,
+    };
+
+    response.status(HttpStatus.CREATED).send(responseBody);
+  }
+}

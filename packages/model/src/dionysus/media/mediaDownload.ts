@@ -25,6 +25,7 @@ export class MediaAssetDownload {
   @ApiProperty({
     enum: () => MediaAssetSearchType,
     enumName: "MediaAssetSearchType",
+    enumSchema: { description: "The type of media asset" },
     required: true,
     description: "The type of media asset",
   })
@@ -63,6 +64,7 @@ export class MediaAssetDownload {
   @ApiProperty({
     enum: () => MediaDownloadStatus,
     enumName: "MediaDownloadStatus",
+    enumSchema: { description: "The status of a media asset download" },
     required: true,
     description: "The status of the download",
   })
@@ -126,6 +128,7 @@ export class MediaAssetDownloadStatusUpdate {
   @ApiProperty({
     enum: () => MediaDownloadStatus,
     enumName: "MediaDownloadStatus",
+    enumSchema: { description: "The status of a media asset download" },
     required: true,
     description: "The status of the download",
   })
@@ -164,6 +167,7 @@ export class UpdateMediaAssetDownloadByNzbIdRequest {
   @ApiProperty({
     enum: () => SearchResultStatus,
     enumName: "SearchResultStatus",
+    enumSchema: { description: "The status of a media asset search result" },
     required: true,
     description: "The status of the download",
   })

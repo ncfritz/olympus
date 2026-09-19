@@ -1,0 +1,67 @@
+import { CreateNoteRequest, SingleNoteResponse } from "@ncfritz/olympus-model";
+import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiOperation,
+  ApiProduces,
+} from "@nestjs/swagger";
+import { type Request, type Response } from "express";
+import { GraphQLClient } from "graphql-request";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { BaseNoteController } from "./BaseNoteController";
+import { DescribeNoteController } from "./DescribeNoteController";
+import { setLocation } from "../../../utils/location";
+
+@Controller({ version: "1" })
+export class CreateNoteController extends BaseNoteController {
+  constructor(protected readonly graphQLClient: GraphQLClient) {
+    super(graphQLClient);
+  }
+
+  @Post("/notes")
+  @ApiOperation({
+    summary: "Creates a new note",
+    description:
+      "Creates a new note. After the note has been created, it will be enqueued for indexing and " +
+      "other potential asynchronous processing.",
+    operationId: "CreateNote",
+    tags: ["Notes"],
+  })
+  @ApiConsumes("application/json")
+  @ApiProduces("application/json")
+  @ApiBody({
+    type: CreateNoteRequest,
+    required: true,
+    description: "Input for the CreateNote operation",
+  })
+  @ApiCreatedResponse({
+    description: "The note has been successfully created.",
+    type: SingleNoteResponse,
+    headers: {
+      Location: {
+        schema: { type: "string" },
+        description: "The location of the created note",
+      },
+    },
+  })
+  @ApiStandardErrorResponses()
+  async handle(
+    @Body() request: CreateNoteRequest,
+    @Req() httpRequest: Request,
+    @Res() response: Response,
+  ): Promise<void> {
+    const createdNote = await this.createNote(request.note);
+
+    const responseBody: SingleNoteResponse = {
+      note: createdNote,
+    };
+
+    setLocation(response, httpRequest, DescribeNoteController, {
+      noteId: createdNote.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
+  }
+}

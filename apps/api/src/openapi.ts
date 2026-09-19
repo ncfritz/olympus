@@ -12,7 +12,7 @@ import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import { NestFactory } from "@nestjs/core";
 import * as fs from "fs";
 import * as path from "path";
-import { AppModule } from "./module/AppModule";
+import { AppModule } from "./AppModule";
 import { buildOpenApiDocument } from "./schema/documentBuilder";
 import {
   DionysusApiConfig,

@@ -49,6 +49,19 @@ const plural = (s: string) =>
 const words = (s: string) =>
   s.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
 
+/** The <Area>Module in a feature folder, if the folder has one. */
+const existingModule = (dir: string): string | undefined =>
+  fs.existsSync(dir)
+    ? fs
+        .readdirSync(dir)
+        .find((f) => /^[A-Z]\w*Module\.ts$/.test(f))
+        ?.replace(/\.ts$/, "")
+    : undefined;
+
+/** An array literal's contents, ready for one more element. */
+const appendable = (list: string) =>
+  list.trim() ? list.trimEnd().replace(/,?$/, ",") : "";
+
 const needsId = (verb: Verb) => ["Describe", "Update", "Delete"].includes(verb);
 
 const defaultRoute = (a: Answers) => {
@@ -90,19 +103,21 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
         type: "input",
         name: "area",
         message:
-          "Area folder under src/controller/<domain> (e.g. notes, content/channel)",
+          "Feature folder under src/<domain> (e.g. notes, content/channels); a new folder gets its own module",
         validate: (v: string) =>
           /^[a-z][a-zA-Z]*(\/[a-z][a-zA-Z]*)*$/.test(v) ||
           "lowerCamel folder(s)",
       },
       {
-        type: "list",
+        type: "input",
         name: "module",
-        message: "Register in module",
-        choices: fs
-          .readdirSync(path.join(api, "module"))
-          .filter((f) => f.endsWith("ApiModule.ts"))
-          .map((f) => f.replace(/\.ts$/, "")),
+        message:
+          "Feature module (created, and added to the domain module, if new)",
+        default: (a: Answers) =>
+          existingModule(path.join(api, a.domain, a.area)) ??
+          `${pascal(a.area)}Module`,
+        validate: (v: string) =>
+          /^[A-Z][A-Za-z0-9]*Module$/.test(v) || "PascalCase ending in Module",
       },
       { type: "list", name: "verb", message: "Verb", choices: [...VERBS] },
       {
@@ -177,7 +192,8 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
     ],
     actions: (raw) => {
       const a = raw as Answers;
-      const controllerDir = path.join(api, "controller", a.domain, a.area);
+      const areaDir = path.join(api, a.domain, a.area);
+      const controllerDir = path.join(areaDir, "controllers");
       const toSrc = path.relative(controllerDir, api).split(path.sep).join("/");
       const idParam = `${camel(a.entity)}Id`;
       const numericId = a.idType === "Int";
@@ -222,16 +238,26 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
         nestMethodUpper: data.nestMethod.toUpperCase(),
       });
 
-      const controllerFile = path.join(controllerDir, `${a.operationId}.ts`);
+      const controllerFile = path.join(
+        controllerDir,
+        `${a.operationId}Controller.ts`,
+      );
       const converterFile = path.join(
-        api,
-        "convert",
-        a.domain,
+        areaDir,
+        "converters",
         `${a.entity}Converter.ts`,
       );
       const modelFile = path.join(model, a.modelFile);
-      const moduleFile = path.join(api, "module", `${a.module}.ts`);
-      const touched = [controllerFile, specFile, modelFile, moduleFile];
+      const moduleFile = path.join(areaDir, `${a.module}.ts`);
+      const domainModule = `${pascal(a.domain)}Module`;
+      const domainModuleFile = path.join(api, a.domain, `${domainModule}.ts`);
+      const touched = [
+        controllerFile,
+        specFile,
+        modelFile,
+        moduleFile,
+        domainModuleFile,
+      ];
 
       return [
         {
@@ -332,14 +358,51 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
           fs.writeFileSync(modelFile, `${source.trimEnd()}\n\n${shapes}`);
           return `appended shapes to ${path.relative(repo, modelFile)}`;
         },
+        // A new feature folder gets its module, listed in the domain module
+        // (which serves it under /<domain> and puts it in the OpenAPI
+        // document).
+        () => {
+          if (fs.existsSync(moduleFile)) return `using ${a.module}`;
+          fs.writeFileSync(
+            moduleFile,
+            [
+              'import { Module } from "@nestjs/common";',
+              `import { GraphQLClientModule } from "${path
+                .relative(areaDir, path.join(api, "infra/GraphQLClientModule"))
+                .split(path.sep)
+                .join("/")}";`,
+              "",
+              "@Module({",
+              "  imports: [GraphQLClientModule],",
+              "  controllers: [],",
+              "})",
+              `export class ${a.module} {}`,
+              "",
+            ].join("\n"),
+          );
+          let source = fs.readFileSync(domainModuleFile, "utf8");
+          const importPath = `./${path
+            .relative(path.dirname(domainModuleFile), moduleFile)
+            .replace(/\.ts$/, "")
+            .split(path.sep)
+            .join("/")}`;
+          source = `import { ${a.module} } from "${importPath}";\n${source}`;
+          source = source.replace(
+            /_MODULES = \[([\s\S]*?)\]/,
+            (_, list: string) =>
+              `_MODULES = [${appendable(list)}\n  ${a.module},\n]`,
+          );
+          fs.writeFileSync(domainModuleFile, source);
+          return `created ${a.module} and added it to ${domainModule}`;
+        },
         // Register the controller in its module.
         () => {
           let source = fs.readFileSync(moduleFile, "utf8");
-          const importPath = path
+          const importPath = `./${path
             .relative(path.dirname(moduleFile), controllerFile)
             .replace(/\.ts$/, "")
             .split(path.sep)
-            .join("/");
+            .join("/")}`;
           const className = `${a.operationId}Controller`;
           const importLine = `import { ${className} } from "${importPath}";\n`;
           const lastImport = [
@@ -353,7 +416,7 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
           source = source.replace(
             /controllers:\s*\[([\s\S]*?)\]/,
             (_, list: string) =>
-              `controllers: [${list.trimEnd().replace(/,?$/, ",")}\n    ${className},\n  ]`,
+              `controllers: [${appendable(list)}\n    ${className},\n  ]`,
           );
           fs.writeFileSync(moduleFile, source);
           return `registered ${className} in ${a.module}`;

@@ -45,6 +45,7 @@ export class BatchJob {
     required: true,
     enum: () => JobType,
     enumName: "JobType",
+    enumSchema: { description: "The type of a batch job" },
     description: "The kind of metadata the batch job processes",
   })
   type: JobType;
@@ -241,6 +242,7 @@ export class CreateBatchJobRequest {
   @ApiProperty({
     enum: () => JobType,
     enumName: "JobType",
+    enumSchema: { description: "The type of a batch job" },
     description: "The type of batch job to create",
     required: true,
   })
@@ -276,6 +278,9 @@ export class CreateRedriveJobRequest {
   @ApiProperty({
     enum: () => MetadataJobType,
     enumName: "MetadataJobType",
+    enumSchema: {
+      description: "The type of entity a metadata fetch job retrieves",
+    },
     description: "The type of entity to re-drive",
     required: true,
   })
@@ -284,6 +289,7 @@ export class CreateRedriveJobRequest {
   @ApiProperty({
     enum: () => MetadataFetchJobStatus,
     enumName: "MetadataFetchJobStatus",
+    enumSchema: { description: "The status of a metadata fetch job" },
     description: "The status of the records to re-drive",
     required: true,
   })
@@ -292,6 +298,7 @@ export class CreateRedriveJobRequest {
   @ApiProperty({
     enum: () => MetadataFetchJobStatus,
     enumName: "MetadataFetchJobStatus",
+    enumSchema: { description: "The status of a metadata fetch job" },
     description: "The status of the records after they have been re-driven",
     required: true,
   })
@@ -331,6 +338,9 @@ export class BatchJobStatsCategories {
   @ApiProperty({
     enum: () => MetadataJobType,
     enumName: "MetadataJobType",
+    enumSchema: {
+      description: "The type of entity a metadata fetch job retrieves",
+    },
     isArray: true,
     required: true,
     description: "The categories (x-axis) of the status chart",
@@ -340,6 +350,7 @@ export class BatchJobStatsCategories {
   @ApiProperty({
     enum: () => JobType,
     enumName: "JobType",
+    enumSchema: { description: "The type of a batch job" },
     isArray: true,
     required: true,
     description: "The categories of the timing charts",

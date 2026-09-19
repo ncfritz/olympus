@@ -9,7 +9,7 @@ import {
   type Mock,
   vi,
 } from "vitest";
-import { NotificationsGateway } from "../../../src/ws/gateway/NotificationsGateway";
+import { NotificationsGateway } from "../../../src/olympus/notifications/gateway/NotificationsGateway";
 import {
   base64Json,
   graphQlNotification,

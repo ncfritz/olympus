@@ -10,11 +10,11 @@ import {
 import type {
   GraphQlBatchJob,
   GraphQlMetadataFetchJob,
-} from "../../src/types/batchJobs";
+} from "../../src/dionysus/jobs/types/batchJobs";
 import type {
   GraphQLWorkflow,
   GraphQlWorkflowStep,
-} from "../../src/types/workflow";
+} from "../../src/dionysus/workflows/types/workflow";
 import { base64Json } from "./olympus";
 
 export const BATCH_JOB_ID = "6b1f0a52-0000-4000-8000-00000000b001";

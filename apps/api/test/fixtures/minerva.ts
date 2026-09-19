@@ -1,6 +1,6 @@
 /** Hasura rows for Minerva tables, as the API's queries receive them. */
-import type { GraphQlMeeting } from "../../src/convert/minerva/MeetingConverter";
-import type { GraphQlNote } from "../../src/convert/minerva/NoteConverter";
+import type { GraphQlMeeting } from "../../src/minerva/meetings/converters/MeetingConverter";
+import type { GraphQlNote } from "../../src/minerva/notes/converters/NoteConverter";
 
 export const graphQlNote = (
   overrides: Partial<GraphQlNote> = {},

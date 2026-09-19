@@ -49,6 +49,9 @@ export class MetadataFetchJob {
     required: true,
     enum: () => MetadataJobType,
     enumName: "MetadataJobType",
+    enumSchema: {
+      description: "The type of entity a metadata fetch job retrieves",
+    },
     description: "The kind of entity to fetch",
   })
   type: MetadataJobType;
@@ -57,6 +60,7 @@ export class MetadataFetchJob {
     required: true,
     enum: () => MetadataFetchJobStatus,
     enumName: "MetadataFetchJobStatus",
+    enumSchema: { description: "The status of a metadata fetch job" },
     description: "The status of the fetch job",
   })
   status: MetadataFetchJobStatus;
@@ -126,6 +130,9 @@ export class CreateMetadataFetchJobRequest {
   @ApiProperty({
     enum: () => MetadataJobType,
     enumName: "MetadataJobType",
+    enumSchema: {
+      description: "The type of entity a metadata fetch job retrieves",
+    },
     description: "The type of metadata fetch job to create",
     required: true,
   })
@@ -148,6 +155,7 @@ export class CreateMetadataFetchJobRequest {
   @ApiProperty({
     enum: () => MetadataFetchJobStatus,
     enumName: "MetadataFetchJobStatus",
+    enumSchema: { description: "The status of a metadata fetch job" },
     description: "The initial status of the job",
     required: false,
     default: MetadataFetchJobStatus.QUEUED,

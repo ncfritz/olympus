@@ -48,6 +48,12 @@ src/
 - Enums are string enums whose values are the wire values. Decorate as
   `enum: () => MeetingStatus, enumName: "MeetingStatus"`. `enumName` is
   required and must equal the enum's name. **[checked]**
+- An enum used by more than one property becomes one shared schema, and
+  Swagger would copy its description from whichever property it meets
+  first. Every usage of a shared enum therefore also sets
+  `enumSchema: { description: "The status of a workflow" }`, with the same
+  text everywhere; property-specific wording stays in `description`.
+  **[checked]** by `apps/api/test/conventions/enums.spec.ts`.
 - **Timestamps** are typed `Moment` and decorated with
   `@ApiTimestamp({ required, description })` from `src/decorators.ts`. It
   documents an ISO-8601 string and adds a null-safe `@Transform`. Do not

@@ -2,7 +2,7 @@ import { INestApplication, VersioningType } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import * as bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
-import { PrometheusMetricsInterceptor } from "./middleware/PrometheusOperationMetricsInterceptor";
+import { PrometheusMetricsInterceptor } from "./infra/PrometheusOperationMetricsInterceptor";
 
 /**
  * HTTP pipeline shared by the server (main.ts) and the API tests, so tests

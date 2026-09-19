@@ -18,7 +18,7 @@ including the ones that don't apply to the chosen verb):
 
 ```sh
 pnpm turbo gen api-operation --args \
-  minerva notes NotesApiModule Describe NoteAssociation NoteAssociations \
+  minerva notes NotesModule Describe NoteAssociation NoteAssociations \
   DescribeNoteAssociation /noteAssociation/:noteAssociationId Notes \
   minerva_note_associations uuid minerva/notes.ts PartialNoteAssociation true
 ```
@@ -28,8 +28,8 @@ pnpm turbo gen api-operation --args \
 | #   | Prompt           | Example                               | Notes                                                     |
 | --- | ---------------- | ------------------------------------- | --------------------------------------------------------- |
 | 1   | Domain           | `minerva`                             | `olympus`, `dionysus` or `minerva`                        |
-| 2   | Area             | `notes`, `content/channel`            | folder under `src/controller/<domain>`                    |
-| 3   | Module           | `NotesApiModule`                      | an existing `*ApiModule`; new modules are added by hand   |
+| 2   | Area             | `notes`, `content/channels`           | feature folder under `src/<domain>`; may be new           |
+| 3   | Module           | `NotesModule`                         | defaults to the folder's module, or `<Area>Module` if new |
 | 4   | Verb             | `Describe`                            | `Describe`, `List`, `Create`, `Update`, `Delete`, `Get`   |
 | 5   | Entity           | `NoteAssociation`                     | an existing model class                                   |
 | 6   | Plural           | `NoteAssociations`                    | defaults to a simple plural                               |
@@ -55,7 +55,7 @@ Route defaults:
 
 ## Output
 
-1. `apps/api/src/controller/<domain>/<area>/<operationId>.ts`: the
+1. `apps/api/src/<domain>/<area>/controllers/<operationId>Controller.ts`: the
    controller in house style, with a GraphQL document named after the
    operation, a typed `GraphQl<operationId>Response`, not-found handling
    for `*_by_pk` roots, and `buildPaginationExpression` /
@@ -64,13 +64,17 @@ Route defaults:
    on the shared harness ([API tests](api-testing.md)) with a 404 test for
    operations that take an ID, a 400 test for paginated lists and an
    `it.todo` for the happy path.
-3. `apps/api/src/convert/<domain>/<Entity>Converter.ts` with a
+3. `apps/api/src/<domain>/<area>/converters/<Entity>Converter.ts` with a
    `GraphQl<Entity>` / `toDomainObject` stub, if it doesn't exist.
 4. `<operationId>Request` / `<operationId>Response` appended to the model
    file, with imports added for the entity, body class and
    `PaginatedResults` as needed. A new model file is exported from its
    domain index.
-5. The controller imported and registered in the chosen module.
+5. The controller imported and registered in the feature module. For a
+   new feature folder the module is created (importing
+   `GraphQLClientModule`) and added to the domain's `<DOMAIN>_MODULES`,
+   which serves it under the domain prefix and puts it in the OpenAPI
+   document.
 6. Everything formatted with Prettier.
 
 ## Finishing an operation

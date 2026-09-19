@@ -1,0 +1,140 @@
+import {
+  Meeting,
+  SingleCalendarItemResponse,
+  UpdateCalendarItemRequest,
+} from "@ncfritz/olympus-model";
+import {
+  Body,
+  Controller,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Put,
+  Res,
+} from "@nestjs/common";
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiProduces,
+} from "@nestjs/swagger";
+import { type Response } from "express";
+import { gql, GraphQLClient } from "graphql-request";
+import { GraphQlMeeting, toDomainObject } from "../converters/MeetingConverter";
+import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+
+type GraphQlUpdateMeetingResponse = {
+  update_minerva_meetings_by_pk: GraphQlMeeting;
+};
+
+@Controller({ version: "1" })
+export class UpdateCalendarItemController {
+  constructor(private readonly graphQLClient: GraphQLClient) {}
+
+  @Put("/meeting/:meetingId")
+  @ApiOperation({
+    summary: "Updates an existing calendar item",
+    description: "Applies the given changes to a calendar item.",
+    operationId: "UpdateCalendarItem",
+    tags: ["Meetings"],
+  })
+  @ApiConsumes("application/json")
+  @ApiProduces("application/json")
+  @ApiParam({
+    name: "meetingId",
+    description: "The ID of the meeting to update",
+    type: String,
+  })
+  @ApiBody({
+    type: UpdateCalendarItemRequest,
+    required: true,
+    description: "Input for the UpdateCalendarItem operation",
+  })
+  @ApiOkResponse({
+    description: "The record has been successfully created.",
+    type: SingleCalendarItemResponse,
+  })
+  @ApiStandardErrorResponses()
+  async handle(
+    @Param("meetingId") meetingId: string,
+    @Body() request: UpdateCalendarItemRequest,
+    @Res() response: Response,
+  ): Promise<void> {
+    if (Object.keys(request.item).length === 0) {
+      response.status(HttpStatus.NOT_MODIFIED).end();
+      return;
+    }
+
+    const updateRequest = gql`
+      mutation UpdateMeeting(
+        $id: String!
+        $changes: minerva_meetings_set_input = {}
+      ) {
+        update_minerva_meetings_by_pk(pk_columns: { id: $id }, _set: $changes) {
+          id
+          uid
+          recurrence_id
+          all_day
+          attendees {
+            attendance
+            attendee_email
+            response
+            user {
+              alias
+              email
+              given_name
+              surname
+              type
+            }
+          }
+          cancelled
+          deleted
+          duration
+          end_time
+          importance
+          location
+          occurrence_type
+          organizer {
+            alias
+            email
+            given_name
+            surname
+            type
+          }
+          reminder
+          response
+          sensitivity
+          start_time
+          status
+          source
+          subject
+          type
+        }
+      }
+    `;
+
+    const updateResponse =
+      await this.graphQLClient.request<GraphQlUpdateMeetingResponse>(
+        updateRequest,
+        { id: meetingId, changes: request.item },
+      );
+
+    if (updateResponse.update_minerva_meetings_by_pk === null) {
+      throw new NotFoundException(
+        `Calendar Item with id ${meetingId} not found`,
+      );
+    }
+
+    const updatedMeeting: Meeting = toDomainObject(
+      updateResponse.update_minerva_meetings_by_pk,
+    );
+
+    const responseBody: SingleCalendarItemResponse = {
+      item: updatedMeeting,
+    };
+
+    response.status(HttpStatus.OK).send(responseBody);
+  }
+}

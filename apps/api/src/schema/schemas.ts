@@ -1,35 +1,23 @@
-import { AdminApiModule } from "../module/AdminApiModule";
-import { BatchJobApiModule } from "../module/BatchJobApiModule";
-import { ContentApiModule } from "../module/ContentApiModule";
-import { MediaApiModule } from "../module/MediaApiModule";
-import { MeetingApiModule } from "../module/MeetingApiModule";
-import { MetadataApiModule } from "../module/MetadataApiModule";
-import { NotesApiModule } from "../module/NotesApiModule";
-import { NotificationsApiModule } from "../module/NotificationsApiModule";
-import { WorkflowApiModule } from "../module/WorkflowApiModule";
+import { DIONYSUS_MODULES } from "../dionysus/DionysusModule";
+import { MINERVA_MODULES } from "../minerva/MinervaModule";
+import { OLYMPUS_MODULES } from "../olympus/OlympusModule";
 import { Routes } from "../utils/routes";
 import { OpenApiDocumentConfig } from "./documentBuilder";
 
 export const OlympusApiConfig: OpenApiDocumentConfig = {
   name: "Olympus",
   route: Routes.OLYMPUS,
-  modules: [AdminApiModule, NotificationsApiModule],
+  modules: OLYMPUS_MODULES,
 };
 
 export const DionysusApiConfig: OpenApiDocumentConfig = {
   name: "Dionysus",
   route: Routes.DIONYSUS,
-  modules: [
-    BatchJobApiModule,
-    ContentApiModule,
-    MediaApiModule,
-    MetadataApiModule,
-    WorkflowApiModule,
-  ],
+  modules: DIONYSUS_MODULES,
 };
 
 export const MinervaApiConfig: OpenApiDocumentConfig = {
   name: "Minerva",
   route: Routes.MINERVA,
-  modules: [NotesApiModule, MeetingApiModule],
+  modules: MINERVA_MODULES,
 };

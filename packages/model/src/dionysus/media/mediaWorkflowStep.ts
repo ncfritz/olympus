@@ -51,6 +51,7 @@ class InternalBaseMediaAssetWorkflowStep {
   @ApiProperty({
     enum: () => MediaAssetSearchType,
     enumName: "MediaAssetSearchType",
+    enumSchema: { description: "The type of media asset" },
     required: true,
     description: "The type of media asset",
   })
@@ -114,6 +115,9 @@ export class BaseMediaAssetWorkflowSubStep {
   @ApiProperty({
     enum: () => MediaAssetWorkflowSubStepType,
     enumName: "MediaAssetWorkflowSubStepType",
+    enumSchema: {
+      description: "The type of job a media asset workflow sub step performs",
+    },
     required: true,
     description: "The type of sub step the workflow step is performing",
   })
@@ -124,6 +128,9 @@ export class MediaAssetWorkflowSubStep extends InternalBaseMediaAssetWorkflowSte
   @ApiProperty({
     enum: () => MediaAssetWorkflowSubStepType,
     enumName: "MediaAssetWorkflowSubStepType",
+    enumSchema: {
+      description: "The type of job a media asset workflow sub step performs",
+    },
     required: true,
     description: "The type of job the workflow sub step is performing",
   })
@@ -134,6 +141,9 @@ export class BaseMediaAssetWorkflowStep {
   @ApiProperty({
     enum: () => MediaAssetWorkflowStepType,
     enumName: "MediaAssetWorkflowStepType",
+    enumSchema: {
+      description: "The type of job a media asset workflow step performs",
+    },
     required: true,
     description: "The type of job the workflow step is performing",
   })
@@ -144,6 +154,9 @@ export class MediaAssetWorkflowStep extends InternalBaseMediaAssetWorkflowStep {
   @ApiProperty({
     enum: () => MediaAssetWorkflowStepType,
     enumName: "MediaAssetWorkflowStepType",
+    enumSchema: {
+      description: "The type of job a media asset workflow step performs",
+    },
     required: true,
     description: "The type of job the workflow step is performing",
   })

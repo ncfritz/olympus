@@ -30,6 +30,7 @@ export class BaseContentIngestionWorkflow {
   @ApiProperty({
     enum: () => ContentIngestionWorkflowAssetLocation,
     enumName: "ContentIngestionWorkflowAssetLocation",
+    enumSchema: { description: "Where the asset to ingest can be found" },
     required: true,
     description: "The type of location where the asset to ingest can be found",
   })
@@ -55,6 +56,7 @@ export class ContentIngestionWorkflow extends BaseContentIngestionWorkflow {
   @ApiProperty({
     enum: () => ContentIngestionWorkflowStatus,
     enumName: "ContentIngestionWorkflowStatus",
+    enumSchema: { description: "The status of a content ingestion workflow" },
     required: true,
     description: "The status of the workflow",
   })

@@ -16,6 +16,7 @@
 | —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                   |
 | —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                  |
 | —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                  |
+| —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | folders **done**          |
 
 ## Open decisions
 

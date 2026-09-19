@@ -11,23 +11,33 @@ the generator (`pnpm gen api-operation`).
 
 ## Layout
 
+Code is organised by feature, as NestJS recommends, with PascalCase file
+names instead of Nest's `operation.controller.ts` style
+([ADR 0014](../decisions/0014-feature-folder-layout.md)).
+
 ```
 src/
   main.ts                    bootstrap: versioning, CORS, interceptors, OpenAPI explorer
-  module/
-    AppModule.ts             RouterModule mapping of *ApiModule → domain prefix
-    <Area>ApiModule.ts       controllers for one area (NotesApiModule, MediaApiModule, ...)
-    GraphQLClientModule.ts   the Hasura client
-    RabbitModule.ts          AMQP connection
-  controller/<domain>/<area>/<OperationId>.ts
-  convert/<domain>/<Entity>Converter.ts
-  query/<domain>/<entity>.ts shared GraphQL selection sets
+  configureApp.ts            app-wide middleware and pipes (shared with the tests)
+  AppModule.ts               infrastructure + the three domain modules, RouterModule prefixes
+  infra/                     GraphQLClientModule (Hasura), RabbitModule (AMQP), metrics interceptor
   schema/                    OpenAPI document definitions (schemas.ts, documentBuilder.ts)
-  types/                     API-internal types (ErrorResponse, ...)
-  utils/                     controllerDecorators.ts, filterUtil.ts, logger.ts, routes.ts
-  ws/gateway/                Socket.IO gateways
-  middleware/                interceptors
+  utils/                     controllerDecorators, filterUtil, location, logger, routes, ...
+  <domain>/
+    <Domain>Module.ts        <DOMAIN>_MODULES: the feature modules served under /<domain>
+    types/ ...               shared by several features of the domain
+    <area>/                  one feature, e.g. minerva/notes, dionysus/content/channels
+      <Area>Module.ts        registers the feature's controllers (NotesModule, TvModule, ...)
+      controllers/<OperationId>Controller.ts
+      converters/<Entity>Converter.ts
+      queries/<entity>.ts    shared GraphQL selection sets
+      types/<entity>.ts      API-internal row and helper types
 ```
+
+A group of features (`dionysus/content`, `dionysus/media`,
+`dionysus/metadata`, `dionysus/jobs`) may keep what its features share in
+`converters/`, `queries/` or `types/` at the group level
+(`dionysus/metadata/converters/CastConverter.ts`).
 
 `<domain>` is `olympus`, `dionysus` or `minerva`.
 
@@ -35,9 +45,11 @@ src/
 
 ### Naming
 
-- The **operationId** is `<Verb><Noun>` in PascalCase. It is also the file
-  name and the class name prefix: operation `UpdateCalendarItem` lives in
-  `UpdateCalendarItem.ts` as `UpdateCalendarItemController`. **[checked]**
+- The **operationId** is `<Verb><Noun>` in PascalCase. It names the class
+  and the file: operation `UpdateCalendarItem` is
+  `UpdateCalendarItemController` in
+  `minerva/meetings/controllers/UpdateCalendarItemController.ts`.
+  **[checked]**
 - Verbs:
 
 | Verb         | Use for                                                                     |
@@ -58,7 +70,7 @@ src/
 - URI versioning. Every controller is `@Controller({ version: "1" })`.
   **[checked]**
 - The domain prefix (`/olympus`, `/dionysus`, `/minerva`) comes from the
-  `RouterModule` registration of the area module in `AppModule`. Do not
+  `RouterModule` registration of the domain module in `AppModule`. Do not
   repeat it in the route.
 - Method routes start with `/`.
 - **Collections are plural** (`POST /content/channels`,
@@ -69,6 +81,10 @@ src/
   `/content/asset/:assetId/tag/:tagId`.
 - Actions that aren't CRUD are a verb segment on the item:
   `POST /content/channel/:channelId/refresh`.
+- Express tries routes in registration order, so a static route
+  (`/workflow/stats`) is registered before a parameterised route that
+  would match it (`/workflow/:workflowId`): list its controller first in
+  the module, or its module first in `<DOMAIN>_MODULES`. **[checked]**
 
 ### Controller shape
 
@@ -217,7 +233,7 @@ response.status(HttpStatus.CREATED).send(responseBody);
 - Declare the response type next to the controller:
   `type GraphQl<OperationId>Response = { <root_field>: GraphQl<Entity> }`.
 - Selection sets reused across operations are UPPER_SNAKE constants in
-  `src/query/<domain>/<entity>.ts` (`BASE_NOTE`,
+  the feature's `queries/<entity>.ts` (`BASE_NOTE`,
   `NOTE_WITH_ASSOCIATIONS`).
 - Upserts use `on_conflict` with the named constraint and an explicit
   `update_columns` list.
@@ -227,7 +243,7 @@ response.status(HttpStatus.CREATED).send(responseBody);
 ### Converters
 
 - Every Hasura entity used by the API has a converter module:
-  `src/convert/<domain>/<Entity>Converter.ts`.
+  `converters/<Entity>Converter.ts` in its feature folder.
 - It exports the Hasura shape as `GraphQl<Entity>` (snake_case fields, as
   Hasura returns them) and a `toDomainObject()` function that maps it to
   the model's camelCase class:
@@ -247,16 +263,16 @@ response.status(HttpStatus.CREATED).send(responseBody);
 
 ## Registering an operation
 
-1. Add the controller class to its area module's `controllers` array
-   (`src/module/<Area>ApiModule.ts`).
-2. A new area module is also added to `RouterModule.register` in
-   `AppModule` with its domain prefix, **and** to the matching
-   `*ApiConfig.modules` in `src/schema/schemas.ts` so it appears in that
+1. Add the controller class to the `controllers` array of the
+   `<Area>Module.ts` beside its `controllers/` folder. **[checked]**
+2. A new feature module is added to its domain's `<DOMAIN>_MODULES` in
+   `src/<domain>/<Domain>Module.ts`. That list is what `AppModule` serves
+   under the domain prefix and what `src/schema/schemas.ts` puts in the
    domain's OpenAPI document. **[checked]**
 3. Run `pnpm turbo run generate --filter=@ncfritz/olympus-sdk` to
    regenerate the SDK.
 
-`pnpm gen api-operation` does step 1 and creates the controller, a test,
+`pnpm gen api-operation` does steps 1 and 2 and creates the controller, a test,
 the model shapes and a converter stub
 ([guide](../guides/api-operation-generator.md)).
 
