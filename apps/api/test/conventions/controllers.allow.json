@@ -1,6 +1,4 @@
 {
   "class-name ListNotificationTypesController": "src/controller/olympus/notifications/ListNotificationTypes.ts: class ListNotificationTypesController for operation ListNotificationsTypes",
-  "file-name ListNotificationTypesController": "src/controller/olympus/notifications/ListNotificationTypes.ts: file ListNotificationTypes.ts for operation ListNotificationsTypes",
-  "graphql-unique GetMovieGenreCountStatisticsController": "GraphQL operation \"GetTvSeriesGenreCountStatistics\" names 2 different documents (GetTvSeriesGenreCountStatisticsController)",
-  "graphql-unique GetTvSeriesGenreCountStatisticsController": "GraphQL operation \"GetTvSeriesGenreCountStatistics\" names 2 different documents (GetMovieGenreCountStatisticsController)"
+  "file-name ListNotificationTypesController": "src/controller/olympus/notifications/ListNotificationTypes.ts: file ListNotificationTypes.ts for operation ListNotificationsTypes"
 }

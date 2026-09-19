@@ -60,8 +60,10 @@ export class GetTvSeriesGenreCountStatisticsController {
 
     fetchResponse.dionysus_tv_series_genre_count_statistics.forEach(
       (result) => {
-        if (result.genres < countStatistics.length) {
-          countStatistics[result.genres].count = result.count;
+        // Entry i holds the count of titles with i + 1 genres.
+        const index = result.genres - 1;
+        if (index >= 0 && index < countStatistics.length) {
+          countStatistics[index].count = result.count;
         }
       },
     );

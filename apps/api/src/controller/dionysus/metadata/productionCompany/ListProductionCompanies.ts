@@ -18,6 +18,11 @@ import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
+import {
+  buildPaginationExpression,
+  buildFilterExpression,
+  parseInFilters,
+} from "../../../../utils/filterUtil";
 
 type GraphQlListProductionCompaniesResponse = {
   dionysus_production_companies: GraphQlSparseProductionCompanyWithContentCounts[];
@@ -60,34 +65,19 @@ export class ListProductionCompaniesController {
     @Query("startPage") startPage = 0,
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
     @Query("sortBy") sortField = "createdTime",
-    @Query("filters") filters = undefined,
+    @Query("filters") filters: string | undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const queryParams = [
-      `limit: ${pageSize}, offset: ${
-        pageSize * startPage
-      }, order_by: {${sortField}: ${sortDirection}}`,
-    ];
-    let where = undefined;
+    const paginationExpression = buildPaginationExpression({
+      pageSize,
+      startPage,
+      sortField,
+      sortDirection,
+    });
+    const queryParams = [paginationExpression];
+    const where = buildFilterExpression(parseInFilters(filters));
 
-    if (filters) {
-      const decodedOptions = JSON.parse(
-        Buffer.from(filters, "base64").toString("utf-8"),
-      );
-
-      const filterOptions = [];
-
-      for (const key in decodedOptions) {
-        if (decodedOptions[key] && decodedOptions[key].length > 0) {
-          const values = decodedOptions[key].map((value: string) => {
-            return `"${value}"`;
-          });
-
-          filterOptions.push(`${key}: { _in: [${values.join(", ")}]}`);
-        }
-      }
-
-      where = `where: {_and: {${filterOptions.join(", ")}}}`;
+    if (where) {
       queryParams.push(where);
     }
 

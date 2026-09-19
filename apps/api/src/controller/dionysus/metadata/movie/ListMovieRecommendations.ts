@@ -2,7 +2,15 @@ import {
   ListMovieRecommendationsResponse,
   SparseMovie,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  ParseIntPipe,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -46,7 +54,7 @@ export class ListMovieRecommendationsController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("movieId") movieId: string,
+    @Param("movieId", ParseIntPipe) movieId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
@@ -64,6 +72,10 @@ export class ListMovieRecommendationsController {
         fetchRequest,
         { id: movieId },
       );
+    if (!fetchResponse.dionysus_movies_by_pk) {
+      throw new NotFoundException();
+    }
+
     const recommendations: SparseMovie[] = [];
 
     fetchResponse.dionysus_movies_by_pk.recommendations.forEach((result) => {

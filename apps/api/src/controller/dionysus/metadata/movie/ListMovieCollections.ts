@@ -2,7 +2,15 @@ import {
   Collection,
   ListMovieCollectionsResponse,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  ParseIntPipe,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -54,7 +62,7 @@ export class ListMovieCollectionsController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("movieId") movieId: string,
+    @Param("movieId", ParseIntPipe) movieId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
@@ -123,6 +131,10 @@ export class ListMovieCollectionsController {
         fetchRequest,
         { id: movieId },
       );
+    if (!fetchResponse.dionysus_movies_by_pk) {
+      throw new NotFoundException();
+    }
+
     const collections: Collection[] = [];
 
     fetchResponse.dionysus_movies_by_pk.collections.forEach((result) => {

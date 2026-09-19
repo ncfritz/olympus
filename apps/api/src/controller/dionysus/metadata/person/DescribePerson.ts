@@ -5,6 +5,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Res,
 } from "@nestjs/common";
 import {
@@ -46,11 +47,11 @@ export class DescribePersonController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("personId") personId: number,
+    @Param("personId", ParseIntPipe) personId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query FetchPerson($id: numeric!) {
+      query DescribePerson($id: numeric!) {
         dionysus_people_by_pk(id: $id) {
           adult
           alsoKnownAs {

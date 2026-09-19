@@ -18,6 +18,7 @@ import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
+import { buildPaginationExpression } from "../../../../utils/filterUtil";
 
 type GraphQlListLanguagesResponse = {
   dionysus_languages: GraphQlLanguage[];
@@ -61,11 +62,15 @@ export class ListLanguagesController {
     @Query("sortBy") sortField = "createdTime",
     @Res() response: Response,
   ): Promise<void> {
+    const paginationExpression = buildPaginationExpression({
+      pageSize,
+      startPage,
+      sortField,
+      sortDirection,
+    });
     const fetchRequest = gql`
       query ListLanguages {
-      dionysus_languages(limit: ${pageSize}, offset: ${
-        pageSize * startPage
-      }, order_by: {${sortField}: ${sortDirection}}) {
+      dionysus_languages(${paginationExpression}) {
         createdTime
         id
         lastUpdatedTime

@@ -5,6 +5,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Res,
 } from "@nestjs/common";
 import {
@@ -46,11 +47,11 @@ export class DescribeNetworkController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("networkId") networkId: number,
+    @Param("networkId", ParseIntPipe) networkId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query FetchNetwork($id: numeric!) {
+      query DescribeNetwork($id: numeric!) {
         dionysus_networks_by_pk(id: $id) {
           country {
             createdTime

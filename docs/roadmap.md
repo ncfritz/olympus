@@ -14,7 +14,8 @@
 | 7   | Theme package; inline-style migration; `packages/ui`                                                 |                       |
 | 8   | Minerva calendar sync import and Hasura integration                                                  |                       |
 | —   | Tests are added in every phase (ADR 0010)                                                            | ongoing               |
-| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | next                  |
+| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**              |
+| —   | Dionysus metadata converter tests; null-safe object relationships                                    | next                  |
 
 ## Open decisions
 
@@ -76,6 +77,12 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
   reads; `CreateMediaAssetWorkflow` is
   `POST .../workflow/:resultId/workflow` (its `Location` says
   `.../result/:resultId/workflow/:id`).
+- `DescribeNetwork` is served at `/v1/dionysus/dionysus/network/:networkId`
+  (its route repeats the domain prefix). Same SDK caveat.
+- Metadata converters assume every object relationship is present
+  (`originalLanguage`, a season's `series`, an episode's `season`). Without
+  referential integrity (roadmap phase 5) a missing row makes the whole
+  read 500.
 - The API `Dockerfile` still targets the old single-repo layout (npm +
   GitHub Packages token). Rebuilt with ADR 0011.
 - OpenAPI `info.version` is `0.0.0` (the workspace package version)

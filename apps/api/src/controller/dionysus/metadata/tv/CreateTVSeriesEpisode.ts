@@ -2,7 +2,15 @@ import {
   CreateTVEpisodeRequest,
   CreateTVEpisodeResponse,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Param, Put, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Put,
+  Res,
+} from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -54,13 +62,13 @@ export class CreateTVSeriesEpisodeController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("seriesId") seriesId: number,
-    @Param("seasonNumber") seasonNumber: number,
+    @Param("seriesId", ParseIntPipe) seriesId: number,
+    @Param("seasonNumber", ParseIntPipe) seasonNumber: number,
     @Body() request: CreateTVEpisodeRequest,
     @Res() response: Response,
   ): Promise<void> {
     const insertRequest = gql`
-      mutation CreateTVEpisode(
+      mutation CreateTVSeriesEpisode(
         $id: numeric!
         $seasonId: numeric!
         $seriesId: numeric!

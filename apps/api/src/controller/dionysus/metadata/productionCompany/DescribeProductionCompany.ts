@@ -8,6 +8,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Res,
 } from "@nestjs/common";
 import {
@@ -49,11 +50,11 @@ export class DescribeProductionCompanyController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("productionCompanyId") productionCompanyId: number,
+    @Param("productionCompanyId", ParseIntPipe) productionCompanyId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query FetchProductionCompany($id: numeric!) {
+      query DescribeProductionCompany($id: numeric!) {
         dionysus_production_companies_by_pk(id: $id) {
           alternativeNames {
             createdTime

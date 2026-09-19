@@ -4,7 +4,15 @@ import {
   PartialTVSeasonCastMemberRoleWithKey,
   PartialTVSeasonCrewMemberJobWithKey,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Param, Put, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Put,
+  Res,
+} from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -54,12 +62,12 @@ export class CreateTVSeriesSeasonController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("seriesId") seriesId: number,
+    @Param("seriesId", ParseIntPipe) seriesId: number,
     @Body() request: CreateTVSeasonRequest,
     @Res() response: Response,
   ): Promise<void> {
     const insertRequest = gql`
-      mutation CreateTVSeason(
+      mutation CreateTVSeriesSeason(
         $id: numeric!
         $seriesId: numeric!
         $airDate: String

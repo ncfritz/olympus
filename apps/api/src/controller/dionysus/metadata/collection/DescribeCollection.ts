@@ -5,6 +5,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Res,
 } from "@nestjs/common";
 import {
@@ -46,11 +47,11 @@ export class DescribeCollectionController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("collectionId") collectionId: number,
+    @Param("collectionId", ParseIntPipe) collectionId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query FetchCollection($id: numeric!) {
+      query DescribeCollection($id: numeric!) {
         dionysus_collections_by_pk(id: $id) {
           backdropPath
           createdTime

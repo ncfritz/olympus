@@ -5,6 +5,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Res,
 } from "@nestjs/common";
 import {
@@ -48,11 +49,11 @@ export class DescribeMovieController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("movieId") movieId: number,
+    @Param("movieId", ParseIntPipe) movieId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query FetchMovie($id: numeric!) {
+      query DescribeMovie($id: numeric!) {
         dionysus_movies_by_pk(id: $id) {
           ${MOVIE}
         }

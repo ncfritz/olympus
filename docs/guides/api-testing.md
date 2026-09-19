@@ -123,34 +123,25 @@ per operation.
 ## Coverage
 
 `test:coverage` writes `apps/api/coverage/index.html` (and
-`coverage-summary.json`). Line coverage on 2026-09-18:
+`coverage-summary.json`). Line coverage on 2026-09-18, after every
+operation got endpoint tests:
 
-| Area                           | Lines |
-| ------------------------------ | ----- |
-| Olympus notification endpoints | 95%   |
-| Minerva endpoints              | 97%   |
-| Converters (Olympus, Minerva)  | 100%  |
-| `utils/`                       | 92%   |
-| Dionysus endpoints             | 10%   |
-| Dionysus converters            | 20%   |
-| Total                          | 34%   |
+| Area                           | Lines   |
+| ------------------------------ | ------- |
+| Olympus, Minerva endpoints     | 95–97%  |
+| Dionysus endpoints (all areas) | 95–100% |
+| Converters (except below)      | 91–100% |
+| Dionysus metadata converters   | 69%     |
+| `utils/`                       | 93%     |
+| Total                          | 93%     |
 
 ADR 0010's ratchet applies: coverage may not go down.
 
-## Dionysus plan
+The metadata operations are covered by a table in
+`test/api/dionysus/metadata.spec.ts` (one row per read operation, with a
+minimal Hasura row from `test/fixtures/metadata.ts`) plus focused tests for
+paging, filters and upserts. Converter fields the table doesn't assert on
+are the next thing to cover, with converter unit tests.
 
-Dionysus has 165 routes, which is more than the other domains put
-together. Endpoint tests are written one area at a time. Each area is its
-own commit, with the bugs its tests find fixed in the same commit:
-
-| Order | Area       | Routes | Notes                                                                                    |
-| ----- | ---------- | ------ | ---------------------------------------------------------------------------------------- |
-| 1     | `job`      | 16     | Batch and metadata-fetch jobs; AMQP publishes; filter/pagination parameters              |
-| 2     | `workflow` | 8      | Workflow and step state                                                                  |
-| 3     | `media`    | 33     | Assets, searches, downloads, favorites (410 delete); 9 controllers use filters           |
-| 4     | `content`  | 41     | Channels, tags, assets; `UploadAssets` needs a temp `DIONYSUS_UPLOAD_PATH` and multipart |
-| 5     | `metadata` | 67     | Mostly Describe/List over TMDB tables; table-driven tests (one `it.each` row per route)  |
-
-Converter tests for `convert/dionysus/**`, the metadata converters above
-all, go with the area that uses them. Fixtures go in
-`test/fixtures/dionysus.ts`.
+When a request unexpectedly answers 500, run the test with
+`TEST_NEST_LOGS=1` to see Nest's error log and stack.

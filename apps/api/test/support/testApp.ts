@@ -39,7 +39,12 @@ export async function createTestApp(): Promise<TestApp> {
     .useValue(amqp)
     .compile();
 
-  const app = configureApp(moduleRef.createNestApplication({ logger: false }));
+  // TEST_NEST_LOGS=1 shows Nest's error log (e.g. the stack behind a 500).
+  const app = configureApp(
+    moduleRef.createNestApplication({
+      logger: process.env.TEST_NEST_LOGS ? ["error"] : false,
+    }),
+  );
   await app.init();
 
   return {

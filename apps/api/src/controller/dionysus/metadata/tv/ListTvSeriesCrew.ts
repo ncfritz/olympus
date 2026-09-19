@@ -2,7 +2,14 @@ import {
   ListTvSeriesCrewResponse,
   TVSeriesCrewMember,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -44,11 +51,11 @@ export class ListTvSeriesCrewController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("tvSeriesId") tvSeriesId: number,
+    @Param("tvSeriesId", ParseIntPipe) tvSeriesId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query ListTvSeriesCrewMembers($id: numeric!) {
+      query ListTvSeriesCrew($id: numeric!) {
         dionysus_tv_series_crew(where: { seriesId: { _eq: $id } }) {
           ${TV_SERIES_CREW_MEMBER}
         }

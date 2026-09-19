@@ -34,7 +34,7 @@ export class GetTvSeriesStatusStatisticsController {
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
     const fetchRequest = gql`
-      query GraphQlTvSeriesStatusStatistics {
+      query GetTvSeriesStatusStatistics {
         dionysus_tv_series_status_statistics {
           status
           count

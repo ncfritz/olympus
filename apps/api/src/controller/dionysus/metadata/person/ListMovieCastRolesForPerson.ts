@@ -2,7 +2,14 @@ import {
   ListMovieCastRolesForPersonResponse,
   PersonMovieCastCredit,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -49,11 +56,11 @@ export class ListMovieCastRolesForPersonController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("personId") personId: number,
+    @Param("personId", ParseIntPipe) personId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query ListPersonCastCredits($id: numeric!) {
+      query ListMovieCastRolesForPerson($id: numeric!) {
         dionysus_movie_cast(
           where: { personId: { _eq: $id } }
           order_by: { movie: { releaseDate: desc } }

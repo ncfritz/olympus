@@ -1,5 +1,12 @@
 import { ListMovieCastResponse, MovieCastMember } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -41,11 +48,11 @@ export class ListMovieCastController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("movieId") movieId: number,
+    @Param("movieId", ParseIntPipe) movieId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
-      query ListMovieCastMembers($id: numeric!) {
+      query ListMovieCast($id: numeric!) {
         dionysus_movie_cast(
           order_by: { order: asc }
           where: { movieId: { _eq: $id } }

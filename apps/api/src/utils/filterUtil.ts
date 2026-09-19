@@ -201,3 +201,49 @@ export const parseFilterDefinition = (
     );
   }
 };
+
+/**
+ * Decodes the `{ "<column>": [values] }` filter format some list operations
+ * accept (base64 JSON) into an AND of `_in` filters. Empty lists are
+ * ignored. Throws BadRequest for anything else.
+ */
+export const parseInFilters = (
+  filters: string | undefined,
+): FilterDefinition | undefined => {
+  if (!filters) {
+    return undefined;
+  }
+
+  let decoded: unknown;
+  try {
+    decoded = JSON.parse(Buffer.from(filters, "base64").toString("utf-8"));
+  } catch {
+    throw new BadRequestException("`filters` must be base64-encoded JSON");
+  }
+  if (!decoded || typeof decoded !== "object" || Array.isArray(decoded)) {
+    throw new BadRequestException("`filters` must be a JSON object");
+  }
+
+  const clauses: FilterDefinition[] = [];
+  for (const [field, values] of Object.entries(decoded)) {
+    assertField(field, "filter field");
+    const allStrings =
+      Array.isArray(values) && values.every((v) => typeof v === "string");
+    const allNumbers =
+      Array.isArray(values) && values.every((v) => typeof v === "number");
+    if (!allStrings && !allNumbers) {
+      throw new BadRequestException(`Invalid values for filter "${field}"`);
+    }
+    if (values.length > 0) {
+      clauses.push({
+        type: FilterType.IN,
+        name: field,
+        value: values as string[] | number[],
+      });
+    }
+  }
+
+  return clauses.length > 0
+    ? { type: FilterType.AND, name: "_", value: clauses }
+    : undefined;
+};

@@ -18,6 +18,7 @@ import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
+import { buildPaginationExpression } from "../../../../utils/filterUtil";
 
 type GraphQlListCountriesResponse = {
   dionysus_countries: GraphQlCountry[];
@@ -61,11 +62,15 @@ export class ListCountriesController {
     @Query("sortBy") sortField = "createdTime",
     @Res() response: Response,
   ): Promise<void> {
+    const paginationExpression = buildPaginationExpression({
+      pageSize,
+      startPage,
+      sortField,
+      sortDirection,
+    });
     const fetchRequest = gql`
       query ListCountries {
-      dionysus_countries(limit: ${pageSize}, offset: ${
-        pageSize * startPage
-      }, order_by: {${sortField}: ${sortDirection}}) {
+      dionysus_countries(${paginationExpression}) {
         createdTime
         id
         lastUpdatedTime

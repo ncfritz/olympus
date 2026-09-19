@@ -18,6 +18,7 @@ import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
+import { buildPaginationExpression } from "../../../../utils/filterUtil";
 
 type GraphQlListKeywordsResponse = {
   dionysus_keywords: GraphQlKeyword[];
@@ -61,11 +62,15 @@ export class ListKeywordsController {
     @Query("sortBy") sortField = "createdTime",
     @Res() response: Response,
   ): Promise<void> {
+    const paginationExpression = buildPaginationExpression({
+      pageSize,
+      startPage,
+      sortField,
+      sortDirection,
+    });
     const fetchRequest = gql`
       query ListKeywords {
-      dionysus_keywords(limit: ${pageSize}, offset: ${
-        pageSize * startPage
-      }, order_by: {${sortField}: ${sortDirection}}) {
+      dionysus_keywords(${paginationExpression}) {
         id
         value
         createdTime

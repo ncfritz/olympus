@@ -295,7 +295,7 @@ export class CreateMovieController {
       tagline: request.movie.tagline,
       title: request.movie.title,
       voteAverage: request.movie.voteAverage,
-      voteCount: request.movie.voteAverage,
+      voteCount: request.movie.voteCount,
       video: request.movie.video,
       alternativeTitles: request.movie.alternativeTitles,
       cast: request.movie.cast,

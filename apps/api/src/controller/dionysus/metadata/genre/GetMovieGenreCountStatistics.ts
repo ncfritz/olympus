@@ -35,7 +35,7 @@ export class GetMovieGenreCountStatisticsController {
   @ApiStandardErrorResponses()
   async handle(@Res() response: Response): Promise<void> {
     const fetchRequest = gql`
-      query GetTvSeriesGenreCountStatistics {
+      query GetMovieGenreCountStatistics {
         dionysus_movie_genre_count_statistics {
           count
           genres
@@ -58,8 +58,10 @@ export class GetMovieGenreCountStatisticsController {
     );
 
     fetchResponse.dionysus_movie_genre_count_statistics.forEach((result) => {
-      if (result.genres < countStatistics.length) {
-        countStatistics[result.genres].count = result.count;
+      // Entry i holds the count of titles with i + 1 genres.
+      const index = result.genres - 1;
+      if (index >= 0 && index < countStatistics.length) {
+        countStatistics[index].count = result.count;
       }
     });
 

@@ -3,7 +3,16 @@ import {
   ListProductionCompanyTvSeriesResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Query, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  ParseIntPipe,
+  Query,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -18,6 +27,7 @@ import {
   ApiPaginationParams,
   ApiStandardErrorResponses,
 } from "../../../../utils/controllerDecorators";
+import { buildPaginationExpression } from "../../../../utils/filterUtil";
 
 type GraphQlListProductionCompanyTvSeriesResponse = {
   dionysus_production_companies_by_pk: {
@@ -59,18 +69,20 @@ export class ListProductionCompanyTvSeriesController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("productionCompanyId") productionCompanyId: number,
+    @Param("productionCompanyId", ParseIntPipe) productionCompanyId: number,
     @Query("pageSize") pageSize = 100,
     @Query("startPage") startPage = 0,
     @Query("sort") sortDirection: SortDirection = SortDirection.DESC,
     @Query("sortBy") sortField = "createdTime",
     @Res() response: Response,
   ): Promise<void> {
-    const queryParams = [
-      `limit: ${pageSize}, offset: ${
-        pageSize * startPage
-      }, order_by: {${sortField}: ${sortDirection}}`,
-    ];
+    const paginationExpression = buildPaginationExpression({
+      pageSize,
+      startPage,
+      sortField,
+      sortDirection,
+    });
+    const queryParams = [paginationExpression];
 
     const fetchRequest = gql`
       query ListProductionCompanyTvSeries($id: numeric!) {
@@ -118,6 +130,10 @@ export class ListProductionCompanyTvSeriesController {
           id: productionCompanyId,
         },
       );
+    if (!fetchResponse.dionysus_production_companies_by_pk) {
+      throw new NotFoundException();
+    }
+
     const tvSeries: BaseTVSeries[] = [];
 
     fetchResponse.dionysus_production_companies_by_pk.tvSeries.forEach(

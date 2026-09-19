@@ -2,7 +2,14 @@ import {
   ListTVEpisodeCrewResponse,
   TVEpisodeCrewMember,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -59,9 +66,9 @@ export class ListTvEpisodeCrewController extends BaseTVController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("tvSeriesId") tvSeriesId: number,
-    @Param("seasonNumber") seasonNumber: number,
-    @Param("episodeNumber") episodeNumber: number,
+    @Param("tvSeriesId", ParseIntPipe) tvSeriesId: number,
+    @Param("seasonNumber", ParseIntPipe) seasonNumber: number,
+    @Param("episodeNumber", ParseIntPipe) episodeNumber: number,
     @Res() response: Response,
   ): Promise<void> {
     const episodeId = await this.lookupMediaIdForTvEpisode(
@@ -71,7 +78,7 @@ export class ListTvEpisodeCrewController extends BaseTVController {
     );
 
     const fetchRequest = gql`
-      query ListTvEpisodeCrewMembers($episodeId: numeric!) {
+      query ListTvEpisodeCrew($episodeId: numeric!) {
         dionysus_tv_episode_crew(where: { episodeId: { _eq: $episodeId } }) {
           ${BASE_TV_EPISODE_CREW_MEMBER}
         }

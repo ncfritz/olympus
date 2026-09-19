@@ -2,7 +2,15 @@ import {
   BaseTVSeries,
   ListTvSeriesRecommendationsResponse,
 } from "@ncfritz/olympus-model";
-import { Controller, Get, HttpStatus, Param, Res } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  ParseIntPipe,
+  Res,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -46,7 +54,7 @@ export class ListTvSeriesRecommendationsController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("tvSeriesId") tvSeriesId: string,
+    @Param("tvSeriesId", ParseIntPipe) tvSeriesId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
@@ -66,6 +74,10 @@ export class ListTvSeriesRecommendationsController {
         fetchRequest,
         { id: tvSeriesId },
       );
+    if (!fetchResponse.dionysus_tv_series_by_pk) {
+      throw new NotFoundException();
+    }
+
     const recommendations: BaseTVSeries[] = [];
 
     fetchResponse.dionysus_tv_series_by_pk.recommendations.forEach((result) => {

@@ -5,6 +5,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Res,
 } from "@nestjs/common";
 import {
@@ -47,7 +48,7 @@ export class GetTvEpisodeByIdController {
   })
   @ApiStandardErrorResponses()
   async handle(
-    @Param("episodeId") episodeId: number,
+    @Param("episodeId", ParseIntPipe) episodeId: number,
     @Res() response: Response,
   ): Promise<void> {
     const fetchRequest = gql`
