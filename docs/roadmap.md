@@ -30,6 +30,21 @@
 - Turning on full TypeScript `strict`.
 - How AI agents interact with the platform (API-backed tools / MCP).
 
+## Backlog
+
+Planned work outside the phases, in no particular order.
+
+1. **Chore: decorate all APIs to capture Prometheus metrics.** Today the
+   API's `PrometheusMetricsInterceptor` records per-operation counts and
+   latency keyed by operationId; agents expose only the default Node
+   metrics.
+2. **Chore: add application-level Prometheus metrics**, beyond HTTP and
+   runtime metrics.
+3. **Feature: deliver a Grafana dashboard, source-controlled** (alongside
+   the rest of `infra/`).
+4. **Feature: interactive message tester, web-based.**
+5. **Feature: delivery audit trail and metrics.**
+
 ## Model backlog
 
 - Description typos in pre-existing descriptions (e.g. "TThe amount of
