@@ -13,10 +13,10 @@ import sharp, { OverlayOptions } from "sharp";
 import { Logger } from "@nestjs/common";
 import type { ContentApi } from "../../api/ContentApi";
 import type { ContentConfigType } from "../../config/configuration";
+import { withSftp } from "../../tools/sftp";
 import { IngestError } from "../../tools/errors/IngestError";
 import type { ContentReporter } from "./ContentReporter";
 import { DuplicateError } from "./DuplicateError";
-import sftp from "ssh2-sftp-client";
 import progress_stream from "progress-stream";
 import { ts } from "./format";
 import * as ffmpegOnProgress from "ffmpeg-on-progress";
@@ -921,50 +921,53 @@ export class AssetWorkflow {
       const files = this.walk(this.workDir.toString());
 
       logger.log("Connecting SSH...");
-      const client = new sftp();
-      await client.connect({
-        host: this.config.sftp.host,
-        port: 22,
-        username: this.config.sftp.username!,
-        password: this.config.sftp.password!,
-      });
+      await withSftp(
+        {
+          host: this.config.sftp.host,
+          port: 22,
+          username: this.config.sftp.username!,
+          password: this.config.sftp.password!,
+        },
+        async (client) => {
+          for (const file of files) {
+            const stat = fs.statSync(file);
+            const truncatedPath = file.substring(
+              this.workDir.toString().length,
+              file.length,
+            );
 
-      for (const file of files) {
-        const stat = fs.statSync(file);
-        const truncatedPath = file.substring(
-          this.workDir.toString().length,
-          file.length,
-        );
-
-        const progress = new cliProgress.SingleBar(
-          { format: " {bar} | {filename} | {percent}% | {value}/{total}" },
-          cliProgress.Presets.rect,
-        );
-        const pStream = progress_stream({
-          length: stat.size,
-          time: 500,
-        });
-        pStream.on(
-          "progress",
-          (p: { transferred: number; percentage: number }) => {
-            progress.update(p.transferred, {
-              percent: p.percentage.toFixed(2),
+            const progress = new cliProgress.SingleBar(
+              { format: " {bar} | {filename} | {percent}% | {value}/{total}" },
+              cliProgress.Presets.rect,
+            );
+            const pStream = progress_stream({
+              length: stat.size,
+              time: 500,
             });
-          },
-        );
+            pStream.on(
+              "progress",
+              (p: { transferred: number; percentage: number }) => {
+                progress.update(p.transferred, {
+                  percent: p.percentage.toFixed(2),
+                });
+              },
+            );
 
-        progress.start(stat.size, 0, { filename: truncatedPath, percent: 0 });
+            progress.start(stat.size, 0, {
+              filename: truncatedPath,
+              percent: 0,
+            });
 
-        const remote = `/Content/assets/${this.metadata.id}/${truncatedPath}`;
-        const remoteDir = remote.substring(0, remote.lastIndexOf("/"));
-        const stream = fs.createReadStream(file).pipe(pStream);
+            const remote = `/Content/assets/${this.metadata.id}/${truncatedPath}`;
+            const remoteDir = remote.substring(0, remote.lastIndexOf("/"));
+            const stream = fs.createReadStream(file).pipe(pStream);
 
-        await client.mkdir(remoteDir, true);
-        await client.put(stream, remote);
-        progress.stop();
-      }
-
-      await client.end();
+            await client.mkdir(remoteDir, true);
+            await client.put(stream, remote);
+            progress.stop();
+          }
+        },
+      );
 
       await this.reporter.updateStepStatus(
         this.ingestWorkflow.id,

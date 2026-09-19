@@ -10,9 +10,10 @@ import moment from "moment";
 import { finished } from "node:stream/promises";
 import path from "path";
 import progress_stream from "progress-stream";
-import sftp from "ssh2-sftp-client";
+import type sftp from "ssh2-sftp-client";
 import { Logger } from "@nestjs/common";
 import type { MediaConfigType } from "../../config/configuration";
+import { withSftp } from "../../tools/sftp";
 import { IngestError } from "../../tools/errors/IngestError";
 import type { Handbrake } from "../../tools/handbrake/Handbrake";
 import type { MediaReporter } from "./MediaReporter";
@@ -341,61 +342,58 @@ export class MediaWorkflow {
         }
       } else {
         logger.debug("Connecting SSH...");
-        const client = new sftp();
-        await client.connect(connection);
+        await withSftp(connection, async (client) => {
+          for (let [file, destination] of Object.entries(files)) {
+            if (!file.startsWith("/")) {
+              file = `/${file}`;
+            }
 
-        for (let [file, destination] of Object.entries(files)) {
-          if (!file.startsWith("/")) {
-            file = `/${file}`;
-          }
+            const sourceFile = `${this.stagingDir}${file}`;
 
-          const sourceFile = `${this.stagingDir}${file}`;
+            if (!destination.startsWith("/")) {
+              destination = `/${destination}`;
+            }
 
-          if (!destination.startsWith("/")) {
-            destination = `/${destination}`;
-          }
+            logger.debug(`Uploading ${sourceFile}`);
+            const stat = fs.statSync(sourceFile);
+            const pStream = progress_stream({
+              length: stat.size,
+              time: 500,
+            });
+            pStream.on(
+              "progress",
+              (p: { transferred: number; percentage: number }) => {
+                const now = moment().utc().valueOf();
 
-          logger.debug(`Uploading ${sourceFile}`);
-          const stat = fs.statSync(sourceFile);
-          const pStream = progress_stream({
-            length: stat.size,
-            time: 500,
-          });
-          pStream.on(
-            "progress",
-            (p: { transferred: number; percentage: number }) => {
-              const now = moment().utc().valueOf();
+                if (now - lastUpdateTime > 5000) {
+                  const progress = (p.transferred / totalSize) * 100;
 
-              if (now - lastUpdateTime > 5000) {
-                const progress = (p.transferred / totalSize) * 100;
+                  logger.debug(
+                    `Transferred ${p.transferred} bytes of ${totalSize} - ${progress}%`,
+                  );
 
-                logger.debug(
-                  `Transferred ${p.transferred} bytes of ${totalSize} - ${progress}%`,
-                );
+                  if (onProgress) {
+                    (async () => {
+                      await onProgress(progress, p.transferred);
+                    })();
+                  }
 
-                if (onProgress) {
-                  (async () => {
-                    await onProgress(progress, p.transferred);
-                  })();
+                  lastUpdateTime = now;
                 }
+              },
+            );
 
-                lastUpdateTime = now;
-              }
-            },
-          );
+            const remoteDir = destination.substring(
+              0,
+              destination.lastIndexOf("/"),
+            );
+            const stream = fs.createReadStream(sourceFile).pipe(pStream);
 
-          const remoteDir = destination.substring(
-            0,
-            destination.lastIndexOf("/"),
-          );
-          const stream = fs.createReadStream(sourceFile).pipe(pStream);
-
-          logger.log(`Uploading ${sourceFile} to ${destination}...`);
-          await client.mkdir(remoteDir, true);
-          await client.put(stream, destination);
-        }
-
-        await client.end();
+            logger.log(`Uploading ${sourceFile} to ${destination}...`);
+            await client.mkdir(remoteDir, true);
+            await client.put(stream, destination);
+          }
+        });
       }
     } catch (e) {
       logger.error(`Asset upload failed: ${e.message}`);
