@@ -114,7 +114,7 @@ export abstract class BatchHandler<
         }
       }
 
-      while ((record = await source.next()) && count - offset <= maxRecords) {
+      while (count - offset < maxRecords && (record = await source.next())) {
         count++;
 
         const jobId = this.getJobId(record);

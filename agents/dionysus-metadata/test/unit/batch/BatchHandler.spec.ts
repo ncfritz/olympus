@@ -155,10 +155,19 @@ describe("BatchHandler", () => {
     });
   });
 
-  it.fails("processes at most `max` records", async () => {
+  it("processes at most `max` records", async () => {
     handler.rows = [{ id: 1 }, { id: 2 }, { id: 3 }];
     await handler.handle(message({ max: 2 }));
     expect(store.createMetadataFetchJob).toHaveBeenCalledTimes(2);
+  });
+
+  it("counts `max` after the skipped records", async () => {
+    handler.rows = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];
+    await handler.handle(message({ offset: 1, max: 2 }));
+    expect(store.createMetadataFetchJob.mock.calls.map((c) => c[0])).toEqual([
+      "2",
+      "3",
+    ]);
   });
 
   it("ignores jobs that aren't new", async () => {
