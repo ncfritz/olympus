@@ -12,6 +12,7 @@ import {
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../converters/WorkflowStepConverter";
 import { GraphQlWorkflowStep } from "../types/workflow";
+import { METADATA_WORKFLOW_STEP } from "../queries/workflowSteps";
 
 type GraphQlGetParentWorkflowIdResponse = {
   dionysus_metadata_workflow_by_pk: {
@@ -81,28 +82,7 @@ export class MetadataWorkflowStepService {
             workflow_id: $workflowId
           }
         ) {
-          attempt
-          createdTime
-          id
-          job {
-            createdTime
-            duplicateRecords
-            expiredRecords
-            finishedTime
-            id
-            lastUpdatedTime
-            maxRecordsToProcess
-            newRecords
-            noOpRecords
-            processedRecords
-            skippedRecords
-            startedTime
-            status
-            totalRecords
-            type
-          }
-          lastUpdatedTime
-          type
+          ${METADATA_WORKFLOW_STEP}
         }
       }
     `;
@@ -152,28 +132,7 @@ export class MetadataWorkflowStepService {
           id: $stepId
           workflow_id: $workflowId
         ) {
-          attempt
-          createdTime
-          id
-          lastUpdatedTime
-          type
-          job {
-            createdTime
-            duplicateRecords
-            expiredRecords
-            finishedTime
-            id
-            lastUpdatedTime
-            maxRecordsToProcess
-            newRecords
-            noOpRecords
-            processedRecords
-            skippedRecords
-            startedTime
-            status
-            totalRecords
-            type
-          }
+          ${METADATA_WORKFLOW_STEP}
         }
       }
     `;
@@ -201,28 +160,7 @@ export class MetadataWorkflowStepService {
         dionysus_metadata_workflow_step(
           where: { workflow_id: { _eq: $workflowId } }
         ) {
-          attempt
-          createdTime
-          id
-          lastUpdatedTime
-          type
-          job {
-            createdTime
-            duplicateRecords
-            expiredRecords
-            finishedTime
-            id
-            lastUpdatedTime
-            maxRecordsToProcess
-            newRecords
-            noOpRecords
-            processedRecords
-            skippedRecords
-            startedTime
-            status
-            totalRecords
-            type
-          }
+          ${METADATA_WORKFLOW_STEP}
         }
       }
     `;

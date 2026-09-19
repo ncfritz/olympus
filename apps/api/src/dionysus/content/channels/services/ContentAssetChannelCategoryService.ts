@@ -14,6 +14,15 @@ import {
 import { BC_CHANNEL_FILTER } from "../../auth/contentAuth";
 import { GraphQlFullContentAssetChannelCategory } from "../../types/content";
 import { toFullDomainObject } from "../converters/ContentAssetChannelCategoryConverter";
+import {
+  BASE_CHANNEL,
+  CHANNEL_ASSET_CACHE_ENTRY_WITH_DIMENSIONS,
+  CHANNEL_SUMMARY,
+} from "../queries/channels";
+import {
+  BASE_CHANNEL_CATEGORY,
+  CHANNEL_CATEGORY_CHANNEL_COUNT,
+} from "../queries/categories";
 
 type GraphQlDescribeContentAssetChannelCategoryResponse = {
   dionysus_content_asset_channel_category_by_pk: GraphQlFullContentAssetChannelCategory | null;
@@ -56,28 +65,9 @@ export class ContentAssetChannelCategoryService {
     const queryRequest = gql`
       query DescribeContentAssetChannelCategory($categoryId: uuid!) {
         dionysus_content_asset_channel_category_by_pk(id: $categoryId) {
-          createdTime
-          id
-          lastUpdatedTime
-          name
+          ${BASE_CHANNEL_CATEGORY}
           channels(limit: 10${channelWhere ? `, ${channelWhere}` : ""}) {
-            bcCompliant
-            categoryId
-            createdTime
-            description
-            encodedFilter
-            favorite
-            filterInput
-            id
-            jitter
-            lastFetchedTime
-            lastUpdatedTime
-            name
-            ttl
-            assetCache {
-              assetId
-              createdTime
-            }
+            ${CHANNEL_SUMMARY}
           }
           channels_aggregate${channelWhere ? `(${channelWhere})` : ""} {
             aggregate {
@@ -124,31 +114,14 @@ export class ContentAssetChannelCategoryService {
       query ListContentAssetChannelCategories {
         dionysus_content_asset_channel_category(${[paginationExpression, whereExpression].join(", ")}) {
           channels${channelWhere ? `(${channelWhere})` : ""} {
-            assetCache {
-              createdTime
-              assetId
-              width
-              height
-            }
-            ttl
-            name
-            lastUpdatedTime
-            lastFetchedTime
-            jitter
-            id
-            filterInput
-            favorite
-            encodedFilter
-            description
-            createdTime
+            ${BASE_CHANNEL}
             categoryId
-            bcCompliant
             assetCount
+            assetCache {
+              ${CHANNEL_ASSET_CACHE_ENTRY_WITH_DIMENSIONS}
+            }
           }
-          createdTime
-          id
-          lastUpdatedTime
-          name
+          ${BASE_CHANNEL_CATEGORY}
           channels_aggregate${channelWhere ? `(${channelWhere})` : ""} {
             aggregate {
               count
@@ -189,34 +162,11 @@ export class ContentAssetChannelCategoryService {
         insert_dionysus_content_asset_channel_category_one(
           object: { name: $name }
         ) {
-          createdTime
-          id
-          lastUpdatedTime
-          name
+          ${BASE_CHANNEL_CATEGORY}
           channels(limit: 10) {
-            bcCompliant
-            categoryId
-            createdTime
-            description
-            encodedFilter
-            favorite
-            filterInput
-            id
-            jitter
-            lastFetchedTime
-            lastUpdatedTime
-            name
-            ttl
-            assetCache {
-              assetId
-              createdTime
-            }
+            ${CHANNEL_SUMMARY}
           }
-          channels_aggregate {
-            aggregate {
-              count
-            }
-          }
+          ${CHANNEL_CATEGORY_CHANNEL_COUNT}
         }
       }
     `;
@@ -248,34 +198,11 @@ export class ContentAssetChannelCategoryService {
           pk_columns: { id: $categoryId }
           _set: { name: $name }
         ) {
-          createdTime
-          id
-          lastUpdatedTime
-          name
+          ${BASE_CHANNEL_CATEGORY}
           channels(limit: 10) {
-            bcCompliant
-            categoryId
-            createdTime
-            description
-            encodedFilter
-            favorite
-            filterInput
-            id
-            jitter
-            lastFetchedTime
-            lastUpdatedTime
-            name
-            ttl
-            assetCache {
-              assetId
-              createdTime
-            }
+            ${CHANNEL_SUMMARY}
           }
-          channels_aggregate {
-            aggregate {
-              count
-            }
-          }
+          ${CHANNEL_CATEGORY_CHANNEL_COUNT}
         }
       }
     `;

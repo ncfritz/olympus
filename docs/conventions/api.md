@@ -268,7 +268,10 @@ response.status(HttpStatus.CREATED).send(responseBody);
   (`type Result = { <root_field>: GraphQl<Entity> | null }`).
 - Selection sets reused across operations are UPPER_SNAKE constants in
   the feature's `queries/<entity>.ts` (`BASE_NOTE`,
-  `NOTE_WITH_ASSOCIATIONS`).
+  `NOTE_WITH_ASSOCIATIONS`), or the group's `queries/` when several
+  features share them. Compose larger sets from smaller ones
+  (`${BASE_NOTE}` plus extra fields). A selection of five or more fields
+  written inline twice is a finding. **[checked]**
 - Upserts use `on_conflict` with the named constraint and an explicit
   `update_columns` list.
 - New Hasura tables and relationships arrive through migrations and

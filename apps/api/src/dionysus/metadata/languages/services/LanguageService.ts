@@ -1,6 +1,7 @@
 import { Language, PartialLanguage } from "@ncfritz/olympus-model";
 import { Injectable } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
+import { BASE_LANGUAGE } from "../../queries/common";
 import {
   buildPaginationExpression,
   PaginationParams,
@@ -41,11 +42,7 @@ export class LanguageService {
             update_columns: [name, nativeName]
           }
         ) {
-          id
-          name
-          nativeName
-          createdTime
-          lastUpdatedTime
+          ${BASE_LANGUAGE}
         }
       }
     `;
@@ -71,11 +68,7 @@ export class LanguageService {
     const fetchRequest = gql`
       query ListLanguages {
       dionysus_languages(${paginationExpression}) {
-        createdTime
-        id
-        lastUpdatedTime
-        name
-        nativeName
+        ${BASE_LANGUAGE}
       }
       dionysus_languages_aggregate {
         aggregate {

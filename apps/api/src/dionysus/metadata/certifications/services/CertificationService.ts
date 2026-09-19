@@ -1,6 +1,7 @@
 import { Certification, PartialCertification } from "@ncfritz/olympus-model";
 import { Injectable } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
+import { BASE_CERTIFICATION } from "../queries/certifications";
 import {
   buildFilterExpression,
   buildPaginationExpression,
@@ -50,13 +51,7 @@ export class CertificationService {
             update_columns: [meaning, order]
           }
         ) {
-          certification
-          country
-          createdTime
-          meaning
-          order
-          type
-          lastUpdatedTime
+          ${BASE_CERTIFICATION}
         }
       }
     `;
@@ -87,13 +82,7 @@ export class CertificationService {
     const fetchRequest = gql`
       query ListCertifications {
         dionysus_certifications(${[paginationExpression, whereExpression].join(", ")}) {
-          certification
-          country
-          createdTime
-          lastUpdatedTime
-          meaning
-          order
-          type
+          ${BASE_CERTIFICATION}
         }
         dionysus_certifications_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {

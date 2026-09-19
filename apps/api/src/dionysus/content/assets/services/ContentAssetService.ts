@@ -24,6 +24,13 @@ import {
   GraphQLContentAssetBucketStatistic,
 } from "../../types/content";
 import { toDomainObject } from "../converters/ContentAssetConverter";
+import {
+  BASE_CONTENT_ASSET,
+  CONTENT_ASSET,
+  CONTENT_ASSET_HISTOGRAM_BUCKET,
+  CONTENT_ASSET_TAGS,
+  CONTENT_ASSET_WITH_TAG_SUMMARIES,
+} from "../queries/assets";
 
 type GraphQlGerContentAssetQueryResponse = {
   dionysus_content_assets: GraphQLContentAsset[];
@@ -169,26 +176,7 @@ export class ContentAssetService {
     const fetchRequest = gql`
       query GetContentAsset {
         dionysus_content_assets(${whereExpression}) {
-          content_id
-          asset_sha
-          asset_size
-          createdTime
-          duration
-          height
-          name
-          original_name
-          original_sha
-          original_size
-          rating
-          width
-          asset_tags {
-            tag {
-              content_tag_id
-              createdTime
-              name
-              type
-            }
-          }
+          ${CONTENT_ASSET}
         }
       }
     `;
@@ -219,25 +207,7 @@ export class ContentAssetService {
     const fetchRequest = gql`
       query ListContentAssets {
         dionysus_content_assets(${[paginationExpression, whereExpression].join(", ")}) {
-          content_id
-          original_sha
-          original_size
-          asset_sha
-          asset_size
-          createdTime
-          duration
-          height
-          name
-          original_name
-          rating
-          width
-          asset_tags {
-            tag {
-              content_tag_id
-              name
-              type
-            }
-          }
+          ${CONTENT_ASSET_WITH_TAG_SUMMARIES}
         }
         dionysus_content_assets_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {
@@ -284,26 +254,7 @@ export class ContentAssetService {
           }
           limit: 1
         ) {
-          content_id
-          asset_sha
-          asset_size
-          createdTime
-          duration
-          height
-          name
-          original_name
-          original_sha
-          original_size
-          rating
-          width
-          asset_tags {
-            tag {
-              content_tag_id
-              createdTime
-              name
-              type
-            }
-          }
+          ${CONTENT_ASSET}
         }
         untagged: dionysus_content_assets_aggregate(
           where: {
@@ -426,14 +377,7 @@ export class ContentAssetService {
           duration
           createdTime
           content_id
-          asset_tags {
-            tag {
-              content_tag_id
-              createdTime
-              name
-              type
-            }
-          }
+          ${CONTENT_ASSET_TAGS}
         }
       }
     `;
@@ -462,25 +406,7 @@ export class ContentAssetService {
             _or: [{ asset_sha: { _eq: $sha } }, { original_sha: { _eq: $sha } }]
           }
         ) {
-          content_id
-          original_sha
-          original_size
-          asset_sha
-          asset_size
-          createdTime
-          duration
-          height
-          name
-          original_name
-          rating
-          width
-          asset_tags {
-            tag {
-              content_tag_id
-              name
-              type
-            }
-          }
+          ${CONTENT_ASSET_WITH_TAG_SUMMARIES}
         }
       }
     `;
@@ -526,18 +452,7 @@ export class ContentAssetService {
             width: $width
           }
         ) {
-          asset_sha
-          asset_size
-          content_id
-          createdTime
-          duration
-          height
-          name
-          original_name
-          original_sha
-          original_size
-          rating
-          width
+          ${BASE_CONTENT_ASSET}
         }
       }
     `;
@@ -641,9 +556,7 @@ export class ContentAssetService {
     const fetchRequest = gql`
       query GetContentAssetSizeStatistics {
         dionysus_content_asset_size_statistics(order_by: { bucket: asc }) {
-          bucket
-          bucket_width
-          count
+          ${CONTENT_ASSET_HISTOGRAM_BUCKET}
         }
       }
     `;
@@ -664,9 +577,7 @@ export class ContentAssetService {
     const fetchRequest = gql`
       query GetContentAssetDurationStatistics {
         dionysus_content_asset_duration_statistics(order_by: { bucket: asc }) {
-          bucket
-          bucket_width
-          count
+          ${CONTENT_ASSET_HISTOGRAM_BUCKET}
         }
       }
     `;
@@ -687,9 +598,7 @@ export class ContentAssetService {
     const fetchRequest = gql`
       query GetContentAssetWidthStatistics {
         dionysus_content_asset_width_statistics(order_by: { bucket: asc }) {
-          bucket
-          bucket_width
-          count
+          ${CONTENT_ASSET_HISTOGRAM_BUCKET}
         }
       }
     `;
@@ -710,9 +619,7 @@ export class ContentAssetService {
     const fetchRequest = gql`
       query GetContentAssetHeightStatistics {
         dionysus_content_asset_height_statistics(order_by: { bucket: asc }) {
-          bucket
-          bucket_width
-          count
+          ${CONTENT_ASSET_HISTOGRAM_BUCKET}
         }
       }
     `;

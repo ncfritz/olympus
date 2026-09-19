@@ -7,6 +7,11 @@ import {
 import { Injectable } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import {
+  BASE_GRNRE,
+  GENRE_COUNT_STATISTIC,
+  GENRE_STATISTIC,
+} from "../queries/genres";
+import {
   buildFilterExpression,
   buildPaginationExpression,
   PaginationParams,
@@ -97,11 +102,7 @@ export class GenreService {
           object: { id: $id, name: $name, type: $type }
           on_conflict: { constraint: genres_pkey, update_columns: [name] }
         ) {
-          id
-          name
-          createdTime
-          type
-          lastUpdatedTime
+          ${BASE_GRNRE}
         }
       }
     `;
@@ -130,11 +131,7 @@ export class GenreService {
     const fetchRequest = gql`
       query ListGenres {
         dionysus_genres(${[paginationExpression, whereExpression].join(", ")}) {
-          id
-          type
-          name
-          createdTime
-          lastUpdatedTime
+          ${BASE_GRNRE}
         }
         dionysus_genres_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {
@@ -160,8 +157,7 @@ export class GenreService {
     const fetchRequest = gql`
       query GetMovieGenreCountStatistics {
         dionysus_movie_genre_count_statistics {
-          count
-          genres
+          ${GENRE_COUNT_STATISTIC}
         }
       }
     `;
@@ -181,8 +177,7 @@ export class GenreService {
     const fetchRequest = gql`
       query GetTvSeriesGenreCountStatistics {
         dionysus_tv_series_genre_count_statistics {
-          count
-          genres
+          ${GENRE_COUNT_STATISTIC}
         }
       }
     `;
@@ -202,8 +197,7 @@ export class GenreService {
     const fetchRequest = gql`
       query GetMovieGenreStatistics {
         dionysus_movie_genre_statistics {
-          count
-          genre
+          ${GENRE_STATISTIC}
         }
       }
     `;
@@ -221,8 +215,7 @@ export class GenreService {
     const fetchRequest = gql`
       query GetTvSeriesGenreStatistics {
         dionysus_tv_series_genre_statistics {
-          count
-          genre
+          ${GENRE_STATISTIC}
         }
       }
     `;

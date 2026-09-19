@@ -32,6 +32,11 @@ import {
   GraphQLContentIngestionWorkflow,
   GraphQlContentIngestionWorkflowStep,
 } from "../types/workflow";
+import {
+  CONTENT_INGESTION_WORKFLOW_STEP,
+  CONTENT_INGESTION_WORKFLOW_SUMMARY,
+  CONTENT_INGESTION_WORKFLOW_WITH_STEPS,
+} from "../queries/workflows";
 
 type GraphQlGetParentContentIngestionWorkflowIdResponse = {
   dionysus_content_asset_ingest_workflows_by_pk: {
@@ -169,28 +174,9 @@ export class ContentIngestionWorkflowService {
     const fetchRequest = gql`
       query DescribeContentIngestionWorkflow($id: uuid!) {
         dionysus_content_asset_ingest_workflows_by_pk(id: $id) {
-          createdTime
-          finishedTime
-          id
-          lastUpdatedTime
-          source
-          sourceType
-          startedTime
-          status
-          steps_aggregate {
-            aggregate {
-              count
-            }
-          }
+          ${CONTENT_INGESTION_WORKFLOW_SUMMARY}
           steps(order_by: { createdTime: asc }) {
-            createdTime
-            finishedTime
-            id
-            lastUpdatedTime
-            progress
-            startedTime
-            status
-            type
+            ${CONTENT_INGESTION_WORKFLOW_STEP}
           }
         }
       }
@@ -223,19 +209,7 @@ export class ContentIngestionWorkflowService {
     const fetchRequest = gql`
       query ListContentIngestionWorkflows {
         dionysus_content_asset_ingest_workflows(${[paginationExpression, whereExpression].join(", ")}) {
-          createdTime
-          finishedTime
-          id
-          lastUpdatedTime
-          source
-          sourceType
-          startedTime
-          status
-          steps_aggregate {
-            aggregate {
-              count
-            }
-          }
+          ${CONTENT_INGESTION_WORKFLOW_SUMMARY}
         }
         dionysus_content_asset_ingest_workflows_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {
@@ -280,25 +254,8 @@ export class ContentIngestionWorkflowService {
           pk_columns: { id: $id }
           _set: $changes
         ) {
-          id
-          source
-          sourceType
+          ${CONTENT_INGESTION_WORKFLOW_WITH_STEPS}
           tempLocation
-          status
-          startedTime
-          finishedTime
-          createdTime
-          lastUpdatedTime
-          steps {
-            id
-            type
-            status
-            progress
-            startedTime
-            finishedTime
-            createdTime
-            lastUpdatedTime
-          }
         }
       }
     `;
@@ -457,14 +414,7 @@ export class ContentIngestionWorkflowService {
             startedTime: $startedTime
           }
         ) {
-          id
-          type
-          status
-          progress
-          startedTime
-          finishedTime
-          createdTime
-          lastUpdatedTime
+          ${CONTENT_INGESTION_WORKFLOW_STEP}
         }
       }
     `;
@@ -504,14 +454,7 @@ export class ContentIngestionWorkflowService {
           pk_columns: { id: $id, workflow_id: $workflowId }
           _set: $changes
         ) {
-          id
-          type
-          status
-          progress
-          startedTime
-          finishedTime
-          createdTime
-          lastUpdatedTime
+          ${CONTENT_INGESTION_WORKFLOW_STEP}
         }
       }
     `;
@@ -544,24 +487,7 @@ export class ContentIngestionWorkflowService {
         insert_dionysus_content_asset_ingest_workflows_one(
           object: { status: $status, source: $source, sourceType: $sourceType }
         ) {
-          id
-          source
-          sourceType
-          status
-          startedTime
-          finishedTime
-          createdTime
-          lastUpdatedTime
-          steps {
-            id
-            type
-            status
-            progress
-            startedTime
-            finishedTime
-            createdTime
-            lastUpdatedTime
-          }
+          ${CONTENT_INGESTION_WORKFLOW_WITH_STEPS}
         }
       }
     `;

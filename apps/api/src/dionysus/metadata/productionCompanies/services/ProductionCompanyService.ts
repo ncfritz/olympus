@@ -10,6 +10,15 @@ import {
 } from "@ncfritz/olympus-model";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
+import { MOVIE_COLUMNS } from "../../movies/queries/movies";
+import { ALTERNATIVE_NAMES } from "../../queries/common";
+import { TV_SERIES_SUMMARY } from "../../tv/queries/tvSeries";
+import {
+  BASE_PRODUCTION_COMPANY,
+  PRODUCTION_COMPANY,
+  SPARSE_PRODUCTION_COMPANY,
+  SPARSE_PRODUCTION_COMPANY_WITH_CONTENT_COUNTS,
+} from "../queries/productionCompany";
 import {
   buildFilterExpression,
   buildPaginationExpression,
@@ -134,26 +143,7 @@ export class ProductionCompanyService {
             ]
           }
         ) {
-          alternativeNames {
-            createdTime
-            lastUpdatedTime
-            name
-            type
-          }
-          country {
-            createdTime
-            id
-            lastUpdatedTime
-            name
-          }
-          createdTime
-          description
-          headquarters
-          homepage
-          id
-          lastUpdatedTime
-          logo
-          name
+          ${SPARSE_PRODUCTION_COMPANY}
         }
       }
     `;
@@ -206,87 +196,20 @@ export class ProductionCompanyService {
     const fetchRequest = gql`
       query DescribeProductionCompany($id: numeric!) {
         dionysus_production_companies_by_pk(id: $id) {
-          alternativeNames {
-            createdTime
-            lastUpdatedTime
-            name
-            type
-          }
-          country {
-            id
-            createdTime
-            lastUpdatedTime
-            name
-          }
-          createdTime
-          description
-          headquarters
-          homepage
-          id
-          lastUpdatedTime
-          logo
-          name
-          logos {
-            createdTime
-            filePath
-            fileType
-            height
-            id
-            lastUpdatedTime
-            width
-          }
+          ${PRODUCTION_COMPANY}
           children {
-            alternativeNames {
-              createdTime
-              lastUpdatedTime
-              name
-              type
-            }
-            country {
-              id
-              createdTime
-              lastUpdatedTime
-              name
-            }
-            createdTime
-            description
-            headquarters
-            homepage
-            id
-            lastUpdatedTime
-            logo
-            name
-            movies_aggregate {
-              aggregate {
-                count
-              }
-            }
-            tvSeries_aggregate {
-              aggregate {
-                count
-              }
-            }
+            ${SPARSE_PRODUCTION_COMPANY_WITH_CONTENT_COUNTS}
           }
           parent {
-            alternativeNames {
-              createdTime
-              lastUpdatedTime
-              name
-              type
-            }
+            ${BASE_PRODUCTION_COMPANY}
+            createdTime
+            lastUpdatedTime
+            ${ALTERNATIVE_NAMES}
             country {
               createdTime
               lastUpdatedTime
               name
             }
-            createdTime
-            description
-            headquarters
-            homepage
-            id
-            lastUpdatedTime
-            logo
-            name
           }
         }
       }
@@ -328,36 +251,7 @@ export class ProductionCompanyService {
     const fetchRequest = gql`
       query ListProductionCompanies {
         dionysus_production_companies(${queryParams.join(", ")}) {
-          alternativeNames {
-            createdTime
-            lastUpdatedTime
-            name
-            type
-          }
-          country {
-            createdTime
-            id
-            lastUpdatedTime
-            name
-          }
-          createdTime
-          description
-          headquarters
-          homepage
-          id
-          lastUpdatedTime
-          logo
-          name
-          movies_aggregate {
-            aggregate {
-              count
-            }
-          }
-          tvSeries_aggregate {
-            aggregate {
-              count
-            }
-          }
+          ${SPARSE_PRODUCTION_COMPANY_WITH_CONTENT_COUNTS}
         }
         dionysus_production_companies_aggregate${where ? `(${where})` : ""} {
           aggregate {
@@ -394,28 +288,7 @@ export class ProductionCompanyService {
         dionysus_production_companies_by_pk(id: $id) {
           movies(${queryParams.join(", ")}) {
             movie {
-              adult
-              backdropPath
-              budget
-              createdTime
-              homepage
-              id
-              imdbId
-              lastUpdatedTime
-              originalLanguageCode
-              originalTitle
-              overview
-              popularity
-              posterPath
-              releaseDate
-              revenue
-              runtime
-              status
-              tagline
-              title
-              voteAverage
-              voteCount
-              video
+              ${MOVIE_COLUMNS}
             }
           }
           movies_aggregate {
@@ -470,27 +343,8 @@ export class ProductionCompanyService {
         dionysus_production_companies_by_pk(id: $id) {
           tvSeries(${queryParams.join(", ")}) {
             tvSeries {
-              adult
-              backdropPath
-              createdTime
-              firstAirDate
-              homepage
-              id
-              inProduction
-              lastAirDate
-              lastEpisodeToAirId
-              lastUpdatedTime
-              name
-              numberOfEpisodes
-              numberOfSeasons
-              originalName
-              original_language
-              overview
+              ${TV_SERIES_SUMMARY}
               popularity
-              posterPath
-              status
-              tagline
-              type
               voteAverage
               voteCount
             }

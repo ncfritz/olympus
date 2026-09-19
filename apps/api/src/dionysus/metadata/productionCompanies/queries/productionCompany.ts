@@ -1,7 +1,7 @@
 import {
   ALTERNATIVE_NAMES,
   BASE_COUNTRY,
-  IDENTIFIABLE_IMAGE,
+  BASE_IDENTIFIABLE_IMAGE,
 } from "../../queries/common";
 
 export const BASE_PRODUCTION_COMPANY = `id
@@ -20,11 +20,21 @@ export const SPARSE_PRODUCTION_COMPANY = `${BASE_PRODUCTION_COMPANY}
   }
   `;
 
-export const SPARSE_PRODUCTION_COMPANY_WITH_CONTENT_COUNTS = `${SPARSE_PRODUCTION_COMPANY}`;
+export const SPARSE_PRODUCTION_COMPANY_WITH_CONTENT_COUNTS = `${SPARSE_PRODUCTION_COMPANY}
+  movies_aggregate {
+    aggregate {
+      count
+    }
+  }
+  tvSeries_aggregate {
+    aggregate {
+      count
+    }
+  }`;
 
 export const PRODUCTION_COMPANY = `${SPARSE_PRODUCTION_COMPANY}
   logos {
-    ${IDENTIFIABLE_IMAGE}
+    ${BASE_IDENTIFIABLE_IMAGE}
   }`;
 
 export const FULL_PRODUCTION_COMPANY = `${PRODUCTION_COMPANY}

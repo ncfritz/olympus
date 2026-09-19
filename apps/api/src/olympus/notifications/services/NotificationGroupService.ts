@@ -5,6 +5,7 @@ import {
   GraphQlNotificationGroup,
   toDomainObject,
 } from "../converters/NotificationGroupConverter";
+import { BASE_NOTIFICATION_GROUP } from "../queries/notificationGroups";
 
 type GraphQlListNotificationGroupsResponse = {
   olympus_notification_groups: GraphQlNotificationGroup[];
@@ -33,10 +34,7 @@ export class NotificationGroupService {
     const queryRequest = gql`
       query ListNotificationGroups {
         olympus_notification_groups {
-          createdTime
-          description
-          id
-          name
+          ${BASE_NOTIFICATION_GROUP}
           ${typesClause}
         }
       }

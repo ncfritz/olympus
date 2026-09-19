@@ -1,6 +1,7 @@
 import { Keyword, PartialKeyword } from "@ncfritz/olympus-model";
 import { Injectable } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
+import { BASE_KEYWORD } from "../queries/keywords";
 import {
   buildPaginationExpression,
   PaginationParams,
@@ -34,10 +35,7 @@ export class KeywordService {
           object: { id: $id, value: $value }
           on_conflict: { constraint: keywords_pkey, update_columns: [value] }
         ) {
-          id
-          value
-          createdTime
-          lastUpdatedTime
+          ${BASE_KEYWORD}
         }
       }
     `;
@@ -62,10 +60,7 @@ export class KeywordService {
     const fetchRequest = gql`
       query ListKeywords {
       dionysus_keywords(${paginationExpression}) {
-        id
-        value
-        createdTime
-        lastUpdatedTime
+        ${BASE_KEYWORD}
       }
       dionysus_keywords_aggregate {
         aggregate {

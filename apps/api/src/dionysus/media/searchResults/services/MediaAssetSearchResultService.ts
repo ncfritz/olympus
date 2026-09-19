@@ -8,7 +8,7 @@ import {
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../converters/MediaAssetSearchResultConverter";
-import { BASE_SEARCH_RESULT } from "../queries/searchResult";
+import { BASE_SEARCH_RESULT, SEARCH_RESULT_KEY } from "../queries/searchResult";
 import { GraphQlMediaAssetSearchResult } from "../types/searchResult";
 import { MediaAssetSearchConfigurationService } from "../../searchConfigurations/services/MediaAssetSearchConfigurationService";
 import {
@@ -73,9 +73,7 @@ export class MediaAssetSearchResultService {
           mediaId: $mediaId
           id: $id
         ) {
-          assetType
-          mediaId
-          id
+          ${SEARCH_RESULT_KEY}
         }
       }
     `;

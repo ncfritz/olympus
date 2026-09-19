@@ -92,6 +92,27 @@ export const TV_SERIES_CREATED_BY = `createdBy {
     }
   }`;
 
+export const TV_SERIES_SUMMARY = `id
+  adult
+  backdropPath
+  firstAirDate
+  homepage
+  inProduction
+  lastAirDate
+  lastEpisodeToAirId
+  name
+  numberOfEpisodes
+  numberOfSeasons
+  originalName
+  original_language
+  overview
+  posterPath
+  status
+  tagline
+  type
+  createdTime
+  lastUpdatedTime`;
+
 export const BASE_TV_SERIES = `id
   adult
   backdropPath

@@ -10,6 +10,12 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment-timezone";
 import { GraphQlMeeting, toDomainObject } from "../converters/MeetingConverter";
+import {
+  BASE_MEETING,
+  MEETING_ATTENDEE,
+  MEETING_CORE,
+  MEETING_WITH_ATTENDEE_EMAILS,
+} from "../queries/meetings";
 
 type GraphQlCreateCalendarItemResponse = {
   insert_minerva_meetings_one: GraphQlMeeting;
@@ -178,43 +184,10 @@ export class MeetingService {
             ]
           }
         ) {
-          id
-          uid
-          recurrence_id
-          all_day
+          ${MEETING_CORE}
           attendees {
-            attendance
-            attendee_email
-            response
-            user {
-              alias
-              email
-              given_name
-              surname
-              type
-            }
+            ${MEETING_ATTENDEE}
           }
-          cancelled
-          deleted
-          duration
-          end_time
-          importance
-          location
-          occurrence_type
-          organizer {
-            alias
-            email
-            given_name
-            surname
-            type
-          }
-          reminder
-          response
-          sensitivity
-          start_time
-          status
-          subject
-          type
         }
       }
     `;
@@ -279,43 +252,7 @@ export class MeetingService {
     const queryRequest = gql`
       query DescribeCalendarItem($id: String!) {
         minerva_meetings_by_pk(id: $id) {
-          all_day
-          type
-          subject
-          status
-          source
-          start_time
-          sensitivity
-          response
-          reminder
-          organizer {
-            alias
-            email
-            given_name
-            surname
-            type
-          }
-          occurrence_type
-          location
-          importance
-          id
-          uid
-          recurrence_id
-          end_time
-          deleted
-          duration
-          cancelled
-          attendees {
-            attendance
-            response
-            user {
-              alias
-              email
-              given_name
-              surname
-              type
-            }
-          }
+          ${BASE_MEETING}
         }
       }
     `;
@@ -340,44 +277,7 @@ export class MeetingService {
         $changes: minerva_meetings_set_input = {}
       ) {
         update_minerva_meetings_by_pk(pk_columns: { id: $id }, _set: $changes) {
-          id
-          uid
-          recurrence_id
-          all_day
-          attendees {
-            attendance
-            attendee_email
-            response
-            user {
-              alias
-              email
-              given_name
-              surname
-              type
-            }
-          }
-          cancelled
-          deleted
-          duration
-          end_time
-          importance
-          location
-          occurrence_type
-          organizer {
-            alias
-            email
-            given_name
-            surname
-            type
-          }
-          reminder
-          response
-          sensitivity
-          start_time
-          status
-          source
-          subject
-          type
+          ${MEETING_WITH_ATTENDEE_EMAILS}
         }
       }
     `;
@@ -403,44 +303,7 @@ export class MeetingService {
           pk_columns: { id: $id }
           _set: { deleted: true }
         ) {
-          id
-          uid
-          recurrence_id
-          all_day
-          attendees {
-            attendance
-            attendee_email
-            response
-            user {
-              alias
-              email
-              given_name
-              surname
-              type
-            }
-          }
-          cancelled
-          deleted
-          duration
-          end_time
-          importance
-          location
-          occurrence_type
-          organizer {
-            alias
-            email
-            given_name
-            surname
-            type
-          }
-          reminder
-          response
-          sensitivity
-          start_time
-          status
-          source
-          subject
-          type
+          ${MEETING_WITH_ATTENDEE_EMAILS}
         }
       }
     `;
@@ -485,44 +348,7 @@ export class MeetingService {
             ]
           }
         ) {
-          all_day
-          type
-          subject
-          status
-          source
-          start_time
-          sensitivity
-          response
-          reminder
-          organizer {
-            alias
-            email
-            given_name
-            surname
-            type
-          }
-          occurrence_type
-          location
-          importance
-          id
-          uid
-          recurrence_id
-          end_time
-          deleted
-          duration
-          cancelled
-          attendees {
-            attendance
-            attendee_email
-            response
-            user {
-              alias
-              email
-              given_name
-              surname
-              type
-            }
-          }
+          ${MEETING_WITH_ATTENDEE_EMAILS}
         }
       }
     `;
@@ -563,43 +389,7 @@ export class MeetingService {
           limit: 1
           order_by: { start_time: asc }
         ) {
-          all_day
-          type
-          subject
-          status
-          source
-          start_time
-          sensitivity
-          response
-          reminder
-          organizer {
-            alias
-            email
-            given_name
-            surname
-            type
-          }
-          occurrence_type
-          location
-          importance
-          id
-          uid
-          recurrence_id
-          end_time
-          deleted
-          duration
-          cancelled
-          attendees {
-            attendance
-            response
-            user {
-              alias
-              email
-              given_name
-              surname
-              type
-            }
-          }
+          ${BASE_MEETING}
         }
       }
     `;
@@ -644,43 +434,7 @@ export class MeetingService {
           limit: $limit
           order_by: { start_time: desc }
         ) {
-          all_day
-          type
-          subject
-          status
-          source
-          start_time
-          sensitivity
-          response
-          reminder
-          organizer {
-            alias
-            email
-            given_name
-            surname
-            type
-          }
-          occurrence_type
-          location
-          importance
-          id
-          uid
-          recurrence_id
-          end_time
-          deleted
-          duration
-          cancelled
-          attendees {
-            attendance
-            response
-            user {
-              alias
-              email
-              given_name
-              surname
-              type
-            }
-          }
+          ${BASE_MEETING}
         }
       }
     `;

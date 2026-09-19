@@ -6,6 +6,8 @@ import {
 } from "@ncfritz/olympus-model";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
+import { MOVIE_SUMMARY_WITH_ORIGINAL_LANGUAGE } from "../../movies/queries/movies";
+import { BASE_COLLECTION } from "../queries/collections";
 import { GraphQlCollection } from "../../types/metadata";
 import { toDomainObject } from "../converters/CollectionConverter";
 
@@ -99,53 +101,15 @@ export class CollectionService {
     const fetchRequest = gql`
       query DescribeCollection($id: numeric!) {
         dionysus_collections_by_pk(id: $id) {
-          backdropPath
-          createdTime
-          id
-          images {
-            createdTime
-            filePath
-            height
-            language {
-              id
-              createdTime
-              lastUpdatedTime
-              name
-              nativeName
-            }
-            lastUpdatedTime
-            type
-            width
-          }
+          ${BASE_COLLECTION}
           lastUpdatedTime
-          name
-          overview
           parts {
             createdTime
             lastUpdatedTime
             movie {
-              adult
-              backdropPath
-              budget
-              createdTime
-              homepage
-              id
-              imdbId
-              lastUpdatedTime
-              originalLanguageCode
-              originalTitle
-              overview
-              posterPath
-              releaseDate
-              revenue
-              runtime
-              status
-              tagline
-              title
-              video
+              ${MOVIE_SUMMARY_WITH_ORIGINAL_LANGUAGE}
             }
           }
-          posterPath
         }
       }
     `;

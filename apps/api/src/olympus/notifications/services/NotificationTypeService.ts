@@ -5,6 +5,7 @@ import {
   GraphQlFullNotificationType,
   toFullDomainObject,
 } from "../converters/NotificationTypeConverter";
+import { NOTIFICATION_TYPE_WITH_PROTOCOLS } from "../queries/notificationTypes";
 
 type GraphQlListNotificationTypesResponse = {
   olympus_notification_type: GraphQlFullNotificationType[];
@@ -20,24 +21,7 @@ export class NotificationTypeService {
     const queryRequest = gql`
       query ListNotificationTypes {
         olympus_notification_type {
-          createdTime
-          defaultGroup {
-            createdTime
-            description
-            id
-            name
-          }
-          description
-          id
-          name
-          emailDefault
-          supportsEmail
-          supportsSynoChat
-          supportsSynoMail
-          supportsWebSocket
-          synoChatDefault
-          synoMailDefault
-          webSocketDefault
+          ${NOTIFICATION_TYPE_WITH_PROTOCOLS}
         }
       }
     `;

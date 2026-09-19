@@ -12,12 +12,14 @@ import {
 } from "@ncfritz/olympus-model";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
+import { MOVIE_SUMMARY_WITH_SEARCH_CONFIGURATION } from "../../movies/queries/movies";
+import { YEAR_STATISTIC } from "../../queries/common";
+import { BASE_PERSON } from "../queries/people";
 import {
   buildFilterExpression,
   buildPaginationExpression,
   PaginationParams,
 } from "../../../../utils/filterUtil";
-import { SEARCH_CONFIGURATION } from "../../../media/searchConfigurations/queries/searchConfiguration";
 import { toBaseMovieCastDomainObject } from "../../converters/CastConverter";
 import { toBaseMovieCrewDomainObject } from "../../converters/CrewConverter";
 import { toSparseDomainObject } from "../../movies/converters/MovieConverter";
@@ -291,20 +293,7 @@ export class PersonService {
     const fetchRequest = gql`
       query ListPeople {
         dionysus_people(${[paginationExpression, whereExpression].join(", ")}) {
-          id
-          name
-          adult
-          birthday
-          birthplace
-          deathday
-          gender
-          homepage
-          imdbId
-          knownForDepartment
-          profilePath
-          popularity
-          createdTime
-          lastUpdatedTime
+          ${BASE_PERSON}
         }
         dionysus_people_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {
@@ -330,8 +319,7 @@ export class PersonService {
     const fetchRequest = gql`
       query GetPeopleBirthdayStatistics {
         dionysus_people_birthday_statistics(order_by: { year: asc }) {
-          count
-          year
+          ${YEAR_STATISTIC}
         }
       }
     `;
@@ -354,8 +342,7 @@ export class PersonService {
     const fetchRequest = gql`
       query GetPeopleDeathdayStatistics {
         dionysus_people_deathday_statistics(order_by: { year: asc }) {
-          count
-          year
+          ${YEAR_STATISTIC}
         }
       }
     `;
@@ -441,25 +428,7 @@ export class PersonService {
           creditId
           lastUpdatedTime
           movie {
-            id
-            adult
-            backdropPath
-            budget
-            createdTime
-            homepage
-            imdbId
-            lastUpdatedTime
-            originalTitle
-            overview
-            posterPath
-            releaseDate
-            revenue
-            runtime
-            status
-            tagline
-            title
-            video
-            ${SEARCH_CONFIGURATION}
+            ${MOVIE_SUMMARY_WITH_SEARCH_CONFIGURATION}
           }
         }
       }
@@ -507,25 +476,7 @@ export class PersonService {
           job
           lastUpdatedTime
           movie {
-            id
-            adult
-            backdropPath
-            budget
-            createdTime
-            homepage
-            imdbId
-            lastUpdatedTime
-            originalTitle
-            overview
-            posterPath
-            releaseDate
-            revenue
-            runtime
-            status
-            tagline
-            title
-            video
-            ${SEARCH_CONFIGURATION}
+            ${MOVIE_SUMMARY_WITH_SEARCH_CONFIGURATION}
           }
         }
       }

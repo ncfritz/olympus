@@ -19,7 +19,12 @@ export const NETWORK = `${BASE_NETWORK}
     ${BASE_COUNTRY}
   }`;
 
-export const NETWORK_WITH_CONTENT_COUNTS = `${NETWORK}`;
+export const NETWORK_WITH_CONTENT_COUNTS = `${NETWORK}
+  tvSeries_aggregate {
+    aggregate {
+      count
+    }
+  }`;
 
 export const NETWORK_ASSOCIATION = `createdTime
   lastUpdatedTime

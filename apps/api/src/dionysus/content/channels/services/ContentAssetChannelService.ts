@@ -25,6 +25,7 @@ import {
   toDomainObject,
   toFullDomainObject,
 } from "../converters/ContentAssetChannelConverter";
+import { CHANNEL_SUMMARY, FULL_CHANNEL } from "../queries/channels";
 
 type GraphQlAssetCacheResponse = {
   dionysus_content_assets: {
@@ -130,36 +131,7 @@ export class ContentAssetChannelService {
     const queryRequest = gql`
       query DescribeContentAssetChannel($channelId: uuid!) {
         dionysus_content_asset_channel_by_pk(id: $channelId) {
-          ttl
-          name
-          lastUpdatedTime
-          lastFetchedTime
-          jitter
-          id
-          filterInput
-          favorite
-          encodedFilter
-          description
-          createdTime
-          category {
-            createdTime
-            id
-            lastUpdatedTime
-            name
-            channels_aggregate {
-              aggregate {
-                count
-              }
-            }
-          }
-          bcCompliant
-          assetCount
-          assetCache {
-            assetId
-            width
-            height
-            createdTime
-          }
+          ${FULL_CHANNEL}
         }
       }
     `;
@@ -201,36 +173,7 @@ export class ContentAssetChannelService {
     const fetchRequest = gql`
       query ListContentAssetChannels {
         dionysus_content_asset_channel(${[paginationExpression, whereExpression].join(", ")}) {
-          ttl
-          name
-          lastUpdatedTime
-          lastFetchedTime
-          jitter
-          id
-          filterInput
-          favorite
-          encodedFilter
-          description
-          createdTime
-          category {
-            createdTime
-            id
-            lastUpdatedTime
-            name
-            channels_aggregate {
-              aggregate {
-                count
-              }
-            }
-          }
-          bcCompliant
-          assetCount
-          assetCache {
-            assetId
-            width
-            height
-            createdTime
-          }
+          ${FULL_CHANNEL}
         }
         dionysus_content_asset_channel_aggregate${whereExpression ? `(${whereExpression})` : ""} {
           aggregate {
@@ -275,24 +218,8 @@ export class ContentAssetChannelService {
       query ListContentAssetChannelsForCategory($categoryId: uuid!) {
         dionysus_content_asset_channel_category_by_pk(id: $categoryId) {
           channels(${[paginationExpression, whereExpression].join(", ")}) {
-            bcCompliant
-            categoryId
-            createdTime
-            description
-            encodedFilter
-            favorite
-            filterInput
-            id
-            jitter
-            lastFetchedTime
-            lastUpdatedTime
-            name
-            ttl
+            ${CHANNEL_SUMMARY}
             assetCount
-            assetCache {
-              assetId
-              createdTime
-            }
           }
           channels_aggregate${whereExpression ? `(${whereExpression})` : ""} {
             aggregate {
@@ -362,36 +289,7 @@ export class ContentAssetChannelService {
             assetCache: { data: $assetCache }
           }
         ) {
-          ttl
-          name
-          lastUpdatedTime
-          lastFetchedTime
-          jitter
-          id
-          filterInput
-          favorite
-          encodedFilter
-          description
-          createdTime
-          category {
-            createdTime
-            id
-            lastUpdatedTime
-            name
-            channels_aggregate {
-              aggregate {
-                count
-              }
-            }
-          }
-          bcCompliant
-          assetCount
-          assetCache {
-            assetId
-            width
-            height
-            createdTime
-          }
+          ${FULL_CHANNEL}
         }
       }
     `;
@@ -460,36 +358,7 @@ export class ContentAssetChannelService {
             assetCount: $assetCount
           }
         ) {
-          ttl
-          name
-          lastUpdatedTime
-          lastFetchedTime
-          jitter
-          id
-          filterInput
-          favorite
-          encodedFilter
-          description
-          createdTime
-          category {
-            createdTime
-            id
-            lastUpdatedTime
-            name
-            channels_aggregate {
-              aggregate {
-                count
-              }
-            }
-          }
-          bcCompliant
-          assetCount
-          assetCache {
-            assetId
-            width
-            height
-            createdTime
-          }
+          ${FULL_CHANNEL}
         }
       }
     `;
@@ -540,36 +409,7 @@ export class ContentAssetChannelService {
           pk_columns: { id: $channelId }
           _set: { lastFetchedTime: $lastFetchedTime, assetCount: $assetCount }
         ) {
-          ttl
-          name
-          lastUpdatedTime
-          lastFetchedTime
-          jitter
-          id
-          filterInput
-          favorite
-          encodedFilter
-          description
-          createdTime
-          category {
-            createdTime
-            id
-            lastUpdatedTime
-            name
-            channels_aggregate {
-              aggregate {
-                count
-              }
-            }
-          }
-          bcCompliant
-          assetCount
-          assetCache {
-            assetId
-            width
-            height
-            createdTime
-          }
+          ${FULL_CHANNEL}
         }
       }
     `;
@@ -604,36 +444,7 @@ export class ContentAssetChannelService {
           pk_columns: { id: $channelId }
           _set: { favorite: $favorite }
         ) {
-          ttl
-          name
-          lastUpdatedTime
-          lastFetchedTime
-          jitter
-          id
-          filterInput
-          favorite
-          encodedFilter
-          description
-          createdTime
-          category {
-            createdTime
-            id
-            lastUpdatedTime
-            name
-            channels_aggregate {
-              aggregate {
-                count
-              }
-            }
-          }
-          bcCompliant
-          assetCount
-          assetCache {
-            assetId
-            width
-            height
-            createdTime
-          }
+          ${FULL_CHANNEL}
         }
       }
     `;

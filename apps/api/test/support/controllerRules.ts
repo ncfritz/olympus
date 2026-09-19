@@ -39,6 +39,9 @@
  *                      or NotificationsGateway: that belongs in a service
  *   graphql-named      every gql document names its operation (services
  *                      and other files included)
+ *   graphql-selection-shared
+ *                      a selection of 5+ plain fields written inline in
+ *                      more than one gql document is a queries/ constant
  *   graphql-unique     a GraphQL operation name means one document across
  *                      the API (the test double and Hasura logs route by it)
  */
@@ -70,12 +73,26 @@ export function checkControllers(
   const descriptionOwners = new Map<string, string[]>();
   // GraphQL operation name -> normalized document -> controllers using it
   const graphqlDocuments = new Map<string, Map<string, Set<string>>>();
+  const inlineSelectionCounts = new Map<string, number>();
+  /** Inline field lists (5+ plain fields) -> the owners that repeat them. */
+  const inlineSelections = new Map<string, Set<string>>();
   const collectGraphql = (
     source: string,
     owner: string,
     unnamed: (message: string) => void,
   ) => {
     for (const [, body] of source.matchAll(/\bgql`([\s\S]*?)`/g)) {
+      for (const [, fields] of body.matchAll(
+        /\{\s*\n((?:[ \t]*[A-Za-z_]\w*[ \t]*\n){5,})[ \t]*\}/g,
+      )) {
+        const key = fields.split(/\s+/).filter(Boolean).sort().join(" ");
+        const owners = inlineSelections.get(key) ?? new Set<string>();
+        inlineSelections.set(key, owners.add(owner));
+        inlineSelectionCounts.set(
+          key,
+          (inlineSelectionCounts.get(key) ?? 0) + 1,
+        );
+      }
       const name = /\b(?:query|mutation|subscription)\s+(\w+)/.exec(body)?.[1];
       if (!name) {
         unnamed("a gql document has no operation name");
@@ -308,6 +325,16 @@ export function checkControllers(
         rule: "graphql-unique",
         target: owner,
         message: `GraphQL operation "${name}" names ${documents.size} different documents (${[...new Set(owners)].filter((o) => o !== owner).join(", ")})`,
+      });
+    }
+  }
+  for (const [fields, owners] of inlineSelections) {
+    if ((inlineSelectionCounts.get(fields) ?? 0) < 2) continue;
+    for (const owner of owners) {
+      findings.push({
+        rule: "graphql-selection-shared",
+        target: owner,
+        message: `the selection { ${fields} } is written inline ${inlineSelectionCounts.get(fields)} times; make it a queries/ constant`,
       });
     }
   }

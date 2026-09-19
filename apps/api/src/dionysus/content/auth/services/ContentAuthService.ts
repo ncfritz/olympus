@@ -7,6 +7,7 @@ import { gql, GraphQLClient } from "graphql-request";
 import * as jose from "jose";
 import { createSecretKey } from "node:crypto";
 import * as speakeasy from "speakeasy";
+import { CONTENT_AUTH_KEY } from "../queries/authKeys";
 
 type GraphQlGetContentAuthResponse = {
   dionysus_content_auth_by_pk: {
@@ -40,9 +41,7 @@ export class ContentAuthService {
     const fetchKeyRequest = gql`
       query FetchContentAuthKey($keyId: String!) {
         dionysus_content_auth_by_pk(key_id: $keyId) {
-          key
-          key_id
-          createdTime
+          ${CONTENT_AUTH_KEY}
         }
       }
     `;
@@ -108,9 +107,7 @@ export class ContentAuthService {
     const fetchJwtKeyRequest = gql`
       query CheckAuthorization {
         dionysus_content_auth_by_pk(key_id: "jwt.key") {
-          key
-          key_id
-          createdTime
+          ${CONTENT_AUTH_KEY}
         }
       }
     `;

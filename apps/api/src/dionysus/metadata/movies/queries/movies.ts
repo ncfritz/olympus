@@ -56,6 +56,36 @@ export const BASE_MOVIE = `id
   voteCount
   voteAverage`;
 
+export const MOVIE_SUMMARY = `id
+  adult
+  backdropPath
+  budget
+  homepage
+  imdbId
+  originalTitle
+  overview
+  posterPath
+  releaseDate
+  revenue
+  runtime
+  status
+  tagline
+  title
+  video
+  createdTime
+  lastUpdatedTime`;
+
+export const MOVIE_SUMMARY_WITH_ORIGINAL_LANGUAGE = `${MOVIE_SUMMARY}
+  originalLanguageCode`;
+
+export const MOVIE_SUMMARY_WITH_SEARCH_CONFIGURATION = `${MOVIE_SUMMARY}
+  ${SEARCH_CONFIGURATION}`;
+
+export const MOVIE_COLUMNS = `${MOVIE_SUMMARY_WITH_ORIGINAL_LANGUAGE}
+  popularity
+  voteCount
+  voteAverage`;
+
 export const SPARSE_MOVIE = `${BASE_MOVIE}
   createdTime
   lastUpdatedTime

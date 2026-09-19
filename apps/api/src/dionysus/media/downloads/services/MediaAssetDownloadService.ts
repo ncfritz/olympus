@@ -27,6 +27,7 @@ import {
   BASE_DECORATED_MEDIA_DOWNLOAD,
   BASE_MEDIA_DOWNLOAD,
 } from "../queries/mediaDownload";
+import { SEARCH_RESULT_KEY } from "../../searchResults/queries/searchResult";
 import {
   GraphQlDecoratedMediaAssetDownload,
   GraphQlMediaAssetDownload,
@@ -220,9 +221,7 @@ export class MediaAssetDownloadService {
           progress
           status
           searchResult {
-            assetType
-            mediaId
-            id
+            ${SEARCH_RESULT_KEY}
           }
         }
       }

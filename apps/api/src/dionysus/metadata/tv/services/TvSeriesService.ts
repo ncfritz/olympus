@@ -16,6 +16,12 @@ import {
 } from "@ncfritz/olympus-model";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
+import {
+  LOCATION_STATISTIC,
+  RUNTIME_STATISTIC,
+  STATUS_STATISTIC,
+  YEAR_STATISTIC,
+} from "../../queries/common";
 import prettyMilliseconds from "pretty-ms";
 import {
   buildFilterExpression,
@@ -698,8 +704,7 @@ export class TvSeriesService {
     const fetchRequest = gql`
       query GetTvSeriesEpisodeRuntimeStatistics {
         dionysus_tv_series_episode_runtime_statistics {
-          rt
-          count
+          ${RUNTIME_STATISTIC}
         }
       }
     `;
@@ -728,8 +733,7 @@ export class TvSeriesService {
     const fetchRequest = gql`
       query GetTvSeriesFirstAirYearStatistics {
         dionysus_tv_series_first_air_date_statistics(order_by: { year: asc }) {
-          count
-          year
+          ${YEAR_STATISTIC}
         }
       }
     `;
@@ -754,8 +758,7 @@ export class TvSeriesService {
     const fetchRequest = gql`
       query GetTvSeriesLocationStatistics {
         dionysus_tv_series_location_statistics {
-          countryCode
-          count
+          ${LOCATION_STATISTIC}
         }
       }
     `;
@@ -805,8 +808,7 @@ export class TvSeriesService {
     const fetchRequest = gql`
       query GetTvSeriesStatusStatistics {
         dionysus_tv_series_status_statistics {
-          status
-          count
+          ${STATUS_STATISTIC}
         }
       }
     `;

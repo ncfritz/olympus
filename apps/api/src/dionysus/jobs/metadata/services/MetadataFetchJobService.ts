@@ -22,6 +22,11 @@ import {
 } from "../../../../utils/filterUtil";
 import { GraphQlMetadataFetchJob } from "../../types/batchJobs";
 import { toDomainObject } from "../converters/MetadataFetchJobConverter";
+import {
+  BASE_METADATA_FETCH_JOB,
+  METADATA_FETCH_JOB,
+} from "../queries/metadataFetchJobs";
+import { JOB_STATUS_STATISTICS } from "../../queries/statistics";
 
 type GraphQlCreateMetadataFetchJobRespons = {
   insert_dionysus_metadata_fetch_status_one: GraphQlMetadataFetchJob;
@@ -137,15 +142,7 @@ export class MetadataFetchJobService {
             update_columns: [status, ttl, jitter, lastFetchedTime]
           }
         ) {
-          id
-          type
-          status
-          createdTime
-          lastUpdatedTime
-          lastFetchedTime
-          ttl
-          jitter
-          context
+          ${METADATA_FETCH_JOB}
         }
       }
     `;
@@ -201,15 +198,7 @@ export class MetadataFetchJobService {
     const fetchRequest = gql`
       query FetchMetadataFetchJob($id: String!, $type: String!) {
         dionysus_metadata_fetch_status_by_pk(id: $id, type: $type) {
-          id
-          type
-          status
-          createdTime
-          lastUpdatedTime
-          lastFetchedTime
-          ttl
-          jitter
-          context
+          ${METADATA_FETCH_JOB}
         }
       }
     `;
@@ -249,15 +238,7 @@ export class MetadataFetchJobService {
           pk_columns: { id: $id, type: $type }
           _set: $changes
         ) {
-          id
-          type
-          status
-          createdTime
-          lastUpdatedTime
-          lastFetchedTime
-          ttl
-          jitter
-          context
+          ${METADATA_FETCH_JOB}
         }
       }
     `;
@@ -312,14 +293,7 @@ export class MetadataFetchJobService {
     const deleteRequest = gql`
       mutation DeleteFetchJob($id: String!, $type: String!) {
         delete_dionysus_metadata_fetch_status_by_pk(id: $id, type: $type) {
-          createdTime
-          id
-          jitter
-          lastFetchedTime
-          lastUpdatedTime
-          status
-          ttl
-          type
+          ${BASE_METADATA_FETCH_JOB}
         }
       }
     `;
@@ -353,14 +327,7 @@ export class MetadataFetchJobService {
     const fetchRequest = gql`
       query ListMetadataFetchJobs {
       dionysus_metadata_fetch_status(${[paginationExpression, whereExpression].join(", ")}) {
-        createdTime
-        id
-        jitter
-        lastFetchedTime
-        lastUpdatedTime
-        status
-        ttl
-        type
+        ${BASE_METADATA_FETCH_JOB}
       }
       dionysus_metadata_fetch_status_aggregate${whereExpression ? `(${whereExpression})` : ""} {
         aggregate {
@@ -422,14 +389,7 @@ export class MetadataFetchJobService {
           order_by: { id: asc }
           where: $where
         ) {
-          createdTime
-          id
-          jitter
-          lastFetchedTime
-          lastUpdatedTime
-          status
-          ttl
-          type
+          ${BASE_METADATA_FETCH_JOB}
         }
         dionysus_metadata_fetch_status_aggregate(where: $where) {
           aggregate {
@@ -462,9 +422,7 @@ export class MetadataFetchJobService {
     const fetchRequest = gql`
       query GetMetadataFetchJobStatistics {
         dionysus_metadata_fetch_status_statistics {
-          count
-          status
-          type
+          ${JOB_STATUS_STATISTICS}
         }
         dionysus_metadata_fetch_status_expiration_statistics {
           count

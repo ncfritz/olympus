@@ -38,6 +38,12 @@ import {
   GraphQlListBatchJobsResponse,
 } from "../../types/batchJobs";
 import { toDomainObject } from "../converters/BatchJobConverter";
+import {
+  BASE_BATCH_JOB,
+  BATCH_JOB,
+  BATCH_JOB_STATISTICS,
+} from "../queries/batchJobs";
+import { JOB_STATUS_STATISTICS } from "../../queries/statistics";
 
 type GraphQlCreateBatchJobResponse = {
   insert_dionysus_bulk_load_jobs_one: GraphQlBatchJob;
@@ -116,20 +122,7 @@ export class BatchJobService {
     const fetchRequest = gql`
       query FetchBatchJob($id: uuid!) {
         dionysus_bulk_load_jobs_by_pk(id: $id) {
-          id
-          type
-          status
-          createdTime
-          lastUpdatedTime
-          startedTime
-          finishedTime
-          totalRecords
-          processedRecords
-          duplicateRecords
-          noOpRecords
-          newRecords
-          expiredRecords
-          skippedRecords
+          ${BASE_BATCH_JOB}
         }
       }
     `;
@@ -163,20 +156,7 @@ export class BatchJobService {
           pk_columns: { id: $id }
           _set: $changes
         ) {
-          id
-          type
-          status
-          createdTime
-          lastUpdatedTime
-          startedTime
-          finishedTime
-          totalRecords
-          processedRecords
-          duplicateRecords
-          noOpRecords
-          newRecords
-          expiredRecords
-          skippedRecords
+          ${BASE_BATCH_JOB}
         }
       }
     `;
@@ -241,20 +221,7 @@ export class BatchJobService {
     const fetchRequest = gql`
       query ListBatchJobs {
       dionysus_bulk_load_jobs(${[paginationExpression, whereExpression].join(", ")}) {
-        id
-        type
-        status
-        createdTime
-        lastUpdatedTime
-        startedTime
-        finishedTime
-        totalRecords
-        duplicateRecords
-        noOpRecords
-        newRecords
-        expiredRecords
-        skippedRecords
-        processedRecords
+        ${BASE_BATCH_JOB}
       }
       dionysus_bulk_load_jobs_aggregate${whereExpression ? `(${whereExpression})` : ""} {
         aggregate {
@@ -304,20 +271,7 @@ export class BatchJobService {
     const fetchRequest = gql`
       query ListBatchJobsByType {
       dionysus_bulk_load_jobs(${[paginationExpression, whereExpression].join(", ")}) {
-        id
-        type
-        status
-        createdTime
-        lastUpdatedTime
-        startedTime
-        finishedTime
-        totalRecords
-        duplicateRecords
-        noOpRecords
-        newRecords
-        expiredRecords
-        skippedRecords
-        processedRecords
+        ${BASE_BATCH_JOB}
       }
       dionysus_bulk_load_jobs_aggregate${whereExpression ? `(${whereExpression})` : ""} {
         aggregate {
@@ -350,23 +304,10 @@ export class BatchJobService {
         dionysus_bulk_load_jobs_statistics(
           where: { created_date: { _gt: $lastMonth } }
         ) {
-          count
-          created_date
-          duplicate_records
-          expired_records
-          new_records
-          noop_records
-          processed_records
-          queue_time
-          run_time
-          skipped_records
-          total_records
-          type
+          ${BATCH_JOB_STATISTICS}
         }
         dionysus_bulk_load_jobs_status_statistics {
-          count
-          status
-          type
+          ${JOB_STATUS_STATISTICS}
         }
       }
     `;
@@ -443,18 +384,7 @@ export class BatchJobService {
           where: { type: { _eq: $type } }
           order_by: { created_date: asc }
         ) {
-          count
-          created_date
-          duplicate_records
-          expired_records
-          new_records
-          noop_records
-          processed_records
-          queue_time
-          run_time
-          skipped_records
-          total_records
-          type
+          ${BATCH_JOB_STATISTICS}
         }
       }
     `;
@@ -538,21 +468,7 @@ export class BatchJobService {
     const insertRequest = gql`
       mutation CreateBatchJob($type: String) {
         insert_dionysus_bulk_load_jobs_one(object: { type: $type }) {
-          id
-          type
-          status
-          createdTime
-          lastUpdatedTime
-          startedTime
-          finishedTime
-          totalRecords
-          processedRecords
-          duplicateRecords
-          noOpRecords
-          newRecords
-          expiredRecords
-          skippedRecords
-          maxRecordsToProcess
+          ${BATCH_JOB}
         }
       }
     `;

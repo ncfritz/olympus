@@ -13,3 +13,9 @@ export const GENRE_ASSOCIATION = `lastUpdatedTime
 export const GENRES = `genres {
     ${GENRE_ASSOCIATION}
   }`;
+
+export const GENRE_COUNT_STATISTIC = `genres
+  count`;
+
+export const GENRE_STATISTIC = `genre
+  count`;

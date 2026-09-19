@@ -107,3 +107,15 @@ export const BASE_RUNTIME = `runTime
 export const TV_EPISODE_RUNTIMES = `episodeRunTimes {
     ${BASE_RUNTIME}
   }`;
+
+export const YEAR_STATISTIC = `year
+  count`;
+
+export const RUNTIME_STATISTIC = `rt
+  count`;
+
+export const LOCATION_STATISTIC = `countryCode
+  count`;
+
+export const STATUS_STATISTIC = `status
+  count`;

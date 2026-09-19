@@ -14,6 +14,13 @@ import {
 } from "@ncfritz/olympus-model";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
+import { BASE_COLLECTION } from "../../collections/queries/collections";
+import {
+  LOCATION_STATISTIC,
+  RUNTIME_STATISTIC,
+  STATUS_STATISTIC,
+  YEAR_STATISTIC,
+} from "../../queries/common";
 import prettyMilliseconds from "pretty-ms";
 import { toDomainObject as toCollectionDomainObject } from "../../collections/converters/CollectionConverter";
 import { toMovieCastDomainObject } from "../../converters/CastConverter";
@@ -38,6 +45,8 @@ import {
   BASE_MOVIE_RECOMMENDATION,
   MOVIE,
   MOVIE_CAST_MEMBER,
+  MOVIE_COLUMNS,
+  MOVIE_SUMMARY_WITH_ORIGINAL_LANGUAGE,
   MOVIE_CREW_MEMBER,
   SPARSE_MOVIE,
 } from "../queries/movies";
@@ -348,29 +357,8 @@ export class MovieService {
             ]
           }
         ) {
-          adult
-          backdropPath
-          budget
-          createdTime
-          homepage
-          id
-          imdbId
-          lastUpdatedTime
-          originalLanguageCode
-          originalTitle
-          overview
-          popularity
-          posterPath
-          releaseDate
-          revenue
-          runtime
-          status
-          tagline
-          title
-          voteCount
-          voteAverage
-          video
-        }
+          ${MOVIE_COLUMNS}
+          }
       }
     `;
     const variables = {
@@ -539,50 +527,12 @@ export class MovieService {
             createdTime
             lastUpdatedTime
             collection {
-              backdropPath
-              createdTime
-              id
-              images {
-                createdTime
-                filePath
-                height
-                language {
-                  createdTime
-                  id
-                  lastUpdatedTime
-                  name
-                  nativeName
-                }
-                lastUpdatedTime
-                type
-                width
-              }
-              name
-              overview
-              posterPath
+              ${BASE_COLLECTION}
               parts {
                 createdTime
                 lastUpdatedTime
                 movie {
-                  adult
-                  backdropPath
-                  budget
-                  createdTime
-                  homepage
-                  id
-                  imdbId
-                  lastUpdatedTime
-                  originalLanguageCode
-                  originalTitle
-                  overview
-                  posterPath
-                  releaseDate
-                  revenue
-                  runtime
-                  status
-                  tagline
-                  title
-                  video
+                  ${MOVIE_SUMMARY_WITH_ORIGINAL_LANGUAGE}
                   ${SEARCH_CONFIGURATION}
                   ${MEDIA_ASSET}
                 }
@@ -685,8 +635,7 @@ export class MovieService {
     const fetchRequest = gql`
       query GetMovieLocationStatistics {
         dionysus_movie_location_statistics {
-          countryCode
-          count
+          ${LOCATION_STATISTIC}
         }
       }
     `;
@@ -712,8 +661,7 @@ export class MovieService {
     const fetchRequest = gql`
       query GetMovieReleaseStatusStatistics {
         dionysus_movie_release_status_statistics {
-          status
-          count
+          ${STATUS_STATISTIC}
         }
       }
     `;
@@ -739,8 +687,7 @@ export class MovieService {
     const fetchRequest = gql`
       query GetMovieReleaseYearStatistics {
         dionysus_movie_release_date_statistics(order_by: { year: asc }) {
-          count
-          year
+          ${YEAR_STATISTIC}
         }
       }
     `;
@@ -763,8 +710,7 @@ export class MovieService {
     const fetchRequest = gql`
       query GetMovieRuntimeStatistics {
         dionysus_movie_runtime_statistics {
-          rt
-          count
+          ${RUNTIME_STATISTIC}
         }
       }
     `;

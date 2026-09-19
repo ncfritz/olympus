@@ -29,6 +29,9 @@ import {
   toDomainObject,
 } from "../converters/NotificationConverter";
 import { NotificationsGateway } from "../gateway/NotificationsGateway";
+import { NOTIFICATION_SETTING_CHANNELS } from "../queries/notificationSettings";
+import { NOTIFICATION_TYPE_PROTOCOLS } from "../queries/notificationTypes";
+import { NOTIFICATION, NOTIFICATION_COUNT } from "../queries/notifications";
 
 type GraphQlGetUnreadCountResponse = {
   olympus_notifications_aggregate: {
@@ -172,9 +175,7 @@ export class NotificationService {
             }
           }
         ) {
-          aggregate {
-            count
-          }
+          ${NOTIFICATION_COUNT}
         }
       }
     `;
@@ -222,30 +223,7 @@ export class NotificationService {
           }
         ) {
           returning {
-            acknowledged
-            acknowledgedTime
-            createdTime
-            deletionTime
-            eventId
-            eventTime
-            expirationTime
-            level
-            notificationId
-            payload
-            ttl
-            notificationGroup {
-              createdTime
-              description
-              id
-              name
-            }
-            notificationType {
-              createdTime
-              defaultGroupId
-              id
-              description
-              name
-            }
+            ${NOTIFICATION}
           }
         }
       }
@@ -331,30 +309,7 @@ export class NotificationService {
           where: { notificationId: { _eq: $notificationId } }
         ) {
           returning {
-            acknowledged
-            acknowledgedTime
-            createdTime
-            deletionTime
-            eventId
-            eventTime
-            expirationTime
-            level
-            notificationId
-            payload
-            ttl
-            notificationGroup {
-              createdTime
-              description
-              id
-              name
-            }
-            notificationType {
-              createdTime
-              defaultGroupId
-              id
-              description
-              name
-            }
+            ${NOTIFICATION}
           }
         }
       }
@@ -395,31 +350,8 @@ export class NotificationService {
         olympus_notifications(
           where: { notificationId: { _eq: $notificationId } }
         ) {
-          acknowledged
-          acknowledgedTime
-          createdTime
-          deletionTime
-          eventId
-          eventTime
-          expirationTime
+          ${NOTIFICATION}
           group
-          level
-          notificationId
-          payload
-          ttl
-          notificationGroup {
-            createdTime
-            description
-            id
-            name
-          }
-          notificationType {
-            createdTime
-            defaultGroupId
-            id
-            description
-            name
-          }
         }
       }
     `;
@@ -476,30 +408,7 @@ export class NotificationService {
             expirationTime: $expirationTime
           }
         ) {
-          acknowledged
-          acknowledgedTime
-          createdTime
-          deletionTime
-          eventId
-          eventTime
-          expirationTime
-          level
-          notificationId
-          payload
-          ttl
-          notificationGroup {
-            createdTime
-            description
-            id
-            name
-          }
-          notificationType {
-            createdTime
-            defaultGroupId
-            id
-            description
-            name
-          }
+          ${NOTIFICATION}
         }
       }
     `;
@@ -535,30 +444,7 @@ export class NotificationService {
         olympus_notifications(
         where: { acknowledged: { _neq: true } }
         order_by: { createdTime: desc }, limit: ${count}) {
-          acknowledged
-          acknowledgedTime
-          createdTime
-          deletionTime
-          eventId
-          eventTime
-          expirationTime
-          level
-          notificationId
-          payload
-          ttl
-          notificationGroup {
-            createdTime
-            description
-            id
-            name
-          }
-          notificationType {
-            createdTime
-            defaultGroupId
-            id
-            description
-            name
-          }
+          ${NOTIFICATION}
         }
         olympus_notification_statistics {
           acknowledged
@@ -620,35 +506,10 @@ export class NotificationService {
           ${paginationExpression}
           where: { group: { _eq: $group } }
         ) {
-          acknowledged
-          acknowledgedTime
-          createdTime
-          deletionTime
-          eventId
-          eventTime
-          expirationTime
-          level
-          notificationId
-          payload
-          ttl
-          notificationGroup {
-            createdTime
-            description
-            id
-            name
-          }
-          notificationType {
-            createdTime
-            defaultGroupId
-            id
-            description
-            name
-          }
+          ${NOTIFICATION}
         }
         olympus_notifications_aggregate(where: {group: {_eq: $group}}) {
-          aggregate {
-            count
-          }
+          ${NOTIFICATION_COUNT}
         }
       }
     `;
@@ -679,9 +540,7 @@ export class NotificationService {
         olympus_notifications_aggregate(
           where: { acknowledged: { _neq: true } }
         ) {
-          aggregate {
-            count
-          }
+          ${NOTIFICATION_COUNT}
         }
       }
     `;
@@ -985,20 +844,10 @@ export class NotificationService {
           notificationTypeId: $notificationTypeId
           username: $username
         ) {
-          synoChat
-          synoMail
-          email
-          webSocket
+          ${NOTIFICATION_SETTING_CHANNELS}
         }
         olympus_notification_type_by_pk(id: $notificationTypeId) {
-          supportsEmail
-          supportsSynoChat
-          supportsSynoMail
-          supportsWebSocket
-          synoChatDefault
-          synoMailDefault
-          webSocketDefault
-          emailDefault
+          ${NOTIFICATION_TYPE_PROTOCOLS}
         }
       }
     `;

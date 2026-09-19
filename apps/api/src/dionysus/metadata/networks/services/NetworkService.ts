@@ -8,6 +8,8 @@ import {
 } from "@ncfritz/olympus-model";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
+import { TV_SERIES_SUMMARY } from "../../tv/queries/tvSeries";
+import { NETWORK, NETWORK_WITH_CONTENT_COUNTS } from "../queries/networks";
 import {
   buildFilterExpression,
   buildPaginationExpression,
@@ -101,34 +103,7 @@ export class NetworkService {
             update_columns: [name, logo, homepage, headquarters, country_id]
           }
         ) {
-          country {
-            createdTime
-            lastUpdatedTime
-            name
-            id
-          }
-          alternativeNames {
-            createdTime
-            lastUpdatedTime
-            name
-            type
-          }
-          createdTime
-          headquarters
-          homepage
-          id
-          logo
-          name
-          lastUpdatedTime
-          images {
-            createdTime
-            filePath
-            fileType
-            height
-            id
-            lastUpdatedTime
-            width
-          }
+          ${NETWORK}
         }
       }
     `;
@@ -177,39 +152,7 @@ export class NetworkService {
     const fetchRequest = gql`
       query DescribeNetwork($id: numeric!) {
         dionysus_networks_by_pk(id: $id) {
-          country {
-            createdTime
-            lastUpdatedTime
-            name
-            id
-          }
-          alternativeNames {
-            createdTime
-            lastUpdatedTime
-            name
-            type
-          }
-          createdTime
-          headquarters
-          homepage
-          id
-          logo
-          name
-          lastUpdatedTime
-          images {
-            createdTime
-            filePath
-            fileType
-            height
-            id
-            lastUpdatedTime
-            width
-          }
-          tvSeries_aggregate {
-            aggregate {
-              count
-            }
-          }
+          ${NETWORK_WITH_CONTENT_COUNTS}
         }
       }
     `;
@@ -247,39 +190,7 @@ export class NetworkService {
     const fetchRequest = gql`
       query ListNetworks {
         dionysus_networks(${queryParams.join(", ")}) {
-          country {
-            createdTime
-            lastUpdatedTime
-            name
-            id
-          }
-          alternativeNames {
-            createdTime
-            lastUpdatedTime
-            name
-            type
-          }
-          createdTime
-          headquarters
-          homepage
-          id
-          logo
-          name
-          lastUpdatedTime
-          images {
-            createdTime
-            filePath
-            fileType
-            height
-            id
-            lastUpdatedTime
-            width
-          }
-          tvSeries_aggregate {
-            aggregate {
-              count
-            }
-          }
+          ${NETWORK_WITH_CONTENT_COUNTS}
         }
         dionysus_networks_aggregate${where ? `(${where})` : ""} {
           aggregate {
@@ -315,26 +226,7 @@ export class NetworkService {
         dionysus_networks_by_pk(id: $id) {
           tvSeries(${queryParams.join(", ")}) {
             tvSeries {
-              adult
-              backdropPath
-              createdTime
-              firstAirDate
-              homepage
-              id
-              inProduction
-              lastAirDate
-              lastEpisodeToAirId
-              lastUpdatedTime
-              name
-              numberOfEpisodes
-              numberOfSeasons
-              originalName
-              original_language
-              overview
-              posterPath
-              status
-              tagline
-              type
+              ${TV_SERIES_SUMMARY}
             }
           }
           tvSeries_aggregate {

@@ -22,7 +22,7 @@ import {
   toDecoratedDomainObject,
   toDomainObjectListItem,
 } from "../converters/MediaAssetSearchConfigurationConverter";
-import { BASE_MEDIA_ASSET } from "../../assets/queries/mediaAsset";
+import { MEDIA_ASSET } from "../../assets/queries/mediaAsset";
 import { GraphQlMediaAsset } from "../../assets/types/mediaAsset";
 import {
   BASE_DECORATED_SEARCH_CONFIGURATION,
@@ -265,9 +265,7 @@ export class MediaAssetSearchConfigurationService {
           ${
             searchConfiguration.type === MediaAssetSearchType.MOVIE ||
             searchConfiguration.type === MediaAssetSearchType.TV_EPISODE
-              ? `asset {
-            ${BASE_MEDIA_ASSET}
-          }`
+              ? MEDIA_ASSET
               : ""
           }
         }

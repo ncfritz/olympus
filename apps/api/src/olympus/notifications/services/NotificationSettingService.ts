@@ -13,6 +13,8 @@ import {
   GraphQlFullNotificationType,
   toFullDomainObject as toNotificationTypeDomainObject,
 } from "../converters/NotificationTypeConverter";
+import { NOTIFICATION_SETTING } from "../queries/notificationSettings";
+import { NOTIFICATION_TYPE_WITH_PROTOCOLS } from "../queries/notificationTypes";
 
 type GraphQlListNotificationSettingsResponse = {
   olympus_notification_type: GraphQlFullNotificationType[];
@@ -36,54 +38,11 @@ export class NotificationSettingService {
     const queryRequest = gql`
       query ListNotificationSettings($username: String!) {
         olympus_notification_settings(where: { username: { _eq: $username } }) {
-          createdTime
-          lastUpdatedTime
-          username
-          webSocket
-          synoMail
-          synoChat
-          email
-          notificationType {
-            createdTime
-            description
-            id
-            name
-            supportsEmail
-            supportsSynoChat
-            supportsSynoMail
-            supportsWebSocket
-            webSocketDefault
-            synoMailDefault
-            synoChatDefault
-            emailDefault
-            defaultGroup {
-              createdTime
-              description
-              id
-              name
-            }
-          }
+          ${NOTIFICATION_SETTING}
         }
         olympus_notification_type {
-          webSocketDefault
-          synoMailDefault
-          synoChatDefault
-          emailDefault
-          supportsWebSocket
-          supportsSynoMail
-          supportsSynoChat
-          supportsEmail
-          name
-          id
-          description
+          ${NOTIFICATION_TYPE_WITH_PROTOCOLS}
           defaultGroupId
-          createdTime
-          defaultGroup {
-            createdTime
-            description
-            id
-            name
-          }
         }
       }
     `;
@@ -146,33 +105,7 @@ export class NotificationSettingService {
             update_columns: [webSocket, synoChat, synoMail, email]
           }
         ) {
-          createdTime
-          email
-          lastUpdatedTime
-          notificationType {
-            createdTime
-            defaultGroup {
-              createdTime
-              description
-              id
-              name
-            }
-            description
-            emailDefault
-            id
-            name
-            supportsEmail
-            supportsSynoChat
-            supportsSynoMail
-            supportsWebSocket
-            synoChatDefault
-            synoMailDefault
-            webSocketDefault
-          }
-          synoChat
-          synoMail
-          username
-          webSocket
+          ${NOTIFICATION_SETTING}
         }
       }
     `;

@@ -20,6 +20,11 @@ import {
 } from "../../../utils/filterUtil";
 import { toDomainObject } from "../converters/WorkflowConverter";
 import { GraphQLWorkflow } from "../types/workflow";
+import {
+  BASE_METADATA_WORKFLOW,
+  METADATA_WORKFLOW,
+} from "../queries/workflows";
+import { BASE_METADATA_WORKFLOW_STEP } from "../queries/workflowSteps";
 
 type GraphQlCreateMetadataWorkflowResponse = {
   insert_dionysus_metadata_workflow_one: GraphQLWorkflow;
@@ -67,18 +72,9 @@ export class MetadataWorkflowService {
     const insertRequest = gql`
       mutation CreateMetadataWorkflow($status: String!) {
         insert_dionysus_metadata_workflow_one(object: { status: $status }) {
-          createdTime
-          finishedTime
-          id
-          lastUpdatedTime
-          startedTime
-          status
+          ${BASE_METADATA_WORKFLOW}
           steps {
-            attempt
-            createdTime
-            id
-            lastUpdatedTime
-            type
+            ${BASE_METADATA_WORKFLOW_STEP}
           }
         }
       }
@@ -116,36 +112,7 @@ export class MetadataWorkflowService {
     const fetchRequest = gql`
       query DescribeMetadataWorkflow($id: uuid!) {
         dionysus_metadata_workflow_by_pk(id: $id) {
-          createdTime
-          finishedTime
-          id
-          lastUpdatedTime
-          startedTime
-          status
-          steps {
-            attempt
-            createdTime
-            id
-            lastUpdatedTime
-            type
-            job {
-              createdTime
-              duplicateRecords
-              expiredRecords
-              finishedTime
-              id
-              lastUpdatedTime
-              maxRecordsToProcess
-              newRecords
-              noOpRecords
-              processedRecords
-              skippedRecords
-              startedTime
-              status
-              totalRecords
-              type
-            }
-          }
+          ${METADATA_WORKFLOW}
         }
       }
     `;
@@ -179,36 +146,7 @@ export class MetadataWorkflowService {
           pk_columns: { id: $id }
           _set: $changes
         ) {
-          createdTime
-          finishedTime
-          id
-          lastUpdatedTime
-          startedTime
-          status
-          steps {
-            attempt
-            createdTime
-            id
-            lastUpdatedTime
-            type
-            job {
-              createdTime
-              duplicateRecords
-              expiredRecords
-              finishedTime
-              id
-              lastUpdatedTime
-              maxRecordsToProcess
-              newRecords
-              noOpRecords
-              processedRecords
-              skippedRecords
-              startedTime
-              status
-              totalRecords
-              type
-            }
-          }
+          ${METADATA_WORKFLOW}
         }
       }
     `;
@@ -242,12 +180,7 @@ export class MetadataWorkflowService {
     const fetchRequest = gql`
       query ListMetadataWorkflows {
         dionysus_metadata_workflow(${[paginationExpression, whereExpression].join(", ")}) {
-          createdTime
-          finishedTime
-          id
-          lastUpdatedTime
-          startedTime
-          status
+          ${BASE_METADATA_WORKFLOW}
           steps_aggregate {
             aggregate {
               count

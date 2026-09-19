@@ -3,6 +3,7 @@ import { ConflictException, Injectable } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import { GraphQlContentAssetTag } from "../../types/content";
 import { toDomainObject } from "../converters/ContentAssetTagConverter";
+import { CONTENT_TAG } from "../../queries/tags";
 
 type FindTagsQueryResponse = {
   dionysus_content_tags: [
@@ -95,10 +96,7 @@ export class ContentAssetTagService {
     const queryRequest = gql`
       query ListContentAssetTags${placeholders} {
         dionysus_content_tags${whereClause} {
-          type
-          name
-          content_tag_id
-          createdTime
+          ${CONTENT_TAG}
         }
       }
     `;
@@ -124,10 +122,7 @@ export class ContentAssetTagService {
         dionysus_content_tags(
           where: { tagged_content: { content_id: { _eq: $contentId } } }
         ) {
-          type
-          name
-          content_tag_id
-          createdTime
+          ${CONTENT_TAG}
         }
       }
     `;
@@ -156,10 +151,7 @@ export class ContentAssetTagService {
           object: { name: $name, type: $type }
           on_conflict: { constraint: content_tags_name_type_key }
         ) {
-          name
-          type
-          createdTime
-          content_tag_id
+          ${CONTENT_TAG}
         }
       }
     `;

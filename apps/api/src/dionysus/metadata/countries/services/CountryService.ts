@@ -1,6 +1,7 @@
 import { Country, PartialCountry } from "@ncfritz/olympus-model";
 import { Injectable } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
+import { BASE_COUNTRY } from "../../queries/common";
 import {
   buildPaginationExpression,
   PaginationParams,
@@ -34,10 +35,7 @@ export class CountryService {
           object: { id: $id, name: $name }
           on_conflict: { constraint: countries_pkey, update_columns: [name] }
         ) {
-          id
-          name
-          createdTime
-          lastUpdatedTime
+          ${BASE_COUNTRY}
         }
       }
     `;
@@ -62,10 +60,7 @@ export class CountryService {
     const fetchRequest = gql`
       query ListCountries {
       dionysus_countries(${paginationExpression}) {
-        createdTime
-        id
-        lastUpdatedTime
-        name
+        ${BASE_COUNTRY}
       }
       dionysus_countries_aggregate {
         aggregate {
