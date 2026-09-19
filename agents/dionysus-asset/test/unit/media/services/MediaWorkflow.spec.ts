@@ -57,3 +57,15 @@ describe("MediaWorkflow.upload", () => {
     expect(FakeSftp.instances[0].ended).toBe(true);
   });
 });
+
+describe("MediaWorkflow.calculateOutputSha", () => {
+  it("fails instead of hanging when there is no transcode", async () => {
+    const workflow = new MediaWorkflow("missing", "mkv", undefined, {
+      config: { stagingDirectory: "/nonexistent" } as MediaConfigType,
+      reporter: {} as MediaReporter,
+      handbrake: {} as Handbrake,
+    });
+
+    await expect(workflow.calculateOutputSha()).rejects.toThrow(/ENOENT/);
+  });
+});

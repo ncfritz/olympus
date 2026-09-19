@@ -4,7 +4,6 @@ import type {
   ContentIngestionWorkflowStep,
 } from "@ncfritz/olympus-sdk/dionysus";
 import * as cliProgress from "cli-progress";
-import { createHash } from "crypto";
 import Ffmpeg, { FfprobeData } from "fluent-ffmpeg";
 import fs, { PathLike } from "fs";
 import moment from "moment";
@@ -13,6 +12,7 @@ import sharp, { OverlayOptions } from "sharp";
 import { Logger } from "@nestjs/common";
 import type { ContentApi } from "../../api/ContentApi";
 import type { ContentConfigType } from "../../config/configuration";
+import { sha256File } from "../../tools/sha256";
 import { withSftp } from "../../tools/sftp";
 import { IngestError } from "../../tools/errors/IngestError";
 import type { ContentReporter } from "./ContentReporter";
@@ -140,54 +140,40 @@ export class AssetWorkflow {
     );
 
     logger.log("Generating SHA-256 of input...");
-    const readableStream = fs.createReadStream(this.input);
-    const hash = createHash("sha256");
     const stat = fs.statSync(this.input);
+    const digest = await sha256File(this.input);
 
-    await new Promise<void>((resolve, reject) => {
-      readableStream.on("data", (chunk) => {
-        hash.update(chunk);
-      });
-      readableStream.on("end", async () => {
-        try {
-          const digest = hash.digest("hex");
+    try {
+      logger.log(`Input SHA: ${digest}`);
 
-          logger.log(`Input SHA: ${digest}`);
+      this.metadata.inputSha256 = digest;
+      this.metadata.originalSize = stat.size;
 
-          this.metadata.inputSha256 = digest;
-          this.metadata.originalSize = stat.size;
+      logger.log(`Duplicate check... ${this.metadata.inputSha256}`);
+      const duplicates = await this.contentApi.checkDuplicates(digest);
 
-          logger.log(`Duplicate check... ${this.metadata.inputSha256}`);
-          const duplicates = await this.contentApi.checkDuplicates(digest);
+      logger.log(JSON.stringify(duplicates));
 
-          logger.log(JSON.stringify(duplicates));
+      if (duplicates && duplicates.length > 0) {
+        logger.log("Duplicate found!");
 
-          if (duplicates && duplicates.length > 0) {
-            logger.log("Duplicate found!");
+        fs.rmSync(this.workDir, { recursive: true });
+        fs.renameSync(
+          this.input,
+          `${this.config.assetsDir}/duplicate/${path.basename(
+            this.input.toString(),
+          )}`,
+        );
 
-            fs.rmSync(this.workDir, { recursive: true });
-            fs.renameSync(
-              this.input,
-              `${this.config.assetsDir}/duplicate/${path.basename(
-                this.input.toString(),
-              )}`,
-            );
-
-            reject(
-              new DuplicateError(`Duplicate asset found with SHA ${digest}`),
-            );
-          }
-        } finally {
-          await this.reporter.updateStepStatus(
-            this.ingestWorkflow.id,
-            step.id,
-            "success",
-          );
-        }
-
-        resolve();
-      });
-    });
+        throw new DuplicateError(`Duplicate asset found with SHA ${digest}`);
+      }
+    } finally {
+      await this.reporter.updateStepStatus(
+        this.ingestWorkflow.id,
+        step.id,
+        "success",
+      );
+    }
   }
 
   async calculateOutputSha(): Promise<void> {
@@ -197,28 +183,16 @@ export class AssetWorkflow {
     );
 
     logger.log("Generating SHA-256 of asset...");
-    const readableStream = fs.createReadStream(this.assetLocation);
-    const hash = createHash("sha256");
+    const digest = await sha256File(this.assetLocation);
+    this.metadata.outputSha256 = digest;
 
-    await new Promise<void>((resolve) => {
-      readableStream.on("data", (chunk) => {
-        hash.update(chunk);
-      });
-      readableStream.on("end", async () => {
-        const digest = hash.digest("hex");
-        this.metadata.outputSha256 = digest;
+    logger.log(`Output SHA: ${digest}`);
 
-        logger.log(`Output SHA: ${digest}`);
-
-        await this.reporter.updateStepStatus(
-          this.ingestWorkflow.id,
-          step.id,
-          "success",
-        );
-
-        resolve();
-      });
-    });
+    await this.reporter.updateStepStatus(
+      this.ingestWorkflow.id,
+      step.id,
+      "success",
+    );
   }
 
   async extractOriginalMetadata(): Promise<void> {

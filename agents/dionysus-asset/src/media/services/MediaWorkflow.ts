@@ -3,7 +3,6 @@ import type {
   MediaAssetWorkflowStepType,
 } from "@ncfritz/olympus-sdk/dionysus";
 import axios from "axios";
-import { createHash } from "crypto";
 import Ffmpeg from "fluent-ffmpeg";
 import fs from "fs";
 import moment from "moment";
@@ -13,6 +12,7 @@ import progress_stream from "progress-stream";
 import type sftp from "ssh2-sftp-client";
 import { Logger } from "@nestjs/common";
 import type { MediaConfigType } from "../../config/configuration";
+import { sha256File } from "../../tools/sha256";
 import { withSftp } from "../../tools/sftp";
 import { IngestError } from "../../tools/errors/IngestError";
 import type { Handbrake } from "../../tools/handbrake/Handbrake";
@@ -478,20 +478,8 @@ export class MediaWorkflow {
   async calculateOutputSha(): Promise<string> {
     logger.log(`Running workflow step "calculateOutputSha()`);
     logger.log("Generating SHA-256 of asset...");
-    const readableStream = fs.createReadStream(
-      `${this.stagingDir}/transcoded.mp4`,
-    );
-    const hash = createHash("sha256");
-
-    return await new Promise<string>((resolve) => {
-      readableStream.on("data", (chunk) => {
-        hash.update(chunk);
-      });
-      readableStream.on("end", async () => {
-        const digest = hash.digest("hex");
-        logger.debug(`Output SHA: ${digest}`);
-        resolve(digest);
-      });
-    });
+    const digest = await sha256File(`${this.stagingDir}/transcoded.mp4`);
+    logger.debug(`Output SHA: ${digest}`);
+    return digest;
   }
 }
