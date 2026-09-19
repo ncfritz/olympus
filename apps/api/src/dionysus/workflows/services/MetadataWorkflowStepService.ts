@@ -1,3 +1,8 @@
+import {
+  batchJobRoute,
+  type MetadataJobType,
+  publishMessage,
+} from "@ncfritz/olympus-messages";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   PartialWorkflowStep,
@@ -108,18 +113,16 @@ export class MetadataWorkflowStepService {
       throw new InternalServerErrorException();
     }
 
-    await this.amqpConnection.publish(
-      "batchJob.trigger",
-      `jobType.${createdBatchJob.type}`,
-      {
-        jobType: createdBatchJob.type,
-        jobId: createdBatchJob.id,
-        workflowId: workflowId,
-        stepId: createdWorkflowStep.id,
-        offset: step.offset,
-        attempt: step.attempt,
-      },
-    );
+    // Workflow steps only run metadata job types (never redrive).
+    const jobType = createdBatchJob.type as MetadataJobType;
+    await publishMessage(this.amqpConnection, batchJobRoute(jobType), {
+      jobType,
+      jobId: createdBatchJob.id,
+      workflowId: workflowId,
+      stepId: createdWorkflowStep.id,
+      offset: step.offset,
+      attempt: step.attempt,
+    });
 
     return createdWorkflowStep;
   }

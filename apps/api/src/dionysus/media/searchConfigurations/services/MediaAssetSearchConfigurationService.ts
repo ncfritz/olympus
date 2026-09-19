@@ -1,3 +1,9 @@
+import {
+  delayed,
+  publishMessage,
+  type SearchExecutionMessage,
+  searchExecutionRoute,
+} from "@ncfritz/olympus-messages";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   BaseMediaAssetSearchConfiguration,
@@ -359,18 +365,11 @@ export class MediaAssetSearchConfigurationService {
       createdSearchConfiguration.type === MediaAssetSearchType.TV_SERIES ||
       createdSearchConfiguration.type === MediaAssetSearchType.TV_SEASON
     ) {
-      await this.amqpConnection.publish(
-        "search.execution.trigger",
-        `jobType.${createdSearchConfiguration.type}`,
-        {
-          mediaId: createdSearchConfiguration.mediaId,
-        },
-        {
-          persistent: true,
-          headers: {
-            "x-delay": 0,
-          },
-        },
+      await publishMessage(
+        this.amqpConnection,
+        searchExecutionRoute(createdSearchConfiguration.type),
+        { mediaId: createdSearchConfiguration.mediaId },
+        delayed(0),
       );
     }
 
@@ -504,7 +503,7 @@ export class MediaAssetSearchConfigurationService {
       );
     }
 
-    const msg: Record<string, unknown> = {
+    const msg: SearchExecutionMessage = {
       mediaId: updatedSearchConfiguration.mediaId,
       propagateImmediately: true,
       initiatingAsset: {
@@ -532,16 +531,11 @@ export class MediaAssetSearchConfigurationService {
       };
     }
 
-    await this.amqpConnection.publish(
-      "search.execution.trigger",
-      `jobType.${updatedSearchConfiguration.type}`,
+    await publishMessage(
+      this.amqpConnection,
+      searchExecutionRoute(updatedSearchConfiguration.type),
       msg,
-      {
-        persistent: true,
-        headers: {
-          "x-delay": 0,
-        },
-      },
+      delayed(0),
     );
 
     return updatedSearchConfiguration;

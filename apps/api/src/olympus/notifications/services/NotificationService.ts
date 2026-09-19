@@ -1,7 +1,8 @@
 import {
   NotificationChannel,
-  notificationRoutingKey,
+  notificationRoute,
   NOTIFICATIONS_EXCHANGE,
+  publishMessage,
   SmtpNotificationEvent,
   SynoChatNotificationEvent,
   WebSocketNotificationEvent,
@@ -724,9 +725,9 @@ export class NotificationService {
         ttl: request.webSocketDestination.ttl,
         context: request.context ?? {},
       };
-      await this.amqpConnection.publish(
-        NOTIFICATIONS_EXCHANGE,
-        notificationRoutingKey(NotificationChannel.WEBSOCKET),
+      await publishMessage(
+        this.amqpConnection,
+        notificationRoute(NotificationChannel.WEBSOCKET),
         message,
       );
 
@@ -770,9 +771,9 @@ export class NotificationService {
         users: request.synoChatDestination.users,
         context: request.context ?? {},
       };
-      await this.amqpConnection.publish(
-        NOTIFICATIONS_EXCHANGE,
-        notificationRoutingKey(NotificationChannel.SYNOCHAT),
+      await publishMessage(
+        this.amqpConnection,
+        notificationRoute(NotificationChannel.SYNOCHAT),
         message,
       );
 
@@ -826,9 +827,9 @@ export class NotificationService {
         ),
         context: request.context ?? {},
       };
-      await this.amqpConnection.publish(
-        NOTIFICATIONS_EXCHANGE,
-        notificationRoutingKey(
+      await publishMessage(
+        this.amqpConnection,
+        notificationRoute(
           mailType === "synomail"
             ? NotificationChannel.SYNOMAIL
             : NotificationChannel.EMAIL,

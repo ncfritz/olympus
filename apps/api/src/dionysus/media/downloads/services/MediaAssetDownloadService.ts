@@ -1,3 +1,7 @@
+import {
+  publishMessage,
+  START_DOWNLOAD_ROUTE,
+} from "@ncfritz/olympus-messages";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   BulkUpdateMediaAssetDownloadStatusRequest,
@@ -145,9 +149,9 @@ export class MediaAssetDownloadService {
       insertResponse.insert_dionysus_media_asset_download_one,
     );
 
-    await this.amqpConnection.publish(
-      "download.trigger",
-      "download.start",
+    await publishMessage(
+      this.amqpConnection,
+      START_DOWNLOAD_ROUTE,
       {
         mediaType: mediaType,
         mediaId: mediaId,

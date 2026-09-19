@@ -1,0 +1,72 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`message routes > match the snapshot 1`] = `
+{
+  "batchJobs": [
+    "batchJob.trigger (topic) jobType.movies",
+    "batchJob.trigger (topic) jobType.tv_series",
+    "batchJob.trigger (topic) jobType.tv_seasons",
+    "batchJob.trigger (topic) jobType.tv_episodes",
+    "batchJob.trigger (topic) jobType.people",
+    "batchJob.trigger (topic) jobType.collections",
+    "batchJob.trigger (topic) jobType.tv_networks",
+    "batchJob.trigger (topic) jobType.keywords",
+    "batchJob.trigger (topic) jobType.production_companies",
+    "batchJob.trigger (topic) jobType.certifications",
+    "batchJob.trigger (topic) jobType.genres",
+    "batchJob.trigger (topic) jobType.countries",
+    "batchJob.trigger (topic) jobType.languages",
+    "batchJob.trigger (topic) jobType.redrive",
+    "batchJob.workflow (x-delayed-message) workflowCreated",
+    "batchJob.workflow (x-delayed-message) jobCompletion",
+  ],
+  "content": [
+    "content.trigger (topic) jobType.rawIngest",
+    "content.trigger (topic) jobType.hls",
+    "content.trigger (topic) jobType.thumbnail",
+    "content.trigger (topic) jobType.delete",
+  ],
+  "downloads": [
+    "download.trigger (x-delayed-message) download.start",
+    "download.update (topic) update.queue",
+  ],
+  "media": [
+    "media.trigger (topic) jobType.extractMetadata",
+    "media.trigger (topic) jobType.configureTranscode",
+    "media.trigger (topic) jobType.transcodeConfiguration",
+    "media.trigger (topic) jobType.verifyTranscodeConfiguration",
+    "media.trigger (topic) jobType.transcode",
+    "media.trigger (topic) jobType.cleanup",
+    "media.trigger (topic) jobType.deleteWorkflow",
+    "media.trigger (topic) jobType.test",
+  ],
+  "metadataJobs": [
+    "metadataJob.trigger (x-delayed-message) jobType.movies",
+    "metadataJob.trigger (x-delayed-message) jobType.tv_series",
+    "metadataJob.trigger (x-delayed-message) jobType.tv_seasons",
+    "metadataJob.trigger (x-delayed-message) jobType.tv_episodes",
+    "metadataJob.trigger (x-delayed-message) jobType.people",
+    "metadataJob.trigger (x-delayed-message) jobType.collections",
+    "metadataJob.trigger (x-delayed-message) jobType.tv_networks",
+    "metadataJob.trigger (x-delayed-message) jobType.keywords",
+    "metadataJob.trigger (x-delayed-message) jobType.production_companies",
+    "metadataJob.trigger (x-delayed-message) jobType.certifications",
+    "metadataJob.trigger (x-delayed-message) jobType.genres",
+    "metadataJob.trigger (x-delayed-message) jobType.countries",
+    "metadataJob.trigger (x-delayed-message) jobType.languages",
+  ],
+  "notifications": [
+    "notifications.trigger (topic) notifications.type.ws",
+    "notifications.trigger (topic) notifications.type.synochat",
+    "notifications.trigger (topic) notifications.type.synomail",
+    "notifications.trigger (topic) notifications.type.email",
+  ],
+  "search": [
+    "search.execution.trigger (x-delayed-message) jobType.movie",
+    "search.execution.trigger (x-delayed-message) jobType.tv_series",
+    "search.execution.trigger (x-delayed-message) jobType.tv_season",
+    "search.execution.trigger (x-delayed-message) jobType.tv_episode",
+    "search.fanout.trigger (fanout) ",
+  ],
+}
+`;

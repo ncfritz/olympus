@@ -4,7 +4,14 @@
  * consumes them.
  */
 
-export const NOTIFICATIONS_EXCHANGE = "notifications.trigger";
+import { exchange, route } from "./routing";
+
+export const NOTIFICATIONS_TRIGGER_EXCHANGE = exchange(
+  "notifications.trigger",
+  "topic",
+);
+/** The exchange name (NOTIFICATIONS_TRIGGER_EXCHANGE.name). */
+export const NOTIFICATIONS_EXCHANGE = NOTIFICATIONS_TRIGGER_EXCHANGE.name;
 
 /** Delivery channels, as they appear in routing keys. */
 export const NotificationChannel = {
@@ -73,3 +80,18 @@ export interface SynoChatNotificationEvent<
   destination: string;
   users?: number[];
 }
+
+/** The message type each channel carries. */
+export interface NotificationEventByChannel {
+  ws: WebSocketNotificationEvent;
+  synochat: SynoChatNotificationEvent;
+  synomail: SmtpNotificationEvent;
+  email: SmtpNotificationEvent;
+}
+
+/** `notifications.type.<channel>` → queue `notifications.<channel>` */
+export const notificationRoute = <C extends NotificationChannel>(channel: C) =>
+  route<NotificationEventByChannel[C]>(
+    NOTIFICATIONS_TRIGGER_EXCHANGE,
+    notificationRoutingKey(channel),
+  );

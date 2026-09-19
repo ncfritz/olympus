@@ -1,3 +1,4 @@
+import { publishMessage, RAW_INGEST_ROUTE } from "@ncfritz/olympus-messages";
 import { dionysusConfig } from "../../../../config/configuration";
 import type { DionysusConfigType } from "../../../../config/configuration";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
@@ -130,7 +131,7 @@ export class ContentIngestionWorkflowService {
       sourceType,
     );
 
-    await this.amqpConnection.publish("content.trigger", "jobType.rawIngest", {
+    await publishMessage(this.amqpConnection, RAW_INGEST_ROUTE, {
       workflowId: createdWorkflow.id,
       assetLocation: source,
       skipWorkflow: false,
@@ -153,16 +154,12 @@ export class ContentIngestionWorkflowService {
         file.originalName,
         ContentIngestionWorkflowAssetLocation.LOCAL,
       );
-      await this.amqpConnection.publish(
-        "content.trigger",
-        "jobType.rawIngest",
-        {
-          workflowId: workflow.id,
-          assetLocation: `${this.dionysus.publishPath}/${file.filename}`,
-          originalFilename: file.originalName,
-          skipWorkflow: false,
-        },
-      );
+      await publishMessage(this.amqpConnection, RAW_INGEST_ROUTE, {
+        workflowId: workflow.id,
+        assetLocation: `${this.dionysus.publishPath}/${file.filename}`,
+        originalFilename: file.originalName,
+        skipWorkflow: false,
+      });
       workflows.push(workflow);
     }
 

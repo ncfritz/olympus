@@ -13,3 +13,4 @@ turbo/generators/templates
 # Email templates: Prettier cannot parse Handlebars partials, and
 # whitespace in them reaches the rendered mail.
 *.handlebars
+packages/messages/schemas

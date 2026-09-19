@@ -1,0 +1,293 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/DownloadUpdateMessage",
+  "definitions": {
+    "DownloadUpdateMessage": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DownloadScanEvent"
+        },
+        {
+          "$ref": "#/definitions/DownloadQueueEvent"
+        },
+        {
+          "$ref": "#/definitions/DownloadPostProcessEvent"
+        }
+      ]
+    },
+    "DownloadScanEvent": {
+      "type": "object",
+      "properties": {
+        "ts": {
+          "type": "number",
+          "description": "Event time, nanoseconds since the epoch (time.time_ns())."
+        },
+        "nzbFilename": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nzbName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "type": "string",
+          "const": "scan"
+        },
+        "nzbDirectory": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nzbUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "priority": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "top": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "paused": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dupeKey": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dupeScore": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dupeMode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "category",
+        "dupeKey",
+        "dupeMode",
+        "dupeScore",
+        "nzbDirectory",
+        "nzbFilename",
+        "nzbName",
+        "nzbUrl",
+        "paused",
+        "priority",
+        "top",
+        "ts",
+        "type"
+      ],
+      "additionalProperties": false,
+      "description": "An NZB was added (scan script)."
+    },
+    "DownloadQueueEvent": {
+      "type": "object",
+      "properties": {
+        "ts": {
+          "type": "number",
+          "description": "Event time, nanoseconds since the epoch (time.time_ns())."
+        },
+        "nzbFilename": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nzbName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "type": "string",
+          "const": "queue"
+        },
+        "destDirectory": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nzbUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "priority": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nzbId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "event": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "deleteStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "category",
+        "deleteStatus",
+        "destDirectory",
+        "event",
+        "nzbFilename",
+        "nzbId",
+        "nzbName",
+        "nzbUrl",
+        "priority",
+        "status",
+        "ts",
+        "type"
+      ],
+      "additionalProperties": false,
+      "description": "A queue event: added, downloaded, deleted, ... (queue script)."
+    },
+    "DownloadPostProcessEvent": {
+      "type": "object",
+      "properties": {
+        "ts": {
+          "type": "number",
+          "description": "Event time, nanoseconds since the epoch (time.time_ns())."
+        },
+        "nzbFilename": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nzbName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "type": "string",
+          "const": "post-process"
+        },
+        "destDirectory": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nzbDirectory": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nzbId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scriptStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "parStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "unpackStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "category",
+        "destDirectory",
+        "nzbDirectory",
+        "nzbFilename",
+        "nzbId",
+        "nzbName",
+        "parStatus",
+        "scriptStatus",
+        "status",
+        "ts",
+        "type",
+        "unpackStatus"
+      ],
+      "additionalProperties": false,
+      "description": "Post-processing finished (post-process script)."
+    }
+  }
+}

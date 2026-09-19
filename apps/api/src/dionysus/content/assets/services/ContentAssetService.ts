@@ -1,3 +1,4 @@
+import { contentJobRoute, publishMessage } from "@ncfritz/olympus-messages";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   BaseContentAsset,
@@ -496,7 +497,7 @@ export class ContentAssetService {
 
   /** Publishes a processing job of `jobType` for an asset. */
   async createJob(assetId: string, jobType: ContentJobType): Promise<void> {
-    await this.amqpConnection.publish("content.trigger", `jobType.${jobType}`, {
+    await publishMessage(this.amqpConnection, contentJobRoute(jobType), {
       assetId: assetId,
     });
   }

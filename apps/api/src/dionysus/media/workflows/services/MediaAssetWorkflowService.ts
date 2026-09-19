@@ -1,3 +1,8 @@
+import {
+  MEDIA_ROUTES,
+  publishMessage,
+  START_DOWNLOAD_ROUTE,
+} from "@ncfritz/olympus-messages";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   ApproveMediaAssetTranscodeConfigurationRequest,
@@ -310,9 +315,9 @@ export class MediaAssetWorkflowService {
         insertResponse.insert_dionysus_media_asset_workflow_one,
       );
 
-    await this.amqpConnection.publish(
-      "download.trigger",
-      "download.start",
+    await publishMessage(
+      this.amqpConnection,
+      START_DOWNLOAD_ROUTE,
       {
         mediaType: mediaType,
         mediaId: mediaId,
@@ -429,13 +434,9 @@ export class MediaAssetWorkflowService {
         throw new NotFoundException();
       }
 
-      await this.amqpConnection.publish(
-        "media.trigger",
-        "jobType.deleteWorkflow",
-        {
-          workflowId: workflowId,
-        },
-      );
+      await publishMessage(this.amqpConnection, MEDIA_ROUTES.deleteWorkflow, {
+        workflowId: workflowId,
+      });
     }
   }
 
@@ -673,9 +674,9 @@ export class MediaAssetWorkflowService {
       },
     );
 
-    await this.amqpConnection.publish(
-      "media.trigger",
-      "jobType.transcodeConfiguration",
+    await publishMessage(
+      this.amqpConnection,
+      MEDIA_ROUTES.transcodeConfiguration,
       {
         workflowId: workflowId,
         configurationStepId: workflowStepId,
@@ -683,7 +684,7 @@ export class MediaAssetWorkflowService {
         audioStreamIndex: request.audioTrackIndex,
         subtitleStreamIndex: request.subtitleTrackIndex,
         mediaExtension: request.originalAssetExtension,
-        transcodeVerificationRequired: request.verificationRequired,
+        transcodeVerificationRequired: request.verificationRequired ?? false,
       },
       {
         persistent: true,
@@ -726,9 +727,9 @@ export class MediaAssetWorkflowService {
     this.logger.debug(
       `Workflow step ${workflowStepId} updated to status ${newStatus}`,
     );
-    await this.amqpConnection.publish(
-      "media.trigger",
-      "jobType.transcode",
+    await publishMessage(
+      this.amqpConnection,
+      MEDIA_ROUTES.transcode,
       {
         workflowId: workflowId,
         configurationStepId: workflowStepId,

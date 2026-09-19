@@ -1,3 +1,8 @@
+import {
+  delayed,
+  metadataJobRoute,
+  publishMessage,
+} from "@ncfritz/olympus-messages";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   CreateMetadataFetchJobRequest,
@@ -170,20 +175,15 @@ export class MetadataFetchJobService {
     );
 
     if (request.publishNotification ?? true) {
-      await this.amqpConnection.publish(
-        "metadataJob.trigger",
-        `jobType.${createdJob.type}`,
+      await publishMessage(
+        this.amqpConnection,
+        metadataJobRoute(createdJob.type),
         {
           entityId: createdJob.id,
           entityType: createdJob.type,
           bypassCache: request.bypassCache,
         },
-        {
-          persistent: true,
-          headers: {
-            "x-delay": 10000,
-          },
-        },
+        delayed(10000),
       );
     }
 
@@ -265,20 +265,15 @@ export class MetadataFetchJobService {
       updatedJob.status === MetadataFetchJobStatus.QUEUED &&
       (request.publishNotification ?? true)
     ) {
-      await this.amqpConnection.publish(
-        "metadataJob.trigger",
-        `jobType.${updatedJob.type}`,
+      await publishMessage(
+        this.amqpConnection,
+        metadataJobRoute(updatedJob.type),
         {
           entityId: updatedJob.id,
           entityType: updatedJob.type,
           bypassCache: request.bypassCache,
         },
-        {
-          persistent: true,
-          headers: {
-            "x-delay": 10000,
-          },
-        },
+        delayed(10000),
       );
     }
 

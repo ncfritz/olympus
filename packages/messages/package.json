@@ -14,7 +14,8 @@
     "lintfix": "eslint src test --fix",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "schemas": "node scripts/generate-schemas.mjs"
   },
   "devDependencies": {
     "@ncfritz/olympus-config": "workspace:*",
@@ -22,7 +23,12 @@
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
+    "ts-json-schema-generator": "^2.4.0",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  }
+  },
+  "files": [
+    "dist",
+    "schemas"
+  ]
 }

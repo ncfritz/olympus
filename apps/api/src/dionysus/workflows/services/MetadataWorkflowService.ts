@@ -1,3 +1,8 @@
+import {
+  delayed,
+  publishMessage,
+  START_WORKFLOW_ROUTE,
+} from "@ncfritz/olympus-messages";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   GetMetadataWorkflowStatisticsResponse,
@@ -90,18 +95,11 @@ export class MetadataWorkflowService {
       insertResponse.insert_dionysus_metadata_workflow_one,
     );
 
-    await this.amqpConnection.publish(
-      "batchJob.workflow",
-      `workflowCreated`,
-      {
-        workflowId: createdWorkflow.id,
-      },
-      {
-        persistent: true,
-        headers: {
-          "x-delay": 15000,
-        },
-      },
+    await publishMessage(
+      this.amqpConnection,
+      START_WORKFLOW_ROUTE,
+      { workflowId: createdWorkflow.id },
+      delayed(15000),
     );
 
     return createdWorkflow;

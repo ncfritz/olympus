@@ -1,3 +1,10 @@
+import {
+  batchJobRoute,
+  type MessageRoute,
+  type MetadataJobType as MessageMetadataJobType,
+  publishMessage,
+  REDRIVE_JOB_ROUTE,
+} from "@ncfritz/olympus-messages";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   BatchJob,
@@ -93,13 +100,17 @@ export class BatchJobService {
 
   /** Creates a batch job and, unless disabled, publishes its trigger. */
   async create(request: CreateBatchJobRequest): Promise<BatchJob> {
+    // CreateBatchJob starts metadata job types; redrive has its own
+    // operation (CreateRedriveJob).
+    const jobType = request.type as MessageMetadataJobType;
     return this.createJob(
       request.type,
       request.publishNotification ?? true,
+      batchJobRoute(jobType),
       (job) => ({
-        jobType: job.type,
+        jobType: job.type as MessageMetadataJobType,
         jobId: job.id,
-        offset: request.offset,
+        offset: request.offset ?? 0,
         max: request.maxRecordsToProcess,
       }),
     );
@@ -107,7 +118,7 @@ export class BatchJobService {
 
   /** Creates a redrive job and publishes its trigger. */
   async createRedrive(request: CreateRedriveJobRequest): Promise<BatchJob> {
-    return this.createJob(JobType.REDRIVE, true, (job) => ({
+    return this.createJob(JobType.REDRIVE, true, REDRIVE_JOB_ROUTE, (job) => ({
       jobId: job.id,
       jobType: request.metadataType,
       status: request.status,
@@ -460,10 +471,11 @@ export class BatchJobService {
     };
   }
 
-  private async createJob(
+  private async createJob<P>(
     type: JobType,
     shouldPublishMessage: boolean,
-    buildMessage: (job: BatchJob) => Record<string, unknown>,
+    route: MessageRoute<P>,
+    buildMessage: (job: BatchJob) => P,
   ): Promise<BatchJob> {
     const insertRequest = gql`
       mutation CreateBatchJob($type: String) {
@@ -488,11 +500,7 @@ export class BatchJobService {
     if (shouldPublishMessage) {
       const message = buildMessage(createdJob);
 
-      await this.amqpConnection.publish(
-        "batchJob.trigger",
-        `jobType.${type}`,
-        message,
-      );
+      await publishMessage(this.amqpConnection, route, message);
     }
 
     return createdJob;
