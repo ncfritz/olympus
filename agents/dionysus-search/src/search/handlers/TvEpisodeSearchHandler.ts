@@ -148,13 +148,17 @@ export class TvEpisodeSearchHandler extends SearchHandler {
       return result;
     }
 
-    // An empty feed has no items; that throws here and fails the search.
-    await this.recordResults(
-      "tv_episode",
-      msg.mediaId,
-      response.data.channel.item!,
-      result,
-    );
+    const items = response.data.channel.item;
+
+    if (!items) {
+      this.logger.log(
+        `No results found for media ID ${msg.mediaId}... skipping`,
+      );
+      result.status = "skipped";
+      return result;
+    }
+
+    await this.recordResults("tv_episode", msg.mediaId, items, result);
     return result;
   }
 }

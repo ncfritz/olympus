@@ -109,6 +109,15 @@ describe("TvEpisodeSearchHandler", () => {
     expect(executionUpdate(f)[3]).toMatchObject({ status: "failed" });
   });
 
+  it("skips when the indexer has nothing", async () => {
+    f.nzbGeek.searchTvEpisode.mockResolvedValue({
+      status: 200,
+      data: { channel: {} },
+    });
+    await handler.handle({ mediaId: 514 });
+    expect(executionUpdate(f)[3]).toMatchObject({ status: "skipped" });
+  });
+
   it("skips series without a TVDB ID", async () => {
     f.metadataApi.describeTvSeries.mockResolvedValue({ externalIds: [] });
     await handler.handle({ mediaId: 514 });
