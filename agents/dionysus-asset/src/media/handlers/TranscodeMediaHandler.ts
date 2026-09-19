@@ -208,6 +208,7 @@ export class TranscodeMediaHandler {
         step.id,
         "failed",
       );
+      throw e;
     }
   }
 
