@@ -2,7 +2,7 @@ import fs from "fs";
 import winston from "winston";
 import DailyRotateFile from "winston-daily-rotate-file";
 import LokiTransport from "winston-loki";
-import type { LoggingConfig } from "../config/configuration";
+import type { LoggingConfig } from "../config/logging";
 
 /**
  * The Winston logger behind Nest's Logger (see main.ts): console, Loki and

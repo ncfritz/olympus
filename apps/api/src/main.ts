@@ -3,11 +3,11 @@ import "source-map-support/register";
 import { Logger } from "@nestjs/common";
 import { NestFactory, PartialGraphHost } from "@nestjs/core";
 import * as fs from "fs";
+import { createWinstonLogger } from "@ncfritz/olympus-nest";
 import { WinstonModule } from "nest-winston";
 import { AppModule } from "./AppModule";
 import { readConfig } from "./config/configuration";
 import { configureApp } from "./configureApp";
-import { createWinstonLogger } from "./infra/logging";
 import { buildOpenApiDocument } from "./schema/documentBuilder";
 import {
   DionysusApiConfig,

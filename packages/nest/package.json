@@ -1,0 +1,33 @@
+{
+  "name": "@ncfritz/olympus-nest",
+  "description": "NestJS infrastructure shared by the Olympus API and agents: typed configuration, logging",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "license": "Apache-2.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
+    "lint": "eslint src test",
+    "lintfix": "eslint src test --fix",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "winston": "catalog:",
+    "winston-daily-rotate-file": "catalog:",
+    "winston-loki": "catalog:"
+  },
+  "devDependencies": {
+    "@ncfritz/olympus-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -10,4 +10,4 @@ Nothing here is published to a registry.
 | `sdk`     | `@ncfritz/olympus-sdk`    | imported |
 | `ui`      | `@ncfritz/olympus-ui`     | planned  |
 | `theme`   | `@ncfritz/olympus-theme`  | planned  |
-| `shared`  | `@ncfritz/olympus-shared` | planned  |
+| `nest`    | `@ncfritz/olympus-nest`   | present  |

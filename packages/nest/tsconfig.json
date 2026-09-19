@@ -1,0 +1,7 @@
+{
+  "extends": "@ncfritz/olympus-config/tsconfig/library.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext"
+  }
+}
