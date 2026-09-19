@@ -2,7 +2,10 @@ import { RabbitMQConfig, RabbitMQModule } from "@golevelup/nestjs-rabbitmq";
 import { Logger, Module } from "@nestjs/common";
 import { amqpConfig } from "../config/configuration";
 import type { AmqpConfigType } from "../config/configuration";
-import { NOTIFICATIONS_EXCHANGE } from "../messaging";
+import {
+  declare,
+  NOTIFICATIONS_TRIGGER_EXCHANGE,
+} from "@ncfritz/olympus-messages";
 
 @Module({
   imports: [
@@ -11,7 +14,7 @@ import { NOTIFICATIONS_EXCHANGE } from "../messaging";
       useFactory: (amqp: AmqpConfigType): RabbitMQConfig => {
         new Logger(RabbitModule.name).log(`Connecting to ${amqp.redactedUri}`);
         return {
-          exchanges: [{ name: NOTIFICATIONS_EXCHANGE, type: "topic" }],
+          exchanges: declare(NOTIFICATIONS_TRIGGER_EXCHANGE),
           prefetchCount: 1,
           connectionInitOptions: { wait: true },
           enableControllerDiscovery: true,

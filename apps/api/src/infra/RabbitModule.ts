@@ -1,3 +1,14 @@
+import {
+  BATCH_JOB_TRIGGER_EXCHANGE,
+  BATCH_JOB_WORKFLOW_EXCHANGE,
+  CONTENT_TRIGGER_EXCHANGE,
+  declare,
+  DOWNLOAD_TRIGGER_EXCHANGE,
+  MEDIA_TRIGGER_EXCHANGE,
+  METADATA_JOB_TRIGGER_EXCHANGE,
+  NOTIFICATIONS_TRIGGER_EXCHANGE,
+  SEARCH_EXECUTION_TRIGGER_EXCHANGE,
+} from "@ncfritz/olympus-messages";
 import { RabbitMQConfig, RabbitMQModule } from "@golevelup/nestjs-rabbitmq";
 import { Logger, Module } from "@nestjs/common";
 import { amqpConfig, AmqpConfigType } from "../config/configuration";
@@ -10,23 +21,18 @@ import { amqpConfig, AmqpConfigType } from "../config/configuration";
         new Logger(RabbitModule.name).log(`Connecting to ${amqp.redactedUri}`);
 
         return {
-          exchanges: [
-            {
-              name: "batchJob.trigger",
-              type: "topic",
-            },
-            {
-              name: "metadataJob.trigger",
-              type: "x-delayed-message",
-              options: {
-                arguments: { "x-delayed-type": "direct" },
-              },
-            },
-            {
-              name: "notifications",
-              type: "topic",
-            },
-          ],
+          // Every exchange the API publishes to, as the consumers declare
+          // it, so publishing never depends on an agent having started.
+          exchanges: declare(
+            BATCH_JOB_TRIGGER_EXCHANGE,
+            BATCH_JOB_WORKFLOW_EXCHANGE,
+            METADATA_JOB_TRIGGER_EXCHANGE,
+            CONTENT_TRIGGER_EXCHANGE,
+            MEDIA_TRIGGER_EXCHANGE,
+            DOWNLOAD_TRIGGER_EXCHANGE,
+            SEARCH_EXECUTION_TRIGGER_EXCHANGE,
+            NOTIFICATIONS_TRIGGER_EXCHANGE,
+          ),
           connectionInitOptions: { wait: true },
           enableControllerDiscovery: true,
           uri: amqp.uri,
