@@ -17,11 +17,15 @@ const logger = new Logger("ExecuteWithMetrics");
  *   and `_exception` (the call threw)
  *
  * A call that fails with 404 resolves to `undefined` instead of throwing.
+ * Characters Prometheus doesn't allow in names (e.g. the dots of
+ * `TMDB.Movie.Details`) become underscores.
  */
 export function ExecuteWithMetrics(
   operation: string,
   _options?: ExecuteWithMetricsOptions,
 ) {
+  const metric = `client_${operation.replace(/[^a-zA-Z0-9_:]/g, "_")}`;
+
   return function (
     _target: object,
     _propertyKey: string,
@@ -57,21 +61,21 @@ export function ExecuteWithMetrics(
         const inRange = (low: number) =>
           status >= low && status <= low + 99 ? 1 : 0;
 
-        ReporterService.counter(`client_${operation}_count`, {}, 1);
-        ReporterService.histogram(`client_${operation}_latency`, latency);
-        ReporterService.counter(`client_${operation}_error`, {}, inRange(400));
-        ReporterService.counter(`client_${operation}_fatal`, {}, inRange(500));
-        ReporterService.counter(`client_${operation}_exception`, {}, exception);
+        ReporterService.counter(`${metric}_count`, {}, 1);
+        ReporterService.histogram(`${metric}_latency`, latency);
+        ReporterService.counter(`${metric}_error`, {}, inRange(400));
+        ReporterService.counter(`${metric}_fatal`, {}, inRange(500));
+        ReporterService.counter(`${metric}_exception`, {}, exception);
         ReporterService.counter(
-          `client_${operation}_throttles`,
+          `${metric}_throttles`,
           {},
           status === 429 ? 1 : 0,
         );
-        ReporterService.counter(`client_${operation}_1xx`, {}, inRange(100));
-        ReporterService.counter(`client_${operation}_2xx`, {}, inRange(200));
-        ReporterService.counter(`client_${operation}_3xx`, {}, inRange(300));
-        ReporterService.counter(`client_${operation}_4xx`, {}, inRange(400));
-        ReporterService.counter(`client_${operation}_5xx`, {}, inRange(500));
+        ReporterService.counter(`${metric}_1xx`, {}, inRange(100));
+        ReporterService.counter(`${metric}_2xx`, {}, inRange(200));
+        ReporterService.counter(`${metric}_3xx`, {}, inRange(300));
+        ReporterService.counter(`${metric}_4xx`, {}, inRange(400));
+        ReporterService.counter(`${metric}_5xx`, {}, inRange(500));
       }
     };
 

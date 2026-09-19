@@ -73,6 +73,31 @@ describe("ExecuteWithMetrics", () => {
     });
   });
 
+  it("names metrics as Prometheus allows", async () => {
+    class Dotted {
+      async call() {
+        return { status: 200 };
+      }
+    }
+    Object.defineProperty(
+      Dotted.prototype,
+      "call",
+      ExecuteWithMetrics("TMDB.Movie.Details")(
+        Dotted.prototype,
+        "call",
+        Object.getOwnPropertyDescriptor(Dotted.prototype, "call")!,
+      ),
+    );
+    await new Dotted().call();
+    const names = vi
+      .mocked(ReporterService.counter)
+      .mock.calls.map(([name]) => name);
+    expect(names).toContain("client_TMDB_Movie_Details_count");
+    expect(names.every((name) => /^[a-zA-Z_:][a-zA-Z0-9_:]*$/.test(name))).toBe(
+      true,
+    );
+  });
+
   it("resolves a 404 to undefined", async () => {
     const client = new Client();
     client.next = async () => {
