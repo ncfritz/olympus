@@ -13,9 +13,9 @@ import type { OlympusConfigType } from "../../../config/configuration";
 import { DeliveryHandler } from "../../../delivery/DeliveryHandler";
 import type { WebSocketNotificationEvent } from "../../../delivery/events";
 import {
-  CHANNEL_WEBSOCKET,
   channelQueue,
-  channelRoutingKey,
+  NotificationChannel,
+  notificationRoutingKey,
   NOTIFICATIONS_EXCHANGE,
 } from "../../../messaging";
 import { WebSocketFormatters } from "../formatters/WebSocketFormatters";
@@ -47,8 +47,8 @@ export class WebSocketHandler extends DeliveryHandler<
 
   @RabbitSubscribe({
     exchange: NOTIFICATIONS_EXCHANGE,
-    queue: channelQueue(CHANNEL_WEBSOCKET),
-    routingKey: channelRoutingKey(CHANNEL_WEBSOCKET),
+    queue: channelQueue(NotificationChannel.WEBSOCKET),
+    routingKey: notificationRoutingKey(NotificationChannel.WEBSOCKET),
   })
   async handle(notification: WebSocketEvent): Promise<void> {
     await this.deliver(notification);
@@ -84,7 +84,7 @@ export class WebSocketHandler extends DeliveryHandler<
             acknowledged: false,
             notificationId: msg.notificationId,
             notificationType: msg.notificationType,
-            level: msg.level,
+            level: msg.level ?? "info",
             payload: payload as unknown as NotificationPayload,
             eventId: msg.eventId,
             group: msg.group,

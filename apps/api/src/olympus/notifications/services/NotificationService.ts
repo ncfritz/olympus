@@ -1,3 +1,11 @@
+import {
+  NotificationChannel,
+  notificationRoutingKey,
+  NOTIFICATIONS_EXCHANGE,
+  SmtpNotificationEvent,
+  SynoChatNotificationEvent,
+  WebSocketNotificationEvent,
+} from "@ncfritz/olympus-messages";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import {
   AcknowledgeNotificationRequest,
@@ -147,9 +155,15 @@ export type SentNotification = {
   allEnqueued: boolean;
 };
 
-const NOTIFICATION_TRIGGER_EXCHANGE = "notifications.trigger";
-
 /** Olympus notifications: the notification store and delivery triggers. */
+/**
+ * Message times are ISO-8601 strings. Request bodies are not transformed
+ * (no ValidationPipe), so a "Moment" field may still hold the client's
+ * string; pass that through unchanged.
+ */
+const toIsoString = (value: Moment | string | undefined) =>
+  moment.isMoment(value) ? value.toISOString() : value;
+
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
@@ -694,24 +708,26 @@ export class NotificationService {
     };
 
     try {
+      const message: WebSocketNotificationEvent = {
+        eventId: eventId,
+        notificationId: notificationId,
+        notificationType: request.type,
+        expirationTime: toIsoString(request.expirationTime),
+        publishTime: now.toISOString(),
+        level: request.webSocketDestination.level,
+        durable: request.webSocketDestination.durable,
+        closable: request.webSocketDestination.closable,
+        deleteOnClose: request.webSocketDestination.deleteOnClose,
+        visibleDuration: request.webSocketDestination.visibleDuration,
+        ghost: request.webSocketDestination.ghost,
+        group: request.webSocketDestination.group,
+        ttl: request.webSocketDestination.ttl,
+        context: request.context ?? {},
+      };
       await this.amqpConnection.publish(
-        NOTIFICATION_TRIGGER_EXCHANGE,
-        "notifications.type.ws",
-        {
-          eventId: eventId,
-          notificationId: notificationId,
-          notificationType: request.type,
-          expirationTime: request.expirationTime,
-          publishTime: now.toISOString(),
-          level: request.webSocketDestination.level,
-          durable: request.webSocketDestination.durable,
-          closable: request.webSocketDestination.closable,
-          deleteOnClose: request.webSocketDestination.deleteOnClose,
-          visibleDuration: request.webSocketDestination.visibleDuration,
-          ghost: request.webSocketDestination.ghost,
-          group: request.webSocketDestination.group,
-          context: request.context,
-        },
+        NOTIFICATIONS_EXCHANGE,
+        notificationRoutingKey(NotificationChannel.WEBSOCKET),
+        message,
       );
 
       deliveryStatus.status = DeliveryState.SUCCESS;
@@ -719,7 +735,7 @@ export class NotificationService {
       deliveryStatus.status = DeliveryState.FAILURE;
 
       this.logger.error(
-        `Failed to enqueue notification ${notificationId} with AMQP exchange ${NOTIFICATION_TRIGGER_EXCHANGE}`,
+        `Failed to enqueue notification ${notificationId} with AMQP exchange ${NOTIFICATIONS_EXCHANGE}`,
         e instanceof Error ? e.stack : String(e),
       );
     } finally {
@@ -743,19 +759,21 @@ export class NotificationService {
     };
 
     try {
+      const message: SynoChatNotificationEvent = {
+        eventId: eventId,
+        notificationId: notificationId,
+        notificationType: request.type,
+        publishTime: moment.utc().toISOString(),
+        expirationTime: toIsoString(request.expirationTime),
+        destinationType: request.synoChatDestination.destinationType,
+        destination: request.synoChatDestination.destination,
+        users: request.synoChatDestination.users,
+        context: request.context ?? {},
+      };
       await this.amqpConnection.publish(
-        "notifications.trigger",
-        "notifications.type.synochat",
-        {
-          eventId: eventId,
-          notificationId: notificationId,
-          notificationType: request.type,
-          expirationTime: request.expirationTime,
-          deliveryType: request.synoChatDestination.destinationType,
-          destination: request.synoChatDestination.destination,
-          users: request.synoChatDestination.users,
-          context: request.context,
-        },
+        NOTIFICATIONS_EXCHANGE,
+        notificationRoutingKey(NotificationChannel.SYNOCHAT),
+        message,
       );
 
       deliveryStatus.status = DeliveryState.SUCCESS;
@@ -763,7 +781,7 @@ export class NotificationService {
       deliveryStatus.status = DeliveryState.FAILURE;
 
       this.logger.error(
-        `Failed to enqueue notification ${notificationId} with AMQP exchange ${NOTIFICATION_TRIGGER_EXCHANGE}`,
+        `Failed to enqueue notification ${notificationId} with AMQP exchange ${NOTIFICATIONS_EXCHANGE}`,
         e instanceof Error ? e.stack : String(e),
       );
     } finally {
@@ -793,25 +811,29 @@ export class NotificationService {
     };
 
     try {
+      const message: SmtpNotificationEvent = {
+        eventId: eventId,
+        notificationId: notificationId,
+        notificationType: request.type,
+        publishTime: moment.utc().toISOString(),
+        expirationTime: toIsoString(request.expirationTime),
+        priority: smtpDestination.priority,
+        from: smtpDestination.from,
+        to: smtpDestination.to.map((item) => (item as EmailValueField).value),
+        cc: smtpDestination.cc?.map((item) => (item as EmailValueField).value),
+        bcc: smtpDestination.bcc?.map(
+          (item) => (item as EmailValueField).value,
+        ),
+        context: request.context ?? {},
+      };
       await this.amqpConnection.publish(
-        "notifications.trigger",
-        `notifications.type.${mailType}`,
-        {
-          eventId: eventId,
-          notificationId: notificationId,
-          notificationType: request.type,
-          expirationTime: request.expirationTime,
-          priority: smtpDestination.priority,
-          from: smtpDestination.from,
-          to: smtpDestination.to.map((item) => (item as EmailValueField).value),
-          cc: smtpDestination.cc?.map(
-            (item) => (item as EmailValueField).value,
-          ),
-          bcc: smtpDestination.bcc?.map(
-            (item) => (item as EmailValueField).value,
-          ),
-          context: request.context,
-        },
+        NOTIFICATIONS_EXCHANGE,
+        notificationRoutingKey(
+          mailType === "synomail"
+            ? NotificationChannel.SYNOMAIL
+            : NotificationChannel.EMAIL,
+        ),
+        message,
       );
 
       deliveryStatus.status = DeliveryState.SUCCESS;
@@ -819,7 +841,7 @@ export class NotificationService {
       deliveryStatus.status = DeliveryState.FAILURE;
 
       this.logger.error(
-        `Failed to enqueue notification ${notificationId} with AMQP exchange ${NOTIFICATION_TRIGGER_EXCHANGE}`,
+        `Failed to enqueue notification ${notificationId} with AMQP exchange ${NOTIFICATIONS_EXCHANGE}`,
         e instanceof Error ? e.stack : String(e),
       );
     } finally {

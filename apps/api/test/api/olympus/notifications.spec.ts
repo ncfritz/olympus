@@ -579,7 +579,11 @@ describe("Olympus notifications API", () => {
         ...overrides,
       },
     });
-    const webSocketDestination = { level: "info", group: "System" };
+    const webSocketDestination = {
+      level: "info",
+      group: "System",
+      ttl: "P1D",
+    };
     const smtpDestination = {
       from: "olympus@ncfritz.net",
       to: [{ value: "neil@example.com" }],
@@ -615,6 +619,7 @@ describe("Olympus notifications API", () => {
         notificationType: "type-1",
         level: "info",
         group: "System",
+        ttl: "P1D",
         context: { title: "Hi" },
         publishTime: "2026-09-18T12:00:00.000Z",
       });
@@ -623,6 +628,7 @@ describe("Olympus notifications API", () => {
         ([, key]) => key === "notifications.type.email",
       )!;
       expect(mail).toMatchObject({
+        publishTime: "2026-09-18T12:00:00.000Z",
         from: "olympus@ncfritz.net",
         to: ["neil@example.com"],
         cc: ["cc@example.com"],
@@ -631,6 +637,39 @@ describe("Olympus notifications API", () => {
         username: "ncfritz",
         notificationTypeId: "type-1",
       });
+    });
+
+    it("sends Synology Chat messages in the agent's format", async () => {
+      t.graphql.on("GetNotificationSetting", typeSupport());
+
+      await t
+        .http()
+        .post("/v1/olympus/notifications/publish")
+        .send({
+          type: "type-1",
+          context: { title: "Hi" },
+          synoChatDestination: {
+            destinationType: "bot",
+            destination: "olympus",
+            users: [4],
+          },
+        })
+        .expect(202);
+
+      const [exchange, routingKey, message] = t.amqp.publish.mock.calls[0];
+      expect([exchange, routingKey]).toEqual([
+        "notifications.trigger",
+        "notifications.type.synochat",
+      ]);
+      expect(message).toMatchObject({
+        notificationType: "type-1",
+        publishTime: "2026-09-18T12:00:00.000Z",
+        destinationType: "bot",
+        destination: "olympus",
+        users: [4],
+        context: { title: "Hi" },
+      });
+      expect(message).not.toHaveProperty("deliveryType");
     });
 
     it("skips destinations the type or the user has turned off", async () => {

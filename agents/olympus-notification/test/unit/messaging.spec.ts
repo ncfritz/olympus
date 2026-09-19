@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  CHANNEL_GMAIL,
-  CHANNEL_SYNOCHAT,
-  CHANNEL_SYNOMAIL,
-  CHANNEL_WEBSOCKET,
   channelQueue,
-  channelRoutingKey,
+  NotificationChannel,
+  notificationRoutingKey,
   NOTIFICATIONS_EXCHANGE,
 } from "../../src/messaging";
 
@@ -13,15 +10,15 @@ import {
 describe("messaging names", () => {
   it("match the snapshot", () => {
     const channels = [
-      CHANNEL_WEBSOCKET,
-      CHANNEL_SYNOCHAT,
-      CHANNEL_SYNOMAIL,
-      CHANNEL_GMAIL,
+      NotificationChannel.WEBSOCKET,
+      NotificationChannel.SYNOCHAT,
+      NotificationChannel.SYNOMAIL,
+      NotificationChannel.EMAIL,
     ];
     expect({
       exchange: NOTIFICATIONS_EXCHANGE,
       queues: channels.map(channelQueue),
-      routingKeys: channels.map(channelRoutingKey),
+      routingKeys: channels.map(notificationRoutingKey),
     }).toMatchInlineSnapshot(`
       {
         "exchange": "notifications.trigger",

@@ -7,9 +7,9 @@ import { gmailConfig } from "../../../config/configuration";
 import type { GmailConfigType } from "../../../config/configuration";
 import type { SmtpNotificationEvent } from "../../../delivery/events";
 import {
-  CHANNEL_GMAIL,
   channelQueue,
-  channelRoutingKey,
+  NotificationChannel,
+  notificationRoutingKey,
   NOTIFICATIONS_EXCHANGE,
 } from "../../../messaging";
 import { EmailFormatters } from "../formatters/EmailFormatters";
@@ -31,8 +31,8 @@ export class GmailHandler extends SmtpHandler {
 
   @RabbitSubscribe({
     exchange: NOTIFICATIONS_EXCHANGE,
-    queue: channelQueue(CHANNEL_GMAIL),
-    routingKey: channelRoutingKey(CHANNEL_GMAIL),
+    queue: channelQueue(NotificationChannel.EMAIL),
+    routingKey: notificationRoutingKey(NotificationChannel.EMAIL),
   })
   async handle(
     notification: SmtpNotificationEvent<NotificationContext>,

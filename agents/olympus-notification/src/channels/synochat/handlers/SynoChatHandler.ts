@@ -7,9 +7,9 @@ import type { SynologyChatConfigType } from "../../../config/configuration";
 import { DeliveryHandler } from "../../../delivery/DeliveryHandler";
 import type { SynoChatNotificationEvent } from "../../../delivery/events";
 import {
-  CHANNEL_SYNOCHAT,
   channelQueue,
-  channelRoutingKey,
+  NotificationChannel,
+  notificationRoutingKey,
   NOTIFICATIONS_EXCHANGE,
 } from "../../../messaging";
 import { SynoChatFormatters } from "../formatters/SynoChatFormatters";
@@ -62,8 +62,8 @@ export class SynoChatHandler extends DeliveryHandler<
 
   @RabbitSubscribe({
     exchange: NOTIFICATIONS_EXCHANGE,
-    queue: channelQueue(CHANNEL_SYNOCHAT),
-    routingKey: channelRoutingKey(CHANNEL_SYNOCHAT),
+    queue: channelQueue(NotificationChannel.SYNOCHAT),
+    routingKey: notificationRoutingKey(NotificationChannel.SYNOCHAT),
   })
   async handle(notification: SynoChatEvent): Promise<void> {
     await this.deliver(notification);

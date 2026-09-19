@@ -7,9 +7,9 @@ import { synologyMailConfig } from "../../../config/configuration";
 import type { SynologyMailConfigType } from "../../../config/configuration";
 import type { SmtpNotificationEvent } from "../../../delivery/events";
 import {
-  CHANNEL_SYNOMAIL,
   channelQueue,
-  channelRoutingKey,
+  NotificationChannel,
+  notificationRoutingKey,
   NOTIFICATIONS_EXCHANGE,
 } from "../../../messaging";
 import { EmailFormatters } from "../formatters/EmailFormatters";
@@ -32,8 +32,8 @@ export class SynologyMailHandler extends SmtpHandler {
 
   @RabbitSubscribe({
     exchange: NOTIFICATIONS_EXCHANGE,
-    queue: channelQueue(CHANNEL_SYNOMAIL),
-    routingKey: channelRoutingKey(CHANNEL_SYNOMAIL),
+    queue: channelQueue(NotificationChannel.SYNOMAIL),
+    routingKey: notificationRoutingKey(NotificationChannel.SYNOMAIL),
   })
   async handle(
     notification: SmtpNotificationEvent<NotificationContext>,
