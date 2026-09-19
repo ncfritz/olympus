@@ -31,7 +31,11 @@ against the current API. After changing an API operation:
 pnpm turbo run build --filter=@ncfritz/olympus-sdk
 ```
 
-The generator configuration is in `config/`.
+The generator configuration is `openapi-ts.config.ts`: one job per API
+document, with the `@hey-api/typescript`, `@hey-api/sdk` and
+`@hey-api/client-axios` plugins. The shared axios `client` is exported from
+each entry point (`client.setConfig({ baseURL })`) and throws on non-2xx
+responses by default.
 
 ## Notes
 

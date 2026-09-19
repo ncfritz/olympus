@@ -20,18 +20,18 @@
     }
   },
   "scripts": {
-    "generate": "openapi-ts -f config/olympus.ts && openapi-ts -f config/dionysus.ts && openapi-ts -f config/minerva.ts",
+    "generate": "openapi-ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint config",
-    "lintfix": "eslint config --fix",
+    "lint": "eslint openapi-ts.config.ts",
+    "lintfix": "eslint openapi-ts.config.ts --fix",
     "clean": "rm -rf dist src/generated"
   },
   "dependencies": {
     "axios": "^1.13.2"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "0.89.2",
+    "@hey-api/openapi-ts": "0.99.0",
     "@ncfritz/olympus-api": "workspace:*",
     "@ncfritz/olympus-config": "workspace:*",
     "eslint": "catalog:",

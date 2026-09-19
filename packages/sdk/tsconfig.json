@@ -7,9 +7,6 @@
     // The client runs in browsers (site) and Node (API tests, agents) and
     // uses fetch-era globals (Headers, URLSearchParams, AbortController).
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    // As in the old SDK repo; the generated client's @ts-expect-error
-    // directives rely on it.
-    "strictFunctionTypes": true,
     "module": "nodenext",
     "moduleResolution": "nodenext"
   },
