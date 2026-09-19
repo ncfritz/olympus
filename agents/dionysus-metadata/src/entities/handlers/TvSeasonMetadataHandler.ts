@@ -28,7 +28,7 @@ export class TvSeasonMetadataHandler extends EntityHandler<
 
   async doFetchMetadata(
     entityId: string,
-    metadataFetchJob: MetadataFetchJob,
+    _metadataFetchJob: MetadataFetchJob,
     metadataManager: FetchJobStore,
   ): Promise<[PartialSeason, TvSeasonContext]> {
     const [seriesId, seasonNumber] = entityId
@@ -61,8 +61,8 @@ export class TvSeasonMetadataHandler extends EntityHandler<
       if (episodeFetchJob) {
         const now = moment.utc();
         const expirationTime = moment(episodeFetchJob.lastFetchedTime)
-          .add(metadataFetchJob.ttl, "days")
-          .add(metadataFetchJob.jitter, "minutes");
+          .add(episodeFetchJob.ttl, "days")
+          .add(episodeFetchJob.jitter, "minutes");
 
         if (expirationTime.isAfter(now)) {
           this.logger.debug(

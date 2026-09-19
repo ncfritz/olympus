@@ -213,6 +213,50 @@ describe("entity handlers", () => {
     });
   });
 
+  describe("child freshness", () => {
+    const tenDaysAgo = () => moment.utc().subtract(10, "days").toISOString();
+
+    it("judges a season by its own TTL, not the series'", async () => {
+      store = fakeStore([
+        fetchJob({ id: "2316", type: "tv_series", ttl: 30 }),
+        ...["2316-0", "2316-1", "2316-2"].map((id) =>
+          fetchJob({
+            id,
+            type: "tv_seasons",
+            status: "fetched",
+            ttl: 7,
+            lastFetchedTime: tenDaysAgo(),
+          }),
+        ),
+      ]);
+      await create(TvSeriesMetadataHandler).handle({
+        entityId: "2316",
+        entityType: "tv_series",
+      });
+      expect(store.createMetadataFetchJob).toHaveBeenCalledTimes(3);
+    });
+
+    it("judges an episode by its own TTL, not the season's", async () => {
+      store = fakeStore([
+        fetchJob({ id: "2316-1", type: "tv_seasons", ttl: 3 }),
+        ...["2316-1-1", "2316-1-2"].map((id) =>
+          fetchJob({
+            id,
+            type: "tv_episodes",
+            status: "fetched",
+            ttl: 30,
+            lastFetchedTime: tenDaysAgo(),
+          }),
+        ),
+      ]);
+      await create(TvSeasonMetadataHandler).handle({
+        entityId: "2316-1",
+        entityType: "tv_seasons",
+      });
+      expect(store.createMetadataFetchJob).not.toHaveBeenCalled();
+    });
+  });
+
   describe("TV seasons", () => {
     it("stores the season and queues a fetch of each episode", async () => {
       store = fakeStore([fetchJob({ id: "2316-1", type: "tv_seasons" })]);
