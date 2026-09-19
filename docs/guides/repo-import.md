@@ -30,8 +30,13 @@ Dependencies first, so each import can switch to `workspace:*` right away:
   history is imported. As of 2026-09-18 several repos have uncommitted
   changes (olympus-api: 10 files, olympus-notification-agent: 21).
 - Check that no secrets are in history (`git log -p -- '*.env'`,
-  `gitleaks detect`). `*.env` files are not tracked in the repos checked so
-  far.
+  `gitleaks detect`, and a grep of `git log -p` for `pass:`, `token=`,
+  `secret`, `apiKey`). `*.env` files are not tracked in the repos checked
+  so far, but olympus-notification-agent had credentials in source.
+- Secrets found in history are redacted in the fresh clone before the
+  merge: add `--replace-text <file>` (lines `<secret>==>REDACTED`) to the
+  `git filter-repo` call below, move the values to environment variables
+  in the adapt commit, and list the credentials to rotate in the roadmap.
 
 ## Steps (per repo)
 

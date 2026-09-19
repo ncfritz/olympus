@@ -35,8 +35,11 @@ export class GoogleMailHandler<
       host: "smtp.gmail.com",
       secure: true,
       auth: {
-        user: "ncfritz@ncfritz.net",
-        pass: "REDACTED",
+        user: this.configService.get<string>(
+          "GMAIL_USER",
+          "ncfritz@ncfritz.net",
+        ),
+        pass: this.configService.get<string>("GMAIL_APP_PASSWORD"),
       },
       tls: {
         rejectUnauthorized: false,

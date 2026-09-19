@@ -20,8 +20,7 @@ export interface SMTPHandleBarsFormatterOptions {
 export abstract class SMTPHandleBarsFormatter<
   T extends NotificationContext,
   C extends object,
-> implements NotificationFormatter<SMTPDestinationEvent<T>, SMTPPayload>
-{
+> implements NotificationFormatter<SMTPDestinationEvent<T>, SMTPPayload> {
   private readonly htmlTemplate: string;
   private readonly cssTemplate: string;
   private readonly plaintextTemplate: string;

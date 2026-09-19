@@ -1,9 +1,10 @@
 # olympus-notification-agent
 
-[![Release](https://github.com/ncfritz/olympus-notification-agent/actions/workflows/release.yml/badge.svg)](https://github.com/ncfritz/olympus-notification-agent/actions/workflows/release.yml)
+`@ncfritz/olympus-notification-agent`, imported from the
+olympus-notification-agent repository with its history.
 
 Asynchronous agent to process notifications sent by Olympus and Olympus-adjacent
-processes and handle delivery to various messaging channels.  This agent supports pushing notifications to the
+processes and handle delivery to various messaging channels. This agent supports pushing notifications to the
 following endpoint types:
 
 1. WebSocket (Olympus)
@@ -12,21 +13,27 @@ following endpoint types:
 4. SMTP (Gmail)
 
 # Development
-* `npm run dev` - Starts the development server (watched for changes).  Environment variables are populated from
-  `dev.env`
-* `npm run dev:local` - Starts the development server (watched for changes).  Environment variables are populated from
-  `local.env`
-* `npm run start` - Starts the development server.  Environment variables are populated from
-  `dev.env`
-* `npm run start:local` - Starts the development server.  Environment variables are populated from
-  `local.env`
+
+Run from the repository root (`pnpm install` once):
+
+- `pnpm --filter @ncfritz/olympus-notification-agent dev`: watch mode,
+  environment from `dev.env` (`dev:local` reads `local.env`).
+- `pnpm --filter @ncfritz/olympus-notification-agent build`, then `start` /
+  `start:local` / `start:prod`.
+
+Copy `dev.env.example` to `dev.env` (git-ignored) and fill in the values.
+
+> The Dockerfile still expects the pre-monorepo layout (npm, GitHub
+> Packages token). It is rebuilt with the Docker work in ADR 0011.
 
 ## Adding a New Notification Handler
+
 TODO
 
 ## Monitoring
+
 These agents expose a Prometheus metrics endpoint at `/metrics/` providing basic NodeJS memory, loop timing, and GC
-statistics.  As sample Prometheus scrape configuration is as follows:
+statistics. As sample Prometheus scrape configuration is as follows:
 
 ```yaml
 scrape_configs:
@@ -40,20 +47,24 @@ scrape_configs:
 ```
 
 ## Docker Image
-The Docker image will expose port 3100 for metrics scraping.  Environment variables should be specified in
+
+The Docker image will expose port 3100 for metrics scraping. Environment variables should be specified in
 `production.env`.
 
 ### Environment Variables
+
 Environment variables are used to configure the NestJS modules that connect to various external data sources:
 
 ##### General
-| Variable               | Usage                                                    | Default Value |
-|------------------------|----------------------------------------------------------|---------------|
-| LISTEN_PORT            | The port to listen on, this is where metrics are exposed | `3101`        |
+
+| Variable    | Usage                                                    | Default Value |
+| ----------- | -------------------------------------------------------- | ------------- |
+| LISTEN_PORT | The port to listen on, this is where metrics are exposed | `3100`        |
 
 ##### Loki / Logging
+
 | Variable               | Usage                                         | Default Value                 |
-|------------------------|-----------------------------------------------|-------------------------------|
+| ---------------------- | --------------------------------------------- | ----------------------------- |
 | LOKI_URL               | The URL of the Loki server to push logs to    |                               |
 | LOKI_LOGGING_LEVEL     | The minimum log level to push to Loki         | `info`                        |
 | ENABLE_CONSOLE_LOGGING | Whether to log to the console                 | `true` (dev) / `false` (prod) |
@@ -63,8 +74,9 @@ Environment variables are used to configure the NestJS modules that connect to v
 | FILE_LOGGING_PATH      | The path to write logs to                     | `./logs`                      |
 
 ##### AMQP - RabbitMQ
+
 | Variable      | Usage                                        | Default Value   |
-|---------------|----------------------------------------------|-----------------|
+| ------------- | -------------------------------------------- | --------------- |
 | AMQP_PROTOCOL | How to connect to the AMQP broker            | `amqp`          |
 | AMQP_HOST     | The host, or container name running RabbitMQ | `localhost`     |
 | AMQP_PORT     | The port to connect on                       | `5672`          |
@@ -73,7 +85,22 @@ Environment variables are used to configure the NestJS modules that connect to v
 | AMQP_VHOST    | The virtual host to use                      | `/dionysus-dev` |
 
 ##### Olympus
-| Variable   | Usage                                              | Default Value            |
-|------------|----------------------------------------------------|--------------------------|
-| WSS_HOST   | The destination to use for WebSocket notifications | `ws://localhost:3000`    |
-| API_HOST   | The Olympus API host                               | `http://localhost:3001`  |              
+
+| Variable     | Usage                                                   | Default Value              |
+| ------------ | ------------------------------------------------------- | -------------------------- |
+| WSS_HOST     | The destination to use for WebSocket notifications      | `ws://localhost:3000`      |
+| API_HOST     | The Olympus API host (WebSocket notification callbacks) | `http:localhost:3001`      |
+| API_BASE_URL | Base URL for SDK calls, including `/v1`                 | `http://localhost:3001/v1` |
+
+##### Delivery channels
+
+| Variable                        | Usage                                                        | Default Value                   |
+| ------------------------------- | ------------------------------------------------------------ | ------------------------------- |
+| SYNO_SMTP_HOST                  | Synology mail server                                         | `192.168.15.21`                 |
+| SYNO_SMTP_USER                  | Synology mail user                                           | `ncfritz`                       |
+| SYNO_SMTP_PASSWORD              | Synology mail password                                       |                                 |
+| SYNO_CHAT_HOST                  | Synology Chat server                                         | `https://nfs02.sea.ncfritz.net` |
+| SYNO_CHAT_OLYMPUS_BOT_TOKEN     | Token of the `olympus` chatbot webhook (skipped when unset)  |                                 |
+| SYNO_CHAT_OLYMPUS_CHANNEL_TOKEN | Token of the `olympus` incoming webhook (skipped when unset) |                                 |
+| GMAIL_USER                      | Gmail account                                                | `ncfritz@ncfritz.net`           |
+| GMAIL_APP_PASSWORD              | Gmail app password                                           |                                 |

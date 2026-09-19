@@ -14,8 +14,9 @@ export interface BaseDestinationEvent<T extends NotificationContext> {
   context: T;
 }
 
-export interface WebSocketDestinationEvent<T extends NotificationContext>
-  extends BaseDestinationEvent<T> {
+export interface WebSocketDestinationEvent<
+  T extends NotificationContext,
+> extends BaseDestinationEvent<T> {
   level: WebSocketNotificationLevel;
   durable: boolean;
   closable: boolean;
@@ -26,8 +27,9 @@ export interface WebSocketDestinationEvent<T extends NotificationContext>
   ttl?: string;
 }
 
-export interface SMTPDestinationEvent<T extends NotificationContext>
-  extends BaseDestinationEvent<T> {
+export interface SMTPDestinationEvent<
+  T extends NotificationContext,
+> extends BaseDestinationEvent<T> {
   priority?: SmtpPriority;
   from: string;
   replyTo?: string;
@@ -36,8 +38,9 @@ export interface SMTPDestinationEvent<T extends NotificationContext>
   bcc?: string[];
 }
 
-export interface SynoChatDestinationEvent<T extends NotificationContext>
-  extends BaseDestinationEvent<T> {
+export interface SynoChatDestinationEvent<
+  T extends NotificationContext,
+> extends BaseDestinationEvent<T> {
   destinationType: SynoChatDestinationType;
   destination: string;
   users?: number[];

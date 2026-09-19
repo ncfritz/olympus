@@ -27,7 +27,7 @@ import { BaseHandler } from "./baseHandler";
 
 @Injectable()
 export class WebSocketHandler extends BaseHandler<
-  WebSocketDestinationEvent<any>,
+  WebSocketDestinationEvent<NotificationContext>,
   WebSocketPayload
 > {
   constructor(private readonly configService: ConfigService) {

@@ -1,6 +1,7 @@
 import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
 import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
 import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { type ConsumeMessage } from "amqplib";
 import axios from "axios";
 import { NotificationFormatter } from "../formatter/formatter";
@@ -15,24 +16,51 @@ import {
 import { logger } from "../util/logger";
 import { BaseHandler } from "./baseHandler";
 
-const SYNO_ENDPOINTS: {
-  bot: { [key: string]: string };
-  channel: { [key: string]: string };
-} = {
-  bot: {
-    olympus:
-      "https://nfs02.sea.ncfritz.net/webapi/entry.cgi?api=SYNO.Chat.External&method=chatbot&version=2&token=%22REDACTED%22",
-  },
-  channel: {
-    olympus:
-      "https://nfs02.sea.ncfritz.net/webapi/entry.cgi?api=SYNO.Chat.External&method=incoming&version=2&token=%22REDACTED%22",
-  },
+type SynoChatEndpoints = {
+  bot: Record<string, string>;
+  channel: Record<string, string>;
 };
+
+const SYNO_CHAT_API = "webapi/entry.cgi?api=SYNO.Chat.External&version=2";
 
 @Injectable()
 export class SynologyChatHandler<
   T extends NotificationContext,
-> extends BaseHandler<SynoChatDestinationEvent<any>, SynoChatPayload> {
+> extends BaseHandler<SynoChatDestinationEvent<T>, SynoChatPayload> {
+  private readonly endpoints: SynoChatEndpoints;
+
+  /**
+   * Webhook URLs by destination name. Tokens come from the environment
+   * (SYNO_CHAT_OLYMPUS_BOT_TOKEN, SYNO_CHAT_OLYMPUS_CHANNEL_TOKEN); a
+   * destination without a token is treated as unknown.
+   */
+  constructor(configService: ConfigService) {
+    super();
+    const host = configService.get<string>(
+      "SYNO_CHAT_HOST",
+      "https://nfs02.sea.ncfritz.net",
+    );
+    const url = (
+      method: string,
+      token: string | undefined,
+    ): Record<string, string> =>
+      token
+        ? {
+            olympus: `${host}/${SYNO_CHAT_API}&method=${method}&token=%22${token}%22`,
+          }
+        : {};
+    this.endpoints = {
+      bot: url(
+        "chatbot",
+        configService.get<string>("SYNO_CHAT_OLYMPUS_BOT_TOKEN"),
+      ),
+      channel: url(
+        "incoming",
+        configService.get<string>("SYNO_CHAT_OLYMPUS_CHANNEL_TOKEN"),
+      ),
+    };
+  }
+
   getChannelName(): string {
     return "SynoChat";
   }
@@ -55,23 +83,23 @@ export class SynologyChatHandler<
     payload: SynoChatPayload,
   ): Promise<void> {
     const data = { ...payload };
-    let endpoint = undefined;
+    let endpoint: string;
 
     if (msg.destinationType === "bot") {
       data.user_ids = msg.users;
 
-      if (!Object.keys(SYNO_ENDPOINTS.bot).includes(msg.destination)) {
+      if (!Object.keys(this.endpoints.bot).includes(msg.destination)) {
         logger.info(`Bot '${msg.destination}' not found, nothing to do.`);
         return;
       } else {
-        endpoint = SYNO_ENDPOINTS.bot[msg.destination];
+        endpoint = this.endpoints.bot[msg.destination];
       }
     } else {
-      if (!Object.keys(SYNO_ENDPOINTS.channel).includes(msg.destination)) {
+      if (!Object.keys(this.endpoints.channel).includes(msg.destination)) {
         logger.info(`Channel '${msg.destination}' not found, nothing to do.`);
         return;
       } else {
-        endpoint = SYNO_ENDPOINTS.channel[msg.destination];
+        endpoint = this.endpoints.channel[msg.destination];
       }
     }
 

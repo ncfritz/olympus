@@ -2,21 +2,21 @@
 
 ## Phases
 
-| #   | Phase                                                                                                | Status                    |
-| --- | ---------------------------------------------------------------------------------------------------- | ------------------------- |
-| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)     |
-| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**                  |
-| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       | SDK **done**; agents next |
-| 3   | Import site and desktop shell                                                                        |                           |
-| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         |                           |
-| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                           |
-| 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                           |
-| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                           |
-| 8   | Minerva calendar sync import and Hasura integration                                                  |                           |
-| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                   |
-| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                  |
-| —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                  |
-| —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | **done**                  |
+| #   | Phase                                                                                                | Status                                              |
+| --- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)                               |
+| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**                                            |
+| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       | SDK, notification agent **done**; other agents next |
+| 3   | Import site and desktop shell                                                                        |                                                     |
+| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         |                                                     |
+| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                                     |
+| 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                                                     |
+| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                                     |
+| 8   | Minerva calendar sync import and Hasura integration                                                  |                                                     |
+| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                             |
+| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                                            |
+| —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                                            |
+| —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | **done**                                            |
 
 ## Open decisions
 
@@ -121,7 +121,20 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
 
 ### Agents
 
-- Agents depend on `"@ncfritz/olympus-sdk": "latest"`.
+- Agents depend on `"@ncfritz/olympus-sdk": "latest"` (not-yet-imported
+  agents; imported ones use `workspace:*`).
+- Notification agent (imported 2026-09-19):
+  - **Rotate credentials**: two Synology Chat webhook tokens and the
+    Gmail app password were hard-coded in source, and the Synology SMTP
+    password is in older history. They are redacted from the imported
+    history and now come from the environment, but they remain in the
+    olympus-notification-agent repository.
+  - The `API_HOST` default is `http:localhost:3001` (missing `//`).
+  - SMTP transports set `tls.rejectUnauthorized: false`.
+  - Hard-coded CORS origins in `main.ts`; the agent serves no browser
+    routes.
+  - Not yet on the agent conventions (`handler/<area>/<Name>Handler.ts`,
+    PascalCase files, typed config, Nest `Logger`); no tests.
 - `RabbitModule` logs the full AMQP URI, including the password.
 - No explicit nack / dead-letter strategy for failed messages.
 - `dionysus-asset-agents` handler files are camelCase
