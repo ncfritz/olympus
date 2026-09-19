@@ -5,7 +5,7 @@ import { WorkflowApi } from "../../../api/WorkflowApi";
 import type { SmtpNotificationEvent } from "../../../delivery/events";
 import type { NotificationFormatter } from "../../../delivery/NotificationFormatter";
 import type { SmtpPayload } from "../payload";
-import { findTemplatesDir } from "../templates";
+import { EmailTemplates } from "../services/EmailTemplates";
 import { MetadataWorkflowCompleteEmailFormatter } from "./MetadataWorkflowCompleteEmailFormatter";
 import { SystemTestEmailFormatter } from "./SystemTestEmailFormatter";
 import { TranscodeWorkflowCompleteEmailFormatter } from "./TranscodeWorkflowCompleteEmailFormatter";
@@ -20,15 +20,18 @@ type EmailFormatter = NotificationFormatter<
 export class EmailFormatters {
   private readonly byType: Record<string, EmailFormatter>;
 
-  constructor(workflowApi: WorkflowApi, mediaApi: MediaApi) {
-    const templatesDir = findTemplatesDir();
+  constructor(
+    workflowApi: WorkflowApi,
+    mediaApi: MediaApi,
+    templates: EmailTemplates,
+  ) {
     this.byType = {
-      system_test: new SystemTestEmailFormatter(templatesDir),
+      system_test: new SystemTestEmailFormatter(templates),
       dionysus_metadata_workflow_completion:
-        new MetadataWorkflowCompleteEmailFormatter(workflowApi, templatesDir),
+        new MetadataWorkflowCompleteEmailFormatter(workflowApi, templates),
       dionysus_transcode_complete: new TranscodeWorkflowCompleteEmailFormatter(
         mediaApi,
-        templatesDir,
+        templates,
       ),
     };
   }

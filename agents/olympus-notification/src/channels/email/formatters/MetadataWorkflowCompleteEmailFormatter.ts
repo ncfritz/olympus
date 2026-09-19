@@ -3,6 +3,7 @@ import type {
   DionysusWorkflowContext,
   DionysusWorkflowMessageContext,
 } from "../../../delivery/contexts/dionysus";
+import type { EmailTemplates } from "../services/EmailTemplates";
 import { HandlebarsEmailFormatter } from "./HandlebarsEmailFormatter";
 
 /** dionysus_metadata_workflow_completion: the workflow and its steps. */
@@ -12,9 +13,9 @@ export class MetadataWorkflowCompleteEmailFormatter extends HandlebarsEmailForma
 > {
   constructor(
     private readonly workflowApi: WorkflowApi,
-    templatesDir: string,
+    templates: EmailTemplates,
   ) {
-    super("dionysus_metadata_workflow_completion", templatesDir);
+    super("dionysus_metadata_workflow_completion", templates);
   }
 
   async buildContext(

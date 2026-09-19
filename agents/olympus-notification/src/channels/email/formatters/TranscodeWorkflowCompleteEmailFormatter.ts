@@ -6,6 +6,7 @@ import type {
   DionysusTranscodeWorkflowCompleteContext,
   DionysusTranscodeWorkflowCompleteMessageContext,
 } from "../../../delivery/contexts/dionysus";
+import type { EmailTemplates } from "../services/EmailTemplates";
 import { HandlebarsEmailFormatter } from "./HandlebarsEmailFormatter";
 
 /**
@@ -18,9 +19,9 @@ export class TranscodeWorkflowCompleteEmailFormatter extends HandlebarsEmailForm
 > {
   constructor(
     private readonly mediaApi: MediaApi,
-    templatesDir: string,
+    templates: EmailTemplates,
   ) {
-    super("dionysus_transcode_complete", templatesDir);
+    super("dionysus_transcode_complete", templates);
   }
 
   async buildContext(
@@ -33,7 +34,7 @@ export class TranscodeWorkflowCompleteEmailFormatter extends HandlebarsEmailForm
     const posterAttachment: Attachment = {
       cid: "media_poster",
       path: path.join(
-        this.templatesDir,
+        this.templates.dir,
         "images",
         `no_poster_${Math.floor(Math.random() * 6) + 1}.png`,
       ),

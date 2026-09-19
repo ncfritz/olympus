@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MediaApi } from "../../../../src/api/MediaApi";
 import type { WorkflowApi } from "../../../../src/api/WorkflowApi";
 import { EmailFormatters } from "../../../../src/channels/email/formatters/EmailFormatters";
+import { EmailTemplates } from "../../../../src/channels/email/services/EmailTemplates";
 import { smtpEvent } from "../../../fixtures/events";
 
 vi.mock("axios");
@@ -17,6 +18,7 @@ const mediaApi = { describeMediaAssetWorkflow: vi.fn() };
 const formatters = new EmailFormatters(
   workflowApi as unknown as WorkflowApi,
   mediaApi as unknown as MediaApi,
+  new EmailTemplates(),
 );
 
 const format = (
@@ -32,6 +34,28 @@ describe("EmailFormatters", () => {
 
   it("has no formatter for other types", () => {
     expect(formatters.formatterFor("unknown")).toBeUndefined();
+  });
+
+  it("renders system_test, which has no CSS template", async () => {
+    const email = await format("system_test");
+    expect(email.subject).toBe("[Olympus] System Test");
+    expect(email.plaintextPart).toContain("This is a test!");
+    expect(email.htmlPart).toContain("This is a test!");
+    expect(email.htmlPart).toContain("<title>Olympus</title>");
+  });
+
+  it("attaches the inline images of the partials the HTML uses, once", async () => {
+    const first = await format("system_test");
+    const second = await format("system_test");
+    for (const email of [first, second]) {
+      expect(email.attachments!.map((a) => a.cid)).toEqual([
+        "t_olympus_header",
+        "t_olympus_footer_logo",
+      ]);
+      for (const attachment of email.attachments!) {
+        expect(fs.existsSync(attachment.path as string)).toBe(true);
+      }
+    }
   });
 
   it("renders the metadata workflow completion from the API", async () => {
