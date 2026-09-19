@@ -1,5 +1,6 @@
 import moment from "moment/moment";
 import { ReporterService } from "nestjs-metrics-reporter";
+import { logger } from "../util/logger";
 
 export interface ExecuteWithMetricsOptions {}
 
@@ -38,7 +39,7 @@ export function ExecuteWithMetrics(
             return undefined;
           }
         } else if (e.request) {
-          console.log("No response received");
+          logger.debug("No response received");
         }
 
         throw e;
