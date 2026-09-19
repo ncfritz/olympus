@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Res } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { describe, expect, it, vi } from "vitest";
-import { locationOf, setLocation } from "./location";
+import { locationOf, setLocation } from "../../../src/utils/location";
 
 @Controller({ version: "1" })
 class DescribeThingController {

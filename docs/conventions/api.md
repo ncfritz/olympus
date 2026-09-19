@@ -299,6 +299,9 @@ the model shapes and a converter stub
   covering its success path, 404 when it takes an ID, and 400 for every
   query parameter that reaches a GraphQL document
   ([guide](../guides/api-testing.md)).
+- Unit tests mirror `src` under `test/unit`
+  (`src/utils/location.ts` → `test/unit/utils/location.spec.ts`). No test
+  files in `src`. **[checked]**
 - Query parameters are parsed with a Nest pipe or `filterUtil`, never
   interpolated into a GraphQL document as received.
 

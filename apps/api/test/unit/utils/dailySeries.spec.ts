@@ -1,6 +1,6 @@
 import moment from "moment";
 import { describe, expect, it } from "vitest";
-import { dailyIndex, emptyDailySeries } from "./dailySeries";
+import { dailyIndex, emptyDailySeries } from "../../../src/utils/dailySeries";
 
 const today = moment.utc("2026-09-18T00:00:00Z");
 const day = (iso: string) => moment.utc(iso).valueOf();

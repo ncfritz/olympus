@@ -9,7 +9,7 @@ import {
   buildFilterExpression,
   buildPaginationExpression,
   parseFilterDefinition,
-} from "./filterUtil";
+} from "../../../src/utils/filterUtil";
 
 const eq = (name: string, value: FilterDefinition["value"]) => ({
   name,

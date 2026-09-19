@@ -1,12 +1,12 @@
 # Writing API tests
 
-API tests live in two places:
+All API tests live under `apps/api/test/`; `src/` holds no tests:
 
-| Kind                  | Where                                  | What it covers                                                          |
-| --------------------- | -------------------------------------- | ----------------------------------------------------------------------- |
-| Unit                  | `apps/api/src/**/<File>.spec.ts`       | Pure code: converters, `utils/` (filters, decorators)                   |
-| Endpoint (HTTP-level) | `apps/api/test/api/<domain>/*.spec.ts` | One operation end to end: routing, pipes, controller, converter, status |
-| Conventions           | `apps/api/test/conventions`            | Controller metadata rules ([guide](convention-checks.md))               |
+| Kind                  | Where                                             | What it covers                                                          |
+| --------------------- | ------------------------------------------------- | ----------------------------------------------------------------------- |
+| Unit                  | `apps/api/test/unit/<path in src>/<File>.spec.ts` | Pure code: converters, services, `utils/` (filters, decorators)         |
+| Endpoint (HTTP-level) | `apps/api/test/api/<domain>/*.spec.ts`            | One operation end to end: routing, pipes, controller, converter, status |
+| Conventions           | `apps/api/test/conventions`                       | Controller metadata rules ([guide](convention-checks.md))               |
 
 Run them:
 
@@ -141,7 +141,7 @@ The metadata operations are covered by a table in
 minimal Hasura row from `test/fixtures/metadata.ts`) plus focused tests for
 paging, filters and upserts. Converter mappings, including missing related
 rows, are unit-tested in
-`src/dionysus/metadata/converters/MetadataConverters.spec.ts`.
+`test/unit/dionysus/metadata/converters/MetadataConverters.spec.ts`.
 
 When a request unexpectedly answers 500, run the test with
 `TEST_NEST_LOGS=1` to see Nest's error log and stack.

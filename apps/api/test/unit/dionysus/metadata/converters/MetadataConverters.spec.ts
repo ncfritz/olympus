@@ -6,8 +6,8 @@
  */
 import { Gender } from "@ncfritz/olympus-model";
 import { describe, expect, it } from "vitest";
-import { toDomainObject as toCertification } from "../certifications/converters/CertificationConverter";
-import { toDomainObject as toCollection } from "../collections/converters/CollectionConverter";
+import { toDomainObject as toCertification } from "../../../../../src/dionysus/metadata/certifications/converters/CertificationConverter";
+import { toDomainObject as toCollection } from "../../../../../src/dionysus/metadata/collections/converters/CollectionConverter";
 import {
   toAlternativeNameDomainObject,
   toAlternativeTitleDomainObject,
@@ -15,36 +15,36 @@ import {
   toIdentifiableImageDomainObject,
   toTypedImageDomainObject,
   toVideoDomainObject,
-} from "./common";
-import { toCountryAssociationDomainObject } from "../countries/converters/CountryConverter";
-import { toGenreAssociationDomainObject } from "../genres/converters/GenreConverter";
-import { toKeywordAssociationDomainObject } from "../keywords/converters/KeywordConverter";
-import { toLanguageAssociationDomainObject } from "../languages/converters/LanguageConverter";
+} from "../../../../../src/dionysus/metadata/converters/common";
+import { toCountryAssociationDomainObject } from "../../../../../src/dionysus/metadata/countries/converters/CountryConverter";
+import { toGenreAssociationDomainObject } from "../../../../../src/dionysus/metadata/genres/converters/GenreConverter";
+import { toKeywordAssociationDomainObject } from "../../../../../src/dionysus/metadata/keywords/converters/KeywordConverter";
+import { toLanguageAssociationDomainObject } from "../../../../../src/dionysus/metadata/languages/converters/LanguageConverter";
 import {
   toDomainObject as toMovie,
   toDomainObjectWithCredits as toMovieWithCredits,
   toMovieReleaseDateDomainObject,
   toSparseDomainObject as toSparseMovie,
-} from "../movies/converters/MovieConverter";
+} from "../../../../../src/dionysus/metadata/movies/converters/MovieConverter";
 import {
   toDomainObject as toNetwork,
   toDomainObjectWithContentCounts as toNetworkWithCounts,
-} from "../networks/converters/NetworkConverter";
+} from "../../../../../src/dionysus/metadata/networks/converters/NetworkConverter";
 import {
   toDomainObject as toPerson,
   toPersonAssociationDomainObject,
-} from "../people/converters/PersonConverter";
+} from "../../../../../src/dionysus/metadata/people/converters/PersonConverter";
 import {
   toFullDomainObject as toFullCompany,
   toSparseDomainObjectWithContentCounts as toCompanyWithCounts,
-} from "../productionCompanies/converters/ProductionCompanyConverter";
-import { toDomainObject as toEpisode } from "../tv/converters/tvEpisodeConverter";
-import { toDomainObject as toSeason } from "../tv/converters/tvSeasonConverter";
+} from "../../../../../src/dionysus/metadata/productionCompanies/converters/ProductionCompanyConverter";
+import { toDomainObject as toEpisode } from "../../../../../src/dionysus/metadata/tv/converters/tvEpisodeConverter";
+import { toDomainObject as toSeason } from "../../../../../src/dionysus/metadata/tv/converters/tvSeasonConverter";
 import {
   toDomainObject as toSeries,
   toTvSeriesCastMember,
   toTvSeriesCrewMember,
-} from "../tv/converters/tvSeriesConverter";
+} from "../../../../../src/dionysus/metadata/tv/converters/tvSeriesConverter";
 
 // Rows are built loosely and passed through `row()`; the converters' input
 // types are exercised by the endpoint tests.

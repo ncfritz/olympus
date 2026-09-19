@@ -1,7 +1,7 @@
 import { MeetingSource } from "@ncfritz/olympus-model";
 import { describe, expect, it } from "vitest";
-import { graphQlMeeting } from "../../../../test/fixtures/minerva";
-import { toDomainObject } from "./MeetingConverter";
+import { graphQlMeeting } from "../../../../fixtures/minerva";
+import { toDomainObject } from "../../../../../src/minerva/meetings/converters/MeetingConverter";
 
 describe("MeetingConverter.toDomainObject", () => {
   it("maps snake_case columns to the model", () => {

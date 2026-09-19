@@ -4,14 +4,14 @@ import {
   graphQlNotificationGroup,
   graphQlNotificationSetting,
   graphQlNotificationType,
-} from "../../../../test/fixtures/olympus";
-import { toDomainObject as toNotification } from "./NotificationConverter";
-import { toDomainObject as toGroup } from "./NotificationGroupConverter";
-import { toDomainObject as toSetting } from "./NotificationSettingConverter";
+} from "../../../../fixtures/olympus";
+import { toDomainObject as toNotification } from "../../../../../src/olympus/notifications/converters/NotificationConverter";
+import { toDomainObject as toGroup } from "../../../../../src/olympus/notifications/converters/NotificationGroupConverter";
+import { toDomainObject as toSetting } from "../../../../../src/olympus/notifications/converters/NotificationSettingConverter";
 import {
   toDomainObject as toType,
   toFullDomainObject as toFullType,
-} from "./NotificationTypeConverter";
+} from "../../../../../src/olympus/notifications/converters/NotificationTypeConverter";
 
 describe("NotificationConverter", () => {
   it("decodes the base64 JSON payload and parses times", () => {

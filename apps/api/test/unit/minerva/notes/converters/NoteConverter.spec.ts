@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { graphQlNote } from "../../../../test/fixtures/minerva";
-import { toDomainObject } from "./NoteConverter";
+import { graphQlNote } from "../../../../fixtures/minerva";
+import { toDomainObject } from "../../../../../src/minerva/notes/converters/NoteConverter";
 
 describe("NoteConverter.toDomainObject", () => {
   it("maps a note with associations", () => {

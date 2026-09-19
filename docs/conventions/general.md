@@ -67,8 +67,11 @@ workflows, jobs), **Minerva** (personal productivity: notes, meetings).
 
 ## Tests
 
-- Test files are `*.spec.ts` / `*.spec.tsx`, next to the code under test,
-  or under `test/` for integration tests.
+- Test files are `*.spec.ts` / `*.spec.tsx` under the package's `test/`
+  folder, never in `src/`. Unit tests mirror the source path under
+  `test/unit/` (`src/utils/location.ts` → `test/unit/utils/location.spec.ts`);
+  other kinds get their own folders (`test/api/`, `test/conventions/`). The
+  Vitest presets only collect `test/**/*.spec.ts`.
 - Vitest, with the presets from `@ncfritz/olympus-config/vitest/*`.
   Import `describe`, `it`, `expect` and `vi` from `"vitest"` explicitly;
   test globals are off.
