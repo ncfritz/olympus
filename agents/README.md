@@ -8,5 +8,5 @@ platform only through `@ncfritz/olympus-sdk`. Conventions:
 | ---------------------- | -------------------------- | ---------------- |
 | `dionysus-asset`       | dionysus-asset-agents      | not yet imported |
 | `dionysus-metadata`    | dionysus-metadata-agents   | not yet imported |
-| `dionysus-search`      | dionysus-search-agents     | imported         |
-| `olympus-notification` | olympus-notification-agent | imported         |
+| `dionysus-search`      | dionysus-search-agents     | on conventions   |
+| `olympus-notification` | olympus-notification-agent | on conventions   |

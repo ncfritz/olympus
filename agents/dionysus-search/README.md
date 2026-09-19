@@ -24,7 +24,45 @@ Requires Node 23 or later (the workspace baseline is 26): the source
 detector's regular expressions use inline modifiers (`(?-i:WEB)`).
 
 `scripts/` holds the NZBGet extension scripts (Python) that publish
-download events to RabbitMQ.
+download events to RabbitMQ. They can't import the TypeScript contract, so
+`test/unit/scripts` checks their payloads against the JSON Schema that
+`@ncfritz/olympus-messages` generates (`schemas/download-update.schema.json`).
+
+## Layout
+
+```
+src/
+  main.ts, AppModule.ts
+  config/configuration.ts     typed, validated configuration (see below)
+  messaging.ts                queues and subscriptions; routes and payloads
+                              come from @ncfritz/olympus-messages
+  infra/                      RabbitModule, metrics content type
+  api/                        OlympusApiModule: SDK client setup, MediaApi,
+                              MetadataApi, NotificationApi
+  search/                     SearchModule: handlers/ (one per asset type,
+                              on SearchHandler), services/NzbGeekClient
+  fanout/                     FanoutModule: the periodic fanout of due
+                              search configurations
+  releases/                   release title parsing (detector) and tag
+                              scoring (tag/spec: TRaSH custom formats)
+```
+
+## Messages
+
+| Queue                                 | Routing key          | Handler                            |
+| ------------------------------------- | -------------------- | ---------------------------------- |
+| `search.fanout.trigger`               | (fanout)             | `SearchConfigurationFanoutHandler` |
+| `search.execution.movie.trigger`      | `jobType.movie`      | `MovieSearchHandler`               |
+| `search.execution.tv_series.trigger`  | `jobType.tv_series`  | `TvSeriesSearchHandler`            |
+| `search.execution.tv_season.trigger`  | `jobType.tv_season`  | `TvSeasonSearchHandler`            |
+| `search.execution.tv_episode.trigger` | `jobType.tv_episode` | `TvEpisodeSearchHandler`           |
+
+The fanout publishes a search for each due search configuration, delayed
+1 to 60 seconds; series searches publish season searches, and season
+searches episode searches, on `search.execution.trigger`.
+
+`pnpm --filter @ncfritz/dionysus-search-agents test` runs the unit and
+convention tests.
 
 > The Dockerfile still expects the pre-monorepo layout (npm, GitHub
 > Packages token). It is rebuilt with the Docker work in ADR 0011.
@@ -91,6 +129,7 @@ Environment variables are used to configure the NestJS modules that connect to v
 
 ##### NzbGeek
 
-| Variable        | Usage                                             | Default Value |
-| --------------- | ------------------------------------------------- | ------------- |
-| NZBGEEK_API_KEY | The API key to use when authenticating to NzbGeek |               |
+| Variable        | Usage                                             | Default Value                  |
+| --------------- | ------------------------------------------------- | ------------------------------ |
+| NZBGEEK_API_URL | The newznab API endpoint                          | `https://api.nzbgeek.info/api` |
+| NZBGEEK_API_KEY | The API key to use when authenticating to NzbGeek |                                |

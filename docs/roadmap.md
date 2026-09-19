@@ -2,21 +2,21 @@
 
 ## Phases
 
-| #   | Phase                                                                                                | Status                                              |
-| --- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)                               |
-| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**                                            |
-| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       | SDK, notification agent **done**; other agents next |
-| 3   | Import site and desktop shell                                                                        |                                                     |
-| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         |                                                     |
-| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                                     |
-| 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                                                     |
-| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                                     |
-| 8   | Minerva calendar sync import and Hasura integration                                                  |                                                     |
-| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                             |
-| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                                            |
-| —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                                            |
-| —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | **done**                                            |
+| #   | Phase                                                                                                | Status                                                    |
+| --- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)                                     |
+| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**                                                  |
+| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       | SDK, notification and search agents **done**; others next |
+| 3   | Import site and desktop shell                                                                        |                                                           |
+| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         |                                                           |
+| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                                           |
+| 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                                                           |
+| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                                           |
+| 8   | Minerva calendar sync import and Hasura integration                                                  |                                                           |
+| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                                   |
+| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                                                  |
+| —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                                                  |
+| —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | **done**                                                  |
 
 ## Open decisions
 
@@ -152,14 +152,57 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     partials reloaded per email, attachment selection, template typos.
   - SMTP transports set `tls.rejectUnauthorized: false`.
   - Failed deliveries are logged and acknowledged; nothing retries.
+- Search agent (imported 2026-09-19):
+  - On the agent conventions (ADR 0015), with tests; the RabbitMQ
+    contracts come from `@ncfritz/olympus-messages`. Fixed on the way:
+    the AMQP password in the logs, `console.log` of failed searches,
+    bootstrap failures writing to `/logs`.
+  - Bugs, one commit each: the NZBGeek API key reaches logs in Axios
+    errors (it's in the request URL); `finishedTime` records the start
+    time; season searches send `episode` instead of `episodeNumber` in
+    `initiatingAsset`; an episode search with no results is marked
+    failed (a movie's is skipped).
+  - Release scoring (`releases/`, `it.fails` cases in
+    `test/unit/releases`):
+    - Parsing a REPACK/PROPER mutates the shared `DEFAULT_REVISION`, so
+      every later release in the process is marked a repack.
+    - 2160p remuxes are parsed as Remux-1080p (so they also get the
+      "x265 (HD)" −10000).
+    - The tag evaluator matches a custom format when any one release
+      title or group condition matches. TRaSH formats need one match per
+      condition type (and all required ones), so every DV release gets
+      "Generated Dynamic HDR" (−10000), and formats with only
+      resolution/source conditions never match.
+    - Release groups aren't parsed; group conditions test the quality
+      group ("WEBDL", "Bluray"), so the tier formats never match.
+  - TV series searches update the series' search configuration once per
+    season, inside the loop (and not at all without seasons).
+  - Nothing in the monorepo or the imported repositories publishes
+    `search.fanout.trigger`; whatever schedules the fanout lives
+    elsewhere and isn't source-controlled.
 - `RabbitModule` logs the full AMQP URI, including the password
   (not-yet-imported agents).
 - No explicit nack / dead-letter strategy for failed messages.
 - `dionysus-asset-agents` handler files are camelCase
   (`rawIngestionHandler.ts`); other agents use PascalCase.
-- `console.log` in handlers (e.g. `BaseSearchHandler`).
 - `dionysus-asset-agents` lists `@golevelup/nestjs-graphql-request` as a
   dependency; agents shouldn't talk to Hasura. Check whether it's used.
+
+### Messages
+
+Found while writing `@ncfritz/olympus-messages` from the publishers;
+check the consumers when the metadata and asset agents are imported.
+
+- Transcode messages never carry `mediaExtension`.
+- Downloads started on their own (CreateMediaAssetDownload) have no
+  `workflowId`; the asset agents may assume one.
+- `bypassCache` is optional on batch and metadata job messages.
+- Batch jobs for `tv_seasons` and `tv_episodes`, and several metadata job
+  types, have no consumer.
+- The NZBGet scripts publish every event with routing key `update.queue`;
+  scan events have no `nzbId` to match a download by.
+- Non-TypeScript publishers (the NZBGet scripts) are checked against
+  generated JSON Schemas; add a schema to `pnpm schemas` for any other.
 
 ### Site
 

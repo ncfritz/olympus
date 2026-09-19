@@ -11,6 +11,9 @@ NestJS infrastructure shared by the API (`apps/api`) and the agents
   `readLoggingConfig` (console, Loki and file logging).
 - `createWinstonLogger`: the Winston logger behind Nest's `Logger`
   (`WinstonModule.createLogger({ instance })` in `main.ts`).
+- `@ExecuteWithMetrics(operation)`: `client_<operation>_*` counters and a
+  latency histogram (nestjs-metrics-reporter) around an SDK call; a 404
+  resolves to `undefined`.
 
 Each service composes these in its own `src/config/configuration.ts` and
 exposes typed namespaces with `registerAs` (see `apps/api`).
