@@ -30,6 +30,10 @@ describe("subscriptions", () => {
     }
   });
 
+  it("has no test queue (its handler overwrote a movie's CDN metadata)", () => {
+    expect(Object.keys(MEDIA_SUBSCRIPTIONS)).not.toContain("test");
+  });
+
   it("runs one transcode at a time for up to 9 hours", () => {
     expect(CHANNELS.transcodeMediaChannel).toBe(1);
     expect(MEDIA_SUBSCRIPTIONS.transcode.queueOptions).toEqual({

@@ -27,7 +27,6 @@ environment variables.
 | DISABLE_DIONYSUS_START_DOWNLOAD_HANDLER,         | Downloads NZB metadata and enqueues a mmedia asset for download using NzbGet                     | `false`       |
 | DISABLE_DIONYSUS_DOWNLOAD_UPDATE_HANDLER,        | Handles updates from NzbGet                                                                      | `false`       |
 | DISABLE_DIONYSUS_DOWNLOAD_STATUS_HANDLER,        | Periodically polls for downloads in NzbGet and persists their status to the database             | `false`       |
-| DISABLE_TEST_HANDLER                             | Generic handler for testing purposes                                                             | `true`        |
 
 ## Development
 

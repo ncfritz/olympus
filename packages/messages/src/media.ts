@@ -60,6 +60,4 @@ export const MEDIA_ROUTES = {
   transcode: mediaRoute<TranscodeMediaMessage>("transcode"),
   cleanup: mediaRoute<MediaWorkflowFileMessage>("cleanup"),
   deleteWorkflow: mediaRoute<DeleteMediaWorkflowMessage>("deleteWorkflow"),
-  /** Consumed by the asset agents' test handler; any payload. */
-  test: mediaRoute<Record<string, unknown>>("test"),
 } as const;

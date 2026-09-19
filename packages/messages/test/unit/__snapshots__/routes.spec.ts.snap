@@ -38,7 +38,6 @@ exports[`message routes > match the snapshot 1`] = `
     "media.trigger (topic) jobType.transcode",
     "media.trigger (topic) jobType.cleanup",
     "media.trigger (topic) jobType.deleteWorkflow",
-    "media.trigger (topic) jobType.test",
   ],
   "metadataJobs": [
     "metadataJob.trigger (x-delayed-message) jobType.movies",

@@ -60,11 +60,6 @@ exports[`subscriptions > keeps the queue names, routing keys and channels 1`] = 
       "queue": "media.extractMetadata.trigger",
       "routingKey": "jobType.extractMetadata",
     },
-    "test": {
-      "exchange": "media.trigger",
-      "queue": "media.test.trigger",
-      "routingKey": "jobType.test",
-    },
     "transcode": {
       "exchange": "media.trigger",
       "queue": "media.transcode.trigger",

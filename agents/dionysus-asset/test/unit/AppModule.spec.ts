@@ -15,7 +15,6 @@ import { CleanupHandler } from "../../src/media/handlers/CleanupHandler";
 import { ConfigureTranscodeHandler } from "../../src/media/handlers/ConfigureTranscodeHandler";
 import { DeleteWorkflowHandler } from "../../src/media/handlers/DeleteWorkflowHandler";
 import { ExtractMetadataHandler } from "../../src/media/handlers/ExtractMetadataHandler";
-import { TestHandler } from "../../src/media/handlers/TestHandler";
 import { TranscodeConfigurationHandler } from "../../src/media/handlers/TranscodeConfigurationHandler";
 import { TranscodeMediaHandler } from "../../src/media/handlers/TranscodeMediaHandler";
 import { VerifyTranscodeConfigurationHandler } from "../../src/media/handlers/VerifyTranscodeConfigurationHandler";
@@ -88,7 +87,6 @@ describe("AppModule", () => {
     [TranscodeMediaHandler, MEDIA_SUBSCRIPTIONS.transcode],
     [CleanupHandler, MEDIA_SUBSCRIPTIONS.cleanup],
     [DeleteWorkflowHandler, MEDIA_SUBSCRIPTIONS.deleteWorkflow],
-    [TestHandler, MEDIA_SUBSCRIPTIONS.test],
     [StartDownloadHandler, DOWNLOAD_SUBSCRIPTIONS.start],
     [DownloadUpdateHandler, DOWNLOAD_SUBSCRIPTIONS.update],
   ])("wires %o to its queue", (handler, expected) => {

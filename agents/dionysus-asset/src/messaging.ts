@@ -67,7 +67,6 @@ export const MEDIA_SUBSCRIPTIONS = {
   },
   cleanup: mediaSubscription("cleanup"),
   deleteWorkflow: mediaSubscription("deleteWorkflow"),
-  test: mediaSubscription("test"),
 };
 
 /** @RabbitSubscribe options of the download handlers. */

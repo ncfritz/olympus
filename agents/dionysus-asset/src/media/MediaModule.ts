@@ -4,7 +4,6 @@ import { CleanupHandler } from "./handlers/CleanupHandler";
 import { ConfigureTranscodeHandler } from "./handlers/ConfigureTranscodeHandler";
 import { DeleteWorkflowHandler } from "./handlers/DeleteWorkflowHandler";
 import { ExtractMetadataHandler } from "./handlers/ExtractMetadataHandler";
-import { TestHandler } from "./handlers/TestHandler";
 import { TranscodeConfigurationHandler } from "./handlers/TranscodeConfigurationHandler";
 import { TranscodeMediaHandler } from "./handlers/TranscodeMediaHandler";
 import { VerifyTranscodeConfigurationHandler } from "./handlers/VerifyTranscodeConfigurationHandler";
@@ -20,7 +19,6 @@ export const MEDIA_HANDLERS = {
   DISABLE_DIONYSUS_VERIFY_XCODE_HANDLER: VerifyTranscodeConfigurationHandler,
   DISABLE_DIONYSUS_CLEANUP_HANDLER: CleanupHandler,
   DISABLE_DIONYSUS_DELETE_MEDIA_WORKFLOW_HANDLER: DeleteWorkflowHandler,
-  DISABLE_TEST_HANDLER: TestHandler,
 };
 
 /**
