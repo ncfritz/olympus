@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Olympus</title>
+  <style media="all">
+      {{> css }}
+      {{#> templateCss }}{{/templateCss}}
+  </style>
+</head>
+<body>
+<table role="presentation" class="body">
+  <tr>
+    <td>&nbsp;</td>
+    <td class="container">
+      <div class="content">
+        <table role="presentation"  class="main">
+          <tr>
+            <td class="header">
+              <img alt="Olympus" src="cid:t_olympus_header" />
+            </td>
+          </tr>
+          <tr>
+            <td class="wrapper">
+              {{> @partial-block }}
+            </td>
+          </tr>
+        </table>
+        <div class="footer">
+          <table role="presentation">
+            <tr>
+              <td class="content-block powered-by">
+                Powered by Olympus, brought to you by <a href="https://olympus.internal.ncfritz.net">ncfritz.net</a>
+                <br/>
+                <img alt="Olympus" src="cid:t_olympus_footer_logo" />
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </td>
+    <td>&nbsp;</td>
+  </tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,95 @@
+{{#> general_layout}}
+  <div class="title">
+    <strong>Workflow:</strong> <span class="monospace">{{workflow.id}}</span>
+  </div>
+  <div class="summary">
+    <div>
+      <strong>Started: </strong>{{date workflow.startedTime "MM/DD/YYYY hh:mm:ss A"}}
+    </div>
+    <div>
+      <strong>Finished: </strong>{{date workflow.finishedTime "MM/DD/YYYY hh:mm:ss A"}}
+    </div>
+    <div>
+      <strong>Status: </strong>
+      <div class="status {{workflow.status}}">
+        {{workflow.status}}
+      </div>
+    </div>
+  </div>
+  <table class="summary">
+    {{#each workflow.steps}}
+      <tr>
+        <td width="125" class="jobType">{{this.job.type}}</td>
+        <td>
+          <table class="progress">
+            <tr>
+              <td width="{{multiply (divide this.job.noOpRecords this.job.totalRecords) 100}}%" class="r-noop"></td>
+              <td width="{{multiply (divide this.job.skippedRecords this.job.totalRecords) 100}}%" class="r-skipped"></td>
+              <td width="{{multiply (divide this.job.expiredRecords this.job.totalRecords) 100}}%" class="r-expired"></td>
+              <td width="{{multiply (divide this.job.newRecords this.job.totalRecords) 100}}%" class="r-new"></td>
+              <td width="{{multiply (divide this.job.duplicateRecords this.job.totalRecords) 100}}%" class="r-duplicate"></td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    {{/each}}
+  </table>
+  <table>
+    {{#each workflow.steps}}
+      <tr class="stats step">
+        <td colspan="4">
+          <strong>Step ID:</strong> {{this.job.id}}
+        </td>
+      </tr>
+      <tr class="stepInfo">
+        <td>
+          <strong>Metadata Type:</strong> {{this.job.type}}</td>
+        <td>
+          <strong>Started:</strong> {{date this.job.startedTime "MM/DD/YYYY hh:mm:ss A"}}</td>
+        <td>
+          <strong>Finished:</strong> {{date this.job.finishedTime "MM/DD/YYYY hh:mm:ss A"}}</td>
+        <td>
+          <div class="status {{this.job.status}}">
+            {{this.job.status}}
+          </div>
+        </td>
+      </tr>
+      <tr class="stats">
+        <td>Total Records</td>
+        <td>Processed Records</td>
+        <td>Duplicate Records</td>
+        <td>New Records</td>
+      </tr>
+      <tr class="stats">
+        <td class="monospace">
+          {{addCommas this.job.totalRecords}}
+        </td>
+        <td class="monospace">
+          {{addCommas this.job.processedRecords}}
+        </td>
+        <td class="monospace">
+          {{addCommas this.job.duplicateRecords}}
+        </td>
+        <td class="monospace">
+          {{addCommas this.job.newRecords}}
+        </td>
+      </tr>
+      <tr class="stats">
+        <td>Expired Records</td>
+        <td>No-Op Records</td>
+        <td colspan="2">Skipped Records</td>
+      </tr>
+      <tr class="stats">
+        <td class="monospace">
+          {{addCommas this.job.expiredRecords}}
+        </td>
+        <td class="monospace">
+          {{addCommas this.job.noOpRecords}}
+        </td>
+        <td class="monospace" colspan="2">
+          {{addCommas this.job.skippedRecords}}
+        </td>
+      </tr>
+    {{/each}}
+  </table>
+{{/general_layout}}

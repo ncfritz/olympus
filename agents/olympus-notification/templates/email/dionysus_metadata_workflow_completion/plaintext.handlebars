@@ -1,0 +1,25 @@
+Workflow: {{workflow.id}}
+ Started: {{date workflow.startedTime "MM/DD/YYYY hh:mm:ss A"}}
+Finished: {{date workflow.finished "MM/DD/YYYY hh:mm:ss A"}}
+  Status: {{workflow.status}}
+
+Steps:
+{{#each workflow.steps}}
+==============================================================================
+          Step ID: {{this.job.id}}
+    Metadata Type: {{this.job.type}}
+          Started: {{date this.job.startedTime "MM/DD/YYYY hh:mm:ss A"}}
+         Finished: {{date this.job.finishedTime "MM/DD/YYYY hh:mm:ss A"}}
+           Status: {{this.job.status}}
+------------------------------------------------------------------------------
+    Total Records: {{addCommas this.job.totalRecords}}
+Processed Records: {{addCommas this.job.processedRecords}}
+Duplicate Records: {{addCommas this.job.duplicateRecords}}
+      New Records: {{addCommas this.job.newRecords}}
+  Expired Records: {{addCommas this.job.expiredRecords}}
+    No-Op Records: {{addCommas this.job.noOpRecords}}
+  Skipped Records: {{addCommas this.job.skippedRecords}}
+------------------------------------------------------------------------------
+
+
+{{/each}}
