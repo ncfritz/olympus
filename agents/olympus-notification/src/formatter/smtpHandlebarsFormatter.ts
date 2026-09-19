@@ -50,6 +50,7 @@ export abstract class SMTPHandleBarsFormatter<
   async formatNotification(
     notification: SMTPDestinationEvent<T>,
   ): Promise<SMTPPayload> {
+    const context = await this.buildContext(notification.context);
     const attachments: Attachment[] = [];
 
     this.loadPartials();
@@ -77,7 +78,18 @@ export abstract class SMTPHandleBarsFormatter<
       }
     }
 
-    const context = await this.buildContext(notification.context);
+    // If the context is an AttachmentAwareMessageContext add the attachments from the context.
+    if (
+      context &&
+      typeof context === "object" &&
+      "attachments" in context &&
+      Array.isArray(context.attachments) &&
+      context.attachments?.length > 0
+    ) {
+      for (const attachment of context.attachments) {
+        attachments.push(attachment);
+      }
+    }
 
     return {
       subject: subjectRenderer[0](context),

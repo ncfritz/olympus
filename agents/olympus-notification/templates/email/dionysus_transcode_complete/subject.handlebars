@@ -1,0 +1,7 @@
+[Dionysus]
+{{#if (eq workflow.status "success")}}✅{{else}}❗{{/if}}
+Transcode of
+{{#if (eq workflow.type "movie")}}{{workflow.decoration.name}}{{else}}{{workflow.decoration.seriesName}}
+-
+{{workflow.decoration.name}}
+{{/if}} {{#if (eq workflow.status "success")}}completed successfully{{else}}failed{{/if}}

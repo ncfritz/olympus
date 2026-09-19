@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { Transporter } from "nodemailer";
 import Mail from "nodemailer/lib/mailer";
 import { MetadataWorkflowCompletionSmtpFormatter } from "../formatter/dionysus/metadataWorkflowCompleteFormatter";
+import { TranscodeWorkflowCompleteSmtpFormatter } from "../formatter/dionysus/transcodeWorkflowCompleteFormatter";
 import { NotificationFormatter } from "../formatter/formatter";
 import { SystemTestSmtpFormatter } from "../formatter/olympus/systemTestFormatter";
 import { SMTPDestinationEvent } from "../types/destinations";
@@ -53,6 +54,9 @@ export abstract class SMTPHandler<
       case "dionysus_metadata_workflow_completion":
         // @ts-expect-error okay
         return new MetadataWorkflowCompletionSmtpFormatter();
+      case "dionysus_transcode_complete":
+        // @ts-expect-error okay
+        return new TranscodeWorkflowCompleteSmtpFormatter();
       default:
         return undefined;
     }

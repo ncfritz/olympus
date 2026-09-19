@@ -1,0 +1,66 @@
+{{#> general_layout}}
+  <div class="poster">
+    <img alt="Poster" src="cid:media_poster" height="375" width="250" />
+  </div>
+  <div class="innerWrapper">
+    <div class="title">
+      <strong>Workflow:</strong> <span class="monospace">
+        <a href="https://olympus.internal.ncfritz.net/dionysus/queue/{{workflow.id}}">{{workflow.id}}</a>
+      </span>
+    </div>
+    <div class="summary">
+      <div>
+        <strong>Started: </strong>{{date workflow.startedTime "MM/DD/YYYY hh:mm:ss A"}}
+      </div>
+      <div>
+        <strong>Finished: </strong>{{date workflow.finishedTime "MM/DD/YYYY hh:mm:ss A"}}
+      </div>
+      <div>
+        <strong>Status: </strong>
+        <div class="status {{workflow.status}}">
+          {{workflow.status}}
+        </div>
+      </div>
+      <table class="summary">
+        <tr class="stats step">
+          <td colspan="4">
+            <strong>Step ID:</strong> {{workflow.download.id}}
+          </td>
+        </tr>
+        <tr class="stepInfo">
+          <td>
+            <strong>Step Type:</strong> Download</td>
+          <td>
+            <strong>Started:</strong> {{date workflow.download.startedTime "MM/DD/YYYY hh:mm:ss A"}}</td>
+          <td>
+            <strong>Finished:</strong> {{date workflow.download.finishedTime "MM/DD/YYYY hh:mm:ss A"}}</td>
+          <td>
+            <div class="status {{workflow.download.status}}">
+              {{workflow.download.status}}
+            </div>
+          </td>
+        </tr>
+        {{#each workflow.steps}}
+          <tr class="stats step">
+            <td colspan="4">
+              <strong>Step ID:</strong> {{this.id}}
+            </td>
+          </tr>
+          <tr class="stepInfo">
+            <td>
+              <strong>Step Type:</strong> {{this.type}}</td>
+            <td>
+              <strong>Started:</strong> {{date this.startedTime "MM/DD/YYYY hh:mm:ss A"}}</td>
+            <td>
+              <strong>Finished:</strong> {{date this.finishedTime "MM/DD/YYYY hh:mm:ss A"}}</td>
+            <td>
+              <div class="status {{this.status}}">
+                {{this.status}}
+              </div>
+            </td>
+          </tr>
+        {{/each}}
+      </table>
+    </div>
+  </div>
+{{/general_layout}}

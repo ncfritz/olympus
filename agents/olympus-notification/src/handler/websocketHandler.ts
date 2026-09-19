@@ -13,6 +13,7 @@ import { io } from "socket.io-client";
 import { v4 as uuidv4 } from "uuid";
 import { BatchJobCompleteWebsocketFormatter } from "../formatter/dionysus/batchJobCompleteFormatter";
 import { MediaAssetSearchRefreshCompleteWebsocketFormatter } from "../formatter/dionysus/mediaAssetSearchRefreshCompleteFormatter";
+import { TranscodeWorkflowCompleteWebsocketFormatter } from "../formatter/dionysus/transcodeWorkflowCompleteFormatter";
 import { NotificationFormatter } from "../formatter/formatter";
 import { WebSocketStaticStringFormatter } from "../formatter/staticStringFormatter";
 import { type WebSocketDestinationEvent } from "../types/destinations";
@@ -130,6 +131,8 @@ export class WebSocketHandler extends BaseHandler<
         return new BatchJobCompleteWebsocketFormatter();
       case "dionysus_media_asset_search_refresh_complete":
         return new MediaAssetSearchRefreshCompleteWebsocketFormatter();
+      case "dionysus_transcode_complete":
+        return new TranscodeWorkflowCompleteWebsocketFormatter();
       default:
         return undefined;
     }

@@ -1,11 +1,19 @@
 import {
+  DecoratedMediaAssetWorkflow,
   JobStatus,
   JobType,
+  MediaAssetSearchType,
+  MediaAssetWorkflowDecoration,
   Workflow,
   WorkflowStatus,
   WorkflowStep,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
+import { Attachment } from "nodemailer/lib/mailer";
+
+export interface AttachmentAwareMessageContext {
+  attachments?: Attachment[];
+}
 
 export interface DionysusBatchJobContext extends NotificationContext {
   jobId: string;
@@ -32,5 +40,16 @@ export interface DionysusWorkflowMessageContext {
   steps: WorkflowStep[];
 }
 
-export type DionysusMediaAssetSearchRefreshCompleteContext =
-  NotificationContext;
+export interface DionysusMediaAssetSearchRefreshCompleteContext extends NotificationContext {
+  assetType: MediaAssetSearchType;
+  mediaId: number;
+  media: MediaAssetWorkflowDecoration;
+}
+
+export interface DionysusTranscodeWorkflowCompleteContext extends NotificationContext {
+  workflowId: string;
+}
+
+export interface DionysusTranscodeWorkflowCompleteMessageContext extends AttachmentAwareMessageContext {
+  workflow: DecoratedMediaAssetWorkflow;
+}
