@@ -312,14 +312,20 @@ describe("entity handlers", () => {
       moment.utc().subtract(days, "days").toISOString();
 
     it.each([
-      [-10, 7],
-      [30, 30],
-      [200, 90],
-      [1000, 180],
-    ])("movies released %i days ago: %i days", (age, days) => {
-      expect(
-        ttl(create(MovieMetadataHandler), { releaseDate: daysAgo(age) }),
-      ).toBe(days);
+      [-10, 7, 9],
+      [30, 30, 36],
+      [200, 90, 119],
+      [1000, 180, 239],
+    ])("movies released %i days ago: %i to %i days", (age, least, most) => {
+      const random = vi.spyOn(Math, "random");
+      const handler = create(MovieMetadataHandler);
+      const releaseDate = daysAgo(age);
+
+      random.mockReturnValue(0);
+      expect(ttl(handler, { releaseDate })).toBe(least);
+      random.mockReturnValue(0.9999);
+      expect(ttl(handler, { releaseDate })).toBe(most);
+      random.mockRestore();
     });
 
     it("movies without a release date: 14 to 180 days", () => {

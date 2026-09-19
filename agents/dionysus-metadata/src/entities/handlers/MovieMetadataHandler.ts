@@ -58,22 +58,22 @@ export class MovieMetadataHandler extends EntityHandler<
     // If there is a release date, calculate the TTL based on the age of the release.  Chances are information
     // will not be updated frequently once a movie is released and even less frequently as it ages.
     //
-    // Rules:
-    // - Future release: weekly updates
-    // - Within 90 days: monthly updates
-    // - Within a year: 90 day updates
-    // - Otherwise: 180 day updates
+    // Rules (plus up to a few days, spreading the refreshes out):
+    // - Future release: weekly updates (7-9 days)
+    // - Within 90 days: monthly updates (30-36 days)
+    // - Within a year: 90 day updates (90-119 days)
+    // - Otherwise: 180 day updates (180-239 days)
     if (metadata.releaseDate) {
       const daysSinceRelease = moment.utc().diff(metadata.releaseDate, "days");
 
       if (daysSinceRelease < 0) {
-        ttl = Math.max(7, Math.floor(Math.random() * 3));
+        ttl = 7 + Math.floor(Math.random() * 3);
       } else if (daysSinceRelease < 90) {
-        ttl = Math.max(30, Math.floor(Math.random() * 7));
+        ttl = 30 + Math.floor(Math.random() * 7);
       } else if (daysSinceRelease < 365) {
-        ttl = Math.max(90, Math.floor(Math.random() * 30));
+        ttl = 90 + Math.floor(Math.random() * 30);
       } else {
-        ttl = Math.max(180, Math.floor(Math.random() * 60));
+        ttl = 180 + Math.floor(Math.random() * 60);
       }
     }
 
