@@ -1,16 +1,18 @@
 # dionysus-asset-agents
 
-[![Release](https://github.com/ncfritz/dionysus-asset-agents/actions/workflows/release.yml/badge.svg)](https://github.com/ncfritz/dionysus-asset-agents/actions/workflows/release.yml)
+`@ncfritz/dionysus-asset-agents`, imported from the dionysus-asset-agents
+repository with its history.
 
-Asynchronous agents for content and media asset handling.  These agents support Dionysus workflows for fetching and
-transcoding assets.  When dealing with media assets, the storage of the asset blobs is generally separated from the 
+Asynchronous agents for content and media asset handling. These agents support Dionysus workflows for fetching and
+transcoding assets. When dealing with media assets, the storage of the asset blobs is generally separated from the
 asynchronous processing agents, however, when dealing directly with the asset, the agents need to be deployed alongside
-the storage.  These agent's handlers can be disabled on a case-by-case basis using the `DISABLE_XXX_HANDLER`
+the storage. These agent's handlers can be disabled on a case-by-case basis using the `DISABLE_XXX_HANDLER`
 environment variables.
 
 ### Available Handlers:
+
 | Handler                                          | Description                                                                                      | Default Value |
-|--------------------------------------------------|--------------------------------------------------------------------------------------------------|---------------|
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ------------- |
 | DISABLE_CONTENT_DELETION_HANDLER                 | Handles deletion of content assets/metadata at the library level                                 | `true`        |
 | DISABLE_CONTENT_HLS_HANDLER                      | Generates HLS segemnts for progressive streaming                                                 | `true`        |
 | DISABLE_CONTENT_THUMBNAIL_HANDLER                | Generates thumbnails for content assets                                                          | `true`        |
@@ -21,24 +23,31 @@ environment variables.
 | DISABLE_DIONYSUS_XCODE_HANDLER                   | Tuns the actual media asset transcode                                                            | `false`       |
 | DISABLE_DIONYSUS_VERIFY_XCODE_HANDLER            | When the transcode is manually configured, generates samples for verification proir to transcode | `false`       |
 | DISABLE_DIONYSUS_CLEANUP_HANDLER                 | Cleans up a media asset workflow's artifacts                                                     | `false`       |
-  | DISABLE_DIONYSUS_DELETE_MEDIA_WORKFLOW_HANDLER | Removed workflow staging artifacts                                                               | `false`       |
+| DISABLE_DIONYSUS_DELETE_MEDIA_WORKFLOW_HANDLER   | Removed workflow staging artifacts                                                               | `false`       |
 | DISABLE_DIONYSUS_START_DOWNLOAD_HANDLER,         | Downloads NZB metadata and enqueues a mmedia asset for download using NzbGet                     | `false`       |
 | DISABLE_DIONYSUS_DOWNLOAD_UPDATE_HANDLER,        | Handles updates from NzbGet                                                                      | `false`       |
 | DISABLE_DIONYSUS_DOWNLOAD_STATUS_HANDLER,        | Periodically polls for downloads in NzbGet and persists their status to the database             | `false`       |
 | DISABLE_TEST_HANDLER                             | Generic handler for testing purposes                                                             | `true`        |
 
 ## Development
-* `npm run dev` - Starts the development server (watched for changes).  Environment variables are populated from
-  `dev.env`
-* `npm run dev:local` - Starts the development server (watched for changes).  Environment variables are populated from
-  `local.env`
-* `npm run start` - Starts the development server.  Environment variables are populated from
-  `dev.env`
-* `npm run start:local` - Starts the development server.  Environment variables are populated from
-  `local.env`
+
+Run from the repository root (`pnpm install` once):
+
+- `pnpm --filter @ncfritz/dionysus-asset-agents dev`: watch mode,
+  environment from `dev.env` (`dev:local` reads `local.env`).
+- `pnpm --filter @ncfritz/dionysus-asset-agents build`, then `start` /
+  `start:local` / `start:prod`.
+
+Copy `dev.env.example` to `dev.env` (git-ignored) and fill in the values.
+FFmpeg and HandBrakeCLI must be installed (`FFMPEG_PATH`, `FFPROBE_PATH`,
+`HANDBRAKE_PATH`); `sharp` is a native module built at install.
+
+> The Dockerfile still expects the pre-monorepo layout (npm, GitHub
+> Packages token). It is rebuilt with the Docker work in ADR 0011.
 
 ## Docker Image
-This project ships with a `Dockerfile` for building a docker image.  Because some requirements are hosted in a private
+
+This project ships with a `Dockerfile` for building a docker image. Because some requirements are hosted in a private
 GitHub NPM repository, you will need to supply a `github_token` build argument so the builder can pull the required
 dependencies.
 
@@ -53,8 +62,9 @@ docker build --build-arg github_token=<your_github_token> -t dionysus-asset-agen
 ```
 
 ## Monitoring
+
 These agents expose a Prometheus metrics endpoint at `/metrics/` providing basic NodeJS memory, loop timing, and GC
-statistics.  As sample Prometheus scrape configuration is as follows:
+statistics. As sample Prometheus scrape configuration is as follows:
 
 ```yaml
 scrape_configs:
@@ -68,20 +78,24 @@ scrape_configs:
 ```
 
 ## Docker Image
-The Docker image will expose port 3100 for metrics scraping.  Environment variables should be specified in 
+
+The Docker image will expose port 3100 for metrics scraping. Environment variables should be specified in
 `production.env`.
 
 ### Environment Variables
+
 Environment variables are used to configure the NestJS modules that connect to various external data sources:
 
 ##### General
-| Variable               | Usage                                                    | Default Value |
-|------------------------|----------------------------------------------------------|---------------|
-| LISTEN_PORT            | The port to listen on, this is where metrics are exposed | `3100`        |
+
+| Variable    | Usage                                                    | Default Value |
+| ----------- | -------------------------------------------------------- | ------------- |
+| LISTEN_PORT | The port to listen on, this is where metrics are exposed | `3100`        |
 
 ##### Loki / Logging
+
 | Variable               | Usage                                         | Default Value                 |
-|------------------------|-----------------------------------------------|-------------------------------|
+| ---------------------- | --------------------------------------------- | ----------------------------- |
 | LOKI_URL               | The URL of the Loki server to push logs to    |                               |
 | LOKI_LOGGING_LEVEL     | The minimum log level to push to Loki         | `info`                        |
 | ENABLE_CONSOLE_LOGGING | Whether to log to the console                 | `true` (dev) / `false` (prod) |
@@ -89,9 +103,11 @@ Environment variables are used to configure the NestJS modules that connect to v
 | FILE_LOGGING_ENABLED   | Whether to log to a file                      | `false` (dev) / `true` (prod) |
 | FILE_LOGGING_LEVEL     | The minimum log level to write to a file      | `info`                        |
 | FILE_LOGGING_PATH      | The path to write logs to                     | `./logs`                      |
+
 ##### AMQP - RabbitMQ
+
 | Variable      | Usage                                        | Default Value   |
-|---------------|----------------------------------------------|-----------------|
+| ------------- | -------------------------------------------- | --------------- |
 | AMQP_PROTOCOL | How to connect to the AMQP broker            | `amqp`          |
 | AMQP_HOST     | The host, or container name running RabbitMQ | `localhost`     |
 | AMQP_PORT     | The port to connect on                       | `5672`          |
@@ -100,7 +116,8 @@ Environment variables are used to configure the NestJS modules that connect to v
 | AMQP_VHOST    | The virtual host to use                      | `/dionysus-dev` |
 
 ##### NordVPN/SOCKS
-When downloading content assets, a SOCKS proxy is used for anonymity.  NordVPN provides multiple SOCKS proxies that
+
+When downloading content assets, a SOCKS proxy is used for anonymity. NordVPN provides multiple SOCKS proxies that
 can be used:
 
 1. `nl.socks.nordhold.net`
@@ -117,15 +134,16 @@ can be used:
 1. `stockholm.se.socks.nordhold.net`
 
 | Variable             | Usage                                                       | Default Value                       |
-|----------------------|-------------------------------------------------------------|-------------------------------------|
+| -------------------- | ----------------------------------------------------------- | ----------------------------------- |
 | SOCKS_PROXY_HOST     | The SOCKS proxy host to use when downloading content assets | `los-angeles.us.socks.nordhold.net` |
 | SOCKS_PROXY_PORT     | The SOCKS proxy port to use when downloading content assets | `1080`                              |
 | SOCKS_PROXY_USERNAME | The username to authenticate to the proxy with              |                                     |
 | SOCKS_PROXY_PASSWORD | The password to authenticate to the proxy with              |                                     |
 
 ##### SSH configuration
+
 | Variable                      | Usage                                                       | Default Value |
-|-------------------------------|-------------------------------------------------------------|---------------|
+| ----------------------------- | ----------------------------------------------------------- | ------------- |
 | CONTENT_SSH_HOST              | The SSH host to use when uploading content assets           |               |
 | CONTENT_SSH_USERNAME          | The username to use when uploading content assets           |               |
 | CONTENT_SSH_PASSWORD          | The password to authenticate to the SSH host with           |               |
@@ -137,8 +155,9 @@ can be used:
 | DIONYSUS_CDN_SSH_PASSWORD     | The password to use when uploading media asset artifacts    |               |
 
 ##### Dionysus
+
 | Variable                    | Usage                                                         | Default Value |
-|-----------------------------|---------------------------------------------------------------|---------------|
+| --------------------------- | ------------------------------------------------------------- | ------------- |
 | LOCAL_DIRECTORY             | The path to write the entity cache                            |               |
 | PERSIST_EVENTS              | The path to write the entity cache                            |               |
 | STAGING_DIRECTORY           | The path to write the entity cache                            |               |
@@ -154,15 +173,17 @@ can be used:
 | CONTENT_ASSETS_TEMP_DIR     | The path to use for temp storage when handling content assets |               |
 
 ##### Olympus
-| Variable       | Usage                                          | Default Value |
-|----------------|------------------------------------------------|---------------|
-| API_BASE_URL   | The API key to use for accessing TMDB's APIs   |               |
+
+| Variable     | Usage                                   | Default Value              |
+| ------------ | --------------------------------------- | -------------------------- |
+| API_BASE_URL | Base URL for SDK calls, including `/v1` | `http://localhost:3001/v1` |
 
 ##### NzbGeek/NzbGet
+
 | Variable        | Usage                                             | Default Value |
-|-----------------|---------------------------------------------------|---------------|
+| --------------- | ------------------------------------------------- | ------------- |
 | NZBGEEK_API_KEY | The API key to use when authenticating to NzbGeek |               |
 | NZBGET_HOST     | The NzbGet host to enqueue downloads with         | `localhost`   |
-| NZBGET_HOST     | The port NzbGet is listening on                   | `6789`        |
+| NZBGET_PORT     | The port NzbGet is listening on                   | `6789`        |
 | NZBGET_USERNAME | The username to authenticate to NzbGet with       |               |
 | NZBGET_PASSWORD | The password to authenticate to NzbGet with       |               |

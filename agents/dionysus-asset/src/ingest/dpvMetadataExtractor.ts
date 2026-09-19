@@ -8,7 +8,7 @@ export class DPVMetadataExtractor extends MetadataExtractor {
     super(client, url, id);
   }
 
-  async getSegmentUrls(root: HTMLElement): Promise<string[]> {
+  async getSegmentUrls(_root: HTMLElement): Promise<string[]> {
     const matches = this.url.match(
       /^http[s]?:\/\/dp-vids\.com\/videos\/(\d+)\/.*$/i,
     );

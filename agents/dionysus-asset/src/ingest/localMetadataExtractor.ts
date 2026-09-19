@@ -15,11 +15,11 @@ export class LocalMetadataExtractor extends MetadataExtractor {
     return true;
   }
 
-  getSegmentUrls(root: HTMLElement): Promise<string[]> {
+  getSegmentUrls(_root: HTMLElement): Promise<string[]> {
     return Promise.resolve([]);
   }
 
-  getTitle(root: HTMLElement): Promise<string> {
+  getTitle(_root: HTMLElement): Promise<string> {
     let name = path.basename(this.originalFile.toString());
 
     if (name.indexOf(".") > 0) {

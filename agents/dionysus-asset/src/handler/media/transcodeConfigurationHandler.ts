@@ -25,7 +25,7 @@ export class TranscodeConfigurationHandler {
   })
   public async handle(
     msg: TranscodeConfigurationMessage,
-    amqMsg: ConsumeMessage,
+    _amqMsg: ConsumeMessage,
   ) {
     logger.debug("TranscodeConfigurationHandler");
     logger.debug(msg);

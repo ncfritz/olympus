@@ -212,7 +212,7 @@ export class MediaWorkflow {
             lastProgressUpdate = now;
           }
         })
-        .on("complete", (result) => {
+        .on("complete", (_result) => {
           resolve();
         })
         .run();
@@ -418,7 +418,7 @@ export class MediaWorkflow {
                 JSON.stringify(output, null, 2),
               );
             })
-            .on("complete", (result) => {
+            .on("complete", (_result) => {
               resolve();
             })
             .run();

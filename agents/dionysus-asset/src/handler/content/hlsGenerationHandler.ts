@@ -88,7 +88,7 @@ export class HlsGenerationAssetHandler {
           "-hls_base_url segments/",
         ]);
         command.output(`${tmpDir}/playlist.m3u8`);
-        command.on("error", function (err, stdout, stderr) {
+        command.on("error", function (err, _stdout, _stderr) {
           logger.error("Error encountered!", err);
 
           progress.stop();
@@ -125,7 +125,7 @@ export class HlsGenerationAssetHandler {
         });
         command.on(
           "progress",
-          ffmpegOnProgress((p: number, e: any) => {
+          ffmpegOnProgress((p: number, _e: any) => {
             progress.update(Math.trunc(p * 100));
           }, duration),
         );

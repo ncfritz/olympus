@@ -681,7 +681,7 @@ export class AssetWorkflow {
       });
       command.on(
         "progress",
-        ffmpegOnProgress(async (p: number, e: any) => {
+        ffmpegOnProgress(async (p: number, _e: any) => {
           const progressPercent = Math.trunc(p * 100);
           progress.update(progressPercent);
 
@@ -764,7 +764,7 @@ export class AssetWorkflow {
       });
       command.on(
         "progress",
-        ffmpegOnProgress(async (p: number, e: any) => {
+        ffmpegOnProgress(async (p: number, _e: any) => {
           const progressPercent = Math.trunc(p * 100);
           progress.update(progressPercent);
 

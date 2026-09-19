@@ -159,6 +159,13 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     partials reloaded per email, attachment selection, template typos.
   - SMTP transports set `tls.rejectUnauthorized: false`.
   - Failed deliveries are logged and acknowledged; nothing retries.
+- Asset agent (imported 2026-09-19):
+  - **Rotate credentials**: the SFTP password of the `content` account on
+    nfs01 was hard-coded in one commit (later removed). It is redacted
+    from the imported history but remains in the
+    dionysus-asset-agents repository.
+  - Starts only with `SOCKS_PROXY_HOST` set (an invalid proxy URL
+    otherwise), and listens on 3102 whatever `LISTEN_PORT` says.
 - Metadata agent (imported 2026-09-19):
   - On the agent conventions (ADR 0015), with tests; contracts from
     `@ncfritz/olympus-messages`, `ExecuteWithMetrics` from

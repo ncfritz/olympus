@@ -150,7 +150,7 @@ export class VerifyTranscodeConfigurationHandler {
                     step.id,
                     progress,
                   );
-                } catch (e) {
+                } catch {
                   logger.error("Unable to update transcode progress...");
                 }
               },
@@ -184,7 +184,7 @@ export class VerifyTranscodeConfigurationHandler {
                 username: process.env.DIONYSUS_CDN_SSH_USERNAME!,
                 password: process.env.DIONYSUS_CDN_SSH_PASSWORD!,
               },
-              async (progress, bytesTransferred) => {
+              async (progress, _bytesTransferred) => {
                 await updateStepProgress(
                   workflow.workflowId,
                   step.id,

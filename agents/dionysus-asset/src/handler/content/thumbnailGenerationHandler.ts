@@ -200,7 +200,7 @@ export class ThumbnailGenerationAssetHandler {
         });
         command.on(
           "progress",
-          ffmpegOnProgress((p: number, e: any) => {
+          ffmpegOnProgress((p: number, _e: any) => {
             progress.update(Math.trunc(p * 100));
           }, duration),
         );

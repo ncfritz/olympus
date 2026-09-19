@@ -59,7 +59,7 @@ const enabledHandlers = Object.entries(HANDLER_MAP)
     );
     return false;
   })
-  .map(([key, handler]) => handler);
+  .map(([_key, handler]) => handler);
 
 @Module({
   imports: [

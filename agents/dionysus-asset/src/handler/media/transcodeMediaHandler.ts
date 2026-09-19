@@ -1,5 +1,5 @@
 import { AmqpConnection, RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
-import { MediaAssetWorkflow } from "@ncfritz/olympus-sdk/dionysus";
+import { DecoratedMediaAssetWorkflow } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { ConsumeMessage } from "amqplib";
@@ -137,7 +137,7 @@ export class TranscodeMediaHandler {
 
   private async transcode(
     workflow: MediaWorkflow,
-    workflowInstance: MediaAssetWorkflow,
+    workflowInstance: DecoratedMediaAssetWorkflow,
   ) {
     const step = await createStep(workflow.workflowId, "transcode");
 
@@ -170,10 +170,17 @@ export class TranscodeMediaHandler {
         const episode = await metadataApi.getTvEpisodeById(
           workflowInstance.mediaId,
         );
-        const year = episode.series.firstAirDate
-          ? moment(episode.series.firstAirDate).year()
+        // The series can be missing (no referential integrity yet).
+        const series = episode.series;
+        if (!series) {
+          throw new IngestError(
+            `No series for TV episode ${workflowInstance.mediaId}`,
+          );
+        }
+        const year = series.firstAirDate
+          ? moment(series.firstAirDate).year()
           : undefined;
-        unsanitizedFileName = `${episode.series.name}${
+        unsanitizedFileName = `${series.name}${
           year ? ` (${year})` : ""
         } - s${episode.seasonNumber
           .toString()
@@ -181,7 +188,7 @@ export class TranscodeMediaHandler {
           .toString()
           .padStart(2, "0")} - ${episode.name}.mp4`;
         unsanitizedPath = `/TV Series/${
-          episode.series.name
+          series.name
         }/Season ${episode.seasonNumber.toString().padStart(2, "0")}`;
       } else {
         throw new IngestError(
@@ -205,7 +212,7 @@ export class TranscodeMediaHandler {
         async (progress) => {
           try {
             await updateStepProgress(workflow.workflowId, step.id, progress);
-          } catch (e) {
+          } catch {
             logger.error("Unable to update transcode progress...");
           }
         },
@@ -223,7 +230,7 @@ export class TranscodeMediaHandler {
 
   private async uploadAssets(
     workflow: MediaWorkflow,
-    workflowInstance: MediaAssetWorkflow,
+    workflowInstance: DecoratedMediaAssetWorkflow,
   ) {
     const step = await createStep(workflow.workflowId, "upload");
 
@@ -251,7 +258,7 @@ export class TranscodeMediaHandler {
             username: process.env.DIONYSUS_LIBRARY_SSH_USERNAME!,
             password: process.env.DIONYSUS_LIBRARY_SSH_PASSWORD!,
           },
-          async (progress, bytesTransferred) => {
+          async (progress, _bytesTransferred) => {
             await updateStepProgress(workflow.workflowId, step.id, progress);
           },
         );

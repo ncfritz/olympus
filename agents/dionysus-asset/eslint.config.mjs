@@ -1,25 +1,11 @@
-import globals from "globals";
-import eslint from "@eslint/js";
-import tseslint from "typescript-eslint";
-import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import node from "@ncfritz/olympus-config/eslint/node";
 
 export default [
-  eslint.configs.recommended,
-  ...tseslint.configs.recommended,
-  eslintPluginPrettierRecommended,
+  ...node,
   {
-    files: [
-      "**/*.js",
-      "**/*.mjs",
-      "**/*.cjs",
-      "**/*.ts",
-      "**/*.tsx",
-      "**/*.json",
-    ],
-    languageOptions: {
-      globals: {
-        ...globals.node,
-      },
-    },
+    // HandBrake, NZBGet and scraped page data are untyped (`any`) until the
+    // restructure onto the agent conventions types them.
+    files: ["src/**/*.ts"],
+    rules: { "@typescript-eslint/no-explicit-any": "off" },
   },
 ];

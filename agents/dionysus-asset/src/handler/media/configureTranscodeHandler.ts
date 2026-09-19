@@ -176,7 +176,7 @@ export class ConfigureTranscodeHandler {
       } else {
         await updateStepStatus(msg.workflowId, step.id, "failed");
       }
-    } catch (e) {
+    } catch {
       await updateStepStatus(msg.workflowId, step.id, "failed");
     }
   }
