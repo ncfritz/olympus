@@ -42,8 +42,9 @@ Planned work outside the phases, in no particular order.
    runtime metrics.
 3. **Feature: deliver a Grafana dashboard, source-controlled** (alongside
    the rest of `infra/`).
-4. **Feature: interactive message tester, web-based.**
-5. **Feature: delivery audit trail and metrics.**
+4. **Feature (notification agent): interactive message tester,
+   web-based.**
+5. **Feature (notification agent): delivery audit trail and metrics.**
 
 ## Model backlog
 
