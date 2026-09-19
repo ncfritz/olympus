@@ -161,11 +161,10 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     reaching logs in Axios errors; `finishedTime` records the start
     time; season searches send `episode` instead of `episodeNumber` in
     `initiatingAsset`; an episode search with no results is marked
-    failed (a movie's is skipped).
+    failed (a movie's is skipped); every release parsed after a
+    REPACK/PROPER marked a repack (shared `DEFAULT_REVISION`).
   - Release scoring (`releases/`, `it.fails` cases in
     `test/unit/releases`):
-    - Parsing a REPACK/PROPER mutates the shared `DEFAULT_REVISION`, so
-      every later release in the process is marked a repack.
     - 2160p remuxes are parsed as Remux-1080p (so they also get the
       "x265 (HD)" −10000).
     - The tag evaluator matches a custom format when any one release

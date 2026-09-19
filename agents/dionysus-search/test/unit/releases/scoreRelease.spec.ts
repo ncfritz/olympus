@@ -1,6 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { scoreRelease } from "../../../src/releases/scoreRelease";
-import { DEFAULT_REVISION } from "../../../src/releases/types";
 
 /** `type:value:score` of each tag, for compact expectations. */
 const tagsOf = (title: string) =>
@@ -12,12 +11,6 @@ const tagsOf = (title: string) =>
  * turns its case into a plain `it`.
  */
 describe("scoreRelease", () => {
-  // parseTitle mutates DEFAULT_REVISION (see the revision case below);
-  // reset it so each case parses from a clean state.
-  beforeEach(() =>
-    Object.assign(DEFAULT_REVISION, { version: 1, real: 0, repack: false }),
-  );
-
   it.each([
     [
       "The.Matrix.1999.1080p.BluRay.x264-SPARKS",
@@ -87,15 +80,15 @@ describe("scoreRelease", () => {
     expect(scoreRelease("").titleInfo.quality.name).toBe("Unknown");
   });
 
-  // Known bugs
-
-  it.fails("does not carry a repack over to the next title", () => {
+  it("does not carry a repack over to the next title", () => {
     scoreRelease("Severance.S02E01.REPACK.1080p.ATVP.WEB-DL.DDP5.1.H.264-NTb");
     expect(
       scoreRelease("The.Matrix.1999.1080p.BluRay.x264-SPARKS").titleInfo
         .revision.repack,
     ).toBe(false);
   });
+
+  // Known bugs
 
   it.fails("detects 2160p remuxes", () => {
     expect(

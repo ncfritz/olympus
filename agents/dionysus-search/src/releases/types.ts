@@ -63,11 +63,12 @@ export type QualityModel = {
   revisionDetectionSource?: QualityDetectionSource;
 };
 
-export const DEFAULT_REVISION: Revision = {
+/** Copy before changing: parse results must not share it. */
+export const DEFAULT_REVISION: Readonly<Revision> = Object.freeze({
   version: 1,
   real: 0,
   repack: false,
-};
+});
 
 export const Qualities: Record<string, Quality> = {
   Unknown: {

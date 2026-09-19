@@ -51,7 +51,7 @@ export const parseTitle = (title: string): QualityModel => {
     return {
       title: normalizedTitle,
       quality: Qualities.Unknown,
-      revision: DEFAULT_REVISION,
+      revision: { ...DEFAULT_REVISION },
     };
   }
 
@@ -332,7 +332,7 @@ const parseQualityModifiers = (title: string): QualityModel => {
   const result: QualityModel = {
     title: title,
     quality: Qualities.Unknown,
-    revision: DEFAULT_REVISION,
+    revision: { ...DEFAULT_REVISION },
   };
 
   const versionMatch = title.match(VERSION_REGEX);
