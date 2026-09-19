@@ -27,7 +27,7 @@ const sanitize = ({ path, fileName }: LibraryPath): LibraryPath => ({
 /** `/Movies/<initial or 0-9>/<Title> (<year>).mp4`. */
 export const movieLibraryPath = (movie: LibraryMovie): LibraryPath => {
   const year = movie.releaseDate ? moment(movie.releaseDate).year() : undefined;
-  const fileName = `${movie.title}${year ? ` (${year}).mp4` : ""}`;
+  const fileName = `${movie.title}${year ? ` (${year})` : ""}.mp4`;
   const path = /^[a-z]/i.test(fileName)
     ? `/Movies/${fileName[0].toUpperCase()}`
     : "/Movies/0-9";

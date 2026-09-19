@@ -18,6 +18,13 @@ describe("movieLibraryPath", () => {
     ).toBe("/Movies/0-9");
   });
 
+  it("keeps the extension when the movie has no release date", () => {
+    expect(movieLibraryPath({ title: "Untitled", releaseDate: null })).toEqual({
+      path: "/Movies/U",
+      fileName: "Untitled.mp4",
+    });
+  });
+
   it("replaces slashes and squeezes spaces in the file name", () => {
     expect(
       movieLibraryPath({ title: "Face/Off  Again", releaseDate: "1997-06-27" })
