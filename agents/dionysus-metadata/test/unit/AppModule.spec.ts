@@ -1,6 +1,7 @@
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import { Test, TestingModule } from "@nestjs/testing";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { WorkflowApi } from "../../src/api/WorkflowApi";
 import { AppModule } from "../../src/AppModule";
 import { CertificationsBatchHandler } from "../../src/batch/handlers/CertificationsBatchHandler";
 import { CollectionsBatchHandler } from "../../src/batch/handlers/CollectionsBatchHandler";
@@ -31,6 +32,8 @@ import {
 } from "../../src/messaging";
 import { StartWorkflowHandler } from "../../src/workflow/handlers/StartWorkflowHandler";
 import { WorkflowJobCompletionHandler } from "../../src/workflow/handlers/WorkflowJobCompletionHandler";
+import { ExecutionRegistry } from "../../src/workflow/services/ExecutionRegistry";
+import { JobNotifier } from "../../src/workflow/services/JobNotifier";
 
 /** The @RabbitSubscribe configuration of a handler's handle(). */
 const subscription = (handler: { prototype: object }) => {
@@ -58,6 +61,25 @@ describe("AppModule", () => {
   });
 
   afterAll(async () => moduleRef.close());
+
+  it("fails what is still running when the app shuts down", async () => {
+    const workflowApi = {
+      updateWorkflow: vi.fn(async (id: string) => ({ id })),
+    };
+    const app = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(WorkflowApi)
+      .useValue(workflowApi)
+      .overrideProvider(JobNotifier)
+      .useValue({ sendWorkflowNotification: vi.fn() })
+      .compile();
+    app.get(ExecutionRegistry).add({ id: "wf-1", type: "workflow" });
+
+    await app.close();
+
+    expect(workflowApi.updateWorkflow).toHaveBeenCalledWith("wf-1", {
+      status: "failed",
+    });
+  });
 
   it.each([
     [CertificationsBatchHandler, BATCH_SUBSCRIPTIONS.certifications],

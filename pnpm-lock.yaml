@@ -182,9 +182,6 @@ importers:
       rxjs:
         specifier: 'catalog:'
         version: 7.8.2
-      signal-exit:
-        specifier: ^4.1.0
-        version: 4.1.0
       source-map-support:
         specifier: ^0.5.21
         version: 0.5.21

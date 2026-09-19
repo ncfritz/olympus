@@ -1,4 +1,8 @@
-import { Injectable, Logger } from "@nestjs/common";
+import {
+  type BeforeApplicationShutdown,
+  Injectable,
+  Logger,
+} from "@nestjs/common";
 import { BatchJobApi } from "../../api/BatchJobApi";
 import { WorkflowApi } from "../../api/WorkflowApi";
 import { JobNotifier } from "./JobNotifier";
@@ -14,10 +18,10 @@ const logger = new Logger("ExecutionRegistry");
 
 /**
  * The workflows and batch jobs this process is running, so they can be
- * marked failed when it exits.
+ * marked failed when it shuts down.
  */
 @Injectable()
-export class ExecutionRegistry {
+export class ExecutionRegistry implements BeforeApplicationShutdown {
   private readonly executions: Map<string, Execution> = new Map();
 
   constructor(
@@ -36,6 +40,11 @@ export class ExecutionRegistry {
 
   remove(id: string): void {
     this.executions.delete(id);
+  }
+
+  async beforeApplicationShutdown(signal?: string): Promise<void> {
+    logger.warn(`Shutting down (${signal ?? "close"})`);
+    await this.failOutstanding();
   }
 
   /** Marks every outstanding workflow and batch job failed. */
