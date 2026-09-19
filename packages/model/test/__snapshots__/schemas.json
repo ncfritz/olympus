@@ -101,7 +101,6 @@
       }
     },
     "required": [
-      "country",
       "createdTime",
       "lastUpdatedTime",
       "title",
@@ -4399,9 +4398,7 @@
       "overview",
       "productionCode",
       "runtime",
-      "season",
       "seasonNumber",
-      "series",
       "videos",
       "voteAverage",
       "voteCount"
@@ -8376,7 +8373,6 @@
       "images",
       "keywords",
       "lastUpdatedTime",
-      "originalLanguage",
       "originalTitle",
       "overview",
       "popularity",
@@ -8567,7 +8563,6 @@
       }
     },
     "required": [
-      "country",
       "createdTime",
       "lastUpdatedTime",
       "note",
@@ -8792,7 +8787,6 @@
       "images",
       "keywords",
       "lastUpdatedTime",
-      "originalLanguage",
       "originalTitle",
       "overview",
       "popularity",
@@ -12971,7 +12965,6 @@
       "name",
       "overview",
       "seasonNumber",
-      "series",
       "videos",
       "voteAverage"
     ],
@@ -13116,7 +13109,6 @@
       "name",
       "overview",
       "seasonNumber",
-      "series",
       "videos",
       "voteAverage"
     ],
@@ -14231,7 +14223,6 @@
       "numberOfEpisodes",
       "numberOfSeasons",
       "originCountries",
-      "originalLanguage",
       "originalName",
       "overview",
       "popularity",
@@ -14669,7 +14660,6 @@
       "numberOfEpisodes",
       "numberOfSeasons",
       "originCountries",
-      "originalLanguage",
       "originalName",
       "overview",
       "popularity",
@@ -15145,7 +15135,6 @@
       "numberOfEpisodes",
       "numberOfSeasons",
       "originCountries",
-      "originalLanguage",
       "originalName",
       "overview",
       "popularity",
@@ -15815,11 +15804,9 @@
       }
     },
     "required": [
-      "country",
       "createdTime",
       "id",
       "key",
-      "language",
       "lastUpdatedTime",
       "name",
       "official",

@@ -81,7 +81,10 @@ export class ListTvSeriesRecommendationsController {
     const recommendations: BaseTVSeries[] = [];
 
     fetchResponse.dionysus_tv_series_by_pk.recommendations.forEach((result) => {
-      recommendations.push(toTvSeriesDomainObject(result.tvSeries));
+      // Skip links to rows that are not in the database (yet).
+      if (result.tvSeries) {
+        recommendations.push(toTvSeriesDomainObject(result.tvSeries));
+      }
     });
 
     const responseBody: ListTvSeriesRecommendationsResponse = {

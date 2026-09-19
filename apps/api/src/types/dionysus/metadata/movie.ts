@@ -39,7 +39,7 @@ export type GraphQlSparseMovie = {
   voteCount: number;
   voteAverage: number;
   genres: GraphQlGenreWrapper[];
-  originalLanguage: GraphQlLanguage;
+  originalLanguage: GraphQlLanguage | null;
   searchConfiguration: GraphQlMediaAssetSearchConfiguration;
   asset?: GraphQlMediaAsset;
   favorite?: GraphQlMediaFavorite;

@@ -103,16 +103,21 @@ export class ListMovieCrewJobsForPersonController {
     const credits: Map<number, PersonMovieCrewCredit> = new Map();
 
     fetchResponse.dionysus_movie_crew.forEach((result) => {
+      if (!result.movie) {
+        return;
+      }
+
       if (!credits.has(result.movie.id)) {
         credits.set(result.movie.id, {
           movie: toSparseDomainObject(result.movie),
           jobs: [],
         });
-
-        credits
-          .get(result.movie.id)!
-          .jobs.push(toBaseMovieCrewDomainObject(result));
       }
+
+      // A person can have several jobs on one movie.
+      credits
+        .get(result.movie.id)!
+        .jobs.push(toBaseMovieCrewDomainObject(result));
     });
 
     const responseBody: ListMovieCrewJobsForPersonResponse = {

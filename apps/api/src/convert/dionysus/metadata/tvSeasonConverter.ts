@@ -76,7 +76,7 @@ export const toDomainObject = (input: GraphQlTvSeason): Season => {
 
   return {
     ...toSparseDomainObject(input),
-    series: toSeriesDomainObject(input.series),
+    series: input.series ? toSeriesDomainObject(input.series) : undefined,
     externalIds: externalIds,
     images: images,
     videos: videos,

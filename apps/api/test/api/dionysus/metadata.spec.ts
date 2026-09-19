@@ -404,6 +404,131 @@ describe("Dionysus metadata API", () => {
     });
   });
 
+  describe("joined rows", () => {
+    it.each([
+      [
+        "cast",
+        "ListMovieCastRolesForPerson",
+        "dionysus_movie_cast",
+        "roles",
+        { character: "Neo" },
+        { character: "Kid" },
+      ],
+      [
+        "crew",
+        "ListMovieCrewJobsForPerson",
+        "dionysus_movie_crew",
+        "jobs",
+        { job: "Stunts" },
+        { job: "Producer" },
+      ],
+    ])(
+      "a person's %s credits group every credit per movie",
+      async (kind, operation, root, list, first, second) => {
+        t.graphql.on(operation, {
+          [root]: [
+            {
+              movie: { id: 603, title: "The Matrix" },
+              creditId: "a",
+              ...first,
+            },
+            {
+              movie: { id: 603, title: "The Matrix" },
+              creditId: "b",
+              ...second,
+            },
+            { movie: { id: 604 }, creditId: "c", ...first },
+            { movie: null, creditId: "d", ...first },
+          ],
+        });
+
+        const res = await t.http().get(`${M}/person/6384/movie/${kind}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.credits).toHaveLength(2);
+        expect(res.body.credits[0].movie.id).toBe(603);
+        expect(res.body.credits[0][list]).toMatchObject([first, second]);
+      },
+    );
+
+    it.each([
+      [
+        `${M}/movie/603/recommendations`,
+        "ListMovieRecommendations",
+        {
+          dionysus_movies_by_pk: {
+            recommendations: [{ movie: { id: 1 } }, { movie: null }],
+          },
+        },
+        "recommendations",
+      ],
+      [
+        `${M}/tvSeries/1399/recommendations`,
+        "ListTvSeriesRecommendations",
+        {
+          dionysus_tv_series_by_pk: {
+            recommendations: [{ tvSeries: { id: 1 } }, { tvSeries: null }],
+          },
+        },
+        "recommendations",
+      ],
+      [
+        `${M}/network/49/tvSeries`,
+        "ListNetworkTvSeries",
+        {
+          dionysus_networks_by_pk: {
+            tvSeries: [{ tvSeries: { id: 1 } }, { tvSeries: null }],
+            tvSeries_aggregate: aggregate(2),
+          },
+        },
+        "tvSeries",
+      ],
+      [
+        `${M}/productionCompany/1/movies`,
+        "ListProductionCompanyMovies",
+        {
+          dionysus_production_companies_by_pk: {
+            movies: [{ movie: { id: 1 } }, { movie: null }],
+            movies_aggregate: aggregate(2),
+          },
+        },
+        "movies",
+      ],
+      [
+        `${M}/productionCompany/1/tvSeries`,
+        "ListProductionCompanyTvSeries",
+        {
+          dionysus_production_companies_by_pk: {
+            tvSeries: [{ tvSeries: { id: 1 } }, { tvSeries: null }],
+            tvSeries_aggregate: aggregate(2),
+          },
+        },
+        "tvSeries",
+      ],
+    ])(
+      "GET %s skips links to rows that are not stored yet",
+      async (url, operation, response, key) => {
+        t.graphql.on(operation, response);
+
+        const res = await t.http().get(url);
+
+        expect(res.status).toBe(200);
+        expect(res.body[key]).toHaveLength(1);
+      },
+    );
+
+    it("describes a movie whose original language is not stored", async () => {
+      t.graphql.on("DescribeMovie", {
+        dionysus_movies_by_pk: movieRow({ originalLanguage: null }),
+      });
+
+      const res = await t.http().get(`${M}/movie/603`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.movie.originalLanguage).toBeUndefined();
+    });
+  });
+
   describe("paging and filters", () => {
     it.each([
       ["ListCountries", "countries", "dionysus_countries"],

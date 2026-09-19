@@ -110,11 +110,11 @@ export class SparseSeason extends BaseSeason {
 
 export class Season extends SparseSeason {
   @ApiProperty({
-    required: true,
+    required: false,
     type: () => BaseTVSeries,
     description: "The TV series the season belongs to",
   })
-  series: BaseTVSeries;
+  series?: BaseTVSeries;
 
   @ApiProperty({
     required: true,

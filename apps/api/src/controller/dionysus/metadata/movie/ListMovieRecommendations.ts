@@ -79,7 +79,10 @@ export class ListMovieRecommendationsController {
     const recommendations: SparseMovie[] = [];
 
     fetchResponse.dionysus_movies_by_pk.recommendations.forEach((result) => {
-      recommendations.push(toMovieDomainObject(result.movie));
+      // Skip links to rows that are not in the database (yet).
+      if (result.movie) {
+        recommendations.push(toMovieDomainObject(result.movie));
+      }
     });
 
     const responseBody: ListMovieRecommendationsResponse = {

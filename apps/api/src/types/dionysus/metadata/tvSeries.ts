@@ -45,7 +45,7 @@ export type GraphQlBaseTvSeries = Timestamped & {
 };
 
 export type GraphQlSparseTvSeries = GraphQlBaseTvSeries & {
-  originalLanguage: GraphQlLanguage;
+  originalLanguage: GraphQlLanguage | null;
   alternativeTitles: GraphQlAlternativeTitle[];
   certifications: GraphQlCertificationWrapper[];
   episodeRuntimes: GraphQlTvSeriesRuntime[];

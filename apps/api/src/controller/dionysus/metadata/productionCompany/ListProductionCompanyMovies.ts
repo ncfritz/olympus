@@ -137,7 +137,10 @@ export class ListProductionCompanyMoviesController {
 
     fetchResponse.dionysus_production_companies_by_pk.movies.forEach(
       (result) => {
-        movies.push(toSparseDomainObject(result.movie));
+        // Skip links to rows that are not in the database (yet).
+        if (result.movie) {
+          movies.push(toSparseDomainObject(result.movie));
+        }
       },
     );
 

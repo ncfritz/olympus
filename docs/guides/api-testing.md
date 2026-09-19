@@ -130,18 +130,18 @@ operation got endpoint tests:
 | ------------------------------ | ------- |
 | Olympus, Minerva endpoints     | 95–97%  |
 | Dionysus endpoints (all areas) | 95–100% |
-| Converters (except below)      | 91–100% |
-| Dionysus metadata converters   | 69%     |
+| Converters                     | 91–100% |
 | `utils/`                       | 93%     |
-| Total                          | 93%     |
+| Total                          | 95%     |
 
 ADR 0010's ratchet applies: coverage may not go down.
 
 The metadata operations are covered by a table in
 `test/api/dionysus/metadata.spec.ts` (one row per read operation, with a
 minimal Hasura row from `test/fixtures/metadata.ts`) plus focused tests for
-paging, filters and upserts. Converter fields the table doesn't assert on
-are the next thing to cover, with converter unit tests.
+paging, filters and upserts. Converter mappings, including missing related
+rows, are unit-tested in
+`src/convert/dionysus/metadata/MetadataConverters.spec.ts`.
 
 When a request unexpectedly answers 500, run the test with
 `TEST_NEST_LOGS=1` to see Nest's error log and stack.

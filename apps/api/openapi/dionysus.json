@@ -15058,8 +15058,6 @@
         },
         "required": [
           "id",
-          "country",
-          "language",
           "name",
           "key",
           "site",
@@ -15200,8 +15198,6 @@
           "voteAverage",
           "createdTime",
           "lastUpdatedTime",
-          "series",
-          "season",
           "externalIds",
           "images",
           "videos"
@@ -18694,7 +18690,6 @@
         "required": [
           "title",
           "type",
-          "country",
           "createdTime",
           "lastUpdatedTime"
         ]
@@ -18826,7 +18821,6 @@
           }
         },
         "required": [
-          "country",
           "type",
           "note",
           "createdTime",
@@ -19072,7 +19066,6 @@
           "externalIds",
           "images",
           "keywords",
-          "originalLanguage",
           "productionCompanies",
           "productionCountries",
           "releaseDates",
@@ -19734,7 +19727,6 @@
           "createdTime",
           "lastUpdatedTime",
           "episodeCount",
-          "series",
           "externalIds",
           "images",
           "videos",
@@ -20199,7 +20191,6 @@
           "genres",
           "createdTime",
           "lastUpdatedTime",
-          "originalLanguage",
           "alternativeTitles",
           "certifications",
           "runtimes",

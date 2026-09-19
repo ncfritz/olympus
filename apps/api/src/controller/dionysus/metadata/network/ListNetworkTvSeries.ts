@@ -135,7 +135,10 @@ export class ListNetworkTvSeriesController {
     const tvSeries: BaseTVSeries[] = [];
 
     fetchResponse.dionysus_networks_by_pk.tvSeries.forEach((result) => {
-      tvSeries.push(toBaseDomainObject(result.tvSeries));
+      // Skip links to rows that are not in the database (yet).
+      if (result.tvSeries) {
+        tvSeries.push(toBaseDomainObject(result.tvSeries));
+      }
     });
 
     const responseBody: ListNetworkTvSeriesResponse = {

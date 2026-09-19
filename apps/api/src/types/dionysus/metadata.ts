@@ -5,7 +5,7 @@ import { GraphQlSparseMovie } from "./metadata/movie";
 import { GraphQlBasePerson } from "./metadata/person";
 
 export type GraphQlAlternativeTitle = Timestamped & {
-  country: GraphQlCountry;
+  country: GraphQlCountry | null;
   title: string;
   type: string;
 };
@@ -50,7 +50,7 @@ export type GraphQlImage = Timestamped & {
 
 export type GraphQlTypedImage = GraphQlImage & {
   type: string;
-  language: GraphQlLanguage;
+  language: GraphQlLanguage | null;
 };
 
 export type GraphQlIdentifiableImage = GraphQlImage & {
@@ -59,19 +59,19 @@ export type GraphQlIdentifiableImage = GraphQlImage & {
 };
 
 export type GraphQlReleaseDate = Timestamped & {
-  certification: GraphQlCertification;
-  country: GraphQlCountry;
-  language: GraphQlLanguage;
+  certification: GraphQlCertification | null;
+  country: GraphQlCountry | null;
+  language: GraphQlLanguage | null;
   note: string;
   releaseDate: string;
   type: number;
 };
 
 export type GraphQlVideo = Timestamped & {
-  country: GraphQlCountry;
+  country: GraphQlCountry | null;
   id: string;
   key: string;
-  language: GraphQlLanguage;
+  language: GraphQlLanguage | null;
   name: string;
   official: boolean;
   publishedDate: string;

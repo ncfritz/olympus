@@ -35,7 +35,7 @@ export const toAlternativeTitleDomainObject = (
   input: GraphQlAlternativeTitle,
 ): AlternativeTitle => {
   return {
-    country: toCountryDomainObject(input.country),
+    country: input.country ? toCountryDomainObject(input.country) : undefined,
     createdTime: moment(input.createdTime),
     lastUpdatedTime: moment(input.lastUpdatedTime),
     title: input.title,
@@ -57,7 +57,7 @@ export const toAlternativeNameDomainObject = (
 export const toVideoDomainObject = (input: GraphQlVideo): Video => {
   return {
     createdTime: moment(input.createdTime),
-    country: toCountryDomainObject(input.country),
+    country: input.country ? toCountryDomainObject(input.country) : undefined,
     type: input.type,
     key: input.key,
     lastUpdatedTime: moment(input.lastUpdatedTime),
@@ -67,7 +67,9 @@ export const toVideoDomainObject = (input: GraphQlVideo): Video => {
     publishedTime: moment(input.publishedDate),
     site: input.site,
     size: input.size,
-    language: toLanguageDomainObject(input.language),
+    language: input.language
+      ? toLanguageDomainObject(input.language)
+      : undefined,
   };
 };
 

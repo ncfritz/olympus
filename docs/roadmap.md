@@ -15,7 +15,7 @@
 | 8   | Minerva calendar sync import and Hasura integration                                                  |                       |
 | —   | Tests are added in every phase (ADR 0010)                                                            | ongoing               |
 | —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**              |
-| —   | Dionysus metadata converter tests; null-safe object relationships                                    | next                  |
+| —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**              |
 
 ## Open decisions
 
@@ -77,10 +77,12 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
 - `DescribeNetwork` moved from `/v1/dionysus/dionysus/network/:networkId`
   to `/v1/dionysus/metadata/network/:networkId` (2026-09-18). The site
   calls the old path until the SDK is regenerated (phase 2).
-- Metadata converters assume every object relationship is present
-  (`originalLanguage`, a season's `series`, an episode's `season`). Without
-  referential integrity (roadmap phase 5) a missing row makes the whole
-  read 500.
+- Without referential integrity (phase 5), related rows can be missing.
+  Metadata converters leave a missing single relationship undefined (the
+  model marks those properties optional) and skip list entries whose row
+  is missing. Clients must handle `originalLanguage`, a season's `series`,
+  an episode's `series`/`season`, and the country/language of titles,
+  videos and release dates being absent.
 - The API `Dockerfile` still targets the old single-repo layout (npm +
   GitHub Packages token). Rebuilt with ADR 0011.
 - OpenAPI `info.version` is `0.0.0` (the workspace package version)

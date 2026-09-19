@@ -29,8 +29,8 @@ export type GraphQlSparseTvEpisode = Timestamped & {
 };
 
 export type GraphQlTvEpisode = GraphQlSparseTvEpisode & {
-  series: GraphQlSparseTvSeries;
-  season: GraphQlSparseTvSeason;
+  series: GraphQlSparseTvSeries | null;
+  season: GraphQlSparseTvSeason | null;
   externalIds: GraphQlExternalId[];
   images: GraphQlTypedImage[];
   videos: GraphQlVideo[];

@@ -247,11 +247,11 @@ export class Movie extends SparseMovie {
   keywords: KeywordAssociation[];
 
   @ApiProperty({
-    required: true,
+    required: false,
     type: Language,
     description: "The original language",
   })
-  originalLanguage: Language;
+  originalLanguage?: Language;
 
   @ApiProperty({
     required: true,
@@ -565,11 +565,11 @@ export class PartialMovieCrewMember extends OmitType(MovieCrewMember, [
 
 export class MovieReleaseDate {
   @ApiProperty({
-    required: true,
+    required: false,
     type: Country,
     description: "The country of the release",
   })
-  country: Country;
+  country?: Country;
 
   @ApiProperty({
     required: false,

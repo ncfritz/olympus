@@ -127,7 +127,9 @@ export const toDomainObject = (input: GraphQlMovie): Movie => {
     externalIds: externalIds,
     images: images,
     keywords: keywords,
-    originalLanguage: toLanguageDomainObject(input.originalLanguage),
+    originalLanguage: input.originalLanguage
+      ? toLanguageDomainObject(input.originalLanguage)
+      : undefined,
     productionCompanies: productionCompanies,
     productionCountries: productionCountries,
     releaseDates: releaseDates,
@@ -215,7 +217,7 @@ export const toMovieReleaseDateDomainObject = (
   input: GraphQlReleaseDate,
 ): MovieReleaseDate => {
   return {
-    country: toCountryDomainObject(input.country),
+    country: input.country ? toCountryDomainObject(input.country) : undefined,
     certification: input.certification
       ? toCertificationDomainObject(input.certification)
       : undefined,

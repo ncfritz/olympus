@@ -62,7 +62,9 @@ export const toBaseDomainObject = (
 
   if (input.genres) {
     input.genres.forEach((entity) => {
-      genres.push(toGenreAssociationDomainObject(entity));
+      if (entity.genre) {
+        genres.push(toGenreAssociationDomainObject(entity));
+      }
     });
   }
 
@@ -138,31 +140,41 @@ export const toSparseDomainObject = (
 
   if (input.keywords) {
     input.keywords.forEach((entity) => {
-      keywords.push(toKeywordAssociationDomainObject(entity));
+      if (entity.keyword) {
+        keywords.push(toKeywordAssociationDomainObject(entity));
+      }
     });
   }
 
   if (input.originCountries) {
     input.originCountries.forEach((entity) => {
-      originCountries.push(toCountryAssociationDomainObject(entity));
+      if (entity.country) {
+        originCountries.push(toCountryAssociationDomainObject(entity));
+      }
     });
   }
 
   if (input.languages) {
     input.languages.forEach((entity) => {
-      languages.push(toLanguageAssociationDomainObject(entity));
+      if (entity.language) {
+        languages.push(toLanguageAssociationDomainObject(entity));
+      }
     });
   }
 
   if (input.spokenLanguages) {
     input.spokenLanguages.forEach((entity) => {
-      languages.push(toLanguageAssociationDomainObject(entity));
+      if (entity.language) {
+        spokenLanguages.push(toLanguageAssociationDomainObject(entity));
+      }
     });
   }
 
   return {
     ...toBaseDomainObject(input),
-    originalLanguage: toLanguageDomainObject(input.originalLanguage),
+    originalLanguage: input.originalLanguage
+      ? toLanguageDomainObject(input.originalLanguage)
+      : undefined,
     alternativeTitles: alternativeTitles,
     certifications: certifications,
     runtimes: runtimes,

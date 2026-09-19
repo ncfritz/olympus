@@ -103,16 +103,21 @@ export class ListMovieCastRolesForPersonController {
     const credits: Map<number, PersonMovieCastCredit> = new Map();
 
     fetchResponse.dionysus_movie_cast.forEach((result) => {
+      if (!result.movie) {
+        return;
+      }
+
       if (!credits.has(result.movie.id)) {
         credits.set(result.movie.id, {
           movie: toSparseDomainObject(result.movie),
           roles: [],
         });
-
-        credits
-          .get(result.movie.id)!
-          .roles.push(toBaseMovieCastDomainObject(result));
       }
+
+      // A person can have several roles on one movie.
+      credits
+        .get(result.movie.id)!
+        .roles.push(toBaseMovieCastDomainObject(result));
     });
 
     const responseBody: ListMovieCastRolesForPersonResponse = {

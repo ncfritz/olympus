@@ -210,11 +210,11 @@ export class BaseTVSeries {
 
 export class SparseTvSeries extends BaseTVSeries {
   @ApiProperty({
-    required: true,
+    required: false,
     type: () => Language,
     description: "The original language",
   })
-  originalLanguage: Language;
+  originalLanguage?: Language;
 
   @ApiProperty({
     required: true,

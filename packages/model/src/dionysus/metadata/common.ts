@@ -55,11 +55,11 @@ export class AlternativeTitle {
   type: string;
 
   @ApiProperty({
-    required: true,
+    required: false,
     type: Country,
     description: "The country where the title is used",
   })
-  country: Country;
+  country?: Country;
 
   @ApiTimestamp({
     required: true,
@@ -225,18 +225,18 @@ export class Video {
   id: string;
 
   @ApiProperty({
-    required: true,
+    required: false,
     type: Country,
     description: "The country the video is intended for",
   })
-  country: Country;
+  country?: Country;
 
   @ApiProperty({
-    required: true,
+    required: false,
     type: Language,
     description: "The language of the video",
   })
-  language: Language;
+  language?: Language;
 
   @ApiProperty({
     required: true,
