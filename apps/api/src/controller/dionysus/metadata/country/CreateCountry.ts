@@ -42,12 +42,6 @@ export class CreateCountryController {
   @ApiCreatedResponse({
     type: CreateCountryResponse,
     description: "The record has been successfully created.",
-    headers: {
-      Location: {
-        schema: { type: "string" },
-        description: "The location of the created job",
-      },
-    },
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -85,12 +79,6 @@ export class CreateCountryController {
       country: createdCountry,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api//metdata/contry/${createdCountry.id}`,
-      )
-      .send(responseBody);
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

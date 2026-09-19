@@ -13,6 +13,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  Req,
   Res,
 } from "@nestjs/common";
 import {
@@ -23,11 +24,13 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/workflow/WorkflowStepConverter";
 import { GraphQlWorkflowStep } from "../../../types/workflow";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { DescribeMetadataWorkflowStepController } from "./DescribeMetadataWorkflowStep";
+import { setLocation } from "../../../utils/location";
 
 type GraphQlGetParentWorkflowIdResponse = {
   dionysus_metadata_workflow_by_pk: {
@@ -80,6 +83,7 @@ export class CreateMetadataWorkflowStepController {
   async handle(
     @Param("workflowId") workflowId: string,
     @Body() request: CreateWorkflowStepRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const checkParentWorkflowRequest = gql`
@@ -180,12 +184,11 @@ export class CreateMetadataWorkflowStepController {
       step: createdWorkflowStep,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/metdata/workflow/${workflowId}/step/${createdWorkflowStep.id}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeMetadataWorkflowStepController, {
+      workflowId,
+      stepId: createdWorkflowStep.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

@@ -5,7 +5,7 @@ import {
   WorkflowStatus,
   Workflow,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -13,11 +13,13 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/workflow/WorkflowConverter";
 import { GraphQLWorkflow } from "../../../types/workflow";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { DescribeMetadataWorkflowController } from "./DescribeMetadataWorkflow";
+import { setLocation } from "../../../utils/location";
 
 type GraphQlCreateMetadataWorkflowResponse = {
   insert_dionysus_metadata_workflow_one: GraphQLWorkflow;
@@ -57,6 +59,7 @@ export class CreateMetadataWorkflowController {
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateWorkflowRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const insertRequest = gql`
@@ -107,14 +110,10 @@ export class CreateMetadataWorkflowController {
       workflow: createdWorkflow,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/metdata/workflow/${encodeURIComponent(
-          createdWorkflow.id,
-        )}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeMetadataWorkflowController, {
+      workflowId: createdWorkflow.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

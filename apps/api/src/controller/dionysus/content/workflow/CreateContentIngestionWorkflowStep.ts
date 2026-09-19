@@ -54,12 +54,6 @@ export class CreateContentIngestionWorkflowStepController extends BaseContentIng
   @ApiCreatedResponse({
     description: "The record has been successfully created.",
     type: CreateContentIngestionWorkflowStepResponse,
-    headers: {
-      Location: {
-        schema: { type: "string" },
-        description: "The location of the created workflow step",
-      },
-    },
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -118,12 +112,6 @@ export class CreateContentIngestionWorkflowStepController extends BaseContentIng
       step: createdWorkflowStep,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/content/workflow/${workflowId}/step/${createdWorkflowStep.id}`,
-      )
-      .send(responseBody);
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

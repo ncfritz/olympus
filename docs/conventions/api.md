@@ -157,6 +157,29 @@ deletes answer `410 Gone` with the removed record; that is accepted for
 
 The status sent must match the success decorator. **[checked]**
 
+### Created resources
+
+A `201 Created` response carries a `Location` header naming the created
+resource's GET route, set with `setLocation()` from `src/utils/location.ts`:
+
+```ts
+setLocation(response, httpRequest, DescribeNoteController, {
+  noteId: createdNote.id,
+});
+response.status(HttpStatus.CREATED).send(responseBody);
+```
+
+- The URL comes from the target controller's route metadata, so it can't
+  drift from the real route: `/v1/minerva/note/<id>`. Behind nginx it is
+  prefixed with `X-Forwarded-Prefix` (`/api/v1/...`).
+- The handler takes `@Req() httpRequest: Request` for this (`request` is
+  the body by convention).
+- When there is no GET route for what was created, send no `Location` and
+  don't document one. Don't point it at a list.
+- Document the header on the `201` response exactly when it is set:
+  `headers: { Location: { schema: { type: "string" }, description } }`.
+  **[checked]**
+
 ### Errors
 
 - Throw Nest's HTTP exceptions; don't hand-write error bodies:

@@ -40,7 +40,7 @@ describe("Minerva notes API", () => {
         childCount: 2,
         createdTime: "2026-09-01T10:00:00.000Z",
       });
-      expect(res.headers.location).toContain(NOTE_ID);
+      expect(res.headers.location).toBe(`/v1/minerva/note/${NOTE_ID}`);
       expect(t.graphql.calls("CreateNote")[0].variables).toMatchObject({
         author: "ncfritz",
         value: "Remember the milk",

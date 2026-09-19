@@ -42,12 +42,6 @@ export class CreateGenreController {
   @ApiCreatedResponse({
     type: CreateGenreResponse,
     description: "The record has been successfully created.",
-    headers: {
-      Location: {
-        schema: { type: "string" },
-        description: "The location of the created job",
-      },
-    },
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -87,12 +81,6 @@ export class CreateGenreController {
       genre: createdGenre,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api//metdata/genre/${createdGenre.type}/${createdGenre.id}`,
-      )
-      .send(responseBody);
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

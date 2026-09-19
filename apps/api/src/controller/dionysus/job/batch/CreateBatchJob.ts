@@ -5,7 +5,7 @@ import {
   CreateBatchJobResponse,
   JobType,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, Post, Res } from "@nestjs/common";
+import { Body, Controller, Post, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -13,7 +13,7 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { BaseCreateBatchJobController } from "./BaseCreateBatchJobController";
@@ -57,9 +57,10 @@ export class CreateBatchJobController extends BaseCreateBatchJobController<Creat
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateBatchJobRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    await this.processRequest(request, response);
+    await this.processRequest(request, httpRequest, response);
   }
 
   protected buildMessage(

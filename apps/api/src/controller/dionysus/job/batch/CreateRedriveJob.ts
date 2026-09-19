@@ -5,7 +5,7 @@ import {
   CreateRedriveJobRequest,
   JobType,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, Post, Res } from "@nestjs/common";
+import { Body, Controller, Post, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -13,7 +13,7 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { BaseCreateBatchJobController } from "./BaseCreateBatchJobController";
@@ -55,9 +55,10 @@ export class CreateRedriveJobController extends BaseCreateBatchJobController<Cre
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateRedriveJobRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    await this.processRequest(request, response);
+    await this.processRequest(request, httpRequest, response);
   }
 
   protected buildMessage(

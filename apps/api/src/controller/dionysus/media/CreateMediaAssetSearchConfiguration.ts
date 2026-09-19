@@ -11,6 +11,7 @@ import {
   Controller,
   HttpStatus,
   Post,
+  Req,
   Res,
 } from "@nestjs/common";
 import {
@@ -20,7 +21,7 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { toDecoratedDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchConfigurationConverter";
@@ -29,6 +30,8 @@ import { BASE_DECORATED_SEARCH_CONFIGURATION } from "../../../query/dionysus/med
 import { GraphQlMediaAsset } from "../../../types/dionysus/media/mediaAsset";
 import { type GraphQlDecoratedMediaAssetSearchConfiguration } from "../../../types/dionysus/media/searchConfiguration";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { DescribeMediaAssetSearchConfigurationController } from "./DescribeMediaAssetSearchConfiguration";
+import { setLocation } from "../../../utils/location";
 
 type QueryRoot =
   | "dionysus_movies_by_pk"
@@ -97,6 +100,7 @@ export class CreateMediaAssetSearchConfigurationController {
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateMediaAssetSearchConfigurationRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     let graphQLQueryRoot: QueryRoot = "dionysus_movies_by_pk";
@@ -235,14 +239,16 @@ export class CreateMediaAssetSearchConfigurationController {
       searchConfiguration: createdSearchConfiguration,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/media/searchConfiguration/${createdSearchConfiguration.type}/${encodeURIComponent(
-          createdSearchConfiguration.mediaId,
-        )}`,
-      )
-      .send(responseBody);
+    setLocation(
+      response,
+      httpRequest,
+      DescribeMediaAssetSearchConfigurationController,
+      {
+        mediaType: createdSearchConfiguration.type,
+        mediaId: createdSearchConfiguration.mediaId,
+      },
+    );
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

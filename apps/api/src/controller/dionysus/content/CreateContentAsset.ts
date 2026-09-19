@@ -3,7 +3,7 @@ import {
   CreateContentAssetResponse,
   ContentAsset,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -11,11 +11,13 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/content/ContentAssetConverter";
 import { GraphQLContentAsset } from "../../../types/content";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { GetContentAssetController } from "./GetContentAsset";
+import { setLocation } from "../../../utils/location";
 
 type GraphQLCreateContentAssetResponse = {
   insert_dionysus_content_assets_one: GraphQLContentAsset;
@@ -53,6 +55,7 @@ export class CreateContentAssetController {
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateContentAssetRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const insertRequest = gql`
@@ -120,12 +123,10 @@ export class CreateContentAssetController {
       asset: createdContentAsset,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/content/assets/${createdContentAsset.id}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, GetContentAssetController, {
+      assetId: createdContentAsset.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

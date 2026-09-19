@@ -5,7 +5,7 @@ import {
   PartialExternalId,
   PartialBaseImage,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Put, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Put, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -13,9 +13,11 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { DescribePersonController } from "./DescribePerson";
+import { setLocation } from "../../../../utils/location";
 
 type GraphQlCreatePersonResponse = {
   insert_dionysus_people_one: { id: number };
@@ -52,6 +54,7 @@ export class CreatePersonController {
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreatePersonRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const insertRequest = gql`
@@ -188,12 +191,10 @@ export class CreatePersonController {
       id: insertResponse.insert_dionysus_people_one.id,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api//metdata/person/${insertResponse.insert_dionysus_people_one.id}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribePersonController, {
+      personId: insertResponse.insert_dionysus_people_one.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

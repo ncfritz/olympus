@@ -42,12 +42,6 @@ export class CreateKeywordController {
   @ApiCreatedResponse({
     type: CreateKeywordResponse,
     description: "The record has been successfully created.",
-    headers: {
-      Location: {
-        schema: { type: "string" },
-        description: "The location of the created job",
-      },
-    },
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -85,12 +79,6 @@ export class CreateKeywordController {
       keyword: createdKeyword,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api//metdata/keyword/${createdKeyword.id}`,
-      )
-      .send(responseBody);
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

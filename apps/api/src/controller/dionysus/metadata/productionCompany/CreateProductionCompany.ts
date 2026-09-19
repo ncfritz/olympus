@@ -4,7 +4,7 @@ import {
   PartialAlternativeName,
   PartialIdentifiableImage,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Put, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Put, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -12,11 +12,13 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toSparseDomainObject as toSparseProductionCompanyDomainObject } from "../../../../convert/dionysus/metadata/ProductionCompanyConverter";
 import { GraphQlSparseProductionCompany } from "../../../../types/dionysus/metadata/productionCompany";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { DescribeProductionCompanyController } from "./DescribeProductionCompany";
+import { setLocation } from "../../../../utils/location";
 
 type GraphQlCreateProductionCompanyResponse = {
   insert_dionysus_production_companies_one: GraphQlSparseProductionCompany;
@@ -53,6 +55,7 @@ export class CreateProductionCompanyController {
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateProductionCompanyRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const insertRequest = gql`
@@ -174,12 +177,11 @@ export class CreateProductionCompanyController {
       ),
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api//metdata/productionCompanies/${insertResponse.insert_dionysus_production_companies_one.id}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeProductionCompanyController, {
+      productionCompanyId:
+        insertResponse.insert_dionysus_production_companies_one.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

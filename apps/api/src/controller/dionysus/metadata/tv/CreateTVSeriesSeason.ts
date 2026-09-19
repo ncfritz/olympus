@@ -11,6 +11,7 @@ import {
   Param,
   ParseIntPipe,
   Put,
+  Req,
   Res,
 } from "@nestjs/common";
 import {
@@ -20,9 +21,11 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { DescribeTvSeasonController } from "./DescribeTvSeason";
+import { setLocation } from "../../../../utils/location";
 
 type GraphQlCreateTVSeasonResponse = {
   insert_dionysus_tv_seasons_one: {
@@ -64,6 +67,7 @@ export class CreateTVSeriesSeasonController {
   async handle(
     @Param("seriesId", ParseIntPipe) seriesId: number,
     @Body() request: CreateTVSeasonRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const insertRequest = gql`
@@ -241,12 +245,11 @@ export class CreateTVSeriesSeasonController {
       seriesId: insertResponse.insert_dionysus_tv_seasons_one.seriesId,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api//metdata/tvSeries/${seriesId}/season/${request.season.seasonNumber}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeTvSeasonController, {
+      tvSeriesId: seriesId,
+      seasonNumber: request.season.seasonNumber,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

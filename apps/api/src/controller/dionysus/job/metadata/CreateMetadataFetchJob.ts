@@ -5,7 +5,7 @@ import {
   CreateMetadataFetchJobRequest,
   CreateMetadataFetchJobResponse,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -13,11 +13,13 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/job/MetadataFetchJobConverter";
 import { GraphQlMetadataFetchJob } from "../../../../types/batchJobs";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { DescribeMetadataFetchJobController } from "./DescribeMetadataFetchJob";
+import { setLocation } from "../../../../utils/location";
 
 type GraphQlCreateMetadataFetchJobRespons = {
   insert_dionysus_metadata_fetch_status_one: GraphQlMetadataFetchJob;
@@ -59,6 +61,7 @@ export class CreateMetadataFetchJobController {
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateMetadataFetchJobRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const ttl = request.ttl ?? 30;
@@ -146,14 +149,11 @@ export class CreateMetadataFetchJobController {
       job: createdJob,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api//metdata/fetchJob/${encodeURIComponent(
-          createdJob.id,
-        )}/${createdJob.type}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeMetadataFetchJobController, {
+      entityId: createdJob.id,
+      entityType: createdJob.type,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

@@ -3,7 +3,7 @@ import {
   CreateContentAssetChannelRequest,
   CreateContentAssetChannelResponse,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -11,13 +11,15 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { toFullDomainObject } from "../../../../convert/dionysus/content/channel/ContentAssetChannelConverter";
 import { GraphQlFullContentAssetChannel } from "../../../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { BaseContentAssetChannelController } from "./BaseContentAssetChannelController";
+import { DescribeContentAssetChannelController } from "./DescribeContentAssetChannel";
+import { setLocation } from "../../../../utils/location";
 
 export type GraphQlMutateContentAssetChannelResponse = {
   insert_dionysus_content_asset_channel_one: GraphQlFullContentAssetChannel;
@@ -56,6 +58,7 @@ export class CreateContentAssetChannelController extends BaseContentAssetChannel
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateContentAssetChannelRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const assetCache = await this.buildAssetCacheEntries(
@@ -153,12 +156,10 @@ export class CreateContentAssetChannelController extends BaseContentAssetChannel
       channel: createdCategory,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/content/channels/categories/${createdCategory.id}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeContentAssetChannelController, {
+      channelId: createdCategory.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

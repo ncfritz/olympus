@@ -4,7 +4,15 @@ import {
   CreateMediaAssetWorkflowSubStepResponse,
   MediaAssetWorkflowSubStep,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Param, Post, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  HttpStatus,
+  Param,
+  Post,
+  Req,
+  Res,
+} from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -13,7 +21,7 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { toSubStepDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowStepConverter";
@@ -21,6 +29,8 @@ import { BASE_MEDIA_ASSET_WORKFLOW_STEP } from "../../../query/dionysus/media/me
 import { GraphQlMediaAssetWorkflowSubStep } from "../../../types/dionysus/media/mediaAssetWorkflow";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { BaseMediaAssetWorkflowController } from "./BaseMediaAssetWorkflowController";
+import { DescribeMediaAssetWorkflowStepController } from "./DescribeMediaAssetWorkflowStep";
+import { setLocation } from "../../../utils/location";
 
 type GraphQlCreateMediaAssetWorkflowSubStepResponse = {
   insert_dionysus_media_asset_workflow_step_one: GraphQlMediaAssetWorkflowSubStep;
@@ -73,6 +83,7 @@ export class CreateMediaAssetWorkflowSubStepController extends BaseMediaAssetWor
     @Param("workflowId") workflowId: string,
     @Param("workflowStepId") workflowStepId: string,
     @Body() request: CreateMediaAssetWorkflowSubStepRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const stepDetails = await this.verifyWorkflowStepExists(
@@ -132,12 +143,13 @@ export class CreateMediaAssetWorkflowSubStepController extends BaseMediaAssetWor
       step: createdWorkflowStep,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/media/workflow/${workflowId}/step/${createdWorkflowStep.id}`,
-      )
-      .send(responseBody);
+    setLocation(
+      response,
+      httpRequest,
+      DescribeMediaAssetWorkflowStepController,
+      { workflowId, workflowStepId: createdWorkflowStep.id },
+    );
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

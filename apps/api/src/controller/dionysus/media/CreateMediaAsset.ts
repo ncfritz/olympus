@@ -43,12 +43,6 @@ export class CreateMediaAssetController {
   @ApiCreatedResponse({
     description: "The record has been successfully created.",
     type: SingleMediaAssetResponse,
-    headers: {
-      Location: {
-        schema: { type: "string" },
-        description: "The location of the created asset",
-      },
-    },
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -121,12 +115,6 @@ export class CreateMediaAssetController {
       asset: createdMediaAsset,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/media/asset/${createdMediaAsset.type}/${createdMediaAsset.mediaId}`,
-      )
-      .send(responseBody);
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

@@ -1,5 +1,5 @@
 import { CreateNoteRequest, SingleNoteResponse } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -7,10 +7,12 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { BaseNoteController } from "./BaseNoteController";
+import { DescribeNoteController } from "./DescribeNote";
+import { setLocation } from "../../../utils/location";
 
 @Controller({ version: "1" })
 export class CreateNoteController extends BaseNoteController {
@@ -47,6 +49,7 @@ export class CreateNoteController extends BaseNoteController {
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateNoteRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const createdNote = await this.createNote(request.note);
@@ -55,14 +58,10 @@ export class CreateNoteController extends BaseNoteController {
       note: createdNote,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/v1/note/${encodeURIComponent(
-          createdNote.id,
-        )}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeNoteController, {
+      noteId: createdNote.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

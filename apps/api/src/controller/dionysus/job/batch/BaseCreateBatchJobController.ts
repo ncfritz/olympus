@@ -5,10 +5,12 @@ import {
   JobType,
 } from "@ncfritz/olympus-model";
 import { Body, HttpStatus, Res } from "@nestjs/common";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/job/BatchJobConverter";
 import { GraphQlBatchJob } from "../../../../types/batchJobs";
+import { DescribeBatchJobController } from "./DescribeBatchJob";
+import { setLocation } from "../../../../utils/location";
 
 type GraphQlCreateBatchJobResponse = {
   insert_dionysus_bulk_load_jobs_one: GraphQlBatchJob;
@@ -35,6 +37,7 @@ export abstract class BaseCreateBatchJobController<I> {
 
   async processRequest(
     @Body() request: I,
+    httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const type = this.getJobType(request);
@@ -87,12 +90,10 @@ export abstract class BaseCreateBatchJobController<I> {
       job: createdJob,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/job/batch/${createdJob.id}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeBatchJobController, {
+      jobId: createdJob.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

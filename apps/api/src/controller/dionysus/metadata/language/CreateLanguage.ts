@@ -42,12 +42,6 @@ export class CreateLanguageController {
   @ApiCreatedResponse({
     type: CreateLanguageResponse,
     description: "The record has been successfully created.",
-    headers: {
-      Location: {
-        schema: { type: "string" },
-        description: "The location of the created job",
-      },
-    },
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -94,12 +88,6 @@ export class CreateLanguageController {
       language: createdLanguage,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api//metdata/language/${createdLanguage.id}`,
-      )
-      .send(responseBody);
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

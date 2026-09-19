@@ -66,8 +66,7 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
 - Route shapes kept for SDK compatibility, to revisit with the SDK import:
   `GetMediaAssetSearchConfigurationsRunningCount` is a `PUT` but only
   reads; `CreateMediaAssetWorkflow` is
-  `POST .../workflow/:resultId/workflow` (its `Location` says
-  `.../result/:resultId/workflow/:id`).
+  `POST .../workflow/:resultId/workflow`.
 - Black curtain (decided 2026-09-18): enforced server-side for every
   request without a valid content auth cookie; `x-dionysus-content-bc` is
   ignored. Still open: the size/duration/width/height statistics come from

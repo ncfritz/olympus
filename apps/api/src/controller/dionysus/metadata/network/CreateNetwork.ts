@@ -4,7 +4,7 @@ import {
   PartialAlternativeName,
   PartialIdentifiableImage,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Put, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Put, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -12,11 +12,13 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../../convert/dionysus/metadata/NetworkConverter";
 import { GraphQlNetwork } from "../../../../types/dionysus/metadata/tvNetworks";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { DescribeNetworkController } from "./DescribeNetwork";
+import { setLocation } from "../../../../utils/location";
 
 type GraphQlCreateNetworkResponse = {
   insert_dionysus_networks_one: GraphQlNetwork;
@@ -53,6 +55,7 @@ export class CreateNetworkController {
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateNetworkRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const insertRequest = gql`
@@ -166,12 +169,10 @@ export class CreateNetworkController {
       network: toDomainObject(insertResponse.insert_dionysus_networks_one),
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api//metdata/network/${insertResponse.insert_dionysus_networks_one.id}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeNetworkController, {
+      networkId: insertResponse.insert_dionysus_networks_one.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

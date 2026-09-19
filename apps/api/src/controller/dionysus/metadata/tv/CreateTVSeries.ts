@@ -4,7 +4,7 @@ import {
   PartialTVSeriesCastMemberRoleWithKey,
   PartialTVSeriesCrewMemberJobWithKey,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Put, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Put, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -12,9 +12,11 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { DescribeTvSeriesController } from "./DescribeTvSeries";
+import { setLocation } from "../../../../utils/location";
 
 type GraphQlCreateTVSeriesResponse = {
   insert_dionysus_tv_series_one: {
@@ -53,6 +55,7 @@ export class CreateTVSeriesController {
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateTVSeriesRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const insertRequest = gql`
@@ -397,12 +400,10 @@ export class CreateTVSeriesController {
       seriesId: insertResponse.insert_dionysus_tv_series_one.id,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api//metdata/tvSeries/${insertResponse.insert_dionysus_tv_series_one.id}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeTvSeriesController, {
+      tvSeriesId: insertResponse.insert_dionysus_tv_series_one.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

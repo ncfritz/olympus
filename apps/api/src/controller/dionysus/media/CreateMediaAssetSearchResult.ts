@@ -12,6 +12,7 @@ import {
   ParseEnumPipe,
   ParseIntPipe,
   Post,
+  Req,
   Res,
 } from "@nestjs/common";
 import {
@@ -22,13 +23,15 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchResultConverter";
 import { BASE_SEARCH_RESULT } from "../../../query/dionysus/media/searchResult";
 import { GraphQlMediaAssetSearchResult } from "../../../types/dionysus/media/searchResult";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { BaseMediaAssetSearchConfigurationController } from "./BaseMediaAssetSearchConfigurationController";
+import { DescribeMediaAssetSearchResultController } from "./DescribeMediaAssetSearchResult";
+import { setLocation } from "../../../utils/location";
 
 type GraphQlCreateMediaAssetSearchResultResponse = {
   insert_dionysus_media_asset_search_result_one: GraphQlMediaAssetSearchResult;
@@ -82,6 +85,7 @@ export class CreateMediaAssetSearchResultController extends BaseMediaAssetSearch
     mediaType: MediaAssetSearchType,
     @Param("mediaId", ParseIntPipe) mediaId: number,
     @Body() request: CreateMediaAssetSearchResultRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     await this.verifySearchConfiguration(mediaType, mediaId);
@@ -160,14 +164,13 @@ export class CreateMediaAssetSearchResultController extends BaseMediaAssetSearch
       searchResult: createdSearchResult,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/media/searchConfiguration/${mediaType}/${mediaId}/result/${encodeURIComponent(
-          createdSearchResult.id,
-        )}`,
-      )
-      .send(responseBody);
+    setLocation(
+      response,
+      httpRequest,
+      DescribeMediaAssetSearchResultController,
+      { mediaType, mediaId, resultId: createdSearchResult.id },
+    );
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

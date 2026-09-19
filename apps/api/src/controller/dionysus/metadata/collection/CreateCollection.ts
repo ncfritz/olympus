@@ -4,7 +4,7 @@ import {
   PartialCollectionPart,
   PartialTypedImage,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Put, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Put, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -12,9 +12,11 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { DescribeCollectionController } from "./DescribeCollection";
+import { setLocation } from "../../../../utils/location";
 
 type GraphQlCreateCollectionInput = {
   id: number;
@@ -63,6 +65,7 @@ export class CreateCollectionController {
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateCollectionRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const insertRequest = gql`
@@ -124,12 +127,10 @@ export class CreateCollectionController {
       id: insertResponse.insert_dionysus_collections_one.id,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api//metdata/collection/${insertResponse.insert_dionysus_collections_one.id}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeCollectionController, {
+      collectionId: insertResponse.insert_dionysus_collections_one.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

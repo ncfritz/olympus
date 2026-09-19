@@ -3,7 +3,7 @@ import {
   CreateContentIngestionWorkflowRequest,
   CreateContentIngestionWorkflowResponse,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -11,10 +11,12 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { GraphQLClient } from "graphql-request";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
 import { BaseContentIngestionWorkflowController } from "./BaseContentIngestionWorkflowController";
+import { DescribeContentIngestionWorkflowController } from "./DescribeContentIngestionWorkflow";
+import { setLocation } from "../../../../utils/location";
 
 @Controller({ version: "1" })
 export class CreateContentIngestionWorkflowController extends BaseContentIngestionWorkflowController {
@@ -52,6 +54,7 @@ export class CreateContentIngestionWorkflowController extends BaseContentIngesti
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateContentIngestionWorkflowRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const createdWorkflow = await this.createContentIngestionWorkflow(
@@ -69,14 +72,13 @@ export class CreateContentIngestionWorkflowController extends BaseContentIngesti
       workflow: createdWorkflow,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/content/workflow/${encodeURIComponent(
-          createdWorkflow.id,
-        )}`,
-      )
-      .send(responseBody);
+    setLocation(
+      response,
+      httpRequest,
+      DescribeContentIngestionWorkflowController,
+      { workflowId: createdWorkflow.id },
+    );
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

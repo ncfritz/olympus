@@ -3,7 +3,7 @@ import {
   Meeting,
   SingleCalendarItemResponse,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -11,13 +11,15 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import {
   GraphQlMeeting,
   toDomainObject,
 } from "../../../convert/minerva/MeetingConverter";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
+import { DescribeCalendarItemController } from "./DescribeCalendarItem";
+import { setLocation } from "../../../utils/location";
 
 type GraphQlCreateCalendarItemResponse = {
   insert_minerva_meetings_one: GraphQlMeeting;
@@ -54,6 +56,7 @@ export class CreateCalendarItemController {
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateCalendarItemRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const insertRequest = gql`
@@ -240,14 +243,10 @@ export class CreateCalendarItemController {
       item: createdMeeting,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/v1/meetings/${encodeURIComponent(
-          createdMeeting.id,
-        )}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeCalendarItemController, {
+      meetingId: createdMeeting.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

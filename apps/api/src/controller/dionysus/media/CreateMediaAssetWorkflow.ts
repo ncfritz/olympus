@@ -14,6 +14,7 @@ import {
   ParseEnumPipe,
   ParseIntPipe,
   Post,
+  Req,
   Res,
 } from "@nestjs/common";
 import {
@@ -23,7 +24,7 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { toDecoratedDomainObject } from "../../../convert/dionysus/media/MediaAssetWorkflowConverter";
@@ -32,6 +33,8 @@ import { GraphQlDecoratedMediaAssetWorkflow } from "../../../types/dionysus/medi
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { BaseMediaAssetSearchResultController } from "./BaseMediaAssetSearchResultController";
 import { v4 as uuidv4 } from "uuid";
+import { DescribeMediaAssetWorkflowController } from "./DescribeMediaAssetWorkflow";
+import { setLocation } from "../../../utils/location";
 
 type GraphQlCreateMediaAssetWorkflowResponse = {
   insert_dionysus_media_asset_download_one: {
@@ -95,6 +98,7 @@ export class CreateMediaAssetWorkflowController extends BaseMediaAssetSearchResu
     mediaType: MediaAssetSearchType,
     @Param("mediaId", ParseIntPipe) mediaId: number,
     @Param("resultId") resultId: string,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     await this.verifySearchResult(mediaType, mediaId, resultId);
@@ -192,14 +196,10 @@ export class CreateMediaAssetWorkflowController extends BaseMediaAssetSearchResu
       workflow: createdWorkflow,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/media/searchConfiguration/${mediaType}/${mediaId}/result/${encodeURIComponent(
-          resultId,
-        )}/workflow/${encodeURIComponent(createdWorkflow.id)}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeMediaAssetWorkflowController, {
+      workflowId: createdWorkflow.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

@@ -76,12 +76,6 @@ export class CreateMediaAssetDownloadController extends BaseMediaAssetSearchResu
   @ApiCreatedResponse({
     description: "The record has been successfully created.",
     type: SingleMediaAssetDownloadResponse,
-    headers: {
-      Location: {
-        schema: { type: "string" },
-        description: "The location of the media download record",
-      },
-    },
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -158,14 +152,6 @@ export class CreateMediaAssetDownloadController extends BaseMediaAssetSearchResu
       download: createdDownload,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/media/searchConfiguration/${mediaType}/${mediaId}/result/${encodeURIComponent(
-          resultId,
-        )}/download/${encodeURIComponent(createdDownload.id)}`,
-      )
-      .send(responseBody);
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

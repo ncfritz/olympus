@@ -13,6 +13,7 @@ import {
   ParseEnumPipe,
   ParseIntPipe,
   Post,
+  Req,
   Res,
 } from "@nestjs/common";
 import {
@@ -23,13 +24,15 @@ import {
   ApiParam,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toDomainObject } from "../../../convert/dionysus/media/MediaAssetSearchExecutionConverter";
 import { BASE_SEARCH_EXECUTION } from "../../../query/dionysus/media/searchExecution";
 import { GraphQlMediaAssetSearchExecution } from "../../../types/dionysus/media/searchExecution";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { BaseMediaAssetSearchConfigurationController } from "./BaseMediaAssetSearchConfigurationController";
+import { DescribeMediaAssetSearchExecutionController } from "./DescribeMediaAssetSearchExecution";
+import { setLocation } from "../../../utils/location";
 
 type GraphQlCreateMediaAssetSearchExecutionResponse = {
   insert_dionysus_media_asset_search_execution_one: GraphQlMediaAssetSearchExecution;
@@ -83,6 +86,7 @@ export class CreateMediaAssetSearchExecutionController extends BaseMediaAssetSea
     mediaType: MediaAssetSearchType,
     @Param("mediaId", ParseIntPipe) mediaId: number,
     @Body() request: CreateMediaAssetSearchExecutionRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     await this.verifySearchConfiguration(mediaType, mediaId);
@@ -123,14 +127,13 @@ export class CreateMediaAssetSearchExecutionController extends BaseMediaAssetSea
       searchExecution: createdSearchExecution,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/media/searchConfiguration/${mediaType}/${mediaId}/execution/${encodeURIComponent(
-          createdSearchExecution.id,
-        )}`,
-      )
-      .send(responseBody);
+    setLocation(
+      response,
+      httpRequest,
+      DescribeMediaAssetSearchExecutionController,
+      { mediaType, mediaId, executionId: createdSearchExecution.id },
+    );
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

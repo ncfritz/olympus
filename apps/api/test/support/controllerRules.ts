@@ -24,6 +24,8 @@
  *   tag-style          the tag is Title Case
  *   todo               summary or description still contains a TODO
  *                      (left by `pnpm gen api-operation`)
+ *   location           Location is set with setLocation() (utils/location),
+ *                      and documented on the 201 response exactly when set
  *   graphql-named      every gql document names its operation
  *   graphql-unique     a GraphQL operation name means one document across
  *                      the API (the test double and Hasura logs route by it)
@@ -145,6 +147,24 @@ export function checkControllers(controllers: ControllerInfo[]): Finding[] {
         "status-sent",
         `documents ${neverSent.join(", ")} but sends ${[...sent].join(", ") || "nothing detectable"}`,
       );
+    }
+
+    const setsLocation = c.sources.some((source) =>
+      /\bsetLocation\(/.test(source),
+    );
+    const documentsLocation = Object.values(route.responses).some((response) =>
+      Boolean(
+        (response as { headers?: Record<string, unknown> }).headers?.Location,
+      ),
+    );
+    if (c.sources.some((source) => /["'`]Location["'`]/.test(source))) {
+      report("location", "sets Location by hand; use setLocation()");
+    }
+    if (setsLocation && !documentsLocation) {
+      report("location", "sets Location but does not document it");
+    }
+    if (documentsLocation && !setsLocation) {
+      report("location", "documents a Location header it never sets");
     }
 
     for (const source of c.sources) {

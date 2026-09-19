@@ -65,12 +65,6 @@ export class CreateMediaFavoriteController {
   @ApiCreatedResponse({
     description: "The record has been successfully created.",
     type: SingleMediaFavoriteResponse,
-    headers: {
-      Location: {
-        schema: { type: "string" },
-        description: "The location of the media favorite record",
-      },
-    },
   })
   @ApiStandardErrorResponses()
   async handle(
@@ -147,12 +141,6 @@ export class CreateMediaFavoriteController {
       favorite: createdFavorite,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/media/favorite/${mediaType}/${mediaId}`,
-      )
-      .send(responseBody);
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

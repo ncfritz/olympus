@@ -3,7 +3,7 @@ import {
   CreateContentAssetChannelCategoryResponse,
   FullContentAssetChannelCategory,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -11,11 +11,13 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { toFullDomainObject } from "../../../../convert/dionysus/content/channel/ContentAssetChannelCategoryConverter";
 import { GraphQlFullContentAssetChannelCategory } from "../../../../types/content";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { DescribeContentAssetChannelCategoryController } from "./DescribeContentAssetChannelCategory";
+import { setLocation } from "../../../../utils/location";
 
 type GraphQlCreateContentAssetChannelCategoryResponse = {
   insert_dionysus_content_asset_channel_category_one: GraphQlFullContentAssetChannelCategory;
@@ -52,6 +54,7 @@ export class CreateContentAssetChannelCategoryController {
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateContentAssetChannelCategoryRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const insertRequest = gql`
@@ -107,12 +110,13 @@ export class CreateContentAssetChannelCategoryController {
       category: createdCategory,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/content/channels/categories/${createdCategory.id}`,
-      )
-      .send(responseBody);
+    setLocation(
+      response,
+      httpRequest,
+      DescribeContentAssetChannelCategoryController,
+      { categoryId: createdCategory.id },
+    );
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

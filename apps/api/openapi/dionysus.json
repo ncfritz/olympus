@@ -1605,14 +1605,6 @@
         "responses": {
           "201": {
             "description": "The record has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the created content asset"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1897,14 +1889,6 @@
         "responses": {
           "201": {
             "description": "The record has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the created workflow step"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
@@ -3273,14 +3257,6 @@
         "responses": {
           "201": {
             "description": "The record has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the created asset"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
@@ -3873,14 +3849,6 @@
         "responses": {
           "201": {
             "description": "The record has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the media download record"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
@@ -4175,14 +4143,6 @@
         "responses": {
           "201": {
             "description": "The record has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the media favorite record"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
@@ -5653,14 +5613,6 @@
         "responses": {
           "201": {
             "description": "The record has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the created job"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
@@ -5864,14 +5816,6 @@
         "responses": {
           "201": {
             "description": "The record has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the created job"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
@@ -6004,14 +5948,6 @@
         "responses": {
           "201": {
             "description": "The record has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the created job"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
@@ -6153,14 +6089,6 @@
         "responses": {
           "201": {
             "description": "The record has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the created job"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
@@ -6293,14 +6221,6 @@
         "responses": {
           "201": {
             "description": "The record has been successfully created.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The location of the created job"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {

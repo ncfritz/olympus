@@ -2,7 +2,7 @@ import {
   CreateMovieRequest,
   CreateMovieResponse,
 } from "@ncfritz/olympus-model";
-import { Body, Controller, HttpStatus, Put, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Put, Req, Res } from "@nestjs/common";
 import {
   ApiBody,
   ApiConsumes,
@@ -10,10 +10,12 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { gql, GraphQLClient } from "graphql-request";
 import { GraphQlSparseMovie } from "../../../../types/dionysus/metadata/movie";
 import { ApiStandardErrorResponses } from "../../../../utils/controllerDecorators";
+import { DescribeMovieController } from "./DescribeMovie";
+import { setLocation } from "../../../../utils/location";
 
 type GraphQlCreateMovieResponse = {
   insert_dionysus_movies_one: GraphQlSparseMovie;
@@ -50,6 +52,7 @@ export class CreateMovieController {
   @ApiStandardErrorResponses()
   async handle(
     @Body() request: CreateMovieRequest,
+    @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
     const insertRequest = gql`
@@ -322,12 +325,10 @@ export class CreateMovieController {
       id: insertResponse.insert_dionysus_movies_one.id,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api//metdata/movies/${insertResponse.insert_dionysus_movies_one.id}`,
-      )
-      .send(responseBody);
+    setLocation(response, httpRequest, DescribeMovieController, {
+      movieId: insertResponse.insert_dionysus_movies_one.id,
+    });
+
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }

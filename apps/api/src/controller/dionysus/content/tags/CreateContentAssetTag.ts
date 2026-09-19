@@ -51,12 +51,6 @@ export class CreateContentAssetTagController {
   @ApiCreatedResponse({
     description: "The record has been successfully created.",
     type: CreateContentAssetTagResponse,
-    headers: {
-      Location: {
-        schema: { type: "string" },
-        description: "The location of the created content asset",
-      },
-    },
   })
   @ApiConflictResponse({
     description: "A tag with the same name and type already exists",
@@ -103,12 +97,6 @@ export class CreateContentAssetTagController {
       tag: createdContentAssetTag,
     };
 
-    response
-      .status(HttpStatus.CREATED)
-      .setHeader(
-        "Location",
-        `http://localhost:3000/api/content/assetTag/${createdContentAssetTag.id}`,
-      )
-      .send(responseBody);
+    response.status(HttpStatus.CREATED).send(responseBody);
   }
 }
