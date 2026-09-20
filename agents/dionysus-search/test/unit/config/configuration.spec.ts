@@ -13,11 +13,26 @@ describe("readConfig", () => {
       "amqp://admin:***@localhost:5672/%2Fdionysus-dev",
     );
     expect(config.olympus).toEqual({
-      apiBaseUrl: "http://localhost:3001/v1",
+      baseUrl: "http://localhost:3001/v1",
     });
     expect(config.nzbGeek).toEqual({
       apiUrl: "https://api.nzbgeek.info/api",
       apiKey: undefined,
+    });
+  });
+
+  it("presents its certificate on the API's mTLS listener", () => {
+    const { olympus } = readConfig({
+      API_BASE_URL: "https://olympus-api:3443/v1",
+      API_CLIENT_CERT: "/certs/dionysus-search-agent.crt",
+      API_CLIENT_KEY: "/certs/dionysus-search-agent.key",
+      API_CA_CERT: "/certs/services-ca.crt",
+    });
+    expect(olympus.baseUrl).toBe("https://olympus-api:3443/v1");
+    expect(olympus.tls).toEqual({
+      certificate: "/certs/dionysus-search-agent.crt",
+      key: "/certs/dionysus-search-agent.key",
+      ca: "/certs/services-ca.crt",
     });
   });
 
