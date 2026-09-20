@@ -19,8 +19,8 @@ export interface StartDownloadMessage {
   resultId: string;
   /**
    * The media workflow the download belongs to. Absent for downloads
-   * started on their own (CreateMediaAssetDownload); the asset agents
-   * assume it today: see the roadmap.
+   * started on their own (CreateMediaAssetDownload), which the asset
+   * agents track but don't stage.
    */
   workflowId?: string;
   downloadId: string;

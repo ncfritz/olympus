@@ -229,7 +229,8 @@ check the consumers when the metadata and asset agents are imported.
 
 - Transcode messages never carry `mediaExtension`.
 - Downloads started on their own (CreateMediaAssetDownload) have no
-  `workflowId`; the asset agents may assume one.
+  `workflowId`; the asset agent tracks them but leaves the files in
+  NZBGet's destination directory (nothing stages or transcodes them).
 - `bypassCache` is optional on batch and metadata job messages (the
   metadata agent treats absent as false).
 - The API accepts batch jobs for `tv_seasons` and `tv_episodes`, which no

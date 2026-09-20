@@ -108,6 +108,15 @@ export class DownloadUpdateHandler {
             return;
           }
 
+          // Started on its own (CreateMediaAssetDownload): nothing to
+          // stage or transcode, so the files stay where NZBGet put them.
+          if (!download.workflowId) {
+            this.logger.log(
+              `Download with nzbId ${nzbId} has no workflow, leaving it in ${msg.destDirectory}`,
+            );
+            return;
+          }
+
           if (!fs.existsSync(`${stagingDir}/${download.workflowId}`)) {
             fs.mkdirSync(`${stagingDir}/${download.workflowId}`, {
               recursive: true,
@@ -159,7 +168,7 @@ export class DownloadUpdateHandler {
             this.amqpConnection,
             MEDIA_ROUTES.extractMetadata,
             {
-              workflowId: download.workflowId!,
+              workflowId: download.workflowId,
               mediaType: "original",
               mediaExtension: originalExtension!,
             },

@@ -98,6 +98,43 @@ describe("StartDownloadHandler", () => {
     );
   });
 
+  describe("started on its own (no workflow)", () => {
+    const standalone = { ...msg, workflowId: undefined };
+
+    it("queues the NZB without staging anything", async () => {
+      nzbGet.append.mockResolvedValue({ status: 200, data: { result: 17 } });
+
+      await handler().handle(standalone);
+
+      expect(mediaApi.updateMediaAssetDownload).toHaveBeenCalledWith(
+        "movie",
+        42,
+        "result-1",
+        "download-1",
+        { nzbId: 17 },
+      );
+      expect(fs.readdirSync(stagingDirectory)).toEqual([]);
+    });
+
+    it("fails only the download", async () => {
+      nzbGet.append.mockResolvedValue({
+        status: 200,
+        data: { result: false, error: "no" },
+      });
+
+      await handler().handle(standalone);
+
+      expect(mediaApi.updateMediaAssetDownload).toHaveBeenCalledWith(
+        "movie",
+        42,
+        "result-1",
+        "download-1",
+        expect.objectContaining({ status: "failed" }),
+      );
+      expect(mediaApi.updateMediaAssetWorkflow).not.toHaveBeenCalled();
+    });
+  });
+
   it.each([
     ["NZBGeek fails", () => nzbGeek.getNzb.mockRejectedValue(new Error("503"))],
     [

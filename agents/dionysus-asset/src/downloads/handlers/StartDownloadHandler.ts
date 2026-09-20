@@ -73,20 +73,23 @@ export class StartDownloadHandler {
           },
         );
 
-        if (!fs.existsSync(`${stagingDir}/${msg.workflowId}`)) {
-          this.logger.debug(
-            `Creating workflow directory: ${stagingDir}/${msg.workflowId}`,
-          );
-          fs.mkdirSync(`${stagingDir}/${msg.workflowId}`, { recursive: true });
-        }
+        // Downloads started on their own have no workflow to stage for.
+        if (msg.workflowId) {
+          const workflowDir = `${stagingDir}/${msg.workflowId}`;
 
-        this.logger.log(
-          `Writing NZB metadata to ${stagingDir}/${msg.workflowId}/nzbMeta.json`,
-        );
-        fs.writeFileSync(
-          `${stagingDir}/${msg.workflowId}/nzbMeta.json`,
-          JSON.stringify(metadata),
-        );
+          if (!fs.existsSync(workflowDir)) {
+            this.logger.debug(`Creating workflow directory: ${workflowDir}`);
+            fs.mkdirSync(workflowDir, { recursive: true });
+          }
+
+          this.logger.log(
+            `Writing NZB metadata to ${workflowDir}/nzbMeta.json`,
+          );
+          fs.writeFileSync(
+            `${workflowDir}/nzbMeta.json`,
+            JSON.stringify(metadata),
+          );
+        }
       } else {
         this.logger.error(
           `Failed to add NZB to NZBGet: ${rpcResponse.data.error}`,
@@ -102,7 +105,7 @@ export class StartDownloadHandler {
 
       try {
         await this.failDownload(
-          msg.workflowId!,
+          msg.workflowId,
           msg.mediaType,
           msg.mediaId,
           msg.resultId,
@@ -120,7 +123,7 @@ export class StartDownloadHandler {
   }
 
   private async failDownload(
-    workflowId: string,
+    workflowId: string | undefined,
     mediaType: MediaAssetType,
     mediaId: number,
     resultId: string,
@@ -138,9 +141,11 @@ export class StartDownloadHandler {
       },
     );
 
-    await this.mediaApi.updateMediaAssetWorkflow(workflowId, {
-      status: "failed",
-      finishedTime: now.toISOString(),
-    });
+    if (workflowId) {
+      await this.mediaApi.updateMediaAssetWorkflow(workflowId, {
+        status: "failed",
+        finishedTime: now.toISOString(),
+      });
+    }
   }
 }

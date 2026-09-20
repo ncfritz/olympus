@@ -142,6 +142,25 @@ describe("DownloadUpdateHandler", () => {
     expect(nzbGet.deleteHistory).toHaveBeenCalledWith(17);
   });
 
+  it("leaves a download without a workflow where NZBGet put it", async () => {
+    mediaApi.updateMediaAssetDownloadByNzbId.mockResolvedValue({
+      status: 200,
+      data: { download: { workflowId: null } },
+    });
+    fs.writeFileSync(`${root}/complete/movie.mkv`, "video");
+
+    await handler().handle(postProcess("SUCCESS/ALL", `${root}/complete`));
+
+    expect(mediaApi.updateMediaAssetDownloadByNzbId).toHaveBeenCalledWith(
+      17,
+      expect.objectContaining({ status: "success" }),
+      "downloaded",
+    );
+    expect(fs.existsSync(`${root}/complete/movie.mkv`)).toBe(true);
+    expect(fs.existsSync(`${root}/staging`)).toBe(false);
+    expect(amqp.publish).not.toHaveBeenCalled();
+  });
+
   it("skips downloads the API does not know", async () => {
     mediaApi.updateMediaAssetDownloadByNzbId.mockResolvedValue({
       status: 404,
