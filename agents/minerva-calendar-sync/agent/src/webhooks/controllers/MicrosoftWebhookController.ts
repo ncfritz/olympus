@@ -1,4 +1,12 @@
-import { Body, Controller, HttpCode, Post, Query, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Post,
+  Query,
+  Res,
+  VERSION_NEUTRAL,
+} from "@nestjs/common";
 import { ApiExcludeController } from "@nestjs/swagger";
 import type { Response } from "express";
 import { Public } from "../../auth/public";
@@ -24,15 +32,17 @@ interface GraphNotificationBody {
  *    change — the same "something may have changed" signal
  *    WebhookNotifier.handleNotification expects, called once per entry.
  */
-@ApiExcludeController() // for Microsoft, not an app client — not part of the public API surface
+// A provider callback (ADR 0016): the path is registered with Microsoft, so
+// it is unversioned and outside the management API document.
+@ApiExcludeController()
 @Public()
-@Controller("webhooks")
-export class MicrosoftWebhooksController {
+@Controller({ version: VERSION_NEUTRAL })
+export class MicrosoftWebhookController {
   constructor(private readonly webhookNotifier: WebhookNotifier) {}
 
-  @Post("microsoft")
+  @Post("/webhooks/microsoft")
   @HttpCode(200)
-  handleMicrosoftNotification(
+  handle(
     @Query("validationToken") validationToken: string | undefined,
     @Body() body: GraphNotificationBody | undefined,
     @Res() res: Response,

@@ -14,6 +14,7 @@ import { OverridesModule } from "./overrides/OverridesModule";
 import { StoreModule } from "./store/StoreModule";
 import { SyncModule } from "./sync/SyncModule";
 import { SyncRunsModule } from "./syncRuns/SyncRunsModule";
+import { WebhooksModule } from "./webhooks/WebhooksModule";
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { SyncRunsModule } from "./syncRuns/SyncRunsModule";
     AuthModule,
     StoreModule,
     SyncModule,
+    WebhooksModule,
     SyncRunsModule,
     EventsModule,
     CalendarsModule,

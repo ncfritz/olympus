@@ -13,7 +13,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 // it must be reachable with no access token (neither provider can present
 // one), must never 500 on a handshake or an unrecognized channel, and for
 // Microsoft specifically must echo the validationToken synchronously as
-// text/plain (see microsoft-webhooks.controller.ts).
+// text/plain (see MicrosoftWebhookController).
 describe("Webhooks (e2e)", () => {
   let app: INestApplication;
 

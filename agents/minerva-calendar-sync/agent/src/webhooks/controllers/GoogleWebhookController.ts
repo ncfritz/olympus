@@ -1,4 +1,10 @@
-import { Controller, Headers, HttpCode, Post } from "@nestjs/common";
+import {
+  Controller,
+  Headers,
+  HttpCode,
+  Post,
+  VERSION_NEUTRAL,
+} from "@nestjs/common";
 import { ApiExcludeController } from "@nestjs/swagger";
 import { Public } from "../../auth/public";
 import { WebhookNotifier } from "../../sync/services/WebhookNotifier";
@@ -9,15 +15,17 @@ import { WebhookNotifier } from "../../sync/services/WebhookNotifier";
  * actual diff/upsert happens via SyncEngine once WebhookNotifier signals
  * a change, same as a poll tick.
  */
-@ApiExcludeController() // for Google, not an app client — not part of the public API surface
+// A provider callback (ADR 0016): the path is registered with Google, so it
+// is unversioned and outside the management API document.
+@ApiExcludeController()
 @Public()
-@Controller("webhooks")
-export class WebhooksController {
+@Controller({ version: VERSION_NEUTRAL })
+export class GoogleWebhookController {
   constructor(private readonly webhookNotifier: WebhookNotifier) {}
 
-  @Post("google")
+  @Post("/webhooks/google")
   @HttpCode(200)
-  handleGoogleNotification(
+  handle(
     @Headers("x-goog-channel-id") channelId: string | undefined,
     @Headers("x-goog-resource-state") resourceState: string | undefined,
     @Headers("x-goog-channel-token") token: string | undefined,

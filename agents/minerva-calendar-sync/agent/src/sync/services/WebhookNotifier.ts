@@ -23,7 +23,7 @@ interface ChannelRegistration {
  * actual change — so, like PollingNotifier, this only ever signals
  * "something may have changed" for SyncEngine to handle. Each provider gets
  * its own receiving endpoint at `/webhooks/{provider.id}` (see
- * WebhooksController, MicrosoftWebhooksController), both funneling into
+ * GoogleWebhookController, MicrosoftWebhookController), both funneling into
  * `handleNotification` below.
  *
  * Requires WEBHOOK_BASE_URL to be a real, publicly reachable HTTPS endpoint
@@ -111,7 +111,7 @@ export class WebhookNotifier implements ChangeNotifier {
     }
   }
 
-  /** Called by WebhooksController/MicrosoftWebhooksController for every incoming push notification. */
+  /** Called by GoogleWebhookController/MicrosoftWebhookController for every incoming push notification. */
   handleNotification(channelId: string, token: string | undefined): void {
     const calendarId = this.calendarIdByChannelId.get(channelId);
     if (!calendarId) {
