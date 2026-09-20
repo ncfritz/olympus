@@ -1,5 +1,5 @@
-import { PrismaEventStore } from "../../src/store/prisma/prisma-event-store";
-import { PrismaService } from "../../src/store/prisma/prisma.service";
+import { PrismaEventStore } from "../../src/store/prisma/PrismaEventStore";
+import { PrismaService } from "../../src/store/prisma/PrismaService";
 import { testPrismaEventStoreContract } from "../support/prisma-event-store.contract";
 import { afterEach, beforeEach, describe } from "vitest";
 

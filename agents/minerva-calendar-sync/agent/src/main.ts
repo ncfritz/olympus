@@ -3,7 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import cookieParser from "cookie-parser";
-import { AppModule } from "./app.module";
+import { AppModule } from "./AppModule";
 import { buildOpenApiDocument } from "./openapi";
 
 async function bootstrap() {

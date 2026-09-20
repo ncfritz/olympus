@@ -1,6 +1,6 @@
-import { CanonicalCalendarEvent } from "../../src/domain/canonical-event";
-import { PrismaEventStore } from "../../src/store/prisma/prisma-event-store";
-import { PrismaService } from "../../src/store/prisma/prisma.service";
+import { CanonicalCalendarEvent } from "../../src/domain/canonicalEvent";
+import { PrismaEventStore } from "../../src/store/prisma/PrismaEventStore";
+import { PrismaService } from "../../src/store/prisma/PrismaService";
 import { describe, expect, it } from "vitest";
 
 function fixtureEvent(

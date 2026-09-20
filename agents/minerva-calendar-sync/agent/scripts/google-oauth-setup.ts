@@ -13,12 +13,12 @@ import "dotenv/config";
 import {
   saveGoogleCredential,
   requireEnv,
-} from "../src/providers/google/google-credential-store";
+} from "../src/providers/google/googleCredentialStore";
 import {
   createLoopbackClient,
   waitForAuthorizationCode,
-} from "../src/providers/google/google-loopback-auth";
-import { GOOGLE_CALENDAR_SCOPES } from "../src/providers/google/google-oauth-scopes";
+} from "../src/providers/google/googleLoopbackAuth";
+import { GOOGLE_CALENDAR_SCOPES } from "../src/providers/google/googleOauthScopes";
 
 async function main(): Promise<void> {
   const label = parseLabelArg();

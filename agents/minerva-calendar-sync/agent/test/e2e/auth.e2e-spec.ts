@@ -1,8 +1,8 @@
 import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
-import { AppModule } from "../../src/app.module";
-import { AuthTokenService } from "../../src/auth/auth-token.service";
+import { AppModule } from "../../src/AppModule";
+import { AuthTokenService } from "../../src/auth/services/AuthTokenService";
 import { E2E_ALLOWED_EMAIL, issueE2eAccessToken } from "./auth-fixtures";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 

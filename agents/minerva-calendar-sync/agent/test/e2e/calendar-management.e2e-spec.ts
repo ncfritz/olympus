@@ -1,8 +1,8 @@
 import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
-import { AppModule } from "../../src/app.module";
-import { saveGoogleCredential } from "../../src/providers/google/google-credential-store";
+import { AppModule } from "../../src/AppModule";
+import { saveGoogleCredential } from "../../src/providers/google/googleCredentialStore";
 import { issueE2eAccessToken } from "./auth-fixtures";
 import { seedCalendar } from "./calendar-fixtures";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";

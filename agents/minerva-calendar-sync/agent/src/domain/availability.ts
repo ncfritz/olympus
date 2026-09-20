@@ -1,4 +1,4 @@
-import { FreeBusyStatus } from "./canonical-event";
+import { FreeBusyStatus } from "./canonicalEvent";
 
 /**
  * The four-level status shown on the availability grid — distinct from

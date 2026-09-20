@@ -11,7 +11,7 @@ import { dump } from "js-yaml";
 import { join } from "path";
 import { DocumentBuilder } from "@nestjs/swagger";
 import { NestFactory } from "@nestjs/core";
-import { AppModule } from "../src/app.module";
+import { AppModule } from "../src/AppModule";
 import { buildOpenApiDocument } from "../src/openapi";
 
 const OUTPUT_PATH = join(

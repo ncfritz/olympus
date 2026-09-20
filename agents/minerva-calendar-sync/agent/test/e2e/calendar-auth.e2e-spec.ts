@@ -1,7 +1,7 @@
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
-import { AppModule } from "../../src/app.module";
+import { AppModule } from "../../src/AppModule";
 import { issueE2eAccessToken } from "./auth-fixtures";
 import { seedCalendar } from "./calendar-fixtures";
 import { afterEach, describe, expect, it } from "vitest";

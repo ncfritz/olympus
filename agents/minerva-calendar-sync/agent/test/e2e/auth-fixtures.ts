@@ -1,5 +1,5 @@
 import { INestApplication } from "@nestjs/common";
-import { AuthTokenService } from "../../src/auth/auth-token.service";
+import { AuthTokenService } from "../../src/auth/services/AuthTokenService";
 
 /** Must match the AUTH_ALLOWED_EMAILS entry set in env-setup.ts. */
 export const E2E_ALLOWED_EMAIL = "e2e@example.com";

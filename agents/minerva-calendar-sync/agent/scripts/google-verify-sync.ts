@@ -9,8 +9,8 @@
  */
 import "dotenv/config";
 import { calendar_v3 } from "googleapis";
-import { GoogleCalendarProvider } from "../src/providers/google/google-calendar-provider";
-import { createAuthorizedGoogleClient } from "../src/providers/google/google-credential-store";
+import { GoogleCalendarProvider } from "../src/providers/google/GoogleCalendarProvider";
+import { createAuthorizedGoogleClient } from "../src/providers/google/googleCredentialStore";
 
 async function main(): Promise<void> {
   const label = requireArg("--label");

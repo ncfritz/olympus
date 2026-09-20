@@ -2,8 +2,8 @@ import { INestApplication } from "@nestjs/common";
 import {
   SYNCED_CALENDAR_STORE,
   SyncedCalendarStore,
-} from "../../src/store/synced-calendar-store";
-import { SyncedCalendarConfig } from "../../src/sync/synced-calendar-config";
+} from "../../src/store/syncedCalendarStore";
+import { SyncedCalendarConfig } from "../../src/sync/syncedCalendarConfig";
 
 /**
  * Seeds a calendar directly into the DB-backed store, bypassing the API —

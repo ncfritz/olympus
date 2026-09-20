@@ -1,9 +1,9 @@
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
-import { AppModule } from "../../src/app.module";
-import { CanonicalCalendarEvent } from "../../src/domain/canonical-event";
-import { EVENT_STORE, EventStore } from "../../src/store/event-store";
+import { AppModule } from "../../src/AppModule";
+import { CanonicalCalendarEvent } from "../../src/domain/canonicalEvent";
+import { EVENT_STORE, EventStore } from "../../src/store/eventStore";
 import { issueE2eAccessToken } from "./auth-fixtures";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
