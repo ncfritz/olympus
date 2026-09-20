@@ -13,6 +13,7 @@
     "noImplicitReturns": false,
     // Tests and scripts are type-checked with the sources (Jest, ts-node).
     "rootDir": "${configDir}",
+    "types": ["node", "jest"],
     "incremental": true
   },
   "include": [
