@@ -1,3 +1,4 @@
-import node from "@ncfritz/olympus-config/vitest/node";
+import nest from "@ncfritz/olympus-config/vitest/nest";
 
-export default node;
+// SWC, for the decorators of MetricsModule and ExecuteWithMetrics.
+export default nest;

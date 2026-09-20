@@ -1,6 +1,6 @@
 {
   "name": "@ncfritz/olympus-nest",
-  "description": "NestJS infrastructure shared by the Olympus API and agents: typed configuration, logging, client metrics",
+  "description": "NestJS infrastructure shared by the Olympus API and agents: typed configuration, logging, metrics",
   "version": "0.0.0",
   "private": true,
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
@@ -17,19 +17,29 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@ncfritz/olympus-metrics": "workspace:*",
     "@nestjs/common": "catalog:",
-    "nestjs-metrics-reporter": "catalog:",
+    "@nestjs/swagger": "catalog:",
+    "prom-client": "catalog:",
     "winston": "catalog:",
     "winston-daily-rotate-file": "catalog:",
     "winston-loki": "catalog:"
   },
   "devDependencies": {
     "@ncfritz/olympus-config": "workspace:*",
+    "@nestjs/core": "catalog:",
+    "@nestjs/platform-express": "^11.1.23",
+    "@nestjs/testing": "catalog:",
+    "@swc/core": "catalog:",
     "@types/node": "catalog:",
+    "@types/supertest": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
+    "reflect-metadata": "catalog:",
+    "supertest": "catalog:",
     "typescript": "catalog:",
+    "unplugin-swc": "catalog:",
     "vitest": "catalog:"
   }
 }

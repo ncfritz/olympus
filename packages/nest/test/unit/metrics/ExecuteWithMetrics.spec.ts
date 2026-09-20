@@ -1,120 +1,101 @@
-import { ReporterService } from "nestjs-metrics-reporter";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { HTTP_CLIENT_REQUEST_DURATION } from "@ncfritz/olympus-metrics";
+import { register } from "prom-client";
+import { beforeEach, describe, expect, it } from "vitest";
 import { ExecuteWithMetrics } from "../../../src/metrics/ExecuteWithMetrics";
+import { requestCounts } from "../../support/metrics";
 
-vi.mock("nestjs-metrics-reporter", () => ({
-  ReporterService: { counter: vi.fn(), histogram: vi.fn() },
-}));
+type Response = { status?: number; config?: { method?: string } };
 
-class Client {
-  next: () => Promise<{ status?: number }> = async () => ({ status: 200 });
+class TmdbClient {
+  next: () => Promise<Response> = async () => ({
+    status: 200,
+    config: { method: "get" },
+  });
 
-  async call(): Promise<{ status?: number } | undefined> {
+  @ExecuteWithMetrics("TMDB.Movie.Details")
+  async movie(): Promise<Response | undefined> {
+    return this.next();
+  }
+
+  @ExecuteWithMetrics("SendNotification", {
+    server: "olympus-api",
+    api: "olympus",
+    tag: "Notifications",
+  })
+  async notify(): Promise<Response | undefined> {
     return this.next();
   }
 }
-// Applied by hand: this package's tests run without decorator support.
-Object.defineProperty(
-  Client.prototype,
-  "call",
-  ExecuteWithMetrics("Op")(
-    Client.prototype,
-    "call",
-    Object.getOwnPropertyDescriptor(Client.prototype, "call")!,
-  ),
-);
 
-/** The counters recorded, by name. */
-const counters = () =>
-  Object.fromEntries(
-    vi
-      .mocked(ReporterService.counter)
-      .mock.calls.map(([name, , value]) => [name, value]),
-  );
+const counts = () => requestCounts(HTTP_CLIENT_REQUEST_DURATION);
+const labels = (overrides: Record<string, string> = {}) =>
+  JSON.stringify({
+    client: "unknown",
+    server: "tmdb",
+    api: "tmdb",
+    tag: "unknown",
+    operation: "Movie.Details",
+    method: "GET",
+    status_code: "200",
+    ...overrides,
+  });
 
 describe("ExecuteWithMetrics", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => register.resetMetrics());
 
-  it("counts the call by status class", async () => {
-    await expect(new Client().call()).resolves.toEqual({ status: 200 });
-    expect(counters()).toEqual({
-      client_Op_count: 1,
-      client_Op_error: 0,
-      client_Op_fatal: 0,
-      client_Op_exception: 0,
-      client_Op_throttles: 0,
-      client_Op_1xx: 0,
-      client_Op_2xx: 1,
-      client_Op_3xx: 0,
-      client_Op_4xx: 0,
-      client_Op_5xx: 0,
+  it("records the call, taking the service from the operation's prefix", async () => {
+    await expect(new TmdbClient().movie()).resolves.toMatchObject({
+      status: 200,
     });
-    expect(ReporterService.histogram).toHaveBeenCalledWith(
-      "client_Op_latency",
-      expect.any(Number),
-    );
+    expect(await counts()).toEqual({ [labels()]: 1 });
   });
 
-  it("marks 5xx responses fatal", async () => {
-    const client = new Client();
-    client.next = async () => ({ status: 503 });
-    await client.call();
-    expect(counters()).toMatchObject({ client_Op_5xx: 1, client_Op_fatal: 1 });
-  });
-
-  it("counts throttled calls", async () => {
-    const client = new Client();
-    client.next = async () => ({ status: 429 });
-    await client.call();
-    expect(counters()).toMatchObject({
-      client_Op_throttles: 1,
-      client_Op_4xx: 1,
-      client_Op_error: 1,
+  it("records an explicit target", async () => {
+    await new TmdbClient().notify();
+    expect(await counts()).toEqual({
+      [JSON.stringify({
+        client: "unknown",
+        server: "olympus-api",
+        api: "olympus",
+        tag: "Notifications",
+        operation: "SendNotification",
+        method: "GET",
+        status_code: "200",
+      })]: 1,
     });
   });
 
-  it("names metrics as Prometheus allows", async () => {
-    class Dotted {
-      async call() {
-        return { status: 200 };
-      }
-    }
-    Object.defineProperty(
-      Dotted.prototype,
-      "call",
-      ExecuteWithMetrics("TMDB.Movie.Details")(
-        Dotted.prototype,
-        "call",
-        Object.getOwnPropertyDescriptor(Dotted.prototype, "call")!,
-      ),
-    );
-    await new Dotted().call();
-    const names = vi
-      .mocked(ReporterService.counter)
-      .mock.calls.map(([name]) => name);
-    expect(names).toContain("client_TMDB_Movie_Details_count");
-    expect(names.every((name) => /^[a-zA-Z_:][a-zA-Z0-9_:]*$/.test(name))).toBe(
-      true,
-    );
+  it("records the status of a failed call", async () => {
+    const client = new TmdbClient();
+    client.next = async () => {
+      throw Object.assign(new Error("down"), {
+        response: { status: 503, config: { method: "get" } },
+      });
+    };
+    await expect(client.movie()).rejects.toThrow("down");
+    expect(await counts()).toEqual({ [labels({ status_code: "503" })]: 1 });
+  });
+
+  it("records a call that got no response", async () => {
+    const client = new TmdbClient();
+    client.next = async () => {
+      throw Object.assign(new Error("timeout"), {
+        request: {},
+        config: { method: "get" },
+      });
+    };
+    await expect(client.movie()).rejects.toThrow("timeout");
+    expect(await counts()).toEqual({ [labels({ status_code: "none" })]: 1 });
   });
 
   it("resolves a 404 to undefined", async () => {
-    const client = new Client();
+    const client = new TmdbClient();
     client.next = async () => {
       throw Object.assign(new Error("not found"), {
-        response: { status: 404 },
+        response: { status: 404, config: { method: "get" } },
       });
     };
-    await expect(client.call()).resolves.toBeUndefined();
-    expect(counters()).toMatchObject({ client_Op_exception: 1 });
-  });
-
-  it("rethrows other failures", async () => {
-    const client = new Client();
-    client.next = async () => {
-      throw Object.assign(new Error("down"), { request: {} });
-    };
-    await expect(client.call()).rejects.toThrow("down");
-    expect(counters()).toMatchObject({ client_Op_exception: 1 });
+    await expect(client.movie()).resolves.toBeUndefined();
+    expect(await counts()).toEqual({ [labels({ status_code: "404" })]: 1 });
   });
 });

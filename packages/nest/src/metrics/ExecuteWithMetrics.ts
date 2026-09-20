@@ -1,30 +1,51 @@
+import { type RequestMetrics, UNKNOWN } from "@ncfritz/olympus-metrics";
+import { createPrometheusRequestMetrics } from "@ncfritz/olympus-metrics/prometheus";
 import { Logger } from "@nestjs/common";
-import { ReporterService } from "nestjs-metrics-reporter";
+import { metricsClientName } from "./MetricsModule";
 
-export type ExecuteWithMetricsOptions = Record<string, never>;
+/** The service a decorated method calls (the `server` and `api` labels). */
+export interface ExecuteWithMetricsTarget {
+  server: string;
+  /** Defaults to `server`. */
+  api?: string;
+  tag?: string;
+}
 
-type HttpError = { response?: { status?: number }; request?: unknown };
+type HttpResponse = { status?: number; config?: { method?: string } };
+type HttpError = {
+  response?: HttpResponse;
+  request?: unknown;
+  config?: { method?: string };
+};
 
 const logger = new Logger("ExecuteWithMetrics");
 
+let metrics: RequestMetrics | undefined;
+const requestMetrics = () => (metrics ??= createPrometheusRequestMetrics());
+
 /**
- * Records client metrics for an async method that makes an HTTP call and
- * resolves to a response with a `status`:
+ * Records http_client_request_duration_seconds (ADR 0017) for an async
+ * method that makes one HTTP call with axios and resolves to its response:
+ * `client` is this service (MetricsModule's `app`), `operation` the name
+ * given, `method` and `status_code` from the response or error.
  *
- * - `client_<operation>_count` and `_latency` (milliseconds)
- * - `client_<operation>_1xx` ... `_5xx`, by the response status
- * - `client_<operation>_error` (4xx), `_fatal` (5xx), `_throttles` (429)
- *   and `_exception` (the call threw)
+ * Without a target, an operation "TMDB.Movie.Details" records server and
+ * api "tmdb" and operation "Movie.Details".
  *
- * A call that fails with 404 resolves to `undefined` instead of throwing.
- * Characters Prometheus doesn't allow in names (e.g. the dots of
- * `TMDB.Movie.Details`) become underscores.
+ * A call that fails with 404 resolves to `undefined` instead of throwing
+ * (see "Not-found handling" in docs/roadmap.md).
  */
 export function ExecuteWithMetrics(
   operation: string,
-  _options?: ExecuteWithMetricsOptions,
+  target?: ExecuteWithMetricsTarget,
 ) {
-  const metric = `client_${operation.replace(/[^a-zA-Z0-9_:]/g, "_")}`;
+  const dot = operation.indexOf(".");
+  const server =
+    target?.server ??
+    (dot > 0 ? operation.slice(0, dot).toLowerCase() : UNKNOWN);
+  const name = target || dot < 0 ? operation : operation.slice(dot + 1);
+  const api = target?.api ?? server;
+  const tag = target?.tag ?? UNKNOWN;
 
   return function (
     _target: object,
@@ -34,48 +55,34 @@ export function ExecuteWithMetrics(
     const originalFunction = descriptor.value;
 
     descriptor.value = async function (...args: unknown[]) {
-      let response: { status?: number } | undefined;
-
-      const start = Date.now();
-      let exception = 0;
+      const start = performance.now();
+      let response: HttpResponse | undefined;
+      let error: HttpError | undefined;
 
       try {
         response = await originalFunction.apply(this, args);
         return response;
       } catch (e) {
-        exception = 1;
-        const error = e as HttpError;
-
-        if (error.response) {
-          if (error.response.status === 404) {
-            return undefined;
-          }
-        } else if (error.request) {
+        error = e as HttpError;
+        if (error.response?.status === 404) {
+          return undefined;
+        }
+        if (!error.response && error.request) {
           logger.warn(`${operation}: no response received`);
         }
-
         throw e;
       } finally {
-        const latency = Date.now() - start;
-        const status = response?.status ?? 0;
-        const inRange = (low: number) =>
-          status >= low && status <= low + 99 ? 1 : 0;
-
-        ReporterService.counter(`${metric}_count`, {}, 1);
-        ReporterService.histogram(`${metric}_latency`, latency);
-        ReporterService.counter(`${metric}_error`, {}, inRange(400));
-        ReporterService.counter(`${metric}_fatal`, {}, inRange(500));
-        ReporterService.counter(`${metric}_exception`, {}, exception);
-        ReporterService.counter(
-          `${metric}_throttles`,
-          {},
-          status === 429 ? 1 : 0,
-        );
-        ReporterService.counter(`${metric}_1xx`, {}, inRange(100));
-        ReporterService.counter(`${metric}_2xx`, {}, inRange(200));
-        ReporterService.counter(`${metric}_3xx`, {}, inRange(300));
-        ReporterService.counter(`${metric}_4xx`, {}, inRange(400));
-        ReporterService.counter(`${metric}_5xx`, {}, inRange(500));
+        const answered = response ?? error?.response;
+        requestMetrics().observeClientRequest({
+          client: metricsClientName(),
+          server,
+          api,
+          tag,
+          operation: name,
+          method: answered?.config?.method ?? error?.config?.method ?? UNKNOWN,
+          statusCode: answered?.status,
+          durationSeconds: (performance.now() - start) / 1000,
+        });
       }
     };
 

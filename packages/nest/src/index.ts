@@ -5,3 +5,5 @@ export * from "./config/logging";
 export * from "./config/runtime";
 export * from "./logging/createWinstonLogger";
 export * from "./metrics/ExecuteWithMetrics";
+export * from "./metrics/httpServerMetrics";
+export * from "./metrics/MetricsModule";
