@@ -184,9 +184,9 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     workflow staged as workflow `undefined`; NaN progress for downloads
     under 1 MB; a "multiple media files" warning on every download;
     burned-in subtitle choice depending on track order; startup failing
-    without a SOCKS proxy; the cleanup request published non-persistent.
-  - `createMediaAsset` records every transcode at
-    `/Dionysus/media/transcoded.mp4` rather than its library path.
+    without a SOCKS proxy; the cleanup request published non-persistent;
+    every media asset recorded at `/Dionysus/media/transcoded.mp4`
+    instead of its library path.
   - In `DEPLOYMENT_MODE=local`, `MediaWorkflow.downloadFile` returns the
     file's text where the handlers expect parsed JSON (the CDN path
     parses it), so local transcodes can't read their job.

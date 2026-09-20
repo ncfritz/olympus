@@ -302,7 +302,8 @@ export class TranscodeMediaHandler {
           width: videoStream.width!,
           height: videoStream.height!,
           durationMs: Math.ceil(Number(videoStream.duration) * 1000),
-          filePath: "/Dionysus/media/transcoded.mp4",
+          // Where the upload above put it on the library server.
+          filePath: run.libraryFilesToUpload["transcoded.mp4"],
         });
       }
 

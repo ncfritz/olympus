@@ -28,6 +28,7 @@ describe("TranscodeMediaHandler", () => {
         width: 1920,
         height: 1080,
         durationMs: 7_200_500,
+        filePath: "/Movies/T/The Matrix (1999).mp4",
       }),
     );
     expect(fakes.amqp.publish).toHaveBeenCalledWith(
