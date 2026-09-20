@@ -62,6 +62,28 @@ describe("selectTracks", () => {
     });
   });
 
+  it("finds the forced English subtitle wherever it is listed", () => {
+    const forced = { Attributes: { Forced: true } };
+
+    expect(selectTracks(scan(title(["eng"], [{}, {}, forced])))).toMatchObject({
+      subtitleTrackIndex: 3,
+      configurationRequiresApproval: false,
+      transcodeVerificationRequired: true,
+    });
+    expect(selectTracks(scan(title(["eng"], [forced, {}, {}])))).toMatchObject({
+      subtitleTrackIndex: 1,
+      configurationRequiresApproval: false,
+      transcodeVerificationRequired: true,
+    });
+  });
+
+  it("picks the first of several forced English subtitles", () => {
+    const forced = { Attributes: { Forced: true } };
+    expect(
+      selectTracks(scan(title(["eng"], [{}, forced, forced]))),
+    ).toMatchObject({ subtitleTrackIndex: 2 });
+  });
+
   it("asks for approval when several English subtitles are unforced", () => {
     expect(selectTracks(scan(title(["eng"], [{}, {}])))).toMatchObject({
       subtitleTrackIndex: undefined,

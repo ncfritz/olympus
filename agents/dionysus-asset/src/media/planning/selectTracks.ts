@@ -79,47 +79,25 @@ export const selectTracks = (metadata: HandbrakeScan): TrackSelection => {
     }
   }
 
-  if (subtitleTracks.length > 0) {
-    const engSubtitleTracks: { index: number; forced: boolean }[] = [];
+  const engSubtitleTracks = subtitleTracks
+    .filter((track) => track.LanguageCode === "eng")
+    .map((track) => ({
+      index: track.TrackNumber,
+      forced: track.Attributes.Forced === true,
+    }));
+  const forcedEngSubtitleTrack = engSubtitleTracks.find((t) => t.forced);
 
-    subtitleTracks.forEach((track) => {
-      if (track.LanguageCode === "eng") {
-        engSubtitleTracks.push({
-          index: track.TrackNumber,
-          forced: track.Attributes.Forced === true,
-        });
-      }
-
-      if (engSubtitleTracks.length > 1) {
-        logger.log(
-          "Multiple 'eng' subtitle track found, flagging transcode for verification",
-        );
-
-        engSubtitleTracks.forEach((subTrack) => {
-          if (subTrack.forced) {
-            logger.log(
-              `'eng' subtitle track at index ${subTrack.index} is forced, flagging transcode for verification`,
-            );
-
-            subtitleTrackIndex = subTrack.index;
-            transcodeVerificationRequired = true;
-          }
-        });
-
-        if (!subtitleTrackIndex) {
-          logger.log(
-            "Multiple 'eng' subtitle tracks found, flagging config for approval",
-          );
-          configurationRequiresApproval = true;
-        }
-      } else if (
-        engSubtitleTracks.length === 1 &&
-        engSubtitleTracks[0].forced
-      ) {
-        subtitleTrackIndex = engSubtitleTracks[0].index;
-        transcodeVerificationRequired = true;
-      }
-    });
+  if (forcedEngSubtitleTrack) {
+    logger.log(
+      `'eng' subtitle track at index ${forcedEngSubtitleTrack.index} is forced, flagging transcode for verification`,
+    );
+    subtitleTrackIndex = forcedEngSubtitleTrack.index;
+    transcodeVerificationRequired = true;
+  } else if (engSubtitleTracks.length > 1) {
+    logger.log(
+      "Multiple 'eng' subtitle tracks found, none forced, flagging config for approval",
+    );
+    configurationRequiresApproval = true;
   }
 
   if (subtitleTrackIndex) {
