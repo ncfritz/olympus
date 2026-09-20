@@ -4,6 +4,7 @@ import {
   MicrosoftGraphEvent,
   resolveMicrosoftRemoval,
 } from "../../../../src/providers/microsoft/microsoft-event-mapper";
+import { describe, expect, it } from "vitest";
 
 function baseEvent(
   overrides: Partial<MicrosoftGraphEvent> = {},

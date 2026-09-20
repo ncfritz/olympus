@@ -2,6 +2,7 @@ import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../../src/app.module";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 // The full "a real channel triggers SyncEngine" path is covered by
 // WebhookNotifier's own unit tests against a fake CalendarProvider — doing

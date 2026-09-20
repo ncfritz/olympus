@@ -5,6 +5,15 @@ import { join } from "path";
 import { PrismaEventStore } from "../../../../src/store/prisma/prisma-event-store";
 import { PrismaService } from "../../../../src/store/prisma/prisma.service";
 import { testPrismaEventStoreContract } from "../../../support/prisma-event-store.contract";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "vitest";
 
 const API_ROOT = join(__dirname, "..", "..", "..", "..");
 

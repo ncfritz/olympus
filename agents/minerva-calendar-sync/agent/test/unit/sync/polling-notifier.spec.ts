@@ -2,6 +2,7 @@ import { SchedulerRegistry } from "@nestjs/schedule";
 import { PollingNotifier } from "../../../src/sync/polling-notifier";
 import { SyncConfigService } from "../../../src/sync/sync-config.service";
 import { SyncedCalendarConfig } from "../../../src/sync/synced-calendar-config";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 function fakeSyncConfig(
   getCalendars: () => SyncedCalendarConfig[],
@@ -45,7 +46,7 @@ describe("PollingNotifier", () => {
       ]),
       scheduler,
     );
-    const onChange = jest.fn();
+    const onChange = vi.fn();
 
     notifier.start(onChange);
     await delay(5);
@@ -62,7 +63,7 @@ describe("PollingNotifier", () => {
       fakeSyncConfig(() => calendars),
       scheduler,
     );
-    const onChange = jest.fn();
+    const onChange = vi.fn();
 
     notifier.start(onChange);
     await delay(5);
@@ -97,7 +98,7 @@ describe("PollingNotifier", () => {
       ]),
       scheduler,
     );
-    const onChange = jest.fn();
+    const onChange = vi.fn();
 
     notifier.start(onChange);
     await delay(5);

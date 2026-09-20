@@ -2,6 +2,7 @@ import {
   combineAvailability,
   mapFreeBusyToAvailability,
 } from "../../../src/domain/availability";
+import { describe, expect, it } from "vitest";
 
 describe("mapFreeBusyToAvailability", () => {
   it("maps busy to busy", () => {

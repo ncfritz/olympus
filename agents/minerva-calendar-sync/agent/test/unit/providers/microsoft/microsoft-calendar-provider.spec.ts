@@ -1,6 +1,7 @@
 import { SyncWindow } from "../../../../src/providers/calendar-provider";
 import { MicrosoftCalendarProvider } from "../../../../src/providers/microsoft/microsoft-calendar-provider";
 import { MicrosoftAccessTokenProvider } from "../../../../src/providers/microsoft/microsoft-oauth";
+import { type Mock, afterEach, describe, expect, it, vi } from "vitest";
 
 const WINDOW: SyncWindow = {
   start: "2026-01-01T00:00:00.000Z",
@@ -18,13 +19,13 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 function providerWithMockFetch(): {
   provider: MicrosoftCalendarProvider;
-  fetchMock: jest.Mock;
+  fetchMock: Mock;
 } {
   const auth: MicrosoftAccessTokenProvider = {
-    getAccessToken: jest.fn().mockResolvedValue("access-token"),
+    getAccessToken: vi.fn().mockResolvedValue("access-token"),
   };
   const provider = new MicrosoftCalendarProvider(auth);
-  const fetchMock = jest.fn();
+  const fetchMock = vi.fn();
   (global as unknown as { fetch: typeof fetch }).fetch =
     fetchMock as unknown as typeof fetch;
   return { provider, fetchMock };
@@ -32,7 +33,7 @@ function providerWithMockFetch(): {
 
 describe("MicrosoftCalendarProvider", () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it("supportsPush returns true", () => {

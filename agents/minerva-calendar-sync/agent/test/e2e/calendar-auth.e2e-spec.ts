@@ -4,6 +4,7 @@ import request from "supertest";
 import { AppModule } from "../../src/app.module";
 import { issueE2eAccessToken } from "./auth-fixtures";
 import { seedCalendar } from "./calendar-fixtures";
+import { afterEach, describe, expect, it } from "vitest";
 
 // A never-real account label: GET /calendar-accounts resolves it via a
 // local-file lookup (tryLoadGoogleCredential), which just reports

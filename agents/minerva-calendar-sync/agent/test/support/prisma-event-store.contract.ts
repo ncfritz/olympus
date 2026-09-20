@@ -1,6 +1,7 @@
 import { CanonicalCalendarEvent } from "../../src/domain/canonical-event";
 import { PrismaEventStore } from "../../src/store/prisma/prisma-event-store";
 import { PrismaService } from "../../src/store/prisma/prisma.service";
+import { describe, expect, it } from "vitest";
 
 function fixtureEvent(
   overrides: Partial<CanonicalCalendarEvent> = {},

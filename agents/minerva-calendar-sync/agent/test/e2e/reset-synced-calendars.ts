@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { afterAll, beforeEach } from "vitest";
 
 // Synced calendars are now entirely DB-backed (no more ephemeral,
 // per-app-instance env config) — so unlike the rest of e2e state, fixtures

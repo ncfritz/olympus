@@ -1,6 +1,7 @@
 import { PrismaEventStore } from "../../src/store/prisma/prisma-event-store";
 import { PrismaService } from "../../src/store/prisma/prisma.service";
 import { testPrismaEventStoreContract } from "../support/prisma-event-store.contract";
+import { afterEach, beforeEach, describe } from "vitest";
 
 // Runs the exact same behavioral contract as
 // test/unit/store/prisma/prisma-event-store.spec.ts, but against a real

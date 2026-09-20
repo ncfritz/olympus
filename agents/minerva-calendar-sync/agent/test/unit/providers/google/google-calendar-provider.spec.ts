@@ -1,9 +1,10 @@
 import { OAuth2Client } from "google-auth-library";
 import { GoogleCalendarProvider } from "../../../../src/providers/google/google-calendar-provider";
+import { type Mock, describe, expect, it, vi } from "vitest";
 
 interface MockCalendarClient {
-  events: { watch: jest.Mock; list: jest.Mock; get: jest.Mock };
-  channels: { stop: jest.Mock };
+  events: { watch: Mock; list: Mock; get: Mock };
+  channels: { stop: Mock };
 }
 
 function providerWithMockCalendar(): {
@@ -12,8 +13,8 @@ function providerWithMockCalendar(): {
 } {
   const provider = new GoogleCalendarProvider(new OAuth2Client("id", "secret"));
   const calendar: MockCalendarClient = {
-    events: { watch: jest.fn(), list: jest.fn(), get: jest.fn() },
-    channels: { stop: jest.fn() },
+    events: { watch: vi.fn(), list: vi.fn(), get: vi.fn() },
+    channels: { stop: vi.fn() },
   };
   // GoogleCalendarProvider builds its own googleapis client internally; swapping
   // the private field for a mock avoids a real network-backed constructor param

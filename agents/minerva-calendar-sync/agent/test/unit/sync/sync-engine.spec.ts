@@ -29,6 +29,15 @@ import { PrismaService } from "../../../src/store/prisma/prisma.service";
 import { SyncRunStore } from "../../../src/store/sync-run-store";
 import { SyncEngine } from "../../../src/sync/sync-engine";
 import { SyncedCalendarConfig } from "../../../src/sync/synced-calendar-config";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "vitest";
 
 const API_ROOT = join(__dirname, "..", "..", "..");
 

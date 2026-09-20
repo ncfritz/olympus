@@ -2,6 +2,7 @@ import { ConfigService } from "@nestjs/config";
 import { NotFoundException } from "@nestjs/common";
 import { parseOidcProviders } from "../../../src/auth/oidc-provider.config";
 import { OidcProviderRegistry } from "../../../src/auth/oidc-provider-registry";
+import { describe, expect, it } from "vitest";
 
 function registryWithConfig(raw: string | undefined): OidcProviderRegistry {
   const config = { get: () => raw } as unknown as ConfigService;

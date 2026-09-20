@@ -5,6 +5,15 @@ import { join } from "path";
 import { NewSyncRun } from "../../../../src/domain/sync-run";
 import { PrismaSyncRunStore } from "../../../../src/store/prisma/prisma-sync-run-store";
 import { PrismaService } from "../../../../src/store/prisma/prisma.service";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "vitest";
 
 const API_ROOT = join(__dirname, "..", "..", "..", "..");
 

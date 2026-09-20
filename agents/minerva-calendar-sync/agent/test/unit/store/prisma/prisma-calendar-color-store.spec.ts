@@ -4,6 +4,15 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { PrismaCalendarColorStore } from "../../../../src/store/prisma/prisma-calendar-color-store";
 import { PrismaService } from "../../../../src/store/prisma/prisma.service";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "vitest";
 
 const API_ROOT = join(__dirname, "..", "..", "..", "..");
 

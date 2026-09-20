@@ -1,5 +1,6 @@
 import { ConfigService } from "@nestjs/config";
 import { AllowlistService } from "../../../src/auth/allowlist.service";
+import { describe, expect, it } from "vitest";
 
 function serviceWithConfig(
   allowedEmails: string | undefined,

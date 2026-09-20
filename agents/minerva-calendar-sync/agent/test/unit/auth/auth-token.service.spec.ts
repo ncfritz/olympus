@@ -1,5 +1,6 @@
 import { JwtService } from "@nestjs/jwt";
 import { AuthTokenService } from "../../../src/auth/auth-token.service";
+import { beforeEach, describe, expect, it } from "vitest";
 
 describe("AuthTokenService", () => {
   let tokens: AuthTokenService;

@@ -11,6 +11,15 @@ import { PrismaOverrideBlockStore } from "../../../src/store/prisma/prisma-overr
 import { PrismaService } from "../../../src/store/prisma/prisma.service";
 import { SyncConfigService } from "../../../src/sync/sync-config.service";
 import { SyncedCalendarConfig } from "../../../src/sync/synced-calendar-config";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "vitest";
 
 const API_ROOT = join(__dirname, "..", "..", "..");
 

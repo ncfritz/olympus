@@ -1,5 +1,6 @@
 import { readFileSync } from "fs";
 import { join } from "path";
+import { expect, it } from "vitest";
 
 const API_ROOT = join(__dirname, "..", "..", "..", "..");
 

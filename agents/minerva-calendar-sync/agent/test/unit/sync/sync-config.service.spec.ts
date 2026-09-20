@@ -2,6 +2,7 @@ import { ConflictException, NotFoundException } from "@nestjs/common";
 import { SyncedCalendarStore } from "../../../src/store/synced-calendar-store";
 import { SyncConfigService } from "../../../src/sync/sync-config.service";
 import { SyncedCalendarConfig } from "../../../src/sync/synced-calendar-config";
+import { describe, expect, it } from "vitest";
 
 const CALENDAR: SyncedCalendarConfig = {
   provider: "google",

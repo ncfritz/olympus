@@ -8,17 +8,18 @@ import { AllowlistService } from "../../../src/auth/allowlist.service";
 import { AuthTokenService } from "../../../src/auth/auth-token.service";
 import { ACCESS_TOKEN_COOKIE } from "../../../src/auth/auth.constants";
 import { JwtAuthGuard } from "../../../src/auth/jwt-auth.guard";
+import { type Mock, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("JwtAuthGuard", () => {
-  let reflector: { getAllAndOverride: jest.Mock };
-  let tokens: { verifyAccessToken: jest.Mock };
-  let allowlist: { isAllowed: jest.Mock };
+  let reflector: { getAllAndOverride: Mock };
+  let tokens: { verifyAccessToken: Mock };
+  let allowlist: { isAllowed: Mock };
   let guard: JwtAuthGuard;
 
   beforeEach(() => {
-    reflector = { getAllAndOverride: jest.fn().mockReturnValue(false) };
-    tokens = { verifyAccessToken: jest.fn() };
-    allowlist = { isAllowed: jest.fn().mockReturnValue(true) };
+    reflector = { getAllAndOverride: vi.fn().mockReturnValue(false) };
+    tokens = { verifyAccessToken: vi.fn() };
+    allowlist = { isAllowed: vi.fn().mockReturnValue(true) };
     guard = new JwtAuthGuard(
       reflector as unknown as Reflector,
       tokens as unknown as AuthTokenService,

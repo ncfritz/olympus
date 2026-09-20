@@ -3,6 +3,7 @@ import {
   mapGoogleEventToCanonical,
   resolveGoogleRemoval,
 } from "../../../../src/providers/google/google-event-mapper";
+import { describe, expect, it } from "vitest";
 
 type GoogleEvent = calendar_v3.Schema$Event;
 

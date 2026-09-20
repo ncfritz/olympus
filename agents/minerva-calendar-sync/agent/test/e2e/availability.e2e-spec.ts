@@ -5,6 +5,7 @@ import { AppModule } from "../../src/app.module";
 import { CanonicalCalendarEvent } from "../../src/domain/canonical-event";
 import { EVENT_STORE, EventStore } from "../../src/store/event-store";
 import { issueE2eAccessToken } from "./auth-fixtures";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 function fixtureEvent(
   overrides: Partial<CanonicalCalendarEvent> = {},

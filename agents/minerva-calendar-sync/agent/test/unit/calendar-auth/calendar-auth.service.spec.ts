@@ -6,19 +6,20 @@ import * as loopbackAuth from "../../../src/providers/google/google-loopback-aut
 import * as microsoftCredentialStore from "../../../src/providers/microsoft/microsoft-credential-store";
 import { SyncedCalendarStore } from "../../../src/store/synced-calendar-store";
 import { SyncConfigService } from "../../../src/sync/sync-config.service";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-jest.mock("../../../src/providers/google/google-credential-store");
-jest.mock("../../../src/providers/google/google-loopback-auth");
+vi.mock("../../../src/providers/google/google-credential-store");
+vi.mock("../../../src/providers/google/google-loopback-auth");
 // Mocked here (just the credential store, not the OAuth flow, since no test
 // in this file drives a loopback/token exchange for either provider) purely
 // so listStoredAccountLabels doesn't fall through to the real filesystem
 // and pick up whatever's actually been authorized on this machine, the same
 // concern GOOGLE_CREDENTIALS_DIR isolation addresses for e2e tests.
-jest.mock("../../../src/providers/microsoft/microsoft-credential-store");
+vi.mock("../../../src/providers/microsoft/microsoft-credential-store");
 
-const mockedStore = jest.mocked(credentialStore);
-const mockedLoopback = jest.mocked(loopbackAuth);
-const mockedMicrosoftStore = jest.mocked(microsoftCredentialStore);
+const mockedStore = vi.mocked(credentialStore);
+const mockedLoopback = vi.mocked(loopbackAuth);
+const mockedMicrosoftStore = vi.mocked(microsoftCredentialStore);
 
 const CALENDARS = [
   {
@@ -69,7 +70,7 @@ function makeService(
 
 describe("CalendarAuthService", () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     process.env.GOOGLE_OAUTH_CLIENT_ID = "client-id";
     process.env.GOOGLE_OAUTH_CLIENT_SECRET = "client-secret";
     mockedStore.requireEnv.mockImplementation((name: string) => {
@@ -192,7 +193,7 @@ describe("CalendarAuthService", () => {
       });
       const expiryDate = Date.parse("2026-09-16T12:00:00.000Z");
       mockedStore.createAuthorizedGoogleClient.mockReturnValue({
-        getAccessToken: jest.fn().mockResolvedValue({ token: "access-token" }),
+        getAccessToken: vi.fn().mockResolvedValue({ token: "access-token" }),
         credentials: { expiry_date: expiryDate },
       } as never);
 
@@ -217,7 +218,7 @@ describe("CalendarAuthService", () => {
         obtainedAt: "2026-01-01T00:00:00.000Z",
       });
       mockedStore.createAuthorizedGoogleClient.mockReturnValue({
-        getAccessToken: jest.fn().mockRejectedValue({
+        getAccessToken: vi.fn().mockRejectedValue({
           response: {
             data: {
               error: "invalid_grant",
@@ -242,7 +243,7 @@ describe("CalendarAuthService", () => {
         obtainedAt: "2026-01-01T00:00:00.000Z",
       });
       mockedStore.createAuthorizedGoogleClient.mockReturnValue({
-        getAccessToken: jest.fn().mockRejectedValue(new Error("network down")),
+        getAccessToken: vi.fn().mockRejectedValue(new Error("network down")),
         credentials: {},
       } as never);
 
@@ -263,10 +264,10 @@ describe("CalendarAuthService", () => {
     it("returns an authUrl immediately and reports reauth_pending until the flow completes", async () => {
       mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
       const client = {
-        generateAuthUrl: jest
+        generateAuthUrl: vi
           .fn()
           .mockReturnValue("https://accounts.google.com/o/oauth2/auth?..."),
-        getToken: jest.fn().mockResolvedValue({
+        getToken: vi.fn().mockResolvedValue({
           tokens: { refresh_token: "new-refresh-token", scope: "scope" },
         }),
       };
@@ -302,7 +303,7 @@ describe("CalendarAuthService", () => {
       mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
       mockedLoopback.createLoopbackClient.mockResolvedValue({
         client: {
-          generateAuthUrl: jest
+          generateAuthUrl: vi
             .fn()
             .mockReturnValue("https://accounts.google.com/first"),
         } as never,
@@ -324,7 +325,7 @@ describe("CalendarAuthService", () => {
       mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
       mockedLoopback.createLoopbackClient.mockResolvedValue({
         client: {
-          generateAuthUrl: jest
+          generateAuthUrl: vi
             .fn()
             .mockReturnValue("https://accounts.google.com/first"),
         } as never,
@@ -379,13 +380,13 @@ describe("CalendarAuthService", () => {
         scope: "scope",
         obtainedAt: "2026-01-01T00:00:00.000Z",
       });
-      const listCalendars = jest
+      const listCalendars = vi
         .fn()
         .mockResolvedValue([
           { id: "cal-ms-1", summary: "Work (Outlook)", primary: false },
         ]);
       const providers = {
-        forAccount: jest.fn().mockReturnValue({ listCalendars }),
+        forAccount: vi.fn().mockReturnValue({ listCalendars }),
       };
 
       const calendars = await makeService(providers).listAvailableCalendars(
@@ -406,12 +407,12 @@ describe("CalendarAuthService", () => {
         scope: "scope",
         obtainedAt: "2026-01-01T00:00:00.000Z",
       });
-      const listCalendars = jest.fn().mockResolvedValue([
+      const listCalendars = vi.fn().mockResolvedValue([
         { id: "cal-1", summary: "Work", primary: false },
         { id: "cal-4", summary: "Team Offsite", primary: false },
       ]);
       const providers = {
-        forAccount: jest.fn().mockReturnValue({ listCalendars }),
+        forAccount: vi.fn().mockReturnValue({ listCalendars }),
       };
 
       const calendars =
@@ -433,7 +434,7 @@ describe("CalendarAuthService", () => {
       });
       // CALENDARS configures "personal" with calendarId "primary" — Google
       // itself reports that same calendar under the account's real email.
-      const listCalendars = jest.fn().mockResolvedValue([
+      const listCalendars = vi.fn().mockResolvedValue([
         {
           id: "personal@example.com",
           summary: "personal@example.com",
@@ -441,7 +442,7 @@ describe("CalendarAuthService", () => {
         },
       ]);
       const providers = {
-        forAccount: jest.fn().mockReturnValue({ listCalendars }),
+        forAccount: vi.fn().mockReturnValue({ listCalendars }),
       };
 
       const calendars =
@@ -494,17 +495,17 @@ describe("CalendarAuthService", () => {
     it("derives the account label from the signed-in email and saves the credential", async () => {
       mockedLoopback.createLoopbackClient.mockResolvedValue({
         client: {
-          generateAuthUrl: jest
+          generateAuthUrl: vi
             .fn()
             .mockReturnValue("https://accounts.google.com/o/oauth2/auth?new"),
-          getToken: jest.fn().mockResolvedValue({
+          getToken: vi.fn().mockResolvedValue({
             tokens: {
               refresh_token: "new-refresh-token",
               access_token: "new-access-token",
               scope: "scope",
             },
           }),
-          getTokenInfo: jest.fn().mockResolvedValue({
+          getTokenInfo: vi.fn().mockResolvedValue({
             email: "brand-new@example.com",
             email_verified: true,
           }),
@@ -538,17 +539,17 @@ describe("CalendarAuthService", () => {
     it("fails when Google doesn't return a verified email", async () => {
       mockedLoopback.createLoopbackClient.mockResolvedValue({
         client: {
-          generateAuthUrl: jest
+          generateAuthUrl: vi
             .fn()
             .mockReturnValue("https://accounts.google.com/o/oauth2/auth?new"),
-          getToken: jest.fn().mockResolvedValue({
+          getToken: vi.fn().mockResolvedValue({
             tokens: {
               refresh_token: "token",
               access_token: "access",
               scope: "scope",
             },
           }),
-          getTokenInfo: jest.fn().mockResolvedValue({
+          getTokenInfo: vi.fn().mockResolvedValue({
             email: "unverified@example.com",
             email_verified: false,
           }),

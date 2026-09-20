@@ -18,7 +18,7 @@ import {
   ApiOkResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { AllowlistService } from "./allowlist.service";
 import { AuthTokenService } from "./auth-token.service";
 import { AuthUser } from "./auth-user";

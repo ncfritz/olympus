@@ -18,6 +18,16 @@ import { PrismaService } from "../../../src/store/prisma/prisma.service";
 import { SyncConfigService } from "../../../src/sync/sync-config.service";
 import { SyncedCalendarConfig } from "../../../src/sync/synced-calendar-config";
 import { WebhookNotifier } from "../../../src/sync/webhook-notifier";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 const API_ROOT = join(__dirname, "..", "..", "..");
 
@@ -132,7 +142,7 @@ describe("WebhookNotifier", () => {
       [{ ...PUSH_CALENDAR, enablePush: false }],
       "https://example.com",
     );
-    notifier.start(jest.fn());
+    notifier.start(vi.fn());
     await notifier.waitUntilReady();
 
     expect(provider.watchCallCount).toBe(0);
@@ -140,7 +150,7 @@ describe("WebhookNotifier", () => {
 
   it("warns and stays poll-only when WEBHOOK_BASE_URL is missing", async () => {
     const notifier = buildNotifier([PUSH_CALENDAR], undefined);
-    notifier.start(jest.fn());
+    notifier.start(vi.fn());
     await notifier.waitUntilReady();
 
     expect(provider.watchCallCount).toBe(0);
@@ -148,7 +158,7 @@ describe("WebhookNotifier", () => {
 
   it("warns and stays poll-only when WEBHOOK_BASE_URL is not HTTPS", async () => {
     const notifier = buildNotifier([PUSH_CALENDAR], "http://example.com");
-    notifier.start(jest.fn());
+    notifier.start(vi.fn());
     await notifier.waitUntilReady();
 
     expect(provider.watchCallCount).toBe(0);
@@ -156,7 +166,7 @@ describe("WebhookNotifier", () => {
 
   it("registers a push channel and persists it to sync state", async () => {
     const notifier = buildNotifier([PUSH_CALENDAR], "https://example.com");
-    notifier.start(jest.fn());
+    notifier.start(vi.fn());
     await notifier.waitUntilReady();
 
     expect(provider.watchCallCount).toBe(1);
@@ -179,7 +189,7 @@ describe("WebhookNotifier", () => {
     });
 
     const notifier = buildNotifier([PUSH_CALENDAR], "https://example.com");
-    notifier.start(jest.fn());
+    notifier.start(vi.fn());
     await notifier.waitUntilReady();
 
     expect(
@@ -188,7 +198,7 @@ describe("WebhookNotifier", () => {
   });
 
   it("calls onChange for a notification with the matching channel and token", async () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     const notifier = buildNotifier([PUSH_CALENDAR], "https://example.com");
     notifier.start(onChange);
     await notifier.waitUntilReady();
@@ -200,7 +210,7 @@ describe("WebhookNotifier", () => {
   });
 
   it("ignores a notification with the wrong token", async () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     const notifier = buildNotifier([PUSH_CALENDAR], "https://example.com");
     notifier.start(onChange);
     await notifier.waitUntilReady();
@@ -211,7 +221,7 @@ describe("WebhookNotifier", () => {
   });
 
   it("ignores a notification for an unknown channel", async () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     const notifier = buildNotifier([PUSH_CALENDAR], "https://example.com");
     notifier.start(onChange);
     await notifier.waitUntilReady();
@@ -228,7 +238,7 @@ describe("WebhookNotifier", () => {
       expiration: expiringSoon(),
     };
     const notifier = buildNotifier([PUSH_CALENDAR], "https://example.com");
-    notifier.start(jest.fn());
+    notifier.start(vi.fn());
     await notifier.waitUntilReady();
 
     provider.nextChannel = {
@@ -248,7 +258,7 @@ describe("WebhookNotifier", () => {
     const state = await store.getSyncState(PUSH_CALENDAR.calendarId);
     expect(state?.channelId).toBe("chan-2");
 
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     (
       notifier as unknown as { onChange: (id: string, trigger: string) => void }
     ).onChange = onChange;
@@ -258,7 +268,7 @@ describe("WebhookNotifier", () => {
 
   it("does not renew a channel that isn't close to expiring", async () => {
     const notifier = buildNotifier([PUSH_CALENDAR], "https://example.com");
-    notifier.start(jest.fn());
+    notifier.start(vi.fn());
     await notifier.waitUntilReady();
 
     await (

@@ -1,4 +1,5 @@
 import { sanitizeReturnTo } from "../../../src/auth/sanitize-return-to";
+import { describe, expect, it } from "vitest";
 
 const WEB_APP_URL = "http://localhost:3001";
 

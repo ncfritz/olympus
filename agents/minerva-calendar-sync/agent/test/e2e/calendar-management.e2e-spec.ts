@@ -5,6 +5,7 @@ import { AppModule } from "../../src/app.module";
 import { saveGoogleCredential } from "../../src/providers/google/google-credential-store";
 import { issueE2eAccessToken } from "./auth-fixtures";
 import { seedCalendar } from "./calendar-fixtures";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 // A never-real account label: SyncEngine's fire-and-forget attempt to
 // resolve it fails fast on a missing local credential file (no network

@@ -11,9 +11,9 @@
     "strictPropertyInitialization": false,
     "noUnusedLocals": false,
     "noImplicitReturns": false,
-    // Tests and scripts are type-checked with the sources (Jest, ts-node).
+    // Tests and scripts are type-checked with the sources.
     "rootDir": "${configDir}",
-    "types": ["node", "jest"],
+    "types": ["node"],
     "incremental": true
   },
   "include": [

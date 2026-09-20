@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, Post, Query, Res } from "@nestjs/common";
 import { ApiExcludeController } from "@nestjs/swagger";
-import { Response } from "express";
+import type { Response } from "express";
 import { Public } from "../auth/public.decorator";
 import { WebhookNotifier } from "../sync/webhook-notifier";
 

@@ -4,6 +4,7 @@ import request from "supertest";
 import { AppModule } from "../../src/app.module";
 import { AuthTokenService } from "../../src/auth/auth-token.service";
 import { E2E_ALLOWED_EMAIL, issueE2eAccessToken } from "./auth-fixtures";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 // The full OIDC login/callback dance needs a live identity provider to talk
 // to (discovery is a real network call) and is out of scope for e2e — that
