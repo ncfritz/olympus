@@ -52,6 +52,18 @@ describe("DownloadStatusPoller", () => {
     ]);
   });
 
+  it("reports no progress for groups of unknown or tiny size", async () => {
+    const { mediaApi, poller: p } = poller([
+      { NZBID: 8, Status: "QUEUED", FileSizeMB: 0, RemainingSizeMB: 0 },
+    ]);
+
+    await p.poll();
+
+    expect(mediaApi.bulkUpdateMediaAssetDownloads).toHaveBeenCalledWith([
+      { nzbId: 8, status: "pending", progress: 0 },
+    ]);
+  });
+
   it("does not call the API when the queue is empty", async () => {
     const { mediaApi, poller: p } = poller([]);
     await p.poll();

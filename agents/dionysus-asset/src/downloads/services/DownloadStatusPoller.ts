@@ -54,7 +54,9 @@ export class DownloadStatusPoller {
         return {
           nzbId: group.NZBID,
           status: downloadStatus(group.Status),
-          progress: ((fileSize - remainingSize) / fileSize) * 100,
+          // NZBGet reports whole MB: under 1 MB (or not yet known) is 0.
+          progress:
+            fileSize > 0 ? ((fileSize - remainingSize) / fileSize) * 100 : 0,
         };
       });
 
