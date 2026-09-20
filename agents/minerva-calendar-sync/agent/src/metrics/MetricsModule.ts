@@ -1,32 +1,28 @@
+import {
+  MetricsController,
+  MetricsModule as SharedMetricsModule,
+} from "@ncfritz/olympus-nest";
 import { Module } from "@nestjs/common";
-import { APP_INTERCEPTOR } from "@nestjs/core";
-import { ApiExcludeController } from "@nestjs/swagger";
-import { MetricsController, ReporterModule } from "nestjs-metrics-reporter";
 import { Public } from "../auth/public";
 import { serverConfig, type ServerConfigType } from "../config/configuration";
-import { OperationMetricsInterceptor } from "./OperationMetricsInterceptor";
 
-// The library's /metrics route is for Prometheus: outside the management
-// API document and its access token, like the provider callbacks.
-ApiExcludeController()(MetricsController);
+// /metrics is for Prometheus: no access token, like the provider callbacks.
 Public()(MetricsController);
 
-/** Prometheus metrics at /metrics: Node's defaults, the operations and agentMetrics. */
+/**
+ * Prometheus metrics at /metrics (ADR 0017): Node's defaults, the
+ * management API's requests (configureApp) and the agent's own
+ * (agentMetrics).
+ */
 @Module({
   imports: [
-    ReporterModule.forRootAsync({
+    SharedMetricsModule.forRootAsync({
       inject: [serverConfig.KEY],
       useFactory: (server: ServerConfigType) => ({
-        defaultMetricsEnabled: true,
-        defaultLabels: {
-          app: server.appName,
-          environment: server.nodeEnv,
-        },
+        app: server.appName,
+        environment: server.nodeEnv,
       }),
     }),
-  ],
-  providers: [
-    { provide: APP_INTERCEPTOR, useClass: OperationMetricsInterceptor },
   ],
 })
 export class MetricsModule {}

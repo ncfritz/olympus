@@ -8,6 +8,9 @@ import {
 /** Where the agent serves its document: /api-spec (UI) and /api-spec-json. */
 export const API_SPEC_ROUTE = "api-spec";
 
+/** The document's name: the `api` label of its request metrics (ADR 0017). */
+export const API_NAME = "minerva-calendar-sync";
+
 /**
  * The management API's OpenAPI document (ADR 0016): what the console
  * generates its client from, committed as openapi/minerva-calendar-sync.json

@@ -36,10 +36,12 @@ Microsoft Graph ─┴─────────────────▶ │
   their paths are registered with Google and Microsoft:
   `/auth/login/:provider`, `/auth/callback/:provider`,
   `/webhooks/google`, `/webhooks/microsoft`.
-- **Metrics** at `/metrics` (Prometheus): Node's defaults,
-  `operation_<operationId>_*` for the management API, and the agent's own
-  `sync_run_*`, `sync_event_change_count`, `outbox_publish_count` and
-  `webhook_notification_count` (`agent/src/metrics/agentMetrics.ts`).
+- **Metrics** at `/metrics` (Prometheus, ADR 0017): Node's defaults,
+  `http_server_request_duration_seconds` for the management API (by
+  caller, from `X-Olympus-Client`, and operation), and the agent's own
+  `sync_runs_total`, `sync_run_duration_seconds`,
+  `sync_event_changes_total`, `outbox_publishes_total` and
+  `webhook_notifications_total` (`agent/src/metrics/agentMetrics.ts`).
 
 Every event change is published to `calendar.events` with routing key
 `event.upsert`, `event.delete` or `event.backfill`; the contract

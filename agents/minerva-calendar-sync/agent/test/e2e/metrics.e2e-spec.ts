@@ -22,6 +22,13 @@ describe("Metrics (e2e)", () => {
     await app.close();
   });
 
+  /** A request histogram series with these labels and a count. */
+  const series = (labels: string) =>
+    new RegExp(
+      `^http_server_request_duration_seconds_count\\{[^}]*${labels}[^}]*\\} [1-9]`,
+      "m",
+    );
+
   it("serves Prometheus metrics at /metrics without an access token", async () => {
     const res = await request(app.getHttpServer())
       .get("/metrics")
@@ -30,31 +37,42 @@ describe("Metrics (e2e)", () => {
     expect(res.text).toContain("process_cpu_user_seconds_total");
   });
 
-  it("records the management API's operations", async () => {
+  it("records the management API's operations by caller", async () => {
     await request(app.getHttpServer())
       .get("/v1/calendars")
       .set("Authorization", `Bearer ${issueE2eAccessToken(app)}`)
+      .set("X-Olympus-Client", "minerva-calendar-sync-console")
       .expect(200);
 
     const res = await request(app.getHttpServer()).get("/metrics").expect(200);
     expect(res.text).toMatch(
-      /^operation_ListCalendars_count(\{[^}]*\})? [1-9]/m,
+      series(
+        'client="minerva-calendar-sync-console",server="[^"]+",api="minerva-calendar-sync",tag="Calendars",operation="ListCalendars",method="GET",status_code="200"',
+      ),
     );
-    expect(res.text).toMatch(/^operation_ListCalendars_2xx(\{[^}]*\})? [1-9]/m);
   });
 
-  it("records the status of a failed operation", async () => {
+  it("records failed and rejected requests with their status", async () => {
     await request(app.getHttpServer())
       .get("/v1/sync-run/no-such-run")
       .set("Authorization", `Bearer ${issueE2eAccessToken(app)}`)
       .expect(404);
+    await request(app.getHttpServer()).get("/v1/sync-runs").expect(401);
 
     const res = await request(app.getHttpServer()).get("/metrics").expect(200);
     expect(res.text).toMatch(
-      /^operation_DescribeSyncRun_4xx(\{[^}]*\})? [1-9]/m,
+      series('operation="DescribeSyncRun",method="GET",status_code="404"'),
     );
     expect(res.text).toMatch(
-      /^operation_DescribeSyncRun_error(\{[^}]*\})? [1-9]/m,
+      series(
+        'client="unknown",[^}]*operation="ListSyncRuns",method="GET",status_code="401"',
+      ),
     );
+  });
+
+  it("records the agent's own metrics", async () => {
+    const res = await request(app.getHttpServer()).get("/metrics").expect(200);
+    expect(res.text).toContain("# TYPE sync_runs_total counter");
+    expect(res.text).toContain("# TYPE outbox_publishes_total counter");
   });
 });
