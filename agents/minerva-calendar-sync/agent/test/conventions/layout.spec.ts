@@ -66,7 +66,11 @@ describe("agent conventions", () => {
 
   it("mirrors src in test/unit", () => {
     const unit = path.join(ROOT, "test/unit");
+    // Directories holding files (git does not keep empty ones).
     const strays = dirs(unit)
+      .filter((dir) =>
+        fs.readdirSync(dir, { withFileTypes: true }).some((e) => e.isFile()),
+      )
       .map((dir) => path.relative(unit, dir).split(path.sep).join("/"))
       .filter((dir) => !fs.existsSync(path.join(SRC, dir)));
     expect(strays).toEqual([]);
