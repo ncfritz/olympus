@@ -14,9 +14,8 @@ export interface OperationEntry {
 }
 
 type OpenApiOperation = { operationId?: string; tags?: string[] };
-type OpenApiDocument = {
-  paths?: Record<string, Record<string, OpenApiOperation | unknown>>;
-};
+/** The part of an OpenAPI document read here (any OpenAPI 3 object fits). */
+type OpenApiDocument = { paths?: Record<string, object> };
 
 const METHODS = ["get", "put", "post", "delete", "patch", "head", "options"];
 
@@ -27,7 +26,9 @@ export const operationsFromOpenApi = (
 ): OperationEntry[] =>
   Object.entries(document.paths ?? {}).flatMap(([path, item]) =>
     METHODS.flatMap((method) => {
-      const operation = item[method] as OpenApiOperation | undefined;
+      const operation = (item as Record<string, unknown>)[method] as
+        | OpenApiOperation
+        | undefined;
       return operation?.operationId
         ? [
             {
