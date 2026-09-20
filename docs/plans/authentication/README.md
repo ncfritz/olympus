@@ -25,11 +25,12 @@ Phases 2 and 3 are independent and can run in either order or together.
 
 1. **ADR 0018 accepted.**
 2. **Hasura migrations baseline** (the minimal part of roadmap phase 4):
-   export the current schema and metadata into `infra/hasura` as the
-   baseline migration, the CLI workflow (apply, status, new migration),
-   and a Postgres + Hasura in the dev compose that applies it. API tests
-   keep using the GraphQL double; the auth migration gets an integration
-   test against the real Hasura.
+   **done 2026-09-20** — `infra/hasura` is a CLI v3 project (the
+   2026-09-20 schema as the baseline migration, the metadata split into
+   files, the connection `from_env`), and
+   `infra/docker/compose/dev.yml` runs Postgres and Hasura, applying both
+   on start. API tests keep using the GraphQL double; the auth migration
+   gets an integration test against the real Hasura.
 3. **Dev CA** (`scripts/dev-ca.sh`): a throwaway root with Olympus
    Services and Olympus Devices intermediates (ECDSA P-256); the API's
    `3443` server certificate (`olympus-api`, `localhost`,

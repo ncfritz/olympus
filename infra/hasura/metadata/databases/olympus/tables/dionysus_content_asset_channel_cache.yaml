@@ -1,0 +1,32 @@
+table:
+  name: content_asset_channel_cache
+  schema: dionysus
+configuration:
+  column_config:
+    asset_id:
+      custom_name: assetId
+    created_at:
+      custom_name: createdTime
+  custom_column_names:
+    asset_id: assetId
+    created_at: createdTime
+  custom_root_fields: {}
+object_relationships:
+- name: asset
+  using:
+    manual_configuration:
+      column_mapping:
+        asset_id: content_id
+      insertion_order: null
+      remote_table:
+        name: content_assets
+        schema: dionysus
+- name: channel
+  using:
+    manual_configuration:
+      column_mapping:
+        channel_id: id
+      insertion_order: null
+      remote_table:
+        name: content_asset_channel
+        schema: dionysus

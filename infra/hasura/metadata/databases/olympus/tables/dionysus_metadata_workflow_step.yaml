@@ -1,0 +1,23 @@
+table:
+  name: metadata_workflow_step
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: job
+  using:
+    manual_configuration:
+      column_mapping:
+        bulk_load_job_id: job_id
+      insertion_order: null
+      remote_table:
+        name: bulk_load_jobs
+        schema: dionysus

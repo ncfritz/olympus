@@ -1,0 +1,16 @@
+table:
+  name: tv_episode_external_ids
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    external_id:
+      custom_name: externalId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    external_id: externalId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}

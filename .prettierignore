@@ -6,6 +6,7 @@ node_modules
 pnpm-lock.yaml
 **/src/generated/**
 infra/hasura/metadata
+infra/hasura/migrations
 apps/api/openapi
 agents/*/agent/openapi
 

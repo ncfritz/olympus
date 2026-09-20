@@ -1,0 +1,29 @@
+table:
+  name: note_associations
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    item_id:
+      custom_name: itemId
+    item_type:
+      custom_name: itemType
+    note_id:
+      custom_name: noteId
+  custom_column_names:
+    created_at: createdTime
+    item_id: itemId
+    item_type: itemType
+    note_id: noteId
+  custom_root_fields: {}
+object_relationships:
+- name: note
+  using:
+    manual_configuration:
+      column_mapping:
+        note_id: id
+      insertion_order: null
+      remote_table:
+        name: notes
+        schema: minerva

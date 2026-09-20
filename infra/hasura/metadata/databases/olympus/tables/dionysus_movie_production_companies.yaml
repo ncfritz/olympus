@@ -1,0 +1,35 @@
+table:
+  name: movie_production_companies
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    production_company_id:
+      custom_name: productionCompanyId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    production_company_id: productionCompanyId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: movie
+  using:
+    manual_configuration:
+      column_mapping:
+        movie_id: id
+      insertion_order: null
+      remote_table:
+        name: movies
+        schema: dionysus
+- name: productionCompany
+  using:
+    manual_configuration:
+      column_mapping:
+        production_company_id: id
+      insertion_order: null
+      remote_table:
+        name: production_companies
+        schema: dionysus

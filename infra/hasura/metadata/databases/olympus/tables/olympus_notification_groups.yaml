@@ -1,0 +1,29 @@
+table:
+  name: notification_groups
+  schema: olympus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+  custom_column_names:
+    created_at: createdTime
+  custom_root_fields: {}
+array_relationships:
+- name: notificationTypes
+  using:
+    manual_configuration:
+      column_mapping:
+        id: default_group_id
+      insertion_order: null
+      remote_table:
+        name: notification_type
+        schema: olympus
+- name: notifications
+  using:
+    manual_configuration:
+      column_mapping:
+        id: group
+      insertion_order: null
+      remote_table:
+        name: notifications
+        schema: olympus

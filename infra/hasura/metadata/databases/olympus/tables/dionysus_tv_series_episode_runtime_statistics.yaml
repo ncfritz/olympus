@@ -1,0 +1,3 @@
+table:
+  name: tv_series_episode_runtime_statistics
+  schema: dionysus

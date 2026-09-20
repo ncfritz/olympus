@@ -1,0 +1,71 @@
+table:
+  name: people
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    imdb_id:
+      custom_name: imdbId
+    known_for_department:
+      custom_name: knownForDepartment
+    place_of_birth:
+      custom_name: birthplace
+    profile_path:
+      custom_name: profilePath
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    imdb_id: imdbId
+    known_for_department: knownForDepartment
+    place_of_birth: birthplace
+    profile_path: profilePath
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+array_relationships:
+- name: alsoKnownAs
+  using:
+    manual_configuration:
+      column_mapping:
+        id: id
+      insertion_order: null
+      remote_table:
+        name: person_aka
+        schema: dionysus
+- name: externalIds
+  using:
+    manual_configuration:
+      column_mapping:
+        id: id
+      insertion_order: null
+      remote_table:
+        name: person_external_ids
+        schema: dionysus
+- name: images
+  using:
+    manual_configuration:
+      column_mapping:
+        id: id
+      insertion_order: null
+      remote_table:
+        name: person_images
+        schema: dionysus
+- name: movieCastMemberOf
+  using:
+    manual_configuration:
+      column_mapping:
+        id: person_id
+      insertion_order: null
+      remote_table:
+        name: movie_cast
+        schema: dionysus
+- name: movieCrewMemberOf
+  using:
+    manual_configuration:
+      column_mapping:
+        id: person_id
+      insertion_order: null
+      remote_table:
+        name: movie_crew
+        schema: dionysus

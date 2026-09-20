@@ -1,0 +1,66 @@
+table:
+  name: media_asset_search_configuration
+  schema: dionysus
+configuration:
+  column_config:
+    asset_type:
+      custom_name: assetType
+    created_at:
+      custom_name: createdTime
+    episode_number:
+      custom_name: episodeNumber
+    last_execution_time:
+      custom_name: lastExecutionTime
+    media_id:
+      custom_name: mediaId
+    next_execution_time:
+      custom_name: nextExecutionTime
+    season_number:
+      custom_name: seasonNumber
+    series_id:
+      custom_name: seriesId
+    updated_at:
+      custom_name: lastModifiedTime
+  custom_column_names:
+    asset_type: assetType
+    created_at: createdTime
+    episode_number: episodeNumber
+    last_execution_time: lastExecutionTime
+    media_id: mediaId
+    next_execution_time: nextExecutionTime
+    season_number: seasonNumber
+    series_id: seriesId
+    updated_at: lastModifiedTime
+  custom_root_fields: {}
+object_relationships:
+- name: decoration
+  using:
+    manual_configuration:
+      column_mapping:
+        asset_type: media_type
+        media_id: id
+      insertion_order: null
+      remote_table:
+        name: media_decorations
+        schema: dionysus
+array_relationships:
+- name: searchExecutions
+  using:
+    manual_configuration:
+      column_mapping:
+        asset_type: search_type
+        media_id: media_id
+      insertion_order: null
+      remote_table:
+        name: media_asset_search_execution
+        schema: dionysus
+- name: searchResults
+  using:
+    manual_configuration:
+      column_mapping:
+        asset_type: asset_type
+        media_id: media_id
+      insertion_order: null
+      remote_table:
+        name: media_asset_search_result
+        schema: dionysus

@@ -1,0 +1,38 @@
+table:
+  name: notification_settings
+  schema: olympus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    email_enabled:
+      custom_name: email
+    notification_type_id:
+      custom_name: notificationTypeId
+    synochat_enabled:
+      custom_name: synoChat
+    synomail_enabled:
+      custom_name: synoMail
+    updated_at:
+      custom_name: lastUpdatedTime
+    websocket_enabled:
+      custom_name: webSocket
+  custom_column_names:
+    created_at: createdTime
+    email_enabled: email
+    notification_type_id: notificationTypeId
+    synochat_enabled: synoChat
+    synomail_enabled: synoMail
+    updated_at: lastUpdatedTime
+    websocket_enabled: webSocket
+  custom_root_fields: {}
+object_relationships:
+- name: notificationType
+  using:
+    manual_configuration:
+      column_mapping:
+        notification_type_id: id
+      insertion_order: null
+      remote_table:
+        name: notification_type
+        schema: olympus

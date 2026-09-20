@@ -1,0 +1,16 @@
+table:
+  name: media_decorations
+  schema: dionysus
+configuration:
+  column_config:
+    media_type:
+      custom_name: mediaType
+    poster_path:
+      custom_name: posterPath
+    series_id:
+      custom_name: seriesId
+  custom_column_names:
+    media_type: mediaType
+    poster_path: posterPath
+    series_id: seriesId
+  custom_root_fields: {}

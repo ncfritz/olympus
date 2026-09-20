@@ -1,0 +1,10 @@
+table:
+  name: content_asset_ingest_workflow_source_aggregate
+  schema: dionysus
+configuration:
+  column_config:
+    source_type:
+      custom_name: sourceType
+  custom_column_names:
+    source_type: sourceType
+  custom_root_fields: {}

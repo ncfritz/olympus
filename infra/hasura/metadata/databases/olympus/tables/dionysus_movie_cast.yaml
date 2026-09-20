@@ -1,0 +1,47 @@
+table:
+  name: movie_cast
+  schema: dionysus
+configuration:
+  column_config:
+    cast_id:
+      custom_name: castId
+    created_at:
+      custom_name: createdTime
+    credit_id:
+      custom_name: creditId
+    movie_id:
+      custom_name: movieId
+    original_name:
+      custom_name: originalName
+    person_id:
+      custom_name: personId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    cast_id: castId
+    created_at: createdTime
+    credit_id: creditId
+    movie_id: movieId
+    original_name: originalName
+    person_id: personId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: movie
+  using:
+    manual_configuration:
+      column_mapping:
+        movie_id: id
+      insertion_order: null
+      remote_table:
+        name: movies
+        schema: dionysus
+- name: person
+  using:
+    manual_configuration:
+      column_mapping:
+        person_id: id
+      insertion_order: null
+      remote_table:
+        name: people
+        schema: dionysus

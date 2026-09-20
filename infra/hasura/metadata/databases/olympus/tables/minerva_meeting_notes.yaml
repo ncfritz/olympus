@@ -1,0 +1,22 @@
+table:
+  name: meeting_notes
+  schema: minerva
+object_relationships:
+- name: meeting
+  using:
+    manual_configuration:
+      column_mapping:
+        meeting_id: id
+      insertion_order: null
+      remote_table:
+        name: meetings
+        schema: minerva
+- name: note
+  using:
+    manual_configuration:
+      column_mapping:
+        note_id: id
+      insertion_order: null
+      remote_table:
+        name: notes
+        schema: minerva

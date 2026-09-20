@@ -1,0 +1,24 @@
+table:
+  name: media_favorite
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    media_id:
+      custom_name: mediaId
+  custom_column_names:
+    created_at: createdTime
+    media_id: mediaId
+  custom_root_fields: {}
+object_relationships:
+- name: decoration
+  using:
+    manual_configuration:
+      column_mapping:
+        media_id: id
+        type: media_type
+      insertion_order: null
+      remote_table:
+        name: media_decorations
+        schema: dionysus

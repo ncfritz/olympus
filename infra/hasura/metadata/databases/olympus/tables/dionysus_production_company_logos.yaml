@@ -1,0 +1,22 @@
+table:
+  name: production_company_logos
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    file_path:
+      custom_name: filePath
+    file_type:
+      custom_name: fileType
+    production_company_id:
+      custom_name: companyId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    file_path: filePath
+    file_type: fileType
+    production_company_id: companyId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}

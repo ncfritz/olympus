@@ -1,0 +1,32 @@
+table:
+  name: tv_series_created_by
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    credit_id:
+      custom_name: creditId
+    person_id:
+      custom_name: personId
+    series_id:
+      custom_name: seriesId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    credit_id: creditId
+    person_id: personId
+    series_id: seriesId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: person
+  using:
+    manual_configuration:
+      column_mapping:
+        person_id: id
+      insertion_order: null
+      remote_table:
+        name: people
+        schema: dionysus

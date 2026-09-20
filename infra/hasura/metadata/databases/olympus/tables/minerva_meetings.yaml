@@ -1,0 +1,23 @@
+table:
+  name: meetings
+  schema: minerva
+object_relationships:
+- name: organizer
+  using:
+    manual_configuration:
+      column_mapping:
+        organizer_email: email
+      insertion_order: null
+      remote_table:
+        name: meeting_user
+        schema: minerva
+array_relationships:
+- name: attendees
+  using:
+    manual_configuration:
+      column_mapping:
+        id: meeting_id
+      insertion_order: null
+      remote_table:
+        name: meeting_attendees
+        schema: minerva

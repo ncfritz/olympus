@@ -1,0 +1,53 @@
+table:
+  name: tv_series_videos
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    iso_3166_1:
+      custom_name: languageCode
+    iso_639_1:
+      custom_name: countryCode
+    published_at:
+      custom_name: publishedDate
+    series_id:
+      custom_name: seriesId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    iso_3166_1: languageCode
+    iso_639_1: countryCode
+    published_at: publishedDate
+    series_id: seriesId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: country
+  using:
+    manual_configuration:
+      column_mapping:
+        iso_639_1: id
+      insertion_order: null
+      remote_table:
+        name: countries
+        schema: dionysus
+- name: language
+  using:
+    manual_configuration:
+      column_mapping:
+        iso_3166_1: id
+      insertion_order: null
+      remote_table:
+        name: languages
+        schema: dionysus
+- name: series
+  using:
+    manual_configuration:
+      column_mapping:
+        series_id: id
+      insertion_order: null
+      remote_table:
+        name: tv_series
+        schema: dionysus

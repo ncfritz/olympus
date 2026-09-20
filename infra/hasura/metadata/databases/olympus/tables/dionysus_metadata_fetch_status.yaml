@@ -1,0 +1,22 @@
+table:
+  name: metadata_fetch_status
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    last_fetched_at:
+      custom_name: lastFetchedTime
+    metadata_lock_id:
+      custom_name: id
+    type:
+      custom_name: type
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    last_fetched_at: lastFetchedTime
+    metadata_lock_id: id
+    type: type
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}

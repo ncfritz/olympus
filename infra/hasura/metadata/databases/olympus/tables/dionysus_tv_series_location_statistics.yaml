@@ -1,0 +1,10 @@
+table:
+  name: tv_series_location_statistics
+  schema: dionysus
+configuration:
+  column_config:
+    country_id:
+      custom_name: countryCode
+  custom_column_names:
+    country_id: countryCode
+  custom_root_fields: {}

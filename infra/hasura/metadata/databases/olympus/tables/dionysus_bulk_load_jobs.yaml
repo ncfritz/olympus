@@ -1,0 +1,46 @@
+table:
+  name: bulk_load_jobs
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    duplicate_records:
+      custom_name: duplicateRecords
+    expired_records:
+      custom_name: expiredRecords
+    finished_at:
+      custom_name: finishedTime
+    job_id:
+      custom_name: id
+    max_record_to_process:
+      custom_name: maxRecordsToProcess
+    new_records:
+      custom_name: newRecords
+    noop_records:
+      custom_name: noOpRecords
+    processed_records:
+      custom_name: processedRecords
+    skipped_records:
+      custom_name: skippedRecords
+    started_at:
+      custom_name: startedTime
+    total_records:
+      custom_name: totalRecords
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    duplicate_records: duplicateRecords
+    expired_records: expiredRecords
+    finished_at: finishedTime
+    job_id: id
+    max_record_to_process: maxRecordsToProcess
+    new_records: newRecords
+    noop_records: noOpRecords
+    processed_records: processedRecords
+    skipped_records: skippedRecords
+    started_at: startedTime
+    total_records: totalRecords
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}

@@ -1,0 +1,78 @@
+table:
+  name: production_companies
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: country
+  using:
+    manual_configuration:
+      column_mapping:
+        country_id: id
+      insertion_order: null
+      remote_table:
+        name: countries
+        schema: dionysus
+- name: parent
+  using:
+    manual_configuration:
+      column_mapping:
+        parent_company: id
+      insertion_order: null
+      remote_table:
+        name: production_companies
+        schema: dionysus
+array_relationships:
+- name: alternativeNames
+  using:
+    manual_configuration:
+      column_mapping:
+        id: id
+      insertion_order: null
+      remote_table:
+        name: production_company_alternative_names
+        schema: dionysus
+- name: children
+  using:
+    manual_configuration:
+      column_mapping:
+        id: parent_company
+      insertion_order: null
+      remote_table:
+        name: production_companies
+        schema: dionysus
+- name: logos
+  using:
+    manual_configuration:
+      column_mapping:
+        id: production_company_id
+      insertion_order: null
+      remote_table:
+        name: production_company_logos
+        schema: dionysus
+- name: movies
+  using:
+    manual_configuration:
+      column_mapping:
+        id: production_company_id
+      insertion_order: null
+      remote_table:
+        name: movie_production_companies
+        schema: dionysus
+- name: tvSeries
+  using:
+    manual_configuration:
+      column_mapping:
+        id: production_company_id
+      insertion_order: null
+      remote_table:
+        name: tv_series_production_companies
+        schema: dionysus

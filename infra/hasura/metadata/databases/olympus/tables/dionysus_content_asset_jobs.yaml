@@ -1,0 +1,13 @@
+table:
+  name: content_asset_jobs
+  schema: dionysus
+object_relationships:
+- name: content_asset
+  using:
+    manual_configuration:
+      column_mapping:
+        content_id: content_id
+      insertion_order: null
+      remote_table:
+        name: content_assets
+        schema: dionysus

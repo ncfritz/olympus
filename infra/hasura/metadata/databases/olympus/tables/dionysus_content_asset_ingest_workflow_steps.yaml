@@ -1,0 +1,29 @@
+table:
+  name: content_asset_ingest_workflow_steps
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    finished_at:
+      custom_name: finishedTime
+    started_at:
+      custom_name: startedTime
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    finished_at: finishedTime
+    started_at: startedTime
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: workflow
+  using:
+    manual_configuration:
+      column_mapping:
+        workflow_id: id
+      insertion_order: null
+      remote_table:
+        name: content_asset_ingest_workflows
+        schema: dionysus

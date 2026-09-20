@@ -1,0 +1,47 @@
+table:
+  name: notification_type
+  schema: olympus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    default_group_id:
+      custom_name: defaultGroupId
+    email_default_enabled:
+      custom_name: emailDefault
+    email_supported:
+      custom_name: supportsEmail
+    synochat_default_enabled:
+      custom_name: synoChatDefault
+    synochat_supported:
+      custom_name: supportsSynoChat
+    synomail_default_enabled:
+      custom_name: synoMailDefault
+    synomail_supported:
+      custom_name: supportsSynoMail
+    websocket_default_enabled:
+      custom_name: webSocketDefault
+    websocket_supported:
+      custom_name: supportsWebSocket
+  custom_column_names:
+    created_at: createdTime
+    default_group_id: defaultGroupId
+    email_default_enabled: emailDefault
+    email_supported: supportsEmail
+    synochat_default_enabled: synoChatDefault
+    synochat_supported: supportsSynoChat
+    synomail_default_enabled: synoMailDefault
+    synomail_supported: supportsSynoMail
+    websocket_default_enabled: webSocketDefault
+    websocket_supported: supportsWebSocket
+  custom_root_fields: {}
+object_relationships:
+- name: defaultGroup
+  using:
+    manual_configuration:
+      column_mapping:
+        default_group_id: id
+      insertion_order: null
+      remote_table:
+        name: notification_groups
+        schema: olympus

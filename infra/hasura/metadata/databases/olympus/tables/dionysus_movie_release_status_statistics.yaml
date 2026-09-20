@@ -1,0 +1,3 @@
+table:
+  name: movie_release_status_statistics
+  schema: dionysus

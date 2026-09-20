@@ -1,0 +1,52 @@
+table:
+  name: media_asset_search_result
+  schema: dionysus
+configuration:
+  column_config:
+    asset_type:
+      custom_name: assetType
+    created_at:
+      custom_name: createdTime
+    media_id:
+      custom_name: mediaId
+    posted_at:
+      custom_name: postedTime
+    quality_group:
+      custom_name: qualityGroup
+  custom_column_names:
+    asset_type: assetType
+    created_at: createdTime
+    media_id: mediaId
+    posted_at: postedTime
+    quality_group: qualityGroup
+  custom_root_fields: {}
+object_relationships:
+- name: searchConfiguration
+  using:
+    manual_configuration:
+      column_mapping:
+        asset_type: asset_type
+        media_id: media_id
+      insertion_order: null
+      remote_table:
+        name: media_asset_search_configuration
+        schema: dionysus
+array_relationships:
+- name: downloads
+  using:
+    manual_configuration:
+      column_mapping:
+        id: search_result_id
+      insertion_order: null
+      remote_table:
+        name: media_asset_download
+        schema: dionysus
+- name: tags
+  using:
+    manual_configuration:
+      column_mapping:
+        id: search_result_id
+      insertion_order: null
+      remote_table:
+        name: media_asset_search_result_tag
+        schema: dionysus

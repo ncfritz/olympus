@@ -1,0 +1,45 @@
+table:
+  name: notes
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    deleted_at:
+      custom_name: deletedTime
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    deleted_at: deletedTime
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: parent
+  using:
+    manual_configuration:
+      column_mapping:
+        parent_id: id
+      insertion_order: null
+      remote_table:
+        name: notes
+        schema: minerva
+array_relationships:
+- name: associatedItems
+  using:
+    manual_configuration:
+      column_mapping:
+        id: note_id
+      insertion_order: null
+      remote_table:
+        name: note_associations
+        schema: minerva
+- name: children
+  using:
+    manual_configuration:
+      column_mapping:
+        id: parent_id
+      insertion_order: null
+      remote_table:
+        name: notes
+        schema: minerva

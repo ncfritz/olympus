@@ -1,0 +1,32 @@
+table:
+  name: countries
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+array_relationships:
+- name: movies
+  using:
+    manual_configuration:
+      column_mapping:
+        id: country_id
+      insertion_order: null
+      remote_table:
+        name: movie_production_countries
+        schema: dionysus
+- name: productionCompanies
+  using:
+    manual_configuration:
+      column_mapping:
+        id: country_id
+      insertion_order: null
+      remote_table:
+        name: production_companies
+        schema: dionysus

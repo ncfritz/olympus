@@ -1,0 +1,58 @@
+table:
+  name: movie_release_dates
+  schema: dionysus
+configuration:
+  column_config:
+    certification_id:
+      custom_name: certificationId
+    created_at:
+      custom_name: createdTime
+    iso_3166_1:
+      custom_name: countryCode
+    iso_639_1:
+      custom_name: languageCode
+    movie_id:
+      custom_name: movieId
+    release_date:
+      custom_name: releaseDate
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    certification_id: certificationId
+    created_at: createdTime
+    iso_3166_1: countryCode
+    iso_639_1: languageCode
+    movie_id: movieId
+    release_date: releaseDate
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: certification
+  using:
+    manual_configuration:
+      column_mapping:
+        certification_id: certification
+        certification_type: type
+        iso_3166_1: country
+      insertion_order: null
+      remote_table:
+        name: certifications
+        schema: dionysus
+- name: country
+  using:
+    manual_configuration:
+      column_mapping:
+        iso_3166_1: id
+      insertion_order: null
+      remote_table:
+        name: countries
+        schema: dionysus
+- name: language
+  using:
+    manual_configuration:
+      column_mapping:
+        iso_639_1: id
+      insertion_order: null
+      remote_table:
+        name: languages
+        schema: dionysus

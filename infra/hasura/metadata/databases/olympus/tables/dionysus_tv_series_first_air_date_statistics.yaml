@@ -1,0 +1,3 @@
+table:
+  name: tv_series_first_air_date_statistics
+  schema: dionysus

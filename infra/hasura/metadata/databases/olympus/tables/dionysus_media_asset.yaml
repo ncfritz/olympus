@@ -1,0 +1,31 @@
+table:
+  name: media_asset
+  schema: dionysus
+configuration:
+  column_config:
+    asset_sha:
+      custom_name: assetSha
+    asset_type:
+      custom_name: assetType
+    created_at:
+      custom_name: createdTime
+    file_path:
+      custom_name: filePath
+    media_id:
+      custom_name: mediaId
+    new_size:
+      custom_name: newSize
+    original_size:
+      custom_name: originalSize
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    asset_sha: assetSha
+    asset_type: assetType
+    created_at: createdTime
+    file_path: filePath
+    media_id: mediaId
+    new_size: newSize
+    original_size: originalSize
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}

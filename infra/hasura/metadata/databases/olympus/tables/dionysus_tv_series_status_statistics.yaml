@@ -1,0 +1,3 @@
+table:
+  name: tv_series_status_statistics
+  schema: dionysus

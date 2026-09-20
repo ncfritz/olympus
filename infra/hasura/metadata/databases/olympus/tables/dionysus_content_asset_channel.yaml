@@ -1,0 +1,51 @@
+table:
+  name: content_asset_channel
+  schema: dionysus
+configuration:
+  column_config:
+    asset_count:
+      custom_name: assetCount
+    bc_compliant:
+      custom_name: bcCompliant
+    category_id:
+      custom_name: categoryId
+    created_at:
+      custom_name: createdTime
+    encoded_filter:
+      custom_name: encodedFilter
+    filter_input:
+      custom_name: filterInput
+    last_fetched_at:
+      custom_name: lastFetchedTime
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    asset_count: assetCount
+    bc_compliant: bcCompliant
+    category_id: categoryId
+    created_at: createdTime
+    encoded_filter: encodedFilter
+    filter_input: filterInput
+    last_fetched_at: lastFetchedTime
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: category
+  using:
+    manual_configuration:
+      column_mapping:
+        category_id: id
+      insertion_order: null
+      remote_table:
+        name: content_asset_channel_category
+        schema: dionysus
+array_relationships:
+- name: assetCache
+  using:
+    manual_configuration:
+      column_mapping:
+        id: channel_id
+      insertion_order: null
+      remote_table:
+        name: content_asset_channel_cache
+        schema: dionysus

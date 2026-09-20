@@ -1,0 +1,121 @@
+table:
+  name: tv_seasons
+  schema: dionysus
+configuration:
+  column_config:
+    air_date:
+      custom_name: airDate
+    created_at:
+      custom_name: createdTime
+    media_type:
+      custom_name: mediaType
+    poster_path:
+      custom_name: posterPath
+    season_number:
+      custom_name: seasonNumber
+    series_id:
+      custom_name: seriesId
+    updated_at:
+      custom_name: lastUpdatedTime
+    vote_average:
+      custom_name: voteAverage
+  custom_column_names:
+    air_date: airDate
+    created_at: createdTime
+    media_type: mediaType
+    poster_path: posterPath
+    season_number: seasonNumber
+    series_id: seriesId
+    updated_at: lastUpdatedTime
+    vote_average: voteAverage
+  custom_root_fields: {}
+object_relationships:
+- name: favorite
+  using:
+    manual_configuration:
+      column_mapping:
+        id: media_id
+        media_type: type
+      insertion_order: null
+      remote_table:
+        name: media_favorite
+        schema: dionysus
+- name: searchConfiguration
+  using:
+    manual_configuration:
+      column_mapping:
+        id: media_id
+        media_type: asset_type
+      insertion_order: null
+      remote_table:
+        name: media_asset_search_configuration
+        schema: dionysus
+- name: series
+  using:
+    manual_configuration:
+      column_mapping:
+        series_id: id
+      insertion_order: null
+      remote_table:
+        name: tv_series
+        schema: dionysus
+array_relationships:
+- name: cast
+  using:
+    manual_configuration:
+      column_mapping:
+        id: season_id
+        series_id: series_id
+      insertion_order: null
+      remote_table:
+        name: tv_season_cast
+        schema: dionysus
+- name: crew
+  using:
+    manual_configuration:
+      column_mapping:
+        id: season_id
+        series_id: series_id
+      insertion_order: null
+      remote_table:
+        name: tv_season_crew
+        schema: dionysus
+- name: episodes
+  using:
+    manual_configuration:
+      column_mapping:
+        id: season_id
+        series_id: series_id
+      insertion_order: null
+      remote_table:
+        name: tv_episodes
+        schema: dionysus
+- name: externalIds
+  using:
+    manual_configuration:
+      column_mapping:
+        id: season_id
+      insertion_order: null
+      remote_table:
+        name: tv_season_external_ids
+        schema: dionysus
+- name: images
+  using:
+    manual_configuration:
+      column_mapping:
+        id: season_id
+        series_id: series_id
+      insertion_order: null
+      remote_table:
+        name: tv_season_images
+        schema: dionysus
+- name: videos
+  using:
+    manual_configuration:
+      column_mapping:
+        id: season_id
+        series_id: series_id
+      insertion_order: null
+      remote_table:
+        name: tv_season_videos
+        schema: dionysus

@@ -1,0 +1,13 @@
+table:
+  name: content_asset_duplicates
+  schema: dionysus
+object_relationships:
+- name: asset
+  using:
+    manual_configuration:
+      column_mapping:
+        content_id: content_id
+      insertion_order: null
+      remote_table:
+        name: content_assets
+        schema: dionysus

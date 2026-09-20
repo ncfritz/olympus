@@ -1,0 +1,20 @@
+table:
+  name: content_tags
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+  custom_column_names:
+    created_at: createdTime
+  custom_root_fields: {}
+array_relationships:
+- name: tagged_content
+  using:
+    manual_configuration:
+      column_mapping:
+        content_tag_id: content_tag_id
+      insertion_order: null
+      remote_table:
+        name: content_asset_tags
+        schema: dionysus

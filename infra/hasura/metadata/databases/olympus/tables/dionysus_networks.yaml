@@ -1,0 +1,51 @@
+table:
+  name: networks
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: country
+  using:
+    manual_configuration:
+      column_mapping:
+        country_id: id
+      insertion_order: null
+      remote_table:
+        name: countries
+        schema: dionysus
+array_relationships:
+- name: alternativeNames
+  using:
+    manual_configuration:
+      column_mapping:
+        id: id
+      insertion_order: null
+      remote_table:
+        name: network_alternative_names
+        schema: dionysus
+- name: images
+  using:
+    manual_configuration:
+      column_mapping:
+        id: network_id
+      insertion_order: null
+      remote_table:
+        name: network_images
+        schema: dionysus
+- name: tvSeries
+  using:
+    manual_configuration:
+      column_mapping:
+        id: network_id
+      insertion_order: null
+      remote_table:
+        name: tv_series_networks
+        schema: dionysus

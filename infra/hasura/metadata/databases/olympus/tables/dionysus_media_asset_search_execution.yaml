@@ -1,0 +1,48 @@
+table:
+  name: media_asset_search_execution
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    duplicate_records:
+      custom_name: duplicateRecords
+    finished_at:
+      custom_name: finishedTime
+    media_id:
+      custom_name: mediaId
+    new_records:
+      custom_name: newRecords
+    search_type:
+      custom_name: searchType
+    skipped_records:
+      custom_name: skippedRecords
+    started_at:
+      custom_name: startedTime
+    total_records:
+      custom_name: totalRecords
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    duplicate_records: duplicateRecords
+    finished_at: finishedTime
+    media_id: mediaId
+    new_records: newRecords
+    search_type: searchType
+    skipped_records: skippedRecords
+    started_at: startedTime
+    total_records: totalRecords
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: searchConfigurartion
+  using:
+    manual_configuration:
+      column_mapping:
+        media_id: media_id
+        search_type: asset_type
+      insertion_order: null
+      remote_table:
+        name: media_asset_search_configuration
+        schema: dionysus

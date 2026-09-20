@@ -1,0 +1,13 @@
+table:
+  name: media_asset_search_result_tag
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    search_result_id:
+      custom_name: searchResultId
+  custom_column_names:
+    created_at: createdTime
+    search_result_id: searchResultId
+  custom_root_fields: {}

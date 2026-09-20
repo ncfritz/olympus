@@ -1,0 +1,35 @@
+table:
+  name: collection_parts
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    movie_id:
+      custom_name: movieId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    movie_id: movieId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: collection
+  using:
+    manual_configuration:
+      column_mapping:
+        collection_id: id
+      insertion_order: null
+      remote_table:
+        name: collections
+        schema: dionysus
+- name: movie
+  using:
+    manual_configuration:
+      column_mapping:
+        movie_id: id
+      insertion_order: null
+      remote_table:
+        name: movies
+        schema: dionysus

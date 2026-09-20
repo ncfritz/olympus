@@ -1,0 +1,38 @@
+table:
+  name: tv_series_production_companies
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    production_company_id:
+      custom_name: productionCompanyId
+    series_id:
+      custom_name: seriesId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    production_company_id: productionCompanyId
+    series_id: seriesId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: productionCompany
+  using:
+    manual_configuration:
+      column_mapping:
+        production_company_id: id
+      insertion_order: null
+      remote_table:
+        name: production_companies
+        schema: dionysus
+- name: tvSeries
+  using:
+    manual_configuration:
+      column_mapping:
+        series_id: id
+      insertion_order: null
+      remote_table:
+        name: tv_series
+        schema: dionysus

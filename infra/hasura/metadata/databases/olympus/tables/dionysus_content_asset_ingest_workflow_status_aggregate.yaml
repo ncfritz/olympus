@@ -1,0 +1,3 @@
+table:
+  name: content_asset_ingest_workflow_status_aggregate
+  schema: dionysus

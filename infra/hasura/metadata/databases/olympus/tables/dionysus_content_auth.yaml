@@ -1,0 +1,10 @@
+table:
+  name: content_auth
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+  custom_column_names:
+    created_at: createdTime
+  custom_root_fields: {}

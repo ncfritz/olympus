@@ -1,0 +1,3 @@
+table:
+  name: metadata_fetch_status_expiration_statistics
+  schema: dionysus

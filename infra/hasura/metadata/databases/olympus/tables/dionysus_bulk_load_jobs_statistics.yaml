@@ -1,0 +1,3 @@
+table:
+  name: bulk_load_jobs_statistics
+  schema: dionysus

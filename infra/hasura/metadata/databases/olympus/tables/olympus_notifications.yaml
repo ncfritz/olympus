@@ -1,0 +1,47 @@
+table:
+  name: notifications
+  schema: olympus
+configuration:
+  column_config:
+    acknowledged_at:
+      custom_name: acknowledgedTime
+    created_at:
+      custom_name: createdTime
+    delete_at:
+      custom_name: deletionTime
+    event_time:
+      custom_name: eventTime
+    expires_at:
+      custom_name: expirationTime
+    notification_id:
+      custom_name: notificationId
+    notification_type_id:
+      custom_name: notificationTypeId
+  custom_column_names:
+    acknowledged_at: acknowledgedTime
+    created_at: createdTime
+    delete_at: deletionTime
+    event_time: eventTime
+    expires_at: expirationTime
+    notification_id: notificationId
+    notification_type_id: notificationTypeId
+  custom_root_fields: {}
+object_relationships:
+- name: notificationGroup
+  using:
+    manual_configuration:
+      column_mapping:
+        group: id
+      insertion_order: null
+      remote_table:
+        name: notification_groups
+        schema: olympus
+- name: notificationType
+  using:
+    manual_configuration:
+      column_mapping:
+        notification_type_id: id
+      insertion_order: null
+      remote_table:
+        name: notification_type
+        schema: olympus

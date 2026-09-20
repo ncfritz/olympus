@@ -1,0 +1,38 @@
+table:
+  name: tv_series_networks
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    network_id:
+      custom_name: networkId
+    series_id:
+      custom_name: seriesId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    network_id: networkId
+    series_id: seriesId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: network
+  using:
+    manual_configuration:
+      column_mapping:
+        network_id: id
+      insertion_order: null
+      remote_table:
+        name: networks
+        schema: dionysus
+- name: tvSeries
+  using:
+    manual_configuration:
+      column_mapping:
+        series_id: id
+      insertion_order: null
+      remote_table:
+        name: tv_series
+        schema: dionysus

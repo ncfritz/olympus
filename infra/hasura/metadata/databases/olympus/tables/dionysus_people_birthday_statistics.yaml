@@ -1,0 +1,3 @@
+table:
+  name: people_birthday_statistics
+  schema: dionysus

@@ -1,0 +1,214 @@
+table:
+  name: movies
+  schema: dionysus
+configuration:
+  column_config:
+    backdrop_path:
+      custom_name: backdropPath
+    created_at:
+      custom_name: createdTime
+    imdb_id:
+      custom_name: imdbId
+    original_language_id:
+      custom_name: originalLanguageCode
+    original_title:
+      custom_name: originalTitle
+    poster_path:
+      custom_name: posterPath
+    release_date:
+      custom_name: releaseDate
+    updated_at:
+      custom_name: lastUpdatedTime
+    vote_average:
+      custom_name: voteAverage
+    vote_count:
+      custom_name: voteCount
+  custom_column_names:
+    backdrop_path: backdropPath
+    created_at: createdTime
+    imdb_id: imdbId
+    original_language_id: originalLanguageCode
+    original_title: originalTitle
+    poster_path: posterPath
+    release_date: releaseDate
+    updated_at: lastUpdatedTime
+    vote_average: voteAverage
+    vote_count: voteCount
+  custom_root_fields: {}
+object_relationships:
+- name: asset
+  using:
+    manual_configuration:
+      column_mapping:
+        id: media_id
+        media_type: asset_type
+      insertion_order: null
+      remote_table:
+        name: media_asset
+        schema: dionysus
+- name: favorite
+  using:
+    manual_configuration:
+      column_mapping:
+        id: media_id
+        media_type: type
+      insertion_order: null
+      remote_table:
+        name: media_favorite
+        schema: dionysus
+- name: originalLanguage
+  using:
+    manual_configuration:
+      column_mapping:
+        original_language_id: id
+      insertion_order: null
+      remote_table:
+        name: languages
+        schema: dionysus
+- name: searchConfiguration
+  using:
+    manual_configuration:
+      column_mapping:
+        id: media_id
+        media_type: asset_type
+      insertion_order: null
+      remote_table:
+        name: media_asset_search_configuration
+        schema: dionysus
+array_relationships:
+- name: alternativeTitles
+  using:
+    manual_configuration:
+      column_mapping:
+        id: movie_id
+      insertion_order: null
+      remote_table:
+        name: movie_alternative_titles
+        schema: dionysus
+- name: cast
+  using:
+    manual_configuration:
+      column_mapping:
+        id: movie_id
+      insertion_order: null
+      remote_table:
+        name: movie_cast
+        schema: dionysus
+- name: collections
+  using:
+    manual_configuration:
+      column_mapping:
+        id: movie_id
+      insertion_order: null
+      remote_table:
+        name: collection_parts
+        schema: dionysus
+- name: crew
+  using:
+    manual_configuration:
+      column_mapping:
+        id: movie_id
+      insertion_order: null
+      remote_table:
+        name: movie_crew
+        schema: dionysus
+- name: externalIds
+  using:
+    manual_configuration:
+      column_mapping:
+        id: movie_id
+      insertion_order: null
+      remote_table:
+        name: movie_external_ids
+        schema: dionysus
+- name: genres
+  using:
+    manual_configuration:
+      column_mapping:
+        id: movie_id
+      insertion_order: null
+      remote_table:
+        name: movie_genres
+        schema: dionysus
+- name: images
+  using:
+    manual_configuration:
+      column_mapping:
+        id: movie_id
+      insertion_order: null
+      remote_table:
+        name: movie_images
+        schema: dionysus
+- name: keywords
+  using:
+    manual_configuration:
+      column_mapping:
+        id: movie_id
+      insertion_order: null
+      remote_table:
+        name: movie_keywords
+        schema: dionysus
+- name: productionCompanies
+  using:
+    manual_configuration:
+      column_mapping:
+        id: movie_id
+      insertion_order: null
+      remote_table:
+        name: movie_production_companies
+        schema: dionysus
+- name: productionCountries
+  using:
+    manual_configuration:
+      column_mapping:
+        id: movie_id
+      insertion_order: null
+      remote_table:
+        name: movie_production_countries
+        schema: dionysus
+- name: recommendations
+  using:
+    manual_configuration:
+      column_mapping:
+        id: id
+      insertion_order: null
+      remote_table:
+        name: movie_recommendations
+        schema: dionysus
+- name: releaseDates
+  using:
+    manual_configuration:
+      column_mapping:
+        id: movie_id
+      insertion_order: null
+      remote_table:
+        name: movie_release_dates
+        schema: dionysus
+- name: searchResults
+  using:
+    manual_configuration:
+      column_mapping:
+        id: media_id
+        media_type: asset_type
+      insertion_order: null
+      remote_table:
+        name: media_asset_search_result
+        schema: dionysus
+- name: spokenLanguages
+  using:
+    manual_configuration:
+      column_mapping:
+        id: movie_id
+      insertion_order: null
+      remote_table:
+        name: movie_spoken_languages
+        schema: dionysus
+- name: videos
+  using:
+    manual_configuration:
+      column_mapping:
+        id: movie_id
+      insertion_order: null
+      remote_table:
+        name: movie_videos
+        schema: dionysus

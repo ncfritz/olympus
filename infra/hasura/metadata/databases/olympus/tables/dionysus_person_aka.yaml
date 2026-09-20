@@ -1,0 +1,13 @@
+table:
+  name: person_aka
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}

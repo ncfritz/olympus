@@ -1,0 +1,41 @@
+table:
+  name: tv_series_images
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    file_path:
+      custom_name: filePath
+    iso_639_1:
+      custom_name: languageCode
+    series_id:
+      custom_name: seriesId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    file_path: filePath
+    iso_639_1: languageCode
+    series_id: seriesId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: language
+  using:
+    manual_configuration:
+      column_mapping:
+        iso_639_1: id
+      insertion_order: null
+      remote_table:
+        name: languages
+        schema: dionysus
+- name: series
+  using:
+    manual_configuration:
+      column_mapping:
+        series_id: id
+      insertion_order: null
+      remote_table:
+        name: tv_series
+        schema: dionysus

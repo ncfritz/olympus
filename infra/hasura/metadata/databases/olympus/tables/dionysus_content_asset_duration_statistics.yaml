@@ -1,0 +1,3 @@
+table:
+  name: content_asset_duration_statistics
+  schema: dionysus

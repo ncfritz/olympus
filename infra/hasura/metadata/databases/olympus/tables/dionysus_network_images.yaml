@@ -1,0 +1,22 @@
+table:
+  name: network_images
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    file_path:
+      custom_name: filePath
+    file_type:
+      custom_name: fileType
+    network_id:
+      custom_name: networkId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    file_path: filePath
+    file_type: fileType
+    network_id: networkId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}

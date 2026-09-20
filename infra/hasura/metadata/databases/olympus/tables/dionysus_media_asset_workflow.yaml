@@ -1,0 +1,55 @@
+table:
+  name: media_asset_workflow
+  schema: dionysus
+configuration:
+  column_config:
+    asset_type:
+      custom_name: type
+    created_at:
+      custom_name: createdTime
+    finished_at:
+      custom_name: finishedTime
+    media_id:
+      custom_name: mediaId
+    started_at:
+      custom_name: startedTime
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    asset_type: type
+    created_at: createdTime
+    finished_at: finishedTime
+    media_id: mediaId
+    started_at: startedTime
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: decoration
+  using:
+    manual_configuration:
+      column_mapping:
+        asset_type: media_type
+        media_id: id
+      insertion_order: null
+      remote_table:
+        name: media_decorations
+        schema: dionysus
+- name: download
+  using:
+    manual_configuration:
+      column_mapping:
+        id: workflow_id
+      insertion_order: null
+      remote_table:
+        name: media_asset_download
+        schema: dionysus
+array_relationships:
+- name: steps
+  using:
+    manual_configuration:
+      column_mapping:
+        id: workflow_id
+      insertion_order: null
+      remote_table:
+        name: media_asset_workflow_step
+        schema: dionysus

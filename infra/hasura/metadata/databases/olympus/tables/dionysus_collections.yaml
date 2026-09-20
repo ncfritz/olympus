@@ -1,0 +1,38 @@
+table:
+  name: collections
+  schema: dionysus
+configuration:
+  column_config:
+    backdrop_path:
+      custom_name: backdropPath
+    created_at:
+      custom_name: createdTime
+    poster_path:
+      custom_name: posterPath
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    backdrop_path: backdropPath
+    created_at: createdTime
+    poster_path: posterPath
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+array_relationships:
+- name: images
+  using:
+    manual_configuration:
+      column_mapping:
+        id: collection_id
+      insertion_order: null
+      remote_table:
+        name: collection_images
+        schema: dionysus
+- name: parts
+  using:
+    manual_configuration:
+      column_mapping:
+        id: collection_id
+      insertion_order: null
+      remote_table:
+        name: collection_parts
+        schema: dionysus

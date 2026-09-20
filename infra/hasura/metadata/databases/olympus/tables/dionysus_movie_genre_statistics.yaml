@@ -1,0 +1,3 @@
+table:
+  name: movie_genre_statistics
+  schema: dionysus

@@ -1,0 +1,3 @@
+table:
+  name: tv_series_genre_count_statistics
+  schema: dionysus

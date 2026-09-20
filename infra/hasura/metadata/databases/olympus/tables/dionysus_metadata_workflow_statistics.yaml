@@ -1,0 +1,16 @@
+table:
+  name: metadata_workflow_statistics
+  schema: dionysus
+configuration:
+  column_config:
+    created_date:
+      custom_name: createdTime
+    queue_time:
+      custom_name: queueTime
+    run_time:
+      custom_name: runTime
+  custom_column_names:
+    created_date: createdTime
+    queue_time: queueTime
+    run_time: runTime
+  custom_root_fields: {}

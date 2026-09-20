@@ -1,0 +1,41 @@
+table:
+  name: tv_episode_cast
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    credit_id:
+      custom_name: creditId
+    episode_id:
+      custom_name: episodeId
+    original_name:
+      custom_name: originalName
+    person_id:
+      custom_name: personId
+    season_id:
+      custom_name: seasonId
+    series_id:
+      custom_name: seriesId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    credit_id: creditId
+    episode_id: episodeId
+    original_name: originalName
+    person_id: personId
+    season_id: seasonId
+    series_id: seriesId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: person
+  using:
+    manual_configuration:
+      column_mapping:
+        person_id: id
+      insertion_order: null
+      remote_table:
+        name: people
+        schema: dionysus

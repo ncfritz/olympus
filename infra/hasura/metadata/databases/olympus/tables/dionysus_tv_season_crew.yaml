@@ -1,0 +1,50 @@
+table:
+  name: tv_season_crew
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    original_name:
+      custom_name: originalName
+    person_id:
+      custom_name: personId
+    season_id:
+      custom_name: seasonId
+    series_id:
+      custom_name: seriesId
+    total_episode_count:
+      custom_name: totalEpisodeCount
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    original_name: originalName
+    person_id: personId
+    season_id: seasonId
+    series_id: seriesId
+    total_episode_count: totalEpisodeCount
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+- name: person
+  using:
+    manual_configuration:
+      column_mapping:
+        person_id: id
+      insertion_order: null
+      remote_table:
+        name: people
+        schema: dionysus
+array_relationships:
+- name: jobs
+  using:
+    manual_configuration:
+      column_mapping:
+        person_id: person_id
+        season_id: season_id
+        series_id: series_id
+      insertion_order: null
+      remote_table:
+        name: tv_season_crew_jobs
+        schema: dionysus

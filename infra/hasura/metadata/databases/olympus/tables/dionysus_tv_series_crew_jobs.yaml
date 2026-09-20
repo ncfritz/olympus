@@ -1,0 +1,25 @@
+table:
+  name: tv_series_crew_jobs
+  schema: dionysus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    credit_id:
+      custom_name: creditId
+    episode_count:
+      custom_name: episodeCount
+    person_id:
+      custom_name: personId
+    series_id:
+      custom_name: seriesId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    credit_id: creditId
+    episode_count: episodeCount
+    person_id: personId
+    series_id: seriesId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
