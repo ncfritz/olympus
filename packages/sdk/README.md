@@ -37,6 +37,14 @@ document, with the `@hey-api/typescript`, `@hey-api/sdk` and
 each entry point (`client.setConfig({ baseURL })`) and throws on non-2xx
 responses by default.
 
+## Operations
+
+`scripts/generate-operations.mjs` runs after the generator and adds
+`operations` to each entry point: every operation of the document as
+`{ api, method, path, operationId, tag }`. `@ncfritz/olympus-client` uses
+it to label a call's request metrics with the operation it made
+(ADR 0017).
+
 ## Notes
 
 - Timestamps are strings. The API documents them as plain strings, so the

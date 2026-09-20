@@ -20,11 +20,11 @@
     }
   },
   "scripts": {
-    "generate": "openapi-ts",
+    "generate": "openapi-ts && node scripts/generate-operations.mjs",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint openapi-ts.config.ts",
-    "lintfix": "eslint openapi-ts.config.ts --fix",
+    "lint": "eslint openapi-ts.config.ts scripts",
+    "lintfix": "eslint openapi-ts.config.ts scripts --fix",
     "clean": "rm -rf dist src/generated"
   },
   "dependencies": {
