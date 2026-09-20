@@ -4,7 +4,8 @@ import type {
   MetadataJobType,
   MetadatFetchJobUpdate,
 } from "@ncfritz/olympus-sdk/dionysus";
-import type { MetadataApi } from "../api/MetadataApi";
+import type { JobApi } from "@ncfritz/olympus-client";
+import moment from "moment";
 import type { FetchJobCache } from "./FetchJobCache";
 
 export type FetchJobStoreOptions = {
@@ -22,7 +23,7 @@ export class FetchJobStore {
 
   constructor(
     private readonly cache: FetchJobCache,
-    private readonly metadataApi: MetadataApi,
+    private readonly jobApi: JobApi,
     options: FetchJobStoreOptions,
   ) {
     this.readCachingEnabled = options.readCachingEnabled;
@@ -42,7 +43,7 @@ export class FetchJobStore {
     }
 
     if (!metadataFetchJob) {
-      metadataFetchJob = await this.metadataApi.getMetadataFetchJob(
+      metadataFetchJob = await this.jobApi.describeMetadataFetchJob(
         entityId,
         jobType,
       );
@@ -64,15 +65,17 @@ export class FetchJobStore {
     publishNotification: boolean,
     context?: Record<string, unknown>,
   ): Promise<MetadataFetchJob> {
-    const metadataFetchJob = await this.metadataApi.createMetadataFetchJob(
-      entityId,
-      jobType,
+    const metadataFetchJob = await this.jobApi.createMetadataFetchJob({
+      id: entityId,
+      type: jobType,
       ttl,
       jitter,
       status,
+      lastFetchedTime:
+        status === "fetched" ? moment.utc().toISOString() : undefined,
       publishNotification,
       context,
-    );
+    });
 
     if (this.writeCachingEnabled && metadataFetchJob) {
       const key = `${jobType}:${entityId}`;
@@ -89,7 +92,7 @@ export class FetchJobStore {
     publishNotification: boolean,
     bypassCache?: boolean,
   ): Promise<MetadataFetchJob> {
-    const metadataFetchJob = await this.metadataApi.updateMetadataFetchJob(
+    const metadataFetchJob = await this.jobApi.updateMetadataFetchJob(
       entityId,
       jobType,
       updates,

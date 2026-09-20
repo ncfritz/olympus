@@ -46,7 +46,7 @@ export class TvSeriesMetadataHandler extends EntityHandler<
 
     const series = toTvSeries(seriesResponse, recommendationsResponse);
 
-    await this.metadataApi.createTVSeries(series);
+    await this.metadataApi.createTvSeries(series);
 
     for (const season of seriesResponse.seasons) {
       const seasonKey = `${seriesResponse.id}-${season.season_number}`;

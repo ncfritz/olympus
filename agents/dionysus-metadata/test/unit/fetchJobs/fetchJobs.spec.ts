@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MetadataApi } from "../../../src/api/MetadataApi";
+import type { JobApi } from "@ncfritz/olympus-client";
 import { FetchJobs } from "../../../src/fetchJobs/FetchJobs";
 import { SqliteFetchJobCache } from "../../../src/fetchJobs/SqliteFetchJobCache";
 import { fetchJob } from "../../fixtures/fakes";
@@ -11,7 +11,7 @@ describe("fetch jobs", () => {
   let dir: string;
   let cache: SqliteFetchJobCache;
   let api: {
-    getMetadataFetchJob: ReturnType<typeof vi.fn>;
+    describeMetadataFetchJob: ReturnType<typeof vi.fn>;
     createMetadataFetchJob: ReturnType<typeof vi.fn>;
     updateMetadataFetchJob: ReturnType<typeof vi.fn>;
   };
@@ -21,15 +21,15 @@ describe("fetch jobs", () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "fetch-jobs-"));
     cache = new SqliteFetchJobCache({ path: path.join(dir, "cache") });
     api = {
-      getMetadataFetchJob: vi.fn(async (id: string) => fetchJob({ id })),
-      createMetadataFetchJob: vi.fn(async (id: string) =>
-        fetchJob({ id, status: "queued" }),
+      describeMetadataFetchJob: vi.fn(async (id: string) => fetchJob({ id })),
+      createMetadataFetchJob: vi.fn(async ({ id, status }) =>
+        fetchJob({ id, status }),
       ),
       updateMetadataFetchJob: vi.fn(async (id: string) =>
         fetchJob({ id, status: "fetched" }),
       ),
     };
-    fetchJobs = new FetchJobs(cache, api as unknown as MetadataApi);
+    fetchJobs = new FetchJobs(cache, api as unknown as JobApi);
   });
 
   afterEach(async () => {
@@ -48,7 +48,7 @@ describe("fetch jobs", () => {
     const store = await fetchJobs.store(caching);
     await store.getMetadataFetchJob("603", "movies", false);
     await store.getMetadataFetchJob("603", "movies", false);
-    expect(api.getMetadataFetchJob).toHaveBeenCalledTimes(1);
+    expect(api.describeMetadataFetchJob).toHaveBeenCalledTimes(1);
     await expect(cache.get("movies:603")).resolves.toMatchObject({ id: "603" });
   });
 
@@ -61,7 +61,7 @@ describe("fetch jobs", () => {
       writeCachingEnabled: false,
     });
     await store.getMetadataFetchJob("603", "movies", false);
-    expect(api.getMetadataFetchJob).toHaveBeenCalledTimes(3);
+    expect(api.describeMetadataFetchJob).toHaveBeenCalledTimes(3);
   });
 
   it("caches what creates and updates return", async () => {
@@ -83,10 +83,52 @@ describe("fetch jobs", () => {
     );
   });
 
+  it("creates a fetch job, stamping it fetched now when created fetched", async () => {
+    const store = await fetchJobs.store(caching);
+    await store.createMetadataFetchJob("1", "movies", 30, 10, "queued", true);
+    await store.createMetadataFetchJob(
+      "2",
+      "movies",
+      30,
+      10,
+      "fetched",
+      false,
+      {
+        seasonId: 4,
+      },
+    );
+    expect(api.createMetadataFetchJob.mock.calls).toEqual([
+      [
+        {
+          id: "1",
+          type: "movies",
+          ttl: 30,
+          jitter: 10,
+          status: "queued",
+          lastFetchedTime: undefined,
+          publishNotification: true,
+          context: undefined,
+        },
+      ],
+      [
+        {
+          id: "2",
+          type: "movies",
+          ttl: 30,
+          jitter: 10,
+          status: "fetched",
+          lastFetchedTime: expect.stringMatching(/^\d{4}-\d\d-\d\dT/),
+          publishNotification: false,
+          context: { seasonId: 4 },
+        },
+      ],
+    ]);
+  });
+
   it("fails without a cache directory", async () => {
     const unset = new FetchJobs(
       new SqliteFetchJobCache({ path: "" }),
-      api as unknown as MetadataApi,
+      api as unknown as JobApi,
     );
     await expect(unset.store(caching)).rejects.toThrow();
   });

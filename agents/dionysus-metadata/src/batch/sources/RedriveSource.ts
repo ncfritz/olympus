@@ -3,7 +3,7 @@ import type {
   MetadataFetchJob,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Logger } from "@nestjs/common";
-import type { MetadataApi } from "../../api/MetadataApi";
+import type { JobApi } from "@ncfritz/olympus-client";
 import type { MetadataFetchJobStatus, MetadataJobType } from "../../messaging";
 import type { RecordSource } from "./RecordSource";
 
@@ -20,7 +20,7 @@ export class RedriveSource implements RecordSource<MetadataFetchJob> {
   private recordCount = 0;
 
   constructor(
-    private readonly metadataApi: MetadataApi,
+    private readonly jobApi: JobApi,
     private readonly metadataType: MetadataJobType,
     private readonly status: MetadataFetchJobStatus,
   ) {}
@@ -85,7 +85,7 @@ export class RedriveSource implements RecordSource<MetadataFetchJob> {
   }
 
   private async fetchJobs(): Promise<ListMetadataFetchJobsResponse> {
-    const listResponse = await this.metadataApi.scrollMetadataFetchJobs(
+    const listResponse = await this.jobApi.scrollMetadataFetchJobs(
       this.metadataType,
       this.status,
       this.lastSeenId,

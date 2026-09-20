@@ -2,7 +2,7 @@ import type { BatchJob, WorkflowStatus } from "@ncfritz/olympus-sdk/dionysus";
 import type { WebSocketNotificationLevel } from "@ncfritz/olympus-sdk/olympus";
 import { Injectable, Logger } from "@nestjs/common";
 import moment from "moment";
-import { NotificationApi } from "../../api/NotificationApi";
+import { NotificationApi } from "@ncfritz/olympus-client";
 
 const logger = new Logger("JobNotifier");
 

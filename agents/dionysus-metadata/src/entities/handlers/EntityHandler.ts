@@ -4,7 +4,7 @@ import type {
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable, Logger } from "@nestjs/common";
 import moment, { type Moment } from "moment";
-import { MetadataApi } from "../../api/MetadataApi";
+import { MetadataApi } from "@ncfritz/olympus-client";
 import { FetchJobs } from "../../fetchJobs/FetchJobs";
 import type { FetchJobStore } from "../../fetchJobs/FetchJobStore";
 import { TERMINAL_STATUSES } from "../../fetchJobs/statuses";

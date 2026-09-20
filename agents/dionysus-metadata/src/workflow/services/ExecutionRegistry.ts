@@ -3,8 +3,7 @@ import {
   Injectable,
   Logger,
 } from "@nestjs/common";
-import { BatchJobApi } from "../../api/BatchJobApi";
-import { WorkflowApi } from "../../api/WorkflowApi";
+import { JobApi, MetadataWorkflowApi } from "@ncfritz/olympus-client";
 import { JobNotifier } from "./JobNotifier";
 
 export type ExecutionType = "workflow" | "batch";
@@ -25,8 +24,8 @@ export class ExecutionRegistry implements BeforeApplicationShutdown {
   private readonly executions: Map<string, Execution> = new Map();
 
   constructor(
-    private readonly workflowApi: WorkflowApi,
-    private readonly batchJobApi: BatchJobApi,
+    private readonly workflowApi: MetadataWorkflowApi,
+    private readonly jobApi: JobApi,
     private readonly jobNotifier: JobNotifier,
   ) {}
 
@@ -57,7 +56,7 @@ export class ExecutionRegistry implements BeforeApplicationShutdown {
     for (const execution of outstandingTasks) {
       try {
         if (execution.type === "workflow") {
-          await this.workflowApi.updateWorkflow(execution.id, {
+          await this.workflowApi.updateMetadataWorkflow(execution.id, {
             status: "failed",
           });
           await this.jobNotifier.sendWorkflowNotification(
@@ -65,7 +64,7 @@ export class ExecutionRegistry implements BeforeApplicationShutdown {
             "failed",
           );
         } else if (execution.type === "batch") {
-          await this.batchJobApi.updateBatchJob(execution.id, {
+          await this.jobApi.updateBatchJob(execution.id, {
             status: "failed",
           });
         }

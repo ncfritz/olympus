@@ -66,8 +66,6 @@ src/
   messaging.ts                queues, subscriptions and channel prefetch;
                               routes and payloads from @ncfritz/olympus-messages
   infra/                      RabbitModule
-  api/                        OlympusApiModule: BatchJobApi, WorkflowApi,
-                              MetadataApi, NotificationApi
   tmdb/                       TmdbModule: TmdbClient (retries, metrics),
                               endpoints tmdb-ts lacks, TMDB types
   fetchJobs/                  FetchJobs: metadata fetch jobs through the

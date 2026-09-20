@@ -1,7 +1,6 @@
 import type { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { BatchJobApi } from "../../../src/api/BatchJobApi";
-import type { MetadataApi } from "../../../src/api/MetadataApi";
+import type { JobApi, MetadataApi } from "@ncfritz/olympus-client";
 import { CertificationsBatchHandler } from "../../../src/batch/handlers/CertificationsBatchHandler";
 import { CountriesBatchHandler } from "../../../src/batch/handlers/CountriesBatchHandler";
 import { GenresBatchHandler } from "../../../src/batch/handlers/GenresBatchHandler";
@@ -13,7 +12,7 @@ import type { ExecutionRegistry } from "../../../src/workflow/services/Execution
 import type { JobNotifier } from "../../../src/workflow/services/JobNotifier";
 import {
   fakeAmqp,
-  fakeBatchJobApi,
+  fakeJobApi,
   fakeFetchJobs,
   fakeMetadataApi,
   fakeNotifier,
@@ -48,13 +47,14 @@ const fakeTmdb = () => ({
 describe("batch handlers", () => {
   let store: FakeStore;
   let metadataApi: ReturnType<typeof fakeMetadataApi>;
+  let jobApi: ReturnType<typeof fakeJobApi>;
   let tmdb: ReturnType<typeof fakeTmdb>;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const create = <H>(Type: abstract new (...args: any[]) => H): H =>
     new (Type as unknown as new (...args: unknown[]) => H)(
       fakeAmqp() as unknown as AmqpConnection,
-      fakeBatchJobApi() as unknown as BatchJobApi,
+      jobApi as unknown as JobApi,
       metadataApi as unknown as MetadataApi,
       tmdb as unknown as TmdbClient,
       fakeFetchJobs(store) as unknown as FetchJobs,
@@ -65,6 +65,7 @@ describe("batch handlers", () => {
   beforeEach(() => {
     store = fakeStore();
     metadataApi = fakeMetadataApi();
+    jobApi = fakeJobApi();
     tmdb = fakeTmdb();
   });
 
@@ -142,7 +143,7 @@ describe("batch handlers", () => {
   describe("redrive", () => {
     it("moves the fetch jobs to the target status, bypassing cache and freshness", async () => {
       store = fakeStore([fetchJob({ id: "1", status: "failed" })]);
-      metadataApi.scrollMetadataFetchJobs
+      jobApi.scrollMetadataFetchJobs
         .mockResolvedValueOnce({ jobs: [fetchJob({ id: "1" })], count: 1 })
         .mockResolvedValueOnce({ jobs: [], count: 1 });
       const handler = create(RedriveBatchHandler);
@@ -156,7 +157,7 @@ describe("batch handlers", () => {
         republish: true,
       });
 
-      expect(metadataApi.scrollMetadataFetchJobs).toHaveBeenCalledWith(
+      expect(jobApi.scrollMetadataFetchJobs).toHaveBeenCalledWith(
         "movies",
         "failed",
         undefined,

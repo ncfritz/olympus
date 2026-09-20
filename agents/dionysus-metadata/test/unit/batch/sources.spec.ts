@@ -3,7 +3,7 @@ import moment from "moment";
 import { Readable } from "stream";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { gzipSync } from "zlib";
-import type { MetadataApi } from "../../../src/api/MetadataApi";
+import type { JobApi } from "@ncfritz/olympus-client";
 import { ExportFileSource } from "../../../src/batch/sources/ExportFileSource";
 import { ListSource } from "../../../src/batch/sources/ListSource";
 import { RedriveSource } from "../../../src/batch/sources/RedriveSource";
@@ -62,7 +62,7 @@ describe("RedriveSource", () => {
     ];
     const scroll = vi.fn(async () => pages.shift()!);
     const source = new RedriveSource(
-      { scrollMetadataFetchJobs: scroll } as unknown as MetadataApi,
+      { scrollMetadataFetchJobs: scroll } as unknown as JobApi,
       "movies",
       "failed",
     );

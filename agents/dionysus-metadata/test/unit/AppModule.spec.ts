@@ -1,7 +1,7 @@
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import { Test, TestingModule } from "@nestjs/testing";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { WorkflowApi } from "../../src/api/WorkflowApi";
+import { MetadataWorkflowApi } from "@ncfritz/olympus-client";
 import { AppModule } from "../../src/AppModule";
 import { CertificationsBatchHandler } from "../../src/batch/handlers/CertificationsBatchHandler";
 import { CollectionsBatchHandler } from "../../src/batch/handlers/CollectionsBatchHandler";
@@ -64,10 +64,10 @@ describe("AppModule", () => {
 
   it("fails what is still running when the app shuts down", async () => {
     const workflowApi = {
-      updateWorkflow: vi.fn(async (id: string) => ({ id })),
+      updateMetadataWorkflow: vi.fn(async (id: string) => ({ id })),
     };
     const app = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(WorkflowApi)
+      .overrideProvider(MetadataWorkflowApi)
       .useValue(workflowApi)
       .overrideProvider(JobNotifier)
       .useValue({ sendWorkflowNotification: vi.fn() })
@@ -76,7 +76,7 @@ describe("AppModule", () => {
 
     await app.close();
 
-    expect(workflowApi.updateWorkflow).toHaveBeenCalledWith("wf-1", {
+    expect(workflowApi.updateMetadataWorkflow).toHaveBeenCalledWith("wf-1", {
       status: "failed",
     });
   });

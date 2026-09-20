@@ -41,7 +41,11 @@ export class TvEpisodeMetadataHandler extends EntityHandler<
 
     const episode = toTvEpisode(episodeResponse, metadataFetchJob);
 
-    await this.metadataApi.createTVEpisode(seriesId, seasonNumber, episode);
+    await this.metadataApi.createTvSeriesEpisode(
+      seriesId,
+      seasonNumber,
+      episode,
+    );
 
     return [episode, undefined];
   }

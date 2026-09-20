@@ -61,21 +61,22 @@ export const fakeMetadataApi = () =>
       (target[name] ??= vi.fn(async (...args: unknown[]) => args.at(-1))),
   });
 
-export const fakeBatchJobApi = () => ({
-  getBatchJob: vi.fn(async (id: string) => ({
+export const fakeJobApi = () => ({
+  describeBatchJob: vi.fn(async (id: string) => ({
     id,
     type: "movies",
     status: "created",
   })),
   updateBatchJob: vi.fn(async (_id: string, job: object) => ({ ...job })),
+  scrollMetadataFetchJobs: vi.fn(),
 });
 
 export const fakeWorkflowApi = () => ({
-  updateWorkflow: vi.fn(async (id: string, workflow: object) => ({
+  updateMetadataWorkflow: vi.fn(async (id: string, workflow: object) => ({
     id,
     ...workflow,
   })),
-  createWorkflowStep: vi.fn(async () => ({})),
+  createMetadataWorkflowStep: vi.fn(async () => ({})),
 });
 
 export const fakeAmqp = () => ({

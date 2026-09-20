@@ -1,6 +1,6 @@
 import moment from "moment";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MetadataApi } from "../../../src/api/MetadataApi";
+import type { MetadataApi } from "@ncfritz/olympus-client";
 import { EntityHandler } from "../../../src/entities/handlers/EntityHandler";
 import { MovieMetadataHandler } from "../../../src/entities/handlers/MovieMetadataHandler";
 import { ProductionCompanyMetadataHandler } from "../../../src/entities/handlers/ProductionCompanyMetadataHandler";
@@ -187,7 +187,7 @@ describe("entity handlers", () => {
         entityType: "tv_series",
       });
 
-      expect(metadataApi.createTVSeries).toHaveBeenCalledOnce();
+      expect(metadataApi.createTvSeries).toHaveBeenCalledOnce();
       expect(store.createMetadataFetchJob.mock.calls).toEqual([
         [
           "2316-0",
@@ -269,7 +269,7 @@ describe("entity handlers", () => {
         { tvShowID: 2316, seasonNumber: 1 },
         ["external_ids", "images", "aggregate_credits", "videos"],
       );
-      expect(metadataApi.createTVSeason).toHaveBeenCalledWith(
+      expect(metadataApi.createTvSeriesSeason).toHaveBeenCalledWith(
         2316,
         expect.objectContaining({ id: 3812 }),
       );
@@ -296,7 +296,7 @@ describe("entity handlers", () => {
         { tvShowID: 2316, seasonNumber: 1, episodeNumber: 1 },
         ["external_ids", "images", "credits", "videos"],
       );
-      expect(metadataApi.createTVEpisode).toHaveBeenCalledWith(
+      expect(metadataApi.createTvSeriesEpisode).toHaveBeenCalledWith(
         2316,
         1,
         expect.objectContaining({ id: 9001, seasonId: 3812 }),

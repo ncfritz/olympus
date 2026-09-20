@@ -7,8 +7,7 @@ import type {
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable, Logger } from "@nestjs/common";
 import moment from "moment";
-import { BatchJobApi } from "../../api/BatchJobApi";
-import { MetadataApi } from "../../api/MetadataApi";
+import { JobApi, MetadataApi } from "@ncfritz/olympus-client";
 import { FetchJobs } from "../../fetchJobs/FetchJobs";
 import { TERMINAL_STATUSES } from "../../fetchJobs/statuses";
 import {
@@ -42,7 +41,7 @@ export abstract class BatchHandler<
 
   constructor(
     protected readonly amqpConnection: AmqpConnection,
-    protected readonly batchJobApi: BatchJobApi,
+    protected readonly jobApi: JobApi,
     protected readonly metadataApi: MetadataApi,
     protected readonly tmdbClient: TmdbClient,
     protected readonly fetchJobs: FetchJobs,
@@ -54,7 +53,7 @@ export abstract class BatchHandler<
   protected abstract createSource(message: M): RecordSource<R>;
 
   protected async run(message: M): Promise<void> {
-    let job = await this.batchJobApi.getBatchJob(message.jobId);
+    let job = await this.jobApi.describeBatchJob(message.jobId);
 
     if (!job) {
       this.logger.log("No job record found, aborting");
@@ -95,7 +94,7 @@ export abstract class BatchHandler<
       job.totalRecords = source.count();
       job.startedTime = moment.utc().toISOString();
 
-      job = await this.batchJobApi.updateBatchJob(job.id, job);
+      job = await this.jobApi.updateBatchJob(job.id, job);
       let lastCheckpointTime = moment.utc();
 
       let record: R | undefined;
@@ -259,7 +258,7 @@ export abstract class BatchHandler<
           job.duplicateRecords = duplicateRecordCount;
           job.expiredRecords = expiredRecordCount;
           job.skippedRecords = skippedRecordCount;
-          await this.batchJobApi.updateBatchJob(job.id, job);
+          await this.jobApi.updateBatchJob(job.id, job);
 
           lastCheckpointTime = moment.utc();
         }
@@ -294,7 +293,7 @@ export abstract class BatchHandler<
       });
 
       this.executions.remove(job.id);
-      await this.batchJobApi.updateBatchJob(job.id, job);
+      await this.jobApi.updateBatchJob(job.id, job);
       await source.cleanup();
       await this.signalWorkflow(job, message);
       await this.jobNotifier.sendBatchJobNotification(job, message.workflowId);

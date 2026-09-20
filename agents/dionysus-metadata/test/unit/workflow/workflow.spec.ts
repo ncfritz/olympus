@@ -1,21 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { BatchJobApi } from "../../../src/api/BatchJobApi";
-import type { NotificationApi } from "../../../src/api/NotificationApi";
-import type { WorkflowApi } from "../../../src/api/WorkflowApi";
+import type {
+  JobApi,
+  NotificationApi,
+  MetadataWorkflowApi,
+} from "@ncfritz/olympus-client";
 import type { BatchJobCompletionMessage } from "../../../src/messaging";
 import { StartWorkflowHandler } from "../../../src/workflow/handlers/StartWorkflowHandler";
 import { WorkflowJobCompletionHandler } from "../../../src/workflow/handlers/WorkflowJobCompletionHandler";
 import { ExecutionRegistry } from "../../../src/workflow/services/ExecutionRegistry";
 import { JobNotifier } from "../../../src/workflow/services/JobNotifier";
 import {
-  fakeBatchJobApi,
+  fakeJobApi,
   fakeNotifier,
   fakeWorkflowApi,
 } from "../../fixtures/fakes";
 
 describe("workflows", () => {
   let workflowApi: ReturnType<typeof fakeWorkflowApi>;
-  let batchJobApi: ReturnType<typeof fakeBatchJobApi>;
+  let jobApi: ReturnType<typeof fakeJobApi>;
   let notifier: ReturnType<typeof fakeNotifier>;
   let executions: ExecutionRegistry;
   let completion: WorkflowJobCompletionHandler;
@@ -35,16 +37,16 @@ describe("workflows", () => {
 
   beforeEach(() => {
     workflowApi = fakeWorkflowApi();
-    batchJobApi = fakeBatchJobApi();
+    jobApi = fakeJobApi();
     notifier = fakeNotifier();
     executions = new ExecutionRegistry(
-      workflowApi as unknown as WorkflowApi,
-      batchJobApi as unknown as BatchJobApi,
+      workflowApi as unknown as MetadataWorkflowApi,
+      jobApi as unknown as JobApi,
       notifier as unknown as JobNotifier,
     );
     completion = new WorkflowJobCompletionHandler(
-      workflowApi as unknown as WorkflowApi,
-      batchJobApi as unknown as BatchJobApi,
+      workflowApi as unknown as MetadataWorkflowApi,
+      jobApi as unknown as JobApi,
       executions,
       notifier as unknown as JobNotifier,
     );
@@ -52,20 +54,23 @@ describe("workflows", () => {
 
   it("starts with languages", async () => {
     await new StartWorkflowHandler(
-      workflowApi as unknown as WorkflowApi,
+      workflowApi as unknown as MetadataWorkflowApi,
       executions,
     ).handle({ workflowId: "wf-1" });
 
-    expect(workflowApi.updateWorkflow).toHaveBeenCalledWith("wf-1", {
+    expect(workflowApi.updateMetadataWorkflow).toHaveBeenCalledWith("wf-1", {
       status: "started",
       startedTime: expect.any(String),
     });
-    expect(workflowApi.createWorkflowStep).toHaveBeenCalledWith("wf-1", {
-      type: "job_execution",
-      jobType: "languages",
-      attempt: 0,
-      offset: 0,
-    });
+    expect(workflowApi.createMetadataWorkflowStep).toHaveBeenCalledWith(
+      "wf-1",
+      {
+        type: "job_execution",
+        jobType: "languages",
+        attempt: 0,
+        offset: 0,
+      },
+    );
     expect(executions.getExecutions()).toEqual([
       { id: "wf-1", type: "workflow" },
     ]);
@@ -89,7 +94,7 @@ describe("workflows", () => {
       await completion.handle(done({ jobType }));
     }
     expect(
-      workflowApi.createWorkflowStep.mock.calls.map(
+      workflowApi.createMetadataWorkflowStep.mock.calls.map(
         (call) => (call as unknown as [string, { jobType: string }])[1].jobType,
       ),
     ).toEqual(order.slice(1));
@@ -98,7 +103,7 @@ describe("workflows", () => {
   it("succeeds after movies", async () => {
     executions.add({ id: "wf-1", type: "workflow" });
     await completion.handle(done({ jobType: "movies" }));
-    expect(workflowApi.updateWorkflow).toHaveBeenCalledWith("wf-1", {
+    expect(workflowApi.updateMetadataWorkflow).toHaveBeenCalledWith("wf-1", {
       status: "success",
       finishedTime: expect.any(String),
     });
@@ -111,25 +116,28 @@ describe("workflows", () => {
 
   it("retries a failed job from where it stopped", async () => {
     await completion.handle(done({ status: "failed", attempt: 1 }));
-    expect(batchJobApi.updateBatchJob).toHaveBeenCalledWith("job-1", {
+    expect(jobApi.updateBatchJob).toHaveBeenCalledWith("job-1", {
       status: "cancelled",
       finishedTime: expect.any(String),
     });
-    expect(workflowApi.createWorkflowStep).toHaveBeenCalledWith("wf-1", {
-      type: "retry",
-      jobType: "languages",
-      attempt: 2,
-      offset: 100,
-    });
+    expect(workflowApi.createMetadataWorkflowStep).toHaveBeenCalledWith(
+      "wf-1",
+      {
+        type: "retry",
+        jobType: "languages",
+        attempt: 2,
+        offset: 100,
+      },
+    );
   });
 
   it("fails the workflow after the third attempt", async () => {
     await completion.handle(done({ status: "failed", attempt: 3 }));
-    expect(workflowApi.updateWorkflow).toHaveBeenCalledWith("wf-1", {
+    expect(workflowApi.updateMetadataWorkflow).toHaveBeenCalledWith("wf-1", {
       status: "failed",
       finishedTime: expect.any(String),
     });
-    expect(workflowApi.createWorkflowStep).not.toHaveBeenCalled();
+    expect(workflowApi.createMetadataWorkflowStep).not.toHaveBeenCalled();
     expect(notifier.sendWorkflowNotification).toHaveBeenCalledWith(
       "wf-1",
       "failed",
@@ -146,17 +154,17 @@ describe("workflows", () => {
 
   it("ignores completions outside a workflow", async () => {
     await completion.handle(done({ workflowId: undefined }));
-    expect(workflowApi.updateWorkflow).not.toHaveBeenCalled();
+    expect(workflowApi.updateMetadataWorkflow).not.toHaveBeenCalled();
   });
 
   it("fails what is still running at shutdown", async () => {
     executions.add({ id: "wf-1", type: "workflow" });
     executions.add({ id: "job-1", type: "batch" });
     await executions.failOutstanding();
-    expect(workflowApi.updateWorkflow).toHaveBeenCalledWith("wf-1", {
+    expect(workflowApi.updateMetadataWorkflow).toHaveBeenCalledWith("wf-1", {
       status: "failed",
     });
-    expect(batchJobApi.updateBatchJob).toHaveBeenCalledWith("job-1", {
+    expect(jobApi.updateBatchJob).toHaveBeenCalledWith("job-1", {
       status: "failed",
     });
   });

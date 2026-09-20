@@ -25,7 +25,7 @@ export class RedriveBatchHandler extends BatchHandler<
 
   protected createSource(message: RedriveJobMessage): RedriveSource {
     return new RedriveSource(
-      this.metadataApi,
+      this.jobApi,
       message.jobType,
       message.status || "failed",
     );

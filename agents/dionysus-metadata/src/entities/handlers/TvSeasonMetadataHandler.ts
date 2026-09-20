@@ -42,7 +42,7 @@ export class TvSeasonMetadataHandler extends EntityHandler<
 
     const season = toTvSeason(seasonResponse);
 
-    await this.metadataApi.createTVSeason(seriesId, season);
+    await this.metadataApi.createTvSeriesSeason(seriesId, season);
 
     let lastEpisodeAirDate = undefined;
 

@@ -1,8 +1,7 @@
 import type { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import moment from "moment";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { BatchJobApi } from "../../../src/api/BatchJobApi";
-import type { MetadataApi } from "../../../src/api/MetadataApi";
+import type { JobApi, MetadataApi } from "@ncfritz/olympus-client";
 import { BatchHandler } from "../../../src/batch/handlers/BatchHandler";
 import { ListSource } from "../../../src/batch/sources/ListSource";
 import type { FetchJobs } from "../../../src/fetchJobs/FetchJobs";
@@ -12,7 +11,7 @@ import type { ExecutionRegistry } from "../../../src/workflow/services/Execution
 import type { JobNotifier } from "../../../src/workflow/services/JobNotifier";
 import {
   fakeAmqp,
-  fakeBatchJobApi,
+  fakeJobApi,
   fakeFetchJobs,
   fakeNotifier,
   fakeStore,
@@ -47,7 +46,7 @@ const message = (
 
 describe("BatchHandler", () => {
   let store: FakeStore;
-  let batchJobApi: ReturnType<typeof fakeBatchJobApi>;
+  let jobApi: ReturnType<typeof fakeJobApi>;
   let amqp: ReturnType<typeof fakeAmqp>;
   let notifier: ReturnType<typeof fakeNotifier>;
   let executions: {
@@ -58,12 +57,12 @@ describe("BatchHandler", () => {
 
   /** The job as last saved. */
   const savedJob = () =>
-    batchJobApi.updateBatchJob.mock.lastCall![1] as Record<string, unknown>;
+    jobApi.updateBatchJob.mock.lastCall![1] as Record<string, unknown>;
 
   const build = () => {
     handler = new TestBatchHandler(
       amqp as unknown as AmqpConnection,
-      batchJobApi as unknown as BatchJobApi,
+      jobApi as unknown as JobApi,
       {} as MetadataApi,
       {} as TmdbClient,
       fakeFetchJobs(store) as unknown as FetchJobs,
@@ -74,7 +73,7 @@ describe("BatchHandler", () => {
 
   beforeEach(() => {
     store = fakeStore();
-    batchJobApi = fakeBatchJobApi();
+    jobApi = fakeJobApi();
     amqp = fakeAmqp();
     notifier = fakeNotifier();
     executions = { add: vi.fn(), remove: vi.fn() };
@@ -171,7 +170,7 @@ describe("BatchHandler", () => {
   });
 
   it("ignores jobs that aren't new", async () => {
-    batchJobApi.getBatchJob.mockResolvedValue({
+    jobApi.describeBatchJob.mockResolvedValue({
       id: "job-1",
       type: "movies",
       status: "started",
@@ -179,13 +178,13 @@ describe("BatchHandler", () => {
     handler.rows = [{ id: 1 }];
     await handler.handle(message());
     expect(store.createMetadataFetchJob).not.toHaveBeenCalled();
-    expect(batchJobApi.updateBatchJob).not.toHaveBeenCalled();
+    expect(jobApi.updateBatchJob).not.toHaveBeenCalled();
     // Someone else's job: a shutdown here must not fail it.
     expect(executions.add).not.toHaveBeenCalled();
   });
 
   it("ignores jobs that don't exist", async () => {
-    batchJobApi.getBatchJob.mockResolvedValue(undefined as never);
+    jobApi.describeBatchJob.mockResolvedValue(undefined as never);
     await expect(handler.handle(message())).resolves.toBeUndefined();
     expect(executions.add).not.toHaveBeenCalled();
   });

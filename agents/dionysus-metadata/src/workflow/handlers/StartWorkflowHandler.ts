@@ -1,7 +1,7 @@
 import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
 import { Injectable, Logger } from "@nestjs/common";
 import moment from "moment";
-import { WorkflowApi } from "../../api/WorkflowApi";
+import { MetadataWorkflowApi } from "@ncfritz/olympus-client";
 import {
   START_WORKFLOW_SUBSCRIPTION,
   type StartWorkflowMessage,
@@ -14,7 +14,7 @@ export class StartWorkflowHandler {
   private readonly logger = new Logger(StartWorkflowHandler.name);
 
   constructor(
-    private readonly workflowApi: WorkflowApi,
+    private readonly workflowApi: MetadataWorkflowApi,
     private readonly executions: ExecutionRegistry,
   ) {}
 
@@ -22,7 +22,7 @@ export class StartWorkflowHandler {
   public async handle(msg: StartWorkflowMessage): Promise<void> {
     this.logger.debug(`Starting workflow ${msg.workflowId}`);
 
-    await this.workflowApi.updateWorkflow(msg.workflowId, {
+    await this.workflowApi.updateMetadataWorkflow(msg.workflowId, {
       status: "started",
       startedTime: moment.utc().toISOString(),
     });
@@ -30,7 +30,7 @@ export class StartWorkflowHandler {
 
     // The API will take care of sending the job notification message.  Once the job completes the
     // WorkflowJobCompletionHandler will take care of running the next stage of the workflow.
-    await this.workflowApi.createWorkflowStep(msg.workflowId, {
+    await this.workflowApi.createMetadataWorkflowStep(msg.workflowId, {
       type: "job_execution",
       jobType: "languages",
       attempt: 0,

@@ -1,8 +1,7 @@
 import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
 import { Injectable, Logger } from "@nestjs/common";
 import moment from "moment";
-import { BatchJobApi } from "../../api/BatchJobApi";
-import { WorkflowApi } from "../../api/WorkflowApi";
+import { JobApi, MetadataWorkflowApi } from "@ncfritz/olympus-client";
 import {
   type BatchJobCompletionMessage,
   JOB_COMPLETION_SUBSCRIPTION,
@@ -21,8 +20,8 @@ export class WorkflowJobCompletionHandler {
   private readonly logger = new Logger(WorkflowJobCompletionHandler.name);
 
   constructor(
-    private readonly workflowApi: WorkflowApi,
-    private readonly batchJobApi: BatchJobApi,
+    private readonly workflowApi: MetadataWorkflowApi,
+    private readonly jobApi: JobApi,
     private readonly executions: ExecutionRegistry,
     private readonly jobNotifier: JobNotifier,
   ) {}
@@ -81,7 +80,7 @@ export class WorkflowJobCompletionHandler {
 
       if (nextJobType) {
         this.logger.log(`Creating next BatchJob in workflow: ${nextJobType}`);
-        await this.workflowApi.createWorkflowStep(msg.workflowId, {
+        await this.workflowApi.createMetadataWorkflowStep(msg.workflowId, {
           type: "job_execution",
           jobType: nextJobType,
           attempt: 0,
@@ -92,10 +91,13 @@ export class WorkflowJobCompletionHandler {
         // The workflow has ended, mark the workflow as success. If any job has failed, retry logic will have kicked
         // in to attempt successful completion of the job. If the job has exhausted all retry attempts, the job will
         // fail and the workflow will also fail.
-        const workflow = await this.workflowApi.updateWorkflow(msg.workflowId, {
-          status: "success",
-          finishedTime: moment.utc().toISOString(),
-        });
+        const workflow = await this.workflowApi.updateMetadataWorkflow(
+          msg.workflowId,
+          {
+            status: "success",
+            finishedTime: moment.utc().toISOString(),
+          },
+        );
         await this.jobNotifier.sendWorkflowNotification(
           workflow.id,
           workflow.status,
@@ -107,20 +109,23 @@ export class WorkflowJobCompletionHandler {
       // the number of records processed so far and increment the attempt.
       if (msg.attempt >= 3) {
         this.executions.remove(msg.workflowId);
-        const workflow = await this.workflowApi.updateWorkflow(msg.workflowId, {
-          status: "failed",
-          finishedTime: moment.utc().toISOString(),
-        });
+        const workflow = await this.workflowApi.updateMetadataWorkflow(
+          msg.workflowId,
+          {
+            status: "failed",
+            finishedTime: moment.utc().toISOString(),
+          },
+        );
         await this.jobNotifier.sendWorkflowNotification(
           workflow.id,
           workflow.status,
         );
       } else {
-        await this.batchJobApi.updateBatchJob(msg.jobId, {
+        await this.jobApi.updateBatchJob(msg.jobId, {
           status: "cancelled",
           finishedTime: moment.utc().toISOString(),
         });
-        await this.workflowApi.createWorkflowStep(msg.workflowId, {
+        await this.workflowApi.createMetadataWorkflowStep(msg.workflowId, {
           type: "retry",
           jobType: msg.jobType,
           attempt: msg.attempt + 1,
@@ -129,10 +134,13 @@ export class WorkflowJobCompletionHandler {
       }
     } else {
       this.executions.remove(msg.workflowId);
-      const workflow = await this.workflowApi.updateWorkflow(msg.workflowId, {
-        status: "failed",
-        finishedTime: moment.utc().toISOString(),
-      });
+      const workflow = await this.workflowApi.updateMetadataWorkflow(
+        msg.workflowId,
+        {
+          status: "failed",
+          finishedTime: moment.utc().toISOString(),
+        },
+      );
       await this.jobNotifier.sendWorkflowNotification(
         workflow.id,
         workflow.status,

@@ -1,10 +1,17 @@
 import { MetricsModule } from "@ncfritz/olympus-nest";
+import { OlympusClientModule } from "@ncfritz/olympus-client/nest";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { OlympusApiModule } from "./api/OlympusApiModule";
 import { BatchModule } from "./batch/BatchModule";
-import type { RuntimeConfigType } from "./config/configuration";
-import { ALL_CONFIG, runtimeConfig } from "./config/configuration";
+import type {
+  RuntimeConfigType,
+  OlympusConfigType,
+} from "./config/configuration";
+import {
+  ALL_CONFIG,
+  runtimeConfig,
+  olympusConfig,
+} from "./config/configuration";
 import { EntitiesModule } from "./entities/EntitiesModule";
 import { FetchJobsModule } from "./fetchJobs/FetchJobsModule";
 import { RabbitModule } from "./infra/RabbitModule";
@@ -29,7 +36,14 @@ import { WorkflowModule } from "./workflow/WorkflowModule";
       }),
     }),
     RabbitModule,
-    OlympusApiModule,
+    // The Olympus API, through @ncfritz/olympus-client (ADR 0017)
+    OlympusClientModule.forRootAsync({
+      inject: [olympusConfig.KEY, runtimeConfig.KEY],
+      useFactory: (olympus: OlympusConfigType, runtime: RuntimeConfigType) => ({
+        baseUrl: olympus.apiBaseUrl,
+        clientName: runtime.appName,
+      }),
+    }),
     TmdbModule,
     FetchJobsModule,
     WorkflowModule,
