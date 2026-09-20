@@ -87,14 +87,18 @@ and no agent presents a certificate until phase 2.
 1. `@ncfritz/olympus-client`: Node-only TLS options (certificate, key, CA)
    on a keep-alive HTTPS agent; the Nest module reads `API_CLIENT_CERT`,
    `API_CLIENT_KEY` and `API_CA_CERT`. Tests against an HTTPS server with
-   the dev CA.
+   the dev CA. **done 2026-09-20** — `@ncfritz/olympus-client/tls` and
+   `readApiClientConfig` in `@ncfritz/olympus-nest`; all four agents read
+   the three variables and present their certificate when they are set
+   (**done 2026-09-20**), so what is left in this phase is operational.
 2. One commit per agent: `API_BASE_URL=https://olympus-api:3443/v1`, the
    certificate paths, the README and `dev.env.example`.
 3. The NAS asset agent: `https://api.olympus.internal.ncfritz.net:3443/v1`;
    `3443` published on the Mac Mini's LAN address; the internal DNS record.
 4. Real certificates from XCA: the Olympus Services intermediate, the
-   API's server certificate, one certificate per agent deployment; the
-   runbook `docs/guides/certificates.md`.
+   API's server certificate, one certificate per agent deployment. The
+   runbook is [docs/guides/certificates.md](../../guides/certificates.md)
+   (**done 2026-09-20**); issuing them is yours to do.
 5. Done when the report-only log shows every agent request identified
    and none that would be rejected.
 
@@ -229,9 +233,12 @@ everything else wait for the site's own conventions work.
 
 1. Signing key rotation: add a key, sign with it, retire the old one
    after the access token lifetime; runbook and test.
-2. Runbooks: issue and revoke service and device certificates, export
-   revocation lists, add a user, revoke a user's sessions, lost device.
-3. Dashboards later (the monitoring conversation): `auth_decisions_total`
+2. Runbooks: add a user, revoke a user's sessions, lost device
+   (certificates are already in
+   [docs/guides/certificates.md](../../guides/certificates.md)).
+3. `certificate_expiry_days` per certificate the API loads, so a renewal
+   is due long before a handshake starts failing.
+4. Dashboards later (the monitoring conversation): `auth_decisions_total`
    and the request metrics by client.
 
 ## Phase 8 — Enforcement
