@@ -17,7 +17,7 @@ export default defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Generated from the agent's OpenAPI document (pnpm generate:api).
-    "src/lib/api/schema.d.ts",
+    // Generated from the agent's OpenAPI document (pnpm generate).
+    "src/generated/**",
   ]),
 ]);

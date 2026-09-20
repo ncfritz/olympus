@@ -11,7 +11,7 @@ import {
   Typography,
 } from "antd";
 import useSWR from "swr";
-import type { components } from "@/lib/api/schema";
+import type { components } from "@/generated/api";
 import type { AvailabilityStatus } from "@/lib/api/queries";
 import { fetchEventPublishStatus } from "@/lib/api/queries";
 import { statusDotColor } from "@/lib/availability";

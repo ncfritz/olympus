@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { components } from "./schema";
+import type { components } from "../../generated/api";
 
 export type EventDto = components["schemas"]["EventResponseDto"];
 export type CalendarStatus = components["schemas"]["CalendarStatusDto"];

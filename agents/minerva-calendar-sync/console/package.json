@@ -10,8 +10,8 @@
     "build": "next build",
     "start": "next start -p 4392",
     "lint": "eslint",
-    "generate:api": "openapi-typescript ../agent/openapi/app-api.yaml -o src/lib/api/schema.d.ts",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "generate": "openapi-typescript ../agent/openapi/minerva-calendar-sync.json -o src/generated/api.d.ts"
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.4",
@@ -31,6 +31,7 @@
     "swr": "^2.5.1"
   },
   "devDependencies": {
+    "@ncfritz/minerva-calendar-sync-agent": "workspace:*",
     "@ncfritz/olympus-config": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "^19",

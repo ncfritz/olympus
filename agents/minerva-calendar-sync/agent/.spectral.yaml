@@ -1,0 +1,3 @@
+# The Olympus API's rules (ADR 0016): `pnpm lint:openapi`, also part of
+# `pnpm check:conventions`.
+extends: ["../../../apps/api/.spectral.yaml"]

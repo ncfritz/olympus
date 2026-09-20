@@ -1,27 +1,38 @@
-import { INestApplication } from "@nestjs/common";
-import { DocumentBuilder, OpenAPIObject, SwaggerModule } from "@nestjs/swagger";
-
 /**
- * Single source of truth for the app-facing OpenAPI document's metadata —
- * shared between main.ts (live Swagger UI) and scripts/generate-openapi.ts
- * (the openapi/app-api.yaml file the web/iOS clients generate against).
+ * Writes the management API's OpenAPI document to a directory (default:
+ * ./openapi). Run with `pnpm openapi` after `pnpm build`. The application
+ * is created but never initialized: no database, broker or provider is
+ * contacted.
  */
-export function buildOpenApiDocument(
-  app: INestApplication,
-  builder: DocumentBuilder,
-): OpenAPIObject {
-  const config = builder
-    .setTitle("Minerva Calendar Sync API")
-    .setDescription(
-      "Read API over synchronized calendar events and calendar sync status.",
-    )
-    .setVersion("0.1.0")
-    .addTag("events")
-    .addTag("calendars")
-    .addTag("calendar-auth")
-    .addTag("auth")
-    .addBearerAuth()
-    .build();
+import "source-map-support/register";
+// First: AppModule's configuration requires these when it is loaded.
+import "./openapiEnv";
 
-  return SwaggerModule.createDocument(app, config);
+import { NestFactory } from "@nestjs/core";
+import * as fs from "fs";
+import * as path from "path";
+import { AppModule } from "./AppModule";
+import { configureApp } from "./configureApp";
+import { buildOpenApiDocument } from "./openapi/documentBuilder";
+
+export const OPENAPI_FILE = "minerva-calendar-sync.json";
+
+async function generate(outDir: string): Promise<void> {
+  const app = await NestFactory.create(AppModule, { logger: ["error"] });
+  configureApp(app);
+
+  fs.mkdirSync(outDir, { recursive: true });
+  const target = path.join(outDir, OPENAPI_FILE);
+  const document = buildOpenApiDocument(app, false);
+  fs.writeFileSync(target, `${JSON.stringify(document, null, 2)}\n`);
+  console.log(`Wrote ${target}`);
+
+  await app.close();
 }
+
+generate(process.argv[2] ?? "openapi")
+  .then(() => process.exit(0))
+  .catch((e) => {
+    console.error("OpenAPI generation failed", e);
+    process.exit(1);
+  });

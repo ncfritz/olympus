@@ -8,7 +8,7 @@ pnpm-lock.yaml
 infra/hasura/metadata
 apps/api/openapi
 agents/*/agent/openapi
-agents/*/console/src/lib/api/schema.d.ts
+
 **/__snapshots__
 turbo/generators/templates
 

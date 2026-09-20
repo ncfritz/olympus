@@ -17,7 +17,10 @@ import {
 
 export { ConfigValidationError };
 
-export type ServerConfig = RuntimeConfig;
+export type ServerConfig = RuntimeConfig & {
+  /** Serve the OpenAPI document at /api-spec (ENABLE_API_EXPLORER; always outside production). */
+  apiExplorer: boolean;
+};
 
 export type GoogleConfig = {
   /** From a Google Cloud "Desktop app" OAuth client; needed to connect or sync a Google account. */
@@ -106,7 +109,12 @@ export const readConfig = (
   env: Record<string, string | undefined>,
 ): AgentConfig => {
   const read = new EnvReader(env);
-  const server = readRuntimeConfig(read, "minerva-calendar-sync", 4432);
+  const runtime = readRuntimeConfig(read, "minerva-calendar-sync", 4432);
+  const server: ServerConfig = {
+    ...runtime,
+    apiExplorer:
+      read.boolean("ENABLE_API_EXPLORER", false) || !runtime.isProduction,
+  };
   const config: AgentConfig = {
     server,
     logging: readLoggingConfig(read, server.isProduction),

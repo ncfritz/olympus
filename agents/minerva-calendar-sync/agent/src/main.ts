@@ -1,14 +1,13 @@
 import "source-map-support/register";
 
 import { createWinstonLogger } from "@ncfritz/olympus-nest";
-import { Logger, ValidationPipe } from "@nestjs/common";
+import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import cookieParser from "cookie-parser";
 import { WinstonModule } from "nest-winston";
 import { AppModule } from "./AppModule";
 import { readConfig } from "./config/configuration";
-import { buildOpenApiDocument } from "./openapi";
+import { configureApp } from "./configureApp";
+import { buildOpenApiDocument } from "./openapi/documentBuilder";
 
 const logger = new Logger("Bootstrap");
 
@@ -27,17 +26,11 @@ async function bootstrap(): Promise<void> {
     app.enableCors({ origin: config.auth.webAppUrl, credentials: true });
   }
 
-  app.use(cookieParser());
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
+  configureApp(app);
 
-  const document = buildOpenApiDocument(app, new DocumentBuilder());
-  SwaggerModule.setup("api/docs", app, document);
+  if (config.server.apiExplorer) {
+    buildOpenApiDocument(app);
+  }
 
   await app.listen(config.server.port);
 }
