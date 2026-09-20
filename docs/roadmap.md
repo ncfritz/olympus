@@ -173,8 +173,6 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     Fixed on the way: the AMQP password in the logs, the SFTP password in
     source, `console.log` throughout, bootstrap failures writing to
     `/logs`, an unused Hasura client dependency.
-  - Starts only with `SOCKS_PROXY_HOST` set (an invalid proxy URL
-    otherwise).
   - In `DEPLOYMENT_MODE=local`, `MediaWorkflow.downloadFile` returns the
     file's text where the handlers expect parsed JSON (the CDN path
     parses it), so local transcodes can't read their job.

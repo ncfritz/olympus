@@ -164,12 +164,12 @@ can be used:
 1. `san-francisco.us.socks.nordhold.net`
 1. `stockholm.se.socks.nordhold.net`
 
-| Variable             | Usage                                                       | Default Value                       |
-| -------------------- | ----------------------------------------------------------- | ----------------------------------- |
-| SOCKS_PROXY_HOST     | The SOCKS proxy host to use when downloading content assets | `los-angeles.us.socks.nordhold.net` |
-| SOCKS_PROXY_PORT     | The SOCKS proxy port to use when downloading content assets | `1080`                              |
-| SOCKS_PROXY_USERNAME | The username to authenticate to the proxy with              |                                     |
-| SOCKS_PROXY_PASSWORD | The password to authenticate to the proxy with              |                                     |
+| Variable             | Usage                                                       | Default Value            |
+| -------------------- | ----------------------------------------------------------- | ------------------------ |
+| SOCKS_PROXY_HOST     | The SOCKS proxy host to use when downloading content assets | none: requests go direct |
+| SOCKS_PROXY_PORT     | The SOCKS proxy port to use when downloading content assets | `1080`                   |
+| SOCKS_PROXY_USERNAME | The username to authenticate to the proxy with              |                          |
+| SOCKS_PROXY_PASSWORD | The password to authenticate to the proxy with              |                          |
 
 ##### SSH configuration
 

@@ -45,8 +45,8 @@ describe("AppModule", () => {
   let moduleRef: TestingModule;
 
   beforeAll(async () => {
-    // The content page requests need a SOCKS proxy (see the roadmap).
-    process.env.SOCKS_PROXY_HOST ??= "proxy.invalid";
+    // Starts without a SOCKS proxy (content requests go direct).
+    delete process.env.SOCKS_PROXY_HOST;
     const { AppModule } = await import("../../src/AppModule");
     moduleRef = await Test.createTestingModule({
       imports: [AppModule],
