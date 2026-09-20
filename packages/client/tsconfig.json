@@ -1,0 +1,12 @@
+{
+  "extends": "@ncfritz/olympus-config/tsconfig/library.json",
+  "compilerOptions": {
+    // The wrappers run in browsers (site) and Node (agents, Next.js
+    // server); only the nest and prometheus entry points need Node.
+    "lib": ["ES2023", "DOM"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}
