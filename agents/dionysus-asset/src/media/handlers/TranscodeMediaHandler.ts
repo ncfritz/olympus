@@ -129,10 +129,15 @@ export class TranscodeMediaHandler {
       await this.uploadAssets(workflow, workflowInstance, run);
 
       this.logger.log("Triggering cleanup job...");
-      await publishMessage(this.amqpConnection, MEDIA_ROUTES.cleanup, {
-        workflowId: workflow.workflowId,
-        mediaExtension: run.transcodeMetadata!.mediaExtension,
-      });
+      await publishMessage(
+        this.amqpConnection,
+        MEDIA_ROUTES.cleanup,
+        {
+          workflowId: workflow.workflowId,
+          mediaExtension: run.transcodeMetadata!.mediaExtension,
+        },
+        { persistent: true },
+      );
     } catch (e) {
       this.logger.error(`Transcode workflow failed: ${e}`);
     } finally {

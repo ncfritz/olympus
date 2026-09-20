@@ -34,6 +34,7 @@ describe("TranscodeMediaHandler", () => {
       "media.trigger",
       "jobType.cleanup",
       { workflowId: "wf-1", mediaExtension: "mkv" },
+      { persistent: true },
     );
   });
 
