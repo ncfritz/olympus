@@ -18,7 +18,8 @@ Dependencies first, so each import can switch to `workspace:*` right away:
 8. `olympus-site` → `apps/site`
 9. `olympus-app` → `apps/desktop` (not a git repository; copied in as a new
    commit)
-10. `minerva-calendar-sync` → layout decided at import (ADR 0003)
+10. `minerva-calendar-sync` → `agents/minerva-calendar-sync/{agent,console}`
+    (ADR 0016; imported 2026-09-20)
 
 ## Before importing
 

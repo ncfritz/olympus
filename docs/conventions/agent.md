@@ -138,3 +138,24 @@ export class GmailHandler extends SmtpHandler {
 - A module test compiles `AppModule` (with `AmqpConnection` stubbed) and
   checks each handler's queue binding.
 - Convention checks in `test/conventions`.
+
+## Agents with a management console
+
+An agent that needs a management or troubleshooting UI lives in
+`agents/<name>/agent` with its console in `agents/<name>/console`
+([ADR 0016](../decisions/0016-agents-with-a-management-console.md)).
+`agents/minerva-calendar-sync` is the reference. Everything above applies
+to `agent/`, plus:
+
+- The management API follows [api.md](api.md): one
+  `<OperationId>Controller.ts` per operation, URI version `1`, the
+  decorator order and status codes. Its shapes follow
+  [model.md](model.md) and live in the agent's `src/model/`.
+- Provider callbacks (webhooks, OAuth redirect URIs) are
+  `VERSION_NEUTRAL` and keep their registered paths.
+- `pnpm openapi` writes the document to `agent/openapi/<name>.json`
+  (committed); `check:openapi` and `lint:openapi` guard it, as in the
+  API. With the API explorer enabled the agent serves it at `/api-spec`
+  and `/api-spec-json`.
+- The console generates its client from that document and follows
+  [ux.md](ux.md).

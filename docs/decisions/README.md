@@ -24,5 +24,6 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0013](0013-minerva-calendar-sync-integration.md)    | Minerva calendar sync feeds Hasura over RabbitMQ                | Accepted (details deferred) |
 | [0014](0014-feature-folder-layout.md)                | Feature-folder layout and service layer for the API             | Accepted                    |
 | [0015](0015-agent-layout-and-shared-packages.md)     | Agent layout and shared service packages                        | Accepted                    |
+| [0016](0016-agents-with-a-management-console.md)     | Agents with a management console                                | Accepted                    |
 
 New records: copy [template.md](template.md), take the next number.

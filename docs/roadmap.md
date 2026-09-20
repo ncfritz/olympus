@@ -12,7 +12,8 @@
 | 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                  |
 | 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                                  |
 | 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                  |
-| 8   | Minerva calendar sync import and Hasura integration                                                  |                                  |
+| 8a  | Minerva calendar sync import (ADR 0016)                                                              | imported; conventions next       |
+| 8b  | Minerva → Hasura integration (ADR 0013)                                                              |                                  |
 | —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                          |
 | —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                         |
 | —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                         |
@@ -20,7 +21,6 @@
 
 ## Open decisions
 
-- Minerva directory layout in the monorepo (ADR 0003).
 - Minerva → Hasura integration details (ADR 0013).
 - Where CI runs (GitHub-hosted vs. self-hosted runner on the Mac Mini).
 - Enabling `ValidationPipe` + `class-validator` in the API.
