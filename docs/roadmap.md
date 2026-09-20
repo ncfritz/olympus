@@ -254,6 +254,25 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     Delivery is at least once, so a publish cut off is retried.
 - No explicit nack / dead-letter strategy for failed messages.
 
+### Not-found handling
+
+Callers disagree on what a `404` from an API means. Settle it during the
+site import, which has more instances; until then the shared client
+(`@ncfritz/olympus-client`, planned) throws by default and returns
+`undefined` only where a method declares `T | undefined`.
+
+- `ExecuteWithMetrics` (`@ncfritz/olympus-nest`) turns any `404` into
+  `undefined`, whatever the method's declared type. The metadata agent's
+  `getMetadataFetchJob` relies on it (declared `MetadataFetchJob`), and so
+  do its TMDB calls.
+- The search agent asks for it explicitly (`validateStatus` accepting
+  `404`, `T | undefined`); the asset agent does the same for the NZB-ID
+  download update.
+- Every other wrapper throws on `404`.
+- `ExecuteWithMetrics` records a call that throws with status `0`, so its
+  `_4xx`, `_5xx`, `_error` and `_fatal` counters never count failures
+  (the SDK clients throw on every non-2xx answer).
+
 ### Messages
 
 Found while writing `@ncfritz/olympus-messages` from the publishers;
