@@ -28,60 +28,60 @@ describe("Auth (e2e)", () => {
     await app.close();
   });
 
-  it("GET /auth/me returns the authenticated user", async () => {
+  it("GET /v1/auth/current-user returns the authenticated user", async () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     const res = await request(app.getHttpServer())
-      .get("/auth/me")
+      .get("/v1/auth/current-user")
       .set("Authorization", authHeader)
       .expect(200);
-    expect(res.body).toEqual({ email: E2E_ALLOWED_EMAIL });
+    expect(res.body).toEqual({ user: { email: E2E_ALLOWED_EMAIL } });
   });
 
   it("rejects a valid token for an email no longer on the allowlist", async () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app, "not-allowed@example.com")}`;
 
     await request(app.getHttpServer())
-      .get("/auth/me")
+      .get("/v1/auth/current-user")
       .set("Authorization", authHeader)
       .expect(403);
   });
 
   it("rejects a malformed token", async () => {
     await request(app.getHttpServer())
-      .get("/auth/me")
+      .get("/v1/auth/current-user")
       .set("Authorization", "Bearer not-a-real-token")
       .expect(401);
   });
 
-  it("POST /auth/refresh exchanges a refresh token for a new access token", async () => {
+  it("POST /v1/auth/refresh exchanges a refresh token for a new access token", async () => {
     const { refreshToken } = app
       .get(AuthTokenService)
       .issueTokenPair(E2E_ALLOWED_EMAIL);
 
     const res = await request(app.getHttpServer())
-      .post("/auth/refresh")
+      .post("/v1/auth/refresh")
       .send({ refreshToken })
       .expect(200);
     expect(typeof res.body.accessToken).toBe("string");
 
     await request(app.getHttpServer())
-      .get("/auth/me")
+      .get("/v1/auth/current-user")
       .set("Authorization", `Bearer ${res.body.accessToken}`)
       .expect(200);
   });
 
-  it("POST /auth/refresh rejects an access token used as a refresh token", async () => {
+  it("POST /v1/auth/refresh rejects an access token used as a refresh token", async () => {
     const accessToken = issueE2eAccessToken(app);
     await request(app.getHttpServer())
-      .post("/auth/refresh")
+      .post("/v1/auth/refresh")
       .send({ refreshToken: accessToken })
       .expect(401);
   });
 
-  it("POST /auth/logout clears the access-token cookie", async () => {
+  it("POST /v1/auth/logout clears the access-token cookie", async () => {
     const res = await request(app.getHttpServer())
-      .post("/auth/logout")
+      .post("/v1/auth/logout")
       .expect(204);
     const setCookie = res.headers["set-cookie"];
     expect(setCookie?.[0]).toMatch(/minerva_access_token=;/);

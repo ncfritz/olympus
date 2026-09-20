@@ -4,14 +4,18 @@
  */
 
 export interface paths {
-  "/": {
+  "/v1/auth/current-user": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["AppController_getHello"];
+    /**
+     * Describes the current user
+     * @description Returns the signed-in user the access token belongs to.
+     */
+    get: operations["DescribeCurrentUser"];
     put?: never;
     post?: never;
     delete?: never;
@@ -20,23 +24,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/auth/me": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get: operations["AuthController_me"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/auth/refresh": {
+  "/v1/auth/refresh": {
     parameters: {
       query?: never;
       header?: never;
@@ -45,14 +33,18 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    post: operations["AuthController_refresh"];
+    /**
+     * Refreshes the access token
+     * @description Issues a new access token for a refresh token whose user is still on the allowlist.
+     */
+    post: operations["RefreshAccessToken"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/auth/logout": {
+  "/v1/auth/logout": {
     parameters: {
       query?: never;
       header?: never;
@@ -61,7 +53,11 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    post: operations["AuthController_logout"];
+    /**
+     * Ends the session
+     * @description Signs the browser out by clearing the access token cookie; Bearer tokens simply stop being sent.
+     */
+    post: operations["EndSession"];
     delete?: never;
     options?: never;
     head?: never;
@@ -616,13 +612,26 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
-    CurrentUserDto: {
+    CurrentUser: {
+      /** @description The user's verified email address */
       email: string;
     };
-    RefreshDto: {
+    DescribeCurrentUserResponse: {
+      /** @description The signed-in user. */
+      user: components["schemas"]["CurrentUser"];
+    };
+    ErrorResponse: {
+      /** @description What went wrong */
+      message: string;
+      /** @description The HTTP status code */
+      statusCode: number;
+    };
+    RefreshAccessTokenRequest: {
+      /** @description The refresh token issued at sign-in */
       refreshToken: string;
     };
-    AccessTokenDto: {
+    RefreshAccessTokenResponse: {
+      /** @description A new access token, for the Authorization header */
       accessToken: string;
     };
     /**
@@ -671,12 +680,6 @@ export interface components {
     ListSyncRunsResponse: {
       /** @description The matching runs, newest first. */
       syncRuns: components["schemas"]["SyncRun"][];
-    };
-    ErrorResponse: {
-      /** @description What went wrong */
-      message: string;
-      /** @description The HTTP status code */
-      statusCode: number;
     };
     SyncRunDailyStat: {
       /** @description The day, as YYYY-MM-DD in UTC */
@@ -1209,7 +1212,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  AppController_getHello: {
+  DescribeCurrentUser: {
     parameters: {
       query?: never;
       header?: never;
@@ -1218,59 +1221,70 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  AuthController_me: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description The currently authenticated user */
+      /** @description The user is signed in. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["CurrentUserDto"];
+          "application/json": components["schemas"]["DescribeCurrentUserResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };
   };
-  AuthController_refresh: {
+  RefreshAccessToken: {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
+    /** @description The refresh token. */
     requestBody: {
       content: {
-        "application/json": components["schemas"]["RefreshDto"];
+        "application/json": components["schemas"]["RefreshAccessTokenRequest"];
       };
     };
     responses: {
-      /** @description A fresh access token */
+      /** @description A new access token was issued. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["AccessTokenDto"];
+          "application/json": components["schemas"]["RefreshAccessTokenResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };
   };
-  AuthController_logout: {
+  EndSession: {
     parameters: {
       query?: never;
       header?: never;
@@ -1279,6 +1293,7 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
+      /** @description The session cookie was cleared. */
       204: {
         headers: {
           [name: string]: unknown;

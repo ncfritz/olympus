@@ -1,31 +1,28 @@
 {
   "openapi": "3.1.1",
   "paths": {
-    "/": {
+    "/v1/auth/current-user": {
       "get": {
-        "operationId": "AppController_getHello",
+        "description": "Returns the signed-in user the access token belongs to.",
+        "operationId": "DescribeCurrentUser",
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "App"
-        ]
-      }
-    },
-    "/auth/me": {
-      "get": {
-        "operationId": "AuthController_me",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "The currently authenticated user",
+            "description": "The user is signed in.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CurrentUserDto"
+                  "$ref": "#/components/schemas/DescribeCurrentUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -36,53 +33,79 @@
             "bearer": []
           }
         ],
+        "summary": "Describes the current user",
         "tags": [
-          "auth"
+          "Auth"
         ]
       }
     },
-    "/auth/refresh": {
+    "/v1/auth/refresh": {
       "post": {
-        "operationId": "AuthController_refresh",
+        "description": "Issues a new access token for a refresh token whose user is still on the allowlist.",
+        "operationId": "RefreshAccessToken",
         "parameters": [],
         "requestBody": {
           "required": true,
+          "description": "The refresh token.",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RefreshDto"
+                "$ref": "#/components/schemas/RefreshAccessTokenRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "A fresh access token",
+            "description": "A new access token was issued.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccessTokenDto"
+                  "$ref": "#/components/schemas/RefreshAccessTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
           }
         },
+        "summary": "Refreshes the access token",
         "tags": [
-          "auth"
+          "Auth"
         ]
       }
     },
-    "/auth/logout": {
+    "/v1/auth/logout": {
       "post": {
-        "operationId": "AuthController_logout",
+        "description": "Signs the browser out by clearing the access token cookie; Bearer tokens simply stop being sent.",
+        "operationId": "EndSession",
         "parameters": [],
         "responses": {
           "204": {
-            "description": ""
+            "description": "The session cookie was cleared."
           }
         },
+        "summary": "Ends the session",
         "tags": [
-          "auth"
+          "Auth"
         ]
       }
     },
@@ -2184,7 +2207,7 @@
   },
   "tags": [
     {
-      "name": "App"
+      "name": "Auth"
     },
     {
       "name": "Availability"
@@ -2212,9 +2235,6 @@
     },
     {
       "name": "Sync Runs"
-    },
-    {
-      "name": "auth"
     }
   ],
   "servers": [],
@@ -2227,33 +2247,69 @@
       }
     },
     "schemas": {
-      "CurrentUserDto": {
+      "CurrentUser": {
         "type": "object",
         "properties": {
           "email": {
-            "type": "string"
+            "type": "string",
+            "description": "The user's verified email address"
           }
         },
         "required": [
           "email"
         ]
       },
-      "RefreshDto": {
+      "DescribeCurrentUserResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "description": "The signed-in user.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrentUser"
+              }
+            ]
+          }
+        },
+        "required": [
+          "user"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "What went wrong"
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code"
+          }
+        },
+        "required": [
+          "message",
+          "statusCode"
+        ]
+      },
+      "RefreshAccessTokenRequest": {
         "type": "object",
         "properties": {
           "refreshToken": {
-            "type": "string"
+            "type": "string",
+            "description": "The refresh token issued at sign-in"
           }
         },
         "required": [
           "refreshToken"
         ]
       },
-      "AccessTokenDto": {
+      "RefreshAccessTokenResponse": {
         "type": "object",
         "properties": {
           "accessToken": {
-            "type": "string"
+            "type": "string",
+            "description": "A new access token, for the Authorization header"
           }
         },
         "required": [
@@ -2381,23 +2437,6 @@
         },
         "required": [
           "syncRuns"
-        ]
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "description": "What went wrong"
-          },
-          "statusCode": {
-            "type": "number",
-            "description": "The HTTP status code"
-          }
-        },
-        "required": [
-          "message",
-          "statusCode"
         ]
       },
       "SyncRunDailyStat": {

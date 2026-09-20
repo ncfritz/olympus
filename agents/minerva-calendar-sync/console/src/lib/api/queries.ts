@@ -23,12 +23,12 @@ export type BackfillResult = components["schemas"]["CalendarBackfill"];
 export type StatusTimeline = Record<string, AvailabilityStatus>;
 
 export async function fetchMe() {
-  const { data } = await apiClient.GET("/auth/me");
-  return data ?? null;
+  const { data } = await apiClient.GET("/v1/auth/current-user");
+  return data?.user ?? null;
 }
 
 export async function logout() {
-  await apiClient.POST("/auth/logout");
+  await apiClient.POST("/v1/auth/logout");
 }
 
 export async function fetchCalendars(): Promise<CalendarStatus[]> {
