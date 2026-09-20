@@ -2,6 +2,8 @@
 // API document as { api, method, path, operationId, tag }, exported from
 // the entry point as `operations`. Clients use it to label their request
 // metrics with the operation called (ADR 0017, @ncfritz/olympus-metrics).
+// Also exports the client factory, so a caller can hold its own client
+// (per service, or per request in Next.js) instead of the shared `client`.
 // Runs after openapi-ts (`pnpm generate`).
 import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -60,7 +62,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     );
     appendFileSync(
       join(dir, "index.ts"),
-      'export { api, type Operation, operations } from "./operations.gen";\n',
+      'export { api, type Operation, operations } from "./operations.gen";\n' +
+        'export { type Client, createClient, createConfig } from "./client";\n',
     );
     console.log(`Wrote src/generated/${api}/operations.gen.ts`);
   }

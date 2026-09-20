@@ -41,7 +41,9 @@ responses by default.
 
 `scripts/generate-operations.mjs` runs after the generator and adds
 `operations` to each entry point: every operation of the document as
-`{ api, method, path, operationId, tag }`. `@ncfritz/olympus-client` uses
+`{ api, method, path, operationId, tag }`. It also exports
+`createClient`/`createConfig`, so a caller can hold its own client
+(`describeMovie({ client, path })`) rather than configure the shared one. `@ncfritz/olympus-client` uses
 it to label a call's request metrics with the operation it made
 (ADR 0017).
 
