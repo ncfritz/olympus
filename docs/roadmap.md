@@ -245,10 +245,9 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
   - Fixed on the way: calendar-color e2e tests depending on test order.
     Fixed after, one commit each: syncs cut off by the database
     disconnecting at shutdown.
-  - `recurrenceRule` holds Microsoft's Graph recurrence pattern as JSON
-    text (Google's is RRULE lines). It is reference-only and never
-    queried; decide whether ADR 0007 allows it like the outbox payload,
-    or whether it becomes columns.
+  - Decided (2026-09-20): `recurrenceRule` may hold Microsoft's Graph
+    recurrence pattern as JSON text; it is reference-only (ADR 0016,
+    Storage).
   - Deleting an override block answers `204` whether or not it existed
     (idempotent; kept).
   - The outbox dispatcher's tick in progress at shutdown is not awaited.

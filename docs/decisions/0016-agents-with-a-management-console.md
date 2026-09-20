@@ -75,9 +75,19 @@ to its own agent.
 
 An agent with a console may own a relational store (Minerva: Prisma on
 SQLite or Postgres, ADR 0013). ADR 0007 applies to it: tables and
-columns, no JSON documents in rows. The one accepted exception is an
-outbox payload column, which holds the exact message body to publish and
-is never queried.
+columns, no JSON documents in rows. Two exceptions are accepted, both
+opaque text that is stored and passed on but never queried or parsed:
+
+- an outbox payload column, which holds the exact message body to
+  publish;
+- a provider's own description of something the agent does not model,
+  kept for reference. Minerva's `recurrenceRule` holds the series'
+  recurrence as the provider gives it: RRULE/EXDATE lines from Google,
+  the Graph `recurrence` pattern as JSON text from Microsoft (accepted
+  2026-09-20). Occurrences are synced as their own rows, so nothing reads
+  the rule.
+
+Anything the agent filters, joins or computes on gets columns.
 
 ## Consequences
 
