@@ -7,7 +7,7 @@ import { issueE2eAccessToken } from "./auth-fixtures";
 import { seedCalendar } from "./calendar-fixtures";
 import { afterEach, describe, expect, it } from "vitest";
 
-// A never-real account label: GET /calendar-accounts resolves it via a
+// A never-real account label: ListCalendarAccounts resolves it via a
 // local-file lookup (tryLoadGoogleCredential), which just reports
 // "not_connected" for a missing file — no network call, so it's safe here.
 // Actually starting a reauth flow is left to the unit tests (it opens a real
@@ -45,10 +45,10 @@ describe("Calendar accounts (e2e)", () => {
     configureApp(app);
     await app.init();
 
-    await request(app.getHttpServer()).get("/calendar-accounts").expect(401);
+    await request(app.getHttpServer()).get("/v1/calendar-accounts").expect(401);
   });
 
-  it("GET /calendar-accounts returns an empty list when nothing is configured", async () => {
+  it("ListCalendarAccounts returns an empty list when nothing is configured", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -58,13 +58,13 @@ describe("Calendar accounts (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     const res = await request(app.getHttpServer())
-      .get("/calendar-accounts")
+      .get("/v1/calendar-accounts")
       .set("Authorization", authHeader)
       .expect(200);
-    expect(res.body).toEqual([]);
+    expect(res.body.calendarAccounts).toEqual([]);
   });
 
-  it("GET /calendar-accounts reports not_connected for a configured account with no stored credential", async () => {
+  it("ListCalendarAccounts reports not_connected for a configured account with no stored credential", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -75,10 +75,10 @@ describe("Calendar accounts (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     const res = await request(app.getHttpServer())
-      .get("/calendar-accounts")
+      .get("/v1/calendar-accounts")
       .set("Authorization", authHeader)
       .expect(200);
-    expect(res.body).toEqual([
+    expect(res.body.calendarAccounts).toEqual([
       {
         accountLabel: FAKE_CALENDAR.accountLabel,
         provider: "google",
@@ -88,7 +88,7 @@ describe("Calendar accounts (e2e)", () => {
     ]);
   });
 
-  it("GET /calendar-accounts reports not_connected for a configured Microsoft account with no stored credential", async () => {
+  it("ListCalendarAccounts reports not_connected for a configured Microsoft account with no stored credential", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -99,10 +99,10 @@ describe("Calendar accounts (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     const res = await request(app.getHttpServer())
-      .get("/calendar-accounts")
+      .get("/v1/calendar-accounts")
       .set("Authorization", authHeader)
       .expect(200);
-    expect(res.body).toEqual([
+    expect(res.body.calendarAccounts).toEqual([
       {
         accountLabel: FAKE_MICROSOFT_CALENDAR.accountLabel,
         provider: "microsoft",
@@ -112,7 +112,7 @@ describe("Calendar accounts (e2e)", () => {
     ]);
   });
 
-  it("GET /calendar-accounts/:accountLabel/available-calendars 404s when the Microsoft account has no stored credential", async () => {
+  it("ListAvailableCalendars 404s when the Microsoft account has no stored credential", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -124,13 +124,13 @@ describe("Calendar accounts (e2e)", () => {
 
     await request(app.getHttpServer())
       .get(
-        `/calendar-accounts/${FAKE_MICROSOFT_CALENDAR.accountLabel}/available-calendars`,
+        `/v1/calendar-account/${FAKE_MICROSOFT_CALENDAR.accountLabel}/calendars`,
       )
       .set("Authorization", authHeader)
       .expect(404);
   });
 
-  it("GET /calendar-accounts keeps a google and a microsoft account distinct even when they share the exact same accountLabel", async () => {
+  it("ListCalendarAccounts keeps a google and a microsoft account distinct even when they share the exact same accountLabel", async () => {
     const sharedLabel = "e2e-shared-label@example.com";
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -146,10 +146,10 @@ describe("Calendar accounts (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     const res = await request(app.getHttpServer())
-      .get("/calendar-accounts")
+      .get("/v1/calendar-accounts")
       .set("Authorization", authHeader)
       .expect(200);
-    expect(res.body).toEqual(
+    expect(res.body.calendarAccounts).toEqual(
       expect.arrayContaining([
         {
           accountLabel: sharedLabel,
@@ -165,10 +165,10 @@ describe("Calendar accounts (e2e)", () => {
         },
       ]),
     );
-    expect(res.body).toHaveLength(2);
+    expect(res.body.calendarAccounts).toHaveLength(2);
   });
 
-  it("GET /calendar-accounts/:accountLabel/available-calendars disambiguates via ?provider= when the same accountLabel collides across providers", async () => {
+  it("ListAvailableCalendars disambiguates via ?provider= when the same accountLabel collides across providers", async () => {
     const sharedLabel = "e2e-shared-label@example.com";
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -188,18 +188,18 @@ describe("Calendar accounts (e2e)", () => {
     // *which* account (not that either succeeds), so a bogus accountLabel
     // with no matching provider at all must still 404 distinctly.
     await request(app.getHttpServer())
-      .get(`/calendar-accounts/${sharedLabel}/available-calendars`)
+      .get(`/v1/calendar-account/${sharedLabel}/calendars`)
       .query({ provider: "google" })
       .set("Authorization", authHeader)
       .expect(404);
     await request(app.getHttpServer())
-      .get(`/calendar-accounts/${sharedLabel}/available-calendars`)
+      .get(`/v1/calendar-account/${sharedLabel}/calendars`)
       .query({ provider: "microsoft" })
       .set("Authorization", authHeader)
       .expect(404);
   });
 
-  it("POST /calendar-accounts/:accountLabel/reauth 404s for an unconfigured account", async () => {
+  it("ReauthorizeCalendarAccount 404s for an unconfigured account", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -209,12 +209,12 @@ describe("Calendar accounts (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     await request(app.getHttpServer())
-      .post("/calendar-accounts/unknown/reauth")
+      .post("/v1/calendar-account/unknown/reauthorize")
       .set("Authorization", authHeader)
       .expect(404);
   });
 
-  it("GET /calendar-accounts/:accountLabel/available-calendars 404s for an unconfigured account", async () => {
+  it("ListAvailableCalendars 404s for an unconfigured account", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -224,12 +224,12 @@ describe("Calendar accounts (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     await request(app.getHttpServer())
-      .get("/calendar-accounts/unknown/available-calendars")
+      .get("/v1/calendar-account/unknown/calendars")
       .set("Authorization", authHeader)
       .expect(404);
   });
 
-  it("GET /calendar-accounts/:accountLabel/available-calendars 404s when the account has no stored credential", async () => {
+  it("ListAvailableCalendars 404s when the account has no stored credential", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -240,14 +240,12 @@ describe("Calendar accounts (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     await request(app.getHttpServer())
-      .get(
-        `/calendar-accounts/${FAKE_CALENDAR.accountLabel}/available-calendars`,
-      )
+      .get(`/v1/calendar-account/${FAKE_CALENDAR.accountLabel}/calendars`)
       .set("Authorization", authHeader)
       .expect(404);
   });
 
-  it("GET /calendar-accounts/new/:transactionId 404s for an unknown transaction", async () => {
+  it("DescribeCalendarAccountAuthorization 404s for an unknown transaction", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -257,7 +255,7 @@ describe("Calendar accounts (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     await request(app.getHttpServer())
-      .get("/calendar-accounts/new/unknown-transaction")
+      .get("/v1/calendar-account-authorization/unknown-transaction")
       .set("Authorization", authHeader)
       .expect(404);
   });
@@ -265,7 +263,7 @@ describe("Calendar accounts (e2e)", () => {
   // Starting a real "new account" flow is left to the unit tests — it opens
   // a real loopback listener, which would leak past the test (same reason
   // reauth's happy path isn't exercised here either).
-  it("POST /calendar-accounts/new rejects an unsupported provider", async () => {
+  it("CreateCalendarAccountAuthorization rejects an unsupported provider", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -275,9 +273,9 @@ describe("Calendar accounts (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     await request(app.getHttpServer())
-      .post("/calendar-accounts/new")
+      .post("/v1/calendar-account-authorizations")
       .set("Authorization", authHeader)
-      .send({ provider: "office365" })
+      .send({ calendarAccountAuthorization: { provider: "office365" } })
       .expect(400);
   });
 });

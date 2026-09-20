@@ -7,9 +7,8 @@ export type AvailabilityStatus = components["schemas"]["AvailabilityStatus"];
 export type FreeBusyStatus = EventDto["status"];
 export type EventOverrideDto = components["schemas"]["EventOverride"];
 export type OverrideBlockDto = components["schemas"]["OverrideBlock"];
-export type CalendarAccountStatus =
-  components["schemas"]["CalendarAccountStatusDto"];
-export type AvailableCalendar = components["schemas"]["AvailableCalendarDto"];
+export type CalendarAccountStatus = components["schemas"]["CalendarAccount"];
+export type AvailableCalendar = components["schemas"]["AvailableCalendar"];
 export type SyncRun = components["schemas"]["SyncRunDto"];
 export type SyncRunDetail = components["schemas"]["SyncRunDetailDto"];
 export type SyncRunEventChange = components["schemas"]["SyncRunEventChangeDto"];
@@ -116,17 +115,17 @@ export async function fetchAvailableCalendars(
   provider: "google" | "microsoft",
 ): Promise<AvailableCalendar[]> {
   const { data } = await apiClient.GET(
-    "/calendar-accounts/{accountLabel}/available-calendars",
+    "/v1/calendar-account/{accountLabel}/calendars",
     { params: { path: { accountLabel }, query: { provider } } },
   );
-  return data ?? [];
+  return data?.availableCalendars ?? [];
 }
 
 export async function fetchCalendarAccountStatuses(): Promise<
   CalendarAccountStatus[]
 > {
-  const { data } = await apiClient.GET("/calendar-accounts");
-  return data ?? [];
+  const { data } = await apiClient.GET("/v1/calendar-accounts");
+  return data?.calendarAccounts ?? [];
 }
 
 export interface SyncRunFilterParams {
@@ -167,41 +166,43 @@ export async function startCalendarAccountReauth(
   provider: "google" | "microsoft",
 ): Promise<string> {
   const { data, error } = await apiClient.POST(
-    "/calendar-accounts/{accountLabel}/reauth",
+    "/v1/calendar-account/{accountLabel}/reauthorize",
     { params: { path: { accountLabel }, query: { provider } } },
   );
   if (error || !data)
     throw new Error(`Failed to start reauth: ${JSON.stringify(error)}`);
-  return data.authUrl;
+  return data.reauthorization.authUrl;
 }
 
 export type NewAccountAuthStatus =
-  components["schemas"]["NewAccountAuthStatusDto"];
+  components["schemas"]["CalendarAccountAuthorization"];
 
 /** Starts authorizing a brand-new account for the given provider; returns an id to poll and the URL to open to complete it. */
 export async function startNewAccountAuth(
   provider: "google" | "microsoft",
 ): Promise<{ transactionId: string; authUrl: string }> {
-  const { data, error } = await apiClient.POST("/calendar-accounts/new", {
-    body: { provider },
-  });
+  const { data, error } = await apiClient.POST(
+    "/v1/calendar-account-authorizations",
+    { body: { calendarAccountAuthorization: { provider } } },
+  );
   if (error || !data)
     throw new Error(`Failed to start authorization: ${JSON.stringify(error)}`);
-  return data;
+  const { authorizationId, authUrl } = data.calendarAccountAuthorization;
+  return { transactionId: authorizationId, authUrl: authUrl ?? "" };
 }
 
 export async function fetchNewAccountAuthStatus(
   transactionId: string,
 ): Promise<NewAccountAuthStatus> {
   const { data, error } = await apiClient.GET(
-    "/calendar-accounts/new/{transactionId}",
-    { params: { path: { transactionId } } },
+    "/v1/calendar-account-authorization/{authorizationId}",
+    { params: { path: { authorizationId: transactionId } } },
   );
   if (error || !data)
     throw new Error(
       `Failed to check authorization status: ${JSON.stringify(error)}`,
     );
-  return data;
+  return data.calendarAccountAuthorization;
 }
 
 export interface EventFilters {

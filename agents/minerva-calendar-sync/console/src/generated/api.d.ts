@@ -292,14 +292,18 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/calendar-accounts": {
+  "/v1/calendar-accounts": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["CalendarAuthController_list"];
+    /**
+     * Lists calendar accounts
+     * @description Returns every calendar account, connected or only configured, with its credential's status.
+     */
+    get: operations["ListCalendarAccounts"];
     put?: never;
     post?: never;
     delete?: never;
@@ -308,7 +312,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/calendar-accounts/new": {
+  "/v1/calendar-account-authorizations": {
     parameters: {
       query?: never;
       header?: never;
@@ -317,21 +321,29 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    post: operations["CalendarAuthController_startNewAccountAuth"];
+    /**
+     * Creates a calendar account authorization
+     * @description Starts a sign-in that connects a new account of the provider; poll DescribeCalendarAccountAuthorization for its outcome.
+     */
+    post: operations["CreateCalendarAccountAuthorization"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/calendar-accounts/new/{transactionId}": {
+  "/v1/calendar-account-authorization/{authorizationId}": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["CalendarAuthController_getNewAccountAuthStatus"];
+    /**
+     * Describes a calendar account authorization
+     * @description Returns the outcome so far of a sign-in that connects a new account.
+     */
+    get: operations["DescribeCalendarAccountAuthorization"];
     put?: never;
     post?: never;
     delete?: never;
@@ -340,7 +352,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/calendar-accounts/{accountLabel}/reauth": {
+  "/v1/calendar-account/{accountLabel}/reauthorize": {
     parameters: {
       query?: never;
       header?: never;
@@ -349,21 +361,29 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    post: operations["CalendarAuthController_startReauth"];
+    /**
+     * Reauthorizes a calendar account
+     * @description Starts a sign-in that renews the access of an account whose credential expired.
+     */
+    post: operations["ReauthorizeCalendarAccount"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/calendar-accounts/{accountLabel}/available-calendars": {
+  "/v1/calendar-account/{accountLabel}/calendars": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["CalendarAuthController_listAvailableCalendars"];
+    /**
+     * Lists an account's calendars
+     * @description Returns the calendars the provider reports for a connected account, marking those already synced.
+     */
+    get: operations["ListAvailableCalendars"];
     put?: never;
     post?: never;
     delete?: never;
@@ -855,65 +875,86 @@ export interface components {
       /** @description What the backfill enqueued. */
       backfill: components["schemas"]["CalendarBackfill"];
     };
-    CalendarAccountStatusDto: {
-      /** @description The stored-credential label this status describes (see google-credential-store / microsoft-credential-store) */
+    /**
+     * @description The credential's status: ok, expired (a new sign-in is needed), reauth_pending, not_connected or error
+     * @enum {string}
+     */
+    CalendarAccountAuthStatus:
+      "ok" | "expired" | "reauth_pending" | "not_connected" | "error";
+    CalendarAccount: {
+      /** @description The account's label: its email address */
       accountLabel: string;
-      /**
-       * @description Which provider this account authorizes with
-       * @enum {string}
-       */
-      provider: "google" | "microsoft";
-      /** @description Source labels of the configured calendars that authorize with this account */
+      /** @description The provider the account authorizes with */
+      provider: components["schemas"]["CalendarProviderName"];
+      /** @description The source labels of the synced calendars that authorize with the account */
       sources: string[];
-      /**
-       * @description Status of the device-flow OAuth credential backing this account's sync
-       * @enum {string}
-       */
-      status: "ok" | "expired" | "reauth_pending" | "not_connected" | "error";
-      /** @description OAuth scopes granted the last time this account completed the login flow */
+      /** @description The credential's status: ok, expired (a new sign-in is needed), reauth_pending, not_connected or error */
+      status: components["schemas"]["CalendarAccountAuthStatus"];
+      /** @description The OAuth scopes granted at the last sign-in */
       scope?: string;
-      /** @description When the stored refresh token was obtained */
+      /** @description An ISO-8601 formatted string indicating when the stored refresh token was obtained */
       obtainedAt?: string;
-      /** @description Expiry of the access token minted from the most recent check — google-auth-library mints a fresh one automatically around this time whenever sync next runs, so this doubles as the 'next refresh' time. */
+      /** @description An ISO-8601 formatted string indicating when the access token from the latest check expires (and the next sync refreshes it) */
       accessTokenExpiresAt?: string;
-      /** @description Human-readable detail when status is 'expired' or 'error' */
+      /** @description What went wrong, when the status is expired or error */
       error?: string;
     };
-    StartNewAccountAuthDto: {
-      /**
-       * @description Which provider to authorize a new account with
-       * @enum {string}
-       */
-      provider: "google" | "microsoft";
+    ListCalendarAccountsResponse: {
+      /** @description The calendar accounts. */
+      calendarAccounts: components["schemas"]["CalendarAccount"][];
     };
-    StartNewAccountAuthResponseDto: {
-      /** @description Opaque id — poll GET /calendar-accounts/new/{transactionId} with this to learn the outcome */
-      transactionId: string;
-      /** @description Open this URL in a browser and sign in to authorize a new account */
-      authUrl: string;
+    BaseCalendarAccountAuthorization: {
+      /** @description The provider to connect an account of */
+      provider: components["schemas"]["CalendarProviderName"];
     };
-    NewAccountAuthStatusDto: {
-      /**
-       * @description pending: waiting on the user to finish signing in. success: the account is connected — see accountLabel. error: the flow failed — see error.
-       * @enum {string}
-       */
-      status: "pending" | "success" | "error";
-      /** @description The newly authorized account's label (its email address), once status is 'success' */
+    CreateCalendarAccountAuthorizationRequest: {
+      /** @description The authorization to start. */
+      calendarAccountAuthorization: components["schemas"]["BaseCalendarAccountAuthorization"];
+    };
+    /**
+     * @description pending while the user signs in, then success (see accountLabel) or error
+     * @enum {string}
+     */
+    CalendarAccountAuthorizationStatus: "pending" | "success" | "error";
+    CalendarAccountAuthorization: {
+      /** @description The unique ID of the authorization */
+      authorizationId: string;
+      /** @description pending while the user signs in, then success (see accountLabel) or error */
+      status: components["schemas"]["CalendarAccountAuthorizationStatus"];
+      /** @description The URL to open in a browser to sign in (returned when the authorization is created) */
+      authUrl?: string;
+      /** @description The connected account's label, once the status is success */
       accountLabel?: string;
-      /** @description Human-readable detail when status is 'error' */
+      /** @description What went wrong, when the status is error */
       error?: string;
     };
-    StartReauthResponseDto: {
-      /** @description Open this URL in a browser and sign in to grant Minerva access again */
+    CreateCalendarAccountAuthorizationResponse: {
+      /** @description The started authorization, with the URL to sign in at. */
+      calendarAccountAuthorization: components["schemas"]["CalendarAccountAuthorization"];
+    };
+    DescribeCalendarAccountAuthorizationResponse: {
+      /** @description The authorization's outcome so far. */
+      calendarAccountAuthorization: components["schemas"]["CalendarAccountAuthorization"];
+    };
+    CalendarAccountReauthorization: {
+      /** @description The URL to open in a browser to grant access again */
       authUrl: string;
     };
-    AvailableCalendarDto: {
-      /** @description The provider's own calendar id (e.g. "primary" or a shared calendar's id) */
+    ReauthorizeCalendarAccountResponse: {
+      /** @description The started reauthorization. */
+      reauthorization: components["schemas"]["CalendarAccountReauthorization"];
+    };
+    AvailableCalendar: {
+      /** @description The provider's ID of the calendar (e.g. "primary") */
       id: string;
-      /** @description The calendar's display name, as the provider shows it */
+      /** @description The calendar's name, as the provider shows it */
       summary: string;
-      /** @description Whether this calendar is already configured to sync */
+      /** @description Whether the calendar is already synced */
       alreadySynced: boolean;
+    };
+    ListAvailableCalendarsResponse: {
+      /** @description The account's calendars. */
+      availableCalendars: components["schemas"]["AvailableCalendar"][];
     };
     ListCalendarColorsResponse: {
       /**
@@ -1777,7 +1818,7 @@ export interface operations {
       };
     };
   };
-  CalendarAuthController_list: {
+  ListCalendarAccounts: {
     parameters: {
       query?: never;
       header?: never;
@@ -1786,128 +1827,215 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
+      /** @description The accounts were listed. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["CalendarAccountStatusDto"][];
+          "application/json": components["schemas"]["ListCalendarAccountsResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };
   };
-  CalendarAuthController_startNewAccountAuth: {
+  CreateCalendarAccountAuthorization: {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
+    /** @description The authorization to start. */
     requestBody: {
       content: {
-        "application/json": components["schemas"]["StartNewAccountAuthDto"];
+        "application/json": components["schemas"]["CreateCalendarAccountAuthorizationRequest"];
       };
     };
     responses: {
-      /** @description A URL to open in a browser to authorize a new account */
-      200: {
+      /** @description The authorization was started. */
+      201: {
+        headers: {
+          /** @description The DescribeCalendarAccountAuthorization route of the authorization */
+          Location?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreateCalendarAccountAuthorizationResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["StartNewAccountAuthResponseDto"];
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };
   };
-  CalendarAuthController_getNewAccountAuthStatus: {
+  DescribeCalendarAccountAuthorization: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        transactionId: string;
+        /** @description The ID of the authorization */
+        authorizationId: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
+      /** @description The authorization was found. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["NewAccountAuthStatusDto"];
+          "application/json": components["schemas"]["DescribeCalendarAccountAuthorizationResponse"];
         };
       };
-      /** @description No such new-account authorization */
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
       404: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
     };
   };
-  CalendarAuthController_startReauth: {
+  ReauthorizeCalendarAccount: {
     parameters: {
       query?: {
-        /** @description Disambiguates which provider's account to reauthorize when the same accountLabel is connected under more than one — omit only when it's known not to collide. */
-        provider?: "google" | "microsoft";
+        /** @description The account's provider; needed only when the same account label is connected under more than one */
+        provider?: components["schemas"]["CalendarProviderName"];
       };
       header?: never;
       path: {
+        /** @description The account's label */
         accountLabel: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
-      /** @description A URL to open in a browser to (re-)grant access */
+      /** @description The reauthorization was started. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["StartReauthResponseDto"];
+          "application/json": components["schemas"]["ReauthorizeCalendarAccountResponse"];
         };
       };
-      /** @description No configured calendar uses that account label */
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
       404: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
     };
   };
-  CalendarAuthController_listAvailableCalendars: {
+  ListAvailableCalendars: {
     parameters: {
       query?: {
-        /** @description Disambiguates which provider's account to list calendars for when the same accountLabel is connected under more than one — omit only when it's known not to collide. */
-        provider?: "google" | "microsoft";
+        /** @description The account's provider; needed only when the same account label is connected under more than one */
+        provider?: components["schemas"]["CalendarProviderName"];
       };
       header?: never;
       path: {
+        /** @description The account's label */
         accountLabel: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
+      /** @description The calendars were listed. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["AvailableCalendarDto"][];
+          "application/json": components["schemas"]["ListAvailableCalendarsResponse"];
         };
       };
-      /** @description No configured calendar uses that account label, or it hasn't signed in yet */
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
       404: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
     };
   };

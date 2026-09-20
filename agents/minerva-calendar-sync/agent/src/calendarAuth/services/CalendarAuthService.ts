@@ -9,9 +9,11 @@ import {
 } from "../strategies/calendarAuthStrategy";
 import { GoogleAuthStrategy } from "../strategies/GoogleAuthStrategy";
 import { MicrosoftAuthStrategy } from "../strategies/MicrosoftAuthStrategy";
-import { AvailableCalendarDto } from "../dto/AvailableCalendarDto";
-import { CalendarAccountStatusDto } from "../dto/CalendarAccountStatusDto";
-import { NewAccountAuthStatusDto } from "../dto/NewAccountAuthStatusDto";
+import type {
+  AvailableCalendarInfo,
+  CalendarAccountStatus,
+  NewAccountAuthResult,
+} from "../types";
 
 const REAUTH_TIMEOUT_MS = 5 * 60 * 1000;
 const NEW_ACCOUNT_AUTH_TIMEOUT_MS = 5 * 60 * 1000;
@@ -65,7 +67,7 @@ export class CalendarAuthService {
     this.strategies = { google, microsoft };
   }
 
-  async listStatuses(): Promise<CalendarAccountStatusDto[]> {
+  async listStatuses(): Promise<CalendarAccountStatus[]> {
     const entries = await this.allAccountEntries();
     return Promise.all(
       entries.map(({ accountLabel, provider }) =>
@@ -84,7 +86,7 @@ export class CalendarAuthService {
   async getStatus(
     accountLabel: string,
     provider?: CalendarProviderName,
-  ): Promise<CalendarAccountStatusDto> {
+  ): Promise<CalendarAccountStatus> {
     const strategy = await this.resolveStrategy(accountLabel, provider);
     return this.buildStatus(accountLabel, strategy);
   }
@@ -92,7 +94,7 @@ export class CalendarAuthService {
   private async buildStatus(
     accountLabel: string,
     strategy: CalendarAuthStrategy,
-  ): Promise<CalendarAccountStatusDto> {
+  ): Promise<CalendarAccountStatus> {
     const sources = await this.sourcesFor(accountLabel, strategy.provider);
     const entry = this.reauth.get(reauthKey(strategy.provider, accountLabel));
     if (entry?.phase === "pending") {
@@ -206,7 +208,7 @@ export class CalendarAuthService {
   async listAvailableCalendars(
     accountLabel: string,
     provider?: CalendarProviderName,
-  ): Promise<AvailableCalendarDto[]> {
+  ): Promise<AvailableCalendarInfo[]> {
     const strategy = await this.resolveStrategy(accountLabel, provider);
     if (!strategy.tryLoadCredential(accountLabel)) {
       throw new NotFoundException(
@@ -258,7 +260,7 @@ export class CalendarAuthService {
     return { transactionId, authUrl: flow.authUrl };
   }
 
-  getNewAccountAuthStatus(transactionId: string): NewAccountAuthStatusDto {
+  getNewAccountAuthStatus(transactionId: string): NewAccountAuthResult {
     const entry = this.newAccountAuth.get(transactionId);
     if (!entry) {
       throw new NotFoundException(
