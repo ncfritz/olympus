@@ -173,6 +173,19 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
     Fixed on the way: the AMQP password in the logs, the SFTP password in
     source, `console.log` throughout, bootstrap failures writing to
     `/logs`, an unused Hasura client dependency.
+  - Fixed after the restructure, one commit each: the test handler
+    overwriting a movie's CDN metadata (removed, with its route); a
+    failed HandBrake run carrying on to upload; movies without a release
+    date filed without `.mp4`; SFTP connections left open by failed
+    uploads; SHA-256 steps hanging on read errors; the NZBGeek API key in
+    failure logs; NZB fetch or parse failures escaping the handler (and
+    requeueing forever); NZB files left in `/tmp`; downloads without a
+    workflow staged as workflow `undefined`; NaN progress for downloads
+    under 1 MB; a "multiple media files" warning on every download;
+    burned-in subtitle choice depending on track order; startup failing
+    without a SOCKS proxy; the cleanup request published non-persistent.
+  - `createMediaAsset` records every transcode at
+    `/Dionysus/media/transcoded.mp4` rather than its library path.
   - In `DEPLOYMENT_MODE=local`, `MediaWorkflow.downloadFile` returns the
     file's text where the handlers expect parsed JSON (the CDN path
     parses it), so local transcodes can't read their job.
