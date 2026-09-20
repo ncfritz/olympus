@@ -1,14 +1,12 @@
+import { MetricsModule } from "@ncfritz/olympus-nest";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { APP_INTERCEPTOR } from "@nestjs/core";
-import { ReporterModule } from "nestjs-metrics-reporter";
 import { OlympusApiModule } from "./api/OlympusApiModule";
 import { BatchModule } from "./batch/BatchModule";
 import type { RuntimeConfigType } from "./config/configuration";
 import { ALL_CONFIG, runtimeConfig } from "./config/configuration";
 import { EntitiesModule } from "./entities/EntitiesModule";
 import { FetchJobsModule } from "./fetchJobs/FetchJobsModule";
-import { MetricsContentTypeInterceptor } from "./infra/MetricsContentTypeInterceptor";
 import { RabbitModule } from "./infra/RabbitModule";
 import { TmdbModule } from "./tmdb/TmdbModule";
 import { WorkflowModule } from "./workflow/WorkflowModule";
@@ -22,14 +20,12 @@ import { WorkflowModule } from "./workflow/WorkflowModule";
       // environment when first injected. main.ts validates it up front.
       load: ALL_CONFIG,
     }),
-    ReporterModule.forRootAsync({
+    // /metrics (ADR 0017)
+    MetricsModule.forRootAsync({
       inject: [runtimeConfig.KEY],
       useFactory: (runtime: RuntimeConfigType) => ({
-        defaultMetricsEnabled: true,
-        defaultLabels: {
-          app: runtime.appName,
-          environment: runtime.nodeEnv,
-        },
+        app: runtime.appName,
+        environment: runtime.nodeEnv,
       }),
     }),
     RabbitModule,
@@ -39,9 +35,6 @@ import { WorkflowModule } from "./workflow/WorkflowModule";
     WorkflowModule,
     BatchModule,
     EntitiesModule,
-  ],
-  providers: [
-    { provide: APP_INTERCEPTOR, useClass: MetricsContentTypeInterceptor },
   ],
 })
 export class AppModule {}

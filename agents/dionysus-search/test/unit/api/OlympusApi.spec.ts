@@ -22,9 +22,6 @@ vi.mock("@ncfritz/olympus-sdk/olympus", () => ({
     data: { notificationId: "n" },
   })),
 }));
-vi.mock("nestjs-metrics-reporter", () => ({
-  ReporterService: { counter: vi.fn(), histogram: vi.fn() },
-}));
 
 describe("SDK wrappers", () => {
   it("unwrap the SDK responses", async () => {

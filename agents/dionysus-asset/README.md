@@ -49,8 +49,7 @@ src/
   config/configuration.ts     typed, validated configuration (see below)
   messaging.ts                queues, subscriptions and channel prefetch;
                               routes and payloads from @ncfritz/olympus-messages
-  infra/                      RabbitModule, ProxyHttpModule (SOCKS),
-                              metrics content type
+  infra/                      RabbitModule, ProxyHttpModule (SOCKS)
   api/                        OlympusApiModule: ContentApi, MediaApi,
                               MetadataApi, NotificationApi
   tools/                      ToolsModule: Handbrake (HandBrakeCLI), FFmpeg
@@ -94,8 +93,9 @@ docker build --build-arg github_token=<your_github_token> -t dionysus-asset-agen
 
 ## Monitoring
 
-These agents expose a Prometheus metrics endpoint at `/metrics/` providing basic NodeJS memory, loop timing, and GC
-statistics. As sample Prometheus scrape configuration is as follows:
+These agents expose Prometheus metrics at `/metrics`: Node's memory, event loop and GC
+statistics, and `http_client_request_duration_seconds` for their calls to the Olympus API and
+other services (ADR 0017). As sample Prometheus scrape configuration is as follows:
 
 ```yaml
 scrape_configs:

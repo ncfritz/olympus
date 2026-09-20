@@ -1,7 +1,6 @@
+import { MetricsModule } from "@ncfritz/olympus-nest";
 import { Logger, Module, Type } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { APP_INTERCEPTOR } from "@nestjs/core";
-import { ReporterModule } from "nestjs-metrics-reporter";
 import { OlympusApiModule } from "./api/OlympusApiModule";
 import { ALL_CONFIG, runtimeConfig } from "./config/configuration";
 import type { RuntimeConfigType } from "./config/configuration";
@@ -10,7 +9,6 @@ import {
   DOWNLOAD_HANDLERS,
   DownloadsModule,
 } from "./downloads/DownloadsModule";
-import { MetricsContentTypeInterceptor } from "./infra/MetricsContentTypeInterceptor";
 import { RabbitModule } from "./infra/RabbitModule";
 import { MEDIA_HANDLERS, MediaModule } from "./media/MediaModule";
 import { ToolsModule } from "./tools/ToolsModule";
@@ -47,14 +45,12 @@ const enabled = (handlers: Record<string, Type>): Type[] =>
       // environment when first injected. main.ts validates it up front.
       load: ALL_CONFIG,
     }),
-    ReporterModule.forRootAsync({
+    // /metrics (ADR 0017)
+    MetricsModule.forRootAsync({
       inject: [runtimeConfig.KEY],
       useFactory: (runtime: RuntimeConfigType) => ({
-        defaultMetricsEnabled: true,
-        defaultLabels: {
-          app: runtime.appName,
-          environment: runtime.nodeEnv,
-        },
+        app: runtime.appName,
+        environment: runtime.nodeEnv,
       }),
     }),
     RabbitModule,
@@ -63,9 +59,6 @@ const enabled = (handlers: Record<string, Type>): Type[] =>
     ContentModule.register(enabled(CONTENT_HANDLERS)),
     MediaModule.register(enabled(MEDIA_HANDLERS)),
     DownloadsModule.register(enabled(DOWNLOAD_HANDLERS)),
-  ],
-  providers: [
-    { provide: APP_INTERCEPTOR, useClass: MetricsContentTypeInterceptor },
   ],
 })
 export class AppModule {}

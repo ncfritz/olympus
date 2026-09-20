@@ -1,14 +1,12 @@
+import { MetricsModule } from "@ncfritz/olympus-nest";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { APP_INTERCEPTOR } from "@nestjs/core";
-import { ReporterModule } from "nestjs-metrics-reporter";
 import { OlympusApiModule } from "./api/OlympusApiModule";
 import { EmailModule } from "./channels/email/EmailModule";
 import { SynoChatModule } from "./channels/synochat/SynoChatModule";
 import { WebSocketModule } from "./channels/websocket/WebSocketModule";
 import { ALL_CONFIG, runtimeConfig } from "./config/configuration";
 import type { RuntimeConfigType } from "./config/configuration";
-import { MetricsContentTypeInterceptor } from "./infra/MetricsContentTypeInterceptor";
 import { RabbitModule } from "./infra/RabbitModule";
 
 @Module({
@@ -20,14 +18,12 @@ import { RabbitModule } from "./infra/RabbitModule";
       // environment when first injected. main.ts validates it up front.
       load: ALL_CONFIG,
     }),
-    ReporterModule.forRootAsync({
+    // /metrics (ADR 0017)
+    MetricsModule.forRootAsync({
       inject: [runtimeConfig.KEY],
       useFactory: (runtime: RuntimeConfigType) => ({
-        defaultMetricsEnabled: true,
-        defaultLabels: {
-          app: runtime.appName,
-          environment: runtime.nodeEnv,
-        },
+        app: runtime.appName,
+        environment: runtime.nodeEnv,
       }),
     }),
     RabbitModule,
@@ -36,9 +32,6 @@ import { RabbitModule } from "./infra/RabbitModule";
     EmailModule,
     SynoChatModule,
     WebSocketModule,
-  ],
-  providers: [
-    { provide: APP_INTERCEPTOR, useClass: MetricsContentTypeInterceptor },
   ],
 })
 export class AppModule {}

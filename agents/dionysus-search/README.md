@@ -36,7 +36,7 @@ src/
   config/configuration.ts     typed, validated configuration (see below)
   messaging.ts                queues and subscriptions; routes and payloads
                               come from @ncfritz/olympus-messages
-  infra/                      RabbitModule, metrics content type
+  infra/                      RabbitModule
   api/                        OlympusApiModule: SDK client setup, MediaApi,
                               MetadataApi, NotificationApi
   search/                     SearchModule: handlers/ (one per asset type,
@@ -70,8 +70,9 @@ convention tests.
 
 ## Monitoring
 
-These agents expose a Prometheus metrics endpoint at `/metrics/` providing basic NodeJS memory, loop timing, and GC
-statistics. As sample Prometheus scrape configuration is as follows:
+These agents expose Prometheus metrics at `/metrics`: Node's memory, event loop and GC
+statistics, and `http_client_request_duration_seconds` for their calls to the Olympus API and
+other services (ADR 0017). As sample Prometheus scrape configuration is as follows:
 
 ```yaml
 scrape_configs:
