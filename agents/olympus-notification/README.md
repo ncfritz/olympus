@@ -34,7 +34,6 @@ src/
   config/configuration.ts     typed, validated configuration (see below)
   messaging.ts                exchange, queues and routing keys
   infra/                      RabbitModule
-  api/                        OlympusApiModule: SDK client setup, WorkflowApi, MediaApi
   delivery/                   DeliveryHandler (expiry, formatter lookup, send),
                               NotificationFormatter, message and context types
   channels/<channel>/         <Channel>Module, handlers/, formatters/, services/

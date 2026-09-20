@@ -6,7 +6,7 @@ import type {
 import { Injectable } from "@nestjs/common";
 import moment from "moment";
 import { v4 as uuidv4 } from "uuid";
-import { NotificationApi } from "../../../api/NotificationApi";
+import { NotificationApi } from "@ncfritz/olympus-client";
 import { DeliveryHandler } from "../../../delivery/DeliveryHandler";
 import type { WebSocketNotificationEvent } from "../../../delivery/events";
 import {

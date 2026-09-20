@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@golevelup/nestjs-rabbitmq": "catalog:",
+    "@ncfritz/olympus-client": "workspace:*",
     "@ncfritz/olympus-messages": "workspace:*",
     "@ncfritz/olympus-nest": "workspace:*",
     "@ncfritz/olympus-sdk": "workspace:*",

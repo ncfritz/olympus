@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WebSocketFormatters } from "../../../../src/channels/websocket/formatters/WebSocketFormatters";
 import { WebSocketHandler } from "../../../../src/channels/websocket/handlers/WebSocketHandler";
-import type { NotificationApi } from "../../../../src/api/NotificationApi";
+import type { NotificationApi } from "@ncfritz/olympus-client";
 import type { WebSocketPublisher } from "../../../../src/channels/websocket/services/WebSocketPublisher";
 import { webSocketEvent } from "../../../fixtures/events";
 

@@ -1,7 +1,7 @@
 import type { NotificationContext } from "@ncfritz/olympus-sdk/olympus";
 import { Injectable } from "@nestjs/common";
-import { MediaApi } from "../../../api/MediaApi";
-import { WorkflowApi } from "../../../api/WorkflowApi";
+import { MediaApi } from "@ncfritz/olympus-client";
+import { MetadataWorkflowApi } from "@ncfritz/olympus-client";
 import type { SmtpNotificationEvent } from "../../../delivery/events";
 import type { NotificationFormatter } from "../../../delivery/NotificationFormatter";
 import type { SmtpPayload } from "../payload";
@@ -21,7 +21,7 @@ export class EmailFormatters {
   private readonly byType: Record<string, EmailFormatter>;
 
   constructor(
-    workflowApi: WorkflowApi,
+    workflowApi: MetadataWorkflowApi,
     mediaApi: MediaApi,
     templates: EmailTemplates,
   ) {

@@ -1,4 +1,4 @@
-import type { WorkflowApi } from "../../../api/WorkflowApi";
+import type { MetadataWorkflowApi } from "@ncfritz/olympus-client";
 import type {
   DionysusWorkflowContext,
   DionysusWorkflowMessageContext,
@@ -12,7 +12,7 @@ export class MetadataWorkflowCompleteEmailFormatter extends HandlebarsEmailForma
   DionysusWorkflowMessageContext
 > {
   constructor(
-    private readonly workflowApi: WorkflowApi,
+    private readonly workflowApi: MetadataWorkflowApi,
     templates: EmailTemplates,
   ) {
     super("dionysus_metadata_workflow_completion", templates);
@@ -21,10 +21,12 @@ export class MetadataWorkflowCompleteEmailFormatter extends HandlebarsEmailForma
   async buildContext(
     context: DionysusWorkflowContext,
   ): Promise<DionysusWorkflowMessageContext> {
-    const workflow = await this.workflowApi.describeWorkflow(
+    const workflow = await this.workflowApi.describeMetadataWorkflow(
       context.workflowId,
     );
-    const steps = await this.workflowApi.listWorkflowSteps(context.workflowId);
+    const steps = await this.workflowApi.listMetadataWorkflowSteps(
+      context.workflowId,
+    );
     return { workflow, steps };
   }
 }

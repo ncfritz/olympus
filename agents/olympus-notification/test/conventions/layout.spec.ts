@@ -75,15 +75,13 @@ describe("agent conventions", () => {
     ).toEqual([]);
   });
 
-  it("reaches the Olympus API only through the SDK wrappers in api/", () => {
-    const outside = SOURCES.filter((file) => !file.startsWith("api/"));
-    // Calling SDK operations (value imports) belongs in api/*Api.ts;
-    // elsewhere the SDK is used for its types only.
-    const sdkCalls = outside.filter((file) =>
+  it("reaches the Olympus API only through @ncfritz/olympus-client", () => {
+    // The wrappers call the SDK; here the SDK is used for its types only.
+    const sdkCalls = SOURCES.filter((file) =>
       /^import (?!type )[^;]*from "@ncfritz\/olympus-sdk/m.test(read(file)),
     );
     // No hand-built API URLs either.
-    const apiUrls = outside.filter((file) => /\/v1\//.test(read(file)));
+    const apiUrls = SOURCES.filter((file) => /\/v1\//.test(read(file)));
     expect({ sdkCalls, apiUrls }).toEqual({ sdkCalls: [], apiUrls: [] });
   });
 

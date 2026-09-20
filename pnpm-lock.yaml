@@ -760,6 +760,9 @@ importers:
       '@golevelup/nestjs-rabbitmq':
         specifier: 'catalog:'
         version: 9.0.2(@nestjs/common@11.2.5(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.5)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@ncfritz/olympus-client':
+        specifier: workspace:*
+        version: link:../../packages/client
       '@ncfritz/olympus-messages':
         specifier: workspace:*
         version: link:../../packages/messages

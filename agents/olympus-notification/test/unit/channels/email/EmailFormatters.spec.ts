@@ -1,8 +1,8 @@
 import axios from "axios";
 import * as fs from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { MediaApi } from "../../../../src/api/MediaApi";
-import type { WorkflowApi } from "../../../../src/api/WorkflowApi";
+import type { MediaApi } from "@ncfritz/olympus-client";
+import type { MetadataWorkflowApi } from "@ncfritz/olympus-client";
 import { EmailFormatters } from "../../../../src/channels/email/formatters/EmailFormatters";
 import { EmailTemplates } from "../../../../src/channels/email/services/EmailTemplates";
 import { smtpEvent } from "../../../fixtures/events";
@@ -10,13 +10,13 @@ import { smtpEvent } from "../../../fixtures/events";
 vi.mock("axios");
 
 const workflowApi = {
-  describeWorkflow: vi.fn(),
-  listWorkflowSteps: vi.fn(),
+  describeMetadataWorkflow: vi.fn(),
+  listMetadataWorkflowSteps: vi.fn(),
 };
 const mediaApi = { describeMediaAssetWorkflow: vi.fn() };
 
 const formatters = new EmailFormatters(
-  workflowApi as unknown as WorkflowApi,
+  workflowApi as unknown as MetadataWorkflowApi,
   mediaApi as unknown as MediaApi,
   new EmailTemplates(),
 );
@@ -59,18 +59,18 @@ describe("EmailFormatters", () => {
   });
 
   it("renders the metadata workflow completion from the API", async () => {
-    workflowApi.describeWorkflow.mockResolvedValue({
+    workflowApi.describeMetadataWorkflow.mockResolvedValue({
       id: "wf-1",
       status: "success",
       startedTime: "2026-09-19T10:00:00Z",
       finishedTime: "2026-09-19T11:00:00Z",
       steps: [],
     });
-    workflowApi.listWorkflowSteps.mockResolvedValue([]);
+    workflowApi.listMetadataWorkflowSteps.mockResolvedValue([]);
     const email = await format("dionysus_metadata_workflow_completion", {
       workflowId: "wf-1",
     });
-    expect(workflowApi.describeWorkflow).toHaveBeenCalledWith("wf-1");
+    expect(workflowApi.describeMetadataWorkflow).toHaveBeenCalledWith("wf-1");
     expect(email.subject).toContain("completed successfully");
     expect(email.htmlPart).toContain("wf-1");
     expect(email.plaintextPart).toMatch(/Finished: 09\/19\/2026 \d\d:00:00/);

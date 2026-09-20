@@ -1,12 +1,19 @@
 import { MetricsModule } from "@ncfritz/olympus-nest";
+import { OlympusClientModule } from "@ncfritz/olympus-client/nest";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { OlympusApiModule } from "./api/OlympusApiModule";
 import { EmailModule } from "./channels/email/EmailModule";
 import { SynoChatModule } from "./channels/synochat/SynoChatModule";
 import { WebSocketModule } from "./channels/websocket/WebSocketModule";
-import { ALL_CONFIG, runtimeConfig } from "./config/configuration";
-import type { RuntimeConfigType } from "./config/configuration";
+import {
+  ALL_CONFIG,
+  runtimeConfig,
+  olympusConfig,
+} from "./config/configuration";
+import type {
+  RuntimeConfigType,
+  OlympusConfigType,
+} from "./config/configuration";
 import { RabbitModule } from "./infra/RabbitModule";
 
 @Module({
@@ -27,7 +34,14 @@ import { RabbitModule } from "./infra/RabbitModule";
       }),
     }),
     RabbitModule,
-    OlympusApiModule,
+    // The Olympus API, through @ncfritz/olympus-client (ADR 0017)
+    OlympusClientModule.forRootAsync({
+      inject: [olympusConfig.KEY, runtimeConfig.KEY],
+      useFactory: (olympus: OlympusConfigType, runtime: RuntimeConfigType) => ({
+        baseUrl: olympus.apiBaseUrl,
+        clientName: runtime.appName,
+      }),
+    }),
     // Delivery channels
     EmailModule,
     SynoChatModule,

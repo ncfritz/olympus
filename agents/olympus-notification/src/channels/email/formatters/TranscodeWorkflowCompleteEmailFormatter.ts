@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as path from "node:path";
 import type { Attachment } from "nodemailer/lib/mailer";
-import type { MediaApi } from "../../../api/MediaApi";
+import type { MediaApi } from "@ncfritz/olympus-client";
 import type {
   DionysusTranscodeWorkflowCompleteContext,
   DionysusTranscodeWorkflowCompleteMessageContext,
