@@ -43,7 +43,7 @@ describe("PrismaEventOverrideStore", () => {
   });
 
   afterEach(async () => {
-    await prisma.onModuleDestroy();
+    await prisma.onApplicationShutdown();
   });
 
   it("returns null for an event with no override", async () => {

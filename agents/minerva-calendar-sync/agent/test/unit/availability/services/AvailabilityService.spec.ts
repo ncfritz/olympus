@@ -120,7 +120,7 @@ describe("AvailabilityService", () => {
   });
 
   afterEach(async () => {
-    await prisma.onModuleDestroy();
+    await prisma.onApplicationShutdown();
   });
 
   const RANGE_START = "2026-01-05T15:00:00.000Z";

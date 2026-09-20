@@ -43,7 +43,7 @@ describe("PrismaOverrideBlockStore", () => {
   });
 
   afterEach(async () => {
-    await prisma.onModuleDestroy();
+    await prisma.onApplicationShutdown();
   });
 
   it("creates a block and assigns it an id", async () => {

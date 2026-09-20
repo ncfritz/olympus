@@ -64,7 +64,7 @@ describe("PrismaSyncRunStore", () => {
   });
 
   afterEach(async () => {
-    await prisma.onModuleDestroy();
+    await prisma.onApplicationShutdown();
   });
 
   it("create persists a run and its event changes, and get returns both", async () => {

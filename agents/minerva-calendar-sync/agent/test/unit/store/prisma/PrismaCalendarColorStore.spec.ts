@@ -43,7 +43,7 @@ describe("PrismaCalendarColorStore", () => {
   });
 
   afterEach(async () => {
-    await prisma.onModuleDestroy();
+    await prisma.onApplicationShutdown();
   });
 
   it("listColors returns an empty map when nothing is stored", async () => {

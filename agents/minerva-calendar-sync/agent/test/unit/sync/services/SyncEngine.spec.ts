@@ -235,7 +235,7 @@ describe("SyncEngine", () => {
   });
 
   afterEach(async () => {
-    await prisma.onModuleDestroy();
+    await prisma.onApplicationShutdown();
   });
 
   it("runs a full sync when there is no stored sync token, and saves the token", async () => {
@@ -490,6 +490,31 @@ describe("SyncEngine", () => {
 
     expect(provider.fullSyncCallCount).toBe(1);
     expect((await store.getEvent(CONFIG.source, "a"))?.uid).toBe("a");
+  });
+
+  it("lets a running sync finish at shutdown and starts no new one", async () => {
+    let releaseGate!: () => void;
+    provider.fullSyncGate = new Promise((resolve) => (releaseGate = resolve));
+    provider.fullSyncBatches = [
+      { events: [fixtureEvent({ uid: "a" })], nextSyncToken: "token-1" },
+    ];
+
+    const running = engine.syncOne(CONFIG, "manual");
+    let shutDown = false;
+    const shutdown = engine
+      .beforeApplicationShutdown()
+      .then(() => (shutDown = true));
+    await engine.syncOne({ ...CONFIG, calendarId: "cal-2" }, "poll");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(shutDown).toBe(false);
+
+    releaseGate();
+    await shutdown;
+    await running;
+
+    expect(provider.fullSyncCallCount).toBe(1);
+    expect((await store.getEvent(CONFIG.source, "a"))?.uid).toBe("a");
+    expect(engine.isSyncing(CONFIG.calendarId)).toBe(false);
   });
 
   describe("sync history", () => {

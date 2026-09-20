@@ -1,4 +1,9 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import {
+  BeforeApplicationShutdown,
+  Inject,
+  Injectable,
+  Logger,
+} from "@nestjs/common";
 import { syncConfig, type SyncConfigType } from "../../config/configuration";
 import {
   buildCanonicalEventId,
@@ -55,9 +60,12 @@ function newTally(): SyncTally {
  * behind those two interfaces.
  */
 @Injectable()
-export class SyncEngine {
+export class SyncEngine implements BeforeApplicationShutdown {
   private readonly logger = new Logger(SyncEngine.name);
   private readonly inFlight = new Set<string>();
+  /** The running syncs, awaited at shutdown. */
+  private readonly running = new Set<Promise<void>>();
+  private stopping = false;
   private readonly windowPastMs: number;
   private readonly windowFutureMs: number;
 
@@ -78,6 +86,7 @@ export class SyncEngine {
    * sources (poll timer, push webhook, the manual "Sync now" button) — an
    * overlapping call for the same calendarId is skipped rather than run
    * concurrently, and a calendar the user has disabled is skipped outright.
+   * Once the application is shutting down no new sync starts.
    *
    * `trigger` is recorded on the resulting sync-history entry (if any) —
    * see persistRun for which runs are actually worth recording. Required
@@ -92,6 +101,12 @@ export class SyncEngine {
     // them — that's what makes two near-simultaneous calls mutually
     // exclusive (see the concurrency test). The enablement check is async,
     // so it has to live inside the guarded section instead of before it.
+    if (this.stopping) {
+      this.logger.debug(
+        `Skipping sync for "${config.calendarId}" — shutting down`,
+      );
+      return;
+    }
     if (this.inFlight.has(config.calendarId)) {
       this.logger.debug(
         `Skipping sync for "${config.calendarId}" — already in progress`,
@@ -100,18 +115,34 @@ export class SyncEngine {
     }
 
     this.inFlight.add(config.calendarId);
-    try {
-      const overrides = await this.enablement.listOverrides();
-      if (overrides[config.calendarId] === false) {
-        this.logger.debug(
-          `Skipping sync for "${config.calendarId}" — disabled`,
-        );
-        return;
-      }
-      await this.runSyncAndRecord(config, trigger);
-    } finally {
+    const sync = this.syncIfEnabled(config, trigger).finally(() => {
       this.inFlight.delete(config.calendarId);
+      this.running.delete(sync);
+    });
+    this.running.add(sync);
+    return sync;
+  }
+
+  /**
+   * Lets running syncs finish before the database disconnects
+   * (PrismaService disconnects in onApplicationShutdown, after this);
+   * no new sync starts from here on.
+   */
+  async beforeApplicationShutdown(): Promise<void> {
+    this.stopping = true;
+    await Promise.allSettled(this.running);
+  }
+
+  private async syncIfEnabled(
+    config: SyncedCalendarConfig,
+    trigger: SyncRunTrigger,
+  ): Promise<void> {
+    const overrides = await this.enablement.listOverrides();
+    if (overrides[config.calendarId] === false) {
+      this.logger.debug(`Skipping sync for "${config.calendarId}" — disabled`);
+      return;
     }
+    await this.runSyncAndRecord(config, trigger);
   }
 
   /** Whether `calendarId` has a sync in progress right now, from any trigger source — drives the frontend's "syncing" indicator. */

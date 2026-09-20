@@ -118,7 +118,7 @@ describe("WebhookNotifier", () => {
 
   afterEach(async () => {
     scheduler.getIntervals().forEach((name) => scheduler.deleteInterval(name));
-    await prisma.onModuleDestroy();
+    await prisma.onApplicationShutdown();
   });
 
   function buildNotifier(
