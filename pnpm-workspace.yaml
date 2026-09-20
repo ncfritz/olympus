@@ -1,6 +1,9 @@
 packages:
   - "apps/*"
   - "agents/*"
+  # An agent with a management console (ADR 0016): agents/<name>/{agent,console}
+  - "agents/*/agent"
+  - "agents/*/console"
   - "packages/*"
 
 # Shared dependency versions. Workspace packages reference these with "catalog:"
@@ -48,7 +51,10 @@ overrides:
 
 # pnpm 10 blocks dependency install scripts unless listed here.
 onlyBuiltDependencies:
+  - "@prisma/client"
+  - "@prisma/engines"
   - "@swc/core"
   - better-sqlite3
   - esbuild
+  - prisma
   - sharp

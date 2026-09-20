@@ -1,13 +1,17 @@
 {
-  "name": "web",
-  "version": "0.1.0",
+  "name": "@ncfritz/minerva-calendar-sync-console",
+  "description": "Minerva calendar sync console: the management UI for the calendar sync agent",
+  "version": "0.0.0",
   "private": true,
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "license": "Apache-2.0",
   "scripts": {
     "dev": "next dev -p 4392",
     "build": "next build",
     "start": "next start -p 4392",
     "lint": "eslint",
-    "generate:api": "openapi-typescript ../../openapi/app-api.yaml -o src/lib/api/schema.d.ts"
+    "generate:api": "openapi-typescript ../agent/openapi/app-api.yaml -o src/lib/api/schema.d.ts",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.4",
@@ -27,13 +31,13 @@
     "swr": "^2.5.1"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@ncfritz/olympus-config": "workspace:*",
+    "@types/node": "catalog:",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
+    "eslint": "catalog:",
     "eslint-config-next": "16.3.5",
     "openapi-typescript": "^7.13.0",
-    "typescript": "^5"
-  },
-  "packageManager": "pnpm@9.15.2"
+    "typescript": "catalog:"
+  }
 }

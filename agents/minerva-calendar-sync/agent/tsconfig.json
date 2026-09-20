@@ -1,20 +1,20 @@
 {
+  "extends": "@ncfritz/olympus-config/tsconfig/nest.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "es2022",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true,
-    "skipLibCheck": true,
+    // Built with tsc (nest build), not webpack: Prisma's client and engines
+    // stay in node_modules. CommonJS output, as before the import.
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "isolatedModules": false,
+    // Stricter than the workspace preset, as the source repo was.
     "strict": true,
     "strictPropertyInitialization": false,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true
-  }
+    "noUnusedLocals": false,
+    "noImplicitReturns": false,
+    // Tests and scripts are type-checked with the sources (Jest, ts-node).
+    "rootDir": "${configDir}",
+    "incremental": true
+  },
+  "include": ["${configDir}/src/**/*.ts", "${configDir}/test/**/*.ts", "${configDir}/scripts/**/*.ts"],
+  "exclude": []
 }

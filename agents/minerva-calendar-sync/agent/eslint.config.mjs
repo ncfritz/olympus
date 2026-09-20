@@ -1,19 +1,11 @@
-import js from "@eslint/js";
-import tseslint from "typescript-eslint";
-import eslintConfigPrettier from "eslint-config-prettier";
+import node from "@ncfritz/olympus-config/eslint/node";
 
-export default tseslint.config(
-  { ignores: ["dist/**", "node_modules/**"] },
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
-  eslintConfigPrettier,
+export default [
+  ...node,
   {
-    languageOptions: {
-      sourceType: "commonjs",
-    },
+    // Carried over from the source repo until the conventions restructure.
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
     },
   },
-);
+];

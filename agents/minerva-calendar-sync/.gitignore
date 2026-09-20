@@ -1,19 +1,11 @@
-node_modules/
-dist/
-.next/
-.turbo/
-*.log
-*.swp
-.env
-.env.local
+# SQLite databases (DATABASE_URL="file:./dev.db") and test leftovers
 *.sqlite
 *.sqlite-journal
-apps/api/*.db
-apps/api/*.db-journal
-apps/api/prisma/*.db
-apps/api/prisma/*.db-journal
-apps/api/.credentials/
-apps/api/.credentials-microsoft/
-.DS_Store
-.claude/settings.local.json
-.claude/scheduled_tasks.lock
+agent/*.db
+agent/*.db-journal
+agent/prisma/*.db
+agent/prisma/*.db-journal
+
+# OAuth credentials stored by the calendar connectors
+agent/.credentials/
+agent/.credentials-microsoft/
