@@ -104,7 +104,7 @@ export const readConfig = (
   env: Record<string, string | undefined>,
 ): AgentConfig => {
   const read = new EnvReader(env);
-  const runtime = readRuntimeConfig(read, "dionysus-asset-agents", 3102);
+  const runtime = readRuntimeConfig(read, "dionysus-asset-agent", 3102);
   const config: AgentConfig = {
     runtime,
     amqp: readAmqpConfig(read, "/dionysus"),

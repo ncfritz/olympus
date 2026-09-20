@@ -1,6 +1,6 @@
-# dionysus-search-agents
+# dionysus-search-agent
 
-`@ncfritz/dionysus-search-agents`, imported from the dionysus-search-agents
+`@ncfritz/dionysus-search-agent`, imported from the dionysus-search-agents
 repository with its history.
 
 Asynchronous agents for performing media asset search tasks. These agents primarily handle executing NzbGeek
@@ -13,9 +13,9 @@ for processing.
 
 Run from the repository root (`pnpm install` once):
 
-- `pnpm --filter @ncfritz/dionysus-search-agents dev`: watch mode,
+- `pnpm --filter @ncfritz/dionysus-search-agent dev`: watch mode,
   environment from `dev.env` (`dev:local` reads `local.env`).
-- `pnpm --filter @ncfritz/dionysus-search-agents build`, then `start` /
+- `pnpm --filter @ncfritz/dionysus-search-agent build`, then `start` /
   `start:local` / `start:prod`.
 
 Copy `dev.env.example` to `dev.env` (git-ignored) and fill in the values.
@@ -60,7 +60,7 @@ The fanout publishes a search for each due search configuration, delayed
 1 to 60 seconds; series searches publish season searches, and season
 searches episode searches, on `search.execution.trigger`.
 
-`pnpm --filter @ncfritz/dionysus-search-agents test` runs the unit and
+`pnpm --filter @ncfritz/dionysus-search-agent test` runs the unit and
 convention tests.
 
 > The Dockerfile still expects the pre-monorepo layout (npm, GitHub

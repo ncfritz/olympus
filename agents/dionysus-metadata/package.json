@@ -1,5 +1,5 @@
 {
-  "name": "@ncfritz/dionysus-metadata-agents",
+  "name": "@ncfritz/dionysus-metadata-agent",
   "description": "Asynchronous agent for handling TMDB metadata processing",
   "version": "0.0.0",
   "private": true,

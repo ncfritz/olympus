@@ -7,7 +7,7 @@ import {
 describe("readConfig", () => {
   it("applies the defaults", () => {
     const config = readConfig({});
-    expect(config.runtime.appName).toBe("dionysus-asset-agents-development");
+    expect(config.runtime.appName).toBe("dionysus-asset-agent-development");
     expect(config.runtime.port).toBe(3102);
     expect(config.amqp.redactedUri).toBe(
       "amqp://admin:***@localhost:5672/%2Fdionysus",

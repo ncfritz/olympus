@@ -1,5 +1,5 @@
 {
-  "name": "@ncfritz/dionysus-asset-agents",
+  "name": "@ncfritz/dionysus-asset-agent",
   "description": "Asynchronous agent for handling content and media assets",
   "version": "0.0.0",
   "private": true,

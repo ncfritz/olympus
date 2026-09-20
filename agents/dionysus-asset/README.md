@@ -1,6 +1,6 @@
-# dionysus-asset-agents
+# dionysus-asset-agent
 
-`@ncfritz/dionysus-asset-agents`, imported from the dionysus-asset-agents
+`@ncfritz/dionysus-asset-agent`, imported from the dionysus-asset-agents
 repository with its history.
 
 Asynchronous agents for content and media asset handling. These agents support Dionysus workflows for fetching and
@@ -32,9 +32,9 @@ environment variables.
 
 Run from the repository root (`pnpm install` once):
 
-- `pnpm --filter @ncfritz/dionysus-asset-agents dev`: watch mode,
+- `pnpm --filter @ncfritz/dionysus-asset-agent dev`: watch mode,
   environment from `dev.env` (`dev:local` reads `local.env`).
-- `pnpm --filter @ncfritz/dionysus-asset-agents build`, then `start` /
+- `pnpm --filter @ncfritz/dionysus-asset-agent build`, then `start` /
   `start:local` / `start:prod`.
 
 Copy `dev.env.example` to `dev.env` (git-ignored) and fill in the values.
@@ -67,7 +67,7 @@ src/
                               NZBGet clients, nzb/ (NZB parser)
 ```
 
-`pnpm --filter @ncfritz/dionysus-asset-agents test` runs the unit and
+`pnpm --filter @ncfritz/dionysus-asset-agent test` runs the unit and
 convention tests.
 
 > The Dockerfile still expects the pre-monorepo layout (npm, GitHub
@@ -82,7 +82,7 @@ dependencies.
 To build the Docker image, run the following command:
 
 ```aiignore
-docker build . --tag ncfritz/dionysus-asset-agents:latest --build-arg github_token=<your_github_token>
+docker build . --tag ncfritz/dionysus-asset-agent:latest --build-arg github_token=<your_github_token>
 ```
 
 ```bash

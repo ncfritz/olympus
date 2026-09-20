@@ -1,5 +1,5 @@
 {
-  "name": "@ncfritz/dionysus-search-agents",
+  "name": "@ncfritz/dionysus-search-agent",
   "description": "Asynchronous agent for handling media searches",
   "version": "0.0.0",
   "private": true,

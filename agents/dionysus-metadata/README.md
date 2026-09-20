@@ -1,6 +1,6 @@
-# dionysus-metadata-agents
+# dionysus-metadata-agent
 
-`@ncfritz/dionysus-metadata-agents`, imported from the
+`@ncfritz/dionysus-metadata-agent`, imported from the
 dionysus-metadata-agents repository with its history.
 
 Asynchronous agents for fetching TMDB metadata and pushing it to Dionysus. These agents use a multi-phase process for
@@ -47,9 +47,9 @@ queueing metadata sets and fetching metadata for individual TMDB entities.
 
 Run from the repository root (`pnpm install` once):
 
-- `pnpm --filter @ncfritz/dionysus-metadata-agents dev`: watch mode,
+- `pnpm --filter @ncfritz/dionysus-metadata-agent dev`: watch mode,
   environment from `dev.env` (`dev:local` reads `local.env`).
-- `pnpm --filter @ncfritz/dionysus-metadata-agents build`, then `start` /
+- `pnpm --filter @ncfritz/dionysus-metadata-agent build`, then `start` /
   `start:local` / `start:prod`.
 
 Copy `dev.env.example` to `dev.env` (git-ignored) and fill in the values.
@@ -80,7 +80,7 @@ src/
                               handlers, JobNotifier, ExecutionRegistry
 ```
 
-`pnpm --filter @ncfritz/dionysus-metadata-agents test` runs the unit and
+`pnpm --filter @ncfritz/dionysus-metadata-agent test` runs the unit and
 convention tests.
 
 > The Dockerfile still expects the pre-monorepo layout (npm, GitHub
