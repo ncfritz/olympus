@@ -22,10 +22,7 @@ src/
   config/configuration.ts    readConfig() + registerAs namespaces, on @ncfritz/olympus-nest
   messaging.ts               exchanges, queues, routing keys (shared ones re-exported
                              from @ncfritz/olympus-messages)
-  infra/                     RabbitModule, interceptors
-  api/
-    OlympusApiModule.ts      configures the SDK clients once from API_BASE_URL
-    <Area>Api.ts             injectable wrappers over the SDK operations the agent uses
+  infra/                     RabbitModule
   <feature>/                 e.g. channels/email, search/movies
     <Feature>Module.ts
     handlers/<Name>Handler.ts
@@ -98,13 +95,17 @@ export class GmailHandler extends SmtpHandler {
 
 ## Calling the API
 
-- Only through the SDK, and only in `api/`: elsewhere SDK imports are
+- Only through `@ncfritz/olympus-client` (ADR 0017): SDK imports are
   type-only and no code builds `/v1/` URLs. **[checked]**
-- `OlympusApiModule` sets `baseURL` (`API_BASE_URL`, including `/v1`) and
-  `throwOnError` on each SDK client once, at startup.
-- A wrapper (`WorkflowApi`, `NotificationApi`) is an `@Injectable()` class
-  whose methods take plain arguments and return the unwrapped model
-  (`response.data!.workflow`).
+- `AppModule` imports `OlympusClientModule.forRootAsync(...)` with
+  `baseUrl` from `API_BASE_URL` (including `/v1`) and `clientName` from
+  the app name; inject the wrappers by class (`MetadataApi`,
+  `NotificationApi`, ...).
+- A call the wrappers don't cover is added to the package (named after
+  the SDK function, with its placeholder in the package's `apis.spec.ts`),
+  not wrapped in the agent.
+- Calls to other services (TMDB, NZBGet, NZBGeek) are wrapped with
+  `ExecuteWithMetrics` from `@ncfritz/olympus-nest`.
 
 ## Configuration
 
@@ -125,8 +126,11 @@ export class GmailHandler extends SmtpHandler {
 - Record the outcome of work in the platform (status fields via the API)
   so failures are visible in the UI, as the search and workflow handlers
   do.
-- The HTTP listener exists for metrics; agents expose no other endpoints
-  and need no CORS, cookies or validation pipes.
+- The HTTP listener exists for metrics: `MetricsModule` from
+  `@ncfritz/olympus-nest` at `/metrics` (ADR 0017). Agents expose no other
+  endpoints and need no CORS, cookies or validation pipes.
+- An agent's own metrics are prom-client metrics with conventional names
+  (`_total`, `_seconds`) and labels for the breakdown.
 
 ## Testing
 
@@ -166,8 +170,10 @@ to `agent/`, plus:
   **[checked]**
 - `Location` headers come from `setLocation()` (`src/utils/location.ts`),
   built from the Describe controller's route. **[checked]**
-- `/metrics` also records `operation_<operationId>_*` for the
-  management API, as the Olympus API does.
+- The management API's requests are recorded as
+  `http_server_request_duration_seconds` (ADR 0017), from middleware
+  over its document installed in `configureApp`; the console sends
+  `X-Olympus-Client`.
 - Messages it publishes are contracts in `@ncfritz/olympus-messages`
   like any other agent's, with a JSON Schema when consumers outside
   TypeScript are expected.

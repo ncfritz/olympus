@@ -18,6 +18,7 @@
 | —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                         |
 | —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                         |
 | —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | **done**                         |
+| —   | Shared API client and request metrics (ADR 0017)                                                     | **done** (2026-09-20)            |
 
 ## Open decisions
 
@@ -34,13 +35,12 @@
 
 Planned work outside the phases, in no particular order.
 
-1. **Chore: decorate all APIs to capture Prometheus metrics.** Today the
-   API's `PrometheusMetricsInterceptor` and Minerva's
-   `OperationMetricsInterceptor` record per-operation counts and latency
-   keyed by operationId; the other agents expose only the default Node
-   metrics.
-2. **Chore: add application-level Prometheus metrics**, beyond HTTP and
-   runtime metrics.
+1. **Monitoring strategy** (next conversation): dashboards and alerts on
+   the ADR 0017 request metrics (API view by client, client view against
+   the API).
+2. **Chore: add application-level Prometheus metrics** to the Dionysus
+   and notification agents (work done, failures, queue lag), as Minerva
+   has (`sync_runs_total`, `outbox_publishes_total`, ...).
 3. **Feature: deliver a Grafana dashboard, source-controlled** (alongside
    the rest of `infra/`).
 4. **Feature (notification agent): interactive message tester,
@@ -257,21 +257,19 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
 ### Not-found handling
 
 Callers disagree on what a `404` from an API means. Settle it during the
-site import, which has more instances; until then the shared client
-(`@ncfritz/olympus-client`, planned) throws by default and returns
-`undefined` only where a method declares `T | undefined`.
+site import, which has more instances. Until then `@ncfritz/olympus-client`
+throws by default and returns `undefined` only where a method declares
+`T | undefined` (`describeBatchJob`, `describeMetadataFetchJob`, the search
+configuration and result describes, `updateMediaAssetDownloadByNzbId`).
 
-- `ExecuteWithMetrics` (`@ncfritz/olympus-nest`) turns any `404` into
-  `undefined`, whatever the method's declared type. The metadata agent's
-  `getMetadataFetchJob` relies on it (declared `MetadataFetchJob`), and so
-  do its TMDB calls.
-- The search agent asks for it explicitly (`validateStatus` accepting
-  `404`, `T | undefined`); the asset agent does the same for the NZB-ID
-  download update.
-- Every other wrapper throws on `404`.
-- `ExecuteWithMetrics` records a call that throws with status `0`, so its
-  `_4xx`, `_5xx`, `_error` and `_fatal` counters never count failures
-  (the SDK clients throw on every non-2xx answer).
+- `ExecuteWithMetrics` (`@ncfritz/olympus-nest`) still turns any `404` into
+  `undefined`, whatever the method's declared type; the metadata agent's
+  TMDB calls rely on it.
+- Moving the metadata agent onto the client (2026-09-20) changed its
+  creates and updates: a `404` used to become `undefined` (every wrapper
+  was under `ExecuteWithMetrics`) and now throws.
+- Fixed with ADR 0017: `ExecuteWithMetrics` recorded failed calls with
+  status `0`, so error counts were always zero.
 
 ### Messages
 

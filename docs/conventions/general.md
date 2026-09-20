@@ -55,8 +55,11 @@ workflows, jobs), **Minerva** (personal productivity: notes, meetings).
 - Use the module-level `logger` (`logger.info/warn/error`). No
   `console.log` in application code. Command-line scripts (such as the
   API's `src/openapi.ts`) may print to the console.
-- Prometheus metrics go through the app's `Prometheus*Interceptor` and
-  `nestjs-metrics-reporter`.
+- Prometheus metrics follow ADR 0017: `MetricsModule` from
+  `@ncfritz/olympus-nest` serves `/metrics`; HTTP calls are recorded as
+  `http_server_request_duration_seconds` / `http_client_request_duration_seconds`
+  with `client`, `server`, `api`, `tag`, `operation`, `method` and
+  `status_code`; every Olympus client sends `X-Olympus-Client`.
 
 ## Dependencies
 

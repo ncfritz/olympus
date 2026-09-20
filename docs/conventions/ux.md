@@ -17,7 +17,7 @@ src/
   components/<feature>/       feature components (notes/, minerva/meetings/, dionysus/media/)
   components/common/          app-wide building blocks (ErrorBlock, Loader, LoadingWrapper)
   components/layout/          page chrome (AuthWrapper, layouts)
-  api/<area>Api.ts            SDK wrappers
+  api/                        clients from @ncfritz/olympus-client (ADR 0017)
   hooks/                      useFetch, useDrag
   redux/                      store.ts, hooks.ts, slices/
   utils/                      formatting and helper functions

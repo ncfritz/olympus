@@ -12,3 +12,5 @@ Nothing here is published to a registry.
 | `theme`    | `@ncfritz/olympus-theme`    | planned  |
 | `messages` | `@ncfritz/olympus-messages` | present  |
 | `nest`     | `@ncfritz/olympus-nest`     | present  |
+| `metrics`  | `@ncfritz/olympus-metrics`  | present  |
+| `client`   | `@ncfritz/olympus-client`   | present  |

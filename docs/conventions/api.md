@@ -18,10 +18,10 @@ names instead of Nest's `operation.controller.ts` style
 ```
 src/
   main.ts                    bootstrap: versioning, CORS, interceptors, OpenAPI explorer
-  configureApp.ts            Express middleware, CORS, versioning (shared with the tests)
+  configureApp.ts            request metrics (ADR 0017), Express middleware, CORS, versioning (shared with the tests)
   AppModule.ts               config, infrastructure, the three domains, APP_* providers
   config/                    configuration.ts: typed, validated config namespaces
-  infra/                     GraphQLClientModule (Hasura), RabbitModule (AMQP), metrics
+  infra/                     GraphQLClientModule (Hasura), RabbitModule (AMQP)
   schema/                    OpenAPI document definitions (schemas.ts, documentBuilder.ts)
   utils/                     controllerDecorators, filterUtil, location, routes, ...
   <domain>/

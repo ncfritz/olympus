@@ -1,6 +1,6 @@
 # 0015. Agent layout and shared service packages
 
-- **Status:** Accepted
+- **Status:** Accepted; the `api/` wrappers are replaced by `@ncfritz/olympus-client` (ADR 0017)
 - **Date:** 2026-09-19
 
 ## Context
