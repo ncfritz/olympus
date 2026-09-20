@@ -37,7 +37,7 @@ The API can be run as a Docker container and will expose port 3000.
 
 `src/config/configuration.ts` reads and validates these at boot. The API
 refuses to start and lists every missing or invalid variable. Code gets
-them as typed namespaces (`server`, `hasura`, `amqp`, `logging`,
+them as typed namespaces (`server`, `auth`, `hasura`, `amqp`, `logging`,
 `dionysus`), never from `process.env`.
 
 ##### General
@@ -49,6 +49,27 @@ them as typed namespaces (`server`, `hasura`, `amqp`, `logging`,
 | LISTEN_PORT         | The port to listen on (metrics are exposed here too)         | `3100`                     |
 | ENABLE_API_EXPLORER | Serve the Swagger explorer in production (always on in dev)  | `false`                    |
 | CORS_ORIGINS        | Comma-separated origins allowed to call the API with cookies | `http://localhost:3000`    |
+
+##### Authentication
+
+See [ADR 0018](../../docs/decisions/0018-authentication.md). Each listener
+is in `report` mode until its callers have moved over: a request that
+would be refused is logged and counted (`auth_decisions_total`) but still
+served. The services listener only starts when it has certificates.
+
+| Variable             | Usage                                                              | Default  |
+| -------------------- | ------------------------------------------------------------------ | -------- |
+| AUTH_MODE_USERS      | `report` or `enforce` for the user listener (tokens)               | `report` |
+| AUTH_MODE_SERVICES   | `report` or `enforce` for the services listener (certificates)     | `report` |
+| AUTH_SERVICE_ROLES   | `<service>:<role>\|<role>`, comma-separated; the known services    | (empty)  |
+| SERVICES_LISTEN_PORT | The mTLS listener's port                                           | `3443`   |
+| TLS_CERT             | The API's server certificate (with TLS_KEY and TLS_CA_SERVICES)    | (off)    |
+| TLS_KEY              | Its private key                                                    | (off)    |
+| TLS_CA_SERVICES      | The Olympus Services chain the listener trusts                     | (off)    |
+| TLS_CRL_SERVICES     | Revocation lists, one file each: the intermediate's and the root's | (empty)  |
+
+`scripts/dev-ca.sh` writes a throwaway CA and the certificates the tests
+and a local run need into `infra/dev-ca/certs`.
 
 ##### Logging
 

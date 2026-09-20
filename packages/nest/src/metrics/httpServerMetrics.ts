@@ -22,6 +22,12 @@ export interface HttpServerMetricsOptions {
   stripPrefix?: string;
   /** Where to record (default: prom-client's default registry). */
   metrics?: RequestMetrics;
+  /**
+   * The `client` label. The default is the X-Olympus-Client header;
+   * a service that verifies the caller (a client certificate, a token)
+   * passes what it verified instead.
+   */
+  client?: (request: PlainRequest) => string | undefined;
 }
 
 /** The parts of Express's request and response the middleware reads. */
@@ -66,7 +72,9 @@ export const httpServerMetrics = (options: HttpServerMetricsOptions) => {
       );
       if (!operation) return;
       metrics.observeServerRequest({
-        client: clientLabel(request.headers[CLIENT_HEADER]),
+        client:
+          options.client?.(request) ??
+          clientLabel(request.headers[CLIENT_HEADER]),
         server: options.server,
         api: operation.api,
         tag: operation.tag,

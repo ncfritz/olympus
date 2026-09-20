@@ -33,8 +33,30 @@ export type DionysusConfig = {
   publishPath: string;
 };
 
+/** How a listener treats a request it cannot authenticate (ADR 0018). */
+export type AuthMode = "report" | "enforce";
+
+export type AuthConfig = {
+  /** Per listener: `report` logs and counts what it would reject. */
+  modes: { users: AuthMode; services: AuthMode };
+  /** Certificate common name -> the roles that service has. */
+  serviceRoles: Record<string, string[]>;
+  services: {
+    /** Off until the certificates are configured. */
+    enabled: boolean;
+    port: number;
+    certificate: string;
+    key: string;
+    /** The Olympus Services chain the listener trusts. */
+    ca: string;
+    /** One file per revocation list: the intermediate's and the root's. */
+    revocationLists: string[];
+  };
+};
+
 export type AppConfig = {
   server: ServerConfig;
+  auth: AuthConfig;
   hasura: HasuraConfig;
   amqp: AmqpConfig;
   logging: LoggingConfig;
@@ -74,13 +96,74 @@ export const readConfig = (
   const amqp = readAmqpConfig(read, "/dionysus");
   const logging = readLoggingConfig(read, runtime.isProduction);
 
+  const auth = readAuthConfig(read);
+
   const dionysus: DionysusConfig = {
     uploadPath: read.string("DIONYSUS_UPLOAD_PATH"),
     publishPath: read.string("DIONYSUS_PUBLISH_PATH"),
   };
 
   if (read.problems.length) throw new ConfigValidationError(read.problems);
-  return { server, hasura, amqp, logging, dionysus };
+  return { server, auth, hasura, amqp, logging, dionysus };
+};
+
+/**
+ * AUTH_SERVICE_ROLES lists what each service certificate may do:
+ * `dionysus-asset-agent:agent|content,dionysus-search-agent:agent`.
+ */
+const readServiceRoles = (read: EnvReader): Record<string, string[]> => {
+  const roles: Record<string, string[]> = {};
+  for (const entry of read.list("AUTH_SERVICE_ROLES", [])) {
+    const [name, granted] = entry.split(":");
+    if (!name || !granted) {
+      read.problems.push(
+        `AUTH_SERVICE_ROLES entries are "<service>:<role>|<role>", got "${entry}"`,
+      );
+      continue;
+    }
+    roles[name.trim()] = granted
+      .split("|")
+      .map((role) => role.trim())
+      .filter(Boolean);
+  }
+  return roles;
+};
+
+const readAuthConfig = (read: EnvReader): AuthConfig => {
+  const modes = {
+    users: read.oneOf<AuthMode>(
+      "AUTH_MODE_USERS",
+      ["report", "enforce"],
+      "report",
+    ),
+    services: read.oneOf<AuthMode>(
+      "AUTH_MODE_SERVICES",
+      ["report", "enforce"],
+      "report",
+    ),
+  };
+  const certificate = read.optional("TLS_CERT");
+  const key = read.optional("TLS_KEY");
+  const ca = read.optional("TLS_CA_SERVICES");
+  const revocationLists = read.list("TLS_CRL_SERVICES", []);
+  const enabled = Boolean(certificate && key && ca);
+  if (!enabled && (certificate || key || ca)) {
+    read.problems.push(
+      "TLS_CERT, TLS_KEY and TLS_CA_SERVICES are set together or not at all",
+    );
+  }
+  return {
+    modes,
+    serviceRoles: readServiceRoles(read),
+    services: {
+      enabled,
+      port: read.port("SERVICES_LISTEN_PORT", 3443),
+      certificate: certificate ?? "",
+      key: key ?? "",
+      ca: ca ?? "",
+      revocationLists,
+    },
+  };
 };
 
 /*
@@ -91,6 +174,10 @@ export const readConfig = (
 export const serverConfig = registerAs(
   "server",
   () => readConfig(process.env).server,
+);
+export const authConfig = registerAs(
+  "auth",
+  () => readConfig(process.env).auth,
 );
 export const hasuraConfig = registerAs(
   "hasura",
@@ -110,12 +197,14 @@ export const dionysusConfig = registerAs(
 );
 
 export type ServerConfigType = ConfigType<typeof serverConfig>;
+export type AuthConfigType = ConfigType<typeof authConfig>;
 export type HasuraConfigType = ConfigType<typeof hasuraConfig>;
 export type AmqpConfigType = ConfigType<typeof amqpConfig>;
 export type DionysusConfigType = ConfigType<typeof dionysusConfig>;
 
 export const ALL_CONFIG = [
   serverConfig,
+  authConfig,
   hasuraConfig,
   amqpConfig,
   loggingConfig,

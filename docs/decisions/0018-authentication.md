@@ -1,6 +1,6 @@
 # 0018. Authentication for users, devices and services
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-20
 
 ## Context

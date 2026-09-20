@@ -1,12 +1,14 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { RouterModule } from "@nestjs/core";
-import { MetricsModule } from "@ncfritz/olympus-nest";
+import { MetricsController, MetricsModule } from "@ncfritz/olympus-nest";
 import {
   ALL_CONFIG,
   serverConfig,
   ServerConfigType,
 } from "./config/configuration";
+import { AuthModule } from "./auth/AuthModule";
+import { Public } from "./auth/authDecorators";
 import { DIONYSUS_MODULES, DionysusModule } from "./dionysus/DionysusModule";
 import { GraphQLClientModule } from "./infra/GraphQLClientModule";
 import { RabbitModule } from "./infra/RabbitModule";
@@ -14,6 +16,9 @@ import { MINERVA_MODULES, MinervaModule } from "./minerva/MinervaModule";
 import { OLYMPUS_MODULES, OlympusModule } from "./olympus/OlympusModule";
 import { NotificationsGatewayModule } from "./olympus/notifications/gateway/NotificationsGatewayModule";
 import { Routes } from "./utils/routes";
+
+// Prometheus scrapes /metrics without credentials (ADR 0018).
+Public()(MetricsController);
 
 @Module({
   imports: [
@@ -51,6 +56,7 @@ import { Routes } from "./utils/routes";
       },
     ]),
     // Infrastructure modules
+    AuthModule,
     RabbitModule,
     GraphQLClientModule,
     NotificationsGatewayModule,

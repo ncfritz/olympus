@@ -99,3 +99,65 @@ describe("readConfig", () => {
     ]);
   });
 });
+
+describe("readConfig: authentication", () => {
+  it("reports on both listeners until it is told to enforce", () => {
+    const { auth } = readConfig(REQUIRED);
+    expect(auth.modes).toEqual({ users: "report", services: "report" });
+    expect(auth.serviceRoles).toEqual({});
+    expect(auth.services.enabled).toBe(false);
+    expect(auth.services.port).toBe(3443);
+  });
+
+  it("enables the services listener once it has certificates", () => {
+    const { auth } = readConfig({
+      ...REQUIRED,
+      AUTH_MODE_SERVICES: "enforce",
+      SERVICES_LISTEN_PORT: "4443",
+      TLS_CERT: "/certs/api.crt",
+      TLS_KEY: "/certs/api.key",
+      TLS_CA_SERVICES: "/certs/services-ca.crt",
+      TLS_CRL_SERVICES: "/certs/services.crl, /certs/root.crl",
+    });
+    expect(auth.modes.services).toBe("enforce");
+    expect(auth.services).toEqual({
+      enabled: true,
+      port: 4443,
+      certificate: "/certs/api.crt",
+      key: "/certs/api.key",
+      ca: "/certs/services-ca.crt",
+      revocationLists: ["/certs/services.crl", "/certs/root.crl"],
+    });
+  });
+
+  it("reads the roles each service certificate is granted", () => {
+    const { auth } = readConfig({
+      ...REQUIRED,
+      AUTH_SERVICE_ROLES:
+        "dionysus-asset-agent:agent|content, dionysus-search-agent:agent",
+    });
+    expect(auth.serviceRoles).toEqual({
+      "dionysus-asset-agent": ["agent", "content"],
+      "dionysus-search-agent": ["agent"],
+    });
+  });
+
+  it("refuses half a TLS configuration and a malformed role", () => {
+    let error: unknown;
+    try {
+      readConfig({
+        ...REQUIRED,
+        TLS_CERT: "/certs/api.crt",
+        AUTH_MODE_USERS: "loud",
+        AUTH_SERVICE_ROLES: "dionysus-asset-agent",
+      });
+    } catch (e) {
+      error = e;
+    }
+    expect((error as ConfigValidationError).problems).toEqual([
+      'AUTH_MODE_USERS must be one of report, enforce, got "loud"',
+      "TLS_CERT, TLS_KEY and TLS_CA_SERVICES are set together or not at all",
+      'AUTH_SERVICE_ROLES entries are "<service>:<role>|<role>", got "dionysus-asset-agent"',
+    ]);
+  });
+});

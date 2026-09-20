@@ -41,10 +41,11 @@ Phases 2 and 3 are independent and can run in either order or together.
    TLS server: valid agent certificates are accepted and the revoked,
    expired, wrong-intermediate, device and missing ones are refused
    during the handshake.
-4. **Dev compose**: Postgres and Hasura (**done**); the API's two
-   listeners are added in phase 1 and the border nginx in phase 6.
+4. **Dev compose**: Postgres and Hasura (**done**). The API runs from
+   the workspace against them, so its two listeners are configured in
+   `apps/api/dev.env`, not in compose; the border nginx arrives in phase 6.
 
-## Phase 1 — Auth core in the API (report-only)
+## Phase 1 — Auth core in the API (report-only) — done 2026-09-20
 
 1. `auth/` feature folder: `Principal` (`user` | `service`),
    `@Public()`, `@Roles(...)`, `@CurrentPrincipal()`.
@@ -67,6 +68,19 @@ Phases 2 and 3 are independent and can run in either order or together.
    `AUTH_MODE_USERS`, `AUTH_SERVICE_ROLES`.
 6. Tests: both listeners with the dev CA; valid, expired, revoked and
    wrong-CA certificates; header mismatch; report vs enforce; role checks.
+
+Delivered in `apps/api/src/auth/`: `principal.ts`, `authDecorators.ts`,
+`AuthGuard.ts`, `authMetrics.ts`, `services/ServiceIdentityService.ts` and
+`servicesListener.ts`, with `AuthModule` binding the guard globally.
+`MetricsController` is `@Public()`. The `client` metric label comes from
+the peer certificate's common name when there is one
+(`packages/nest`'s `httpServerMetrics` takes a `client` resolver).
+`test/api/services.spec.ts` drives a real TLS handshake against the dev
+CA; the guard, the service strategy and the new configuration have unit
+tests.
+
+Not yet done here: nothing rejects. Both listeners default to `report`,
+and no agent presents a certificate until phase 2.
 
 ## Phase 2 — Agents on mTLS
 

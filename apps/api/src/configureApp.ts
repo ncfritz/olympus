@@ -2,6 +2,7 @@ import { INestApplication, VersioningType } from "@nestjs/common";
 import * as bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import { operationsFromOpenApi } from "@ncfritz/olympus-metrics";
+import type { TLSSocket } from "tls";
 import { useHttpServerMetrics } from "@ncfritz/olympus-nest";
 import { buildOpenApiDocument } from "./schema/documentBuilder";
 import { API_DOCUMENTS } from "./schema/schemas";
@@ -19,6 +20,13 @@ export const configureApp = (app: INestApplication): INestApplication => {
   // the API documents, built once on the first request.
   useHttpServerMetrics(app, {
     server: server.appName,
+    // On the services listener the caller is its certificate, not a header.
+    client: (request) => {
+      const socket = (request as { socket?: TLSSocket }).socket;
+      if (typeof socket?.getPeerCertificate !== "function") return undefined;
+      const name = socket.getPeerCertificate()?.subject?.CN;
+      return Array.isArray(name) ? name[0] : name;
+    },
     operations: () =>
       API_DOCUMENTS.flatMap((config) =>
         operationsFromOpenApi(

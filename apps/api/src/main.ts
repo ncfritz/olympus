@@ -7,6 +7,7 @@ import { createWinstonLogger } from "@ncfritz/olympus-nest";
 import { WinstonModule } from "nest-winston";
 import { AppModule } from "./AppModule";
 import { readConfig } from "./config/configuration";
+import { createServicesListener } from "./auth/servicesListener";
 import { configureApp } from "./configureApp";
 import { buildOpenApiDocument } from "./schema/documentBuilder";
 import {
@@ -35,6 +36,10 @@ async function bootstrap(): Promise<void> {
     buildOpenApiDocument(app, OlympusApiConfig);
     buildOpenApiDocument(app, DionysusApiConfig);
     buildOpenApiDocument(app, MinervaApiConfig);
+  }
+
+  if (config.auth.services.enabled) {
+    createServicesListener(app, config.auth.services);
   }
 
   await app.listen(config.server.port);

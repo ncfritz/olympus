@@ -26,6 +26,6 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0015](0015-agent-layout-and-shared-packages.md)      | Agent layout and shared service packages                        | Accepted                    |
 | [0016](0016-agents-with-a-management-console.md)      | Agents with a management console                                | Accepted                    |
 | [0017](0017-shared-api-client-and-request-metrics.md) | Shared API client and request metrics                           | Accepted                    |
-| [0018](0018-authentication.md)                        | Authentication for users, devices and services                  | Proposed                    |
+| [0018](0018-authentication.md)                        | Authentication for users, devices and services                  | Accepted                    |
 
 New records: copy [template.md](template.md), take the next number.

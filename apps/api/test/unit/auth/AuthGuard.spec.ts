@@ -1,0 +1,175 @@
+import type { ExecutionContext } from "@nestjs/common";
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import type { Reflector } from "@nestjs/core";
+import { register } from "prom-client";
+import { beforeEach, describe, expect, it } from "vitest";
+import { AuthGuard } from "../../../src/auth/AuthGuard";
+import { IS_PUBLIC, REQUIRED_ROLES } from "../../../src/auth/authDecorators";
+import type {
+  RequestWithPrincipal,
+  ServicePrincipal,
+} from "../../../src/auth/principal";
+import type { ServiceIdentity } from "../../../src/auth/services/ServiceIdentityService";
+import type { ServiceIdentityService } from "../../../src/auth/services/ServiceIdentityService";
+import type {
+  AuthConfigType,
+  AuthMode,
+} from "../../../src/config/configuration";
+
+const AGENT: ServicePrincipal = {
+  kind: "service",
+  name: "dionysus-asset-agent",
+  deployment: "mac-mini",
+  roles: ["agent"],
+};
+
+/** Metadata the guard reads, as a reflector that returns it directly. */
+const reflector = (metadata: Record<string, unknown>) =>
+  ({
+    getAllAndOverride: (key: string) => metadata[key],
+  }) as unknown as Reflector;
+
+const context = (request: Partial<RequestWithPrincipal>) =>
+  ({
+    switchToHttp: () => ({ getRequest: () => request }),
+    getHandler: () => undefined,
+    getClass: () => undefined,
+  }) as unknown as ExecutionContext;
+
+const config = (modes: Partial<Record<"users" | "services", AuthMode>> = {}) =>
+  ({
+    modes: { users: "report", services: "report", ...modes },
+    serviceRoles: {},
+    services: {
+      enabled: false,
+      port: 3443,
+      certificate: "",
+      key: "",
+      ca: "",
+      revocationLists: [],
+    },
+  }) as AuthConfigType;
+
+const guard = (
+  identity: ServiceIdentity,
+  metadata: Record<string, unknown> = {},
+  modes?: Partial<Record<"users" | "services", AuthMode>>,
+) =>
+  new AuthGuard(
+    reflector(metadata),
+    { identify: () => identity } as unknown as ServiceIdentityService,
+    config(modes),
+  );
+
+const request = (over: Partial<RequestWithPrincipal> = {}) =>
+  ({
+    method: "GET",
+    originalUrl: "/v1/olympus/ping",
+    ...over,
+  }) as RequestWithPrincipal;
+
+const counted = async () => {
+  const metric = await register.getSingleMetricAsString("auth_decisions_total");
+  return metric
+    .split("\n")
+    .filter((line) => line.startsWith("auth_decisions_total{"));
+};
+
+describe("AuthGuard", () => {
+  beforeEach(() => {
+    register.getSingleMetric("auth_decisions_total")?.reset();
+  });
+
+  it("lets a public route through without a principal", () => {
+    const req = request({ listener: "users" });
+    expect(
+      guard({ reason: "no credentials" }, { [IS_PUBLIC]: true }).canActivate(
+        context(req),
+      ),
+    ).toBe(true);
+    expect(req.principal).toBeUndefined();
+  });
+
+  it("makes the verified service the request's principal", async () => {
+    const req = request({ listener: "services" });
+    expect(guard({ principal: AGENT }).canActivate(context(req))).toBe(true);
+    expect(req.principal).toEqual(AGENT);
+    expect(await counted()).toEqual([
+      'auth_decisions_total{listener="services",outcome="allow",reason="none"} 1',
+    ]);
+  });
+
+  it("serves an unauthenticated request in report mode and counts it", async () => {
+    const req = request({ listener: "users" });
+    expect(guard({ reason: "no credentials" }).canActivate(context(req))).toBe(
+      true,
+    );
+    expect(await counted()).toEqual([
+      'auth_decisions_total{listener="users",outcome="would_reject",reason="no credentials"} 1',
+    ]);
+  });
+
+  it("rejects the same request once the listener enforces", async () => {
+    const enforcing = guard(
+      { reason: "no credentials" },
+      {},
+      { users: "enforce" },
+    );
+    expect(() =>
+      enforcing.canActivate(context(request({ listener: "users" }))),
+    ).toThrow(UnauthorizedException);
+    expect(await counted()).toEqual([
+      'auth_decisions_total{listener="users",outcome="reject",reason="no credentials"} 1',
+    ]);
+  });
+
+  it("treats a request without a listener as the users listener", () => {
+    const req = request();
+    expect(guard({ reason: "no credentials" }).canActivate(context(req))).toBe(
+      true,
+    );
+  });
+
+  it("counts an unknown service without putting its name in the label", async () => {
+    guard({ reason: 'unknown service "olympus-site"' }).canActivate(
+      context(request({ listener: "services" })),
+    );
+    expect(await counted()).toEqual([
+      'auth_decisions_total{listener="services",outcome="would_reject",reason="unknown service"} 1',
+    ]);
+  });
+
+  it("allows a principal that has one of the required roles", () => {
+    expect(
+      guard(
+        { principal: AGENT },
+        { [REQUIRED_ROLES]: ["content", "agent"] },
+      ).canActivate(context(request({ listener: "services" }))),
+    ).toBe(true);
+  });
+
+  it("forbids a principal that has none of them when enforcing", async () => {
+    const enforcing = guard(
+      { principal: AGENT },
+      { [REQUIRED_ROLES]: ["admin"] },
+      { services: "enforce" },
+    );
+    expect(() =>
+      enforcing.canActivate(context(request({ listener: "services" }))),
+    ).toThrow(ForbiddenException);
+    expect(await counted()).toEqual([
+      'auth_decisions_total{listener="services",outcome="reject",reason="role"} 1',
+    ]);
+  });
+
+  it("serves the same request in report mode", () => {
+    const req = request({ listener: "services" });
+    expect(
+      guard({ principal: AGENT }, { [REQUIRED_ROLES]: ["admin"] }).canActivate(
+        context(req),
+      ),
+    ).toBe(true);
+    // The principal is still on the request: a handler can see who called.
+    expect(req.principal).toEqual(AGENT);
+  });
+});
