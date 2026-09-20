@@ -8,7 +8,7 @@ import type {
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import fs from "fs";
 import moment from "moment";
-import { MediaApi } from "../../api/MediaApi";
+import { MediaApi } from "@ncfritz/olympus-client";
 import { downloadsConfig, mediaConfig } from "../../config/configuration";
 import type {
   DownloadsConfigType,
@@ -246,19 +246,18 @@ export class DownloadUpdateHandler {
     updates: PartialMediaAssetDownload,
     searchResultStatus: SearchResultStatus,
   ) {
-    const response = await this.mediaApi.updateMediaAssetDownloadByNzbId(
+    const download = await this.mediaApi.updateMediaAssetDownloadByNzbId(
       nzbId as number,
       updates,
       searchResultStatus,
     );
 
-    if (response.status === 404) {
+    if (!download) {
       this.logger.warn(
         `Download with nzbId ${nzbId} not found, skipping update`,
       );
-      return undefined;
     }
 
-    return response.data.download;
+    return download;
   }
 }

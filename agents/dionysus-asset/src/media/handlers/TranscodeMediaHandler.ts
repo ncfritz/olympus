@@ -3,8 +3,7 @@ import { publishMessage } from "@ncfritz/olympus-messages";
 import type { DecoratedMediaAssetWorkflow } from "@ncfritz/olympus-sdk/dionysus";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import fs from "fs";
-import { MediaApi } from "../../api/MediaApi";
-import { MetadataApi } from "../../api/MetadataApi";
+import { MediaApi, MetadataApi } from "@ncfritz/olympus-client";
 import { mediaConfig } from "../../config/configuration";
 import type { MediaConfigType } from "../../config/configuration";
 import {

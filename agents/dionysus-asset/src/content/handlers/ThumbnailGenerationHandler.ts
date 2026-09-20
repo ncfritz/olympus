@@ -6,7 +6,7 @@ import Ffmpeg from "fluent-ffmpeg";
 import * as fs from "fs";
 import * as path from "path";
 import sharp, { OverlayOptions } from "sharp";
-import { ContentApi } from "../../api/ContentApi";
+import { ContentApi } from "@ncfritz/olympus-client";
 import { contentConfig } from "../../config/configuration";
 import type { ContentConfigType } from "../../config/configuration";
 import {
@@ -116,11 +116,10 @@ export class ThumbnailGenerationHandler {
           progress.stop();
 
           this.logger.log("Tagging asset...");
-          await this.contentApi.addContentAssetTag(
-            assetId,
-            "video.thumbs",
-            "system",
-          );
+          await this.contentApi.addContentAssetTagToAsset(assetId, {
+            name: "video.thumbs",
+            type: "system",
+          });
 
           if (fs.existsSync(spriteFile)) {
             this.logger.warn("Found existing sprites file, cleaning up...");

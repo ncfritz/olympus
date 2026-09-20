@@ -4,7 +4,7 @@ import * as cliProgress from "cli-progress";
 import * as ffmpegOnProgress from "ffmpeg-on-progress";
 import Ffmpeg from "fluent-ffmpeg";
 import * as fs from "fs";
-import { ContentApi } from "../../api/ContentApi";
+import { ContentApi } from "@ncfritz/olympus-client";
 import { contentConfig } from "../../config/configuration";
 import type { ContentConfigType } from "../../config/configuration";
 import {
@@ -102,11 +102,10 @@ export class HlsGenerationHandler {
           progress.stop();
 
           this.logger.log("Tagging asset");
-          await this.contentApi.addContentAssetTag(
-            assetId,
-            "video.hls",
-            "system",
-          );
+          await this.contentApi.addContentAssetTagToAsset(assetId, {
+            name: "video.hls",
+            type: "system",
+          });
 
           if (fs.existsSync(segmentsDir)) {
             this.logger.warn(

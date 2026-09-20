@@ -8,7 +8,7 @@ import { parse } from "node-html-parser";
 import path from "path";
 import { firstValueFrom } from "rxjs";
 import { v4 as uuidv4 } from "uuid";
-import { ContentApi } from "../../api/ContentApi";
+import { ContentApi } from "@ncfritz/olympus-client";
 import { contentConfig } from "../../config/configuration";
 import type { ContentConfigType } from "../../config/configuration";
 import {

@@ -3,7 +3,7 @@ import os from "os";
 import path from "path";
 import { Readable } from "stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MediaApi } from "../../../src/api/MediaApi";
+import type { MediaApi } from "@ncfritz/olympus-client";
 import type { MediaConfigType } from "../../../src/config/configuration";
 import { StartDownloadHandler } from "../../../src/downloads/handlers/StartDownloadHandler";
 import type { NzbGeekClient } from "../../../src/downloads/services/NzbGeekClient";

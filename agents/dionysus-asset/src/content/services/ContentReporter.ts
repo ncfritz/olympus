@@ -6,7 +6,7 @@ import type {
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
 import moment from "moment";
-import { ContentApi } from "../../api/ContentApi";
+import { ContentApi } from "@ncfritz/olympus-client";
 
 /** Records a content ingestion workflow's steps, progress and status. */
 @Injectable()

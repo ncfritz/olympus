@@ -6,7 +6,7 @@ import type {
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import fs from "fs";
 import { parseFile } from "subparse";
-import { MediaApi } from "../../api/MediaApi";
+import { MediaApi } from "@ncfritz/olympus-client";
 import { mediaConfig } from "../../config/configuration";
 import type { MediaConfigType } from "../../config/configuration";
 import {

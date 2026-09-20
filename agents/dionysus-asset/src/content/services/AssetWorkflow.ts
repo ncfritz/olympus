@@ -1,4 +1,5 @@
 import type {
+  BaseContentAsset,
   ContentTagType,
   ContentIngestionWorkflow,
   ContentIngestionWorkflowStep,
@@ -10,7 +11,7 @@ import moment from "moment";
 import path from "path";
 import sharp, { OverlayOptions } from "sharp";
 import { Logger } from "@nestjs/common";
-import type { ContentApi } from "../../api/ContentApi";
+import type { ContentApi } from "@ncfritz/olympus-client";
 import type { ContentConfigType } from "../../config/configuration";
 import { sha256File } from "../../tools/sha256";
 import { withSftp } from "../../tools/sftp";
@@ -35,6 +36,19 @@ export interface AssetMetadata {
   height?: number;
   assetSize?: number;
 }
+
+/** The content asset the API records for an ingested file. */
+export const toContentAsset = (metadata: AssetMetadata): BaseContentAsset => ({
+  id: metadata.id,
+  originalName: metadata.name,
+  originalSha: metadata.inputSha256!,
+  originalSizeBytes: metadata.originalSize!,
+  newSha: metadata.outputSha256!,
+  newSizeBytes: metadata.assetSize!,
+  durationMs: metadata.duration!,
+  width: metadata.width!,
+  height: metadata.height!,
+});
 
 export type MODE = "local" | "remote";
 export type PendingTag = {
@@ -150,7 +164,8 @@ export class AssetWorkflow {
       this.metadata.originalSize = stat.size;
 
       logger.log(`Duplicate check... ${this.metadata.inputSha256}`);
-      const duplicates = await this.contentApi.checkDuplicates(digest);
+      const duplicates =
+        await this.contentApi.listDuplicateContentAssets(digest);
 
       logger.log(JSON.stringify(duplicates));
 
@@ -1001,15 +1016,14 @@ export class AssetWorkflow {
     }
 
     if (this.isNewAsset) {
-      await this.contentApi.createContentAsset(this.metadata);
+      await this.contentApi.createContentAsset(toContentAsset(this.metadata));
     }
 
     for (const pendingTag of this.tags) {
-      await this.contentApi.addContentAssetTag(
-        this.metadata.id,
-        pendingTag.name,
-        pendingTag.type,
-      );
+      await this.contentApi.addContentAssetTagToAsset(this.metadata.id, {
+        name: pendingTag.name,
+        type: pendingTag.type,
+      });
     }
   }
 

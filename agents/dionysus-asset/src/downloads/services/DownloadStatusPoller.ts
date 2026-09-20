@@ -4,7 +4,7 @@ import type {
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
 import { Interval } from "@nestjs/schedule";
-import { MediaApi } from "../../api/MediaApi";
+import { MediaApi } from "@ncfritz/olympus-client";
 import { NzbGetClient } from "./NzbGetClient";
 
 /** NZBGet group statuses → download status. */

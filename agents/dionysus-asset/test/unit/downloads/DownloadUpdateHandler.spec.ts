@@ -4,7 +4,7 @@ import os from "os";
 import path from "path";
 import { Logger } from "@nestjs/common";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MediaApi } from "../../../src/api/MediaApi";
+import type { MediaApi } from "@ncfritz/olympus-client";
 import type {
   DownloadsConfigType,
   MediaConfigType,
@@ -66,8 +66,7 @@ describe("DownloadUpdateHandler", () => {
     fs.mkdirSync(`${root}/complete`);
     mediaApi = {
       updateMediaAssetDownloadByNzbId: vi.fn(async () => ({
-        status: 200,
-        data: { download: { workflowId: "wf-1" } },
+        workflowId: "wf-1",
       })),
       updateMediaAssetWorkflow: vi.fn(),
     };
@@ -164,8 +163,7 @@ describe("DownloadUpdateHandler", () => {
 
   it("leaves a download without a workflow where NZBGet put it", async () => {
     mediaApi.updateMediaAssetDownloadByNzbId.mockResolvedValue({
-      status: 200,
-      data: { download: { workflowId: null } },
+      workflowId: null,
     });
     fs.writeFileSync(`${root}/complete/movie.mkv`, "video");
 
@@ -182,9 +180,7 @@ describe("DownloadUpdateHandler", () => {
   });
 
   it("skips downloads the API does not know", async () => {
-    mediaApi.updateMediaAssetDownloadByNzbId.mockResolvedValue({
-      status: 404,
-    });
+    mediaApi.updateMediaAssetDownloadByNzbId.mockResolvedValue(undefined);
     fs.writeFileSync(`${root}/complete/movie.mkv`, "video");
 
     await handler().handle(postProcess("SUCCESS/ALL", `${root}/complete`));

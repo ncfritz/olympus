@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { MediaApi } from "../../../src/api/MediaApi";
+import type { MediaApi } from "@ncfritz/olympus-client";
 import {
   DownloadStatusPoller,
   downloadStatus,

@@ -3,7 +3,7 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import fs from "fs";
 import moment from "moment";
 import { finished } from "node:stream/promises";
-import { MediaApi } from "../../api/MediaApi";
+import { MediaApi } from "@ncfritz/olympus-client";
 import { mediaConfig } from "../../config/configuration";
 import type { MediaConfigType } from "../../config/configuration";
 import {

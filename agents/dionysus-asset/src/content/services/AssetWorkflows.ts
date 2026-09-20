@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { ContentApi } from "../../api/ContentApi";
+import { ContentApi } from "@ncfritz/olympus-client";
 import { contentConfig } from "../../config/configuration";
 import type { ContentConfigType } from "../../config/configuration";
 import { AssetWorkflow, type AssetWorkflowProps } from "./AssetWorkflow";

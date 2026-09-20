@@ -6,8 +6,7 @@ import type {
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
 import moment from "moment";
-import { MediaApi } from "../../api/MediaApi";
-import { NotificationApi } from "../../api/NotificationApi";
+import { MediaApi, NotificationApi } from "@ncfritz/olympus-client";
 
 /**
  * Records a media workflow's steps and sub-steps, their progress and

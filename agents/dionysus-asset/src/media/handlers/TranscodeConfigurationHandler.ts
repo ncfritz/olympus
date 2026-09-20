@@ -2,7 +2,7 @@ import { AmqpConnection, RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
 import { publishMessage } from "@ncfritz/olympus-messages";
 import { Injectable, Logger } from "@nestjs/common";
 import fs from "fs";
-import { MediaApi } from "../../api/MediaApi";
+import { MediaApi } from "@ncfritz/olympus-client";
 import {
   MEDIA_ROUTES,
   MEDIA_SUBSCRIPTIONS,

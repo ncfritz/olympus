@@ -50,8 +50,6 @@ src/
   messaging.ts                queues, subscriptions and channel prefetch;
                               routes and payloads from @ncfritz/olympus-messages
   infra/                      RabbitModule, ProxyHttpModule (SOCKS)
-  api/                        OlympusApiModule: ContentApi, MediaApi,
-                              MetadataApi, NotificationApi
   tools/                      ToolsModule: Handbrake (HandBrakeCLI), FFmpeg
                               paths; HandBrake scan and job file types
   content/                    ContentModule: handlers/ (raw ingestion, HLS,

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
 import fs from "fs";
-import { MediaApi } from "../../api/MediaApi";
+import { MediaApi } from "@ncfritz/olympus-client";
 import type { HandbrakeScan } from "../../tools/handbrake/scan";
 import { selectTracks } from "../planning/selectTracks";
 import {
@@ -82,11 +82,13 @@ export class ConfigureTranscodeHandler {
           await this.mediaApi.approveMediaAssetTranscodeConfiguration(
             msg.workflowId,
             step.id,
-            msg.mediaExtension,
-            title.Index,
-            audioTrackIndex,
-            subtitleTrackIndex,
-            transcodeVerificationRequired,
+            {
+              originalAssetExtension: msg.mediaExtension,
+              videoTrackIndex: title.Index,
+              audioTrackIndex,
+              subtitleTrackIndex,
+              verificationRequired: transcodeVerificationRequired,
+            },
           );
 
           await this.reporter.updateStepStatus(
