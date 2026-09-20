@@ -27,8 +27,7 @@ export const operationsFromOpenApi = (
   Object.entries(document.paths ?? {}).flatMap(([path, item]) =>
     METHODS.flatMap((method) => {
       const operation = (item as Record<string, unknown>)[method] as
-        | OpenApiOperation
-        | undefined;
+        OpenApiOperation | undefined;
       return operation?.operationId
         ? [
             {
