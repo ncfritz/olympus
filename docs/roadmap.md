@@ -7,13 +7,14 @@
 | 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)            |
 | 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**                         |
 | 2   | Import SDK and agents; retire publishing and `olympus-release`                                       | SDK and all four agents **done** |
-| 3   | Import site and desktop shell                                                                        |                                  |
-| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         |                                  |
+| 3   | Import site and desktop shell (the site first changes only for authentication, phase 9)              |                                  |
+| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         | minimal baseline first (phase 9) |
 | 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                  |
 | 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                                  |
 | 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                  |
 | 8a  | Minerva calendar sync import (ADR 0016)                                                              | **done** (2026-09-20)            |
 | 8b  | Minerva → Hasura integration (ADR 0013)                                                              |                                  |
+| 9   | Authentication (ADR 0018, [plan](plans/authentication/README.md))                                    | planned                          |
 | —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                          |
 | —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                         |
 | —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                         |

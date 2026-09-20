@@ -179,24 +179,23 @@ flowchart LR
 ### Web sign-in
 
 The same on the LAN and outside it; outside, the NAS nginx first
-requires the device certificate (see "A user's API request").
+requires the device certificate (see "A user's API request"). The site's
+pages run the flow in the browser as a public client; the site needs no
+server routes, and the refresh token never reaches JavaScript.
 
 ```mermaid
 sequenceDiagram
   autonumber
   actor U as User
-  participant B as Browser
-  participant S as Site (Next.js server)
-  participant A as API :3100
+  participant B as Browser (site pages)
+  participant A as API :3100 (via nginx /api)
   participant P as Provider (GitHub, Google, Synology)
   participant H as Hasura
 
   U->>B: Sign in with GitHub
-  B->>S: GET /auth/signin?provider=github
-  S->>S: state, PKCE verifier + challenge<br/>(verifier and state in an httpOnly cookie)
-  S-->>B: 302 /api/v1/auth/authorize?client_id=olympus-site<br/>&provider=github&redirect_uri=.../auth/callback<br/>&state&code_challenge
-  B->>A: GET /v1/auth/authorize (via nginx /api)
-  A->>A: check client_id and redirect_uri,<br/>remember challenge, redirect_uri (by an internal state)
+  B->>B: /auth/signin: state, PKCE verifier + challenge<br/>(kept in sessionStorage)
+  B->>A: GET /api/v1/auth/authorize?client_id=olympus-site<br/>&provider=github&redirect_uri=.../auth/callback<br/>&state&code_challenge
+  A->>A: check client_id and redirect_uri,<br/>remember the request under an internal state
   A-->>B: 302 to GitHub's authorize URL (API's OAuth app)
   B->>P: sign in, consent
   P-->>B: 302 /api/v1/auth/callback/github?code&state
@@ -204,18 +203,17 @@ sequenceDiagram
   A->>P: exchange code (API's client secret)
   P-->>A: provider token, profile (subject, email)
   A->>H: find identity (github, subject) → user
-  alt no linked user
+  alt no linked user, or disabled
     A-->>B: 403 "not allowed"
   end
   A->>A: authorization code (single use, 60 s,<br/>bound to the challenge and redirect_uri)
   A-->>B: 302 https://olympus…/auth/callback?code&state
-  B->>S: GET /auth/callback?code&state
-  S->>S: check state against the cookie
-  S->>A: POST /v1/auth/token<br/>grant_type=authorization_code, code, code_verifier
+  B->>B: /auth/callback: check state
+  B->>A: POST /api/v1/auth/token<br/>grant_type=authorization_code, code, code_verifier
   A->>A: verify the code and PKCE
   A->>H: insert session (refresh token hash, client, device)
-  A-->>S: access token (JWT, 10 min), refresh token
-  S-->>B: Set-Cookie refresh (httpOnly, Secure, SameSite=Strict,<br/>Path=/api/v1/auth), access token to the page
+  A-->>B: access token (JWT, 10 min) in the body,<br/>Set-Cookie refresh (httpOnly, Secure, SameSite=Strict,<br/>Path=/api/v1/auth)
+  B->>B: access token in memory only
 ```
 
 ### Token refresh
@@ -403,6 +401,9 @@ sequenceDiagram
   work.
 
 ## Implementation
+
+The phases, the testers and the functional sign-off are in
+[docs/plans/authentication](../plans/authentication/README.md). In short:
 
 1. **Foundations.** This ADR accepted; the minimal Hasura migrations
    baseline; the `users`, `user_identities` and `sessions` migration.

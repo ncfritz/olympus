@@ -1,0 +1,216 @@
+# Authentication: phased implementation plan
+
+The implementation of [ADR 0018](../../decisions/0018-authentication.md).
+Each phase ends in a working, deployable state and a functional sign-off
+against [signoff.md](signoff.md). Nothing is rejected until phase 8: the
+guard reports what it would reject, so each caller can be moved and
+checked before enforcement.
+
+| Phase | Delivers                                                   | Depends on | Sign-off flows          |
+| ----- | ---------------------------------------------------------- | ---------- | ----------------------- |
+| 0     | Hasura migrations baseline, dev CA, dev compose            | —          | —                       |
+| 1     | Auth core in the API, report-only; service mTLS on `3443`  | 0          | F6, F7 (dev), F11       |
+| 2     | Agents on mTLS (Docker and NAS), real certificates         | 1          | F6, F7, F8              |
+| 3     | Token service: users, sessions, providers, PKCE, refresh   | 0, 1       | F1, F2, F3, F4 (tester) |
+| 4     | Auth testers: CLI and iOS proof of concept                 | 3          | F5 (internal)           |
+| 5     | Site import, changed only for authentication               | 3          | F1, F2, F3, F4, F10     |
+| 6     | Border: NAS nginx, device certificates, DNS, redirect URIs | 3, 4, 5    | F9, F5, F1–F3 external  |
+| 7     | Key rotation and operations runbooks                       | 3          | F12, F8                 |
+| 8     | Enforcement: services first, then users                    | 2, 5, 6    | F13, then all           |
+| Later | step-ca for short-lived certificates; the iOS app          | 8          |                         |
+
+Phases 2 and 3 are independent and can run in either order or together.
+
+## Phase 0 — Prerequisites
+
+1. **ADR 0018 accepted.**
+2. **Hasura migrations baseline** (the minimal part of roadmap phase 4):
+   export the current schema and metadata into `infra/hasura` as the
+   baseline migration, the CLI workflow (apply, status, new migration),
+   and a Postgres + Hasura in the dev compose that applies it. API tests
+   keep using the GraphQL double; the auth migration gets an integration
+   test against the real Hasura.
+3. **Dev CA** (`scripts/dev-ca.sh`): a throwaway root with Olympus
+   Services and Olympus Devices intermediates (ECDSA P-256); the API's
+   `3443` server certificate (`olympus-api`, `localhost`,
+   `api.olympus.internal.localhost`); agent certificates; device
+   certificates (valid, revoked, expired); both revocation lists. Output
+   in a git-ignored `infra/dev-ca/`.
+4. **Dev compose**: Postgres, Hasura, the API with both listeners, and an
+   nginx standing in for the NAS border (device mTLS on a local port).
+
+## Phase 1 — Auth core in the API (report-only)
+
+1. `auth/` feature folder: `Principal` (`user` | `service`),
+   `@Public()`, `@Roles(...)`, `@CurrentPrincipal()`.
+2. A global guard with `AUTH_MODE_SERVICES` and `AUTH_MODE_USERS`, each
+   `report` or `enforce` (default `report`): in report mode it resolves the principal, logs and counts
+   (`auth_decisions_total{listener,outcome,reason}`) what it would reject,
+   and lets the request through.
+3. **The `3443` listener**: a second Node HTTPS server over the same
+   Express app (`requestCert`, `rejectUnauthorized`, the Services CA, the
+   revocation list reloaded when the file changes); the service strategy
+   (CN → principal, OU → deployment, roles from
+   `AUTH_SERVICE_ROLES`); a mismatching `X-Olympus-Client` is a rejection.
+4. The request metrics take `client` from the verified identity
+   (certificate CN on `3443`; token `client_id` on `3100` from phase 3).
+5. Configuration: `TLS_CERT`, `TLS_KEY`, `TLS_CA_SERVICES`,
+   `TLS_CRL_SERVICES`, `SERVICES_LISTEN_PORT` (3443), `AUTH_MODE_SERVICES`,
+   `AUTH_MODE_USERS`, `AUTH_SERVICE_ROLES`.
+6. Tests: both listeners with the dev CA; valid, expired, revoked and
+   wrong-CA certificates; header mismatch; report vs enforce; role checks.
+
+## Phase 2 — Agents on mTLS
+
+1. `@ncfritz/olympus-client`: Node-only TLS options (certificate, key, CA)
+   on a keep-alive HTTPS agent; the Nest module reads `API_CLIENT_CERT`,
+   `API_CLIENT_KEY` and `API_CA_CERT`. Tests against an HTTPS server with
+   the dev CA.
+2. One commit per agent: `API_BASE_URL=https://olympus-api:3443/v1`, the
+   certificate paths, the README and `dev.env.example`.
+3. The NAS asset agent: `https://api.olympus.internal.ncfritz.net:3443/v1`;
+   `3443` published on the Mac Mini's LAN address; the internal DNS record.
+4. Real certificates from XCA: the Olympus Services intermediate, the
+   API's server certificate, one certificate per agent deployment; the
+   runbook `docs/guides/certificates.md`.
+5. Done when the report-only log shows every agent request identified
+   and none that would be rejected.
+
+## Phase 3 — Token service
+
+1. Migration: `users` (id, display name, email, roles, disabled),
+   `user_identities` (provider, subject, user, email at link time),
+   `sessions` (id, user, client, device name, refresh hash, previous hash,
+   created, last used, expires, revoked). Hasura permissions: admin only.
+2. **Clients** (configuration, not the database):
+
+   | Client id             | Kind   | Redirect URIs                                                                                     | Refresh token   |
+   | --------------------- | ------ | ------------------------------------------------------------------------------------------------- | --------------- |
+   | `olympus-site`        | public | `https://olympus.internal.ncfritz.net/auth/callback`, `https://olympus.ncfritz.net/auth/callback` | httpOnly cookie |
+   | `olympus-ios`         | public | `olympus://auth`                                                                                  | response body   |
+   | `olympus-auth-tester` | public | `http://127.0.0.1:*/callback` (loopback), `olympus-auth-tester://auth`                            | response body   |
+
+3. **Providers**: GitHub (OAuth), Google (OIDC), Synology SSO (OIDC), each
+   an API OAuth application with the API's callback URLs. Identities link
+   to users by verified email on first sign-in; a user who doesn't exist
+   is refused. `pnpm --filter @ncfritz/olympus-api auth:user` adds users
+   and sets roles.
+4. **Endpoints** (public, under `/v1/auth`): `authorize`,
+   `callback/:provider`, `token` (`authorization_code`, `refresh_token`),
+   `logout`, plus `/.well-known/jwks.json`. For signed-in users:
+   `DescribeCurrentUser`, `ListSessions`, `RevokeSession`.
+5. **Tokens**: ES256 access tokens (10 minutes; `sub`, `client_id`,
+   `aud`, `roles`, `kid`); opaque refresh tokens (30 days), rotated, with
+   reuse detection revoking the session. Keys from `AUTH_SIGNING_KEYS`
+   (a directory of PEM files, newest signs, all verify).
+6. The JWT strategy on `3100`; rate limits on the auth endpoints.
+7. Tests: every endpoint and error, PKCE, reuse detection, expiry, a
+   disabled user, the provider callbacks with a fake provider, and the
+   migration against the dev Hasura.
+
+## Phase 4 — Auth testers
+
+Proves the flows before the site or an iOS app depends on them.
+
+**`tools/auth-tester` (Node CLI)**, the scripted half of sign-off and the
+pattern for desktop apps (RFC 8252 loopback redirect):
+
+| Command                                | Does                                                                      |
+| -------------------------------------- | ------------------------------------------------------------------------- |
+| `login --provider github [--external]` | PKCE with a loopback redirect; opens the browser; stores tokens in a file |
+| `whoami`                               | `DescribeCurrentUser`, and the decoded token claims                       |
+| `call <method> <path>`                 | any API call with the access token                                        |
+| `refresh`, `refresh --replay`          | rotates; `--replay` presents the previous token again (reuse detection)   |
+| `logout`, `sessions`, `revoke <id>`    | session management                                                        |
+| `agent-call --cert --key <path>`       | a call on `3443` with a service certificate                               |
+| `--device-cert <p12>`                  | presents a device certificate (the border, phase 6)                       |
+
+**`apps/auth-tester-ios` (SwiftUI)**, the mobile proof of concept, outside
+the pnpm build (an Xcode project):
+
+- Screens: provider sign-in, token claims, "Call API", "Refresh",
+  "Replay previous refresh token", "Sign out", sessions, a log of every
+  request and response.
+- `ASWebAuthenticationSession` with the `olympus-auth-tester://auth`
+  callback; tokens in the Keychain.
+- Importing a device certificate (`.p12` from Files) into the app's
+  Keychain, and answering `URLSession` client-certificate challenges with
+  it.
+
+The risks it retires:
+
+1. Whether `ASWebAuthenticationSession` presents a device certificate
+   installed by configuration profile at the border.
+2. That an app's own `URLSession` can't use profile-installed identities,
+   so the app must import the `.p12` itself (a second install step for
+   users).
+3. The custom-scheme redirect, Keychain storage and refresh when the app
+   returns from the background.
+
+Internally (phase 4) the tester runs against the dev border nginx and the
+dev CA; externally (phase 6) against the real border.
+
+## Phase 5 — Site import, authentication only
+
+The site is imported (`docs/guides/repo-import.md`) and changed **only**
+where authentication needs it; conventions, styles, the SDK wrappers and
+everything else wait for the site's own conventions work.
+
+1. Import with history into `apps/site`; the minimum to build in the
+   workspace (package name, TS/ESLint config only where the build fails).
+2. Remove NextAuth (`[...nextauth]`, `useSession` in `AuthHeader`,
+   `AuthWrapper`, `SettingsPanel`, the sign-in page).
+3. Sign-in in the browser as a public client: `/auth/signin` builds the
+   PKCE request (verifier in `sessionStorage`) and redirects to
+   `/api/v1/auth/authorize`; `/auth/callback` exchanges the code at
+   `/api/v1/auth/token`. The API sets the refresh cookie; the access token
+   stays in memory. On load the site refreshes to restore the session. No
+   Next server routes (the site has no `getServerSideProps`, and `/api/`
+   belongs to the API).
+4. One SDK request interceptor adds `Authorization: Bearer` and, on a 401,
+   refreshes once and retries; the existing `client.setConfig` calls stay.
+5. The Socket.IO connection sends the access token in its handshake
+   (`auth: { token }`); the API's gateway checks it.
+6. The content-auth cookie flow is unchanged.
+7. nginx on the Mac Mini: remove any route that sends `/api/auth/` to
+   NextAuth, so all of `/api/` goes to the API.
+
+## Phase 6 — Border
+
+1. Olympus Devices intermediate; device certificates for each person's
+   devices; the revocation list.
+2. The NAS nginx: `olympus.ncfritz.net` and `api.olympus.ncfritz.net`
+   with Let's Encrypt, `ssl_verify_client on` against Olympus Devices, the
+   revocation list, forwarding over HTTPS to `olympus.internal…`.
+3. The Mac Mini nginx (host 1) accepts the forwarded traffic; configs in
+   `infra/nginx/`.
+4. DNS: Cloudflare records (DNS only) and internal records for both
+   public names pointing at the NAS; the router forward.
+5. Provider redirect URIs for the public names.
+6. iOS profile and `.p12` for the tester; the phase 4 risks confirmed on a
+   real device outside the LAN.
+
+## Phase 7 — Operations
+
+1. Signing key rotation: add a key, sign with it, retire the old one
+   after the access token lifetime; runbook and test.
+2. Runbooks: issue and revoke service and device certificates, export
+   revocation lists, add a user, revoke a user's sessions, lost device.
+3. Dashboards later (the monitoring conversation): `auth_decisions_total`
+   and the request metrics by client.
+
+## Phase 8 — Enforcement
+
+1. `AUTH_MODE_SERVICES=enforce` once the report log shows no would-be
+   rejections for a week.
+2. `AUTH_MODE_USERS=enforce` once the site (and tester) run clean.
+3. Stop publishing anything that bypasses the listeners; confirm with the
+   negative tests (F13).
+4. Rollback: set the mode back to `report`; no code change.
+
+## Later
+
+- step-ca as an ACME subordinate of the internal root: short-lived
+  service and device certificates, automatic renewal.
+- The iOS app, on the tester's proven pattern and the client package's
+  auth option.
