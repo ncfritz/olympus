@@ -336,7 +336,7 @@ export function EventsPanel({
       } else {
         const event = events.find((e) => e.id === entry.id);
         if (!event) return;
-        await setEventOverride(event.source, event.uid, status);
+        await setEventOverride(event.id, status);
         mutateEventOverrides();
       }
     } catch (error) {
@@ -363,7 +363,7 @@ export function EventsPanel({
     const event = events.find((e) => e.id === entry.id);
     if (!event) return;
     try {
-      await clearEventOverride(event.source, event.uid);
+      await clearEventOverride(event.id);
       mutateEventOverrides();
     } catch (error) {
       message.error("Failed to clear the override");
@@ -662,7 +662,7 @@ export function EventsPanel({
         onSelectOverride={async (status) => {
           if (!selected) return;
           try {
-            await setEventOverride(selected.source, selected.uid, status);
+            await setEventOverride(selected.id, status);
           } finally {
             mutateEventOverrides();
           }
@@ -670,7 +670,7 @@ export function EventsPanel({
         onClearOverride={async () => {
           if (!selected) return;
           try {
-            await clearEventOverride(selected.source, selected.uid);
+            await clearEventOverride(selected.id);
           } finally {
             mutateEventOverrides();
           }

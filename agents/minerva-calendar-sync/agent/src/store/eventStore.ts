@@ -25,6 +25,8 @@ export interface EventStore {
   /** Soft-delete: sets `deleted = true`, never removes the row. Returns whether it actually flipped `deleted`. */
   markDeleted(source: string, uid: string): Promise<boolean>;
   getEvent(source: string, uid: string): Promise<CanonicalCalendarEvent | null>;
+  /** By canonical id (`source:uid`, see buildCanonicalEventId); null when there is none. */
+  getEventById(id: string): Promise<CanonicalCalendarEvent | null>;
   listEvents(filter: EventFilter): Promise<CanonicalCalendarEvent[]>;
   /** Non-cancelled, non-deleted events overlapping [start, end) — the shape availability computation needs, distinct from listEvents' startTime-only filtering. */
   listEventsOverlapping(

@@ -1,12 +1,11 @@
 import { apiClient } from "./client";
 import type { components } from "../../generated/api";
 
-export type EventDto = components["schemas"]["EventResponseDto"];
+export type EventDto = components["schemas"]["Event"];
 export type CalendarStatus = components["schemas"]["CalendarStatusDto"];
 export type AvailabilityStatus = components["schemas"]["AvailabilityStatus"];
 export type FreeBusyStatus = EventDto["status"];
-export type EventOverrideDto =
-  components["schemas"]["EventOverrideResponseDto"];
+export type EventOverrideDto = components["schemas"]["EventOverride"];
 export type OverrideBlockDto = components["schemas"]["OverrideBlock"];
 export type CalendarAccountStatus =
   components["schemas"]["CalendarAccountStatusDto"];
@@ -218,7 +217,7 @@ export interface EventFilters {
 }
 
 export async function fetchEvents(filters: EventFilters): Promise<EventDto[]> {
-  const { data } = await apiClient.GET("/events", {
+  const { data } = await apiClient.GET("/v1/events", {
     params: {
       query: {
         cancelled: filters.showCancelled ? undefined : false,
@@ -229,7 +228,7 @@ export async function fetchEvents(filters: EventFilters): Promise<EventDto[]> {
       },
     },
   });
-  return data ?? [];
+  return data?.events ?? [];
 }
 
 /** Bulk lookup — one request for a whole page of events rather than N. */
@@ -237,10 +236,10 @@ export async function fetchEventOverrides(
   eventIds: string[],
 ): Promise<EventOverrideDto[]> {
   if (eventIds.length === 0) return [];
-  const { data } = await apiClient.GET("/events/overrides", {
+  const { data } = await apiClient.GET("/v1/event-overrides", {
     params: { query: { ids: eventIds.join(",") } },
   });
-  return data ?? [];
+  return data?.eventOverrides ?? [];
 }
 
 export async function fetchOverrideBlocks(
@@ -279,24 +278,20 @@ export async function fetchStatusTimeline(
 }
 
 export async function setEventOverride(
-  source: string,
-  uid: string,
+  eventId: string,
   status: AvailabilityStatus,
 ): Promise<void> {
-  const { error } = await apiClient.PUT("/events/{source}/{uid}/override", {
-    params: { path: { source, uid } },
-    body: { status },
+  const { error } = await apiClient.PUT("/v1/event/{eventId}/override", {
+    params: { path: { eventId } },
+    body: { eventOverride: { status } },
   });
   if (error)
     throw new Error(`Failed to set override: ${JSON.stringify(error)}`);
 }
 
-export async function clearEventOverride(
-  source: string,
-  uid: string,
-): Promise<void> {
-  const { error } = await apiClient.DELETE("/events/{source}/{uid}/override", {
-    params: { path: { source, uid } },
+export async function clearEventOverride(eventId: string): Promise<void> {
+  const { error } = await apiClient.DELETE("/v1/event/{eventId}/override", {
+    params: { path: { eventId } },
   });
   if (error)
     throw new Error(`Failed to clear override: ${JSON.stringify(error)}`);

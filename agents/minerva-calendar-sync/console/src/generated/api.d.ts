@@ -116,14 +116,18 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/events": {
+  "/v1/events": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["EventsController_list"];
+    /**
+     * Lists events
+     * @description Returns synced events, newest first, filtered and paged by the query.
+     */
+    get: operations["ListEvents"];
     put?: never;
     post?: never;
     delete?: never;
@@ -132,14 +136,18 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/events/overrides": {
+  "/v1/event/{eventId}": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["EventsController_listOverrides"];
+    /**
+     * Describes an event
+     * @description Returns a single synced event.
+     */
+    get: operations["DescribeEvent"];
     put?: never;
     post?: never;
     delete?: never;
@@ -148,14 +156,18 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/events/{source}/{uid}": {
+  "/v1/event-overrides": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["EventsController_getOne"];
+    /**
+     * Lists event overrides
+     * @description Returns the availability overrides of the given events, for a whole page of events in one request.
+     */
+    get: operations["ListEventOverrides"];
     put?: never;
     post?: never;
     delete?: never;
@@ -164,17 +176,29 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/events/{source}/{uid}/override": {
+  "/v1/event/{eventId}/override": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["EventsController_getOverride"];
-    put: operations["EventsController_setOverride"];
+    /**
+     * Describes an event override
+     * @description Returns the availability override set on an event.
+     */
+    get: operations["DescribeEventOverride"];
+    /**
+     * Updates an event override
+     * @description Sets the availability an event counts as, whatever its synced status.
+     */
+    put: operations["UpdateEventOverride"];
     post?: never;
-    delete: operations["EventsController_clearOverride"];
+    /**
+     * Deletes an event override
+     * @description Removes an event's availability override, so its synced status counts again.
+     */
+    delete: operations["DeleteEventOverride"];
     options?: never;
     head?: never;
     patch?: never;
@@ -645,50 +669,126 @@ export interface components {
       errorMessage?: string | null;
       changes: components["schemas"]["SyncRunEventChangeDto"][];
     };
-    EventResponseDto: {
+    /**
+     * @description Whether an event stands alone or belongs to a recurring series
+     * @enum {string}
+     */
+    OccurrenceType: "single" | "occurrence" | "series_master";
+    /**
+     * @description How private the event is
+     * @enum {string}
+     */
+    Sensitivity: "normal" | "personal" | "private" | "confidential";
+    /**
+     * @description The event's importance
+     * @enum {string}
+     */
+    Importance: "low" | "normal" | "high";
+    /**
+     * @description The kind of event
+     * @enum {string}
+     */
+    EventType: "appointment" | "meeting" | "other";
+    /**
+     * @description The account owner's response to the event
+     * @enum {string}
+     */
+    ResponseStatus:
+      "organizer" | "accepted" | "declined" | "tentative" | "needs_action";
+    /**
+     * @description How the event shows the owner's time in the provider
+     * @enum {string}
+     */
+    FreeBusyStatus:
+      "free" | "busy" | "tentative" | "out_of_office" | "working_elsewhere";
+    Event: {
+      /** @description The unique ID of the event: its source and uid, as source:uid */
       id: string;
+      /** @description The event's title */
       subject: string;
-      /** @enum {string} */
-      sensitivity: "normal" | "personal" | "private" | "confidential";
-      /** @enum {string} */
-      importance: "low" | "normal" | "high";
-      /** @enum {string} */
-      occurrenceType: "single" | "occurrence" | "series_master";
-      /** @enum {string} */
-      type: "appointment" | "meeting" | "other";
+      /** @description How private the event is */
+      sensitivity: components["schemas"]["Sensitivity"];
+      /** @description The event's importance */
+      importance: components["schemas"]["Importance"];
+      /** @description Whether the event is a single event or an occurrence */
+      occurrenceType: components["schemas"]["OccurrenceType"];
+      /** @description The kind of event */
+      type: components["schemas"]["EventType"];
+      /** @description Whether a reminder is set */
       reminder: boolean;
-      /** @enum {string} */
-      response:
-        "organizer" | "accepted" | "declined" | "tentative" | "needs_action";
-      /** @description ISO-8601 */
+      /** @description The account owner's response to the event */
+      response: components["schemas"]["ResponseStatus"];
+      /** @description An ISO-8601 formatted string indicating when the event starts (midnight UTC of its date for all-day events) */
       startTime: string;
-      /** @description ISO-8601 */
+      /** @description An ISO-8601 formatted string indicating when the event ends (exclusive) */
       endTime: string;
-      /** @description Minutes */
+      /** @description The event's length in minutes */
       duration: number;
+      /** @description Whether the event lasts whole days */
       allDay: boolean;
-      /** @enum {string} */
-      status:
-        "free" | "busy" | "tentative" | "out_of_office" | "working_elsewhere";
-      location?: string | null;
+      /** @description How the event shows the owner's time in the provider */
+      status: components["schemas"]["FreeBusyStatus"];
+      /** @description Where the event takes place */
+      location?: string;
+      /** @description Whether the event was cancelled */
       cancelled: boolean;
-      organizerEmail?: string | null;
-      /** @description Soft-delete flag */
+      /** @description The organizer's email address */
+      organizerEmail?: string;
+      /** @description Whether the event was removed from its calendar */
       deleted: boolean;
+      /** @description The provider's ID of the event */
       uid: string;
-      recurrenceId?: string | null;
+      /** @description The provider's ID of the occurrence within its series */
+      recurrenceId?: string;
+      /** @description The label of the calendar the event came from */
       source: string;
-      /** @description The provider's own recurrence description (RRULE lines for Google, a serialized Graph recurrence pattern for Microsoft) — recorded for reference only, never parsed or expanded by this app */
-      recurrenceRule?: string | null;
+      /** @description The provider's own recurrence description (RRULE lines for Google, a serialized Graph recurrence pattern for Microsoft), recorded for reference only */
+      recurrenceRule?: string;
     };
-    EventOverrideResponseDto: {
+    ListEventsResponse: {
+      /** @description The matching events. */
+      events: components["schemas"]["Event"][];
+    };
+    ErrorResponse: {
+      /** @description What went wrong */
+      message: string;
+      /** @description The HTTP status code */
+      statusCode: number;
+    };
+    DescribeEventResponse: {
+      /** @description The event. */
+      event: components["schemas"]["Event"];
+    };
+    /**
+     * @description An availability status, lowest precedence first: none, free, interruptable, busy
+     * @enum {string}
+     */
+    AvailabilityStatus: "none" | "free" | "interruptable" | "busy";
+    EventOverride: {
+      /** @description The ID of the event the override applies to */
       eventId: string;
-      /** @enum {string} */
-      status: "none" | "free" | "interruptable" | "busy";
+      /** @description The availability the event counts as */
+      status: components["schemas"]["AvailabilityStatus"];
     };
-    SetEventOverrideDto: {
-      /** @enum {string} */
-      status: "none" | "free" | "interruptable" | "busy";
+    ListEventOverridesResponse: {
+      /** @description The overrides of those events that have one. */
+      eventOverrides: components["schemas"]["EventOverride"][];
+    };
+    DescribeEventOverrideResponse: {
+      /** @description The event's override. */
+      eventOverride: components["schemas"]["EventOverride"];
+    };
+    PartialEventOverride: {
+      /** @description The availability the event counts as */
+      status: components["schemas"]["AvailabilityStatus"];
+    };
+    UpdateEventOverrideRequest: {
+      /** @description The override to set. */
+      eventOverride: components["schemas"]["PartialEventOverride"];
+    };
+    UpdateEventOverrideResponse: {
+      /** @description The override as stored. */
+      eventOverride: components["schemas"]["EventOverride"];
     };
     CalendarStatusDto: {
       /**
@@ -814,12 +914,6 @@ export interface components {
         [key: string]: string;
       };
     };
-    ErrorResponse: {
-      /** @description What went wrong */
-      message: string;
-      /** @description The HTTP status code */
-      statusCode: number;
-    };
     PartialCalendarColor: {
       /**
        * @description The color, as a 6-digit hex string such as #1677ff
@@ -844,11 +938,6 @@ export interface components {
       /** @description The color as stored. */
       calendarColor: components["schemas"]["CalendarColor"];
     };
-    /**
-     * @description An availability status, lowest precedence first: none, free, interruptable, busy
-     * @enum {string}
-     */
-    AvailabilityStatus: "none" | "free" | "interruptable" | "busy";
     AvailabilitySlot: {
       /** @description An ISO-8601 formatted string indicating when the slot starts */
       startTime: string;
@@ -1130,20 +1219,24 @@ export interface operations {
       };
     };
   };
-  EventsController_list: {
+  ListEvents: {
     parameters: {
       query?: {
-        /** @description Filter to events from this configured calendar's source label */
+        /** @description Only events from this calendar source label */
         source?: string;
-        /** @description ISO-8601 — only events starting at or after this instant */
+        /** @description ISO-8601: only events starting at or after this instant */
         startsAfter?: string;
-        /** @description ISO-8601 — only events starting at or before this instant */
+        /** @description ISO-8601: only events starting at or before this instant */
         startsBefore?: string;
+        /** @description Only cancelled (true) or only not cancelled (false) events */
         cancelled?: boolean;
+        /** @description Only deleted (true) or only not deleted (false) events */
         deleted?: boolean;
-        occurrenceType?: "single" | "occurrence" | "series_master";
+        /** @description Only events of this occurrence type */
+        occurrenceType?: components["schemas"]["OccurrenceType"];
+        /** @description The number of events to return */
         limit?: number;
-        /** @description Internal event id to page from (exclusive) */
+        /** @description The ID of the event to page from (exclusive) */
         cursor?: string;
       };
       header?: never;
@@ -1152,20 +1245,80 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
+      /** @description The events were listed. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["EventResponseDto"][];
+          "application/json": components["schemas"]["ListEventsResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };
   };
-  EventsController_listOverrides: {
+  DescribeEvent: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The ID of the event (source:uid) */
+        eventId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The event was found. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DescribeEventResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  ListEventOverrides: {
     parameters: {
       query: {
-        /** @description Comma-separated canonical event ids to look up overrides for */
+        /** @description Comma-separated IDs of the events to look up */
         ids: string;
       };
       header?: never;
@@ -1174,131 +1327,167 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
+      /** @description The overrides were listed. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["EventOverrideResponseDto"][];
+          "application/json": components["schemas"]["ListEventOverridesResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };
   };
-  EventsController_getOne: {
+  DescribeEventOverride: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        source: string;
-        uid: string;
+        /** @description The ID of the event (source:uid) */
+        eventId: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
+      /** @description The override was found. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["EventResponseDto"];
+          "application/json": components["schemas"]["DescribeEventOverrideResponse"];
         };
       };
-      /** @description No event for that source/uid */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  EventsController_getOverride: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        source: string;
-        uid: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      200: {
+      /** @description No valid access token was presented */
+      401: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["EventOverrideResponseDto"];
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
-      /** @description No event for that source/uid, or no override is set for it */
+      /** @description The entity with the specified identifiers was not found */
       404: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
     };
   };
-  EventsController_setOverride: {
+  UpdateEventOverride: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        source: string;
-        uid: string;
+        /** @description The ID of the event (source:uid) */
+        eventId: string;
       };
       cookie?: never;
     };
+    /** @description The override to set. */
     requestBody: {
       content: {
-        "application/json": components["schemas"]["SetEventOverrideDto"];
+        "application/json": components["schemas"]["UpdateEventOverrideRequest"];
       };
     };
     responses: {
+      /** @description The override was stored. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["EventOverrideResponseDto"];
+          "application/json": components["schemas"]["UpdateEventOverrideResponse"];
         };
       };
-      /** @description No event for that source/uid */
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
       404: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
     };
   };
-  EventsController_clearOverride: {
+  DeleteEventOverride: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        source: string;
-        uid: string;
+        /** @description The ID of the event (source:uid) */
+        eventId: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
+      /** @description The event has no override. */
       204: {
         headers: {
           [name: string]: unknown;
         };
         content?: never;
       };
-      /** @description No event for that source/uid */
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
       404: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
     };
   };

@@ -123,6 +123,11 @@ export class PrismaEventStore implements EventStore {
     return row ? fromRow(row) : null;
   }
 
+  async getEventById(id: string): Promise<CanonicalCalendarEvent | null> {
+    const row = await this.prisma.event.findUnique({ where: { id } });
+    return row ? fromRow(row) : null;
+  }
+
   async listEvents(filter: EventFilter): Promise<CanonicalCalendarEvent[]> {
     const where: Prisma.EventWhereInput = {
       source: filter.source,

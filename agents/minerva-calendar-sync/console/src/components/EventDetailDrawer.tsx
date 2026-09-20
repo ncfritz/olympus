@@ -11,13 +11,10 @@ import {
   Typography,
 } from "antd";
 import useSWR from "swr";
-import type { components } from "@/generated/api";
-import type { AvailabilityStatus } from "@/lib/api/queries";
+import type { AvailabilityStatus, EventDto } from "@/lib/api/queries";
 import { fetchEventPublishStatus } from "@/lib/api/queries";
 import { statusDotColor } from "@/lib/availability";
 import { OverrideStatusPicker } from "./OverrideStatusPicker";
-
-type EventDto = components["schemas"]["EventResponseDto"];
 
 const STATUS_LABEL: Record<AvailabilityStatus, string> = {
   none: "None",

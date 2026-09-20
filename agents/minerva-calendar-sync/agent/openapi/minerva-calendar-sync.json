@@ -308,15 +308,16 @@
         ]
       }
     },
-    "/events": {
+    "/v1/events": {
       "get": {
-        "operationId": "EventsController_list",
+        "description": "Returns synced events, newest first, filtered and paged by the query.",
+        "operationId": "ListEvents",
         "parameters": [
           {
             "name": "source",
             "required": false,
             "in": "query",
-            "description": "Filter to events from this configured calendar's source label",
+            "description": "Only events from this calendar source label",
             "schema": {
               "type": "string"
             }
@@ -325,7 +326,7 @@
             "name": "startsAfter",
             "required": false,
             "in": "query",
-            "description": "ISO-8601 — only events starting at or after this instant",
+            "description": "ISO-8601: only events starting at or after this instant",
             "schema": {
               "type": "string"
             }
@@ -334,7 +335,7 @@
             "name": "startsBefore",
             "required": false,
             "in": "query",
-            "description": "ISO-8601 — only events starting at or before this instant",
+            "description": "ISO-8601: only events starting at or before this instant",
             "schema": {
               "type": "string"
             }
@@ -343,6 +344,7 @@
             "name": "cancelled",
             "required": false,
             "in": "query",
+            "description": "Only cancelled (true) or only not cancelled (false) events",
             "schema": {
               "type": "boolean"
             }
@@ -351,6 +353,7 @@
             "name": "deleted",
             "required": false,
             "in": "query",
+            "description": "Only deleted (true) or only not deleted (false) events",
             "schema": {
               "type": "boolean"
             }
@@ -359,19 +362,16 @@
             "name": "occurrenceType",
             "required": false,
             "in": "query",
+            "description": "Only events of this occurrence type",
             "schema": {
-              "type": "string",
-              "enum": [
-                "single",
-                "occurrence",
-                "series_master"
-              ]
+              "$ref": "#/components/schemas/OccurrenceType"
             }
           },
           {
             "name": "limit",
             "required": false,
             "in": "query",
+            "description": "The number of events to return",
             "schema": {
               "minimum": 1,
               "maximum": 1000,
@@ -383,7 +383,7 @@
             "name": "cursor",
             "required": false,
             "in": "query",
-            "description": "Internal event id to page from (exclusive)",
+            "description": "The ID of the event to page from (exclusive)",
             "schema": {
               "type": "string"
             }
@@ -391,14 +391,31 @@
         ],
         "responses": {
           "200": {
-            "description": "",
+            "description": "The events were listed.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/EventResponseDto"
-                  }
+                  "$ref": "#/components/schemas/ListEventsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -409,20 +426,80 @@
             "bearer": []
           }
         ],
+        "summary": "Lists events",
         "tags": [
-          "events"
+          "Events"
         ]
       }
     },
-    "/events/overrides": {
+    "/v1/event/{eventId}": {
       "get": {
-        "operationId": "EventsController_listOverrides",
+        "description": "Returns a single synced event.",
+        "operationId": "DescribeEvent",
+        "parameters": [
+          {
+            "name": "eventId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the event (source:uid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The event was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeEventResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Describes an event",
+        "tags": [
+          "Events"
+        ]
+      }
+    },
+    "/v1/event-overrides": {
+      "get": {
+        "description": "Returns the availability overrides of the given events, for a whole page of events in one request.",
+        "operationId": "ListEventOverrides",
         "parameters": [
           {
             "name": "ids",
             "required": true,
             "in": "query",
-            "description": "Comma-separated canonical event ids to look up overrides for",
+            "description": "Comma-separated IDs of the events to look up",
             "schema": {
               "type": "string"
             }
@@ -430,14 +507,31 @@
         ],
         "responses": {
           "200": {
-            "description": "",
+            "description": "The overrides were listed.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/EventOverrideResponseDto"
-                  }
+                  "$ref": "#/components/schemas/ListEventOverridesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -448,27 +542,22 @@
             "bearer": []
           }
         ],
+        "summary": "Lists event overrides",
         "tags": [
-          "events"
+          "Event Overrides"
         ]
       }
     },
-    "/events/{source}/{uid}": {
+    "/v1/event/{eventId}/override": {
       "get": {
-        "operationId": "EventsController_getOne",
+        "description": "Returns the availability override set on an event.",
+        "operationId": "DescribeEventOverride",
         "parameters": [
           {
-            "name": "source",
+            "name": "eventId",
             "required": true,
             "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "uid",
-            "required": true,
-            "in": "path",
+            "description": "The ID of the event (source:uid)",
             "schema": {
               "type": "string"
             }
@@ -476,63 +565,34 @@
         ],
         "responses": {
           "200": {
-            "description": "",
+            "description": "The override was found.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventResponseDto"
+                  "$ref": "#/components/schemas/DescribeEventOverrideResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
           },
           "404": {
-            "description": "No event for that source/uid"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "events"
-        ]
-      }
-    },
-    "/events/{source}/{uid}/override": {
-      "get": {
-        "operationId": "EventsController_getOverride",
-        "parameters": [
-          {
-            "name": "source",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "uid",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
+            "description": "The entity with the specified identifiers was not found",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventOverrideResponseDto"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
-          },
-          "404": {
-            "description": "No event for that source/uid, or no override is set for it"
           }
         },
         "security": [
@@ -540,25 +600,20 @@
             "bearer": []
           }
         ],
+        "summary": "Describes an event override",
         "tags": [
-          "events"
+          "Event Overrides"
         ]
       },
       "put": {
-        "operationId": "EventsController_setOverride",
+        "description": "Sets the availability an event counts as, whatever its synced status.",
+        "operationId": "UpdateEventOverride",
         "parameters": [
           {
-            "name": "source",
+            "name": "eventId",
             "required": true,
             "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "uid",
-            "required": true,
-            "in": "path",
+            "description": "The ID of the event (source:uid)",
             "schema": {
               "type": "string"
             }
@@ -566,27 +621,55 @@
         ],
         "requestBody": {
           "required": true,
+          "description": "The override to set.",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SetEventOverrideDto"
+                "$ref": "#/components/schemas/UpdateEventOverrideRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "",
+            "description": "The override was stored.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventOverrideResponseDto"
+                  "$ref": "#/components/schemas/UpdateEventOverrideResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
           },
           "404": {
-            "description": "No event for that source/uid"
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -594,25 +677,20 @@
             "bearer": []
           }
         ],
+        "summary": "Updates an event override",
         "tags": [
-          "events"
+          "Event Overrides"
         ]
       },
       "delete": {
-        "operationId": "EventsController_clearOverride",
+        "description": "Removes an event's availability override, so its synced status counts again.",
+        "operationId": "DeleteEventOverride",
         "parameters": [
           {
-            "name": "source",
+            "name": "eventId",
             "required": true,
             "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "uid",
-            "required": true,
-            "in": "path",
+            "description": "The ID of the event (source:uid)",
             "schema": {
               "type": "string"
             }
@@ -620,10 +698,27 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "The event has no override."
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           },
           "404": {
-            "description": "No event for that source/uid"
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -631,8 +726,9 @@
             "bearer": []
           }
         ],
+        "summary": "Deletes an event override",
         "tags": [
-          "events"
+          "Event Overrides"
         ]
       }
     },
@@ -1784,6 +1880,12 @@
       "name": "Calendar Colors"
     },
     {
+      "name": "Event Overrides"
+    },
+    {
+      "name": "Events"
+    },
+    {
       "name": "Override Blocks"
     },
     {
@@ -1794,9 +1896,6 @@
     },
     {
       "name": "calendars"
-    },
-    {
-      "name": "events"
     },
     {
       "name": "outbox"
@@ -2097,115 +2196,175 @@
           "changes"
         ]
       },
-      "EventResponseDto": {
+      "OccurrenceType": {
+        "type": "string",
+        "enum": [
+          "single",
+          "occurrence",
+          "series_master"
+        ],
+        "description": "Whether an event stands alone or belongs to a recurring series"
+      },
+      "Sensitivity": {
+        "type": "string",
+        "enum": [
+          "normal",
+          "personal",
+          "private",
+          "confidential"
+        ],
+        "description": "How private the event is"
+      },
+      "Importance": {
+        "type": "string",
+        "enum": [
+          "low",
+          "normal",
+          "high"
+        ],
+        "description": "The event's importance"
+      },
+      "EventType": {
+        "type": "string",
+        "enum": [
+          "appointment",
+          "meeting",
+          "other"
+        ],
+        "description": "The kind of event"
+      },
+      "ResponseStatus": {
+        "type": "string",
+        "enum": [
+          "organizer",
+          "accepted",
+          "declined",
+          "tentative",
+          "needs_action"
+        ],
+        "description": "The account owner's response to the event"
+      },
+      "FreeBusyStatus": {
+        "type": "string",
+        "enum": [
+          "free",
+          "busy",
+          "tentative",
+          "out_of_office",
+          "working_elsewhere"
+        ],
+        "description": "How the event shows the owner's time in the provider"
+      },
+      "Event": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "The unique ID of the event: its source and uid, as source:uid"
           },
           "subject": {
-            "type": "string"
+            "type": "string",
+            "description": "The event's title"
           },
           "sensitivity": {
-            "type": "string",
-            "enum": [
-              "normal",
-              "personal",
-              "private",
-              "confidential"
+            "description": "How private the event is",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Sensitivity"
+              }
             ]
           },
           "importance": {
-            "type": "string",
-            "enum": [
-              "low",
-              "normal",
-              "high"
+            "description": "The event's importance",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Importance"
+              }
             ]
           },
           "occurrenceType": {
-            "type": "string",
-            "enum": [
-              "single",
-              "occurrence",
-              "series_master"
+            "description": "Whether the event is a single event or an occurrence",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OccurrenceType"
+              }
             ]
           },
           "type": {
-            "type": "string",
-            "enum": [
-              "appointment",
-              "meeting",
-              "other"
+            "description": "The kind of event",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventType"
+              }
             ]
           },
           "reminder": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether a reminder is set"
           },
           "response": {
-            "type": "string",
-            "enum": [
-              "organizer",
-              "accepted",
-              "declined",
-              "tentative",
-              "needs_action"
+            "description": "The account owner's response to the event",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResponseStatus"
+              }
             ]
           },
           "startTime": {
             "type": "string",
-            "description": "ISO-8601"
+            "description": "An ISO-8601 formatted string indicating when the event starts (midnight UTC of its date for all-day events)"
           },
           "endTime": {
             "type": "string",
-            "description": "ISO-8601"
+            "description": "An ISO-8601 formatted string indicating when the event ends (exclusive)"
           },
           "duration": {
             "type": "number",
-            "description": "Minutes"
+            "description": "The event's length in minutes"
           },
           "allDay": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the event lasts whole days"
           },
           "status": {
-            "type": "string",
-            "enum": [
-              "free",
-              "busy",
-              "tentative",
-              "out_of_office",
-              "working_elsewhere"
+            "description": "How the event shows the owner's time in the provider",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FreeBusyStatus"
+              }
             ]
           },
           "location": {
             "type": "string",
-            "nullable": true
+            "description": "Where the event takes place"
           },
           "cancelled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the event was cancelled"
           },
           "organizerEmail": {
             "type": "string",
-            "nullable": true
+            "description": "The organizer's email address"
           },
           "deleted": {
             "type": "boolean",
-            "description": "Soft-delete flag"
+            "description": "Whether the event was removed from its calendar"
           },
           "uid": {
-            "type": "string"
+            "type": "string",
+            "description": "The provider's ID of the event"
           },
           "recurrenceId": {
             "type": "string",
-            "nullable": true
+            "description": "The provider's ID of the occurrence within its series"
           },
           "source": {
-            "type": "string"
+            "type": "string",
+            "description": "The label of the calendar the event came from"
           },
           "recurrenceRule": {
             "type": "string",
-            "nullable": true,
-            "description": "The provider's own recurrence description (RRULE lines for Google, a serialized Graph recurrence pattern for Microsoft) — recorded for reference only, never parsed or expanded by this app"
+            "description": "The provider's own recurrence description (RRULE lines for Google, a serialized Graph recurrence pattern for Microsoft), recorded for reference only"
           }
         },
         "required": [
@@ -2228,19 +2387,77 @@
           "source"
         ]
       },
-      "EventOverrideResponseDto": {
+      "ListEventsResponse": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "description": "The matching events.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Event"
+            }
+          }
+        },
+        "required": [
+          "events"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "What went wrong"
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code"
+          }
+        },
+        "required": [
+          "message",
+          "statusCode"
+        ]
+      },
+      "DescribeEventResponse": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "description": "The event.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Event"
+              }
+            ]
+          }
+        },
+        "required": [
+          "event"
+        ]
+      },
+      "AvailabilityStatus": {
+        "type": "string",
+        "description": "An availability status, lowest precedence first: none, free, interruptable, busy",
+        "enum": [
+          "none",
+          "free",
+          "interruptable",
+          "busy"
+        ]
+      },
+      "EventOverride": {
         "type": "object",
         "properties": {
           "eventId": {
-            "type": "string"
+            "type": "string",
+            "description": "The ID of the event the override applies to"
           },
           "status": {
-            "type": "string",
-            "enum": [
-              "none",
-              "free",
-              "interruptable",
-              "busy"
+            "description": "The availability the event counts as",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityStatus"
+              }
             ]
           }
         },
@@ -2249,21 +2466,83 @@
           "status"
         ]
       },
-      "SetEventOverrideDto": {
+      "ListEventOverridesResponse": {
+        "type": "object",
+        "properties": {
+          "eventOverrides": {
+            "description": "The overrides of those events that have one.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventOverride"
+            }
+          }
+        },
+        "required": [
+          "eventOverrides"
+        ]
+      },
+      "DescribeEventOverrideResponse": {
+        "type": "object",
+        "properties": {
+          "eventOverride": {
+            "description": "The event's override.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventOverride"
+              }
+            ]
+          }
+        },
+        "required": [
+          "eventOverride"
+        ]
+      },
+      "PartialEventOverride": {
         "type": "object",
         "properties": {
           "status": {
-            "type": "string",
-            "enum": [
-              "none",
-              "free",
-              "interruptable",
-              "busy"
+            "description": "The availability the event counts as",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityStatus"
+              }
             ]
           }
         },
         "required": [
           "status"
+        ]
+      },
+      "UpdateEventOverrideRequest": {
+        "type": "object",
+        "properties": {
+          "eventOverride": {
+            "description": "The override to set.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialEventOverride"
+              }
+            ]
+          }
+        },
+        "required": [
+          "eventOverride"
+        ]
+      },
+      "UpdateEventOverrideResponse": {
+        "type": "object",
+        "properties": {
+          "eventOverride": {
+            "description": "The override as stored.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventOverride"
+              }
+            ]
+          }
+        },
+        "required": [
+          "eventOverride"
         ]
       },
       "CalendarStatusDto": {
@@ -2566,23 +2845,6 @@
           "calendarColors"
         ]
       },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "description": "What went wrong"
-          },
-          "statusCode": {
-            "type": "number",
-            "description": "The HTTP status code"
-          }
-        },
-        "required": [
-          "message",
-          "statusCode"
-        ]
-      },
       "PartialCalendarColor": {
         "type": "object",
         "properties": {
@@ -2644,16 +2906,6 @@
         },
         "required": [
           "calendarColor"
-        ]
-      },
-      "AvailabilityStatus": {
-        "type": "string",
-        "description": "An availability status, lowest precedence first: none, free, interruptable, busy",
-        "enum": [
-          "none",
-          "free",
-          "interruptable",
-          "busy"
         ]
       },
       "AvailabilitySlot": {
