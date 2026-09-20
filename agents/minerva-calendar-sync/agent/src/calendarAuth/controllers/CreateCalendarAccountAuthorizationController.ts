@@ -1,4 +1,4 @@
-import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Post, Req, Res } from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiBody,
@@ -7,13 +7,15 @@ import {
   ApiOperation,
   ApiProduces,
 } from "@nestjs/swagger";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import {
   CreateCalendarAccountAuthorizationRequest,
   CreateCalendarAccountAuthorizationResponse,
 } from "../../model/calendarAccounts";
 import { ApiStandardErrorResponses } from "../../openapi/controllerDecorators";
+import { setLocation } from "../../utils/location";
 import { CalendarAccountService } from "../services/CalendarAccountService";
+import { DescribeCalendarAccountAuthorizationController } from "./DescribeCalendarAccountAuthorizationController";
 
 @ApiBearerAuth()
 @Controller({ version: "1" })
@@ -48,18 +50,24 @@ export class CreateCalendarAccountAuthorizationController {
   })
   @ApiStandardErrorResponses({ exclude: [HttpStatus.NOT_FOUND] })
   async handle(
-    @Body() request: CreateCalendarAccountAuthorizationRequest,
+    @Body() body: CreateCalendarAccountAuthorizationRequest,
+    @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
     const calendarAccountAuthorization =
       await this.calendarAccounts.createAuthorization(
-        request.calendarAccountAuthorization.provider,
+        body.calendarAccountAuthorization.provider,
       );
     const responseBody: CreateCalendarAccountAuthorizationResponse = {
       calendarAccountAuthorization,
     };
-    response.location(
-      `/v1/calendar-account-authorization/${encodeURIComponent(calendarAccountAuthorization.authorizationId)}`,
+    setLocation(
+      response,
+      request,
+      DescribeCalendarAccountAuthorizationController,
+      {
+        authorizationId: calendarAccountAuthorization.authorizationId,
+      },
     );
     response.status(HttpStatus.CREATED).send(responseBody);
   }
