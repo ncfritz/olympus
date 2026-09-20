@@ -10,8 +10,9 @@ import {
   Query,
   Req,
   Res,
+  Inject,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { authConfig, type AuthConfigType } from "../../config/configuration";
 import {
   ApiBearerAuth,
   ApiExcludeEndpoint,
@@ -54,11 +55,10 @@ export class AuthController {
     private readonly providers: OidcProviderRegistry,
     private readonly allowlist: AllowlistService,
     private readonly tokens: AuthTokenService,
-    config: ConfigService,
+    @Inject(authConfig.KEY) auth: AuthConfigType,
   ) {
-    this.baseUrl =
-      config.get<string>("AUTH_BASE_URL") ?? "http://localhost:4432";
-    this.webAppUrl = config.get<string>("WEB_APP_URL");
+    this.baseUrl = auth.baseUrl;
+    this.webAppUrl = auth.webAppUrl;
   }
 
   @Public()

@@ -7,17 +7,19 @@
  * Usage:
  *   pnpm google:verify -- --label personal-gmail [--calendar-id primary] [--limit 10]
  */
-import "dotenv/config";
 import { calendar_v3 } from "googleapis";
 import { GoogleCalendarProvider } from "../src/providers/google/GoogleCalendarProvider";
-import { createAuthorizedGoogleClient } from "../src/providers/google/googleCredentialStore";
+import { readConfig } from "../src/config/configuration";
+import { GoogleCredentialStore } from "../src/providers/google/GoogleCredentialStore";
 
 async function main(): Promise<void> {
   const label = requireArg("--label");
   const calendarId = argOrDefault("--calendar-id", "primary");
   const limit = Number(argOrDefault("--limit", "10"));
 
-  const client = createAuthorizedGoogleClient(label);
+  const client = new GoogleCredentialStore(
+    readConfig(process.env).google,
+  ).createAuthorizedClient(label);
   const provider = new GoogleCalendarProvider(client);
 
   console.log(`Calendars visible to "${label}":`);

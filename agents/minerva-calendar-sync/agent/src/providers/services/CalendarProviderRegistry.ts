@@ -1,9 +1,14 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
+import {
+  microsoftConfig,
+  type MicrosoftConfigType,
+} from "../../config/configuration";
 import { SyncedCalendarConfig } from "../../sync/syncedCalendarConfig";
 import { CalendarProvider } from "../calendarProvider";
 import { GoogleCalendarProvider } from "../google/GoogleCalendarProvider";
-import { createAuthorizedGoogleClient } from "../google/googleCredentialStore";
+import { GoogleCredentialStore } from "../google/GoogleCredentialStore";
 import { MicrosoftCalendarProvider } from "../microsoft/MicrosoftCalendarProvider";
+import { MicrosoftCredentialStore } from "../microsoft/MicrosoftCredentialStore";
 import { createAuthorizedMicrosoftClient } from "../microsoft/microsoftOauth";
 
 /** Resolves the right CalendarProvider instance for a configured calendar, caching by account. */
@@ -14,6 +19,13 @@ export class CalendarProviderRegistry {
     string,
     MicrosoftCalendarProvider
   >();
+
+  constructor(
+    private readonly googleCredentials: GoogleCredentialStore,
+    private readonly microsoftCredentials: MicrosoftCredentialStore,
+    @Inject(microsoftConfig.KEY)
+    private readonly microsoft: MicrosoftConfigType,
+  ) {}
 
   resolve(config: SyncedCalendarConfig): CalendarProvider {
     switch (config.provider) {
@@ -45,7 +57,7 @@ export class CalendarProviderRegistry {
     let provider = this.googleProviders.get(accountLabel);
     if (!provider) {
       provider = new GoogleCalendarProvider(
-        createAuthorizedGoogleClient(accountLabel),
+        this.googleCredentials.createAuthorizedClient(accountLabel),
       );
       this.googleProviders.set(accountLabel, provider);
     }
@@ -58,7 +70,11 @@ export class CalendarProviderRegistry {
     let provider = this.microsoftProviders.get(accountLabel);
     if (!provider) {
       provider = new MicrosoftCalendarProvider(
-        createAuthorizedMicrosoftClient(accountLabel),
+        createAuthorizedMicrosoftClient(
+          this.microsoft,
+          this.microsoftCredentials,
+          accountLabel,
+        ),
       );
       this.microsoftProviders.set(accountLabel, provider);
     }

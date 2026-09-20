@@ -1,5 +1,6 @@
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { PollingNotifier } from "../../../../src/sync/services/PollingNotifier";
+import type { SyncConfigType } from "../../../../src/config/configuration";
 import { SyncConfigService } from "../../../../src/sync/services/SyncConfigService";
 import { SyncedCalendarConfig } from "../../../../src/sync/syncedCalendarConfig";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -15,14 +16,14 @@ function delay(ms: number): Promise<void> {
 }
 
 describe("PollingNotifier", () => {
-  const originalPollInterval = process.env.POLL_INTERVAL_MS;
+  let pollIntervalMs = 45_000;
   let scheduler: SchedulerRegistry;
   let notifier: PollingNotifier | undefined;
 
   afterEach(() => {
     notifier?.stop();
     notifier = undefined;
-    process.env.POLL_INTERVAL_MS = originalPollInterval;
+    pollIntervalMs = 45_000;
   });
 
   it("fires once immediately for every currently configured calendar", async () => {
@@ -45,6 +46,7 @@ describe("PollingNotifier", () => {
         },
       ]),
       scheduler,
+      { pollIntervalMs } as SyncConfigType,
     );
     const onChange = vi.fn();
 
@@ -56,12 +58,13 @@ describe("PollingNotifier", () => {
   });
 
   it("picks up a calendar added after start(), on the next tick, with no restart", async () => {
-    process.env.POLL_INTERVAL_MS = "20";
+    pollIntervalMs = 20;
     let calendars: SyncedCalendarConfig[] = [];
     scheduler = new SchedulerRegistry();
     notifier = new PollingNotifier(
       fakeSyncConfig(() => calendars),
       scheduler,
+      { pollIntervalMs } as SyncConfigType,
     );
     const onChange = vi.fn();
 
@@ -84,7 +87,7 @@ describe("PollingNotifier", () => {
   });
 
   it("stops ticking once stop() is called", async () => {
-    process.env.POLL_INTERVAL_MS = "20";
+    pollIntervalMs = 20;
     scheduler = new SchedulerRegistry();
     notifier = new PollingNotifier(
       fakeSyncConfig(() => [
@@ -97,6 +100,7 @@ describe("PollingNotifier", () => {
         },
       ]),
       scheduler,
+      { pollIntervalMs } as SyncConfigType,
     );
     const onChange = vi.fn();
 

@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { ALL_CONFIG } from "./config/configuration";
 import { AppController } from "./AppController";
 import { AppService } from "./AppService";
 import { AuthModule } from "./auth/AuthModule";
@@ -15,7 +16,13 @@ import { SyncModule } from "./sync/SyncModule";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      // Typed namespaces (config/configuration.ts); the environment comes
+      // from the process (`--env-file=dev.env`), validated by main.ts.
+      ignoreEnvFile: true,
+      load: ALL_CONFIG,
+    }),
     AuthModule,
     StoreModule,
     SyncModule,
@@ -25,7 +32,7 @@ import { SyncModule } from "./sync/SyncModule";
     CalendarColorsModule,
     AvailabilityModule,
     OverridesModule,
-    OutboxModule.register(),
+    OutboxModule.register(process.env.OUTBOX_ENABLED === "true"),
   ],
   controllers: [AppController],
   providers: [AppService],

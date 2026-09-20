@@ -1,11 +1,6 @@
+import { Injectable } from "@nestjs/common";
 import { OAuth2Client } from "google-auth-library";
-import {
-  createAuthorizedGoogleClient,
-  listStoredAccountLabels,
-  requireEnv,
-  saveGoogleCredential,
-  tryLoadGoogleCredential,
-} from "../../providers/google/googleCredentialStore";
+import { GoogleCredentialStore } from "../../providers/google/GoogleCredentialStore";
 import {
   createLoopbackClient,
   waitForAuthorizationCode,
@@ -20,30 +15,34 @@ import {
   LoopbackFlowRequest,
 } from "./calendarAuthStrategy";
 
+@Injectable()
 export class GoogleAuthStrategy implements CalendarAuthStrategy {
   readonly provider = "google" as const;
 
+  constructor(private readonly credentials: GoogleCredentialStore) {}
+
   listStoredAccountLabels(): string[] {
-    return listStoredAccountLabels();
+    return this.credentials.listAccountLabels();
   }
 
   tryLoadCredential(accountLabel: string) {
-    return tryLoadGoogleCredential(accountLabel);
+    return this.credentials.tryLoad(accountLabel);
   }
 
   async checkAccessToken(
     accountLabel: string,
   ): Promise<{ expiresAt?: string }> {
-    const client = createAuthorizedGoogleClient(accountLabel);
+    const client = this.credentials.createAuthorizedClient(accountLabel);
     await client.getAccessToken();
     const expiry = client.credentials.expiry_date;
     return { expiresAt: expiry ? new Date(expiry).toISOString() : undefined };
   }
 
   async startLoopbackFlow(request: LoopbackFlowRequest): Promise<LoopbackFlow> {
+    const { clientId, clientSecret } = this.credentials.oauthClient();
     const { client, redirectUri } = await createLoopbackClient(
-      requireEnv("GOOGLE_OAUTH_CLIENT_ID"),
-      requireEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
+      clientId,
+      clientSecret,
     );
     const scopes =
       request.mode === "new"
@@ -95,7 +94,7 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
     }
 
     const scope = tokens.scope ?? scopes.join(" ");
-    saveGoogleCredential({
+    this.credentials.save({
       accountLabel,
       refreshToken: tokens.refresh_token,
       scope,

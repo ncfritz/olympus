@@ -1,18 +1,19 @@
 import {
+  Inject,
   Injectable,
   Logger,
   OnModuleDestroy,
   OnModuleInit,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import {
+  outboxConfig,
+  type OutboxConfigType,
+} from "../../config/configuration";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import { OutboxEvent as OutboxRow } from "@prisma/client";
 import { PrismaService } from "../../store/prisma/PrismaService";
-import { DEFAULT_EXCHANGE } from "../OutboxModule";
+import { CALENDAR_EVENTS_EXCHANGE } from "../OutboxModule";
 
-const DEFAULT_BATCH_SIZE = 50;
-const DEFAULT_POLL_INTERVAL_MS = 5_000;
-const DEFAULT_MAX_ATTEMPTS = 10;
 const BASE_BACKOFF_MS = 2_000;
 const MAX_BACKOFF_MS = 10 * 60_000;
 
@@ -40,17 +41,12 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly amqp: AmqpConnection,
     private readonly prisma: PrismaService,
-    config: ConfigService,
+    @Inject(outboxConfig.KEY) outbox: OutboxConfigType,
   ) {
-    this.exchange = config.get("RABBITMQ_EXCHANGE", DEFAULT_EXCHANGE);
-    this.batchSize =
-      Number(config.get("RABBITMQ_OUTBOX_BATCH_SIZE")) || DEFAULT_BATCH_SIZE;
-    this.pollIntervalMs =
-      Number(config.get("RABBITMQ_OUTBOX_POLL_INTERVAL_MS")) ||
-      DEFAULT_POLL_INTERVAL_MS;
-    this.maxAttempts =
-      Number(config.get("RABBITMQ_OUTBOX_MAX_ATTEMPTS")) ||
-      DEFAULT_MAX_ATTEMPTS;
+    this.exchange = CALENDAR_EVENTS_EXCHANGE;
+    this.batchSize = outbox.batchSize;
+    this.pollIntervalMs = outbox.pollIntervalMs;
+    this.maxAttempts = outbox.maxAttempts;
   }
 
   onModuleInit(): void {

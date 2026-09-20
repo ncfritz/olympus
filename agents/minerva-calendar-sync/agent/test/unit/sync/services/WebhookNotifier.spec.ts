@@ -1,4 +1,3 @@
-import { ConfigService } from "@nestjs/config";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { execSync } from "child_process";
 import { mkdtempSync, rmSync } from "fs";
@@ -15,6 +14,7 @@ import {
 import { CalendarProviderRegistry } from "../../../../src/providers/services/CalendarProviderRegistry";
 import { PrismaEventStore } from "../../../../src/store/prisma/PrismaEventStore";
 import { PrismaService } from "../../../../src/store/prisma/PrismaService";
+import type { SyncConfigType } from "../../../../src/config/configuration";
 import { SyncConfigService } from "../../../../src/sync/services/SyncConfigService";
 import { SyncedCalendarConfig } from "../../../../src/sync/syncedCalendarConfig";
 import { WebhookNotifier } from "../../../../src/sync/services/WebhookNotifier";
@@ -77,8 +77,8 @@ class FakeCalendarProvider implements CalendarProvider {
   }
 }
 
-function fakeConfigService(webhookBaseUrl: string | undefined): ConfigService {
-  return { get: () => webhookBaseUrl } as unknown as ConfigService;
+function fakeConfig(webhookBaseUrl: string | undefined): SyncConfigType {
+  return { webhookBaseUrl } as SyncConfigType;
 }
 
 function fakeSyncConfig(calendars: SyncedCalendarConfig[]): SyncConfigService {
@@ -133,7 +133,7 @@ describe("WebhookNotifier", () => {
       registry,
       store,
       scheduler,
-      fakeConfigService(webhookBaseUrl),
+      fakeConfig(webhookBaseUrl),
     );
   }
 

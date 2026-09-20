@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { syncConfig, type SyncConfigType } from "../../config/configuration";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { PushChannel } from "../../providers/calendarProvider";
 import { CalendarProviderRegistry } from "../../providers/services/CalendarProviderRegistry";
@@ -48,9 +48,9 @@ export class WebhookNotifier implements ChangeNotifier {
     private readonly providers: CalendarProviderRegistry,
     @Inject(EVENT_STORE) private readonly store: EventStore,
     private readonly scheduler: SchedulerRegistry,
-    config: ConfigService,
+    @Inject(syncConfig.KEY) sync: SyncConfigType,
   ) {
-    this.webhookBaseUrl = config.get<string>("WEBHOOK_BASE_URL");
+    this.webhookBaseUrl = sync.webhookBaseUrl;
   }
 
   start(onChange: (calendarId: string, trigger: "webhook") => void): void {

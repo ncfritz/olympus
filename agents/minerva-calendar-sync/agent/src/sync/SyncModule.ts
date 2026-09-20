@@ -1,5 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ScheduleModule } from "@nestjs/schedule";
+import { GoogleCredentialStore } from "../providers/google/GoogleCredentialStore";
+import { MicrosoftCredentialStore } from "../providers/microsoft/MicrosoftCredentialStore";
 import { CalendarProviderRegistry } from "../providers/services/CalendarProviderRegistry";
 import { StoreModule } from "../store/StoreModule";
 import { MicrosoftWebhooksController } from "../webhooks/controllers/MicrosoftWebhooksController";
@@ -23,11 +25,19 @@ import { WebhookNotifier } from "./services/WebhookNotifier";
     SyncEngine,
     SyncConfigService,
     CalendarProviderRegistry,
+    GoogleCredentialStore,
+    MicrosoftCredentialStore,
     PollingNotifier,
     WebhookNotifier,
     SyncBootstrapService,
     SyncHistoryPrunerService,
   ],
-  exports: [SyncEngine, SyncConfigService, CalendarProviderRegistry],
+  exports: [
+    SyncEngine,
+    SyncConfigService,
+    CalendarProviderRegistry,
+    GoogleCredentialStore,
+    MicrosoftCredentialStore,
+  ],
 })
 export class SyncModule {}

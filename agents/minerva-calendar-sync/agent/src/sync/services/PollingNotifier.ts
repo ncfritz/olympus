@@ -1,9 +1,9 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { ChangeNotifier } from "../changeNotifier";
+import { syncConfig, type SyncConfigType } from "../../config/configuration";
 import { SyncConfigService } from "./SyncConfigService";
 
-const DEFAULT_POLL_INTERVAL_MS = 45_000;
 const TIMER_NAME = "poll:all";
 
 /**
@@ -24,9 +24,9 @@ export class PollingNotifier implements ChangeNotifier {
   constructor(
     private readonly config: SyncConfigService,
     private readonly scheduler: SchedulerRegistry,
+    @Inject(syncConfig.KEY) sync: SyncConfigType,
   ) {
-    this.intervalMs =
-      Number(process.env.POLL_INTERVAL_MS) || DEFAULT_POLL_INTERVAL_MS;
+    this.intervalMs = sync.pollIntervalMs;
   }
 
   start(onChange: (calendarId: string, trigger: "poll") => void): void {

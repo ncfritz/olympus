@@ -50,10 +50,7 @@ export class CalendarAuthService {
   private readonly strategies: Record<
     CalendarProviderName,
     CalendarAuthStrategy
-  > = {
-    google: new GoogleAuthStrategy(),
-    microsoft: new MicrosoftAuthStrategy(),
-  };
+  >;
   /** In-flight or most-recently-failed reauth attempts, keyed by "provider\0accountLabel". Cleared on success. */
   private readonly reauth = new Map<string, ReauthEntry>();
   /** In-flight or resolved new-account authorizations, keyed by a random transactionId — there's no accountLabel to key by until the flow tells us the signed-in email. */
@@ -62,7 +59,11 @@ export class CalendarAuthService {
   constructor(
     private readonly config: SyncConfigService,
     private readonly providers: CalendarProviderRegistry,
-  ) {}
+    google: GoogleAuthStrategy,
+    microsoft: MicrosoftAuthStrategy,
+  ) {
+    this.strategies = { google, microsoft };
+  }
 
   async listStatuses(): Promise<CalendarAccountStatusDto[]> {
     const entries = await this.allAccountEntries();

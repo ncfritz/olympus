@@ -25,7 +25,7 @@ Microsoft Graph ─┴─────────────────▶ │
 Run from the repository root (`pnpm install` once):
 
 - `pnpm --filter @ncfritz/minerva-calendar-sync-agent dev`: the agent in
-  watch mode, configured from `agent/.env` (see `agent/.env.example`).
+  watch mode, configured from `agent/dev.env` (see `agent/dev.env.example`).
 - `pnpm --filter @ncfritz/minerva-calendar-sync-console dev`: the console
   on port 4392, pointed at the agent by `console/.env.local`
   (`NEXT_PUBLIC_API_URL`, see `console/.env.local.example`).
@@ -38,6 +38,11 @@ it.
 OAuth credentials the calendar connectors store (`agent/.credentials*/`)
 and the SQLite files are git-ignored. When moving from the old repository,
 copy `apps/api/.env`, `apps/api/.credentials*/` and `apps/api/prisma/dev.db`
-into `agent/`, and `apps/web/.env.local` into `console/`.
+into `agent/` (renaming `.env` to `dev.env`), and `apps/web/.env.local`
+into `console/`. Variables renamed on the way: `PORT` → `LISTEN_PORT`;
+`RABBITMQ_URL` → `OUTBOX_ENABLED=true` plus `AMQP_HOST`, `AMQP_PORT`,
+`AMQP_USER`, `AMQP_PASSWORD`, `AMQP_VHOST`; `RABBITMQ_OUTBOX_*` →
+`OUTBOX_*`; `RABBITMQ_EXCHANGE` is gone (the exchange is part of the
+message contract).
 
 Prisma downloads its engines from `binaries.prisma.sh` on install.

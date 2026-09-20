@@ -1,12 +1,13 @@
-import { ConfigService } from "@nestjs/config";
 import { NotFoundException } from "@nestjs/common";
 import { parseOidcProviders } from "../../../../src/auth/oidcProviderConfig";
+import type { AuthConfigType } from "../../../../src/config/configuration";
 import { OidcProviderRegistry } from "../../../../src/auth/services/OidcProviderRegistry";
 import { describe, expect, it } from "vitest";
 
 function registryWithConfig(raw: string | undefined): OidcProviderRegistry {
-  const config = { get: () => raw } as unknown as ConfigService;
-  return new OidcProviderRegistry(config);
+  return new OidcProviderRegistry({
+    oidcProviders: raw ? parseOidcProviders(raw) : [],
+  } as AuthConfigType);
 }
 
 describe("parseOidcProviders", () => {

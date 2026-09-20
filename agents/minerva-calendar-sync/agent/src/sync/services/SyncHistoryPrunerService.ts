@@ -5,11 +5,10 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { syncConfig, type SyncConfigType } from "../../config/configuration";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { SYNC_RUN_STORE, SyncRunStore } from "../../store/syncRunStore";
 
-const DEFAULT_RETENTION_DAYS = 90;
 const PRUNE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const TIMER_NAME = "sync-history-prune";
 
@@ -29,11 +28,9 @@ export class SyncHistoryPrunerService implements OnModuleInit, OnModuleDestroy {
   constructor(
     @Inject(SYNC_RUN_STORE) private readonly syncRuns: SyncRunStore,
     private readonly scheduler: SchedulerRegistry,
-    config: ConfigService,
+    @Inject(syncConfig.KEY) sync: SyncConfigType,
   ) {
-    this.retentionDays =
-      Number(config.get<string>("SYNC_HISTORY_RETENTION_DAYS")) ||
-      DEFAULT_RETENTION_DAYS;
+    this.retentionDays = sync.historyRetentionDays;
   }
 
   onModuleInit(): void {

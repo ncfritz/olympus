@@ -1,12 +1,12 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { authConfig, type AuthConfigType } from "../../config/configuration";
 // openid-client is ESM-only; this project's CJS output can't `require()` it
 // directly, so every call site loads it via dynamic `import()` instead (see
 // the `loadOpenIdClient` helper). Type-only import here costs nothing at
 // runtime — it's erased entirely by the compiler.
 import type * as OpenIdClient from "openid-client";
 import { loadOpenIdClient } from "../openidClientLoader";
-import { OidcProviderConfig, parseOidcProviders } from "../oidcProviderConfig";
+import type { OidcProviderConfig } from "../oidcProviderConfig";
 
 /**
  * Login providers, configured entirely separately from CalendarProviderRegistry
@@ -21,10 +21,8 @@ export class OidcProviderRegistry {
     Promise<OpenIdClient.Configuration>
   >();
 
-  constructor(config: ConfigService) {
-    const raw = config.get<string>("AUTH_OIDC_PROVIDERS");
-    const list = raw ? parseOidcProviders(raw) : [];
-    this.providers = new Map(list.map((p) => [p.name, p]));
+  constructor(@Inject(authConfig.KEY) auth: AuthConfigType) {
+    this.providers = new Map(auth.oidcProviders.map((p) => [p.name, p]));
   }
 
   getProviderConfig(name: string): OidcProviderConfig {

@@ -1,25 +1,33 @@
 import { NotFoundException } from "@nestjs/common";
 import { CalendarAuthService } from "../../../../src/calendarAuth/services/CalendarAuthService";
 import { CalendarProviderRegistry } from "../../../../src/providers/services/CalendarProviderRegistry";
-import * as credentialStore from "../../../../src/providers/google/googleCredentialStore";
+import { GoogleAuthStrategy } from "../../../../src/calendarAuth/strategies/GoogleAuthStrategy";
+import { MicrosoftAuthStrategy } from "../../../../src/calendarAuth/strategies/MicrosoftAuthStrategy";
+import type { GoogleCredentialStore } from "../../../../src/providers/google/GoogleCredentialStore";
 import * as loopbackAuth from "../../../../src/providers/google/googleLoopbackAuth";
-import * as microsoftCredentialStore from "../../../../src/providers/microsoft/microsoftCredentialStore";
+import type { MicrosoftCredentialStore } from "../../../../src/providers/microsoft/MicrosoftCredentialStore";
 import { SyncedCalendarStore } from "../../../../src/store/syncedCalendarStore";
 import { SyncConfigService } from "../../../../src/sync/services/SyncConfigService";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../../../src/providers/google/googleCredentialStore");
 vi.mock("../../../../src/providers/google/googleLoopbackAuth");
-// Mocked here (just the credential store, not the OAuth flow, since no test
-// in this file drives a loopback/token exchange for either provider) purely
-// so listStoredAccountLabels doesn't fall through to the real filesystem
-// and pick up whatever's actually been authorized on this machine, the same
-// concern GOOGLE_CREDENTIALS_DIR isolation addresses for e2e tests.
-vi.mock("../../../../src/providers/microsoft/microsoftCredentialStore");
 
-const mockedStore = vi.mocked(credentialStore);
 const mockedLoopback = vi.mocked(loopbackAuth);
-const mockedMicrosoftStore = vi.mocked(microsoftCredentialStore);
+
+// Fake credential stores, so nothing reads the real filesystem and picks
+// up whatever has actually been authorized on this machine.
+const mockedStore = {
+  listAccountLabels: vi.fn(),
+  tryLoad: vi.fn(),
+  save: vi.fn(),
+  createAuthorizedClient: vi.fn(),
+  oauthClient: vi.fn(),
+};
+const mockedMicrosoftStore = {
+  listAccountLabels: vi.fn(),
+  tryLoad: vi.fn(),
+  save: vi.fn(),
+};
 
 const CALENDARS = [
   {
@@ -65,29 +73,31 @@ function makeService(
   return new CalendarAuthService(
     new SyncConfigService(seededCalendarStore),
     providers as CalendarProviderRegistry,
+    new GoogleAuthStrategy(mockedStore as unknown as GoogleCredentialStore),
+    new MicrosoftAuthStrategy(
+      mockedMicrosoftStore as unknown as MicrosoftCredentialStore,
+      { clientId: "ms-client-id", tenantId: "common", credentialsDir: "" },
+    ),
   );
 }
 
 describe("CalendarAuthService", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    process.env.GOOGLE_OAUTH_CLIENT_ID = "client-id";
-    process.env.GOOGLE_OAUTH_CLIENT_SECRET = "client-secret";
-    mockedStore.requireEnv.mockImplementation((name: string) => {
-      const value = process.env[name];
-      if (!value) throw new Error(`Missing required env var ${name}`);
-      return value;
+    mockedStore.oauthClient.mockReturnValue({
+      clientId: "client-id",
+      clientSecret: "client-secret",
     });
     // Only accounts with a configured calendar exist in these fixtures by
     // default — tests for the "connected but zero calendars yet" case
     // override this explicitly.
-    mockedStore.listStoredAccountLabels.mockReturnValue([]);
-    mockedMicrosoftStore.listStoredAccountLabels.mockReturnValue([]);
+    mockedStore.listAccountLabels.mockReturnValue([]);
+    mockedMicrosoftStore.listAccountLabels.mockReturnValue([]);
   });
 
   describe("listStatuses", () => {
     it("returns one entry per distinct google account label, with its sources", async () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
+      mockedStore.tryLoad.mockReturnValue(undefined);
 
       const statuses = await makeService().listStatuses();
 
@@ -108,11 +118,9 @@ describe("CalendarAuthService", () => {
     });
 
     it("keeps a google and a microsoft account distinct even when they share the exact same accountLabel", async () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
-      mockedMicrosoftStore.tryLoadMicrosoftCredential.mockReturnValue(
-        undefined,
-      );
-      mockedMicrosoftStore.listStoredAccountLabels.mockReturnValue(["work"]);
+      mockedStore.tryLoad.mockReturnValue(undefined);
+      mockedMicrosoftStore.tryLoad.mockReturnValue(undefined);
+      mockedMicrosoftStore.listAccountLabels.mockReturnValue(["work"]);
 
       const statuses = await makeService().listStatuses();
 
@@ -136,7 +144,7 @@ describe("CalendarAuthService", () => {
 
   describe("isConnected", () => {
     it("is true when the provider's strategy has a stored credential for the account", () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue({
+      mockedStore.tryLoad.mockReturnValue({
         accountLabel: "work",
         refreshToken: "refresh-token",
         scope: "scope",
@@ -147,22 +155,20 @@ describe("CalendarAuthService", () => {
     });
 
     it("is false when there's no stored credential", () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
+      mockedStore.tryLoad.mockReturnValue(undefined);
 
       expect(makeService().isConnected("work", "google")).toBe(false);
     });
 
     it("checks the given provider's strategy specifically, not just any provider with that label", () => {
       // "work" has a google credential but not a microsoft one.
-      mockedStore.tryLoadGoogleCredential.mockReturnValue({
+      mockedStore.tryLoad.mockReturnValue({
         accountLabel: "work",
         refreshToken: "refresh-token",
         scope: "scope",
         obtainedAt: "2026-01-01T00:00:00.000Z",
       });
-      mockedMicrosoftStore.tryLoadMicrosoftCredential.mockReturnValue(
-        undefined,
-      );
+      mockedMicrosoftStore.tryLoad.mockReturnValue(undefined);
 
       const service = makeService();
       expect(service.isConnected("work", "google")).toBe(true);
@@ -172,7 +178,7 @@ describe("CalendarAuthService", () => {
 
   describe("getStatus", () => {
     it("reports not_connected when no credential has ever been stored", async () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
+      mockedStore.tryLoad.mockReturnValue(undefined);
 
       const status = await makeService().getStatus("work");
 
@@ -185,14 +191,14 @@ describe("CalendarAuthService", () => {
     });
 
     it("reports ok with the access token's expiry when the refresh succeeds", async () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue({
+      mockedStore.tryLoad.mockReturnValue({
         accountLabel: "work",
         refreshToken: "refresh-token",
         scope: "https://www.googleapis.com/auth/calendar.readonly",
         obtainedAt: "2026-01-01T00:00:00.000Z",
       });
       const expiryDate = Date.parse("2026-09-16T12:00:00.000Z");
-      mockedStore.createAuthorizedGoogleClient.mockReturnValue({
+      mockedStore.createAuthorizedClient.mockReturnValue({
         getAccessToken: vi.fn().mockResolvedValue({ token: "access-token" }),
         credentials: { expiry_date: expiryDate },
       } as never);
@@ -211,13 +217,13 @@ describe("CalendarAuthService", () => {
     });
 
     it("reports expired when Google rejects the refresh token", async () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue({
+      mockedStore.tryLoad.mockReturnValue({
         accountLabel: "work",
         refreshToken: "refresh-token",
         scope: "scope",
         obtainedAt: "2026-01-01T00:00:00.000Z",
       });
-      mockedStore.createAuthorizedGoogleClient.mockReturnValue({
+      mockedStore.createAuthorizedClient.mockReturnValue({
         getAccessToken: vi.fn().mockRejectedValue({
           response: {
             data: {
@@ -236,13 +242,13 @@ describe("CalendarAuthService", () => {
     });
 
     it("reports a generic error for anything else the refresh attempt throws", async () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue({
+      mockedStore.tryLoad.mockReturnValue({
         accountLabel: "work",
         refreshToken: "refresh-token",
         scope: "scope",
         obtainedAt: "2026-01-01T00:00:00.000Z",
       });
-      mockedStore.createAuthorizedGoogleClient.mockReturnValue({
+      mockedStore.createAuthorizedClient.mockReturnValue({
         getAccessToken: vi.fn().mockRejectedValue(new Error("network down")),
         credentials: {},
       } as never);
@@ -262,7 +268,7 @@ describe("CalendarAuthService", () => {
     });
 
     it("returns an authUrl immediately and reports reauth_pending until the flow completes", async () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
+      mockedStore.tryLoad.mockReturnValue(undefined);
       const client = {
         generateAuthUrl: vi
           .fn()
@@ -291,7 +297,7 @@ describe("CalendarAuthService", () => {
       await flushPromises();
 
       expect(client.getToken).toHaveBeenCalledWith("auth-code");
-      expect(mockedStore.saveGoogleCredential).toHaveBeenCalledWith(
+      expect(mockedStore.save).toHaveBeenCalledWith(
         expect.objectContaining({
           accountLabel: "work",
           refreshToken: "new-refresh-token",
@@ -300,7 +306,7 @@ describe("CalendarAuthService", () => {
     });
 
     it("returns the same in-flight authUrl instead of starting a second loopback listener", async () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
+      mockedStore.tryLoad.mockReturnValue(undefined);
       mockedLoopback.createLoopbackClient.mockResolvedValue({
         client: {
           generateAuthUrl: vi
@@ -322,7 +328,7 @@ describe("CalendarAuthService", () => {
     });
 
     it("surfaces the failure as status 'error' and allows retrying", async () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
+      mockedStore.tryLoad.mockReturnValue(undefined);
       mockedLoopback.createLoopbackClient.mockResolvedValue({
         client: {
           generateAuthUrl: vi
@@ -360,7 +366,7 @@ describe("CalendarAuthService", () => {
     });
 
     it("404s when the account hasn't signed in yet", async () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
+      mockedStore.tryLoad.mockReturnValue(undefined);
 
       await expect(
         makeService().listAvailableCalendars("work"),
@@ -372,9 +378,9 @@ describe("CalendarAuthService", () => {
       // a signed-in (but not yet configured) microsoft account under the
       // exact same label — an explicit provider must resolve to microsoft,
       // not fall through to google's ambiguous-fallback match.
-      mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
-      mockedMicrosoftStore.listStoredAccountLabels.mockReturnValue(["work"]);
-      mockedMicrosoftStore.tryLoadMicrosoftCredential.mockReturnValue({
+      mockedStore.tryLoad.mockReturnValue(undefined);
+      mockedMicrosoftStore.listAccountLabels.mockReturnValue(["work"]);
+      mockedMicrosoftStore.tryLoad.mockReturnValue({
         accountLabel: "work",
         refreshToken: "refresh-token",
         scope: "scope",
@@ -401,7 +407,7 @@ describe("CalendarAuthService", () => {
     });
 
     it("lists Google's calendars for the account, flagging which are already synced", async () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue({
+      mockedStore.tryLoad.mockReturnValue({
         accountLabel: "work",
         refreshToken: "refresh-token",
         scope: "scope",
@@ -426,7 +432,7 @@ describe("CalendarAuthService", () => {
     });
 
     it('treats Google\'s primary calendar as already synced when a "primary" alias is configured', async () => {
-      mockedStore.tryLoadGoogleCredential.mockReturnValue({
+      mockedStore.tryLoad.mockReturnValue({
         accountLabel: "personal",
         refreshToken: "refresh-token",
         scope: "scope",
@@ -460,12 +466,12 @@ describe("CalendarAuthService", () => {
 
   describe("account labels from stored credentials", () => {
     it("includes an account that has a stored credential but no configured calendar yet", async () => {
-      mockedStore.listStoredAccountLabels.mockReturnValue([
+      mockedStore.listAccountLabels.mockReturnValue([
         "work",
         "personal",
         "brand-new@example.com",
       ]);
-      mockedStore.tryLoadGoogleCredential.mockReturnValue(undefined);
+      mockedStore.tryLoad.mockReturnValue(undefined);
 
       const statuses = await makeService().listStatuses();
 
@@ -524,7 +530,7 @@ describe("CalendarAuthService", () => {
 
       await flushPromises();
 
-      expect(mockedStore.saveGoogleCredential).toHaveBeenCalledWith(
+      expect(mockedStore.save).toHaveBeenCalledWith(
         expect.objectContaining({
           accountLabel: "brand-new@example.com",
           refreshToken: "new-refresh-token",
@@ -565,7 +571,7 @@ describe("CalendarAuthService", () => {
       const status = service.getNewAccountAuthStatus(transactionId);
       expect(status.status).toBe("error");
       expect(status.error).toMatch(/verified email/);
-      expect(mockedStore.saveGoogleCredential).not.toHaveBeenCalled();
+      expect(mockedStore.save).not.toHaveBeenCalled();
     });
   });
 });

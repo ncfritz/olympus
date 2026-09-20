@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { outboxConfig, type OutboxConfigType } from "../config/configuration";
 import { CALENDAR_BUSY_INCLUSION_STORE } from "./calendarBusyInclusionStore";
 import { CALENDAR_COLOR_STORE } from "./calendarColorStore";
 import { CALENDAR_ENABLEMENT_STORE } from "./calendarEnablementStore";
@@ -28,22 +28,10 @@ import { SYNC_RUN_STORE } from "./syncRunStore";
     // the first place, so it stays a plain flag here rather than living in
     // OutboxModule, which PrismaEventStore can't depend on without a
     // circular import (OutboxModule already depends on StoreModule).
-    //
-    // Deliberately a `useFactory` reading ConfigService, not a `useValue`
-    // reading `process.env` directly: this file's own `@Module()` decorator
-    // runs at *import* time — while app.module.ts is still resolving its
-    // own imports, strictly before it reaches its `ConfigModule.forRoot()`
-    // call — so a direct `process.env.RABBITMQ_URL` read here would only
-    // ever see a variable already set in the OS environment, never one
-    // coming from the `.env` file dotenv loads. A factory provider defers
-    // this read to Nest's DI-instantiation phase, well after bootstrap has
-    // finished composing the module graph, sidestepping that ordering
-    // entirely.
     {
       provide: OUTBOX_ENABLED,
-      useFactory: (config: ConfigService) =>
-        Boolean(config.get<string>("RABBITMQ_URL")),
-      inject: [ConfigService],
+      useFactory: (outbox: OutboxConfigType) => outbox.enabled,
+      inject: [outboxConfig.KEY],
     },
     PrismaEventStore,
     { provide: EVENT_STORE, useExisting: PrismaEventStore },

@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { syncConfig, type SyncConfigType } from "../../config/configuration";
 import {
   buildCanonicalEventId,
   CanonicalCalendarEvent,
@@ -29,8 +29,6 @@ import { SyncedCalendarConfig } from "../syncedCalendarConfig";
 // Fine for a personal/small-team calendar; would need real pagination well beyond this scale.
 const FULL_SYNC_DIFF_LIMIT = 10_000;
 
-const DEFAULT_SYNC_WINDOW_PAST_DAYS = 30;
-const DEFAULT_SYNC_WINDOW_FUTURE_DAYS = 180;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // A bounded sync window's syncToken/deltaLink freezes that window at
@@ -71,14 +69,10 @@ export class SyncEngine {
     private readonly enablement: CalendarEnablementStore,
     private readonly providers: CalendarProviderRegistry,
     @Inject(SYNC_RUN_STORE) private readonly syncRuns: SyncRunStore,
-    config: ConfigService,
+    @Inject(syncConfig.KEY) sync: SyncConfigType,
   ) {
-    this.windowPastMs =
-      (Number(config.get("SYNC_WINDOW_PAST_DAYS")) ||
-        DEFAULT_SYNC_WINDOW_PAST_DAYS) * DAY_MS;
-    this.windowFutureMs =
-      (Number(config.get("SYNC_WINDOW_FUTURE_DAYS")) ||
-        DEFAULT_SYNC_WINDOW_FUTURE_DAYS) * DAY_MS;
+    this.windowPastMs = sync.windowPastDays * DAY_MS;
+    this.windowFutureMs = sync.windowFutureDays * DAY_MS;
   }
 
   /**

@@ -2,7 +2,7 @@ import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../../src/AppModule";
-import { saveGoogleCredential } from "../../src/providers/google/googleCredentialStore";
+import { GoogleCredentialStore } from "../../src/providers/google/GoogleCredentialStore";
 import { issueE2eAccessToken } from "./auth-fixtures";
 import { seedCalendar } from "./calendar-fixtures";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -27,15 +27,15 @@ describe("Calendar management (e2e)", () => {
   let authHeader: string;
 
   beforeEach(async () => {
-    saveGoogleCredential({
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    moduleFixture.get(GoogleCredentialStore).save({
       accountLabel: KNOWN_CALENDAR.accountLabel,
       refreshToken: "e2e-refresh-token",
       scope: "https://www.googleapis.com/auth/calendar.readonly",
       obtainedAt: new Date().toISOString(),
     });
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
     app = moduleFixture.createNestApplication();
     await app.init();
     await seedCalendar(app, KNOWN_CALENDAR);

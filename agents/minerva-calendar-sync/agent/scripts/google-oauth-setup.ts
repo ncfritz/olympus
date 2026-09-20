@@ -5,15 +5,12 @@
  *   pnpm google:auth -- --label personal-gmail
  *
  * Requires GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET in the
- * environment (see .env.example) — from a Google Cloud "Desktop app" OAuth
- * client. Writes the resulting refresh token to
- * .credentials/<label>.json (gitignored).
+ * environment (dev.env, see dev.env.example) — from a Google Cloud "Desktop
+ * app" OAuth client. Writes the resulting refresh token to
+ * GOOGLE_CREDENTIALS_DIR/<label>.json (default .credentials/, gitignored).
  */
-import "dotenv/config";
-import {
-  saveGoogleCredential,
-  requireEnv,
-} from "../src/providers/google/googleCredentialStore";
+import { readConfig } from "../src/config/configuration";
+import { GoogleCredentialStore } from "../src/providers/google/GoogleCredentialStore";
 import {
   createLoopbackClient,
   waitForAuthorizationCode,
@@ -22,10 +19,12 @@ import { GOOGLE_CALENDAR_SCOPES } from "../src/providers/google/googleOauthScope
 
 async function main(): Promise<void> {
   const label = parseLabelArg();
+  const credentials = new GoogleCredentialStore(readConfig(process.env).google);
+  const { clientId, clientSecret } = credentials.oauthClient();
 
   const { client, redirectUri } = await createLoopbackClient(
-    requireEnv("GOOGLE_OAUTH_CLIENT_ID"),
-    requireEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
+    clientId,
+    clientSecret,
   );
   const authUrl = client.generateAuthUrl({
     access_type: "offline",
@@ -49,14 +48,14 @@ async function main(): Promise<void> {
     );
   }
 
-  saveGoogleCredential({
+  credentials.save({
     accountLabel: label,
     refreshToken: tokens.refresh_token,
     scope: tokens.scope ?? GOOGLE_CALENDAR_SCOPES.join(" "),
     obtainedAt: new Date().toISOString(),
   });
 
-  console.log(`Saved credentials for "${label}" to .credentials/${label}.json`);
+  console.log(`Saved credentials for "${label}"`);
 }
 
 function parseLabelArg(): string {

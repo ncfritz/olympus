@@ -4,10 +4,11 @@ import {
   findFreePort,
   waitForAuthorizationCallback,
 } from "../shared/oauthLoopbackServer";
-import {
-  loadMicrosoftCredential,
-  requireEnv,
-} from "./microsoftCredentialStore";
+import type { MicrosoftConfigType } from "../../config/configuration";
+import type { MicrosoftCredentialStore } from "./MicrosoftCredentialStore";
+
+/** The app registration the flows run against: MICROSOFT_OAUTH_CLIENT_ID and _TENANT_ID. */
+export type MicrosoftApp = Pick<MicrosoftConfigType, "clientId" | "tenantId">;
 
 /** Scopes requested when obtaining (or renewing) a Microsoft credential for calendar sync. */
 export const MICROSOFT_CALENDAR_SCOPES = [
@@ -28,7 +29,7 @@ export const MICROSOFT_NEW_ACCOUNT_SCOPES = [
   "email",
 ];
 
-let discoveryPromise: Promise<OpenIdClient.Configuration> | undefined;
+const discoveries = new Map<string, Promise<OpenIdClient.Configuration>>();
 
 /**
  * Microsoft identity platform v2.0 discovery for MICROSOFT_OAUTH_TENANT_ID
@@ -46,17 +47,23 @@ let discoveryPromise: Promise<OpenIdClient.Configuration> | undefined;
  */
 function getOidcConfig(
   client: typeof OpenIdClient,
+  app: MicrosoftApp,
 ): Promise<OpenIdClient.Configuration> {
-  if (!discoveryPromise) {
-    const tenant = process.env["MICROSOFT_OAUTH_TENANT_ID"] || "common";
-    discoveryPromise = client.discovery(
-      new URL(`https://login.microsoftonline.com/${tenant}/v2.0`),
-      requireEnv("MICROSOFT_OAUTH_CLIENT_ID"),
+  if (!app.clientId) {
+    throw new Error("Missing required env var MICROSOFT_OAUTH_CLIENT_ID");
+  }
+  const key = `${app.tenantId}\0${app.clientId}`;
+  let discovery = discoveries.get(key);
+  if (!discovery) {
+    discovery = client.discovery(
+      new URL(`https://login.microsoftonline.com/${app.tenantId}/v2.0`),
+      app.clientId,
       undefined,
       client.None(),
     );
+    discoveries.set(key, discovery);
   }
-  return discoveryPromise;
+  return discovery;
 }
 
 export interface MicrosoftTokenResult {
@@ -82,10 +89,11 @@ export interface MicrosoftLoopbackFlow {
  * OIDC rather than a bespoke client library.
  */
 export async function startMicrosoftLoopbackFlow(
+  app: MicrosoftApp,
   scopes: string[],
 ): Promise<MicrosoftLoopbackFlow> {
   const client = await loadOpenIdClient();
-  const oidcConfig = await getOidcConfig(client);
+  const oidcConfig = await getOidcConfig(client, app);
 
   const port = await findFreePort();
   // Unlike Google (which wants the loopback IP literal, 127.0.0.1, per RFC
@@ -185,10 +193,11 @@ function describeTokenError(error: unknown): string {
 
 /** Mints a fresh access token from a stored refresh token. Microsoft access tokens are short-lived (~1h) and never cached to disk. */
 export async function refreshMicrosoftAccessToken(
+  app: MicrosoftApp,
   refreshToken: string,
 ): Promise<{ accessToken: string; expiresAt?: string }> {
   const client = await loadOpenIdClient();
-  const oidcConfig = await getOidcConfig(client);
+  const oidcConfig = await getOidcConfig(client, app);
   const tokenResponse = await client.refreshTokenGrant(
     oidcConfig,
     refreshToken,
@@ -214,6 +223,8 @@ export interface MicrosoftAccessTokenProvider {
  * it in memory until shortly before it expires.
  */
 export function createAuthorizedMicrosoftClient(
+  app: MicrosoftApp,
+  credentials: MicrosoftCredentialStore,
   accountLabel: string,
 ): MicrosoftAccessTokenProvider {
   let cached: { accessToken: string; expiresAtMs: number } | undefined;
@@ -224,8 +235,9 @@ export function createAuthorizedMicrosoftClient(
         return cached.accessToken;
       }
 
-      const credential = loadMicrosoftCredential(accountLabel);
+      const credential = credentials.load(accountLabel);
       const { accessToken, expiresAt } = await refreshMicrosoftAccessToken(
+        app,
         credential.refreshToken,
       );
       cached = {

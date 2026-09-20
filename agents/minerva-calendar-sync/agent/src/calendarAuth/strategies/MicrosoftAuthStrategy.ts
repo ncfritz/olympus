@@ -1,8 +1,9 @@
+import { Inject, Injectable } from "@nestjs/common";
 import {
-  listStoredAccountLabels,
-  saveMicrosoftCredential,
-  tryLoadMicrosoftCredential,
-} from "../../providers/microsoft/microsoftCredentialStore";
+  microsoftConfig,
+  type MicrosoftConfigType,
+} from "../../config/configuration";
+import { MicrosoftCredentialStore } from "../../providers/microsoft/MicrosoftCredentialStore";
 import {
   MICROSOFT_CALENDAR_SCOPES,
   MICROSOFT_NEW_ACCOUNT_SCOPES,
@@ -15,25 +16,33 @@ import {
   LoopbackFlowRequest,
 } from "./calendarAuthStrategy";
 
+@Injectable()
 export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
   readonly provider = "microsoft" as const;
 
+  constructor(
+    private readonly credentials: MicrosoftCredentialStore,
+    @Inject(microsoftConfig.KEY)
+    private readonly microsoft: MicrosoftConfigType,
+  ) {}
+
   listStoredAccountLabels(): string[] {
-    return listStoredAccountLabels();
+    return this.credentials.listAccountLabels();
   }
 
   tryLoadCredential(accountLabel: string) {
-    return tryLoadMicrosoftCredential(accountLabel);
+    return this.credentials.tryLoad(accountLabel);
   }
 
   async checkAccessToken(
     accountLabel: string,
   ): Promise<{ expiresAt?: string }> {
-    const credential = tryLoadMicrosoftCredential(accountLabel);
+    const credential = this.credentials.tryLoad(accountLabel);
     if (!credential) {
       throw new Error(`No stored Microsoft credential for "${accountLabel}"`);
     }
     const { expiresAt } = await refreshMicrosoftAccessToken(
+      this.microsoft,
       credential.refreshToken,
     );
     return { expiresAt };
@@ -44,7 +53,7 @@ export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
       request.mode === "new"
         ? MICROSOFT_NEW_ACCOUNT_SCOPES
         : MICROSOFT_CALENDAR_SCOPES;
-    const flow = await startMicrosoftLoopbackFlow(scopes);
+    const flow = await startMicrosoftLoopbackFlow(this.microsoft, scopes);
 
     return {
       authUrl: flow.authUrl,
@@ -54,7 +63,7 @@ export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
           request.mode === "new"
             ? requireEmail(result.email)
             : request.accountLabel;
-        saveMicrosoftCredential({
+        this.credentials.save({
           accountLabel,
           refreshToken: result.refreshToken,
           scope: result.scope,

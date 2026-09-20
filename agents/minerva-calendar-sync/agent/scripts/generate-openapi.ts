@@ -5,7 +5,6 @@
  *
  * Usage: pnpm openapi:generate
  */
-import "dotenv/config";
 import { writeFileSync } from "fs";
 import { dump } from "js-yaml";
 import { join } from "path";
@@ -14,14 +13,7 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "../src/AppModule";
 import { buildOpenApiDocument } from "../src/openapi";
 
-const OUTPUT_PATH = join(
-  __dirname,
-  "..",
-  "..",
-  "..",
-  "openapi",
-  "app-api.yaml",
-);
+const OUTPUT_PATH = join(__dirname, "..", "openapi", "app-api.yaml");
 
 async function main(): Promise<void> {
   // AUTH_OIDC_PROVIDERS must not drive any real login here — this script

@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { authConfig, type AuthConfigType } from "../config/configuration";
 import { APP_GUARD } from "@nestjs/core";
 import { JwtModule } from "@nestjs/jwt";
 import { AllowlistService } from "./services/AllowlistService";
@@ -11,10 +11,8 @@ import { OidcProviderRegistry } from "./services/OidcProviderRegistry";
 @Module({
   imports: [
     JwtModule.registerAsync({
-      useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>("AUTH_JWT_SECRET"),
-      }),
-      inject: [ConfigService],
+      useFactory: (auth: AuthConfigType) => ({ secret: auth.jwtSecret }),
+      inject: [authConfig.KEY],
     }),
   ],
   controllers: [AuthController],

@@ -1,12 +1,13 @@
-import { ConfigService } from "@nestjs/config";
 import { AllowlistService } from "../../../../src/auth/services/AllowlistService";
 import { describe, expect, it } from "vitest";
+import { testConfig } from "../../../support/config";
 
 function serviceWithConfig(
   allowedEmails: string | undefined,
 ): AllowlistService {
-  const config = { get: () => allowedEmails } as unknown as ConfigService;
-  return new AllowlistService(config);
+  return new AllowlistService(
+    testConfig({ AUTH_ALLOWED_EMAILS: allowedEmails }).auth,
+  );
 }
 
 describe("AllowlistService", () => {

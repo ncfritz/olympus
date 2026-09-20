@@ -2,7 +2,6 @@ import { execSync } from "child_process";
 import { mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { ConfigService } from "@nestjs/config";
 
 import { CanonicalCalendarEvent } from "../../../../src/domain/canonicalEvent";
 import {
@@ -27,6 +26,7 @@ import { CalendarEnablementStore } from "../../../../src/store/calendarEnablemen
 import { PrismaEventStore } from "../../../../src/store/prisma/PrismaEventStore";
 import { PrismaService } from "../../../../src/store/prisma/PrismaService";
 import { SyncRunStore } from "../../../../src/store/syncRunStore";
+import { testConfig } from "../../../support/config";
 import { SyncEngine } from "../../../../src/sync/services/SyncEngine";
 import { SyncedCalendarConfig } from "../../../../src/sync/syncedCalendarConfig";
 import {
@@ -230,7 +230,7 @@ describe("SyncEngine", () => {
       enablement,
       registry,
       syncRuns,
-      new ConfigService(),
+      testConfig().sync,
     );
   });
 
