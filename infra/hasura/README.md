@@ -61,3 +61,7 @@ hasura migrate apply --database-name olympus --version 1789862400000 --skip-exec
 After the first `hasura metadata apply`, run `hasura metadata export` once
 and commit whatever the CLI normalizes, so later exports show only real
 changes.
+
+Applying migrations or metadata to the Mac Mini's engine is always a
+manual step, taken by hand with the CLI above; nothing in the repository
+does it for you.
