@@ -23,10 +23,7 @@ export default mergeConfig(
           test: {
             name: "e2e",
             include: ["test/e2e/**/*.e2e-spec.ts"],
-            setupFiles: [
-              "test/e2e/env-setup.ts",
-              "test/e2e/reset-synced-calendars.ts",
-            ],
+            setupFiles: ["test/e2e/env-setup.ts", "test/e2e/reset-state.ts"],
           },
         },
         {
