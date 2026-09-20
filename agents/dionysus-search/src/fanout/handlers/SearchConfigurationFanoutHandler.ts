@@ -3,7 +3,7 @@ import { delayed, publishMessage } from "@ncfritz/olympus-messages";
 import type { FilterDefinition } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable, Logger } from "@nestjs/common";
 import moment from "moment";
-import { MediaApi } from "../../api/MediaApi";
+import { MediaSearchApi } from "@ncfritz/olympus-client";
 import {
   FANOUT_SUBSCRIPTION,
   type InitiatingAsset,
@@ -26,7 +26,7 @@ export class SearchConfigurationFanoutHandler {
 
   constructor(
     private readonly amqpConnection: AmqpConnection,
-    private readonly mediaApi: MediaApi,
+    private readonly mediaApi: MediaSearchApi,
   ) {}
 
   @RabbitSubscribe(FANOUT_SUBSCRIPTION)

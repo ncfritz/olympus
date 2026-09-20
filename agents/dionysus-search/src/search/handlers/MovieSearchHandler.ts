@@ -1,8 +1,10 @@
 import { RabbitSubscribe } from "@golevelup/nestjs-rabbitmq";
 import { Injectable } from "@nestjs/common";
-import { MediaApi } from "../../api/MediaApi";
-import { MetadataApi } from "../../api/MetadataApi";
-import { NotificationApi } from "../../api/NotificationApi";
+import {
+  MediaSearchApi,
+  MetadataApi,
+  NotificationApi,
+} from "@ncfritz/olympus-client";
 import {
   SEARCH_SUBSCRIPTIONS,
   type SearchExecutionMessage,
@@ -18,7 +20,7 @@ import {
 @Injectable()
 export class MovieSearchHandler extends SearchHandler {
   constructor(
-    mediaApi: MediaApi,
+    mediaApi: MediaSearchApi,
     notificationApi: NotificationApi,
     private readonly metadataApi: MetadataApi,
     private readonly nzbGeek: NzbGeekClient,

@@ -1,7 +1,9 @@
 import { vi } from "vitest";
-import type { MediaApi } from "../../src/api/MediaApi";
-import type { MetadataApi } from "../../src/api/MetadataApi";
-import type { NotificationApi } from "../../src/api/NotificationApi";
+import type {
+  MediaSearchApi,
+  MetadataApi,
+  NotificationApi,
+} from "@ncfritz/olympus-client";
 import type {
   NewznabItem,
   NzbGeekClient,
@@ -80,7 +82,7 @@ export const fakes = (): Fakes => ({
 
 /** The fakes as the handlers' constructor parameter types. */
 export const as = {
-  mediaApi: (f: Fakes) => f.mediaApi as unknown as MediaApi,
+  mediaApi: (f: Fakes) => f.mediaApi as unknown as MediaSearchApi,
   metadataApi: (f: Fakes) => f.metadataApi as unknown as MetadataApi,
   notificationApi: (f: Fakes) =>
     f.notificationApi as unknown as NotificationApi,

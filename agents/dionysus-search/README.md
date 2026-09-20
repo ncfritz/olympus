@@ -37,8 +37,6 @@ src/
   messaging.ts                queues and subscriptions; routes and payloads
                               come from @ncfritz/olympus-messages
   infra/                      RabbitModule
-  api/                        OlympusApiModule: SDK client setup, MediaApi,
-                              MetadataApi, NotificationApi
   search/                     SearchModule: handlers/ (one per asset type,
                               on SearchHandler), services/NzbGeekClient
   fanout/                     FanoutModule: the periodic fanout of due

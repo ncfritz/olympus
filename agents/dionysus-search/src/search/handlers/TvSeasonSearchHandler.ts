@@ -6,9 +6,11 @@ import type {
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Injectable } from "@nestjs/common";
 import moment from "moment";
-import { MediaApi } from "../../api/MediaApi";
-import { MetadataApi } from "../../api/MetadataApi";
-import { NotificationApi } from "../../api/NotificationApi";
+import {
+  MediaSearchApi,
+  MetadataApi,
+  NotificationApi,
+} from "@ncfritz/olympus-client";
 import {
   SEARCH_SUBSCRIPTIONS,
   type SearchExecutionMessage,
@@ -27,7 +29,7 @@ import {
 @Injectable()
 export class TvSeasonSearchHandler extends SearchHandler {
   constructor(
-    mediaApi: MediaApi,
+    mediaApi: MediaSearchApi,
     notificationApi: NotificationApi,
     private readonly metadataApi: MetadataApi,
     private readonly amqpConnection: AmqpConnection,

@@ -5,8 +5,7 @@ import type {
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Logger } from "@nestjs/common";
 import moment from "moment";
-import type { MediaApi } from "../../api/MediaApi";
-import type { NotificationApi } from "../../api/NotificationApi";
+import type { MediaSearchApi, NotificationApi } from "@ncfritz/olympus-client";
 import type { SearchExecutionMessage } from "../../messaging";
 import { scoreRelease } from "../../releases/scoreRelease";
 import { newznabAttribute, type NewznabItem } from "../services/NzbGeekClient";
@@ -38,7 +37,7 @@ export abstract class SearchHandler {
   protected readonly logger = new Logger(this.constructor.name);
 
   protected constructor(
-    protected readonly mediaApi: MediaApi,
+    protected readonly mediaApi: MediaSearchApi,
     private readonly notificationApi: NotificationApi,
   ) {}
 
