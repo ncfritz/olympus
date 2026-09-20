@@ -2,6 +2,7 @@ import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../../src/AppModule";
+import { configureApp } from "../../src/configureApp";
 import { GoogleCredentialStore } from "../../src/providers/google/GoogleCredentialStore";
 import { issueE2eAccessToken } from "./auth-fixtures";
 import { seedCalendar } from "./calendar-fixtures";
@@ -37,6 +38,7 @@ describe("Calendar management (e2e)", () => {
       obtainedAt: new Date().toISOString(),
     });
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     await seedCalendar(app, KNOWN_CALENDAR);
     authHeader = `Bearer ${issueE2eAccessToken(app)}`;

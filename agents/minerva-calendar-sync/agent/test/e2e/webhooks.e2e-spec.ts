@@ -2,6 +2,7 @@ import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../../src/AppModule";
+import { configureApp } from "../../src/configureApp";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 // The full "a real channel triggers SyncEngine" path is covered by
@@ -21,6 +22,7 @@ describe("Webhooks (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
   });
 

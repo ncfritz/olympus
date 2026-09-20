@@ -2,6 +2,7 @@ import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../../src/AppModule";
+import { configureApp } from "../../src/configureApp";
 import { AuthTokenService } from "../../src/auth/services/AuthTokenService";
 import { E2E_ALLOWED_EMAIL, issueE2eAccessToken } from "./auth-fixtures";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -19,6 +20,7 @@ describe("Auth (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
   });
 

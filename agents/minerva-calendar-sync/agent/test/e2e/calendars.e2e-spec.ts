@@ -2,6 +2,7 @@ import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../../src/AppModule";
+import { configureApp } from "../../src/configureApp";
 import { issueE2eAccessToken } from "./auth-fixtures";
 import { seedCalendar } from "./calendar-fixtures";
 import { afterEach, describe, expect, it } from "vitest";
@@ -29,6 +30,7 @@ describe("Calendars (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
 
     await request(app.getHttpServer()).get("/calendars").expect(401);
@@ -39,6 +41,7 @@ describe("Calendars (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
@@ -63,6 +66,7 @@ describe("Calendars (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
@@ -78,6 +82,7 @@ describe("Calendars (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
@@ -92,6 +97,7 @@ describe("Calendars (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
@@ -107,6 +113,7 @@ describe("Calendars (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
@@ -122,6 +129,7 @@ describe("Calendars (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
@@ -172,6 +180,7 @@ describe("Calendars (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
@@ -187,6 +196,7 @@ describe("Calendars (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;

@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import {
-  AvailabilitySlot,
+  AvailabilitySlot as DomainAvailabilitySlot,
   AvailabilityStatus,
   combineAvailability,
   mapFreeBusyToAvailability,
@@ -19,6 +19,12 @@ import {
   OverrideBlockStore,
 } from "../../store/overrideBlockStore";
 import { SyncConfigService } from "../../sync/services/SyncConfigService";
+import {
+  AvailabilitySlot,
+  GetFreeBusyQuery,
+  GetStatusTimelineQuery,
+} from "../../model/availability";
+import { toDomainObject } from "../converters/AvailabilitySlotConverter";
 
 const SLOT_MS = 15 * 60 * 1000;
 /** Sanity cap on the computed range — 92 days is ~8832 slots, comfortably cheap; anything past that is almost certainly a caller bug. */
@@ -57,17 +63,35 @@ export class AvailabilityService {
     private readonly syncConfig: SyncConfigService,
   ) {}
 
+  /** GetFreeBusy: the 15-minute slots of the query's range. */
+  async getFreeBusy(query: GetFreeBusyQuery): Promise<AvailabilitySlot[]> {
+    const slots = await this.computeSlots(query.start, query.end);
+    return slots.map(toDomainObject);
+  }
+
+  /** GetStatusTimeline: the status of each 15-minute chunk of the query's range. */
+  getStatusTimeline(
+    query: GetStatusTimelineQuery,
+  ): Promise<Record<string, AvailabilityStatus>> {
+    return this.computeTimeline(query.start, query.end, {
+      dayStart: query.dayStart,
+      dayEnd: query.dayEnd,
+      treatWeekendsAsWorking: query.treatWeekendsAsWorking,
+      timezone: query.timezone,
+    });
+  }
+
   async computeSlots(
     startIso: string,
     endIso: string,
-  ): Promise<AvailabilitySlot[]> {
+  ): Promise<DomainAvailabilitySlot[]> {
     const { start, end } = this.validateRange(startIso, endIso);
     const { eventTimes, blockTimes } = await this.loadContributions(
       startIso,
       endIso,
     );
 
-    const slots: AvailabilitySlot[] = [];
+    const slots: DomainAvailabilitySlot[] = [];
     for (let slotStart = start; slotStart < end; slotStart += SLOT_MS) {
       const slotEnd = slotStart + SLOT_MS;
       const status = computeStatus(

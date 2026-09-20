@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@golevelup/nestjs-rabbitmq": "catalog:",
+    "@ncfritz/olympus-model": "workspace:*",
     "@ncfritz/olympus-nest": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
@@ -50,6 +51,7 @@
     "cookie-parser": "^1.4.7",
     "google-auth-library": "^11.0.2",
     "googleapis": "^180.0.0",
+    "moment": "catalog:",
     "nest-winston": "catalog:",
     "openid-client": "^6.8.8",
     "reflect-metadata": "catalog:",

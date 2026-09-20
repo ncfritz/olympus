@@ -1,7 +1,8 @@
-import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../../src/AppModule";
+import { configureApp } from "../../src/configureApp";
 import { issueE2eAccessToken } from "./auth-fixtures";
 import { seedCalendar } from "./calendar-fixtures";
 import { afterEach, describe, expect, it } from "vitest";
@@ -41,6 +42,7 @@ describe("Calendar accounts (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
 
     await request(app.getHttpServer()).get("/calendar-accounts").expect(401);
@@ -51,6 +53,7 @@ describe("Calendar accounts (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
@@ -66,6 +69,7 @@ describe("Calendar accounts (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
@@ -89,6 +93,7 @@ describe("Calendar accounts (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_MICROSOFT_CALENDAR);
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
@@ -112,6 +117,7 @@ describe("Calendar accounts (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_MICROSOFT_CALENDAR);
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
@@ -130,6 +136,7 @@ describe("Calendar accounts (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     await seedCalendar(app, { ...FAKE_CALENDAR, accountLabel: sharedLabel });
     await seedCalendar(app, {
@@ -167,6 +174,7 @@ describe("Calendar accounts (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     await seedCalendar(app, { ...FAKE_CALENDAR, accountLabel: sharedLabel });
     await seedCalendar(app, {
@@ -196,6 +204,7 @@ describe("Calendar accounts (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
@@ -210,6 +219,7 @@ describe("Calendar accounts (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
@@ -224,6 +234,7 @@ describe("Calendar accounts (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
@@ -241,6 +252,7 @@ describe("Calendar accounts (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
@@ -258,13 +270,7 @@ describe("Calendar accounts (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({
-        transform: true,
-        whitelist: true,
-        forbidNonWhitelisted: true,
-      }),
-    );
+    configureApp(app);
     await app.init();
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 

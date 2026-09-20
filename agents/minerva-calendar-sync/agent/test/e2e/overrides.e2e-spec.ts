@@ -1,7 +1,8 @@
-import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../../src/AppModule";
+import { configureApp } from "../../src/configureApp";
 import { issueE2eAccessToken } from "./auth-fixtures";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -14,13 +15,7 @@ describe("Overrides (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({
-        transform: true,
-        whitelist: true,
-        forbidNonWhitelisted: true,
-      }),
-    );
+    configureApp(app);
     await app.init();
 
     authHeader = `Bearer ${issueE2eAccessToken(app)}`;
@@ -33,103 +28,114 @@ describe("Overrides (e2e)", () => {
   it("rejects requests with no access token", () => {
     return request(app.getHttpServer())
       .get(
-        "/overrides?start=2026-01-05T00:00:00.000Z&end=2026-01-06T00:00:00.000Z",
+        "/v1/override-blocks?start=2026-01-05T00:00:00.000Z&end=2026-01-06T00:00:00.000Z",
       )
       .expect(401);
   });
 
   it("creates, lists, and deletes an override block", async () => {
     const created = await request(app.getHttpServer())
-      .post("/overrides")
+      .post("/v1/override-blocks")
       .set("Authorization", authHeader)
       .send({
-        startTime: "2026-01-05T15:00:00.000Z",
-        endTime: "2026-01-05T16:00:00.000Z",
-        status: "busy",
-        label: "Focus time",
+        overrideBlock: {
+          startTime: "2026-01-05T15:00:00.000Z",
+          endTime: "2026-01-05T16:00:00.000Z",
+          status: "busy",
+          label: "Focus time",
+        },
       })
       .expect(201);
-    expect(created.body).toMatchObject({
+    expect(created.body.overrideBlock).toMatchObject({
       startTime: "2026-01-05T15:00:00.000Z",
       endTime: "2026-01-05T16:00:00.000Z",
       status: "busy",
       label: "Focus time",
     });
-    expect(created.body.id).toBeTruthy();
+    expect(created.body.overrideBlock.id).toBeTruthy();
 
     const listed = await request(app.getHttpServer())
       .get(
-        "/overrides?start=2026-01-05T00:00:00.000Z&end=2026-01-06T00:00:00.000Z",
+        "/v1/override-blocks?start=2026-01-05T00:00:00.000Z&end=2026-01-06T00:00:00.000Z",
       )
       .set("Authorization", authHeader)
       .expect(200);
-    expect(listed.body.map((b: { id: string }) => b.id)).toContain(
-      created.body.id,
-    );
+    expect(
+      listed.body.overrideBlocks.map((b: { id: string }) => b.id),
+    ).toContain(created.body.overrideBlock.id);
 
     await request(app.getHttpServer())
-      .delete(`/overrides/${created.body.id}`)
+      .delete(`/v1/override-block/${created.body.overrideBlock.id}`)
       .set("Authorization", authHeader)
       .expect(204);
 
     const afterDelete = await request(app.getHttpServer())
       .get(
-        "/overrides?start=2026-01-05T00:00:00.000Z&end=2026-01-06T00:00:00.000Z",
+        "/v1/override-blocks?start=2026-01-05T00:00:00.000Z&end=2026-01-06T00:00:00.000Z",
       )
       .set("Authorization", authHeader)
       .expect(200);
-    expect(afterDelete.body.map((b: { id: string }) => b.id)).not.toContain(
-      created.body.id,
-    );
+    expect(
+      afterDelete.body.overrideBlocks.map((b: { id: string }) => b.id),
+    ).not.toContain(created.body.overrideBlock.id);
   });
 
   it("updates the status of an existing override block", async () => {
     const created = await request(app.getHttpServer())
-      .post("/overrides")
+      .post("/v1/override-blocks")
       .set("Authorization", authHeader)
       .send({
-        startTime: "2026-01-05T15:00:00.000Z",
-        endTime: "2026-01-05T16:00:00.000Z",
-        status: "busy",
+        overrideBlock: {
+          startTime: "2026-01-05T15:00:00.000Z",
+          endTime: "2026-01-05T16:00:00.000Z",
+          status: "busy",
+        },
       })
       .expect(201);
 
     const updated = await request(app.getHttpServer())
-      .put(`/overrides/${created.body.id}`)
+      .put(`/v1/override-block/${created.body.overrideBlock.id}`)
       .set("Authorization", authHeader)
-      .send({ status: "free" })
+      .send({ overrideBlock: { status: "free" } })
       .expect(200);
-    expect(updated.body).toMatchObject({ id: created.body.id, status: "free" });
+    expect(updated.body.overrideBlock).toMatchObject({
+      id: created.body.overrideBlock.id,
+      status: "free",
+    });
   });
 
-  it("PUT /overrides/:id 404s for an unknown id", () => {
+  it("UpdateOverrideBlock 404s for an unknown id", () => {
     return request(app.getHttpServer())
-      .put("/overrides/does-not-exist")
+      .put("/v1/override-block/does-not-exist")
       .set("Authorization", authHeader)
-      .send({ status: "free" })
+      .send({ overrideBlock: { status: "free" } })
       .expect(404);
   });
 
   it("rejects a block where startTime is not before endTime", () => {
     return request(app.getHttpServer())
-      .post("/overrides")
+      .post("/v1/override-blocks")
       .set("Authorization", authHeader)
       .send({
-        startTime: "2026-01-05T16:00:00.000Z",
-        endTime: "2026-01-05T15:00:00.000Z",
-        status: "busy",
+        overrideBlock: {
+          startTime: "2026-01-05T16:00:00.000Z",
+          endTime: "2026-01-05T15:00:00.000Z",
+          status: "busy",
+        },
       })
       .expect(400);
   });
 
   it("rejects an invalid status value", () => {
     return request(app.getHttpServer())
-      .post("/overrides")
+      .post("/v1/override-blocks")
       .set("Authorization", authHeader)
       .send({
-        startTime: "2026-01-05T15:00:00.000Z",
-        endTime: "2026-01-05T16:00:00.000Z",
-        status: "bogus",
+        overrideBlock: {
+          startTime: "2026-01-05T15:00:00.000Z",
+          endTime: "2026-01-05T16:00:00.000Z",
+          status: "bogus",
+        },
       })
       .expect(400);
   });

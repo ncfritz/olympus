@@ -1098,24 +1098,28 @@
         ]
       }
     },
-    "/calendar-colors": {
+    "/v1/calendar-colors": {
       "get": {
-        "operationId": "CalendarColorsController_list",
+        "description": "Returns every display color the viewer has chosen, keyed by source label.",
+        "operationId": "ListCalendarColors",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "All stored colors, keyed by source label",
+            "description": "The colors were listed.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "example": {
-                    "personal-gmail": "#1677ff",
-                    "Overrides": "#f5222d"
-                  }
+                  "$ref": "#/components/schemas/ListCalendarColorsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1126,19 +1130,22 @@
             "bearer": []
           }
         ],
+        "summary": "Lists calendar colors",
         "tags": [
-          "calendar-colors"
+          "Calendar Colors"
         ]
       }
     },
-    "/calendar-colors/{source}": {
+    "/v1/calendar-color/{source}": {
       "put": {
-        "operationId": "CalendarColorsController_setColor",
+        "description": "Sets the display color of a source label, including sources with no configured calendar such as the Overrides pseudo-source.",
+        "operationId": "UpdateCalendarColor",
         "parameters": [
           {
             "name": "source",
             "required": true,
             "in": "path",
+            "description": "The source label to color",
             "schema": {
               "type": "string"
             }
@@ -1146,62 +1153,42 @@
         ],
         "requestBody": {
           "required": true,
+          "description": "The color to set.",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SetCalendarColorDto"
+                "$ref": "#/components/schemas/UpdateCalendarColorRequest"
               }
             }
           }
         },
         "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "calendar-colors"
-        ]
-      }
-    },
-    "/freebusy": {
-      "get": {
-        "operationId": "AvailabilityController_list",
-        "parameters": [
-          {
-            "name": "start",
-            "required": true,
-            "in": "query",
-            "description": "ISO-8601 — inclusive start of the computed range",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "end",
-            "required": true,
-            "in": "query",
-            "description": "ISO-8601 — exclusive end of the computed range",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
           "200": {
-            "description": "Computed 15-minute availability slots",
+            "description": "The color was stored.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AvailabilitySlotDto"
-                  }
+                  "$ref": "#/components/schemas/UpdateCalendarColorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1212,20 +1199,22 @@
             "bearer": []
           }
         ],
+        "summary": "Updates a calendar color",
         "tags": [
-          "availability"
+          "Calendar Colors"
         ]
       }
     },
-    "/freebusy/timeline": {
+    "/v1/availability/free-busy": {
       "get": {
-        "operationId": "AvailabilityController_timeline",
+        "description": "Returns the combined availability of every calendar included in busy, per 15-minute slot of the range, after overrides.",
+        "operationId": "GetFreeBusy",
         "parameters": [
           {
             "name": "start",
             "required": true,
             "in": "query",
-            "description": "ISO-8601 — inclusive start of the computed range",
+            "description": "ISO-8601: the inclusive start of the computed range",
             "schema": {
               "type": "string"
             }
@@ -1234,7 +1223,74 @@
             "name": "end",
             "required": true,
             "in": "query",
-            "description": "ISO-8601 — exclusive end of the computed range",
+            "description": "ISO-8601: the exclusive end of the computed range",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The slots were computed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetFreeBusyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Gets free/busy slots",
+        "tags": [
+          "Availability"
+        ]
+      }
+    },
+    "/v1/availability/timeline": {
+      "get": {
+        "description": "Returns the status of each 15-minute chunk of the range, with working hours, weekends and the time zone applied, as the console's timeline shows it.",
+        "operationId": "GetStatusTimeline",
+        "parameters": [
+          {
+            "name": "start",
+            "required": true,
+            "in": "query",
+            "description": "ISO-8601: the inclusive start of the computed range",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "end",
+            "required": true,
+            "in": "query",
+            "description": "ISO-8601: the exclusive end of the computed range",
             "schema": {
               "type": "string"
             }
@@ -1243,7 +1299,7 @@
             "name": "dayStart",
             "required": false,
             "in": "query",
-            "description": "HH:mm, 24-hour, in `timezone` — start of the working-hours window",
+            "description": "HH:mm, 24-hour, in `timezone`: the start of the working-hours window",
             "schema": {
               "default": "08:00",
               "type": "string"
@@ -1253,7 +1309,7 @@
             "name": "dayEnd",
             "required": false,
             "in": "query",
-            "description": "HH:mm, 24-hour, in `timezone` — end of the working-hours window (exclusive)",
+            "description": "HH:mm, 24-hour, in `timezone`: the end of the working-hours window (exclusive)",
             "schema": {
               "default": "18:00",
               "type": "string"
@@ -1263,7 +1319,7 @@
             "name": "treatWeekendsAsWorking",
             "required": false,
             "in": "query",
-            "description": "Compute Saturday/Sunday the same as weekdays instead of showing them as \"none\" except where an override applies",
+            "description": "Whether Saturday and Sunday are computed like weekdays instead of as \"none\" (except where an override applies)",
             "schema": {
               "default": false,
               "type": "boolean"
@@ -1273,7 +1329,7 @@
             "name": "timezone",
             "required": false,
             "in": "query",
-            "description": "IANA timezone name (e.g. \"America/Los_Angeles\") used to evaluate dayStart/dayEnd and weekday",
+            "description": "The IANA time zone (e.g. \"America/Los_Angeles\") dayStart, dayEnd and the weekday are evaluated in",
             "schema": {
               "default": "UTC",
               "type": "string"
@@ -1282,24 +1338,31 @@
         ],
         "responses": {
           "200": {
-            "description": "Computed status per 15-minute chunk across the requested range, keyed by each chunk's start time in minutes since epoch",
+            "description": "The timeline was computed.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string",
-                    "enum": [
-                      "none",
-                      "free",
-                      "interruptable",
-                      "busy"
-                    ]
-                  },
-                  "example": {
-                    "28564020": "busy",
-                    "28564035": "none"
-                  }
+                  "$ref": "#/components/schemas/GetStatusTimelineResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1310,32 +1373,55 @@
             "bearer": []
           }
         ],
+        "summary": "Gets the status timeline",
         "tags": [
-          "availability"
+          "Availability"
         ]
       }
     },
-    "/overrides": {
+    "/v1/override-blocks": {
       "post": {
-        "operationId": "OverridesController_create",
+        "description": "Adds a block of time to the Overrides calendar; its status wins over everything synced during it.",
+        "operationId": "CreateOverrideBlock",
         "parameters": [],
         "requestBody": {
           "required": true,
+          "description": "The block to create.",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateOverrideBlockDto"
+                "$ref": "#/components/schemas/CreateOverrideBlockRequest"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "",
+            "description": "The block was created.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OverrideBlockResponseDto"
+                  "$ref": "#/components/schemas/CreateOverrideBlockResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1346,18 +1432,20 @@
             "bearer": []
           }
         ],
+        "summary": "Creates an override block",
         "tags": [
-          "overrides"
+          "Override Blocks"
         ]
       },
       "get": {
-        "operationId": "OverridesController_list",
+        "description": "Returns the override blocks that overlap the range.",
+        "operationId": "ListOverrideBlocks",
         "parameters": [
           {
             "name": "start",
             "required": true,
             "in": "query",
-            "description": "ISO-8601 — inclusive start of the range to list",
+            "description": "ISO-8601: the inclusive start of the range to list",
             "schema": {
               "type": "string"
             }
@@ -1366,7 +1454,7 @@
             "name": "end",
             "required": true,
             "in": "query",
-            "description": "ISO-8601 — exclusive end of the range to list",
+            "description": "ISO-8601: the exclusive end of the range to list",
             "schema": {
               "type": "string"
             }
@@ -1374,14 +1462,31 @@
         ],
         "responses": {
           "200": {
-            "description": "",
+            "description": "The blocks were listed.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OverrideBlockResponseDto"
-                  }
+                  "$ref": "#/components/schemas/ListOverrideBlocksResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1392,19 +1497,22 @@
             "bearer": []
           }
         ],
+        "summary": "Lists override blocks",
         "tags": [
-          "overrides"
+          "Override Blocks"
         ]
       }
     },
-    "/overrides/{id}": {
+    "/v1/override-block/{overrideBlockId}": {
       "put": {
-        "operationId": "OverridesController_updateStatus",
+        "description": "Changes the status an override block sets.",
+        "operationId": "UpdateOverrideBlock",
         "parameters": [
           {
-            "name": "id",
+            "name": "overrideBlockId",
             "required": true,
             "in": "path",
+            "description": "The ID of the override block",
             "schema": {
               "type": "string"
             }
@@ -1412,27 +1520,55 @@
         ],
         "requestBody": {
           "required": true,
+          "description": "The changes to the block.",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateOverrideBlockStatusDto"
+                "$ref": "#/components/schemas/UpdateOverrideBlockRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "",
+            "description": "The block was updated.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OverrideBlockResponseDto"
+                  "$ref": "#/components/schemas/UpdateOverrideBlockResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
           },
           "404": {
-            "description": "No override block with that id"
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1440,17 +1576,20 @@
             "bearer": []
           }
         ],
+        "summary": "Updates an override block",
         "tags": [
-          "overrides"
+          "Override Blocks"
         ]
       },
       "delete": {
-        "operationId": "OverridesController_remove",
+        "description": "Removes a block from the Overrides calendar; removing one that doesn't exist also succeeds.",
+        "operationId": "DeleteOverrideBlock",
         "parameters": [
           {
-            "name": "id",
+            "name": "overrideBlockId",
             "required": true,
             "in": "path",
+            "description": "The ID of the override block",
             "schema": {
               "type": "string"
             }
@@ -1458,7 +1597,17 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "The block is gone."
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1466,8 +1615,9 @@
             "bearer": []
           }
         ],
+        "summary": "Deletes an override block",
         "tags": [
-          "overrides"
+          "Override Blocks"
         ]
       }
     },
@@ -1628,16 +1778,19 @@
       "name": "App"
     },
     {
+      "name": "Availability"
+    },
+    {
+      "name": "Calendar Colors"
+    },
+    {
+      "name": "Override Blocks"
+    },
+    {
       "name": "auth"
     },
     {
-      "name": "availability"
-    },
-    {
       "name": "calendar-auth"
-    },
-    {
-      "name": "calendar-colors"
     },
     {
       "name": "calendars"
@@ -1647,9 +1800,6 @@
     },
     {
       "name": "outbox"
-    },
-    {
-      "name": "overrides"
     },
     {
       "name": "sync-runs"
@@ -2397,12 +2547,48 @@
           "alreadySynced"
         ]
       },
-      "SetCalendarColorDto": {
+      "ListCalendarColorsResponse": {
+        "type": "object",
+        "properties": {
+          "calendarColors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Every stored color, keyed by source label",
+            "example": {
+              "personal-gmail": "#1677ff",
+              "Overrides": "#f5222d"
+            }
+          }
+        },
+        "required": [
+          "calendarColors"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "What went wrong"
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code"
+          }
+        },
+        "required": [
+          "message",
+          "statusCode"
+        ]
+      },
+      "PartialCalendarColor": {
         "type": "object",
         "properties": {
           "color": {
             "type": "string",
-            "description": "Hex color, e.g. #1677ff",
+            "description": "The color, as a 6-digit hex string such as #1677ff",
             "example": "#1677ff"
           }
         },
@@ -2410,24 +2596,83 @@
           "color"
         ]
       },
-      "AvailabilitySlotDto": {
+      "UpdateCalendarColorRequest": {
+        "type": "object",
+        "properties": {
+          "calendarColor": {
+            "description": "The color to set.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialCalendarColor"
+              }
+            ]
+          }
+        },
+        "required": [
+          "calendarColor"
+        ]
+      },
+      "CalendarColor": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "The source label the color belongs to"
+          },
+          "color": {
+            "type": "string",
+            "description": "The color, as a 6-digit hex string such as #1677ff",
+            "example": "#1677ff"
+          }
+        },
+        "required": [
+          "source",
+          "color"
+        ]
+      },
+      "UpdateCalendarColorResponse": {
+        "type": "object",
+        "properties": {
+          "calendarColor": {
+            "description": "The color as stored.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarColor"
+              }
+            ]
+          }
+        },
+        "required": [
+          "calendarColor"
+        ]
+      },
+      "AvailabilityStatus": {
+        "type": "string",
+        "description": "An availability status, lowest precedence first: none, free, interruptable, busy",
+        "enum": [
+          "none",
+          "free",
+          "interruptable",
+          "busy"
+        ]
+      },
+      "AvailabilitySlot": {
         "type": "object",
         "properties": {
           "startTime": {
             "type": "string",
-            "description": "ISO-8601"
+            "description": "An ISO-8601 formatted string indicating when the slot starts"
           },
           "endTime": {
             "type": "string",
-            "description": "ISO-8601"
+            "description": "An ISO-8601 formatted string indicating when the slot ends (exclusive)"
           },
           "status": {
-            "type": "string",
-            "enum": [
-              "none",
-              "free",
-              "interruptable",
-              "busy"
+            "description": "The combined availability during the slot",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityStatus"
+              }
             ]
           }
         },
@@ -2437,29 +2682,68 @@
           "status"
         ]
       },
-      "CreateOverrideBlockDto": {
+      "GetFreeBusyResponse": {
+        "type": "object",
+        "properties": {
+          "slots": {
+            "description": "The 15-minute slots of the range, in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvailabilitySlot"
+            }
+          }
+        },
+        "required": [
+          "slots"
+        ]
+      },
+      "GetStatusTimelineResponse": {
+        "type": "object",
+        "properties": {
+          "timeline": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "none",
+                "free",
+                "interruptable",
+                "busy"
+              ]
+            },
+            "description": "The status of each 15-minute chunk of the range, keyed by the chunk's start in minutes since the epoch",
+            "example": {
+              "28564020": "busy",
+              "28564035": "none"
+            }
+          }
+        },
+        "required": [
+          "timeline"
+        ]
+      },
+      "BaseOverrideBlock": {
         "type": "object",
         "properties": {
           "startTime": {
             "type": "string",
-            "description": "ISO-8601"
+            "description": "ISO-8601: when the block starts"
           },
           "endTime": {
             "type": "string",
-            "description": "ISO-8601"
+            "description": "ISO-8601: when the block ends (exclusive)"
           },
           "status": {
-            "type": "string",
-            "enum": [
-              "none",
-              "free",
-              "interruptable",
-              "busy"
+            "description": "The availability the block sets",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityStatus"
+              }
             ]
           },
           "label": {
             "type": "string",
-            "nullable": true
+            "description": "A label shown on the block"
           }
         },
         "required": [
@@ -2468,32 +2752,48 @@
           "status"
         ]
       },
-      "OverrideBlockResponseDto": {
+      "CreateOverrideBlockRequest": {
+        "type": "object",
+        "properties": {
+          "overrideBlock": {
+            "description": "The block to create.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseOverrideBlock"
+              }
+            ]
+          }
+        },
+        "required": [
+          "overrideBlock"
+        ]
+      },
+      "OverrideBlock": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "The unique ID of the override block"
           },
           "startTime": {
             "type": "string",
-            "description": "ISO-8601"
+            "description": "An ISO-8601 formatted string indicating when the block starts"
           },
           "endTime": {
             "type": "string",
-            "description": "ISO-8601"
+            "description": "An ISO-8601 formatted string indicating when the block ends (exclusive)"
           },
           "status": {
-            "type": "string",
-            "enum": [
-              "none",
-              "free",
-              "interruptable",
-              "busy"
+            "description": "The availability the block sets",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityStatus"
+              }
             ]
           },
           "label": {
             "type": "string",
-            "nullable": true
+            "description": "A label shown on the block"
           }
         },
         "required": [
@@ -2503,21 +2803,83 @@
           "status"
         ]
       },
-      "UpdateOverrideBlockStatusDto": {
+      "CreateOverrideBlockResponse": {
+        "type": "object",
+        "properties": {
+          "overrideBlock": {
+            "description": "The created block.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OverrideBlock"
+              }
+            ]
+          }
+        },
+        "required": [
+          "overrideBlock"
+        ]
+      },
+      "ListOverrideBlocksResponse": {
+        "type": "object",
+        "properties": {
+          "overrideBlocks": {
+            "description": "The blocks overlapping the range.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverrideBlock"
+            }
+          }
+        },
+        "required": [
+          "overrideBlocks"
+        ]
+      },
+      "PartialOverrideBlock": {
         "type": "object",
         "properties": {
           "status": {
-            "type": "string",
-            "enum": [
-              "none",
-              "free",
-              "interruptable",
-              "busy"
+            "description": "The availability the block sets",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityStatus"
+              }
             ]
           }
         },
         "required": [
           "status"
+        ]
+      },
+      "UpdateOverrideBlockRequest": {
+        "type": "object",
+        "properties": {
+          "overrideBlock": {
+            "description": "The changes to the block.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialOverrideBlock"
+              }
+            ]
+          }
+        },
+        "required": [
+          "overrideBlock"
+        ]
+      },
+      "UpdateOverrideBlockResponse": {
+        "type": "object",
+        "properties": {
+          "overrideBlock": {
+            "description": "The block with the changes applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OverrideBlock"
+              }
+            ]
+          }
+        },
+        "required": [
+          "overrideBlock"
         ]
       },
       "OutboxSourceStatsDto": {

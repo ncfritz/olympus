@@ -3,13 +3,11 @@ import type { components } from "../../generated/api";
 
 export type EventDto = components["schemas"]["EventResponseDto"];
 export type CalendarStatus = components["schemas"]["CalendarStatusDto"];
-export type AvailabilityStatus =
-  components["schemas"]["EventOverrideResponseDto"]["status"];
+export type AvailabilityStatus = components["schemas"]["AvailabilityStatus"];
 export type FreeBusyStatus = EventDto["status"];
 export type EventOverrideDto =
   components["schemas"]["EventOverrideResponseDto"];
-export type OverrideBlockDto =
-  components["schemas"]["OverrideBlockResponseDto"];
+export type OverrideBlockDto = components["schemas"]["OverrideBlock"];
 export type CalendarAccountStatus =
   components["schemas"]["CalendarAccountStatusDto"];
 export type AvailableCalendar = components["schemas"]["AvailableCalendarDto"];
@@ -41,17 +39,17 @@ export async function fetchCalendars(): Promise<CalendarStatus[]> {
 }
 
 export async function fetchCalendarColors(): Promise<Record<string, string>> {
-  const { data } = await apiClient.GET("/calendar-colors");
-  return data ?? {};
+  const { data } = await apiClient.GET("/v1/calendar-colors");
+  return data?.calendarColors ?? {};
 }
 
 export async function setCalendarColor(
   source: string,
   color: string,
 ): Promise<void> {
-  const { error } = await apiClient.PUT("/calendar-colors/{source}", {
+  const { error } = await apiClient.PUT("/v1/calendar-color/{source}", {
     params: { path: { source } },
-    body: { color },
+    body: { calendarColor: { color } },
   });
   if (error)
     throw new Error(`Failed to set calendar color: ${JSON.stringify(error)}`);
@@ -249,10 +247,10 @@ export async function fetchOverrideBlocks(
   start: string,
   end: string,
 ): Promise<OverrideBlockDto[]> {
-  const { data } = await apiClient.GET("/overrides", {
+  const { data } = await apiClient.GET("/v1/override-blocks", {
     params: { query: { start, end } },
   });
-  return data ?? [];
+  return data?.overrideBlocks ?? [];
 }
 
 export async function fetchStatusTimeline(
@@ -265,7 +263,7 @@ export async function fetchStatusTimeline(
     timezone: string;
   },
 ): Promise<StatusTimeline> {
-  const { data } = await apiClient.GET("/freebusy/timeline", {
+  const { data } = await apiClient.GET("/v1/availability/timeline", {
     params: {
       query: {
         start,
@@ -277,7 +275,7 @@ export async function fetchStatusTimeline(
       },
     },
   });
-  return data ?? {};
+  return data?.timeline ?? {};
 }
 
 export async function setEventOverride(
@@ -310,33 +308,39 @@ export async function createOverrideBlock(block: {
   status: AvailabilityStatus;
   label?: string;
 }): Promise<OverrideBlockDto> {
-  const { data, error } = await apiClient.POST("/overrides", { body: block });
+  const { data, error } = await apiClient.POST("/v1/override-blocks", {
+    body: { overrideBlock: block },
+  });
   if (error || !data)
     throw new Error(
       `Failed to create override block: ${JSON.stringify(error)}`,
     );
-  return data;
+  return data.overrideBlock;
 }
 
 export async function updateOverrideBlock(
   id: string,
   status: AvailabilityStatus,
 ): Promise<OverrideBlockDto> {
-  const { data, error } = await apiClient.PUT("/overrides/{id}", {
-    params: { path: { id } },
-    body: { status },
-  });
+  const { data, error } = await apiClient.PUT(
+    "/v1/override-block/{overrideBlockId}",
+    {
+      params: { path: { overrideBlockId: id } },
+      body: { overrideBlock: { status } },
+    },
+  );
   if (error || !data)
     throw new Error(
       `Failed to update override block: ${JSON.stringify(error)}`,
     );
-  return data;
+  return data.overrideBlock;
 }
 
 export async function deleteOverrideBlock(id: string): Promise<void> {
-  const { error } = await apiClient.DELETE("/overrides/{id}", {
-    params: { path: { id } },
-  });
+  const { error } = await apiClient.DELETE(
+    "/v1/override-block/{overrideBlockId}",
+    { params: { path: { overrideBlockId: id } } },
+  );
   if (error)
     throw new Error(
       `Failed to delete override block: ${JSON.stringify(error)}`,

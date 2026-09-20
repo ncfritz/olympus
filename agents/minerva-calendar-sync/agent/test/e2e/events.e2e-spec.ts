@@ -1,7 +1,8 @@
-import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../../src/AppModule";
+import { configureApp } from "../../src/configureApp";
 import { CanonicalCalendarEvent } from "../../src/domain/canonicalEvent";
 import { EVENT_STORE, EventStore } from "../../src/store/eventStore";
 import { issueE2eAccessToken } from "./auth-fixtures";
@@ -49,13 +50,7 @@ describe("Events (e2e)", () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({
-        transform: true,
-        whitelist: true,
-        forbidNonWhitelisted: true,
-      }),
-    );
+    configureApp(app);
     await app.init();
 
     store = app.get(EVENT_STORE);

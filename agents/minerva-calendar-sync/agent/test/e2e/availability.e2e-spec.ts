@@ -1,7 +1,8 @@
-import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
 import { AppModule } from "../../src/AppModule";
+import { configureApp } from "../../src/configureApp";
 import { CanonicalCalendarEvent } from "../../src/domain/canonicalEvent";
 import { EVENT_STORE, EventStore } from "../../src/store/eventStore";
 import { issueE2eAccessToken } from "./auth-fixtures";
@@ -48,13 +49,7 @@ describe("Availability (e2e)", () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({
-        transform: true,
-        whitelist: true,
-        forbidNonWhitelisted: true,
-      }),
-    );
+    configureApp(app);
     await app.init();
 
     store = app.get(EVENT_STORE);
@@ -68,7 +63,7 @@ describe("Availability (e2e)", () => {
   it("rejects requests with no access token", () => {
     return request(app.getHttpServer())
       .get(
-        "/freebusy?start=2026-01-05T15:00:00.000Z&end=2026-01-05T16:00:00.000Z",
+        "/v1/availability/free-busy?start=2026-01-05T15:00:00.000Z&end=2026-01-05T16:00:00.000Z",
       )
       .expect(401);
   });
@@ -84,12 +79,12 @@ describe("Availability (e2e)", () => {
 
     const res = await request(app.getHttpServer())
       .get(
-        "/freebusy?start=2026-01-05T15:00:00.000Z&end=2026-01-05T16:00:00.000Z",
+        "/v1/availability/free-busy?start=2026-01-05T15:00:00.000Z&end=2026-01-05T16:00:00.000Z",
       )
       .set("Authorization", authHeader)
       .expect(200);
 
-    expect(res.body.map((s: { status: string }) => s.status)).toEqual([
+    expect(res.body.slots.map((s: { status: string }) => s.status)).toEqual([
       "free",
       "busy",
       "busy",
@@ -100,7 +95,7 @@ describe("Availability (e2e)", () => {
   it("rejects a range where start is not before end", () => {
     return request(app.getHttpServer())
       .get(
-        "/freebusy?start=2026-01-05T16:00:00.000Z&end=2026-01-05T15:00:00.000Z",
+        "/v1/availability/free-busy?start=2026-01-05T16:00:00.000Z&end=2026-01-05T15:00:00.000Z",
       )
       .set("Authorization", authHeader)
       .expect(400);
@@ -108,16 +103,16 @@ describe("Availability (e2e)", () => {
 
   it("rejects a missing query parameter", () => {
     return request(app.getHttpServer())
-      .get("/freebusy?start=2026-01-05T15:00:00.000Z")
+      .get("/v1/availability/free-busy?start=2026-01-05T15:00:00.000Z")
       .set("Authorization", authHeader)
       .expect(400);
   });
 
-  describe("/freebusy/timeline", () => {
+  describe("/v1/availability/timeline", () => {
     it("rejects requests with no access token", () => {
       return request(app.getHttpServer())
         .get(
-          "/freebusy/timeline?start=2026-01-05T15:00:00.000Z&end=2026-01-05T16:00:00.000Z",
+          "/v1/availability/timeline?start=2026-01-05T15:00:00.000Z&end=2026-01-05T16:00:00.000Z",
         )
         .expect(401);
     });
@@ -133,13 +128,13 @@ describe("Availability (e2e)", () => {
 
       const res = await request(app.getHttpServer())
         .get(
-          "/freebusy/timeline?start=2026-01-05T15:00:00.000Z&end=2026-01-05T16:00:00.000Z",
+          "/v1/availability/timeline?start=2026-01-05T15:00:00.000Z&end=2026-01-05T16:00:00.000Z",
         )
         .set("Authorization", authHeader)
         .expect(200);
 
       const startMinutes = Date.parse("2026-01-05T15:00:00.000Z") / 60_000;
-      expect(res.body).toEqual({
+      expect(res.body.timeline).toEqual({
         [startMinutes]: "free",
         [startMinutes + 15]: "busy",
         [startMinutes + 30]: "busy",
@@ -150,7 +145,7 @@ describe("Availability (e2e)", () => {
     it("rejects a range where start is not before end", () => {
       return request(app.getHttpServer())
         .get(
-          "/freebusy/timeline?start=2026-01-05T16:00:00.000Z&end=2026-01-05T15:00:00.000Z",
+          "/v1/availability/timeline?start=2026-01-05T16:00:00.000Z&end=2026-01-05T15:00:00.000Z",
         )
         .set("Authorization", authHeader)
         .expect(400);
@@ -167,12 +162,12 @@ describe("Availability (e2e)", () => {
 
       const res = await request(app.getHttpServer())
         .get(
-          "/freebusy/timeline?start=2026-01-05T06:00:00.000Z&end=2026-01-05T06:15:00.000Z",
+          "/v1/availability/timeline?start=2026-01-05T06:00:00.000Z&end=2026-01-05T06:15:00.000Z",
         )
         .set("Authorization", authHeader)
         .expect(200);
 
-      expect(Object.values(res.body)).toEqual(["none"]);
+      expect(Object.values(res.body.timeline)).toEqual(["none"]);
     });
 
     it("honors custom dayStart/dayEnd query params", async () => {
@@ -186,12 +181,12 @@ describe("Availability (e2e)", () => {
 
       const res = await request(app.getHttpServer())
         .get(
-          "/freebusy/timeline?start=2026-01-05T08:00:00.000Z&end=2026-01-05T08:15:00.000Z&dayStart=09:00&dayEnd=17:00",
+          "/v1/availability/timeline?start=2026-01-05T08:00:00.000Z&end=2026-01-05T08:15:00.000Z&dayStart=09:00&dayEnd=17:00",
         )
         .set("Authorization", authHeader)
         .expect(200);
 
-      expect(Object.values(res.body)).toEqual(["none"]);
+      expect(Object.values(res.body.timeline)).toEqual(["none"]);
     });
 
     it("shows a weekend synced meeting as none unless treatWeekendsAsWorking is set", async () => {
@@ -206,25 +201,25 @@ describe("Availability (e2e)", () => {
 
       const byDefault = await request(app.getHttpServer())
         .get(
-          "/freebusy/timeline?start=2026-01-03T15:00:00.000Z&end=2026-01-03T15:15:00.000Z",
+          "/v1/availability/timeline?start=2026-01-03T15:00:00.000Z&end=2026-01-03T15:15:00.000Z",
         )
         .set("Authorization", authHeader)
         .expect(200);
-      expect(Object.values(byDefault.body)).toEqual(["none"]);
+      expect(Object.values(byDefault.body.timeline)).toEqual(["none"]);
 
       const treatedAsWorking = await request(app.getHttpServer())
         .get(
-          "/freebusy/timeline?start=2026-01-03T15:00:00.000Z&end=2026-01-03T15:15:00.000Z&treatWeekendsAsWorking=true",
+          "/v1/availability/timeline?start=2026-01-03T15:00:00.000Z&end=2026-01-03T15:15:00.000Z&treatWeekendsAsWorking=true",
         )
         .set("Authorization", authHeader)
         .expect(200);
-      expect(Object.values(treatedAsWorking.body)).toEqual(["busy"]);
+      expect(Object.values(treatedAsWorking.body.timeline)).toEqual(["busy"]);
     });
 
     it("rejects a malformed dayStart", () => {
       return request(app.getHttpServer())
         .get(
-          "/freebusy/timeline?start=2026-01-05T15:00:00.000Z&end=2026-01-05T16:00:00.000Z&dayStart=not-a-time",
+          "/v1/availability/timeline?start=2026-01-05T15:00:00.000Z&end=2026-01-05T16:00:00.000Z&dayStart=not-a-time",
         )
         .set("Authorization", authHeader)
         .expect(400);
@@ -243,18 +238,18 @@ describe("Availability (e2e)", () => {
 
       const res = await request(app.getHttpServer())
         .get(
-          "/freebusy/timeline?start=2026-01-05T19:00:00.000Z&end=2026-01-05T19:15:00.000Z&timezone=America/Los_Angeles",
+          "/v1/availability/timeline?start=2026-01-05T19:00:00.000Z&end=2026-01-05T19:15:00.000Z&timezone=America/Los_Angeles",
         )
         .set("Authorization", authHeader)
         .expect(200);
 
-      expect(Object.values(res.body)).toEqual(["busy"]);
+      expect(Object.values(res.body.timeline)).toEqual(["busy"]);
     });
 
     it("rejects an unrecognized timezone", () => {
       return request(app.getHttpServer())
         .get(
-          "/freebusy/timeline?start=2026-01-05T15:00:00.000Z&end=2026-01-05T16:00:00.000Z&timezone=Not/AZone",
+          "/v1/availability/timeline?start=2026-01-05T15:00:00.000Z&end=2026-01-05T16:00:00.000Z&timezone=Not/AZone",
         )
         .set("Authorization", authHeader)
         .expect(400);
