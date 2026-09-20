@@ -65,8 +65,9 @@ const enabled = (handlers: Record<string, Type>): Type[] =>
     OlympusClientModule.forRootAsync({
       inject: [olympusConfig.KEY, runtimeConfig.KEY],
       useFactory: (olympus: OlympusConfigType, runtime: RuntimeConfigType) => ({
-        baseUrl: olympus.apiBaseUrl,
+        baseUrl: olympus.baseUrl,
         clientName: runtime.appName,
+        tls: olympus.tls,
       }),
     }),
     ToolsModule,

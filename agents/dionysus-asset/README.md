@@ -203,9 +203,20 @@ can be used:
 
 ##### Olympus
 
-| Variable     | Usage                                   | Default Value              |
-| ------------ | --------------------------------------- | -------------------------- |
-| API_BASE_URL | Base URL for SDK calls, including `/v1` | `http://localhost:3001/v1` |
+| Variable        | Usage                                                            | Default Value              |
+| --------------- | ---------------------------------------------------------------- | -------------------------- |
+| API_BASE_URL    | Base URL for SDK calls, including `/v1`                          | `http://localhost:3001/v1` |
+| API_CLIENT_CERT | The agent's certificate, from the Olympus Services CA (ADR 0018) | (none)                     |
+| API_CLIENT_KEY  | Its private key                                                  | (none)                     |
+| API_CA_CERT     | The chain that signed the API's server certificate               | (system)                   |
+
+This agent has two deployments and a certificate for each: the one on the
+Docker host reaches the API at `https://olympus-api:3443/v1`, and the one
+on the NAS, which is not on that network, at
+`https://api.olympus.internal.ncfritz.net:3443/v1`. Both certificates have
+`dionysus-asset-agent` as their common name, so the API sees one service;
+the organizational unit (`mac-mini`, `nas`) is what tells the deployments
+apart (ADR 0018).
 
 ##### NzbGeek/NzbGet
 

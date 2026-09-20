@@ -12,7 +12,7 @@ describe("readConfig", () => {
     expect(config.amqp.redactedUri).toBe(
       "amqp://admin:***@localhost:5672/%2Fdionysus",
     );
-    expect(config.olympus).toEqual({ apiBaseUrl: "http://localhost:3001/v1" });
+    expect(config.olympus).toEqual({ baseUrl: "http://localhost:3001/v1" });
     expect(config.media).toMatchObject({
       deploymentMode: "remote",
       transcodeCleanup: false,
@@ -24,6 +24,21 @@ describe("readConfig", () => {
       port: 6789,
     });
     expect(config.downloads.persistEvents).toBe(false);
+  });
+
+  it("presents its certificate on the API's mTLS listener", () => {
+    const { olympus } = readConfig({
+      API_BASE_URL: "https://olympus-api:3443/v1",
+      API_CLIENT_CERT: "/certs/dionysus-asset-agent.crt",
+      API_CLIENT_KEY: "/certs/dionysus-asset-agent.key",
+      API_CA_CERT: "/certs/services-ca.crt",
+    });
+    expect(olympus.baseUrl).toBe("https://olympus-api:3443/v1");
+    expect(olympus.tls).toEqual({
+      certificate: "/certs/dionysus-asset-agent.crt",
+      key: "/certs/dionysus-asset-agent.key",
+      ca: "/certs/services-ca.crt",
+    });
   });
 
   it("reads the media, download and content settings", () => {

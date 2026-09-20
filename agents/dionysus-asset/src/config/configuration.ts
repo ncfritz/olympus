@@ -1,9 +1,11 @@
 import {
   AmqpConfig,
+  ApiClientConfig,
   ConfigValidationError,
   EnvReader,
   LoggingConfig,
   readAmqpConfig,
+  readApiClientConfig,
   readLoggingConfig,
   readRuntimeConfig,
   RuntimeConfig,
@@ -12,10 +14,7 @@ import { ConfigType, registerAs } from "@nestjs/config";
 
 export { ConfigValidationError };
 
-export type OlympusConfig = {
-  /** Base URL for SDK calls, including `/v1`. */
-  apiBaseUrl: string;
-};
+export type OlympusConfig = ApiClientConfig;
 
 /** The media tools' executables. */
 export type ToolsConfig = {
@@ -109,9 +108,7 @@ export const readConfig = (
     runtime,
     amqp: readAmqpConfig(read, "/dionysus"),
     logging: readLoggingConfig(read, runtime.isProduction),
-    olympus: {
-      apiBaseUrl: read.string("API_BASE_URL", "http://localhost:3001/v1"),
-    },
+    olympus: readApiClientConfig(read, "http://localhost:3001/v1"),
     tools: {
       ffmpegPath: read.optional("FFMPEG_PATH"),
       ffprobePath: read.optional("FFPROBE_PATH"),
