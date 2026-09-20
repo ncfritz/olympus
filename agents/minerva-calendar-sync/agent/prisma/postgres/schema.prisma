@@ -1,0 +1,197 @@
+// Postgres counterpart of ../schema.prisma, kept in sync deliberately by
+// hand rather than generated — Prisma has no way to share model
+// definitions across two `datasource` blocks with different `provider`s in
+// one file. The two files' model bodies must stay identical (a unit test
+// in test/unit/domain asserts this); only the `datasource` block differs.
+// Selected explicitly via `--schema` (see the `*:postgres` scripts in
+// package.json) — the default `prisma/schema.prisma` (SQLite) is what dev
+// and the regular test suite use unless you opt into this one.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id             String   @id
+  source         String
+  uid            String
+  subject        String
+  sensitivity    String
+  importance     String
+  occurrenceType String
+  type           String
+  reminder       Boolean
+  response       String
+  startTime      DateTime
+  endTime        DateTime
+  duration       Int
+  allDay         Boolean
+  status         String
+  location       String?
+  cancelled      Boolean  @default(false)
+  organizerEmail String?
+  deleted        Boolean  @default(false)
+  recurrenceId   String?
+  // The provider's own recurrence description (RRULE lines for Google, a
+  // serialized Graph recurrence pattern for Microsoft) — recorded for
+  // reference only; see CanonicalCalendarEvent.recurrenceRule.
+  recurrenceRule String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([source, uid], name: "source_uid")
+  @@index([source, deleted])
+}
+
+// Per-calendar incremental sync cursor + push-channel bookkeeping.
+model SyncState {
+  calendarId        String    @id
+  syncToken         String?
+  channelId         String?
+  resourceId        String?
+  channelExpiration DateTime?
+  channelToken      String?
+  // When a *full* sync last completed — see CanonicalCalendarEvent's
+  // SyncState.lastFullSyncAt doc for why this is tracked separately from
+  // updatedAt (which also moves on every incremental sync).
+  lastFullSyncAt    DateTime?
+  updatedAt         DateTime  @updatedAt
+}
+
+// Per-meeting availability override, keyed by the canonical event id
+// ("source:uid") rather than a foreign key into Event — deliberately not a
+// Prisma relation, so this survives Event being fully wiped and re-synced.
+model EventOverride {
+  eventId   String   @id
+  status    String
+  updatedAt DateTime @updatedAt
+}
+
+// An independent block of time on the internal "Overrides" calendar (not
+// tied to any synced meeting) that overrides the computed availability
+// status for everything it covers.
+model OverrideBlock {
+  id        String   @id @default(cuid())
+  startTime DateTime
+  endTime   DateTime
+  status    String
+  label     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([startTime, endTime])
+}
+
+// A viewer-assigned display color for a calendar source, keyed by the
+// source label rather than a foreign key — sources include the "Overrides"
+// pseudo-calendar, which has no row in any configured-calendar table.
+model CalendarColor {
+  source    String   @id
+  color     String
+  updatedAt DateTime @updatedAt
+}
+
+// Whether a configured calendar's sync is paused, keyed by calendarId. A
+// missing row means enabled (the default) — so a newly configured calendar
+// works without needing a row created for it first.
+model CalendarEnablement {
+  calendarId String   @id
+  enabled    Boolean
+  updatedAt  DateTime @updatedAt
+}
+
+// A calendar added to sync at runtime (via the Sync page's discovery UI),
+// as opposed to one declared in the SYNCED_CALENDARS env var. SyncConfigService
+// merges both into one list; only rows here can be removed through the API —
+// env-declared calendars are edited by changing the env var itself.
+model SyncedCalendar {
+  calendarId   String   @id
+  provider     String
+  accountLabel String
+  source       String
+  enablePush   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+// Whether a calendar's events count toward the busy/free calculation
+// (GET /freebusy, /freebusy/timeline), keyed by calendarId. A missing row
+// means included — the default — so e.g. a shared holidays calendar can be
+// synced and kept visible without affecting computed availability, once
+// switched off here.
+model CalendarBusyInclusion {
+  calendarId     String   @id
+  includedInBusy Boolean
+  updatedAt      DateTime @updatedAt
+}
+
+// A completed attempt to sync one calendar — only "meaningful" ones are
+// recorded (something changed, it errored, or it was manually triggered),
+// not every background poll tick that found nothing new; see SyncEngine.
+// `source` is denormalized so a run stays readable after its calendar is
+// later removed. Pruned after SYNC_HISTORY_RETENTION_DAYS by SyncHistoryPruner.
+model SyncRun {
+  id           String               @id @default(cuid())
+  calendarId   String
+  source       String
+  type         String
+  trigger      String
+  status       String
+  startedAt    DateTime
+  finishedAt   DateTime
+  totalCount   Int
+  addedCount   Int
+  updatedCount Int
+  deletedCount Int
+  errorMessage String?
+  changes      SyncRunEventChange[]
+
+  @@index([calendarId, startedAt])
+  @@index([startedAt])
+}
+
+// One event actually added, updated, or deleted by a SyncRun — an event a
+// full resync re-fetches with no value changes produces no row here (see
+// PrismaEventStore.upsertEvent's diff-before-write).
+model SyncRunEventChange {
+  id        String    @id @default(cuid())
+  syncRunId String
+  action    String
+  eventId   String
+  subject   String
+  startTime DateTime?
+  syncRun   SyncRun   @relation(fields: [syncRunId], references: [id], onDelete: Cascade)
+
+  @@index([syncRunId])
+}
+
+// A durable record of one local event change to publish to the external
+// (Hasura-backed) system over RabbitMQ — see OutboxDispatcherService.
+// Written in the same transaction as the Event row it describes (see
+// PrismaEventStore), so a crash or broker outage between the two delays a
+// change but never loses it. `payload` is a full CanonicalCalendarEvent
+// snapshot taken at write time, not a pointer back to Event — that keeps
+// each row an immutable fact the dispatcher can send as-is, with no risk of
+// racing a later write to the same event.
+model OutboxEvent {
+  id          String    @id @default(cuid())
+  eventId     String
+  // Denormalized from the Event this row describes (same reasoning as
+  // SyncRun.source above) — lets per-calendar publish stats group directly
+  // on this table without a join back to Event.
+  source      String
+  action      String
+  payload     String
+  status      String    @default("pending")
+  attempts    Int       @default(0)
+  lastError   String?
+  availableAt DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  sentAt      DateTime?
+
+  @@index([status, availableAt])
+  @@index([source, status])
+}

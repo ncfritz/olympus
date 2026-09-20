@@ -1,0 +1,104 @@
+html,
+body {
+  height: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  /* Matches antd's colorBgContainer (Table/Card background) — see
+     AppLayout's Content — rather than its colorBgLayout default. */
+  background: #ffffff;
+}
+
+/* Set by ThemeModeContext on <html> — covers the sliver of body background
+   visible outside the antd Layout (e.g. before it mounts) so there's no
+   light flash around a dark page. */
+html[data-theme="dark"] body {
+  background: #141414;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.fc-event {
+  margin: 3px;
+  border-radius: 6px;
+  /* Without this, the left status flag (an absolutely-positioned child
+     inset to the event's edges) keeps square corners that poke out past
+     the now-rounded event box. With it, the flag is also clipped to the
+     rounded corners below, rather than needing its own border-radius. */
+  overflow: hidden;
+  /* The flag is meant to read as the card's own left edge, not a bar
+     floating inside it — drop the left border so nothing but the flag's
+     own color shows there. FullCalendar's default `.fc-event` CSS is what
+     sets border-width (the inline style it renders only sets border-color),
+     and its injected stylesheet isn't guaranteed to land before this one in
+     the DOM, so !important guarantees this side always wins regardless of
+     injection order. */
+  border-left-width: 0 !important;
+}
+
+/* The per-15-minute status timeline strip (week/day views only — see
+   EventsCalendarView.tsx and lib/statusTimeline.ts; month view doesn't get
+   one, see EventsCalendarView's comment on why). FullCalendar renders a
+   "background" event as a rect filling the day column's full width;
+   constraining it keeps it left-anchored (background events start flush
+   left same as foreground ones) as a solid bar instead. Margin and
+   border-radius are inherited from the general ".fc-event" rule above (3px
+   margin, 6px radius) — zeroed here so this reads as one continuous flush
+   bar rather than a rounded pill inset from the column's edge. Opacity is
+   below 1 so the grid lines under it stay visible. The compound selector
+   (not just .status-timeline-event) already outranks both that single-class
+   ".fc-event" rule and FullCalendar's own same-specificity ".fc-bg-event"
+   one, regardless of which stylesheet lands later in the DOM. 12px here is
+   day view's width — day has no more specific override below, so it falls
+   through to this base rule. */
+.fc-bg-event.status-timeline-event {
+  width: 12px;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  opacity: 0.5;
+}
+
+/* Shifts real events 12px right (matching day view's strip width above) so
+   it's never covered — foreground event harnesses live in a sibling
+   container from background events, so this doesn't touch the strip
+   itself. FullCalendar's own ".fc-direction-ltr .fc-timegrid-col-events"
+   rule sets a 2px left margin at higher specificity (two classes vs. one
+   here), so !important is what actually wins here, not selector order. */
+.fc-timegrid-col-events {
+  margin-left: 12px !important;
+}
+
+/* Week view gets a narrower 8px strip than day's 12px. ".fc-timeGridWeek-
+   view" is FullCalendar's own class for the current view's root, scoping
+   this to week only; its extra ancestor class is what outranks the base
+   12px rules above, not rule order (and ties FullCalendar's own
+   same-specificity rule on the second selector, so !important still
+   applies there too). */
+.fc-timeGridWeek-view .fc-bg-event.status-timeline-event {
+  width: 8px;
+}
+
+.fc-timeGridWeek-view .fc-timegrid-col-events {
+  margin-left: 8px !important;
+}
+
+/* Week/day view draws the separator ring around side-by-side overlapping
+   events, and the drag-select mirror, as a 1px box-shadow keyed off
+   --fc-page-bg-color (FullCalendar's own rule, in its injected stylesheet)
+   — that variable is also the real background for the "+more" popover and
+   the sticky column header (see EventsCalendarView.tsx), so it can't just
+   be repointed at the border color globally. Overriding the ring's
+   box-shadow here instead keeps it matching the grid border specifically,
+   without affecting those other uses; !important for the same
+   injection-order reason as the other overrides in this file. */
+.fc-timegrid-event-harness-inset .fc-timegrid-event,
+.fc-timegrid-event.fc-event-mirror,
+.fc-timegrid-more-link {
+  box-shadow: 0 0 0 1px var(--fc-border-color) !important;
+}
