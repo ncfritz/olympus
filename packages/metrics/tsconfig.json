@@ -1,0 +1,10 @@
+{
+  "extends": "@ncfritz/olympus-config/tsconfig/library.json",
+  "compilerOptions": {
+    // The conventions run in browsers (site) as well as Node; only the
+    // prometheus entry point needs Node.
+    "lib": ["ES2023", "DOM"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext"
+  }
+}
