@@ -136,7 +136,7 @@ export class DownloadUpdateHandler {
             await this.failDownload(nzbId, "failed");
 
             return;
-          } else if (mediaFilenames?.length > 0) {
+          } else if (mediaFilenames.length > 1) {
             this.logger.warn(
               `Multiple media filenames found, this should not happen: ${JSON.stringify(mediaFilenames)}`,
             );

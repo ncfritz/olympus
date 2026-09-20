@@ -2,6 +2,7 @@ import type { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { Logger } from "@nestjs/common";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MediaApi } from "../../../src/api/MediaApi";
 import type {
@@ -113,6 +114,25 @@ describe("DownloadUpdateHandler", () => {
       { persistent: true },
     );
     expect(nzbGet.deleteHistory).toHaveBeenCalledWith(17);
+  });
+
+  it("warns about extra media files only when there are some", async () => {
+    const warn = vi.spyOn(Logger.prototype, "warn");
+    const multiple = () =>
+      warn.mock.calls.filter(([message]) =>
+        String(message).startsWith("Multiple media filenames"),
+      );
+    fs.writeFileSync(`${root}/complete/movie.mkv`, "video");
+
+    await handler().handle(postProcess("SUCCESS/ALL", `${root}/complete`));
+    expect(multiple()).toHaveLength(0);
+
+    fs.writeFileSync(`${root}/complete/a.mkv`, "video");
+    fs.writeFileSync(`${root}/complete/b.mp4`, "video");
+    await handler().handle(postProcess("SUCCESS/ALL", `${root}/complete`));
+    expect(multiple()).toHaveLength(1);
+
+    warn.mockRestore();
   });
 
   it("fails the download and workflow when no media file arrived", async () => {
