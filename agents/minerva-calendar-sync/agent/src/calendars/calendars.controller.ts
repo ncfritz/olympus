@@ -1,4 +1,17 @@
-import { Body, ConflictException, Controller, Delete, Get, HttpCode, Inject, Logger, NotFoundException, Param, Post, Put } from "@nestjs/common";
+import {
+  Body,
+  ConflictException,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Inject,
+  Logger,
+  NotFoundException,
+  Param,
+  Post,
+  Put,
+} from "@nestjs/common";
 import {
   ApiAcceptedResponse,
   ApiBearerAuth,
@@ -11,10 +24,20 @@ import {
 } from "@nestjs/swagger";
 import { CalendarAuthService } from "../calendar-auth/calendar-auth.service";
 import { CanonicalCalendarEvent } from "../domain/canonical-event";
-import { CALENDAR_BUSY_INCLUSION_STORE, CalendarBusyInclusionStore } from "../store/calendar-busy-inclusion-store";
-import { CALENDAR_ENABLEMENT_STORE, CalendarEnablementStore } from "../store/calendar-enablement-store";
+import {
+  CALENDAR_BUSY_INCLUSION_STORE,
+  CalendarBusyInclusionStore,
+} from "../store/calendar-busy-inclusion-store";
+import {
+  CALENDAR_ENABLEMENT_STORE,
+  CalendarEnablementStore,
+} from "../store/calendar-enablement-store";
 import { EVENT_STORE, EventStore } from "../store/event-store";
-import { OUTBOX_ENABLED, OUTBOX_STORE, OutboxStore } from "../store/outbox-store";
+import {
+  OUTBOX_ENABLED,
+  OUTBOX_STORE,
+  OutboxStore,
+} from "../store/outbox-store";
 import { SyncConfigService } from "../sync/sync-config.service";
 import { SyncEngine } from "../sync/sync-engine";
 import { SyncedCalendarConfig } from "../sync/synced-calendar-config";
@@ -39,8 +62,10 @@ export class CalendarsController {
   constructor(
     private readonly config: SyncConfigService,
     @Inject(EVENT_STORE) private readonly store: EventStore,
-    @Inject(CALENDAR_ENABLEMENT_STORE) private readonly enablement: CalendarEnablementStore,
-    @Inject(CALENDAR_BUSY_INCLUSION_STORE) private readonly busyInclusion: CalendarBusyInclusionStore,
+    @Inject(CALENDAR_ENABLEMENT_STORE)
+    private readonly enablement: CalendarEnablementStore,
+    @Inject(CALENDAR_BUSY_INCLUSION_STORE)
+    private readonly busyInclusion: CalendarBusyInclusionStore,
     @Inject(OUTBOX_STORE) private readonly outbox: OutboxStore,
     @Inject(OUTBOX_ENABLED) private readonly outboxEnabled: boolean,
     private readonly engine: SyncEngine,
@@ -71,12 +96,18 @@ export class CalendarsController {
   }
 
   @Post()
-  @ApiCreatedResponse({ type: CalendarStatusDto, description: "The newly added calendar — an initial sync is kicked off in the background" })
+  @ApiCreatedResponse({
+    type: CalendarStatusDto,
+    description:
+      "The newly added calendar — an initial sync is kicked off in the background",
+  })
   @ApiConflictResponse({ description: "This calendar is already being synced" })
   @ApiNotFoundResponse({ description: "That account isn't connected yet" })
   async add(@Body() body: AddCalendarDto): Promise<CalendarStatusDto> {
     if (!this.calendarAuth.isConnected(body.accountLabel, body.provider)) {
-      throw new NotFoundException(`Account "${body.accountLabel}" (${body.provider}) isn't connected yet`);
+      throw new NotFoundException(
+        `Account "${body.accountLabel}" (${body.provider}) isn't connected yet`,
+      );
     }
 
     const calendar: SyncedCalendarConfig = {
@@ -117,7 +148,10 @@ export class CalendarsController {
   @HttpCode(204)
   @ApiNoContentResponse()
   @ApiNotFoundResponse({ description: "No configured calendar with that id" })
-  async setEnabled(@Param("calendarId") calendarId: string, @Body() body: SetCalendarEnabledDto): Promise<void> {
+  async setEnabled(
+    @Param("calendarId") calendarId: string,
+    @Body() body: SetCalendarEnabledDto,
+  ): Promise<void> {
     await this.assertConfigured(calendarId);
     await this.enablement.setEnabled(calendarId, body.enabled);
   }
@@ -136,7 +170,9 @@ export class CalendarsController {
 
   @Post(":calendarId/sync")
   @HttpCode(202)
-  @ApiAcceptedResponse({ description: "Sync triggered — runs in the background" })
+  @ApiAcceptedResponse({
+    description: "Sync triggered — runs in the background",
+  })
   @ApiNotFoundResponse({ description: "No configured calendar with that id" })
   async triggerSync(@Param("calendarId") calendarId: string): Promise<void> {
     const calendar = await this.assertConfigured(calendarId);
@@ -162,11 +198,17 @@ export class CalendarsController {
   @Post(":calendarId/backfill")
   @ApiOkResponse({ type: BackfillResultDto })
   @ApiNotFoundResponse({ description: "No configured calendar with that id" })
-  @ApiConflictResponse({ description: "Outbound sync isn't configured (RABBITMQ_URL unset)" })
-  async backfill(@Param("calendarId") calendarId: string): Promise<BackfillResultDto> {
+  @ApiConflictResponse({
+    description: "Outbound sync isn't configured (RABBITMQ_URL unset)",
+  })
+  async backfill(
+    @Param("calendarId") calendarId: string,
+  ): Promise<BackfillResultDto> {
     const calendar = await this.assertConfigured(calendarId);
     if (!this.outboxEnabled) {
-      throw new ConflictException("Outbound sync isn't configured — set RABBITMQ_URL to enable it");
+      throw new ConflictException(
+        "Outbound sync isn't configured — set RABBITMQ_URL to enable it",
+      );
     }
 
     let cursor: string | undefined;
@@ -189,8 +231,12 @@ export class CalendarsController {
     return { enqueued, truncated: enqueued >= BACKFILL_LIMIT };
   }
 
-  private async assertConfigured(calendarId: string): Promise<SyncedCalendarConfig> {
-    const calendar = (await this.config.getAll()).find((c) => c.calendarId === calendarId);
+  private async assertConfigured(
+    calendarId: string,
+  ): Promise<SyncedCalendarConfig> {
+    const calendar = (await this.config.getAll()).find(
+      (c) => c.calendarId === calendarId,
+    );
     if (!calendar) {
       throw new NotFoundException(`No configured calendar "${calendarId}"`);
     }

@@ -1,6 +1,22 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Put } from "@nestjs/common";
-import { ApiBearerAuth, ApiNoContentResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import { CALENDAR_COLOR_STORE, CalendarColorStore } from "../store/calendar-color-store";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  Put,
+} from "@nestjs/common";
+import {
+  ApiBearerAuth,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiTags,
+} from "@nestjs/swagger";
+import {
+  CALENDAR_COLOR_STORE,
+  CalendarColorStore,
+} from "../store/calendar-color-store";
 import { SetCalendarColorDto } from "./dto/set-calendar-color.dto";
 
 /**

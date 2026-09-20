@@ -26,14 +26,21 @@ export function findFreePort(): Promise<number> {
  * `state` against the whole callback URL — use this directly;
  * `waitForAuthorizationCode` below is the simpler `code`-only shorthand.
  */
-export function waitForAuthorizationCallback(redirectUri: string, timeoutMs?: number): Promise<URL> {
+export function waitForAuthorizationCallback(
+  redirectUri: string,
+  timeoutMs?: number,
+): Promise<URL> {
   const port = Number(new URL(redirectUri).port);
 
   return new Promise((resolve, reject) => {
     const timer = timeoutMs
       ? setTimeout(() => {
           server.close();
-          reject(new Error(`Timed out waiting for the OAuth redirect on ${redirectUri}`));
+          reject(
+            new Error(
+              `Timed out waiting for the OAuth redirect on ${redirectUri}`,
+            ),
+          );
         }, timeoutMs)
       : undefined;
 
@@ -44,7 +51,9 @@ export function waitForAuthorizationCallback(redirectUri: string, timeoutMs?: nu
 
       res.setHeader("Content-Type", "text/html");
       if (error) {
-        res.end(`<html><body>Authorization failed: ${error}. You can close this window.</body></html>`);
+        res.end(
+          `<html><body>Authorization failed: ${error}. You can close this window.</body></html>`,
+        );
         clearTimeout(timer);
         server.close();
         reject(new Error(`Authorization server returned an error: ${error}`));
@@ -55,7 +64,9 @@ export function waitForAuthorizationCallback(redirectUri: string, timeoutMs?: nu
         return;
       }
 
-      res.end("<html><body>Authorized — you can close this window and return to Minerva.</body></html>");
+      res.end(
+        "<html><body>Authorized — you can close this window and return to Minerva.</body></html>",
+      );
       clearTimeout(timer);
       server.close();
       resolve(url);
@@ -70,7 +81,10 @@ export function waitForAuthorizationCallback(redirectUri: string, timeoutMs?: nu
 }
 
 /** Shorthand for callers that only need the `code` query param (e.g. google-auth-library's own `getToken`). */
-export async function waitForAuthorizationCode(redirectUri: string, timeoutMs?: number): Promise<string> {
+export async function waitForAuthorizationCode(
+  redirectUri: string,
+  timeoutMs?: number,
+): Promise<string> {
   const url = await waitForAuthorizationCallback(redirectUri, timeoutMs);
   const code = url.searchParams.get("code");
   if (!code) {

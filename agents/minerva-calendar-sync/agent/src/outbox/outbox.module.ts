@@ -31,7 +31,12 @@ export class OutboxModule {
             inject: [ConfigService],
             useFactory: (config: ConfigService) => ({
               uri: config.getOrThrow<string>("RABBITMQ_URL"),
-              exchanges: [{ name: config.get("RABBITMQ_EXCHANGE", DEFAULT_EXCHANGE), type: "topic" }],
+              exchanges: [
+                {
+                  name: config.get("RABBITMQ_EXCHANGE", DEFAULT_EXCHANGE),
+                  type: "topic",
+                },
+              ],
               // Don't block Nest bootstrap if the broker happens to be
               // unreachable right when this process starts — the underlying
               // amqp-connection-manager keeps retrying in the background,

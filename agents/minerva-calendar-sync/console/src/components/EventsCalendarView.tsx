@@ -231,7 +231,10 @@ export function EventsCalendarView({
         selectMirror
         unselectAuto
         datesSet={(arg: DatesSetArg) => {
-          const range = { start: arg.start.toISOString(), end: arg.end.toISOString() };
+          const range = {
+            start: arg.start.toISOString(),
+            end: arg.end.toISOString(),
+          };
           setVisibleRange(range);
           onVisibleRangeChange?.(range);
         }}
@@ -273,7 +276,9 @@ export function EventsCalendarView({
             // time to find the date, rolling it back a day in any timezone
             // behind UTC. Slicing to the date-only portion feeds FullCalendar
             // an unambiguous calendar date instead of an instant to convert.
-            start: entry.allDay ? entry.startTime.slice(0, 10) : entry.startTime,
+            start: entry.allDay
+              ? entry.startTime.slice(0, 10)
+              : entry.startTime,
             end: entry.allDay ? entry.endTime.slice(0, 10) : entry.endTime,
             allDay: entry.allDay,
             // Same body regardless of status (color comes from the flag bar

@@ -26,5 +26,8 @@ describe("PrismaEventStore (Postgres)", () => {
     await prisma.onModuleDestroy();
   });
 
-  testPrismaEventStoreContract(() => store, () => prisma);
+  testPrismaEventStoreContract(
+    () => store,
+    () => prisma,
+  );
 });

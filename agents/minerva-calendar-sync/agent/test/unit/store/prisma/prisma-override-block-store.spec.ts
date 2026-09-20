@@ -15,7 +15,11 @@ describe("PrismaOverrideBlockStore", () => {
   beforeAll(() => {
     tempDir = mkdtempSync(join(tmpdir(), "minerva-test-"));
     process.env.DATABASE_URL = `file:${join(tempDir, "test.db")}`;
-    execSync("npx prisma db push --skip-generate", { cwd: API_ROOT, env: process.env, stdio: "pipe" });
+    execSync("npx prisma db push --skip-generate", {
+      cwd: API_ROOT,
+      env: process.env,
+      stdio: "pipe",
+    });
   }, 30000);
 
   afterAll(() => {
@@ -63,7 +67,10 @@ describe("PrismaOverrideBlockStore", () => {
       label: null,
     });
 
-    const result = await store.listOverlapping("2026-01-05T15:15:00.000Z", "2026-01-05T16:00:00.000Z");
+    const result = await store.listOverlapping(
+      "2026-01-05T15:15:00.000Z",
+      "2026-01-05T16:00:00.000Z",
+    );
     expect(result.map((b) => b.id)).toEqual([overlapping.id]);
   });
 
@@ -75,7 +82,10 @@ describe("PrismaOverrideBlockStore", () => {
       label: null,
     });
 
-    const result = await store.listOverlapping("2026-01-05T15:00:00.000Z", "2026-01-05T16:00:00.000Z");
+    const result = await store.listOverlapping(
+      "2026-01-05T15:00:00.000Z",
+      "2026-01-05T16:00:00.000Z",
+    );
     expect(result).toEqual([]);
   });
 
@@ -88,7 +98,12 @@ describe("PrismaOverrideBlockStore", () => {
     });
 
     await store.delete(block.id);
-    expect(await store.listOverlapping("2026-01-01T00:00:00.000Z", "2026-01-06T00:00:00.000Z")).toEqual([]);
+    expect(
+      await store.listOverlapping(
+        "2026-01-01T00:00:00.000Z",
+        "2026-01-06T00:00:00.000Z",
+      ),
+    ).toEqual([]);
   });
 
   it("deleting an unknown id is a harmless no-op", async () => {
@@ -104,7 +119,11 @@ describe("PrismaOverrideBlockStore", () => {
     });
 
     const updated = await store.updateStatus(block.id, "free");
-    expect(updated).toMatchObject({ id: block.id, status: "free", label: "Focus time" });
+    expect(updated).toMatchObject({
+      id: block.id,
+      status: "free",
+      label: "Focus time",
+    });
   });
 
   it("updateStatus returns null for an unknown id", async () => {

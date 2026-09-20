@@ -71,7 +71,9 @@ describe("SyncConfigService", () => {
     it("rejects a calendarId that's already synced", async () => {
       const { service } = makeService([CALENDAR]);
 
-      await expect(service.add({ ...CALENDAR, source: "Duplicate" })).rejects.toThrow(ConflictException);
+      await expect(
+        service.add({ ...CALENDAR, source: "Duplicate" }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 
@@ -87,7 +89,9 @@ describe("SyncConfigService", () => {
     it("404s for a calendarId that isn't configured at all", async () => {
       const { service } = makeService();
 
-      await expect(service.remove("unknown")).rejects.toThrow(NotFoundException);
+      await expect(service.remove("unknown")).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

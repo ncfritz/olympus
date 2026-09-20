@@ -33,9 +33,20 @@ const STATUS_TAG: Record<string, { color: string; label: string }> = {
   error: { color: "red", label: "Error" },
 };
 
-const TYPE_LABEL: Record<string, string> = { full: "Full", incremental: "Incremental" };
-const TRIGGER_LABEL: Record<string, string> = { manual: "Manual", poll: "Poll", webhook: "Push" };
-const ACTION_TAG: Record<string, string> = { added: "green", updated: "blue", deleted: "red" };
+const TYPE_LABEL: Record<string, string> = {
+  full: "Full",
+  incremental: "Incremental",
+};
+const TRIGGER_LABEL: Record<string, string> = {
+  manual: "Manual",
+  poll: "Poll",
+  webhook: "Push",
+};
+const ACTION_TAG: Record<string, string> = {
+  added: "green",
+  updated: "blue",
+  deleted: "red",
+};
 
 /** Column header filter options (antd's {text, value} shape) for the Type/Trigger/Status columns. */
 const TYPE_FILTERS = [
@@ -80,9 +91,12 @@ export function SyncHistoryPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const calendarId = searchParams.get("calendarId") ?? undefined;
-  const type = (searchParams.get("type") ?? undefined) as SyncRun["type"] | undefined;
-  const trigger = (searchParams.get("trigger") ?? undefined) as SyncRun["trigger"] | undefined;
-  const status = (searchParams.get("status") ?? undefined) as SyncRun["status"] | undefined;
+  const type = (searchParams.get("type") ?? undefined) as
+    SyncRun["type"] | undefined;
+  const trigger = (searchParams.get("trigger") ?? undefined) as
+    SyncRun["trigger"] | undefined;
+  const status = (searchParams.get("status") ?? undefined) as
+    SyncRun["status"] | undefined;
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
   const { data: calendars = [] } = useSWR("/calendars", fetchCalendars);
@@ -106,7 +120,10 @@ export function SyncHistoryPage() {
 
   const filter: SyncRunFilterParams = { calendarId, type, trigger, status };
 
-  const handleTableChange: NonNullable<TableProps<SyncRun>["onChange"]> = (_pagination, filters) => {
+  const handleTableChange: NonNullable<TableProps<SyncRun>["onChange"]> = (
+    _pagination,
+    filters,
+  ) => {
     const params = new URLSearchParams(searchParams.toString());
     const applyFilter = (key: FilterKey) => {
       const value = filters[key]?.[0];
@@ -127,7 +144,12 @@ export function SyncHistoryPage() {
         title="Sync History"
         style={{ borderRadius: 0 }}
         extra={
-          <Button icon={<ReloadOutlined />} onClick={() => mutate()} loading={isLoading} aria-label="Refresh" />
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => mutate()}
+            loading={isLoading}
+            aria-label="Refresh"
+          />
         }
       >
         <Table<SyncRun>
@@ -216,7 +238,10 @@ export function SyncHistoryPage() {
               filteredValue: status ? [status] : null,
               filterMultiple: false,
               render: (value: string) => {
-                const tag = STATUS_TAG[value] ?? { color: "default", label: value };
+                const tag = STATUS_TAG[value] ?? {
+                  color: "default",
+                  label: value,
+                };
                 return <Tag color={tag.color}>{tag.label}</Tag>;
               },
             },
@@ -226,7 +251,9 @@ export function SyncHistoryPage() {
               title: "Duration",
               key: "duration",
               render: (_, run) => (
-                <span style={{ fontFamily: "monospace" }}>{formatDuration(run.startedAt, run.finishedAt)}</span>
+                <span style={{ fontFamily: "monospace" }}>
+                  {formatDuration(run.startedAt, run.finishedAt)}
+                </span>
               ),
             },
             {
@@ -260,7 +287,10 @@ export function SyncHistoryPage() {
           ]}
         />
       </Card>
-      <SyncRunDetailDrawer runId={selectedRunId} onClose={() => setSelectedRunId(null)} />
+      <SyncRunDetailDrawer
+        runId={selectedRunId}
+        onClose={() => setSelectedRunId(null)}
+      />
     </AppLayout>
   );
 }
@@ -278,23 +308,40 @@ function SyncRunDetailDrawer({
   );
 
   return (
-    <Drawer title="Sync run details" open={runId !== null} onClose={onClose} size="large">
+    <Drawer
+      title="Sync run details"
+      open={runId !== null}
+      onClose={onClose}
+      size="large"
+    >
       {!isLoading && run && (
         <>
           <Descriptions column={2} size="small" bordered>
             <Descriptions.Item label="Calendar">{run.source}</Descriptions.Item>
-            <Descriptions.Item label="Type">{TYPE_LABEL[run.type] ?? run.type}</Descriptions.Item>
-            <Descriptions.Item label="Trigger">{TRIGGER_LABEL[run.trigger] ?? run.trigger}</Descriptions.Item>
+            <Descriptions.Item label="Type">
+              {TYPE_LABEL[run.type] ?? run.type}
+            </Descriptions.Item>
+            <Descriptions.Item label="Trigger">
+              {TRIGGER_LABEL[run.trigger] ?? run.trigger}
+            </Descriptions.Item>
             <Descriptions.Item label="Status">
-              <Tag color={(STATUS_TAG[run.status] ?? { color: "default" }).color}>
+              <Tag
+                color={(STATUS_TAG[run.status] ?? { color: "default" }).color}
+              >
                 {(STATUS_TAG[run.status] ?? { label: run.status }).label}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Started">{new Date(run.startedAt).toLocaleString()}</Descriptions.Item>
-            <Descriptions.Item label="Finished">{new Date(run.finishedAt).toLocaleString()}</Descriptions.Item>
+            <Descriptions.Item label="Started">
+              {new Date(run.startedAt).toLocaleString()}
+            </Descriptions.Item>
+            <Descriptions.Item label="Finished">
+              {new Date(run.finishedAt).toLocaleString()}
+            </Descriptions.Item>
             {run.errorMessage && (
               <Descriptions.Item label="Error" span={2}>
-                <Typography.Text type="danger">{run.errorMessage}</Typography.Text>
+                <Typography.Text type="danger">
+                  {run.errorMessage}
+                </Typography.Text>
               </Descriptions.Item>
             )}
           </Descriptions>
@@ -311,13 +358,16 @@ function SyncRunDetailDrawer({
                 title: "Action",
                 dataIndex: "action",
                 width: 100,
-                render: (value: string) => <Tag color={ACTION_TAG[value] ?? "default"}>{value}</Tag>,
+                render: (value: string) => (
+                  <Tag color={ACTION_TAG[value] ?? "default"}>{value}</Tag>
+                ),
               },
               { title: "Subject", dataIndex: "subject" },
               {
                 title: "Start time",
                 dataIndex: "startTime",
-                render: (value: string | null) => (value ? new Date(value).toLocaleString() : "—"),
+                render: (value: string | null) =>
+                  value ? new Date(value).toLocaleString() : "—",
               },
             ]}
           />

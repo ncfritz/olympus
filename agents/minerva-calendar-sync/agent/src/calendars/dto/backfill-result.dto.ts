@@ -1,7 +1,10 @@
 import { ApiProperty } from "@nestjs/swagger";
 
 export class BackfillResultDto {
-  @ApiProperty({ description: "How many of this calendar's events were enqueued for redelivery to the outbound broker" })
+  @ApiProperty({
+    description:
+      "How many of this calendar's events were enqueued for redelivery to the outbound broker",
+  })
   enqueued: number;
 
   @ApiProperty({

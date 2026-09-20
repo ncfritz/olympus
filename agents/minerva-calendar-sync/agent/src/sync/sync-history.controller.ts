@@ -1,8 +1,24 @@
-import { Controller, Get, Inject, NotFoundException, Param, Query } from "@nestjs/common";
-import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import {
+  Controller,
+  Get,
+  Inject,
+  NotFoundException,
+  Param,
+  Query,
+} from "@nestjs/common";
+import {
+  ApiBearerAuth,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from "@nestjs/swagger";
 import { SYNC_RUN_STORE, SyncRunStore } from "../store/sync-run-store";
 import { ListSyncRunsQueryDto } from "./dto/list-sync-runs-query.dto";
-import { SyncRunDailyStatDto, SyncRunDetailDto, SyncRunDto } from "./dto/sync-run.dto";
+import {
+  SyncRunDailyStatDto,
+  SyncRunDetailDto,
+  SyncRunDto,
+} from "./dto/sync-run.dto";
 import { SyncRunStatsQueryDto } from "./dto/sync-run-stats-query.dto";
 
 const DEFAULT_STATS_WINDOW_DAYS = 30;
@@ -11,7 +27,9 @@ const DEFAULT_STATS_WINDOW_DAYS = 30;
 @ApiTags("sync-runs")
 @Controller("sync-runs")
 export class SyncHistoryController {
-  constructor(@Inject(SYNC_RUN_STORE) private readonly syncRuns: SyncRunStore) {}
+  constructor(
+    @Inject(SYNC_RUN_STORE) private readonly syncRuns: SyncRunStore,
+  ) {}
 
   @Get()
   @ApiOkResponse({ type: SyncRunDto, isArray: true })
@@ -26,7 +44,9 @@ export class SyncHistoryController {
    */
   @Get("stats")
   @ApiOkResponse({ type: SyncRunDailyStatDto, isArray: true })
-  dailyStats(@Query() query: SyncRunStatsQueryDto): Promise<SyncRunDailyStatDto[]> {
+  dailyStats(
+    @Query() query: SyncRunStatsQueryDto,
+  ): Promise<SyncRunDailyStatDto[]> {
     const days = query.days ?? DEFAULT_STATS_WINDOW_DAYS;
     const since = new Date();
     since.setUTCDate(since.getUTCDate() - (days - 1));

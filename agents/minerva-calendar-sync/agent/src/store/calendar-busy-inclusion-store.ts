@@ -11,4 +11,6 @@ export interface CalendarBusyInclusionStore {
 }
 
 /** Nest DI token — inject with `@Inject(CALENDAR_BUSY_INCLUSION_STORE)`. */
-export const CALENDAR_BUSY_INCLUSION_STORE = Symbol("CALENDAR_BUSY_INCLUSION_STORE");
+export const CALENDAR_BUSY_INCLUSION_STORE = Symbol(
+  "CALENDAR_BUSY_INCLUSION_STORE",
+);

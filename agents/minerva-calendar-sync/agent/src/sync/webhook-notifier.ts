@@ -35,7 +35,10 @@ interface ChannelRegistration {
 export class WebhookNotifier implements ChangeNotifier {
   private readonly logger = new Logger(WebhookNotifier.name);
   private readonly webhookBaseUrl?: string;
-  private readonly channelsByCalendarId = new Map<string, ChannelRegistration>();
+  private readonly channelsByCalendarId = new Map<
+    string,
+    ChannelRegistration
+  >();
   private readonly calendarIdByChannelId = new Map<string, string>();
   private onChange?: (calendarId: string, trigger: "webhook") => void;
   private startupPromise: Promise<void> = Promise.resolve();
@@ -56,7 +59,9 @@ export class WebhookNotifier implements ChangeNotifier {
   }
 
   private async setUp(): Promise<void> {
-    const pushCalendars = (await this.syncConfig.getAll()).filter((c) => c.enablePush);
+    const pushCalendars = (await this.syncConfig.getAll()).filter(
+      (c) => c.enablePush,
+    );
     if (pushCalendars.length === 0) return;
 
     if (!this.webhookBaseUrl?.startsWith("https://")) {
@@ -69,7 +74,10 @@ export class WebhookNotifier implements ChangeNotifier {
 
     await this.registerAll(pushCalendars);
 
-    const timer = setInterval(() => this.renewExpiringChannels(pushCalendars), RENEWAL_CHECK_INTERVAL_MS);
+    const timer = setInterval(
+      () => this.renewExpiringChannels(pushCalendars),
+      RENEWAL_CHECK_INTERVAL_MS,
+    );
     this.scheduler.addInterval(RENEWAL_TIMER_NAME, timer);
   }
 
@@ -96,7 +104,9 @@ export class WebhookNotifier implements ChangeNotifier {
       try {
         await this.registerChannel(calendar);
       } catch (error) {
-        this.logger.error(`Failed to register a push channel for "${calendar.calendarId}": ${message(error)}`);
+        this.logger.error(
+          `Failed to register a push channel for "${calendar.calendarId}": ${message(error)}`,
+        );
       }
     }
   }
@@ -105,13 +115,17 @@ export class WebhookNotifier implements ChangeNotifier {
   handleNotification(channelId: string, token: string | undefined): void {
     const calendarId = this.calendarIdByChannelId.get(channelId);
     if (!calendarId) {
-      this.logger.debug(`Ignoring a notification for unknown channel "${channelId}"`);
+      this.logger.debug(
+        `Ignoring a notification for unknown channel "${channelId}"`,
+      );
       return;
     }
 
     const registration = this.channelsByCalendarId.get(calendarId);
     if (registration?.token !== token) {
-      this.logger.warn(`Ignoring a notification for "${calendarId}" — channel token mismatch`);
+      this.logger.warn(
+        `Ignoring a notification for "${calendarId}" — channel token mismatch`,
+      );
       return;
     }
 
@@ -121,13 +135,19 @@ export class WebhookNotifier implements ChangeNotifier {
   private async registerChannel(calendar: SyncedCalendarConfig): Promise<void> {
     const provider = this.providers.resolve(calendar);
     if (!provider.supportsPush() || !provider.watch) {
-      this.logger.warn(`Provider "${provider.id}" doesn't support push — "${calendar.calendarId}" stays poll-only`);
+      this.logger.warn(
+        `Provider "${provider.id}" doesn't support push — "${calendar.calendarId}" stays poll-only`,
+      );
       return;
     }
 
     const token = randomBytes(24).toString("hex");
     const webhookUrl = `${this.webhookBaseUrl}/webhooks/${provider.id}`;
-    const channel = await provider.watch(calendar.calendarId, webhookUrl, token);
+    const channel = await provider.watch(
+      calendar.calendarId,
+      webhookUrl,
+      token,
+    );
 
     this.channelsByCalendarId.set(calendar.calendarId, { token });
     this.calendarIdByChannelId.set(channel.id, calendar.calendarId);
@@ -143,15 +163,21 @@ export class WebhookNotifier implements ChangeNotifier {
       lastFullSyncAt: existing?.lastFullSyncAt ?? null,
     });
 
-    this.logger.log(`Registered a push channel for "${calendar.calendarId}", expiring ${channel.expiration}`);
+    this.logger.log(
+      `Registered a push channel for "${calendar.calendarId}", expiring ${channel.expiration}`,
+    );
   }
 
-  private async renewExpiringChannels(calendars: SyncedCalendarConfig[]): Promise<void> {
+  private async renewExpiringChannels(
+    calendars: SyncedCalendarConfig[],
+  ): Promise<void> {
     for (const calendar of calendars) {
       try {
         await this.renewIfExpiring(calendar);
       } catch (error) {
-        this.logger.error(`Failed to renew the push channel for "${calendar.calendarId}": ${message(error)}`);
+        this.logger.error(
+          `Failed to renew the push channel for "${calendar.calendarId}": ${message(error)}`,
+        );
       }
     }
   }
@@ -163,11 +189,17 @@ export class WebhookNotifier implements ChangeNotifier {
     const msUntilExpiry = Date.parse(state.channelExpiration) - Date.now();
     if (msUntilExpiry > RENEWAL_THRESHOLD_MS) return;
 
-    this.logger.log(`Renewing the push channel for "${calendar.calendarId}" (expires ${state.channelExpiration})`);
+    this.logger.log(
+      `Renewing the push channel for "${calendar.calendarId}" (expires ${state.channelExpiration})`,
+    );
 
     const oldChannel: PushChannel | null =
       state.channelId && state.resourceId
-        ? { id: state.channelId, resourceId: state.resourceId, expiration: state.channelExpiration }
+        ? {
+            id: state.channelId,
+            resourceId: state.resourceId,
+            expiration: state.channelExpiration,
+          }
         : null;
 
     await this.registerChannel(calendar);
@@ -176,9 +208,13 @@ export class WebhookNotifier implements ChangeNotifier {
       this.calendarIdByChannelId.delete(oldChannel.id);
       const provider = this.providers.resolve(calendar);
       if (provider.stopWatch) {
-        await provider.stopWatch(oldChannel).catch((error) =>
-          this.logger.warn(`Failed to stop the old push channel for "${calendar.calendarId}": ${message(error)}`),
-        );
+        await provider
+          .stopWatch(oldChannel)
+          .catch((error) =>
+            this.logger.warn(
+              `Failed to stop the old push channel for "${calendar.calendarId}": ${message(error)}`,
+            ),
+          );
       }
     }
   }

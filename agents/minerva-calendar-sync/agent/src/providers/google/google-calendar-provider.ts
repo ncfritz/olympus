@@ -12,7 +12,11 @@ import {
   SyncTokenExpiredError,
   SyncWindow,
 } from "../calendar-provider";
-import { isGoogleRemoval, mapGoogleEventToCanonical, resolveGoogleRemoval } from "./google-event-mapper";
+import {
+  isGoogleRemoval,
+  mapGoogleEventToCanonical,
+  resolveGoogleRemoval,
+} from "./google-event-mapper";
 
 const PAGE_SIZE = 250;
 // How long a resolved series recurrence rule is trusted before re-fetching
@@ -30,7 +34,10 @@ interface CachedRecurrenceRule {
 export class GoogleCalendarProvider implements CalendarProvider {
   readonly id = "google";
   private readonly calendar: calendar_v3.Calendar;
-  private readonly recurrenceRuleCache = new Map<string, CachedRecurrenceRule>();
+  private readonly recurrenceRuleCache = new Map<
+    string,
+    CachedRecurrenceRule
+  >();
 
   constructor(auth: OAuth2Client) {
     this.calendar = google.calendar({ version: "v3", auth });
@@ -43,7 +50,12 @@ export class GoogleCalendarProvider implements CalendarProvider {
     do {
       const { data } = await this.calendar.calendarList.list({ pageToken });
       for (const item of data.items ?? []) {
-        if (item.id) calendars.push({ id: item.id, summary: item.summary ?? item.id, primary: item.primary === true });
+        if (item.id)
+          calendars.push({
+            id: item.id,
+            summary: item.summary ?? item.id,
+            primary: item.primary === true,
+          });
       }
       pageToken = data.nextPageToken ?? undefined;
     } while (pageToken);
@@ -51,7 +63,10 @@ export class GoogleCalendarProvider implements CalendarProvider {
     return calendars;
   }
 
-  async *fullSync(calendarId: string, window: SyncWindow): AsyncIterable<RawEventBatch> {
+  async *fullSync(
+    calendarId: string,
+    window: SyncWindow,
+  ): AsyncIterable<RawEventBatch> {
     let pageToken: string | undefined;
 
     do {
@@ -82,7 +97,10 @@ export class GoogleCalendarProvider implements CalendarProvider {
     } while (pageToken);
   }
 
-  async incrementalSync(calendarId: string, syncToken: string): Promise<IncrementalResult> {
+  async incrementalSync(
+    calendarId: string,
+    syncToken: string,
+  ): Promise<IncrementalResult> {
     const events: unknown[] = [];
     let pageToken: string | undefined;
     let nextSyncToken: string | undefined;
@@ -112,13 +130,18 @@ export class GoogleCalendarProvider implements CalendarProvider {
     } while (pageToken);
 
     if (!nextSyncToken) {
-      throw new Error(`Google incrementalSync for "${calendarId}" did not return a nextSyncToken`);
+      throw new Error(
+        `Google incrementalSync for "${calendarId}" did not return a nextSyncToken`,
+      );
     }
 
     return { events, nextSyncToken };
   }
 
-  async normalizeEvent(raw: unknown, ctx: { source: string; calendarId: string }): Promise<CanonicalCalendarEvent> {
+  async normalizeEvent(
+    raw: unknown,
+    ctx: { source: string; calendarId: string },
+  ): Promise<CanonicalCalendarEvent> {
     const event = raw as calendar_v3.Schema$Event;
     const recurrenceRule = event.recurringEventId
       ? await this.getRecurrenceRule(ctx.calendarId, event.recurringEventId)
@@ -135,7 +158,10 @@ export class GoogleCalendarProvider implements CalendarProvider {
    * (e.g. the master itself is somehow gone) yields null rather than failing
    * the whole sync over a field that's purely informational.
    */
-  private getRecurrenceRule(calendarId: string, masterEventId: string): Promise<string | null> {
+  private getRecurrenceRule(
+    calendarId: string,
+    masterEventId: string,
+  ): Promise<string | null> {
     const cacheKey = `${calendarId}:${masterEventId}`;
     const cached = this.recurrenceRuleCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
@@ -146,7 +172,10 @@ export class GoogleCalendarProvider implements CalendarProvider {
       .get({ calendarId, eventId: masterEventId })
       .then(({ data }) => data.recurrence?.join("\n") ?? null)
       .catch(() => null);
-    this.recurrenceRuleCache.set(cacheKey, { value, expiresAt: Date.now() + RECURRENCE_RULE_CACHE_TTL_MS });
+    this.recurrenceRuleCache.set(cacheKey, {
+      value,
+      expiresAt: Date.now() + RECURRENCE_RULE_CACHE_TTL_MS,
+    });
     return value;
   }
 
@@ -162,7 +191,11 @@ export class GoogleCalendarProvider implements CalendarProvider {
     return true;
   }
 
-  async watch(calendarId: string, webhookUrl: string, token: string): Promise<PushChannel> {
+  async watch(
+    calendarId: string,
+    webhookUrl: string,
+    token: string,
+  ): Promise<PushChannel> {
     const { data } = await this.calendar.events.watch({
       calendarId,
       requestBody: {
@@ -174,7 +207,9 @@ export class GoogleCalendarProvider implements CalendarProvider {
     });
 
     if (!data.id || !data.resourceId || !data.expiration) {
-      throw new Error(`Google watch() for "${calendarId}" returned an incomplete channel`);
+      throw new Error(
+        `Google watch() for "${calendarId}" returned an incomplete channel`,
+      );
     }
 
     return {
@@ -194,7 +229,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
 
 function isGone(error: unknown): boolean {
   const status =
-    (error as { code?: number; response?: { status?: number } })?.response?.status ??
-    (error as { code?: number })?.code;
+    (error as { code?: number; response?: { status?: number } })?.response
+      ?.status ?? (error as { code?: number })?.code;
   return status === 410;
 }

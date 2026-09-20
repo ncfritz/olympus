@@ -6,7 +6,10 @@ interface MockCalendarClient {
   channels: { stop: jest.Mock };
 }
 
-function providerWithMockCalendar(): { provider: GoogleCalendarProvider; calendar: MockCalendarClient } {
+function providerWithMockCalendar(): {
+  provider: GoogleCalendarProvider;
+  calendar: MockCalendarClient;
+} {
   const provider = new GoogleCalendarProvider(new OAuth2Client("id", "secret"));
   const calendar: MockCalendarClient = {
     events: { watch: jest.fn(), list: jest.fn(), get: jest.fn() },
@@ -29,10 +32,18 @@ describe("GoogleCalendarProvider", () => {
     it("registers a channel with the given webhook URL and token, and normalizes the response", async () => {
       const { provider, calendar } = providerWithMockCalendar();
       calendar.events.watch.mockResolvedValue({
-        data: { id: "chan-1", resourceId: "res-1", expiration: "1893456000000" },
+        data: {
+          id: "chan-1",
+          resourceId: "res-1",
+          expiration: "1893456000000",
+        },
       });
 
-      const channel = await provider.watch("primary", "https://example.com/webhooks/google", "secret-token");
+      const channel = await provider.watch(
+        "primary",
+        "https://example.com/webhooks/google",
+        "secret-token",
+      );
 
       expect(channel).toEqual({
         id: "chan-1",
@@ -53,9 +64,13 @@ describe("GoogleCalendarProvider", () => {
       const { provider, calendar } = providerWithMockCalendar();
       calendar.events.watch.mockResolvedValue({ data: { id: "chan-1" } });
 
-      await expect(provider.watch("primary", "https://example.com/webhooks/google", "token")).rejects.toThrow(
-        /incomplete channel/,
-      );
+      await expect(
+        provider.watch(
+          "primary",
+          "https://example.com/webhooks/google",
+          "token",
+        ),
+      ).rejects.toThrow(/incomplete channel/);
     });
   });
 
@@ -64,7 +79,11 @@ describe("GoogleCalendarProvider", () => {
       const { provider, calendar } = providerWithMockCalendar();
       calendar.channels.stop.mockResolvedValue({});
 
-      await provider.stopWatch({ id: "chan-1", resourceId: "res-1", expiration: "2026-01-01T00:00:00.000Z" });
+      await provider.stopWatch({
+        id: "chan-1",
+        resourceId: "res-1",
+        expiration: "2026-01-01T00:00:00.000Z",
+      });
 
       expect(calendar.channels.stop).toHaveBeenCalledWith({
         requestBody: { id: "chan-1", resourceId: "res-1" },
@@ -75,13 +94,25 @@ describe("GoogleCalendarProvider", () => {
   describe("fullSync", () => {
     it("expands recurring series into occurrences, bounded to the given window", async () => {
       const { provider, calendar } = providerWithMockCalendar();
-      calendar.events.list.mockResolvedValue({ data: { items: [{ id: "evt-1" }] } });
-      const window = { start: "2026-01-01T00:00:00.000Z", end: "2026-07-01T00:00:00.000Z" };
+      calendar.events.list.mockResolvedValue({
+        data: { items: [{ id: "evt-1" }] },
+      });
+      const window = {
+        start: "2026-01-01T00:00:00.000Z",
+        end: "2026-07-01T00:00:00.000Z",
+      };
 
       const batches = [];
-      for await (const batch of provider.fullSync("primary", window)) batches.push(batch);
+      for await (const batch of provider.fullSync("primary", window))
+        batches.push(batch);
 
-      expect(batches).toEqual([{ events: [{ id: "evt-1" }], nextPageToken: undefined, nextSyncToken: undefined }]);
+      expect(batches).toEqual([
+        {
+          events: [{ id: "evt-1" }],
+          nextPageToken: undefined,
+          nextSyncToken: undefined,
+        },
+      ]);
       expect(calendar.events.list).toHaveBeenCalledWith(
         expect.objectContaining({
           calendarId: "primary",
@@ -92,14 +123,18 @@ describe("GoogleCalendarProvider", () => {
       );
       // orderBy is deliberately never sent alongside singleEvents here — see
       // fullSync's doc comment: combining them silently drops nextSyncToken.
-      expect(calendar.events.list).not.toHaveBeenCalledWith(expect.objectContaining({ orderBy: expect.anything() }));
+      expect(calendar.events.list).not.toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: expect.anything() }),
+      );
     });
   });
 
   describe("normalizeEvent", () => {
     it("resolves a plain occurrence's recurrenceRule from its series master, caching across occurrences of the same series", async () => {
       const { provider, calendar } = providerWithMockCalendar();
-      calendar.events.get.mockResolvedValue({ data: { recurrence: ["RRULE:FREQ=WEEKLY;BYDAY=MO"] } });
+      calendar.events.get.mockResolvedValue({
+        data: { recurrence: ["RRULE:FREQ=WEEKLY;BYDAY=MO"] },
+      });
       const occurrence = (uid: string) => ({
         id: uid,
         iCalUID: `${uid}@google.com`,
@@ -110,14 +145,23 @@ describe("GoogleCalendarProvider", () => {
         end: { dateTime: "2026-01-05T10:30:00-05:00" },
       });
 
-      const first = await provider.normalizeEvent(occurrence("occ-1"), { source: "work", calendarId: "primary" });
-      const second = await provider.normalizeEvent(occurrence("occ-2"), { source: "work", calendarId: "primary" });
+      const first = await provider.normalizeEvent(occurrence("occ-1"), {
+        source: "work",
+        calendarId: "primary",
+      });
+      const second = await provider.normalizeEvent(occurrence("occ-2"), {
+        source: "work",
+        calendarId: "primary",
+      });
 
       expect(first.recurrenceRule).toBe("RRULE:FREQ=WEEKLY;BYDAY=MO");
       expect(second.recurrenceRule).toBe("RRULE:FREQ=WEEKLY;BYDAY=MO");
       // One lookup for the whole series, not one per occurrence.
       expect(calendar.events.get).toHaveBeenCalledTimes(1);
-      expect(calendar.events.get).toHaveBeenCalledWith({ calendarId: "primary", eventId: "master-1" });
+      expect(calendar.events.get).toHaveBeenCalledWith({
+        calendarId: "primary",
+        eventId: "master-1",
+      });
     });
 
     it("reads recurrenceRule directly off the event when it's a series master itself, without a lookup", async () => {
@@ -132,7 +176,10 @@ describe("GoogleCalendarProvider", () => {
         end: { dateTime: "2026-01-05T10:30:00-05:00" },
       };
 
-      const result = await provider.normalizeEvent(master, { source: "work", calendarId: "primary" });
+      const result = await provider.normalizeEvent(master, {
+        source: "work",
+        calendarId: "primary",
+      });
 
       expect(result.recurrenceRule).toBe("RRULE:FREQ=DAILY");
       expect(calendar.events.get).not.toHaveBeenCalled();
@@ -151,7 +198,10 @@ describe("GoogleCalendarProvider", () => {
         end: { dateTime: "2026-01-05T10:30:00-05:00" },
       };
 
-      const result = await provider.normalizeEvent(occurrence, { source: "work", calendarId: "primary" });
+      const result = await provider.normalizeEvent(occurrence, {
+        source: "work",
+        calendarId: "primary",
+      });
 
       expect(result.recurrenceRule).toBeNull();
     });

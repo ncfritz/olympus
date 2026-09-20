@@ -37,7 +37,13 @@ export const PROVIDER_META: Record<Provider, ProviderMeta> = {
 };
 
 /** The small square brand icon at a given pixel size, aspect-correct. */
-export function ProviderIcon({ provider, size = 16 }: { provider: Provider; size?: number }) {
+export function ProviderIcon({
+  provider,
+  size = 16,
+}: {
+  provider: Provider;
+  size?: number;
+}) {
   const meta = PROVIDER_META[provider];
   return (
     <Image
@@ -51,7 +57,13 @@ export function ProviderIcon({ provider, size = 16 }: { provider: Provider; size
 }
 
 /** The full wordmark logo, scaled to a given pixel height with its aspect ratio preserved. */
-export function ProviderLogo({ provider, height = 80 }: { provider: Provider; height?: number }) {
+export function ProviderLogo({
+  provider,
+  height = 80,
+}: {
+  provider: Provider;
+  height?: number;
+}) {
   const meta = PROVIDER_META[provider];
   const width = Math.round((meta.logoWidth / meta.logoHeight) * height);
   return (

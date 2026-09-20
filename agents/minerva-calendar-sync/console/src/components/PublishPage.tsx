@@ -68,9 +68,8 @@ export function PublishPage() {
     data: failed = [],
     isLoading: failedLoading,
     mutate: mutateFailed,
-  } = useSWR(
-    summary?.enabled ? ["/outbox/failed", FAILED_LIMIT] : null,
-    () => fetchFailedOutboxRecords(FAILED_LIMIT),
+  } = useSWR(summary?.enabled ? ["/outbox/failed", FAILED_LIMIT] : null, () =>
+    fetchFailedOutboxRecords(FAILED_LIMIT),
   );
 
   const handleBackfill = async (calendarId: string, source: string) => {
@@ -179,7 +178,9 @@ export function PublishPage() {
               dataIndex: "oldestPendingAt",
               render: (value: string | null) =>
                 value ? (
-                  <Tooltip title={new Date(value).toLocaleString()}>{formatAge(value)}</Tooltip>
+                  <Tooltip title={new Date(value).toLocaleString()}>
+                    {formatAge(value)}
+                  </Tooltip>
                 ) : (
                   "—"
                 ),
@@ -204,7 +205,11 @@ export function PublishPage() {
               width: COUNT_COLUMN_WIDTH,
               align: "right",
               render: (value: number) =>
-                value > 0 ? <Tag color="red">{renderMonoNumber(value)}</Tag> : renderMonoNumber(value),
+                value > 0 ? (
+                  <Tag color="red">{renderMonoNumber(value)}</Tag>
+                ) : (
+                  renderMonoNumber(value)
+                ),
             },
             {
               title: "",
@@ -216,7 +221,9 @@ export function PublishPage() {
                   <Popconfirm
                     title="Backfill this calendar?"
                     description="Re-queues every current event as a fresh publish — for standing up or catching up a downstream database."
-                    onConfirm={() => handleBackfill(row.calendarId!, row.source)}
+                    onConfirm={() =>
+                      handleBackfill(row.calendarId!, row.source)
+                    }
                   >
                     <Button size="small" type="primary">
                       Backfill
@@ -254,7 +261,11 @@ export function PublishPage() {
                 title: "Last error",
                 dataIndex: "lastError",
                 render: (value: string | null) => (
-                  <Typography.Text type="danger" ellipsis={{ tooltip: value }} style={{ maxWidth: 400 }}>
+                  <Typography.Text
+                    type="danger"
+                    ellipsis={{ tooltip: value }}
+                    style={{ maxWidth: 400 }}
+                  >
                     {value ?? "—"}
                   </Typography.Text>
                 ),

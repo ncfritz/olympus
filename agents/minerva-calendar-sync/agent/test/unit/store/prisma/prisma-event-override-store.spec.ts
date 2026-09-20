@@ -15,7 +15,11 @@ describe("PrismaEventOverrideStore", () => {
   beforeAll(() => {
     tempDir = mkdtempSync(join(tmpdir(), "minerva-test-"));
     process.env.DATABASE_URL = `file:${join(tempDir, "test.db")}`;
-    execSync("npx prisma db push --skip-generate", { cwd: API_ROOT, env: process.env, stdio: "pipe" });
+    execSync("npx prisma db push --skip-generate", {
+      cwd: API_ROOT,
+      env: process.env,
+      stdio: "pipe",
+    });
   }, 30000);
 
   afterAll(() => {
@@ -39,7 +43,10 @@ describe("PrismaEventOverrideStore", () => {
 
   it("sets, gets, and clears an override", async () => {
     await store.setOverride("source:a", "busy");
-    expect(await store.getOverride("source:a")).toEqual({ eventId: "source:a", status: "busy" });
+    expect(await store.getOverride("source:a")).toEqual({
+      eventId: "source:a",
+      status: "busy",
+    });
 
     await store.clearOverride("source:a");
     expect(await store.getOverride("source:a")).toBeNull();
@@ -48,11 +55,16 @@ describe("PrismaEventOverrideStore", () => {
   it("setOverride replaces an existing override rather than erroring", async () => {
     await store.setOverride("source:a", "busy");
     await store.setOverride("source:a", "free");
-    expect(await store.getOverride("source:a")).toEqual({ eventId: "source:a", status: "free" });
+    expect(await store.getOverride("source:a")).toEqual({
+      eventId: "source:a",
+      status: "free",
+    });
   });
 
   it("clearOverride on an event with no override is a harmless no-op", async () => {
-    await expect(store.clearOverride("source:never-set")).resolves.toBeUndefined();
+    await expect(
+      store.clearOverride("source:never-set"),
+    ).resolves.toBeUndefined();
   });
 
   it("listOverrides returns only the requested ids that have an override", async () => {
@@ -60,7 +72,11 @@ describe("PrismaEventOverrideStore", () => {
     await store.setOverride("source:b", "interruptable");
     await store.setOverride("source:c", "none");
 
-    const result = await store.listOverrides(["source:a", "source:b", "source:missing"]);
+    const result = await store.listOverrides([
+      "source:a",
+      "source:b",
+      "source:missing",
+    ]);
     expect(result.sort((x, y) => x.eventId.localeCompare(y.eventId))).toEqual([
       { eventId: "source:a", status: "busy" },
       { eventId: "source:b", status: "interruptable" },

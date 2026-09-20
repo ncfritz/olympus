@@ -1,5 +1,11 @@
 import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
-import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
+import {
+  ApiBearerAuth,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+} from "@nestjs/swagger";
 import { CalendarAuthService } from "./calendar-auth.service";
 import { AvailableCalendarDto } from "./dto/available-calendar.dto";
 import { CalendarAccountStatusDto } from "./dto/calendar-account-status.dto";
@@ -21,15 +27,22 @@ export class CalendarAuthController {
   }
 
   @Post("new")
-  @ApiOkResponse({ type: StartNewAccountAuthResponseDto, description: "A URL to open in a browser to authorize a new account" })
-  startNewAccountAuth(@Body() body: StartNewAccountAuthDto): Promise<StartNewAccountAuthResponseDto> {
+  @ApiOkResponse({
+    type: StartNewAccountAuthResponseDto,
+    description: "A URL to open in a browser to authorize a new account",
+  })
+  startNewAccountAuth(
+    @Body() body: StartNewAccountAuthDto,
+  ): Promise<StartNewAccountAuthResponseDto> {
     return this.service.startNewAccountAuth(body.provider);
   }
 
   @Get("new/:transactionId")
   @ApiOkResponse({ type: NewAccountAuthStatusDto })
   @ApiNotFoundResponse({ description: "No such new-account authorization" })
-  getNewAccountAuthStatus(@Param("transactionId") transactionId: string): NewAccountAuthStatusDto {
+  getNewAccountAuthStatus(
+    @Param("transactionId") transactionId: string,
+  ): NewAccountAuthStatusDto {
     return this.service.getNewAccountAuthStatus(transactionId);
   }
 
@@ -41,8 +54,13 @@ export class CalendarAuthController {
     description:
       "Disambiguates which provider's account to reauthorize when the same accountLabel is connected under more than one — omit only when it's known not to collide.",
   })
-  @ApiOkResponse({ type: StartReauthResponseDto, description: "A URL to open in a browser to (re-)grant access" })
-  @ApiNotFoundResponse({ description: "No configured calendar uses that account label" })
+  @ApiOkResponse({
+    type: StartReauthResponseDto,
+    description: "A URL to open in a browser to (re-)grant access",
+  })
+  @ApiNotFoundResponse({
+    description: "No configured calendar uses that account label",
+  })
   startReauth(
     @Param("accountLabel") accountLabel: string,
     @Query("provider") provider?: "google" | "microsoft",
@@ -59,7 +77,10 @@ export class CalendarAuthController {
       "Disambiguates which provider's account to list calendars for when the same accountLabel is connected under more than one — omit only when it's known not to collide.",
   })
   @ApiOkResponse({ type: AvailableCalendarDto, isArray: true })
-  @ApiNotFoundResponse({ description: "No configured calendar uses that account label, or it hasn't signed in yet" })
+  @ApiNotFoundResponse({
+    description:
+      "No configured calendar uses that account label, or it hasn't signed in yet",
+  })
   listAvailableCalendars(
     @Param("accountLabel") accountLabel: string,
     @Query("provider") provider?: "google" | "microsoft",

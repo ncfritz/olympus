@@ -1,5 +1,7 @@
 /** Scopes requested when obtaining (or renewing) a device-flow Google credential for calendar sync. */
-export const GOOGLE_CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
+export const GOOGLE_CALENDAR_SCOPES = [
+  "https://www.googleapis.com/auth/calendar.readonly",
+];
 
 /**
  * Scopes for authorizing a brand-new account, where — unlike a reauth for an

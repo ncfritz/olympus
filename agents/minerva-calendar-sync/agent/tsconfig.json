@@ -15,6 +15,10 @@
     "rootDir": "${configDir}",
     "incremental": true
   },
-  "include": ["${configDir}/src/**/*.ts", "${configDir}/test/**/*.ts", "${configDir}/scripts/**/*.ts"],
+  "include": [
+    "${configDir}/src/**/*.ts",
+    "${configDir}/test/**/*.ts",
+    "${configDir}/scripts/**/*.ts"
+  ],
   "exclude": []
 }

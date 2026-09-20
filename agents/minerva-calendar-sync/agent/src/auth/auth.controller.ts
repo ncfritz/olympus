@@ -1,6 +1,23 @@
-import { BadRequestException, Body, Controller, ForbiddenException, Get, HttpCode, Param, Post, Query, Req, Res } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+  Req,
+  Res,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { ApiBearerAuth, ApiExcludeEndpoint, ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import {
+  ApiBearerAuth,
+  ApiExcludeEndpoint,
+  ApiOkResponse,
+  ApiTags,
+} from "@nestjs/swagger";
 import { Request, Response } from "express";
 import { AllowlistService } from "./allowlist.service";
 import { AuthTokenService } from "./auth-token.service";
@@ -39,7 +56,8 @@ export class AuthController {
     private readonly tokens: AuthTokenService,
     config: ConfigService,
   ) {
-    this.baseUrl = config.get<string>("AUTH_BASE_URL") ?? "http://localhost:4432";
+    this.baseUrl =
+      config.get<string>("AUTH_BASE_URL") ?? "http://localhost:4432";
     this.webAppUrl = config.get<string>("WEB_APP_URL");
   }
 
@@ -99,16 +117,22 @@ export class AuthController {
     const oidcConfig = await this.providers.getOidcConfig(providerName);
     const currentUrl = new URL(req.originalUrl, this.baseUrl);
 
-    const tokenResponse = await client.authorizationCodeGrant(oidcConfig, currentUrl, {
-      pkceCodeVerifier: txn.codeVerifier,
-      expectedState: txn.state,
-      expectedNonce: txn.nonce,
-    });
+    const tokenResponse = await client.authorizationCodeGrant(
+      oidcConfig,
+      currentUrl,
+      {
+        pkceCodeVerifier: txn.codeVerifier,
+        expectedState: txn.state,
+        expectedNonce: txn.nonce,
+      },
+    );
 
     const claims = tokenResponse.claims();
     const email = claims?.email as string | undefined;
     if (!email || claims?.email_verified !== true) {
-      throw new ForbiddenException("The identity provider did not return a verified email address");
+      throw new ForbiddenException(
+        "The identity provider did not return a verified email address",
+      );
     }
     if (!this.allowlist.isAllowed(email)) {
       throw new ForbiddenException(`${email} is not on the allowlist`);
@@ -134,7 +158,10 @@ export class AuthController {
 
   @Get("me")
   @ApiBearerAuth()
-  @ApiOkResponse({ type: CurrentUserDto, description: "The currently authenticated user" })
+  @ApiOkResponse({
+    type: CurrentUserDto,
+    description: "The currently authenticated user",
+  })
   me(@CurrentUser() user: AuthUser): AuthUser {
     return user;
   }
@@ -162,10 +189,15 @@ export class AuthController {
     return new URL(`/auth/callback/${providerName}`, this.baseUrl).href;
   }
 
-  private readTransaction(req: Request, expectedProvider: string): OidcTransaction {
+  private readTransaction(
+    req: Request,
+    expectedProvider: string,
+  ): OidcTransaction {
     const raw = req.cookies?.[OIDC_TXN_COOKIE];
     if (!raw) {
-      throw new BadRequestException("Missing or expired OIDC transaction — start over at /auth/login");
+      throw new BadRequestException(
+        "Missing or expired OIDC transaction — start over at /auth/login",
+      );
     }
 
     let txn: OidcTransaction;

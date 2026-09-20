@@ -30,12 +30,15 @@ export class EventResponseDto implements CanonicalCalendarEvent {
   @ApiProperty({ description: "Minutes" }) duration: number;
   @ApiProperty() allDay: boolean;
   @ApiProperty({ enum: FREE_BUSY_STATUS_VALUES }) status: FreeBusyStatus;
-  @ApiPropertyOptional({ nullable: true, type: String }) location: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String }) location:
+    string | null;
   @ApiProperty() cancelled: boolean;
-  @ApiPropertyOptional({ nullable: true, type: String }) organizerEmail: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String }) organizerEmail:
+    string | null;
   @ApiProperty({ description: "Soft-delete flag" }) deleted: boolean;
   @ApiProperty() uid: string;
-  @ApiPropertyOptional({ nullable: true, type: String }) recurrenceId: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String }) recurrenceId:
+    string | null;
   @ApiProperty() source: string;
   @ApiPropertyOptional({
     nullable: true,

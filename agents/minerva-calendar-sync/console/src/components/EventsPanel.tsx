@@ -170,7 +170,10 @@ export function EventsPanel({
     showDeleted,
     limit: EVENT_LIMIT,
     ...(isDateScoped && calendarVisibleRange
-      ? { startsAfter: calendarVisibleRange.start, startsBefore: calendarVisibleRange.end }
+      ? {
+          startsAfter: calendarVisibleRange.start,
+          startsBefore: calendarVisibleRange.end,
+        }
       : {}),
   };
   // Withholds the fetch (rather than falling back to the unscoped query)
@@ -182,7 +185,9 @@ export function EventsPanel({
     data: events = [],
     isLoading,
     mutate,
-  } = useSWR(canFetchEvents ? ["/events", filters] : null, ([, f]) => fetchEvents(f));
+  } = useSWR(canFetchEvents ? ["/events", filters] : null, ([, f]) =>
+    fetchEvents(f),
+  );
 
   // Overrides are fetched over the span of currently-loaded events (padded),
   // not scoped by the sources checkboxes below — an override's association
@@ -493,7 +498,10 @@ export function EventsPanel({
                         style={{ flexShrink: 0, objectFit: "contain" }}
                       />
                     ) : providerBySource.has(source) ? (
-                      <ProviderIcon provider={providerBySource.get(source)!} size={16} />
+                      <ProviderIcon
+                        provider={providerBySource.get(source)!}
+                        size={16}
+                      />
                     ) : (
                       // Keeps the same icon-width slot reserved so this
                       // row's text lines up with the ones that do have a
@@ -593,7 +601,9 @@ export function EventsPanel({
                   title: "Start",
                   dataIndex: "startTime",
                   render: (value: string, record) =>
-                    record.allDay ? value.slice(0, 10) : new Date(value).toLocaleString(),
+                    record.allDay
+                      ? value.slice(0, 10)
+                      : new Date(value).toLocaleString(),
                   sorter: (a, b) =>
                     Date.parse(a.startTime) - Date.parse(b.startTime),
                   defaultSortOrder: "descend",

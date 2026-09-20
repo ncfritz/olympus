@@ -47,7 +47,11 @@ export class AuthTokenService {
     return this.verify(token, "refresh");
   }
 
-  private sign(email: string, type: TokenPayload["type"], expiresIn: ExpiresIn): string {
+  private sign(
+    email: string,
+    type: TokenPayload["type"],
+    expiresIn: ExpiresIn,
+  ): string {
     return this.jwt.sign({ email, type } satisfies TokenPayload, { expiresIn });
   }
 
@@ -56,7 +60,9 @@ export class AuthTokenService {
     try {
       payload = this.jwt.verify<TokenPayload>(token);
     } catch (error) {
-      throw new UnauthorizedException("Invalid or expired token", { cause: error });
+      throw new UnauthorizedException("Invalid or expired token", {
+        cause: error,
+      });
     }
 
     if (payload.type !== expectedType) {

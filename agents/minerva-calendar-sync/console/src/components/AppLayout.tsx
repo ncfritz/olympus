@@ -50,7 +50,11 @@ const NAV_ITEMS = [
   { key: "/publish", label: <Link href="/publish">Publish</Link> },
 ];
 
-const THEME_MODE_OPTIONS: { value: ThemeMode; icon: ReactNode; tooltip: string }[] = [
+const THEME_MODE_OPTIONS: {
+  value: ThemeMode;
+  icon: ReactNode;
+  tooltip: string;
+}[] = [
   { value: "light", icon: <SunOutlined />, tooltip: "Light" },
   { value: "dark", icon: <MoonOutlined />, tooltip: "Dark" },
   { value: "system", icon: <DesktopOutlined />, tooltip: "System" },
@@ -135,7 +139,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
             theme="dark"
             mode="horizontal"
             selectedKeys={[
-              ["/calendars", "/sync", "/publish"].includes(pathname) ? pathname : "/",
+              ["/calendars", "/sync", "/publish"].includes(pathname)
+                ? pathname
+                : "/",
             ]}
             items={NAV_ITEMS}
             style={{ flex: 1, minWidth: 0 }}

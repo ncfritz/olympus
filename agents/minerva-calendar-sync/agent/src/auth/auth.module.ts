@@ -11,7 +11,9 @@ import { OidcProviderRegistry } from "./oidc-provider-registry";
 @Module({
   imports: [
     JwtModule.registerAsync({
-      useFactory: (config: ConfigService) => ({ secret: config.getOrThrow<string>("AUTH_JWT_SECRET") }),
+      useFactory: (config: ConfigService) => ({
+        secret: config.getOrThrow<string>("AUTH_JWT_SECRET"),
+      }),
       inject: [ConfigService],
     }),
   ],

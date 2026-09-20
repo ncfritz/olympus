@@ -15,7 +15,11 @@ describe("PrismaCalendarColorStore", () => {
   beforeAll(() => {
     tempDir = mkdtempSync(join(tmpdir(), "minerva-test-"));
     process.env.DATABASE_URL = `file:${join(tempDir, "test.db")}`;
-    execSync("npx prisma db push --skip-generate", { cwd: API_ROOT, env: process.env, stdio: "pipe" });
+    execSync("npx prisma db push --skip-generate", {
+      cwd: API_ROOT,
+      env: process.env,
+      stdio: "pipe",
+    });
   }, 30000);
 
   afterAll(() => {

@@ -19,7 +19,10 @@ export interface OutboxStore {
   /** Resets a failed row to pending (attempts/backoff cleared) so the dispatcher picks it up again. Returns whether it actually flipped a "failed" row. */
   requeue(id: string): Promise<boolean>;
   /** Bulk-enqueues a full-state resend of `events` (see the "backfill" action) for a calendar backfill. Returns how many rows were written. */
-  enqueueBackfill(source: string, events: CanonicalCalendarEvent[]): Promise<number>;
+  enqueueBackfill(
+    source: string,
+    events: CanonicalCalendarEvent[],
+  ): Promise<number>;
 }
 
 /** Nest DI token — inject with `@Inject(OUTBOX_STORE)`. */

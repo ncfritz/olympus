@@ -12,7 +12,10 @@ export function parseOidcProviders(raw: string): OidcProviderConfig[] {
   try {
     parsed = JSON.parse(raw);
   } catch (error) {
-    throw new Error(`AUTH_OIDC_PROVIDERS is not valid JSON: ${(error as Error).message}`, { cause: error });
+    throw new Error(
+      `AUTH_OIDC_PROVIDERS is not valid JSON: ${(error as Error).message}`,
+      { cause: error },
+    );
   }
 
   if (!Array.isArray(parsed)) {
@@ -20,9 +23,12 @@ export function parseOidcProviders(raw: string): OidcProviderConfig[] {
   }
 
   return parsed.map((entry, index) => {
-    const { name, issuer, clientId, clientSecret } = entry as Partial<OidcProviderConfig>;
+    const { name, issuer, clientId, clientSecret } =
+      entry as Partial<OidcProviderConfig>;
     if (!name || !issuer || !clientId || !clientSecret) {
-      throw new Error(`AUTH_OIDC_PROVIDERS[${index}] must have { name, issuer, clientId, clientSecret }`);
+      throw new Error(
+        `AUTH_OIDC_PROVIDERS[${index}] must have { name, issuer, clientId, clientSecret }`,
+      );
     }
     return { name, issuer, clientId, clientSecret };
   });

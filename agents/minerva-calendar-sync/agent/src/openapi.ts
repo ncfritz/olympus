@@ -6,10 +6,15 @@ import { DocumentBuilder, OpenAPIObject, SwaggerModule } from "@nestjs/swagger";
  * shared between main.ts (live Swagger UI) and scripts/generate-openapi.ts
  * (the openapi/app-api.yaml file the web/iOS clients generate against).
  */
-export function buildOpenApiDocument(app: INestApplication, builder: DocumentBuilder): OpenAPIObject {
+export function buildOpenApiDocument(
+  app: INestApplication,
+  builder: DocumentBuilder,
+): OpenAPIObject {
   const config = builder
     .setTitle("Minerva Calendar Sync API")
-    .setDescription("Read API over synchronized calendar events and calendar sync status.")
+    .setDescription(
+      "Read API over synchronized calendar events and calendar sync status.",
+    )
     .setVersion("0.1.0")
     .addTag("events")
     .addTag("calendars")

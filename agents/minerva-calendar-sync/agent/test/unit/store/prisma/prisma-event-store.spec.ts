@@ -40,7 +40,10 @@ describe("PrismaEventStore (SQLite)", () => {
     await prisma.onModuleDestroy();
   });
 
-  testPrismaEventStoreContract(() => store, () => prisma);
+  testPrismaEventStoreContract(
+    () => store,
+    () => prisma,
+  );
 
   it("writes no outbox rows at all when outbound sync isn't configured", async () => {
     const disabledStore = new PrismaEventStore(prisma, false);

@@ -1,7 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { OutboxEvent as OutboxRow } from "@prisma/client";
 import { CanonicalCalendarEvent } from "../../domain/canonical-event";
-import { OutboxAction, OutboxRecord, OutboxSourceStats, OutboxStatus } from "../../domain/outbox";
+import {
+  OutboxAction,
+  OutboxRecord,
+  OutboxSourceStats,
+  OutboxStatus,
+} from "../../domain/outbox";
 import { OutboxStore } from "../outbox-store";
 import { PrismaService } from "./prisma.service";
 
@@ -11,7 +16,10 @@ export class PrismaOutboxStore implements OutboxStore {
 
   async getStats(): Promise<OutboxSourceStats[]> {
     const [counts, oldestPending] = await Promise.all([
-      this.prisma.outboxEvent.groupBy({ by: ["source", "status"], _count: { _all: true } }),
+      this.prisma.outboxEvent.groupBy({
+        by: ["source", "status"],
+        _count: { _all: true },
+      }),
       this.prisma.outboxEvent.groupBy({
         by: ["source"],
         where: { status: "pending" },
@@ -19,7 +27,9 @@ export class PrismaOutboxStore implements OutboxStore {
       }),
     ]);
 
-    const oldestBySource = new Map(oldestPending.map((row) => [row.source, row._min.createdAt]));
+    const oldestBySource = new Map(
+      oldestPending.map((row) => [row.source, row._min.createdAt]),
+    );
     const bySource = new Map<string, OutboxSourceStats>();
 
     for (const row of counts) {
@@ -35,10 +45,13 @@ export class PrismaOutboxStore implements OutboxStore {
     }
 
     for (const stats of bySource.values()) {
-      stats.oldestPendingAt = oldestBySource.get(stats.source)?.toISOString() ?? null;
+      stats.oldestPendingAt =
+        oldestBySource.get(stats.source)?.toISOString() ?? null;
     }
 
-    return [...bySource.values()].sort((a, b) => a.source.localeCompare(b.source));
+    return [...bySource.values()].sort((a, b) =>
+      a.source.localeCompare(b.source),
+    );
   }
 
   async listFailed(limit: number): Promise<OutboxRecord[]> {
@@ -51,19 +64,30 @@ export class PrismaOutboxStore implements OutboxStore {
   }
 
   async getLatestForEvent(eventId: string): Promise<OutboxRecord | null> {
-    const row = await this.prisma.outboxEvent.findFirst({ where: { eventId }, orderBy: { createdAt: "desc" } });
+    const row = await this.prisma.outboxEvent.findFirst({
+      where: { eventId },
+      orderBy: { createdAt: "desc" },
+    });
     return row ? fromRow(row) : null;
   }
 
   async requeue(id: string): Promise<boolean> {
     const result = await this.prisma.outboxEvent.updateMany({
       where: { id, status: "failed" },
-      data: { status: "pending", attempts: 0, lastError: null, availableAt: new Date() },
+      data: {
+        status: "pending",
+        attempts: 0,
+        lastError: null,
+        availableAt: new Date(),
+      },
     });
     return result.count > 0;
   }
 
-  async enqueueBackfill(source: string, events: CanonicalCalendarEvent[]): Promise<number> {
+  async enqueueBackfill(
+    source: string,
+    events: CanonicalCalendarEvent[],
+  ): Promise<number> {
     if (events.length === 0) return 0;
 
     const result = await this.prisma.outboxEvent.createMany({

@@ -2,7 +2,9 @@ import { CanonicalCalendarEvent } from "../../src/domain/canonical-event";
 import { PrismaEventStore } from "../../src/store/prisma/prisma-event-store";
 import { PrismaService } from "../../src/store/prisma/prisma.service";
 
-function fixtureEvent(overrides: Partial<CanonicalCalendarEvent> = {}): CanonicalCalendarEvent {
+function fixtureEvent(
+  overrides: Partial<CanonicalCalendarEvent> = {},
+): CanonicalCalendarEvent {
   const uid = overrides.uid ?? "uid-1";
   const source = overrides.source ?? "personal-gmail";
   return {
@@ -38,7 +40,10 @@ function fixtureEvent(overrides: Partial<CanonicalCalendarEvent> = {}): Canonica
  * dialects are verified against the exact same assertions, not
  * hand-copied (and potentially drifting) ones.
  */
-export function testPrismaEventStoreContract(getStore: () => PrismaEventStore, getPrisma: () => PrismaService): void {
+export function testPrismaEventStoreContract(
+  getStore: () => PrismaEventStore,
+  getPrisma: () => PrismaService,
+): void {
   it("round-trips an event through upsert and get", async () => {
     const store = getStore();
     const event = fixtureEvent();
@@ -52,7 +57,11 @@ export function testPrismaEventStoreContract(getStore: () => PrismaEventStore, g
     const store = getStore();
     const event = fixtureEvent();
     await store.upsertEvent(event);
-    await store.upsertEvent({ ...event, subject: "Team sync (rescheduled)", startTime: "2026-01-06T15:00:00.000Z" });
+    await store.upsertEvent({
+      ...event,
+      subject: "Team sync (rescheduled)",
+      startTime: "2026-01-06T15:00:00.000Z",
+    });
 
     const all = await store.listEvents({ source: event.source });
     expect(all).toHaveLength(1);
@@ -65,7 +74,9 @@ export function testPrismaEventStoreContract(getStore: () => PrismaEventStore, g
 
     expect(await store.upsertEvent(event)).toBe("created");
     expect(await store.upsertEvent(event)).toBe("unchanged");
-    expect(await store.upsertEvent({ ...event, subject: "Renamed" })).toBe("updated");
+    expect(await store.upsertEvent({ ...event, subject: "Renamed" })).toBe(
+      "updated",
+    );
   });
 
   it("marks an event cancelled without deleting the row, reporting whether it actually flipped", async () => {
@@ -97,23 +108,37 @@ export function testPrismaEventStoreContract(getStore: () => PrismaEventStore, g
   it("filters listEvents by source, cancelled, and deleted", async () => {
     const store = getStore();
     await store.upsertEvent(fixtureEvent({ uid: "uid-a", source: "cal-a" }));
-    await store.upsertEvent(fixtureEvent({ uid: "uid-b", source: "cal-a", cancelled: true }));
+    await store.upsertEvent(
+      fixtureEvent({ uid: "uid-b", source: "cal-a", cancelled: true }),
+    );
     await store.upsertEvent(fixtureEvent({ uid: "uid-c", source: "cal-b" }));
 
     const calAOnly = await store.listEvents({ source: "cal-a" });
     expect(calAOnly.map((e) => e.uid).sort()).toEqual(["uid-a", "uid-b"]);
 
-    const cancelledOnly = await store.listEvents({ source: "cal-a", cancelled: true });
+    const cancelledOnly = await store.listEvents({
+      source: "cal-a",
+      cancelled: true,
+    });
     expect(cancelledOnly.map((e) => e.uid)).toEqual(["uid-b"]);
   });
 
   it("orders listEvents by most recent/upcoming first, so a capped limit doesn't bury recent events under old history", async () => {
     const store = getStore();
-    await store.upsertEvent(fixtureEvent({ uid: "old", startTime: "2009-01-01T00:00:00.000Z" }));
-    await store.upsertEvent(fixtureEvent({ uid: "recent", startTime: "2026-01-01T00:00:00.000Z" }));
-    await store.upsertEvent(fixtureEvent({ uid: "middle", startTime: "2018-01-01T00:00:00.000Z" }));
+    await store.upsertEvent(
+      fixtureEvent({ uid: "old", startTime: "2009-01-01T00:00:00.000Z" }),
+    );
+    await store.upsertEvent(
+      fixtureEvent({ uid: "recent", startTime: "2026-01-01T00:00:00.000Z" }),
+    );
+    await store.upsertEvent(
+      fixtureEvent({ uid: "middle", startTime: "2018-01-01T00:00:00.000Z" }),
+    );
 
-    const capped = await store.listEvents({ source: "personal-gmail", limit: 2 });
+    const capped = await store.listEvents({
+      source: "personal-gmail",
+      limit: 2,
+    });
     expect(capped.map((e) => e.uid)).toEqual(["recent", "middle"]);
   });
 
@@ -159,9 +184,18 @@ export function testPrismaEventStoreContract(getStore: () => PrismaEventStore, g
       await store.upsertEvent(event); // unchanged
       await store.upsertEvent({ ...event, subject: "Renamed" });
 
-      const rows = await prisma.outboxEvent.findMany({ orderBy: { createdAt: "asc" } });
+      const rows = await prisma.outboxEvent.findMany({
+        orderBy: { createdAt: "asc" },
+      });
       expect(rows).toHaveLength(2);
-      expect(rows.every((r) => r.eventId === event.id && r.action === "upsert" && r.status === "pending")).toBe(true);
+      expect(
+        rows.every(
+          (r) =>
+            r.eventId === event.id &&
+            r.action === "upsert" &&
+            r.status === "pending",
+        ),
+      ).toBe(true);
       expect(JSON.parse(rows[1].payload).subject).toBe("Renamed");
     });
 
@@ -174,7 +208,10 @@ export function testPrismaEventStoreContract(getStore: () => PrismaEventStore, g
       await store.markCancelled(event.source, event.uid);
       await store.markCancelled(event.source, event.uid); // already cancelled — no-op
 
-      const rows = await prisma.outboxEvent.findMany({ where: { action: "upsert" }, orderBy: { createdAt: "asc" } });
+      const rows = await prisma.outboxEvent.findMany({
+        where: { action: "upsert" },
+        orderBy: { createdAt: "asc" },
+      });
       expect(rows).toHaveLength(2); // the initial create + the cancellation
       const cancelPayload = JSON.parse(rows[1].payload);
       expect(cancelPayload.cancelled).toBe(true);
@@ -190,7 +227,9 @@ export function testPrismaEventStoreContract(getStore: () => PrismaEventStore, g
       await store.markDeleted(event.source, event.uid);
       await store.markDeleted(event.source, event.uid); // already deleted — no-op
 
-      const rows = await prisma.outboxEvent.findMany({ where: { action: "delete" } });
+      const rows = await prisma.outboxEvent.findMany({
+        where: { action: "delete" },
+      });
       expect(rows).toHaveLength(1);
       const payload = JSON.parse(rows[0].payload);
       expect(payload.id).toBe(event.id);

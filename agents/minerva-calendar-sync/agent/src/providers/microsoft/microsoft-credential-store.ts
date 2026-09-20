@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "fs";
 import { join } from "path";
 
 // Same rationale as google-credential-store.ts: a small local JSON file per
@@ -6,7 +12,9 @@ import { join } from "path";
 // DB-backed store later won't touch CalendarProvider at all. Overridable so
 // e2e tests can point this at an empty temp dir (see test/e2e/env-setup.ts)
 // instead of the developer's real .credentials/.
-const CREDENTIALS_DIR = process.env.MICROSOFT_CREDENTIALS_DIR ?? join(__dirname, "..", "..", "..", ".credentials-microsoft");
+const CREDENTIALS_DIR =
+  process.env.MICROSOFT_CREDENTIALS_DIR ??
+  join(__dirname, "..", "..", "..", ".credentials-microsoft");
 
 export interface StoredMicrosoftCredential {
   accountLabel: string;
@@ -19,22 +27,33 @@ function credentialPath(accountLabel: string): string {
   return join(CREDENTIALS_DIR, `${accountLabel}.json`);
 }
 
-export function saveMicrosoftCredential(credential: StoredMicrosoftCredential): void {
+export function saveMicrosoftCredential(
+  credential: StoredMicrosoftCredential,
+): void {
   mkdirSync(CREDENTIALS_DIR, { recursive: true });
-  writeFileSync(credentialPath(credential.accountLabel), JSON.stringify(credential, null, 2));
+  writeFileSync(
+    credentialPath(credential.accountLabel),
+    JSON.stringify(credential, null, 2),
+  );
 }
 
 /** Returns undefined instead of throwing when nothing has been stored yet for this account. */
-export function tryLoadMicrosoftCredential(accountLabel: string): StoredMicrosoftCredential | undefined {
+export function tryLoadMicrosoftCredential(
+  accountLabel: string,
+): StoredMicrosoftCredential | undefined {
   const path = credentialPath(accountLabel);
   if (!existsSync(path)) return undefined;
   return JSON.parse(readFileSync(path, "utf8")) as StoredMicrosoftCredential;
 }
 
-export function loadMicrosoftCredential(accountLabel: string): StoredMicrosoftCredential {
+export function loadMicrosoftCredential(
+  accountLabel: string,
+): StoredMicrosoftCredential {
   const credential = tryLoadMicrosoftCredential(accountLabel);
   if (!credential) {
-    throw new Error(`No stored Microsoft credential for "${accountLabel}" at ${credentialPath(accountLabel)}.`);
+    throw new Error(
+      `No stored Microsoft credential for "${accountLabel}" at ${credentialPath(accountLabel)}.`,
+    );
   }
   return credential;
 }

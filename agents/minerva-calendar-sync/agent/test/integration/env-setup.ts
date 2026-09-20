@@ -6,7 +6,8 @@ import { join } from "path";
 // disposable per-run file — there's nothing to create, only to make sure
 // the schema is current before the suite runs. `migrate deploy` is a
 // no-op when there's nothing new to apply.
-process.env.DATABASE_URL ??= "postgresql://minerva:minerva@localhost:5432/minerva_test";
+process.env.DATABASE_URL ??=
+  "postgresql://minerva:minerva@localhost:5432/minerva_test";
 
 execSync("npx prisma migrate deploy --schema=prisma/postgres/schema.prisma", {
   cwd: join(__dirname, "..", ".."),

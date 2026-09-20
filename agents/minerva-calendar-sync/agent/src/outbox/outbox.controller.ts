@@ -1,8 +1,27 @@
-import { Controller, Get, HttpCode, Inject, NotFoundException, Param, Post, Query } from "@nestjs/common";
-import { ApiBearerAuth, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import {
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  NotFoundException,
+  Param,
+  Post,
+  Query,
+} from "@nestjs/common";
+import {
+  ApiBearerAuth,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from "@nestjs/swagger";
 import { buildCanonicalEventId } from "../domain/canonical-event";
 import { OutboxSourceStats } from "../domain/outbox";
-import { OUTBOX_ENABLED, OUTBOX_STORE, OutboxStore } from "../store/outbox-store";
+import {
+  OUTBOX_ENABLED,
+  OUTBOX_STORE,
+  OutboxStore,
+} from "../store/outbox-store";
 import { SyncConfigService } from "../sync/sync-config.service";
 import { EventPublishStatusDto } from "./dto/event-publish-status.dto";
 import { ListFailedQueryDto } from "./dto/list-failed-query.dto";
@@ -34,15 +53,29 @@ export class OutboxController {
   @Get("summary")
   @ApiOkResponse({ type: OutboxSummaryDto })
   async summary(): Promise<OutboxSummaryDto> {
-    const [stats, calendars] = await Promise.all([this.outbox.getStats(), this.syncConfig.getAll()]);
-    const calendarIdBySource = new Map(calendars.map((c) => [c.source, c.calendarId]));
+    const [stats, calendars] = await Promise.all([
+      this.outbox.getStats(),
+      this.syncConfig.getAll(),
+    ]);
+    const calendarIdBySource = new Map(
+      calendars.map((c) => [c.source, c.calendarId]),
+    );
     const zeroStats = { pending: 0, sent: 0, failed: 0, oldestPendingAt: null };
 
-    const sources = new Map<string, OutboxSourceStats & { calendarId: string | null }>(
-      calendars.map((c) => [c.source, { ...zeroStats, source: c.source, calendarId: c.calendarId }]),
+    const sources = new Map<
+      string,
+      OutboxSourceStats & { calendarId: string | null }
+    >(
+      calendars.map((c) => [
+        c.source,
+        { ...zeroStats, source: c.source, calendarId: c.calendarId },
+      ]),
     );
     for (const s of stats) {
-      sources.set(s.source, { ...s, calendarId: calendarIdBySource.get(s.source) ?? null });
+      sources.set(s.source, {
+        ...s,
+        calendarId: calendarIdBySource.get(s.source) ?? null,
+      });
     }
 
     return { enabled: this.outboxEnabled, sources: [...sources.values()] };
@@ -57,7 +90,9 @@ export class OutboxController {
 
   @Post("failed/:id/requeue")
   @HttpCode(204)
-  @ApiNoContentResponse({ description: "Requeued — the dispatcher will retry it on its next tick" })
+  @ApiNoContentResponse({
+    description: "Requeued — the dispatcher will retry it on its next tick",
+  })
   @ApiNotFoundResponse({ description: "No failed outbox row with that id" })
   async requeue(@Param("id") id: string): Promise<void> {
     const requeued = await this.outbox.requeue(id);
@@ -69,8 +104,13 @@ export class OutboxController {
   /** Backs the "Publish status" row in the event detail drawer. */
   @Get("events/:source/:uid")
   @ApiOkResponse({ type: EventPublishStatusDto })
-  async eventStatus(@Param("source") source: string, @Param("uid") uid: string): Promise<EventPublishStatusDto> {
-    const latest = await this.outbox.getLatestForEvent(buildCanonicalEventId(source, uid));
+  async eventStatus(
+    @Param("source") source: string,
+    @Param("uid") uid: string,
+  ): Promise<EventPublishStatusDto> {
+    const latest = await this.outbox.getLatestForEvent(
+      buildCanonicalEventId(source, uid),
+    );
     return { enabled: this.outboxEnabled, latest };
   }
 }

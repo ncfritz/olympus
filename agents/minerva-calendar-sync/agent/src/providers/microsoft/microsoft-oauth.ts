@@ -1,10 +1,19 @@
 import type * as OpenIdClient from "openid-client";
 import { loadOpenIdClient } from "../../auth/openid-client-loader";
-import { findFreePort, waitForAuthorizationCallback } from "../shared/oauth-loopback-server";
-import { loadMicrosoftCredential, requireEnv } from "./microsoft-credential-store";
+import {
+  findFreePort,
+  waitForAuthorizationCallback,
+} from "../shared/oauth-loopback-server";
+import {
+  loadMicrosoftCredential,
+  requireEnv,
+} from "./microsoft-credential-store";
 
 /** Scopes requested when obtaining (or renewing) a Microsoft credential for calendar sync. */
-export const MICROSOFT_CALENDAR_SCOPES = ["offline_access", "https://graph.microsoft.com/Calendars.Read"];
+export const MICROSOFT_CALENDAR_SCOPES = [
+  "offline_access",
+  "https://graph.microsoft.com/Calendars.Read",
+];
 
 /**
  * Scopes for authorizing a brand-new account, where — unlike a reauth for an
@@ -13,7 +22,11 @@ export const MICROSOFT_CALENDAR_SCOPES = ["offline_access", "https://graph.micro
  * MicrosoftAuthStrategy.completeNewAccountAuth), mirroring
  * GOOGLE_NEW_ACCOUNT_SCOPES.
  */
-export const MICROSOFT_NEW_ACCOUNT_SCOPES = [...MICROSOFT_CALENDAR_SCOPES, "openid", "email"];
+export const MICROSOFT_NEW_ACCOUNT_SCOPES = [
+  ...MICROSOFT_CALENDAR_SCOPES,
+  "openid",
+  "email",
+];
 
 let discoveryPromise: Promise<OpenIdClient.Configuration> | undefined;
 
@@ -31,7 +44,9 @@ let discoveryPromise: Promise<OpenIdClient.Configuration> | undefined;
  * though a secret may still exist on the app registration (some registration
  * flows generate one regardless of platform type).
  */
-function getOidcConfig(client: typeof OpenIdClient): Promise<OpenIdClient.Configuration> {
+function getOidcConfig(
+  client: typeof OpenIdClient,
+): Promise<OpenIdClient.Configuration> {
   if (!discoveryPromise) {
     const tenant = process.env["MICROSOFT_OAUTH_TENANT_ID"] || "common";
     discoveryPromise = client.discovery(
@@ -66,7 +81,9 @@ export interface MicrosoftLoopbackFlow {
  * google-auth-library's OAuth2Client, since Microsoft's endpoints are plain
  * OIDC rather than a bespoke client library.
  */
-export async function startMicrosoftLoopbackFlow(scopes: string[]): Promise<MicrosoftLoopbackFlow> {
+export async function startMicrosoftLoopbackFlow(
+  scopes: string[],
+): Promise<MicrosoftLoopbackFlow> {
   const client = await loadOpenIdClient();
   const oidcConfig = await getOidcConfig(client);
 
@@ -110,15 +127,27 @@ export async function startMicrosoftLoopbackFlow(scopes: string[]): Promise<Micr
     authUrl: authUrl.href,
     redirectUri,
     async complete(timeoutMs?: number) {
-      const callbackUrl = await waitForAuthorizationCallback(redirectUri, timeoutMs);
-      let tokenResponse: Awaited<ReturnType<typeof client.authorizationCodeGrant>>;
+      const callbackUrl = await waitForAuthorizationCallback(
+        redirectUri,
+        timeoutMs,
+      );
+      let tokenResponse: Awaited<
+        ReturnType<typeof client.authorizationCodeGrant>
+      >;
       try {
-        tokenResponse = await client.authorizationCodeGrant(oidcConfig, callbackUrl, {
-          pkceCodeVerifier: codeVerifier,
-          expectedState: state,
-        });
+        tokenResponse = await client.authorizationCodeGrant(
+          oidcConfig,
+          callbackUrl,
+          {
+            pkceCodeVerifier: codeVerifier,
+            expectedState: state,
+          },
+        );
       } catch (error) {
-        throw new Error(`Microsoft token exchange failed: ${describeTokenError(error)}`, { cause: error });
+        throw new Error(
+          `Microsoft token exchange failed: ${describeTokenError(error)}`,
+          { cause: error },
+        );
       }
 
       if (!tokenResponse.refresh_token) {
@@ -141,9 +170,15 @@ export async function startMicrosoftLoopbackFlow(scopes: string[]): Promise<Micr
 
 /** Extracts the OAuth error code/description oauth4webapi's ResponseBodyError carries, falling back to the plain message. */
 function describeTokenError(error: unknown): string {
-  const err = error as { error?: string; error_description?: string; message?: string };
+  const err = error as {
+    error?: string;
+    error_description?: string;
+    message?: string;
+  };
   if (err?.error) {
-    return err.error_description ? `${err.error}: ${err.error_description}` : err.error;
+    return err.error_description
+      ? `${err.error}: ${err.error_description}`
+      : err.error;
   }
   return err?.message ?? String(error);
 }
@@ -154,11 +189,16 @@ export async function refreshMicrosoftAccessToken(
 ): Promise<{ accessToken: string; expiresAt?: string }> {
   const client = await loadOpenIdClient();
   const oidcConfig = await getOidcConfig(client);
-  const tokenResponse = await client.refreshTokenGrant(oidcConfig, refreshToken);
+  const tokenResponse = await client.refreshTokenGrant(
+    oidcConfig,
+    refreshToken,
+  );
 
   return {
     accessToken: tokenResponse.access_token,
-    expiresAt: tokenResponse.expiresIn() ? new Date(Date.now() + tokenResponse.expiresIn()! * 1000).toISOString() : undefined,
+    expiresAt: tokenResponse.expiresIn()
+      ? new Date(Date.now() + tokenResponse.expiresIn()! * 1000).toISOString()
+      : undefined,
   };
 }
 
@@ -173,7 +213,9 @@ export interface MicrosoftAccessTokenProvider {
  * in per request, so this mints one from the stored refresh token and caches
  * it in memory until shortly before it expires.
  */
-export function createAuthorizedMicrosoftClient(accountLabel: string): MicrosoftAccessTokenProvider {
+export function createAuthorizedMicrosoftClient(
+  accountLabel: string,
+): MicrosoftAccessTokenProvider {
   let cached: { accessToken: string; expiresAtMs: number } | undefined;
 
   return {
@@ -183,8 +225,15 @@ export function createAuthorizedMicrosoftClient(accountLabel: string): Microsoft
       }
 
       const credential = loadMicrosoftCredential(accountLabel);
-      const { accessToken, expiresAt } = await refreshMicrosoftAccessToken(credential.refreshToken);
-      cached = { accessToken, expiresAtMs: expiresAt ? Date.parse(expiresAt) : Date.now() + 55 * 60 * 1000 };
+      const { accessToken, expiresAt } = await refreshMicrosoftAccessToken(
+        credential.refreshToken,
+      );
+      cached = {
+        accessToken,
+        expiresAtMs: expiresAt
+          ? Date.parse(expiresAt)
+          : Date.now() + 55 * 60 * 1000,
+      };
       return accessToken;
     },
   };

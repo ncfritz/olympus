@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { SYNC_RUN_STORE, SyncRunStore } from "../store/sync-run-store";
@@ -25,17 +31,27 @@ export class SyncHistoryPrunerService implements OnModuleInit, OnModuleDestroy {
     private readonly scheduler: SchedulerRegistry,
     config: ConfigService,
   ) {
-    this.retentionDays = Number(config.get<string>("SYNC_HISTORY_RETENTION_DAYS")) || DEFAULT_RETENTION_DAYS;
+    this.retentionDays =
+      Number(config.get<string>("SYNC_HISTORY_RETENTION_DAYS")) ||
+      DEFAULT_RETENTION_DAYS;
   }
 
   onModuleInit(): void {
     const timer = setInterval(() => {
-      this.prune().catch((error) => this.logger.error(`Prune failed: ${error instanceof Error ? error.message : error}`));
+      this.prune().catch((error) =>
+        this.logger.error(
+          `Prune failed: ${error instanceof Error ? error.message : error}`,
+        ),
+      );
     }, PRUNE_INTERVAL_MS);
     this.scheduler.addInterval(TIMER_NAME, timer);
 
     // Run once at boot rather than waiting a full day for the first pass.
-    this.prune().catch((error) => this.logger.error(`Initial prune failed: ${error instanceof Error ? error.message : error}`));
+    this.prune().catch((error) =>
+      this.logger.error(
+        `Initial prune failed: ${error instanceof Error ? error.message : error}`,
+      ),
+    );
   }
 
   onModuleDestroy(): void {
@@ -45,10 +61,14 @@ export class SyncHistoryPrunerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async prune(): Promise<void> {
-    const cutoff = new Date(Date.now() - this.retentionDays * 24 * 60 * 60 * 1000);
+    const cutoff = new Date(
+      Date.now() - this.retentionDays * 24 * 60 * 60 * 1000,
+    );
     const count = await this.syncRuns.pruneFinishedBefore(cutoff);
     if (count > 0) {
-      this.logger.log(`Pruned ${count} sync history run(s) older than ${this.retentionDays} day(s)`);
+      this.logger.log(
+        `Pruned ${count} sync history run(s) older than ${this.retentionDays} day(s)`,
+      );
     }
   }
 }

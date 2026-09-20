@@ -41,7 +41,8 @@ import { SYNC_RUN_STORE } from "./sync-run-store";
     // entirely.
     {
       provide: OUTBOX_ENABLED,
-      useFactory: (config: ConfigService) => Boolean(config.get<string>("RABBITMQ_URL")),
+      useFactory: (config: ConfigService) =>
+        Boolean(config.get<string>("RABBITMQ_URL")),
       inject: [ConfigService],
     },
     PrismaEventStore,
@@ -55,11 +56,17 @@ import { SYNC_RUN_STORE } from "./sync-run-store";
     PrismaCalendarColorStore,
     { provide: CALENDAR_COLOR_STORE, useExisting: PrismaCalendarColorStore },
     PrismaCalendarEnablementStore,
-    { provide: CALENDAR_ENABLEMENT_STORE, useExisting: PrismaCalendarEnablementStore },
+    {
+      provide: CALENDAR_ENABLEMENT_STORE,
+      useExisting: PrismaCalendarEnablementStore,
+    },
     PrismaSyncedCalendarStore,
     { provide: SYNCED_CALENDAR_STORE, useExisting: PrismaSyncedCalendarStore },
     PrismaCalendarBusyInclusionStore,
-    { provide: CALENDAR_BUSY_INCLUSION_STORE, useExisting: PrismaCalendarBusyInclusionStore },
+    {
+      provide: CALENDAR_BUSY_INCLUSION_STORE,
+      useExisting: PrismaCalendarBusyInclusionStore,
+    },
     PrismaSyncRunStore,
     { provide: SYNC_RUN_STORE, useExisting: PrismaSyncRunStore },
   ],

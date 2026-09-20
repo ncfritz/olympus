@@ -3,13 +3,22 @@
  * so the same values work unchanged across every EventStore backend
  * (SQLite, Postgres, or a custom API) and every CalendarProvider.
  */
-export const SENSITIVITY_VALUES = ["normal", "personal", "private", "confidential"] as const;
+export const SENSITIVITY_VALUES = [
+  "normal",
+  "personal",
+  "private",
+  "confidential",
+] as const;
 export type Sensitivity = (typeof SENSITIVITY_VALUES)[number];
 
 export const IMPORTANCE_VALUES = ["low", "normal", "high"] as const;
 export type Importance = (typeof IMPORTANCE_VALUES)[number];
 
-export const OCCURRENCE_TYPE_VALUES = ["single", "occurrence", "series_master"] as const;
+export const OCCURRENCE_TYPE_VALUES = [
+  "single",
+  "occurrence",
+  "series_master",
+] as const;
 export type OccurrenceType = (typeof OCCURRENCE_TYPE_VALUES)[number];
 
 export const EVENT_TYPE_VALUES = ["appointment", "meeting", "other"] as const;

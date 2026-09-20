@@ -1,4 +1,8 @@
-import { CanonicalCalendarEvent, EventFilter, SyncState } from "../domain/canonical-event";
+import {
+  CanonicalCalendarEvent,
+  EventFilter,
+  SyncState,
+} from "../domain/canonical-event";
 
 /**
  * What upsertEvent actually did — lets SyncEngine tally accurate
@@ -23,7 +27,10 @@ export interface EventStore {
   getEvent(source: string, uid: string): Promise<CanonicalCalendarEvent | null>;
   listEvents(filter: EventFilter): Promise<CanonicalCalendarEvent[]>;
   /** Non-cancelled, non-deleted events overlapping [start, end) — the shape availability computation needs, distinct from listEvents' startTime-only filtering. */
-  listEventsOverlapping(start: string, end: string): Promise<CanonicalCalendarEvent[]>;
+  listEventsOverlapping(
+    start: string,
+    end: string,
+  ): Promise<CanonicalCalendarEvent[]>;
   getSyncState(calendarId: string): Promise<SyncState | null>;
   saveSyncState(calendarId: string, state: SyncState): Promise<void>;
 }

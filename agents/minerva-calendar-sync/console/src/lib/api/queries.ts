@@ -15,8 +15,7 @@ export type CalendarAccountStatus =
 export type AvailableCalendar = components["schemas"]["AvailableCalendarDto"];
 export type SyncRun = components["schemas"]["SyncRunDto"];
 export type SyncRunDetail = components["schemas"]["SyncRunDetailDto"];
-export type SyncRunEventChange =
-  components["schemas"]["SyncRunEventChangeDto"];
+export type SyncRunEventChange = components["schemas"]["SyncRunEventChangeDto"];
 export type SyncRunDailyStat = components["schemas"]["SyncRunDailyStatDto"];
 export type OutboxSummary = components["schemas"]["OutboxSummaryDto"];
 export type OutboxSourceStats = components["schemas"]["OutboxSourceStatsDto"];
@@ -83,10 +82,13 @@ export async function setCalendarIncludedInBusy(
   calendarId: string,
   includedInBusy: boolean,
 ): Promise<void> {
-  const { error } = await apiClient.PUT("/calendars/{calendarId}/included-in-busy", {
-    params: { path: { calendarId } },
-    body: { includedInBusy },
-  });
+  const { error } = await apiClient.PUT(
+    "/calendars/{calendarId}/included-in-busy",
+    {
+      params: { path: { calendarId } },
+      body: { includedInBusy },
+    },
+  );
   if (error)
     throw new Error(
       `Failed to set calendar busy inclusion: ${JSON.stringify(error)}`,
@@ -143,19 +145,25 @@ export interface SyncRunFilterParams {
 export async function fetchSyncRuns(
   filter: SyncRunFilterParams & { limit?: number },
 ): Promise<SyncRun[]> {
-  const { data } = await apiClient.GET("/sync-runs", { params: { query: filter } });
+  const { data } = await apiClient.GET("/sync-runs", {
+    params: { query: filter },
+  });
   return data ?? [];
 }
 
 export async function fetchSyncRun(id: string): Promise<SyncRunDetail | null> {
-  const { data } = await apiClient.GET("/sync-runs/{id}", { params: { path: { id } } });
+  const { data } = await apiClient.GET("/sync-runs/{id}", {
+    params: { path: { id } },
+  });
   return data ?? null;
 }
 
 export async function fetchSyncRunStats(
   filter: SyncRunFilterParams & { days?: number },
 ): Promise<SyncRunDailyStat[]> {
-  const { data } = await apiClient.GET("/sync-runs/stats", { params: { query: filter } });
+  const { data } = await apiClient.GET("/sync-runs/stats", {
+    params: { query: filter },
+  });
   return data ?? [];
 }
 
@@ -196,7 +204,9 @@ export async function fetchNewAccountAuthStatus(
     { params: { path: { transactionId } } },
   );
   if (error || !data)
-    throw new Error(`Failed to check authorization status: ${JSON.stringify(error)}`);
+    throw new Error(
+      `Failed to check authorization status: ${JSON.stringify(error)}`,
+    );
   return data;
 }
 

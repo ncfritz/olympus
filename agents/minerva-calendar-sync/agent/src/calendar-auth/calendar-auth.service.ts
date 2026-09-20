@@ -3,7 +3,10 @@ import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { CalendarProviderRegistry } from "../providers/calendar-provider-registry";
 import { SyncConfigService } from "../sync/sync-config.service";
 import { SyncedCalendarConfig } from "../sync/synced-calendar-config";
-import { CalendarAuthStrategy, LoopbackFlow } from "./strategies/calendar-auth-strategy";
+import {
+  CalendarAuthStrategy,
+  LoopbackFlow,
+} from "./strategies/calendar-auth-strategy";
 import { GoogleAuthStrategy } from "./strategies/google-auth-strategy";
 import { MicrosoftAuthStrategy } from "./strategies/microsoft-auth-strategy";
 import { AvailableCalendarDto } from "./dto/available-calendar.dto";
@@ -15,7 +18,9 @@ const NEW_ACCOUNT_AUTH_TIMEOUT_MS = 5 * 60 * 1000;
 
 type CalendarProviderName = "google" | "microsoft";
 
-type ReauthEntry = { phase: "pending"; authUrl: string } | { phase: "failed"; authUrl: string; error: string };
+type ReauthEntry =
+  | { phase: "pending"; authUrl: string }
+  | { phase: "failed"; authUrl: string; error: string };
 
 type NewAccountAuthEntry =
   | { phase: "pending" }
@@ -42,7 +47,10 @@ type NewAccountAuthEntry =
 @Injectable()
 export class CalendarAuthService {
   private readonly logger = new Logger(CalendarAuthService.name);
-  private readonly strategies: Record<CalendarProviderName, CalendarAuthStrategy> = {
+  private readonly strategies: Record<
+    CalendarProviderName,
+    CalendarAuthStrategy
+  > = {
     google: new GoogleAuthStrategy(),
     microsoft: new MicrosoftAuthStrategy(),
   };
@@ -59,32 +67,58 @@ export class CalendarAuthService {
   async listStatuses(): Promise<CalendarAccountStatusDto[]> {
     const entries = await this.allAccountEntries();
     return Promise.all(
-      entries.map(({ accountLabel, provider }) => this.buildStatus(accountLabel, this.strategies[provider])),
+      entries.map(({ accountLabel, provider }) =>
+        this.buildStatus(accountLabel, this.strategies[provider]),
+      ),
     );
   }
 
   /** Whether `accountLabel` has a stored, usable credential for `provider` — CalendarsController checks this before adding a calendar for it. */
   isConnected(accountLabel: string, provider: CalendarProviderName): boolean {
-    return this.strategies[provider].tryLoadCredential(accountLabel) !== undefined;
+    return (
+      this.strategies[provider].tryLoadCredential(accountLabel) !== undefined
+    );
   }
 
-  async getStatus(accountLabel: string, provider?: CalendarProviderName): Promise<CalendarAccountStatusDto> {
+  async getStatus(
+    accountLabel: string,
+    provider?: CalendarProviderName,
+  ): Promise<CalendarAccountStatusDto> {
     const strategy = await this.resolveStrategy(accountLabel, provider);
     return this.buildStatus(accountLabel, strategy);
   }
 
-  private async buildStatus(accountLabel: string, strategy: CalendarAuthStrategy): Promise<CalendarAccountStatusDto> {
+  private async buildStatus(
+    accountLabel: string,
+    strategy: CalendarAuthStrategy,
+  ): Promise<CalendarAccountStatusDto> {
     const sources = await this.sourcesFor(accountLabel, strategy.provider);
     const entry = this.reauth.get(reauthKey(strategy.provider, accountLabel));
     if (entry?.phase === "pending") {
-      return { accountLabel, provider: strategy.provider, sources, status: "reauth_pending" };
+      return {
+        accountLabel,
+        provider: strategy.provider,
+        sources,
+        status: "reauth_pending",
+      };
     }
 
     const credential = strategy.tryLoadCredential(accountLabel);
     if (!credential) {
       return entry?.phase === "failed"
-        ? { accountLabel, provider: strategy.provider, sources, status: "error", error: entry.error }
-        : { accountLabel, provider: strategy.provider, sources, status: "not_connected" };
+        ? {
+            accountLabel,
+            provider: strategy.provider,
+            sources,
+            status: "error",
+            error: entry.error,
+          }
+        : {
+            accountLabel,
+            provider: strategy.provider,
+            sources,
+            status: "not_connected",
+          };
     }
 
     const base = {
@@ -103,8 +137,14 @@ export class CalendarAuthService {
       return { ...base, status: "ok", accessTokenExpiresAt: expiresAt };
     } catch (error) {
       const message = strategy.errorMessage(error);
-      this.logger.warn(`${strategy.provider} credential check failed for "${accountLabel}": ${message}`);
-      return { ...base, status: strategy.isInvalidGrantError(error) ? "expired" : "error", error: message };
+      this.logger.warn(
+        `${strategy.provider} credential check failed for "${accountLabel}": ${message}`,
+      );
+      return {
+        ...base,
+        status: strategy.isInvalidGrantError(error) ? "expired" : "error",
+        error: message,
+      };
     }
   }
 
@@ -115,7 +155,10 @@ export class CalendarAuthService {
    * the exchange completes in the background once the user finishes
    * granting access.
    */
-  async startReauth(accountLabel: string, provider?: CalendarProviderName): Promise<{ authUrl: string }> {
+  async startReauth(
+    accountLabel: string,
+    provider?: CalendarProviderName,
+  ): Promise<{ authUrl: string }> {
     const strategy = await this.resolveStrategy(accountLabel, provider);
     const key = reauthKey(strategy.provider, accountLabel);
 
@@ -124,21 +167,32 @@ export class CalendarAuthService {
       return { authUrl: existing.authUrl };
     }
 
-    const flow = await strategy.startLoopbackFlow({ mode: "reauth", accountLabel });
+    const flow = await strategy.startLoopbackFlow({
+      mode: "reauth",
+      accountLabel,
+    });
     this.reauth.set(key, { phase: "pending", authUrl: flow.authUrl });
     this.completeReauth(key, accountLabel, flow);
 
     return { authUrl: flow.authUrl };
   }
 
-  private async completeReauth(key: string, accountLabel: string, flow: LoopbackFlow): Promise<void> {
+  private async completeReauth(
+    key: string,
+    accountLabel: string,
+    flow: LoopbackFlow,
+  ): Promise<void> {
     try {
       await flow.complete(REAUTH_TIMEOUT_MS);
       this.reauth.delete(key);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error(`Reauth failed for "${accountLabel}": ${message}`);
-      this.reauth.set(key, { phase: "failed", authUrl: flow.authUrl, error: message });
+      this.reauth.set(key, {
+        phase: "failed",
+        authUrl: flow.authUrl,
+        error: message,
+      });
     }
   }
 
@@ -154,11 +208,19 @@ export class CalendarAuthService {
   ): Promise<AvailableCalendarDto[]> {
     const strategy = await this.resolveStrategy(accountLabel, provider);
     if (!strategy.tryLoadCredential(accountLabel)) {
-      throw new NotFoundException(`Account "${accountLabel}" hasn't completed sign-in yet`);
+      throw new NotFoundException(
+        `Account "${accountLabel}" hasn't completed sign-in yet`,
+      );
     }
 
-    const synced = new Set((await this.calendarsFor(accountLabel, strategy.provider)).map((c) => c.calendarId));
-    const calendars = await this.providers.forAccount(accountLabel, strategy.provider).listCalendars();
+    const synced = new Set(
+      (await this.calendarsFor(accountLabel, strategy.provider)).map(
+        (c) => c.calendarId,
+      ),
+    );
+    const calendars = await this.providers
+      .forAccount(accountLabel, strategy.provider)
+      .listCalendars();
     return calendars.map((calendar) => ({
       id: calendar.id,
       summary: calendar.summary,
@@ -167,7 +229,9 @@ export class CalendarAuthService {
       // SyncedCalendarConfig accepts as a shorthand for it — check both so
       // an already-synced primary calendar isn't shown as addable under its
       // other name (which would double-sync it).
-      alreadySynced: synced.has(calendar.id) || Boolean(calendar.primary && synced.has("primary")),
+      alreadySynced:
+        synced.has(calendar.id) ||
+        Boolean(calendar.primary && synced.has("primary")),
     }));
   }
 
@@ -179,8 +243,12 @@ export class CalendarAuthService {
    * listStatuses via each strategy's listStoredAccountLabels, ready for the
    * Sync page's discovery UI to add its first calendar.
    */
-  async startNewAccountAuth(provider: CalendarProviderName): Promise<{ transactionId: string; authUrl: string }> {
-    const flow = await this.strategies[provider].startLoopbackFlow({ mode: "new" });
+  async startNewAccountAuth(
+    provider: CalendarProviderName,
+  ): Promise<{ transactionId: string; authUrl: string }> {
+    const flow = await this.strategies[provider].startLoopbackFlow({
+      mode: "new",
+    });
 
     const transactionId = randomUUID();
     this.newAccountAuth.set(transactionId, { phase: "pending" });
@@ -192,7 +260,9 @@ export class CalendarAuthService {
   getNewAccountAuthStatus(transactionId: string): NewAccountAuthStatusDto {
     const entry = this.newAccountAuth.get(transactionId);
     if (!entry) {
-      throw new NotFoundException(`No new-account authorization "${transactionId}"`);
+      throw new NotFoundException(
+        `No new-account authorization "${transactionId}"`,
+      );
     }
     return entry.phase === "pending"
       ? { status: "pending" }
@@ -201,14 +271,25 @@ export class CalendarAuthService {
         : { status: "error", error: entry.error };
   }
 
-  private async completeNewAccountAuth(transactionId: string, flow: LoopbackFlow): Promise<void> {
+  private async completeNewAccountAuth(
+    transactionId: string,
+    flow: LoopbackFlow,
+  ): Promise<void> {
     try {
       const { accountLabel } = await flow.complete(NEW_ACCOUNT_AUTH_TIMEOUT_MS);
-      this.newAccountAuth.set(transactionId, { phase: "success", accountLabel });
+      this.newAccountAuth.set(transactionId, {
+        phase: "success",
+        accountLabel,
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(`New account authorization "${transactionId}" failed: ${message}`);
-      this.newAccountAuth.set(transactionId, { phase: "failed", error: message });
+      this.logger.error(
+        `New account authorization "${transactionId}" failed: ${message}`,
+      );
+      this.newAccountAuth.set(transactionId, {
+        phase: "failed",
+        error: message,
+      });
     }
   }
 
@@ -222,19 +303,29 @@ export class CalendarAuthService {
    * ambiguous if the same label happens to be connected under more than one
    * provider, but there's no third option for callers that don't know it.
    */
-  private async resolveStrategy(accountLabel: string, provider?: CalendarProviderName): Promise<CalendarAuthStrategy> {
+  private async resolveStrategy(
+    accountLabel: string,
+    provider?: CalendarProviderName,
+  ): Promise<CalendarAuthStrategy> {
     if (provider) {
       const strategy = this.strategies[provider];
       const configured = (await this.config.getAll()).some(
         (c) => c.accountLabel === accountLabel && c.provider === provider,
       );
-      if (!configured && !strategy.listStoredAccountLabels().includes(accountLabel)) {
-        throw new NotFoundException(`No configured calendar uses ${provider} account "${accountLabel}"`);
+      if (
+        !configured &&
+        !strategy.listStoredAccountLabels().includes(accountLabel)
+      ) {
+        throw new NotFoundException(
+          `No configured calendar uses ${provider} account "${accountLabel}"`,
+        );
       }
       return strategy;
     }
 
-    const configured = (await this.config.getAll()).find((c) => c.accountLabel === accountLabel);
+    const configured = (await this.config.getAll()).find(
+      (c) => c.accountLabel === accountLabel,
+    );
     if (configured) {
       return this.strategies[configured.provider as CalendarProviderName];
     }
@@ -243,16 +334,26 @@ export class CalendarAuthService {
         return strategy;
       }
     }
-    throw new NotFoundException(`No configured calendar uses account "${accountLabel}"`);
+    throw new NotFoundException(
+      `No configured calendar uses account "${accountLabel}"`,
+    );
   }
 
-  private async allAccountEntries(): Promise<{ accountLabel: string; provider: CalendarProviderName }[]> {
+  private async allAccountEntries(): Promise<
+    { accountLabel: string; provider: CalendarProviderName }[]
+  > {
     // Keyed by "provider\0accountLabel" — accountLabel alone isn't unique
     // across providers (see class doc comment).
-    const entries = new Map<string, { accountLabel: string; provider: CalendarProviderName }>();
+    const entries = new Map<
+      string,
+      { accountLabel: string; provider: CalendarProviderName }
+    >();
     for (const calendar of await this.config.getAll()) {
       const provider = calendar.provider as CalendarProviderName;
-      entries.set(reauthKey(provider, calendar.accountLabel), { accountLabel: calendar.accountLabel, provider });
+      entries.set(reauthKey(provider, calendar.accountLabel), {
+        accountLabel: calendar.accountLabel,
+        provider,
+      });
     }
     // Includes accounts with a stored credential but no calendar yet — a
     // freshly authorized account needs to appear so its first calendar can
@@ -260,21 +361,35 @@ export class CalendarAuthService {
     for (const strategy of Object.values(this.strategies)) {
       for (const accountLabel of strategy.listStoredAccountLabels()) {
         const key = reauthKey(strategy.provider, accountLabel);
-        if (!entries.has(key)) entries.set(key, { accountLabel, provider: strategy.provider });
+        if (!entries.has(key))
+          entries.set(key, { accountLabel, provider: strategy.provider });
       }
     }
     return [...entries.values()];
   }
 
-  private async calendarsFor(accountLabel: string, provider: CalendarProviderName): Promise<SyncedCalendarConfig[]> {
-    return (await this.config.getAll()).filter((c) => c.accountLabel === accountLabel && c.provider === provider);
+  private async calendarsFor(
+    accountLabel: string,
+    provider: CalendarProviderName,
+  ): Promise<SyncedCalendarConfig[]> {
+    return (await this.config.getAll()).filter(
+      (c) => c.accountLabel === accountLabel && c.provider === provider,
+    );
   }
 
-  private async sourcesFor(accountLabel: string, provider: CalendarProviderName): Promise<string[]> {
-    return (await this.calendarsFor(accountLabel, provider)).map((c) => c.source);
+  private async sourcesFor(
+    accountLabel: string,
+    provider: CalendarProviderName,
+  ): Promise<string[]> {
+    return (await this.calendarsFor(accountLabel, provider)).map(
+      (c) => c.source,
+    );
   }
 }
 
-function reauthKey(provider: CalendarProviderName, accountLabel: string): string {
+function reauthKey(
+  provider: CalendarProviderName,
+  accountLabel: string,
+): string {
   return `${provider}\0${accountLabel}`;
 }

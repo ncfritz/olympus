@@ -25,7 +25,8 @@ export class PollingNotifier implements ChangeNotifier {
     private readonly config: SyncConfigService,
     private readonly scheduler: SchedulerRegistry,
   ) {
-    this.intervalMs = Number(process.env.POLL_INTERVAL_MS) || DEFAULT_POLL_INTERVAL_MS;
+    this.intervalMs =
+      Number(process.env.POLL_INTERVAL_MS) || DEFAULT_POLL_INTERVAL_MS;
   }
 
   start(onChange: (calendarId: string, trigger: "poll") => void): void {
@@ -36,12 +37,20 @@ export class PollingNotifier implements ChangeNotifier {
     };
 
     const timer = setInterval(() => {
-      tick().catch((error) => this.logger.error(`Poll tick failed: ${error instanceof Error ? error.message : error}`));
+      tick().catch((error) =>
+        this.logger.error(
+          `Poll tick failed: ${error instanceof Error ? error.message : error}`,
+        ),
+      );
     }, this.intervalMs);
     this.scheduler.addInterval(TIMER_NAME, timer);
 
     // Fire once immediately rather than waiting for the first tick.
-    tick().catch((error) => this.logger.error(`Initial poll failed: ${error instanceof Error ? error.message : error}`));
+    tick().catch((error) =>
+      this.logger.error(
+        `Initial poll failed: ${error instanceof Error ? error.message : error}`,
+      ),
+    );
   }
 
   stop(): void {

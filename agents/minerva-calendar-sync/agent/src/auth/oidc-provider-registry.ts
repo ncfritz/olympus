@@ -16,7 +16,10 @@ import { OidcProviderConfig, parseOidcProviders } from "./oidc-provider.config";
 @Injectable()
 export class OidcProviderRegistry {
   private readonly providers: Map<string, OidcProviderConfig>;
-  private readonly discovered = new Map<string, Promise<OpenIdClient.Configuration>>();
+  private readonly discovered = new Map<
+    string,
+    Promise<OpenIdClient.Configuration>
+  >();
 
   constructor(config: ConfigService) {
     const raw = config.get<string>("AUTH_OIDC_PROVIDERS");
@@ -38,7 +41,11 @@ export class OidcProviderRegistry {
     let discovery = this.discovered.get(name);
     if (!discovery) {
       discovery = loadOpenIdClient().then((client) =>
-        client.discovery(new URL(provider.issuer), provider.clientId, provider.clientSecret),
+        client.discovery(
+          new URL(provider.issuer),
+          provider.clientId,
+          provider.clientSecret,
+        ),
       );
       this.discovered.set(name, discovery);
     }

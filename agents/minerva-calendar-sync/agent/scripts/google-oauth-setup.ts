@@ -10,8 +10,14 @@
  * .credentials/<label>.json (gitignored).
  */
 import "dotenv/config";
-import { saveGoogleCredential, requireEnv } from "../src/providers/google/google-credential-store";
-import { createLoopbackClient, waitForAuthorizationCode } from "../src/providers/google/google-loopback-auth";
+import {
+  saveGoogleCredential,
+  requireEnv,
+} from "../src/providers/google/google-credential-store";
+import {
+  createLoopbackClient,
+  waitForAuthorizationCode,
+} from "../src/providers/google/google-loopback-auth";
 import { GOOGLE_CALENDAR_SCOPES } from "../src/providers/google/google-oauth-scopes";
 
 async function main(): Promise<void> {
@@ -27,7 +33,9 @@ async function main(): Promise<void> {
     scope: GOOGLE_CALENDAR_SCOPES,
   });
 
-  console.log("\nOpen this URL in a browser and sign in with the Google account to sync:\n");
+  console.log(
+    "\nOpen this URL in a browser and sign in with the Google account to sync:\n",
+  );
   console.log(authUrl);
   console.log(`\nWaiting for the OAuth redirect on ${redirectUri} ...\n`);
 

@@ -10,7 +10,10 @@ import { createAuthorizedMicrosoftClient } from "./microsoft/microsoft-oauth";
 @Injectable()
 export class CalendarProviderRegistry {
   private readonly googleProviders = new Map<string, GoogleCalendarProvider>();
-  private readonly microsoftProviders = new Map<string, MicrosoftCalendarProvider>();
+  private readonly microsoftProviders = new Map<
+    string,
+    MicrosoftCalendarProvider
+  >();
 
   resolve(config: SyncedCalendarConfig): CalendarProvider {
     switch (config.provider) {
@@ -24,7 +27,10 @@ export class CalendarProviderRegistry {
   }
 
   /** Resolves a provider bound to just an account — for calendar discovery, before any specific calendar is configured. */
-  forAccount(accountLabel: string, provider: SyncedCalendarConfig["provider"]): CalendarProvider {
+  forAccount(
+    accountLabel: string,
+    provider: SyncedCalendarConfig["provider"],
+  ): CalendarProvider {
     switch (provider) {
       case "google":
         return this.getGoogleProvider(accountLabel);
@@ -38,16 +44,22 @@ export class CalendarProviderRegistry {
   private getGoogleProvider(accountLabel: string): GoogleCalendarProvider {
     let provider = this.googleProviders.get(accountLabel);
     if (!provider) {
-      provider = new GoogleCalendarProvider(createAuthorizedGoogleClient(accountLabel));
+      provider = new GoogleCalendarProvider(
+        createAuthorizedGoogleClient(accountLabel),
+      );
       this.googleProviders.set(accountLabel, provider);
     }
     return provider;
   }
 
-  private getMicrosoftProvider(accountLabel: string): MicrosoftCalendarProvider {
+  private getMicrosoftProvider(
+    accountLabel: string,
+  ): MicrosoftCalendarProvider {
     let provider = this.microsoftProviders.get(accountLabel);
     if (!provider) {
-      provider = new MicrosoftCalendarProvider(createAuthorizedMicrosoftClient(accountLabel));
+      provider = new MicrosoftCalendarProvider(
+        createAuthorizedMicrosoftClient(accountLabel),
+      );
       this.microsoftProviders.set(accountLabel, provider);
     }
     return provider;

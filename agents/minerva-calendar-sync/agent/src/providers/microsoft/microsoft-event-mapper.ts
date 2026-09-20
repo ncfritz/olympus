@@ -51,7 +51,9 @@ export function isMicrosoftRemoval(raw: MicrosoftGraphEvent): boolean {
  * *and* every removal stub — so this mapper uses it directly as `uid`
  * everywhere instead of `iCalUId`, and removal resolution needs no heuristic.
  */
-export function resolveMicrosoftRemoval(raw: MicrosoftGraphEvent): RemovalTombstone {
+export function resolveMicrosoftRemoval(
+  raw: MicrosoftGraphEvent,
+): RemovalTombstone {
   return {
     uid: raw.id,
     // Best-effort like Google's: Graph's delta contract doesn't guarantee
@@ -103,11 +105,17 @@ export function mapMicrosoftEventToCanonical(
 }
 
 function mapSensitivity(sensitivity: string | undefined): Sensitivity {
-  return sensitivity && (SENSITIVITY_VALUES as readonly string[]).includes(sensitivity) ? (sensitivity as Sensitivity) : "normal";
+  return sensitivity &&
+    (SENSITIVITY_VALUES as readonly string[]).includes(sensitivity)
+    ? (sensitivity as Sensitivity)
+    : "normal";
 }
 
 function mapImportance(importance: string | undefined): Importance {
-  return importance && (IMPORTANCE_VALUES as readonly string[]).includes(importance) ? (importance as Importance) : "normal";
+  return importance &&
+    (IMPORTANCE_VALUES as readonly string[]).includes(importance)
+    ? (importance as Importance)
+    : "normal";
 }
 
 function mapOccurrenceType(type: string | undefined): OccurrenceType {
@@ -167,7 +175,11 @@ function mapFreeBusyStatus(showAs: string | undefined): FreeBusyStatus {
   }
 }
 
-function mapTimes(raw: MicrosoftGraphEvent): { startTime: string; endTime: string; allDay: boolean } {
+function mapTimes(raw: MicrosoftGraphEvent): {
+  startTime: string;
+  endTime: string;
+  allDay: boolean;
+} {
   const start = raw.start;
   const end = raw.end;
   if (!start?.dateTime || !end?.dateTime) {

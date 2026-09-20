@@ -12,9 +12,16 @@ export class NewAccountAuthStatusDto {
   })
   status: NewAccountAuthStatus;
 
-  @ApiProperty({ description: "The newly authorized account's label (its email address), once status is 'success'", required: false })
+  @ApiProperty({
+    description:
+      "The newly authorized account's label (its email address), once status is 'success'",
+    required: false,
+  })
   accountLabel?: string;
 
-  @ApiProperty({ description: "Human-readable detail when status is 'error'", required: false })
+  @ApiProperty({
+    description: "Human-readable detail when status is 'error'",
+    required: false,
+  })
   error?: string;
 }

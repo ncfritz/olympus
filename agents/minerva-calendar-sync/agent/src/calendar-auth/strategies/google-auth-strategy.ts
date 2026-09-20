@@ -6,9 +6,19 @@ import {
   saveGoogleCredential,
   tryLoadGoogleCredential,
 } from "../../providers/google/google-credential-store";
-import { createLoopbackClient, waitForAuthorizationCode } from "../../providers/google/google-loopback-auth";
-import { GOOGLE_CALENDAR_SCOPES, GOOGLE_NEW_ACCOUNT_SCOPES } from "../../providers/google/google-oauth-scopes";
-import { CalendarAuthStrategy, LoopbackFlow, LoopbackFlowRequest } from "./calendar-auth-strategy";
+import {
+  createLoopbackClient,
+  waitForAuthorizationCode,
+} from "../../providers/google/google-loopback-auth";
+import {
+  GOOGLE_CALENDAR_SCOPES,
+  GOOGLE_NEW_ACCOUNT_SCOPES,
+} from "../../providers/google/google-oauth-scopes";
+import {
+  CalendarAuthStrategy,
+  LoopbackFlow,
+  LoopbackFlowRequest,
+} from "./calendar-auth-strategy";
 
 export class GoogleAuthStrategy implements CalendarAuthStrategy {
   readonly provider = "google" as const;
@@ -21,7 +31,9 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
     return tryLoadGoogleCredential(accountLabel);
   }
 
-  async checkAccessToken(accountLabel: string): Promise<{ expiresAt?: string }> {
+  async checkAccessToken(
+    accountLabel: string,
+  ): Promise<{ expiresAt?: string }> {
     const client = createAuthorizedGoogleClient(accountLabel);
     await client.getAccessToken();
     const expiry = client.credentials.expiry_date;
@@ -33,12 +45,20 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
       requireEnv("GOOGLE_OAUTH_CLIENT_ID"),
       requireEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
     );
-    const scopes = request.mode === "new" ? GOOGLE_NEW_ACCOUNT_SCOPES : GOOGLE_CALENDAR_SCOPES;
-    const authUrl = client.generateAuthUrl({ access_type: "offline", prompt: "consent", scope: scopes });
+    const scopes =
+      request.mode === "new"
+        ? GOOGLE_NEW_ACCOUNT_SCOPES
+        : GOOGLE_CALENDAR_SCOPES;
+    const authUrl = client.generateAuthUrl({
+      access_type: "offline",
+      prompt: "consent",
+      scope: scopes,
+    });
 
     return {
       authUrl,
-      complete: (timeoutMs) => this.complete(request, client, redirectUri, scopes, timeoutMs),
+      complete: (timeoutMs) =>
+        this.complete(request, client, redirectUri, scopes, timeoutMs),
     };
   }
 
@@ -65,7 +85,9 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
       }
       const info = await client.getTokenInfo(tokens.access_token);
       if (!info.email || info.email_verified !== true) {
-        throw new Error("Google did not return a verified email address for this account");
+        throw new Error(
+          "Google did not return a verified email address for this account",
+        );
       }
       accountLabel = info.email;
     } else {
@@ -73,7 +95,12 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
     }
 
     const scope = tokens.scope ?? scopes.join(" ");
-    saveGoogleCredential({ accountLabel, refreshToken: tokens.refresh_token, scope, obtainedAt: new Date().toISOString() });
+    saveGoogleCredential({
+      accountLabel,
+      refreshToken: tokens.refresh_token,
+      scope,
+      obtainedAt: new Date().toISOString(),
+    });
     return { accountLabel, scope };
   }
 
@@ -82,14 +109,21 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
   }
 
   errorMessage(error: unknown): string {
-    const data = (error as { response?: { data?: { error?: string; error_description?: string } } })?.response?.data;
+    const data = (
+      error as {
+        response?: { data?: { error?: string; error_description?: string } };
+      }
+    )?.response?.data;
     if (data?.error) {
-      return data.error_description ? `${data.error}: ${data.error_description}` : data.error;
+      return data.error_description
+        ? `${data.error}: ${data.error_description}`
+        : data.error;
     }
     return error instanceof Error ? error.message : String(error);
   }
 }
 
 function googleErrorCode(error: unknown): string | undefined {
-  return (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
+  return (error as { response?: { data?: { error?: string } } })?.response?.data
+    ?.error;
 }

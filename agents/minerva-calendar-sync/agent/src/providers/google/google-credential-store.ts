@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "fs";
 import { OAuth2Client } from "google-auth-library";
 import { join } from "path";
 
@@ -9,7 +15,9 @@ import { join } from "path";
 // empty temp dir instead of the developer's real .credentials/ — otherwise
 // listStoredAccountLabels would read whatever's actually been authorized on
 // this machine straight into test results.
-const CREDENTIALS_DIR = process.env.GOOGLE_CREDENTIALS_DIR ?? join(__dirname, "..", "..", "..", ".credentials");
+const CREDENTIALS_DIR =
+  process.env.GOOGLE_CREDENTIALS_DIR ??
+  join(__dirname, "..", "..", "..", ".credentials");
 
 export interface StoredGoogleCredential {
   accountLabel: string;
@@ -24,10 +32,15 @@ function credentialPath(accountLabel: string): string {
 
 export function saveGoogleCredential(credential: StoredGoogleCredential): void {
   mkdirSync(CREDENTIALS_DIR, { recursive: true });
-  writeFileSync(credentialPath(credential.accountLabel), JSON.stringify(credential, null, 2));
+  writeFileSync(
+    credentialPath(credential.accountLabel),
+    JSON.stringify(credential, null, 2),
+  );
 }
 
-export function loadGoogleCredential(accountLabel: string): StoredGoogleCredential {
+export function loadGoogleCredential(
+  accountLabel: string,
+): StoredGoogleCredential {
   const credential = tryLoadGoogleCredential(accountLabel);
   if (!credential) {
     throw new Error(
@@ -39,7 +52,9 @@ export function loadGoogleCredential(accountLabel: string): StoredGoogleCredenti
 }
 
 /** Same as loadGoogleCredential, but returns undefined instead of throwing when nothing has been stored yet. */
-export function tryLoadGoogleCredential(accountLabel: string): StoredGoogleCredential | undefined {
+export function tryLoadGoogleCredential(
+  accountLabel: string,
+): StoredGoogleCredential | undefined {
   const path = credentialPath(accountLabel);
   if (!existsSync(path)) return undefined;
   return JSON.parse(readFileSync(path, "utf8")) as StoredGoogleCredential;
@@ -58,9 +73,14 @@ export function listStoredAccountLabels(): string[] {
 }
 
 /** Builds an OAuth2Client authorized for `accountLabel`, ready to pass into GoogleCalendarProvider. */
-export function createAuthorizedGoogleClient(accountLabel: string): OAuth2Client {
+export function createAuthorizedGoogleClient(
+  accountLabel: string,
+): OAuth2Client {
   const credential = loadGoogleCredential(accountLabel);
-  const client = new OAuth2Client(requireEnv("GOOGLE_OAUTH_CLIENT_ID"), requireEnv("GOOGLE_OAUTH_CLIENT_SECRET"));
+  const client = new OAuth2Client(
+    requireEnv("GOOGLE_OAUTH_CLIENT_ID"),
+    requireEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
+  );
   client.setCredentials({ refresh_token: credential.refreshToken });
   return client;
 }

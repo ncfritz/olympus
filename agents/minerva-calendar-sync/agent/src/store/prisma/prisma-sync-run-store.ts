@@ -1,5 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import { Prisma, SyncRun as SyncRunRow, SyncRunEventChange as SyncRunEventChangeRow } from "@prisma/client";
+import {
+  Prisma,
+  SyncRun as SyncRunRow,
+  SyncRunEventChange as SyncRunEventChangeRow,
+} from "@prisma/client";
 import {
   NewSyncRun,
   SyncRun,
@@ -119,7 +123,8 @@ export class PrismaSyncRunStore implements SyncRunStore {
       bucket.runCount += 1;
       if (row.status === "success") bucket.successCount += 1;
       else bucket.errorCount += 1;
-      bucket.durationMsSum += row.finishedAt.getTime() - row.startedAt.getTime();
+      bucket.durationMsSum +=
+        row.finishedAt.getTime() - row.startedAt.getTime();
       bucket.totalCount += row.totalCount;
       bucket.addedCount += row.addedCount;
       bucket.updatedCount += row.updatedCount;
@@ -129,9 +134,14 @@ export class PrismaSyncRunStore implements SyncRunStore {
     return [...buckets.values()]
       .map(({ durationMsSum, ...bucket }) => ({
         ...bucket,
-        avgDurationMs: bucket.runCount > 0 ? Math.round(durationMsSum / bucket.runCount) : 0,
+        avgDurationMs:
+          bucket.runCount > 0 ? Math.round(durationMsSum / bucket.runCount) : 0,
       }))
-      .sort((a, b) => a.date.localeCompare(b.date) || a.calendarId.localeCompare(b.calendarId));
+      .sort(
+        (a, b) =>
+          a.date.localeCompare(b.date) ||
+          a.calendarId.localeCompare(b.calendarId),
+      );
   }
 
   async get(id: string): Promise<SyncRunWithChanges | null> {
@@ -144,7 +154,9 @@ export class PrismaSyncRunStore implements SyncRunStore {
   }
 
   async pruneFinishedBefore(cutoff: Date): Promise<number> {
-    const { count } = await this.prisma.syncRun.deleteMany({ where: { finishedAt: { lt: cutoff } } });
+    const { count } = await this.prisma.syncRun.deleteMany({
+      where: { finishedAt: { lt: cutoff } },
+    });
     return count;
   }
 }

@@ -6,7 +6,10 @@ import { AvailabilityStatus, EventOverride } from "../domain/availability";
  * why: this must outlive a full wipe-and-re-sync of Event.
  */
 export interface EventOverrideStore {
-  setOverride(eventId: string, status: AvailabilityStatus): Promise<EventOverride>;
+  setOverride(
+    eventId: string,
+    status: AvailabilityStatus,
+  ): Promise<EventOverride>;
   clearOverride(eventId: string): Promise<void>;
   getOverride(eventId: string): Promise<EventOverride | null>;
   listOverrides(eventIds: string[]): Promise<EventOverride[]>;

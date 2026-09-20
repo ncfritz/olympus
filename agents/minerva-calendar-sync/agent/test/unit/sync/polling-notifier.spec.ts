@@ -3,7 +3,9 @@ import { PollingNotifier } from "../../../src/sync/polling-notifier";
 import { SyncConfigService } from "../../../src/sync/sync-config.service";
 import { SyncedCalendarConfig } from "../../../src/sync/synced-calendar-config";
 
-function fakeSyncConfig(getCalendars: () => SyncedCalendarConfig[]): SyncConfigService {
+function fakeSyncConfig(
+  getCalendars: () => SyncedCalendarConfig[],
+): SyncConfigService {
   return { getAll: async () => getCalendars() } as unknown as SyncConfigService;
 }
 
@@ -24,10 +26,25 @@ describe("PollingNotifier", () => {
 
   it("fires once immediately for every currently configured calendar", async () => {
     scheduler = new SchedulerRegistry();
-    notifier = new PollingNotifier(fakeSyncConfig(() => [
-      { provider: "google", accountLabel: "a", calendarId: "cal-1", source: "A", enablePush: false },
-      { provider: "google", accountLabel: "a", calendarId: "cal-2", source: "A2", enablePush: false },
-    ]), scheduler);
+    notifier = new PollingNotifier(
+      fakeSyncConfig(() => [
+        {
+          provider: "google",
+          accountLabel: "a",
+          calendarId: "cal-1",
+          source: "A",
+          enablePush: false,
+        },
+        {
+          provider: "google",
+          accountLabel: "a",
+          calendarId: "cal-2",
+          source: "A2",
+          enablePush: false,
+        },
+      ]),
+      scheduler,
+    );
     const onChange = jest.fn();
 
     notifier.start(onChange);
@@ -41,14 +58,25 @@ describe("PollingNotifier", () => {
     process.env.POLL_INTERVAL_MS = "20";
     let calendars: SyncedCalendarConfig[] = [];
     scheduler = new SchedulerRegistry();
-    notifier = new PollingNotifier(fakeSyncConfig(() => calendars), scheduler);
+    notifier = new PollingNotifier(
+      fakeSyncConfig(() => calendars),
+      scheduler,
+    );
     const onChange = jest.fn();
 
     notifier.start(onChange);
     await delay(5);
     expect(onChange).not.toHaveBeenCalled();
 
-    calendars = [{ provider: "google", accountLabel: "a", calendarId: "cal-new", source: "A", enablePush: false }];
+    calendars = [
+      {
+        provider: "google",
+        accountLabel: "a",
+        calendarId: "cal-new",
+        source: "A",
+        enablePush: false,
+      },
+    ];
     await delay(40);
 
     expect(onChange).toHaveBeenCalledWith("cal-new", "poll");
@@ -59,7 +87,13 @@ describe("PollingNotifier", () => {
     scheduler = new SchedulerRegistry();
     notifier = new PollingNotifier(
       fakeSyncConfig(() => [
-        { provider: "google", accountLabel: "a", calendarId: "cal-1", source: "A", enablePush: false },
+        {
+          provider: "google",
+          accountLabel: "a",
+          calendarId: "cal-1",
+          source: "A",
+          enablePush: false,
+        },
       ]),
       scheduler,
     );

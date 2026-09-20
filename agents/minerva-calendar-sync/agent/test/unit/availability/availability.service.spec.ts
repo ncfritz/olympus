@@ -22,7 +22,10 @@ class FakeBusyInclusionStore implements CalendarBusyInclusionStore {
     return this.overrides;
   }
 
-  async setIncludedInBusy(calendarId: string, includedInBusy: boolean): Promise<void> {
+  async setIncludedInBusy(
+    calendarId: string,
+    includedInBusy: boolean,
+  ): Promise<void> {
     this.overrides[calendarId] = includedInBusy;
   }
 }
@@ -31,7 +34,9 @@ function fakeSyncConfig(calendars: SyncedCalendarConfig[]): SyncConfigService {
   return { getAll: async () => calendars } as unknown as SyncConfigService;
 }
 
-function fixtureEvent(overrides: Partial<CanonicalCalendarEvent> = {}): CanonicalCalendarEvent {
+function fixtureEvent(
+  overrides: Partial<CanonicalCalendarEvent> = {},
+): CanonicalCalendarEvent {
   const uid = overrides.uid ?? "uid-1";
   const source = overrides.source ?? "test-source";
   return {
@@ -73,7 +78,11 @@ describe("AvailabilityService", () => {
   beforeAll(() => {
     tempDir = mkdtempSync(join(tmpdir(), "minerva-test-"));
     process.env.DATABASE_URL = `file:${join(tempDir, "test.db")}`;
-    execSync("npx prisma db push --skip-generate", { cwd: API_ROOT, env: process.env, stdio: "pipe" });
+    execSync("npx prisma db push --skip-generate", {
+      cwd: API_ROOT,
+      env: process.env,
+      stdio: "pipe",
+    });
   }, 30000);
 
   afterAll(() => {
@@ -121,11 +130,20 @@ describe("AvailabilityService", () => {
 
   it("maps a busy meeting onto exactly the slots it overlaps", async () => {
     await events.upsertEvent(
-      fixtureEvent({ status: "busy", startTime: "2026-01-05T15:15:00.000Z", endTime: "2026-01-05T15:45:00.000Z" }),
+      fixtureEvent({
+        status: "busy",
+        startTime: "2026-01-05T15:15:00.000Z",
+        endTime: "2026-01-05T15:45:00.000Z",
+      }),
     );
 
     const slots = await service.computeSlots(RANGE_START, RANGE_END);
-    expect(slots.map((s) => s.status)).toEqual(["free", "busy", "busy", "free"]);
+    expect(slots.map((s) => s.status)).toEqual([
+      "free",
+      "busy",
+      "busy",
+      "free",
+    ]);
   });
 
   it("maps tentative to interruptable and out_of_office/working_elsewhere to none", async () => {
@@ -155,11 +173,18 @@ describe("AvailabilityService", () => {
     );
 
     const slots = await service.computeSlots(RANGE_START, RANGE_END);
-    expect(slots.map((s) => s.status)).toEqual(["interruptable", "none", "none", "free"]);
+    expect(slots.map((s) => s.status)).toEqual([
+      "interruptable",
+      "none",
+      "none",
+      "free",
+    ]);
   });
 
   it("excludes cancelled and deleted events", async () => {
-    await events.upsertEvent(fixtureEvent({ uid: "cancelled", cancelled: true }));
+    await events.upsertEvent(
+      fixtureEvent({ uid: "cancelled", cancelled: true }),
+    );
     await events.upsertEvent(fixtureEvent({ uid: "deleted", deleted: true }));
 
     const slots = await service.computeSlots(RANGE_START, RANGE_END);
@@ -184,7 +209,10 @@ describe("AvailabilityService", () => {
       }),
     );
     // "free" beats "none" even though nothing here is "busy".
-    let slots = await service.computeSlots(RANGE_START, "2026-01-05T15:15:00.000Z");
+    let slots = await service.computeSlots(
+      RANGE_START,
+      "2026-01-05T15:15:00.000Z",
+    );
     expect(slots[0].status).toBe("free");
 
     await events.upsertEvent(
@@ -208,7 +236,10 @@ describe("AvailabilityService", () => {
     await events.upsertEvent(event);
     await eventOverrides.setOverride(event.id, "free");
 
-    const slots = await service.computeSlots(RANGE_START, "2026-01-05T15:15:00.000Z");
+    const slots = await service.computeSlots(
+      RANGE_START,
+      "2026-01-05T15:15:00.000Z",
+    );
     expect(slots[0].status).toBe("free");
   });
 
@@ -227,7 +258,10 @@ describe("AvailabilityService", () => {
       label: "Focus block",
     });
 
-    const slots = await service.computeSlots(RANGE_START, "2026-01-05T15:15:00.000Z");
+    const slots = await service.computeSlots(
+      RANGE_START,
+      "2026-01-05T15:15:00.000Z",
+    );
     expect(slots[0].status).toBe("busy");
   });
 
@@ -239,16 +273,26 @@ describe("AvailabilityService", () => {
       label: null,
     });
 
-    const slots = await service.computeSlots(RANGE_START, "2026-01-05T15:15:00.000Z");
+    const slots = await service.computeSlots(
+      RANGE_START,
+      "2026-01-05T15:15:00.000Z",
+    );
     expect(slots[0].status).toBe("none");
   });
 
   it("rejects a range where start is not before end", async () => {
-    await expect(service.computeSlots(RANGE_END, RANGE_START)).rejects.toThrow();
+    await expect(
+      service.computeSlots(RANGE_END, RANGE_START),
+    ).rejects.toThrow();
   });
 
   it("rejects an excessively large range", async () => {
-    await expect(service.computeSlots("2020-01-01T00:00:00.000Z", "2030-01-01T00:00:00.000Z")).rejects.toThrow();
+    await expect(
+      service.computeSlots(
+        "2020-01-01T00:00:00.000Z",
+        "2030-01-01T00:00:00.000Z",
+      ),
+    ).rejects.toThrow();
   });
 
   describe("busy inclusion", () => {
@@ -261,7 +305,9 @@ describe("AvailabilityService", () => {
         enablePush: false,
       });
       busyInclusion.overrides["cal-holidays"] = false;
-      await events.upsertEvent(fixtureEvent({ source: "holidays-source", status: "busy" }));
+      await events.upsertEvent(
+        fixtureEvent({ source: "holidays-source", status: "busy" }),
+      );
 
       const slots = await service.computeSlots(RANGE_START, RANGE_END);
       expect(slots.every((s) => s.status === "free")).toBe(true);
@@ -275,7 +321,9 @@ describe("AvailabilityService", () => {
         source: "holidays-source",
         enablePush: false,
       });
-      await events.upsertEvent(fixtureEvent({ source: "holidays-source", status: "busy" }));
+      await events.upsertEvent(
+        fixtureEvent({ source: "holidays-source", status: "busy" }),
+      );
 
       const slots = await service.computeSlots(RANGE_START, RANGE_END);
       expect(slots.some((s) => s.status === "busy")).toBe(true);
@@ -299,8 +347,16 @@ describe("AvailabilityService", () => {
         },
       );
       busyInclusion.overrides["cal-holidays"] = false;
-      await events.upsertEvent(fixtureEvent({ uid: "holiday", source: "holidays-source", status: "busy" }));
-      await events.upsertEvent(fixtureEvent({ uid: "meeting", source: "test-source", status: "busy" }));
+      await events.upsertEvent(
+        fixtureEvent({
+          uid: "holiday",
+          source: "holidays-source",
+          status: "busy",
+        }),
+      );
+      await events.upsertEvent(
+        fixtureEvent({ uid: "meeting", source: "test-source", status: "busy" }),
+      );
 
       const slots = await service.computeSlots(RANGE_START, RANGE_END);
       expect(slots.some((s) => s.status === "busy")).toBe(true);
@@ -324,7 +380,10 @@ describe("AvailabilityService", () => {
         }),
       );
 
-      const timeline = await service.computeTimeline("2026-01-05T15:00:00.000Z", "2026-01-05T15:15:00.000Z");
+      const timeline = await service.computeTimeline(
+        "2026-01-05T15:00:00.000Z",
+        "2026-01-05T15:15:00.000Z",
+      );
       expect(Object.values(timeline)).toEqual(["free"]);
     });
   });
@@ -341,39 +400,79 @@ describe("AvailabilityService", () => {
       const timeline = await service.computeTimeline(MONDAY_START, MONDAY_END);
       const startMinutes = Date.parse(MONDAY_START) / 60_000;
 
-      expect(Object.keys(timeline)).toEqual([0, 15, 30, 45].map((offset) => String(startMinutes + offset)));
-      expect(Object.values(timeline).every((status) => status === "free")).toBe(true);
+      expect(Object.keys(timeline)).toEqual(
+        [0, 15, 30, 45].map((offset) => String(startMinutes + offset)),
+      );
+      expect(Object.values(timeline).every((status) => status === "free")).toBe(
+        true,
+      );
     });
 
     it("maps synced statuses onto the four-level scale, same as computeSlots", async () => {
       await events.upsertEvent(
-        fixtureEvent({ uid: "tentative", status: "tentative", startTime: "2026-01-05T15:00:00.000Z", endTime: "2026-01-05T15:15:00.000Z" }),
+        fixtureEvent({
+          uid: "tentative",
+          status: "tentative",
+          startTime: "2026-01-05T15:00:00.000Z",
+          endTime: "2026-01-05T15:15:00.000Z",
+        }),
       );
       await events.upsertEvent(
-        fixtureEvent({ uid: "ooo", status: "out_of_office", startTime: "2026-01-05T15:15:00.000Z", endTime: "2026-01-05T15:30:00.000Z" }),
+        fixtureEvent({
+          uid: "ooo",
+          status: "out_of_office",
+          startTime: "2026-01-05T15:15:00.000Z",
+          endTime: "2026-01-05T15:30:00.000Z",
+        }),
       );
       await events.upsertEvent(
-        fixtureEvent({ uid: "elsewhere", status: "working_elsewhere", startTime: "2026-01-05T15:30:00.000Z", endTime: "2026-01-05T15:45:00.000Z" }),
+        fixtureEvent({
+          uid: "elsewhere",
+          status: "working_elsewhere",
+          startTime: "2026-01-05T15:30:00.000Z",
+          endTime: "2026-01-05T15:45:00.000Z",
+        }),
       );
       await events.upsertEvent(
-        fixtureEvent({ uid: "busy", status: "busy", startTime: "2026-01-05T15:45:00.000Z", endTime: "2026-01-05T16:00:00.000Z" }),
+        fixtureEvent({
+          uid: "busy",
+          status: "busy",
+          startTime: "2026-01-05T15:45:00.000Z",
+          endTime: "2026-01-05T16:00:00.000Z",
+        }),
       );
 
       const timeline = await service.computeTimeline(MONDAY_START, MONDAY_END);
-      expect(Object.values(timeline)).toEqual(["interruptable", "none", "none", "busy"]);
+      expect(Object.values(timeline)).toEqual([
+        "interruptable",
+        "none",
+        "none",
+        "busy",
+      ]);
     });
 
     it("a per-event override replaces that event's contribution", async () => {
-      const event = fixtureEvent({ status: "busy", startTime: "2026-01-05T15:00:00.000Z", endTime: "2026-01-05T15:15:00.000Z" });
+      const event = fixtureEvent({
+        status: "busy",
+        startTime: "2026-01-05T15:00:00.000Z",
+        endTime: "2026-01-05T15:15:00.000Z",
+      });
       await events.upsertEvent(event);
       await eventOverrides.setOverride(event.id, "free");
 
-      const timeline = await service.computeTimeline(MONDAY_START, "2026-01-05T15:15:00.000Z");
+      const timeline = await service.computeTimeline(
+        MONDAY_START,
+        "2026-01-05T15:15:00.000Z",
+      );
       expect(Object.values(timeline)).toEqual(["free"]);
     });
 
     it("an override block wins over both a synced status and a per-event override", async () => {
-      const event = fixtureEvent({ status: "free", startTime: "2026-01-05T15:00:00.000Z", endTime: "2026-01-05T15:15:00.000Z" });
+      const event = fixtureEvent({
+        status: "free",
+        startTime: "2026-01-05T15:00:00.000Z",
+        endTime: "2026-01-05T15:15:00.000Z",
+      });
       await events.upsertEvent(event);
       await eventOverrides.setOverride(event.id, "interruptable");
       await overrideBlocks.create({
@@ -383,47 +482,77 @@ describe("AvailabilityService", () => {
         label: "Focus block",
       });
 
-      const timeline = await service.computeTimeline(MONDAY_START, "2026-01-05T15:15:00.000Z");
+      const timeline = await service.computeTimeline(
+        MONDAY_START,
+        "2026-01-05T15:15:00.000Z",
+      );
       expect(Object.values(timeline)).toEqual(["busy"]);
     });
 
     it("excludes cancelled and deleted events", async () => {
-      await events.upsertEvent(fixtureEvent({ uid: "cancelled", cancelled: true }));
+      await events.upsertEvent(
+        fixtureEvent({ uid: "cancelled", cancelled: true }),
+      );
       await events.upsertEvent(fixtureEvent({ uid: "deleted", deleted: true }));
 
       const timeline = await service.computeTimeline(MONDAY_START, MONDAY_END);
-      expect(Object.values(timeline).every((status) => status === "free")).toBe(true);
+      expect(Object.values(timeline).every((status) => status === "free")).toBe(
+        true,
+      );
     });
 
     it("rejects a range where start is not before end", async () => {
-      await expect(service.computeTimeline(MONDAY_END, MONDAY_START)).rejects.toThrow();
+      await expect(
+        service.computeTimeline(MONDAY_END, MONDAY_START),
+      ).rejects.toThrow();
     });
 
     describe("the day-start/day-end window", () => {
       it("shows a synced meeting before the default 08:00 start as none", async () => {
         await events.upsertEvent(
-          fixtureEvent({ status: "busy", startTime: "2026-01-05T06:00:00.000Z", endTime: "2026-01-05T06:15:00.000Z" }),
+          fixtureEvent({
+            status: "busy",
+            startTime: "2026-01-05T06:00:00.000Z",
+            endTime: "2026-01-05T06:15:00.000Z",
+          }),
         );
 
-        const timeline = await service.computeTimeline("2026-01-05T06:00:00.000Z", "2026-01-05T06:15:00.000Z");
+        const timeline = await service.computeTimeline(
+          "2026-01-05T06:00:00.000Z",
+          "2026-01-05T06:15:00.000Z",
+        );
         expect(Object.values(timeline)).toEqual(["none"]);
       });
 
       it("shows a synced meeting at/after the default 18:00 end as none", async () => {
         await events.upsertEvent(
-          fixtureEvent({ status: "busy", startTime: "2026-01-05T18:00:00.000Z", endTime: "2026-01-05T18:15:00.000Z" }),
+          fixtureEvent({
+            status: "busy",
+            startTime: "2026-01-05T18:00:00.000Z",
+            endTime: "2026-01-05T18:15:00.000Z",
+          }),
         );
 
-        const timeline = await service.computeTimeline("2026-01-05T18:00:00.000Z", "2026-01-05T18:15:00.000Z");
+        const timeline = await service.computeTimeline(
+          "2026-01-05T18:00:00.000Z",
+          "2026-01-05T18:15:00.000Z",
+        );
         expect(Object.values(timeline)).toEqual(["none"]);
       });
 
       it("still shows the real status for the last slot before 18:00 (the window's end is exclusive)", async () => {
         await events.upsertEvent(
-          fixtureEvent({ status: "busy", startTime: "2026-01-05T17:45:00.000Z", endTime: "2026-01-05T18:00:00.000Z" }),
+          fixtureEvent({
+            status: "busy",
+            startTime: "2026-01-05T17:45:00.000Z",
+            endTime: "2026-01-05T18:00:00.000Z",
+          }),
         );
 
-        const timeline = await service.computeTimeline("2026-01-05T17:45:00.000Z", "2026-01-05T18:00:00.000Z");
+        const timeline = await service.computeTimeline(
+          "2026-01-05T17:45:00.000Z",
+          "2026-01-05T18:00:00.000Z",
+        );
         expect(Object.values(timeline)).toEqual(["busy"]);
       });
 
@@ -435,42 +564,70 @@ describe("AvailabilityService", () => {
           label: null,
         });
 
-        const timeline = await service.computeTimeline("2026-01-05T06:00:00.000Z", "2026-01-05T06:15:00.000Z");
+        const timeline = await service.computeTimeline(
+          "2026-01-05T06:00:00.000Z",
+          "2026-01-05T06:15:00.000Z",
+        );
         expect(Object.values(timeline)).toEqual(["interruptable"]);
       });
 
       it("a per-event override outside the window also shows through, ignoring the event's own synced status", async () => {
-        const event = fixtureEvent({ status: "busy", startTime: "2026-01-05T06:00:00.000Z", endTime: "2026-01-05T06:15:00.000Z" });
+        const event = fixtureEvent({
+          status: "busy",
+          startTime: "2026-01-05T06:00:00.000Z",
+          endTime: "2026-01-05T06:15:00.000Z",
+        });
         await events.upsertEvent(event);
         await eventOverrides.setOverride(event.id, "free");
 
-        const timeline = await service.computeTimeline("2026-01-05T06:00:00.000Z", "2026-01-05T06:15:00.000Z");
+        const timeline = await service.computeTimeline(
+          "2026-01-05T06:00:00.000Z",
+          "2026-01-05T06:15:00.000Z",
+        );
         expect(Object.values(timeline)).toEqual(["free"]);
       });
 
       it("honors custom dayStart/dayEnd", async () => {
         await events.upsertEvent(
-          fixtureEvent({ status: "busy", startTime: "2026-01-05T08:00:00.000Z", endTime: "2026-01-05T08:15:00.000Z" }),
+          fixtureEvent({
+            status: "busy",
+            startTime: "2026-01-05T08:00:00.000Z",
+            endTime: "2026-01-05T08:15:00.000Z",
+          }),
         );
 
-        const defaultWindow = await service.computeTimeline("2026-01-05T08:00:00.000Z", "2026-01-05T08:15:00.000Z");
+        const defaultWindow = await service.computeTimeline(
+          "2026-01-05T08:00:00.000Z",
+          "2026-01-05T08:15:00.000Z",
+        );
         expect(Object.values(defaultWindow)).toEqual(["busy"]);
 
-        const customWindow = await service.computeTimeline("2026-01-05T08:00:00.000Z", "2026-01-05T08:15:00.000Z", {
-          dayStart: "09:00",
-          dayEnd: "17:00",
-        });
+        const customWindow = await service.computeTimeline(
+          "2026-01-05T08:00:00.000Z",
+          "2026-01-05T08:15:00.000Z",
+          {
+            dayStart: "09:00",
+            dayEnd: "17:00",
+          },
+        );
         expect(Object.values(customWindow)).toEqual(["none"]);
       });
 
       it("rejects dayStart at or after dayEnd", async () => {
         await expect(
-          service.computeTimeline(MONDAY_START, MONDAY_END, { dayStart: "18:00", dayEnd: "08:00" }),
+          service.computeTimeline(MONDAY_START, MONDAY_END, {
+            dayStart: "18:00",
+            dayEnd: "08:00",
+          }),
         ).rejects.toThrow();
       });
 
       it("rejects a malformed dayStart", async () => {
-        await expect(service.computeTimeline(MONDAY_START, MONDAY_END, { dayStart: "not-a-time" })).rejects.toThrow();
+        await expect(
+          service.computeTimeline(MONDAY_START, MONDAY_END, {
+            dayStart: "not-a-time",
+          }),
+        ).rejects.toThrow();
       });
     });
 
@@ -480,41 +637,81 @@ describe("AvailabilityService", () => {
 
       it("shows a weekend synced meeting as none by default", async () => {
         await events.upsertEvent(
-          fixtureEvent({ status: "busy", startTime: SATURDAY_START, endTime: SATURDAY_END }),
+          fixtureEvent({
+            status: "busy",
+            startTime: SATURDAY_START,
+            endTime: SATURDAY_END,
+          }),
         );
 
-        const timeline = await service.computeTimeline(SATURDAY_START, SATURDAY_END);
+        const timeline = await service.computeTimeline(
+          SATURDAY_START,
+          SATURDAY_END,
+        );
         expect(Object.values(timeline)).toEqual(["none"]);
       });
 
       it("shows an override on a weekend regardless of the default", async () => {
-        await overrideBlocks.create({ startTime: SATURDAY_START, endTime: SATURDAY_END, status: "busy", label: null });
+        await overrideBlocks.create({
+          startTime: SATURDAY_START,
+          endTime: SATURDAY_END,
+          status: "busy",
+          label: null,
+        });
 
-        const timeline = await service.computeTimeline(SATURDAY_START, SATURDAY_END);
+        const timeline = await service.computeTimeline(
+          SATURDAY_START,
+          SATURDAY_END,
+        );
         expect(Object.values(timeline)).toEqual(["busy"]);
       });
 
       it("computes weekends the same as weekdays when treatWeekendsAsWorking is set", async () => {
         await events.upsertEvent(
-          fixtureEvent({ status: "busy", startTime: SATURDAY_START, endTime: SATURDAY_END }),
+          fixtureEvent({
+            status: "busy",
+            startTime: SATURDAY_START,
+            endTime: SATURDAY_END,
+          }),
         );
 
-        const timeline = await service.computeTimeline(SATURDAY_START, SATURDAY_END, { treatWeekendsAsWorking: true });
+        const timeline = await service.computeTimeline(
+          SATURDAY_START,
+          SATURDAY_END,
+          { treatWeekendsAsWorking: true },
+        );
         expect(Object.values(timeline)).toEqual(["busy"]);
       });
 
       it("with treatWeekendsAsWorking set, an empty weekend slot is free like a weekday", async () => {
-        const timeline = await service.computeTimeline(SATURDAY_START, SATURDAY_END, { treatWeekendsAsWorking: true });
+        const timeline = await service.computeTimeline(
+          SATURDAY_START,
+          SATURDAY_END,
+          { treatWeekendsAsWorking: true },
+        );
         expect(Object.values(timeline)).toEqual(["free"]);
       });
 
       it("still applies the day-start/day-end window to a weekend treated as working", async () => {
-        const earlySaturday = { start: "2026-01-03T06:00:00.000Z", end: "2026-01-03T06:15:00.000Z" };
-        await events.upsertEvent(fixtureEvent({ status: "busy", startTime: earlySaturday.start, endTime: earlySaturday.end }));
+        const earlySaturday = {
+          start: "2026-01-03T06:00:00.000Z",
+          end: "2026-01-03T06:15:00.000Z",
+        };
+        await events.upsertEvent(
+          fixtureEvent({
+            status: "busy",
+            startTime: earlySaturday.start,
+            endTime: earlySaturday.end,
+          }),
+        );
 
-        const timeline = await service.computeTimeline(earlySaturday.start, earlySaturday.end, {
-          treatWeekendsAsWorking: true,
-        });
+        const timeline = await service.computeTimeline(
+          earlySaturday.start,
+          earlySaturday.end,
+          {
+            treatWeekendsAsWorking: true,
+          },
+        );
         expect(Object.values(timeline)).toEqual(["none"]);
       });
     });
@@ -523,10 +720,17 @@ describe("AvailabilityService", () => {
       it("defaults to UTC when omitted", async () => {
         // 19:00 UTC is outside the default 08:00-18:00 window in UTC.
         await events.upsertEvent(
-          fixtureEvent({ status: "busy", startTime: "2026-01-05T19:00:00.000Z", endTime: "2026-01-05T19:15:00.000Z" }),
+          fixtureEvent({
+            status: "busy",
+            startTime: "2026-01-05T19:00:00.000Z",
+            endTime: "2026-01-05T19:15:00.000Z",
+          }),
         );
 
-        const timeline = await service.computeTimeline("2026-01-05T19:00:00.000Z", "2026-01-05T19:15:00.000Z");
+        const timeline = await service.computeTimeline(
+          "2026-01-05T19:00:00.000Z",
+          "2026-01-05T19:15:00.000Z",
+        );
         expect(Object.values(timeline)).toEqual(["none"]);
       });
 
@@ -534,12 +738,20 @@ describe("AvailabilityService", () => {
         // 19:00 UTC on 2026-01-05 is 11:00 in America/Los_Angeles (UTC-8 in
         // January) — inside the default window there, though outside it in UTC.
         await events.upsertEvent(
-          fixtureEvent({ status: "busy", startTime: "2026-01-05T19:00:00.000Z", endTime: "2026-01-05T19:15:00.000Z" }),
+          fixtureEvent({
+            status: "busy",
+            startTime: "2026-01-05T19:00:00.000Z",
+            endTime: "2026-01-05T19:15:00.000Z",
+          }),
         );
 
-        const timeline = await service.computeTimeline("2026-01-05T19:00:00.000Z", "2026-01-05T19:15:00.000Z", {
-          timezone: "America/Los_Angeles",
-        });
+        const timeline = await service.computeTimeline(
+          "2026-01-05T19:00:00.000Z",
+          "2026-01-05T19:15:00.000Z",
+          {
+            timezone: "America/Los_Angeles",
+          },
+        );
         expect(Object.values(timeline)).toEqual(["busy"]);
       });
 
@@ -548,21 +760,34 @@ describe("AvailabilityService", () => {
         // 08:00 in Asia/Tokyo (UTC+9) — a weekday there, and the very start
         // of the default working window.
         await events.upsertEvent(
-          fixtureEvent({ status: "busy", startTime: "2026-01-04T23:00:00.000Z", endTime: "2026-01-04T23:15:00.000Z" }),
+          fixtureEvent({
+            status: "busy",
+            startTime: "2026-01-04T23:00:00.000Z",
+            endTime: "2026-01-04T23:15:00.000Z",
+          }),
         );
 
-        const utc = await service.computeTimeline("2026-01-04T23:00:00.000Z", "2026-01-04T23:15:00.000Z");
+        const utc = await service.computeTimeline(
+          "2026-01-04T23:00:00.000Z",
+          "2026-01-04T23:15:00.000Z",
+        );
         expect(Object.values(utc)).toEqual(["none"]);
 
-        const tokyo = await service.computeTimeline("2026-01-04T23:00:00.000Z", "2026-01-04T23:15:00.000Z", {
-          timezone: "Asia/Tokyo",
-        });
+        const tokyo = await service.computeTimeline(
+          "2026-01-04T23:00:00.000Z",
+          "2026-01-04T23:15:00.000Z",
+          {
+            timezone: "Asia/Tokyo",
+          },
+        );
         expect(Object.values(tokyo)).toEqual(["busy"]);
       });
 
       it("rejects an unrecognized timezone", async () => {
         await expect(
-          service.computeTimeline(MONDAY_START, MONDAY_END, { timezone: "Not/AZone" }),
+          service.computeTimeline(MONDAY_START, MONDAY_END, {
+            timezone: "Not/AZone",
+          }),
         ).rejects.toThrow();
       });
     });

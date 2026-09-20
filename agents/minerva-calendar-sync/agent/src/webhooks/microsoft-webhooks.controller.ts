@@ -45,7 +45,10 @@ export class MicrosoftWebhooksController {
 
     for (const notification of body?.value ?? []) {
       if (notification.subscriptionId) {
-        this.webhookNotifier.handleNotification(notification.subscriptionId, notification.clientState);
+        this.webhookNotifier.handleNotification(
+          notification.subscriptionId,
+          notification.clientState,
+        );
       }
     }
     res.status(202).send();

@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from "@nestjs/common";
 import { SyncRunTrigger } from "../domain/sync-run";
 import { PollingNotifier } from "./polling-notifier";
 import { SyncConfigService } from "./sync-config.service";
@@ -24,15 +29,21 @@ export class SyncBootstrapService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit(): Promise<void> {
     if ((await this.config.getAll()).length === 0) {
-      this.logger.warn("No calendars configured yet — nothing to sync until one is added");
+      this.logger.warn(
+        "No calendars configured yet — nothing to sync until one is added",
+      );
     }
 
     const onChange = async (calendarId: string, trigger: SyncRunTrigger) => {
-      const calendar = (await this.config.getAll()).find((c) => c.calendarId === calendarId);
+      const calendar = (await this.config.getAll()).find(
+        (c) => c.calendarId === calendarId,
+      );
       if (!calendar) return;
 
       await this.engine.syncOne(calendar, trigger).catch((error) => {
-        this.logger.error(`Sync failed for "${calendarId}": ${error instanceof Error ? error.message : error}`);
+        this.logger.error(
+          `Sync failed for "${calendarId}": ${error instanceof Error ? error.message : error}`,
+        );
       });
     };
 

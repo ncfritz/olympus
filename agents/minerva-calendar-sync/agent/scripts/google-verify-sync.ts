@@ -60,7 +60,10 @@ async function main(): Promise<void> {
 
       try {
         console.log("--- normalized ---");
-        const normalized = await provider.normalizeEvent(raw, { source: label, calendarId });
+        const normalized = await provider.normalizeEvent(raw, {
+          source: label,
+          calendarId,
+        });
         console.log(JSON.stringify(normalized, null, 2));
       } catch (error) {
         console.log("--- normalize FAILED ---");

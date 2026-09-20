@@ -38,7 +38,13 @@ const BASE_OPTIONS: Highcharts.Options = {
 function lastNDays(n: number): string[] {
   const today = new Date();
   return Array.from({ length: n }, (_, i) => {
-    const d = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - (n - 1 - i)));
+    const d = new Date(
+      Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth(),
+        today.getUTCDate() - (n - 1 - i),
+      ),
+    );
     return d.toISOString().slice(0, 10);
   });
 }
@@ -61,7 +67,14 @@ interface DayTotals {
 }
 
 function emptyDayTotals(): DayTotals {
-  return { successCount: 0, errorCount: 0, addedCount: 0, updatedCount: 0, deletedCount: 0, totalCount: 0 };
+  return {
+    successCount: 0,
+    errorCount: 0,
+    addedCount: 0,
+    updatedCount: 0,
+    deletedCount: 0,
+    totalCount: 0,
+  };
 }
 
 /**
@@ -106,7 +119,13 @@ export function SyncStatsCharts({ filter }: { filter: SyncRunFilterParams }) {
   );
 
   const { data: stats = [], isLoading } = useSWR(
-    ["/sync-runs/stats", filter.calendarId, filter.type, filter.trigger, filter.status],
+    [
+      "/sync-runs/stats",
+      filter.calendarId,
+      filter.type,
+      filter.trigger,
+      filter.status,
+    ],
     () => fetchSyncRunStats({ ...filter, days: STATS_WINDOW_DAYS }),
   );
 
@@ -116,7 +135,10 @@ export function SyncStatsCharts({ filter }: { filter: SyncRunFilterParams }) {
   const calendars = useMemo(() => {
     const bySourceLabel = new Map<string, string>();
     for (const s of stats) bySourceLabel.set(s.calendarId, s.source);
-    return [...bySourceLabel.entries()].map(([calendarId, source]) => ({ calendarId, source }));
+    return [...bySourceLabel.entries()].map(([calendarId, source]) => ({
+      calendarId,
+      source,
+    }));
   }, [stats]);
 
   const byDayAndCalendar = useMemo(() => {
@@ -149,13 +171,15 @@ export function SyncStatsCharts({ filter }: { filter: SyncRunFilterParams }) {
         yAxis: { title: { text: "Avg duration (ms)" }, min: 0, softMax: 100 },
         tooltip: { shared: true },
         plotOptions: { series: SERIES_PLOT_OPTIONS },
-        series: calendars.map(
-          (c): Highcharts.SeriesSplineOptions => ({
-            type: "spline",
-            name: c.source,
-            data: days.map((date) => byDayAndCalendar.get(`${date}|${c.calendarId}`)?.avgDurationMs ?? null),
-          }),
-        ),
+        series: calendars.map((c): Highcharts.SeriesSplineOptions => ({
+          type: "spline",
+          name: c.source,
+          data: days.map(
+            (date) =>
+              byDayAndCalendar.get(`${date}|${c.calendarId}`)?.avgDurationMs ??
+              null,
+          ),
+        })),
       }),
     [chartTheme, categories, calendars, days, byDayAndCalendar],
   );
@@ -166,7 +190,10 @@ export function SyncStatsCharts({ filter }: { filter: SyncRunFilterParams }) {
         chart: { type: "column" },
         xAxis: { categories },
         yAxis: { title: { text: "Runs" }, min: 0, softMax: 5 },
-        plotOptions: { series: SERIES_PLOT_OPTIONS, column: { stacking: "normal" } },
+        plotOptions: {
+          series: SERIES_PLOT_OPTIONS,
+          column: { stacking: "normal" },
+        },
         tooltip: { shared: true },
         series: [
           {
@@ -191,7 +218,10 @@ export function SyncStatsCharts({ filter }: { filter: SyncRunFilterParams }) {
       Highcharts.merge(BASE_OPTIONS, chartTheme, {
         xAxis: { categories },
         yAxis: { title: { text: "Events" }, min: 0, softMax: 5 },
-        plotOptions: { series: SERIES_PLOT_OPTIONS, column: { stacking: "normal" } },
+        plotOptions: {
+          series: SERIES_PLOT_OPTIONS,
+          column: { stacking: "normal" },
+        },
         tooltip: { shared: true },
         series: [
           {
@@ -221,7 +251,9 @@ export function SyncStatsCharts({ filter }: { filter: SyncRunFilterParams }) {
             color: token.colorText,
             data: days.map((d) => byDay.get(d)?.totalCount ?? 0),
           },
-        ] satisfies (Highcharts.SeriesColumnOptions | Highcharts.SeriesSplineOptions)[],
+        ] satisfies (
+          Highcharts.SeriesColumnOptions | Highcharts.SeriesSplineOptions
+        )[],
       }),
     [chartTheme, token, categories, days, byDay],
   );

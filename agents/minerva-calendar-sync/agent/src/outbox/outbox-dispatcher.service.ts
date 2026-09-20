@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import { OutboxEvent as OutboxRow } from "@prisma/client";
@@ -38,14 +43,21 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
     config: ConfigService,
   ) {
     this.exchange = config.get("RABBITMQ_EXCHANGE", DEFAULT_EXCHANGE);
-    this.batchSize = Number(config.get("RABBITMQ_OUTBOX_BATCH_SIZE")) || DEFAULT_BATCH_SIZE;
-    this.pollIntervalMs = Number(config.get("RABBITMQ_OUTBOX_POLL_INTERVAL_MS")) || DEFAULT_POLL_INTERVAL_MS;
-    this.maxAttempts = Number(config.get("RABBITMQ_OUTBOX_MAX_ATTEMPTS")) || DEFAULT_MAX_ATTEMPTS;
+    this.batchSize =
+      Number(config.get("RABBITMQ_OUTBOX_BATCH_SIZE")) || DEFAULT_BATCH_SIZE;
+    this.pollIntervalMs =
+      Number(config.get("RABBITMQ_OUTBOX_POLL_INTERVAL_MS")) ||
+      DEFAULT_POLL_INTERVAL_MS;
+    this.maxAttempts =
+      Number(config.get("RABBITMQ_OUTBOX_MAX_ATTEMPTS")) ||
+      DEFAULT_MAX_ATTEMPTS;
   }
 
   onModuleInit(): void {
     this.timer = setInterval(() => {
-      this.tick().catch((error) => this.logger.error(`Outbox dispatch tick failed: ${message(error)}`));
+      this.tick().catch((error) =>
+        this.logger.error(`Outbox dispatch tick failed: ${message(error)}`),
+      );
     }, this.pollIntervalMs);
   }
 
@@ -74,9 +86,14 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
       // Resolves only once the broker has confirmed the publish (AmqpConnection
       // publishes over a confirm channel internally) — that confirmation, not
       // just an unthrown call, is what makes marking this "sent" honest.
-      await this.amqp.publish(this.exchange, `event.${row.action}`, JSON.parse(row.payload), {
-        messageId: row.id,
-      });
+      await this.amqp.publish(
+        this.exchange,
+        `event.${row.action}`,
+        JSON.parse(row.payload),
+        {
+          messageId: row.id,
+        },
+      );
       await this.prisma.outboxEvent.update({
         where: { id: row.id },
         data: { status: "sent", sentAt: new Date() },
@@ -91,15 +108,27 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
     const lastError = message(error);
 
     if (attempts >= this.maxAttempts) {
-      await this.prisma.outboxEvent.update({ where: { id: row.id }, data: { status: "failed", attempts, lastError } });
-      this.logger.error(`Giving up on outbox row ${row.id} (event ${row.eventId}) after ${attempts} attempts: ${lastError}`);
+      await this.prisma.outboxEvent.update({
+        where: { id: row.id },
+        data: { status: "failed", attempts, lastError },
+      });
+      this.logger.error(
+        `Giving up on outbox row ${row.id} (event ${row.eventId}) after ${attempts} attempts: ${lastError}`,
+      );
       return;
     }
 
-    const backoffMs = Math.min(BASE_BACKOFF_MS * 2 ** row.attempts, MAX_BACKOFF_MS);
+    const backoffMs = Math.min(
+      BASE_BACKOFF_MS * 2 ** row.attempts,
+      MAX_BACKOFF_MS,
+    );
     await this.prisma.outboxEvent.update({
       where: { id: row.id },
-      data: { attempts, lastError, availableAt: new Date(Date.now() + backoffMs) },
+      data: {
+        attempts,
+        lastError,
+        availableAt: new Date(Date.now() + backoffMs),
+      },
     });
   }
 }

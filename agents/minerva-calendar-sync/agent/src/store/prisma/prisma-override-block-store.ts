@@ -20,10 +20,18 @@ export class PrismaOverrideBlockStore implements OverrideBlockStore {
     return fromRow(row);
   }
 
-  async updateStatus(id: string, status: AvailabilityStatus): Promise<OverrideBlock | null> {
-    const existing = await this.prisma.overrideBlock.findUnique({ where: { id } });
+  async updateStatus(
+    id: string,
+    status: AvailabilityStatus,
+  ): Promise<OverrideBlock | null> {
+    const existing = await this.prisma.overrideBlock.findUnique({
+      where: { id },
+    });
     if (!existing) return null;
-    const row = await this.prisma.overrideBlock.update({ where: { id }, data: { status } });
+    const row = await this.prisma.overrideBlock.update({
+      where: { id },
+      data: { status },
+    });
     return fromRow(row);
   }
 

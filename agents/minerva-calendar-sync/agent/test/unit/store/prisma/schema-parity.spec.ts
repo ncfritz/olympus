@@ -15,8 +15,14 @@ function modelsOnly(schema: string): string {
 // drifting apart — if it fails, whichever file was just edited needs the
 // same change applied to the other one.
 it("prisma/schema.prisma and prisma/postgres/schema.prisma define identical models", () => {
-  const sqliteSchema = readFileSync(join(API_ROOT, "prisma", "schema.prisma"), "utf-8");
-  const postgresSchema = readFileSync(join(API_ROOT, "prisma", "postgres", "schema.prisma"), "utf-8");
+  const sqliteSchema = readFileSync(
+    join(API_ROOT, "prisma", "schema.prisma"),
+    "utf-8",
+  );
+  const postgresSchema = readFileSync(
+    join(API_ROOT, "prisma", "postgres", "schema.prisma"),
+    "utf-8",
+  );
 
   expect(modelsOnly(postgresSchema)).toBe(modelsOnly(sqliteSchema));
 });

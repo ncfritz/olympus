@@ -1,7 +1,8 @@
 import createClient from "openapi-fetch";
 import type { paths } from "./schema";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4432";
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4432";
 
 /**
  * Every request rides on the httpOnly cookie /auth/callback sets — this app

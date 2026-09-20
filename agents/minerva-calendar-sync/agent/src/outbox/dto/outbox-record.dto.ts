@@ -4,7 +4,9 @@ export class OutboxRecordDto {
   @ApiProperty({ description: "Outbox row id" })
   id: string;
 
-  @ApiProperty({ description: "The canonical event id (source:uid) this row describes" })
+  @ApiProperty({
+    description: "The canonical event id (source:uid) this row describes",
+  })
   eventId: string;
 
   @ApiProperty({ description: "The source label this row's event belongs to" })

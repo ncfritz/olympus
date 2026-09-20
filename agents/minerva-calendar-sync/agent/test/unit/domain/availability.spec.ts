@@ -1,4 +1,7 @@
-import { combineAvailability, mapFreeBusyToAvailability } from "../../../src/domain/availability";
+import {
+  combineAvailability,
+  mapFreeBusyToAvailability,
+} from "../../../src/domain/availability";
 
 describe("mapFreeBusyToAvailability", () => {
   it("maps busy to busy", () => {
@@ -28,11 +31,15 @@ describe("combineAvailability", () => {
   });
 
   it("busy outranks everything else", () => {
-    expect(combineAvailability(["free", "busy", "interruptable", "none"])).toBe("busy");
+    expect(combineAvailability(["free", "busy", "interruptable", "none"])).toBe(
+      "busy",
+    );
   });
 
   it("interruptable outranks free and none", () => {
-    expect(combineAvailability(["free", "interruptable", "none"])).toBe("interruptable");
+    expect(combineAvailability(["free", "interruptable", "none"])).toBe(
+      "interruptable",
+    );
   });
 
   it("free outranks none", () => {
@@ -44,7 +51,9 @@ describe("combineAvailability", () => {
   });
 
   it("is order-independent", () => {
-    expect(combineAvailability(["busy", "none", "free"])).toBe(combineAvailability(["none", "free", "busy"]));
+    expect(combineAvailability(["busy", "none", "free"])).toBe(
+      combineAvailability(["none", "free", "busy"]),
+    );
   });
 
   it("throws on an empty list", () => {

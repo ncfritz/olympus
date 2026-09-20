@@ -5,6 +5,9 @@ import { AuthTokenService } from "../../src/auth/auth-token.service";
 export const E2E_ALLOWED_EMAIL = "e2e@example.com";
 
 /** Mints a valid access token the same way a real login would — no network/IdP needed for tests that don't exercise the OIDC dance itself. */
-export function issueE2eAccessToken(app: INestApplication, email = E2E_ALLOWED_EMAIL): string {
+export function issueE2eAccessToken(
+  app: INestApplication,
+  email = E2E_ALLOWED_EMAIL,
+): string {
   return app.get(AuthTokenService).issueAccessToken(email);
 }

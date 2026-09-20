@@ -1,5 +1,13 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { SYNCED_CALENDAR_STORE, SyncedCalendarStore } from "../store/synced-calendar-store";
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import {
+  SYNCED_CALENDAR_STORE,
+  SyncedCalendarStore,
+} from "../store/synced-calendar-store";
 import { SyncedCalendarConfig } from "./synced-calendar-config";
 
 /**
@@ -10,7 +18,9 @@ import { SyncedCalendarConfig } from "./synced-calendar-config";
  */
 @Injectable()
 export class SyncConfigService {
-  constructor(@Inject(SYNCED_CALENDAR_STORE) private readonly store: SyncedCalendarStore) {}
+  constructor(
+    @Inject(SYNCED_CALENDAR_STORE) private readonly store: SyncedCalendarStore,
+  ) {}
 
   async getAll(): Promise<SyncedCalendarConfig[]> {
     return this.store.listAll();
@@ -25,7 +35,9 @@ export class SyncConfigService {
   async add(calendar: SyncedCalendarConfig): Promise<void> {
     const existing = await this.getAll();
     if (existing.some((c) => c.calendarId === calendar.calendarId)) {
-      throw new ConflictException(`"${calendar.calendarId}" is already being synced`);
+      throw new ConflictException(
+        `"${calendar.calendarId}" is already being synced`,
+      );
     }
     await this.store.add(calendar);
   }

@@ -1,6 +1,26 @@
-import { Body, Controller, Delete, Get, HttpCode, Inject, NotFoundException, Param, Put, Query } from "@nestjs/common";
-import { ApiBearerAuth, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import { EVENT_OVERRIDE_STORE, EventOverrideStore } from "../store/event-override-store";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Inject,
+  NotFoundException,
+  Param,
+  Put,
+  Query,
+} from "@nestjs/common";
+import {
+  ApiBearerAuth,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from "@nestjs/swagger";
+import {
+  EVENT_OVERRIDE_STORE,
+  EventOverrideStore,
+} from "../store/event-override-store";
 import { EVENT_STORE, EventStore } from "../store/event-store";
 import { EventOverrideResponseDto } from "./dto/event-override-response.dto";
 import { EventResponseDto } from "./dto/event-response.dto";
@@ -14,7 +34,8 @@ import { SetEventOverrideDto } from "./dto/set-event-override.dto";
 export class EventsController {
   constructor(
     @Inject(EVENT_STORE) private readonly store: EventStore,
-    @Inject(EVENT_OVERRIDE_STORE) private readonly overrides: EventOverrideStore,
+    @Inject(EVENT_OVERRIDE_STORE)
+    private readonly overrides: EventOverrideStore,
   ) {}
 
   @Get()
@@ -31,7 +52,9 @@ export class EventsController {
    */
   @Get("overrides")
   @ApiOkResponse({ type: EventOverrideResponseDto, isArray: true })
-  listOverrides(@Query() query: ListEventOverridesQueryDto): Promise<EventOverrideResponseDto[]> {
+  listOverrides(
+    @Query() query: ListEventOverridesQueryDto,
+  ): Promise<EventOverrideResponseDto[]> {
     const ids = query.ids
       .split(",")
       .map((id) => id.trim())
@@ -42,22 +65,34 @@ export class EventsController {
   @Get(":source/:uid")
   @ApiOkResponse({ type: EventResponseDto })
   @ApiNotFoundResponse({ description: "No event for that source/uid" })
-  async getOne(@Param("source") source: string, @Param("uid") uid: string): Promise<EventResponseDto> {
+  async getOne(
+    @Param("source") source: string,
+    @Param("uid") uid: string,
+  ): Promise<EventResponseDto> {
     const event = await this.store.getEvent(source, uid);
     if (!event) {
-      throw new NotFoundException(`No event for source="${source}" uid="${uid}"`);
+      throw new NotFoundException(
+        `No event for source="${source}" uid="${uid}"`,
+      );
     }
     return event;
   }
 
   @Get(":source/:uid/override")
   @ApiOkResponse({ type: EventOverrideResponseDto })
-  @ApiNotFoundResponse({ description: "No event for that source/uid, or no override is set for it" })
-  async getOverride(@Param("source") source: string, @Param("uid") uid: string): Promise<EventOverrideResponseDto> {
+  @ApiNotFoundResponse({
+    description: "No event for that source/uid, or no override is set for it",
+  })
+  async getOverride(
+    @Param("source") source: string,
+    @Param("uid") uid: string,
+  ): Promise<EventOverrideResponseDto> {
     const event = await this.getEventOrThrow(source, uid);
     const override = await this.overrides.getOverride(event.id);
     if (!override) {
-      throw new NotFoundException(`No override set for source="${source}" uid="${uid}"`);
+      throw new NotFoundException(
+        `No override set for source="${source}" uid="${uid}"`,
+      );
     }
     return override;
   }
@@ -78,15 +113,23 @@ export class EventsController {
   @HttpCode(204)
   @ApiNoContentResponse()
   @ApiNotFoundResponse({ description: "No event for that source/uid" })
-  async clearOverride(@Param("source") source: string, @Param("uid") uid: string): Promise<void> {
+  async clearOverride(
+    @Param("source") source: string,
+    @Param("uid") uid: string,
+  ): Promise<void> {
     const event = await this.getEventOrThrow(source, uid);
     await this.overrides.clearOverride(event.id);
   }
 
-  private async getEventOrThrow(source: string, uid: string): Promise<EventResponseDto> {
+  private async getEventOrThrow(
+    source: string,
+    uid: string,
+  ): Promise<EventResponseDto> {
     const event = await this.store.getEvent(source, uid);
     if (!event) {
-      throw new NotFoundException(`No event for source="${source}" uid="${uid}"`);
+      throw new NotFoundException(
+        `No event for source="${source}" uid="${uid}"`,
+      );
     }
     return event;
   }

@@ -4,7 +4,10 @@
  * is ever exposed in the URL, so the risk is confined to redirecting a user
  * who just authenticated to an attacker's page, not credential leakage.
  */
-export function sanitizeReturnTo(returnTo: string | undefined, webAppUrl: string | undefined): string | undefined {
+export function sanitizeReturnTo(
+  returnTo: string | undefined,
+  webAppUrl: string | undefined,
+): string | undefined {
   if (!returnTo || !webAppUrl) return undefined;
 
   try {

@@ -1,10 +1,26 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { buildCanonicalEventId, CanonicalCalendarEvent, SyncState } from "../domain/canonical-event";
-import { NewSyncRun, SyncRunEventChange, SyncRunTrigger, SyncRunType } from "../domain/sync-run";
-import { CalendarProvider, SyncTokenExpiredError, SyncWindow } from "../providers/calendar-provider";
+import {
+  buildCanonicalEventId,
+  CanonicalCalendarEvent,
+  SyncState,
+} from "../domain/canonical-event";
+import {
+  NewSyncRun,
+  SyncRunEventChange,
+  SyncRunTrigger,
+  SyncRunType,
+} from "../domain/sync-run";
+import {
+  CalendarProvider,
+  SyncTokenExpiredError,
+  SyncWindow,
+} from "../providers/calendar-provider";
 import { CalendarProviderRegistry } from "../providers/calendar-provider-registry";
-import { CALENDAR_ENABLEMENT_STORE, CalendarEnablementStore } from "../store/calendar-enablement-store";
+import {
+  CALENDAR_ENABLEMENT_STORE,
+  CalendarEnablementStore,
+} from "../store/calendar-enablement-store";
 import { EVENT_STORE, EventStore, UpsertResult } from "../store/event-store";
 import { SYNC_RUN_STORE, SyncRunStore } from "../store/sync-run-store";
 import { SyncedCalendarConfig } from "./synced-calendar-config";
@@ -51,15 +67,18 @@ export class SyncEngine {
 
   constructor(
     @Inject(EVENT_STORE) private readonly store: EventStore,
-    @Inject(CALENDAR_ENABLEMENT_STORE) private readonly enablement: CalendarEnablementStore,
+    @Inject(CALENDAR_ENABLEMENT_STORE)
+    private readonly enablement: CalendarEnablementStore,
     private readonly providers: CalendarProviderRegistry,
     @Inject(SYNC_RUN_STORE) private readonly syncRuns: SyncRunStore,
     config: ConfigService,
   ) {
     this.windowPastMs =
-      (Number(config.get("SYNC_WINDOW_PAST_DAYS")) || DEFAULT_SYNC_WINDOW_PAST_DAYS) * DAY_MS;
+      (Number(config.get("SYNC_WINDOW_PAST_DAYS")) ||
+        DEFAULT_SYNC_WINDOW_PAST_DAYS) * DAY_MS;
     this.windowFutureMs =
-      (Number(config.get("SYNC_WINDOW_FUTURE_DAYS")) || DEFAULT_SYNC_WINDOW_FUTURE_DAYS) * DAY_MS;
+      (Number(config.get("SYNC_WINDOW_FUTURE_DAYS")) ||
+        DEFAULT_SYNC_WINDOW_FUTURE_DAYS) * DAY_MS;
   }
 
   /**
@@ -73,13 +92,18 @@ export class SyncEngine {
    * rather than defaulted: a caller that silently defaulted here once
    * mislabeled real poll-triggered runs as "manual" in the history table.
    */
-  async syncOne(config: SyncedCalendarConfig, trigger: SyncRunTrigger): Promise<void> {
+  async syncOne(
+    config: SyncedCalendarConfig,
+    trigger: SyncRunTrigger,
+  ): Promise<void> {
     // The has-check and add below must stay adjacent with no `await` between
     // them — that's what makes two near-simultaneous calls mutually
     // exclusive (see the concurrency test). The enablement check is async,
     // so it has to live inside the guarded section instead of before it.
     if (this.inFlight.has(config.calendarId)) {
-      this.logger.debug(`Skipping sync for "${config.calendarId}" — already in progress`);
+      this.logger.debug(
+        `Skipping sync for "${config.calendarId}" — already in progress`,
+      );
       return;
     }
 
@@ -87,7 +111,9 @@ export class SyncEngine {
     try {
       const overrides = await this.enablement.listOverrides();
       if (overrides[config.calendarId] === false) {
-        this.logger.debug(`Skipping sync for "${config.calendarId}" — disabled`);
+        this.logger.debug(
+          `Skipping sync for "${config.calendarId}" — disabled`,
+        );
         return;
       }
       await this.runSyncAndRecord(config, trigger);
@@ -101,14 +127,25 @@ export class SyncEngine {
     return this.inFlight.has(calendarId);
   }
 
-  private async runSyncAndRecord(config: SyncedCalendarConfig, trigger: SyncRunTrigger): Promise<void> {
+  private async runSyncAndRecord(
+    config: SyncedCalendarConfig,
+    trigger: SyncRunTrigger,
+  ): Promise<void> {
     const startedAt = new Date();
     const tally = newTally();
     let type: SyncRunType = "incremental";
 
     try {
       type = await this.runSync(config, tally);
-      await this.persistRun(config, trigger, type, "success", startedAt, tally, null);
+      await this.persistRun(
+        config,
+        trigger,
+        type,
+        "success",
+        startedAt,
+        tally,
+        null,
+      );
     } catch (error) {
       await this.persistRun(
         config,
@@ -165,7 +202,10 @@ export class SyncEngine {
     }
   }
 
-  private async runSync(config: SyncedCalendarConfig, tally: SyncTally): Promise<SyncRunType> {
+  private async runSync(
+    config: SyncedCalendarConfig,
+    tally: SyncTally,
+  ): Promise<SyncRunType> {
     const provider = this.providers.resolve(config);
     const state = await this.store.getSyncState(config.calendarId);
 
@@ -179,7 +219,9 @@ export class SyncEngine {
       return "incremental";
     } catch (error) {
       if (error instanceof SyncTokenExpiredError) {
-        this.logger.warn(`Sync token expired for "${config.calendarId}" — falling back to a full sync`);
+        this.logger.warn(
+          `Sync token expired for "${config.calendarId}" — falling back to a full sync`,
+        );
         await this.runFullSync(provider, config, state, tally);
         return "full";
       }
@@ -195,7 +237,9 @@ export class SyncEngine {
    */
   private isWindowStale(state: SyncState): boolean {
     if (!state.lastFullSyncAt) return true;
-    return Date.now() - Date.parse(state.lastFullSyncAt) > WINDOW_REFRESH_INTERVAL_MS;
+    return (
+      Date.now() - Date.parse(state.lastFullSyncAt) > WINDOW_REFRESH_INTERVAL_MS
+    );
   }
 
   private computeSyncWindow(): SyncWindow {
@@ -251,7 +295,9 @@ export class SyncEngine {
       lastFullSyncAt: new Date().toISOString(),
     });
 
-    this.logger.log(`Full sync of "${config.calendarId}" complete: ${seenUids.size} events`);
+    this.logger.log(
+      `Full sync of "${config.calendarId}" complete: ${seenUids.size} events`,
+    );
   }
 
   private async runIncrementalSync(
@@ -260,7 +306,10 @@ export class SyncEngine {
     state: SyncState,
     tally: SyncTally,
   ): Promise<void> {
-    const result = await provider.incrementalSync(config.calendarId, state.syncToken!);
+    const result = await provider.incrementalSync(
+      config.calendarId,
+      state.syncToken!,
+    );
 
     for (const raw of result.events) {
       tally.total += 1;
@@ -268,11 +317,29 @@ export class SyncEngine {
       if (provider.isRemoval(raw)) {
         const removal = provider.resolveRemoval(raw);
         if (removal.isOccurrence) {
-          const changed = await this.store.markCancelled(config.source, removal.uid);
-          if (changed) await this.recordRemoval(tally, "updated", config.source, removal.uid);
+          const changed = await this.store.markCancelled(
+            config.source,
+            removal.uid,
+          );
+          if (changed)
+            await this.recordRemoval(
+              tally,
+              "updated",
+              config.source,
+              removal.uid,
+            );
         } else {
-          const changed = await this.store.markDeleted(config.source, removal.uid);
-          if (changed) await this.recordRemoval(tally, "deleted", config.source, removal.uid);
+          const changed = await this.store.markDeleted(
+            config.source,
+            removal.uid,
+          );
+          if (changed)
+            await this.recordRemoval(
+              tally,
+              "deleted",
+              config.source,
+              removal.uid,
+            );
         }
         continue;
       }
@@ -284,14 +351,23 @@ export class SyncEngine {
       }
     }
 
-    await this.store.saveSyncState(config.calendarId, { ...state, syncToken: result.nextSyncToken });
+    await this.store.saveSyncState(config.calendarId, {
+      ...state,
+      syncToken: result.nextSyncToken,
+    });
 
     if (result.events.length > 0) {
-      this.logger.log(`Incremental sync of "${config.calendarId}" applied ${result.events.length} change(s)`);
+      this.logger.log(
+        `Incremental sync of "${config.calendarId}" applied ${result.events.length} change(s)`,
+      );
     }
   }
 
-  private recordUpsert(tally: SyncTally, result: UpsertResult, event: CanonicalCalendarEvent): void {
+  private recordUpsert(
+    tally: SyncTally,
+    result: UpsertResult,
+    event: CanonicalCalendarEvent,
+  ): void {
     if (result === "unchanged") return;
     if (result === "created") {
       tally.added += 1;
@@ -341,7 +417,10 @@ export class SyncEngine {
   ): Promise<CanonicalCalendarEvent | null> {
     let canonical: CanonicalCalendarEvent;
     try {
-      canonical = await provider.normalizeEvent(raw, { source: config.source, calendarId: config.calendarId });
+      canonical = await provider.normalizeEvent(raw, {
+        source: config.source,
+        calendarId: config.calendarId,
+      });
     } catch (error) {
       this.logger.warn(
         `Skipping an event on "${config.calendarId}" that failed to normalize: ${

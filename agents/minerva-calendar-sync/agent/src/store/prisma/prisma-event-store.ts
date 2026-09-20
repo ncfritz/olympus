@@ -37,7 +37,10 @@ export class PrismaEventStore implements EventStore {
       this.withOutbox(
         event,
         existing
-          ? this.prisma.event.update({ where: { source_uid: { source: event.source, uid: event.uid } }, data })
+          ? this.prisma.event.update({
+              where: { source_uid: { source: event.source, uid: event.uid } },
+              data,
+            })
           : this.prisma.event.create({ data }),
       ),
     );
@@ -63,13 +66,25 @@ export class PrismaEventStore implements EventStore {
    * guarantee that an outbox row is written exactly when, and atomically
    * with, an Event row actually changes.
    */
-  private async flipAndEnqueue(source: string, uid: string, field: "cancelled" | "deleted"): Promise<boolean> {
-    const existing = await this.prisma.event.findUnique({ where: { source_uid: { source, uid } } });
+  private async flipAndEnqueue(
+    source: string,
+    uid: string,
+    field: "cancelled" | "deleted",
+  ): Promise<boolean> {
+    const existing = await this.prisma.event.findUnique({
+      where: { source_uid: { source, uid } },
+    });
     if (!existing || existing[field]) return false;
 
     const updated: EventRow = { ...existing, [field]: true };
     await this.prisma.$transaction(
-      this.withOutbox(fromRow(updated), this.prisma.event.updateMany({ where: { source, uid, [field]: false }, data: { [field]: true } })),
+      this.withOutbox(
+        fromRow(updated),
+        this.prisma.event.updateMany({
+          where: { source, uid, [field]: false },
+          data: { [field]: true },
+        }),
+      ),
     );
     return true;
   }
@@ -81,7 +96,10 @@ export class PrismaEventStore implements EventStore {
    * case no outbox row is written at all rather than accumulating forever
    * unconsumed.
    */
-  private withOutbox(event: CanonicalCalendarEvent, write: Prisma.PrismaPromise<unknown>): Prisma.PrismaPromise<unknown>[] {
+  private withOutbox(
+    event: CanonicalCalendarEvent,
+    write: Prisma.PrismaPromise<unknown>,
+  ): Prisma.PrismaPromise<unknown>[] {
     if (!this.outboxEnabled) return [write];
 
     const enqueue = this.prisma.outboxEvent.create({
@@ -95,8 +113,13 @@ export class PrismaEventStore implements EventStore {
     return [write, enqueue];
   }
 
-  async getEvent(source: string, uid: string): Promise<CanonicalCalendarEvent | null> {
-    const row = await this.prisma.event.findUnique({ where: { source_uid: { source, uid } } });
+  async getEvent(
+    source: string,
+    uid: string,
+  ): Promise<CanonicalCalendarEvent | null> {
+    const row = await this.prisma.event.findUnique({
+      where: { source_uid: { source, uid } },
+    });
     return row ? fromRow(row) : null;
   }
 
@@ -125,7 +148,10 @@ export class PrismaEventStore implements EventStore {
     return rows.map(fromRow);
   }
 
-  async listEventsOverlapping(start: string, end: string): Promise<CanonicalCalendarEvent[]> {
+  async listEventsOverlapping(
+    start: string,
+    end: string,
+  ): Promise<CanonicalCalendarEvent[]> {
     const rows = await this.prisma.event.findMany({
       where: {
         cancelled: false,
@@ -138,7 +164,9 @@ export class PrismaEventStore implements EventStore {
   }
 
   async getSyncState(calendarId: string): Promise<SyncState | null> {
-    const row = await this.prisma.syncState.findUnique({ where: { calendarId } });
+    const row = await this.prisma.syncState.findUnique({
+      where: { calendarId },
+    });
     if (!row) return null;
 
     return {
@@ -158,9 +186,13 @@ export class PrismaEventStore implements EventStore {
       syncToken: state.syncToken,
       channelId: state.channelId,
       resourceId: state.resourceId,
-      channelExpiration: state.channelExpiration ? new Date(state.channelExpiration) : null,
+      channelExpiration: state.channelExpiration
+        ? new Date(state.channelExpiration)
+        : null,
       channelToken: state.channelToken,
-      lastFullSyncAt: state.lastFullSyncAt ? new Date(state.lastFullSyncAt) : null,
+      lastFullSyncAt: state.lastFullSyncAt
+        ? new Date(state.lastFullSyncAt)
+        : null,
     };
 
     await this.prisma.syncState.upsert({
@@ -172,7 +204,10 @@ export class PrismaEventStore implements EventStore {
 }
 
 /** Field-by-field comparison used to tell a real change from an untouched event a full resync re-fetched anyway. */
-function rowsEqual(existing: EventRow, next: ReturnType<typeof toRow>): boolean {
+function rowsEqual(
+  existing: EventRow,
+  next: ReturnType<typeof toRow>,
+): boolean {
   return (
     existing.subject === next.subject &&
     existing.sensitivity === next.sensitivity &&

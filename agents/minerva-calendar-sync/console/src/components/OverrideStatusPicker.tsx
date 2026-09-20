@@ -1,10 +1,18 @@
 "use client";
 
-import { CheckCircleFilled, CheckCircleOutlined, CloseCircleFilled } from "@ant-design/icons";
+import {
+  CheckCircleFilled,
+  CheckCircleOutlined,
+  CloseCircleFilled,
+} from "@ant-design/icons";
 import { message, Space, theme } from "antd";
 import { useState } from "react";
 import type { AvailabilityStatus } from "@/lib/api/queries";
-import { AVAILABILITY_STATUSES, statusDotColor, STATUS_LABEL } from "@/lib/availability";
+import {
+  AVAILABILITY_STATUSES,
+  statusDotColor,
+  STATUS_LABEL,
+} from "@/lib/availability";
 
 /**
  * A row-per-status override selector, generic over what "setting" and
@@ -88,7 +96,9 @@ export function OverrideStatusPicker({
                 <CheckCircleFilled style={{ color: "#52c41a", fontSize: 18 }} />
               )
             ) : (
-              <CheckCircleOutlined style={{ color: token.colorBorder, fontSize: 18 }} />
+              <CheckCircleOutlined
+                style={{ color: token.colorBorder, fontSize: 18 }}
+              />
             )}
           </div>
         );

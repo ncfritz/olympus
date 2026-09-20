@@ -8,7 +8,10 @@ import { PrismaService } from "./prisma.service";
 export class PrismaEventOverrideStore implements EventOverrideStore {
   constructor(private readonly prisma: PrismaService) {}
 
-  async setOverride(eventId: string, status: AvailabilityStatus): Promise<EventOverride> {
+  async setOverride(
+    eventId: string,
+    status: AvailabilityStatus,
+  ): Promise<EventOverride> {
     const row = await this.prisma.eventOverride.upsert({
       where: { eventId },
       create: { eventId, status },
@@ -22,13 +25,17 @@ export class PrismaEventOverrideStore implements EventOverrideStore {
   }
 
   async getOverride(eventId: string): Promise<EventOverride | null> {
-    const row = await this.prisma.eventOverride.findUnique({ where: { eventId } });
+    const row = await this.prisma.eventOverride.findUnique({
+      where: { eventId },
+    });
     return row ? fromRow(row) : null;
   }
 
   async listOverrides(eventIds: string[]): Promise<EventOverride[]> {
     if (eventIds.length === 0) return [];
-    const rows = await this.prisma.eventOverride.findMany({ where: { eventId: { in: eventIds } } });
+    const rows = await this.prisma.eventOverride.findMany({
+      where: { eventId: { in: eventIds } },
+    });
     return rows.map(fromRow);
   }
 }

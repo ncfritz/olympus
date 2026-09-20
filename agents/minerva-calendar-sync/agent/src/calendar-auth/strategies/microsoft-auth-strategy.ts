@@ -9,7 +9,11 @@ import {
   refreshMicrosoftAccessToken,
   startMicrosoftLoopbackFlow,
 } from "../../providers/microsoft/microsoft-oauth";
-import { CalendarAuthStrategy, LoopbackFlow, LoopbackFlowRequest } from "./calendar-auth-strategy";
+import {
+  CalendarAuthStrategy,
+  LoopbackFlow,
+  LoopbackFlowRequest,
+} from "./calendar-auth-strategy";
 
 export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
   readonly provider = "microsoft" as const;
@@ -22,24 +26,34 @@ export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
     return tryLoadMicrosoftCredential(accountLabel);
   }
 
-  async checkAccessToken(accountLabel: string): Promise<{ expiresAt?: string }> {
+  async checkAccessToken(
+    accountLabel: string,
+  ): Promise<{ expiresAt?: string }> {
     const credential = tryLoadMicrosoftCredential(accountLabel);
     if (!credential) {
       throw new Error(`No stored Microsoft credential for "${accountLabel}"`);
     }
-    const { expiresAt } = await refreshMicrosoftAccessToken(credential.refreshToken);
+    const { expiresAt } = await refreshMicrosoftAccessToken(
+      credential.refreshToken,
+    );
     return { expiresAt };
   }
 
   async startLoopbackFlow(request: LoopbackFlowRequest): Promise<LoopbackFlow> {
-    const scopes = request.mode === "new" ? MICROSOFT_NEW_ACCOUNT_SCOPES : MICROSOFT_CALENDAR_SCOPES;
+    const scopes =
+      request.mode === "new"
+        ? MICROSOFT_NEW_ACCOUNT_SCOPES
+        : MICROSOFT_CALENDAR_SCOPES;
     const flow = await startMicrosoftLoopbackFlow(scopes);
 
     return {
       authUrl: flow.authUrl,
       complete: async (timeoutMs) => {
         const result = await flow.complete(timeoutMs);
-        const accountLabel = request.mode === "new" ? requireEmail(result.email) : request.accountLabel;
+        const accountLabel =
+          request.mode === "new"
+            ? requireEmail(result.email)
+            : request.accountLabel;
         saveMicrosoftCredential({
           accountLabel,
           refreshToken: result.refreshToken,
@@ -58,7 +72,9 @@ export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
   errorMessage(error: unknown): string {
     const err = error as { error?: string; error_description?: string };
     if (err?.error) {
-      return err.error_description ? `${err.error}: ${err.error_description}` : err.error;
+      return err.error_description
+        ? `${err.error}: ${err.error_description}`
+        : err.error;
     }
     return error instanceof Error ? error.message : String(error);
   }
@@ -66,7 +82,9 @@ export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
 
 function requireEmail(email: string | undefined): string {
   if (!email) {
-    throw new Error("Microsoft did not return a verified email address for this account");
+    throw new Error(
+      "Microsoft did not return a verified email address for this account",
+    );
   }
   return email;
 }

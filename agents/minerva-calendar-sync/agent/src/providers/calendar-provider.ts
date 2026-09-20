@@ -74,10 +74,16 @@ export interface CalendarProvider {
   listCalendars(): Promise<ProviderCalendar[]>;
 
   /** Pages through every event (recurring series expanded into their individual occurrences) within `window`, for a from-scratch sync. */
-  fullSync(calendarId: string, window: SyncWindow): AsyncIterable<RawEventBatch>;
+  fullSync(
+    calendarId: string,
+    window: SyncWindow,
+  ): AsyncIterable<RawEventBatch>;
 
   /** Fetches everything changed since `syncToken`, within whatever window was active when that token was issued. Throws SyncTokenExpiredError if it's stale. */
-  incrementalSync(calendarId: string, syncToken: string): Promise<IncrementalResult>;
+  incrementalSync(
+    calendarId: string,
+    syncToken: string,
+  ): Promise<IncrementalResult>;
 
   /**
    * Converts one provider-native raw event into the canonical shape.
@@ -87,7 +93,10 @@ export interface CalendarProvider {
    * here (alongside `source`, already used for tagging) because that
    * lookup needs it.
    */
-  normalizeEvent(raw: unknown, ctx: { source: string; calendarId: string }): Promise<CanonicalCalendarEvent>;
+  normalizeEvent(
+    raw: unknown,
+    ctx: { source: string; calendarId: string },
+  ): Promise<CanonicalCalendarEvent>;
 
   /**
    * True when `raw` is a minimal removal record, as incremental/delta sync
@@ -102,6 +111,10 @@ export interface CalendarProvider {
 
   supportsPush(): boolean;
   /** `token` is an opaque secret the caller generates and later verifies against each incoming notification, to reject forged ones. */
-  watch?(calendarId: string, webhookUrl: string, token: string): Promise<PushChannel>;
+  watch?(
+    calendarId: string,
+    webhookUrl: string,
+    token: string,
+  ): Promise<PushChannel>;
   stopWatch?(channel: PushChannel): Promise<void>;
 }

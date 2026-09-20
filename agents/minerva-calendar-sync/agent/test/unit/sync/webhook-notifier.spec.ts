@@ -33,7 +33,11 @@ class FakeCalendarProvider implements CalendarProvider {
   readonly id = "fake";
   watchCallCount = 0;
   stopWatchCallCount = 0;
-  nextChannel: PushChannel = { id: "chan-1", resourceId: "res-1", expiration: "2099-01-01T00:00:00.000Z" };
+  nextChannel: PushChannel = {
+    id: "chan-1",
+    resourceId: "res-1",
+    expiration: "2099-01-01T00:00:00.000Z",
+  };
 
   async listCalendars(): Promise<ProviderCalendar[]> {
     return [];
@@ -81,7 +85,11 @@ describe("WebhookNotifier", () => {
   beforeAll(() => {
     tempDir = mkdtempSync(join(tmpdir(), "minerva-test-"));
     process.env.DATABASE_URL = `file:${join(tempDir, "test.db")}`;
-    execSync("npx prisma db push --skip-generate", { cwd: API_ROOT, env: process.env, stdio: "pipe" });
+    execSync("npx prisma db push --skip-generate", {
+      cwd: API_ROOT,
+      env: process.env,
+      stdio: "pipe",
+    });
   }, 30000);
 
   afterAll(() => {
@@ -103,13 +111,27 @@ describe("WebhookNotifier", () => {
     await prisma.onModuleDestroy();
   });
 
-  function buildNotifier(calendars: SyncedCalendarConfig[], webhookBaseUrl: string | undefined): WebhookNotifier {
-    const registry = { resolve: () => provider } as unknown as CalendarProviderRegistry;
-    return new WebhookNotifier(fakeSyncConfig(calendars), registry, store, scheduler, fakeConfigService(webhookBaseUrl));
+  function buildNotifier(
+    calendars: SyncedCalendarConfig[],
+    webhookBaseUrl: string | undefined,
+  ): WebhookNotifier {
+    const registry = {
+      resolve: () => provider,
+    } as unknown as CalendarProviderRegistry;
+    return new WebhookNotifier(
+      fakeSyncConfig(calendars),
+      registry,
+      store,
+      scheduler,
+      fakeConfigService(webhookBaseUrl),
+    );
   }
 
   it("does nothing when no calendar has enablePush", async () => {
-    const notifier = buildNotifier([{ ...PUSH_CALENDAR, enablePush: false }], "https://example.com");
+    const notifier = buildNotifier(
+      [{ ...PUSH_CALENDAR, enablePush: false }],
+      "https://example.com",
+    );
     notifier.start(jest.fn());
     await notifier.waitUntilReady();
 
@@ -160,7 +182,9 @@ describe("WebhookNotifier", () => {
     notifier.start(jest.fn());
     await notifier.waitUntilReady();
 
-    expect((await store.getSyncState(PUSH_CALENDAR.calendarId))?.syncToken).toBe("existing-token");
+    expect(
+      (await store.getSyncState(PUSH_CALENDAR.calendarId))?.syncToken,
+    ).toBe("existing-token");
   });
 
   it("calls onChange for a notification with the matching channel and token", async () => {
@@ -198,14 +222,25 @@ describe("WebhookNotifier", () => {
   });
 
   it("renews a channel expiring soon and stops the old one", async () => {
-    provider.nextChannel = { id: "chan-1", resourceId: "res-1", expiration: expiringSoon() };
+    provider.nextChannel = {
+      id: "chan-1",
+      resourceId: "res-1",
+      expiration: expiringSoon(),
+    };
     const notifier = buildNotifier([PUSH_CALENDAR], "https://example.com");
     notifier.start(jest.fn());
     await notifier.waitUntilReady();
 
-    provider.nextChannel = { id: "chan-2", resourceId: "res-2", expiration: "2099-01-01T00:00:00.000Z" };
-    await (notifier as unknown as { renewExpiringChannels: (c: SyncedCalendarConfig[]) => Promise<void> })
-      .renewExpiringChannels([PUSH_CALENDAR]);
+    provider.nextChannel = {
+      id: "chan-2",
+      resourceId: "res-2",
+      expiration: "2099-01-01T00:00:00.000Z",
+    };
+    await (
+      notifier as unknown as {
+        renewExpiringChannels: (c: SyncedCalendarConfig[]) => Promise<void>;
+      }
+    ).renewExpiringChannels([PUSH_CALENDAR]);
 
     expect(provider.watchCallCount).toBe(2);
     expect(provider.stopWatchCallCount).toBe(1);
@@ -214,7 +249,9 @@ describe("WebhookNotifier", () => {
     expect(state?.channelId).toBe("chan-2");
 
     const onChange = jest.fn();
-    (notifier as unknown as { onChange: (id: string, trigger: string) => void }).onChange = onChange;
+    (
+      notifier as unknown as { onChange: (id: string, trigger: string) => void }
+    ).onChange = onChange;
     notifier.handleNotification("chan-1", "anything");
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -224,8 +261,11 @@ describe("WebhookNotifier", () => {
     notifier.start(jest.fn());
     await notifier.waitUntilReady();
 
-    await (notifier as unknown as { renewExpiringChannels: (c: SyncedCalendarConfig[]) => Promise<void> })
-      .renewExpiringChannels([PUSH_CALENDAR]);
+    await (
+      notifier as unknown as {
+        renewExpiringChannels: (c: SyncedCalendarConfig[]) => Promise<void>;
+      }
+    ).renewExpiringChannels([PUSH_CALENDAR]);
 
     expect(provider.watchCallCount).toBe(1);
     expect(provider.stopWatchCallCount).toBe(0);

@@ -12,5 +12,12 @@ export default defineConfig([
     // removed; naming the version skips it.
     settings: { react: { version: "19.2" } },
   },
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    // Generated from the agent's OpenAPI document (pnpm generate:api).
+    "src/lib/api/schema.d.ts",
+  ]),
 ]);

@@ -9,7 +9,12 @@ import {
   SyncTokenExpiredError,
   SyncWindow,
 } from "../calendar-provider";
-import { isMicrosoftRemoval, mapMicrosoftEventToCanonical, MicrosoftGraphEvent, resolveMicrosoftRemoval } from "./microsoft-event-mapper";
+import {
+  isMicrosoftRemoval,
+  mapMicrosoftEventToCanonical,
+  MicrosoftGraphEvent,
+  resolveMicrosoftRemoval,
+} from "./microsoft-event-mapper";
 import { MicrosoftAccessTokenProvider } from "./microsoft-oauth";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
@@ -43,7 +48,10 @@ interface GraphSubscriptionResponse {
 }
 
 class GraphRequestError extends Error {
-  constructor(readonly status: number, message: string) {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
     super(message);
     this.name = "GraphRequestError";
   }
@@ -51,18 +59,26 @@ class GraphRequestError extends Error {
 
 export class MicrosoftCalendarProvider implements CalendarProvider {
   readonly id = "microsoft";
-  private readonly recurrenceRuleCache = new Map<string, CachedRecurrenceRule>();
+  private readonly recurrenceRuleCache = new Map<
+    string,
+    CachedRecurrenceRule
+  >();
 
   constructor(private readonly auth: MicrosoftAccessTokenProvider) {}
 
   async listCalendars(): Promise<ProviderCalendar[]> {
     const calendars: ProviderCalendar[] = [];
-    let url: string | undefined = `${GRAPH_BASE}/me/calendars?$top=${PAGE_SIZE}`;
+    let url: string | undefined =
+      `${GRAPH_BASE}/me/calendars?$top=${PAGE_SIZE}`;
 
     while (url) {
       const data: GraphCalendarListResponse = await this.request(url);
       for (const item of data.value) {
-        calendars.push({ id: item.id, summary: item.name ?? item.id, primary: item.isDefaultCalendar === true });
+        calendars.push({
+          id: item.id,
+          summary: item.name ?? item.id,
+          primary: item.isDefaultCalendar === true,
+        });
       }
       url = data["@odata.nextLink"];
     }
@@ -70,7 +86,10 @@ export class MicrosoftCalendarProvider implements CalendarProvider {
     return calendars;
   }
 
-  async *fullSync(calendarId: string, window: SyncWindow): AsyncIterable<RawEventBatch> {
+  async *fullSync(
+    calendarId: string,
+    window: SyncWindow,
+  ): AsyncIterable<RawEventBatch> {
     let url: string | undefined = this.deltaUrl(calendarId, window);
 
     while (url) {
@@ -85,7 +104,10 @@ export class MicrosoftCalendarProvider implements CalendarProvider {
     }
   }
 
-  async incrementalSync(calendarId: string, syncToken: string): Promise<IncrementalResult> {
+  async incrementalSync(
+    calendarId: string,
+    syncToken: string,
+  ): Promise<IncrementalResult> {
     const events: MicrosoftGraphEvent[] = [];
     let url: string | undefined = syncToken;
     let deltaLink: string | undefined;
@@ -107,17 +129,24 @@ export class MicrosoftCalendarProvider implements CalendarProvider {
     }
 
     if (!deltaLink) {
-      throw new Error(`Microsoft incrementalSync for "${calendarId}" did not return a deltaLink`);
+      throw new Error(
+        `Microsoft incrementalSync for "${calendarId}" did not return a deltaLink`,
+      );
     }
 
     return { events, nextSyncToken: deltaLink };
   }
 
-  async normalizeEvent(raw: unknown, ctx: { source: string; calendarId: string }): Promise<CanonicalCalendarEvent> {
+  async normalizeEvent(
+    raw: unknown,
+    ctx: { source: string; calendarId: string },
+  ): Promise<CanonicalCalendarEvent> {
     const event = raw as MicrosoftGraphEvent;
     const recurrenceRule = event.seriesMasterId
       ? await this.getRecurrenceRule(event.seriesMasterId)
-      : (event.recurrence ? JSON.stringify(event.recurrence) : null);
+      : event.recurrence
+        ? JSON.stringify(event.recurrence)
+        : null;
     return mapMicrosoftEventToCanonical(event, ctx, recurrenceRule);
   }
 
@@ -134,10 +163,17 @@ export class MicrosoftCalendarProvider implements CalendarProvider {
       return cached.value;
     }
 
-    const value = this.request<MicrosoftGraphEvent>(`${GRAPH_BASE}/me/events/${masterEventId}`)
-      .then((master) => (master.recurrence ? JSON.stringify(master.recurrence) : null))
+    const value = this.request<MicrosoftGraphEvent>(
+      `${GRAPH_BASE}/me/events/${masterEventId}`,
+    )
+      .then((master) =>
+        master.recurrence ? JSON.stringify(master.recurrence) : null,
+      )
       .catch(() => null);
-    this.recurrenceRuleCache.set(masterEventId, { value, expiresAt: Date.now() + RECURRENCE_RULE_CACHE_TTL_MS });
+    this.recurrenceRuleCache.set(masterEventId, {
+      value,
+      expiresAt: Date.now() + RECURRENCE_RULE_CACHE_TTL_MS,
+    });
     return value;
   }
 
@@ -153,23 +189,38 @@ export class MicrosoftCalendarProvider implements CalendarProvider {
     return true;
   }
 
-  async watch(calendarId: string, webhookUrl: string, token: string): Promise<PushChannel> {
-    const data = await this.request<GraphSubscriptionResponse>(`${GRAPH_BASE}/subscriptions`, {
-      method: "POST",
-      body: JSON.stringify({
-        changeType: "created,updated,deleted",
-        notificationUrl: webhookUrl,
-        resource: this.eventsResource(calendarId),
-        expirationDateTime: new Date(Date.now() + SUBSCRIPTION_TTL_MS).toISOString(),
-        clientState: token,
-      }),
-    });
+  async watch(
+    calendarId: string,
+    webhookUrl: string,
+    token: string,
+  ): Promise<PushChannel> {
+    const data = await this.request<GraphSubscriptionResponse>(
+      `${GRAPH_BASE}/subscriptions`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          changeType: "created,updated,deleted",
+          notificationUrl: webhookUrl,
+          resource: this.eventsResource(calendarId),
+          expirationDateTime: new Date(
+            Date.now() + SUBSCRIPTION_TTL_MS,
+          ).toISOString(),
+          clientState: token,
+        }),
+      },
+    );
 
-    return { id: data.id, resourceId: data.resource, expiration: data.expirationDateTime };
+    return {
+      id: data.id,
+      resourceId: data.resource,
+      expiration: data.expirationDateTime,
+    };
   }
 
   async stopWatch(channel: PushChannel): Promise<void> {
-    await this.request(`${GRAPH_BASE}/subscriptions/${channel.id}`, { method: "DELETE" });
+    await this.request(`${GRAPH_BASE}/subscriptions/${channel.id}`, {
+      method: "DELETE",
+    });
   }
 
   /**
@@ -185,18 +236,25 @@ export class MicrosoftCalendarProvider implements CalendarProvider {
     // requested via the Prefer: odata.maxpagesize= header (see request()),
     // which every subsequent @odata.nextLink/@odata.deltaLink-driven call
     // must keep resending since it's a header, not part of the URL.
-    const params = new URLSearchParams({ startDateTime: window.start, endDateTime: window.end });
+    const params = new URLSearchParams({
+      startDateTime: window.start,
+      endDateTime: window.end,
+    });
     return `${GRAPH_BASE}/${this.calendarViewResource(calendarId)}/delta?${params}`;
   }
 
   private calendarViewResource(calendarId: string): string {
     // SyncedCalendarConfig accepts "primary" as a shorthand for the account's default calendar.
-    return calendarId === "primary" ? "me/calendarView" : `me/calendars/${calendarId}/calendarView`;
+    return calendarId === "primary"
+      ? "me/calendarView"
+      : `me/calendars/${calendarId}/calendarView`;
   }
 
   private eventsResource(calendarId: string): string {
     // SyncedCalendarConfig accepts "primary" as a shorthand for the account's default calendar.
-    return calendarId === "primary" ? "me/events" : `me/calendars/${calendarId}/events`;
+    return calendarId === "primary"
+      ? "me/events"
+      : `me/calendars/${calendarId}/events`;
   }
 
   private async request<T>(url: string, init?: RequestInit): Promise<T> {
@@ -217,7 +275,10 @@ export class MicrosoftCalendarProvider implements CalendarProvider {
 
     if (!response.ok) {
       const body = await response.text().catch(() => "");
-      throw new GraphRequestError(response.status, `Microsoft Graph request to ${url} failed (${response.status}): ${body}`);
+      throw new GraphRequestError(
+        response.status,
+        `Microsoft Graph request to ${url} failed (${response.status}): ${body}`,
+      );
     }
     if (response.status === 204) {
       return undefined as T;

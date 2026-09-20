@@ -35,7 +35,11 @@ describe("PrismaSyncRunStore", () => {
   beforeAll(() => {
     tempDir = mkdtempSync(join(tmpdir(), "minerva-test-"));
     process.env.DATABASE_URL = `file:${join(tempDir, "test.db")}`;
-    execSync("npx prisma db push --skip-generate", { cwd: API_ROOT, env: process.env, stdio: "pipe" });
+    execSync("npx prisma db push --skip-generate", {
+      cwd: API_ROOT,
+      env: process.env,
+      stdio: "pipe",
+    });
   }, 30000);
 
   afterAll(() => {
@@ -59,13 +63,25 @@ describe("PrismaSyncRunStore", () => {
       fixtureRun({
         addedCount: 1,
         totalCount: 1,
-        changes: [{ action: "added", eventId: "personal-gmail:uid-1", subject: "Team sync", startTime: "2026-01-05T16:00:00.000Z" }],
+        changes: [
+          {
+            action: "added",
+            eventId: "personal-gmail:uid-1",
+            subject: "Team sync",
+            startTime: "2026-01-05T16:00:00.000Z",
+          },
+        ],
       }),
     );
 
     const fetched = await store.get(created.id);
     expect(fetched?.changes).toEqual([
-      { action: "added", eventId: "personal-gmail:uid-1", subject: "Team sync", startTime: "2026-01-05T16:00:00.000Z" },
+      {
+        action: "added",
+        eventId: "personal-gmail:uid-1",
+        subject: "Team sync",
+        startTime: "2026-01-05T16:00:00.000Z",
+      },
     ]);
   });
 
@@ -74,29 +90,67 @@ describe("PrismaSyncRunStore", () => {
   });
 
   it("list filters by calendarId, type, trigger, and status", async () => {
-    await store.create(fixtureRun({ calendarId: "cal-1", trigger: "poll", type: "incremental", status: "success" }));
-    await store.create(fixtureRun({ calendarId: "cal-2", trigger: "manual", type: "full", status: "error", errorMessage: "boom" }));
+    await store.create(
+      fixtureRun({
+        calendarId: "cal-1",
+        trigger: "poll",
+        type: "incremental",
+        status: "success",
+      }),
+    );
+    await store.create(
+      fixtureRun({
+        calendarId: "cal-2",
+        trigger: "manual",
+        type: "full",
+        status: "error",
+        errorMessage: "boom",
+      }),
+    );
 
-    expect((await store.list({ calendarId: "cal-1" })).map((r) => r.calendarId)).toEqual(["cal-1"]);
-    expect((await store.list({ trigger: "manual" })).map((r) => r.calendarId)).toEqual(["cal-2"]);
-    expect((await store.list({ type: "full" })).map((r) => r.calendarId)).toEqual(["cal-2"]);
-    expect((await store.list({ status: "error" })).map((r) => r.calendarId)).toEqual(["cal-2"]);
+    expect(
+      (await store.list({ calendarId: "cal-1" })).map((r) => r.calendarId),
+    ).toEqual(["cal-1"]);
+    expect(
+      (await store.list({ trigger: "manual" })).map((r) => r.calendarId),
+    ).toEqual(["cal-2"]);
+    expect(
+      (await store.list({ type: "full" })).map((r) => r.calendarId),
+    ).toEqual(["cal-2"]);
+    expect(
+      (await store.list({ status: "error" })).map((r) => r.calendarId),
+    ).toEqual(["cal-2"]);
     expect(await store.list({})).toHaveLength(2);
   });
 
   it("list orders by most recent first", async () => {
-    await store.create(fixtureRun({ startedAt: "2026-01-05T15:00:00.000Z", finishedAt: "2026-01-05T15:00:01.000Z" }));
-    await store.create(fixtureRun({ startedAt: "2026-01-06T15:00:00.000Z", finishedAt: "2026-01-06T15:00:01.000Z" }));
+    await store.create(
+      fixtureRun({
+        startedAt: "2026-01-05T15:00:00.000Z",
+        finishedAt: "2026-01-05T15:00:01.000Z",
+      }),
+    );
+    await store.create(
+      fixtureRun({
+        startedAt: "2026-01-06T15:00:00.000Z",
+        finishedAt: "2026-01-06T15:00:01.000Z",
+      }),
+    );
 
     const runs = await store.list({});
-    expect(runs.map((r) => r.startedAt)).toEqual(["2026-01-06T15:00:00.000Z", "2026-01-05T15:00:00.000Z"]);
+    expect(runs.map((r) => r.startedAt)).toEqual([
+      "2026-01-06T15:00:00.000Z",
+      "2026-01-05T15:00:00.000Z",
+    ]);
   });
 
   it("pruneFinishedBefore deletes only runs that finished before the cutoff", async () => {
     await store.create(fixtureRun({ finishedAt: "2026-01-01T00:00:00.000Z" }));
     await store.create(fixtureRun({ finishedAt: "2026-06-01T00:00:00.000Z" }));
 
-    const deleted = await store.pruneFinishedBefore(new Date("2026-03-01T00:00:00.000Z"));
+    const deleted = await store.pruneFinishedBefore(
+      new Date("2026-03-01T00:00:00.000Z"),
+    );
 
     expect(deleted).toBe(1);
     expect(await store.list({})).toHaveLength(1);
@@ -128,10 +182,16 @@ describe("PrismaSyncRunStore", () => {
       );
       // A different calendar, same day — should be its own bucket.
       await store.create(
-        fixtureRun({ calendarId: "cal-2", startedAt: "2026-01-05T09:00:00.000Z", finishedAt: "2026-01-05T09:00:00.500Z" }),
+        fixtureRun({
+          calendarId: "cal-2",
+          startedAt: "2026-01-05T09:00:00.000Z",
+          finishedAt: "2026-01-05T09:00:00.500Z",
+        }),
       );
 
-      const stats = await store.dailyStats({ since: "2026-01-01T00:00:00.000Z" });
+      const stats = await store.dailyStats({
+        since: "2026-01-01T00:00:00.000Z",
+      });
 
       expect(stats).toEqual(
         expect.arrayContaining([
@@ -147,26 +207,47 @@ describe("PrismaSyncRunStore", () => {
             updatedCount: 1,
             deletedCount: 1,
           }),
-          expect.objectContaining({ date: "2026-01-05", calendarId: "cal-2", runCount: 1 }),
+          expect.objectContaining({
+            date: "2026-01-05",
+            calendarId: "cal-2",
+            runCount: 1,
+          }),
         ]),
       );
       expect(stats).toHaveLength(2);
     });
 
     it("excludes runs that started before the since cutoff", async () => {
-      await store.create(fixtureRun({ startedAt: "2025-12-01T00:00:00.000Z", finishedAt: "2025-12-01T00:00:01.000Z" }));
-      await store.create(fixtureRun({ startedAt: "2026-01-05T00:00:00.000Z", finishedAt: "2026-01-05T00:00:01.000Z" }));
+      await store.create(
+        fixtureRun({
+          startedAt: "2025-12-01T00:00:00.000Z",
+          finishedAt: "2025-12-01T00:00:01.000Z",
+        }),
+      );
+      await store.create(
+        fixtureRun({
+          startedAt: "2026-01-05T00:00:00.000Z",
+          finishedAt: "2026-01-05T00:00:01.000Z",
+        }),
+      );
 
-      const stats = await store.dailyStats({ since: "2026-01-01T00:00:00.000Z" });
+      const stats = await store.dailyStats({
+        since: "2026-01-01T00:00:00.000Z",
+      });
 
       expect(stats.map((s) => s.date)).toEqual(["2026-01-05"]);
     });
 
     it("applies the same type/trigger/status/calendarId filters as list", async () => {
       await store.create(fixtureRun({ calendarId: "cal-1", trigger: "poll" }));
-      await store.create(fixtureRun({ calendarId: "cal-2", trigger: "manual" }));
+      await store.create(
+        fixtureRun({ calendarId: "cal-2", trigger: "manual" }),
+      );
 
-      const stats = await store.dailyStats({ since: "2026-01-01T00:00:00.000Z", trigger: "manual" });
+      const stats = await store.dailyStats({
+        since: "2026-01-01T00:00:00.000Z",
+        trigger: "manual",
+      });
 
       expect(stats.map((s) => s.calendarId)).toEqual(["cal-2"]);
     });

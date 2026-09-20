@@ -14,7 +14,11 @@ import { WebhookNotifier } from "./webhook-notifier";
 
 @Module({
   imports: [ScheduleModule.forRoot(), StoreModule],
-  controllers: [WebhooksController, MicrosoftWebhooksController, SyncHistoryController],
+  controllers: [
+    WebhooksController,
+    MicrosoftWebhooksController,
+    SyncHistoryController,
+  ],
   providers: [
     SyncEngine,
     SyncConfigService,

@@ -7,7 +7,11 @@ export type SyncRunTrigger = (typeof SYNC_RUN_TRIGGER_VALUES)[number];
 export const SYNC_RUN_STATUS_VALUES = ["success", "error"] as const;
 export type SyncRunStatus = (typeof SYNC_RUN_STATUS_VALUES)[number];
 
-export const SYNC_RUN_EVENT_ACTION_VALUES = ["added", "updated", "deleted"] as const;
+export const SYNC_RUN_EVENT_ACTION_VALUES = [
+  "added",
+  "updated",
+  "deleted",
+] as const;
 export type SyncRunEventAction = (typeof SYNC_RUN_EVENT_ACTION_VALUES)[number];
 
 /** One event actually added, updated, or deleted by a SyncRun. */
@@ -39,7 +43,9 @@ export interface SyncRunWithChanges extends SyncRun {
   changes: SyncRunEventChange[];
 }
 
-export type NewSyncRun = Omit<SyncRun, "id"> & { changes: SyncRunEventChange[] };
+export type NewSyncRun = Omit<SyncRun, "id"> & {
+  changes: SyncRunEventChange[];
+};
 
 export interface SyncRunFilter {
   calendarId?: string;

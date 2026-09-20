@@ -11,7 +11,9 @@ import {
 
 /** The calendar/type/trigger/status filters shared by GET /sync-runs and GET /sync-runs/stats. */
 export class SyncRunFilterQueryDto {
-  @ApiPropertyOptional({ description: "Filter to sync history for this configured calendar only" })
+  @ApiPropertyOptional({
+    description: "Filter to sync history for this configured calendar only",
+  })
   @IsOptional()
   @IsString()
   calendarId?: string;

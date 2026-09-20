@@ -1,22 +1,42 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
-import { IsBoolean, IsIn, IsISO8601, IsInt, IsOptional, IsString, Max, Min } from "class-validator";
-import { OCCURRENCE_TYPE_VALUES, OccurrenceType } from "../../domain/canonical-event";
+import {
+  IsBoolean,
+  IsIn,
+  IsISO8601,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from "class-validator";
+import {
+  OCCURRENCE_TYPE_VALUES,
+  OccurrenceType,
+} from "../../domain/canonical-event";
 
-const toBoolean = ({ value }: { value: unknown }) => value === "true" || value === true;
+const toBoolean = ({ value }: { value: unknown }) =>
+  value === "true" || value === true;
 
 export class ListEventsQueryDto {
-  @ApiPropertyOptional({ description: "Filter to events from this configured calendar's source label" })
+  @ApiPropertyOptional({
+    description:
+      "Filter to events from this configured calendar's source label",
+  })
   @IsOptional()
   @IsString()
   source?: string;
 
-  @ApiPropertyOptional({ description: "ISO-8601 — only events starting at or after this instant" })
+  @ApiPropertyOptional({
+    description: "ISO-8601 — only events starting at or after this instant",
+  })
   @IsOptional()
   @IsISO8601()
   startsAfter?: string;
 
-  @ApiPropertyOptional({ description: "ISO-8601 — only events starting at or before this instant" })
+  @ApiPropertyOptional({
+    description: "ISO-8601 — only events starting at or before this instant",
+  })
   @IsOptional()
   @IsISO8601()
   startsBefore?: string;
@@ -46,7 +66,9 @@ export class ListEventsQueryDto {
   @Max(1000)
   limit?: number;
 
-  @ApiPropertyOptional({ description: "Internal event id to page from (exclusive)" })
+  @ApiPropertyOptional({
+    description: "Internal event id to page from (exclusive)",
+  })
   @IsOptional()
   @IsString()
   cursor?: string;

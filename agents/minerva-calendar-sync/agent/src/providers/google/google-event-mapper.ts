@@ -45,7 +45,9 @@ export function resolveGoogleRemoval(raw: GoogleEvent): RemovalTombstone {
   }
   const isOccurrence = Boolean(raw.recurringEventId);
   return {
-    uid: isOccurrence ? `${raw.id}@google.com` : (raw.iCalUID ?? `${raw.id}@google.com`),
+    uid: isOccurrence
+      ? `${raw.id}@google.com`
+      : (raw.iCalUID ?? `${raw.id}@google.com`),
     isOccurrence,
   };
 }
@@ -79,7 +81,9 @@ export function mapGoogleEventToCanonical(
   // iCalUID, which legacy/malformed events occasionally lack even when not
   // cancelled — same documented derivation heuristic as resolveGoogleRemoval,
   // rather than failing the whole sync over one odd event.
-  const uid = raw.recurringEventId ? `${raw.id}@google.com` : (raw.iCalUID ?? `${raw.id}@google.com`);
+  const uid = raw.recurringEventId
+    ? `${raw.id}@google.com`
+    : (raw.iCalUID ?? `${raw.id}@google.com`);
   const { startTime, endTime, allDay } = mapTimes(raw);
 
   return {
@@ -147,7 +151,9 @@ function mapType(raw: GoogleEvent): EventType {
 
 function mapReminder(reminders: GoogleEvent["reminders"]): boolean {
   if (!reminders) return false;
-  return Boolean(reminders.useDefault) || (reminders.overrides?.length ?? 0) > 0;
+  return (
+    Boolean(reminders.useDefault) || (reminders.overrides?.length ?? 0) > 0
+  );
 }
 
 function mapResponse(raw: GoogleEvent): ResponseStatus {
@@ -170,15 +176,23 @@ function mapResponse(raw: GoogleEvent): ResponseStatus {
   }
 }
 
-function mapFreeBusyStatus(transparency: GoogleEvent["transparency"]): FreeBusyStatus {
+function mapFreeBusyStatus(
+  transparency: GoogleEvent["transparency"],
+): FreeBusyStatus {
   return transparency === "transparent" ? "free" : "busy";
 }
 
-function mapTimes(raw: GoogleEvent): { startTime: string; endTime: string; allDay: boolean } {
+function mapTimes(raw: GoogleEvent): {
+  startTime: string;
+  endTime: string;
+  allDay: boolean;
+} {
   const start = raw.start;
   const end = raw.end;
   if (!start || !end) {
-    throw new Error(`Google event ${raw.id ?? "<unknown id>"} is missing start or end`);
+    throw new Error(
+      `Google event ${raw.id ?? "<unknown id>"} is missing start or end`,
+    );
   }
 
   if (start.date && end.date) {
@@ -190,7 +204,9 @@ function mapTimes(raw: GoogleEvent): { startTime: string; endTime: string; allDa
   }
 
   if (!start.dateTime || !end.dateTime) {
-    throw new Error(`Google event ${raw.id ?? "<unknown id>"} has an inconsistent start/end shape`);
+    throw new Error(
+      `Google event ${raw.id ?? "<unknown id>"} has an inconsistent start/end shape`,
+    );
   }
 
   return {

@@ -5,7 +5,12 @@ import { FreeBusyStatus } from "./canonical-event";
  * FreeBusyStatus, which is the raw value synced from the calendar
  * provider. Every provider status maps down to one of these.
  */
-export const AVAILABILITY_STATUS_VALUES = ["none", "free", "interruptable", "busy"] as const;
+export const AVAILABILITY_STATUS_VALUES = [
+  "none",
+  "free",
+  "interruptable",
+  "busy",
+] as const;
 export type AvailabilityStatus = (typeof AVAILABILITY_STATUS_VALUES)[number];
 
 /**
@@ -21,7 +26,9 @@ const AVAILABILITY_PRECEDENCE: Record<AvailabilityStatus, number> = {
   busy: 3,
 };
 
-export function mapFreeBusyToAvailability(status: FreeBusyStatus): AvailabilityStatus {
+export function mapFreeBusyToAvailability(
+  status: FreeBusyStatus,
+): AvailabilityStatus {
   switch (status) {
     case "busy":
       return "busy";
@@ -36,12 +43,16 @@ export function mapFreeBusyToAvailability(status: FreeBusyStatus): AvailabilityS
 }
 
 /** Combines two or more overlapping statuses into one, per AVAILABILITY_PRECEDENCE. Callers handle the zero-overlap case (which is "free", not a combine). */
-export function combineAvailability(statuses: AvailabilityStatus[]): AvailabilityStatus {
+export function combineAvailability(
+  statuses: AvailabilityStatus[],
+): AvailabilityStatus {
   if (statuses.length === 0) {
     throw new Error("combineAvailability requires at least one status");
   }
   return statuses.reduce((best, status) =>
-    AVAILABILITY_PRECEDENCE[status] > AVAILABILITY_PRECEDENCE[best] ? status : best,
+    AVAILABILITY_PRECEDENCE[status] > AVAILABILITY_PRECEDENCE[best]
+      ? status
+      : best,
   );
 }
 

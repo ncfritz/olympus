@@ -77,7 +77,10 @@ const POLL_NEW_ACCOUNT_AUTH_MS = 2000;
  * provider at once — so every account-scoped lookup/row-key below is keyed
  * by provider + accountLabel together.
  */
-function accountKey(provider: CalendarAccountStatus["provider"], accountLabel: string): string {
+function accountKey(
+  provider: CalendarAccountStatus["provider"],
+  accountLabel: string,
+): string {
   return `${provider}:${accountLabel}`;
 }
 
@@ -101,7 +104,8 @@ const REMOVE_BUTTON_WIDTH = 92;
 const SYNC_BUTTON_WIDTH = 112;
 
 /** Remove + Sync now + Enable/Disable, each fixed-width, plus two 8px gaps. */
-const ACTIONS_COLUMN_WIDTH = REMOVE_BUTTON_WIDTH + SYNC_BUTTON_WIDTH + ENABLE_TOGGLE_BUTTON_WIDTH + 16;
+const ACTIONS_COLUMN_WIDTH =
+  REMOVE_BUTTON_WIDTH + SYNC_BUTTON_WIDTH + ENABLE_TOGGLE_BUTTON_WIDTH + 16;
 
 /** Fixed width for the "Included in busy" switch column — fits its header text plus the switch. */
 const BUSY_INCLUSION_COLUMN_WIDTH = 140;
@@ -165,7 +169,10 @@ export function CalendarAccountsPanel() {
     mutateCalendars();
   }
 
-  async function handleReauth(accountLabel: string, provider: CalendarAccountStatus["provider"]) {
+  async function handleReauth(
+    accountLabel: string,
+    provider: CalendarAccountStatus["provider"],
+  ) {
     try {
       const authUrl = await startCalendarAccountReauth(accountLabel, provider);
       window.open(authUrl, "_blank", "noopener,noreferrer");
@@ -185,7 +192,9 @@ export function CalendarAccountsPanel() {
   async function handleToggleEnabled(calendarId: string, enabled: boolean) {
     mutateCalendars(
       (current) =>
-        current?.map((c) => (c.calendarId === calendarId ? { ...c, enabled } : c)),
+        current?.map((c) =>
+          c.calendarId === calendarId ? { ...c, enabled } : c,
+        ),
       { revalidate: false },
     );
     try {
@@ -195,13 +204,18 @@ export function CalendarAccountsPanel() {
       console.error(error);
       mutateCalendars(
         (current) =>
-          current?.map((c) => (c.calendarId === calendarId ? { ...c, enabled: !enabled } : c)),
+          current?.map((c) =>
+            c.calendarId === calendarId ? { ...c, enabled: !enabled } : c,
+          ),
         { revalidate: false },
       );
     }
   }
 
-  async function handleToggleIncludedInBusy(calendarId: string, includedInBusy: boolean) {
+  async function handleToggleIncludedInBusy(
+    calendarId: string,
+    includedInBusy: boolean,
+  ) {
     mutateCalendars(
       (current) =>
         current?.map((c) =>
@@ -219,7 +233,9 @@ export function CalendarAccountsPanel() {
       mutateCalendars(
         (current) =>
           current?.map((c) =>
-            c.calendarId === calendarId ? { ...c, includedInBusy: !includedInBusy } : c,
+            c.calendarId === calendarId
+              ? { ...c, includedInBusy: !includedInBusy }
+              : c,
           ),
         { revalidate: false },
       );
@@ -236,7 +252,9 @@ export function CalendarAccountsPanel() {
       // finishes rather than guessing at a timeout here.
       mutateCalendars(
         (current) =>
-          current?.map((c) => (c.calendarId === calendarId ? { ...c, syncing: true } : c)),
+          current?.map((c) =>
+            c.calendarId === calendarId ? { ...c, syncing: true } : c,
+          ),
         { revalidate: false },
       );
       message.success(`Sync triggered for "${calendarId}"`);
@@ -292,11 +310,17 @@ export function CalendarAccountsPanel() {
           // needs to be expandable so its first one can be discovered/added.
           rowExpandable: (account) =>
             account.status === "ok" ||
-            (calendarsByAccount.get(accountKey(account.provider, account.accountLabel))?.length ?? 0) > 0,
+            (calendarsByAccount.get(
+              accountKey(account.provider, account.accountLabel),
+            )?.length ?? 0) > 0,
           expandedRowRender: (account) => (
             <AccountCalendarsTable
               account={account}
-              tracked={calendarsByAccount.get(accountKey(account.provider, account.accountLabel)) ?? []}
+              tracked={
+                calendarsByAccount.get(
+                  accountKey(account.provider, account.accountLabel),
+                ) ?? []
+              }
               colorForSource={colorForSource}
               onSetSourceColor={setSourceColor}
               onSync={handleSync}
@@ -355,7 +379,11 @@ export function CalendarAccountsPanel() {
             render: (_, account) => (
               <AccountCalendarCount
                 account={account}
-                tracked={calendarsByAccount.get(accountKey(account.provider, account.accountLabel)) ?? []}
+                tracked={
+                  calendarsByAccount.get(
+                    accountKey(account.provider, account.accountLabel),
+                  ) ?? []
+                }
               />
             ),
           },
@@ -366,9 +394,13 @@ export function CalendarAccountsPanel() {
               NEEDS_REAUTH.includes(record.status) ? (
                 <Button
                   size="small"
-                  onClick={() => handleReauth(record.accountLabel, record.provider)}
+                  onClick={() =>
+                    handleReauth(record.accountLabel, record.provider)
+                  }
                 >
-                  {record.status === "not_connected" ? "Sign in" : "Reauthorize"}
+                  {record.status === "not_connected"
+                    ? "Sign in"
+                    : "Reauthorize"}
                 </Button>
               ) : record.status === "reauth_pending" ? (
                 <Button size="small" loading disabled>
@@ -404,7 +436,9 @@ function AddAccountModal({
   const [flow, setFlow] = useState<AddAccountFlow>({ phase: "idle" });
 
   useSWR(
-    flow.phase === "pending" ? ["/calendar-accounts/new", flow.phase, flow.transactionId] : null,
+    flow.phase === "pending"
+      ? ["/calendar-accounts/new", flow.phase, flow.transactionId]
+      : null,
     ([, , transactionId]) => fetchNewAccountAuthStatus(transactionId),
     {
       refreshInterval: POLL_NEW_ACCOUNT_AUTH_MS,
@@ -414,7 +448,10 @@ function AddAccountModal({
           onAdded();
           handleClose();
         } else if (status.status === "error") {
-          setFlow({ phase: "error", message: status.error ?? "Authorization failed" });
+          setFlow({
+            phase: "error",
+            message: status.error ?? "Authorization failed",
+          });
         }
       },
     },
@@ -425,7 +462,9 @@ function AddAccountModal({
     onClose();
   }
 
-  async function handleSelectProvider(provider: CalendarAccountStatus["provider"]) {
+  async function handleSelectProvider(
+    provider: CalendarAccountStatus["provider"],
+  ) {
     try {
       const { transactionId, authUrl } = await startNewAccountAuth(provider);
       window.open(authUrl, "_blank", "noopener,noreferrer");
@@ -437,26 +476,45 @@ function AddAccountModal({
   }
 
   return (
-    <Modal title="Add a calendar account" open={open} onCancel={handleClose} footer={null}>
+    <Modal
+      title="Add a calendar account"
+      open={open}
+      onCancel={handleClose}
+      footer={null}
+    >
       {flow.phase === "pending" ? (
         <Flex vertical align="center" gap={12} style={{ padding: "24px 0" }}>
           <Spin />
-          <Typography.Text>Waiting for sign-in in the tab that opened…</Typography.Text>
+          <Typography.Text>
+            Waiting for sign-in in the tab that opened…
+          </Typography.Text>
         </Flex>
       ) : (
         <Flex vertical gap={8}>
-          {flow.phase === "error" && <Alert type="error" showIcon message={flow.message} />}
+          {flow.phase === "error" && (
+            <Alert type="error" showIcon message={flow.message} />
+          )}
           <Button
             size="large"
             onClick={() => handleSelectProvider("google")}
-            style={{ height: 104, display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{
+              height: 104,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
             <ProviderLogo provider="google" height={80} />
           </Button>
           <Button
             size="large"
             onClick={() => handleSelectProvider("microsoft")}
-            style={{ height: 104, display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{
+              height: 104,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
             <ProviderLogo provider="microsoft" height={80} />
           </Button>
@@ -482,7 +540,11 @@ function AccountCalendarCount({
 }) {
   const { data: available = [] } = useSWR(
     account.status === "ok"
-      ? ["/calendar-accounts/available-calendars", account.provider, account.accountLabel]
+      ? [
+          "/calendar-accounts/available-calendars",
+          account.provider,
+          account.accountLabel,
+        ]
       : null,
     ([, provider, label]) => fetchAvailableCalendars(label, provider),
   );
@@ -496,7 +558,8 @@ function AccountCalendarCount({
 
   return (
     <span>
-      {totalAvailable} calendar{totalAvailable === 1 ? "" : "s"} available, {enabledCount} enabled
+      {totalAvailable} calendar{totalAvailable === 1 ? "" : "s"} available,{" "}
+      {enabledCount} enabled
     </span>
   );
 }
@@ -530,7 +593,11 @@ function AccountCalendarsTable({
     mutate: mutateAvailable,
   } = useSWR(
     account.status === "ok"
-      ? ["/calendar-accounts/available-calendars", account.provider, account.accountLabel]
+      ? [
+          "/calendar-accounts/available-calendars",
+          account.provider,
+          account.accountLabel,
+        ]
       : null,
     ([, provider, label]) => fetchAvailableCalendars(label, provider),
   );
@@ -544,14 +611,26 @@ function AccountCalendarsTable({
     const trackedIds = new Set(tracked.map((c) => c.calendarId));
     const untracked = available
       .filter((c) => !c.alreadySynced && !trackedIds.has(c.id))
-      .map((c): CalendarRow => ({ tracked: false, calendarId: c.id, source: c.summary }));
-    return [...tracked.map((c): CalendarRow => ({ ...c, tracked: true })), ...untracked];
+      .map((c): CalendarRow => ({
+        tracked: false,
+        calendarId: c.id,
+        source: c.summary,
+      }));
+    return [
+      ...tracked.map((c): CalendarRow => ({ ...c, tracked: true })),
+      ...untracked,
+    ];
   }, [tracked, available]);
 
   async function handleAdd(calendarId: string, source: string) {
     setAddingId(calendarId);
     try {
-      await addCalendar({ provider: account.provider, accountLabel: account.accountLabel, calendarId, source });
+      await addCalendar({
+        provider: account.provider,
+        accountLabel: account.accountLabel,
+        calendarId,
+        source,
+      });
       message.success(`Added "${source}"`);
       mutateAvailable();
       onCalendarAdded();
@@ -580,7 +659,9 @@ function AccountCalendarsTable({
               {row.tracked && row.enabled ? (
                 <ColorPicker
                   value={colorForSource(row.source)}
-                  onChange={(color) => onSetSourceColor(row.source, color.toHexString())}
+                  onChange={(color) =>
+                    onSetSourceColor(row.source, color.toHexString())
+                  }
                 >
                   <div
                     style={{
@@ -635,7 +716,10 @@ function AccountCalendarsTable({
                 : { color: "red", label: "Disabled" }
               : { color: "default", label: "Not synchronized" };
             return (
-              <Tag color={tag.color} style={{ width: STATUS_TAG_WIDTH, textAlign: "center" }}>
+              <Tag
+                color={tag.color}
+                style={{ width: STATUS_TAG_WIDTH, textAlign: "center" }}
+              >
                 {tag.label}
               </Tag>
             );
@@ -651,7 +735,9 @@ function AccountCalendarsTable({
                 href={`/sync?calendarId=${encodeURIComponent(row.calendarId)}`}
                 style={{ fontSize: 12 }}
               >
-                {row.lastSyncedAt ? new Date(row.lastSyncedAt).toLocaleString() : "Never"}
+                {row.lastSyncedAt
+                  ? new Date(row.lastSyncedAt).toLocaleString()
+                  : "Never"}
               </Link>
             ) : (
               <span style={{ fontSize: 12 }}>—</span>
@@ -666,7 +752,9 @@ function AccountCalendarsTable({
               <Switch
                 checked={row.includedInBusy}
                 disabled={row.syncing}
-                onChange={(checked) => onToggleIncludedInBusy(row.calendarId, checked)}
+                onChange={(checked) =>
+                  onToggleIncludedInBusy(row.calendarId, checked)
+                }
               />
             ) : null,
         },
@@ -686,7 +774,12 @@ function AccountCalendarsTable({
                     description="It can be added back later by enabling it again."
                     onConfirm={() => onRemove(row.calendarId)}
                   >
-                    <Button size="small" danger disabled={syncing} style={{ width: REMOVE_BUTTON_WIDTH }}>
+                    <Button
+                      size="small"
+                      danger
+                      disabled={syncing}
+                      style={{ width: REMOVE_BUTTON_WIDTH }}
+                    >
                       Remove
                     </Button>
                   </Popconfirm>

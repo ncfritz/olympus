@@ -1,5 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { AVAILABILITY_STATUS_VALUES, AvailabilityStatus, OverrideBlock } from "../../domain/availability";
+import {
+  AVAILABILITY_STATUS_VALUES,
+  AvailabilityStatus,
+  OverrideBlock,
+} from "../../domain/availability";
 
 export class OverrideBlockResponseDto implements OverrideBlock {
   @ApiProperty() id: string;

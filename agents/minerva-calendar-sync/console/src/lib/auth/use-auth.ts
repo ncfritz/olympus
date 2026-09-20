@@ -13,7 +13,11 @@ export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 export function useAuth() {
   const { data: user, isLoading, mutate } = useSWR("/auth/me", fetchMe);
 
-  const status: AuthStatus = isLoading ? "loading" : user ? "authenticated" : "unauthenticated";
+  const status: AuthStatus = isLoading
+    ? "loading"
+    : user
+      ? "authenticated"
+      : "unauthenticated";
 
   async function logout() {
     await logoutRequest();

@@ -1,6 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsIn, IsISO8601, IsOptional, IsString } from "class-validator";
-import { AVAILABILITY_STATUS_VALUES, AvailabilityStatus } from "../../domain/availability";
+import {
+  AVAILABILITY_STATUS_VALUES,
+  AvailabilityStatus,
+} from "../../domain/availability";
 
 export class CreateOverrideBlockDto {
   @ApiProperty({ description: "ISO-8601" })

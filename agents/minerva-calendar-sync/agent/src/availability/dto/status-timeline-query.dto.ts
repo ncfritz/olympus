@@ -3,12 +3,14 @@ import { Transform } from "class-transformer";
 import { IsBoolean, IsOptional, IsString, Matches } from "class-validator";
 import { FreeBusyQueryDto } from "./free-busy-query.dto";
 
-const toBoolean = ({ value }: { value: unknown }) => value === "true" || value === true;
+const toBoolean = ({ value }: { value: unknown }) =>
+  value === "true" || value === true;
 const TIME_OF_DAY_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export class StatusTimelineQueryDto extends FreeBusyQueryDto {
   @ApiPropertyOptional({
-    description: "HH:mm, 24-hour, in `timezone` — start of the working-hours window",
+    description:
+      "HH:mm, 24-hour, in `timezone` — start of the working-hours window",
     default: "08:00",
   })
   @IsOptional()
@@ -16,7 +18,8 @@ export class StatusTimelineQueryDto extends FreeBusyQueryDto {
   dayStart?: string;
 
   @ApiPropertyOptional({
-    description: "HH:mm, 24-hour, in `timezone` — end of the working-hours window (exclusive)",
+    description:
+      "HH:mm, 24-hour, in `timezone` — end of the working-hours window (exclusive)",
     default: "18:00",
   })
   @IsOptional()
@@ -34,7 +37,8 @@ export class StatusTimelineQueryDto extends FreeBusyQueryDto {
   treatWeekendsAsWorking?: boolean;
 
   @ApiPropertyOptional({
-    description: 'IANA timezone name (e.g. "America/Los_Angeles") used to evaluate dayStart/dayEnd and weekday',
+    description:
+      'IANA timezone name (e.g. "America/Los_Angeles") used to evaluate dayStart/dayEnd and weekday',
     default: "UTC",
   })
   @IsOptional()
