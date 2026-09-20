@@ -86,15 +86,16 @@
         ]
       }
     },
-    "/sync-runs": {
+    "/v1/sync-runs": {
       "get": {
-        "operationId": "SyncHistoryController_list",
+        "description": "Returns the recorded sync runs, newest first, filtered and paged by the query.",
+        "operationId": "ListSyncRuns",
         "parameters": [
           {
             "name": "calendarId",
             "required": false,
             "in": "query",
-            "description": "Filter to sync history for this configured calendar only",
+            "description": "Only runs of this calendar (the provider's ID)",
             "schema": {
               "type": "string"
             }
@@ -103,43 +104,34 @@
             "name": "type",
             "required": false,
             "in": "query",
+            "description": "Only runs of this type",
             "schema": {
-              "type": "string",
-              "enum": [
-                "full",
-                "incremental"
-              ]
+              "$ref": "#/components/schemas/SyncRunType"
             }
           },
           {
             "name": "trigger",
             "required": false,
             "in": "query",
+            "description": "Only runs started this way",
             "schema": {
-              "type": "string",
-              "enum": [
-                "manual",
-                "poll",
-                "webhook"
-              ]
+              "$ref": "#/components/schemas/SyncRunTrigger"
             }
           },
           {
             "name": "status",
             "required": false,
             "in": "query",
+            "description": "Only runs that ended this way",
             "schema": {
-              "type": "string",
-              "enum": [
-                "success",
-                "error"
-              ]
+              "$ref": "#/components/schemas/SyncRunStatus"
             }
           },
           {
             "name": "limit",
             "required": false,
             "in": "query",
+            "description": "The number of runs to return",
             "schema": {
               "minimum": 1,
               "maximum": 200,
@@ -151,7 +143,7 @@
             "name": "cursor",
             "required": false,
             "in": "query",
-            "description": "Sync run id to page from (exclusive)",
+            "description": "The ID of the run to page from (exclusive)",
             "schema": {
               "type": "string"
             }
@@ -159,14 +151,31 @@
         ],
         "responses": {
           "200": {
-            "description": "",
+            "description": "The runs were listed.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SyncRunDto"
-                  }
+                  "$ref": "#/components/schemas/ListSyncRunsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -177,20 +186,22 @@
             "bearer": []
           }
         ],
+        "summary": "Lists sync runs",
         "tags": [
-          "sync-runs"
+          "Sync Runs"
         ]
       }
     },
-    "/sync-runs/stats": {
+    "/v1/sync-runs/stats": {
       "get": {
-        "operationId": "SyncHistoryController_dailyStats",
+        "description": "Returns per-day, per-calendar counts and durations of the recorded runs over a trailing window.",
+        "operationId": "GetSyncRunStats",
         "parameters": [
           {
             "name": "calendarId",
             "required": false,
             "in": "query",
-            "description": "Filter to sync history for this configured calendar only",
+            "description": "Only runs of this calendar (the provider's ID)",
             "schema": {
               "type": "string"
             }
@@ -199,44 +210,34 @@
             "name": "type",
             "required": false,
             "in": "query",
+            "description": "Only runs of this type",
             "schema": {
-              "type": "string",
-              "enum": [
-                "full",
-                "incremental"
-              ]
+              "$ref": "#/components/schemas/SyncRunType"
             }
           },
           {
             "name": "trigger",
             "required": false,
             "in": "query",
+            "description": "Only runs started this way",
             "schema": {
-              "type": "string",
-              "enum": [
-                "manual",
-                "poll",
-                "webhook"
-              ]
+              "$ref": "#/components/schemas/SyncRunTrigger"
             }
           },
           {
             "name": "status",
             "required": false,
             "in": "query",
+            "description": "Only runs that ended this way",
             "schema": {
-              "type": "string",
-              "enum": [
-                "success",
-                "error"
-              ]
+              "$ref": "#/components/schemas/SyncRunStatus"
             }
           },
           {
             "name": "days",
             "required": false,
             "in": "query",
-            "description": "Trailing window size, in days",
+            "description": "The number of trailing days to cover",
             "schema": {
               "minimum": 1,
               "maximum": 90,
@@ -247,14 +248,31 @@
         ],
         "responses": {
           "200": {
-            "description": "",
+            "description": "The statistics were computed.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SyncRunDailyStatDto"
-                  }
+                  "$ref": "#/components/schemas/GetSyncRunStatsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -265,19 +283,22 @@
             "bearer": []
           }
         ],
+        "summary": "Gets sync run statistics",
         "tags": [
-          "sync-runs"
+          "Sync Runs"
         ]
       }
     },
-    "/sync-runs/{id}": {
+    "/v1/sync-run/{syncRunId}": {
       "get": {
-        "operationId": "SyncHistoryController_getOne",
+        "description": "Returns a recorded sync run with the event changes it made.",
+        "operationId": "DescribeSyncRun",
         "parameters": [
           {
-            "name": "id",
+            "name": "syncRunId",
             "required": true,
             "in": "path",
+            "description": "The ID of the sync run",
             "schema": {
               "type": "string"
             }
@@ -285,17 +306,34 @@
         ],
         "responses": {
           "200": {
-            "description": "",
+            "description": "The run was found.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SyncRunDetailDto"
+                  "$ref": "#/components/schemas/DescribeSyncRunResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
           },
           "404": {
-            "description": "No sync run with that id"
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -303,8 +341,9 @@
             "bearer": []
           }
         ],
+        "summary": "Describes a sync run",
         "tags": [
-          "sync-runs"
+          "Sync Runs"
         ]
       }
     },
@@ -2112,13 +2151,13 @@
       "name": "Override Blocks"
     },
     {
+      "name": "Sync Runs"
+    },
+    {
       "name": "auth"
     },
     {
       "name": "outbox"
-    },
-    {
-      "name": "sync-runs"
     }
   ],
   "servers": [],
@@ -2164,67 +2203,97 @@
           "accessToken"
         ]
       },
-      "SyncRunDto": {
+      "SyncRunType": {
+        "type": "string",
+        "enum": [
+          "full",
+          "incremental"
+        ],
+        "description": "Whether a sync re-fetched everything (full) or applied the changes since the last one (incremental)"
+      },
+      "SyncRunTrigger": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "poll",
+          "webhook"
+        ],
+        "description": "What started a sync"
+      },
+      "SyncRunStatus": {
+        "type": "string",
+        "enum": [
+          "success",
+          "error"
+        ],
+        "description": "How a sync ended"
+      },
+      "SyncRun": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "description": "Sync history entry id"
+            "description": "The unique ID of the sync run"
           },
           "calendarId": {
             "type": "string",
-            "description": "The provider's own calendar id this run synced"
+            "description": "The provider's ID of the calendar synced"
           },
           "source": {
             "type": "string",
-            "description": "The source label this calendar's events are stored under"
+            "description": "The source label the calendar's events are stored under"
           },
           "type": {
-            "type": "string",
-            "enum": [
-              "full",
-              "incremental"
-            ],
-            "description": "Whether this run re-fetched everything or applied a delta"
+            "description": "Whether the run was full or incremental",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SyncRunType"
+              }
+            ]
           },
           "trigger": {
-            "type": "string",
-            "enum": [
-              "manual",
-              "poll",
-              "webhook"
-            ],
-            "description": "What kicked this run off"
+            "description": "What started the run",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SyncRunTrigger"
+              }
+            ]
           },
           "status": {
-            "type": "string",
-            "enum": [
-              "success",
-              "error"
+            "description": "How the run ended",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SyncRunStatus"
+              }
             ]
           },
           "startedAt": {
-            "type": "string"
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the run started"
           },
           "finishedAt": {
-            "type": "string"
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the run ended"
           },
           "totalCount": {
             "type": "number",
-            "description": "Events processed during this run"
+            "description": "The number of events processed"
           },
           "addedCount": {
-            "type": "number"
+            "type": "number",
+            "description": "The number of events added"
           },
           "updatedCount": {
-            "type": "number"
+            "type": "number",
+            "description": "The number of events updated"
           },
           "deletedCount": {
-            "type": "number"
+            "type": "number",
+            "description": "The number of events deleted"
           },
           "errorMessage": {
             "type": "string",
-            "nullable": true
+            "description": "What went wrong, when the run failed"
           }
         },
         "required": [
@@ -2242,47 +2311,84 @@
           "deletedCount"
         ]
       },
-      "SyncRunDailyStatDto": {
+      "ListSyncRunsResponse": {
+        "type": "object",
+        "properties": {
+          "syncRuns": {
+            "description": "The matching runs, newest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncRun"
+            }
+          }
+        },
+        "required": [
+          "syncRuns"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "What went wrong"
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code"
+          }
+        },
+        "required": [
+          "message",
+          "statusCode"
+        ]
+      },
+      "SyncRunDailyStat": {
         "type": "object",
         "properties": {
           "date": {
             "type": "string",
-            "description": "YYYY-MM-DD, UTC"
+            "description": "The day, as YYYY-MM-DD in UTC"
           },
           "calendarId": {
             "type": "string",
-            "description": "The provider's own calendar id this day's stats are for"
+            "description": "The provider's ID of the calendar"
           },
           "source": {
             "type": "string",
-            "description": "The source label this calendar's events are stored under"
+            "description": "The source label the calendar's events are stored under"
           },
           "runCount": {
             "type": "number",
-            "description": "How many sync attempts ran against this calendar this day"
+            "description": "The number of recorded runs that day"
           },
           "successCount": {
-            "type": "number"
+            "type": "number",
+            "description": "The number of those runs that succeeded"
           },
           "errorCount": {
-            "type": "number"
+            "type": "number",
+            "description": "The number of those runs that failed"
           },
           "avgDurationMs": {
             "type": "number",
-            "description": "Mean run duration in milliseconds, across this day's runs"
+            "description": "The mean run duration in milliseconds"
           },
           "totalCount": {
             "type": "number",
-            "description": "Events processed, summed across this day's runs"
+            "description": "The events processed, summed over the day's runs"
           },
           "addedCount": {
-            "type": "number"
+            "type": "number",
+            "description": "The events added, summed over the day's runs"
           },
           "updatedCount": {
-            "type": "number"
+            "type": "number",
+            "description": "The events updated, summed over the day's runs"
           },
           "deletedCount": {
-            "type": "number"
+            "type": "number",
+            "description": "The events deleted, summed over the day's runs"
           }
         },
         "required": [
@@ -2299,27 +2405,52 @@
           "deletedCount"
         ]
       },
-      "SyncRunEventChangeDto": {
+      "GetSyncRunStatsResponse": {
+        "type": "object",
+        "properties": {
+          "syncRunStats": {
+            "description": "One entry per day and calendar with runs.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncRunDailyStat"
+            }
+          }
+        },
+        "required": [
+          "syncRunStats"
+        ]
+      },
+      "SyncRunEventAction": {
+        "type": "string",
+        "enum": [
+          "added",
+          "updated",
+          "deleted"
+        ],
+        "description": "What happened to the event"
+      },
+      "SyncRunEventChange": {
         "type": "object",
         "properties": {
           "action": {
-            "type": "string",
-            "enum": [
-              "added",
-              "updated",
-              "deleted"
+            "description": "What happened to the event",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SyncRunEventAction"
+              }
             ]
           },
           "eventId": {
             "type": "string",
-            "description": "The canonical event id (source:uid) this change applied to"
+            "description": "The ID of the event (source:uid)"
           },
           "subject": {
-            "type": "string"
+            "type": "string",
+            "description": "The event's title"
           },
           "startTime": {
             "type": "string",
-            "nullable": true
+            "description": "An ISO-8601 formatted string indicating when the event starts"
           }
         },
         "required": [
@@ -2328,72 +2459,78 @@
           "subject"
         ]
       },
-      "SyncRunDetailDto": {
+      "FullSyncRun": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "description": "Sync history entry id"
+            "description": "The unique ID of the sync run"
           },
           "calendarId": {
             "type": "string",
-            "description": "The provider's own calendar id this run synced"
+            "description": "The provider's ID of the calendar synced"
           },
           "source": {
             "type": "string",
-            "description": "The source label this calendar's events are stored under"
+            "description": "The source label the calendar's events are stored under"
           },
           "type": {
-            "type": "string",
-            "enum": [
-              "full",
-              "incremental"
-            ],
-            "description": "Whether this run re-fetched everything or applied a delta"
+            "description": "Whether the run was full or incremental",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SyncRunType"
+              }
+            ]
           },
           "trigger": {
-            "type": "string",
-            "enum": [
-              "manual",
-              "poll",
-              "webhook"
-            ],
-            "description": "What kicked this run off"
+            "description": "What started the run",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SyncRunTrigger"
+              }
+            ]
           },
           "status": {
-            "type": "string",
-            "enum": [
-              "success",
-              "error"
+            "description": "How the run ended",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SyncRunStatus"
+              }
             ]
           },
           "startedAt": {
-            "type": "string"
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the run started"
           },
           "finishedAt": {
-            "type": "string"
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the run ended"
           },
           "totalCount": {
             "type": "number",
-            "description": "Events processed during this run"
+            "description": "The number of events processed"
           },
           "addedCount": {
-            "type": "number"
+            "type": "number",
+            "description": "The number of events added"
           },
           "updatedCount": {
-            "type": "number"
+            "type": "number",
+            "description": "The number of events updated"
           },
           "deletedCount": {
-            "type": "number"
+            "type": "number",
+            "description": "The number of events deleted"
           },
           "errorMessage": {
             "type": "string",
-            "nullable": true
+            "description": "What went wrong, when the run failed"
           },
           "changes": {
+            "description": "The events the run added, updated or deleted",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SyncRunEventChangeDto"
+              "$ref": "#/components/schemas/SyncRunEventChange"
             }
           }
         },
@@ -2411,6 +2548,22 @@
           "updatedCount",
           "deletedCount",
           "changes"
+        ]
+      },
+      "DescribeSyncRunResponse": {
+        "type": "object",
+        "properties": {
+          "syncRun": {
+            "description": "The run and its event changes.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullSyncRun"
+              }
+            ]
+          }
+        },
+        "required": [
+          "syncRun"
         ]
       },
       "OccurrenceType": {
@@ -2617,23 +2770,6 @@
         },
         "required": [
           "events"
-        ]
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "description": "What went wrong"
-          },
-          "statusCode": {
-            "type": "number",
-            "description": "The HTTP status code"
-          }
-        },
-        "required": [
-          "message",
-          "statusCode"
         ]
       },
       "DescribeEventResponse": {

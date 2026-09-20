@@ -13,6 +13,7 @@ import { OutboxModule } from "./outbox/OutboxModule";
 import { OverridesModule } from "./overrides/OverridesModule";
 import { StoreModule } from "./store/StoreModule";
 import { SyncModule } from "./sync/SyncModule";
+import { SyncRunsModule } from "./syncRuns/SyncRunsModule";
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SyncModule } from "./sync/SyncModule";
     AuthModule,
     StoreModule,
     SyncModule,
+    SyncRunsModule,
     EventsModule,
     CalendarsModule,
     CalendarAuthModule,

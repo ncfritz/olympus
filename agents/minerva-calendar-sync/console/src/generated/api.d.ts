@@ -68,14 +68,18 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/sync-runs": {
+  "/v1/sync-runs": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["SyncHistoryController_list"];
+    /**
+     * Lists sync runs
+     * @description Returns the recorded sync runs, newest first, filtered and paged by the query.
+     */
+    get: operations["ListSyncRuns"];
     put?: never;
     post?: never;
     delete?: never;
@@ -84,14 +88,18 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/sync-runs/stats": {
+  "/v1/sync-runs/stats": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["SyncHistoryController_dailyStats"];
+    /**
+     * Gets sync run statistics
+     * @description Returns per-day, per-calendar counts and durations of the recorded runs over a trailing window.
+     */
+    get: operations["GetSyncRunStats"];
     put?: never;
     post?: never;
     delete?: never;
@@ -100,14 +108,18 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/sync-runs/{id}": {
+  "/v1/sync-run/{syncRunId}": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["SyncHistoryController_getOne"];
+    /**
+     * Describes a sync run
+     * @description Returns a recorded sync run with the event changes it made.
+     */
+    get: operations["DescribeSyncRun"];
     put?: never;
     post?: never;
     delete?: never;
@@ -597,89 +609,135 @@ export interface components {
     AccessTokenDto: {
       accessToken: string;
     };
-    SyncRunDto: {
-      /** @description Sync history entry id */
+    /**
+     * @description Whether a sync re-fetched everything (full) or applied the changes since the last one (incremental)
+     * @enum {string}
+     */
+    SyncRunType: "full" | "incremental";
+    /**
+     * @description What started a sync
+     * @enum {string}
+     */
+    SyncRunTrigger: "manual" | "poll" | "webhook";
+    /**
+     * @description How a sync ended
+     * @enum {string}
+     */
+    SyncRunStatus: "success" | "error";
+    SyncRun: {
+      /** @description The unique ID of the sync run */
       id: string;
-      /** @description The provider's own calendar id this run synced */
+      /** @description The provider's ID of the calendar synced */
       calendarId: string;
-      /** @description The source label this calendar's events are stored under */
+      /** @description The source label the calendar's events are stored under */
       source: string;
-      /**
-       * @description Whether this run re-fetched everything or applied a delta
-       * @enum {string}
-       */
-      type: "full" | "incremental";
-      /**
-       * @description What kicked this run off
-       * @enum {string}
-       */
-      trigger: "manual" | "poll" | "webhook";
-      /** @enum {string} */
-      status: "success" | "error";
+      /** @description Whether the run was full or incremental */
+      type: components["schemas"]["SyncRunType"];
+      /** @description What started the run */
+      trigger: components["schemas"]["SyncRunTrigger"];
+      /** @description How the run ended */
+      status: components["schemas"]["SyncRunStatus"];
+      /** @description An ISO-8601 formatted string indicating when the run started */
       startedAt: string;
+      /** @description An ISO-8601 formatted string indicating when the run ended */
       finishedAt: string;
-      /** @description Events processed during this run */
+      /** @description The number of events processed */
       totalCount: number;
+      /** @description The number of events added */
       addedCount: number;
+      /** @description The number of events updated */
       updatedCount: number;
+      /** @description The number of events deleted */
       deletedCount: number;
-      errorMessage?: string | null;
+      /** @description What went wrong, when the run failed */
+      errorMessage?: string;
     };
-    SyncRunDailyStatDto: {
-      /** @description YYYY-MM-DD, UTC */
+    ListSyncRunsResponse: {
+      /** @description The matching runs, newest first. */
+      syncRuns: components["schemas"]["SyncRun"][];
+    };
+    ErrorResponse: {
+      /** @description What went wrong */
+      message: string;
+      /** @description The HTTP status code */
+      statusCode: number;
+    };
+    SyncRunDailyStat: {
+      /** @description The day, as YYYY-MM-DD in UTC */
       date: string;
-      /** @description The provider's own calendar id this day's stats are for */
+      /** @description The provider's ID of the calendar */
       calendarId: string;
-      /** @description The source label this calendar's events are stored under */
+      /** @description The source label the calendar's events are stored under */
       source: string;
-      /** @description How many sync attempts ran against this calendar this day */
+      /** @description The number of recorded runs that day */
       runCount: number;
+      /** @description The number of those runs that succeeded */
       successCount: number;
+      /** @description The number of those runs that failed */
       errorCount: number;
-      /** @description Mean run duration in milliseconds, across this day's runs */
+      /** @description The mean run duration in milliseconds */
       avgDurationMs: number;
-      /** @description Events processed, summed across this day's runs */
+      /** @description The events processed, summed over the day's runs */
       totalCount: number;
+      /** @description The events added, summed over the day's runs */
       addedCount: number;
+      /** @description The events updated, summed over the day's runs */
       updatedCount: number;
+      /** @description The events deleted, summed over the day's runs */
       deletedCount: number;
     };
-    SyncRunEventChangeDto: {
-      /** @enum {string} */
-      action: "added" | "updated" | "deleted";
-      /** @description The canonical event id (source:uid) this change applied to */
+    GetSyncRunStatsResponse: {
+      /** @description One entry per day and calendar with runs. */
+      syncRunStats: components["schemas"]["SyncRunDailyStat"][];
+    };
+    /**
+     * @description What happened to the event
+     * @enum {string}
+     */
+    SyncRunEventAction: "added" | "updated" | "deleted";
+    SyncRunEventChange: {
+      /** @description What happened to the event */
+      action: components["schemas"]["SyncRunEventAction"];
+      /** @description The ID of the event (source:uid) */
       eventId: string;
+      /** @description The event's title */
       subject: string;
-      startTime?: string | null;
+      /** @description An ISO-8601 formatted string indicating when the event starts */
+      startTime?: string;
     };
-    SyncRunDetailDto: {
-      /** @description Sync history entry id */
+    FullSyncRun: {
+      /** @description The unique ID of the sync run */
       id: string;
-      /** @description The provider's own calendar id this run synced */
+      /** @description The provider's ID of the calendar synced */
       calendarId: string;
-      /** @description The source label this calendar's events are stored under */
+      /** @description The source label the calendar's events are stored under */
       source: string;
-      /**
-       * @description Whether this run re-fetched everything or applied a delta
-       * @enum {string}
-       */
-      type: "full" | "incremental";
-      /**
-       * @description What kicked this run off
-       * @enum {string}
-       */
-      trigger: "manual" | "poll" | "webhook";
-      /** @enum {string} */
-      status: "success" | "error";
+      /** @description Whether the run was full or incremental */
+      type: components["schemas"]["SyncRunType"];
+      /** @description What started the run */
+      trigger: components["schemas"]["SyncRunTrigger"];
+      /** @description How the run ended */
+      status: components["schemas"]["SyncRunStatus"];
+      /** @description An ISO-8601 formatted string indicating when the run started */
       startedAt: string;
+      /** @description An ISO-8601 formatted string indicating when the run ended */
       finishedAt: string;
-      /** @description Events processed during this run */
+      /** @description The number of events processed */
       totalCount: number;
+      /** @description The number of events added */
       addedCount: number;
+      /** @description The number of events updated */
       updatedCount: number;
+      /** @description The number of events deleted */
       deletedCount: number;
-      errorMessage?: string | null;
-      changes: components["schemas"]["SyncRunEventChangeDto"][];
+      /** @description What went wrong, when the run failed */
+      errorMessage?: string;
+      /** @description The events the run added, updated or deleted */
+      changes: components["schemas"]["SyncRunEventChange"][];
+    };
+    DescribeSyncRunResponse: {
+      /** @description The run and its event changes. */
+      syncRun: components["schemas"]["FullSyncRun"];
     };
     /**
      * @description Whether an event stands alone or belongs to a recurring series
@@ -760,12 +818,6 @@ export interface components {
     ListEventsResponse: {
       /** @description The matching events. */
       events: components["schemas"]["Event"][];
-    };
-    ErrorResponse: {
-      /** @description What went wrong */
-      message: string;
-      /** @description The HTTP status code */
-      statusCode: number;
     };
     DescribeEventResponse: {
       /** @description The event. */
@@ -1190,16 +1242,20 @@ export interface operations {
       };
     };
   };
-  SyncHistoryController_list: {
+  ListSyncRuns: {
     parameters: {
       query?: {
-        /** @description Filter to sync history for this configured calendar only */
+        /** @description Only runs of this calendar (the provider's ID) */
         calendarId?: string;
-        type?: "full" | "incremental";
-        trigger?: "manual" | "poll" | "webhook";
-        status?: "success" | "error";
+        /** @description Only runs of this type */
+        type?: components["schemas"]["SyncRunType"];
+        /** @description Only runs started this way */
+        trigger?: components["schemas"]["SyncRunTrigger"];
+        /** @description Only runs that ended this way */
+        status?: components["schemas"]["SyncRunStatus"];
+        /** @description The number of runs to return */
         limit?: number;
-        /** @description Sync run id to page from (exclusive) */
+        /** @description The ID of the run to page from (exclusive) */
         cursor?: string;
       };
       header?: never;
@@ -1208,25 +1264,47 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
+      /** @description The runs were listed. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["SyncRunDto"][];
+          "application/json": components["schemas"]["ListSyncRunsResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };
   };
-  SyncHistoryController_dailyStats: {
+  GetSyncRunStats: {
     parameters: {
       query?: {
-        /** @description Filter to sync history for this configured calendar only */
+        /** @description Only runs of this calendar (the provider's ID) */
         calendarId?: string;
-        type?: "full" | "incremental";
-        trigger?: "manual" | "poll" | "webhook";
-        status?: "success" | "error";
-        /** @description Trailing window size, in days */
+        /** @description Only runs of this type */
+        type?: components["schemas"]["SyncRunType"];
+        /** @description Only runs started this way */
+        trigger?: components["schemas"]["SyncRunTrigger"];
+        /** @description Only runs that ended this way */
+        status?: components["schemas"]["SyncRunStatus"];
+        /** @description The number of trailing days to cover */
         days?: number;
       };
       header?: never;
@@ -1235,41 +1313,73 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
+      /** @description The statistics were computed. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["SyncRunDailyStatDto"][];
+          "application/json": components["schemas"]["GetSyncRunStatsResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };
   };
-  SyncHistoryController_getOne: {
+  DescribeSyncRun: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        id: string;
+        /** @description The ID of the sync run */
+        syncRunId: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
+      /** @description The run was found. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["SyncRunDetailDto"];
+          "application/json": components["schemas"]["DescribeSyncRunResponse"];
         };
       };
-      /** @description No sync run with that id */
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
       404: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
     };
   };

@@ -10,17 +10,12 @@ import { PollingNotifier } from "./services/PollingNotifier";
 import { SyncBootstrapService } from "./services/SyncBootstrapService";
 import { SyncConfigService } from "./services/SyncConfigService";
 import { SyncEngine } from "./services/SyncEngine";
-import { SyncHistoryController } from "./controllers/SyncHistoryController";
 import { SyncHistoryPrunerService } from "./services/SyncHistoryPrunerService";
 import { WebhookNotifier } from "./services/WebhookNotifier";
 
 @Module({
   imports: [ScheduleModule.forRoot(), StoreModule],
-  controllers: [
-    WebhooksController,
-    MicrosoftWebhooksController,
-    SyncHistoryController,
-  ],
+  controllers: [WebhooksController, MicrosoftWebhooksController],
   providers: [
     SyncEngine,
     SyncConfigService,

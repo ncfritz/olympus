@@ -9,10 +9,10 @@ export type EventOverrideDto = components["schemas"]["EventOverride"];
 export type OverrideBlockDto = components["schemas"]["OverrideBlock"];
 export type CalendarAccountStatus = components["schemas"]["CalendarAccount"];
 export type AvailableCalendar = components["schemas"]["AvailableCalendar"];
-export type SyncRun = components["schemas"]["SyncRunDto"];
-export type SyncRunDetail = components["schemas"]["SyncRunDetailDto"];
-export type SyncRunEventChange = components["schemas"]["SyncRunEventChangeDto"];
-export type SyncRunDailyStat = components["schemas"]["SyncRunDailyStatDto"];
+export type SyncRun = components["schemas"]["SyncRun"];
+export type SyncRunDetail = components["schemas"]["FullSyncRun"];
+export type SyncRunEventChange = components["schemas"]["SyncRunEventChange"];
+export type SyncRunDailyStat = components["schemas"]["SyncRunDailyStat"];
 export type OutboxSummary = components["schemas"]["OutboxSummaryDto"];
 export type OutboxSourceStats = components["schemas"]["OutboxSourceStatsDto"];
 export type OutboxRecord = components["schemas"]["OutboxRecordDto"];
@@ -138,26 +138,26 @@ export interface SyncRunFilterParams {
 export async function fetchSyncRuns(
   filter: SyncRunFilterParams & { limit?: number },
 ): Promise<SyncRun[]> {
-  const { data } = await apiClient.GET("/sync-runs", {
+  const { data } = await apiClient.GET("/v1/sync-runs", {
     params: { query: filter },
   });
-  return data ?? [];
+  return data?.syncRuns ?? [];
 }
 
 export async function fetchSyncRun(id: string): Promise<SyncRunDetail | null> {
-  const { data } = await apiClient.GET("/sync-runs/{id}", {
-    params: { path: { id } },
+  const { data } = await apiClient.GET("/v1/sync-run/{syncRunId}", {
+    params: { path: { syncRunId: id } },
   });
-  return data ?? null;
+  return data?.syncRun ?? null;
 }
 
 export async function fetchSyncRunStats(
   filter: SyncRunFilterParams & { days?: number },
 ): Promise<SyncRunDailyStat[]> {
-  const { data } = await apiClient.GET("/sync-runs/stats", {
+  const { data } = await apiClient.GET("/v1/sync-runs/stats", {
     params: { query: filter },
   });
-  return data ?? [];
+  return data?.syncRunStats ?? [];
 }
 
 /** Starts a new device-flow login for a calendar-sync account; returns the URL to open so the user can complete it. */
