@@ -2,7 +2,8 @@ import nest from "@ncfritz/olympus-config/vitest/nest";
 import { defineConfig, mergeConfig } from "vitest/config";
 
 // Three projects:
-// - unit:        test/unit, each file on its own temporary SQLite database
+// - unit:        test/unit, each file on its own temporary SQLite database,
+//                and the convention checks in test/conventions
 // - e2e:         test/e2e, the whole app over HTTP (supertest) on SQLite
 // - integration: test/integration, against the Postgres of docker-compose.yml
 //                (opt-in: pnpm test:integration)
@@ -15,7 +16,10 @@ export default mergeConfig(
           extends: true,
           test: {
             name: "unit",
-            include: ["test/unit/**/*.spec.ts"],
+            include: [
+              "test/unit/**/*.spec.ts",
+              "test/conventions/**/*.spec.ts",
+            ],
           },
         },
         {

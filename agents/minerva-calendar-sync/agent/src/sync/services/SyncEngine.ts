@@ -11,11 +11,8 @@ import {
   SyncRunTrigger,
   SyncRunType,
 } from "../../domain/syncRun";
-import {
-  CalendarProvider,
-  SyncTokenExpiredError,
-  SyncWindow,
-} from "../../providers/calendarProvider";
+import { CalendarProvider, SyncWindow } from "../../providers/calendarProvider";
+import { SyncTokenExpiredError } from "../../providers/SyncTokenExpiredError";
 import { CalendarProviderRegistry } from "../../providers/services/CalendarProviderRegistry";
 import {
   CALENDAR_ENABLEMENT_STORE,

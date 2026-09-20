@@ -18,9 +18,9 @@ import {
   ProviderCalendar,
   RawEventBatch,
   RemovalTombstone,
-  SyncTokenExpiredError,
   SyncWindow,
 } from "../../../../src/providers/calendarProvider";
+import { SyncTokenExpiredError } from "../../../../src/providers/SyncTokenExpiredError";
 import { CalendarProviderRegistry } from "../../../../src/providers/services/CalendarProviderRegistry";
 import { CalendarEnablementStore } from "../../../../src/store/calendarEnablementStore";
 import { PrismaEventStore } from "../../../../src/store/prisma/PrismaEventStore";

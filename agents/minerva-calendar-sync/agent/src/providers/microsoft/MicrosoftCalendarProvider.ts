@@ -6,9 +6,9 @@ import {
   PushChannel,
   RawEventBatch,
   RemovalTombstone,
-  SyncTokenExpiredError,
   SyncWindow,
 } from "../calendarProvider";
+import { SyncTokenExpiredError } from "../SyncTokenExpiredError";
 import {
   isMicrosoftRemoval,
   mapMicrosoftEventToCanonical,
