@@ -4,6 +4,9 @@
     // The wrappers run in browsers (site) and Node (agents, Next.js
     // server); only the nest and prometheus entry points need Node.
     "lib": ["ES2023", "DOM"],
+    // The nest and tls entry points are Node-only; the browser bundle test
+    // is what keeps the main entry point free of Node built-ins.
+    "types": ["node"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "experimentalDecorators": true,

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   EnvReader,
   readAmqpConfig,
+  readApiClientConfig,
   readLoggingConfig,
   readRuntimeConfig,
 } from "../../../src";
@@ -61,5 +62,53 @@ describe("readLoggingConfig", () => {
     const prod = readLoggingConfig(new EnvReader({}), true);
     expect([dev.console.enabled, dev.file.enabled]).toEqual([true, false]);
     expect([prod.console.enabled, prod.file.enabled]).toEqual([false, true]);
+  });
+});
+
+describe("readApiClientConfig", () => {
+  const read = (env: Record<string, string>) => {
+    const reader = new EnvReader(env);
+    return {
+      config: readApiClientConfig(reader, "http://api:3100/v1"),
+      reader,
+    };
+  };
+
+  it("falls back to the plain base URL", () => {
+    const { config, reader } = read({});
+    expect(config).toEqual({ baseUrl: "http://api:3100/v1" });
+    expect(reader.problems).toEqual([]);
+  });
+
+  it("reads the certificate the service presents", () => {
+    const { config, reader } = read({
+      API_BASE_URL: "https://olympus-api:3443/v1",
+      API_CLIENT_CERT: "/certs/agent.crt",
+      API_CLIENT_KEY: "/certs/agent.key",
+      API_CA_CERT: "/certs/services-ca.crt",
+    });
+    expect(config).toEqual({
+      baseUrl: "https://olympus-api:3443/v1",
+      tls: {
+        certificate: "/certs/agent.crt",
+        key: "/certs/agent.key",
+        ca: "/certs/services-ca.crt",
+      },
+    });
+    expect(reader.problems).toEqual([]);
+  });
+
+  it("refuses half a certificate", () => {
+    expect(
+      read({ API_CLIENT_CERT: "/certs/agent.crt" }).reader.problems,
+    ).toEqual(["API_CLIENT_CERT and API_CLIENT_KEY are set together"]);
+  });
+
+  it("refuses an https API without one", () => {
+    expect(
+      read({ API_BASE_URL: "https://olympus-api:3443/v1" }).reader.problems,
+    ).toEqual([
+      "API_CLIENT_CERT and API_CLIENT_KEY are required for an https API_BASE_URL",
+    ]);
   });
 });

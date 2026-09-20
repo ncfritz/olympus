@@ -17,6 +17,10 @@
     "./prometheus": {
       "types": "./dist/prometheus.d.ts",
       "default": "./dist/prometheus.js"
+    },
+    "./tls": {
+      "types": "./dist/tls.d.ts",
+      "default": "./dist/tls.js"
     }
   },
   "scripts": {

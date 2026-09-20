@@ -21,6 +21,7 @@ The Olympus APIs for services and the site, over `@ncfritz/olympus-sdk`
 | `@ncfritz/olympus-client`            | browsers, Node | the clients and wrappers                                             |
 | `@ncfritz/olympus-client/prometheus` | Node           | `createPrometheusRequestMetrics()`                                   |
 | `@ncfritz/olympus-client/nest`       | Nest services  | `OlympusClientModule`: clients and wrappers as providers, metrics on |
+| `@ncfritz/olympus-client/tls`        | Node           | `createTlsAgent`/`tlsAxiosOptions`: the caller's client certificate  |
 
 ## Nest
 
@@ -30,12 +31,24 @@ OlympusClientModule.forRootAsync({
   useFactory: (olympus: OlympusConfigType, runtime: RuntimeConfigType) => ({
     baseUrl: olympus.apiBaseUrl, // API_BASE_URL, with /v1
     clientName: runtime.appName,
+    tls: olympus.tls, // API_CLIENT_CERT, API_CLIENT_KEY, API_CA_CERT
   }),
 }),
 ```
 
 then inject a wrapper by its class (`constructor(private readonly metadata:
 MetadataApi)`), or `OLYMPUS_CLIENTS` for an SDK call no wrapper covers.
+
+## Authenticating with a certificate
+
+A service reaches the API's mTLS listener (ADR 0018) by presenting its own
+certificate: `tls` above, or `tlsAxiosOptions(tls)` in `axios` outside
+Nest. `readApiClientConfig` in `@ncfritz/olympus-nest` reads the three
+paths and refuses an `https` base URL without them. The agent keeps the
+connection alive, so a service handshakes once and not per request.
+
+The site does not use this: a browser sends no certificate, and the border
+nginx is what checks the device certificate there.
 
 ## Next.js and other callers
 

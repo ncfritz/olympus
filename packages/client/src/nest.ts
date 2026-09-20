@@ -13,12 +13,22 @@ import {
   type OlympusClients,
 } from "./clients";
 import { OLYMPUS_APIS } from "./index";
+import { type ClientTlsOptions, tlsAxiosOptions } from "./tls";
 
 /** The OlympusClients, for SDK calls the wrappers don't cover. */
 export const OLYMPUS_CLIENTS = Symbol("OLYMPUS_CLIENTS");
 
 /** createOlympusClients' options; metrics are always recorded (prom-client). */
-export type OlympusClientModuleOptions = Omit<OlympusClientOptions, "metrics">;
+export type OlympusClientModuleOptions = Omit<
+  OlympusClientOptions,
+  "metrics"
+> & {
+  /**
+   * The certificate to present to the API's mTLS listener (ADR 0018).
+   * Without it the clients are plain HTTP, as they were before.
+   */
+  tls?: ClientTlsOptions;
+};
 
 /**
  * The Olympus API for a Nest service (ADR 0017): creates the clients once
@@ -30,6 +40,7 @@ export type OlympusClientModuleOptions = Omit<OlympusClientOptions, "metrics">;
  *     useFactory: (olympus, runtime) => ({
  *       baseUrl: olympus.apiBaseUrl,
  *       clientName: runtime.appName,
+ *       tls: olympus.tls,
  *     }),
  *   })
  */
@@ -49,10 +60,12 @@ export class OlympusClientModule {
       useFactory: async (...args: never[]) => {
         const resolved = await options.useFactory(...args);
         new Logger(OlympusClientModule.name).log(
-          `Using the Olympus API at ${resolved.baseUrl} as ${resolved.clientName}`,
+          `Using the Olympus API at ${resolved.baseUrl} as ${resolved.clientName}` +
+            (resolved.tls ? ` with ${resolved.tls.certificate}` : ""),
         );
         return createOlympusClients({
           ...resolved,
+          axios: { ...resolved.axios, ...tlsAxiosOptions(resolved.tls) },
           metrics: createPrometheusRequestMetrics(),
         });
       },
