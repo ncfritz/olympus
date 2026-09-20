@@ -1,0 +1,176 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/CalendarEventMessage",
+  "definitions": {
+    "CalendarEventMessage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "`<source>:<uid>`: the key to upsert by."
+        },
+        "subject": {
+          "type": "string"
+        },
+        "sensitivity": {
+          "$ref": "#/definitions/CalendarEventSensitivity"
+        },
+        "importance": {
+          "$ref": "#/definitions/CalendarEventImportance"
+        },
+        "occurrenceType": {
+          "$ref": "#/definitions/CalendarEventOccurrenceType"
+        },
+        "type": {
+          "$ref": "#/definitions/CalendarEventType"
+        },
+        "reminder": {
+          "type": "boolean",
+          "description": "Whether a reminder is set."
+        },
+        "response": {
+          "$ref": "#/definitions/CalendarEventResponse",
+          "description": "The calendar owner's response."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "ISO-8601."
+        },
+        "endTime": {
+          "type": "string",
+          "description": "ISO-8601."
+        },
+        "duration": {
+          "type": "number",
+          "description": "Minutes."
+        },
+        "allDay": {
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/definitions/CalendarEventFreeBusyStatus",
+          "description": "How the event shows on the owner's free/busy."
+        },
+        "location": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cancelled": {
+          "type": "boolean"
+        },
+        "organizerEmail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "deleted": {
+          "type": "boolean",
+          "description": "The event was removed at the provider; true on `delete`."
+        },
+        "uid": {
+          "type": "string",
+          "description": "The provider's stable identifier (for example Google's iCalUID)."
+        },
+        "recurrenceId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The `uid` of the series master, for an occurrence."
+        },
+        "source": {
+          "type": "string",
+          "description": "The configured calendar the event came from."
+        },
+        "recurrenceRule": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The provider's recurrence description of the series, for reference only: RFC 5545 RRULE/EXDATE lines for Google, the Graph `recurrence` pattern as JSON text for Microsoft. Occurrences arrive as their own messages."
+        }
+      },
+      "required": [
+        "id",
+        "subject",
+        "sensitivity",
+        "importance",
+        "occurrenceType",
+        "type",
+        "reminder",
+        "response",
+        "startTime",
+        "endTime",
+        "duration",
+        "allDay",
+        "status",
+        "location",
+        "cancelled",
+        "organizerEmail",
+        "deleted",
+        "uid",
+        "recurrenceId",
+        "source",
+        "recurrenceRule"
+      ],
+      "additionalProperties": false,
+      "description": "A provider-independent snapshot of one calendar event."
+    },
+    "CalendarEventSensitivity": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "personal",
+        "private",
+        "confidential"
+      ]
+    },
+    "CalendarEventImportance": {
+      "type": "string",
+      "enum": [
+        "low",
+        "normal",
+        "high"
+      ]
+    },
+    "CalendarEventOccurrenceType": {
+      "type": "string",
+      "enum": [
+        "single",
+        "occurrence",
+        "series_master"
+      ]
+    },
+    "CalendarEventType": {
+      "type": "string",
+      "enum": [
+        "appointment",
+        "meeting",
+        "other"
+      ]
+    },
+    "CalendarEventResponse": {
+      "type": "string",
+      "enum": [
+        "organizer",
+        "accepted",
+        "declined",
+        "tentative",
+        "needs_action"
+      ]
+    },
+    "CalendarEventFreeBusyStatus": {
+      "type": "string",
+      "enum": [
+        "free",
+        "busy",
+        "tentative",
+        "out_of_office",
+        "working_elsewhere"
+      ]
+    }
+  }
+}

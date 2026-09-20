@@ -1,4 +1,5 @@
 import { RabbitMQModule } from "@golevelup/nestjs-rabbitmq";
+import { CALENDAR_EVENTS_EXCHANGE, declare } from "@ncfritz/olympus-messages";
 import { DynamicModule, Logger, Module } from "@nestjs/common";
 import { outboxConfig, type OutboxConfigType } from "../config/configuration";
 import { StoreModule } from "../store/StoreModule";
@@ -9,9 +10,6 @@ import { ListFailedOutboxEventsController } from "./controllers/ListFailedOutbox
 import { RequeueOutboxEventController } from "./controllers/RequeueOutboxEventController";
 import { OutboxService } from "./services/OutboxService";
 import { OutboxDispatcherService } from "./services/OutboxDispatcherService";
-
-/** The topic exchange event changes are published to (routing keys `event.<action>`). */
-export const CALENDAR_EVENTS_EXCHANGE = "calendar.events";
 
 /**
  * The publish-status read/admin API (OutboxService, backed by
@@ -40,7 +38,7 @@ export class OutboxModule {
               );
               return {
                 uri: outbox.amqp.uri,
-                exchanges: [{ name: CALENDAR_EVENTS_EXCHANGE, type: "topic" }],
+                exchanges: declare(CALENDAR_EVENTS_EXCHANGE),
                 // Don't block Nest bootstrap if the broker happens to be
                 // unreachable right when this process starts — the underlying
                 // amqp-connection-manager keeps retrying in the background,

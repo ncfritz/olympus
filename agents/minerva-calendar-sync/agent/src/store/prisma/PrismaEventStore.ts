@@ -1,3 +1,4 @@
+import type { CalendarEventMessage } from "@ncfritz/olympus-messages";
 import { Inject, Injectable } from "@nestjs/common";
 import { Event as EventRow, Prisma } from "@prisma/client";
 import {
@@ -107,7 +108,8 @@ export class PrismaEventStore implements EventStore {
         eventId: event.id,
         source: event.source,
         action: event.deleted ? "delete" : "upsert",
-        payload: JSON.stringify(event),
+        // The message contract (@ncfritz/olympus-messages) is the event itself.
+        payload: JSON.stringify(event satisfies CalendarEventMessage),
       },
     });
     return [write, enqueue];

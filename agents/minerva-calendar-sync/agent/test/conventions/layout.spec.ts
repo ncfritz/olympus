@@ -100,14 +100,10 @@ describe("agent conventions", () => {
     expect(misplaced).toEqual([]);
   });
 
-  it("publishes only from the outbox dispatcher", () => {
-    expect(
-      SOURCES.filter(
-        (file) =>
-          file !== "outbox/services/OutboxDispatcherService.ts" &&
-          /\.publish\(/.test(read(file)),
-      ),
-    ).toEqual([]);
+  it("publishes through the shared routes, not exchange names", () => {
+    expect(SOURCES.filter((file) => /\.publish\(/.test(read(file)))).toEqual(
+      [],
+    );
   });
 
   it("reads process.env only through src/config", () => {

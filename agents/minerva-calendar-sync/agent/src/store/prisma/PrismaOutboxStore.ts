@@ -1,3 +1,4 @@
+import type { CalendarEventMessage } from "@ncfritz/olympus-messages";
 import { Injectable } from "@nestjs/common";
 import { OutboxEvent as OutboxRow } from "@prisma/client";
 import { CanonicalCalendarEvent } from "../../domain/canonicalEvent";
@@ -95,7 +96,8 @@ export class PrismaOutboxStore implements OutboxStore {
         eventId: event.id,
         source,
         action: "backfill",
-        payload: JSON.stringify(event),
+        // The message contract (@ncfritz/olympus-messages) is the event itself.
+        payload: JSON.stringify(event satisfies CalendarEventMessage),
       })),
     });
     return result.count;

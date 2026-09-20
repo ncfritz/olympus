@@ -5,15 +5,16 @@ The RabbitMQ contracts between the API and the agents: exchanges, routes
 consumers compile against the same definitions, so a renamed field or key
 fails the build instead of silently dropping messages.
 
-| Module          | Exchanges                                           | Flow                                              |
-| --------------- | --------------------------------------------------- | ------------------------------------------------- |
-| `notifications` | `notifications.trigger`                             | API SendNotification → notification agent         |
-| `batchJobs`     | `batchJob.trigger`, `batchJob.workflow`             | API → metadata agents; agents → their workflow    |
-| `metadataJobs`  | `metadataJob.trigger`                               | API → metadata agents                             |
-| `content`       | `content.trigger`                                   | API → asset agents                                |
-| `media`         | `media.trigger`                                     | API and asset agents → asset agents               |
-| `downloads`     | `download.trigger`, `download.update`               | API → asset agents; NZBGet scripts → asset agents |
-| `search`        | `search.execution.trigger`, `search.fanout.trigger` | API and search agents → search agents             |
+| Module           | Exchanges                                           | Flow                                              |
+| ---------------- | --------------------------------------------------- | ------------------------------------------------- |
+| `notifications`  | `notifications.trigger`                             | API SendNotification → notification agent         |
+| `batchJobs`      | `batchJob.trigger`, `batchJob.workflow`             | API → metadata agents; agents → their workflow    |
+| `metadataJobs`   | `metadataJob.trigger`                               | API → metadata agents                             |
+| `content`        | `content.trigger`                                   | API → asset agents                                |
+| `media`          | `media.trigger`                                     | API and asset agents → asset agents               |
+| `downloads`      | `download.trigger`, `download.update`               | API → asset agents; NZBGet scripts → asset agents |
+| `search`         | `search.execution.trigger`, `search.fanout.trigger` | API and search agents → search agents             |
+| `calendarEvents` | `calendar.events`                                   | Minerva calendar sync agent → its consumers       |
 
 ## Use
 
@@ -36,9 +37,13 @@ exchanges: declare(METADATA_JOB_TRIGGER_EXCHANGE, BATCH_JOB_TRIGGER_EXCHANGE),
 - `publishMessage` only accepts the payload type of the route.
 - Delayed exchanges (`x-delayed-message`) take `delayed(ms)`.
 
-## Non-TypeScript publishers
+## Non-TypeScript publishers and consumers
 
 The NZBGet extension scripts (Python, `agents/dionysus-search/scripts`)
 publish `download.update`. `schemas/download-update.schema.json` is
 generated from `DownloadUpdateMessage` (`pnpm schemas`; a test fails when
 it is stale), and the search agent's tests check the scripts against it.
+
+Consumers of `calendar.events` need not be TypeScript either:
+`schemas/calendar-event.schema.json` is generated from
+`CalendarEventMessage` the same way.

@@ -7,6 +7,9 @@ describe("message routes", () => {
     notifications: Object.values(messages.NotificationChannel).map(
       messages.notificationRoute,
     ),
+    calendarEvents: messages.CALENDAR_EVENT_ACTIONS.map(
+      messages.calendarEventRoute,
+    ),
     batchJobs: [
       ...messages.METADATA_JOB_TYPES.map(messages.batchJobRoute),
       messages.REDRIVE_JOB_ROUTE,

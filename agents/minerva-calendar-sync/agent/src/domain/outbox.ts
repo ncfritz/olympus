@@ -1,8 +1,10 @@
+import { CALENDAR_EVENT_ACTIONS } from "@ncfritz/olympus-messages";
+
 export const OUTBOX_STATUS_VALUES = ["pending", "sent", "failed"] as const;
 export type OutboxStatus = (typeof OUTBOX_STATUS_VALUES)[number];
 
-/** "backfill" is functionally identical to "upsert" downstream (both are a full snapshot) — kept distinct so a consumer can tell a resend of current state apart from a live change (e.g. to skip notifications). */
-export const OUTBOX_ACTION_VALUES = ["upsert", "delete", "backfill"] as const;
+/** The calendar event message's actions (@ncfritz/olympus-messages): each row is published as `event.<action>`. */
+export const OUTBOX_ACTION_VALUES = CALENDAR_EVENT_ACTIONS;
 export type OutboxAction = (typeof OUTBOX_ACTION_VALUES)[number];
 
 /** One row of the OutboxEvent table, as read back for the admin/publish-status API — see OutboxStore. */

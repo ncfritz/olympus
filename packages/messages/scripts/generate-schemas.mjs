@@ -1,5 +1,6 @@
 // Writes JSON Schemas for the messages that non-TypeScript services
-// publish (the Python NZBGet scripts), generated from the TS types.
+// publish (the Python NZBGet scripts) or consume (calendar events),
+// generated from the TS types.
 // `pnpm schemas`; test/unit/schemas.spec.ts fails when they are stale.
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -9,6 +10,10 @@ import { createGenerator } from "ts-json-schema-generator";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 export const SCHEMAS = {
+  "calendar-event.schema.json": {
+    path: join(root, "src/calendarEvents.ts"),
+    type: "CalendarEventMessage",
+  },
   "download-update.schema.json": {
     path: join(root, "src/downloads.ts"),
     type: "DownloadUpdateMessage",

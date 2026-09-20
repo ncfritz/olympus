@@ -20,6 +20,11 @@ exports[`message routes > match the snapshot 1`] = `
     "batchJob.workflow (x-delayed-message) workflowCreated",
     "batchJob.workflow (x-delayed-message) jobCompletion",
   ],
+  "calendarEvents": [
+    "calendar.events (topic) event.upsert",
+    "calendar.events (topic) event.delete",
+    "calendar.events (topic) event.backfill",
+  ],
   "content": [
     "content.trigger (topic) jobType.rawIngest",
     "content.trigger (topic) jobType.hls",

@@ -10,16 +10,22 @@ import {
   type OutboxConfigType,
 } from "../../config/configuration";
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
+import {
+  calendarEventRoute,
+  publishMessage,
+  type CalendarEventAction,
+  type CalendarEventMessage,
+} from "@ncfritz/olympus-messages";
 import { OutboxEvent as OutboxRow } from "@prisma/client";
 import { PrismaService } from "../../store/prisma/PrismaService";
-import { CALENDAR_EVENTS_EXCHANGE } from "../OutboxModule";
 
 const BASE_BACKOFF_MS = 2_000;
 const MAX_BACKOFF_MS = 10 * 60_000;
 
 /**
  * Drains the OutboxEvent table (written transactionally by PrismaEventStore
- * alongside every Event change) onto RabbitMQ. Polling rather than
+ * alongside every Event change) onto RabbitMQ, as the calendar event
+ * messages of @ncfritz/olympus-messages. Polling rather than
  * publish-on-write: a row written while the dispatcher (or the broker) is
  * down is picked up on the next tick with no special recovery path, since
  * "pending row sitting in Postgres" already *is* the recovery state.
@@ -32,7 +38,6 @@ const MAX_BACKOFF_MS = 10 * 60_000;
 @Injectable()
 export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(OutboxDispatcherService.name);
-  private readonly exchange: string;
   private readonly batchSize: number;
   private readonly pollIntervalMs: number;
   private readonly maxAttempts: number;
@@ -43,7 +48,6 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
     private readonly prisma: PrismaService,
     @Inject(outboxConfig.KEY) outbox: OutboxConfigType,
   ) {
-    this.exchange = CALENDAR_EVENTS_EXCHANGE;
     this.batchSize = outbox.batchSize;
     this.pollIntervalMs = outbox.pollIntervalMs;
     this.maxAttempts = outbox.maxAttempts;
@@ -82,13 +86,11 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
       // Resolves only once the broker has confirmed the publish (AmqpConnection
       // publishes over a confirm channel internally) — that confirmation, not
       // just an unthrown call, is what makes marking this "sent" honest.
-      await this.amqp.publish(
-        this.exchange,
-        `event.${row.action}`,
-        JSON.parse(row.payload),
-        {
-          messageId: row.id,
-        },
+      await publishMessage(
+        this.amqp,
+        calendarEventRoute(row.action as CalendarEventAction),
+        JSON.parse(row.payload) as CalendarEventMessage,
+        { messageId: row.id },
       );
       await this.prisma.outboxEvent.update({
         where: { id: row.id },
