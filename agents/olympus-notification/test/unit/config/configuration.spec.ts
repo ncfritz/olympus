@@ -15,7 +15,7 @@ describe("readConfig", () => {
       "amqp://admin:***@localhost:5672/%2Fdionysus-dev",
     );
     expect(config.olympus).toEqual({
-      apiBaseUrl: "http://localhost:3001/v1",
+      baseUrl: "http://localhost:3001/v1",
       webSocketHost: "ws://localhost:3000",
     });
     expect(config.synologyChat).toEqual({
@@ -26,6 +26,21 @@ describe("readConfig", () => {
     expect(config.gmail).toEqual({
       user: "ncfritz@ncfritz.net",
       appPassword: undefined,
+    });
+  });
+
+  it("presents its certificate on the API's mTLS listener", () => {
+    const { olympus } = readConfig({
+      API_BASE_URL: "https://olympus-api:3443/v1",
+      API_CLIENT_CERT: "/certs/olympus-notification-agent.crt",
+      API_CLIENT_KEY: "/certs/olympus-notification-agent.key",
+      API_CA_CERT: "/certs/services-ca.crt",
+    });
+    expect(olympus.baseUrl).toBe("https://olympus-api:3443/v1");
+    expect(olympus.tls).toEqual({
+      certificate: "/certs/olympus-notification-agent.crt",
+      key: "/certs/olympus-notification-agent.key",
+      ca: "/certs/services-ca.crt",
     });
   });
 

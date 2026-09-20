@@ -1,9 +1,11 @@
 import {
   AmqpConfig,
+  ApiClientConfig,
   ConfigValidationError,
   EnvReader,
   LoggingConfig,
   readAmqpConfig,
+  readApiClientConfig,
   readLoggingConfig,
   readRuntimeConfig,
   RuntimeConfig,
@@ -12,9 +14,7 @@ import { ConfigType, registerAs } from "@nestjs/config";
 
 export { ConfigValidationError };
 
-export type OlympusConfig = {
-  /** Base URL for SDK calls, including `/v1`. */
-  apiBaseUrl: string;
+export type OlympusConfig = ApiClientConfig & {
   /** Socket.IO server that relays notifications to browsers. */
   webSocketHost: string;
 };
@@ -62,7 +62,7 @@ export const readConfig = (
     amqp: readAmqpConfig(read, "/dionysus-dev"),
     logging: readLoggingConfig(read, runtime.isProduction),
     olympus: {
-      apiBaseUrl: read.string("API_BASE_URL", "http://localhost:3001/v1"),
+      ...readApiClientConfig(read, "http://localhost:3001/v1"),
       webSocketHost: read.string("WSS_HOST", "ws://localhost:3000"),
     },
     synologyMail: {
