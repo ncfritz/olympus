@@ -13,10 +13,10 @@ export type SyncRun = components["schemas"]["SyncRun"];
 export type SyncRunDetail = components["schemas"]["FullSyncRun"];
 export type SyncRunEventChange = components["schemas"]["SyncRunEventChange"];
 export type SyncRunDailyStat = components["schemas"]["SyncRunDailyStat"];
-export type OutboxSummary = components["schemas"]["OutboxSummaryDto"];
-export type OutboxSourceStats = components["schemas"]["OutboxSourceStatsDto"];
-export type OutboxRecord = components["schemas"]["OutboxRecordDto"];
-export type EventPublishStatus = components["schemas"]["EventPublishStatusDto"];
+export type OutboxSummary = components["schemas"]["OutboxSummary"];
+export type OutboxSourceStats = components["schemas"]["OutboxSourceSummary"];
+export type OutboxRecord = components["schemas"]["OutboxEvent"];
+export type EventPublishStatus = components["schemas"]["EventPublishStatus"];
 export type BackfillResult = components["schemas"]["CalendarBackfill"];
 
 /** Keyed by each 15-minute chunk's start time, in minutes since epoch (as a string, since JSON object keys always are). */
@@ -341,35 +341,35 @@ export async function deleteOverrideBlock(id: string): Promise<void> {
 }
 
 export async function fetchOutboxSummary(): Promise<OutboxSummary> {
-  const { data } = await apiClient.GET("/outbox/summary");
-  return data ?? { enabled: false, sources: [] };
+  const { data } = await apiClient.GET("/v1/outbox/summary");
+  return data?.outboxSummary ?? { enabled: false, sources: [] };
 }
 
 export async function fetchFailedOutboxRecords(
   limit?: number,
 ): Promise<OutboxRecord[]> {
-  const { data } = await apiClient.GET("/outbox/failed", {
+  const { data } = await apiClient.GET("/v1/outbox-events/failed", {
     params: { query: { limit } },
   });
-  return data ?? [];
+  return data?.outboxEvents ?? [];
 }
 
 export async function requeueOutboxRecord(id: string): Promise<void> {
-  const { error } = await apiClient.POST("/outbox/failed/{id}/requeue", {
-    params: { path: { id } },
-  });
+  const { error } = await apiClient.POST(
+    "/v1/outbox-event/{outboxEventId}/requeue",
+    { params: { path: { outboxEventId: id } } },
+  );
   if (error)
     throw new Error(`Failed to requeue outbox row: ${JSON.stringify(error)}`);
 }
 
 export async function fetchEventPublishStatus(
-  source: string,
-  uid: string,
+  eventId: string,
 ): Promise<EventPublishStatus> {
-  const { data } = await apiClient.GET("/outbox/events/{source}/{uid}", {
-    params: { path: { source, uid } },
+  const { data } = await apiClient.GET("/v1/event/{eventId}/publish-status", {
+    params: { path: { eventId } },
   });
-  return data ?? { enabled: false, latest: null };
+  return data?.eventPublishStatus ?? { enabled: false };
 }
 
 export async function backfillCalendar(

@@ -3,14 +3,18 @@ import { DynamicModule, Logger, Module } from "@nestjs/common";
 import { outboxConfig, type OutboxConfigType } from "../config/configuration";
 import { StoreModule } from "../store/StoreModule";
 import { SyncModule } from "../sync/SyncModule";
-import { OutboxController } from "./controllers/OutboxController";
+import { GetEventPublishStatusController } from "./controllers/GetEventPublishStatusController";
+import { GetOutboxSummaryController } from "./controllers/GetOutboxSummaryController";
+import { ListFailedOutboxEventsController } from "./controllers/ListFailedOutboxEventsController";
+import { RequeueOutboxEventController } from "./controllers/RequeueOutboxEventController";
+import { OutboxService } from "./services/OutboxService";
 import { OutboxDispatcherService } from "./services/OutboxDispatcherService";
 
 /** The topic exchange event changes are published to (routing keys `event.<action>`). */
 export const CALENDAR_EVENTS_EXCHANGE = "calendar.events";
 
 /**
- * The publish-status read/admin API (OutboxController, backed by
+ * The publish-status read/admin API (OutboxService, backed by
  * OutboxStore) is always registered — the Publish page needs it to render
  * an honest "not configured" state even when outbound sync is off.
  *
@@ -53,8 +57,13 @@ export class OutboxModule {
     return {
       module: OutboxModule,
       imports: [StoreModule, SyncModule, ...rabbitMqImports],
-      controllers: [OutboxController],
-      providers: enabled ? [OutboxDispatcherService] : [],
+      controllers: [
+        GetOutboxSummaryController,
+        ListFailedOutboxEventsController,
+        RequeueOutboxEventController,
+        GetEventPublishStatusController,
+      ],
+      providers: [OutboxService, ...(enabled ? [OutboxDispatcherService] : [])],
     };
   }
 }

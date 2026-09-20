@@ -1973,17 +1973,28 @@
         ]
       }
     },
-    "/outbox/summary": {
+    "/v1/outbox/summary": {
       "get": {
-        "operationId": "OutboxController_summary",
+        "description": "Returns whether publishing is enabled and each source's waiting, published and failed event counts.",
+        "operationId": "GetOutboxSummary",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "",
+            "description": "The summary was computed.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OutboxSummaryDto"
+                  "$ref": "#/components/schemas/GetOutboxSummaryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1994,19 +2005,22 @@
             "bearer": []
           }
         ],
+        "summary": "Gets the outbox summary",
         "tags": [
-          "outbox"
+          "Outbox"
         ]
       }
     },
-    "/outbox/failed": {
+    "/v1/outbox-events/failed": {
       "get": {
-        "operationId": "OutboxController_listFailed",
+        "description": "Returns the event changes that gave up being published, newest first.",
+        "operationId": "ListFailedOutboxEvents",
         "parameters": [
           {
             "name": "limit",
             "required": false,
             "in": "query",
+            "description": "The number of outbox events to return",
             "schema": {
               "minimum": 1,
               "maximum": 200,
@@ -2017,14 +2031,31 @@
         ],
         "responses": {
           "200": {
-            "description": "",
+            "description": "The failed outbox events were listed.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OutboxRecordDto"
-                  }
+                  "$ref": "#/components/schemas/ListFailedOutboxEventsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -2035,19 +2066,22 @@
             "bearer": []
           }
         ],
+        "summary": "Lists failed outbox events",
         "tags": [
-          "outbox"
+          "Outbox"
         ]
       }
     },
-    "/outbox/failed/{id}/requeue": {
+    "/v1/outbox-event/{outboxEventId}/requeue": {
       "post": {
-        "operationId": "OutboxController_requeue",
+        "description": "Puts a failed outbox event back in line; the dispatcher retries it on its next tick.",
+        "operationId": "RequeueOutboxEvent",
         "parameters": [
           {
-            "name": "id",
+            "name": "outboxEventId",
             "required": true,
             "in": "path",
+            "description": "The ID of the failed outbox event",
             "schema": {
               "type": "string"
             }
@@ -2055,50 +2089,24 @@
         ],
         "responses": {
           "204": {
-            "description": "Requeued — the dispatcher will retry it on its next tick"
+            "description": "The outbox event was requeued."
           },
-          "404": {
-            "description": "No failed outbox row with that id"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "outbox"
-        ]
-      }
-    },
-    "/outbox/events/{source}/{uid}": {
-      "get": {
-        "operationId": "OutboxController_eventStatus",
-        "parameters": [
-          {
-            "name": "source",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "uid",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
+          "401": {
+            "description": "No valid access token was presented",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventPublishStatusDto"
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -2109,8 +2117,57 @@
             "bearer": []
           }
         ],
+        "summary": "Requeues an outbox event",
         "tags": [
-          "outbox"
+          "Outbox"
+        ]
+      }
+    },
+    "/v1/event/{eventId}/publish-status": {
+      "get": {
+        "description": "Returns whether publishing is enabled and the calendar event's latest outbox event.",
+        "operationId": "GetEventPublishStatus",
+        "parameters": [
+          {
+            "name": "eventId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the calendar event (source:uid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The publish status was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetEventPublishStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Gets an event's publish status",
+        "tags": [
+          "Outbox"
         ]
       }
     }
@@ -2148,6 +2205,9 @@
       "name": "Events"
     },
     {
+      "name": "Outbox"
+    },
+    {
       "name": "Override Blocks"
     },
     {
@@ -2155,9 +2215,6 @@
     },
     {
       "name": "auth"
-    },
-    {
-      "name": "outbox"
     }
   ],
   "servers": [],
@@ -3681,31 +3738,32 @@
           "overrideBlock"
         ]
       },
-      "OutboxSourceStatsDto": {
+      "OutboxSourceSummary": {
         "type": "object",
         "properties": {
           "source": {
             "type": "string",
-            "description": "The source label this row's stats are for"
+            "description": "The source label"
           },
           "calendarId": {
             "type": "string",
-            "description": "The configured calendar this source belongs to, if it's still configured",
-            "nullable": true
+            "description": "The provider's ID of the source's calendar, while it is still synced"
           },
           "pending": {
-            "type": "number"
+            "type": "number",
+            "description": "The number of events waiting to be published"
           },
           "sent": {
-            "type": "number"
+            "type": "number",
+            "description": "The number of events published"
           },
           "failed": {
-            "type": "number"
+            "type": "number",
+            "description": "The number of events that gave up"
           },
           "oldestPendingAt": {
             "type": "string",
-            "description": "createdAt of the oldest still-pending row — a growing age is the signal something downstream is stuck",
-            "nullable": true
+            "description": "An ISO-8601 formatted string indicating when the oldest waiting event was queued; a growing age means something downstream is stuck"
           }
         },
         "required": [
@@ -3715,17 +3773,18 @@
           "failed"
         ]
       },
-      "OutboxSummaryDto": {
+      "OutboxSummary": {
         "type": "object",
         "properties": {
           "enabled": {
             "type": "boolean",
-            "description": "Whether outbound sync is configured at all (RABBITMQ_URL set)"
+            "description": "Whether publishing is enabled (OUTBOX_ENABLED)"
           },
           "sources": {
+            "description": "One entry per synced calendar, plus sources with outbox activity whose calendar is gone",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/OutboxSourceStatsDto"
+              "$ref": "#/components/schemas/OutboxSourceSummary"
             }
           }
         },
@@ -3734,55 +3793,90 @@
           "sources"
         ]
       },
-      "OutboxRecordDto": {
+      "GetOutboxSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "outboxSummary": {
+            "description": "The outbox summary.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OutboxSummary"
+              }
+            ]
+          }
+        },
+        "required": [
+          "outboxSummary"
+        ]
+      },
+      "OutboxAction": {
+        "type": "string",
+        "enum": [
+          "upsert",
+          "delete",
+          "backfill"
+        ],
+        "description": "What is published: upsert, delete, or backfill (a resend of the current state)"
+      },
+      "OutboxStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "sent",
+          "failed"
+        ],
+        "description": "Whether it is waiting, was published, or gave up"
+      },
+      "OutboxEvent": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "description": "Outbox row id"
+            "description": "The unique ID of the outbox event"
           },
           "eventId": {
             "type": "string",
-            "description": "The canonical event id (source:uid) this row describes"
+            "description": "The ID of the calendar event it describes (source:uid)"
           },
           "source": {
             "type": "string",
-            "description": "The source label this row's event belongs to"
+            "description": "The source label of the calendar event"
           },
           "subject": {
             "type": "string",
-            "description": "Lifted from the row's payload for display"
+            "description": "The calendar event's title, at the time of the change"
           },
           "action": {
-            "type": "string",
-            "enum": [
-              "upsert",
-              "delete",
-              "backfill"
+            "description": "What is published: upsert, delete, or backfill (a resend of the current state)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OutboxAction"
+              }
             ]
           },
           "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "sent",
-              "failed"
+            "description": "Whether it is waiting, was published, or gave up",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OutboxStatus"
+              }
             ]
           },
           "attempts": {
             "type": "number",
-            "description": "How many delivery attempts have been made"
+            "description": "The number of publishing attempts made"
           },
           "lastError": {
             "type": "string",
-            "nullable": true
+            "description": "Why the last attempt failed"
           },
           "createdAt": {
-            "type": "string"
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when it was queued"
           },
           "sentAt": {
             "type": "string",
-            "nullable": true
+            "description": "An ISO-8601 formatted string indicating when it was published"
           }
         },
         "required": [
@@ -3796,26 +3890,55 @@
           "createdAt"
         ]
       },
-      "EventPublishStatusDto": {
+      "ListFailedOutboxEventsResponse": {
+        "type": "object",
+        "properties": {
+          "outboxEvents": {
+            "description": "The outbox events that gave up, newest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OutboxEvent"
+            }
+          }
+        },
+        "required": [
+          "outboxEvents"
+        ]
+      },
+      "EventPublishStatus": {
         "type": "object",
         "properties": {
           "enabled": {
             "type": "boolean",
-            "description": "Whether outbound sync is configured at all (RABBITMQ_URL set)"
+            "description": "Whether publishing is enabled (OUTBOX_ENABLED)"
           },
           "latest": {
-            "nullable": true,
-            "description": "The most recent outbox row for this event, or null if it's never been queued (e.g. it predates outbound sync being enabled)",
-            "type": "object",
+            "description": "The event's latest outbox event; absent when it was never queued (it predates publishing, say)",
             "allOf": [
               {
-                "$ref": "#/components/schemas/OutboxRecordDto"
+                "$ref": "#/components/schemas/OutboxEvent"
               }
             ]
           }
         },
         "required": [
           "enabled"
+        ]
+      },
+      "GetEventPublishStatusResponse": {
+        "type": "object",
+        "properties": {
+          "eventPublishStatus": {
+            "description": "The event's publish status.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventPublishStatus"
+              }
+            ]
+          }
+        },
+        "required": [
+          "eventPublishStatus"
         ]
       }
     }

@@ -532,14 +532,18 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/outbox/summary": {
+  "/v1/outbox/summary": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["OutboxController_summary"];
+    /**
+     * Gets the outbox summary
+     * @description Returns whether publishing is enabled and each source's waiting, published and failed event counts.
+     */
+    get: operations["GetOutboxSummary"];
     put?: never;
     post?: never;
     delete?: never;
@@ -548,14 +552,18 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/outbox/failed": {
+  "/v1/outbox-events/failed": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["OutboxController_listFailed"];
+    /**
+     * Lists failed outbox events
+     * @description Returns the event changes that gave up being published, newest first.
+     */
+    get: operations["ListFailedOutboxEvents"];
     put?: never;
     post?: never;
     delete?: never;
@@ -564,7 +572,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/outbox/failed/{id}/requeue": {
+  "/v1/outbox-event/{outboxEventId}/requeue": {
     parameters: {
       query?: never;
       header?: never;
@@ -573,21 +581,29 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    post: operations["OutboxController_requeue"];
+    /**
+     * Requeues an outbox event
+     * @description Puts a failed outbox event back in line; the dispatcher retries it on its next tick.
+     */
+    post: operations["RequeueOutboxEvent"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/outbox/events/{source}/{uid}": {
+  "/v1/event/{eventId}/publish-status": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["OutboxController_eventStatus"];
+    /**
+     * Gets an event's publish status
+     * @description Returns whether publishing is enabled and the calendar event's latest outbox event.
+     */
+    get: operations["GetEventPublishStatus"];
     put?: never;
     post?: never;
     delete?: never;
@@ -1114,46 +1130,75 @@ export interface components {
       /** @description The block with the changes applied. */
       overrideBlock: components["schemas"]["OverrideBlock"];
     };
-    OutboxSourceStatsDto: {
-      /** @description The source label this row's stats are for */
+    OutboxSourceSummary: {
+      /** @description The source label */
       source: string;
-      /** @description The configured calendar this source belongs to, if it's still configured */
-      calendarId?: string | null;
+      /** @description The provider's ID of the source's calendar, while it is still synced */
+      calendarId?: string;
+      /** @description The number of events waiting to be published */
       pending: number;
+      /** @description The number of events published */
       sent: number;
+      /** @description The number of events that gave up */
       failed: number;
-      /** @description createdAt of the oldest still-pending row — a growing age is the signal something downstream is stuck */
-      oldestPendingAt?: string | null;
+      /** @description An ISO-8601 formatted string indicating when the oldest waiting event was queued; a growing age means something downstream is stuck */
+      oldestPendingAt?: string;
     };
-    OutboxSummaryDto: {
-      /** @description Whether outbound sync is configured at all (RABBITMQ_URL set) */
+    OutboxSummary: {
+      /** @description Whether publishing is enabled (OUTBOX_ENABLED) */
       enabled: boolean;
-      sources: components["schemas"]["OutboxSourceStatsDto"][];
+      /** @description One entry per synced calendar, plus sources with outbox activity whose calendar is gone */
+      sources: components["schemas"]["OutboxSourceSummary"][];
     };
-    OutboxRecordDto: {
-      /** @description Outbox row id */
+    GetOutboxSummaryResponse: {
+      /** @description The outbox summary. */
+      outboxSummary: components["schemas"]["OutboxSummary"];
+    };
+    /**
+     * @description What is published: upsert, delete, or backfill (a resend of the current state)
+     * @enum {string}
+     */
+    OutboxAction: "upsert" | "delete" | "backfill";
+    /**
+     * @description Whether it is waiting, was published, or gave up
+     * @enum {string}
+     */
+    OutboxStatus: "pending" | "sent" | "failed";
+    OutboxEvent: {
+      /** @description The unique ID of the outbox event */
       id: string;
-      /** @description The canonical event id (source:uid) this row describes */
+      /** @description The ID of the calendar event it describes (source:uid) */
       eventId: string;
-      /** @description The source label this row's event belongs to */
+      /** @description The source label of the calendar event */
       source: string;
-      /** @description Lifted from the row's payload for display */
+      /** @description The calendar event's title, at the time of the change */
       subject: string;
-      /** @enum {string} */
-      action: "upsert" | "delete" | "backfill";
-      /** @enum {string} */
-      status: "pending" | "sent" | "failed";
-      /** @description How many delivery attempts have been made */
+      /** @description What is published: upsert, delete, or backfill (a resend of the current state) */
+      action: components["schemas"]["OutboxAction"];
+      /** @description Whether it is waiting, was published, or gave up */
+      status: components["schemas"]["OutboxStatus"];
+      /** @description The number of publishing attempts made */
       attempts: number;
-      lastError?: string | null;
+      /** @description Why the last attempt failed */
+      lastError?: string;
+      /** @description An ISO-8601 formatted string indicating when it was queued */
       createdAt: string;
-      sentAt?: string | null;
+      /** @description An ISO-8601 formatted string indicating when it was published */
+      sentAt?: string;
     };
-    EventPublishStatusDto: {
-      /** @description Whether outbound sync is configured at all (RABBITMQ_URL set) */
+    ListFailedOutboxEventsResponse: {
+      /** @description The outbox events that gave up, newest first. */
+      outboxEvents: components["schemas"]["OutboxEvent"][];
+    };
+    EventPublishStatus: {
+      /** @description Whether publishing is enabled (OUTBOX_ENABLED) */
       enabled: boolean;
-      /** @description The most recent outbox row for this event, or null if it's never been queued (e.g. it predates outbound sync being enabled) */
-      latest?: components["schemas"]["OutboxRecordDto"] | null;
+      /** @description The event's latest outbox event; absent when it was never queued (it predates publishing, say) */
+      latest?: components["schemas"]["OutboxEvent"];
+    };
+    GetEventPublishStatusResponse: {
+      /** @description The event's publish status. */
+      eventPublishStatus: components["schemas"]["EventPublishStatus"];
     };
   };
   responses: never;
@@ -2489,7 +2534,7 @@ export interface operations {
       };
     };
   };
-  OutboxController_summary: {
+  GetOutboxSummary: {
     parameters: {
       query?: never;
       header?: never;
@@ -2498,19 +2543,30 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
+      /** @description The summary was computed. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["OutboxSummaryDto"];
+          "application/json": components["schemas"]["GetOutboxSummaryResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };
   };
-  OutboxController_listFailed: {
+  ListFailedOutboxEvents: {
     parameters: {
       query?: {
+        /** @description The number of outbox events to return */
         limit?: number;
       };
       header?: never;
@@ -2519,61 +2575,102 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
+      /** @description The failed outbox events were listed. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["OutboxRecordDto"][];
+          "application/json": components["schemas"]["ListFailedOutboxEventsResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };
   };
-  OutboxController_requeue: {
+  RequeueOutboxEvent: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        id: string;
+        /** @description The ID of the failed outbox event */
+        outboxEventId: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
-      /** @description Requeued — the dispatcher will retry it on its next tick */
+      /** @description The outbox event was requeued. */
       204: {
         headers: {
           [name: string]: unknown;
         };
         content?: never;
       };
-      /** @description No failed outbox row with that id */
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
       404: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
     };
   };
-  OutboxController_eventStatus: {
+  GetEventPublishStatus: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        source: string;
-        uid: string;
+        /** @description The ID of the calendar event (source:uid) */
+        eventId: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
+      /** @description The publish status was found. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["EventPublishStatusDto"];
+          "application/json": components["schemas"]["GetEventPublishStatusResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };

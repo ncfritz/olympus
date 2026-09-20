@@ -50,8 +50,8 @@ export function EventDetailDrawer({
 }) {
   const { token } = theme.useToken();
   const { data: publishStatus } = useSWR(
-    event ? ["/outbox/events", event.source, event.uid] : null,
-    ([, source, uid]) => fetchEventPublishStatus(source, uid),
+    event ? ["/v1/event/publish-status", event.id] : null,
+    ([, eventId]) => fetchEventPublishStatus(eventId),
   );
 
   return (
