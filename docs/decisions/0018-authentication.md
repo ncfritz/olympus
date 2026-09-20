@@ -78,8 +78,11 @@ may depend on a cloud service.
   doesn't pass the border, and each is revoked separately.
 
 - Revocation lists for both are exported from XCA on every revocation and
-  at least monthly; the API reloads its list when the file changes, the
-  NAS nginx on reload.
+  at least monthly. A verifier checks every authority in the chain, so it
+  needs the root's list as well as the intermediate's: the API loads them
+  as separate files (Node reads only the first list in a file) and
+  reloads them with `setSecureContext()` when they change; nginx takes
+  both in one file (`ssl_crl`) and reloads.
 - The API's `3443` server certificate names `olympus-api` and
   `api.olympus.internal.ncfritz.net`.
 - Later: an ACME-capable subordinate CA (step-ca) under the internal root

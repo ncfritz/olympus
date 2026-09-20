@@ -30,3 +30,6 @@ __pycache__/
 
 # The metadata agent's fetch job cache (DIONYSUS_CACHE_PATH default)
 agents/dionysus-metadata/cache/
+
+# A throwaway CA for development (scripts/dev-ca.sh).
+infra/dev-ca/

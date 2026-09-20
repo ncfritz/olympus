@@ -31,14 +31,18 @@ Phases 2 and 3 are independent and can run in either order or together.
    `infra/docker/compose/dev.yml` runs Postgres and Hasura, applying both
    on start. API tests keep using the GraphQL double; the auth migration
    gets an integration test against the real Hasura.
-3. **Dev CA** (`scripts/dev-ca.sh`): a throwaway root with Olympus
-   Services and Olympus Devices intermediates (ECDSA P-256); the API's
-   `3443` server certificate (`olympus-api`, `localhost`,
-   `api.olympus.internal.localhost`); agent certificates; device
-   certificates (valid, revoked, expired); both revocation lists. Output
-   in a git-ignored `infra/dev-ca/`.
-4. **Dev compose**: Postgres, Hasura, the API with both listeners, and an
-   nginx standing in for the NAS border (device mTLS on a local port).
+3. **Dev CA** (`scripts/dev-ca.sh`): **done 2026-09-20** — a throwaway
+   root with Olympus Services and Olympus Devices intermediates (ECDSA
+   P-256), the API's `3443` server certificate (`olympus-api`,
+   `localhost`, `api.olympus.internal.localhost`, `127.0.0.1`), a
+   certificate per agent deployment, device certificates, and the
+   revoked, expired and wrong-intermediate certificates the sign-off
+   cases need, in a git-ignored `infra/dev-ca/`. Checked against a Node
+   TLS server: valid agent certificates are accepted and the revoked,
+   expired, wrong-intermediate, device and missing ones are refused
+   during the handshake.
+4. **Dev compose**: Postgres and Hasura (**done**); the API's two
+   listeners are added in phase 1 and the border nginx in phase 6.
 
 ## Phase 1 — Auth core in the API (report-only)
 
@@ -49,8 +53,11 @@ Phases 2 and 3 are independent and can run in either order or together.
    (`auth_decisions_total{listener,outcome,reason}`) what it would reject,
    and lets the request through.
 3. **The `3443` listener**: a second Node HTTPS server over the same
-   Express app (`requestCert`, `rejectUnauthorized`, the Services CA, the
-   revocation list reloaded when the file changes); the service strategy
+   Express app (`requestCert`, `rejectUnauthorized`, the Services CA, and
+   the revocation lists — Node reads only the first list in a file, so
+   `TLS_CRL_SERVICES` is a list of paths, the intermediate's and the
+   root's; reloaded with `setSecureContext()` when a file changes, no
+   restart); the service strategy
    (CN → principal, OU → deployment, roles from
    `AUTH_SERVICE_ROLES`); a mismatching `X-Olympus-Client` is a rejection.
 4. The request metrics take `client` from the verified identity
