@@ -74,6 +74,7 @@ describe("StartDownloadHandler", () => {
     );
     expect(meta).toMatchObject({ size: 1800, parSize: 100 });
     expect(mediaApi.updateMediaAssetWorkflow).not.toHaveBeenCalled();
+    expect(fs.existsSync(`/tmp/${msg.nzbId}.nzb`)).toBe(false);
   });
 
   it("fails the download and workflow when NZBGet refuses the NZB", async () => {
@@ -121,5 +122,6 @@ describe("StartDownloadHandler", () => {
       "wf-1",
       expect.objectContaining({ status: "failed" }),
     );
+    expect(fs.existsSync(`/tmp/${msg.nzbId}.nzb`)).toBe(false);
   });
 });

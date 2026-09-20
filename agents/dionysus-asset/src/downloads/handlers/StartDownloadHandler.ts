@@ -114,6 +114,8 @@ export class StartDownloadHandler {
           innerError instanceof Error ? innerError.stack : undefined,
         );
       }
+    } finally {
+      fs.rmSync(nzbFilename, { force: true });
     }
   }
 
