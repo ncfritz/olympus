@@ -9,5 +9,5 @@ platform only through `@ncfritz/olympus-sdk`. Conventions:
 | `dionysus-asset`        | dionysus-asset-agents      | on conventions |
 | `dionysus-metadata`     | dionysus-metadata-agents   | on conventions |
 | `dionysus-search`       | dionysus-search-agents     | on conventions |
-| `minerva-calendar-sync` | minerva-calendar-sync      | imported       |
+| `minerva-calendar-sync` | minerva-calendar-sync      | on conventions |
 | `olympus-notification`  | olympus-notification-agent | on conventions |

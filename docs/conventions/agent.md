@@ -157,5 +157,21 @@ to `agent/`, plus:
   (committed); `check:openapi` and `lint:openapi` guard it, as in the
   API. With the API explorer enabled the agent serves it at `/api-spec`
   and `/api-spec-json`.
+- Query parameters are a `<OperationId>Query` class in `src/model` with
+  `@ApiProperty` and class-validator decorators; the agent's global
+  `ValidationPipe` (with `transform`) answers `400` for invalid ones.
+- Every route needs the agent's access token except those marked
+  `@Public()` (provider callbacks, sign-in, `/metrics`). Operations
+  behind it carry `@ApiBearerAuth()` and document `401`.
+  **[checked]**
+- `Location` headers come from `setLocation()` (`src/utils/location.ts`),
+  built from the Describe controller's route. **[checked]**
+- `/metrics` also records `operation_<operationId>_*` for the
+  management API, as the Olympus API does.
+- Messages it publishes are contracts in `@ncfritz/olympus-messages`
+  like any other agent's, with a JSON Schema when consumers outside
+  TypeScript are expected.
+- `test/conventions` ports the API's controller, model and enum checks
+  next to the agent layout checks.
 - The console generates its client from that document and follows
   [ux.md](ux.md).

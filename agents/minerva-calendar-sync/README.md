@@ -20,6 +20,32 @@ Microsoft Graph ─┴─────────────────▶ │
                               console (browser)
 ```
 
+## The agent's HTTP surface
+
+- **Management API** under `/v1`, for the console: on the API conventions
+  (`docs/conventions/api.md`), one `<OperationId>Controller.ts` per
+  operation, request and response shapes in `agent/src/model`. Every
+  operation needs the agent's access token (sign-in through the OIDC
+  providers in `AUTH_OIDC_PROVIDERS`, limited to `AUTH_ALLOWED_EMAILS`).
+- **OpenAPI document**: `pnpm openapi` writes
+  `agent/openapi/minerva-calendar-sync.json` (committed; `check:openapi`
+  and `lint:openapi` guard it, and the console generates its client from
+  it). With `ENABLE_API_EXPLORER=true`, or outside production, the agent
+  serves it at `/api-spec` (Swagger UI) and `/api-spec-json`.
+- **Provider callbacks**, unversioned and outside the document because
+  their paths are registered with Google and Microsoft:
+  `/auth/login/:provider`, `/auth/callback/:provider`,
+  `/webhooks/google`, `/webhooks/microsoft`.
+- **Metrics** at `/metrics` (Prometheus): Node's defaults,
+  `operation_<operationId>_*` for the management API, and the agent's own
+  `sync_run_*`, `sync_event_change_count`, `outbox_publish_count` and
+  `webhook_notification_count` (`agent/src/metrics/agentMetrics.ts`).
+
+Every event change is published to `calendar.events` with routing key
+`event.upsert`, `event.delete` or `event.backfill`; the contract
+(`CalendarEventMessage`, and a JSON Schema for other languages) is in
+`@ncfritz/olympus-messages`.
+
 ## Development
 
 Run from the repository root (`pnpm install` once):
@@ -46,3 +72,8 @@ into `console/`. Variables renamed on the way: `PORT` → `LISTEN_PORT`;
 message contract).
 
 Prisma downloads its engines from `binaries.prisma.sh` on install.
+
+Tests (`pnpm test` in `agent/`): unit tests in `test/unit`, the
+application over HTTP in `test/e2e`, and the convention checks in
+`test/conventions`; `pnpm test:integration` runs the store against the
+Postgres of `docker-compose.yml`.

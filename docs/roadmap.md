@@ -12,7 +12,7 @@
 | 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                  |
 | 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                                  |
 | 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                  |
-| 8a  | Minerva calendar sync import (ADR 0016)                                                              | imported; conventions next       |
+| 8a  | Minerva calendar sync import (ADR 0016)                                                              | **done** (2026-09-20)            |
 | 8b  | Minerva → Hasura integration (ADR 0013)                                                              |                                  |
 | —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                          |
 | —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                         |
@@ -35,8 +35,9 @@
 Planned work outside the phases, in no particular order.
 
 1. **Chore: decorate all APIs to capture Prometheus metrics.** Today the
-   API's `PrometheusMetricsInterceptor` records per-operation counts and
-   latency keyed by operationId; agents expose only the default Node
+   API's `PrometheusMetricsInterceptor` and Minerva's
+   `OperationMetricsInterceptor` record per-operation counts and latency
+   keyed by operationId; the other agents expose only the default Node
    metrics.
 2. **Chore: add application-level Prometheus metrics**, beyond HTTP and
    runtime metrics.
@@ -231,6 +232,27 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
   - Nothing in the monorepo or the imported repositories publishes
     `search.fanout.trigger`; whatever schedules the fanout lives
     elsewhere and isn't source-controlled.
+- Minerva calendar sync (imported 2026-09-20, ADR 0016):
+  - Management API on the API conventions: one operation per controller
+    under `/v1`, models in `src/model`, the OpenAPI document generated,
+    checked, linted and served at `/api-spec`; the console's client is
+    generated from it. Provider callbacks (OAuth login and callback,
+    Google and Microsoft webhooks) are unversioned and outside the
+    document. Convention checks in `agent/test/conventions`; the
+    `calendar.events` contract in `@ncfritz/olympus-messages`, with a JSON
+    Schema; Prometheus metrics at `/metrics`. Environment variables
+    renamed (`LISTEN_PORT`, `OUTBOX_ENABLED` + `AMQP_*`, `OUTBOX_*`).
+  - Fixed on the way: calendar-color e2e tests depending on test order.
+    Fixed after, one commit each: syncs cut off by the database
+    disconnecting at shutdown.
+  - `recurrenceRule` holds Microsoft's Graph recurrence pattern as JSON
+    text (Google's is RRULE lines). It is reference-only and never
+    queried; decide whether ADR 0007 allows it like the outbox payload,
+    or whether it becomes columns.
+  - Deleting an override block answers `204` whether or not it existed
+    (idempotent; kept).
+  - The outbox dispatcher's tick in progress at shutdown is not awaited.
+    Delivery is at least once, so a publish cut off is retried.
 - No explicit nack / dead-letter strategy for failed messages.
 
 ### Messages
