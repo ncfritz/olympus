@@ -1,9 +1,11 @@
 import {
   AmqpConfig,
+  ApiClientConfig,
   ConfigValidationError,
   EnvReader,
   LoggingConfig,
   readAmqpConfig,
+  readApiClientConfig,
   readLoggingConfig,
   readRuntimeConfig,
   RuntimeConfig,
@@ -12,10 +14,7 @@ import { ConfigType, registerAs } from "@nestjs/config";
 
 export { ConfigValidationError };
 
-export type OlympusConfig = {
-  /** Base URL for SDK calls, including `/v1`. */
-  apiBaseUrl: string;
-};
+export type OlympusConfig = ApiClientConfig;
 
 export type TmdbConfig = {
   /** TMDB API read access token; unset fails every TMDB call. */
@@ -50,9 +49,7 @@ export const readConfig = (
     runtime,
     amqp: readAmqpConfig(read, "/dionysus-dev"),
     logging: readLoggingConfig(read, runtime.isProduction),
-    olympus: {
-      apiBaseUrl: read.string("API_BASE_URL", "http://localhost:3001/v1"),
-    },
+    olympus: readApiClientConfig(read, "http://localhost:3001/v1"),
     tmdb: {
       apiKey: read.optional("TMDB_API_KEY"),
     },

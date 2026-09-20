@@ -12,9 +12,24 @@ describe("readConfig", () => {
     expect(config.amqp.redactedUri).toBe(
       "amqp://admin:***@localhost:5672/%2Fdionysus-dev",
     );
-    expect(config.olympus).toEqual({ apiBaseUrl: "http://localhost:3001/v1" });
+    expect(config.olympus).toEqual({ baseUrl: "http://localhost:3001/v1" });
     expect(config.tmdb).toEqual({ apiKey: undefined });
     expect(config.cache).toEqual({ path: "./cache" });
+  });
+
+  it("presents its certificate on the API's mTLS listener", () => {
+    const { olympus } = readConfig({
+      API_BASE_URL: "https://olympus-api:3443/v1",
+      API_CLIENT_CERT: "/certs/dionysus-metadata-agent.crt",
+      API_CLIENT_KEY: "/certs/dionysus-metadata-agent.key",
+      API_CA_CERT: "/certs/services-ca.crt",
+    });
+    expect(olympus.baseUrl).toBe("https://olympus-api:3443/v1");
+    expect(olympus.tls).toEqual({
+      certificate: "/certs/dionysus-metadata-agent.crt",
+      key: "/certs/dionysus-metadata-agent.key",
+      ca: "/certs/services-ca.crt",
+    });
   });
 
   it("reads the TMDB key and cache path", () => {

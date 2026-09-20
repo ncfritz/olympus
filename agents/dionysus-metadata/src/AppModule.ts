@@ -40,8 +40,9 @@ import { WorkflowModule } from "./workflow/WorkflowModule";
     OlympusClientModule.forRootAsync({
       inject: [olympusConfig.KEY, runtimeConfig.KEY],
       useFactory: (olympus: OlympusConfigType, runtime: RuntimeConfigType) => ({
-        baseUrl: olympus.apiBaseUrl,
+        baseUrl: olympus.baseUrl,
         clientName: runtime.appName,
+        tls: olympus.tls,
       }),
     }),
     TmdbModule,

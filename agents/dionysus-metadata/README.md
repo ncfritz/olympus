@@ -149,9 +149,12 @@ Environment variables are used to configure the NestJS modules that connect to v
 
 ##### Olympus
 
-| Variable     | Usage                                   | Default Value              |
-| ------------ | --------------------------------------- | -------------------------- |
-| API_BASE_URL | Base URL for SDK calls, including `/v1` | `http://localhost:3001/v1` |
+| Variable        | Usage                                                            | Default Value              |
+| --------------- | ---------------------------------------------------------------- | -------------------------- |
+| API_BASE_URL    | Base URL for SDK calls, including `/v1`                          | `http://localhost:3001/v1` |
+| API_CLIENT_CERT | The agent's certificate, from the Olympus Services CA (ADR 0018) | (none)                     |
+| API_CLIENT_KEY  | Its private key                                                  | (none)                     |
+| API_CA_CERT     | The chain that signed the API's server certificate               | (system)                   |
 
 ##### TMDB
 
