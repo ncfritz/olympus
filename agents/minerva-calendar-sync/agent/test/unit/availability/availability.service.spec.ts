@@ -54,6 +54,7 @@ function fixtureEvent(overrides: Partial<CanonicalCalendarEvent> = {}): Canonica
     deleted: false,
     uid,
     recurrenceId: null,
+    recurrenceRule: null,
     source,
     ...overrides,
   };

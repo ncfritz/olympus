@@ -40,6 +40,10 @@ model Event {
   organizerEmail String?
   deleted        Boolean  @default(false)
   recurrenceId   String?
+  // The provider's own recurrence description (RRULE lines for Google, a
+  // serialized Graph recurrence pattern for Microsoft) — recorded for
+  // reference only; see CanonicalCalendarEvent.recurrenceRule.
+  recurrenceRule String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -55,6 +59,10 @@ model SyncState {
   resourceId        String?
   channelExpiration DateTime?
   channelToken      String?
+  // When a *full* sync last completed — see CanonicalCalendarEvent's
+  // SyncState.lastFullSyncAt doc for why this is tracked separately from
+  // updatedAt (which also moves on every incremental sync).
+  lastFullSyncAt    DateTime?
   updatedAt         DateTime  @updatedAt
 }
 

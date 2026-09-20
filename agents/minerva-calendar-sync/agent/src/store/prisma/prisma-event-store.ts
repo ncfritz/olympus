@@ -148,6 +148,7 @@ export class PrismaEventStore implements EventStore {
       resourceId: row.resourceId,
       channelExpiration: row.channelExpiration?.toISOString() ?? null,
       channelToken: row.channelToken,
+      lastFullSyncAt: row.lastFullSyncAt?.toISOString() ?? null,
       lastSyncedAt: row.updatedAt.toISOString(),
     };
   }
@@ -159,6 +160,7 @@ export class PrismaEventStore implements EventStore {
       resourceId: state.resourceId,
       channelExpiration: state.channelExpiration ? new Date(state.channelExpiration) : null,
       channelToken: state.channelToken,
+      lastFullSyncAt: state.lastFullSyncAt ? new Date(state.lastFullSyncAt) : null,
     };
 
     await this.prisma.syncState.upsert({
@@ -188,7 +190,8 @@ function rowsEqual(existing: EventRow, next: ReturnType<typeof toRow>): boolean 
     existing.cancelled === next.cancelled &&
     existing.organizerEmail === next.organizerEmail &&
     existing.deleted === next.deleted &&
-    existing.recurrenceId === next.recurrenceId
+    existing.recurrenceId === next.recurrenceId &&
+    existing.recurrenceRule === next.recurrenceRule
   );
 }
 
@@ -214,6 +217,7 @@ function toRow(event: CanonicalCalendarEvent) {
     organizerEmail: event.organizerEmail,
     deleted: event.deleted,
     recurrenceId: event.recurrenceId,
+    recurrenceRule: event.recurrenceRule,
   };
 }
 
@@ -239,5 +243,6 @@ function fromRow(row: EventRow): CanonicalCalendarEvent {
     organizerEmail: row.organizerEmail,
     deleted: row.deleted,
     recurrenceId: row.recurrenceId,
+    recurrenceRule: row.recurrenceRule,
   };
 }

@@ -27,8 +27,13 @@ async function main(): Promise<void> {
 
   console.log(`\nFirst ${limit} raw events on "${calendarId}", normalized:\n`);
 
+  const window = {
+    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    end: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+  };
+
   let printed = 0;
-  outer: for await (const batch of provider.fullSync(calendarId)) {
+  outer: for await (const batch of provider.fullSync(calendarId, window)) {
     for (const raw of batch.events as calendar_v3.Schema$Event[]) {
       if (printed >= limit) break outer;
       printed += 1;
@@ -55,7 +60,8 @@ async function main(): Promise<void> {
 
       try {
         console.log("--- normalized ---");
-        console.log(JSON.stringify(provider.normalizeEvent(raw, { source: label }), null, 2));
+        const normalized = await provider.normalizeEvent(raw, { source: label, calendarId });
+        console.log(JSON.stringify(normalized, null, 2));
       } catch (error) {
         console.log("--- normalize FAILED ---");
         console.log(error instanceof Error ? error.message : error);

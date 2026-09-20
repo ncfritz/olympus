@@ -60,6 +60,7 @@ export function EventsCalendarView({
   onClear,
   colorForSource,
   timelineSettings,
+  onVisibleRangeChange,
 }: {
   mode: CalendarViewMode;
   events: CalendarEntry[];
@@ -76,6 +77,8 @@ export function EventsCalendarView({
   colorForSource: (source: string) => string;
   /** Day-start/day-end window, weekend handling, and timezone for the status timeline strip — see lib/settings. */
   timelineSettings: TimelineSettings;
+  /** Fired whenever FullCalendar's visible range changes (prev/next/today/view switch) — lets the parent scope its own event fetch to what's actually on screen. */
+  onVisibleRangeChange?: (range: { start: string; end: string }) => void;
 }) {
   const { token } = theme.useToken();
 
@@ -228,10 +231,9 @@ export function EventsCalendarView({
         selectMirror
         unselectAuto
         datesSet={(arg: DatesSetArg) => {
-          setVisibleRange({
-            start: arg.start.toISOString(),
-            end: arg.end.toISOString(),
-          });
+          const range = { start: arg.start.toISOString(), end: arg.end.toISOString() };
+          setVisibleRange(range);
+          onVisibleRangeChange?.(range);
         }}
         select={(info: DateSelectArg) => {
           // `.start`/`.end` are real Date instants — toISOString() always
@@ -264,8 +266,15 @@ export function EventsCalendarView({
           ...events.map((entry) => ({
             id: entry.id,
             title: entry.subject,
-            start: entry.startTime,
-            end: entry.endTime,
+            // An all-day entry's start/endTime are UTC-midnight instants
+            // (see the API's all-day mapping) purely to encode a plain
+            // calendar date — passed as full instants, FullCalendar (running
+            // in the browser's local zone) would convert them back to local
+            // time to find the date, rolling it back a day in any timezone
+            // behind UTC. Slicing to the date-only portion feeds FullCalendar
+            // an unambiguous calendar date instead of an instant to convert.
+            start: entry.allDay ? entry.startTime.slice(0, 10) : entry.startTime,
+            end: entry.allDay ? entry.endTime.slice(0, 10) : entry.endTime,
             allDay: entry.allDay,
             // Same body regardless of status (color comes from the flag bar
             // instead — see eventContent below) — these are first-class

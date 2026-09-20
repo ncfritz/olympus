@@ -78,6 +78,15 @@ export interface CanonicalCalendarEvent {
   recurrenceId: string | null;
   /** 19. The configured calendar/account label this event came from. */
   source: string;
+  /**
+   * 20. The provider's own recurrence description for this event's series,
+   * if any — RFC5545 RRULE/EXDATE lines (newline-joined) for Google, a
+   * JSON-serialized Graph `recurrence` pattern for Microsoft. Recorded for
+   * reference/debugging only: this app never parses or expands it itself,
+   * since it syncs already-expanded per-occurrence events from the provider
+   * (see CalendarProvider.fullSync's SyncWindow).
+   */
+  recurrenceRule: string | null;
 }
 
 /** `source` and `uid` already guarantee uniqueness, so the id is just their composite — no hash needed. */
@@ -107,4 +116,13 @@ export interface SyncState {
   channelToken: string | null;
   /** When this row was last written — i.e. when a full or incremental sync last completed. Absent when constructing a state to save (the store stamps it). */
   lastSyncedAt?: string;
+  /**
+   * When a *full* sync last completed — distinct from lastSyncedAt, which
+   * also updates on every incremental sync. SyncEngine uses this to decide
+   * when the bounded sync window (see CalendarProvider.fullSync) has gone
+   * stale and needs re-establishing with a fresh window, since an
+   * incremental sync's token keeps whatever window was active when it was
+   * issued and never rolls it forward on its own.
+   */
+  lastFullSyncAt: string | null;
 }

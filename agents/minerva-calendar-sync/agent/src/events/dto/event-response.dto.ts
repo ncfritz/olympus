@@ -37,4 +37,11 @@ export class EventResponseDto implements CanonicalCalendarEvent {
   @ApiProperty() uid: string;
   @ApiPropertyOptional({ nullable: true, type: String }) recurrenceId: string | null;
   @ApiProperty() source: string;
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    description:
+      "The provider's own recurrence description (RRULE lines for Google, a serialized Graph recurrence pattern for Microsoft) — recorded for reference only, never parsed or expanded by this app",
+  })
+  recurrenceRule: string | null;
 }

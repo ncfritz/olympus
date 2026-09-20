@@ -644,6 +644,8 @@ export interface components {
             uid: string;
             recurrenceId?: string | null;
             source: string;
+            /** @description The provider's own recurrence description (RRULE lines for Google, a serialized Graph recurrence pattern for Microsoft) — recorded for reference only, never parsed or expanded by this app */
+            recurrenceRule?: string | null;
         };
         EventOverrideResponseDto: {
             eventId: string;

@@ -1,5 +1,8 @@
+import { SyncWindow } from "../../../../src/providers/calendar-provider";
 import { MicrosoftCalendarProvider } from "../../../../src/providers/microsoft/microsoft-calendar-provider";
 import { MicrosoftAccessTokenProvider } from "../../../../src/providers/microsoft/microsoft-oauth";
+
+const WINDOW: SyncWindow = { start: "2026-01-01T00:00:00.000Z", end: "2026-07-01T00:00:00.000Z" };
 
 function jsonResponse(body: unknown, status = 200): Response {
   return {
@@ -93,14 +96,14 @@ describe("MicrosoftCalendarProvider", () => {
   });
 
   describe("fullSync", () => {
-    it("queries the delta endpoint without $top and yields the final page's deltaLink as the sync token", async () => {
+    it("queries the calendarView delta endpoint (bounded by the window, without $top) and yields the final page's deltaLink as the sync token", async () => {
       const { provider, fetchMock } = providerWithMockFetch();
       fetchMock.mockResolvedValueOnce(
-        jsonResponse({ value: [{ id: "evt-1" }], "@odata.deltaLink": "https://graph.microsoft.com/v1.0/me/events/delta?token=abc" }),
+        jsonResponse({ value: [{ id: "evt-1" }], "@odata.deltaLink": "https://graph.microsoft.com/v1.0/me/calendarView/delta?token=abc" }),
       );
 
       const batches = [];
-      for await (const batch of provider.fullSync("primary")) {
+      for await (const batch of provider.fullSync("primary", WINDOW)) {
         batches.push(batch);
       }
 
@@ -108,19 +111,33 @@ describe("MicrosoftCalendarProvider", () => {
         {
           events: [{ id: "evt-1" }],
           nextPageToken: undefined,
-          nextSyncToken: "https://graph.microsoft.com/v1.0/me/events/delta?token=abc",
+          nextSyncToken: "https://graph.microsoft.com/v1.0/me/calendarView/delta?token=abc",
         },
       ]);
       const [url] = fetchMock.mock.calls[0];
-      expect(url).toBe("https://graph.microsoft.com/v1.0/me/events/delta");
+      expect(url).toBe(
+        `https://graph.microsoft.com/v1.0/me/calendarView/delta?startDateTime=${encodeURIComponent(WINDOW.start)}&endDateTime=${encodeURIComponent(WINDOW.end)}`,
+      );
       expect(url).not.toContain("$top");
+    });
+
+    it("scopes calendarView to a non-default calendar", async () => {
+      const { provider, fetchMock } = providerWithMockFetch();
+      fetchMock.mockResolvedValueOnce(jsonResponse({ value: [], "@odata.deltaLink": "https://graph.microsoft.com/v1.0/delta?token=x" }));
+
+      for await (const batch of provider.fullSync("cal-1", WINDOW)) {
+        void batch;
+      }
+
+      const [url] = fetchMock.mock.calls[0];
+      expect(url).toContain("/me/calendars/cal-1/calendarView/delta?");
     });
 
     it("sends the page size via the Prefer header instead of $top", async () => {
       const { provider, fetchMock } = providerWithMockFetch();
       fetchMock.mockResolvedValueOnce(jsonResponse({ value: [], "@odata.deltaLink": "https://graph.microsoft.com/v1.0/delta?token=x" }));
 
-      for await (const batch of provider.fullSync("primary")) {
+      for await (const batch of provider.fullSync("primary", WINDOW)) {
         void batch;
       }
 
@@ -141,7 +158,7 @@ describe("MicrosoftCalendarProvider", () => {
         );
 
       const batches = [];
-      for await (const batch of provider.fullSync("primary")) {
+      for await (const batch of provider.fullSync("primary", WINDOW)) {
         batches.push(batch);
       }
 
@@ -196,6 +213,60 @@ describe("MicrosoftCalendarProvider", () => {
         { id: "cal-1", summary: "Calendar", primary: true },
         { id: "cal-2", summary: "Shared", primary: false },
       ]);
+    });
+  });
+
+  describe("normalizeEvent", () => {
+    const occurrence = (id: string) => ({
+      id,
+      subject: "Standup",
+      isCancelled: false,
+      seriesMasterId: "master-1",
+      start: { dateTime: "2026-01-05T15:00:00.0000000" },
+      end: { dateTime: "2026-01-05T15:30:00.0000000" },
+    });
+
+    it("resolves a plain occurrence's recurrenceRule from its series master, caching across occurrences of the same series", async () => {
+      const { provider, fetchMock } = providerWithMockFetch();
+      fetchMock.mockResolvedValue(
+        jsonResponse({ id: "master-1", recurrence: { pattern: { type: "weekly" }, range: { type: "noEnd" } } }),
+      );
+
+      const first = await provider.normalizeEvent(occurrence("occ-1"), { source: "work", calendarId: "primary" });
+      const second = await provider.normalizeEvent(occurrence("occ-2"), { source: "work", calendarId: "primary" });
+
+      const expected = JSON.stringify({ pattern: { type: "weekly" }, range: { type: "noEnd" } });
+      expect(first.recurrenceRule).toBe(expected);
+      expect(second.recurrenceRule).toBe(expected);
+      // One lookup for the whole series, not one per occurrence.
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith("https://graph.microsoft.com/v1.0/me/events/master-1", expect.anything());
+    });
+
+    it("reads recurrenceRule directly off the event when it's a series master itself, without a lookup", async () => {
+      const { provider, fetchMock } = providerWithMockFetch();
+      const master = {
+        id: "master-1",
+        subject: "Standup",
+        isCancelled: false,
+        recurrence: { pattern: { type: "daily" }, range: { type: "noEnd" } },
+        start: { dateTime: "2026-01-05T15:00:00.0000000" },
+        end: { dateTime: "2026-01-05T15:30:00.0000000" },
+      };
+
+      const result = await provider.normalizeEvent(master, { source: "work", calendarId: "primary" });
+
+      expect(result.recurrenceRule).toBe(JSON.stringify(master.recurrence));
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("resolves to null, without failing, when the master lookup errors", async () => {
+      const { provider, fetchMock } = providerWithMockFetch();
+      fetchMock.mockResolvedValue(jsonResponse({ error: "nope" }, 404));
+
+      const result = await provider.normalizeEvent(occurrence("occ-1"), { source: "work", calendarId: "primary" });
+
+      expect(result.recurrenceRule).toBeNull();
     });
   });
 });

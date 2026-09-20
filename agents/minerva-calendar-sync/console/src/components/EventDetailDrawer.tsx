@@ -87,8 +87,12 @@ export function EventDetailDrawer({
           <Descriptions column={1} size="small" bordered>
             <Descriptions.Item label="Subject">{event.subject}</Descriptions.Item>
             <Descriptions.Item label="Source">{event.source}</Descriptions.Item>
-            <Descriptions.Item label="Start">{new Date(event.startTime).toLocaleString()}</Descriptions.Item>
-            <Descriptions.Item label="End">{new Date(event.endTime).toLocaleString()}</Descriptions.Item>
+            <Descriptions.Item label="Start">
+              {event.allDay ? event.startTime.slice(0, 10) : new Date(event.startTime).toLocaleString()}
+            </Descriptions.Item>
+            <Descriptions.Item label="End">
+              {event.allDay ? event.endTime.slice(0, 10) : new Date(event.endTime).toLocaleString()}
+            </Descriptions.Item>
             <Descriptions.Item label="Duration">{event.duration} min</Descriptions.Item>
             <Descriptions.Item label="All day">{event.allDay ? "Yes" : "No"}</Descriptions.Item>
             <Descriptions.Item label="Location">{event.location ?? "—"}</Descriptions.Item>
@@ -99,6 +103,15 @@ export function EventDetailDrawer({
             <Descriptions.Item label="Type">{event.type}</Descriptions.Item>
             <Descriptions.Item label="Occurrence">{event.occurrenceType}</Descriptions.Item>
             <Descriptions.Item label="Recurrence ID">{event.recurrenceId ?? "—"}</Descriptions.Item>
+            <Descriptions.Item label="Recurrence rule">
+              {event.recurrenceRule ? (
+                <Typography.Text code ellipsis={{ tooltip: event.recurrenceRule }} style={{ maxWidth: 320 }}>
+                  {event.recurrenceRule}
+                </Typography.Text>
+              ) : (
+                "—"
+              )}
+            </Descriptions.Item>
             <Descriptions.Item label="Response">{event.response}</Descriptions.Item>
             <Descriptions.Item label="Reminder">{event.reminder ? "Yes" : "No"}</Descriptions.Item>
             <Descriptions.Item label="Cancelled">

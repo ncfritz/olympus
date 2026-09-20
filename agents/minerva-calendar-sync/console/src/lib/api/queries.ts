@@ -204,6 +204,9 @@ export interface EventFilters {
   showCancelled: boolean;
   showDeleted: boolean;
   limit: number;
+  /** ISO-8601. Scopes the fetch to the calendar's currently-visible date range — omitted in List view, which browses everything by recency instead. */
+  startsAfter?: string;
+  startsBefore?: string;
 }
 
 export async function fetchEvents(filters: EventFilters): Promise<EventDto[]> {
@@ -213,6 +216,8 @@ export async function fetchEvents(filters: EventFilters): Promise<EventDto[]> {
         cancelled: filters.showCancelled ? undefined : false,
         deleted: filters.showDeleted ? undefined : false,
         limit: filters.limit,
+        startsAfter: filters.startsAfter,
+        startsBefore: filters.startsBefore,
       },
     },
   });

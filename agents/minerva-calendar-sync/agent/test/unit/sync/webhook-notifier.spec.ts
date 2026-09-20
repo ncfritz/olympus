@@ -153,6 +153,7 @@ describe("WebhookNotifier", () => {
       resourceId: null,
       channelExpiration: null,
       channelToken: null,
+      lastFullSyncAt: null,
     });
 
     const notifier = buildNotifier([PUSH_CALENDAR], "https://example.com");

@@ -20,7 +20,7 @@ const ctx = { source: "work-o365" };
 
 describe("mapMicrosoftEventToCanonical", () => {
   it("maps the common fields, using Graph's own id as uid", () => {
-    const result = mapMicrosoftEventToCanonical(baseEvent(), ctx);
+    const result = mapMicrosoftEventToCanonical(baseEvent(), ctx, null);
 
     expect(result.id).toBe("work-o365:graph-id-1");
     expect(result.uid).toBe("graph-id-1");
@@ -33,7 +33,7 @@ describe("mapMicrosoftEventToCanonical", () => {
   });
 
   it("defaults a missing subject to '(No title)'", () => {
-    const result = mapMicrosoftEventToCanonical(baseEvent({ subject: undefined }), ctx);
+    const result = mapMicrosoftEventToCanonical(baseEvent({ subject: undefined }), ctx, null);
     expect(result.subject).toBe("(No title)");
   });
 
@@ -45,6 +45,7 @@ describe("mapMicrosoftEventToCanonical", () => {
         end: { dateTime: "2026-01-06T00:00:00.0000000" },
       }),
       ctx,
+      null,
     );
 
     expect(result.allDay).toBe(true);
@@ -60,7 +61,7 @@ describe("mapMicrosoftEventToCanonical", () => {
     [undefined, "normal"],
     ["not-a-real-value", "normal"],
   ] as const)("maps Graph sensitivity %s to %s", (sensitivity, expected) => {
-    const result = mapMicrosoftEventToCanonical(baseEvent({ sensitivity }), ctx);
+    const result = mapMicrosoftEventToCanonical(baseEvent({ sensitivity }), ctx, null);
     expect(result.sensitivity).toBe(expected);
   });
 
@@ -70,40 +71,41 @@ describe("mapMicrosoftEventToCanonical", () => {
     [undefined, "normal"],
     ["not-a-real-value", "normal"],
   ] as const)("maps Graph importance %s to %s", (importance, expected) => {
-    const result = mapMicrosoftEventToCanonical(baseEvent({ importance }), ctx);
+    const result = mapMicrosoftEventToCanonical(baseEvent({ importance }), ctx, null);
     expect(result.importance).toBe(expected);
   });
 
   it("classifies occurrenceType from Graph's type field directly", () => {
-    expect(mapMicrosoftEventToCanonical(baseEvent({ type: "singleInstance" }), ctx).occurrenceType).toBe("single");
-    expect(mapMicrosoftEventToCanonical(baseEvent({ type: "occurrence" }), ctx).occurrenceType).toBe("occurrence");
-    expect(mapMicrosoftEventToCanonical(baseEvent({ type: "exception" }), ctx).occurrenceType).toBe("occurrence");
-    expect(mapMicrosoftEventToCanonical(baseEvent({ type: "seriesMaster" }), ctx).occurrenceType).toBe(
+    expect(mapMicrosoftEventToCanonical(baseEvent({ type: "singleInstance" }), ctx, null).occurrenceType).toBe("single");
+    expect(mapMicrosoftEventToCanonical(baseEvent({ type: "occurrence" }), ctx, null).occurrenceType).toBe("occurrence");
+    expect(mapMicrosoftEventToCanonical(baseEvent({ type: "exception" }), ctx, null).occurrenceType).toBe("occurrence");
+    expect(mapMicrosoftEventToCanonical(baseEvent({ type: "seriesMaster" }), ctx, null).occurrenceType).toBe(
       "series_master",
     );
   });
 
   it("carries seriesMasterId through as recurrenceId", () => {
-    const result = mapMicrosoftEventToCanonical(baseEvent({ seriesMasterId: "master-1" }), ctx);
+    const result = mapMicrosoftEventToCanonical(baseEvent({ seriesMasterId: "master-1" }), ctx, null);
     expect(result.recurrenceId).toBe("master-1");
   });
 
   it("classifies type from attendee presence", () => {
-    expect(mapMicrosoftEventToCanonical(baseEvent(), ctx).type).toBe("appointment");
+    expect(mapMicrosoftEventToCanonical(baseEvent(), ctx, null).type).toBe("appointment");
     expect(
-      mapMicrosoftEventToCanonical(baseEvent({ attendees: [{ emailAddress: { address: "a@x.com" } }] }), ctx).type,
+      mapMicrosoftEventToCanonical(baseEvent({ attendees: [{ emailAddress: { address: "a@x.com" } }] }), ctx, null).type,
     ).toBe("meeting");
   });
 
   it("reads reminder directly from isReminderOn", () => {
-    expect(mapMicrosoftEventToCanonical(baseEvent({ isReminderOn: false }), ctx).reminder).toBe(false);
-    expect(mapMicrosoftEventToCanonical(baseEvent({ isReminderOn: true }), ctx).reminder).toBe(true);
+    expect(mapMicrosoftEventToCanonical(baseEvent({ isReminderOn: false }), ctx, null).reminder).toBe(false);
+    expect(mapMicrosoftEventToCanonical(baseEvent({ isReminderOn: true }), ctx, null).reminder).toBe(true);
   });
 
   it("maps response: isOrganizer takes priority over responseStatus", () => {
     const result = mapMicrosoftEventToCanonical(
       baseEvent({ isOrganizer: true, responseStatus: { response: "declined" } }),
       ctx,
+      null,
     );
     expect(result.response).toBe("organizer");
   });
@@ -114,12 +116,12 @@ describe("mapMicrosoftEventToCanonical", () => {
     ["tentativelyAccepted", "tentative"],
     ["notResponded", "needs_action"],
   ] as const)("maps Graph responseStatus.response %s to %s", (response, expected) => {
-    const result = mapMicrosoftEventToCanonical(baseEvent({ isOrganizer: false, responseStatus: { response } }), ctx);
+    const result = mapMicrosoftEventToCanonical(baseEvent({ isOrganizer: false, responseStatus: { response } }), ctx, null);
     expect(result.response).toBe(expected);
   });
 
   it("defaults response to accepted with no organizer flag and no tracked response", () => {
-    expect(mapMicrosoftEventToCanonical(baseEvent(), ctx).response).toBe("accepted");
+    expect(mapMicrosoftEventToCanonical(baseEvent(), ctx, null).response).toBe("accepted");
   });
 
   it.each([
@@ -131,16 +133,24 @@ describe("mapMicrosoftEventToCanonical", () => {
     ["unknown", "busy"],
     [undefined, "busy"],
   ] as const)("maps Graph showAs %s to free/busy status %s", (showAs, expected) => {
-    const result = mapMicrosoftEventToCanonical(baseEvent({ showAs }), ctx);
+    const result = mapMicrosoftEventToCanonical(baseEvent({ showAs }), ctx, null);
     expect(result.status).toBe(expected);
   });
 
   it("maps cancelled from Graph's isCancelled field", () => {
-    expect(mapMicrosoftEventToCanonical(baseEvent({ isCancelled: true }), ctx).cancelled).toBe(true);
+    expect(mapMicrosoftEventToCanonical(baseEvent({ isCancelled: true }), ctx, null).cancelled).toBe(true);
   });
 
   it("throws when start or end is missing", () => {
-    expect(() => mapMicrosoftEventToCanonical(baseEvent({ start: undefined }), ctx)).toThrow();
+    expect(() => mapMicrosoftEventToCanonical(baseEvent({ start: undefined }), ctx, null)).toThrow();
+  });
+
+  it("carries the resolved recurrenceRule straight through onto the canonical event", () => {
+    // The mapper never reads raw.recurrence itself for this — see its doc
+    // comment — it just trusts whatever the caller already resolved.
+    const serialized = JSON.stringify({ pattern: { type: "weekly" }, range: { type: "noEnd" } });
+    expect(mapMicrosoftEventToCanonical(baseEvent(), ctx, serialized).recurrenceRule).toBe(serialized);
+    expect(mapMicrosoftEventToCanonical(baseEvent(), ctx, null).recurrenceRule).toBeNull();
   });
 });
 

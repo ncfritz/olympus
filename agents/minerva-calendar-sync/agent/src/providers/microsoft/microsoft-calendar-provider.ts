@@ -7,6 +7,7 @@ import {
   RawEventBatch,
   RemovalTombstone,
   SyncTokenExpiredError,
+  SyncWindow,
 } from "../calendar-provider";
 import { isMicrosoftRemoval, mapMicrosoftEventToCanonical, MicrosoftGraphEvent, resolveMicrosoftRemoval } from "./microsoft-event-mapper";
 import { MicrosoftAccessTokenProvider } from "./microsoft-oauth";
@@ -16,6 +17,13 @@ const PAGE_SIZE = 250;
 // Graph's own max subscription lifetime for the /events resource is ~4230
 // minutes (just under 3 days) — request a hair under that as a safety margin.
 const SUBSCRIPTION_TTL_MS = 3 * 24 * 60 * 60 * 1000 - 10 * 60 * 1000;
+// See GoogleCalendarProvider's identical constant for the reasoning.
+const RECURRENCE_RULE_CACHE_TTL_MS = 10 * 60_000;
+
+interface CachedRecurrenceRule {
+  value: Promise<string | null>;
+  expiresAt: number;
+}
 
 interface GraphCalendarListResponse {
   value: Array<{ id: string; name?: string; isDefaultCalendar?: boolean }>;
@@ -43,6 +51,7 @@ class GraphRequestError extends Error {
 
 export class MicrosoftCalendarProvider implements CalendarProvider {
   readonly id = "microsoft";
+  private readonly recurrenceRuleCache = new Map<string, CachedRecurrenceRule>();
 
   constructor(private readonly auth: MicrosoftAccessTokenProvider) {}
 
@@ -61,8 +70,8 @@ export class MicrosoftCalendarProvider implements CalendarProvider {
     return calendars;
   }
 
-  async *fullSync(calendarId: string): AsyncIterable<RawEventBatch> {
-    let url: string | undefined = this.deltaUrl(calendarId);
+  async *fullSync(calendarId: string, window: SyncWindow): AsyncIterable<RawEventBatch> {
+    let url: string | undefined = this.deltaUrl(calendarId, window);
 
     while (url) {
       const data: GraphEventDeltaResponse = await this.request(url);
@@ -104,8 +113,32 @@ export class MicrosoftCalendarProvider implements CalendarProvider {
     return { events, nextSyncToken: deltaLink };
   }
 
-  normalizeEvent(raw: unknown, ctx: { source: string }): CanonicalCalendarEvent {
-    return mapMicrosoftEventToCanonical(raw as MicrosoftGraphEvent, ctx);
+  async normalizeEvent(raw: unknown, ctx: { source: string; calendarId: string }): Promise<CanonicalCalendarEvent> {
+    const event = raw as MicrosoftGraphEvent;
+    const recurrenceRule = event.seriesMasterId
+      ? await this.getRecurrenceRule(event.seriesMasterId)
+      : (event.recurrence ? JSON.stringify(event.recurrence) : null);
+    return mapMicrosoftEventToCanonical(event, ctx, recurrenceRule);
+  }
+
+  /**
+   * An expanded calendarView occurrence doesn't carry its series'
+   * `recurrence` pattern — only the master resource does — so this fetches
+   * it directly. `/me/events/{id}` addresses an event by id regardless of
+   * which calendar folder it's actually in, so no calendarId is needed here.
+   * Cached like Google's equivalent lookup, for the same reason.
+   */
+  private getRecurrenceRule(masterEventId: string): Promise<string | null> {
+    const cached = this.recurrenceRuleCache.get(masterEventId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.value;
+    }
+
+    const value = this.request<MicrosoftGraphEvent>(`${GRAPH_BASE}/me/events/${masterEventId}`)
+      .then((master) => (master.recurrence ? JSON.stringify(master.recurrence) : null))
+      .catch(() => null);
+    this.recurrenceRuleCache.set(masterEventId, { value, expiresAt: Date.now() + RECURRENCE_RULE_CACHE_TTL_MS });
+    return value;
   }
 
   isRemoval(raw: unknown): boolean {
@@ -139,13 +172,26 @@ export class MicrosoftCalendarProvider implements CalendarProvider {
     await this.request(`${GRAPH_BASE}/subscriptions/${channel.id}`, { method: "DELETE" });
   }
 
-  private deltaUrl(calendarId: string): string {
+  /**
+   * `/calendarView/delta` (not `/events/delta`) is what makes Graph expand
+   * recurring series into individually-dated occurrences instead of
+   * returning one series-master resource per series — the startDateTime/
+   * endDateTime bounds are required for it and, like Google's sync token,
+   * get baked into the returned deltaLink for every later incremental call.
+   */
+  private deltaUrl(calendarId: string, window: SyncWindow): string {
     // Unlike a plain collection endpoint, delta/change-tracking queries
     // reject $top outright (400 ErrorInvalidUrlQuery) — page size is instead
     // requested via the Prefer: odata.maxpagesize= header (see request()),
     // which every subsequent @odata.nextLink/@odata.deltaLink-driven call
     // must keep resending since it's a header, not part of the URL.
-    return `${GRAPH_BASE}/${this.eventsResource(calendarId)}/delta`;
+    const params = new URLSearchParams({ startDateTime: window.start, endDateTime: window.end });
+    return `${GRAPH_BASE}/${this.calendarViewResource(calendarId)}/delta?${params}`;
+  }
+
+  private calendarViewResource(calendarId: string): string {
+    // SyncedCalendarConfig accepts "primary" as a shorthand for the account's default calendar.
+    return calendarId === "primary" ? "me/calendarView" : `me/calendars/${calendarId}/calendarView`;
   }
 
   private eventsResource(calendarId: string): string {

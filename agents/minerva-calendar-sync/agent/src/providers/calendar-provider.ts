@@ -7,6 +7,20 @@ export interface ProviderCalendar {
   primary: boolean;
 }
 
+/**
+ * The bounded date range a full sync fetches events within — see
+ * SyncEngine's window computation. Both providers ask the remote API to
+ * expand recurring series into individually-dated occurrences (Google's
+ * `singleEvents: true`, Microsoft's `/calendarView`), and that expansion is
+ * only ever done over a bounded range — there's no "expand forever" mode.
+ */
+export interface SyncWindow {
+  /** ISO-8601, inclusive. */
+  start: string;
+  /** ISO-8601, exclusive. */
+  end: string;
+}
+
 /** One page of raw, provider-native events from a full (from-scratch) sync. */
 export interface RawEventBatch {
   events: unknown[];
@@ -59,14 +73,21 @@ export interface CalendarProvider {
 
   listCalendars(): Promise<ProviderCalendar[]>;
 
-  /** Pages through every event currently on the calendar, for a from-scratch sync. */
-  fullSync(calendarId: string): AsyncIterable<RawEventBatch>;
+  /** Pages through every event (recurring series expanded into their individual occurrences) within `window`, for a from-scratch sync. */
+  fullSync(calendarId: string, window: SyncWindow): AsyncIterable<RawEventBatch>;
 
-  /** Fetches everything changed since `syncToken`. Throws SyncTokenExpiredError if it's stale. */
+  /** Fetches everything changed since `syncToken`, within whatever window was active when that token was issued. Throws SyncTokenExpiredError if it's stale. */
   incrementalSync(calendarId: string, syncToken: string): Promise<IncrementalResult>;
 
-  /** Converts one provider-native raw event into the canonical shape. */
-  normalizeEvent(raw: unknown, ctx: { source: string }): CanonicalCalendarEvent;
+  /**
+   * Converts one provider-native raw event into the canonical shape.
+   * Async because a plain recurring occurrence doesn't carry its series'
+   * recurrence rule inline — capturing it (for CanonicalCalendarEvent.recurrenceRule)
+   * takes a separate lookup of the series-master event. `calendarId` is
+   * here (alongside `source`, already used for tagging) because that
+   * lookup needs it.
+   */
+  normalizeEvent(raw: unknown, ctx: { source: string; calendarId: string }): Promise<CanonicalCalendarEvent>;
 
   /**
    * True when `raw` is a minimal removal record, as incremental/delta sync

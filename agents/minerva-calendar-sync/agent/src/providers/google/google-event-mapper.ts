@@ -31,14 +31,22 @@ export function isGoogleRemoval(raw: GoogleEvent): boolean {
  * documented best-effort heuristic. If a stored row doesn't actually match
  * (imported event, convention doesn't hold), the mark-as-removed call is a
  * harmless no-op — the next full resync's diff pass catches it regardless.
+ *
+ * For an occurrence of a recurring series (`recurringEventId` set), iCalUID
+ * is shared by every instance of the series — it identifies the series, not
+ * this specific date — so it must never be used as the uid here even when
+ * present, or a removal would collide with (and could wrongly affect) every
+ * other occurrence's stored row. The instance's own `id` is unique per
+ * occurrence, so that's what this derives the uid from instead.
  */
 export function resolveGoogleRemoval(raw: GoogleEvent): RemovalTombstone {
   if (!raw.id) {
     throw new Error("Google removal record has no id");
   }
+  const isOccurrence = Boolean(raw.recurringEventId);
   return {
-    uid: raw.iCalUID ?? `${raw.id}@google.com`,
-    isOccurrence: Boolean(raw.recurringEventId),
+    uid: isOccurrence ? `${raw.id}@google.com` : (raw.iCalUID ?? `${raw.id}@google.com`),
+    isOccurrence,
   };
 }
 
@@ -46,20 +54,32 @@ export function resolveGoogleRemoval(raw: GoogleEvent): RemovalTombstone {
  * Google Calendar's API has no native equivalent for several of our fields
  * (importance, appointment/meeting/other type). Each of those is a
  * documented heuristic below, not something Google actually told us.
+ *
+ * `recurrenceRule` is passed in already-resolved rather than read off `raw`:
+ * with `singleEvents: true` (see GoogleCalendarProvider.fullSync), Google
+ * omits the `recurrence` field on individual occurrences — it only appears
+ * on the series-master resource, which the provider fetches separately (and
+ * caches) before calling this. This keeps the mapper a pure, synchronous
+ * function the rest of it already is.
  */
 export function mapGoogleEventToCanonical(
   raw: GoogleEvent,
   ctx: { source: string },
+  recurrenceRule: string | null,
 ): CanonicalCalendarEvent {
   if (!raw.id) {
     throw new Error("Google event has no id");
   }
 
-  // Normally always present, but some legacy/malformed recurring instances
-  // come back without it even when not cancelled — same documented
-  // derivation heuristic as resolveGoogleRemoval, rather than failing the
-  // whole sync over one odd event.
-  const uid = raw.iCalUID ?? `${raw.id}@google.com`;
+  // iCalUID is shared by every occurrence of a recurring series — it names
+  // the series, not this specific date — so an occurrence must be keyed by
+  // its own (per-instance-unique) Google id instead, or all its occurrences
+  // collapse onto a single stored row, each sync overwriting the last one
+  // processed. A master or a genuinely single event has a real per-event
+  // iCalUID, which legacy/malformed events occasionally lack even when not
+  // cancelled — same documented derivation heuristic as resolveGoogleRemoval,
+  // rather than failing the whole sync over one odd event.
+  const uid = raw.recurringEventId ? `${raw.id}@google.com` : (raw.iCalUID ?? `${raw.id}@google.com`);
   const { startTime, endTime, allDay } = mapTimes(raw);
 
   return {
@@ -86,6 +106,7 @@ export function mapGoogleEventToCanonical(
     // so we store Google's id directly as a documented heuristic.
     recurrenceId: raw.recurringEventId ?? null,
     source: ctx.source,
+    recurrenceRule,
   };
 }
 

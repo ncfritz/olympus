@@ -64,6 +64,7 @@ describe("PrismaEventStore (SQLite)", () => {
       deleted: false,
       uid: "uid-disabled",
       recurrenceId: null,
+      recurrenceRule: null,
       source: "personal-gmail",
     };
 

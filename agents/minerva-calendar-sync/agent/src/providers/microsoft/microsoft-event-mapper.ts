@@ -25,6 +25,8 @@ export interface MicrosoftGraphEvent {
   isReminderOn?: boolean;
   type?: string;
   seriesMasterId?: string;
+  /** Only populated on a series-master resource — never on an occurrence/exception instance. */
+  recurrence?: { pattern: unknown; range: unknown };
   start?: { dateTime: string };
   end?: { dateTime: string };
   location?: { displayName?: string };
@@ -61,7 +63,18 @@ export function resolveMicrosoftRemoval(raw: MicrosoftGraphEvent): RemovalTombst
   };
 }
 
-export function mapMicrosoftEventToCanonical(raw: MicrosoftGraphEvent, ctx: { source: string }): CanonicalCalendarEvent {
+/**
+ * `recurrenceRule` is passed in already-resolved rather than read off `raw`:
+ * an expanded calendarView occurrence doesn't carry its series' `recurrence`
+ * pattern — only the series-master resource does, which the provider
+ * fetches separately (and caches) before calling this. Keeps this mapper a
+ * pure, synchronous function like the rest of it.
+ */
+export function mapMicrosoftEventToCanonical(
+  raw: MicrosoftGraphEvent,
+  ctx: { source: string },
+  recurrenceRule: string | null,
+): CanonicalCalendarEvent {
   const { startTime, endTime, allDay } = mapTimes(raw);
 
   return {
@@ -85,6 +98,7 @@ export function mapMicrosoftEventToCanonical(raw: MicrosoftGraphEvent, ctx: { so
     uid: raw.id,
     recurrenceId: raw.seriesMasterId ?? null,
     source: ctx.source,
+    recurrenceRule,
   };
 }
 

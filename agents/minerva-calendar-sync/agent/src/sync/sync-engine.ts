@@ -1,7 +1,8 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { buildCanonicalEventId, CanonicalCalendarEvent, SyncState } from "../domain/canonical-event";
 import { NewSyncRun, SyncRunEventChange, SyncRunTrigger, SyncRunType } from "../domain/sync-run";
-import { CalendarProvider, SyncTokenExpiredError } from "../providers/calendar-provider";
+import { CalendarProvider, SyncTokenExpiredError, SyncWindow } from "../providers/calendar-provider";
 import { CalendarProviderRegistry } from "../providers/calendar-provider-registry";
 import { CALENDAR_ENABLEMENT_STORE, CalendarEnablementStore } from "../store/calendar-enablement-store";
 import { EVENT_STORE, EventStore, UpsertResult } from "../store/event-store";
@@ -11,6 +12,17 @@ import { SyncedCalendarConfig } from "./synced-calendar-config";
 // Pragmatic cap for the full-sync deletion diff (see markVanishedEventsDeleted).
 // Fine for a personal/small-team calendar; would need real pagination well beyond this scale.
 const FULL_SYNC_DIFF_LIMIT = 10_000;
+
+const DEFAULT_SYNC_WINDOW_PAST_DAYS = 30;
+const DEFAULT_SYNC_WINDOW_FUTURE_DAYS = 180;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// A bounded sync window's syncToken/deltaLink freezes that window at
+// creation time — neither provider rolls it forward as time passes (see
+// SyncWindow's doc). Re-establishing it via a fresh full sync once a day
+// keeps a rolling window close enough to correct that a day's slack against
+// a window sized in weeks/months is negligible.
+const WINDOW_REFRESH_INTERVAL_MS = DAY_MS;
 
 /** Running counters + the individual event changes for one in-progress sync, built up as it goes and persisted at the end. */
 interface SyncTally {
@@ -34,13 +46,21 @@ function newTally(): SyncTally {
 export class SyncEngine {
   private readonly logger = new Logger(SyncEngine.name);
   private readonly inFlight = new Set<string>();
+  private readonly windowPastMs: number;
+  private readonly windowFutureMs: number;
 
   constructor(
     @Inject(EVENT_STORE) private readonly store: EventStore,
     @Inject(CALENDAR_ENABLEMENT_STORE) private readonly enablement: CalendarEnablementStore,
     private readonly providers: CalendarProviderRegistry,
     @Inject(SYNC_RUN_STORE) private readonly syncRuns: SyncRunStore,
-  ) {}
+    config: ConfigService,
+  ) {
+    this.windowPastMs =
+      (Number(config.get("SYNC_WINDOW_PAST_DAYS")) || DEFAULT_SYNC_WINDOW_PAST_DAYS) * DAY_MS;
+    this.windowFutureMs =
+      (Number(config.get("SYNC_WINDOW_FUTURE_DAYS")) || DEFAULT_SYNC_WINDOW_FUTURE_DAYS) * DAY_MS;
+  }
 
   /**
    * Syncs one configured calendar. Safe to call from multiple trigger
@@ -149,7 +169,7 @@ export class SyncEngine {
     const provider = this.providers.resolve(config);
     const state = await this.store.getSyncState(config.calendarId);
 
-    if (!state?.syncToken) {
+    if (!state?.syncToken || this.isWindowStale(state)) {
       await this.runFullSync(provider, config, state, tally);
       return "full";
     }
@@ -167,18 +187,38 @@ export class SyncEngine {
     }
   }
 
+  /**
+   * A bounded sync window's syncToken/deltaLink freezes that window at
+   * creation time (see SyncWindow) — this is what forces it to be
+   * re-established via a fresh full sync periodically, rather than only
+   * ever falling back to one reactively on outright token expiry.
+   */
+  private isWindowStale(state: SyncState): boolean {
+    if (!state.lastFullSyncAt) return true;
+    return Date.now() - Date.parse(state.lastFullSyncAt) > WINDOW_REFRESH_INTERVAL_MS;
+  }
+
+  private computeSyncWindow(): SyncWindow {
+    const now = Date.now();
+    return {
+      start: new Date(now - this.windowPastMs).toISOString(),
+      end: new Date(now + this.windowFutureMs).toISOString(),
+    };
+  }
+
   private async runFullSync(
     provider: CalendarProvider,
     config: SyncedCalendarConfig,
     existingState: SyncState | null,
     tally: SyncTally,
   ): Promise<void> {
+    const window = this.computeSyncWindow();
     const seenUids = new Set<string>();
     let nextSyncToken: string | undefined;
 
-    for await (const batch of provider.fullSync(config.calendarId)) {
+    for await (const batch of provider.fullSync(config.calendarId, window)) {
       for (const raw of batch.events) {
-        const canonical = this.normalizeForStorage(provider, raw, config);
+        const canonical = await this.normalizeForStorage(provider, raw, config);
         if (!canonical) continue;
         seenUids.add(canonical.uid);
         tally.total += 1;
@@ -188,7 +228,7 @@ export class SyncEngine {
       nextSyncToken = batch.nextSyncToken ?? nextSyncToken;
     }
 
-    await this.markVanishedEventsDeleted(config, seenUids, tally);
+    await this.markVanishedEventsDeleted(config, window, seenUids, tally);
 
     if (!nextSyncToken) {
       this.logger.warn(
@@ -208,6 +248,7 @@ export class SyncEngine {
       resourceId: existingState?.resourceId ?? null,
       channelExpiration: existingState?.channelExpiration ?? null,
       channelToken: existingState?.channelToken ?? null,
+      lastFullSyncAt: new Date().toISOString(),
     });
 
     this.logger.log(`Full sync of "${config.calendarId}" complete: ${seenUids.size} events`);
@@ -236,7 +277,7 @@ export class SyncEngine {
         continue;
       }
 
-      const canonical = this.normalizeForStorage(provider, raw, config);
+      const canonical = await this.normalizeForStorage(provider, raw, config);
       if (canonical) {
         const upsertResult = await this.store.upsertEvent(canonical);
         this.recordUpsert(tally, upsertResult, canonical);
@@ -293,14 +334,14 @@ export class SyncEngine {
    * normalize (missing fields Google itself can't explain) — one such event
    * is logged and skipped rather than aborting the sync of everything else.
    */
-  private normalizeForStorage(
+  private async normalizeForStorage(
     provider: CalendarProvider,
     raw: unknown,
     config: SyncedCalendarConfig,
-  ): CanonicalCalendarEvent | null {
+  ): Promise<CanonicalCalendarEvent | null> {
     let canonical: CanonicalCalendarEvent;
     try {
-      canonical = provider.normalizeEvent(raw, { source: config.source });
+      canonical = await provider.normalizeEvent(raw, { source: config.source, calendarId: config.calendarId });
     } catch (error) {
       this.logger.warn(
         `Skipping an event on "${config.calendarId}" that failed to normalize: ${
@@ -314,14 +355,23 @@ export class SyncEngine {
     return canonical.recurrenceId ? canonical : { ...canonical, deleted: true };
   }
 
+  /**
+   * Only ever compares against stored events that fall within the just-
+   * synced window — a full sync no longer sees the whole calendar (see
+   * SyncWindow), so anything stored outside it wasn't expected to show up
+   * regardless and must be left alone, not treated as vanished.
+   */
   private async markVanishedEventsDeleted(
     config: SyncedCalendarConfig,
+    window: SyncWindow,
     seenUids: Set<string>,
     tally: SyncTally,
   ): Promise<void> {
     const existing = await this.store.listEvents({
       source: config.source,
       deleted: false,
+      startsAfter: window.start,
+      startsBefore: window.end,
       limit: FULL_SYNC_DIFF_LIMIT,
     });
 

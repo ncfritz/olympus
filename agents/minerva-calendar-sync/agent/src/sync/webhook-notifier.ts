@@ -140,6 +140,7 @@ export class WebhookNotifier implements ChangeNotifier {
       resourceId: channel.resourceId,
       channelExpiration: channel.expiration,
       channelToken: token,
+      lastFullSyncAt: existing?.lastFullSyncAt ?? null,
     });
 
     this.logger.log(`Registered a push channel for "${calendar.calendarId}", expiring ${channel.expiration}`);

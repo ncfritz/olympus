@@ -2,6 +2,8 @@ import { execSync } from "child_process";
 import { mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
+import { ConfigService } from "@nestjs/config";
+
 import { CanonicalCalendarEvent } from "../../../src/domain/canonical-event";
 import {
   NewSyncRun,
@@ -18,6 +20,7 @@ import {
   RawEventBatch,
   RemovalTombstone,
   SyncTokenExpiredError,
+  SyncWindow,
 } from "../../../src/providers/calendar-provider";
 import { CalendarProviderRegistry } from "../../../src/providers/calendar-provider-registry";
 import { CalendarEnablementStore } from "../../../src/store/calendar-enablement-store";
@@ -37,6 +40,14 @@ const CONFIG: SyncedCalendarConfig = {
   enablePush: false,
 };
 
+// Relative to "now" (not a fixed date, unlike most other fixtureEvent
+// look-alikes in this test suite) — SyncEngine's window-bounded full sync
+// (see computeSyncWindow) filters markVanishedEventsDeleted's candidates by
+// startTime, so a fixed past date would eventually drift outside that
+// window and silently stop being a valid "in range" fixture.
+const FIXTURE_START = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+const FIXTURE_END = new Date(Date.now() + 24 * 60 * 60 * 1000 + 30 * 60 * 1000).toISOString();
+
 function fixtureEvent(overrides: Partial<CanonicalCalendarEvent> = {}): CanonicalCalendarEvent {
   const uid = overrides.uid ?? "uid-1";
   return {
@@ -48,8 +59,8 @@ function fixtureEvent(overrides: Partial<CanonicalCalendarEvent> = {}): Canonica
     type: "appointment",
     reminder: false,
     response: "accepted",
-    startTime: "2026-01-05T15:00:00.000Z",
-    endTime: "2026-01-05T15:30:00.000Z",
+    startTime: FIXTURE_START,
+    endTime: FIXTURE_END,
     duration: 30,
     allDay: false,
     status: "busy",
@@ -59,6 +70,7 @@ function fixtureEvent(overrides: Partial<CanonicalCalendarEvent> = {}): Canonica
     deleted: false,
     uid,
     recurrenceId: null,
+    recurrenceRule: null,
     source: CONFIG.source,
     ...overrides,
   };
@@ -70,14 +82,16 @@ class FakeCalendarProvider implements CalendarProvider {
   fullSyncBatches: RawEventBatch[] = [];
   fullSyncGate: Promise<void> = Promise.resolve();
   fullSyncCallCount = 0;
+  lastFullSyncWindow: SyncWindow | null = null;
   incrementalQueue: (IncrementalResult | Error)[] = [];
 
   async listCalendars(): Promise<ProviderCalendar[]> {
     return [];
   }
 
-  async *fullSync(): AsyncIterable<RawEventBatch> {
+  async *fullSync(_calendarId: string, window: SyncWindow): AsyncIterable<RawEventBatch> {
     this.fullSyncCallCount += 1;
+    this.lastFullSyncWindow = window;
     await this.fullSyncGate;
     for (const batch of this.fullSyncBatches) yield batch;
   }
@@ -89,7 +103,7 @@ class FakeCalendarProvider implements CalendarProvider {
     return next;
   }
 
-  normalizeEvent(raw: unknown, ctx: { source: string }): CanonicalCalendarEvent {
+  async normalizeEvent(raw: unknown, ctx: { source: string; calendarId: string }): Promise<CanonicalCalendarEvent> {
     const marker = raw as { __fail?: boolean };
     if (marker.__fail) throw new Error("normalize failed (test fixture)");
     return { ...(raw as CanonicalCalendarEvent), source: ctx.source };
@@ -183,7 +197,7 @@ describe("SyncEngine", () => {
     enablement = new FakeEnablementStore();
     syncRuns = new FakeSyncRunStore();
     const registry = { resolve: () => provider } as unknown as CalendarProviderRegistry;
-    engine = new SyncEngine(store, enablement, registry, syncRuns);
+    engine = new SyncEngine(store, enablement, registry, syncRuns, new ConfigService());
   });
 
   afterEach(async () => {
@@ -199,7 +213,48 @@ describe("SyncEngine", () => {
 
     const events = await store.listEvents({ source: CONFIG.source });
     expect(events.map((e) => e.uid).sort()).toEqual(["a", "b"]);
-    expect((await store.getSyncState(CONFIG.calendarId))?.syncToken).toBe("token-1");
+    const state = await store.getSyncState(CONFIG.calendarId);
+    expect(state?.syncToken).toBe("token-1");
+    expect(state?.lastFullSyncAt).toEqual(expect.any(String));
+  });
+
+  it("bounds the full sync to a window around the default past/future days", async () => {
+    provider.fullSyncBatches = [{ events: [fixtureEvent({ uid: "a" })], nextSyncToken: "token-1" }];
+    const before = Date.now();
+
+    await engine.syncOne(CONFIG, "manual");
+
+    const window = provider.lastFullSyncWindow;
+    expect(window).not.toBeNull();
+    // Defaults: 30 days back, 180 days forward (see SyncEngine's
+    // DEFAULT_SYNC_WINDOW_*_DAYS) — checked loosely against wall-clock time
+    // taken just before the sync ran, rather than asserting exact instants.
+    expect(Date.parse(window!.start)).toBeLessThan(before - 29 * 24 * 60 * 60 * 1000);
+    expect(Date.parse(window!.start)).toBeGreaterThan(before - 31 * 24 * 60 * 60 * 1000);
+    expect(Date.parse(window!.end)).toBeGreaterThan(before + 179 * 24 * 60 * 60 * 1000);
+    expect(Date.parse(window!.end)).toBeLessThan(before + 181 * 24 * 60 * 60 * 1000);
+  });
+
+  it("forces a fresh full sync once the window is stale, even with a valid sync token", async () => {
+    await store.saveSyncState(CONFIG.calendarId, {
+      calendarId: CONFIG.calendarId,
+      syncToken: "token-1",
+      channelId: null,
+      resourceId: null,
+      channelExpiration: null,
+      channelToken: null,
+      // Well past WINDOW_REFRESH_INTERVAL_MS (24h) — a valid syncToken alone
+      // shouldn't be enough to take the incremental path once this is stale.
+      lastFullSyncAt: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+    });
+    provider.fullSyncBatches = [{ events: [fixtureEvent({ uid: "a" })], nextSyncToken: "token-2" }];
+    provider.incrementalQueue = [{ events: [], nextSyncToken: "should-not-be-used" }];
+
+    await engine.syncOne(CONFIG, "manual");
+
+    expect(provider.fullSyncCallCount).toBe(1);
+    expect(provider.incrementalQueue).toHaveLength(1); // untouched
+    expect((await store.getSyncState(CONFIG.calendarId))?.syncToken).toBe("token-2");
   });
 
   it("skips an event that fails to normalize without aborting the rest of the sync", async () => {
@@ -224,6 +279,20 @@ describe("SyncEngine", () => {
     expect((await store.getEvent(CONFIG.source, "fresh"))?.deleted).toBe(false);
   });
 
+  it("leaves a stored event outside the sync window alone, rather than treating it as vanished", async () => {
+    // Far outside the default 30-day-past/180-day-future window — a full
+    // sync bounded to that window was never going to see this event either
+    // way, so its absence from fullSyncBatches shouldn't be read as "gone".
+    const longAgo = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000).toISOString();
+    await store.upsertEvent(fixtureEvent({ uid: "ancient", startTime: longAgo, endTime: longAgo }));
+    provider.fullSyncBatches = [{ events: [fixtureEvent({ uid: "fresh" })], nextSyncToken: "token-1" }];
+
+    await engine.syncOne(CONFIG, "manual");
+
+    expect((await store.getEvent(CONFIG.source, "ancient"))?.deleted).toBe(false);
+    expect((await store.getEvent(CONFIG.source, "fresh"))?.deleted).toBe(false);
+  });
+
   it("applies an incremental update to an existing event and advances the sync token", async () => {
     await store.upsertEvent(fixtureEvent({ uid: "a", subject: "Original" }));
     await store.saveSyncState(CONFIG.calendarId, {
@@ -233,6 +302,7 @@ describe("SyncEngine", () => {
       resourceId: null,
       channelExpiration: null,
       channelToken: null,
+      lastFullSyncAt: new Date().toISOString(),
     });
     provider.incrementalQueue = [
       { events: [fixtureEvent({ uid: "a", subject: "Updated" })], nextSyncToken: "token-2" },
@@ -253,6 +323,7 @@ describe("SyncEngine", () => {
       resourceId: null,
       channelExpiration: null,
       channelToken: null,
+      lastFullSyncAt: new Date().toISOString(),
     });
     provider.incrementalQueue = [
       { events: [removalRaw({ uid: "occ-1", isOccurrence: true })], nextSyncToken: "token-2" },
@@ -274,6 +345,7 @@ describe("SyncEngine", () => {
       resourceId: null,
       channelExpiration: null,
       channelToken: null,
+      lastFullSyncAt: new Date().toISOString(),
     });
     provider.incrementalQueue = [
       { events: [removalRaw({ uid: "solo-1", isOccurrence: false })], nextSyncToken: "token-2" },
@@ -292,6 +364,7 @@ describe("SyncEngine", () => {
       resourceId: null,
       channelExpiration: null,
       channelToken: null,
+      lastFullSyncAt: new Date().toISOString(),
     });
     provider.incrementalQueue = [new SyncTokenExpiredError(CONFIG.calendarId)];
     provider.fullSyncBatches = [{ events: [fixtureEvent({ uid: "a" })], nextSyncToken: "fresh-token" }];
@@ -373,6 +446,7 @@ describe("SyncEngine", () => {
         resourceId: null,
         channelExpiration: null,
         channelToken: null,
+        lastFullSyncAt: new Date().toISOString(),
       });
       provider.incrementalQueue = [{ events: [], nextSyncToken: "token-2" }];
 
@@ -390,6 +464,7 @@ describe("SyncEngine", () => {
         resourceId: null,
         channelExpiration: null,
         channelToken: null,
+        lastFullSyncAt: new Date().toISOString(),
       });
       provider.incrementalQueue = [{ events: [], nextSyncToken: "token-2" }];
 

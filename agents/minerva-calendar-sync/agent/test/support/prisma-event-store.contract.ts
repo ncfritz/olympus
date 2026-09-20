@@ -25,6 +25,7 @@ function fixtureEvent(overrides: Partial<CanonicalCalendarEvent> = {}): Canonica
     deleted: false,
     uid: "uid-1",
     recurrenceId: null,
+    recurrenceRule: null,
     source: "personal-gmail",
     ...overrides,
   };
@@ -128,6 +129,7 @@ export function testPrismaEventStoreContract(getStore: () => PrismaEventStore, g
       resourceId: "res-1",
       channelExpiration: "2026-02-01T00:00:00.000Z",
       channelToken: "secret-1",
+      lastFullSyncAt: null,
     });
 
     const state = await store.getSyncState(calendarId);
@@ -139,6 +141,7 @@ export function testPrismaEventStoreContract(getStore: () => PrismaEventStore, g
       resourceId: "res-1",
       channelExpiration: "2026-02-01T00:00:00.000Z",
       channelToken: "secret-1",
+      lastFullSyncAt: null,
       lastSyncedAt: state?.lastSyncedAt,
     });
 

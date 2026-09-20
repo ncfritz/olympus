@@ -105,6 +105,12 @@ export function EventsPanel({
     setView(next);
     saveViewPreference(next);
   }
+  // Only meaningful for the Month/Week/Day views — List browses everything
+  // by recency instead (see `filters` below) and never sets this.
+  const [calendarVisibleRange, setCalendarVisibleRange] = useState<{
+    start: string;
+    end: string;
+  } | null>(null);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const knownSources = useRef<Set<string>>(new Set());
   const [showCancelled, setShowCancelled] = useState(true);
@@ -152,12 +158,31 @@ export function EventsPanel({
     }
   }, [availableSources]);
 
-  const filters = { showCancelled, showDeleted, limit: EVENT_LIMIT };
+  // List view browses everything by recency (no date bounds, just the
+  // EVENT_LIMIT cap below); Month/Week/Day scope the fetch to whatever
+  // FullCalendar currently has on screen (see calendarVisibleRange) instead
+  // — otherwise a flat top-200-across-all-sources cut can crowd out a
+  // calendar's own events well before reaching whichever month is actually
+  // being viewed, particularly once recurring series are involved.
+  const isDateScoped = view !== "list";
+  const filters = {
+    showCancelled,
+    showDeleted,
+    limit: EVENT_LIMIT,
+    ...(isDateScoped && calendarVisibleRange
+      ? { startsAfter: calendarVisibleRange.start, startsBefore: calendarVisibleRange.end }
+      : {}),
+  };
+  // Withholds the fetch (rather than falling back to the unscoped query)
+  // until the calendar view has reported its actual initial range via
+  // onVisibleRangeChange, so switching into Month/Week/Day never shows a
+  // flash of the wrong (recency-ordered, unbounded) data first.
+  const canFetchEvents = !isDateScoped || calendarVisibleRange !== null;
   const {
     data: events = [],
     isLoading,
     mutate,
-  } = useSWR(["/events", filters], ([, f]) => fetchEvents(f));
+  } = useSWR(canFetchEvents ? ["/events", filters] : null, ([, f]) => fetchEvents(f));
 
   // Overrides are fetched over the span of currently-loaded events (padded),
   // not scoped by the sources checkboxes below — an override's association
@@ -567,7 +592,8 @@ export function EventsPanel({
                 {
                   title: "Start",
                   dataIndex: "startTime",
-                  render: (value: string) => new Date(value).toLocaleString(),
+                  render: (value: string, record) =>
+                    record.allDay ? value.slice(0, 10) : new Date(value).toLocaleString(),
                   sorter: (a, b) =>
                     Date.parse(a.startTime) - Date.parse(b.startTime),
                   defaultSortOrder: "descend",
@@ -603,6 +629,7 @@ export function EventsPanel({
                 onClear={handleContextClear}
                 colorForSource={colorForSource}
                 timelineSettings={timelineSettings}
+                onVisibleRangeChange={setCalendarVisibleRange}
               />
             </div>
           )}
