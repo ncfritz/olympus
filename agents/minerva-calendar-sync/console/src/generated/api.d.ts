@@ -204,23 +204,31 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/calendars": {
+  "/v1/calendars": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations["CalendarsController_list"];
+    /**
+     * Lists calendars
+     * @description Returns every synced calendar with its settings and sync status.
+     */
+    get: operations["ListCalendars"];
     put?: never;
-    post: operations["CalendarsController_add"];
+    /**
+     * Creates a calendar
+     * @description Starts syncing a calendar of a connected account; its first sync runs in the background.
+     */
+    post: operations["CreateCalendar"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/calendars/{calendarId}": {
+  "/v1/calendar/{calendarId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -228,47 +236,23 @@ export interface paths {
       cookie?: never;
     };
     get?: never;
-    put?: never;
+    /**
+     * Updates a calendar
+     * @description Changes whether a calendar syncs and whether its events count toward the computed availability.
+     */
+    put: operations["UpdateCalendar"];
     post?: never;
-    delete: operations["CalendarsController_remove"];
+    /**
+     * Deletes a calendar
+     * @description Stops syncing a calendar; its events stay stored.
+     */
+    delete: operations["DeleteCalendar"];
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/calendars/{calendarId}/enabled": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put: operations["CalendarsController_setEnabled"];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{calendarId}/included-in-busy": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put: operations["CalendarsController_setIncludedInBusy"];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/calendars/{calendarId}/sync": {
+  "/v1/calendar/{calendarId}/sync": {
     parameters: {
       query?: never;
       header?: never;
@@ -277,14 +261,18 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    post: operations["CalendarsController_triggerSync"];
+    /**
+     * Syncs a calendar
+     * @description Starts a sync of a calendar now, in the background.
+     */
+    post: operations["SyncCalendar"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/calendars/{calendarId}/backfill": {
+  "/v1/calendar/{calendarId}/backfill": {
     parameters: {
       query?: never;
       header?: never;
@@ -293,7 +281,11 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    post: operations["CalendarsController_backfill"];
+    /**
+     * Backfills a calendar
+     * @description Enqueues a calendar's current events for publishing again, to seed or repair a downstream copy.
+     */
+    post: operations["BackfillCalendar"];
     delete?: never;
     options?: never;
     head?: never;
@@ -790,57 +782,78 @@ export interface components {
       /** @description The override as stored. */
       eventOverride: components["schemas"]["EventOverride"];
     };
-    CalendarStatusDto: {
-      /**
-       * @description Which CalendarProvider implementation this calendar uses
-       * @enum {string}
-       */
-      provider: "google" | "microsoft";
-      /** @description Which stored OAuth credential this calendar authorizes with */
+    /**
+     * @description A calendar provider
+     * @enum {string}
+     */
+    CalendarProviderName: "google" | "microsoft";
+    Calendar: {
+      /** @description The provider the calendar's account authorizes with */
+      provider: components["schemas"]["CalendarProviderName"];
+      /** @description The connected account the calendar authorizes with */
       accountLabel: string;
-      /** @description The provider's own calendar id */
+      /** @description The provider's own ID of the calendar */
       calendarId: string;
-      /** @description The source label written onto this calendar's event rows */
+      /** @description The source label written onto the calendar's events */
       source: string;
-      /** @description True once at least one full sync has completed */
+      /** @description Whether at least one full sync has completed */
       synced: boolean;
-      /** @description Whether a provider push-notification channel is configured for this calendar */
+      /** @description Whether a provider push-notification channel is configured for the calendar */
       enablePush: boolean;
-      /** @description Whether this calendar's sync is turned on — a disabled calendar is skipped by polling, push, and manual sync alike */
+      /** @description Whether the calendar syncs: a disabled calendar is skipped by polling, push and manual syncs alike */
       enabled: boolean;
-      /** @description When a full or incremental sync last completed for this calendar */
+      /** @description An ISO-8601 formatted string indicating when a sync of the calendar last completed */
       lastSyncedAt?: string;
-      /** @description True while a sync (from any trigger — poll, push, or manual) is in progress for this calendar */
+      /** @description Whether a sync of the calendar is running */
       syncing: boolean;
-      /** @description Whether this calendar's events count toward the busy/free calculation (GET /freebusy, /freebusy/timeline) — off lets a calendar stay synced and visible without affecting computed availability, e.g. a shared holidays calendar */
+      /** @description Whether the calendar's events count toward the computed availability; off keeps a calendar (a shared holidays calendar, say) synced and visible without affecting it */
       includedInBusy: boolean;
     };
-    AddCalendarDto: {
-      /**
-       * @description Which provider this calendar's account authorizes with
-       * @enum {string}
-       */
-      provider: "google" | "microsoft";
-      /** @description Which stored OAuth credential this calendar authorizes with — must already be a connected account for this provider */
+    ListCalendarsResponse: {
+      /** @description The synced calendars. */
+      calendars: components["schemas"]["Calendar"][];
+    };
+    BaseCalendar: {
+      /** @description The provider the calendar's account authorizes with */
+      provider: components["schemas"]["CalendarProviderName"];
+      /** @description The connected account the calendar authorizes with; it must already be connected for this provider */
       accountLabel: string;
-      /** @description The provider's own calendar id, from GET /calendar-accounts/{accountLabel}/available-calendars?provider=... */
+      /** @description The provider's own ID of the calendar, from ListAvailableCalendars */
       calendarId: string;
-      /** @description The source label to write onto this calendar's event rows */
+      /** @description The source label to write onto the calendar's events */
       source: string;
     };
-    SetCalendarEnabledDto: {
-      /** @description Whether this calendar's sync should run */
-      enabled: boolean;
+    CreateCalendarRequest: {
+      /** @description The calendar to add. */
+      calendar: components["schemas"]["BaseCalendar"];
     };
-    SetCalendarBusyInclusionDto: {
-      /** @description Whether this calendar's events should count toward the busy/free calculation */
-      includedInBusy: boolean;
+    CreateCalendarResponse: {
+      /** @description The added calendar; its first sync runs in the background. */
+      calendar: components["schemas"]["Calendar"];
     };
-    BackfillResultDto: {
-      /** @description How many of this calendar's events were enqueued for redelivery to the outbound broker */
+    PartialCalendar: {
+      /** @description Whether the calendar syncs */
+      enabled?: boolean;
+      /** @description Whether the calendar's events count toward the computed availability */
+      includedInBusy?: boolean;
+    };
+    UpdateCalendarRequest: {
+      /** @description The settings to change. */
+      calendar: components["schemas"]["PartialCalendar"];
+    };
+    UpdateCalendarResponse: {
+      /** @description The calendar with the changes applied. */
+      calendar: components["schemas"]["Calendar"];
+    };
+    CalendarBackfill: {
+      /** @description How many of the calendar's events were enqueued for publishing again */
       enqueued: number;
-      /** @description True if this calendar has more non-deleted events than the backfill cap — only the most recent ones (by start time) were enqueued */
+      /** @description Whether the calendar has more events than a backfill takes, so only part of them were enqueued */
       truncated: boolean;
+    };
+    BackfillCalendarResponse: {
+      /** @description What the backfill enqueued. */
+      backfill: components["schemas"]["CalendarBackfill"];
     };
     CalendarAccountStatusDto: {
       /** @description The stored-credential label this status describes (see google-credential-store / microsoft-credential-store) */
@@ -1491,7 +1504,7 @@ export interface operations {
       };
     };
   };
-  CalendarsController_list: {
+  ListCalendars: {
     parameters: {
       query?: never;
       header?: never;
@@ -1500,199 +1513,267 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
+      /** @description The calendars were listed. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["CalendarStatusDto"][];
+          "application/json": components["schemas"]["ListCalendarsResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };
   };
-  CalendarsController_add: {
+  CreateCalendar: {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
+    /** @description The calendar to add. */
     requestBody: {
       content: {
-        "application/json": components["schemas"]["AddCalendarDto"];
+        "application/json": components["schemas"]["CreateCalendarRequest"];
       };
     };
     responses: {
-      /** @description The newly added calendar — an initial sync is kicked off in the background */
+      /** @description The calendar was added. */
       201: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["CalendarStatusDto"];
+          "application/json": components["schemas"]["CreateCalendarResponse"];
         };
       };
-      /** @description That account isn't connected yet */
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
       404: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
-      /** @description This calendar is already being synced */
+      /** @description The request conflicts with the current state */
       409: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
     };
   };
-  CalendarsController_remove: {
+  UpdateCalendar: {
     parameters: {
       query?: never;
       header?: never;
       path: {
+        /** @description The provider's ID of the calendar */
+        calendarId: string;
+      };
+      cookie?: never;
+    };
+    /** @description The settings to change. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateCalendarRequest"];
+      };
+    };
+    responses: {
+      /** @description The calendar was updated. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UpdateCalendarResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  DeleteCalendar: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The provider's ID of the calendar */
         calendarId: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
+      /** @description The calendar is no longer synced. */
       204: {
         headers: {
           [name: string]: unknown;
         };
         content?: never;
       };
-      /** @description No configured calendar with that id */
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
       404: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
     };
   };
-  CalendarsController_setEnabled: {
+  SyncCalendar: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        calendarId: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["SetCalendarEnabledDto"];
-      };
-    };
-    responses: {
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description No configured calendar with that id */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  CalendarsController_setIncludedInBusy: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        calendarId: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["SetCalendarBusyInclusionDto"];
-      };
-    };
-    responses: {
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description No configured calendar with that id */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  CalendarsController_triggerSync: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
+        /** @description The provider's ID of the calendar */
         calendarId: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
-      /** @description Sync triggered — runs in the background */
+      /** @description The sync was started. */
       202: {
         headers: {
           [name: string]: unknown;
         };
         content?: never;
       };
-      /** @description No configured calendar with that id */
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
       404: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
     };
   };
-  CalendarsController_backfill: {
+  BackfillCalendar: {
     parameters: {
       query?: never;
       header?: never;
       path: {
+        /** @description The provider's ID of the calendar */
         calendarId: string;
       };
       cookie?: never;
     };
     requestBody?: never;
     responses: {
+      /** @description The events were enqueued. */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["BackfillResultDto"];
+          "application/json": components["schemas"]["BackfillCalendarResponse"];
         };
       };
-      /** @description No configured calendar with that id */
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
       404: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
-      /** @description Outbound sync isn't configured (RABBITMQ_URL unset) */
+      /** @description The request conflicts with the current state */
       409: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
       };
     };
   };

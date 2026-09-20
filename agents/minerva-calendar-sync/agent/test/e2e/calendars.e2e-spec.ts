@@ -33,10 +33,10 @@ describe("Calendars (e2e)", () => {
     configureApp(app);
     await app.init();
 
-    await request(app.getHttpServer()).get("/calendars").expect(401);
+    await request(app.getHttpServer()).get("/v1/calendars").expect(401);
   });
 
-  it("GET /calendars returns the configured calendars with sync status", async () => {
+  it("ListCalendars returns the configured calendars with sync status", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -47,10 +47,10 @@ describe("Calendars (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     const res = await request(app.getHttpServer())
-      .get("/calendars")
+      .get("/v1/calendars")
       .set("Authorization", authHeader)
       .expect(200);
-    expect(res.body).toEqual([
+    expect(res.body.calendars).toEqual([
       {
         ...FAKE_CALENDAR,
         synced: false,
@@ -61,7 +61,7 @@ describe("Calendars (e2e)", () => {
     ]);
   });
 
-  it("GET /calendars returns an empty list when nothing is configured", async () => {
+  it("ListCalendars returns an empty list when nothing is configured", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -71,13 +71,13 @@ describe("Calendars (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     const res = await request(app.getHttpServer())
-      .get("/calendars")
+      .get("/v1/calendars")
       .set("Authorization", authHeader)
       .expect(200);
-    expect(res.body).toEqual([]);
+    expect(res.body.calendars).toEqual([]);
   });
 
-  it("POST /calendars/:calendarId/sync 404s for an unconfigured calendar", async () => {
+  it("SyncCalendar 404s for an unconfigured calendar", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -87,12 +87,12 @@ describe("Calendars (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     await request(app.getHttpServer())
-      .post("/calendars/unknown/sync")
+      .post("/v1/calendar/unknown/sync")
       .set("Authorization", authHeader)
       .expect(404);
   });
 
-  it("POST /calendars/:calendarId/sync accepts a configured calendar", async () => {
+  it("SyncCalendar accepts a configured calendar", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -103,12 +103,12 @@ describe("Calendars (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     await request(app.getHttpServer())
-      .post(`/calendars/${FAKE_CALENDAR.calendarId}/sync`)
+      .post(`/v1/calendar/${FAKE_CALENDAR.calendarId}/sync`)
       .set("Authorization", authHeader)
       .expect(202);
   });
 
-  it("PUT /calendars/:calendarId/enabled 404s for an unconfigured calendar", async () => {
+  it("UpdateCalendar (enabled) 404s for an unconfigured calendar", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -118,13 +118,13 @@ describe("Calendars (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     await request(app.getHttpServer())
-      .put("/calendars/unknown/enabled")
+      .put("/v1/calendar/unknown")
       .set("Authorization", authHeader)
-      .send({ enabled: false })
+      .send({ calendar: { enabled: false } })
       .expect(404);
   });
 
-  it("PUT /calendars/:calendarId/enabled persists the toggle and GET /calendars reflects it", async () => {
+  it("UpdateCalendar (enabled) persists the toggle and ListCalendars reflects it", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -135,16 +135,16 @@ describe("Calendars (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     await request(app.getHttpServer())
-      .put(`/calendars/${FAKE_CALENDAR.calendarId}/enabled`)
+      .put(`/v1/calendar/${FAKE_CALENDAR.calendarId}`)
       .set("Authorization", authHeader)
-      .send({ enabled: false })
-      .expect(204);
+      .send({ calendar: { enabled: false } })
+      .expect(200);
 
     const res = await request(app.getHttpServer())
-      .get("/calendars")
+      .get("/v1/calendars")
       .set("Authorization", authHeader)
       .expect(200);
-    expect(res.body).toEqual([
+    expect(res.body.calendars).toEqual([
       {
         ...FAKE_CALENDAR,
         synced: false,
@@ -155,16 +155,16 @@ describe("Calendars (e2e)", () => {
     ]);
 
     await request(app.getHttpServer())
-      .put(`/calendars/${FAKE_CALENDAR.calendarId}/enabled`)
+      .put(`/v1/calendar/${FAKE_CALENDAR.calendarId}`)
       .set("Authorization", authHeader)
-      .send({ enabled: true })
-      .expect(204);
+      .send({ calendar: { enabled: true } })
+      .expect(200);
 
     const reenabled = await request(app.getHttpServer())
-      .get("/calendars")
+      .get("/v1/calendars")
       .set("Authorization", authHeader)
       .expect(200);
-    expect(reenabled.body).toEqual([
+    expect(reenabled.body.calendars).toEqual([
       {
         ...FAKE_CALENDAR,
         synced: false,
@@ -175,7 +175,7 @@ describe("Calendars (e2e)", () => {
     ]);
   });
 
-  it("PUT /calendars/:calendarId/included-in-busy 404s for an unconfigured calendar", async () => {
+  it("UpdateCalendar (includedInBusy) 404s for an unconfigured calendar", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -185,13 +185,13 @@ describe("Calendars (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     await request(app.getHttpServer())
-      .put("/calendars/unknown/included-in-busy")
+      .put("/v1/calendar/unknown")
       .set("Authorization", authHeader)
-      .send({ includedInBusy: false })
+      .send({ calendar: { includedInBusy: false } })
       .expect(404);
   });
 
-  it("PUT /calendars/:calendarId/included-in-busy persists the toggle and GET /calendars reflects it", async () => {
+  it("UpdateCalendar (includedInBusy) persists the toggle and ListCalendars reflects it", async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -202,16 +202,16 @@ describe("Calendars (e2e)", () => {
     const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
 
     await request(app.getHttpServer())
-      .put(`/calendars/${FAKE_CALENDAR.calendarId}/included-in-busy`)
+      .put(`/v1/calendar/${FAKE_CALENDAR.calendarId}`)
       .set("Authorization", authHeader)
-      .send({ includedInBusy: false })
-      .expect(204);
+      .send({ calendar: { includedInBusy: false } })
+      .expect(200);
 
     const res = await request(app.getHttpServer())
-      .get("/calendars")
+      .get("/v1/calendars")
       .set("Authorization", authHeader)
       .expect(200);
-    expect(res.body).toEqual([
+    expect(res.body.calendars).toEqual([
       {
         ...FAKE_CALENDAR,
         synced: false,
@@ -222,16 +222,16 @@ describe("Calendars (e2e)", () => {
     ]);
 
     await request(app.getHttpServer())
-      .put(`/calendars/${FAKE_CALENDAR.calendarId}/included-in-busy`)
+      .put(`/v1/calendar/${FAKE_CALENDAR.calendarId}`)
       .set("Authorization", authHeader)
-      .send({ includedInBusy: true })
-      .expect(204);
+      .send({ calendar: { includedInBusy: true } })
+      .expect(200);
 
     const reincluded = await request(app.getHttpServer())
-      .get("/calendars")
+      .get("/v1/calendars")
       .set("Authorization", authHeader)
       .expect(200);
-    expect(reincluded.body).toEqual([
+    expect(reincluded.body.calendars).toEqual([
       {
         ...FAKE_CALENDAR,
         synced: false,

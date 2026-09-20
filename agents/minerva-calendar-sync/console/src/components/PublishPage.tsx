@@ -147,7 +147,7 @@ export function PublishPage() {
             type="info"
             showIcon
             message="Outbound sync isn't configured"
-            description="Set RABBITMQ_URL to publish event changes onward to an external system. Inbound calendar sync is unaffected either way."
+            description="Set OUTBOX_ENABLED=true to publish event changes onward to an external system. Inbound calendar sync is unaffected either way."
             style={{ marginBottom: 16 }}
           />
         )}

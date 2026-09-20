@@ -9,8 +9,14 @@ const ERROR_DESCRIPTIONS: { [K in HttpStatus]?: string } = {
     "The entity with the specified identifiers was not found",
 };
 
+/** Answers only some operations give, added with `include`. */
+const OPTIONAL_ERROR_DESCRIPTIONS: { [K in HttpStatus]?: string } = {
+  [HttpStatus.CONFLICT]: "The request conflicts with the current state",
+};
+
 export type ApiStandardErrorResponsesOptions = {
   exclude?: HttpStatus[];
+  include?: HttpStatus[];
 };
 
 /**
@@ -21,7 +27,14 @@ export const ApiStandardErrorResponses = (
   options?: ApiStandardErrorResponsesOptions,
 ) =>
   applyDecorators(
-    ...Object.entries(ERROR_DESCRIPTIONS)
+    ...Object.entries({
+      ...ERROR_DESCRIPTIONS,
+      ...Object.fromEntries(
+        Object.entries(OPTIONAL_ERROR_DESCRIPTIONS).filter(([status]) =>
+          options?.include?.includes(Number(status)),
+        ),
+      ),
+    })
       .filter(([status]) => !options?.exclude?.includes(Number(status)))
       .map(([status, description]) =>
         ApiResponse({

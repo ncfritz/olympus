@@ -2,7 +2,7 @@ import { apiClient } from "./client";
 import type { components } from "../../generated/api";
 
 export type EventDto = components["schemas"]["Event"];
-export type CalendarStatus = components["schemas"]["CalendarStatusDto"];
+export type CalendarStatus = components["schemas"]["Calendar"];
 export type AvailabilityStatus = components["schemas"]["AvailabilityStatus"];
 export type FreeBusyStatus = EventDto["status"];
 export type EventOverrideDto = components["schemas"]["EventOverride"];
@@ -18,7 +18,7 @@ export type OutboxSummary = components["schemas"]["OutboxSummaryDto"];
 export type OutboxSourceStats = components["schemas"]["OutboxSourceStatsDto"];
 export type OutboxRecord = components["schemas"]["OutboxRecordDto"];
 export type EventPublishStatus = components["schemas"]["EventPublishStatusDto"];
-export type BackfillResult = components["schemas"]["BackfillResultDto"];
+export type BackfillResult = components["schemas"]["CalendarBackfill"];
 
 /** Keyed by each 15-minute chunk's start time, in minutes since epoch (as a string, since JSON object keys always are). */
 export type StatusTimeline = Record<string, AvailabilityStatus>;
@@ -33,8 +33,8 @@ export async function logout() {
 }
 
 export async function fetchCalendars(): Promise<CalendarStatus[]> {
-  const { data } = await apiClient.GET("/calendars");
-  return data ?? [];
+  const { data } = await apiClient.GET("/v1/calendars");
+  return data?.calendars ?? [];
 }
 
 export async function fetchCalendarColors(): Promise<Record<string, string>> {
@@ -57,7 +57,7 @@ export async function setCalendarColor(
 export async function triggerCalendarSync(
   calendarId: string,
 ): Promise<boolean> {
-  const { response } = await apiClient.POST("/calendars/{calendarId}/sync", {
+  const { response } = await apiClient.POST("/v1/calendar/{calendarId}/sync", {
     params: { path: { calendarId } },
   });
   return response.ok;
@@ -67,9 +67,9 @@ export async function setCalendarEnabled(
   calendarId: string,
   enabled: boolean,
 ): Promise<void> {
-  const { error } = await apiClient.PUT("/calendars/{calendarId}/enabled", {
+  const { error } = await apiClient.PUT("/v1/calendar/{calendarId}", {
     params: { path: { calendarId } },
-    body: { enabled },
+    body: { calendar: { enabled } },
   });
   if (error)
     throw new Error(`Failed to set calendar enabled: ${JSON.stringify(error)}`);
@@ -79,13 +79,10 @@ export async function setCalendarIncludedInBusy(
   calendarId: string,
   includedInBusy: boolean,
 ): Promise<void> {
-  const { error } = await apiClient.PUT(
-    "/calendars/{calendarId}/included-in-busy",
-    {
-      params: { path: { calendarId } },
-      body: { includedInBusy },
-    },
-  );
+  const { error } = await apiClient.PUT("/v1/calendar/{calendarId}", {
+    params: { path: { calendarId } },
+    body: { calendar: { includedInBusy } },
+  });
   if (error)
     throw new Error(
       `Failed to set calendar busy inclusion: ${JSON.stringify(error)}`,
@@ -98,16 +95,16 @@ export async function addCalendar(calendar: {
   calendarId: string;
   source: string;
 }): Promise<CalendarStatus> {
-  const { data, error } = await apiClient.POST("/calendars", {
-    body: calendar,
+  const { data, error } = await apiClient.POST("/v1/calendars", {
+    body: { calendar },
   });
   if (error || !data)
     throw new Error(`Failed to add calendar: ${JSON.stringify(error)}`);
-  return data;
+  return data.calendar;
 }
 
 export async function removeCalendar(calendarId: string): Promise<void> {
-  const { error } = await apiClient.DELETE("/calendars/{calendarId}", {
+  const { error } = await apiClient.DELETE("/v1/calendar/{calendarId}", {
     params: { path: { calendarId } },
   });
   if (error)
@@ -378,10 +375,10 @@ export async function backfillCalendar(
   calendarId: string,
 ): Promise<BackfillResult> {
   const { data, error } = await apiClient.POST(
-    "/calendars/{calendarId}/backfill",
+    "/v1/calendar/{calendarId}/backfill",
     { params: { path: { calendarId } } },
   );
   if (error || !data)
     throw new Error(`Failed to start backfill: ${JSON.stringify(error)}`);
-  return data;
+  return data.backfill;
 }

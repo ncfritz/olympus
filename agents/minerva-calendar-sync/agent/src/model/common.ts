@@ -14,3 +14,11 @@ export const AVAILABILITY_STATUS_ENUM = {
       "An availability status, lowest precedence first: none, free, interruptable, busy",
   },
 };
+
+export const CALENDAR_PROVIDER_VALUES = ["google", "microsoft"] as const;
+
+export const CALENDAR_PROVIDER_ENUM = {
+  enum: [...CALENDAR_PROVIDER_VALUES],
+  enumName: "CalendarProviderName",
+  enumSchema: { description: "A calendar provider" },
+};

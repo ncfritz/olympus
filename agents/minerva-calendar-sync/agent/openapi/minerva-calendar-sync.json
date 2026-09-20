@@ -732,20 +732,28 @@
         ]
       }
     },
-    "/calendars": {
+    "/v1/calendars": {
       "get": {
-        "operationId": "CalendarsController_list",
+        "description": "Returns every synced calendar with its settings and sync status.",
+        "operationId": "ListCalendars",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "",
+            "description": "The calendars were listed.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CalendarStatusDto"
-                  }
+                  "$ref": "#/components/schemas/ListCalendarsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -756,39 +764,76 @@
             "bearer": []
           }
         ],
+        "summary": "Lists calendars",
         "tags": [
-          "calendars"
+          "Calendars"
         ]
       },
       "post": {
-        "operationId": "CalendarsController_add",
+        "description": "Starts syncing a calendar of a connected account; its first sync runs in the background.",
+        "operationId": "CreateCalendar",
         "parameters": [],
         "requestBody": {
           "required": true,
+          "description": "The calendar to add.",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AddCalendarDto"
+                "$ref": "#/components/schemas/CreateCalendarRequest"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "The newly added calendar — an initial sync is kicked off in the background",
+            "description": "The calendar was added.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CalendarStatusDto"
+                  "$ref": "#/components/schemas/CreateCalendarResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
           },
           "404": {
-            "description": "That account isn't connected yet"
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           },
           "409": {
-            "description": "This calendar is already being synced"
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -796,19 +841,99 @@
             "bearer": []
           }
         ],
+        "summary": "Creates a calendar",
         "tags": [
-          "calendars"
+          "Calendars"
         ]
       }
     },
-    "/calendars/{calendarId}": {
+    "/v1/calendar/{calendarId}": {
+      "put": {
+        "description": "Changes whether a calendar syncs and whether its events count toward the computed availability.",
+        "operationId": "UpdateCalendar",
+        "parameters": [
+          {
+            "name": "calendarId",
+            "required": true,
+            "in": "path",
+            "description": "The provider's ID of the calendar",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The settings to change.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCalendarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The calendar was updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateCalendarResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Updates a calendar",
+        "tags": [
+          "Calendars"
+        ]
+      },
       "delete": {
-        "operationId": "CalendarsController_remove",
+        "description": "Stops syncing a calendar; its events stay stored.",
+        "operationId": "DeleteCalendar",
         "parameters": [
           {
             "name": "calendarId",
             "required": true,
             "in": "path",
+            "description": "The provider's ID of the calendar",
             "schema": {
               "type": "string"
             }
@@ -816,112 +941,50 @@
         ],
         "responses": {
           "204": {
-            "description": ""
+            "description": "The calendar is no longer synced."
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           },
           "404": {
-            "description": "No configured calendar with that id"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "calendars"
-        ]
-      }
-    },
-    "/calendars/{calendarId}/enabled": {
-      "put": {
-        "operationId": "CalendarsController_setEnabled",
-        "parameters": [
-          {
-            "name": "calendarId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetCalendarEnabledDto"
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
         },
-        "responses": {
-          "204": {
-            "description": ""
-          },
-          "404": {
-            "description": "No configured calendar with that id"
-          }
-        },
         "security": [
           {
             "bearer": []
           }
         ],
+        "summary": "Deletes a calendar",
         "tags": [
-          "calendars"
+          "Calendars"
         ]
       }
     },
-    "/calendars/{calendarId}/included-in-busy": {
-      "put": {
-        "operationId": "CalendarsController_setIncludedInBusy",
-        "parameters": [
-          {
-            "name": "calendarId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetCalendarBusyInclusionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": ""
-          },
-          "404": {
-            "description": "No configured calendar with that id"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "calendars"
-        ]
-      }
-    },
-    "/calendars/{calendarId}/sync": {
+    "/v1/calendar/{calendarId}/sync": {
       "post": {
-        "operationId": "CalendarsController_triggerSync",
+        "description": "Starts a sync of a calendar now, in the background.",
+        "operationId": "SyncCalendar",
         "parameters": [
           {
             "name": "calendarId",
             "required": true,
             "in": "path",
+            "description": "The provider's ID of the calendar",
             "schema": {
               "type": "string"
             }
@@ -929,10 +992,27 @@
         ],
         "responses": {
           "202": {
-            "description": "Sync triggered — runs in the background"
+            "description": "The sync was started."
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           },
           "404": {
-            "description": "No configured calendar with that id"
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -940,19 +1020,22 @@
             "bearer": []
           }
         ],
+        "summary": "Syncs a calendar",
         "tags": [
-          "calendars"
+          "Calendars"
         ]
       }
     },
-    "/calendars/{calendarId}/backfill": {
+    "/v1/calendar/{calendarId}/backfill": {
       "post": {
-        "operationId": "CalendarsController_backfill",
+        "description": "Enqueues a calendar's current events for publishing again, to seed or repair a downstream copy.",
+        "operationId": "BackfillCalendar",
         "parameters": [
           {
             "name": "calendarId",
             "required": true,
             "in": "path",
+            "description": "The provider's ID of the calendar",
             "schema": {
               "type": "string"
             }
@@ -960,20 +1043,44 @@
         ],
         "responses": {
           "200": {
-            "description": "",
+            "description": "The events were enqueued.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BackfillResultDto"
+                  "$ref": "#/components/schemas/BackfillCalendarResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
           },
           "404": {
-            "description": "No configured calendar with that id"
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Outbound sync isn't configured (RABBITMQ_URL unset)"
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -981,8 +1088,9 @@
             "bearer": []
           }
         ],
+        "summary": "Backfills a calendar",
         "tags": [
-          "calendars"
+          "Calendars"
         ]
       }
     },
@@ -1880,6 +1988,9 @@
       "name": "Calendar Colors"
     },
     {
+      "name": "Calendars"
+    },
+    {
       "name": "Event Overrides"
     },
     {
@@ -1893,9 +2004,6 @@
     },
     {
       "name": "calendar-auth"
-    },
-    {
-      "name": "calendars"
     },
     {
       "name": "outbox"
@@ -2545,52 +2653,60 @@
           "eventOverride"
         ]
       },
-      "CalendarStatusDto": {
+      "CalendarProviderName": {
+        "type": "string",
+        "description": "A calendar provider",
+        "enum": [
+          "google",
+          "microsoft"
+        ]
+      },
+      "Calendar": {
         "type": "object",
         "properties": {
           "provider": {
-            "type": "string",
-            "description": "Which CalendarProvider implementation this calendar uses",
-            "enum": [
-              "google",
-              "microsoft"
+            "description": "The provider the calendar's account authorizes with",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarProviderName"
+              }
             ]
           },
           "accountLabel": {
             "type": "string",
-            "description": "Which stored OAuth credential this calendar authorizes with"
+            "description": "The connected account the calendar authorizes with"
           },
           "calendarId": {
             "type": "string",
-            "description": "The provider's own calendar id"
+            "description": "The provider's own ID of the calendar"
           },
           "source": {
             "type": "string",
-            "description": "The source label written onto this calendar's event rows"
+            "description": "The source label written onto the calendar's events"
           },
           "synced": {
             "type": "boolean",
-            "description": "True once at least one full sync has completed"
+            "description": "Whether at least one full sync has completed"
           },
           "enablePush": {
             "type": "boolean",
-            "description": "Whether a provider push-notification channel is configured for this calendar"
+            "description": "Whether a provider push-notification channel is configured for the calendar"
           },
           "enabled": {
             "type": "boolean",
-            "description": "Whether this calendar's sync is turned on — a disabled calendar is skipped by polling, push, and manual sync alike"
+            "description": "Whether the calendar syncs: a disabled calendar is skipped by polling, push and manual syncs alike"
           },
           "lastSyncedAt": {
             "type": "string",
-            "description": "When a full or incremental sync last completed for this calendar"
+            "description": "An ISO-8601 formatted string indicating when a sync of the calendar last completed"
           },
           "syncing": {
             "type": "boolean",
-            "description": "True while a sync (from any trigger — poll, push, or manual) is in progress for this calendar"
+            "description": "Whether a sync of the calendar is running"
           },
           "includedInBusy": {
             "type": "boolean",
-            "description": "Whether this calendar's events count toward the busy/free calculation (GET /freebusy, /freebusy/timeline) — off lets a calendar stay synced and visible without affecting computed availability, e.g. a shared holidays calendar"
+            "description": "Whether the calendar's events count toward the computed availability; off keeps a calendar (a shared holidays calendar, say) synced and visible without affecting it"
           }
         },
         "required": [
@@ -2605,28 +2721,43 @@
           "includedInBusy"
         ]
       },
-      "AddCalendarDto": {
+      "ListCalendarsResponse": {
+        "type": "object",
+        "properties": {
+          "calendars": {
+            "description": "The synced calendars.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Calendar"
+            }
+          }
+        },
+        "required": [
+          "calendars"
+        ]
+      },
+      "BaseCalendar": {
         "type": "object",
         "properties": {
           "provider": {
-            "type": "string",
-            "description": "Which provider this calendar's account authorizes with",
-            "enum": [
-              "google",
-              "microsoft"
+            "description": "The provider the calendar's account authorizes with",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarProviderName"
+              }
             ]
           },
           "accountLabel": {
             "type": "string",
-            "description": "Which stored OAuth credential this calendar authorizes with — must already be a connected account for this provider"
+            "description": "The connected account the calendar authorizes with; it must already be connected for this provider"
           },
           "calendarId": {
             "type": "string",
-            "description": "The provider's own calendar id, from GET /calendar-accounts/{accountLabel}/available-calendars?provider=..."
+            "description": "The provider's own ID of the calendar, from ListAvailableCalendars"
           },
           "source": {
             "type": "string",
-            "description": "The source label to write onto this calendar's event rows"
+            "description": "The source label to write onto the calendar's events"
           }
         },
         "required": [
@@ -2636,45 +2767,114 @@
           "source"
         ]
       },
-      "SetCalendarEnabledDto": {
+      "CreateCalendarRequest": {
+        "type": "object",
+        "properties": {
+          "calendar": {
+            "description": "The calendar to add.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseCalendar"
+              }
+            ]
+          }
+        },
+        "required": [
+          "calendar"
+        ]
+      },
+      "CreateCalendarResponse": {
+        "type": "object",
+        "properties": {
+          "calendar": {
+            "description": "The added calendar; its first sync runs in the background.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Calendar"
+              }
+            ]
+          }
+        },
+        "required": [
+          "calendar"
+        ]
+      },
+      "PartialCalendar": {
         "type": "object",
         "properties": {
           "enabled": {
             "type": "boolean",
-            "description": "Whether this calendar's sync should run"
-          }
-        },
-        "required": [
-          "enabled"
-        ]
-      },
-      "SetCalendarBusyInclusionDto": {
-        "type": "object",
-        "properties": {
+            "description": "Whether the calendar syncs"
+          },
           "includedInBusy": {
             "type": "boolean",
-            "description": "Whether this calendar's events should count toward the busy/free calculation"
+            "description": "Whether the calendar's events count toward the computed availability"
+          }
+        }
+      },
+      "UpdateCalendarRequest": {
+        "type": "object",
+        "properties": {
+          "calendar": {
+            "description": "The settings to change.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialCalendar"
+              }
+            ]
           }
         },
         "required": [
-          "includedInBusy"
+          "calendar"
         ]
       },
-      "BackfillResultDto": {
+      "UpdateCalendarResponse": {
+        "type": "object",
+        "properties": {
+          "calendar": {
+            "description": "The calendar with the changes applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Calendar"
+              }
+            ]
+          }
+        },
+        "required": [
+          "calendar"
+        ]
+      },
+      "CalendarBackfill": {
         "type": "object",
         "properties": {
           "enqueued": {
             "type": "number",
-            "description": "How many of this calendar's events were enqueued for redelivery to the outbound broker"
+            "description": "How many of the calendar's events were enqueued for publishing again"
           },
           "truncated": {
             "type": "boolean",
-            "description": "True if this calendar has more non-deleted events than the backfill cap — only the most recent ones (by start time) were enqueued"
+            "description": "Whether the calendar has more events than a backfill takes, so only part of them were enqueued"
           }
         },
         "required": [
           "enqueued",
           "truncated"
+        ]
+      },
+      "BackfillCalendarResponse": {
+        "type": "object",
+        "properties": {
+          "backfill": {
+            "description": "What the backfill enqueued.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarBackfill"
+              }
+            ]
+          }
+        },
+        "required": [
+          "backfill"
         ]
       },
       "CalendarAccountStatusDto": {
