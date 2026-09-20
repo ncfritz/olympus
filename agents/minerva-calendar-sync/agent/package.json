@@ -39,6 +39,7 @@
     "@ncfritz/olympus-messages": "workspace:*",
     "@ncfritz/olympus-model": "workspace:*",
     "@ncfritz/olympus-nest": "workspace:*",
+    "nestjs-metrics-reporter": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "@nestjs/core": "catalog:",

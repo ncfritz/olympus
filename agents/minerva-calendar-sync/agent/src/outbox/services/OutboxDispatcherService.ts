@@ -17,6 +17,7 @@ import {
   type CalendarEventMessage,
 } from "@ncfritz/olympus-messages";
 import { OutboxEvent as OutboxRow } from "@prisma/client";
+import { recordOutboxPublish } from "../../metrics/agentMetrics";
 import { PrismaService } from "../../store/prisma/PrismaService";
 
 const BASE_BACKOFF_MS = 2_000;
@@ -96,6 +97,7 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
         where: { id: row.id },
         data: { status: "sent", sentAt: new Date() },
       });
+      recordOutboxPublish(row.action as CalendarEventAction, "sent");
     } catch (error) {
       await this.markFailed(row, error);
     }
@@ -110,6 +112,7 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
         where: { id: row.id },
         data: { status: "failed", attempts, lastError },
       });
+      recordOutboxPublish(row.action as CalendarEventAction, "failed");
       this.logger.error(
         `Giving up on outbox row ${row.id} (event ${row.eventId}) after ${attempts} attempts: ${lastError}`,
       );
@@ -128,6 +131,7 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
         availableAt: new Date(Date.now() + backoffMs),
       },
     });
+    recordOutboxPublish(row.action as CalendarEventAction, "retry");
   }
 }
 

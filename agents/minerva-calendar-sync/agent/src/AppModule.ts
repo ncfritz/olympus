@@ -9,6 +9,7 @@ import { CalendarAuthModule } from "./calendarAuth/CalendarAuthModule";
 import { CalendarColorsModule } from "./calendarColors/CalendarColorsModule";
 import { CalendarsModule } from "./calendars/CalendarsModule";
 import { EventsModule } from "./events/EventsModule";
+import { MetricsModule } from "./metrics/MetricsModule";
 import { OutboxModule } from "./outbox/OutboxModule";
 import { OverridesModule } from "./overrides/OverridesModule";
 import { StoreModule } from "./store/StoreModule";
@@ -25,6 +26,7 @@ import { WebhooksModule } from "./webhooks/WebhooksModule";
       ignoreEnvFile: true,
       load: ALL_CONFIG,
     }),
+    MetricsModule,
     AuthModule,
     StoreModule,
     SyncModule,

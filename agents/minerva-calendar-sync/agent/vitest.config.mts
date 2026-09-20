@@ -20,6 +20,7 @@ export default mergeConfig(
               "test/unit/**/*.spec.ts",
               "test/conventions/**/*.spec.ts",
             ],
+            setupFiles: ["test/support/setup.ts"],
           },
         },
         {
@@ -27,7 +28,11 @@ export default mergeConfig(
           test: {
             name: "e2e",
             include: ["test/e2e/**/*.e2e-spec.ts"],
-            setupFiles: ["test/e2e/env-setup.ts", "test/e2e/reset-state.ts"],
+            setupFiles: [
+              "test/support/setup.ts",
+              "test/e2e/env-setup.ts",
+              "test/e2e/reset-state.ts",
+            ],
           },
         },
         {
@@ -35,7 +40,10 @@ export default mergeConfig(
           test: {
             name: "integration",
             include: ["test/integration/**/*.integration-spec.ts"],
-            setupFiles: ["test/integration/env-setup.ts"],
+            setupFiles: [
+              "test/support/setup.ts",
+              "test/integration/env-setup.ts",
+            ],
           },
         },
       ],

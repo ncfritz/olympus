@@ -8,6 +8,7 @@ import { EVENT_STORE, EventStore } from "../../store/eventStore";
 import { ChangeNotifier } from "../changeNotifier";
 import { SyncConfigService } from "./SyncConfigService";
 import { SyncedCalendarConfig } from "../syncedCalendarConfig";
+import { recordWebhookNotification } from "../../metrics/agentMetrics";
 
 const RENEWAL_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const RENEWAL_THRESHOLD_MS = 24 * 60 * 60 * 1000;
@@ -115,6 +116,7 @@ export class WebhookNotifier implements ChangeNotifier {
   handleNotification(channelId: string, token: string | undefined): void {
     const calendarId = this.calendarIdByChannelId.get(channelId);
     if (!calendarId) {
+      recordWebhookNotification("unknown_channel");
       this.logger.debug(
         `Ignoring a notification for unknown channel "${channelId}"`,
       );
@@ -123,12 +125,14 @@ export class WebhookNotifier implements ChangeNotifier {
 
     const registration = this.channelsByCalendarId.get(calendarId);
     if (registration?.token !== token) {
+      recordWebhookNotification("token_mismatch");
       this.logger.warn(
         `Ignoring a notification for "${calendarId}" — channel token mismatch`,
       );
       return;
     }
 
+    recordWebhookNotification("accepted");
     this.onChange?.(calendarId, "webhook");
   }
 

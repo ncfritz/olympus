@@ -21,6 +21,7 @@ import {
 import { EVENT_STORE, EventStore, UpsertResult } from "../../store/eventStore";
 import { SYNC_RUN_STORE, SyncRunStore } from "../../store/syncRunStore";
 import { SyncedCalendarConfig } from "../syncedCalendarConfig";
+import { recordSyncRun } from "../../metrics/agentMetrics";
 
 // Pragmatic cap for the full-sync deletion diff (see markVanishedEventsDeleted).
 // Fine for a personal/small-team calendar; would need real pagination well beyond this scale.
@@ -184,6 +185,7 @@ export class SyncEngine {
       changes: tally.changes,
     };
 
+    recordSyncRun(run);
     try {
       await this.syncRuns.create(run);
     } catch (error) {
