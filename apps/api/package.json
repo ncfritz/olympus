@@ -31,6 +31,7 @@
   "dependencies": {
     "@golevelup/nestjs-rabbitmq": "catalog:",
     "@ncfritz/olympus-messages": "workspace:*",
+    "@ncfritz/olympus-metrics": "workspace:*",
     "@ncfritz/olympus-model": "workspace:*",
     "@ncfritz/olympus-nest": "workspace:*",
     "@nestjs/common": "catalog:",
@@ -48,7 +49,6 @@
     "moment-timezone": "^0.6.2",
     "multer": "^2.2.0",
     "nest-winston": "catalog:",
-    "nestjs-metrics-reporter": "catalog:",
     "pretty-bytes": "^7.1.0",
     "pretty-ms": "^9.3.0",
     "socket.io": "^4.8.3",
@@ -88,7 +88,6 @@
     "eslint": "catalog:",
     "graphql": "^16.14.0",
     "prettier": "catalog:",
-    "prom-client": "^15.1.3",
     "reflect-metadata": "catalog:",
     "run-script-webpack-plugin": "^0.2.3",
     "rxjs": "catalog:",

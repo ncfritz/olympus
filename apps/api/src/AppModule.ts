@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { APP_INTERCEPTOR, RouterModule } from "@nestjs/core";
-import { ReporterModule } from "nestjs-metrics-reporter";
+import { RouterModule } from "@nestjs/core";
+import { MetricsModule } from "@ncfritz/olympus-nest";
 import {
   ALL_CONFIG,
   serverConfig,
@@ -9,7 +9,6 @@ import {
 } from "./config/configuration";
 import { DIONYSUS_MODULES, DionysusModule } from "./dionysus/DionysusModule";
 import { GraphQLClientModule } from "./infra/GraphQLClientModule";
-import { PrometheusMetricsInterceptor } from "./infra/PrometheusOperationMetricsInterceptor";
 import { RabbitModule } from "./infra/RabbitModule";
 import { MINERVA_MODULES, MinervaModule } from "./minerva/MinervaModule";
 import { OLYMPUS_MODULES, OlympusModule } from "./olympus/OlympusModule";
@@ -25,14 +24,12 @@ import { Routes } from "./utils/routes";
       // environment when first injected. main.ts validates it up front.
       load: ALL_CONFIG,
     }),
-    ReporterModule.forRootAsync({
+    // /metrics; request metrics are recorded by configureApp.
+    MetricsModule.forRootAsync({
       inject: [serverConfig.KEY],
       useFactory: (server: ServerConfigType) => ({
-        defaultMetricsEnabled: true,
-        defaultLabels: {
-          app: server.appName,
-          environment: server.nodeEnv,
-        },
+        app: server.appName,
+        environment: server.nodeEnv,
       }),
     }),
     // Each domain's feature modules are served under its prefix.
@@ -61,10 +58,6 @@ import { Routes } from "./utils/routes";
     OlympusModule,
     DionysusModule,
     MinervaModule,
-  ],
-  providers: [
-    // Request metrics for every operation.
-    { provide: APP_INTERCEPTOR, useClass: PrometheusMetricsInterceptor },
   ],
 })
 export class AppModule {}

@@ -21,3 +21,10 @@ export const MinervaApiConfig: OpenApiDocumentConfig = {
   route: Routes.MINERVA,
   modules: MINERVA_MODULES,
 };
+
+/** Every document the API serves. */
+export const API_DOCUMENTS: OpenApiDocumentConfig[] = [
+  OlympusApiConfig,
+  DionysusApiConfig,
+  MinervaApiConfig,
+];
