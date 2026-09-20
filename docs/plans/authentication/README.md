@@ -12,7 +12,7 @@ checked before enforcement.
 | 1     | Auth core in the API, report-only; service mTLS on `3443`  | 0          | F6, F7 (dev), F11       |
 | 2     | Agents on mTLS (Docker and NAS), real certificates         | 1          | F6, F7, F8              |
 | 3     | Token service: users, sessions, providers, PKCE, refresh   | 0, 1       | F1, F2, F3, F4 (tester) |
-| 4     | Auth testers: CLI and iOS proof of concept                 | 3          | F5 (internal)           |
+| 4     | Auth testers: CLI and React Native (iOS) proof of concept  | 3          | F5 (internal)           |
 | 5     | Site import, changed only for authentication               | 3          | F1, F2, F3, F4, F10     |
 | 6     | Border: NAS nginx, device certificates, DNS, redirect URIs | 3, 4, 5    | F9, F5, F1–F3 external  |
 | 7     | Key rotation and operations runbooks                       | 3          | F12, F8                 |
@@ -125,27 +125,40 @@ pattern for desktop apps (RFC 8252 loopback redirect):
 | `agent-call --cert --key <path>`       | a call on `3443` with a service certificate                               |
 | `--device-cert <p12>`                  | presents a device certificate (the border, phase 6)                       |
 
-**`apps/auth-tester-ios` (SwiftUI)**, the mobile proof of concept, outside
-the pnpm build (an Xcode project):
+**`apps/auth-tester-mobile` (React Native, Expo)**, the mobile proof of
+concept, built the way the iOS app will be:
 
+- An Expo app in the workspace; Turbo runs its typecheck, lint and unit
+  tests; the app itself is built with a development build
+  (`npx expo run:ios`, Xcode on a Mac), not Expo Go, because it has a
+  native module.
 - Screens: provider sign-in, token claims, "Call API", "Refresh",
   "Replay previous refresh token", "Sign out", sessions, a log of every
   request and response.
-- `ASWebAuthenticationSession` with the `olympus-auth-tester://auth`
-  callback; tokens in the Keychain.
-- Importing a device certificate (`.p12` from Files) into the app's
-  Keychain, and answering `URLSession` client-certificate challenges with
-  it.
+- Sign-in with `expo-web-browser`'s `openAuthSessionAsync`
+  (`ASWebAuthenticationSession` on iOS) and the
+  `olympus-auth-tester://auth` callback; PKCE with `expo-crypto`; tokens in
+  the Keychain with `expo-secure-store`.
+- API calls through `@ncfritz/olympus-client` with its auth option (the
+  first React Native use of the package).
+- A local Expo module, `client-identity` (Swift): imports a device
+  certificate (`.p12` from Files, with its password) into the app's
+  Keychain, and performs requests on a `URLSession` that answers
+  client-certificate challenges with it. React Native's own networking
+  can't present a client certificate, so the client package gets an axios
+  adapter over this module (`createOlympusClients({ axios: { adapter } })`).
+  The same module is what the iOS app will use.
 
 The risks it retires:
 
 1. Whether `ASWebAuthenticationSession` presents a device certificate
    installed by configuration profile at the border.
-2. That an app's own `URLSession` can't use profile-installed identities,
+2. That the app's own requests can't use profile-installed identities,
    so the app must import the `.p12` itself (a second install step for
-   users).
-3. The custom-scheme redirect, Keychain storage and refresh when the app
-   returns from the background.
+   users), and that the native module and adapter handle it.
+3. The custom-scheme redirect, Keychain storage, refresh when the app
+   returns from the background, and `@ncfritz/olympus-client` under React
+   Native.
 
 Internally (phase 4) the tester runs against the dev border nginx and the
 dev CA; externally (phase 6) against the real border.
@@ -212,5 +225,5 @@ everything else wait for the site's own conventions work.
 
 - step-ca as an ACME subordinate of the internal root: short-lived
   service and device certificates, automatic renewal.
-- The iOS app, on the tester's proven pattern and the client package's
-  auth option.
+- The iOS app in React Native, on the mobile tester's proven pattern:
+  its `client-identity` module and the client package's auth option.

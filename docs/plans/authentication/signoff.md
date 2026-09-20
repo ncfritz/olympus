@@ -99,28 +99,28 @@ the previous token, or the site serializing refreshes across tabs.
 | F4.3 | DEV | Use an access token after sign-out, before it expires                          | still accepted until expiry (documented behaviour)         | tester                |
 | F4.4 | INT | Revoke all of `user-reader`'s sessions (runbook)                               | every client of that user signed out within 10 minutes     | tester; screenshot    |
 
-## F5 — Mobile sign-in (iOS tester)
+## F5 — Mobile sign-in (React Native tester)
 
-Proves the iOS pattern before any app work (phase 4 internal, phase 6
+Proves the iOS pattern with `apps/auth-tester-mobile` before any app
+work (phase 4 internal, phase 6
 external).
 
-| Id    | Env | Steps                                                                           | Expected                                                                                              | Evidence            |
-| ----- | --- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------- |
-| F5.1  | INT | Install the tester; sign in with GitHub                                         | `ASWebAuthenticationSession` opens; returns via `olympus-auth-tester://auth`; claims shown            | screen recording    |
-| F5.2  | INT | "Call API"                                                                      | `DescribeCurrentUser` returns the user; log shows `Bearer`                                            | tester log          |
-| F5.3  | INT | Kill and relaunch the app                                                       | still signed in (refresh token from the Keychain)                                                     | recording           |
-| F5.4  | INT | Background the app 11+ minutes, return, "Call API"                              | one refresh, then success                                                                             | tester log          |
-| F5.5  | INT | "Replay previous refresh token"                                                 | `401`; session revoked; the app returns to signed out                                                 | tester log          |
-| F5.6  | EXT | Profile with `dev-valid` installed; `.p12` **not** imported in the app; sign in | sign-in page loads through the border (proves `ASWebAuthenticationSession` uses the profile identity) | recording; NAS log  |
-| F5.7  | EXT | Continue F5.6: the token exchange                                               | fails at the border (proves the app's `URLSession` can't use the profile identity)                    | tester log; NAS log |
-| F5.8  | EXT | Import `dev-valid.p12` in the app; repeat                                       | exchange and "Call API" succeed                                                                       | tester log          |
-| F5.9  | EXT | No profile, no `.p12`                                                           | the border refuses the sign-in page                                                                   | screenshot          |
-| F5.10 | EXT | `dev-revoked` imported                                                          | refused at the border                                                                                 | NAS log             |
-| F5.11 | INT | Sign out                                                                        | Keychain cleared; session revoked                                                                     | tester log          |
+| Id    | Env | Steps                                                                                               | Expected                                                                                              | Evidence            |
+| ----- | --- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------- |
+| F5.1  | INT | Install the tester; sign in with GitHub                                                             | `ASWebAuthenticationSession` opens; returns via `olympus-auth-tester://auth`; claims shown            | screen recording    |
+| F5.2  | INT | "Call API"                                                                                          | `DescribeCurrentUser` returns the user; log shows `Bearer`                                            | tester log          |
+| F5.3  | INT | Kill and relaunch the app                                                                           | still signed in (refresh token from the Keychain)                                                     | recording           |
+| F5.4  | INT | Background the app 11+ minutes, return, "Call API"                                                  | one refresh, then success                                                                             | tester log          |
+| F5.5  | INT | "Replay previous refresh token"                                                                     | `401`; session revoked; the app returns to signed out                                                 | tester log          |
+| F5.6  | EXT | Profile with `dev-valid` installed; `.p12` **not** imported in the app (`client-identity`); sign in | sign-in page loads through the border (proves `ASWebAuthenticationSession` uses the profile identity) | recording; NAS log  |
+| F5.7  | EXT | Continue F5.6: the token exchange                                                                   | fails at the border (proves the app's requests can't use the profile identity)                        | tester log; NAS log |
+| F5.8  | EXT | Import `dev-valid.p12` in the app (`client-identity`); repeat                                       | exchange and "Call API" succeed                                                                       | tester log          |
+| F5.9  | EXT | No profile, no `.p12`                                                                               | the border refuses the sign-in page                                                                   | screenshot          |
+| F5.10 | EXT | `dev-revoked` imported                                                                              | refused at the border                                                                                 | NAS log             |
+| F5.11 | INT | Sign out                                                                                            | Keychain cleared; session revoked                                                                     | tester log          |
 
 F5.6 and F5.7 record what iOS does; if F5.6 fails, the fallback
-(sign-in in `SFSafariViewController` or the app's own web view with the
-imported identity) is decided before the iOS app starts.
+(sign-in in a web view whose requests go through `client-identity`) is decided before the iOS app starts.
 
 ## F6 — Agent request (Docker)
 
