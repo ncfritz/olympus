@@ -1,6 +1,12 @@
+import { readFileSync } from "fs";
+
 /**
  * Reads typed values from environment variables, collecting every problem
  * so a misconfigured deployment is reported in one go at boot.
+ *
+ * Any variable can instead be given as a file: `NAME_FILE` is the path
+ * of a file holding the value, which is how Compose secrets arrive
+ * (`/run/secrets/<name>`, ADR 0019). Setting both is a problem.
  */
 export class EnvReader {
   readonly problems: string[] = [];
@@ -9,7 +15,7 @@ export class EnvReader {
 
   /** A string; `fallback` when unset or empty, a problem when required. */
   string(name: string, fallback?: string): string {
-    const value = this.env[name]?.trim();
+    const value = this.raw(name);
     if (value) return value;
     if (fallback === undefined) {
       this.problems.push(`${name} is required`);
@@ -20,7 +26,7 @@ export class EnvReader {
 
   /** A string that may be absent. */
   optional(name: string): string | undefined {
-    return this.env[name]?.trim() || undefined;
+    return this.raw(name);
   }
 
   /** A TCP port. */
@@ -63,5 +69,23 @@ export class EnvReader {
       .split(",")
       .map((item) => item.trim())
       .filter(Boolean);
+  }
+
+  /** `NAME`, or the contents of the file `NAME_FILE` names; trimmed. */
+  private raw(name: string): string | undefined {
+    const value = this.env[name]?.trim() || undefined;
+    const path = this.env[`${name}_FILE`]?.trim() || undefined;
+    if (path === undefined) return value;
+    if (value !== undefined) {
+      this.problems.push(`${name} and ${name}_FILE are both set; use one`);
+      return value;
+    }
+    try {
+      return readFileSync(path, "utf8").trim() || undefined;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code ?? "unreadable";
+      this.problems.push(`${name}_FILE: cannot read ${path} (${code})`);
+      return undefined;
+    }
   }
 }

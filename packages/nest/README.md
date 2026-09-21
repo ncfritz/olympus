@@ -5,7 +5,8 @@ NestJS infrastructure shared by the API (`apps/api`) and the agents
 
 - `EnvReader`, `ConfigValidationError`: read typed values from the
   environment, collecting every problem so a service reports all of them
-  at boot.
+  at boot. Any variable can come from a file instead: `NAME_FILE` names
+  it, which is how Compose secrets arrive (ADR 0019).
 - `readRuntimeConfig` (NODE_ENV, APP_NAME, LISTEN_PORT),
   `readAmqpConfig` (AMQP\_\*, with a password-free `redactedUri` for logs),
   `readLoggingConfig` (console, Loki and file logging),

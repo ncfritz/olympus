@@ -1,3 +1,6 @@
+import { mkdtempSync, writeFileSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import { describe, expect, it } from "vitest";
 import {
   EnvReader,
@@ -62,6 +65,51 @@ describe("readLoggingConfig", () => {
     const prod = readLoggingConfig(new EnvReader({}), true);
     expect([dev.console.enabled, dev.file.enabled]).toEqual([true, false]);
     expect([prod.console.enabled, prod.file.enabled]).toEqual([false, true]);
+  });
+});
+
+describe("EnvReader: values from files", () => {
+  const secret = (content: string) => {
+    const path = join(mkdtempSync(join(tmpdir(), "env-reader-")), "secret");
+    writeFileSync(path, content);
+    return path;
+  };
+
+  it("reads NAME_FILE when NAME is unset, without the trailing newline", () => {
+    const read = new EnvReader({ AMQP_PASSWORD_FILE: secret("s3cret\n") });
+    expect(read.string("AMQP_PASSWORD")).toBe("s3cret");
+    expect(read.problems).toEqual([]);
+  });
+
+  it("feeds every typed reader", () => {
+    const read = new EnvReader({ PORT_FILE: secret("5672\n") });
+    expect(read.port("PORT", 1)).toBe(5672);
+  });
+
+  it("treats an empty file as unset", () => {
+    const read = new EnvReader({ KEY_FILE: secret("\n") });
+    expect(read.optional("KEY")).toBeUndefined();
+    expect(read.string("KEY", "fallback")).toBe("fallback");
+  });
+
+  it("refuses both NAME and NAME_FILE", () => {
+    const read = new EnvReader({ KEY: "a", KEY_FILE: secret("b") });
+    expect(read.string("KEY")).toBe("a");
+    expect(read.problems).toEqual(["KEY and KEY_FILE are both set; use one"]);
+  });
+
+  it("reports a file it cannot read", () => {
+    const read = new EnvReader({ KEY_FILE: "/run/secrets/missing" });
+    expect(read.optional("KEY")).toBeUndefined();
+    expect(read.problems).toEqual([
+      "KEY_FILE: cannot read /run/secrets/missing (ENOENT)",
+    ]);
+  });
+
+  it("still reports a required value as missing", () => {
+    const read = new EnvReader({ KEY_FILE: secret("") });
+    read.string("KEY");
+    expect(read.problems).toEqual(["KEY is required"]);
   });
 });
 
