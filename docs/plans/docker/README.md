@@ -3,17 +3,17 @@
 The implementation of [ADR 0019](../../decisions/0019-compose-stacks-and-configuration.md),
 and the build half of [ADR 0011](../../decisions/0011-centralized-docker-builds.md)
 that it depends on. It comes before authentication phase 3, which needs
-the dev Hasura built here to try its migration on.
+`hasura-dev` to try its migration on.
 
-| Phase | Delivers                                                             | Where       | Depends on |
-| ----- | -------------------------------------------------------------------- | ----------- | ---------- |
-| 0     | Close the exposed database, rotate its secrets, restart policies     | Mac Mini    | —          |
-| 1     | Images: monorepo Dockerfiles, `/health`, the bake file, the registry | repo        | —          |
-| 2     | Configuration: `_FILE` secrets, RabbitMQ definitions                 | repo        | 1          |
-| 3     | Compose files, `stack.sh`, and dev stood up from scratch             | repo + host | 1, 2       |
-| 4     | Production cutover, stack by stack                                   | Mac Mini    | 3          |
-| 5     | The NAS asset agent; the new-host runbook                            | NAS, docs   | 4          |
-| 6     | Backups and the restore drill                                        | host        | 3          |
+| Phase | Delivers                                                                         | Where         | Depends on |
+| ----- | -------------------------------------------------------------------------------- | ------------- | ---------- |
+| 0     | Close the exposed database, rotate its secrets, restart policies                 | Mac Mini      | —          |
+| 1     | Images: monorepo Dockerfiles, `/health`, the bake file, the registry             | repo          | —          |
+| 2     | Configuration: `_FILE` secrets, RabbitMQ definitions                             | repo          | 1          |
+| 3     | Compose files, `stack.sh`, workspace env files; the laptop stood up from nothing | repo + laptop | 1, 2       |
+| 4     | Production cutover, and the home lab's dev database and Hasura                   | Mac Mini      | 3          |
+| 5     | The new-host runbook                                                             | docs          | 3          |
+| 6     | Backups and the restore drill                                                    | Mac Mini      | 4          |
 
 ## The current stack
 
@@ -93,26 +93,26 @@ one baked into an image. Rotations work without rebuilding.
 
 ## Phase 1 — Images
 
-1. Dockerfiles for the API and the four agents per ADR 0011: `turbo
-prune <app> --docker`, `pnpm install --frozen-lockfile`, build,
-   `pnpm deploy --filter <app> --prod`, a runtime stage as `node` on
-   `node:26-alpine`, `CMD ["node", "dist/main.js"]`. The asset agent
-   keeps ffmpeg and HandBrake. `.dockerignore` excludes `*.env`,
-   `node_modules`, `dist`, `infra/dev-ca`.
+1. Dockerfiles for the API and the four agents per ADR 0011:
+   `turbo prune <app> --docker`, `pnpm install --frozen-lockfile`, build,
+   `pnpm deploy --filter <app> --prod`, then a runtime stage on
+   `node:26-alpine` running as `node` with `CMD ["node", "dist/main.js"]`.
+   The asset agent keeps ffmpeg and HandBrake. `.dockerignore` excludes
+   `*.env`, `node_modules`, `dist` and `infra/dev-ca`.
 2. `GET /health` (public, outside the API documents) in
    `@ncfritz/olympus-nest`, beside `/metrics`, for every service.
 3. The Hasura image: `v2.39.1.cli-migrations-v3` plus `infra/hasura`'s
    migrations and metadata, and an entrypoint that exports
-   `HASURA_GRAPHQL_ADMIN_SECRET` and `HASURA_GRAPHQL_DATABASE_URL` from
-   their `_FILE`s before handing over to the image's own.
-4. The RabbitMQ image, from today's `ncfritz/rabbitmq` Dockerfile (to be
-   copied into `infra/docker/rabbitmq/`), on a pinned base.
-5. `infra/docker/docker-bake.hcl`: every image, `linux/arm64` (and
-   `linux/amd64` for the asset agent), tagged with the commit.
-6. The registry (`registry:2`) on the Mac Mini with an internal-CA
+   `HASURA_GRAPHQL_ADMIN_SECRET`, `HASURA_GRAPHQL_DATABASE_URL` and
+   `HASURA_GRAPHQL_METADATA_DATABASE_URL` from their `_FILE`s before
+   handing over to the image's own.
+4. `infra/docker/docker-bake.hcl`: every image, `linux/arm64` (and
+   `linux/amd64` for the asset agent), tagged with the commit; `--load`
+   for the laptop.
+5. The registry (`registry:2`) on the Mac Mini with an internal-CA
    certificate, as its own small stack.
-7. Tests: each image builds, starts, answers `/health`, and `docker run
---rm <image> cat production.env` fails.
+6. Tests: each image builds, starts, answers `/health`, and has no
+   `production.env` in it.
 
 ## Phase 2 — Configuration
 
@@ -124,57 +124,70 @@ prune <app> --docker`, `pnpm install --frozen-lockfile`, build,
 3. The secret list per stack, and what each service reads, in
    `infra/docker/README.md`.
 
-## Phase 3 — Compose files and dev
+## Phase 3 — Compose files, and the laptop
 
 1. `infra/docker/compose/{data,rabbitmq,nginx,olympus}.yml` per the ADR:
    the `x-service` fragment, networks, published ports, health checks,
-   secrets, environment interpolated with `${NAME:?}`.
-2. `infra/docker/env/mac-mini.prod.env` and `mac-mini.dev.env`, and
+   secrets, environment interpolated with `${NAME:?}`. `hasura-dev` is in
+   `data.yml` behind a profile that `mac-mini.env` turns on.
+2. `infra/docker/env/mac-mini.env` and `laptop.env`, and
    `infra/docker/nginx/olympus.conf` (the Olympus server blocks, which the
    host's nginx includes; its other sites stay the host's).
 3. `infra/docker/stack.sh`: `bootstrap` (networks, data and secrets
-   directories), `check` (every secret present; `docker compose config`
-   clean), `up`, `down`, `pull`, `logs`, per environment and stack.
-4. The dev CA's API certificate gains `host.docker.internal`, for agents
-   in containers calling a workspace-run API.
-5. **Stand up dev from nothing** on the Mac Mini: `bootstrap`, a restore
-   of production's Postgres into `data-dev`, then `data-dev` and
-   `olympus-dev`. This is the rehearsal for a new host. Then work on one
-   agent from the workspace with the rest in containers.
-6. `infra/docker/compose/dev.yml` (the workspace-only infra of ADR 0018's
-   phase 0) is replaced by `data.yml` under a dev project.
+   directories), `check` (every secret present, `docker compose config`
+   clean), `up`, `down`, `pull`, `logs`, per stack.
+4. The workspace env files: every service's `dev.env.example` points at
+   the Mac Mini's dev endpoints (`hasura-dev`, RabbitMQ as the dev user on
+   `/dionysus-dev`); a `local.env.example` points at localhost.
+5. The dev CA's API certificate gains `host.docker.internal`, for agents
+   in the laptop's containers calling an API run from the IDE.
+6. **Stand the laptop up from nothing**: `bootstrap`, the laptop's own
+   secrets, a restore of a backup, `data` and `rabbitmq`, then services
+   from the IDE and the `olympus` stack from local images. This is the
+   rehearsal for a new host, and nothing on the Mac Mini changes for it.
+7. `infra/docker/compose/dev.yml` (the workspace-only infra of ADR 0018's
+   phase 0) is replaced by `data.yml` with `laptop.env`.
 
 ## Phase 4 — Production cutover
 
 One stack at a time, each with its old compose file kept for rollback:
 
-1. **rabbitmq**: same data directory, hostname `snowball`, definitions
-   loaded; per-service users created; the old `admin` password rotated.
-2. **data**: same data directory, the pinned major. Before the new
-   Hasura image first starts, mark the baseline migration as applied
+1. **rabbitmq**: same data directory, hostname `snowball`, the image
+   pinned by tag, definitions loaded: per-service users, the dev user on
+   `/dionysus-dev`; the old `admin` password rotated.
+2. **data**: same data directory, the pinned major, production's Hasura
+   still on today's image and metadata.
+3. **Dev's database and Hasura**: the `olympus_dev` role and database,
+   a restore of production into it, then `hasura-dev` on the new image.
+   The restore carries the schema, so the baseline migration is marked
+   applied first
    (`hasura migrate apply --version 1789862400000 --skip-execution`, per
-   `infra/hasura/README.md`) and set `HASURA_GRAPHQL_DATABASE_URL`. **This
-   is where the repository's metadata is first applied to production** —
-   I'll stop and walk through it with you then.
-3. **olympus**: the new images from the registry, secrets from
-   `${SECRETS_DIR}`, with each secret rotated as it moves (finding 1).
-   Prometheus scrape targets change to the new names.
-4. **nginx**: the Olympus server blocks from the repository.
+   `infra/hasura/README.md`). This is the first time the repository's
+   metadata is applied anywhere real, on a copy.
+4. **Production's Hasura on the new image**: the same two steps, marking
+   the baseline and setting `HASURA_GRAPHQL_DATABASE_URL`, against
+   production. **This is where the repository's metadata is first applied
+   to production**; I'll stop and walk through it with you, with step 3
+   as the rehearsal.
+5. **olympus**: the new images from the registry, secrets from
+   `${SECRETS_DIR}`, each rotated as it moves (finding 1). Prometheus
+   scrape targets change to the new names.
+6. **nginx**: the Olympus server blocks from the repository.
 
 Done when the old compose files and images can be deleted and every
 service answers `/health`.
 
-## Phase 5 — The NAS, and a new host
+## Phase 5 — A new host
 
-1. The NAS asset agent: its current compose file (not yet seen), an
-   `env/nas.prod.env`, and the `amd64` image from the registry.
-2. `docs/guides/new-host.md`: from an empty machine to a running
-   platform: Docker, the repository, the secrets directory, `bootstrap`,
-   the restore, `up`. Written from phase 3's rehearsal.
+`docs/guides/new-host.md`: from an empty machine to a running platform
+(Docker, the repository, a secrets directory, `bootstrap`, the restore,
+`up`), written from the laptop's rehearsal. The NAS deployment follows
+with the later Olympus tooling work.
 
 ## Phase 6 — Backups
 
 1. Nightly `pg_dump` per database and RabbitMQ's definitions, to the NAS,
    with a retention.
-2. The restore drill: `data-dev` rebuilt from last night's backup, on a
-   schedule, so the backups are known to restore.
+2. The restore drill: `olympus_dev` rebuilt from last night's backup on a
+   schedule, so the backups are known to restore; the laptop refreshes
+   from the same files.
