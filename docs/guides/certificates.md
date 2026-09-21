@@ -2,7 +2,8 @@
 
 The certificates behind [ADR 0018](../decisions/0018-authentication.md).
 They are issued by hand, from the XCA database that holds the internal
-root; [step-ca](../decisions/0018-authentication.md) replaces this later.
+root; the internal CA ([ADR 0020](../decisions/0020-internal-certificate-authority.md))
+replaces this later.
 
 For development nothing here is needed: `scripts/dev-ca.sh` writes a
 throwaway copy of the whole hierarchy into `infra/dev-ca/certs`, with the

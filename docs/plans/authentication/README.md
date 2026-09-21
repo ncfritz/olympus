@@ -17,7 +17,7 @@ checked before enforcement.
 | 6     | Border: NAS nginx, device certificates, DNS, redirect URIs | 3, 4, 5    | F9, F5, F1–F3 external  |
 | 7     | Key rotation and operations runbooks                       | 3          | F12, F8                 |
 | 8     | Enforcement: services first, then users                    | 2, 5, 6    | F13, then all           |
-| Later | step-ca for short-lived certificates; the iOS app          | 8          |                         |
+| Later | The internal CA (ADR 0020); the iOS app                    | 8          |                         |
 
 Phases 2 and 3 are independent and can run in either order or together.
 
@@ -258,7 +258,8 @@ everything else wait for the site's own conventions work.
 
 ## Later
 
-- step-ca as an ACME subordinate of the internal root: short-lived
-  service and device certificates, automatic renewal.
+- The internal CA replaces step-ca here: ACME, renewal and published
+  revocation lists ([ADR 0020](../../decisions/0020-internal-certificate-authority.md),
+  [plan](../internal-ca/README.md)).
 - The iOS app in React Native, on the mobile tester's proven pattern:
   its `client-identity` module and the client package's auth option.
