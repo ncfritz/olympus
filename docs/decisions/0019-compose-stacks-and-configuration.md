@@ -1,6 +1,6 @@
 # 0019. Compose stacks, configuration and secrets
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-21
 
 ## Context
@@ -196,9 +196,9 @@ that variable instead of storing the password.
   data and its metadata database. Each instance keeps its metadata in its
   own database, so the two never share a catalog. A schema change is
   deployed to `hasura-dev` first and tried there; production follows by
-  moving its tag. It runs with the console on and is published to the LAN
-  with its own admin secret; its data is a copy of production's, so it is
-  as sensitive.
+  moving its tag. It is published to the LAN with its own admin secret;
+  its data is a copy of production's, so it is as sensitive.
+- `hasura-dev` serves the console (below).
 - RabbitMQ is shared: dev services connect as a user whose permissions
   cover only `/dionysus-dev`.
 - The API, agents and site run from the IDE with `pnpm dev`. The site's
@@ -212,6 +212,19 @@ the IDE with `pnpm dev:local`. The data is a restore of a backup; the
 secrets are the laptop's own, never production's. What the laptop can't
 reach away from home, the NAS's SSH and NZBGet, leaves the asset and
 download handlers idle there.
+
+**The console in dev.** `hasura-dev` and the laptop's Hasura serve the
+console (`HASURA_GRAPHQL_ENABLE_CONSOLE`, with dev mode for detailed
+errors), for inspecting data and trying queries; production's never
+does. What changes the schema still goes through the CLI's
+`hasura console`, which writes migrations and metadata into
+`infra/hasura`:
+
+- The image applies the repository's metadata when it starts, so a
+  restart or a redeploy replaces anything tracked, permitted or renamed
+  in the served console.
+- A table or column made there stays in `olympus_dev` but exists nowhere
+  else, and the next restore from production removes it.
 
 Standing the laptop up from the repository, a secrets directory and a
 backup is also the rehearsal for a new host.

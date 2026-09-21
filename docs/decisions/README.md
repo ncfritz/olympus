@@ -19,7 +19,7 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0008](0008-preserve-and-enforce-api-conventions.md)  | Preserve existing API conventions and check them automatically  | Accepted                    |
 | [0009](0009-api-operation-generator.md)               | Stub generator for new API operations                           | Accepted                    |
 | [0010](0010-testing-strategy.md)                      | Testing strategy                                                | Proposed                    |
-| [0011](0011-centralized-docker-builds.md)             | Build all images centrally on the Mac Mini                      | Proposed                    |
+| [0011](0011-centralized-docker-builds.md)             | Build all images centrally on the Mac Mini                      | Accepted                    |
 | [0012](0012-theming-with-antd-tokens.md)              | Theming through AntD design tokens and a theme package          | Proposed                    |
 | [0013](0013-minerva-calendar-sync-integration.md)     | Minerva calendar sync feeds Hasura over RabbitMQ                | Accepted (details deferred) |
 | [0014](0014-feature-folder-layout.md)                 | Feature-folder layout and service layer for the API             | Accepted                    |
@@ -27,7 +27,7 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0016](0016-agents-with-a-management-console.md)      | Agents with a management console                                | Accepted                    |
 | [0017](0017-shared-api-client-and-request-metrics.md) | Shared API client and request metrics                           | Accepted                    |
 | [0018](0018-authentication.md)                        | Authentication for users, devices and services                  | Accepted                    |
-| [0019](0019-compose-stacks-and-configuration.md)      | Compose stacks, configuration and secrets                       | Proposed                    |
+| [0019](0019-compose-stacks-and-configuration.md)      | Compose stacks, configuration and secrets                       | Accepted                    |
 | [0020](0020-internal-certificate-authority.md)        | An internal certificate authority: PKI service and signer       | Proposed                    |
 
 New records: copy [template.md](template.md), take the next number.

@@ -7,7 +7,7 @@ that it depends on. It comes before authentication phase 3, which needs
 
 | Phase | Delivers                                                                         | Where         | Depends on |
 | ----- | -------------------------------------------------------------------------------- | ------------- | ---------- |
-| 0     | Close the exposed database, rotate its secrets, restart policies                 | Mac Mini      | —          |
+| 0     | Close the exposed database, rotate its secrets, restart policies (**done**)      | Mac Mini      | —          |
 | 1     | Images: monorepo Dockerfiles, `/health`, the bake file, the registry             | repo          | —          |
 | 2     | Configuration: `_FILE` secrets, RabbitMQ definitions                             | repo          | 1          |
 | 3     | Compose files, `stack.sh`, workspace env files; the laptop stood up from nothing | repo + laptop | 1, 2       |
@@ -67,7 +67,7 @@ Two things to keep through any change:
   must be set on the engine **before** the repository's metadata is
   applied, or the source disconnects.
 
-## Phase 0 — On the running stack, now
+## Phase 0 — On the running stack (done 2026-09-21)
 
 No repository changes; each item is an edit to the files on the Mac
 Mini. Node's `--env-file` never overrides a variable already in the
@@ -135,7 +135,9 @@ one baked into an image. Rotations work without rebuilding.
 1. `infra/docker/compose/{data,rabbitmq,nginx,olympus}.yml` per the ADR:
    the `x-service` fragment, networks, published ports, health checks,
    secrets, environment interpolated with `${NAME:?}`. `hasura-dev` is in
-   `data.yml` behind a profile that `mac-mini.env` turns on.
+   `data.yml` behind a profile that `mac-mini.env` turns on. The console
+   is a per-instance setting: on for `hasura-dev` and the laptop, off for
+   production.
 2. `infra/docker/env/mac-mini.env` and `laptop.env`, and
    `infra/docker/nginx/olympus.conf` (the Olympus server blocks, which the
    host's nginx includes; its other sites stay the host's).

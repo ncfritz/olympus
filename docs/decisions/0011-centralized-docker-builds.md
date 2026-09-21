@@ -1,6 +1,6 @@
 # 0011. Build all images centrally on the Mac Mini
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-18
 
 ## Context
