@@ -72,7 +72,7 @@ is described by the repository.
 | ---------- | --------------------------------------------------------------------------------------------- | ------------------ |
 | Mac Mini   | Production: all four stacks, and `hasura-dev` in the data stack                               | `env/mac-mini.env` |
 | Dev laptop | A full local stack: `data` and `rabbitmq`, optionally `nginx` and `olympus` from local images | `env/laptop.env`   |
-| NAS        | The asset agent (brought in later; see Open)                                                  | —                  |
+| NAS        | `compose/nas.yml`: the asset agent alone, its handlers chosen in the env file                 | `env/nas.env`      |
 
 Services run from the IDE read the workspace env files that already
 exist: `dev.env` (`pnpm dev`) points at the home lab's dev endpoints,
@@ -128,9 +128,12 @@ Docker networks. The laptop publishes the same set on 127.0.0.1.
   with `infra/hasura`'s migrations and metadata copied in, so deploying
   an image applies the schema it was built with, and no stack
   bind-mounts anything from a checkout.
-- **RabbitMQ** stays today's custom image, named in the host's env file
-  and pinned to a version tag; building it stays outside this
-  repository for now (see Open).
+- **RabbitMQ** is our own image from `infra/docker/rabbitmq/`: the
+  management image plus the delayed-message, consistent-hash and
+  Prometheus plugins, the plugin's download checked against its checksum.
+  It stays on the 4.1 series: the delayed-message plugin, which carries
+  every `x-delay` retry, is no longer maintained and can't follow
+  RabbitMQ to 4.3, which drops the Mnesia store it keeps messages in.
 - **Third-party** images are pinned to an exact version: Postgres at the
   major version its data directory was created with, nginx at a stable
   release.
@@ -312,9 +315,11 @@ flowchart LR
 
 - Whether `env/*.env` stays committed if the repository is ever public:
   it names internal hosts.
-- The NAS deployment and the RabbitMQ image stay outside the repository
-  until the later Olympus tooling work; the stacks here name the RabbitMQ
-  image by tag.
+- AMQP to the NAS crosses the LAN unencrypted (credentials included);
+  TLS on 5671 when that link is next touched.
+- Replacing the delayed-message exchange, most likely with per-delay
+  queues that dead-letter back when their TTL expires, before any
+  RabbitMQ upgrade past 4.2.
 
 ## Implementation
 

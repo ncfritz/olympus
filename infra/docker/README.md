@@ -9,6 +9,8 @@ Planned contents (ADR 0011, ADR 0019, [plan](../../docs/plans/docker/README.md))
   are files in `${SECRETS_DIR}` on the host
 - `stack.sh`: `bootstrap`, `check`, `up`, `down` per stack
 - `hasura/`: our Hasura image, carrying the migrations and metadata
+- `rabbitmq/`: RabbitMQ with the plugins Olympus uses
+- `compose/nas.yml`, `env/nas.env`: the NAS's asset agent
 - Dockerfiles stay next to each app and use `turbo prune <app> --docker`
 
 `compose/dev.yml` (Postgres and Hasura for the workspace) is replaced by

@@ -108,6 +108,11 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
   is missing. Clients must handle `originalLanguage`, a season's `series`,
   an episode's `series`/`season`, and the country/language of titles,
   videos and release dates being absent.
+- Retries and back-offs (`x-delay`) use RabbitMQ's delayed-message
+  exchange plugin, which is no longer maintained and can't run on
+  RabbitMQ 4.3 (Mnesia is removed). The broker stays on 4.1 until the
+  delays move to per-delay queues with a TTL that dead-letter back
+  (ADR 0019).
 - Every `Dockerfile` still targets the old single-repo layout (npm +
   GitHub Packages token) and copies `production.env` into the image.
   Rebuilt in phase 6 (ADR 0011, 0019).

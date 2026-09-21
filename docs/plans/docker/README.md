@@ -12,7 +12,7 @@ that it depends on. It comes before authentication phase 3, which needs
 | 2     | Configuration: `_FILE` secrets, RabbitMQ definitions                             | repo          | 1          |
 | 3     | Compose files, `stack.sh`, workspace env files; the laptop stood up from nothing | repo + laptop | 1, 2       |
 | 4     | Production cutover, and the home lab's dev database and Hasura                   | Mac Mini      | 3          |
-| 5     | The new-host runbook                                                             | docs          | 3          |
+| 5     | The new-host runbook; the NAS                                                    | docs, NAS     | 3          |
 | 6     | Backups and the restore drill                                                    | Mac Mini      | 4          |
 
 ## The current stack
@@ -54,6 +54,7 @@ Severity is for a LAN-only platform about to be exposed at the border.
 | 13  | Low      | The API's `DIONYSUS_UPLOAD_PATH` and `DIONYSUS_PUBLISH_PATH` are a macOS path that isn't mounted into the container: uploads land in the container's own layer and vanish when it is recreated. Worth checking whether uploads work today.                | 3             |
 | 14  | Low      | Metrics ports differ per agent (3100, 13003, 13007) for no reason; each container has its own network namespace.                                                                                                                                          | 3             |
 | 15  | Low      | Leftovers: `version:` keys (ignored by Compose v2), the API's unused `WSS_HOST`, Postgres's unused network.                                                                                                                                               | 3             |
+| 16  | Low      | The RabbitMQ image downloads its delayed-message plugin unverified, and that plugin is no longer maintained: it can't run on RabbitMQ 4.3, and every `x-delay` retry depends on it.                                                                       | 1, roadmap    |
 
 Two things to keep through any change:
 
@@ -84,11 +85,13 @@ one baked into an image. Rotations work without rebuilding.
 4. Rotate Hasura's admin secret; set the new one on Hasura and as
    `HASURA_PASSWORD` in the API's `environment:`. Turn off
    `HASURA_GRAPHQL_DEV_MODE` and `HASURA_GRAPHQL_ENABLE_CONSOLE`.
-5. `restart: unless-stopped` on the six services without one; remove the
+5. Tag the RabbitMQ image you build instead of `latest`, at the version
+   it was built from.
+6. `restart: unless-stopped` on the six services without one; remove the
    9229 mapping.
-6. Log rotation in Docker's `daemon.json` (`"log-opts": {"max-size":
+7. Log rotation in Docker's `daemon.json` (`"log-opts": {"max-size":
 "10m", "max-file": "5"}`), which covers every container.
-7. Since every secret in finding 1 has been inside an image, plan to
+8. Since every secret in finding 1 has been inside an image, plan to
    rotate the rest as phase 2 moves them out; the order is in phase 4.
 
 ## Phase 1 — Images
@@ -106,12 +109,15 @@ one baked into an image. Rotations work without rebuilding.
    `HASURA_GRAPHQL_ADMIN_SECRET`, `HASURA_GRAPHQL_DATABASE_URL` and
    `HASURA_GRAPHQL_METADATA_DATABASE_URL` from their `_FILE`s before
    handing over to the image's own.
-4. `infra/docker/docker-bake.hcl`: every image, `linux/arm64` (and
+4. The RabbitMQ image, `infra/docker/rabbitmq/Dockerfile` (**done
+   2026-09-21**): today's image with the plugin download checked against
+   its checksum and the three plugins enabled in one layer.
+5. `infra/docker/docker-bake.hcl`: every image, `linux/arm64` (and
    `linux/amd64` for the asset agent), tagged with the commit; `--load`
    for the laptop.
-5. The registry (`registry:2`) on the Mac Mini with an internal-CA
+6. The registry (`registry:2`) on the Mac Mini with an internal-CA
    certificate, as its own small stack.
-6. Tests: each image builds, starts, answers `/health`, and has no
+7. Tests: each image builds, starts, answers `/health`, and has no
    `production.env` in it.
 
 ## Phase 2 — Configuration
@@ -153,7 +159,7 @@ one baked into an image. Rotations work without rebuilding.
 One stack at a time, each with its old compose file kept for rollback:
 
 1. **rabbitmq**: same data directory, hostname `snowball`, the image
-   pinned by tag, definitions loaded: per-service users, the dev user on
+   built from the repository at the version running today, definitions loaded: per-service users, the dev user on
    `/dionysus-dev`; the old `admin` password rotated.
 2. **data**: same data directory, the pinned major, production's Hasura
    still on today's image and metadata.
@@ -177,12 +183,15 @@ One stack at a time, each with its old compose file kept for rollback:
 Done when the old compose files and images can be deleted and every
 service answers `/health`.
 
-## Phase 5 — A new host
+## Phase 5 — A new host, and the NAS
 
-`docs/guides/new-host.md`: from an empty machine to a running platform
-(Docker, the repository, a secrets directory, `bootstrap`, the restore,
-`up`), written from the laptop's rehearsal. The NAS deployment follows
-with the later Olympus tooling work.
+1. `docs/guides/new-host.md`: from an empty machine to a running
+   platform (Docker, the repository, a secrets directory, `bootstrap`,
+   the restore, `up`), written from the laptop's rehearsal.
+2. The NAS: `compose/nas.yml`, one container running the asset agent's
+   `amd64` image, and `env/nas.env` choosing its handlers. Its own
+   certificate (`OU=nas`) and RabbitMQ user; the NAS's Docker trusts the
+   registry's internal-CA certificate.
 
 ## Phase 6 — Backups
 
