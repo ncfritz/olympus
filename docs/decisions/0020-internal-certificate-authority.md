@@ -88,26 +88,36 @@ signing API is what an HSM would give us, drawn in software.
 - **Storage**: its own SQLite file on its own volume. Keys are never in
   Postgres, and a dump of the platform database holds nothing that signs.
 
-### Key protection: sealed until unsealed
+### Key protection: encrypted, unsealed automatically
 
 - Each private key is encrypted with its own data key (AES-256-GCM). The
-  data keys are wrapped by a key-encryption key derived from a
-  passphrase with Argon2id. A known ciphertext tells a wrong passphrase
-  from a corrupt store.
-- The signer starts **sealed**. Unsealing (from the UI, or a CLI inside
-  the container) loads the keys into memory; sealing, or a restart,
-  forgets them.
+  data keys are wrapped by a master key, and the master key is wrapped
+  twice:
+  - by the **unseal key**, 32 random bytes in a Compose secret
+    (`pki_signer_unseal_key`, ADR 0019) that only the signer mounts;
+  - by a **recovery passphrase** (Argon2id), kept in the password
+    manager and nowhere on the host.
+- **The signer unseals itself at start** with the unseal key, so the CA
+  survives an unattended reboot of the Mac Mini. If the secret is missing
+  or wrong it starts sealed and alerts, and the recovery passphrase
+  unseals it (UI or CLI).
+- **Sealing is deliberate**: `seal` (a suspected compromise, a lost
+  backup) forgets the keys and records the seal in the store, so the
+  signer stays sealed across restarts until it is unsealed with the
+  recovery passphrase. The unseal key alone does not undo it.
 - While sealed, issuance, renewal, ACME finalisation and CRL signing
-  return `503`; scheduled CRL signing retries until unsealed and alerts.
-  Everything read-only keeps working.
-- The passphrase lives in the password manager, nowhere on the host.
-  Losing it loses the online intermediates, not the hierarchy: the root
-  (offline, in XCA) reissues them.
-- **The cost**: an unattended reboot of the Mac Mini leaves the CA sealed
-  until someone unseals it. Lifetimes are chosen so that is survivable:
-  ACME certificates renew with a third of their life left, so the CA can
-  stay sealed for weeks before anything expires; published CRLs outlive
-  their publishing interval by days (Revocation).
+  return `503`; scheduled CRL signing retries and alerts. Everything
+  read-only keeps working.
+- Rotating the unseal key or the passphrase rewraps the master key;
+  nothing else changes.
+- **The cost**: whoever can read both the Mac Mini's secrets directory
+  and the signer's volume has the online issuers, as they would have the
+  API's signing keys (ADR 0018) today. What bounds it: the store and the
+  unseal key are never in the same backup; Internal TLS is
+  name-constrained; the root stays offline and can revoke and reissue
+  every intermediate. Losing the passphrase is harmless while the unseal
+  key exists; losing both loses the online intermediates, which the root
+  reissues.
 
 ### Hierarchy
 
@@ -158,8 +168,9 @@ Two modes, per profile:
 - **Generated, and escrowed**: the signer generates the key, the
   certificate is issued, and the key is kept, wrapped by its own data
   key like the issuers' keys. It can be exported again (PKCS#12 or PEM)
-  by someone holding `pki-admin`, with a reason, re-authenticated, and
-  recorded in the audit log. This is for devices that cannot generate a
+  by someone holding `pki-admin`, with a reason, after a recent sign-in
+  (the access token's `auth_time`, ADR 0018), and recorded in the audit
+  log. This is for devices that cannot generate a
   CSR, or where re-downloading a lost file matters more than the key
   never having existed outside the device.
 
@@ -295,7 +306,9 @@ profiles; ACME accounts and EAB credentials; the audit log.
   never seals, the CA.
 - `pki` joins `edge`, so nginx can proxy the management API.
 - Backups: the signer's SQLite file (encrypted keys) and the `pki`
-  database, together; the XCA database, as today.
+  database, together; the XCA database, as today. The unseal key is not
+  in that backup: it lives in the host's secrets and, with the recovery
+  passphrase, in the password manager.
 - A second host later changes where the stack runs and what
   `pki.internal.ncfritz.net` resolves to, nothing else.
 
@@ -311,7 +324,7 @@ flowchart LR
   subgraph MacMini["Mac Mini"]
     subgraph PKI["pki stack"]
       APP["pki (NestJS)<br/>management API, ACME, renewal<br/>:9443 LAN"]
-      SIG["pki-signer (Python)<br/>keys, sealed at start"]
+      SIG["pki-signer (Python)<br/>keys, unsealed at start"]
       DB[("pki-postgres")]
       PUB[("pki-published")]
     end
@@ -403,8 +416,9 @@ sequenceDiagram
 - Writing the ACME server is the largest single piece of work.
 - The CA shares the Mac Mini with what it vouches for: losing that host
   loses both. Accepted for now; a second host moves the `pki` stack.
-- Every restart of the host means an unseal. The CA being sealed is
-  visible (a metric and an alert), not silent.
+- A restart of the host needs nobody: the signer unseals itself. The CA
+  being sealed (the secret missing, or a deliberate seal) is visible, a
+  metric and an alert, not silent.
 - The runbook ([certificates](../guides/certificates.md)) is rewritten for
   the UI; XCA remains only for the root.
 - Replaces ADR 0018's "later: step-ca" item. The rest of ADR 0018
@@ -415,10 +429,6 @@ sequenceDiagram
 
 - Name constraints on Olympus Services and Olympus Devices when they are
   next reissued.
-- Whether the Internal TLS key should unseal automatically (a key file
-  readable only by the signer) so the CA survives an unattended reboot,
-  trading its protection for availability; its name constraints bound
-  the damage.
 - `dns-01`: delegate `_acme-challenge.internal.ncfritz.net` to an
   acme-dns instance, or move the internal zone off the router.
 - Device enrollment for iOS by SCEP in a configuration profile, instead

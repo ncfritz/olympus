@@ -1,21 +1,21 @@
 # Internal CA: phased implementation plan
 
 The implementation of [ADR 0020](../../decisions/0020-internal-certificate-authority.md).
-Each phase ends in a working, deployable state and a "done when" that is
-checked before the next begins. XCA stays authoritative until phase 4;
+Each phase ends in a working, deployable state and a functional sign-off
+against [signoff.md](signoff.md). XCA stays authoritative until phase 4;
 until then everything runs against the dev CA.
 
-| Phase | Delivers                                                          | Depends on             |
-| ----- | ----------------------------------------------------------------- | ---------------------- |
-| 0     | Scaffolding: both services, Python toolchain, dev CA, dev compose | —                      |
-| 1     | The signer: key store, seal, signing, invariants, escrow          | 0                      |
-| 2     | Management core: issuers, profiles, issuance, revocation, audit   | 1                      |
-| 3     | Revocation lists: scheduling, publication, relying parties        | 2                      |
-| 4     | Production cutover from XCA                                       | 3; Docker plan phase 3 |
-| 5     | Renewal over mutual TLS                                           | 4                      |
-| 6     | ACME                                                              | 4                      |
-| 7     | The PKI area in the site                                          | 2; roadmap phase 3     |
-| Later | SCEP, `dns-01`, OCSP, ARI, hardware keys                          |                        |
+| Phase | Delivers                                                          | Depends on                              | Sign-off flows                |
+| ----- | ----------------------------------------------------------------- | --------------------------------------- | ----------------------------- |
+| 0     | Scaffolding: both services, Python toolchain, dev CA, dev compose | —                                       | —                             |
+| 1     | The signer: key store, automatic unseal, signing, invariants      | 0                                       | C1 (DEV), C2                  |
+| 2     | Management core: issuers, profiles, issuance, escrow, audit       | 1; authentication phase 3 (`auth_time`) | C3, C4.1–C4.6, C7             |
+| 3     | Revocation lists: scheduling, publication, relying parties        | 2                                       | C5, C6.1 (DEV)                |
+| 4     | Production cutover from XCA                                       | 3; Docker plan phase 3                  | C8, C1.2, C5.4, C6, C4.7, C12 |
+| 5     | Renewal over mutual TLS                                           | 4                                       | C9                            |
+| 6     | ACME                                                              | 4                                       | C10                           |
+| 7     | The PKI area in the site                                          | 2; roadmap phase 3                      | C11                           |
+| Later | SCEP, `dns-01`, OCSP, ARI, hardware keys                          |                                         |                               |
 
 Phases 5 and 6 are independent. Phase 7 can start as soon as the site is
 imported and grows with each phase after 2; until then the API is driven
@@ -46,17 +46,22 @@ from its OpenAPI page and the break-glass CLI.
    Hasura; both services run from the workspace (`pnpm dev`), the signer
    on a socket in a git-ignored directory.
 
-**Done when** both services start, `/health` answers, the Turbo tasks
-pass, and the SDK builds with an empty `pki` client.
+**Sign-off:** both services start, `/health` answers, the Turbo tasks
+pass, and the SDK builds with an empty `pki` client; no functional flows.
 
 ## Phase 1 — The signer
 
 1. **Key store**: SQLite on the signer's volume. Per-key data keys
    (AES-256-GCM), wrapped by a key-encryption key from Argon2id over the
    passphrase; a check value to reject a wrong passphrase.
-2. **Seal**: `status`, `unseal`, `seal`; sealed at start; every signing
-   operation `503` while sealed. `initialise` sets the passphrase on an
-   empty store and refuses on a populated one.
+2. **Seal**: a master key wrapped by the unseal key (a file secret) and
+   by the recovery passphrase; the signer unseals itself at start with
+   the unseal key, and starts sealed if the secret is missing. `seal` is
+   recorded in the store and survives restarts until `unseal` with the
+   passphrase. Every signing operation `503` while sealed. `initialise`
+   writes a new unseal key and sets the passphrase on an empty store, and
+   refuses on a populated one; `rotate-unseal-key` and
+   `change-passphrase` rewrap the master key.
 3. **Keys**: generate P-256 and RSA 2048 (subject keys only); import
    encrypted PKCS#8 (the XCA intermediates); public keys out, never
    private ones.
@@ -73,15 +78,14 @@ pass, and the SDK builds with an empty `pki` client.
 7. **Transport**: Uvicorn on a Unix socket; the shared token; no TCP
    listener in any configuration.
 8. **CLI** (`python -m pki_signer`): `initialise`, `unseal`, `seal`,
-   `status`.
+   `status`, `rotate-unseal-key`, `change-passphrase`.
 9. **Tests**: every certificate and CRL produced is parsed back and
    verified against its issuer with `cryptography` and with `openssl
 verify` / `openssl crl -verify`; each invariant has a refusal test;
-   seal and unseal, wrong passphrase, a restart forgetting keys.
+   automatic unseal, a missing or wrong unseal key, a deliberate seal
+   surviving a restart, a wrong passphrase.
 
-**Done when** a certificate signed by the dev Services intermediate
-through the signer is accepted by the API's `3443` in the existing
-handshake test, and each invariant's refusal is covered.
+**Sign-off:** C1 (DEV), C2.
 
 ## Phase 2 — Management core
 
@@ -102,8 +106,8 @@ handshake test, and each invariant's refusal is covered.
    escrowed key deleted on revocation.
 6. **Auth**: JWTs verified against the API's JWKS (`kid`, `aud`), roles
    `pki-admin` and `pki-operator`; escrow export requires a recent
-   sign-in, which needs an `auth_time` claim added to the API's access
-   tokens (a change to the ADR 0018 token service, made there).
+   sign-in, read from the access token's `auth_time` (ADR 0018,
+   authentication phase 3).
 7. **Audit**: every issuance, revocation, export, unseal and seal, with
    the principal and a reason where one is required.
 8. **Metrics**: `pki_signer_sealed`, `pki_certificates_issued_total{issuer,profile}`,
@@ -112,9 +116,7 @@ handshake test, and each invariant's refusal is covered.
 9. **Break-glass CLI** in the `pki` image: `issue`, `revoke`, `status`,
    running against the database and the signer without the API.
 
-**Done when** a service and a device certificate are issued (one by CSR,
-one generated and escrowed), exported, and revoked through the OpenAPI
-page against the dev CA, with an audit event for each.
+**Sign-off:** C3, C4.1–C4.6, C7.
 
 ## Phase 3 — Revocation lists
 
@@ -128,13 +130,11 @@ page against the dev CA, with an audit event for each.
    root lists (dev first). No code change: it already reloads on change.
 5. **The NAS**: a pull script in `infra/` (fetch, verify both lists,
    concatenate, swap the file, `nginx -s reload`) and its schedule.
-6. **Alerts**: sealed longer than 10 minutes; a publication failed; a
+6. **Alerts**: sealed longer than 10 minutes (the unseal key missing, or
+   a deliberate seal); a publication failed; a
    published list within 2 days of its next update.
 
-**Done when** revoking a dev agent certificate makes the API refuse its
-next handshake without anyone touching a file, and a revoked device
-certificate is refused by the border nginx after one pull (in dev once
-authentication phase 6 provides it).
+**Sign-off:** C5, C6.1 (DEV).
 
 ## Phase 4 — Production cutover from XCA
 
@@ -146,7 +146,10 @@ authentication phase 6 provides it).
    over plain HTTP, and `/pki` on the site's host proxied to the
    management API. The internal DNS record.
 3. **Ceremony** (a guide, followed once and recorded):
-   1. `initialise` the signer; the passphrase into the password manager.
+   1. `initialise` the signer: the unseal key into `${SECRETS_DIR}` as
+      `pki_signer_unseal_key`, and it and the recovery passphrase into
+      the password manager. Restart the stack and confirm it unseals by
+      itself.
    2. Generate the Internal TLS key in the signer; its CSR out.
    3. In XCA, sign it with the root: path length 0, key usage
       `Certificate Sign` and `CRL Sign`, name constraints permitting
@@ -164,10 +167,7 @@ authentication phase 6 provides it).
 5. **Rewrite [the certificates guide](../../guides/certificates.md)** for
    the UI and the CLI; XCA remains for the root and its list.
 
-**Done when** the first production lists are published with numbers
-above XCA's, the API and the NAS load them, a test certificate is issued
-and revoked in production, and XCA's intermediate keys are no longer
-used.
+**Sign-off:** C8, C1.2, C5.4, C6, C4.7, C12.
 
 ## Phase 5 — Renewal
 
@@ -181,8 +181,7 @@ used.
 3. Alerts on `certificate_expiry_days` below 30 for anything not renewed
    automatically (the printer).
 
-**Done when** a dev agent renews its own certificate and keeps calling
-the API without a restart.
+**Sign-off:** C9.
 
 ## Phase 6 — ACME
 
@@ -204,8 +203,7 @@ the API without a restart.
    `api.olympus.internal` certificates; the NAS's DSM certificate through
    acme.sh's Synology deploy hook.
 
-**Done when** all four clients obtain, renew and revoke against dev, and
-the Mac Mini nginx renews its production certificate unattended.
+**Sign-off:** C10.
 
 ## Phase 7 — The PKI area in the site
 
@@ -221,8 +219,7 @@ After the site import (roadmap phase 3), on the SDK and `packages/ui`:
 5. ACME: accounts, EAB credentials and their name policies, orders.
 6. The audit log.
 
-**Done when** every action in the certificates guide can be done from the
-UI.
+**Sign-off:** C11.
 
 ## Later
 

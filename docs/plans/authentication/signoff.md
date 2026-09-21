@@ -64,16 +64,17 @@ The site signs a user in through a provider and holds a session.
 Access tokens expire after 10 minutes; clients refresh without the user
 noticing; rotated tokens can't be reused.
 
-| Id   | Env | Steps                                                              | Expected                                                                            | Evidence                         |
-| ---- | --- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | -------------------------------- |
-| F2.1 | INT | Signed in on the site, idle 11 minutes, then navigate              | page loads; one `401` then a refresh then the retried call succeed                  | network log                      |
-| F2.2 | DEV | `tester refresh` twice                                             | each returns a new refresh token; `sessions` shows one session, `last used` updated | tester output                    |
-| F2.3 | DEV | `tester refresh --replay` (the previous token)                     | `401`; the session is revoked; the current token also fails now                     | tester; API log `reuse detected` |
-| F2.4 | DEV | Refresh with a token for another client id                         | `401`                                                                               | tester                           |
-| F2.5 | DEV | Refresh after the session's 30 days (clock or short test lifetime) | `401`, sign in again                                                                | tester                           |
-| F2.6 | INT | Change `user-reader`'s roles; refresh                              | the new access token carries the new roles                                          | `tester whoami`                  |
-| F2.7 | INT | Disable `user-reader`; refresh                                     | `401`; the site shows signed out                                                    | tester; screenshot               |
-| F2.8 | INT | Two tabs refresh at the same moment                                | both keep working (no false reuse detection)                                        | network log                      |
+| Id   | Env | Steps                                                                  | Expected                                                                            | Evidence                         |
+| ---- | --- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------- |
+| F2.1 | INT | Signed in on the site, idle 11 minutes, then navigate                  | page loads; one `401` then a refresh then the retried call succeed                  | network log                      |
+| F2.2 | DEV | `tester refresh` twice                                                 | each returns a new refresh token; `sessions` shows one session, `last used` updated | tester output                    |
+| F2.3 | DEV | `tester refresh --replay` (the previous token)                         | `401`; the session is revoked; the current token also fails now                     | tester; API log `reuse detected` |
+| F2.4 | DEV | Refresh with a token for another client id                             | `401`                                                                               | tester                           |
+| F2.5 | DEV | Refresh after the session's 30 days (clock or short test lifetime)     | `401`, sign in again                                                                | tester                           |
+| F2.6 | INT | Change `user-reader`'s roles; refresh                                  | the new access token carries the new roles                                          | `tester whoami`                  |
+| F2.7 | INT | Disable `user-reader`; refresh                                         | `401`; the site shows signed out                                                    | tester; screenshot               |
+| F2.8 | INT | Two tabs refresh at the same moment                                    | both keep working (no false reuse detection)                                        | network log                      |
+| F2.9 | DEV | `tester whoami` after sign-in, after a refresh, after signing in again | `auth_time` unchanged by the refresh; a new, later value after the new sign-in      | tester output                    |
 
 F2.8 needs a design answer before phase 3 ends: a short grace window for
 the previous token, or the site serializing refreshes across tabs.
@@ -147,12 +148,12 @@ F5.6 and F5.7 record what iOS does; if F5.6 fails, the fallback
 
 ## F8 — Certificate issuance and revocation
 
-| Id   | Env | Steps                                                                             | Expected                                                                | Evidence          |
-| ---- | --- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------- |
-| F8.1 | INT | Issue a service certificate by the runbook; install; restart the agent            | F6.1 passes for it                                                      | runbook checklist |
-| F8.2 | INT | Issue a device certificate; install on iPhone (profile) and Mac (keychain)        | F5.6 / F9.1 pass for it                                                 | runbook checklist |
-| F8.3 | INT | Revoke both by the runbook; export both lists                                     | F6.6 and F9.3 behaviour                                                 | runbook checklist |
-| F8.4 | INT | Let a revocation list pass its next-update date (test list with a short lifetime) | documented behaviour: nginx and the API refuse; alert noted for runbook | logs              |
+| Id   | Env | Steps                                                                                                               | Expected                                                                | Evidence          |
+| ---- | --- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------- |
+| F8.1 | INT | Issue a service certificate by the runbook; install; restart the agent                                              | F6.1 passes for it                                                      | runbook checklist |
+| F8.2 | INT | Issue a device certificate with its key generated (escrowed in XCA); install on iPhone (profile) and Mac (keychain) | F5.6 / F9.1 pass for it; the key can be exported again from XCA         | runbook checklist |
+| F8.3 | INT | Revoke both by the runbook; export both lists                                                                       | F6.6 and F9.3 behaviour                                                 | runbook checklist |
+| F8.4 | INT | Let a revocation list pass its next-update date (test list with a short lifetime)                                   | documented behaviour: nginx and the API refuse; alert noted for runbook | logs              |
 
 ## F9 — The border (device certificates)
 
@@ -202,13 +203,13 @@ Run after switching each listener to `enforce` (phase 8).
 
 ## Sign-off matrix
 
-| Phase | Flows to pass                                                           |
-| ----- | ----------------------------------------------------------------------- |
-| 1     | F6.3–F6.5, F6.8 (DEV), F11                                              |
-| 2     | F6, F7, F8.1, F8.3 (services)                                           |
-| 3     | F1.7–F1.10, F2.2–F2.5, F3.3–F3.6, F4.3, F12.3 with the CLI tester (DEV) |
-| 4     | F5.1–F5.5, F5.11 (INT, dev border)                                      |
-| 5     | F1 (INT), F2, F3 (INT), F4, F10                                         |
-| 6     | F9, F5.6–F5.10, F1.12, F3.7, F8.2                                       |
-| 7     | F12, F8.4                                                               |
-| 8     | F13                                                                     |
+| Phase | Flows to pass                                                                 |
+| ----- | ----------------------------------------------------------------------------- |
+| 1     | F6.3–F6.5, F6.8 (DEV), F11                                                    |
+| 2     | F6, F7, F8.1, F8.3 (services)                                                 |
+| 3     | F1.7–F1.10, F2.2–F2.5, F2.9, F3.3–F3.6, F4.3, F12.3 with the CLI tester (DEV) |
+| 4     | F5.1–F5.5, F5.11 (INT, dev border)                                            |
+| 5     | F1 (INT), F2, F3 (INT), F4, F10                                               |
+| 6     | F9, F5.6–F5.10, F1.12, F3.7, F8.2                                             |
+| 7     | F12, F8.4                                                                     |
+| 8     | F13                                                                           |

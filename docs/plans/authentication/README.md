@@ -132,7 +132,7 @@ on `3443`. Before phase 8 the gateway needs a service path for the agent
    `logout`, plus `/.well-known/jwks.json`. For signed-in users:
    `DescribeCurrentUser`, `ListSessions`, `RevokeSession`.
 5. **Tokens**: ES256 access tokens (10 minutes; `sub`, `client_id`,
-   `aud`, `roles`, `kid`); opaque refresh tokens (30 days), rotated, with
+   `aud`, `roles`, `auth_time` from the session's creation, `kid`); opaque refresh tokens (30 days), rotated, with
    reuse detection revoking the session. Keys from `AUTH_SIGNING_KEYS`
    (a directory of PEM files, newest signs, all verify).
 6. The JWT strategy on `3100`; rate limits on the auth endpoints.
