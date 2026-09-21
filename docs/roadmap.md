@@ -10,7 +10,7 @@
 | 3   | Import site and desktop shell (the site first changes only for authentication, phase 9)              |                                                                                          |
 | 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         | baseline and workflow **done** (2026-09-20); cli-migrations image in the deployment work |
 | 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                                                                          |
-| 6   | Central Docker builds: bake file, local registry, per-host compose                                   |                                                                                          |
+| 6   | Central Docker builds and compose stacks (ADR 0011, 0019, [plan](plans/docker/README.md))            | planned; before authentication phase 3                                                   |
 | 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                                                                          |
 | 8a  | Minerva calendar sync import (ADR 0016)                                                              | **done** (2026-09-20)                                                                    |
 | 8b  | Minerva → Hasura integration (ADR 0013)                                                              |                                                                                          |
@@ -108,8 +108,9 @@ Spectral (`pnpm lint:openapi`) track these; the allow-list holds the rest.
   is missing. Clients must handle `originalLanguage`, a season's `series`,
   an episode's `series`/`season`, and the country/language of titles,
   videos and release dates being absent.
-- The API `Dockerfile` still targets the old single-repo layout (npm +
-  GitHub Packages token). Rebuilt with ADR 0011.
+- Every `Dockerfile` still targets the old single-repo layout (npm +
+  GitHub Packages token) and copies `production.env` into the image.
+  Rebuilt in phase 6 (ADR 0011, 0019).
 - OpenAPI `info.version` is `0.0.0` (the workspace package version)
   instead of a release number.
 - Found while extracting services (2026-09-19; behaviour kept as is):

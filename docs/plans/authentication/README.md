@@ -102,6 +102,12 @@ and no agent presents a certificate until phase 2.
 5. Done when the report-only log shows every agent request identified
    and none that would be rejected.
 
+Found in the Docker audit (2026-09-21): the notification agent relays
+to browsers through the API's Socket.IO gateway, which runs on the users
+listener, accepts any origin and authenticates nobody, and is not served
+on `3443`. Before phase 8 the gateway needs a service path for the agent
+(or the relay moves to RabbitMQ) and a token check for browsers.
+
 ## Phase 3 — Token service
 
 1. Migration: `users` (id, display name, email, roles, disabled),
