@@ -9,7 +9,7 @@ that it depends on. It comes before authentication phase 3, which needs
 | ----- | -------------------------------------------------------------------------------- | ------------- | ---------- |
 | 0     | Close the exposed database, rotate its secrets, restart policies (**done**)      | Mac Mini      | —          |
 | 1     | Images: monorepo Dockerfiles, `/health`, the bake file, the registry             | repo          | —          |
-| 2     | Configuration: `_FILE` secrets, RabbitMQ definitions                             | repo          | 1          |
+| 2     | Configuration: `_FILE` secrets, RabbitMQ definitions (**done**)                  | repo          | 1          |
 | 3     | Compose files, `stack.sh`, workspace env files; the laptop stood up from nothing | repo + laptop | 1, 2       |
 | 4     | Production cutover, and the home lab's dev database and Hasura                   | Mac Mini      | 3          |
 | 5     | The new-host runbook; the NAS                                                    | docs, NAS     | 3          |
@@ -120,13 +120,19 @@ one baked into an image. Rotations work without rebuilding.
 7. Tests: each image builds, starts, answers `/health`, and has no
    `production.env` in it.
 
-## Phase 2 — Configuration
+## Phase 2 — Configuration (done 2026-09-21)
 
 1. `EnvReader` reads `NAME_FILE` when `NAME` is unset, trimming the
    trailing newline; one unit test per branch. Every service gets it.
+   Setting both `NAME` and `NAME_FILE`, or naming a file that can't be
+   read, is a problem reported at boot.
 2. RabbitMQ definitions: vhosts `/dionysus` and `/dionysus-dev`, one user
    per service and environment with permissions on its vhost only, and
    `admin` kept for the management UI. Loaded at boot from a secret file.
+   `infra/docker/rabbitmq/users.json` lists them;
+   `definitions.mjs` hashes each user's password file into the
+   definitions (checked against RabbitMQ's published example), and the
+   image's `conf.d` loads them.
 3. The secret list per stack, and what each service reads, in
    `infra/docker/README.md`.
 

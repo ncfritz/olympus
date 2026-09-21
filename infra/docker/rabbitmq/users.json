@@ -1,0 +1,18 @@
+{
+  "vhosts": ["/dionysus", "/dionysus-dev"],
+  "users": [
+    {
+      "name": "admin",
+      "tags": ["administrator"],
+      "vhosts": ["/dionysus", "/dionysus-dev"]
+    },
+    { "name": "olympus-api", "vhosts": ["/dionysus"] },
+    { "name": "olympus-notification-agent", "vhosts": ["/dionysus"] },
+    { "name": "dionysus-asset-agent", "vhosts": ["/dionysus"] },
+    { "name": "dionysus-asset-agent-nas", "vhosts": ["/dionysus"] },
+    { "name": "dionysus-metadata-agent", "vhosts": ["/dionysus"] },
+    { "name": "dionysus-search-agent", "vhosts": ["/dionysus"] },
+    { "name": "minerva-calendar-sync-agent", "vhosts": ["/dionysus"] },
+    { "name": "olympus-dev", "vhosts": ["/dionysus-dev"] }
+  ]
+}

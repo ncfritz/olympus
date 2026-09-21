@@ -21,6 +21,9 @@ ADD --checksum=sha256:567f876378e70af9d949de4066bbb2fc30162b46bcbc9efe2430076b17
     https://github.com/rabbitmq/rabbitmq-delayed-message-exchange/releases/download/v${DELAYED_MESSAGE_VERSION}/rabbitmq_delayed_message_exchange-${DELAYED_MESSAGE_VERSION}.ez \
     ${RABBITMQ_HOME}/plugins/
 
+# Users, vhosts and permissions from the definitions secret (ADR 0019).
+COPY 20-definitions.conf /etc/rabbitmq/conf.d/20-definitions.conf
+
 RUN rabbitmq-plugins enable --offline \
       rabbitmq_delayed_message_exchange \
       rabbitmq_consistent_hash_exchange \
