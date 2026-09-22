@@ -136,7 +136,7 @@ done
 echo "API server certificate"
 key "$out/api.key"
 csr "$out/api.key" "$ca/api.csr" "/CN=olympus-api/O=Olympus Dev"
-SAN="DNS:olympus-api,DNS:localhost,DNS:api.olympus.internal.localhost,IP:127.0.0.1" \
+SAN="DNS:olympus-api,DNS:localhost,DNS:host.docker.internal,DNS:api.olympus.internal.localhost,IP:127.0.0.1" \
   issue services v3_server "$ca/api.csr" "$out/api.crt"
 
 # client <authority> <directory> <name> <subject> [openssl ca flags...]
