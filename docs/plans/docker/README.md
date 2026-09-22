@@ -8,7 +8,7 @@ that it depends on. It comes before authentication phase 3, which needs
 | Phase | Delivers                                                                         | Where         | Depends on |
 | ----- | -------------------------------------------------------------------------------- | ------------- | ---------- |
 | 0     | Close the exposed database, rotate its secrets, restart policies (**done**)      | Mac Mini      | —          |
-| 1     | Images: monorepo Dockerfiles, `/health`, the bake file, the registry             | repo          | —          |
+| 1     | Images: monorepo Dockerfiles, `/health`, the bake file, the registry (**done**)  | repo          | —          |
 | 2     | Configuration: `_FILE` secrets, RabbitMQ definitions (**done**)                  | repo          | 1          |
 | 3     | Compose files, `stack.sh`, workspace env files; the laptop stood up from nothing | repo + laptop | 1, 2       |
 | 4     | Production cutover, and the home lab's dev database and Hasura                   | Mac Mini      | 3          |
@@ -94,7 +94,7 @@ one baked into an image. Rotations work without rebuilding.
 8. Since every secret in finding 1 has been inside an image, plan to
    rotate the rest as phase 2 moves them out; the order is in phase 4.
 
-## Phase 1 — Images
+## Phase 1 — Images (done 2026-09-22)
 
 Written 2026-09-21 and first built on the Mac Mini on 2026-09-22 (the
 workspace these were written in can't reach an image registry). Each step
@@ -123,12 +123,16 @@ their bundles require resolving and both native modules loading.
    `linux/amd64` too; checked with `bake --print`. **Written.**
 6. The registry, `registry.internal.ncfritz.net`: `compose/registry.yml`
    (`registry:3`, plain HTTP on `olympus-edge`, its own login) behind the
-   shared nginx (`nginx/registry.conf`, TLS). **Written; being set up.**
+   shared nginx (`nginx/registry.conf`, TLS). Pushes go through an
+   `olympus` BuildKit builder, since the default one can't build two
+   platforms. **Done 2026-09-22**: every image pushed, anonymous access
+   refused, the asset agent listed for arm64 and amd64.
 7. The first builds on the Mac Mini: `bake --load` for the API, the
    services and Hasura and RabbitMQ all succeed (**done 2026-09-22**).
-8. The Minerva agent (Prisma: its CLI must be a runtime dependency to run
-   migrations at start) and console (Next.js `standalone`), as a second
-   round once the first builds.
+8. The Minerva agent and console move to phase 3, which is the first to
+   need them (the `olympus` stack): the agent's Prisma CLI must be a
+   runtime dependency to run migrations at start, and the console needs
+   Next.js's `standalone` output.
 
 ## Phase 2 — Configuration (done 2026-09-21)
 
@@ -148,28 +152,29 @@ their bundles require resolving and both native modules loading.
 
 ## Phase 3 — Compose files, and the laptop
 
-1. `infra/docker/compose/{data,rabbitmq,nginx,olympus}.yml` per the ADR:
+1. The Minerva agent and console images (from phase 1).
+2. `infra/docker/compose/{data,rabbitmq,nginx,olympus}.yml` per the ADR:
    the `x-service` fragment, networks, published ports, health checks,
    secrets, environment interpolated with `${NAME:?}`. `hasura-dev` is in
    `data.yml` behind a profile that `mac-mini.env` turns on. The console
    is a per-instance setting: on for `hasura-dev` and the laptop, off for
    production.
-2. `infra/docker/env/mac-mini.env` and `laptop.env`, and
+3. `infra/docker/env/mac-mini.env` and `laptop.env`, and
    `infra/docker/nginx/olympus.conf` (the Olympus server blocks, which the
    host's nginx includes; its other sites stay the host's).
-3. `infra/docker/stack.sh`: `bootstrap` (networks, data and secrets
+4. `infra/docker/stack.sh`: `bootstrap` (networks, data and secrets
    directories), `check` (every secret present, `docker compose config`
    clean), `up`, `down`, `pull`, `logs`, per stack.
-4. The workspace env files: every service's `dev.env.example` points at
+5. The workspace env files: every service's `dev.env.example` points at
    the Mac Mini's dev endpoints (`hasura-dev`, RabbitMQ as the dev user on
    `/dionysus-dev`); a `local.env.example` points at localhost.
-5. The dev CA's API certificate gains `host.docker.internal`, for agents
+6. The dev CA's API certificate gains `host.docker.internal`, for agents
    in the laptop's containers calling an API run from the IDE.
-6. **Stand the laptop up from nothing**: `bootstrap`, the laptop's own
+7. **Stand the laptop up from nothing**: `bootstrap`, the laptop's own
    secrets, a restore of a backup, `data` and `rabbitmq`, then services
    from the IDE and the `olympus` stack from local images. This is the
    rehearsal for a new host, and nothing on the Mac Mini changes for it.
-7. `infra/docker/compose/dev.yml` (the workspace-only infra of ADR 0018's
+8. `infra/docker/compose/dev.yml` (the workspace-only infra of ADR 0018's
    phase 0) is replaced by `data.yml` with `laptop.env`.
 
 ## Phase 4 — Production cutover
