@@ -119,7 +119,7 @@ their bundles require resolving and both native modules loading.
 3. The Hasura image, and its entrypoint turning `_FILE` secrets into
    Hasura's variables (5 tests). **Written.**
 4. The RabbitMQ image (**done 2026-09-21**), now loading the definitions.
-5. `infra/docker/docker-bake.hcl`: every image, the asset agent for
+5. `/docker-bake.hcl` (at the root, where `bake` looks for it): every image, the asset agent for
    `linux/amd64` too; checked with `bake --print`. **Written.**
 6. `compose/registry.yml`: `registry:3` with TLS and a login. **Written**;
    needs a hostname and a certificate.

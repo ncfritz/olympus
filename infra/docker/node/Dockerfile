@@ -1,5 +1,5 @@
 # The Node services: the API and the agents (ADR 0011, 0019). One file for
-# all of them; docker-bake.hcl passes the package and what else it needs.
+# all of them; /docker-bake.hcl passes the package and what else it needs.
 # The build context is the repository root (see /.dockerignore).
 #
 # TypeScript is built once, on the build machine's platform. Production

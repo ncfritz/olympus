@@ -5,7 +5,6 @@ Images, stacks and their configuration (ADR 0011, ADR 0019,
 
 | Path                                        | What                                                                          | State   |
 | ------------------------------------------- | ----------------------------------------------------------------------------- | ------- |
-| `docker-bake.hcl`                           | Every image, its platforms and tags                                           | phase 1 |
 | `node/Dockerfile`                           | The API and the agents, one Dockerfile for all                                | phase 1 |
 | `hasura/`                                   | Hasura carrying the migrations and metadata; `_FILE` secrets                  | phase 1 |
 | `rabbitmq/`                                 | RabbitMQ with the plugins Olympus uses; users from `users.json`               | phase 1 |
@@ -20,7 +19,10 @@ Images, stacks and their configuration (ADR 0011, ADR 0019,
 
 ## Building images
 
-From the repository root, with Docker's BuildKit (Docker Desktop has it):
+`/docker-bake.hcl` lists every image, its platforms and tags. It sits at
+the repository root because `docker buildx bake` looks for it in the
+current directory; run it from there, with Docker's BuildKit (Docker
+Desktop has it):
 
 ```sh
 docker buildx bake --load api          # one image, into the local image store

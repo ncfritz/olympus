@@ -1,4 +1,5 @@
-# Every image Olympus builds (ADR 0011). Run from the repository root:
+# Every image Olympus builds (ADR 0011). Run from the repository root,
+# where `docker buildx bake` finds this file:
 #
 #   docker buildx bake                               # all images, tag "dev", local names
 #   docker buildx bake --load api                    # one image into the local image store

@@ -11,7 +11,7 @@ Intel Synology NAS (amd64), and building on the NAS is slow.
 ## Decision
 
 - **Build everything on the Mac Mini** with `docker buildx bake` and a
-  `docker-bake.hcl` in `infra/docker/` listing every image and its
+  `docker-bake.hcl` at the repository root listing every image and its
   platform.
 - **Cross-platform without full emulation.** Install and compile stages use
   `FROM --platform=$BUILDPLATFORM`, so TypeScript builds natively on arm64.
