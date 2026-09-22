@@ -174,15 +174,21 @@ their bundles require resolving and both native modules loading.
 4. `stack.sh`: `bootstrap`, `check`, `up`, `down`, `rabbitmq-users` and
    passthroughs; bash 3.2, shellcheck-clean. **Done.**
 5. Every service's `dev.env.example` points at the home lab's dev
-   endpoints (`dev.olympus.internal.ncfritz.net`: hasura-dev on 8081,
+   endpoints (`olympus.dev.ncfritz.net`: hasura-dev on 8081,
    RabbitMQ as `olympus-dev` on `/dionysus-dev`), and a
    `local.env.example` at the laptop's. **Done.**
 6. The dev CA's API certificate names `host.docker.internal`.
    **Done** (`scripts/dev-ca.sh --force` to regenerate).
-7. `infra/docker/nginx/olympus.conf`: the Olympus server blocks
-   (`olympus.internal.ncfritz.net` with `/api`, `minerva.internal.ncfritz.net`).
-   **Needs the current Olympus server block** from the Mac Mini's nginx,
-   so the new one keeps what it does today.
+7. `infra/docker/nginx/olympus.conf`: today's Olympus server block with
+   the new service names (the site, the API under `/api` with its path
+   passed on still encoded, the explorers, `/api/metrics`, Socket.IO), and
+   `minerva.internal.ncfritz.net` with its agent under `/api`. Services
+   are found through Docker's DNS, so nginx starts with any of them down.
+   Two changes: the API gets `X-Forwarded-Prefix: /api`, so its Location
+   headers carry `/api`, and the cipher list is nginx's default (the old
+   one allowed 3DES). `/api/metrics` pointed at the dev API; it points at
+   the API now. **Done**, checked by running it in front of stand-in
+   backends.
 8. **Stand the laptop up from nothing**: `bootstrap laptop`, its own
    secrets, `rabbitmq-users`, a restore of a backup, images with
    `bake --load`, then `stack.sh up`. This is the rehearsal for a new
@@ -214,7 +220,11 @@ One stack at a time, each with its old compose file kept for rollback:
 5. **olympus**: the new images from the registry, secrets from
    `${SECRETS_DIR}`, each rotated as it moves (finding 1). Prometheus
    scrape targets change to the new names.
-6. **nginx**: the Olympus server blocks from the repository.
+6. **nginx**: the Olympus server blocks from the repository. `nginx.conf`
+   includes `/etc/nginx/olympus/*.conf`, and the host's own copies go:
+   the old Olympus server block, the file with its `upstream` blocks
+   (their names stop resolving, and nginx won't start with an
+   unresolvable upstream) and the registry block copied in phase 1.
 
 Done when the old compose files and images can be deleted and every
 service answers `/health`.

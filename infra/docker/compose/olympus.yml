@@ -176,6 +176,8 @@ services:
     # Unset where the profile is off; a name that fails to pull if it is
     # on without one.
     image: ${SITE_IMAGE:-site-image-not-set}
+    # Built on the Mac Mini and never pushed anywhere: use it as it is.
+    pull_policy: never
     profiles: [site]
     restart: unless-stopped
     security_opt:
