@@ -2,15 +2,17 @@
 
 Shared configuration consumed by every workspace package.
 
-| Export                  | Use in                                              |
-| ----------------------- | --------------------------------------------------- |
-| `tsconfig/nest.json`    | API, agents, model (anything using Nest decorators) |
-| `tsconfig/library.json` | Plain TS libraries (shared utilities)               |
-| `tsconfig/next.json`    | Site                                                |
-| `eslint/node`           | API, agents, model, SDK                             |
-| `eslint/react`          | Site, ui, theme                                     |
-| `vitest/nest`           | API, agents, model                                  |
-| `vitest/node`           | Plain TS libraries                                  |
+| Export                        | Use in                                                  |
+| ----------------------------- | ------------------------------------------------------- |
+| `tsconfig/nest.json`          | API, agents, model (anything using Nest decorators)     |
+| `tsconfig/library.json`       | Plain TS libraries (shared utilities)                   |
+| `tsconfig/next.json`          | Site, consoles (Next.js apps)                           |
+| `tsconfig/react-library.json` | React libraries consumed as source (`packages/console`) |
+| `eslint/node`                 | API, agents, model, SDK                                 |
+| `eslint/react`                | Site, ui, theme                                         |
+| `vitest/nest`                 | API, agents, model                                      |
+| `vitest/node`                 | Plain TS libraries                                      |
+| `vitest/react`                | React packages (jsdom, `.tsx` tests)                    |
 
 Example `tsconfig.json`:
 

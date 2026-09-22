@@ -8,12 +8,14 @@
   "exports": {
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/library.json": "./tsconfig/library.json",
+    "./tsconfig/react-library.json": "./tsconfig/react-library.json",
     "./tsconfig/nest.json": "./tsconfig/nest.json",
     "./tsconfig/next.json": "./tsconfig/next.json",
     "./eslint/node": "./eslint/node.js",
     "./eslint/react": "./eslint/react.js",
     "./vitest/nest": "./vitest/nest.js",
     "./vitest/node": "./vitest/node.js",
+    "./vitest/react": "./vitest/react.js",
     "./vitest/coverage": "./vitest/coverage.js"
   },
   "dependencies": {

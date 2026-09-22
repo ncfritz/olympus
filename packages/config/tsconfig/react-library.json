@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Olympus React library",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    // Consumed as source by the Next.js apps that use it
+    // (`transpilePackages`), so nothing is emitted here: this project is
+    // for type checking and the editor.
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["${configDir}/src/**/*.ts", "${configDir}/src/**/*.tsx"]
+}
