@@ -96,8 +96,8 @@ one baked into an image. Rotations work without rebuilding.
 
 ## Phase 1 — Images
 
-Written 2026-09-21; the first builds run on the Mac Mini, since the
-workspace these were written in can't reach an image registry. Each step
+Written 2026-09-21 and first built on the Mac Mini on 2026-09-22 (the
+workspace these were written in can't reach an image registry). Each step
 of `node/Dockerfile` (prune, frozen install, build, production deploy)
 was rehearsed outside Docker for all five services, with every module
 their bundles require resolving and both native modules loading.
@@ -123,8 +123,8 @@ their bundles require resolving and both native modules loading.
    `linux/amd64` too; checked with `bake --print`. **Written.**
 6. `compose/registry.yml`: `registry:3` with TLS and a login. **Written**;
    needs a hostname and a certificate.
-7. **To do on the Mac Mini**: `docker buildx bake --load api`, then the
-   rest; each image starts and answers `/health`.
+7. The first builds on the Mac Mini: `bake --load` for the API, the
+   services and Hasura and RabbitMQ all succeed (**done 2026-09-22**).
 8. The Minerva agent (Prisma: its CLI must be a runtime dependency to run
    migrations at start) and console (Next.js `standalone`), as a second
    round once the first builds.
