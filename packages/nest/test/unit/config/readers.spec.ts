@@ -66,6 +66,20 @@ describe("readLoggingConfig", () => {
     expect([dev.console.enabled, dev.file.enabled]).toEqual([true, false]);
     expect([prod.console.enabled, prod.file.enabled]).toEqual([false, true]);
   });
+
+  it("lets a container log to the console and not to files in production", () => {
+    const container = readLoggingConfig(
+      new EnvReader({
+        ENABLE_CONSOLE_LOGGING: "true",
+        FILE_LOGGING_ENABLED: "false",
+      }),
+      true,
+    );
+    expect([container.console.enabled, container.file.enabled]).toEqual([
+      true,
+      false,
+    ]);
+  });
 });
 
 describe("EnvReader: values from files", () => {
