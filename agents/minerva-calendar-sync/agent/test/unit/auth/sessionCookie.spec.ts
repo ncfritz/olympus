@@ -39,8 +39,12 @@ describe("sessionCookiePath", () => {
 
 describe("sessionCookieOptions", () => {
   it("keeps the cookie out of scripts and off other sites", () => {
-    const options = sessionCookieOptions("http://localhost:4392", false);
-    expect(options).toMatchObject({
+    expect(
+      sessionCookieOptions({
+        baseUrl: "http://localhost:4432",
+        webAppUrl: "http://localhost:4392",
+      }),
+    ).toMatchObject({
       httpOnly: true,
       sameSite: "lax",
       secure: false,
@@ -48,9 +52,24 @@ describe("sessionCookieOptions", () => {
     });
   });
 
-  it("marks the cookie secure over TLS", () => {
+  it("marks the cookie secure when the browser reaches the agent over TLS", () => {
     expect(
-      sessionCookieOptions("https://control.example/olympus/ca", true),
+      sessionCookieOptions({
+        baseUrl: "https://control.example/olympus/ca/api",
+        webAppUrl: "https://control.example/olympus/ca",
+      }),
     ).toMatchObject({ secure: true, path: "/olympus/ca" });
+  });
+
+  it("does not depend on the request, which arrives from nginx in the clear", () => {
+    // The published URL is the only thing that knows TLS was terminated
+    // at the border: nothing about the request reaching this process says so.
+    expect(
+      sessionCookieOptions({ baseUrl: "https://minerva.example/api" }).secure,
+    ).toBe(true);
+  });
+
+  it("is not secure when there is nothing to go on", () => {
+    expect(sessionCookieOptions({ baseUrl: "not-a-url" }).secure).toBe(false);
   });
 });

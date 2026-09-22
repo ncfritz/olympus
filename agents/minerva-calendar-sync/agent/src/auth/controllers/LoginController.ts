@@ -42,7 +42,7 @@ export class LoginController {
       returnTo,
     );
     response.cookie(OIDC_TXN_COOKIE, JSON.stringify(transaction), {
-      ...sessionCookieOptions(this.auth.webAppUrl, response.req.secure),
+      ...sessionCookieOptions(this.auth),
       maxAge: OIDC_TXN_COOKIE_TTL_MS,
     });
     response.redirect(authUrl);

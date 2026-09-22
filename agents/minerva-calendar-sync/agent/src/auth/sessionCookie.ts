@@ -1,5 +1,13 @@
 import type { CookieOptions } from "express";
 
+/** What the cookies are scoped and secured by: where this agent and its console are published. */
+export interface SessionCookieConfig {
+  /** AUTH_BASE_URL: where the browser reaches this agent. */
+  baseUrl: string;
+  /** WEB_APP_URL: where the browser reaches its console. */
+  webAppUrl?: string;
+}
+
 /**
  * How this console's cookies are scoped. On the control host (ADR 0021)
  * every console in the suite shares one origin, so a cookie left at the
@@ -21,16 +29,31 @@ export const sessionCookiePath = (webAppUrl: string | undefined): string => {
 };
 
 /**
+ * Whether the browser reaches this agent over TLS, which is what decides
+ * `Secure`. It is read from the URL the agent is published at rather than
+ * from the request, because TLS is terminated at nginx: the request that
+ * arrives here is plain HTTP, and `req.secure` would say so unless the
+ * proxy is trusted — which is how the session cookie came to be issued
+ * without `Secure` at all.
+ */
+const isPublishedOverTls = (baseUrl: string): boolean => {
+  try {
+    return new URL(baseUrl).protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+/**
  * The options every session cookie is set *and cleared* with: a cookie is
  * only replaced by one with the same name, path and domain, so the two
  * have to agree.
  */
 export const sessionCookieOptions = (
-  webAppUrl: string | undefined,
-  secure: boolean,
+  auth: SessionCookieConfig,
 ): CookieOptions => ({
   httpOnly: true,
   sameSite: "lax",
-  secure,
-  path: sessionCookiePath(webAppUrl),
+  secure: isPublishedOverTls(auth.baseUrl),
+  path: sessionCookiePath(auth.webAppUrl),
 });

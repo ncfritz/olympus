@@ -31,10 +31,7 @@ export class EndSessionController {
   async handle(@Res() response: Response): Promise<void> {
     // The same options it was set with: a cookie is only replaced by one
     // with the same name, path and domain.
-    response.clearCookie(
-      ACCESS_TOKEN_COOKIE,
-      sessionCookieOptions(this.auth.webAppUrl, response.req.secure),
-    );
+    response.clearCookie(ACCESS_TOKEN_COOKIE, sessionCookieOptions(this.auth));
     response.status(HttpStatus.NO_CONTENT).end();
   }
 }

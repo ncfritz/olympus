@@ -38,7 +38,7 @@ export class LoginCallbackController {
   ): Promise<void> {
     const rawTransaction = request.cookies?.[OIDC_TXN_COOKIE] as
       string | undefined;
-    const cookie = sessionCookieOptions(this.auth.webAppUrl, request.secure);
+    const cookie = sessionCookieOptions(this.auth);
     response.clearCookie(OIDC_TXN_COOKIE, cookie);
 
     const { accessToken, refreshToken, returnTo } = await this.login.complete(
