@@ -17,7 +17,7 @@ services:
     image: registry:3.0.0
     restart: unless-stopped
     environment:
-      REGISTRY_HTTP_ADDR: 0.0.0.0:5000
+      REGISTRY_HTTP_ADDR: 0.0.0.0:3478
       # The address clients use, for the URLs the registry hands back.
       REGISTRY_HTTP_HOST: https://${REGISTRY_HOST:-registry.internal.ncfritz.net}
       REGISTRY_AUTH: htpasswd
@@ -40,7 +40,7 @@ services:
         max-file: "5"
     healthcheck:
       # The root answers 200 without a login; /v2/ would need one.
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5000/"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3478/"]
       interval: 30s
       timeout: 5s
       retries: 3
