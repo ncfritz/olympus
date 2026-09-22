@@ -6,6 +6,11 @@
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
   "license": "Apache-2.0",
   "main": "dist/main.js",
+  "files": [
+    "dist",
+    "templates",
+    "ca_roots.pem"
+  ],
   "scripts": {
     "build": "nest build",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
