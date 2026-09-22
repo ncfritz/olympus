@@ -30,8 +30,8 @@ docker buildx bake --load services --set asset-agent.platform=linux/arm64
 docker buildx bake                     # everything, tag "dev"
 
 # For the registry: tagged with the commit.
-REGISTRY=<registry-host>:5000 TAG=$(git rev-parse --short HEAD) \
-  GIT_REVISION=$(git rev-parse HEAD) docker buildx bake --push
+REGISTRY=registry.internal.ncfritz.net TAG=$(git rev-parse --short HEAD) \
+  GIT_REVISION=$(git rev-parse HEAD) docker buildx bake --builder olympus --push
 ```
 
 Without `REGISTRY` the images are `olympus/<name>:<TAG>`. The asset agent
@@ -86,6 +86,31 @@ system keychain, or `~/.docker/certs.d/registry.internal.ncfritz.net/ca.crt`
 for Docker Desktop and `/etc/docker/certs.d/...` on the NAS), then
 `docker login registry.internal.ncfritz.net`, and push with
 `REGISTRY=registry.internal.ncfritz.net`.
+
+### Pushing
+
+Docker's default builder can't build the asset agent's second platform
+without Docker Desktop's containerd image store, and switching stores
+hides the running containers. Pushes use a BuildKit builder of their own
+instead; `--load` keeps using the default one. Once, on the Mac Mini:
+
+```sh
+cat > ~/.docker/buildkitd-olympus.toml <<'TOML'
+[registry."registry.internal.ncfritz.net"]
+  ca = ["/path/to/internal-root-ca.crt"]
+TOML
+docker buildx create --name olympus --driver docker-container \
+  --config ~/.docker/buildkitd-olympus.toml --bootstrap
+```
+
+The builder runs in its own container and pushes itself, so it needs the
+internal root there; Docker Desktop's keychain and `certs.d` don't reach
+it. Then:
+
+```sh
+REGISTRY=registry.internal.ncfritz.net TAG=$(git rev-parse --short HEAD) \
+  GIT_REVISION=$(git rev-parse HEAD) docker buildx bake --builder olympus --push
+```
 
 ## Secrets
 

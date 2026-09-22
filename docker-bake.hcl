@@ -3,8 +3,11 @@
 #
 #   docker buildx bake                               # all images, tag "dev", local names
 #   docker buildx bake --load api                    # one image into the local image store
-#   REGISTRY=<registry> TAG=$(git rev-parse --short HEAD) \
-#     GIT_REVISION=$(git rev-parse HEAD) docker buildx bake --push
+#   REGISTRY=registry.internal.ncfritz.net TAG=$(git rev-parse --short HEAD) \
+#     GIT_REVISION=$(git rev-parse HEAD) docker buildx bake --builder olympus --push
+#
+# The push uses the `olympus` builder (infra/docker/README.md, Pushing):
+# Docker's default builder can't build two platforms.
 #
 # Without REGISTRY the images are named olympus/<name>:<TAG>, which is what
 # the laptop runs. The asset agent is also built for the NAS (amd64); to
