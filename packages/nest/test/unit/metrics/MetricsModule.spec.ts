@@ -36,6 +36,11 @@ describe("MetricsModule", () => {
     );
   });
 
+  it("answers /health for Docker's health check", async () => {
+    const res = await request(app.getHttpServer()).get("/health").expect(200);
+    expect(res.body).toEqual({ status: "ok" });
+  });
+
   it("names the service as the client of its outbound requests", () => {
     expect(metricsClientName()).toBe("test-agent");
   });

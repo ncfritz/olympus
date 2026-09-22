@@ -50,9 +50,24 @@ export class MetricsController {
 }
 
 /**
+ * Liveness for Docker's health check (ADR 0019): the process is up and
+ * serving HTTP. It checks no dependency, so a broker or Hasura outage
+ * doesn't get a healthy container restarted.
+ */
+@ApiExcludeController()
+@Controller({ path: "health", version: VERSION_NEUTRAL })
+export class HealthController {
+  @Get()
+  handle(@Res() response: PlainResponse): void {
+    response.setHeader("Content-Type", "application/json");
+    response.status(HttpStatus.OK).send('{"status":"ok"}');
+  }
+}
+
+/**
  * Prometheus metrics at /metrics (ADR 0017): Node's defaults and whatever
  * the service records on prom-client's default registry, labelled with
- * `app` and `environment`. The request histograms come from
+ * `app` and `environment`, and `/health` for Docker. The request histograms come from
  * useHttpServerMetrics (inbound) and the Olympus client or
  * ExecuteWithMetrics (outbound).
  */
@@ -71,7 +86,7 @@ export class MetricsModule implements OnModuleInit {
     return {
       module: MetricsModule,
       imports: options.imports ?? [],
-      controllers: [MetricsController],
+      controllers: [MetricsController, HealthController],
       providers: [
         {
           provide: METRICS_OPTIONS,

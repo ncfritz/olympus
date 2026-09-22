@@ -1,7 +1,11 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { RouterModule } from "@nestjs/core";
-import { MetricsController, MetricsModule } from "@ncfritz/olympus-nest";
+import {
+  HealthController,
+  MetricsController,
+  MetricsModule,
+} from "@ncfritz/olympus-nest";
 import {
   ALL_CONFIG,
   serverConfig,
@@ -17,8 +21,10 @@ import { OLYMPUS_MODULES, OlympusModule } from "./olympus/OlympusModule";
 import { NotificationsGatewayModule } from "./olympus/notifications/gateway/NotificationsGatewayModule";
 import { Routes } from "./utils/routes";
 
-// Prometheus scrapes /metrics without credentials (ADR 0018).
+// Prometheus scrapes /metrics and Docker checks /health without
+// credentials (ADR 0018, 0019).
 Public()(MetricsController);
+Public()(HealthController);
 
 @Module({
   imports: [
