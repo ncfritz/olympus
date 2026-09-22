@@ -37,7 +37,7 @@ group "default" {
 group "services" {
   targets = [
     "api", "notification-agent", "asset-agent", "metadata-agent", "search-agent",
-    "minerva-agent", "minerva-console",
+    "minerva-calendar-agent", "minerva-calendar-console",
   ]
 }
 
@@ -95,7 +95,7 @@ target "search-agent" {
   tags = image("search-agent")
 }
 
-target "minerva-agent" {
+target "minerva-calendar-agent" {
   inherits = ["_node"]
   args = {
     APP = "@ncfritz/minerva-calendar-sync-agent"
@@ -103,10 +103,10 @@ target "minerva-agent" {
     POST_DEPLOY      = "node node_modules/prisma/build/index.js generate --schema prisma/schema.prisma"
     RUNTIME_PACKAGES = "openssl"
   }
-  tags = image("minerva-agent")
+  tags = image("minerva-calendar-agent")
 }
 
-target "minerva-console" {
+target "minerva-calendar-console" {
   context    = "."
   dockerfile = "infra/docker/next/Dockerfile"
   platforms  = ["linux/arm64"]
@@ -115,10 +115,11 @@ target "minerva-console" {
     APP_DIR      = "agents/minerva-calendar-sync/console"
     PORT         = "4392"
     GIT_REVISION = GIT_REVISION
-    # nginx serves the agent under /api on the console's own name.
-    NEXT_PUBLIC_API_URL = "/api"
+    # Where the control host publishes this console (ADR 0021). Next bakes
+    # basePath in; the console asks for its agent under the same path.
+    NEXT_PUBLIC_BASE_PATH = "/minerva/calendar"
   }
-  tags = image("minerva-console")
+  tags = image("minerva-calendar-console")
 }
 
 target "hasura" {

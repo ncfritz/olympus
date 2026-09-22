@@ -3,7 +3,6 @@
 import useSWR from "swr";
 import { fetchCalendars } from "@/lib/api/queries";
 import { useCalendarColors } from "@/lib/useCalendarColors";
-import { AppLayout } from "./AppLayout";
 import { EventsPanel } from "./EventsPanel";
 
 export function CalendarPage() {
@@ -11,12 +10,12 @@ export function CalendarPage() {
   const { colorForSource, setSourceColor } = useCalendarColors();
 
   return (
-    <AppLayout>
+    <>
       <EventsPanel
         calendars={calendars}
         colorForSource={colorForSource}
         onSetSourceColor={setSourceColor}
       />
-    </AppLayout>
+    </>
   );
 }

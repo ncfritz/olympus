@@ -27,7 +27,6 @@ import {
 } from "@/lib/api/queries";
 import { PROVIDER_META, ProviderIcon, type Provider } from "@/lib/providerMeta";
 import { useCalendarColors } from "@/lib/useCalendarColors";
-import { AppLayout } from "./AppLayout";
 
 const SOURCE_SWATCH_SIZE = 16;
 const FAILED_LIMIT = 100;
@@ -125,7 +124,7 @@ export function PublishPage() {
   };
 
   return (
-    <AppLayout>
+    <>
       <Card
         title="Publish"
         style={{ borderRadius: 0 }}
@@ -292,6 +291,6 @@ export function PublishPage() {
           />
         </Card>
       )}
-    </AppLayout>
+    </>
   );
 }

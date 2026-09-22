@@ -750,6 +750,9 @@ importers:
       '@fullcalendar/timegrid':
         specifier: 6.1.21
         version: 6.1.21(@fullcalendar/core@6.1.21)
+      '@ncfritz/olympus-console':
+        specifier: workspace:*
+        version: link:../../../packages/console
       antd:
         specifier: 'catalog:'
         version: 6.6.4(luxon@3.7.2)(moment@2.31.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)

@@ -67,7 +67,7 @@ React versions the shell shares with the console moved into the catalog
 (ADR 0002). Its inline styles keep the shared config's warning until the
 styles mechanism is decided (roadmap 7).
 
-## Phase 2 — Minerva calendar moves
+## Phase 2 — Minerva calendar moves (done 2026-09-22)
 
 ### The console
 
@@ -133,12 +133,31 @@ One commit each, each with a test, before the wiring changes:
 
 ### Verifying
 
-`~/work/md/mcheck.sh` for the agent and console, `deploycheck.sh` for the
-image steps, `bake --print` for the renamed targets, and nginx in front of
-stand-in backends for `control.conf` — the same routine the Olympus server
-blocks went through: prefix matching between `/minerva/calendar` and
-`/minerva/calendar/api`, the `_next` assets, and the login redirect
-round trip.
+Done, and what it turned up:
+
+- The console builds and runs with `NEXT_PUBLIC_BASE_PATH=/minerva/calendar`:
+  the standalone server 404s `/` and serves the console with its assets
+  under the base path.
+- `docker compose config` renders for both hosts with the renamed
+  services.
+- `control.conf` in front of stand-in backends: the console, its `_next`
+  assets, the agent with the prefix stripped, and `/` redirecting until
+  the index exists. The agent's stanza uses the Olympus API's
+  encoding-preserving idiom (`$request_uri` rather than the decoded
+  `$uri`), so a path segment containing `%2F` reaches the agent intact —
+  the Minerva block it replaces decoded it.
+- The root layout is `force-dynamic`: `CONTROL_CONSOLES` is read per
+  request, and a prerendered layout would have carried the build
+  machine's value.
+
+Two things fell out of the move. The console's header wordmark is gone —
+the shell's header names the console (`Minerva · Calendar`) and the
+sider names the suite, so `public/header.webp` is now unused; a `brand`
+slot can come back if the suite wants per-console marks. And
+`NEXT_PUBLIC_API_URL` is no longer a build argument: the client derives
+the agent's path from the console's key, so the path and the base path
+cannot disagree. The workspace still sets it, since the agent has a port
+of its own there.
 
 ## Phase 3 — The index
 

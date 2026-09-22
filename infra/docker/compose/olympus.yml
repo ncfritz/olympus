@@ -189,8 +189,8 @@ services:
       - edge
 
   # Minerva's SQLite store, migrated before the agent starts.
-  minerva-migrate:
-    image: ${IMAGE_PREFIX:?}/minerva-agent:${OLYMPUS_TAG:?}
+  minerva-calendar-migrate:
+    image: ${IMAGE_PREFIX:?}/minerva-calendar-agent:${OLYMPUS_TAG:?}
     profiles: [minerva]
     command:
       [
@@ -214,14 +214,14 @@ services:
       - ALL
     logging: *logging
 
-  minerva-agent:
+  minerva-calendar-agent:
     <<: *service
-    image: ${IMAGE_PREFIX:?}/minerva-agent:${OLYMPUS_TAG:?}
+    image: ${IMAGE_PREFIX:?}/minerva-calendar-agent:${OLYMPUS_TAG:?}
     profiles: [minerva]
     depends_on:
-      minerva-migrate:
+      minerva-calendar-migrate:
         condition: service_completed_successfully
-    env_file: ../env/${OLYMPUS_HOST:?}/minerva-agent.env
+    env_file: ../env/${OLYMPUS_HOST:?}/minerva-calendar-agent.env
     environment:
       <<: *node-environment
       LISTEN_PORT: "4432"
@@ -232,9 +232,11 @@ services:
       MICROSOFT_CREDENTIALS_DIR: /data/credentials/microsoft
       AUTH_JWT_SECRET_FILE: /run/secrets/minerva_auth_jwt_secret
       GOOGLE_OAUTH_CLIENT_SECRET_FILE: /run/secrets/google_oauth_client_secret
-      # nginx serves the agent at /api on the console's name.
-      AUTH_BASE_URL: https://${MINERVA_HOST:?}/api
-      WEB_APP_URL: https://${MINERVA_HOST:?}
+      # nginx publishes this console at /minerva/calendar on the control
+      # host, and its agent under it (ADR 0021). Those paths scope the
+      # session cookie and bound where a login may return to.
+      AUTH_BASE_URL: https://${CONTROL_HOST:?}/minerva/calendar/api
+      WEB_APP_URL: https://${CONTROL_HOST:?}/minerva/calendar
     secrets:
       - source: amqp_minerva
         target: amqp_password
@@ -248,10 +250,14 @@ services:
       - edge
       - monitoring
 
-  minerva-console:
+  minerva-calendar-console:
     <<: *service
-    image: ${IMAGE_PREFIX:?}/minerva-console:${OLYMPUS_TAG:?}
+    image: ${IMAGE_PREFIX:?}/minerva-calendar-console:${OLYMPUS_TAG:?}
     profiles: [minerva]
+    environment:
+      # Which consoles this host runs, so every console's sidebar shows
+      # the same suite and nothing it cannot reach (ADR 0021).
+      CONTROL_CONSOLES: ${CONTROL_CONSOLES:?}
     networks:
       - edge
 

@@ -22,15 +22,6 @@ export type BackfillResult = components["schemas"]["CalendarBackfill"];
 /** Keyed by each 15-minute chunk's start time, in minutes since epoch (as a string, since JSON object keys always are). */
 export type StatusTimeline = Record<string, AvailabilityStatus>;
 
-export async function fetchMe() {
-  const { data } = await apiClient.GET("/v1/auth/current-user");
-  return data?.user ?? null;
-}
-
-export async function logout() {
-  await apiClient.POST("/v1/auth/logout");
-}
-
 export async function fetchCalendars(): Promise<CalendarStatus[]> {
   const { data } = await apiClient.GET("/v1/calendars");
   return data?.calendars ?? [];

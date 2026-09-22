@@ -25,7 +25,6 @@ import {
 } from "@/lib/api/queries";
 import { PROVIDER_META, ProviderIcon, type Provider } from "@/lib/providerMeta";
 import { useCalendarColors } from "@/lib/useCalendarColors";
-import { AppLayout } from "./AppLayout";
 import { SyncStatsCharts } from "./SyncStatsCharts";
 
 const STATUS_TAG: Record<string, { color: string; label: string }> = {
@@ -138,7 +137,7 @@ export function SyncHistoryPage() {
   };
 
   return (
-    <AppLayout>
+    <>
       <SyncStatsCharts filter={filter} />
       <Card
         title="Sync History"
@@ -291,7 +290,7 @@ export function SyncHistoryPage() {
         runId={selectedRunId}
         onClose={() => setSelectedRunId(null)}
       />
-    </AppLayout>
+    </>
   );
 }
 

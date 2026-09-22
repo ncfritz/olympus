@@ -12,6 +12,10 @@ export interface ShellConfig {
 export interface ShellEnvironment {
   CONTROL_CONSOLES?: string;
   CONTROL_ORIGIN?: string;
+  // Everything else a process environment carries. Without it this is a
+  // weak type, and `process.env` — which Next.js narrows to the variables
+  // it knows about — has nothing in common with it.
+  [key: string]: string | undefined;
 }
 
 /**
