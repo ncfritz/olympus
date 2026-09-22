@@ -50,13 +50,19 @@ ENV npm_config_store_dir=/pnpm/store
 # packages follow the Alpine release of the pinned Node image; pinning
 # their versions too breaks the build whenever Alpine's repository moves on.
 # hadolint ignore=DL3018
-RUN apk add --no-cache python3 make g++ \
+RUN apk add --no-cache python3 make g++ openssl \
     && npm install --global --no-fund --no-audit pnpm@${PNPM_VERSION}
 WORKDIR /repo
 COPY --from=build /repo .
-# The store is content-addressed, so both platforms can share it.
+# A step a package needs after its production install, on this platform
+# too: Prisma generating its client and engine for the Minerva agent.
+ARG POST_DEPLOY=""
+# The store is content-addressed, so both platforms can share it. (The
+# `cd` is in the optional step only, so it is not a WORKDIR.)
+# hadolint ignore=DL3003
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
-    pnpm --filter="${APP}" deploy --prod --legacy /out
+    pnpm --filter="${APP}" deploy --prod --legacy /out \
+    && if [ -n "${POST_DEPLOY}" ]; then cd /out && sh -c "${POST_DEPLOY}"; fi
 
 # ---- What runs.
 FROM node:${NODE_VERSION}-alpine AS runtime

@@ -1,6 +1,10 @@
 {
   "name": "@ncfritz/minerva-calendar-sync-agent",
   "description": "Minerva calendar sync agent: syncs Google and Microsoft 365 calendars, publishes changes, and serves its management API",
+  "files": [
+    "dist",
+    "prisma"
+  ],
   "version": "0.0.0",
   "private": true,
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
@@ -56,6 +60,7 @@
     "moment": "catalog:",
     "nest-winston": "catalog:",
     "openid-client": "^6.8.8",
+    "prisma": "^6.19.3",
     "prom-client": "catalog:",
     "reflect-metadata": "catalog:",
     "rxjs": "catalog:",
@@ -78,7 +83,6 @@
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
-    "prisma": "^6.19.3",
     "rimraf": "^6.0.1",
     "supertest": "catalog:",
     "ts-loader": "^9.5.1",

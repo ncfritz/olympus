@@ -35,7 +35,10 @@ group "default" {
 }
 
 group "services" {
-  targets = ["api", "notification-agent", "asset-agent", "metadata-agent", "search-agent"]
+  targets = [
+    "api", "notification-agent", "asset-agent", "metadata-agent", "search-agent",
+    "minerva-agent", "minerva-console",
+  ]
 }
 
 # The Node services share one Dockerfile.
@@ -90,6 +93,32 @@ target "search-agent" {
     EXTRA_CA_CERTS = "/app/ca_roots.pem"
   }
   tags = image("search-agent")
+}
+
+target "minerva-agent" {
+  inherits = ["_node"]
+  args = {
+    APP = "@ncfritz/minerva-calendar-sync-agent"
+    # Prisma's client and query engine, for this image's platform.
+    POST_DEPLOY      = "node node_modules/prisma/build/index.js generate --schema prisma/schema.prisma"
+    RUNTIME_PACKAGES = "openssl"
+  }
+  tags = image("minerva-agent")
+}
+
+target "minerva-console" {
+  context    = "."
+  dockerfile = "infra/docker/next/Dockerfile"
+  platforms  = ["linux/arm64"]
+  args = {
+    APP          = "@ncfritz/minerva-calendar-sync-console"
+    APP_DIR      = "agents/minerva-calendar-sync/console"
+    PORT         = "4392"
+    GIT_REVISION = GIT_REVISION
+    # nginx serves the agent under /api on the console's own name.
+    NEXT_PUBLIC_API_URL = "/api"
+  }
+  tags = image("minerva-console")
 }
 
 target "hasura" {
