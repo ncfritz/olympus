@@ -1,0 +1,306 @@
+# The Olympus services (ADR 0019): the API, the agents, the site and
+# Minerva. The same file on every host; each service's own settings are in
+# infra/docker/env/<host>/<service>.env, and the wiring (hosts, ports,
+# secret paths) is here. Deploy with infra/docker/stack.sh olympus up.
+#
+# Profiles: `site` (the site's pre-monorepo image, until it is imported)
+# and `minerva`, each turned on in the host's env file (COMPOSE_PROFILES).
+
+name: olympus
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
+# Every Olympus service: restarted unless stopped, an init to reap child
+# processes, no privileges it doesn't need.
+x-service: &service
+  restart: unless-stopped
+  init: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging: *logging
+
+# What every Nest service reads the same way.
+x-node-environment: &node-environment
+  LISTEN_PORT: "3100"
+  ENABLE_CONSOLE_LOGGING: "true"
+  FILE_LOGGING_ENABLED: "false"
+  LOKI_URL: ${LOKI_URL:-}
+  AMQP_PROTOCOL: amqp
+  AMQP_HOST: rabbitmq
+  AMQP_PORT: "5672"
+  AMQP_VHOST: /dionysus
+  AMQP_PASSWORD_FILE: /run/secrets/amqp_password
+
+# The agents call the API over the backend network: plain HTTP until the
+# certificates are issued (ADR 0018 phase 2), then https://olympus-api:3443/v1
+# with API_CLIENT_CERT/KEY and API_CA_CERT in the agent's env file.
+x-agent-environment: &agent-environment
+  <<: *node-environment
+  API_BASE_URL: ${AGENT_API_BASE_URL:-http://olympus-api:3100/v1}
+
+services:
+  olympus-api:
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/api:${OLYMPUS_TAG:?}
+    env_file: ../env/${OLYMPUS_HOST:?}/olympus-api.env
+    environment:
+      <<: *node-environment
+      AMQP_USER: olympus-api
+      HASURA_PROTOCOL: http
+      HASURA_HOST: hasura
+      HASURA_PORT: "8080"
+      HASURA_PASSWORD_FILE: /run/secrets/hasura_admin_secret
+      # UploadAssets writes here; the asset agent sees the same directory
+      # at the publish path.
+      DIONYSUS_UPLOAD_PATH: /olympus/uploads
+      DIONYSUS_PUBLISH_PATH: /dionysus/uploads
+    secrets:
+      - source: amqp_olympus_api
+        target: amqp_password
+      - hasura_admin_secret
+    volumes:
+      - ${DATA_DIR:?}/dionysus/uploads:/olympus/uploads
+      # The services listener's certificate, key, CA and revocation lists.
+      - ${SECRETS_DIR:?}/tls/olympus-api:/run/secrets/tls:ro
+    ports:
+      # The mTLS listener, for the NAS's asset agent (ADR 0018).
+      - "${LAN_BIND:-127.0.0.1}:3443:3443"
+    networks:
+      - graphql
+      - backend
+      - edge
+      - monitoring
+
+  olympus-notification-agent:
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/notification-agent:${OLYMPUS_TAG:?}
+    env_file: ../env/${OLYMPUS_HOST:?}/olympus-notification-agent.env
+    environment:
+      <<: *agent-environment
+      AMQP_USER: olympus-notification-agent
+      WSS_HOST: ws://olympus-api:3100
+      SYNO_SMTP_PASSWORD_FILE: /run/secrets/syno_smtp_password
+    secrets:
+      - source: amqp_olympus_notification_agent
+        target: amqp_password
+      - syno_smtp_password
+    volumes:
+      - ${SECRETS_DIR:?}/tls/olympus-notification-agent:/run/secrets/tls:ro
+    networks:
+      - backend
+      - monitoring
+
+  dionysus-asset-agent:
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/asset-agent:${OLYMPUS_TAG:?}
+    env_file: ../env/${OLYMPUS_HOST:?}/dionysus-asset-agent.env
+    environment:
+      <<: *agent-environment
+      AMQP_USER: dionysus-asset-agent
+      SOCKS_PROXY_USERNAME_FILE: /run/secrets/socks_proxy_username
+      SOCKS_PROXY_PASSWORD_FILE: /run/secrets/socks_proxy_password
+      CONTENT_SSH_PASSWORD_FILE: /run/secrets/content_ssh_password
+      DIONYSUS_CDN_SSH_PASSWORD_FILE: /run/secrets/dionysus_cdn_ssh_password
+      DIONYSUS_LIBRARY_SSH_PASSWORD_FILE: /run/secrets/dionysus_library_ssh_password
+      NZBGEEK_API_KEY_FILE: /run/secrets/nzbgeek_api_key
+      NZBGET_PASSWORD_FILE: /run/secrets/nzbget_password
+    secrets:
+      - source: amqp_dionysus_asset_agent
+        target: amqp_password
+      - socks_proxy_username
+      - socks_proxy_password
+      - content_ssh_password
+      - dionysus_cdn_ssh_password
+      - dionysus_library_ssh_password
+      - nzbgeek_api_key
+      - nzbget_password
+    volumes:
+      - ${DATA_DIR:?}/dionysus/asset-agents/data:/dionysus
+      - ${DATA_DIR:?}/dionysus/uploads:/dionysus/uploads
+      - ${SECRETS_DIR:?}/tls/dionysus-asset-agent:/run/secrets/tls:ro
+    # A transcode would otherwise take the whole machine.
+    cpus: ${ASSET_AGENT_CPUS:-2}
+    mem_limit: ${ASSET_AGENT_MEMORY:-4g}
+    stop_grace_period: 60s
+    networks:
+      - backend
+      - monitoring
+
+  dionysus-metadata-agent:
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/metadata-agent:${OLYMPUS_TAG:?}
+    env_file: ../env/${OLYMPUS_HOST:?}/dionysus-metadata-agent.env
+    environment:
+      <<: *agent-environment
+      AMQP_USER: dionysus-metadata-agent
+      TMDB_API_KEY_FILE: /run/secrets/tmdb_api_key
+    secrets:
+      - source: amqp_dionysus_metadata_agent
+        target: amqp_password
+      - tmdb_api_key
+    volumes:
+      - ${DATA_DIR:?}/dionysus/metadata-agents/data:/dionysus
+      - ${SECRETS_DIR:?}/tls/dionysus-metadata-agent:/run/secrets/tls:ro
+    networks:
+      - backend
+      - monitoring
+
+  dionysus-search-agent:
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/search-agent:${OLYMPUS_TAG:?}
+    env_file: ../env/${OLYMPUS_HOST:?}/dionysus-search-agent.env
+    environment:
+      <<: *agent-environment
+      AMQP_USER: dionysus-search-agent
+      NZBGEEK_API_KEY_FILE: /run/secrets/nzbgeek_api_key
+    secrets:
+      - source: amqp_dionysus_search_agent
+        target: amqp_password
+      - nzbgeek_api_key
+    volumes:
+      - ${DATA_DIR:?}/dionysus/search-agents/data:/dionysus
+      - ${SECRETS_DIR:?}/tls/dionysus-search-agent:/run/secrets/tls:ro
+    networks:
+      - backend
+      - monitoring
+
+  # The site's pre-monorepo image, as it runs today, until the site is
+  # imported (roadmap phase 3). Its configuration is inside the image.
+  olympus-site:
+    # Unset where the profile is off; a name that fails to pull if it is
+    # on without one.
+    image: ${SITE_IMAGE:-site-image-not-set}
+    profiles: [site]
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    logging: *logging
+    volumes:
+      - ${DATA_DIR:?}/olympus/site/olr:/olr
+    networks:
+      - edge
+
+  # Minerva's SQLite store, migrated before the agent starts.
+  minerva-migrate:
+    image: ${IMAGE_PREFIX:?}/minerva-agent:${OLYMPUS_TAG:?}
+    profiles: [minerva]
+    command:
+      [
+        "node",
+        "node_modules/prisma/build/index.js",
+        "migrate",
+        "deploy",
+        "--schema",
+        "prisma/schema.prisma",
+      ]
+    environment:
+      DATABASE_URL: file:/data/minerva.db
+    volumes:
+      - ${DATA_DIR:?}/minerva:/data
+    network_mode: none
+    healthcheck:
+      disable: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging: *logging
+
+  minerva-agent:
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/minerva-agent:${OLYMPUS_TAG:?}
+    profiles: [minerva]
+    depends_on:
+      minerva-migrate:
+        condition: service_completed_successfully
+    env_file: ../env/${OLYMPUS_HOST:?}/minerva-agent.env
+    environment:
+      <<: *node-environment
+      LISTEN_PORT: "4432"
+      AMQP_USER: minerva-calendar-sync-agent
+      DATABASE_URL: file:/data/minerva.db
+      # OAuth tokens, kept with the database.
+      GOOGLE_CREDENTIALS_DIR: /data/credentials/google
+      MICROSOFT_CREDENTIALS_DIR: /data/credentials/microsoft
+      AUTH_JWT_SECRET_FILE: /run/secrets/minerva_auth_jwt_secret
+      GOOGLE_OAUTH_CLIENT_SECRET_FILE: /run/secrets/google_oauth_client_secret
+      # nginx serves the agent at /api on the console's name.
+      AUTH_BASE_URL: https://${MINERVA_HOST:?}/api
+      WEB_APP_URL: https://${MINERVA_HOST:?}
+    secrets:
+      - source: amqp_minerva
+        target: amqp_password
+      - minerva_auth_jwt_secret
+      - google_oauth_client_secret
+    volumes:
+      - ${DATA_DIR:?}/minerva:/data
+    stop_grace_period: 30s
+    networks:
+      - backend
+      - edge
+      - monitoring
+
+  minerva-console:
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/minerva-console:${OLYMPUS_TAG:?}
+    profiles: [minerva]
+    networks:
+      - edge
+
+networks:
+  graphql:
+    name: olympus-graphql
+    external: true
+  backend:
+    name: olympus-backend
+    external: true
+  edge:
+    name: olympus-edge
+    external: true
+  monitoring:
+    name: ${MONITORING_NETWORK:?}
+    external: true
+
+secrets:
+  hasura_admin_secret:
+    file: ${SECRETS_DIR:?}/hasura_admin_secret
+  amqp_olympus_api:
+    file: ${SECRETS_DIR:?}/rabbitmq/olympus-api.password
+  amqp_olympus_notification_agent:
+    file: ${SECRETS_DIR:?}/rabbitmq/olympus-notification-agent.password
+  amqp_dionysus_asset_agent:
+    file: ${SECRETS_DIR:?}/rabbitmq/dionysus-asset-agent.password
+  amqp_dionysus_metadata_agent:
+    file: ${SECRETS_DIR:?}/rabbitmq/dionysus-metadata-agent.password
+  amqp_dionysus_search_agent:
+    file: ${SECRETS_DIR:?}/rabbitmq/dionysus-search-agent.password
+  amqp_minerva:
+    file: ${SECRETS_DIR:?}/rabbitmq/minerva-calendar-sync-agent.password
+  syno_smtp_password:
+    file: ${SECRETS_DIR:?}/syno_smtp_password
+  socks_proxy_username:
+    file: ${SECRETS_DIR:?}/socks_proxy_username
+  socks_proxy_password:
+    file: ${SECRETS_DIR:?}/socks_proxy_password
+  content_ssh_password:
+    file: ${SECRETS_DIR:?}/content_ssh_password
+  dionysus_cdn_ssh_password:
+    file: ${SECRETS_DIR:?}/dionysus_cdn_ssh_password
+  dionysus_library_ssh_password:
+    file: ${SECRETS_DIR:?}/dionysus_library_ssh_password
+  nzbgeek_api_key:
+    file: ${SECRETS_DIR:?}/nzbgeek_api_key
+  nzbget_password:
+    file: ${SECRETS_DIR:?}/nzbget_password
+  tmdb_api_key:
+    file: ${SECRETS_DIR:?}/tmdb_api_key
+  minerva_auth_jwt_secret:
+    file: ${SECRETS_DIR:?}/minerva_auth_jwt_secret
+  google_oauth_client_secret:
+    file: ${SECRETS_DIR:?}/google_oauth_client_secret

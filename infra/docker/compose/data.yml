@@ -1,0 +1,90 @@
+# Postgres and Hasura (ADR 0019). The same file on every host; the host's
+# env file (infra/docker/env/<host>.env) supplies the versions, tags and
+# paths. Deploy with infra/docker/stack.sh data up.
+#
+# Hasura's image carries the schema: starting a new tag applies its
+# migrations and metadata. Its console is off unless the host's env file
+# turns it on (the laptop does; production doesn't).
+
+name: data
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
+services:
+  postgres:
+    # The major version must match the data directory's.
+    image: postgres:${POSTGRES_VERSION:?}
+    restart: unless-stopped
+    shm_size: 256mb
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - ${DATA_DIR:?}/postgres:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    stop_grace_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    logging: *logging
+
+  hasura:
+    image: ${IMAGE_PREFIX:?}/hasura:${HASURA_TAG:?}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      HASURA_GRAPHQL_ADMIN_SECRET_FILE: /run/secrets/hasura_admin_secret
+      HASURA_GRAPHQL_DATABASE_URL_FILE: /run/secrets/hasura_database_url
+      # The metadata catalog lives in the same database.
+      HASURA_GRAPHQL_METADATA_DATABASE_URL_FILE: /run/secrets/hasura_database_url
+      HASURA_GRAPHQL_ENABLE_CONSOLE: ${HASURA_CONSOLE:-false}
+      HASURA_GRAPHQL_DEV_MODE: ${HASURA_CONSOLE:-false}
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log
+    secrets:
+      - hasura_admin_secret
+      - hasura_database_url
+    ports:
+      - "127.0.0.1:${HASURA_PORT:-8080}:8080"
+    networks:
+      - data
+      - graphql
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # Migrations and metadata are applied before the engine answers.
+      start_period: 120s
+    security_opt:
+      - no-new-privileges:true
+    logging: *logging
+
+networks:
+  data:
+    name: olympus-data
+    external: true
+  graphql:
+    name: olympus-graphql
+    external: true
+
+secrets:
+  postgres_password:
+    file: ${SECRETS_DIR:?}/postgres_password
+  hasura_admin_secret:
+    file: ${SECRETS_DIR:?}/hasura_admin_secret
+  hasura_database_url:
+    file: ${SECRETS_DIR:?}/hasura_database_url

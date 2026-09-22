@@ -1,0 +1,58 @@
+# The home lab's dev Hasura (ADR 0019): the same image as production's,
+# on its own tag, over the olympus_dev database in production's Postgres.
+# It keeps its metadata in olympus_dev too, so it never shares a catalog
+# with production. The Mac Mini only; the laptop's data stack is its dev.
+#
+# A schema change goes here first (HASURA_DEV_TAG), then to production
+# (HASURA_TAG in data.yml). The console is on, for inspecting data and
+# trying queries; schema changes still go through the CLI's
+# `hasura console`, since the image re-applies the repository's metadata
+# on every start.
+
+name: hasura-dev
+
+services:
+  hasura-dev:
+    image: ${IMAGE_PREFIX:?}/hasura:${HASURA_DEV_TAG:?}
+    restart: unless-stopped
+    environment:
+      HASURA_GRAPHQL_ADMIN_SECRET_FILE: /run/secrets/hasura_dev_admin_secret
+      HASURA_GRAPHQL_DATABASE_URL_FILE: /run/secrets/hasura_dev_database_url
+      HASURA_GRAPHQL_METADATA_DATABASE_URL_FILE: /run/secrets/hasura_dev_database_url
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log
+    secrets:
+      - hasura_dev_admin_secret
+      - hasura_dev_database_url
+    # For the IDE on another machine: its data is a copy of production's,
+    # so the admin secret matters as much as production's.
+    ports:
+      - "${LAN_BIND:-127.0.0.1}:${HASURA_DEV_PORT:-8081}:8080"
+    # Only Postgres; nothing on this network resolves `hasura`.
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+networks:
+  data:
+    name: olympus-data
+    external: true
+
+secrets:
+  hasura_dev_admin_secret:
+    file: ${SECRETS_DIR:?}/hasura_dev_admin_secret
+  hasura_dev_database_url:
+    file: ${SECRETS_DIR:?}/hasura_dev_database_url

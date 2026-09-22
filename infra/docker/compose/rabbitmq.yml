@@ -1,0 +1,51 @@
+# RabbitMQ (ADR 0019). Users, vhosts and permissions come from the
+# definitions secret (infra/docker/rabbitmq/definitions.mjs), applied on
+# every start. Deploy with infra/docker/stack.sh rabbitmq up.
+
+name: rabbitmq
+
+services:
+  rabbitmq:
+    image: ${IMAGE_PREFIX:?}/rabbitmq:${RABBITMQ_TAG:?}
+    # The broker's data is filed under its node name, rabbit@<hostname>:
+    # the Mac Mini's must stay `snowball`.
+    hostname: ${RABBITMQ_HOSTNAME:-snowball}
+    restart: unless-stopped
+    secrets:
+      - rabbitmq_definitions
+    volumes:
+      - ${DATA_DIR:?}/rabbitmq/data:/var/lib/rabbitmq
+    ports:
+      # AMQP: the NAS's asset agent and the IDE reach it over the LAN.
+      - "${LAN_BIND:-127.0.0.1}:5672:5672"
+      - "127.0.0.1:15672:15672"
+    networks:
+      - backend
+      # Prometheus scrapes :15692 over it.
+      - monitoring
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    stop_grace_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+networks:
+  backend:
+    name: olympus-backend
+    external: true
+  monitoring:
+    name: ${MONITORING_NETWORK:?}
+    external: true
+
+secrets:
+  rabbitmq_definitions:
+    file: ${SECRETS_DIR:?}/rabbitmq_definitions

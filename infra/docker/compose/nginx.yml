@@ -1,0 +1,49 @@
+# The shared nginx (ADR 0019): Olympus's sites and the registry, and the
+# host's other sites. Its main nginx.conf and those other sites stay in the
+# host's own directory; the Olympus server blocks come from this
+# repository (infra/docker/nginx), which nginx.conf includes with
+#
+#   include /etc/nginx/olympus/*.conf;
+#
+# inside its http block. After a change there: `nginx -s reload`.
+# Unlike the other stacks this one mounts files from the checkout, so it is
+# deployed from the Mac Mini itself.
+
+name: nginx
+
+services:
+  nginx:
+    image: nginx:${NGINX_VERSION:?}
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ${DATA_DIR:?}/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${DATA_DIR:?}/nginx/config:/config:ro
+      - ${DATA_DIR:?}/nginx/content:/content:ro
+      - ${DATA_DIR:?}/nginx/logs:/var/log/nginx
+      - ../nginx:/etc/nginx/olympus:ro
+    networks:
+      - edge
+      # The host's other sites, as before.
+      - nginx_net
+    healthcheck:
+      test: ["CMD", "nginx", "-t", "-q"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+networks:
+  edge:
+    name: olympus-edge
+    external: true
+  nginx_net:
+    driver: bridge

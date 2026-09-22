@@ -19,6 +19,10 @@ graph.json
 .env*
 !*.env.example
 !.env.example
+# Except the hosts' settings for the Docker stacks: no secrets, by design
+# (ADR 0019). Secrets are files in each host's SECRETS_DIR.
+!infra/docker/env/*.env
+!infra/docker/env/*/*.env
 
 # Local certs / keys
 *.pem
@@ -33,3 +37,6 @@ agents/dionysus-metadata/cache/
 
 # A throwaway CA for development (scripts/dev-ca.sh).
 infra/dev-ca/
+
+# The host infra/docker/stack.sh runs as (stack.sh bootstrap <host>).
+infra/docker/env/.host
