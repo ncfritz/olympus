@@ -20,7 +20,7 @@ Nothing here is live yet: Minerva sits behind the `minerva` Compose
 profile with its environment unfilled, so the service, image and volume
 renames in phase 2 cost nothing and need no migration.
 
-## Phase 1 — The shell package
+## Phase 1 — The shell package (done 2026-09-22)
 
 `packages/console`, `@ncfritz/olympus-console`. Consumed from the
 workspace as source (ADR 0002) with `transpilePackages` in each console's
@@ -57,6 +57,15 @@ packages into the output the image copies.
    current console and the tab strip. This is the repository's first
    React test setup — vitest with `jsdom` and `@testing-library/react`,
    versions in the catalog, picked up by the existing Turbo `test` task.
+
+Fifty-one tests. Two things came out of building it: the shell takes the
+session as a prop rather than calling `useConsoleAuth` itself, which keeps
+it presentational and testable without stubbing a fetch; and the client's
+base URL is resolved against the document's origin, because `Request`
+rejects a relative one anywhere other than a browser's own `fetch`. The
+React versions the shell shares with the console moved into the catalog
+(ADR 0002). Its inline styles keep the shared config's warning until the
+styles mechanism is decided (roadmap 7).
 
 ## Phase 2 — Minerva calendar moves
 

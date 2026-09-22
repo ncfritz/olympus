@@ -14,3 +14,4 @@ Nothing here is published to a registry.
 | `nest`     | `@ncfritz/olympus-nest`     | present  |
 | `metrics`  | `@ncfritz/olympus-metrics`  | present  |
 | `client`   | `@ncfritz/olympus-client`   | present  |
+| `console`  | `@ncfritz/olympus-console`  | present  |

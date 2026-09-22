@@ -1,0 +1,8 @@
+{
+  "extends": "@ncfritz/olympus-config/tsconfig/react-library.json",
+  "compilerOptions": {
+    // `readShellConfig` defaults to `process.env`: it is called from a
+    // console's root layout, which is a server component.
+    "types": ["node"]
+  }
+}

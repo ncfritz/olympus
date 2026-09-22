@@ -1,0 +1,52 @@
+{
+  "name": "@ncfritz/olympus-console",
+  "description": "The Olympus Control shell: the console registry, the suite's navigation, theme, sign-in and API client",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
+    "lint": "eslint src test",
+    "lintfix": "eslint src test --fix",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@ncfritz/olympus-metrics": "workspace:*"
+  },
+  "peerDependencies": {
+    "@ant-design/icons": "catalog:",
+    "antd": "catalog:",
+    "openapi-fetch": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "swr": "catalog:"
+  },
+  "devDependencies": {
+    "@ant-design/icons": "catalog:",
+    "@ncfritz/olympus-config": "workspace:*",
+    "@testing-library/react": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "antd": "catalog:",
+    "eslint": "catalog:",
+    "jsdom": "catalog:",
+    "openapi-fetch": "catalog:",
+    "prettier": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "swr": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "files": [
+    "src"
+  ]
+}
