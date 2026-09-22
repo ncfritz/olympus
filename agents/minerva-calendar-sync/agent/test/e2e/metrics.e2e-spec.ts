@@ -37,6 +37,11 @@ describe("Metrics (e2e)", () => {
     expect(res.text).toContain("process_cpu_user_seconds_total");
   });
 
+  it("answers Docker's health check without an access token", async () => {
+    const res = await request(app.getHttpServer()).get("/health").expect(200);
+    expect(res.body).toEqual({ status: "ok" });
+  });
+
   it("records the management API's operations by caller", async () => {
     await request(app.getHttpServer())
       .get("/v1/calendars")
