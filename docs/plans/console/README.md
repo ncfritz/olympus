@@ -159,7 +159,7 @@ the agent's path from the console's key, so the path and the base path
 cannot disagree. The workspace still sets it, since the agent has a port
 of its own there.
 
-## Phase 3 — The index
+## Phase 3 — The index (done 2026-09-22)
 
 1. `apps/control` (`@ncfritz/olympus-control`), base path `/`, the same
    shell with no tab strip: a card per property listing its consoles.
@@ -168,6 +168,14 @@ of its own there.
 3. Service health on the cards is deliberately deferred (ADR 0021, Open)
    — it wants the monitoring work, not a fan-out of `/health` from a
    browser.
+
+The shell took two changes to render here: `current` and `auth` are both
+optional, because the index is none of the consoles and has no agent to
+hold a session with. The header's title goes with them — the sider's
+wordmark already names the suite, and the index would otherwise say
+"Olympus Control" twice. `location /` on the control host now reaches the
+index, so a path no console claims 404s there, which is what should
+happen to a stale link.
 
 ## Phase 4 — Cutover
 

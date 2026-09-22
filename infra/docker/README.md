@@ -32,14 +32,14 @@ infra/docker/stack.sh up olympus           # or one stack
 infra/docker/stack.sh logs olympus -f dionysus-asset-agent
 ```
 
-| Stack        | Services                                                            | Runs on          |
-| ------------ | ------------------------------------------------------------------- | ---------------- |
-| `data`       | Postgres, Hasura                                                    | Mac Mini, laptop |
-| `hasura-dev` | The home lab's dev Hasura, over `olympus_dev` in the same Postgres  | Mac Mini         |
-| `rabbitmq`   | RabbitMQ                                                            | Mac Mini, laptop |
-| `olympus`    | The API, the agents; the site (`site` profile), Minerva (`minerva`) | Mac Mini, laptop |
-| `nginx`      | The shared nginx; mounts `infra/docker/nginx` from the checkout     | Mac Mini         |
-| `registry`   | The image registry                                                  | Mac Mini         |
+| Stack        | Services                                                                               | Runs on          |
+| ------------ | -------------------------------------------------------------------------------------- | ---------------- |
+| `data`       | Postgres, Hasura                                                                       | Mac Mini, laptop |
+| `hasura-dev` | The home lab's dev Hasura, over `olympus_dev` in the same Postgres                     | Mac Mini         |
+| `rabbitmq`   | RabbitMQ                                                                               | Mac Mini, laptop |
+| `olympus`    | The API, the agents, the control index; the site (`site` profile), Minerva (`minerva`) | Mac Mini, laptop |
+| `nginx`      | The shared nginx; mounts `infra/docker/nginx` from the checkout                        | Mac Mini         |
+| `registry`   | The image registry                                                                     | Mac Mini         |
 
 Networks are created once by `bootstrap` and shared by name:
 `olympus-data` (Postgres, both Hasuras), `olympus-graphql` (Hasura, the

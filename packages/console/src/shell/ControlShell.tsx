@@ -16,14 +16,18 @@ import type { ShellTab, SignInProvider } from "./types";
 
 const { Content } = Layout;
 
+/** What the chrome is called where it is not a particular console. */
+const SUITE = "Olympus Control";
+
 export interface ControlShellProps {
   /** The consoles this host runs, from `readShellConfig`. */
   nav: Registry;
-  /** Which one this is: `minerva/calendar`. */
-  current: ConsoleKey;
+  /** Which one this is: `minerva/calendar`. The suite's index is none of them. */
+  current?: ConsoleKey;
   /** Where the suite is, if not this origin (CONTROL_ORIGIN). */
   origin?: string;
-  auth: ConsoleAuth;
+  /** The session, from `useConsoleAuth`. The index has no agent to have one with. */
+  auth?: ConsoleAuth;
   tabs?: ShellTab[];
   activeTab?: string;
   /** Console-specific header controls, to the left of the session menu. */
@@ -54,12 +58,14 @@ export const ControlShell = ({
   // The host's list can leave this console out — a misconfiguration, but
   // not a reason to render nothing, so the name comes from the full
   // registry and the sider shows whatever the host allowed.
-  const here = findConsole(nav, current) ?? findConsole(PROPERTIES, current);
+  const here = current
+    ? (findConsole(nav, current) ?? findConsole(PROPERTIES, current))
+    : undefined;
   const title = here
     ? `${here.property.label} · ${here.console.label}`
-    : current;
+    : (current ?? SUITE);
 
-  if (auth.status === "loading") {
+  if (auth?.status === "loading") {
     return (
       <Flex align="center" justify="center" style={{ minHeight: "100vh" }}>
         <Spin size="large" />
@@ -67,7 +73,7 @@ export const ControlShell = ({
     );
   }
 
-  if (auth.status === "unauthenticated") {
+  if (auth?.status === "unauthenticated") {
     return (
       <SignInCard
         title={title}
@@ -88,12 +94,12 @@ export const ControlShell = ({
       />
       <Layout>
         <ControlHeader
-          title={title}
+          title={current ? title : undefined}
           tabs={tabs}
           activeTab={activeTab}
           actions={actions}
-          email={auth.email}
-          onLogout={() => void auth.logout()}
+          email={auth?.email}
+          onLogout={() => void auth?.logout()}
           onToggleNav={() => setCollapsed((open) => !open)}
         />
         <Content

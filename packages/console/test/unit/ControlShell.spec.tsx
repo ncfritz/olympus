@@ -146,6 +146,43 @@ describe("ControlShell", () => {
     );
   });
 
+  describe("as the suite's index, which is no console and has no session", () => {
+    const renderIndex = () =>
+      render(
+        <ThemeModeProvider>
+          <ControlShell nav={testRegistry}>
+            <p>the index</p>
+          </ControlShell>
+        </ThemeModeProvider>,
+      );
+
+    it("shows the suite and the page", () => {
+      const { container } = renderIndex();
+
+      expect(hrefs(part(container, ".ant-layout-sider"))).toHaveLength(3);
+      expect(screen.getByText("the index")).toBeDefined();
+    });
+
+    it("marks no console, and leaves the naming to the sider", () => {
+      const { container } = renderIndex();
+
+      expect(container.querySelector(".ant-menu-item-selected")).toBeNull();
+      // The sider's wordmark already says it; the header would be saying
+      // "Olympus Control" a second time.
+      expect(part(container, ".ant-layout-header").textContent).not.toContain(
+        "Olympus Control",
+      );
+    });
+
+    it("offers no session menu", () => {
+      const { container } = renderIndex();
+
+      expect(part(container, ".ant-layout-header").textContent).not.toContain(
+        "@",
+      );
+    });
+  });
+
   it("waits rather than flashing a sign-in screen", () => {
     const { container } = renderShell({
       auth: { ...authenticated, status: "loading" },

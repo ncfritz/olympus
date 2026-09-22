@@ -33,8 +33,11 @@ const THEME_MODE_OPTIONS: { value: ThemeMode; icon: ReactNode }[] = [
 ];
 
 export interface ControlHeaderProps {
-  /** What this console is called, with its property: "Minerva · Calendar". */
-  title: string;
+  /**
+   * What this console is called, with its property: "Minerva · Calendar".
+   * The suite's index has none — the sider already names the suite.
+   */
+  title?: string;
   tabs?: ShellTab[];
   activeTab?: string;
   actions?: ReactNode;
@@ -73,9 +76,11 @@ export const ControlHeader = ({
       aria-label="Toggle the console list"
       style={{ color: "#fff", flexShrink: 0 }}
     />
-    <Text strong style={{ color: "#fff", whiteSpace: "nowrap" }}>
-      {title}
-    </Text>
+    {title ? (
+      <Text strong style={{ color: "#fff", whiteSpace: "nowrap" }}>
+        {title}
+      </Text>
+    ) : null}
     {tabs && tabs.length > 0 ? (
       <Menu
         theme="dark"

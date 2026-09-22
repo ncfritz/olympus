@@ -10,7 +10,7 @@ const { Text } = Typography;
 
 export interface ControlSiderProps {
   nav: Registry;
-  current: ConsoleKey;
+  current?: ConsoleKey;
   origin?: string;
   collapsed: boolean;
   onCollapse: (collapsed: boolean) => void;
@@ -62,7 +62,12 @@ export const ControlSider = ({
           Olympus Control
         </Text>
       </div>
-      <Menu theme="dark" mode="inline" selectedKeys={[current]} items={items} />
+      <Menu
+        theme="dark"
+        mode="inline"
+        selectedKeys={current ? [current] : []}
+        items={items}
+      />
     </Sider>
   );
 };

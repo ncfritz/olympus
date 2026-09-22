@@ -1,0 +1,35 @@
+{
+  "name": "@ncfritz/olympus-control",
+  "description": "Olympus Control: the suite's index, listing the consoles this host runs",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "next dev -p 4390",
+    "build": "next build",
+    "start": "next start -p 4390",
+    "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@ant-design/icons": "catalog:",
+    "@ant-design/nextjs-registry": "^1.3.0",
+    "@ncfritz/olympus-console": "workspace:*",
+    "antd": "catalog:",
+    "next": "catalog:",
+    "openapi-fetch": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "swr": "catalog:"
+  },
+  "devDependencies": {
+    "@ncfritz/olympus-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-next": "catalog:",
+    "typescript": "catalog:"
+  }
+}

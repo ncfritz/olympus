@@ -37,7 +37,7 @@ group "default" {
 group "services" {
   targets = [
     "api", "notification-agent", "asset-agent", "metadata-agent", "search-agent",
-    "minerva-calendar-agent", "minerva-calendar-console",
+    "minerva-calendar-agent", "minerva-calendar-console", "control",
   ]
 }
 
@@ -120,6 +120,20 @@ target "minerva-calendar-console" {
     NEXT_PUBLIC_BASE_PATH = "/minerva/calendar"
   }
   tags = image("minerva-calendar-console")
+}
+
+# The suite's index at the root of the control host (ADR 0021).
+target "control" {
+  context    = "."
+  dockerfile = "infra/docker/next/Dockerfile"
+  platforms  = ["linux/arm64"]
+  args = {
+    APP          = "@ncfritz/olympus-control"
+    APP_DIR      = "apps/control"
+    PORT         = "4390"
+    GIT_REVISION = GIT_REVISION
+  }
+  tags = image("control")
 }
 
 target "hasura" {

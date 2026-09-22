@@ -170,6 +170,17 @@ services:
       - backend
       - monitoring
 
+  # The index at the root of the control host: the way in when you arrive
+  # without a console in mind (ADR 0021). No profile — it is the host's
+  # front door, and it lists whatever CONTROL_CONSOLES says is here.
+  olympus-control:
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/control:${OLYMPUS_TAG:?}
+    environment:
+      CONTROL_CONSOLES: ${CONTROL_CONSOLES:?}
+    networks:
+      - edge
+
   # The site's pre-monorepo image, as it runs today, until the site is
   # imported (roadmap phase 3). Its configuration is inside the image.
   olympus-site:
