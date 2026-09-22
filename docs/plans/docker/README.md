@@ -96,29 +96,38 @@ one baked into an image. Rotations work without rebuilding.
 
 ## Phase 1 — Images
 
-1. Dockerfiles for the API and the four agents per ADR 0011:
-   `turbo prune <app> --docker`, `pnpm install --frozen-lockfile`, build,
-   `pnpm deploy --filter <app> --prod`, then a runtime stage on
-   `node:26-alpine` running as `node` with `CMD ["node", "dist/main.js"]`.
-   The asset agent keeps ffmpeg and HandBrake. `.dockerignore` excludes
-   `*.env`, `node_modules`, `dist` and `infra/dev-ca`.
-2. `GET /health` (public, outside the API documents) in
-   `@ncfritz/olympus-nest`, beside `/metrics`, for every service.
-3. The Hasura image: `v2.39.1.cli-migrations-v3` plus `infra/hasura`'s
-   migrations and metadata, and an entrypoint that exports
-   `HASURA_GRAPHQL_ADMIN_SECRET`, `HASURA_GRAPHQL_DATABASE_URL` and
-   `HASURA_GRAPHQL_METADATA_DATABASE_URL` from their `_FILE`s before
-   handing over to the image's own.
-4. The RabbitMQ image, `infra/docker/rabbitmq/Dockerfile` (**done
-   2026-09-21**): today's image with the plugin download checked against
-   its checksum and the three plugins enabled in one layer.
-5. `infra/docker/docker-bake.hcl`: every image, `linux/arm64` (and
-   `linux/amd64` for the asset agent), tagged with the commit; `--load`
-   for the laptop.
-6. The registry (`registry:2`) on the Mac Mini with an internal-CA
-   certificate, as its own small stack.
-7. Tests: each image builds, starts, answers `/health`, and has no
-   `production.env` in it.
+Written 2026-09-21; the first builds run on the Mac Mini, since the
+workspace these were written in can't reach an image registry. Each step
+of `node/Dockerfile` (prune, frozen install, build, production deploy)
+was rehearsed outside Docker for all five services, with every module
+their bundles require resolving and both native modules loading.
+
+1. `infra/docker/node/Dockerfile`, one for the API and the four agents:
+   prune, install and build on the build platform, `pnpm deploy --prod`
+   on the image's platform (native modules), runtime on `node:26-alpine`
+   as `node`, `HEALTHCHECK` on `/health`, `CMD ["node", "dist/main.js"]`.
+   `/.dockerignore` keeps env files, keys and local data out of the
+   context. The per-app Dockerfiles are gone. **Written.**
+   - Found on the way: the API declared six runtime packages
+     (`@nestjs/core`, `@nestjs/platform-socket.io`, `class-validator`,
+     `class-transformer`, `reflect-metadata`, `rxjs`) as dev-only, which
+     npm's flat install had hidden; they are dependencies now. Each app
+     has a `files` list, so an image carries its build and not its
+     sources.
+2. `GET /health` in `@ncfritz/olympus-nest`, public on the API.
+   **Done.**
+3. The Hasura image, and its entrypoint turning `_FILE` secrets into
+   Hasura's variables (5 tests). **Written.**
+4. The RabbitMQ image (**done 2026-09-21**), now loading the definitions.
+5. `infra/docker/docker-bake.hcl`: every image, the asset agent for
+   `linux/amd64` too; checked with `bake --print`. **Written.**
+6. `compose/registry.yml`: `registry:3` with TLS and a login. **Written**;
+   needs a hostname and a certificate.
+7. **To do on the Mac Mini**: `docker buildx bake --load api`, then the
+   rest; each image starts and answers `/health`.
+8. The Minerva agent (Prisma: its CLI must be a runtime dependency to run
+   migrations at start) and console (Next.js `standalone`), as a second
+   round once the first builds.
 
 ## Phase 2 — Configuration (done 2026-09-21)
 

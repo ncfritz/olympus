@@ -1,20 +1,79 @@
 # Docker
 
-Planned contents (ADR 0011, ADR 0019, [plan](../../docs/plans/docker/README.md)):
+Images, stacks and their configuration (ADR 0011, ADR 0019,
+[plan](../../docs/plans/docker/README.md)).
 
-- `docker-bake.hcl`: every image, its platform(s) and tags
-- `compose/{data,rabbitmq,nginx,olympus}.yml`: one Compose project per
-  stack; the Mac Mini and the dev laptop run the same files
-- `env/<host>.env`: the non-secret values that differ per host; secrets
-  are files in `${SECRETS_DIR}` on the host
-- `stack.sh`: `bootstrap`, `check`, `up`, `down` per stack
-- `hasura/`: our Hasura image, carrying the migrations and metadata
-- `rabbitmq/`: RabbitMQ with the plugins Olympus uses
-- `compose/nas.yml`, `env/nas.env`: the NAS's asset agent
-- Dockerfiles stay next to each app and use `turbo prune <app> --docker`
+| Path                                        | What                                                                          | State   |
+| ------------------------------------------- | ----------------------------------------------------------------------------- | ------- |
+| `docker-bake.hcl`                           | Every image, its platforms and tags                                           | phase 1 |
+| `node/Dockerfile`                           | The API and the agents, one Dockerfile for all                                | phase 1 |
+| `hasura/`                                   | Hasura carrying the migrations and metadata; `_FILE` secrets                  | phase 1 |
+| `rabbitmq/`                                 | RabbitMQ with the plugins Olympus uses; users from `users.json`               | phase 1 |
+| `compose/registry.yml`                      | The image registry on the Mac Mini                                            | phase 1 |
+| `compose/{data,rabbitmq,nginx,olympus}.yml` | One Compose project per stack; the Mac Mini and the laptop run the same files | phase 3 |
+| `env/<host>.env`                            | The non-secret values that differ per host                                    | phase 3 |
+| `stack.sh`                                  | `bootstrap`, `check`, `up`, `down` per stack                                  | phase 3 |
+| `compose/nas.yml`                           | The NAS's asset agent                                                         | phase 5 |
 
 `compose/dev.yml` (Postgres and Hasura for the workspace) is replaced by
 `data.yml` with the laptop's env file in phase 3.
+
+## Building images
+
+From the repository root, with Docker's BuildKit (Docker Desktop has it):
+
+```sh
+docker buildx bake --load api          # one image, into the local image store
+docker buildx bake --load services --set asset-agent.platform=linux/arm64
+docker buildx bake                     # everything, tag "dev"
+
+# For the registry: tagged with the commit.
+REGISTRY=<registry-host>:5000 TAG=$(git rev-parse --short HEAD) \
+  GIT_REVISION=$(git rev-parse HEAD) docker buildx bake --push
+```
+
+Without `REGISTRY` the images are `olympus/<name>:<TAG>`. The asset agent
+is built for `linux/amd64` (the NAS) as well as `linux/arm64`; loading a
+two-platform image needs Docker's containerd image store, so a local
+`--load` builds one platform.
+
+How `node/Dockerfile` works:
+
+1. **prune**: `turbo prune <package> --docker` keeps the package and the
+   workspace packages it depends on.
+2. **build**, on the build machine's platform: `pnpm install
+--frozen-lockfile` from the pruned manifests (cached, so a source-only
+   change skips it), then `turbo run build` for the package and its
+   dependencies. An agent builds the API too: the SDK is generated from
+   the API's OpenAPI documents.
+3. **deploy**, on the image's platform: `pnpm deploy --prod` installs
+   production dependencies, so native modules (sharp, better-sqlite3)
+   are built for the CPU the image runs on.
+4. **runtime**: `node:26-alpine`, the package's `files` (`dist`, and
+   `templates` or `ca_roots.pem` where it has them) with its
+   `node_modules`, as the `node` user, `HEALTHCHECK` on `/health`.
+
+No image contains configuration: `/.dockerignore` keeps every `*.env`,
+key and local database out of the build context, and nothing reads an env
+file at start.
+
+## Registry
+
+`compose/registry.yml` runs `registry:3` on the Mac Mini with TLS and a
+login. Once, on the Mac Mini:
+
+1. A certificate for the registry's hostname from the internal CA
+   (`TLS Web Server Authentication`), saved as
+   `${SECRETS_DIR}/registry_tls_certificate` and `registry_tls_key`.
+2. A login: `htpasswd -Bc "$SECRETS_DIR/registry_htpasswd" olympus`
+   (`htpasswd` ships with macOS; the registry reads bcrypt only).
+3. `docker compose -f infra/docker/compose/registry.yml --env-file <env>
+up -d`, where the env file sets `DATA_DIR` and `SECRETS_DIR`.
+
+On every machine that pulls or pushes: trust the internal root for that
+registry (`~/.docker/certs.d/<host>:5000/ca.crt` for Docker Desktop,
+`/etc/docker/certs.d/<host>:5000/ca.crt` on the NAS) and
+`docker login <host>:5000`.
 
 ## Secrets
 

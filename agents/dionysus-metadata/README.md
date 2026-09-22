@@ -83,8 +83,10 @@ src/
 `pnpm --filter @ncfritz/dionysus-metadata-agent test` runs the unit and
 convention tests.
 
-> The Dockerfile still expects the pre-monorepo layout (npm, GitHub
-> Packages token). It is rebuilt with the Docker work in ADR 0011.
+> The image is built from the shared `infra/docker/node/Dockerfile`:
+> `docker buildx bake metadata-agent` from the repository root (see
+> `infra/docker/README.md`). Configuration comes from the environment
+> and secret files at run time, never from the image (ADR 0019).
 
 ## Monitoring
 
@@ -103,10 +105,9 @@ scrape_configs:
           - localhost:13001
 ```
 
-## Docker Image
+## Configuration
 
-The Docker image will expose port 3100 for metrics scraping. Environment variables should be specified in
-`production.env`.
+The image serves `/metrics` and `/health` on `LISTEN_PORT`.
 
 ### Environment Variables
 

@@ -25,13 +25,16 @@ The generator (`src/openapi.ts`) creates the Nest application without
 listening and stubs the AMQP connection, so it needs no Hasura or
 RabbitMQ.
 
-> The Dockerfile still expects the pre-monorepo layout (npm, GitHub
-> Packages token). It is rebuilt with the Docker work in ADR 0011. Until
-> then, deploy the API from the original olympus-api repository.
+> The image is built from the shared `infra/docker/node/Dockerfile`:
+> `docker buildx bake api` from the repository root (see
+> `infra/docker/README.md`). Configuration comes from the environment
+> and secret files at run time, never from the image (ADR 0019).
 
 ## Docker Image
 
-The API can be run as a Docker container and will expose port 3000.
+The image serves `LISTEN_PORT` (3100), and the services listener
+(`SERVICES_LISTEN_PORT`, 3443) when it has certificates. Docker checks
+`GET /health`.
 
 ### Environment variables
 

@@ -70,24 +70,12 @@ src/
 `pnpm --filter @ncfritz/dionysus-asset-agent test` runs the unit and
 convention tests.
 
-> The Dockerfile still expects the pre-monorepo layout (npm, GitHub
-> Packages token). It is rebuilt with the Docker work in ADR 0011.
-
-## Docker Image
-
-This project ships with a `Dockerfile` for building a docker image. Because some requirements are hosted in a private
-GitHub NPM repository, you will need to supply a `github_token` build argument so the builder can pull the required
-dependencies.
-
-To build the Docker image, run the following command:
-
-```aiignore
-docker build . --tag ncfritz/dionysus-asset-agent:latest --build-arg github_token=<your_github_token>
-```
-
-```bash
-docker build --build-arg github_token=<your_github_token> -t dionysus-asset-agent .
-```
+> The image is built from the shared `infra/docker/node/Dockerfile`:
+> `docker buildx bake asset-agent` from the repository root (see
+> `infra/docker/README.md`). Configuration comes from the environment
+> and secret files at run time, never from the image (ADR 0019).
+> The image adds ffmpeg and HandBrake, and is built for `linux/amd64`
+> (the NAS) as well as `linux/arm64`.
 
 ## Monitoring
 
@@ -106,10 +94,9 @@ scrape_configs:
           - localhost:13007
 ```
 
-## Docker Image
+## Configuration
 
-The Docker image will expose port 3100 for metrics scraping. Environment variables should be specified in
-`production.env`.
+The image serves `/metrics` and `/health` on `LISTEN_PORT`.
 
 ### Environment Variables
 

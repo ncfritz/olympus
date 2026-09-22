@@ -23,8 +23,10 @@ Run from the repository root (`pnpm install` once):
 
 Copy `dev.env.example` to `dev.env` (git-ignored) and fill in the values.
 
-> The Dockerfile still expects the pre-monorepo layout (npm, GitHub
-> Packages token). It is rebuilt with the Docker work in ADR 0011.
+> The image is built from the shared `infra/docker/node/Dockerfile`:
+> `docker buildx bake notification-agent` from the repository root (see
+> `infra/docker/README.md`). Configuration comes from the environment
+> and secret files at run time, never from the image (ADR 0019).
 
 ## Layout
 
@@ -71,10 +73,9 @@ scrape_configs:
           - localhost:3101
 ```
 
-## Docker Image
+## Configuration
 
-The Docker image will expose port 3100 for metrics scraping. Environment variables should be specified in
-`production.env`.
+The image serves `/metrics` and `/health` on `LISTEN_PORT`.
 
 ### Environment Variables
 
