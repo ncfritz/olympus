@@ -85,5 +85,7 @@ describe("Auth (e2e)", () => {
       .expect(204);
     const setCookie = res.headers["set-cookie"];
     expect(setCookie?.[0]).toMatch(/minerva_access_token=;/);
+    // Cleared with the path it is set with, or the browser keeps it.
+    expect(setCookie?.[0]).toMatch(/Path=\//);
   });
 });

@@ -1,13 +1,17 @@
-import { Controller, HttpStatus, Post, Res } from "@nestjs/common";
+import { Controller, HttpStatus, Inject, Post, Res } from "@nestjs/common";
 import { ApiNoContentResponse, ApiOperation } from "@nestjs/swagger";
 import type { Response } from "express";
 import { ApiStandardErrorResponses } from "../../openapi/controllerDecorators";
+import { authConfig, type AuthConfigType } from "../../config/configuration";
 import { ACCESS_TOKEN_COOKIE } from "../authConstants";
 import { Public } from "../public";
+import { sessionCookieOptions } from "../sessionCookie";
 
 @Public()
 @Controller({ version: "1" })
 export class EndSessionController {
+  constructor(@Inject(authConfig.KEY) private readonly auth: AuthConfigType) {}
+
   @Post("/auth/logout")
   @ApiOperation({
     summary: "Ends the session",
@@ -25,7 +29,12 @@ export class EndSessionController {
     ],
   })
   async handle(@Res() response: Response): Promise<void> {
-    response.clearCookie(ACCESS_TOKEN_COOKIE);
+    // The same options it was set with: a cookie is only replaced by one
+    // with the same name, path and domain.
+    response.clearCookie(
+      ACCESS_TOKEN_COOKIE,
+      sessionCookieOptions(this.auth.webAppUrl, response.req.secure),
+    );
     response.status(HttpStatus.NO_CONTENT).end();
   }
 }

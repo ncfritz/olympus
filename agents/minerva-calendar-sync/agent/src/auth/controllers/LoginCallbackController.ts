@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Inject,
   Param,
   Req,
   Res,
@@ -8,8 +9,10 @@ import {
 } from "@nestjs/common";
 import { ApiExcludeController } from "@nestjs/swagger";
 import type { Request, Response } from "express";
+import { authConfig, type AuthConfigType } from "../../config/configuration";
 import { ACCESS_TOKEN_COOKIE, OIDC_TXN_COOKIE } from "../authConstants";
 import { Public } from "../public";
+import { sessionCookieOptions } from "../sessionCookie";
 import { LoginService } from "../services/LoginService";
 
 const ACCESS_TOKEN_COOKIE_TTL_MS = 60 * 60 * 1000;
@@ -22,7 +25,10 @@ const ACCESS_TOKEN_COOKIE_TTL_MS = 60 * 60 * 1000;
 @Public()
 @Controller({ version: VERSION_NEUTRAL })
 export class LoginCallbackController {
-  constructor(private readonly login: LoginService) {}
+  constructor(
+    private readonly login: LoginService,
+    @Inject(authConfig.KEY) private readonly auth: AuthConfigType,
+  ) {}
 
   @Get("/auth/callback/:provider")
   async handle(
@@ -32,7 +38,8 @@ export class LoginCallbackController {
   ): Promise<void> {
     const rawTransaction = request.cookies?.[OIDC_TXN_COOKIE] as
       string | undefined;
-    response.clearCookie(OIDC_TXN_COOKIE);
+    const cookie = sessionCookieOptions(this.auth.webAppUrl, request.secure);
+    response.clearCookie(OIDC_TXN_COOKIE, cookie);
 
     const { accessToken, refreshToken, returnTo } = await this.login.complete(
       providerName,
@@ -40,9 +47,7 @@ export class LoginCallbackController {
       request.originalUrl,
     );
     response.cookie(ACCESS_TOKEN_COOKIE, accessToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: request.secure,
+      ...cookie,
       maxAge: ACCESS_TOKEN_COOKIE_TTL_MS,
     });
 
