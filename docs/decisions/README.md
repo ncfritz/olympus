@@ -29,5 +29,6 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0018](0018-authentication.md)                        | Authentication for users, devices and services                  | Accepted                    |
 | [0019](0019-compose-stacks-and-configuration.md)      | Compose stacks, configuration and secrets                       | Accepted                    |
 | [0020](0020-internal-certificate-authority.md)        | An internal certificate authority: PKI service and signer       | Proposed                    |
+| [0021](0021-control-host-and-console-navigation.md)   | The control host and console navigation                         | Accepted                    |
 
 New records: copy [template.md](template.md), take the next number.

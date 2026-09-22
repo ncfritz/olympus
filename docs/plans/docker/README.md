@@ -184,6 +184,8 @@ their bundles require resolving and both native modules loading.
    passed on still encoded, the explorers, `/api/metrics`, Socket.IO), and
    `minerva.internal.ncfritz.net` with its agent under `/api`. Services
    are found through Docker's DNS, so nginx starts with any of them down.
+   The Minerva server block is short-lived: [ADR 0021](../../decisions/0021-control-host-and-console-navigation.md)
+   replaces it with the control host ([plan](../console/README.md)).
    Two changes: the API gets `X-Forwarded-Prefix: /api`, so its Location
    headers carry `/api`, and the cipher list is nginx's default (the old
    one allowed 3DES). `/api/metrics` pointed at the dev API; it points at
@@ -224,7 +226,9 @@ One stack at a time, each with its old compose file kept for rollback:
    includes `/etc/nginx/olympus/*.conf`, and the host's own copies go:
    the old Olympus server block, the file with its `upstream` blocks
    (their names stop resolving, and nginx won't start with an
-   unresolvable upstream) and the registry block copied in phase 1.
+   unresolvable upstream) and the registry block copied in phase 1. If
+   the console plan's phase 2 has landed by then, `control.conf` goes up
+   in place of the Minerva block rather than after it.
 
 Done when the old compose files and images can be deleted and every
 service answers `/health`.
