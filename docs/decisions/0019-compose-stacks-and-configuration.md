@@ -105,15 +105,15 @@ production's Hasura only from the API.
 
 Only what another machine needs:
 
-| Port              | Bound to  | Why                                                 |
-| ----------------- | --------- | --------------------------------------------------- |
-| nginx 80, 443     | LAN       | The site, the API under `/api`, the Minerva console |
-| API 3443          | LAN       | The NAS asset agent (ADR 0018)                      |
-| RabbitMQ 5672     | LAN       | The NAS asset agent; services run from the IDE      |
-| Hasura (dev) 8081 | LAN       | The API run from the IDE, and its console           |
-| Postgres 5432     | 127.0.0.1 | Tools on the host; an SSH tunnel from elsewhere     |
-| Hasura 8080       | 127.0.0.1 | `hasura console` and `migrate` from the CLI         |
-| RabbitMQ 15672    | 127.0.0.1 | The management UI                                   |
+| Port              | Bound to  | Why                                                                     |
+| ----------------- | --------- | ----------------------------------------------------------------------- |
+| nginx 80, 443     | LAN       | The site, the API under `/api`, the Minerva console, the image registry |
+| API 3443          | LAN       | The NAS asset agent (ADR 0018)                                          |
+| RabbitMQ 5672     | LAN       | The NAS asset agent; services run from the IDE                          |
+| Hasura (dev) 8081 | LAN       | The API run from the IDE, and its console                               |
+| Postgres 5432     | 127.0.0.1 | Tools on the host; an SSH tunnel from elsewhere                         |
+| Hasura 8080       | 127.0.0.1 | `hasura console` and `migrate` from the CLI                             |
+| RabbitMQ 15672    | 127.0.0.1 | The management UI                                                       |
 
 The site, the API's `3100` and every metrics port are reached over
 Docker networks. The laptop publishes the same set on 127.0.0.1.

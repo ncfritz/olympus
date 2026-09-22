@@ -121,8 +121,9 @@ their bundles require resolving and both native modules loading.
 4. The RabbitMQ image (**done 2026-09-21**), now loading the definitions.
 5. `/docker-bake.hcl` (at the root, where `bake` looks for it): every image, the asset agent for
    `linux/amd64` too; checked with `bake --print`. **Written.**
-6. `compose/registry.yml`: `registry:3` with TLS and a login. **Written**;
-   needs a hostname and a certificate.
+6. The registry, `registry.internal.ncfritz.net`: `compose/registry.yml`
+   (`registry:3`, plain HTTP on `olympus-edge`, its own login) behind the
+   shared nginx (`nginx/registry.conf`, TLS). **Written; being set up.**
 7. The first builds on the Mac Mini: `bake --load` for the API, the
    services and Hasura and RabbitMQ all succeed (**done 2026-09-22**).
 8. The Minerva agent (Prisma: its CLI must be a runtime dependency to run

@@ -25,8 +25,14 @@ Intel Synology NAS (amd64), and building on the NAS is slow.
 - **Deployment** with Docker contexts over SSH and one compose file per
   host.
 
+## Resolved
+
+- The registry is `registry.internal.ncfritz.net`, `registry:3` on the
+  Mac Mini behind the shared nginx, which terminates TLS with an
+  internal-CA certificate; the registry does the login. Its storage is a
+  bind mount under the Mac Mini's data directory (2026-09-22).
+
 ## Open
 
 - Whether a self-hosted GitHub Actions runner on the Mac Mini triggers
   builds automatically.
-- Registry hostname and storage location.

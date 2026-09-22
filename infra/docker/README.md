@@ -61,21 +61,31 @@ file at start.
 
 ## Registry
 
-`compose/registry.yml` runs `registry:3` on the Mac Mini with TLS and a
-login. Once, on the Mac Mini:
+`registry.internal.ncfritz.net` is `registry:3` on the Mac Mini
+(`compose/registry.yml`) behind the shared nginx, which terminates TLS
+(`nginx/registry.conf`). The registry answers plain HTTP on the
+`olympus-edge` network and publishes no port; it does the login itself.
+Once, on the Mac Mini:
 
-1. A certificate for the registry's hostname from the internal CA
-   (`TLS Web Server Authentication`), saved as
-   `${SECRETS_DIR}/registry_tls_certificate` and `registry_tls_key`.
-2. A login: `htpasswd -Bc "$SECRETS_DIR/registry_htpasswd" olympus`
+1. `docker network create olympus-edge`, and add it to the nginx
+   compose file as an external network nginx joins (phase 3's
+   `stack.sh bootstrap` finds it already there).
+2. The certificate and key from the internal CA where the server block
+   expects them, the leaf followed by any intermediate in
+   `fullchain.pem`; include `nginx/registry.conf` from `nginx.conf` and
+   reload nginx (`http2 on;` needs nginx 1.25.1 or later).
+3. A login: `htpasswd -Bc "$SECRETS_DIR/registry_htpasswd" olympus`
    (`htpasswd` ships with macOS; the registry reads bcrypt only).
-3. `docker compose -f infra/docker/compose/registry.yml --env-file <env>
-up -d`, where the env file sets `DATA_DIR` and `SECRETS_DIR`.
+4. `DATA_DIR=... SECRETS_DIR=... docker compose -f
+infra/docker/compose/registry.yml up -d`.
+5. The internal DNS record: `registry.internal.ncfritz.net` → the Mac
+   Mini.
 
-On every machine that pulls or pushes: trust the internal root for that
-registry (`~/.docker/certs.d/<host>:5000/ca.crt` for Docker Desktop,
-`/etc/docker/certs.d/<host>:5000/ca.crt` on the NAS) and
-`docker login <host>:5000`.
+On every machine that pulls or pushes: trust the internal root (in the
+system keychain, or `~/.docker/certs.d/registry.internal.ncfritz.net/ca.crt`
+for Docker Desktop and `/etc/docker/certs.d/...` on the NAS), then
+`docker login registry.internal.ncfritz.net`, and push with
+`REGISTRY=registry.internal.ncfritz.net`.
 
 ## Secrets
 

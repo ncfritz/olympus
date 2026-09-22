@@ -1,12 +1,14 @@
 # The image registry on the Mac Mini (ADR 0011): the Mac Mini pushes what
-# `docker buildx bake --push` builds, and every host pulls from it.
+# `docker buildx bake --push` builds, and every host pulls from it, as
+# registry.internal.ncfritz.net.
 #
-#   docker compose -f infra/docker/compose/registry.yml \
-#     --env-file infra/docker/env/mac-mini.env up -d
+#   docker network create olympus-edge      # once; stack.sh bootstrap later
+#   DATA_DIR=... SECRETS_DIR=... docker compose -f infra/docker/compose/registry.yml up -d
 #
-# TLS with a certificate from the internal CA, and a login for every
-# client: without one, anything on the LAN could replace an Olympus image.
-# See infra/docker/README.md (Registry) for the one-off setup.
+# The shared nginx terminates TLS (infra/docker/nginx/registry.conf) and
+# reaches the registry over olympus-edge; no port is published. The
+# registry does the login: without one, anything on the LAN could replace
+# an Olympus image. See infra/docker/README.md (Registry).
 
 name: registry
 
@@ -14,23 +16,21 @@ services:
   registry:
     image: registry:3.0.0
     restart: unless-stopped
-    ports:
-      - "${REGISTRY_PORT:-5000}:5000"
     environment:
       REGISTRY_HTTP_ADDR: 0.0.0.0:5000
-      REGISTRY_HTTP_TLS_CERTIFICATE: /run/secrets/registry_tls_certificate
-      REGISTRY_HTTP_TLS_KEY: /run/secrets/registry_tls_key
+      # The address clients use, for the URLs the registry hands back.
+      REGISTRY_HTTP_HOST: https://${REGISTRY_HOST:-registry.internal.ncfritz.net}
       REGISTRY_AUTH: htpasswd
       REGISTRY_AUTH_HTPASSWD_REALM: Olympus
       REGISTRY_AUTH_HTPASSWD_PATH: /run/secrets/registry_htpasswd
       # So `garbage-collect` can reclaim the space of deleted tags.
       REGISTRY_STORAGE_DELETE_ENABLED: "true"
     secrets:
-      - registry_tls_certificate
-      - registry_tls_key
       - registry_htpasswd
     volumes:
       - ${DATA_DIR:?}/registry:/var/lib/registry
+    networks:
+      - edge
     security_opt:
       - no-new-privileges:true
     logging:
@@ -40,23 +40,16 @@ services:
         max-file: "5"
     healthcheck:
       # The root answers 200 without a login; /v2/ would need one.
-      test:
-        [
-          "CMD",
-          "wget",
-          "-q",
-          "--spider",
-          "--no-check-certificate",
-          "https://127.0.0.1:5000/",
-        ]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5000/"]
       interval: 30s
       timeout: 5s
       retries: 3
 
+networks:
+  edge:
+    name: olympus-edge
+    external: true
+
 secrets:
-  registry_tls_certificate:
-    file: ${SECRETS_DIR:?}/registry_tls_certificate
-  registry_tls_key:
-    file: ${SECRETS_DIR:?}/registry_tls_key
   registry_htpasswd:
     file: ${SECRETS_DIR:?}/registry_htpasswd
