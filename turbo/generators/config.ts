@@ -1,8 +1,13 @@
 /**
- * `pnpm gen api-operation`: scaffolds one API operation following
- * docs/conventions/api.md. See docs/guides/api-operation-generator.md.
+ * The workspace's generators:
+ *
+ * - `pnpm gen api-operation` scaffolds one API operation following
+ *   docs/conventions/api.md (docs/guides/api-operation-generator.md);
+ * - `pnpm gen console` scaffolds a console for Olympus Control and
+ *   registers it everywhere it has to be (ADR 0021), in ./console.ts.
  */
 import type { PlopTypes } from "@turbo/gen";
+import { registerConsoleGenerator } from "./console";
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -109,6 +114,8 @@ const defaultRoute = (a: Answers) => {
 };
 
 export default function generator(plop: PlopTypes.NodePlopAPI): void {
+  registerConsoleGenerator(plop);
+
   const repo = plop.getDestBasePath();
   const api = path.join(repo, "apps/api/src");
   const model = path.join(repo, "packages/model/src");

@@ -1,0 +1,24 @@
+{{#if hasAgent}}
+import { consoleApiPath, type ConsoleKey } from "@ncfritz/olympus-console";
+{{else}}
+import type { ConsoleKey } from "@ncfritz/olympus-console";
+{{/if}}
+
+/** This console, in the suite (ADR 0021). */
+export const CONSOLE_KEY: ConsoleKey = "{{consoleKey}}";
+
+/** Where this console is published: `{{consolePath}}`, or the root in the workspace. */
+export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
+{{#if hasAgent}}
+
+/**
+ * The agent, which nginx publishes under this console on the control
+ * host. The workspace overrides it with NEXT_PUBLIC_API_URL, where the
+ * agent is a port of its own.
+ *
+ * `||`, not `??`: the image's build stage sets these to the empty string
+ * when they are not given, and Next inlines that rather than `undefined`.
+ */
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || consoleApiPath(CONSOLE_KEY);
+{{/if}}

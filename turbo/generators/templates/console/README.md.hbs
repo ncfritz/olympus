@@ -1,0 +1,16 @@
+# {{packageName}}
+
+The {{label}} console: {{description}}.
+
+It is published at `{{consolePath}}` on the control host
+([ADR 0021](../{{toDocs}}/decisions/0021-control-host-and-console-navigation.md)),
+inside the shared shell from `@ncfritz/olympus-console`: the suite in the
+sider, this console's own pages in the header strip (`TABS` in
+`src/components/AppLayout.tsx`).
+
+{{#if hasAgent}}
+Its agent is published under it at `{{consolePath}}/api`. Add the typed
+client once the agent has a committed OpenAPI document: a `generate`
+script (see the Minerva console), then `createConsoleClient<paths>` in
+`src/lib/api/client.ts`.
+{{/if}}

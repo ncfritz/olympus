@@ -1,0 +1,55 @@
+"use client";
+
+import {
+  ControlShell,
+{{#if hasAgent}}
+  useConsoleAuth,
+{{/if}}
+  type Registry,
+} from "@ncfritz/olympus-console";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
+{{#if hasAgent}}
+import { API_URL, CONSOLE_KEY } from "@/lib/api/client";
+{{else}}
+import { CONSOLE_KEY } from "@/lib/api/client";
+{{/if}}
+
+/** This console's own pages, in the shell's header strip. */
+const TABS = [{ key: "/", label: <Link href="/">Home</Link> }];
+
+export interface AppLayoutProps {
+  /** The suite, as this host runs it, from the root layout. */
+  nav: Registry;
+  origin?: string;
+  children: ReactNode;
+}
+
+/**
+ * This console inside the shared chrome (ADR 0021): the suite's sider{{#if hasAgent}} and
+ * the session{{/if}} come from `@ncfritz/olympus-console`, the pages are this
+ * console's own.
+ */
+export function AppLayout({ nav, origin, children }: AppLayoutProps) {
+{{#if hasAgent}}
+  const auth = useConsoleAuth({ apiUrl: API_URL });
+{{/if}}
+  const pathname = usePathname();
+
+  return (
+    <ControlShell
+      nav={nav}
+      current={CONSOLE_KEY}
+      origin={origin}
+{{#if hasAgent}}
+      auth={auth}
+      signIn={[{ name: "google", label: "Sign in with Google" }]}
+{{/if}}
+      tabs={TABS}
+      activeTab={TABS.some((tab) => tab.key === pathname) ? pathname : "/"}
+    >
+      {children}
+    </ControlShell>
+  );
+}

@@ -7,14 +7,14 @@ Compose services and nginx blocks it changes, and it finishes only after
 [authentication](../authentication/README.md) phase 3, which gives the
 suite one session instead of one per console.
 
-| Phase | Delivers                                                           | Where    | Depends on   |
-| ----- | ------------------------------------------------------------------ | -------- | ------------ |
-| 1     | `packages/console`: the registry, the shell, the first React tests | repo     | —            |
-| 2     | Minerva calendar moves under the control host                      | repo     | 1            |
-| 3     | The index at `/`                                                   | repo     | 1            |
-| 4     | Cutover: DNS, certificate, OAuth redirect URIs, nginx              | Mac Mini | 2, docker 4  |
-| 5     | The console generator, and the second console                      | repo     | 2            |
-| 6     | One session across the suite                                       | repo     | auth phase 3 |
+| Phase | Delivers                                                           | Where    | Depends on             |
+| ----- | ------------------------------------------------------------------ | -------- | ---------------------- |
+| 1     | `packages/console`: the registry, the shell, the first React tests | repo     | —                      |
+| 2     | Minerva calendar moves under the control host                      | repo     | 1                      |
+| 3     | The index at `/`                                                   | repo     | 1                      |
+| 4     | Cutover: DNS, certificate, OAuth redirect URIs, nginx              | Mac Mini | 2, docker 4            |
+| 5     | The console generator, and the second console                      | repo     | 2 (generator **done**) |
+| 6     | One session across the suite                                       | repo     | auth phase 3           |
 
 Nothing here is live yet: Minerva sits behind the `minerva` Compose
 profile with its environment unfilled, so the service, image and volume
@@ -197,10 +197,15 @@ On the Mac Mini, after the Docker plan's phase 4, in this order:
 
 ## Phase 5 — The generator, and the second console
 
-1. `pnpm gen console <property> <name>`: the package (under
-   `agents/<name>/console` or `apps/<name>-console`), its registry entry,
-   bake target, Compose service and nginx stanza — the five places ADR
-   0021 says a console touches, so none of them is forgotten.
+1. `pnpm gen console`: the package (under `agents/<agent>/console` or
+   `apps/<name>-console`), its registry entry, bake target, Compose
+   service and nginx stanza — the places ADR 0021 says a console touches,
+   so none of them is forgotten. **Done**
+   ([guide](../../guides/console-generator.md)); checked by generating a
+   Dionysus metadata console in the verify clone and building it. An
+   anchor it cannot find stops the generator rather than leaving a console
+   half registered, and the agent is deliberately not scaffolded — the
+   generator prints what its two URLs have to be instead.
 2. The first console built with it proves the pattern across properties:
    the CA console (ADR 0020) or the notifications console, whichever work
    lands first.

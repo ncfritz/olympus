@@ -1,0 +1,19 @@
+"use client";
+
+import { Card, Flex } from "antd";
+
+// A const rather than an inline style object: this file is a template, and
+// the double braces of one are the template language's own.
+const PAGE = { padding: 24 };
+
+export function Home() {
+  return (
+    <Flex vertical gap="large" style={PAGE}>
+      <Card title="{{label}}">
+        Nothing here yet. Add this console&apos;s pages under{" "}
+        <code>src/app</code>, and its tabs to <code>TABS</code> in{" "}
+        <code>src/components/AppLayout.tsx</code>.
+      </Card>
+    </Flex>
+  );
+}
