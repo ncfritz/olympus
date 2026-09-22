@@ -34,9 +34,10 @@ hasura migrate create <name> --database-name olympus   # a new, empty migration
 
 A schema change is a migration plus, when it changes what Hasura tracks,
 a metadata export. Both are committed together, and reviewed like code.
-Deployments run `hasura/graphql-engine:<version>.cli-migrations-v3`, which
-applies migrations and metadata when the container starts
-(`infra/docker/compose/dev.yml` does this locally).
+Deployments run our Hasura image (`infra/docker/hasura`), which carries
+`migrations/` and `metadata/` and applies them when the container starts:
+a schema change ships as an image, to `hasura-dev` first (ADR 0019). The
+laptop runs the same image in its `data` stack (`infra/docker/stack.sh`).
 
 ## The baseline
 

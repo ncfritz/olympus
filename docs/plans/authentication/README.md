@@ -28,8 +28,9 @@ Phases 2 and 3 are independent and can run in either order or together.
    **done 2026-09-20** — `infra/hasura` is a CLI v3 project (the
    2026-09-20 schema as the baseline migration, the metadata split into
    files, the connection `from_env`), and
-   `infra/docker/compose/dev.yml` runs Postgres and Hasura, applying both
-   on start. API tests keep using the GraphQL double; the auth migration
+   Postgres and Hasura run from the `data` stack (ADR 0019; the
+   workspace-only `dev.yml` it started with is gone), applying both on
+   start. API tests keep using the GraphQL double; the auth migration
    gets an integration test against the real Hasura.
 3. **Dev CA** (`scripts/dev-ca.sh`): **done 2026-09-20** — a throwaway
    root with Olympus Services and Olympus Devices intermediates (ECDSA

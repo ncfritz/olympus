@@ -3,19 +3,50 @@
 Images, stacks and their configuration (ADR 0011, ADR 0019,
 [plan](../../docs/plans/docker/README.md)).
 
-| Path                                        | What                                                                          | State   |
-| ------------------------------------------- | ----------------------------------------------------------------------------- | ------- |
-| `node/Dockerfile`                           | The API and the agents, one Dockerfile for all                                | phase 1 |
-| `hasura/`                                   | Hasura carrying the migrations and metadata; `_FILE` secrets                  | phase 1 |
-| `rabbitmq/`                                 | RabbitMQ with the plugins Olympus uses; users from `users.json`               | phase 1 |
-| `compose/registry.yml`                      | The image registry on the Mac Mini                                            | phase 1 |
-| `compose/{data,rabbitmq,nginx,olympus}.yml` | One Compose project per stack; the Mac Mini and the laptop run the same files | phase 3 |
-| `env/<host>.env`                            | The non-secret values that differ per host                                    | phase 3 |
-| `stack.sh`                                  | `bootstrap`, `check`, `up`, `down` per stack                                  | phase 3 |
-| `compose/nas.yml`                           | The NAS's asset agent                                                         | phase 5 |
+| Path                                 | What                                                             |
+| ------------------------------------ | ---------------------------------------------------------------- |
+| `/docker-bake.hcl`                   | Every image, its platforms and tags                              |
+| `node/Dockerfile`, `next/Dockerfile` | The Nest services and the Next.js apps                           |
+| `hasura/`                            | Hasura carrying the migrations and metadata; `_FILE` secrets     |
+| `rabbitmq/`                          | RabbitMQ with the plugins Olympus uses; users from `users.json`  |
+| `compose/<stack>.yml`                | `data`, `hasura-dev`, `rabbitmq`, `olympus`, `nginx`, `registry` |
+| `env/<host>.env`                     | What differs per host: paths, tags, versions, profiles, binds    |
+| `env/<host>/<service>.env`           | Each service's own settings on that host                         |
+| `nginx/`                             | The Olympus server blocks the shared nginx includes              |
+| `stack.sh`                           | `bootstrap`, `check`, `up`, `down` and the rest, per stack       |
+| `compose/nas.yml`                    | The NAS's asset agent (phase 5)                                  |
 
-`compose/dev.yml` (Postgres and Hasura for the workspace) is replaced by
-`data.yml` with the laptop's env file in phase 3.
+## Running the stacks
+
+Every host runs the same compose files; `env/<host>.env` and the
+per-service files under `env/<host>/` are all that differ, and neither
+holds a secret. The wiring between services (hostnames, ports, secret
+paths) is in the compose files.
+
+```sh
+infra/docker/stack.sh bootstrap mac-mini   # once: networks, data and secrets dirs
+infra/docker/stack.sh rabbitmq-users       # RabbitMQ's users, into the secrets dir
+infra/docker/stack.sh check                # every setting and secret in place
+infra/docker/stack.sh up                   # the host's STACKS, in order
+infra/docker/stack.sh up olympus           # or one stack
+infra/docker/stack.sh logs olympus -f dionysus-asset-agent
+```
+
+| Stack        | Services                                                            | Runs on          |
+| ------------ | ------------------------------------------------------------------- | ---------------- |
+| `data`       | Postgres, Hasura                                                    | Mac Mini, laptop |
+| `hasura-dev` | The home lab's dev Hasura, over `olympus_dev` in the same Postgres  | Mac Mini         |
+| `rabbitmq`   | RabbitMQ                                                            | Mac Mini, laptop |
+| `olympus`    | The API, the agents; the site (`site` profile), Minerva (`minerva`) | Mac Mini, laptop |
+| `nginx`      | The shared nginx; mounts `infra/docker/nginx` from the checkout     | Mac Mini         |
+| `registry`   | The image registry                                                  | Mac Mini         |
+
+Networks are created once by `bootstrap` and shared by name:
+`olympus-data` (Postgres, both Hasuras), `olympus-graphql` (Hasura, the
+API), `olympus-backend` (RabbitMQ, the API, the agents), `olympus-edge`
+(nginx, the site, the API, Minerva, the registry), and the monitoring
+stack's network. A service that starts before RabbitMQ or Hasura is
+ready exits and its restart policy tries again.
 
 ## Building images
 
@@ -121,24 +152,26 @@ the service at `/run/secrets/<name>` (ADR 0019). Services built on
 `NAME_FILE`; setting both is refused at boot. A variable that is already
 a path (a key file) points at the secret directly.
 
-| File in `${SECRETS_DIR}`                                                             | Stack    | Service                | As                                                                                    |
-| ------------------------------------------------------------------------------------ | -------- | ---------------------- | ------------------------------------------------------------------------------------- |
-| `postgres_password`                                                                  | data     | Postgres               | `POSTGRES_PASSWORD_FILE`                                                              |
-| `hasura_admin_secret`                                                                | data     | Hasura                 | `HASURA_GRAPHQL_ADMIN_SECRET_FILE` (the image's entrypoint)                           |
-|                                                                                      | olympus  | API                    | `HASURA_PASSWORD_FILE`                                                                |
-| `hasura_database_url`                                                                | data     | Hasura                 | `HASURA_GRAPHQL_DATABASE_URL_FILE`, `HASURA_GRAPHQL_METADATA_DATABASE_URL_FILE`       |
-| `hasura_dev_admin_secret`, `hasura_dev_database_url`                                 | data     | `hasura-dev`           | the same, for `olympus_dev` (Mac Mini only)                                           |
-| `rabbitmq_definitions`                                                               | rabbitmq | RabbitMQ               | loaded at boot; written by `rabbitmq/definitions.mjs`                                 |
-| `rabbitmq/<user>.password`                                                           | olympus  | each service           | `AMQP_PASSWORD_FILE`, as its own RabbitMQ user (the same file feeds the definitions)  |
-| `api_tls_key`                                                                        | olympus  | API                    | `TLS_KEY=/run/secrets/api_tls_key`                                                    |
-| `<service>_client_key`                                                               | olympus  | each agent             | `API_CLIENT_KEY=/run/secrets/<service>_client_key`                                    |
-| `tmdb_api_key`                                                                       | olympus  | metadata agent         | `TMDB_API_KEY_FILE`                                                                   |
-| `nzbgeek_api_key`                                                                    | olympus  | asset and search agent | `NZBGEEK_API_KEY_FILE`                                                                |
-| `nzbget_password`, `socks_proxy_username`, `socks_proxy_password`                    | olympus  | asset agent            | `NZBGET_PASSWORD_FILE`, `SOCKS_PROXY_USERNAME_FILE`, `SOCKS_PROXY_PASSWORD_FILE`      |
-| `content_ssh_password`, `dionysus_cdn_ssh_password`, `dionysus_library_ssh_password` | olympus  | asset agent            | `CONTENT_SSH_PASSWORD_FILE`, `DIONYSUS_CDN_SSH_PASSWORD_FILE`, `..._LIBRARY_..._FILE` |
-| `syno_smtp_password`, `gmail_app_password`                                           | olympus  | notification agent     | `SYNO_SMTP_PASSWORD_FILE`, `GMAIL_APP_PASSWORD_FILE`                                  |
-| `syno_chat_olympus_bot_token`, `syno_chat_olympus_channel_token`                     | olympus  | notification agent     | `SYNO_CHAT_OLYMPUS_BOT_TOKEN_FILE`, `SYNO_CHAT_OLYMPUS_CHANNEL_TOKEN_FILE`            |
-| `minerva_auth_jwt_secret`, `google_oauth_client_secret`                              | olympus  | Minerva agent          | `AUTH_JWT_SECRET_FILE`, `GOOGLE_OAUTH_CLIENT_SECRET_FILE`                             |
+| File in `${SECRETS_DIR}`                                                             | Stack      | Service                | As                                                                                                                        |
+| ------------------------------------------------------------------------------------ | ---------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `postgres_password`                                                                  | data       | Postgres               | `POSTGRES_PASSWORD_FILE`                                                                                                  |
+| `hasura_admin_secret`                                                                | data       | Hasura                 | `HASURA_GRAPHQL_ADMIN_SECRET_FILE` (the image's entrypoint)                                                               |
+|                                                                                      | olympus    | API                    | `HASURA_PASSWORD_FILE`                                                                                                    |
+| `hasura_database_url`                                                                | data       | Hasura                 | `HASURA_GRAPHQL_DATABASE_URL_FILE`, `HASURA_GRAPHQL_METADATA_DATABASE_URL_FILE`                                           |
+| `hasura_dev_admin_secret`, `hasura_dev_database_url`                                 | hasura-dev | `hasura-dev`           | the same, for `olympus_dev` (Mac Mini only)                                                                               |
+| `rabbitmq_definitions`                                                               | rabbitmq   | RabbitMQ               | loaded at boot; written by `rabbitmq/definitions.mjs`                                                                     |
+| `rabbitmq/<user>.password`                                                           | olympus    | each service           | `AMQP_PASSWORD_FILE` (secrets `amqp_<service>`), as its own RabbitMQ user; the same file feeds the definitions            |
+| `tls/<service>/` (a directory)                                                       | olympus    | the API, each agent    | mounted at `/run/secrets/tls`: the API's `TLS_*` and an agent's `API_CLIENT_*` point into it once certificates are issued |
+| `tmdb_api_key`                                                                       | olympus    | metadata agent         | `TMDB_API_KEY_FILE`                                                                                                       |
+| `nzbgeek_api_key`                                                                    | olympus    | asset and search agent | `NZBGEEK_API_KEY_FILE`                                                                                                    |
+| `nzbget_password`, `socks_proxy_username`, `socks_proxy_password`                    | olympus    | asset agent            | `NZBGET_PASSWORD_FILE`, `SOCKS_PROXY_USERNAME_FILE`, `SOCKS_PROXY_PASSWORD_FILE`                                          |
+| `content_ssh_password`, `dionysus_cdn_ssh_password`, `dionysus_library_ssh_password` | olympus    | asset agent            | `CONTENT_SSH_PASSWORD_FILE`, `DIONYSUS_CDN_SSH_PASSWORD_FILE`, `..._LIBRARY_..._FILE`                                     |
+| `syno_smtp_password`                                                                 | olympus    | notification agent     | `SYNO_SMTP_PASSWORD_FILE`                                                                                                 |
+| `minerva_auth_jwt_secret`, `google_oauth_client_secret`                              | olympus    | Minerva agent          | `AUTH_JWT_SECRET_FILE`, `GOOGLE_OAUTH_CLIENT_SECRET_FILE`                                                                 |
+
+`stack.sh bootstrap` creates the optional ones empty (the SSH, NZBGet,
+NZBGeek, TMDB, SMTP, proxy and Google client secrets): an empty file is
+"not configured", and `check` says which. The rest are required.
 
 The SOCKS proxy's username is here too: it is half of a NordVPN service
 credential. Certificates and CA chains are not secret but are mounted

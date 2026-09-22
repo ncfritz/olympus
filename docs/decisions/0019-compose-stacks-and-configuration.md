@@ -70,7 +70,7 @@ is described by the repository.
 
 | Host       | Runs                                                                                          | Env file           |
 | ---------- | --------------------------------------------------------------------------------------------- | ------------------ |
-| Mac Mini   | Production: all four stacks, and `hasura-dev` in the data stack                               | `env/mac-mini.env` |
+| Mac Mini   | Production: all four stacks, and `hasura-dev` beside the data stack                           | `env/mac-mini.env` |
 | Dev laptop | A full local stack: `data` and `rabbitmq`, optionally `nginx` and `olympus` from local images | `env/laptop.env`   |
 | NAS        | `compose/nas.yml`: the asset agent alone, its handlers chosen in the env file                 | `env/nas.env`      |
 
@@ -142,10 +142,14 @@ Docker networks. The laptop publishes the same set on 127.0.0.1.
 
 ### Configuration and secrets
 
-- Non-secret settings are `environment:` entries in the compose file,
-  interpolated from the host's env file with `${NAME:?}` so a missing
-  value stops the deploy instead of starting a service with an empty one.
-  Code defaults cover the rest.
+- Non-secret settings come in two layers, both committed. What differs
+  per host (paths, image tags, versions, profiles, binds) is
+  `env/<host>.env`, interpolated into the compose files with `${NAME:?}`
+  so a missing value stops the deploy instead of starting a service with
+  an empty one. Each service's own settings on that host (handlers, SSH
+  hosts, log levels) are `env/<host>/<service>.env`, its `env_file`. The
+  wiring between services (hosts, ports, secret paths) is `environment:`
+  in the compose file, the same everywhere. Code defaults cover the rest.
 - Secrets are Compose file secrets: files in `${SECRETS_DIR}` on the
   host (outside the repository, readable by the Docker user only),
   mounted at `/run/secrets/<name>`. Each file's top-level `secrets:` is
@@ -191,8 +195,9 @@ that variable instead of storing the password.
 - Postgres holds a second database, `olympus_dev`, owned by an
   `olympus_dev` role that can connect to nothing else. It starts as a
   restore of production's latest backup.
-- `hasura-dev` is a second instance of the same Hasura image, in the data
-  stack on its own tag (`HASURA_DEV_TAG`), with `olympus_dev` as both its
+- `hasura-dev` is a second instance of the same Hasura image, a small
+  stack of its own (`compose/hasura-dev.yml`) on its own tag
+  (`HASURA_DEV_TAG`), with `olympus_dev` as both its
   data and its metadata database. Each instance keeps its metadata in its
   own database, so the two never share a catalog. A schema change is
   deployed to `hasura-dev` first and tried there; production follows by
@@ -231,12 +236,18 @@ backup is also the rehearsal for a new host.
 
 ### Deploying
 
-`infra/docker/stack.sh <stack> <up|down|pull|check>` wraps
-`docker compose -p <stack> -f compose/<stack>.yml --env-file
-env/$OLYMPUS_HOST.env`. Because no stack bind-mounts files from the
-checkout (host paths are absolute paths on the Docker host), it works on
-the host itself or from another machine with `DOCKER_CONTEXT` set, as
-ADR 0011 intends.
+`infra/docker/stack.sh` wraps `docker compose -f compose/<stack>.yml
+--env-file env/<host>.env`. `stack.sh bootstrap <host>` records the host
+and creates the networks and directories; then `check`, `up`, `down` and
+the rest take stack names, or none for the host's `STACKS` in order.
+Services outside a host's routine sit behind Compose profiles (`site` for
+the site's pre-monorepo image, `minerva`), turned on in `COMPOSE_PROFILES`.
+
+Apart from nginx, no stack bind-mounts files from the checkout (host
+paths are absolute paths on the Docker host), so it works on the host
+itself or from another machine with `DOCKER_CONTEXT` set, as ADR 0011
+intends. nginx mounts the repository's Olympus server blocks, so it is
+deployed from the Mac Mini.
 
 ### Data
 

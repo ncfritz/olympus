@@ -152,30 +152,43 @@ their bundles require resolving and both native modules loading.
 
 ## Phase 3 — Compose files, and the laptop
 
-1. The Minerva agent and console images (from phase 1).
-2. `infra/docker/compose/{data,rabbitmq,nginx,olympus}.yml` per the ADR:
-   the `x-service` fragment, networks, published ports, health checks,
-   secrets, environment interpolated with `${NAME:?}`. `hasura-dev` is in
-   `data.yml` behind a profile that `mac-mini.env` turns on. The console
-   is a per-instance setting: on for `hasura-dev` and the laptop, off for
-   production.
-3. `infra/docker/env/mac-mini.env` and `laptop.env`, and
-   `infra/docker/nginx/olympus.conf` (the Olympus server blocks, which the
-   host's nginx includes; its other sites stay the host's).
-4. `infra/docker/stack.sh`: `bootstrap` (networks, data and secrets
-   directories), `check` (every secret present, `docker compose config`
-   clean), `up`, `down`, `pull`, `logs`, per stack.
-5. The workspace env files: every service's `dev.env.example` points at
-   the Mac Mini's dev endpoints (`hasura-dev`, RabbitMQ as the dev user on
-   `/dionysus-dev`); a `local.env.example` points at localhost.
-6. The dev CA's API certificate gains `host.docker.internal`, for agents
-   in the laptop's containers calling an API run from the IDE.
-7. **Stand the laptop up from nothing**: `bootstrap`, the laptop's own
-   secrets, a restore of a backup, `data` and `rabbitmq`, then services
-   from the IDE and the `olympus` stack from local images. This is the
-   rehearsal for a new host, and nothing on the Mac Mini changes for it.
-8. `infra/docker/compose/dev.yml` (the workspace-only infra of ADR 0018's
-   phase 0) is replaced by `data.yml` with `laptop.env`.
+1. The Minerva agent and console images: the agent through the shared
+   Node Dockerfile with Prisma generated on the image's platform and
+   `prisma` a runtime dependency; the console through
+   `infra/docker/next/Dockerfile` (`standalone`), calling the agent at
+   `/api` on `minerva.internal.ncfritz.net`. **Done.**
+2. `compose/{data,hasura-dev,rabbitmq,nginx,olympus}.yml`: fixed network
+   names, secrets, pinned images, health checks, log rotation, `init`, no
+   capabilities, limits on the asset agent; the site's current image
+   behind a `site` profile and Minerva behind `minerva`, its migrations a
+   one-shot service the agent waits for. `hasura-dev` became a stack of
+   its own rather than a profile of `data`. **Done**, checked with a
+   Compose dry run on both hosts' settings.
+3. `env/mac-mini.env`, `env/laptop.env` and `env/<host>/<service>.env`,
+   the Mac Mini's from its production env files without their secrets.
+   **Done.** Found on the way: file logging couldn't be turned off in
+   production (fixed), the search agent's `EVENTS_DIRECTORY` and
+   `PERSIST_EVENTS` and the asset agent's `DISABLE_TEST_HANDLER` were
+   never read (dropped), the API's upload directory is now a volume the
+   asset agent shares, and every service listens on 3100 (Minerva 4432).
+4. `stack.sh`: `bootstrap`, `check`, `up`, `down`, `rabbitmq-users` and
+   passthroughs; bash 3.2, shellcheck-clean. **Done.**
+5. Every service's `dev.env.example` points at the home lab's dev
+   endpoints (`dev.olympus.internal.ncfritz.net`: hasura-dev on 8081,
+   RabbitMQ as `olympus-dev` on `/dionysus-dev`), and a
+   `local.env.example` at the laptop's. **Done.**
+6. The dev CA's API certificate names `host.docker.internal`.
+   **Done** (`scripts/dev-ca.sh --force` to regenerate).
+7. `infra/docker/nginx/olympus.conf`: the Olympus server blocks
+   (`olympus.internal.ncfritz.net` with `/api`, `minerva.internal.ncfritz.net`).
+   **Needs the current Olympus server block** from the Mac Mini's nginx,
+   so the new one keeps what it does today.
+8. **Stand the laptop up from nothing**: `bootstrap laptop`, its own
+   secrets, `rabbitmq-users`, a restore of a backup, images with
+   `bake --load`, then `stack.sh up`. This is the rehearsal for a new
+   host, and nothing on the Mac Mini changes for it.
+9. `compose/dev.yml` is gone; `data.yml` with `env/laptop.env` replaces
+   it. **Done.**
 
 ## Phase 4 — Production cutover
 
