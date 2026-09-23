@@ -209,7 +209,10 @@ through. Run a console there with `pnpm dev` instead.
      minerva-calendar-agent minerva-calendar-console control
    ```
 
-   `OLYMPUS_TAG` in `env/mac-mini.env` is then that short commit.
+   `OLYMPUS_TAG` in `env/mac-mini.env` is then that short commit. On the
+   Mac Mini itself use `--load` rather than `--builder olympus --push`:
+   the registry is on that machine, and the images are wanted in its own
+   store (`infra/docker/README.md`, Pushing).
 
 5. `stack.sh bootstrap mac-mini` — idempotent: it creates the networks
    (`olympus-edge` already exists), the data directories, and the optional

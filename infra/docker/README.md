@@ -136,12 +136,29 @@ docker buildx create --name olympus --driver docker-container \
 
 The builder runs in its own container and pushes itself, so it needs the
 internal root there; Docker Desktop's keychain and `certs.d` don't reach
-it. Then:
+it. The same is true of its network: it resolves and connects on its own,
+through Docker's bridge rather than the host's resolver. Then:
 
 ```sh
 REGISTRY=registry.internal.ncfritz.net TAG=$(git rev-parse --short HEAD) \
   GIT_REVISION=$(git rev-parse HEAD) docker buildx bake --builder olympus --push
 ```
+
+**On the Mac Mini, build with `--load` instead.** The registry is on the
+Mac Mini, so a push from there is a container reaching its own host's LAN
+address and coming back in through nginx — a round trip Docker Desktop
+does not reliably make, and a pointless one: `--load` puts the image
+straight into the store the Compose services pull from, under the same
+`registry.internal.ncfritz.net/olympus/...` name when `REGISTRY` is set.
+
+```sh
+REGISTRY=registry.internal.ncfritz.net TAG=$(git rev-parse --short HEAD) \
+  GIT_REVISION=$(git rev-parse HEAD) docker buildx bake --load <targets>
+```
+
+The registry is for the machines that are not the build host — the
+laptop, the NAS — and for the asset agent's `amd64` image, which needs
+the container builder and a push whatever else is going on.
 
 ## Secrets
 
