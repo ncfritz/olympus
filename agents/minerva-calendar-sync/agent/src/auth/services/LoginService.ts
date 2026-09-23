@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { authConfig, type AuthConfigType } from "../../config/configuration";
 import { loadOpenIdClient } from "../openidClientLoader";
+import { publishedUrl } from "../publishedUrl";
 import { sanitizeReturnTo } from "../sanitizeReturnTo";
 import { AllowlistService } from "./AllowlistService";
 import { AuthTokenService, type TokenPair } from "./AuthTokenService";
@@ -89,7 +90,10 @@ export class LoginService {
     const txn = this.readTransaction(rawTransaction, providerName);
 
     const oidcConfig = await this.providers.getOidcConfig(providerName);
-    const currentUrl = new URL(callbackPath, this.baseUrl);
+    // Under AUTH_BASE_URL, so this is the same URL the provider was given
+    // as redirect_uri at start(): the token exchange sends it again, and
+    // the two have to agree.
+    const currentUrl = publishedUrl(this.baseUrl, callbackPath);
 
     const tokenResponse = await client.authorizationCodeGrant(
       oidcConfig,
@@ -124,8 +128,9 @@ export class LoginService {
     return this.tokens.issueAccessToken(email);
   }
 
+  /** Registered with each provider; nginx publishes it under the console. */
   private callbackUrl(providerName: string): string {
-    return new URL(`/auth/callback/${providerName}`, this.baseUrl).href;
+    return publishedUrl(this.baseUrl, `auth/callback/${providerName}`).href;
   }
 
   private readTransaction(
