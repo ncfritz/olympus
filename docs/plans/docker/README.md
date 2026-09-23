@@ -220,7 +220,7 @@ their bundles require resolving and both native modules loading.
 9. `compose/dev.yml` is gone; `data.yml` with `env/local.env` replaces
    it. **Done.**
 
-## Phase 4 — Production cutover
+## Phase 4 — Production cutover (done 2026-09-23)
 
 What the Mac Mini actually looked like on 2026-09-23, which is why this
 is shorter than it was drafted to be:
@@ -347,6 +347,57 @@ phase 1. `control.conf` is already in place from the console plan.
 Repoint `hasura_dev_database_url` at `postgres:5432` on the `data`
 network and restart `hasura-dev`. Done when the old compose files and
 images can be deleted and every service answers `/health`.
+
+### What it found
+
+The steps above are what was planned. These are what the day added, and
+they are the reason phase 5 should not assume the repository describes the
+host.
+
+1. **The pinned tag was older than the fixes 3.8 turned up.** `prod.env`
+   held `OLYMPUS_TAG=3ab21dd`, which predates both `7792577b` (the SDK
+   shipping its `dist`) and `b90d7a9c` (build-context file modes). Control
+   and Minerva had been running on it for a day — neither reaches the SDK's
+   `dist` — so nothing about the running stack suggested a problem, and the
+   four agents would have failed on start exactly as they did on local.
+   Rebuilt at `cafe7e6`. A tag that runs what is up is not evidence it runs
+   what you are about to start.
+
+2. **The nginx blocks in this repository had never been read by nginx.**
+   Phase 1 copied them to the host; the host's copies were then edited by
+   hand, so the repository held drafts and the host held the truth. Four
+   mismatches, found before anything was installed: `registry.conf`'s
+   `ssl_certificate_key` had no terminating semicolon, which `nginx -t`
+   rejects the *whole* configuration for; `olympus.conf` answered only the
+   internal name where the host serves both from one certificate; both
+   named certificate paths that did not exist; and `nginx.conf` included
+   seven explicit files rather than a directory. Validate in a throwaway
+   container (`docker run --rm -v … nginx:<version> nginx -t`) against the
+   real `nginx.conf`, certificates and blocks before recreating anything.
+
+3. **Two bugs the move fixed by accident.** The host's block sent
+   `/api/metrics` to the *dev* upstream, and named the API on port 3001
+   where the listener is now 3100 (ADR 0018). Either would have survived a
+   copy-paste of the old block.
+
+4. **`olympus.dev.ncfritz.net` existed in nginx and nowhere else.** Kept,
+   as `olympus-dev.conf`, pointed at a `dev-host` role name rather than a
+   machine address (ADR 0022) and reached through a resolver and a `set`
+   variable so nginx starts when that machine is off.
+
+5. **Steps 4 and 5 belong back to back.** Step 4 removes the containers the
+   host's old `upstream` blocks name, so the site 502s from the moment the
+   agents start until nginx is recreated. Nothing else in the window is
+   ordering-sensitive.
+
+6. Two `password authentication failed for user "olympus"` lines at the
+   swap were the old engine's pool still carrying the pre-rotation
+   password, and stopped on their own. A grafana 502 during verification
+   was unrelated — it had not come back after a Docker restart.
+
+The old compose files, the retired server blocks under
+`config/servers/_retired/` and the pre-monorepo images are still on the
+Mac Mini. They cost nothing but disk and they are the rollback.
 
 ## Phase 5 — A new host, and the NAS
 
