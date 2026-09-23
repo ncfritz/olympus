@@ -5,6 +5,12 @@
 #
 # Profiles: `site` (the site's pre-monorepo image, until it is imported)
 # and `minerva`, each turned on in the environment's file (COMPOSE_PROFILES).
+#
+# Every service talks to the broker and to Hasura on this host's own
+# networks by default. An environment that has neither — local, pointed at
+# the dev resources on prod — overrides AMQP_HOST, HASURA_HOST and the
+# rest, and AMQP_USER_OVERRIDE makes every service connect as the one dev
+# user instead of as itself, password and all.
 
 name: olympus
 
@@ -31,10 +37,12 @@ x-node-environment: &node-environment
   ENABLE_CONSOLE_LOGGING: "true"
   FILE_LOGGING_ENABLED: "false"
   LOKI_URL: ${LOKI_URL:-}
-  AMQP_PROTOCOL: amqp
-  AMQP_HOST: rabbitmq
-  AMQP_PORT: "5672"
-  AMQP_VHOST: /dionysus
+  # The broker on this host's own backend network, unless the environment
+  # names another: local points at the dev broker rather than running one.
+  AMQP_PROTOCOL: ${AMQP_PROTOCOL:-amqp}
+  AMQP_HOST: ${AMQP_HOST:-rabbitmq}
+  AMQP_PORT: ${AMQP_PORT:-5672}
+  AMQP_VHOST: ${AMQP_VHOST:-/dionysus}
   AMQP_PASSWORD_FILE: /run/secrets/amqp_password
 
 # The agents call the API over the backend network: plain HTTP until the
@@ -51,10 +59,10 @@ services:
     env_file: ../env/${OLYMPUS_ENV:?}/olympus-api.env
     environment:
       <<: *node-environment
-      AMQP_USER: olympus-api
-      HASURA_PROTOCOL: http
-      HASURA_HOST: hasura
-      HASURA_PORT: "8080"
+      AMQP_USER: ${AMQP_USER_OVERRIDE:-olympus-api}
+      HASURA_PROTOCOL: ${HASURA_PROTOCOL:-http}
+      HASURA_HOST: ${HASURA_HOST:-hasura}
+      HASURA_PORT: ${HASURA_PORT:-8080}
       HASURA_PASSWORD_FILE: /run/secrets/hasura_admin_secret
       # UploadAssets writes here; the asset agent sees the same directory
       # at the publish path.
@@ -83,7 +91,7 @@ services:
     env_file: ../env/${OLYMPUS_ENV:?}/olympus-notification-agent.env
     environment:
       <<: *agent-environment
-      AMQP_USER: olympus-notification-agent
+      AMQP_USER: ${AMQP_USER_OVERRIDE:-olympus-notification-agent}
       WSS_HOST: ws://olympus-api:3100
       SYNO_SMTP_PASSWORD_FILE: /run/secrets/syno_smtp_password
     secrets:
@@ -102,7 +110,7 @@ services:
     env_file: ../env/${OLYMPUS_ENV:?}/dionysus-asset-agent.env
     environment:
       <<: *agent-environment
-      AMQP_USER: dionysus-asset-agent
+      AMQP_USER: ${AMQP_USER_OVERRIDE:-dionysus-asset-agent}
       SOCKS_PROXY_USERNAME_FILE: /run/secrets/socks_proxy_username
       SOCKS_PROXY_PASSWORD_FILE: /run/secrets/socks_proxy_password
       CONTENT_SSH_PASSWORD_FILE: /run/secrets/content_ssh_password
@@ -138,7 +146,7 @@ services:
     env_file: ../env/${OLYMPUS_ENV:?}/dionysus-metadata-agent.env
     environment:
       <<: *agent-environment
-      AMQP_USER: dionysus-metadata-agent
+      AMQP_USER: ${AMQP_USER_OVERRIDE:-dionysus-metadata-agent}
       TMDB_API_KEY_FILE: /run/secrets/tmdb_api_key
     secrets:
       - source: amqp_dionysus_metadata_agent
@@ -157,7 +165,7 @@ services:
     env_file: ../env/${OLYMPUS_ENV:?}/dionysus-search-agent.env
     environment:
       <<: *agent-environment
-      AMQP_USER: dionysus-search-agent
+      AMQP_USER: ${AMQP_USER_OVERRIDE:-dionysus-search-agent}
       NZBGEEK_API_KEY_FILE: /run/secrets/nzbgeek_api_key
     secrets:
       - source: amqp_dionysus_search_agent
@@ -236,7 +244,7 @@ services:
     environment:
       <<: *node-environment
       LISTEN_PORT: "4432"
-      AMQP_USER: minerva-calendar-sync-agent
+      AMQP_USER: ${AMQP_USER_OVERRIDE:-minerva-calendar-sync-agent}
       DATABASE_URL: file:/data/minerva.db
       # OAuth tokens, kept with the database.
       GOOGLE_CREDENTIALS_DIR: /data/credentials/google
@@ -295,17 +303,17 @@ secrets:
   hasura_admin_secret:
     file: ${SECRETS_DIR:?}/hasura_admin_secret
   amqp_olympus_api:
-    file: ${SECRETS_DIR:?}/rabbitmq/olympus-api.password
+    file: ${SECRETS_DIR:?}/rabbitmq/${AMQP_USER_OVERRIDE:-olympus-api}.password
   amqp_olympus_notification_agent:
-    file: ${SECRETS_DIR:?}/rabbitmq/olympus-notification-agent.password
+    file: ${SECRETS_DIR:?}/rabbitmq/${AMQP_USER_OVERRIDE:-olympus-notification-agent}.password
   amqp_dionysus_asset_agent:
-    file: ${SECRETS_DIR:?}/rabbitmq/dionysus-asset-agent.password
+    file: ${SECRETS_DIR:?}/rabbitmq/${AMQP_USER_OVERRIDE:-dionysus-asset-agent}.password
   amqp_dionysus_metadata_agent:
-    file: ${SECRETS_DIR:?}/rabbitmq/dionysus-metadata-agent.password
+    file: ${SECRETS_DIR:?}/rabbitmq/${AMQP_USER_OVERRIDE:-dionysus-metadata-agent}.password
   amqp_dionysus_search_agent:
-    file: ${SECRETS_DIR:?}/rabbitmq/dionysus-search-agent.password
+    file: ${SECRETS_DIR:?}/rabbitmq/${AMQP_USER_OVERRIDE:-dionysus-search-agent}.password
   amqp_minerva:
-    file: ${SECRETS_DIR:?}/rabbitmq/minerva-calendar-sync-agent.password
+    file: ${SECRETS_DIR:?}/rabbitmq/${AMQP_USER_OVERRIDE:-minerva-calendar-sync-agent}.password
   syno_smtp_password:
     file: ${SECRETS_DIR:?}/syno_smtp_password
   socks_proxy_username:
