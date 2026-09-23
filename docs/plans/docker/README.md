@@ -222,38 +222,112 @@ their bundles require resolving and both native modules loading.
 
 ## Phase 4 — Production cutover
 
-One stack at a time, each with its old compose file kept for rollback:
+What the Mac Mini actually looked like on 2026-09-23, which is why this
+is shorter than it was drafted to be:
 
-1. **rabbitmq**: same data directory, hostname `snowball`, the image
-   built from the repository at the version running today, definitions loaded: per-service users, the dev user on
-   `/dionysus-dev`; the old `admin` password rotated.
-2. **data**: same data directory, the pinned major, production's Hasura
-   still on today's image and metadata.
-3. **Dev's database and Hasura**: the `olympus_dev` role and database,
-   a restore of production into it, then `hasura-dev` on the new image.
-   The restore carries the schema, so the baseline migration is marked
-   applied first
-   (`hasura migrate apply --version 1789862400000 --skip-execution`, per
-   `infra/hasura/README.md`). This is the first time the repository's
-   metadata is applied anywhere real, on a copy.
-4. **Production's Hasura on the new image**: the same two steps, marking
-   the baseline and setting `HASURA_GRAPHQL_DATABASE_URL`, against
-   production. **This is where the repository's metadata is first applied
-   to production**; I'll stop and walk through it with you, with step 3
-   as the rehearsal.
-5. **olympus**: the new images from the registry, secrets from
-   `${SECRETS_DIR}`, each rotated as it moves (finding 1). Prometheus
-   scrape targets change to the new names.
-6. **nginx**: the Olympus server blocks from the repository. `nginx.conf`
-   includes `/etc/nginx/olympus/*.conf`, and the host's own copies go:
-   the old Olympus server block, the file with its `upstream` blocks
-   (their names stop resolving, and nginx won't start with an
-   unresolvable upstream) and the registry block copied in phase 1. If
-   the console plan's phase 2 has landed by then, `control.conf` goes up
-   in place of the Minerva block rather than after it.
+- Postgres's data directory is **major 16**, so `POSTGRES_VERSION=16.3`
+  stands. Phase 0 could only guess at this from a schema dump.
+- **No agent is running.** The old `dionysus` project is down and so is
+  the notification agent; the only pre-monorepo containers left are
+  `olympus-api-server` and `olympus-site-server`. There is no second set
+  of consumers to race, so the agents are a start rather than a swap.
+- **RabbitMQ has one user, `admin`, and nothing queued.** The new
+  definitions are a first load, not a migration, and nothing drains.
+- `${SECRETS_DIR}` already holds the third-party credentials, the RabbitMQ
+  definitions and a password per user. Missing: `postgres_password`,
+  `hasura_admin_secret`, `hasura_database_url`, and the `hasura_dev` pair.
 
-Done when the old compose files and images can be deleted and every
-service answers `/health`.
+Rotation is split: what we own both ends of (Postgres, the Hasura admin
+secret, every RabbitMQ user) rotates as it moves; the third-party
+credentials — TMDB, NZBGeek, NZBGet, the SSH passwords, SMTP, the SOCKS
+proxy — are a separate pass, since each needs changing at the other end
+too. A maintenance window is fine: the API and site stop while their
+containers are replaced.
+
+### 0. Before the window
+
+1. `infra/docker/stack.sh bootstrap prod`. The environment rename moved
+   the marker to `env/.current`, so `stack.sh` refuses until this runs.
+2. Confirm the paths the old compose files bind-mount are the ones
+   `prod.env` names: `${DATA_DIR}/postgres` and `${DATA_DIR}/rabbitmq/data`.
+   A mismatch here is a stack that starts on an empty directory.
+3. Pin `POSTGRES_VERSION` to the exact minor now running
+   (`docker exec postgres-server postgres --version`), not just the major.
+4. Build and push every image at one commit, and set `OLYMPUS_TAG`,
+   `HASURA_TAG`, `HASURA_DEV_TAG` and `RABBITMQ_TAG` to it. On the Mac
+   Mini that is `--load`, not `--push` (see `infra/docker/README.md`).
+5. **Take the rollback**: `pg_dump` the `olympus` database, and
+   `hasura metadata export` from the running engine into a directory
+   outside the repository. The metadata apply in step 3 is the one step
+   that cannot be undone by starting the old container again.
+
+### 1. rabbitmq
+
+Nothing is consuming and nothing is queued, so this is independent of
+everything else. Stop the old project, `stack.sh up rabbitmq`, and check
+`rabbitmqctl list_users` shows the nine and `list_vhosts` both vhosts.
+The definitions rotate `admin` as they load.
+
+### 2. The dev database, and the metadata rehearsal
+
+Production is untouched by this whole step; it exists so that step 3 has
+already been done once.
+
+1. In the **old** Postgres: the `olympus_dev` role and database, then
+   `pg_dump olympus | psql olympus_dev`.
+2. Write `hasura_dev_admin_secret`, and `hasura_dev_database_url` pointing
+   at `host.docker.internal:5432` for now — the new `data` network does
+   not exist yet.
+3. The restore carries the schema, so the baseline must be recorded as
+   applied before our image starts, or it will try to create what is
+   already there. Two ways: the CLI against a plain engine
+   (`hasura migrate apply --version 1789862400000 --skip-execution`), or
+   the row straight into `hdb_catalog.schema_migrations`. **Which one
+   works is what this step is for** — it is free to get wrong on a copy.
+4. `stack.sh up hasura-dev`, then `hasura metadata apply`. Compare what
+   the engine reports against the repository, and run
+   `hasura metadata export` once to commit whatever the CLI normalises.
+
+### 3. data — and the metadata apply (**stop here and walk through it**)
+
+The window opens.
+
+1. Stop `olympus-api-server` and `olympus-site-server`, so nothing is
+   querying Hasura while it moves.
+2. Rotate Postgres's password with `ALTER USER postgres PASSWORD …` on
+   the running server — `POSTGRES_PASSWORD_FILE` only applies to an empty
+   data directory, so the file is for clients, not the server. Write
+   `postgres_password` and `hasura_database_url` with the new value, and
+   `hasura_admin_secret` with a new one.
+3. Mark the baseline applied on production's `olympus` database, the way
+   step 2 proved.
+4. Stop the old `postgres` and `hasura` projects; `stack.sh up data`.
+   Our image applies the repository's metadata on start. **This is the
+   first time it touches production.**
+5. Verify: `/healthz`, a known query through the API's usual path, and
+   row counts against what the rollback dump says.
+
+### 4. olympus
+
+`stack.sh up olympus` recreates the API and the site from the new
+definitions — Compose already counts `olympus-api-server` and
+`olympus-site-server` as this file's `olympus-api` and `olympus-site` —
+and starts the notification agent, the three Dionysus agents, and the
+control index and Minerva that are already there. Prometheus's scrape
+targets change to the new container names.
+
+### 5. nginx
+
+The repository's server blocks; the host's own copies go: the old Olympus
+block, the file with its `upstream` blocks — a name in one that does not
+resolve is what stops nginx starting — and the registry block copied in
+phase 1. `control.conf` is already in place from the console plan.
+
+### 6. Afterwards
+
+Repoint `hasura_dev_database_url` at `postgres:5432` on the `data`
+network and restart `hasura-dev`. Done when the old compose files and
+images can be deleted and every service answers `/health`.
 
 ## Phase 5 — A new host, and the NAS
 
