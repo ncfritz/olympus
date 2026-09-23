@@ -247,6 +247,11 @@ Watch for: the agent runs as `node` in the image and writes to
 `${DATA_DIR}/minerva`, so the migration is the first thing that fails if
 that directory is not writable by it.
 
+Found building it for the first time: the shared Next.js Dockerfile copied
+`public/` unconditionally, and a console with no static files of its own
+does not have one. The build stage creates it, so a missing `public/` is
+not a broken image.
+
 ## Phase 5 — The generator, and the second console
 
 1. `pnpm gen console`: the package (under `agents/<agent>/console` or

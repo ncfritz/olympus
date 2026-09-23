@@ -25,6 +25,7 @@ RUN test -n "${APP}" || { echo "APP (the package name) is required" >&2; exit 1;
 # ---- Install and build.
 FROM --platform=$BUILDPLATFORM node:${NODE_VERSION}-alpine AS build
 ARG APP
+ARG APP_DIR
 ARG PNPM_VERSION
 # Inlined into the browser bundle by `next build`: public, and the same on
 # every host. NEXT_PUBLIC_BASE_PATH is where the control host publishes a
@@ -45,7 +46,11 @@ COPY --from=prune /pruned/json/ .
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile
 COPY --from=prune /pruned/full/ .
-RUN pnpm turbo run build --filter="${APP}..."
+# public/ is optional in a Next.js app — the consoles that have no static
+# files of their own do not carry one — but the runtime stage's COPY is
+# not, so make sure there is always something to copy.
+RUN pnpm turbo run build --filter="${APP}..." \
+    && mkdir -p "${APP_DIR}/public"
 
 # ---- What runs.
 FROM node:${NODE_VERSION}-alpine AS runtime
