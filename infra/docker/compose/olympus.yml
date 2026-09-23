@@ -243,6 +243,10 @@ services:
       MICROSOFT_CREDENTIALS_DIR: /data/credentials/microsoft
       AUTH_JWT_SECRET_FILE: /run/secrets/minerva_auth_jwt_secret
       GOOGLE_OAUTH_CLIENT_SECRET_FILE: /run/secrets/google_oauth_client_secret
+      # Who may sign in to the console: a JSON list of OIDC providers,
+      # each with a client secret, so it is a file rather than a value in
+      # a committed env file.
+      AUTH_OIDC_PROVIDERS_FILE: /run/secrets/minerva_oidc_providers
       # nginx publishes this console at /minerva/calendar on the control
       # host, and its agent under it (ADR 0021). Those paths scope the
       # session cookie and bound where a login may return to.
@@ -252,6 +256,7 @@ services:
       - source: amqp_minerva
         target: amqp_password
       - minerva_auth_jwt_secret
+      - minerva_oidc_providers
       - google_oauth_client_secret
     volumes:
       - ${DATA_DIR:?}/minerva:/data
@@ -321,5 +326,7 @@ secrets:
     file: ${SECRETS_DIR:?}/tmdb_api_key
   minerva_auth_jwt_secret:
     file: ${SECRETS_DIR:?}/minerva_auth_jwt_secret
+  minerva_oidc_providers:
+    file: ${SECRETS_DIR:?}/minerva_oidc_providers
   google_oauth_client_secret:
     file: ${SECRETS_DIR:?}/google_oauth_client_secret

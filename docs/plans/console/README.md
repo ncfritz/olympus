@@ -179,21 +179,73 @@ happen to a stale link.
 
 ## Phase 4 — Cutover
 
-On the Mac Mini, after the Docker plan's phase 4, in this order:
+On the Mac Mini. Minerva and the index have never run anywhere, so this is
+a first deployment rather than a cutover: four services join the host
+beside the stack that is already there, and nothing existing moves. The
+rest of the `olympus` stack waits for the Docker plan's phase 4 —
+`stack.sh up olympus` would start the API, the agents and the site from
+the new compose file, which needs RabbitMQ's per-service users and the new
+`data` stack first.
+
+The laptop cannot show the suite yet: its `STACKS` has no nginx, and
+neither console publishes a port, so there is nothing to reach them
+through. Run a console there with `pnpm dev` instead.
 
 1. The DNS record and certificate for
    `control.olympus.internal.ncfritz.net` (the external
    `control.olympus.ncfritz.net` when split-horizon DNS lands, on one
    certificate).
-2. **Re-register the OAuth redirect URIs first** — the Google _web_
-   client and the Microsoft app registration, to
+2. **Re-register the OAuth redirect URIs first** — the Google _web_ client
+   and the Microsoft app registration, to
    `https://<control host>/minerva/calendar/api/auth/callback/<provider>`.
    Sign-in is broken between the nginx change and this, so it goes first.
 3. nginx: add `control.conf`, drop the Minerva server block, reload.
-4. `stack.sh up olympus` with the renamed services, the `minerva` profile
-   on.
-5. Retire `minerva.internal.ncfritz.net`: its record, its certificate and
+4. The images, from the repository at the commit being deployed:
+
+   ```sh
+   TAG=$(git rev-parse --short HEAD) REGISTRY=registry.internal.ncfritz.net \
+     GIT_REVISION=$(git rev-parse HEAD) \
+     docker buildx bake --builder olympus --push \
+     minerva-calendar-agent minerva-calendar-console control
+   ```
+
+   `OLYMPUS_TAG` in `env/mac-mini.env` is then that short commit.
+
+5. `stack.sh bootstrap mac-mini` — idempotent: it creates the networks
+   (`olympus-edge` already exists), the data directories, and the optional
+   secrets empty.
+6. The secrets, in `${SECRETS_DIR}` with `umask 077`:
+
+   | File                                            | What                                                                       |
+   | ----------------------------------------------- | -------------------------------------------------------------------------- |
+   | `minerva_auth_jwt_secret`                       | `openssl rand -base64 48 >` it; never echoed                               |
+   | `minerva_oidc_providers`                        | the JSON list of OIDC providers — the Google _web_ client, with its secret |
+   | `google_oauth_client_secret`                    | the _desktop_ client's secret, for calendar access (a different client)    |
+   | `rabbitmq/minerva-calendar-sync-agent.password` | `stack.sh rabbitmq-users` generates it                                     |
+
+   The RabbitMQ password is only there for the mount: `OUTBOX_ENABLED` is
+   false, and `OutboxModule` registers no connection at all when it is.
+
+7. `env/mac-mini/minerva-calendar-agent.env`: `GOOGLE_OAUTH_CLIENT_ID` (the
+   desktop client), `MICROSOFT_OAUTH_CLIENT_ID` if Microsoft calendars are
+   wanted, and `AUTH_ALLOWED_EMAILS`.
+8. Start the four services, not the stack:
+
+   ```sh
+   infra/docker/stack.sh compose olympus up -d \
+     minerva-calendar-agent minerva-calendar-console olympus-control
+   ```
+
+   `minerva-calendar-migrate` comes with the agent, which waits for it.
+   `stack.sh check olympus` will list the production secrets that are not
+   there yet — expected until the Docker plan's phase 4.
+
+9. Retire `minerva.internal.ncfritz.net`: its record, its certificate and
    its `/config/ssl` files.
+
+Watch for: the agent runs as `node` in the image and writes to
+`${DATA_DIR}/minerva`, so the migration is the first thing that fails if
+that directory is not writable by it.
 
 ## Phase 5 — The generator, and the second console
 

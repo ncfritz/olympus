@@ -168,6 +168,7 @@ a path (a key file) points at the secret directly.
 | `content_ssh_password`, `dionysus_cdn_ssh_password`, `dionysus_library_ssh_password` | olympus    | asset agent            | `CONTENT_SSH_PASSWORD_FILE`, `DIONYSUS_CDN_SSH_PASSWORD_FILE`, `..._LIBRARY_..._FILE`                                     |
 | `syno_smtp_password`                                                                 | olympus    | notification agent     | `SYNO_SMTP_PASSWORD_FILE`                                                                                                 |
 | `minerva_auth_jwt_secret`, `google_oauth_client_secret`                              | olympus    | Minerva agent          | `AUTH_JWT_SECRET_FILE`, `GOOGLE_OAUTH_CLIENT_SECRET_FILE`                                                                 |
+| `minerva_oidc_providers`                                                             | olympus    | Minerva agent          | `AUTH_OIDC_PROVIDERS_FILE`: the JSON list of providers the console signs in with, client secrets and all                  |
 
 `stack.sh bootstrap` creates the optional ones empty (the SSH, NZBGet,
 NZBGeek, TMDB, SMTP, proxy and Google client secrets): an empty file is
