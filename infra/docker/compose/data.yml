@@ -1,10 +1,10 @@
-# Postgres and Hasura (ADR 0019). The same file on every host; the host's
-# env file (infra/docker/env/<host>.env) supplies the versions, tags and
-# paths. Deploy with infra/docker/stack.sh data up.
+# Postgres and Hasura (ADR 0019). The same file everywhere; the
+# environment's file (infra/docker/env/<env>.env) supplies the versions,
+# tags and paths. Deploy with infra/docker/stack.sh data up.
 #
 # Hasura's image carries the schema: starting a new tag applies its
-# migrations and metadata. Its console is off unless the host's env file
-# turns it on (the laptop does; production doesn't).
+# migrations and metadata. Its console is off unless the environment turns
+# it on (local does; prod doesn't).
 
 name: data
 
@@ -22,6 +22,11 @@ services:
     shm_size: 256mb
     environment:
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      # Postgres creates this only while initialising an empty data
+      # directory, so it is a no-op wherever there is already data and the
+      # one thing that gives a new environment the database the migrations
+      # and HASURA_GRAPHQL_DATABASE_URL both expect.
+      POSTGRES_DB: ${POSTGRES_DB:-olympus}
     secrets:
       - postgres_password
     volumes:

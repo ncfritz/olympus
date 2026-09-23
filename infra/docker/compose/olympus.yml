@@ -1,6 +1,6 @@
 # The Olympus services (ADR 0019): the API, the agents, the site and
 # Minerva. The same file on every host; each service's own settings are in
-# infra/docker/env/<host>/<service>.env, and the wiring (hosts, ports,
+# infra/docker/env/<env>/<service>.env, and the wiring (hosts, ports,
 # secret paths) is here. Deploy with infra/docker/stack.sh olympus up.
 #
 # Profiles: `site` (the site's pre-monorepo image, until it is imported)

@@ -8,7 +8,7 @@ services:
   rabbitmq:
     image: ${IMAGE_PREFIX:?}/rabbitmq:${RABBITMQ_TAG:?}
     # The broker's data is filed under its node name, rabbit@<hostname>:
-    # the Mac Mini's must stay `snowball`.
+    # prod's must stay `snowball`, which is what its data is filed under.
     hostname: ${RABBITMQ_HOSTNAME:-snowball}
     restart: unless-stopped
     secrets:

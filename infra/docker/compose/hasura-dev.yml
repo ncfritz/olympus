@@ -1,7 +1,7 @@
 # The home lab's dev Hasura (ADR 0019): the same image as production's,
 # on its own tag, over the olympus_dev database in production's Postgres.
 # It keeps its metadata in olympus_dev too, so it never shares a catalog
-# with production. The Mac Mini only; the laptop's data stack is its dev.
+# with production. prod only; local's own data stack is its dev.
 #
 # A schema change goes here first (HASURA_DEV_TAG), then to production
 # (HASURA_TAG in data.yml). The console is on, for inspecting data and
