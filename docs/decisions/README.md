@@ -30,5 +30,6 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0019](0019-compose-stacks-and-configuration.md)      | Compose stacks, configuration and secrets                       | Accepted                    |
 | [0020](0020-internal-certificate-authority.md)        | An internal certificate authority: PKI service and signer       | Proposed                    |
 | [0021](0021-control-host-and-console-navigation.md)   | The control host and console navigation                         | Accepted                    |
+| [0022](0022-environments-not-machines.md)             | Environments are named, machines are not                        | Accepted                    |
 
 New records: copy [template.md](template.md), take the next number.

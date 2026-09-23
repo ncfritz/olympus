@@ -40,3 +40,6 @@ infra/dev-ca/
 
 # The host infra/docker/stack.sh runs as (stack.sh bootstrap <host>).
 infra/docker/env/.current
+
+# Scratch output from Claude sessions.
+Claude outputs/
