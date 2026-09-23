@@ -191,10 +191,11 @@ The laptop cannot show the suite yet: its `STACKS` has no nginx, and
 neither console publishes a port, so there is nothing to reach them
 through. Run a console there with `pnpm dev` instead.
 
-1. The DNS record and certificate for
-   `control.olympus.internal.ncfritz.net` (the external
-   `control.olympus.ncfritz.net` when split-horizon DNS lands, on one
-   certificate).
+1. The DNS record and certificate. `control.olympus.ncfritz.net` is the
+   canonical name — one name whichever side of the split horizon you are
+   on — and `control.olympus.internal.ncfritz.net` redirects to it. Two
+   names serving the same suite would be two session cookies and two
+   registered OIDC redirect URIs, since both belong to a host.
 2. **Re-register the OAuth redirect URIs first** — the Google _web_ client
    and the Microsoft app registration, to
    `https://<control host>/minerva/calendar/api/auth/callback/<provider>`.
