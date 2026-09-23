@@ -48,6 +48,31 @@ API), `olympus-backend` (RabbitMQ, the API, the agents), `olympus-edge`
 stack's network. A service that starts before RabbitMQ or Hasura is
 ready exits and its restart policy tries again.
 
+### DNS from containers
+
+A host has to let its containers resolve names on the public internet:
+Minerva's OIDC discovery, the calendar providers' APIs and TMDB all go
+out. Docker Desktop's own resolver does this, but a `dns` list in the
+daemon's configuration replaces it wholesale, and on Docker Desktop a
+resolver on the LAN is often unreachable from inside a container even
+though the host reaches it fine.
+
+The symptom is not "no DNS": it is slow lookups and, in Node, a bare
+`TypeError: fetch failed` with `EAI_AGAIN` underneath, because the
+embedded resolver is still working through two dead servers when the
+process gives up. `docker run --rm alpine sh -c 'nslookup example.com'`
+shows it — an answer from the _third_ nameserver in the list, after a
+pause.
+
+So leave the daemon's `dns` unset and let Docker Desktop forward to the
+host. If a host does need it set, the servers in it have to be reachable
+from a container, which is worth checking rather than assuming:
+
+```sh
+docker run --rm alpine cat /etc/resolv.conf
+docker run --rm alpine nslookup accounts.google.com
+```
+
 ## Building images
 
 `/docker-bake.hcl` lists every image, its platforms and tags. It sits at
