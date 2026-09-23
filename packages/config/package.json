@@ -18,6 +18,10 @@
     "./vitest/react": "./vitest/react.js",
     "./vitest/coverage": "./vitest/coverage.js"
   },
+  "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
   "dependencies": {
     "@eslint/js": "catalog:",
     "eslint-config-prettier": "catalog:",

@@ -33,6 +33,10 @@ Example `vitest.config.ts`:
 export { default } from "@ncfritz/olympus-config/vitest/nest";
 ```
 
+This package also holds the workspace's own conventions test
+(`test/unit/packaging.spec.ts`): what every package ships, which belongs
+to no single package and so lives with the configuration they all share.
+
 Test files are excluded from `tsc` builds by the Nest and library presets.
 Tests import `describe`/`it`/`expect` from `"vitest"` (globals are off).
 

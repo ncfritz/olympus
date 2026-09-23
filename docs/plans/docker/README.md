@@ -150,7 +150,7 @@ their bundles require resolving and both native modules loading.
 3. The secret list per stack, and what each service reads, in
    `infra/docker/README.md`.
 
-## Phase 3 — Compose files, and local
+## Phase 3 — Compose files, and local (done 2026-09-23)
 
 1. The Minerva agent and console images: the agent through the shared
    Node Dockerfile with Prisma generated on the image's platform and
@@ -196,15 +196,26 @@ their bundles require resolving and both native modules loading.
    `bake --load`, then `stack.sh up`. This is the rehearsal for a new
    host, and nothing on the Mac Mini changes for it.
 
-   What it found, which is the point of doing it on a second machine:
-   nothing created the `olympus` database Hasura's URL names (prod's data
-   directory predates the compose files), and the images were sensitive
-   to the build context's file modes — `pnpm deploy` copies a workspace
-   dependency out of the context and keeps its mode, so a file at 0600
-   was unreadable to the `node` user the runtime drops to. The API never
-   showed it: it is the one service with no workspace dependency the
-   agents share. A checkout from git is always 0644, so prod could not
-   have found either.
+   **Done.** Three things it found, which is the point of doing it on a
+   second machine:
+
+   - Nothing created the `olympus` database Hasura's URL names: prod's
+     data directory predates the compose files.
+   - The images were sensitive to the build context's file modes.
+     `pnpm deploy` copies a workspace dependency out of the context and
+     keeps its mode, and the runtime drops to `node`, so a file at 0600
+     was unreadable. A checkout from git is 0644, so prod could not have
+     shown it.
+   - `packages/sdk` shipped without its `dist`: no `files` field, so
+     packing fell back to the package's own .gitignore, which excludes
+     it. The API is the one service that depends on neither the SDK nor
+     the client, which is why it was healthy while all four agents
+     restarted.
+
+   The last two are now checked rather than remembered: the chmod is in
+   the Dockerfile that produces the tree, and
+   `packages/config/test/unit/packaging.spec.ts` holds every workspace
+   package to shipping what its entry points resolve to.
 
 9. `compose/dev.yml` is gone; `data.yml` with `env/local.env` replaces
    it. **Done.**
