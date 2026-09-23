@@ -280,10 +280,20 @@ already been done once.
    not exist yet.
 3. The restore carries the schema, so the baseline must be recorded as
    applied before our image starts, or it will try to create what is
-   already there. Two ways: the CLI against a plain engine
-   (`hasura migrate apply --version 1789862400000 --skip-execution`), or
-   the row straight into `hdb_catalog.schema_migrations`. **Which one
-   works is what this step is for** — it is free to get wrong on a copy.
+   already there. `hdb_catalog.schema_migrations` does not exist until
+   migrations have run, so the row cannot simply be inserted: it is the
+   CLI against a plain `hasura/graphql-engine:v2.39.1`,
+   `hasura migrate apply --database-name olympus --version 1789862400000
+--skip-execution`, then stop it.
+
+   Before starting any engine, check what the copied metadata says the
+   source connects to. Production's holds a **literal** connection
+   string, so an engine on the copy would connect its source to
+   production; rewrite it to `from_env` in the copy first, which is what
+   the repository's metadata says anyway. That rewrite is also what the
+   apply does to production in step 3, so `HASURA_GRAPHQL_DATABASE_URL`
+   has to be right before the swap, not after.
+
 4. `stack.sh up hasura-dev`, then `hasura metadata apply`. Compare what
    the engine reports against the repository, and run
    `hasura metadata export` once to commit whatever the CLI normalises.
@@ -294,11 +304,17 @@ The window opens.
 
 1. Stop `olympus-api-server` and `olympus-site-server`, so nothing is
    querying Hasura while it moves.
-2. Rotate Postgres's password with `ALTER USER postgres PASSWORD …` on
-   the running server — `POSTGRES_PASSWORD_FILE` only applies to an empty
-   data directory, so the file is for clients, not the server. Write
-   `postgres_password` and `hasura_database_url` with the new value, and
-   `hasura_admin_secret` with a new one.
+2. Rotate the password of **the role Hasura connects as**, which the
+   rehearsal showed is `olympus`, not the superuser:
+   `ALTER ROLE olympus PASSWORD …` on the running server.
+   `POSTGRES_PASSWORD_FILE` only applies to an empty data directory, so
+   `postgres_password` is for tools rather than the server. Write
+   `hasura_database_url` as
+   `postgres://olympus:<new>@postgres:5432/olympus` and
+   `hasura_admin_secret` with a new value. Use hex: a password with
+   `:`, `@`, `/`, `+` or `=` in it needs percent-encoding inside a
+   connection string, and silently authenticates as something else if it
+   doesn't get it.
 3. Mark the baseline applied on production's `olympus` database, the way
    step 2 proved.
 4. Stop the old `postgres` and `hasura` projects; `stack.sh up data`.
