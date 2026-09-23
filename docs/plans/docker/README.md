@@ -403,7 +403,9 @@ Mac Mini. They cost nothing but disk and they are the rollback.
 
 1. `docs/guides/new-host.md`: from an empty machine to a running
    platform (Docker, the repository, a secrets directory, `bootstrap`,
-   the restore, `up`), written from local's rehearsal.
+   the restore, `up`), written from local's rehearsal. **Done**, from
+   3.8 and phase 4 both — including a table of what tends to go wrong,
+   which is the part worth having.
 2. The NAS: `compose/nas.yml`, one container running the asset agent's
    `amd64` image, and `env/nas.env` choosing its handlers. Its own
    certificate (`OU=nas`) and RabbitMQ user; the NAS's Docker trusts the
