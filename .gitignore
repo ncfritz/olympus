@@ -39,4 +39,4 @@ agents/dionysus-metadata/cache/
 infra/dev-ca/
 
 # The host infra/docker/stack.sh runs as (stack.sh bootstrap <host>).
-infra/docker/env/.host
+infra/docker/env/.current

@@ -127,7 +127,7 @@ F5.6 and F5.7 record what iOS does; if F5.6 fails, the fallback
 
 | Id   | Env | Steps                                                                                 | Expected                                                                           | Evidence                            |
 | ---- | --- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------- |
-| F6.1 | INT | Each agent does its normal work (search, metadata batch, transcode, notification)     | work completes; API log: principal `service/<agent>/mac-mini`                      | API log                             |
+| F6.1 | INT | Each agent does its normal work (search, metadata batch, transcode, notification)     | work completes; API log: principal `service/<agent>/prod`                          | API log                             |
 | F6.2 | INT | `/metrics`                                                                            | `client` = each agent's CN on its operations; no `unknown`                         | metrics excerpt                     |
 | F6.3 | DEV | `tester agent-call` with `svc-revoked`, `svc-expired`, `svc-wrong-ca`, no certificate | TLS handshake fails; no HTTP request logged                                        | tester output; API log (TLS error)  |
 | F6.4 | DEV | `svc-valid` with `X-Olympus-Client` of another agent                                  | report: `would reject: client mismatch`; enforce: `401`                            | log                                 |

@@ -150,7 +150,7 @@ client() {
 
 echo "agent certificates"
 for agent in dionysus-asset-agent dionysus-metadata-agent dionysus-search-agent olympus-notification-agent; do
-  client services agents "$agent" "/CN=$agent/OU=mac-mini/O=Olympus Dev"
+  client services agents "$agent" "/CN=$agent/OU=prod/O=Olympus Dev"
 done
 client services agents dionysus-asset-agent-nas "/CN=dionysus-asset-agent/OU=nas/O=Olympus Dev"
 client services agents svc-revoked "/CN=dionysus-search-agent/OU=test/O=Olympus Dev"

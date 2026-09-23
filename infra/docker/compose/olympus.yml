@@ -4,7 +4,7 @@
 # secret paths) is here. Deploy with infra/docker/stack.sh olympus up.
 #
 # Profiles: `site` (the site's pre-monorepo image, until it is imported)
-# and `minerva`, each turned on in the host's env file (COMPOSE_PROFILES).
+# and `minerva`, each turned on in the environment's file (COMPOSE_PROFILES).
 
 name: olympus
 
@@ -48,7 +48,7 @@ services:
   olympus-api:
     <<: *service
     image: ${IMAGE_PREFIX:?}/api:${OLYMPUS_TAG:?}
-    env_file: ../env/${OLYMPUS_HOST:?}/olympus-api.env
+    env_file: ../env/${OLYMPUS_ENV:?}/olympus-api.env
     environment:
       <<: *node-environment
       AMQP_USER: olympus-api
@@ -80,7 +80,7 @@ services:
   olympus-notification-agent:
     <<: *service
     image: ${IMAGE_PREFIX:?}/notification-agent:${OLYMPUS_TAG:?}
-    env_file: ../env/${OLYMPUS_HOST:?}/olympus-notification-agent.env
+    env_file: ../env/${OLYMPUS_ENV:?}/olympus-notification-agent.env
     environment:
       <<: *agent-environment
       AMQP_USER: olympus-notification-agent
@@ -99,7 +99,7 @@ services:
   dionysus-asset-agent:
     <<: *service
     image: ${IMAGE_PREFIX:?}/asset-agent:${OLYMPUS_TAG:?}
-    env_file: ../env/${OLYMPUS_HOST:?}/dionysus-asset-agent.env
+    env_file: ../env/${OLYMPUS_ENV:?}/dionysus-asset-agent.env
     environment:
       <<: *agent-environment
       AMQP_USER: dionysus-asset-agent
@@ -135,7 +135,7 @@ services:
   dionysus-metadata-agent:
     <<: *service
     image: ${IMAGE_PREFIX:?}/metadata-agent:${OLYMPUS_TAG:?}
-    env_file: ../env/${OLYMPUS_HOST:?}/dionysus-metadata-agent.env
+    env_file: ../env/${OLYMPUS_ENV:?}/dionysus-metadata-agent.env
     environment:
       <<: *agent-environment
       AMQP_USER: dionysus-metadata-agent
@@ -154,7 +154,7 @@ services:
   dionysus-search-agent:
     <<: *service
     image: ${IMAGE_PREFIX:?}/search-agent:${OLYMPUS_TAG:?}
-    env_file: ../env/${OLYMPUS_HOST:?}/dionysus-search-agent.env
+    env_file: ../env/${OLYMPUS_ENV:?}/dionysus-search-agent.env
     environment:
       <<: *agent-environment
       AMQP_USER: dionysus-search-agent
@@ -232,7 +232,7 @@ services:
     depends_on:
       minerva-calendar-migrate:
         condition: service_completed_successfully
-    env_file: ../env/${OLYMPUS_HOST:?}/minerva-calendar-agent.env
+    env_file: ../env/${OLYMPUS_ENV:?}/minerva-calendar-agent.env
     environment:
       <<: *node-environment
       LISTEN_PORT: "4432"

@@ -115,7 +115,7 @@ One commit each, each with a test, before the wiring changes:
    `WEB_APP_URL: https://${CONTROL_HOST:?}/minerva/calendar`, and
    `CONTROL_CONSOLES` / `CONTROL_ORIGIN` on the console service.
    `minerva-migrate` and the data volume follow the rename.
-7. `infra/docker/env/{mac-mini,laptop}.env`: `MINERVA_HOST` →
+7. `infra/docker/env/{prod,local}.env`: `MINERVA_HOST` →
    `CONTROL_HOST` (`control.olympus.internal.ncfritz.net`,
    `control.olympus.localhost`), plus each host's `CONTROL_CONSOLES`.
 8. `infra/docker/nginx/control.conf`, a file of its own since it grows
@@ -187,7 +187,7 @@ rest of the `olympus` stack waits for the Docker plan's phase 4 —
 the new compose file, which needs RabbitMQ's per-service users and the new
 `data` stack first.
 
-The laptop cannot show the suite yet: its `STACKS` has no nginx, and
+Local cannot show the suite yet: its `STACKS` has no nginx, and
 neither console publishes a port, so there is nothing to reach them
 through. Run a console there with `pnpm dev` instead.
 
@@ -210,12 +210,12 @@ through. Run a console there with `pnpm dev` instead.
      minerva-calendar-agent minerva-calendar-console control
    ```
 
-   `OLYMPUS_TAG` in `env/mac-mini.env` is then that short commit. On the
+   `OLYMPUS_TAG` in `env/prod.env` is then that short commit. On the
    Mac Mini itself use `--load` rather than `--builder olympus --push`:
    the registry is on that machine, and the images are wanted in its own
    store (`infra/docker/README.md`, Pushing).
 
-5. `stack.sh bootstrap mac-mini` — idempotent: it creates the networks
+5. `stack.sh bootstrap prod` — idempotent: it creates the networks
    (`olympus-edge` already exists), the data directories, and the optional
    secrets empty.
 6. The secrets, in `${SECRETS_DIR}` with `umask 077`:
@@ -230,7 +230,7 @@ through. Run a console there with `pnpm dev` instead.
    The RabbitMQ password is only there for the mount: `OUTBOX_ENABLED` is
    false, and `OutboxModule` registers no connection at all when it is.
 
-7. `env/mac-mini/minerva-calendar-agent.env`: `GOOGLE_OAUTH_CLIENT_ID` (the
+7. `env/prod/minerva-calendar-agent.env`: `GOOGLE_OAUTH_CLIENT_ID` (the
    desktop client), `MICROSOFT_OAUTH_CLIENT_ID` if Microsoft calendars are
    wanted, and `AUTH_ALLOWED_EMAILS`.
 8. Start the four services, not the stack:

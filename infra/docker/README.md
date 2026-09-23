@@ -10,36 +10,36 @@ Images, stacks and their configuration (ADR 0011, ADR 0019,
 | `hasura/`                            | Hasura carrying the migrations and metadata; `_FILE` secrets     |
 | `rabbitmq/`                          | RabbitMQ with the plugins Olympus uses; users from `users.json`  |
 | `compose/<stack>.yml`                | `data`, `hasura-dev`, `rabbitmq`, `olympus`, `nginx`, `registry` |
-| `env/<host>.env`                     | What differs per host: paths, tags, versions, profiles, binds    |
-| `env/<host>/<service>.env`           | Each service's own settings on that host                         |
+| `env/<env>.env`                      | What differs per environment: paths, tags, versions, profiles    |
+| `env/<env>/<service>.env`            | Each service's own settings there                                |
 | `nginx/`                             | The Olympus server blocks the shared nginx includes              |
 | `stack.sh`                           | `bootstrap`, `check`, `up`, `down` and the rest, per stack       |
 | `compose/nas.yml`                    | The NAS's asset agent (phase 5)                                  |
 
 ## Running the stacks
 
-Every host runs the same compose files; `env/<host>.env` and the
-per-service files under `env/<host>/` are all that differ, and neither
-holds a secret. The wiring between services (hostnames, ports, secret
+Every environment runs the same compose files — `prod` on the Mac Mini,
+`local` on the laptop; `env/<env>.env` and the per-service files under
+`env/<env>/` are all that differ, and neither holds a secret. The wiring between services (hostnames, ports, secret
 paths) is in the compose files.
 
 ```sh
-infra/docker/stack.sh bootstrap mac-mini   # once: networks, data and secrets dirs
+infra/docker/stack.sh bootstrap prod       # once: networks, data and secrets dirs
 infra/docker/stack.sh rabbitmq-users       # RabbitMQ's users, into the secrets dir
 infra/docker/stack.sh check                # every setting and secret in place
-infra/docker/stack.sh up                   # the host's STACKS, in order
+infra/docker/stack.sh up                   # this environment's STACKS, in order
 infra/docker/stack.sh up olympus           # or one stack
 infra/docker/stack.sh logs olympus -f dionysus-asset-agent
 ```
 
-| Stack        | Services                                                                               | Runs on          |
-| ------------ | -------------------------------------------------------------------------------------- | ---------------- |
-| `data`       | Postgres, Hasura                                                                       | Mac Mini, laptop |
-| `hasura-dev` | The home lab's dev Hasura, over `olympus_dev` in the same Postgres                     | Mac Mini         |
-| `rabbitmq`   | RabbitMQ                                                                               | Mac Mini, laptop |
-| `olympus`    | The API, the agents, the control index; the site (`site` profile), Minerva (`minerva`) | Mac Mini, laptop |
-| `nginx`      | The shared nginx; mounts `infra/docker/nginx` from the checkout                        | Mac Mini         |
-| `registry`   | The image registry                                                                     | Mac Mini         |
+| Stack        | Services                                                                               | Runs on     |
+| ------------ | -------------------------------------------------------------------------------------- | ----------- |
+| `data`       | Postgres, Hasura                                                                       | prod, local |
+| `hasura-dev` | The home lab's dev Hasura, over `olympus_dev` in the same Postgres                     | Mac Mini    |
+| `rabbitmq`   | RabbitMQ                                                                               | prod, local |
+| `olympus`    | The API, the agents, the control index; the site (`site` profile), Minerva (`minerva`) | prod, local |
+| `nginx`      | The shared nginx; mounts `infra/docker/nginx` from the checkout                        | Mac Mini    |
+| `registry`   | The image registry                                                                     | Mac Mini    |
 
 Networks are created once by `bootstrap` and shared by name:
 `olympus-data` (Postgres, both Hasuras), `olympus-graphql` (Hasura, the
@@ -181,13 +181,13 @@ REGISTRY=registry.internal.ncfritz.net TAG=$(git rev-parse --short HEAD) \
   GIT_REVISION=$(git rev-parse HEAD) docker buildx bake --load <targets>
 ```
 
-The registry is for the machines that are not the build host — the
-laptop, the NAS — and for the asset agent's `amd64` image, which needs
+The registry is for the machines that are not the build host — local,
+the NAS — and for the asset agent's `amd64` image, which needs
 the container builder and a push whatever else is going on.
 
 ## Secrets
 
-Every secret is a file in the host's `${SECRETS_DIR}` (outside the
+Every secret is a file in the environment's `${SECRETS_DIR}` (outside the
 repository, readable only by the account that runs Docker), mounted into
 the service at `/run/secrets/<name>` (ADR 0019). Services built on
 `@ncfritz/olympus-nest` read any variable `NAME` from the file named by
@@ -226,7 +226,7 @@ from its own secrets directory, with its own RabbitMQ user
 
 `rabbitmq/users.json` lists the vhosts and one user per service, each
 allowed only its own vhosts; `olympus-dev` is the one user dev services
-share, on `/dionysus-dev`. To write the definitions for a host:
+share, on `/dionysus-dev`. To write the definitions for an environment:
 
 ```sh
 node infra/docker/rabbitmq/definitions.mjs "$SECRETS_DIR" --generate-missing

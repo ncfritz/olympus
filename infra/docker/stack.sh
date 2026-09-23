@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Runs Olympus's Compose stacks on this host (ADR 0019). Bash 3.2 (macOS).
 #
-#   infra/docker/stack.sh bootstrap <host>    once: remember the host, create
-#                                             networks and directories
+#   infra/docker/stack.sh bootstrap <env>     once: remember which
+#                                             environment this machine is,
+#                                             create networks and directories
 #   infra/docker/stack.sh check [stack...]    every setting and secret in place
 #   infra/docker/stack.sh up [stack...|all]   check, then start (in order)
 #   infra/docker/stack.sh down [stack...|all] stop (in reverse order)
@@ -10,13 +11,14 @@
 #   infra/docker/stack.sh compose <stack> [args...]   anything else
 #   infra/docker/stack.sh rabbitmq-users      write the RabbitMQ definitions
 #
-# The host's settings are infra/docker/env/<host>.env; its secrets are files
-# in SECRETS_DIR. With DOCKER_CONTEXT set this drives another machine's
-# Docker, except the nginx stack, which mounts files from the checkout.
+# An environment's settings are infra/docker/env/<env>.env (prod, local);
+# its secrets are files in SECRETS_DIR. With DOCKER_CONTEXT set this drives
+# another machine's Docker, except the nginx stack, which mounts files from
+# the checkout.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
-host_file="$here/env/.host"
+env_file_marker="$here/env/.current"
 
 die() { echo "stack.sh: $*" >&2; exit 1; }
 
@@ -30,15 +32,15 @@ is_optional() {
   return 1
 }
 
-known_hosts() {
+known_envs() {
   local f
   for f in "$here"/env/*.env; do basename "$f" .env; done | tr '\n' ' '
 }
 
-load_host() {
-  [ -f "$host_file" ] || die "no host yet: run 'stack.sh bootstrap <host>' (one of: $(known_hosts))"
-  HOST=$(cat "$host_file")
-  ENV_FILE="$here/env/$HOST.env"
+load_env() {
+  [ -f "$env_file_marker" ] || die "no environment yet: run 'stack.sh bootstrap <env>' (one of: $(known_envs))"
+  OLYMPUS_ENV=$(cat "$env_file_marker")
+  ENV_FILE="$here/env/$OLYMPUS_ENV.env"
   [ -f "$ENV_FILE" ] || die "no $ENV_FILE"
   set -a
   # shellcheck disable=SC1090
@@ -67,11 +69,11 @@ stacks() {
 }
 
 bootstrap() {
-  local host=${1:-}
-  [ -n "$host" ] || die "usage: stack.sh bootstrap <host>"
-  [ -f "$here/env/$host.env" ] || die "no env/$host.env"
-  echo "$host" > "$host_file"
-  load_host
+  local name=${1:-}
+  [ -n "$name" ] || die "usage: stack.sh bootstrap <env> (one of: $(known_envs))"
+  [ -f "$here/env/$name.env" ] || die "no env/$name.env"
+  echo "$name" > "$env_file_marker"
+  load_env
 
   local net
   for net in olympus-data olympus-graphql olympus-backend olympus-edge "$MONITORING_NETWORK"; do
@@ -157,11 +159,11 @@ case "$command" in
     bootstrap "$@"
     ;;
   check)
-    load_host
+    load_env
     check "$@"
     ;;
   up)
-    load_host
+    load_env
     check "$@"
     for stack in $(stacks forward "$@"); do
       echo "== $stack"
@@ -169,28 +171,28 @@ case "$command" in
     done
     ;;
   down)
-    load_host
+    load_env
     for stack in $(stacks reverse "$@"); do
       echo "== $stack"
       compose "$stack" down
     done
     ;;
   pull | ps | logs | restart)
-    load_host
+    load_env
     stack=${1:-}
     [ -n "$stack" ] || die "usage: stack.sh $command <stack> [args...]"
     shift
     compose "$stack" "$command" "$@"
     ;;
   compose)
-    load_host
+    load_env
     stack=${1:-}
     [ -n "$stack" ] || die "usage: stack.sh compose <stack> [args...]"
     shift
     compose "$stack" "$@"
     ;;
   rabbitmq-users)
-    load_host
+    load_env
     node "$here/rabbitmq/definitions.mjs" "$SECRETS_DIR" --generate-missing
     ;;
   *)

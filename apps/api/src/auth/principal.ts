@@ -19,7 +19,7 @@ export interface ServicePrincipal {
   kind: "service";
   /** The certificate's common name, e.g. dionysus-asset-agent. */
   name: string;
-  /** Its organizational unit: where the service runs (mac-mini, nas). */
+  /** Its organizational unit: where the service runs (prod, nas). */
   deployment?: string;
   roles: string[];
 }

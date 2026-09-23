@@ -5,15 +5,15 @@ and the build half of [ADR 0011](../../decisions/0011-centralized-docker-builds.
 that it depends on. It comes before authentication phase 3, which needs
 `hasura-dev` to try its migration on.
 
-| Phase | Delivers                                                                         | Where         | Depends on |
-| ----- | -------------------------------------------------------------------------------- | ------------- | ---------- |
-| 0     | Close the exposed database, rotate its secrets, restart policies (**done**)      | Mac Mini      | —          |
-| 1     | Images: monorepo Dockerfiles, `/health`, the bake file, the registry (**done**)  | repo          | —          |
-| 2     | Configuration: `_FILE` secrets, RabbitMQ definitions (**done**)                  | repo          | 1          |
-| 3     | Compose files, `stack.sh`, workspace env files; the laptop stood up from nothing | repo + laptop | 1, 2       |
-| 4     | Production cutover, and the home lab's dev database and Hasura                   | Mac Mini      | 3          |
-| 5     | The new-host runbook; the NAS                                                    | docs, NAS     | 3          |
-| 6     | Backups and the restore drill                                                    | Mac Mini      | 4          |
+| Phase | Delivers                                                                        | Where        | Depends on |
+| ----- | ------------------------------------------------------------------------------- | ------------ | ---------- |
+| 0     | Close the exposed database, rotate its secrets, restart policies (**done**)     | Mac Mini     | —          |
+| 1     | Images: monorepo Dockerfiles, `/health`, the bake file, the registry (**done**) | repo         | —          |
+| 2     | Configuration: `_FILE` secrets, RabbitMQ definitions (**done**)                 | repo         | 1          |
+| 3     | Compose files, `stack.sh`, workspace env files; local stood up from nothing     | repo + local | 1, 2       |
+| 4     | Production cutover, and the home lab's dev database and Hasura                  | Mac Mini     | 3          |
+| 5     | The new-host runbook; the NAS                                                   | docs, NAS    | 3          |
+| 6     | Backups and the restore drill                                                   | Mac Mini     | 4          |
 
 ## The current stack
 
@@ -150,7 +150,7 @@ their bundles require resolving and both native modules loading.
 3. The secret list per stack, and what each service reads, in
    `infra/docker/README.md`.
 
-## Phase 3 — Compose files, and the laptop
+## Phase 3 — Compose files, and local
 
 1. The Minerva agent and console images: the agent through the shared
    Node Dockerfile with Prisma generated on the image's platform and
@@ -164,7 +164,7 @@ their bundles require resolving and both native modules loading.
    one-shot service the agent waits for. `hasura-dev` became a stack of
    its own rather than a profile of `data`. **Done**, checked with a
    Compose dry run on both hosts' settings.
-3. `env/mac-mini.env`, `env/laptop.env` and `env/<host>/<service>.env`,
+3. `env/prod.env`, `env/local.env` and `env/<env>/<service>.env`,
    the Mac Mini's from its production env files without their secrets.
    **Done.** Found on the way: file logging couldn't be turned off in
    production (fixed), the search agent's `EVENTS_DIRECTORY` and
@@ -176,7 +176,7 @@ their bundles require resolving and both native modules loading.
 5. Every service's `dev.env.example` points at the home lab's dev
    endpoints (`olympus.dev.ncfritz.net`: hasura-dev on 8081,
    RabbitMQ as `olympus-dev` on `/dionysus-dev`), and a
-   `local.env.example` at the laptop's. **Done.**
+   `local.env.example` at local's own. **Done.**
 6. The dev CA's API certificate names `host.docker.internal`.
    **Done** (`scripts/dev-ca.sh --force` to regenerate).
 7. `infra/docker/nginx/olympus.conf`: today's Olympus server block with
@@ -191,11 +191,11 @@ their bundles require resolving and both native modules loading.
    one allowed 3DES). `/api/metrics` pointed at the dev API; it points at
    the API now. **Done**, checked by running it in front of stand-in
    backends.
-8. **Stand the laptop up from nothing**: `bootstrap laptop`, its own
+8. **Stand local up from nothing**: `bootstrap local`, its own
    secrets, `rabbitmq-users`, a restore of a backup, images with
    `bake --load`, then `stack.sh up`. This is the rehearsal for a new
    host, and nothing on the Mac Mini changes for it.
-9. `compose/dev.yml` is gone; `data.yml` with `env/laptop.env` replaces
+9. `compose/dev.yml` is gone; `data.yml` with `env/local.env` replaces
    it. **Done.**
 
 ## Phase 4 — Production cutover
@@ -237,7 +237,7 @@ service answers `/health`.
 
 1. `docs/guides/new-host.md`: from an empty machine to a running
    platform (Docker, the repository, a secrets directory, `bootstrap`,
-   the restore, `up`), written from the laptop's rehearsal.
+   the restore, `up`), written from local's rehearsal.
 2. The NAS: `compose/nas.yml`, one container running the asset agent's
    `amd64` image, and `env/nas.env` choosing its handlers. Its own
    certificate (`OU=nas`) and RabbitMQ user; the NAS's Docker trusts the
@@ -248,5 +248,5 @@ service answers `/health`.
 1. Nightly `pg_dump` per database and RabbitMQ's definitions, to the NAS,
    with a retention.
 2. The restore drill: `olympus_dev` rebuilt from last night's backup on a
-   schedule, so the backups are known to restore; the laptop refreshes
+   schedule, so the backups are known to restore; local refreshes
    from the same files.
