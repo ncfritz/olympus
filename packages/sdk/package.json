@@ -37,5 +37,8 @@
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

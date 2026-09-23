@@ -41,5 +41,8 @@
     "typescript": "catalog:",
     "unplugin-swc": "catalog:",
     "vitest": "catalog:"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }
