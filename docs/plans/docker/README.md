@@ -195,6 +195,17 @@ their bundles require resolving and both native modules loading.
    secrets, `rabbitmq-users`, a restore of a backup, images with
    `bake --load`, then `stack.sh up`. This is the rehearsal for a new
    host, and nothing on the Mac Mini changes for it.
+
+   What it found, which is the point of doing it on a second machine:
+   nothing created the `olympus` database Hasura's URL names (prod's data
+   directory predates the compose files), and the images were sensitive
+   to the build context's file modes — `pnpm deploy` copies a workspace
+   dependency out of the context and keeps its mode, so a file at 0600
+   was unreadable to the `node` user the runtime drops to. The API never
+   showed it: it is the one service with no workspace dependency the
+   agents share. A checkout from git is always 0644, so prod could not
+   have found either.
+
 9. `compose/dev.yml` is gone; `data.yml` with `env/local.env` replaces
    it. **Done.**
 

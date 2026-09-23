@@ -49,8 +49,13 @@ COPY --from=prune /pruned/full/ .
 # public/ is optional in a Next.js app — the consoles that have no static
 # files of their own do not carry one — but the runtime stage's COPY is
 # not, so make sure there is always something to copy.
+# The traced output carries workspace packages out of the build context
+# with their modes, and the runtime drops to `node`: a file left at 0600
+# by a developer's umask would be unreadable there.
 RUN pnpm turbo run build --filter="${APP}..." \
-    && mkdir -p "${APP_DIR}/public"
+    && mkdir -p "${APP_DIR}/public" \
+    && chmod -R a+rX "${APP_DIR}/.next/standalone" "${APP_DIR}/.next/static" \
+       "${APP_DIR}/public"
 
 # ---- What runs.
 FROM node:${NODE_VERSION}-alpine AS runtime

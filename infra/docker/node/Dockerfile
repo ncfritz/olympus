@@ -60,9 +60,15 @@ ARG POST_DEPLOY=""
 # The store is content-addressed, so both platforms can share it. (The
 # `cd` is in the optional step only, so it is not a WORKDIR.)
 # hadolint ignore=DL3003
+# `deploy` copies a workspace dependency straight out of the build
+# context and keeps its mode, so a file the developer's umask left at 0600
+# arrives unreadable to the `node` user the runtime drops to. Normalised
+# here, in the same layer, rather than after the COPY, which would write a
+# second copy of the whole tree.
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
     pnpm --filter="${APP}" deploy --prod --legacy /out \
-    && if [ -n "${POST_DEPLOY}" ]; then cd /out && sh -c "${POST_DEPLOY}"; fi
+    && if [ -n "${POST_DEPLOY}" ]; then cd /out && sh -c "${POST_DEPLOY}"; fi \
+    && chmod -R a+rX /out
 
 # ---- What runs.
 FROM node:${NODE_VERSION}-alpine AS runtime
@@ -76,8 +82,8 @@ ARG EXTRA_CA_CERTS=""
 ENV NODE_ENV=production \
     NODE_EXTRA_CA_CERTS=${EXTRA_CA_CERTS}
 WORKDIR /app
-# Owned by root and read-only to the service: what it writes goes to
-# volumes.
+# Owned by root and readable but not writable by the service: what it
+# writes goes to volumes.
 COPY --from=deploy /out .
 USER node
 # LISTEN_PORT comes from the environment at run time.
