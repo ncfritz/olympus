@@ -243,6 +243,13 @@ through. Run a console there with `pnpm dev` instead.
    `stack.sh check olympus` will list the production secrets that are not
    there yet — expected until the Docker plan's phase 4.
 
+   **Name the services until that cutover.** The stack running on the Mac
+   Mini today is also a Compose project called `olympus`, with services
+   called `olympus-api` and `olympus-site`, so `docker compose ps` counts
+   its containers as this file's. A bare `stack.sh up olympus` would
+   recreate them from the new definitions — which is the cutover, out of
+   order — and `stack.sh down olympus` would stop production.
+
 9. Retire `minerva.internal.ncfritz.net`: its record, its certificate and
    its `/config/ssl` files.
 
