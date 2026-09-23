@@ -315,8 +315,11 @@ The window opens.
    `:`, `@`, `/`, `+` or `=` in it needs percent-encoding inside a
    connection string, and silently authenticates as something else if it
    doesn't get it.
-3. Mark the baseline applied on production's `olympus` database, the way
-   step 2 proved.
+3. Mark the baseline applied on production's `olympus` database. No
+   throwaway engine is needed here, unlike the copy: production's engine
+   is already running and its `olympus` source is already its own
+   database, so the CLI points at it directly. Do this **before**
+   rotating the role's password, while that engine can still connect.
 4. Stop the old `postgres` and `hasura` projects; `stack.sh up data`.
    Our image applies the repository's metadata on start. **This is the
    first time it touches production.**
