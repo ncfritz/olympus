@@ -122,11 +122,16 @@ secret_files() {
 }
 
 check() {
-  local list stack problems=0 name path
+  local list stack problems=0 name path output
   list=$(stacks forward "$@")
   for stack in $list; do
-    if ! compose "$stack" config --quiet 2>/tmp/stack-check.$$; then
-      echo "$stack: $(cat /tmp/stack-check.$$)"
+    # Capture the output instead of redirecting it to a file. `compose` can
+    # `die` in here — an unknown stack, a missing compose file — and `die`
+    # writes to stderr and exits, so with stderr going to a file the message
+    # was written somewhere nothing read and the script exited 1 in silence.
+    # A command substitution is a subshell, so that exit lands here.
+    if ! output=$(compose "$stack" config --quiet 2>&1); then
+      echo "$stack: $output"
       problems=$((problems + 1))
       continue
     fi
@@ -146,7 +151,6 @@ check() {
     done < <(secret_files "$stack")
     echo "$stack: checked"
   done
-  rm -f /tmp/stack-check.$$
   [ "$problems" -eq 0 ] || die "$problems problem(s)"
 }
 

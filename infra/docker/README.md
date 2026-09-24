@@ -284,6 +284,20 @@ beside their keys. The NAS's asset agent reads the asset agent's rows
 from its own secrets directory, with its own RabbitMQ user
 (`dionysus-asset-agent-nas`) and certificate.
 
+### Tests
+
+`stack.sh` and the RabbitMQ definitions script have their own tests, run
+directly rather than through Turbo (neither is a workspace package):
+
+```sh
+node --test infra/docker/test/*.test.mjs
+node --test infra/docker/rabbitmq/test/*.test.mjs
+```
+
+`stack.sh`'s cover the failures that do not need Docker — an unknown stack,
+an unknown command, no environment chosen — because those are the ones a
+silent exit hides.
+
 ### RabbitMQ users
 
 `rabbitmq/users.json` lists the vhosts and one user per service, each
