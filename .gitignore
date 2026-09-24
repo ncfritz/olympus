@@ -11,6 +11,9 @@ logs/
 graph.json
 *.log
 .DS_Store
+# Editor leftovers. A vim swap file reached a commit once.
+*.sw[a-p]
+*~
 .idea/
 *.iml
 
