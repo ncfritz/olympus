@@ -75,6 +75,12 @@ DSM makes awkward:
   definitions are generated once, on the Mac Mini, for every user including
   this one.
 
+Copying anything to the NAS needs `scp -O`: DSM's OpenSSH is old enough
+that it has no SFTP subsystem for scp to use, and scp has defaulted to SFTP
+since OpenSSH 9. `scp` also does not preserve modes, so a credential
+arrives world-readable — `chmod 600` the files afterwards, or the secrets
+directory's own 700 is the only thing protecting them.
+
 The asset agent is the only image built for two platforms, so it is the one
 that has to reach the registry by `--push` rather than `--load`.
 
