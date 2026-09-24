@@ -13,6 +13,10 @@ export type ServiceIdentity =
  * Olympus Services chain and its revocation lists (ADR 0018). The common
  * name is the service, the organizational unit its deployment, and the
  * roles come from configuration.
+ *
+ * The handshake does not establish which authority signed, only that the
+ * chain reached a trusted one, so the issuer is checked here as well
+ * (ADR 0023).
  */
 @Injectable()
 export class ServiceIdentityService {
@@ -23,12 +27,28 @@ export class ServiceIdentityService {
     if (typeof socket.getPeerCertificate !== "function") {
       return { reason: "not a TLS connection" };
     }
-    const subject = socket.getPeerCertificate()?.subject;
+    const certificate = socket.getPeerCertificate();
+    const subject = certificate?.subject;
     const name = firstValue(subject?.CN);
     if (!name) {
       // Only reachable when the listener asks for a certificate without
       // requiring one; the handshake refuses the rest.
       return { reason: "no client certificate" };
+    }
+
+    // The handshake proved the chain; it did not prove *which* authority
+    // signed. The issuing CAs for services and for devices are siblings
+    // under one parent, and a trust store has to terminate at a
+    // self-signed certificate, so a device certificate builds a valid
+    // chain to the same root (ADR 0023). Name the authority we meant.
+    const expected = this.auth.servicesIssuer;
+    if (expected) {
+      const issuer = firstValue(certificate?.issuer?.CN);
+      if (issuer !== expected) {
+        return {
+          reason: `issuer "${issuer ?? "none"}" is not "${expected}"`,
+        };
+      }
     }
 
     const roles = this.auth.serviceRoles[name];

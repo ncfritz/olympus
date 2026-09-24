@@ -41,6 +41,12 @@ export type AuthConfig = {
   modes: { users: AuthMode; services: AuthMode };
   /** Certificate common name -> the roles that service has. */
   serviceRoles: Record<string, string[]>;
+  /**
+   * The common name of the CA that must have signed a client certificate.
+   * The issuing CAs for services and for devices are siblings, so the
+   * chain alone does not tell them apart (ADR 0023). Unset: not checked.
+   */
+  servicesIssuer?: string;
   services: {
     /** Off until the certificates are configured. */
     enabled: boolean;
@@ -49,7 +55,7 @@ export type AuthConfig = {
     key: string;
     /** The Olympus Services chain the listener trusts. */
     ca: string;
-    /** One file per revocation list: the intermediate's and the root's. */
+    /** One file per signing authority in the chain (ADR 0023). */
     revocationLists: string[];
   };
 };
@@ -155,6 +161,7 @@ const readAuthConfig = (read: EnvReader): AuthConfig => {
   return {
     modes,
     serviceRoles: readServiceRoles(read),
+    servicesIssuer: read.optional("AUTH_SERVICES_ISSUER"),
     services: {
       enabled,
       port: read.port("SERVICES_LISTEN_PORT", 3443),
