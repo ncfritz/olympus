@@ -25,11 +25,14 @@ const fixture = () => {
   return dir;
 };
 
-const run = (dir, ...args) =>
-  spawnSync("bash", [join(dir, "stack.sh"), ...args], { encoding: "utf8" });
+const run = (dir, args, env = {}) =>
+  spawnSync("bash", [join(dir, "stack.sh"), ...args], {
+    encoding: "utf8",
+    env: { ...process.env, ...env },
+  });
 
 test("names the stack it cannot find, rather than failing silently", () => {
-  const { status, stdout, stderr } = run(fixture(), "check", "nosuchstack");
+  const { status, stdout, stderr } = run(fixture(), ["check", "nosuchstack"]);
   assert.notEqual(status, 0);
   assert.match(
     stdout + stderr,
@@ -40,7 +43,7 @@ test("names the stack it cannot find, rather than failing silently", () => {
 });
 
 test("refuses an unknown command by name", () => {
-  const { status, stderr } = run(fixture(), "frobnicate");
+  const { status, stderr } = run(fixture(), ["frobnicate"]);
   assert.notEqual(status, 0);
   assert.match(stderr, /frobnicate/);
 });
@@ -51,7 +54,19 @@ test("says what to do when no environment has been chosen", () => {
   cpSync(join(source, "env"), join(dir, "env"), { recursive: true });
   // The checkout this copy came from has one; a new machine does not.
   rmSync(join(dir, "env", ".current"), { force: true });
-  const { status, stderr } = run(dir, "check");
+  const { status, stderr } = run(dir, ["check"]);
   assert.notEqual(status, 0);
   assert.match(stderr, /bootstrap/);
+});
+
+test("does not call a remote stack's secrets missing", () => {
+  // The paths in nas.yml are on the NAS. Checking them against this
+  // machine's filesystem reported all eight as missing when they were
+  // sitting on the other end of the Docker context.
+  const { stdout, stderr } = run(fixture(), ["check", "nas"], {
+    DOCKER_CONTEXT: "nas",
+  });
+  const all = stdout + stderr;
+  assert.match(all, /not checked here/);
+  assert.doesNotMatch(all, /missing secret/);
 });

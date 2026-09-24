@@ -122,9 +122,17 @@ secret_files() {
 }
 
 check() {
-  local list stack problems=0 name path output
+  local list stack problems=0 name path output remote=""
   list=$(stacks forward "$@")
+  # Secret paths and bind mounts are resolved on the Docker *host*. Driving
+  # another machine's Docker, this shell cannot see them, and reporting them
+  # missing would be a lie that sends someone to copy files that are already
+  # there. Say so instead. (A context selected with `docker context use`
+  # rather than these variables is not visible from here.)
+  [ -z "${DOCKER_CONTEXT:-}${DOCKER_HOST:-}" ] || remote=yes
   for stack in $list; do
+    [ -z "$remote" ] ||
+      echo "$stack: on another machine's Docker; secret files not checked here"
     # Capture the output instead of redirecting it to a file. `compose` can
     # `die` in here — an unknown stack, a missing compose file — and `die`
     # writes to stderr and exits, so with stderr going to a file the message
@@ -135,6 +143,7 @@ check() {
       problems=$((problems + 1))
       continue
     fi
+    [ -z "$remote" ] || { echo "$stack: checked"; continue; }
     while IFS="$(printf '\t')" read -r name path; do
       [ -n "$name" ] || continue
       if [ ! -e "$path" ]; then

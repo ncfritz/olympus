@@ -106,6 +106,12 @@ sudo /usr/syno/bin/update-ca-certificates.sh
 sudo synopkg restart ContainerManager
 ```
 
+`stack.sh check nas` validates the compose file and its settings but not
+the secret files: those paths are on the NAS, and checking them against the
+Mac Mini's filesystem would call every one of them missing. It says so
+rather than reporting a problem. A context selected with `docker context
+use` instead of `DOCKER_CONTEXT` is invisible to it, so prefer the variable.
+
 Each certificate has to be its own file; the concatenated `ca.crt` that
 `certs.d` would take is not what this reads. Re-check it after a DSM
 upgrade — this is DSM's own tree, not ours.
