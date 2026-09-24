@@ -416,13 +416,31 @@ Mac Mini. They cost nothing but disk and they are the rollback.
    registry's internal-CA certificate. **Written**; the cutover is the
    remaining work.
 
-   The `OU=nas` certificate moved out of this phase. Today's agent reaches
-   the API at `https://olympus.internal.ncfritz.net/api/v1` — through nginx,
-   over TLS — not the 3443 mTLS listener, so keeping that path makes this a
-   behaviour-preserving move and leaves the certificate to authentication
-   phase 3, where the rest of the mTLS work lives. `nas.yml` mounts the
-   (empty) TLS directory already, so turning it on later is a certificate
-   and three variables.
+   **The `OU=nas` certificate cannot be deferred, though it was written
+   here that it could.** The reasoning was that today's agent reaches the
+   API at `https://olympus.internal.ncfritz.net/api/v1` through nginx, so
+   keeping that URL was behaviour-preserving. It is not: the monorepo agent
+   rejects an https `API_BASE_URL` without `API_CLIENT_CERT` and
+   `API_CLIENT_KEY` (`packages/nest/src/config/apiClient.ts`), deliberately,
+   because https in this system means the 3443 listener. The configuration
+   that ran for years is refused by the new code. And nginx would not help
+   even with a certificate, because it terminates the TLS that carries it.
+
+   So the NAS needs authentication phase 2's certificates first:
+
+   - the Olympus Services intermediate, if XCA does not have it yet;
+   - the API's server certificate, `CN=olympus-api` with
+     `DNS:api.olympus.internal.ncfritz.net` among its SANs, into
+     `${SECRETS_DIR}/tls/olympus-api`, and the `TLS_*` block in
+     `env/prod/olympus-api.env` uncommented — the services listener starts
+     only when `TLS_CERT`, `TLS_KEY` and `TLS_CA_SERVICES` are all set, so
+     3443 is published today with nothing behind it;
+   - a DNS record for `api.olympus.internal.ncfritz.net`;
+   - the client certificate `CN=dionysus-asset-agent`, `OU=nas`, into
+     `${NAS_SECRETS_DIR}/tls/dionysus-asset-agent`.
+
+   `AUTH_MODE_SERVICES=report` means an unknown service is recorded rather
+   than refused, so this can go in before `AUTH_SERVICE_ROLES` is complete.
 
 ## Phase 6 — Backups
 

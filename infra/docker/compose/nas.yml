@@ -41,7 +41,12 @@ services:
       FILE_LOGGING_ENABLED: "true"
       FILE_LOGGING_PATH: /data/logs
       LOKI_URL: http://${PROD_LAN_HOST:?}:4100
+      # Straight to the API's mTLS listener, not through nginx: nginx
+      # terminates TLS, so the API would never see the client certificate.
       API_BASE_URL: ${API_LAN_URL:?}
+      API_CLIENT_CERT: /run/secrets/tls/dionysus-asset-agent.crt
+      API_CLIENT_KEY: /run/secrets/tls/dionysus-asset-agent.key
+      API_CA_CERT: /run/secrets/tls/services-ca.crt
       AMQP_PROTOCOL: amqp
       AMQP_HOST: ${PROD_LAN_HOST:?}
       AMQP_PORT: ${AMQP_PORT:-5672}
@@ -71,8 +76,9 @@ services:
       # One mount, the shared folder the media lives in. Every path in the
       # env file is under /data because of this.
       - ${NAS_DATA_DIR:?}:/data
-      # Empty until an OU=nas certificate is issued (authentication plan
-      # phase 3); the agent reaches the API through nginx until then.
+      # The OU=nas client certificate, its key and the Services chain
+      # (docs/guides/certificates.md). The agent will not start without
+      # them: an https API_BASE_URL requires a certificate, by design.
       - ${NAS_SECRETS_DIR:?}/tls/dionysus-asset-agent:/run/secrets/tls:ro
     ports:
       # Prometheus scrapes this over the LAN.

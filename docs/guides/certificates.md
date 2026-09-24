@@ -62,7 +62,7 @@ Docker host and on the NAS, and each has its own.
 - `CN` is the service's app name exactly as it sends `X-Olympus-Client`
   and as `AUTH_SERVICE_ROLES` names it: `dionysus-asset-agent`. The API
   refuses a request whose header and certificate disagree.
-- `OU` is the deployment: `mac-mini`, `nas`. The API records it on the
+- `OU` is the deployment: `prod`, `nas`. The API records it on the
   principal; it is how two deployments of one service are told apart.
 - Extended key usage `TLS Web Client Authentication`. Validity 1 year.
 - Export the certificate and key as PEM next to the service
