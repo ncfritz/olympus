@@ -12,38 +12,47 @@ same names, and the tests use it.
 ## The hierarchy
 
 ```
-ncfritz.net Root CA
-├── Olympus Services   signs services; only the API's 3443 trusts it
-│   ├── olympus-api                 (server certificate)
-│   └── <agent>-agent               (one per deployment)
-└── Olympus Devices    signs people's devices; only the NAS nginx trusts it
-    └── <person>-<device>
+ncfritz.net Root CA 1
+├── ncfritz.net Intermediate CA 1
+│   ├── ncfritz.net Issuing CA 1 - G1     devices on the network: NAS, router
+│   └── ncfritz.net Issuing CA 2 - G1     server certificates, api.olympus…
+└── ncfritz.net Intermediate CA 2
+    ├── ncfritz.net Device Issuing CA 1   people's devices (the border)
+    └── ncfritz.net Service Issuing CA 1  services (the API's 3443)
 ```
 
-Everything is ECDSA P-256. A device certificate cannot act as a service
-and a service certificate does not pass the border, because the two
-verifiers trust different intermediates.
+Everything is ECDSA P-256. ADR 0018 calls the last two Olympus Services
+and Olympus Devices; those are their roles, and the names above are what
+XCA holds.
 
-## One-off: the intermediates
+A device certificate must not act as a service. The chain does not enforce
+that on its own — the two issuing CAs are siblings, so a trust store that
+terminates at the root accepts either — so the API checks the issuer's
+common name against `AUTH_SERVICES_ISSUER`
+([ADR 0023](../decisions/0023-service-certificates-are-checked-by-issuer.md)).
+Getting the signing CA right therefore matters as much as getting the
+subject right.
 
-1. **New Certificate**, signed by `ncfritz.net Root CA`, template
-   `[default] CA`, key EC / `prime256v1`.
-2. Subject: `CN = Olympus Services`, `O = ncfritz.net`,
-   `OU = Infrastructure`. Validity 5 years.
-3. Extensions: `Certificate Authority`, path length `0` (it signs no
-   further CAs), key usage `Certificate Sign`, `CRL Sign`.
-4. Repeat for `CN = Olympus Devices`.
-5. Export each as PEM, and the root with it: what a verifier trusts is
-   the intermediate **and** the root in one file
-   (`services-ca.crt`, `devices-ca.crt`).
+## One-off: the issuing CAs
 
-The root itself must allow a CA below it (path length at least 1). If it
-was issued with path length 0, the chain fails with "path length
-constraint exceeded" and the root has to be reissued.
+Both already exist under `Intermediate CA 2`. If one has to be recreated:
+signed by `Intermediate CA 2`, template `[default] CA`, key EC /
+`prime256v1`, `O = ncfritz.net`, `OU = Infrastructure`, validity 5 years,
+extensions `Certificate Authority` with path length `0` (it signs no
+further CAs) and key usage `Certificate Sign`, `CRL Sign`.
+
+Export each with **everything above it** in one file — the chain has to
+terminate at a self-signed certificate in the verifier's store, so the
+file is the issuing CA, `Intermediate CA 2` and `Root CA 1`, in that
+order: `services-ca.crt`, `devices-ca.crt`.
+
+Every CA above a leaf must allow one below it: a path length of 0 two
+levels up fails with "path length constraint exceeded", and the CA has to
+be reissued.
 
 ## The API's server certificate
 
-Signed by **Olympus Services**, template `[default] TLS_server`:
+Signed by **Service Issuing CA 1**, template `[default] TLS_server`:
 
 - `CN = olympus-api`, `O = ncfritz.net`.
 - Subject alternative names, all of them — a client verifies the name it
@@ -58,7 +67,9 @@ Signed by **Olympus Services**, template `[default] TLS_server`:
 One per **deployment**, not per service: the asset agent runs on the
 Docker host and on the NAS, and each has its own.
 
-- Signed by **Olympus Services**, template `[default] TLS_client`.
+- Signed by **Service Issuing CA 1** (ADR 0018's Olympus Services),
+  template `[default] TLS_client`. The API rejects a certificate signed by
+  anything else, whatever its subject says.
 - `CN` is the service's app name exactly as it sends `X-Olympus-Client`
   and as `AUTH_SERVICE_ROLES` names it: `dionysus-asset-agent`. The API
   refuses a request whose header and certificate disagree.
@@ -83,17 +94,24 @@ Docker host and on the NAS, and each has its own.
 
 ## Revocation
 
-Revoke in XCA, then export the list of **both** the intermediate and the
-root — a verifier checks every authority in the chain:
+A CRL comes from the CA that signed the certificate below it, so a
+verifier needs one per signing authority in the chain — three, for this
+hierarchy ([ADR 0023](../decisions/0023-service-certificates-are-checked-by-issuer.md)):
+the issuing CA's, `Intermediate CA 2`'s and `Root CA 1`'s. Revoke in XCA,
+then export all three:
 
 - The API (`TLS_CRL_SERVICES`) takes them as separate files, because Node
   reads only the first list in a file. It reloads them within seconds of
   the files changing; no restart.
-- nginx (`ssl_crl`) takes the two lists concatenated into one file, and
+- nginx (`ssl_crl`) takes its three concatenated into one file, and
   reloads with `nginx -s reload`.
 
-Export both lists on every revocation, and at least monthly regardless:
-a list that has expired is treated as no list at all.
+`Intermediate CA 2` and `Root CA 1` sign both chains, so their lists are
+shared: four files across the system, three per verifier.
+
+Export every list on each revocation, and before `nextUpdate` regardless.
+An expired list is treated as no list, and Node checks the whole chain, so
+one stale file refuses every service — it fails closed.
 
 ## Renewal
 

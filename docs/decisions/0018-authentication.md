@@ -77,6 +77,13 @@ may depend on a cloud service.
   A device certificate can't act as an agent, an agent certificate
   doesn't pass the border, and each is revoked separately.
 
+  > **Amended by [ADR 0023](0023-service-certificates-are-checked-by-issuer.md).**
+  > The two issuing CAs are siblings under one parent, so a trust store
+  > that terminates at the root accepts either. The API checks the
+  > certificate's issuer; the paragraph above describes the intent, not
+  > what the chain enforces on its own. 0023 also corrects the number of
+  > revocation lists below.
+
 - Revocation lists for both are exported from XCA on every revocation and
   at least monthly. A verifier checks every authority in the chain, so it
   needs the root's list as well as the intermediate's: the API loads them
