@@ -75,6 +75,14 @@ DSM makes awkward:
   definitions are generated once, on the Mac Mini, for every user including
   this one.
 
+The agent runs as **uid 1028** (`dionysus`), not the image's `node`, because
+Synology ACLs on `/volume4/Dionysus` override the mode bits: a directory
+that reads `drwxrwxrwx+` is unreachable to another uid, and presents as
+missing rather than as a refusal — `existsSync` says no and the next line
+tries to create it. Its secrets are owned by that uid for the same reason.
+Chowning the media directories instead would break everything else that
+reaches them as `dionysus`.
+
 Copying anything to the NAS needs `scp -O`: DSM's OpenSSH is old enough
 that it has no SFTP subsystem for scp to use, and scp has defaulted to SFTP
 since OpenSSH 9. `scp` also does not preserve modes, so a credential

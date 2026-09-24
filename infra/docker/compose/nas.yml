@@ -30,6 +30,12 @@ services:
     # the registry rather than loaded locally.
     restart: unless-stopped
     init: true
+    # The uid that owns the data, not the image's `node`. Synology ACLs on
+    # the shared folder (the `+` in `drwxrwxrwx+`) override what the mode
+    # bits appear to allow, so another uid cannot even stat a directory
+    # there — it presents as a missing directory rather than as a refusal.
+    # /app is root-owned and world-readable, so any uid can run the image.
+    user: ${NAS_AGENT_USER:?}
     env_file: ../env/${OLYMPUS_ENV:?}/dionysus-asset-agent-nas.env
     # What olympus.yml's x-node-environment gives every other service; an
     # anchor does not cross compose files, so it is spelled out here.
