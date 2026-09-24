@@ -368,7 +368,7 @@ host.
    hand, so the repository held drafts and the host held the truth. Four
    mismatches, found before anything was installed: `registry.conf`'s
    `ssl_certificate_key` had no terminating semicolon, which `nginx -t`
-   rejects the *whole* configuration for; `olympus.conf` answered only the
+   rejects the _whole_ configuration for; `olympus.conf` answered only the
    internal name where the host serves both from one certificate; both
    named certificate paths that did not exist; and `nginx.conf` included
    seven explicit files rather than a directory. Validate in a throwaway
@@ -376,7 +376,7 @@ host.
    real `nginx.conf`, certificates and blocks before recreating anything.
 
 3. **Two bugs the move fixed by accident.** The host's block sent
-   `/api/metrics` to the *dev* upstream, and named the API on port 3001
+   `/api/metrics` to the _dev_ upstream, and named the API on port 3001
    where the listener is now 3100 (ADR 0018). Either would have survived a
    copy-paste of the old block.
 
@@ -407,9 +407,22 @@ Mac Mini. They cost nothing but disk and they are the rollback.
    3.8 and phase 4 both — including a table of what tends to go wrong,
    which is the part worth having.
 2. The NAS: `compose/nas.yml`, one container running the asset agent's
-   `amd64` image, and `env/nas.env` choosing its handlers. Its own
-   certificate (`OU=nas`) and RabbitMQ user; the NAS's Docker trusts the
-   registry's internal-CA certificate.
+   `amd64` image, with `env/prod/dionysus-asset-agent-nas.env` choosing its
+   handlers — **not** `env/nas.env` as this said: the NAS is a machine in
+   the `prod` environment, not an environment (ADR 0022), so its paths are
+   `NAS_` settings in `prod.env` and Compose resolves them on the Docker
+   host. Its own RabbitMQ user (`dionysus-asset-agent-nas`, already in
+   `users.json`) replaces connecting as `admin`. The NAS's Docker trusts the
+   registry's internal-CA certificate. **Written**; the cutover is the
+   remaining work.
+
+   The `OU=nas` certificate moved out of this phase. Today's agent reaches
+   the API at `https://olympus.internal.ncfritz.net/api/v1` — through nginx,
+   over TLS — not the 3443 mTLS listener, so keeping that path makes this a
+   behaviour-preserving move and leaves the certificate to authentication
+   phase 3, where the rest of the mTLS work lives. `nas.yml` mounts the
+   (empty) TLS directory already, so turning it on later is a certificate
+   and three variables.
 
 ## Phase 6 — Backups
 

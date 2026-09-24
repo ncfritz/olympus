@@ -40,6 +40,7 @@ infra/docker/stack.sh logs olympus -f dionysus-asset-agent
 | `olympus`    | The API, the agents, the control index; the site (`site` profile), Minerva (`minerva`) | prod, local |
 | `nginx`      | The shared nginx; mounts `infra/docker/nginx` from the checkout                        | Mac Mini    |
 | `registry`   | The image registry                                                                     | Mac Mini    |
+| `nas`        | The asset agent's other deployment, where the media is                                 | nfs01       |
 
 Networks are created once by `bootstrap` and shared by name:
 `olympus-data` (Postgres, both Hasuras), `olympus-graphql` (Hasura, the
@@ -47,6 +48,35 @@ API), `olympus-backend` (RabbitMQ, the API, the agents), `olympus-edge`
 (nginx, the site, the API, Minerva, the registry), and the monitoring
 stack's network. A service that starts before RabbitMQ or Hasura is
 ready exits and its restart policy tries again.
+
+### The NAS
+
+`nas` is part of the `prod` environment — machines are not environments
+([ADR 0022](../../docs/decisions/0022-environments-not-machines.md)) — but
+it runs on nfs01, so it is driven over a Docker context and is left out of
+`STACKS` so that `up` and `down` never reach it by accident:
+
+```sh
+docker context create nas --docker host=ssh://<user>@nfs01.sea.ncfritz.net
+DOCKER_CONTEXT=nas infra/docker/stack.sh up nas
+```
+
+Compose runs on the machine you type on and only needs a reachable daemon
+at the other end, so DSM's own bundled Compose is never used. Two things
+DSM makes awkward:
+
+- The remote `docker` must be on the `PATH` of a **non-interactive** shell.
+  DSM's package directories are not, so `ssh nfs01 docker version` fails
+  with `command not found` until there is a link into `/usr/bin`.
+- Every path in `compose/nas.yml` is a `NAS_` setting, because Compose
+  resolves bind mounts and secret files on the Docker _host_. The NAS keeps
+  its own `${NAS_SECRETS_DIR}` holding the asset agent's rows and its own
+  `rabbitmq/dionysus-asset-agent-nas.password`, copied from prod's — the
+  definitions are generated once, on the Mac Mini, for every user including
+  this one.
+
+The asset agent is the only image built for two platforms, so it is the one
+that has to reach the registry by `--push` rather than `--load`.
 
 ### DNS from containers
 

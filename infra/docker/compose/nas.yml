@@ -1,0 +1,109 @@
+# The NAS's asset agent (ADR 0019, docker plan phase 5). The NAS is part
+# of the prod environment — machines are not environments
+# ([ADR 0022](../../../docs/decisions/0022-environments-not-machines.md)) —
+# so this reads env/prod.env like every other stack. What differs is the
+# machine it runs on, which is why every path here comes from a NAS_
+# setting: Compose resolves bind mounts and secret files on the Docker
+# host, not on the machine running the command.
+#
+# It is driven from the Mac Mini over a Docker context and is deliberately
+# not in STACKS, so `up` and `down` never touch it by accident:
+#
+#   docker context create nas --docker host=ssh://<user>@nfs01.sea.ncfritz.net
+#   DOCKER_CONTEXT=nas infra/docker/stack.sh up nas
+#
+# Compose runs on the machine you type on, so the NAS only has to offer a
+# reachable daemon; DSM's own bundled Compose is not used. The remote
+# `docker` has to be on the PATH of a non-interactive shell, which on DSM
+# means a link into /usr/bin.
+#
+# No olympus-* networks: none of them exist here. RabbitMQ, the API and
+# Loki are all reached over the LAN by name.
+
+name: nas
+
+services:
+  dionysus-asset-agent:
+    image: ${IMAGE_PREFIX:?}/asset-agent:${OLYMPUS_TAG:?}
+    # linux/amd64, which is why the asset agent is the one image built for
+    # two platforms (docker-bake.hcl) and the one that has to be pushed to
+    # the registry rather than loaded locally.
+    restart: unless-stopped
+    init: true
+    env_file: ../env/${OLYMPUS_ENV:?}/dionysus-asset-agent-nas.env
+    # What olympus.yml's x-node-environment gives every other service; an
+    # anchor does not cross compose files, so it is spelled out here.
+    environment:
+      LISTEN_PORT: "3100"
+      ENABLE_CONSOLE_LOGGING: "true"
+      # The one deployment that keeps log files: nobody watches a terminal
+      # on the NAS.
+      FILE_LOGGING_ENABLED: "true"
+      FILE_LOGGING_PATH: /data/logs
+      LOKI_URL: http://${PROD_LAN_HOST:?}:4100
+      API_BASE_URL: ${API_LAN_URL:?}
+      AMQP_PROTOCOL: amqp
+      AMQP_HOST: ${PROD_LAN_HOST:?}
+      AMQP_PORT: ${AMQP_PORT:-5672}
+      AMQP_VHOST: ${AMQP_VHOST:-/dionysus}
+      # Its own user, not admin: this deployment is a separate principal
+      # from prod's asset agent (ADR 0018).
+      AMQP_USER: dionysus-asset-agent-nas
+      AMQP_PASSWORD_FILE: /run/secrets/amqp_password
+      SOCKS_PROXY_USERNAME_FILE: /run/secrets/socks_proxy_username
+      SOCKS_PROXY_PASSWORD_FILE: /run/secrets/socks_proxy_password
+      CONTENT_SSH_PASSWORD_FILE: /run/secrets/content_ssh_password
+      DIONYSUS_CDN_SSH_PASSWORD_FILE: /run/secrets/dionysus_cdn_ssh_password
+      DIONYSUS_LIBRARY_SSH_PASSWORD_FILE: /run/secrets/dionysus_library_ssh_password
+      NZBGEEK_API_KEY_FILE: /run/secrets/nzbgeek_api_key
+      NZBGET_PASSWORD_FILE: /run/secrets/nzbget_password
+    secrets:
+      - source: amqp_dionysus_asset_agent_nas
+        target: amqp_password
+      - socks_proxy_username
+      - socks_proxy_password
+      - content_ssh_password
+      - dionysus_cdn_ssh_password
+      - dionysus_library_ssh_password
+      - nzbgeek_api_key
+      - nzbget_password
+    volumes:
+      # One mount, the shared folder the media lives in. Every path in the
+      # env file is under /data because of this.
+      - ${NAS_DATA_DIR:?}:/data
+      # Empty until an OU=nas certificate is issued (authentication plan
+      # phase 3); the agent reaches the API through nginx until then.
+      - ${NAS_SECRETS_DIR:?}/tls/dionysus-asset-agent:/run/secrets/tls:ro
+    ports:
+      # Prometheus scrapes this over the LAN.
+      - "${NAS_METRICS_BIND:-0.0.0.0}:3100:3100"
+    # No cpus or mem_limit: this machine's job is the transcoding, and a
+    # limit guessed from here is how a long job gets killed at 90%.
+    stop_grace_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+secrets:
+  amqp_dionysus_asset_agent_nas:
+    file: ${NAS_SECRETS_DIR:?}/rabbitmq/dionysus-asset-agent-nas.password
+  socks_proxy_username:
+    file: ${NAS_SECRETS_DIR:?}/socks_proxy_username
+  socks_proxy_password:
+    file: ${NAS_SECRETS_DIR:?}/socks_proxy_password
+  content_ssh_password:
+    file: ${NAS_SECRETS_DIR:?}/content_ssh_password
+  dionysus_cdn_ssh_password:
+    file: ${NAS_SECRETS_DIR:?}/dionysus_cdn_ssh_password
+  dionysus_library_ssh_password:
+    file: ${NAS_SECRETS_DIR:?}/dionysus_library_ssh_password
+  nzbgeek_api_key:
+    file: ${NAS_SECRETS_DIR:?}/nzbgeek_api_key
+  nzbget_password:
+    file: ${NAS_SECRETS_DIR:?}/nzbget_password
