@@ -36,7 +36,13 @@ COPY --from=prune /pruned/json/ .
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile
 COPY --from=prune /pruned/full/ .
-RUN pnpm turbo run build --filter="${APP}..."
+# NODE_ENV on the build, not on the stage: `pnpm install` above needs the
+# devDependencies. webpack.config.js reads it to choose its mode, so
+# without it every image is a development bundle — unminified, and with
+# `process.env.NODE_ENV` compiled to "development" inside the bundle, which
+# no runtime setting can undo. Turbo passes it through because turbo.json's
+# build task declares it.
+RUN NODE_ENV=production pnpm turbo run build --filter="${APP}..."
 # What the next stage needs is sources and build output; its installed
 # modules are for this platform, not the image's.
 RUN find . -name node_modules -prune -exec rm -rf {} +

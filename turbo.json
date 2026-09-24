@@ -5,7 +5,8 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
-      "inputs": ["$TURBO_DEFAULT$", "!openapi/**", "!src/generated/**"]
+      "inputs": ["$TURBO_DEFAULT$", "!openapi/**", "!src/generated/**"],
+      "env": ["NODE_ENV"]
     },
     "openapi": {
       "dependsOn": ["build"],
