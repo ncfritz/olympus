@@ -1,9 +1,11 @@
 import "source-map-support/register";
 
-import { createWinstonLogger } from "@ncfritz/olympus-nest";
+import {
+  createWinstonLogger,
+  reportBootstrapFailure,
+} from "@ncfritz/olympus-nest";
 import { Logger } from "@nestjs/common";
 import { NestFactory, PartialGraphHost } from "@nestjs/core";
-import * as fs from "fs";
 import { WinstonModule } from "nest-winston";
 import { AppModule } from "./AppModule";
 import { readConfig } from "./config/configuration";
@@ -31,14 +33,6 @@ bootstrap()
     logger.log("🔥🔥🔥 Olympus Notification Agent bootstrap complete.");
   })
   .catch((e: unknown) => {
-    logger.error(
-      "🤯🤯🤯 Error during bootstrap!",
-      e instanceof Error ? e.stack : String(e),
-    );
-
-    if (process.env.NODE_ENV !== "production") {
-      fs.writeFileSync("graph.json", PartialGraphHost.toString() ?? "");
-    }
-
+    reportBootstrapFailure(e, PartialGraphHost, logger);
     process.exit(1);
   });

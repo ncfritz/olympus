@@ -1,3 +1,5 @@
+export * from "./bootstrap/reportBootstrapFailure";
+export * from "./bootstrap/reportBootstrapFailure";
 export * from "./config/amqp";
 export * from "./config/apiClient";
 export * from "./config/ConfigValidationError";
