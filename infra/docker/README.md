@@ -90,6 +90,26 @@ find "$NAS_SECRETS_DIR" -type d -exec chmod 700 {} + -o -type f -exec chmod 600 
 The asset agent is the only image built for two platforms, so it is the one
 that has to reach the registry by `--push` rather than `--load`.
 
+#### Trusting the registry
+
+DSM ignores `/etc/docker/certs.d` — the usual per-registry trust directory
+does nothing here, and a pull keeps failing with `certificate signed by
+unknown authority` however correct the bundle in it is. Container Manager
+uses DSM's own system bundle instead:
+
+```sh
+sudo mkdir -p /usr/syno/etc/security-profile/ca-bundle-profile/ca-certificates
+# One .crt file per certificate — a concatenated bundle is not read.
+# The root and every intermediate that signed the registry's certificate:
+#   ncfritz.net Root CA 1 → Intermediate CA 1 → Issuing CA 2 - G1
+sudo /usr/syno/bin/update-ca-certificates.sh
+sudo synopkg restart ContainerManager
+```
+
+Each certificate has to be its own file; the concatenated `ca.crt` that
+`certs.d` would take is not what this reads. Re-check it after a DSM
+upgrade — this is DSM's own tree, not ours.
+
 ### DNS from containers
 
 A host has to let its containers resolve names on the public internet:
