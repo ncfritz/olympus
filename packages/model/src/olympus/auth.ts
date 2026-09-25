@@ -74,3 +74,43 @@ export class DescribeJsonWebKeySetResponse {
   })
   keys: PublicSigningKey[];
 }
+
+/**
+ * An OAuth token response (RFC 6749 §5.1).
+ *
+ * The field names are snake_case because the specification says so and
+ * every client library expects it — the one place in this model package
+ * where the house camelCase gives way to an external contract.
+ */
+export class CreateTokenResponse {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The access token: a JWT, signed ES256, good for ten minutes",
+  })
+  access_token: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Always `Bearer`",
+    example: "Bearer",
+  })
+  token_type: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Seconds until the access token expires",
+    example: 600,
+  })
+  expires_in: number;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The refresh token, for a client that receives it in the body. Absent for the site, which is given it in an httpOnly cookie instead so that it never reaches JavaScript",
+  })
+  refresh_token?: string;
+}

@@ -5,6 +5,7 @@ import { AuthorizationCodeService } from "./codes/AuthorizationCodeService";
 import { UserDirectoryService } from "./users/UserDirectoryService";
 import { BeginSignInController } from "./controllers/BeginSignInController";
 import { CompleteSignInController } from "./controllers/CompleteSignInController";
+import { CreateTokenController } from "./controllers/CreateTokenController";
 import { OidcProviderRegistry } from "./providers/OidcProviderRegistry";
 import { ProviderLoginService } from "./providers/ProviderLoginService";
 import { DescribeJsonWebKeySetController } from "./tokens/controllers/DescribeJsonWebKeySetController";
@@ -17,6 +18,7 @@ import { ServiceIdentityService } from "./services/ServiceIdentityService";
   controllers: [
     BeginSignInController,
     CompleteSignInController,
+    CreateTokenController,
     DescribeJsonWebKeySetController,
   ],
   providers: [

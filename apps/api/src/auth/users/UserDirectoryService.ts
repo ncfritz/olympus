@@ -185,6 +185,31 @@ export class UserDirectoryService {
   }
 
   /**
+   * A user by id, with their roles as they are *now*.
+   *
+   * Read at every token issue and refresh rather than carried in the
+   * authorization code, because that is what makes ADR 0018's promise true:
+   * a role change or a disabling takes effect at the next refresh, within
+   * the access token's ten minutes.
+   */
+  async describe(userId: string): Promise<Resolution> {
+    const query = gql`
+      query DescribeUser($userId: uuid!) {
+        olympus_users_by_pk(id: $userId) {
+          ${USER_WITH_ROLES}
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      olympus_users_by_pk: GraphQlUser | null;
+    }>(query, { userId });
+    const row = response.olympus_users_by_pk;
+    if (row === null) return { reason: `no user ${userId}` };
+    if (row.disabled) return { reason: `user ${userId} is disabled` };
+    return { user: user(row) };
+  }
+
+  /**
    * Records a session and returns when it began: the token's `auth_time`,
    * which refresh carries unchanged.
    */
