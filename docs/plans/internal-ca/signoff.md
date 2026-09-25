@@ -8,11 +8,11 @@ clients, devices.
 
 ## Environments
 
-| Id      | Where                                                                                | Used from |
-| ------- | ------------------------------------------------------------------------------------ | --------- |
-| **DEV** | the dev compose: `pki`, `pki-signer`, `pki-postgres`, the API, the dev CA            | phase 1   |
-| **INT** | the Mac Mini's `pki` stack with the production issuers; the API, NAS and LAN clients | phase 4   |
-| **EXT** | outside the LAN (a phone on mobile data), for device certificates issued by the CA   | phase 4   |
+| Id      | Where                                                                                             | Used from |
+| ------- | ------------------------------------------------------------------------------------------------- | --------- |
+| **DEV** | the dev compose: `harpocrates`, `harpocrates-signer`, `harpocrates-postgres`, the API, the dev CA | phase 1   |
+| **INT** | the Mac Mini's `harpocrates` stack with the production issuers; the API, NAS and LAN clients      | phase 4   |
+| **EXT** | outside the LAN (a phone on mobile data), for device certificates issued by the CA                | phase 4   |
 
 ## Fixtures
 
@@ -37,9 +37,9 @@ per case pass/fail with the evidence named in the case. A phase is signed
 off when every case listed for it passes, or a failure has an accepted,
 recorded exception.
 
-Evidence sources: `pki` and signer logs, the audit log
-(`audit_events`), `/metrics` (`pki_signer_sealed`,
-`pki_certificates_issued_total`, `pki_revocations_total`,
+Evidence sources: `harpocrates` and signer logs, the audit log
+(`audit_events`), `/metrics` (`harpocrates_signer_sealed`,
+`harpocrates_certificates_issued_total`, `harpocrates_revocations_total`,
 `certificate_expiry_days`), `openssl x509|crl|verify|s_client` output, the
 API log (`auth` decisions, `CRL reloaded`), nginx access and error logs,
 ACME client output, screenshots.
@@ -51,17 +51,17 @@ ACME client output, screenshots.
 The signer unseals itself at start; a deliberate seal holds until the
 recovery passphrase is used.
 
-| Id   | Env | Steps                                                        | Expected                                                                                | Evidence                        |
-| ---- | --- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------- |
-| C1.1 | DEV | Start the signer with the unseal key mounted                 | `status` unsealed; issuance works; no operator action                                   | `status`; log                   |
-| C1.2 | INT | Reboot the Mac Mini; touch nothing                           | after boot the signer is unsealed and a certificate can be issued                       | `pki_signer_sealed` 0; issuance |
-| C1.3 | DEV | Start without the unseal key secret                          | starts sealed; issuance, renewal, ACME finalise and CRL signing `503`; reads still work | API responses; log              |
-| C1.4 | DEV | C1.3 continued: sealed longer than 10 minutes                | the sealed alert fires                                                                  | alert                           |
-| C1.5 | DEV | Unseal with the recovery passphrase (CLI, then the API)      | unsealed; issuance works                                                                | `status`; audit `unseal`        |
-| C1.6 | DEV | Unseal with a wrong passphrase                               | refused; still sealed; nothing about the passphrase in the log                          | response; log                   |
-| C1.7 | DEV | `seal`; restart the signer with the unseal key present       | still sealed after the restart; only the recovery passphrase unseals                    | `status`; audit `seal`          |
-| C1.8 | DEV | Rotate the unseal key; restart                               | unseals with the new key; the old key no longer does                                    | `status`                        |
-| C1.9 | DEV | Inspect the signer's SQLite file and the `pki` database dump | no private key in clear or PEM form in either                                           | `strings`/`grep` output         |
+| Id   | Env | Steps                                                                | Expected                                                                                | Evidence                                |
+| ---- | --- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------- |
+| C1.1 | DEV | Start the signer with the unseal key mounted                         | `status` unsealed; issuance works; no operator action                                   | `status`; log                           |
+| C1.2 | INT | Reboot the Mac Mini; touch nothing                                   | after boot the signer is unsealed and a certificate can be issued                       | `harpocrates_signer_sealed` 0; issuance |
+| C1.3 | DEV | Start without the unseal key secret                                  | starts sealed; issuance, renewal, ACME finalise and CRL signing `503`; reads still work | API responses; log                      |
+| C1.4 | DEV | C1.3 continued: sealed longer than 10 minutes                        | the sealed alert fires                                                                  | alert                                   |
+| C1.5 | DEV | Unseal with the recovery passphrase (CLI, then the API)              | unsealed; issuance works                                                                | `status`; audit `unseal`                |
+| C1.6 | DEV | Unseal with a wrong passphrase                                       | refused; still sealed; nothing about the passphrase in the log                          | response; log                           |
+| C1.7 | DEV | `seal`; restart the signer with the unseal key present               | still sealed after the restart; only the recovery passphrase unseals                    | `status`; audit `seal`                  |
+| C1.8 | DEV | Rotate the unseal key; restart                                       | unseals with the new key; the old key no longer does                                    | `status`                                |
+| C1.9 | DEV | Inspect the signer's SQLite file and the `harpocrates` database dump | no private key in clear or PEM form in either                                           | `strings`/`grep` output                 |
 
 ## C2 — The signer's boundary and invariants
 
@@ -129,7 +129,7 @@ recovery passphrase is used.
 | C7.3 | DEV | `pki-operator` issues by CSR and revokes; tries to import an issuer        | the first two work; issuer import `403`                                                | response               |
 | C7.4 | DEV | After C3–C5, read the audit log                                            | one event per issuance, revocation, export, seal and unseal, with principal and reason | audit query            |
 | C7.5 | DEV | Stop the API (no JWKS); use the break-glass CLI to issue and revoke        | both work; audited as the CLI                                                          | CLI output; audit      |
-| C7.6 | DEV | The OpenAPI document `/pki` and the SDK's `pki` client                     | every management operation present; the SDK builds                                     | document; build output |
+| C7.6 | DEV | The OpenAPI document `/harpocrates` and the SDK's `harpocrates` client     | every management operation present; the SDK builds                                     | document; build output |
 
 ## C8 — Cutover from XCA
 
@@ -140,7 +140,7 @@ recovery passphrase is used.
 | C8.3 | INT | The first published lists                               | numbers above XCA's last for each issuer; the same revoked serials XCA's last lists held  | `openssl crl -text` side by side   |
 | C8.4 | INT | Existing agents and devices, untouched                  | keep working (authentication F6.1, F7.1, F9.1)                                            | as those cases                     |
 | C8.5 | INT | The exported XCA intermediate key files                 | deleted; XCA used afterwards only for the root                                            | ceremony log                       |
-| C8.6 | INT | `pki`'s own `9443` certificate                          | issued by Internal TLS; a LAN client trusting the root connects without a warning         | `openssl s_client`                 |
+| C8.6 | INT | `harpocrates`'s own `9443` certificate                  | issued by Internal TLS; a LAN client trusting the root connects without a warning         | `openssl s_client`                 |
 
 ## C9 — Renewal
 
@@ -169,7 +169,7 @@ recovery passphrase is used.
 | C10.10 | INT | The Mac Mini nginx renews `olympus.internal` unattended                               | renewed before 30 days remain; nginx reloaded; browsers show the new certificate | certificate dates; log   |
 | C10.11 | INT | The NAS DSM certificate through acme.sh's Synology deploy hook                        | DSM serves the new certificate                                                   | browser                  |
 
-## C11 — The PKI area in the site
+## C11 — The Harpocrates area in the site
 
 | Id    | Env | Steps                                                              | Expected                                                                          | Evidence    |
 | ----- | --- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------- | ----------- |

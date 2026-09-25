@@ -25,7 +25,8 @@
 
 Domain words used across the codebase: **Olympus** (platform: admin,
 notifications), **Dionysus** (media: content, metadata, media assets,
-workflows, jobs), **Minerva** (personal productivity: notes, meetings).
+workflows, jobs), **Minerva** (personal productivity: notes, meetings),
+**Harpocrates** (the internal certificate authority, ADR 0020).
 **Hephaestus** appears in the model. New top-level domains get an ADR.
 
 ## Dates and times

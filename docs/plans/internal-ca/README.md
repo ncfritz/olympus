@@ -14,7 +14,7 @@ until then everything runs against the dev CA.
 | 4     | Production cutover from XCA                                       | 3; Docker plan phase 3                  | C8, C1.2, C5.4, C6, C4.7, C12 |
 | 5     | Renewal over mutual TLS                                           | 4                                       | C9                            |
 | 6     | ACME                                                              | 4                                       | C10                           |
-| 7     | The PKI area in the site                                          | 2; roadmap phase 3                      | C11                           |
+| 7     | The Harpocrates area in the site                                  | 2; roadmap phase 3                      | C11                           |
 | Later | SCEP, `dns-01`, OCSP, ARI, hardware keys                          |                                         |                               |
 
 Phases 5 and 6 are independent. Phase 7 can start as soon as the site is
@@ -24,7 +24,7 @@ from its OpenAPI page and the break-glass CLI.
 ## Phase 0 — Scaffolding
 
 1. **ADR 0020 accepted.**
-2. **`apps/pki-signer`**: a FastAPI app with `pyproject.toml` managed by
+2. **`apps/harpocrates/signer`**: a FastAPI app with `pyproject.toml` managed by
    `uv`; `ruff` (lint and format), `pyright` (strict), `pytest`. A
    `package.json` whose `build`, `lint`, `test` and `openapi` scripts
    call them, so `pnpm turbo run build lint test` covers it like any
@@ -32,22 +32,23 @@ from its OpenAPI page and the break-glass CLI.
    0011).
 3. **`docs/conventions/python.md`**: the rules for the signer, in the
    shape of the other convention documents, and `CLAUDE.md` pointing at
-   it for `apps/pki-signer`.
-4. **`apps/pki`**: a NestJS app on the shared packages
+   it for `apps/harpocrates/signer`.
+4. **`apps/harpocrates/service`**: a NestJS app on the shared packages
    (`@ncfritz/olympus-nest`: config, logger, metrics), Prisma for its
-   database, an `openapi` task writing `apps/pki/openapi/pki.json`, and
-   `packages/sdk` generating a `pki` client from it. A generated client
-   for the signer's document, internal to `apps/pki`.
+   database, an `openapi` task writing `apps/harpocrates/service/openapi/harpocrates.json`, and
+   `packages/sdk` generating a `harpocrates` client from it. A generated client
+   for the signer's document, internal to `apps/harpocrates/service`.
 5. **Dev CA**: `scripts/dev-ca.sh` adds an **Internal TLS Dev**
    intermediate, name-constrained to `localhost` and
    `internal.localhost`, and writes the intermediates' keys as encrypted
    PKCS#8, the format the signer imports.
-6. **Dev compose**: `pki-postgres` alongside the existing Postgres and
-   Hasura; both services run from the workspace (`pnpm dev`), the signer
-   on a socket in a git-ignored directory.
+6. **Dev compose**: `apps/harpocrates/docker-compose.yml` runs
+   `harpocrates-postgres` on its own port, beside the existing Postgres
+   and Hasura; both services run from the workspace (`pnpm dev`), the
+   signer on a socket in `apps/harpocrates/.run/` (git-ignored).
 
 **Sign-off:** both services start, `/health` answers, the Turbo tasks
-pass, and the SDK builds with an empty `pki` client; no functional flows.
+pass, and the SDK builds with an empty `harpocrates` client; no functional flows.
 
 ## Phase 1 — The signer
 
@@ -77,7 +78,7 @@ pass, and the SDK builds with an empty `pki` client; no functional flows.
    for `legacy-device`.
 7. **Transport**: Uvicorn on a Unix socket; the shared token; no TCP
    listener in any configuration.
-8. **CLI** (`python -m pki_signer`): `initialise`, `unseal`, `seal`,
+8. **CLI** (`python -m harpocrates_signer`): `initialise`, `unseal`, `seal`,
    `status`, `rotate-unseal-key`, `change-passphrase`.
 9. **Tests**: every certificate and CRL produced is parsed back and
    verified against its issuer with `cryptography` and with `openssl
@@ -110,10 +111,10 @@ verify` / `openssl crl -verify`; each invariant has a refusal test;
    authentication phase 3).
 7. **Audit**: every issuance, revocation, export, unseal and seal, with
    the principal and a reason where one is required.
-8. **Metrics**: `pki_signer_sealed`, `pki_certificates_issued_total{issuer,profile}`,
-   `pki_revocations_total{issuer,reason}`, `certificate_expiry_days`
+8. **Metrics**: `harpocrates_signer_sealed`, `harpocrates_certificates_issued_total{issuer,profile}`,
+   `harpocrates_revocations_total{issuer,reason}`, `certificate_expiry_days`
    per certificate the CA knows of.
-9. **Break-glass CLI** in the `pki` image: `issue`, `revoke`, `status`,
+9. **Break-glass CLI** in the `harpocrates` image: `issue`, `revoke`, `status`,
    running against the database and the signer without the API.
 
 **Sign-off:** C3, C4.1–C4.6, C7.
@@ -138,16 +139,16 @@ verify` / `openssl crl -verify`; each invariant has a refusal test;
 
 ## Phase 4 — Production cutover from XCA
 
-1. **The `pki` stack** in `infra/docker/compose/pki.yml` on ADR 0019's
+1. **The `harpocrates` stack** in `infra/docker/compose/harpocrates.yml` on ADR 0019's
    conventions (shared `x-service`, file secrets for the signer token and
-   the Postgres password, pinned images), with `pki-published` mounted
+   the Postgres password, pinned images), with `harpocrates-published` mounted
    into the nginx and `olympus` stacks read-only.
 2. **nginx**: `pki.internal.ncfritz.net` serving the published directory
-   over plain HTTP, and `/pki` on the site's host proxied to the
+   over plain HTTP, and `/harpocrates` on the site's host proxied to the
    management API. The internal DNS record.
 3. **Ceremony** (a guide, followed once and recorded):
    1. `initialise` the signer: the unseal key into `${SECRETS_DIR}` as
-      `pki_signer_unseal_key`, and it and the recovery passphrase into
+      `harpocrates_signer_unseal_key`, and it and the recovery passphrase into
       the password manager. Restart the stack and confirm it unseals by
       itself.
    2. Generate the Internal TLS key in the signer; its CSR out.
@@ -160,7 +161,7 @@ verify` / `openssl crl -verify`; each invariant has a refusal test;
    5. Import every certificate the two intermediates have issued, with
       its serial, and their revocations, from the XCA database; the
       next list number continues from XCA's last.
-   6. Issue `pki`'s own `9443` certificate from Internal TLS.
+   6. Issue `harpocrates`'s own `9443` certificate from Internal TLS.
    7. Sign the root's list in XCA (13 months) and upload it.
 4. **Switch the relying parties** to the published lists: the API's
    `TLS_CRL_SERVICES`, the NAS pull job.
@@ -194,7 +195,7 @@ verify` / `openssl crl -verify`; each invariant has a refusal test;
    `jose` (ES256, ES384, RS256, EdDSA).
 3. **Policy**: an order's names checked against its account's name
    policy before any challenge exists.
-4. **Challenges**: `http-01` and `tls-alpn-01`, validated from the `pki`
+4. **Challenges**: `http-01` and `tls-alpn-01`, validated from the `harpocrates`
    container. First confirm that container reaches port 80 and 443 on
    the Mac Mini's LAN address, the NAS and a host outside Docker.
 5. **Interop**: certbot, lego, acme.sh and Caddy against the dev stack,
@@ -205,7 +206,7 @@ verify` / `openssl crl -verify`; each invariant has a refusal test;
 
 **Sign-off:** C10.
 
-## Phase 7 — The PKI area in the site
+## Phase 7 — The Harpocrates area in the site
 
 After the site import (roadmap phase 3), on the SDK and `packages/ui`:
 
@@ -231,4 +232,4 @@ After the site import (roadmap phase 3), on the SDK and `packages/ui`:
 - A hardware key store behind the signer's key interface.
 - Name constraints on Olympus Services and Olympus Devices at their
   renewal.
-- The `pki` stack on a second host.
+- The `harpocrates` stack on a second host.

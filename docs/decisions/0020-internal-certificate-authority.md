@@ -1,4 +1,4 @@
-# 0020. An internal certificate authority: PKI service and signer
+# 0020. An internal certificate authority: Harpocrates
 
 - **Status:** Proposed
 - **Date:** 2026-09-21
@@ -49,17 +49,50 @@ What was found (September 2026):
 The CA is ours, split so that private keys live in one small process
 that makes almost no decisions:
 
-| Service      | Language         | Holds                                           | Does                                                                    |
-| ------------ | ---------------- | ----------------------------------------------- | ----------------------------------------------------------------------- |
-| `pki`        | NestJS           | Metadata: issuers, profiles, certificates, ACME | Management API, ACME, renewal, policy, CRL scheduling and publication   |
-| `pki-signer` | Python (FastAPI) | Private keys, encrypted                         | Generate keys, sign certificates and CRLs, export PKCS#12; nothing else |
+| Service              | Language         | Holds                                           | Does                                                                    |
+| -------------------- | ---------------- | ----------------------------------------------- | ----------------------------------------------------------------------- |
+| `harpocrates`        | NestJS           | Metadata: issuers, profiles, certificates, ACME | Management API, ACME, renewal, policy, CRL scheduling and publication   |
+| `harpocrates-signer` | Python (FastAPI) | Private keys, encrypted                         | Generate keys, sign certificates and CRLs, export PKCS#12; nothing else |
 
-`pki` never sees a private key except one it is handing to the operator
-once (see Enrollment). `pki-signer` never decides _whether_ a certificate
+`harpocrates` never sees a private key except one it is handing to the operator
+once (see Enrollment). `harpocrates-signer` never decides _whether_ a certificate
 should exist, only whether it breaks one of its own invariants.
 
-This is a new top-level domain, **PKI** (`docs/conventions/general.md`:
-new domains get an ADR). Its OpenAPI document is `/pki`.
+This is a new top-level domain, **Harpocrates** (`docs/conventions/general.md`:
+new domains get an ADR), after the god of silence and secrets: the
+platform's PKI. Its OpenAPI document is `/harpocrates`.
+
+### Naming and layout
+
+The domain's name is its components' identity: directories, packages,
+images, containers, the Compose stack, volumes, secrets, the OpenAPI
+document, the SDK client, the proxy path and metric names. What is
+written into certificates and tokens stays functional, because it
+outlives the implementation: the distribution host
+`pki.internal.ncfritz.net` and the roles `pki-admin` and `pki-operator`.
+
+The two services are one system, built, versioned and deployed together,
+so they share a directory, as an agent and its console do (ADR 0016):
+
+```
+apps/harpocrates/
+  README.md            how the parts fit: socket, token, ports, dev loop
+  docker-compose.yml   development only: harpocrates-postgres
+  .run/                git-ignored: the signer's socket and dev store
+  service/             @ncfritz/harpocrates-service   NestJS, Prisma
+    openapi/harpocrates.json   the management API; the SDK's client
+  signer/              @ncfritz/harpocrates-signer    FastAPI, uv
+    openapi/signer.json        the signer's API; a client internal to service/
+```
+
+- The workspace includes `apps/harpocrates/*` by name, not `apps/*/*`,
+  so no other app is nested by accident.
+- `service` depends on `signer` (`workspace:*`, development only), so
+  Turbo builds the signer's document before the service generates its
+  client from it, as `packages/sdk` depends on `apps/api`. A change to the
+  signer's API breaks the service's build, not its runtime.
+- The signer is a single `uv` project. A root `uv` workspace waits for a
+  second Python project.
 
 **The signer is the one exception to "TypeScript everywhere".** It is kept
 small enough to read in a sitting, because Python's `cryptography` is
@@ -69,16 +102,16 @@ signing API is what an HSM would give us, drawn in software.
 
 ### The signer
 
-- **Transport: a Unix socket**, on a volume only `pki` and the signer
+- **Transport: a Unix socket**, on a volume only `harpocrates` and the signer
   mount. No network listener at all, so nothing else on any Docker
   network can reach it, and there is no certificate to bootstrap before
   the CA exists. A shared token (a Compose secret) is checked as well.
 - **API**: `status`, `unseal`, `seal`, `keys` (generate; import),
   `sign/certificate`, `sign/crl`, `escrow/export`. Inputs are fully
   formed: subject, extensions, validity, serial and the public key or
-  CSR. It has its own OpenAPI document; `pki` calls it through a
+  CSR. It has its own OpenAPI document; `harpocrates` calls it through a
   generated client that is not part of `packages/sdk`.
-- **Invariants it enforces itself**, whatever `pki` asks:
+- **Invariants it enforces itself**, whatever `harpocrates` asks:
   - The issuer's name constraints, checked against every name in the
     request.
   - A maximum validity per issuer, and never past the issuer's own
@@ -94,7 +127,7 @@ signing API is what an HSM would give us, drawn in software.
   data keys are wrapped by a master key, and the master key is wrapped
   twice:
   - by the **unseal key**, 32 random bytes in a Compose secret
-    (`pki_signer_unseal_key`, ADR 0019) that only the signer mounts;
+    (`harpocrates_signer_unseal_key`, ADR 0019) that only the signer mounts;
   - by a **recovery passphrase** (Argon2id), kept in the password
     manager and nowhere on the host.
 - **The signer unseals itself at start** with the unseal key, so the CA
@@ -189,7 +222,7 @@ year.
   treated as no list, so expiry, not corruption, is the failure to
   design against.
 - **Publication** writes the DER list and the issuer's certificate to a
-  `pki-published` volume, then fetches it back through the distribution
+  `harpocrates-published` volume, then fetches it back through the distribution
   URL and verifies the signature before recording it as published. A
   failure alerts.
 - **Distribution**: the Mac Mini nginx serves that volume at
@@ -200,7 +233,7 @@ year.
   distribution point, authority information access), so the name is
   dedicated and outlives the host: it moves with the CA if the CA moves.
 - **Relying parties keep reading files**, as ADR 0018 set:
-  - The API mounts `pki-published` read-only and points
+  - The API mounts `harpocrates-published` read-only and points
     `TLS_CRL_SERVICES` at the Services and root lists; it already
     reloads them when they change.
   - The NAS pulls the Devices and root lists from the distribution URL
@@ -208,7 +241,7 @@ year.
     `ssl_crl`, and reloads nginx. Pull, so the CA needs no credentials
     for the NAS.
 - **The root's list** is signed in XCA with a 13-month validity, once a
-  year and whenever an intermediate is revoked, and uploaded to `pki`,
+  year and whenever an intermediate is revoked, and uploaded to `harpocrates`,
   which verifies it against the root and publishes it with the rest.
 - OCSP is not provided; every relying party is ours and uses lists.
 
@@ -218,7 +251,7 @@ year.
   unrevoked certificate from the same issuer to `POST /v1/renew` on
   `9443`,
   with a CSR (or with none, for an escrowed key), returns a certificate
-  with the same subject. `pki` checks status from its own records, not
+  with the same subject. `harpocrates` checks status from its own records, not
   a revocation list.
 - **ACME** subscribers renew as ACME clients do.
 - **Hand-issued** certificates (the printer) are listed by expiry in the
@@ -226,7 +259,7 @@ year.
 
 ### ACME
 
-RFC 8555, implemented in `pki` (NestJS, `jose` for JWS), for the Internal
+RFC 8555, implemented in `harpocrates` (NestJS, `jose` for JWS), for the Internal
 TLS issuer only.
 
 - Directory at `https://pki.internal.ncfritz.net:9443/acme/directory`;
@@ -247,15 +280,15 @@ TLS issuer only.
 
 ### Surfaces
 
-| Surface        | Where                                              | Auth                                                           | Documented          |
-| -------------- | -------------------------------------------------- | -------------------------------------------------------------- | ------------------- |
-| Management API | nginx → `pki`, `/pki/v1/...`                       | JWT from the API (ADR 0018), roles `pki-admin`, `pki-operator` | OpenAPI `/pki`; SDK |
-| Renewal        | `pki` `:9443`, `/v1/renew`                         | Client certificate                                             | OpenAPI `/pki`      |
-| ACME           | `pki` `:9443`, `/acme/...`                         | JWS; EAB at registration                                       | RFC 8555            |
-| Distribution   | Mac Mini nginx, `http://pki.internal.ncfritz.net/` | None                                                           | This ADR            |
-| Signer         | Unix socket                                        | Shared token                                                   | Internal OpenAPI    |
+| Surface        | Where                                              | Auth                                                           | Documented                  |
+| -------------- | -------------------------------------------------- | -------------------------------------------------------------- | --------------------------- |
+| Management API | nginx → `harpocrates`, `/harpocrates/v1/...`       | JWT from the API (ADR 0018), roles `pki-admin`, `pki-operator` | OpenAPI `/harpocrates`; SDK |
+| Renewal        | `harpocrates` `:9443`, `/v1/renew`                 | Client certificate                                             | OpenAPI `/harpocrates`      |
+| ACME           | `harpocrates` `:9443`, `/acme/...`                 | JWS; EAB at registration                                       | RFC 8555                    |
+| Distribution   | Mac Mini nginx, `http://pki.internal.ncfritz.net/` | None                                                           | This ADR                    |
+| Signer         | Unix socket                                        | Shared token                                                   | Internal OpenAPI            |
 
-- The management API is proxied by the Mac Mini nginx under `/pki` on
+- The management API is proxied by the Mac Mini nginx under `/harpocrates` on
   the site's host, as the API is under `/api`, so the site calls it the
   same way on the LAN and through the border.
 - ACME and renewal are on `9443`: HTTPS with a certificate from Internal
@@ -263,7 +296,7 @@ TLS issuer only.
   decides what it accepts. Published on the LAN directly, like the API's
   `3443`, because renewal needs the client certificate a proxy would
   end.
-- `pki` verifies users' JWTs against the API's JWKS; it does not issue
+- `harpocrates` verifies users' JWTs against the API's JWKS; it does not issue
   tokens or touch the auth tables.
 - **Break-glass**: CLIs inside the containers can unseal, issue and
   revoke without the site or the API, so an expired certificate on the
@@ -271,7 +304,7 @@ TLS issuer only.
 
 ### Data
 
-`pki` keeps its own Postgres, a container in the `pki` stack, with
+`harpocrates` keeps its own Postgres, a container in the `harpocrates` stack, with
 migrations in Prisma (as Minerva calendar sync does). It is not the data
 stack's Postgres, is not tracked by Hasura, and the API is not its
 client.
@@ -292,20 +325,20 @@ client.
 
 ### UI
 
-A PKI area in `apps/site` (Next.js, AntD, `packages/ui`), on the SDK like
+A Harpocrates area in `apps/site` (Next.js, AntD, `packages/ui`), on the SDK like
 every other area: the seal state and unseal; issuers and their CRLs;
 certificates (search, detail, chain, issue, renew, revoke, export);
 profiles; ACME accounts and EAB credentials; the audit log.
 
 ### Deployment
 
-- The Mac Mini, in a fifth Compose stack, `pki` (ADR 0019): `pki`,
-  `pki-signer` and `pki-postgres`, a private network, the signer's store
-  and socket volumes, and `pki-published` shared with nginx and the API.
+- The Mac Mini, in a fifth Compose stack, `harpocrates` (ADR 0019): `harpocrates`,
+  `harpocrates-signer` and `harpocrates-postgres`, a private network, the signer's store
+  and socket volumes, and `harpocrates-published` shared with nginx and the API.
   Separate from `olympus` so a platform deploy never restarts, and so
   never seals, the CA.
-- `pki` joins `edge`, so nginx can proxy the management API.
-- Backups: the signer's SQLite file (encrypted keys) and the `pki`
+- `harpocrates` joins `edge`, so nginx can proxy the management API.
+- Backups: the signer's SQLite file (encrypted keys) and the `harpocrates`
   database, together; the XCA database, as today. The unseal key is not
   in that backup: it lives in the host's secrets and, with the recovery
   passphrase, in the password manager.
@@ -322,15 +355,15 @@ flowchart LR
     XCA["XCA<br/>ncfritz.net Root CA"]
   end
   subgraph MacMini["Mac Mini"]
-    subgraph PKI["pki stack"]
-      APP["pki (NestJS)<br/>management API, ACME, renewal<br/>:9443 LAN"]
-      SIG["pki-signer (Python)<br/>keys, unsealed at start"]
-      DB[("pki-postgres")]
-      PUB[("pki-published")]
+    subgraph HARP["harpocrates stack"]
+      APP["harpocrates (NestJS)<br/>management API, ACME, renewal<br/>:9443 LAN"]
+      SIG["harpocrates-signer (Python)<br/>keys, unsealed at start"]
+      DB[("harpocrates-postgres")]
+      PUB[("harpocrates-published")]
     end
     NGX["nginx<br/>http://pki.internal.ncfritz.net"]
     API["API :3443<br/>TLS_CRL_SERVICES"]
-    SITE["site<br/>PKI area"]
+    SITE["site<br/>Harpocrates area"]
   end
   subgraph NAS
     EDGE["nginx<br/>ssl_crl"]
@@ -347,7 +380,7 @@ flowchart LR
   PUB -. "read-only" .-> API
   PULL -- "HTTP" --> NGX
   PULL --> EDGE
-  SITE -- "SDK, JWT (via nginx /pki)" --> APP
+  SITE -- "SDK, JWT (via nginx /harpocrates)" --> APP
   ACMEC -- "ACME + EAB" --> APP
   AGENTS -- "renew, mTLS" --> APP
 ```
@@ -359,12 +392,12 @@ sequenceDiagram
   autonumber
   actor O as Operator (pki-admin)
   participant S as site
-  participant P as pki
-  participant G as pki-signer
-  participant D as Postgres (pki)
+  participant P as harpocrates
+  participant G as harpocrates-signer
+  participant D as Postgres (harpocrates)
 
   O->>S: issue "device" for neil-ipad
-  S->>P: POST /pki/v1/certificates {profile: device, subject}
+  S->>P: POST /harpocrates/v1/certificates {profile: device, subject}
   P->>P: profile rules, subject policy
   P->>G: keys: generate P-256, escrow
   G-->>P: key id, public key
@@ -384,9 +417,9 @@ sequenceDiagram
 sequenceDiagram
   autonumber
   participant C as ACME client
-  participant P as pki
+  participant P as harpocrates
   participant H as Subject host :80
-  participant G as pki-signer
+  participant G as harpocrates-signer
 
   C->>P: newAccount (JWS) + EAB
   P->>P: EAB valid, bind the account to its name policy
@@ -415,7 +448,7 @@ sequenceDiagram
   and a conventions document for it.
 - Writing the ACME server is the largest single piece of work.
 - The CA shares the Mac Mini with what it vouches for: losing that host
-  loses both. Accepted for now; a second host moves the `pki` stack.
+  loses both. Accepted for now; a second host moves the `harpocrates` stack.
 - A restart of the host needs nobody: the signer unseals itself. The CA
   being sealed (the secret missing, or a deliberate seal) is visible, a
   metric and an alert, not silent.
@@ -439,7 +472,6 @@ sequenceDiagram
   it.
 - A hardware key store (a YubiKey or PKCS#11 token) behind the signer's
   key interface.
-- A mythological name for the domain, like its siblings.
 
 ## Implementation
 

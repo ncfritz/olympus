@@ -28,7 +28,7 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0017](0017-shared-api-client-and-request-metrics.md)      | Shared API client and request metrics                              | Accepted                    |
 | [0018](0018-authentication.md)                             | Authentication for users, devices and services                     | Accepted                    |
 | [0019](0019-compose-stacks-and-configuration.md)           | Compose stacks, configuration and secrets                          | Accepted                    |
-| [0020](0020-internal-certificate-authority.md)             | An internal certificate authority: PKI service and signer          | Proposed                    |
+| [0020](0020-internal-certificate-authority.md)             | An internal certificate authority: Harpocrates                     | Proposed                    |
 | [0021](0021-control-host-and-console-navigation.md)        | The control host and console navigation                            | Accepted                    |
 | [0022](0022-environments-not-machines.md)                  | Environments are named, machines are not                           | Accepted                    |
 | [0023](0023-service-certificates-are-checked-by-issuer.md) | A service certificate is checked by its issuer, not only its chain | Accepted                    |
