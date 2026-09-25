@@ -50,8 +50,8 @@ services:
       # Straight to the API's mTLS listener, not through nginx: nginx
       # terminates TLS, so the API would never see the client certificate.
       API_BASE_URL: ${API_LAN_URL:?}
-      API_CLIENT_CERT: /run/secrets/tls/dionysus-asset-agent.crt
-      API_CLIENT_KEY: /run/secrets/tls/dionysus-asset-agent.key
+      API_CLIENT_CERT: /run/secrets/tls/client.crt
+      API_CLIENT_KEY: /run/secrets/tls/client.key
       API_CA_CERT: /run/secrets/tls/services-ca.crt
       AMQP_PROTOCOL: amqp
       AMQP_HOST: ${PROD_LAN_HOST:?}
@@ -82,7 +82,9 @@ services:
       # One mount, the shared folder the media lives in. Every path in the
       # env file is under /data because of this.
       - ${NAS_DATA_DIR:?}:/data
-      # The OU=nas client certificate, its key and the Services chain
+      # The OU=nas client certificate, its key and the Services chain, as
+      # client.crt/client.key/services-ca.crt — the same three names every
+      # deployment uses, since the directory says which agent it is
       # (docs/guides/certificates.md). The agent will not start without
       # them: an https API_BASE_URL requires a certificate, by design.
       - ${NAS_SECRETS_DIR:?}/tls/dionysus-asset-agent:/run/secrets/tls:ro

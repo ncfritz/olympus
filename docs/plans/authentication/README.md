@@ -92,14 +92,26 @@ and no agent presents a certificate until phase 2.
    `readApiClientConfig` in `@ncfritz/olympus-nest`; all four agents read
    the three variables and present their certificate when they are set
    (**done 2026-09-20**), so what is left in this phase is operational.
-2. One commit per agent: `API_BASE_URL=https://olympus-api:3443/v1`, the
-   certificate paths, the README and `dev.env.example`.
+2. `API_BASE_URL=https://olympus-api:3443/v1` and the certificate paths for
+   all four at once, not a commit each: they share one anchor in
+   `olympus.yml`, and with `AUTH_MODE_SERVICES=report` a failure is recorded
+   rather than breaking anything, so moving them singly buys nothing. Each
+   deployment's files are `client.crt`, `client.key` and `services-ca.crt`
+   in its own TLS directory; an environment with no certificates sets the
+   three variables empty and stays on plain HTTP, which is how `local`
+   runs. **done 2026-09-24** — the certificates are yours to issue.
 3. The NAS asset agent: `https://api.olympus.internal.ncfritz.net:3443/v1`;
    `3443` published on the Mac Mini's LAN address; the internal DNS record.
+   **done 2026-09-24** — and it found that the chain does not separate
+   services from devices
+   ([ADR 0023](../../decisions/0023-service-certificates-are-checked-by-issuer.md)).
 4. Real certificates from XCA: the Olympus Services intermediate, the
    API's server certificate, one certificate per agent deployment. The
    runbook is [docs/guides/certificates.md](../../guides/certificates.md)
-   (**done 2026-09-20**); issuing them is yours to do.
+   (**done 2026-09-20**); issuing them is yours to do. The issuing CA, the
+   API's server certificate and the NAS's client certificate are **done
+   2026-09-24**, and the listener runs on them. Outstanding: four `OU=prod`
+   client certificates, one per on-host agent.
 5. Done when the report-only log shows every agent request identified
    and none that would be rejected.
 

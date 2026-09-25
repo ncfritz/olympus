@@ -76,9 +76,12 @@ Docker host and on the NAS, and each has its own.
 - `OU` is the deployment: `prod`, `nas`. The API records it on the
   principal; it is how two deployments of one service are told apart.
 - Extended key usage `TLS Web Client Authentication`. Validity 1 year.
-- Export the certificate and key as PEM next to the service
-  (`API_CLIENT_CERT`, `API_CLIENT_KEY`), and the Services chain as
-  `API_CA_CERT`. The key is read once at start: a renewed certificate
+- Export the certificate and key as PEM into that deployment's own TLS
+  directory — `${SECRETS_DIR}/tls/<service>` on the Docker host, mounted at
+  `/run/secrets/tls` — as **`client.crt`**, **`client.key`** and
+  **`services-ca.crt`**. The same three names in every deployment: the
+  directory already says which agent it is, which is what lets one setting
+  serve them all. The key is read once at start, so a renewed certificate
   needs a restart.
 - Add the service to the API's `AUTH_SERVICE_ROLES` before it calls, or
   every request is counted as an unknown service.
