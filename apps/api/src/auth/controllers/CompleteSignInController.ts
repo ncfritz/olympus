@@ -11,6 +11,7 @@ import {
 import { ApiOperation, ApiParam, ApiResponse } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
 import { Public } from "../authDecorators";
+import { AUTH_LIMITS, RateLimited } from "../limits/rateLimits";
 import { AuthorizationCodeService } from "../codes/AuthorizationCodeService";
 import { ProviderLoginService } from "../providers/ProviderLoginService";
 import { UserDirectoryService } from "../users/UserDirectoryService";
@@ -41,6 +42,7 @@ export class CompleteSignInController {
 
   @Get("/callback/:provider")
   @Public()
+  @RateLimited(AUTH_LIMITS.completeSignIn)
   @ApiOperation({
     summary: "Completes a sign-in",
     description:
@@ -54,6 +56,10 @@ export class CompleteSignInController {
     status: 400,
     description:
       "There is no pending sign-in for this state, so there is nowhere safe to redirect to.",
+  })
+  @ApiResponse({
+    status: 429,
+    description: "Over the rate limit; `Retry-After` says for how long.",
   })
   async handle(
     @Param("provider") provider: string,

@@ -35,6 +35,16 @@ export const configureApp = (app: INestApplication): INestApplication => {
         ),
       ),
   });
+  // Whether X-Forwarded-For may be believed, and so what request.ip is.
+  // Express implements the derivation (including subnets and the hop count);
+  // the only decision here is whom to trust. Left unset, express trusts
+  // nobody and request.ip is the immediate peer.
+  if (server.trustedProxies.length > 0) {
+    app
+      .getHttpAdapter()
+      .getInstance()
+      .set("trust proxy", server.trustedProxies);
+  }
   app.use(cookieParser());
   // Allow larger body size
   app.use(bodyParser.json({ limit: 1024 * 1024 * 10, inflate: true }));

@@ -11,6 +11,7 @@ import { ApiOperation, ApiQuery, ApiResponse } from "@nestjs/swagger";
 import { type Response } from "express";
 import { authConfig, type AuthConfigType } from "../../config/configuration";
 import { Public } from "../authDecorators";
+import { AUTH_LIMITS, RateLimited } from "../limits/rateLimits";
 import { resolveClients } from "../clients/clients";
 import { AuthorizationCodeService } from "../codes/AuthorizationCodeService";
 import { CODE_CHALLENGE_METHOD } from "../codes/pkce";
@@ -43,6 +44,7 @@ export class BeginSignInController {
 
   @Get("/authorize")
   @Public()
+  @RateLimited(AUTH_LIMITS.beginSignIn)
   @ApiOperation({
     summary: "Begins a sign-in",
     description:
@@ -66,6 +68,10 @@ export class BeginSignInController {
     status: 400,
     description:
       "The request is not one this client registered. Deliberately not a redirect: an unvalidated redirect_uri is an open redirect.",
+  })
+  @ApiResponse({
+    status: 429,
+    description: "Over the rate limit; `Retry-After` says for how long.",
   })
   async handle(
     @Query("client_id") clientId: string | undefined,

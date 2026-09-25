@@ -19,6 +19,7 @@ import {
 import { type Request, type Response } from "express";
 import { authConfig, type AuthConfigType } from "../../config/configuration";
 import { Public } from "../authDecorators";
+import { AUTH_LIMITS, RateLimited } from "../limits/rateLimits";
 import { resolveClients, type RefreshDelivery } from "../clients/clients";
 import { AuthorizationCodeService } from "../codes/AuthorizationCodeService";
 import { SigningKeyService } from "../tokens/SigningKeyService";
@@ -59,6 +60,7 @@ export class CreateTokenController {
 
   @Post("/token")
   @Public()
+  @RateLimited(AUTH_LIMITS.createToken)
   @ApiOperation({
     summary: "Exchanges an authorization code for tokens",
     description:
@@ -98,6 +100,11 @@ export class CreateTokenController {
     status: 400,
     description:
       "`{ error, error_description }` per RFC 6749. Which check failed is in the log, not the response.",
+  })
+  @ApiResponse({
+    status: 429,
+    description:
+      "Over the rate limit; `Retry-After` says for how long. A plain 429 rather than an OAuth error: RFC 6749 has no code for it.",
   })
   async handle(
     @Body()

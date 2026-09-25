@@ -12,6 +12,25 @@ const decisions = new Counter({
   labelNames: ["listener", "outcome", "reason"],
 });
 
+/**
+ * Requests refused by the rate limiter, by endpoint and by which of its two
+ * counters refused them. `scope="global"` is the interesting one: it means
+ * the ceiling is being reached, which is either genuine load or a per-client
+ * key that is not telling callers apart.
+ */
+const rateLimited = new Counter({
+  name: "auth_rate_limited_total",
+  help: "Auth requests refused by the rate limiter, by endpoint and scope",
+  labelNames: ["endpoint", "scope"],
+});
+
+export const recordRateLimited = (
+  endpoint: string,
+  scope: "client" | "global",
+): void => {
+  rateLimited.inc({ endpoint, scope });
+};
+
 export const recordAuthDecision = (
   listener: Listener,
   outcome: AuthOutcome,

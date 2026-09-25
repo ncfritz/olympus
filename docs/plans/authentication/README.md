@@ -152,7 +152,14 @@ on `3443`. Before phase 8 the gateway needs a service path for the agent
    `aud`, `roles`, `auth_time` from the session's creation, `kid`); opaque refresh tokens (30 days), rotated, with
    reuse detection revoking the session. Keys from `AUTH_SIGNING_KEYS`
    (a directory of PEM files, newest signs, all verify).
-6. The JWT strategy on `3100`; rate limits on the auth endpoints.
+6. The JWT strategy on `3100`; rate limits on the auth endpoints — per
+   caller **and** a global ceiling, because a reverse proxy that does not
+   forward the client address makes a per-caller limit either useless or an
+   outage. Which is what `3100` was doing: nginx now sends
+   `X-Forwarded-For`, and the API believes it only from `TRUSTED_PROXIES`.
+   None of this is a credential defence — codes, verifiers and refresh
+   tokens are all 256-bit and single-use — it is flood containment.
+   **done 2026-09-25.**
 7. Tests: every endpoint and error, PKCE, reuse detection, expiry, a
    disabled user, the provider callbacks with a fake provider, and the
    migration against the dev Hasura.

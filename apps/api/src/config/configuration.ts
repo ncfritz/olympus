@@ -18,6 +18,14 @@ export type ServerConfig = RuntimeConfig & {
   /** Serve the OpenAPI explorer (always outside production). */
   apiExplorer: boolean;
   corsOrigins: string[];
+  /**
+   * Proxies whose `X-Forwarded-For` may be believed, as express's
+   * `trust proxy` takes them: addresses or CIDR ranges, or `loopback`,
+   * `linklocal`, `uniquelocal`. Empty means trust nothing, and then
+   * `request.ip` is the proxy's own address — correct, but it tells no two
+   * callers apart, which is why the rate limiter has a global ceiling.
+   */
+  trustedProxies: string[];
 };
 
 export type HasuraConfig = {
@@ -99,6 +107,7 @@ export const readConfig = (
     apiExplorer:
       read.boolean("ENABLE_API_EXPLORER", false) || !runtime.isProduction,
     corsOrigins: read.list("CORS_ORIGINS", ["http://localhost:3000"]),
+    trustedProxies: read.list("TRUSTED_PROXIES", []),
   };
 
   const hasuraProtocol = read.oneOf(
