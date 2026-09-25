@@ -1,3 +1,4 @@
+import { UnauthorizedException } from "@nestjs/common";
 import type { Request } from "express";
 
 /**
@@ -34,6 +35,26 @@ export type AuthOutcome = "allow" | "reject" | "would_reject";
 export type RequestWithPrincipal = Request & {
   listener?: Listener;
   principal?: Principal;
+};
+
+/**
+ * The user a request is from, for a route that cannot be served without
+ * one.
+ *
+ * The guard has already refused a request with no principal on any route
+ * marked `@RequiresIdentity()`, so this throws only where that was
+ * forgotten -- which is exactly why it throws rather than asserting the
+ * type away. A service principal reaching a user route is the other case:
+ * a certificate on the services listener is not a person, and it has no
+ * sessions and no email to describe.
+ */
+export const requireUser = (
+  principal: Principal | undefined,
+): UserPrincipal => {
+  if (principal?.kind !== "user") {
+    throw new UnauthorizedException();
+  }
+  return principal;
 };
 
 /** The name a request's principal is known by, for logs and metrics. */

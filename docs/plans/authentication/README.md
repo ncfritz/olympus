@@ -149,7 +149,13 @@ on `3443`. Before phase 8 the gateway needs a service path for the agent
 4. **Endpoints** (public, under `/v1/auth`): `authorize`,
    `callback/:provider`, `token` (`authorization_code`, `refresh_token`),
    `logout`, plus `/.well-known/jwks.json`. For signed-in users:
-   `DescribeCurrentUser`, `ListSessions`, `RevokeSession`.
+   `DescribeCurrentUser`, `ListSessions`, `RevokeSession` — **done
+   2026-09-25**, all three enforced regardless of the listener's mode
+   (`@RequiresIdentity`), because an endpoint whose subject is the caller
+   has no answer without one. `logout` is the one still missing, and it is
+   not made redundant by `RevokeSession`: the site's refresh token is in an
+   httpOnly cookie, and signing out has to clear it or the browser keeps
+   presenting a revoked token.
 5. **Tokens**: ES256 access tokens (10 minutes; `sub`, `client_id`,
    `aud`, `roles`, `auth_time` from the session's creation, `kid`); opaque refresh tokens (30 days), rotated, with
    reuse detection revoking the session. Keys from `AUTH_SIGNING_KEYS`

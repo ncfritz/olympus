@@ -171,6 +171,89 @@ describe("createSession", () => {
   });
 });
 
+/** The user every session below belongs to. */
+const ROW_ID = ROW.id;
+
+describe("listSessions", () => {
+  const SESSION_ROW = {
+    id: "9c2f4b1a-0000-4000-8000-0000000000aa",
+    userId: ROW_ID,
+    clientId: "olympus-site",
+    deviceName: null,
+    createdTime: "2026-09-24T12:00:00+00:00",
+    lastUsedTime: null,
+    expiresTime: "2026-10-24T12:00:00+00:00",
+    revokedTime: null,
+  };
+
+  it("asks only for the caller's live, unexpired sessions", async () => {
+    const { graphql, calls } = client({
+      ListSessions: { olympus_sessions: [SESSION_ROW] },
+    });
+    const now = new Date("2026-09-25T00:00:00Z");
+    await new UserDirectoryService(graphql).listSessions(ROW_ID, now);
+    expect(calls[0]?.variables).toEqual({
+      userId: ROW_ID,
+      now: "2026-09-25T00:00:00.000Z",
+    });
+  });
+
+  it("returns the rows as they came", async () => {
+    const { graphql } = client({
+      ListSessions: { olympus_sessions: [SESSION_ROW] },
+    });
+    await expect(
+      new UserDirectoryService(graphql).listSessions(ROW_ID),
+    ).resolves.toEqual([SESSION_ROW]);
+  });
+
+  it("is empty rather than failing when there are none", async () => {
+    const { graphql } = client({ ListSessions: { olympus_sessions: [] } });
+    await expect(
+      new UserDirectoryService(graphql).listSessions(ROW_ID),
+    ).resolves.toEqual([]);
+  });
+});
+
+describe("revokeSessionForUser", () => {
+  const answered = (affected: number) => ({
+    RevokeSessionForUser: {
+      update_olympus_sessions: { affected_rows: affected },
+    },
+  });
+  const SESSION = "9c2f4b1a-0000-4000-8000-0000000000aa";
+
+  it("matches on the user as well as the session", async () => {
+    const { graphql, calls } = client(answered(1));
+    await new UserDirectoryService(graphql).revokeSessionForUser(
+      SESSION,
+      ROW_ID,
+    );
+    // Without userId in the where clause this endpoint would end anybody's
+    // session for anybody who could guess an id.
+    expect(calls[0]?.variables).toMatchObject({
+      id: SESSION,
+      userId: ROW_ID,
+    });
+  });
+
+  it("is true when it revoked a session", async () => {
+    const { graphql } = client(answered(1));
+    await expect(
+      new UserDirectoryService(graphql).revokeSessionForUser(SESSION, ROW_ID),
+    ).resolves.toBe(true);
+  });
+
+  it("is false when nothing matched", async () => {
+    // Somebody else's session, one that does not exist, and one already
+    // revoked are all this: the caller cannot tell which.
+    const { graphql } = client(answered(0));
+    await expect(
+      new UserDirectoryService(graphql).revokeSessionForUser(SESSION, ROW_ID),
+    ).resolves.toBe(false);
+  });
+});
+
 describe("normalizeEmail", () => {
   it.each([
     ["lowercases", "Neil@Example.COM", "neil@example.com"],

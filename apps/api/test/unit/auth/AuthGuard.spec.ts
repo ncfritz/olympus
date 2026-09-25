@@ -4,7 +4,11 @@ import type { Reflector } from "@nestjs/core";
 import { register } from "prom-client";
 import { beforeEach, describe, expect, it } from "vitest";
 import { AuthGuard } from "../../../src/auth/AuthGuard";
-import { IS_PUBLIC, REQUIRED_ROLES } from "../../../src/auth/authDecorators";
+import {
+  IS_PUBLIC,
+  REQUIRED_ROLES,
+  REQUIRES_IDENTITY,
+} from "../../../src/auth/authDecorators";
 import type {
   RequestWithPrincipal,
   ServicePrincipal,
@@ -134,6 +138,41 @@ describe("AuthGuard", () => {
     ).rejects.toThrow(UnauthorizedException);
     expect(await counted()).toEqual([
       'auth_decisions_total{listener="users",outcome="reject",reason="no credentials"} 1',
+    ]);
+  });
+
+  it("rejects a RequiresIdentity route in report mode", async () => {
+    // Report mode serves what it would refuse, which is right for an
+    // endpoint that has a job either way. "Describe the current user" does
+    // not: with no principal there is nothing to describe.
+    await expect(
+      guard(
+        { reason: "no credentials" },
+        { [REQUIRES_IDENTITY]: true },
+      ).canActivate(context(request({ listener: "users" }))),
+    ).rejects.toThrow(UnauthorizedException);
+    // Counted as a real rejection, not a would_reject: it was one.
+    expect(await counted()).toEqual([
+      'auth_decisions_total{listener="users",outcome="reject",reason="no credentials"} 1',
+    ]);
+  });
+
+  it("still reports a role failure on a RequiresIdentity route in report mode", async () => {
+    // The principal is there; only the role is missing. RequiresIdentity is
+    // about having an identity at all, so this stays a report-mode pass --
+    // otherwise adding the decorator would quietly enforce roles too.
+    const req = request({ listener: "services" });
+    expect(
+      await guard(
+        { principal: AGENT },
+        {
+          [REQUIRES_IDENTITY]: true,
+          [REQUIRED_ROLES]: ["admin"],
+        },
+      ).canActivate(context(req)),
+    ).toBe(true);
+    expect(await counted()).toEqual([
+      'auth_decisions_total{listener="services",outcome="would_reject",reason="role"} 1',
     ]);
   });
 

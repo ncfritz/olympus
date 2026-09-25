@@ -14,6 +14,18 @@ export type DirectoryUser = {
   roles: string[];
 };
 
+/** A session as the list query returns it: BASE_SESSION's columns. */
+export type ListedSession = {
+  id: string;
+  userId: string;
+  clientId: string;
+  deviceName: string | null;
+  createdTime: string;
+  lastUsedTime: string | null;
+  expiresTime: string;
+  revokedTime: string | null;
+};
+
 export type GraphQlSession = {
   id: string;
   userId: string;
@@ -374,12 +386,26 @@ export class UserDirectoryService {
     });
   }
 
-  /** A user's live sessions, newest first (ListSessions, step 8). */
-  async listSessions(userId: string): Promise<unknown[]> {
+  /**
+   * A user's live sessions, newest first.
+   *
+   * Scoped by the user, and the caller passes their own id from their own
+   * token: there is no way to ask for somebody else's. Expired sessions are
+   * filtered here rather than swept, because a refresh checks the expiry
+   * anyway and a background sweep would be a second thing to get wrong.
+   */
+  async listSessions(
+    userId: string,
+    now: Date = new Date(),
+  ): Promise<ListedSession[]> {
     const query = gql`
-      query ListSessions($userId: uuid!) {
+      query ListSessions($userId: uuid!, $now: timestamptz!) {
         olympus_sessions(
-          where: { userId: { _eq: $userId }, revokedTime: { _is_null: true } }
+          where: {
+            userId: { _eq: $userId }
+            revokedTime: { _is_null: true }
+            expiresTime: { _gt: $now }
+          }
           order_by: { createdTime: desc }
         ) {
           ${BASE_SESSION}
@@ -387,8 +413,54 @@ export class UserDirectoryService {
       }
     `;
     const response = await this.graphQLClient.request<{
-      olympus_sessions: unknown[];
-    }>(query, { userId });
+      olympus_sessions: ListedSession[];
+    }>(query, { userId, now: now.toISOString() });
     return response.olympus_sessions;
+  }
+
+  /**
+   * Revokes one of a user's own sessions, and says whether it did.
+   *
+   * Separate from {@link revokeSession}, which takes an id and nothing else.
+   * That is right for reuse detection, which has already established which
+   * session it holds; as an endpoint it would be a straight IDOR — any
+   * signed-in user could end anyone's session by guessing a uuid. Here the
+   * user has to match too.
+   *
+   * False covers every way this can fail to change a row: no such session,
+   * someone else's, or already revoked. The caller cannot tell them apart,
+   * which is the point — distinguishing "not yours" from "does not exist"
+   * would confirm that an id is somebody's.
+   */
+  async revokeSessionForUser(
+    sessionId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const mutation = gql`
+      mutation RevokeSessionForUser(
+        $id: uuid!
+        $userId: uuid!
+        $now: timestamptz!
+      ) {
+        update_olympus_sessions(
+          where: {
+            id: { _eq: $id }
+            userId: { _eq: $userId }
+            revokedTime: { _is_null: true }
+          }
+          _set: { revokedTime: $now }
+        ) {
+          affected_rows
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      update_olympus_sessions: { affected_rows: number };
+    }>(mutation, {
+      id: sessionId,
+      userId,
+      now: new Date().toISOString(),
+    });
+    return response.update_olympus_sessions.affected_rows === 1;
   }
 }

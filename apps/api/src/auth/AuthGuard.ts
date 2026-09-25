@@ -9,7 +9,7 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { authConfig, type AuthConfigType } from "../config/configuration";
-import { IS_PUBLIC, REQUIRED_ROLES } from "./authDecorators";
+import { IS_PUBLIC, REQUIRED_ROLES, REQUIRES_IDENTITY } from "./authDecorators";
 import { recordAuthDecision } from "./authMetrics";
 import {
   type AuthOutcome,
@@ -73,7 +73,15 @@ export class AuthGuard implements CanActivate {
     }
 
     const failure = reason ?? `needs one of ${required?.join(", ")}`;
-    const enforcing = this.auth.modes[listener] === "enforce";
+    // A route that cannot be served without a principal is enforced whatever
+    // mode the listener is in (see RequiresIdentity).
+    const enforcing =
+      this.auth.modes[listener] === "enforce" ||
+      (principal === undefined &&
+        this.reflector.getAllAndOverride<boolean>(REQUIRES_IDENTITY, [
+          context.getHandler(),
+          context.getClass(),
+        ]) === true);
     this.record(
       request,
       listener,

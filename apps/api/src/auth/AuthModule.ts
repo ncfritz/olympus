@@ -11,7 +11,10 @@ import { CompleteSignInController } from "./controllers/CompleteSignInController
 import { CreateTokenController } from "./controllers/CreateTokenController";
 import { OidcProviderRegistry } from "./providers/OidcProviderRegistry";
 import { ProviderLoginService } from "./providers/ProviderLoginService";
+import { DescribeCurrentUserController } from "./controllers/DescribeCurrentUserController";
 import { DescribeJsonWebKeySetController } from "./controllers/DescribeJsonWebKeySetController";
+import { ListSessionsController } from "./controllers/ListSessionsController";
+import { RevokeSessionController } from "./controllers/RevokeSessionController";
 import { SigningKeyService } from "./tokens/SigningKeyService";
 import { ServiceIdentityService } from "./services/ServiceIdentityService";
 
@@ -26,6 +29,11 @@ import { ServiceIdentityService } from "./services/ServiceIdentityService";
     CompleteSignInController,
     CreateTokenController,
     DescribeJsonWebKeySetController,
+    // Static before parameterised, and both before /sessions/:sessionId:
+    // Express tries routes in registration order.
+    DescribeCurrentUserController,
+    ListSessionsController,
+    RevokeSessionController,
   ],
   providers: [
     AuthorizationCodeService,
