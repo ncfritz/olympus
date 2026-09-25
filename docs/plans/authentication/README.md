@@ -143,7 +143,9 @@ on `3443`. Before phase 8 the gateway needs a service path for the agent
    an API OAuth application with the API's callback URLs. Identities link
    to users by verified email on first sign-in; a user who doesn't exist
    is refused. `pnpm --filter @ncfritz/olympus-api auth:user` adds users
-   and sets roles.
+   and sets roles — `add`, `show`, `list`, `roles`, `disable`/`enable` and
+   `unlink` (for when a first sign-in links the wrong account). See
+   [the user directory](../../guides/users.md). **done 2026-09-25.**
 4. **Endpoints** (public, under `/v1/auth`): `authorize`,
    `callback/:provider`, `token` (`authorization_code`, `refresh_token`),
    `logout`, plus `/.well-known/jwks.json`. For signed-in users:

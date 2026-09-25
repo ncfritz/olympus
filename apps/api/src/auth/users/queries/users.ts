@@ -8,6 +8,14 @@ export const USER_WITH_ROLES = `${BASE_USER}
     role
   }`;
 
+/** A user as the `auth:user` CLI shows them: roles and linked identities. */
+export const ADMIN_USER = `${USER_WITH_ROLES}
+  identities {
+    provider
+    subject
+    email
+  }`;
+
 export const BASE_SESSION = `id
   userId
   clientId

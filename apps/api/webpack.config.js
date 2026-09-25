@@ -14,9 +14,14 @@ console.log("Current Mode:", mode);
 
 module.exports = {
   // main: the server. openapi: writes the OpenAPI documents (pnpm openapi).
+  // authUser: the user directory CLI (pnpm auth:user). It ships in the image
+  // on purpose — in production the Hasura admin secret is a file inside the
+  // container, so `docker compose exec olympus-api node dist/authUser.js` is
+  // how users are administered there.
   entry: {
     main: "./src/main.ts",
     openapi: "./src/openapi.ts",
+    authUser: "./src/authUser.ts",
   },
   mode: mode,
   target: "node",

@@ -28,6 +28,9 @@
     "dev": "nest start --env-file dev.env --watch",
     "dev:local": "nest start --env-file local.env --watch",
     "dev:prod": "nest start --env-file production.env --watch",
+    "auth:user": "node --env-file=dev.env dist/authUser.js",
+    "auth:user:local": "node --env-file=local.env dist/authUser.js",
+    "auth:user:prod": "node --env-file=production.env dist/authUser.js",
     "check:openapi": "rm -rf .openapi-check && node dist/openapi.js .openapi-check > /dev/null && diff -r openapi .openapi-check && rm -rf .openapi-check",
     "lint:openapi": "spectral lint \"openapi/*.json\" --fail-severity=error"
   },

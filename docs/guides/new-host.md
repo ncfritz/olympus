@@ -176,6 +176,18 @@ name in an `upstream` must resolve when nginx _starts_: one service being
 down then stops nginx from starting at all, instead of producing a 502
 for that service alone.
 
+## 9. The first user
+
+The directory is empty, so nobody can sign in yet — signing in does not
+create anyone (ADR 0018). Add yourself:
+
+```
+docker compose exec olympus-api node dist/authUser.js add you@example.com "Your Name" admin
+```
+
+See [the user directory](users.md) for the rest of the commands, and for
+what to look at when a first sign-in links the wrong account.
+
 ## What tends to go wrong
 
 From the two rehearsals, roughly in the order they were found:
