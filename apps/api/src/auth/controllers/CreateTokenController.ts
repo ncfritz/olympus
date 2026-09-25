@@ -1,4 +1,3 @@
-import { publishedUrl } from "@ncfritz/olympus-nest";
 import { CreateTokenResponse } from "@ncfritz/olympus-model";
 import {
   Body,
@@ -19,6 +18,7 @@ import {
 import { type Request, type Response } from "express";
 import { authConfig, type AuthConfigType } from "../../config/configuration";
 import { Public } from "../authDecorators";
+import { REFRESH_COOKIE, refreshCookieOptions } from "../refreshCookie";
 import { AUTH_LIMITS, RateLimited } from "../limits/rateLimits";
 import { resolveClients, type RefreshDelivery } from "../clients/clients";
 import { AuthorizationCodeService } from "../codes/AuthorizationCodeService";
@@ -31,9 +31,6 @@ import {
   type NewRefreshToken,
 } from "../tokens/refreshTokens";
 import { UserDirectoryService } from "../users/UserDirectoryService";
-
-/** The cookie the site's refresh token lives in. */
-const REFRESH_COOKIE = "olympus_refresh";
 
 /**
  * Exchanges an authorization code for tokens.
@@ -247,10 +244,7 @@ export class CreateTokenController {
       // Scoped to the auth path, so it is sent to /token and /logout and
       // nowhere else, and httpOnly so no script can read it.
       response.cookie(REFRESH_COOKIE, issued.refresh.token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "strict",
-        path: this.refreshCookiePath(),
+        ...refreshCookieOptions(this.auth.users.publicBaseUrl),
         expires: issued.refresh.expiresAt,
       });
     } else {
@@ -389,16 +383,5 @@ export class CreateTokenController {
       keys,
     });
     this.logger.log(`refreshed session ${session.id} for ${clientId}`);
-  }
-
-  /**
-   * Where the browser sends the refresh cookie. The API is published under
-   * a path (`/api`), so the cookie's path has to include it — otherwise the
-   * browser never sends the cookie to the endpoint that needs it.
-   */
-  private refreshCookiePath(): string {
-    const base = this.auth.users.publicBaseUrl;
-    if (base === undefined) return "/v1/auth";
-    return publishedUrl(base, "/v1/auth").pathname;
   }
 }

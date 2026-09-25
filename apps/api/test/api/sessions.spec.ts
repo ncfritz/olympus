@@ -203,6 +203,73 @@ describe("the signed-in user's own endpoints", () => {
     });
   });
 
+  describe("SignOut", () => {
+    const revoked = (affected: number) =>
+      t.graphql.on("RevokeSessionForUser", {
+        update_olympus_sessions: { affected_rows: affected },
+      });
+
+    /** The Set-Cookie header for the refresh cookie, if there is one. */
+    const refreshCookie = (res: { headers: Record<string, unknown> }) =>
+      ((res.headers["set-cookie"] as string[] | undefined) ?? []).find(
+        (cookie) => cookie.startsWith("olympus_refresh="),
+      );
+
+    it("revokes the session its own token was issued from", async () => {
+      revoked(1);
+      const res = await t
+        .http()
+        .post("/v1/auth/logout")
+        .set("authorization", `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ signedOut: true });
+      // From the token's sid and sub, not from anything in the request.
+      expect(
+        t.graphql.calls("RevokeSessionForUser")[0]?.variables,
+      ).toMatchObject({ id: SESSION, userId: USER });
+    });
+
+    it("clears the refresh cookie on the path it was set with", async () => {
+      // The reason this endpoint exists rather than being RevokeSession on
+      // your own sid: a browser only replaces a cookie when the name,
+      // domain and path match, so a cookie cleared on the wrong path stays
+      // put and the site keeps presenting a revoked token.
+      revoked(1);
+      const cookie = refreshCookie(
+        await t
+          .http()
+          .post("/v1/auth/logout")
+          .set("authorization", `Bearer ${token}`),
+      );
+      expect(cookie).toBeDefined();
+      expect(cookie).toContain("Path=/v1/auth");
+      expect(cookie).toContain("HttpOnly");
+      // Emptied and expired in the past: that is what clearing is.
+      expect(cookie).toMatch(/^olympus_refresh=;/);
+      expect(cookie).toContain("Expires=Thu, 01 Jan 1970");
+    });
+
+    it("clears the cookie even when the session had already ended", async () => {
+      // Otherwise signing out of an expired session leaves the dead cookie
+      // behind, which is the failure worth avoiding.
+      revoked(0);
+      const res = await t
+        .http()
+        .post("/v1/auth/logout")
+        .set("authorization", `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ signedOut: false });
+      expect(refreshCookie(res)).toBeDefined();
+    });
+
+    it("refuses a request with no token, and touches nothing", async () => {
+      const res = await t.http().post("/v1/auth/logout");
+      expect(res.status).toBe(401);
+      expect(t.graphql.calls("RevokeSessionForUser")).toEqual([]);
+      expect(refreshCookie(res)).toBeUndefined();
+    });
+  });
+
   describe("RevokeSession", () => {
     const revoked = (affected: number) =>
       t.graphql.on("RevokeSessionForUser", {

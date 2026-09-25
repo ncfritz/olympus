@@ -15,6 +15,7 @@ import { DescribeCurrentUserController } from "./controllers/DescribeCurrentUser
 import { DescribeJsonWebKeySetController } from "./controllers/DescribeJsonWebKeySetController";
 import { ListSessionsController } from "./controllers/ListSessionsController";
 import { RevokeSessionController } from "./controllers/RevokeSessionController";
+import { SignOutController } from "./controllers/SignOutController";
 import { SigningKeyService } from "./tokens/SigningKeyService";
 import { ServiceIdentityService } from "./services/ServiceIdentityService";
 
@@ -34,6 +35,7 @@ import { ServiceIdentityService } from "./services/ServiceIdentityService";
     DescribeCurrentUserController,
     ListSessionsController,
     RevokeSessionController,
+    SignOutController,
   ],
   providers: [
     AuthorizationCodeService,

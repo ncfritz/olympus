@@ -256,3 +256,14 @@ export class RevokeSessionResponse {
   })
   signedOutThisDevice: boolean;
 }
+
+/** What signing out did. */
+export class SignOutResponse {
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "Whether a live session was ended. False where it had already expired or been revoked — signing out twice is not an error",
+  })
+  signedOut: boolean;
+}
