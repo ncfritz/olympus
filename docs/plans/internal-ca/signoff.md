@@ -16,21 +16,24 @@ clients, devices.
 
 ## Fixtures
 
-| Fixture                     | What                                                                          |
-| --------------------------- | ----------------------------------------------------------------------------- |
-| `pki-admin`                 | a user with the `pki-admin` role                                              |
-| `pki-operator`              | a user with the `pki-operator` role                                           |
-| `user-reader`               | a user with no PKI role                                                       |
-| `csr-service`               | a CSR for a real agent's CN, OU `test`, P-256                                 |
-| `csr-out-of-bounds`         | a CSR for Internal TLS naming `example.com` beside an internal name           |
-| `csr-tampered`              | `csr-service` with its signature broken                                       |
-| `svc-issued`, `svc-revoked` | service certificates issued by the CA; valid / revoked                        |
-| `dev-escrowed`              | a device certificate with a generated, escrowed key                           |
-| `eab-nas`                   | an EAB credential whose policy allows `nas.internal.ncfritz.net` only         |
-| `eab-none`                  | an ACME account registered without EAB (attempted)                            |
-| `acme-clients`              | certbot, lego, acme.sh and Caddy in containers, each able to answer `http-01` |
-| `crl-root`, `crl-forged`    | the root's list signed in XCA; a list for the root signed by another key      |
-| `printer`                   | the HP Color LaserJet Pro MFP M479fdw and its embedded web server             |
+| Fixture                        | What                                                                            |
+| ------------------------------ | ------------------------------------------------------------------------------- |
+| `pki-admin`                    | a user with the `pki-admin` role                                                |
+| `pki-operator`                 | a user with the `pki-operator` role                                             |
+| `user-reader`                  | a user with no PKI role                                                         |
+| `csr-service`                  | a CSR for a real agent's CN, OU `test`, P-256                                   |
+| `csr-out-of-bounds`            | a CSR for TLS CA naming `example.com` beside an internal name                   |
+| `csr-tampered`                 | `csr-service` with its signature broken                                         |
+| `svc-issued`, `svc-revoked`    | service certificates issued by the CA; valid / revoked                          |
+| `dev-escrowed`                 | a device certificate with a generated, escrowed key                             |
+| `eab-nas`                      | an EAB credential whose policy allows `nas.internal.ncfritz.net` only           |
+| `eab-none`                     | an ACME account registered without EAB (attempted)                              |
+| `acme-clients`                 | certbot, lego, acme.sh and Caddy in containers, each able to answer `http-01`   |
+| `crl-root`, `crl-forged`       | the root's list signed in a ceremony; a list for the root signed by another key |
+| `root-key`                     | the dev root's and intermediates' keys as encrypted PKCS#8, with passphrases    |
+| `ssh-user-key`, `ssh-host-key` | an Ed25519 public key for a user; a host's `ssh_host_ed25519_key.pub`           |
+| `endpoint-stale`               | an nginx on the dev stack still serving a certificate that has been renewed     |
+| `printer`                      | the HP Color LaserJet Pro MFP M479fdw and its embedded web server               |
 
 Every run records: date, environment, build (git commit), who ran it, and
 per case pass/fail with the evidence named in the case. A phase is signed
@@ -69,9 +72,9 @@ recovery passphrase is used.
 | ---- | --- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------ |
 | C2.1 | DEV | List the signer container's listening sockets; try to reach it from another container | no TCP listener; only the Unix socket                                   | `ss -lx`/`ss -lt` output |
 | C2.2 | DEV | Call the socket without the token, and with a wrong one                               | `401`                                                                   | response                 |
-| C2.3 | DEV | Ask the signer directly to sign `csr-out-of-bounds` under Internal TLS                | refused: outside the name constraints                                   | response; signer log     |
+| C2.3 | DEV | Ask the signer directly to sign `csr-out-of-bounds` under TLS CA                      | refused: outside the name constraints                                   | response; signer log     |
 | C2.4 | DEV | Ask for validity beyond the issuer's maximum, and past the issuer's own expiry        | refused                                                                 | response                 |
-| C2.5 | DEV | Ask Olympus Devices to sign `serverAuth`; Internal TLS to sign `clientAuth`           | refused                                                                 | response                 |
+| C2.5 | DEV | Ask Olympus Devices to sign `serverAuth`; TLS CA to sign `clientAuth`                 | refused                                                                 | response                 |
 | C2.6 | DEV | Ask any issuer to sign `CA:TRUE`                                                      | refused                                                                 | response                 |
 | C2.7 | DEV | A certificate and a CRL from each issuer                                              | `openssl verify` against the chain passes; `openssl crl -verify` passes | `openssl` output         |
 
@@ -108,7 +111,7 @@ recovery passphrase is used.
 | C5.4 | DEV | Fetch `http://…/crl/<issuer>.crl` and `/ca/<issuer>.crt`                | plain HTTP `200`, no redirect, no authentication; DER                               | `curl -v`                         |
 | C5.5 | DEV | Make the distribution URL unreachable; revoke                           | publication recorded as failed; the alert fires; the list is retried                | log; alert                        |
 | C5.6 | DEV | A published list within 2 days of its next update (short test lifetime) | the expiry alert fires                                                              | alert                             |
-| C5.7 | DEV | Upload `crl-root`; upload `crl-forged`                                  | the first is verified and published; the second is refused                          | response; published directory     |
+| C5.7 | DEV | Sign the root's list in a ceremony; offer `crl-forged` for publication  | the first is verified and published; the second is refused                          | response; published directory     |
 | C5.8 | DEV | Seal; wait past a daily publication; unseal                             | the missed list is signed as soon as the signer unseals                             | log; `crls` table                 |
 
 ## C6 — Relying parties
@@ -133,14 +136,14 @@ recovery passphrase is used.
 
 ## C8 — Cutover from XCA
 
-| Id   | Env | Steps                                                   | Expected                                                                                  | Evidence                           |
-| ---- | --- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------- |
-| C8.1 | INT | After the ceremony, the Internal TLS certificate        | signed by the root; path length 0; name constraints as the ADR; key never left the signer | `openssl x509 -text`; ceremony log |
-| C8.2 | INT | Every certificate XCA issued under Services and Devices | present with its serial, dates and status; revoked ones revoked with their dates          | comparison against the XCA export  |
-| C8.3 | INT | The first published lists                               | numbers above XCA's last for each issuer; the same revoked serials XCA's last lists held  | `openssl crl -text` side by side   |
-| C8.4 | INT | Existing agents and devices, untouched                  | keep working (authentication F6.1, F7.1, F9.1)                                            | as those cases                     |
-| C8.5 | INT | The exported XCA intermediate key files                 | deleted; XCA used afterwards only for the root                                            | ceremony log                       |
-| C8.6 | INT | `harpocrates`'s own `9443` certificate                  | issued by Internal TLS; a LAN client trusting the root connects without a warning         | `openssl s_client`                 |
+| Id   | Env | Steps                                                        | Expected                                                                                                                           | Evidence                           |
+| ---- | --- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| C8.1 | INT | After the ceremonies, the TLS CA and Signing CA certificates | signed by Intermediate CA 1 and 2; path length 0; name constraints and EKUs as the ADR; keys never left the signer                 | `openssl x509 -text`; ceremony log |
+| C8.2 | INT | Every certificate XCA issued, under every CA                 | present with its serial, dates and status; revoked ones revoked with their dates                                                   | comparison against the XCA export  |
+| C8.3 | INT | The first published lists                                    | numbers above XCA's last for each issuer; the same revoked serials XCA's last lists held                                           | `openssl crl -text` side by side   |
+| C8.4 | INT | Existing agents and devices, untouched                       | keep working (authentication F6.1, F7.1, F9.1)                                                                                     | as those cases                     |
+| C8.5 | INT | The exported XCA key files; XCA itself                       | intermediate keys deleted; the root's only on offline media and in the password manager; the XCA database archived and XCA retired | ceremony log                       |
+| C8.6 | INT | `harpocrates`'s own `9443` certificate                       | issued by TLS CA; a LAN client trusting the root connects without a warning                                                        | `openssl s_client`                 |
 
 ## C9 — Renewal
 
@@ -158,7 +161,7 @@ recovery passphrase is used.
 | Id     | Env | Steps                                                                                 | Expected                                                                         | Evidence                 |
 | ------ | --- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------ |
 | C10.1  | DEV | Register `eab-none`                                                                   | `externalAccountRequired`; no account                                            | client output            |
-| C10.2  | DEV | Each of `acme-clients` registers with `eab-nas` and obtains a certificate (`http-01`) | certificate for `nas.internal…`, 90 days, Internal TLS                           | client output; `openssl` |
+| C10.2  | DEV | Each of `acme-clients` registers with `eab-nas` and obtains a certificate (`http-01`) | certificate for `nas.internal…`, 90 days, TLS CA                                 | client output; `openssl` |
 | C10.3  | DEV | Same with `tls-alpn-01` (the clients that support it)                                 | issued                                                                           | client output            |
 | C10.4  | DEV | With `eab-nas`, order another internal name                                           | order refused before any challenge (`rejectedIdentifier`)                        | client output; log       |
 | C10.5  | DEV | Order `example.com` with a policy that (wrongly) allowed it                           | refused at signing by the name constraints                                       | log; signer log          |
@@ -169,15 +172,15 @@ recovery passphrase is used.
 | C10.10 | INT | The Mac Mini nginx renews `olympus.internal` unattended                               | renewed before 30 days remain; nginx reloaded; browsers show the new certificate | certificate dates; log   |
 | C10.11 | INT | The NAS DSM certificate through acme.sh's Synology deploy hook                        | DSM serves the new certificate                                                   | browser                  |
 
-## C11 — The Harpocrates area in the site
+## C11 — The console
 
-| Id    | Env | Steps                                                              | Expected                                                                          | Evidence    |
-| ----- | --- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------- | ----------- |
-| C11.1 | INT | As `pki-admin`, every action of the certificates guide from the UI | each works: issue (both modes), renew, revoke, download, export                   | screenshots |
-| C11.2 | INT | Seal the signer                                                    | every page of the area shows sealed; actions that sign are disabled; unseal works | screenshot  |
-| C11.3 | INT | Export an escrowed key with an old sign-in                         | the site sends the user through sign-in again, then exports                       | screenshot  |
-| C11.4 | INT | As `user-reader`                                                   | the area is not offered; direct URLs show "not allowed"                           | screenshot  |
-| C11.5 | INT | Create an EAB credential with a name policy; use it (C10.2)        | the account appears under the credential with its orders                          | screenshot  |
+| Id    | Env | Steps                                                                   | Expected                                                                          | Evidence    |
+| ----- | --- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------- |
+| C11.1 | INT | As `pki-admin`, every action of the certificates guide from the console | each works: issue (both modes), renew, revoke, download, export                   | screenshots |
+| C11.2 | INT | Seal the signer                                                         | every page of the area shows sealed; actions that sign are disabled; unseal works | screenshot  |
+| C11.3 | INT | Export an escrowed key with an old sign-in                              | the console sends the user through sign-in again, then exports                    | screenshot  |
+| C11.4 | INT | As `user-reader`                                                        | the console is not offered; direct URLs show "not allowed"                        | screenshot  |
+| C11.5 | INT | Create an EAB credential with a name policy; use it (C10.2)             | the account appears under the credential with its orders                          | screenshot  |
 
 ## C12 — The printer
 
@@ -187,14 +190,54 @@ recovery passphrase is used.
 | C12.2 | INT | Browse to the printer's EWS over HTTPS from a laptop trusting the root           | no certificate warning; the certificate is the one issued            | browser             |
 | C12.3 | INT | If C12.1 fails: the modern PKCS#12, then P-256 instead of RSA                    | the combination that works is recorded and the profile settled on it | EWS screenshot; ADR |
 
+## C13 — Ceremonies
+
+| Id    | Env | Steps                                                                                                                              | Expected                                                                                   | Evidence                     |
+| ----- | --- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------- |
+| C13.1 | DEV | Create a root in a ceremony                                                                                                        | a self-signed root, path length 2; its key returned encrypted once; none left in the store | `openssl x509`; signer store |
+| C13.2 | DEV | Open a ceremony with `root-key`; sign an intermediate and the root's list; close; then, with the intermediate's key, an issuing CA | all verify to the root; path lengths 1 and 0; each key is gone after its ceremony          | `openssl verify`; store      |
+| C13.3 | DEV | Open a ceremony and restart the signer; separately, open one and wait an hour                                                      | the root's key is gone in both; signing with it is refused                                 | signer log; response         |
+| C13.4 | DEV | Ask an online intermediate to sign `CA:TRUE`                                                                                       | refused                                                                                    | response; signer log         |
+| C13.5 | INT | The production root and intermediates after the cutover                                                                            | imported as offline; their keys only on offline media and in the password manager          | store; ceremony log          |
+
+## C14 — Keys and enrollments
+
+| Id    | Env | Steps                                                                        | Expected                                                                       | Evidence           |
+| ----- | --- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------ |
+| C14.1 | DEV | Submit `csr-service`; then a new CSR with the same key for a different CN    | the first issues; the second is refused: the key belongs to another enrollment | response; audit    |
+| C14.2 | DEV | Renew `svc-issued` keeping its key; then again past `maxKeyAge`              | the first renews in the same enrollment; the second requires a new key         | response; database |
+| C14.3 | DEV | Submit a CSR with a Debian weak key; one with an issuer's public key         | both refused, with the reason                                                  | response; audit    |
+| C14.4 | DEV | Revoke `svc-issued` for `keyCompromise`; submit its key again                | every certificate in its lineage revoked; the key refused for good             | database; audit    |
+| C14.5 | DEV | Request from a CA inside its last issuing year, with a successor present     | issued by the successor, full validity                                         | `openssl x509`     |
+| C14.6 | DEV | `harpocrates audit verify`; alter one event in the database and verify again | the chain verifies; then the altered event is named                            | CLI output         |
+
+## C15 — SSH certificates
+
+| Id    | Env | Steps                                                                             | Expected                                           | Evidence                  |
+| ----- | --- | --------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------- |
+| C15.1 | DEV | Issue `ssh-user` for `ssh-user-key`; log in to a host trusting the User CA        | accepted; valid 16 hours with the principals asked | `ssh -v`; `ssh-keygen -L` |
+| C15.2 | DEV | Issue `ssh-host` for `ssh-host-key`; connect from a client with `@cert-authority` | no host-key prompt                                 | `ssh -v`                  |
+| C15.3 | DEV | Revoke the user certificate; the host fetches the KRL                             | the login is refused                               | `sshd` log                |
+| C15.4 | DEV | Ask the Host CA to sign a user certificate                                        | refused                                            | response                  |
+
+## C16 — Monitoring and the dashboard
+
+| Id    | Env | Steps                                                                             | Expected                                                                                          | Evidence     |
+| ----- | --- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------ |
+| C16.1 | DEV | Issue a certificate inside its profile's threshold; let Prometheus scrape         | `certificate_expiry_days` below the threshold; the alert fires                                    | Alertmanager |
+| C16.2 | DEV | Stop the service; wait past a list's alert threshold                              | the alert still fires: paging does not depend on the CA                                           | Alertmanager |
+| C16.3 | DEV | Renew the certificate `endpoint-stale` serves without deploying it; run the check | deployed-versus-issued shows the endpoint serving the old serial                                  | API; metric  |
+| C16.4 | INT | Open the dashboard                                                                | the 90-day timeline, what needs a person, issuing windows, lists and seal state, matching the API | screenshot   |
+
 ## Sign-off matrix
 
-| Phase | Flows to pass                 |
-| ----- | ----------------------------- |
-| 1     | C1.1, C1.3–C1.9, C2 (DEV)     |
-| 2     | C3, C4.1–C4.6, C7 (DEV)       |
-| 3     | C5, C6.1 (DEV)                |
-| 4     | C8, C1.2, C5.4, C6, C4.7, C12 |
-| 5     | C9                            |
-| 6     | C10                           |
-| 7     | C11                           |
+| Phase | Flows to pass                          |
+| ----- | -------------------------------------- |
+| 1     | C1.1, C1.3–C1.9, C2, C13.1–C13.4 (DEV) |
+| 2     | C3, C4.1–C4.6, C7, C14 (DEV)           |
+| 3     | C5, C6.1, C16.1–C16.2 (DEV)            |
+| 4     | C8, C1.2, C5.4, C6, C4.7, C12, C13.5   |
+| 5     | C9, C16.3                              |
+| 6     | C10                                    |
+| 7     | C11, C16.4                             |
+| 8     | C15                                    |

@@ -1,13 +1,14 @@
 # Harpocrates
 
 The internal certificate authority ([ADR 0020](../../docs/decisions/0020-internal-certificate-authority.md),
-[plan](../../docs/plans/internal-ca/README.md)). Two processes, built,
-versioned and deployed together:
+[plan](../../docs/plans/internal-ca/README.md)). Two processes and a
+console, built, versioned and deployed together:
 
 | Package                                   | Language         | Does                                                                               |
 | ----------------------------------------- | ---------------- | ---------------------------------------------------------------------------------- |
 | `service/` `@ncfritz/harpocrates-service` | NestJS, Prisma   | Management API, issuance policy, revocation lists, renewal and ACME                |
 | `signer/` `@ncfritz/harpocrates-signer`   | Python (FastAPI) | Holds the private keys; generates keys, signs certificates and lists; nothing else |
+| `console/` `@ncfritz/harpocrates-console` | Next.js          | The operator's console on Olympus Control, `/harpocrates/ca` (phase 7)             |
 
 The service reaches the signer over a Unix socket with a shared token;
 the signer has no network listener. The service never sees a private key
