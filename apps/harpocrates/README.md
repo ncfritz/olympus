@@ -23,15 +23,33 @@ except one it hands to the operator once.
 
 ## Development
 
+Needs [uv](https://docs.astral.sh/uv/) on the PATH for the signer (it
+installs the Python version itself); the rules are
+[python.md](../../docs/conventions/python.md).
+
 ```sh
 cd apps/harpocrates
 docker compose up -d                          # harpocrates-postgres
 cp service/dev.env.example service/dev.env
-pnpm --filter @ncfritz/harpocrates-service dev
+cp signer/dev.env.example signer/dev.env
+pnpm --filter "@ncfritz/harpocrates-*" dev    # both, from the workspace
+curl --unix-socket .run/signer.sock http://signer/health
 ```
 
 `.run/` holds the signer's socket and development store; it is
 git-ignored.
+
+The signer's API document is committed (`signer/openapi/signer.json`),
+and so is the service's client for it (`service/src/generated/signer`),
+so building the service never needs Python. After changing the signer's
+API:
+
+```sh
+pnpm --filter @ncfritz/harpocrates-signer openapi
+pnpm --filter @ncfritz/harpocrates-service generate:signer
+```
+
+`check:conventions` fails on either until both are current.
 
 ## Naming
 

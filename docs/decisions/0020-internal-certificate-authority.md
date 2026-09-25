@@ -87,10 +87,12 @@ apps/harpocrates/
 
 - The workspace includes `apps/harpocrates/*` by name, not `apps/*/*`,
   so no other app is nested by accident.
-- `service` depends on `signer` (`workspace:*`, development only), so
-  Turbo builds the signer's document before the service generates its
-  client from it, as `packages/sdk` depends on `apps/api`. A change to the
-  signer's API breaks the service's build, not its runtime.
+- The service's client for the signer is generated from the signer's
+  committed document and committed with it (`src/generated/signer`), so
+  building the service, locally or in its image, never needs Python.
+  `check:conventions` regenerates it and fails on a difference, as
+  `check:openapi` does for the documents: a change to the signer's API
+  fails the check, not the service at runtime.
 - The signer is a single `uv` project. A root `uv` workspace waits for a
   second Python project.
 
