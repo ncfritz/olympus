@@ -37,6 +37,16 @@ export type ProviderIdentity = {
   emailVerified: boolean;
 };
 
+/**
+ * The form an address is compared in: the same expression the generated
+ * column uses. Plus-addressing is deliberately not stripped — the local
+ * part is opaque to everyone but the receiving server (RFC 5321), so
+ * `a+b@x` and `a@x` are not reliably the same mailbox, and guessing costs
+ * more than it saves.
+ */
+export const normalizeEmail = (email: string): string =>
+  email.trim().toLowerCase();
+
 const user = (row: GraphQlUser): DirectoryUser => ({
   id: row.id,
   displayName: row.displayName,
@@ -116,22 +126,29 @@ export class UserDirectoryService {
   }
 
   /**
-   * By email, exactly. Addresses are stored lowercased — a CHECK constraint
-   * insists — so this is an equality comparison rather than `_ilike`, which
-   * would treat an underscore in an address as a wildcard and match someone
-   * else's.
+   * By email, exactly, against the column Postgres generates as
+   * `lower(btrim(email))`. Equality rather than `_ilike`, which would treat
+   * an underscore in an address as a wildcard and match someone else's; and
+   * against the generated column rather than a normalized `email`, so the
+   * casing a person typed is still theirs.
+   *
+   * Only the input is normalized here. The stored key is the database's job,
+   * which is why nothing on the write path lowercases anything.
    */
   private async byEmail(email: string): Promise<GraphQlUser | undefined> {
     const query = gql`
       query DescribeUserByEmail($email: String!) {
-        olympus_users(where: { email: { _eq: $email } }, limit: 1) {
+        olympus_users(
+          where: { emailNormalized: { _eq: $email } }
+          limit: 1
+        ) {
           ${USER_WITH_ROLES}
         }
       }
     `;
     const response = await this.graphQLClient.request<{
       olympus_users: GraphQlUser[];
-    }>(query, { email: email.trim().toLowerCase() });
+    }>(query, { email: normalizeEmail(email) });
     return response.olympus_users[0];
   }
 
@@ -162,7 +179,8 @@ export class UserDirectoryService {
       userId,
       provider: identity.provider,
       subject: identity.subject,
-      email: identity.email.trim().toLowerCase(),
+      // As the provider gave it: this is the audit trail, not a key.
+      email: identity.email,
     });
   }
 

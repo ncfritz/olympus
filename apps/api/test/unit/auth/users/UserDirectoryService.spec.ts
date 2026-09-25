@@ -1,6 +1,9 @@
 import type { GraphQLClient } from "graphql-request";
 import { describe, expect, it, vi } from "vitest";
-import { UserDirectoryService } from "../../../../src/auth/users/UserDirectoryService";
+import {
+  normalizeEmail,
+  UserDirectoryService,
+} from "../../../../src/auth/users/UserDirectoryService";
 
 const ROW = {
   id: "5f1a0c6e-0000-4000-8000-000000000001",
@@ -123,7 +126,7 @@ describe("resolve", () => {
     );
   });
 
-  it("lowercases the email it looks up and the one it stores", async () => {
+  it("normalizes what it looks up, and stores the identity's as given", async () => {
     const { graphql, calls } = client({
       DescribeUserByIdentity: { olympus_user_identities: [] },
       DescribeUserByEmail: { olympus_users: [ROW] },
@@ -134,10 +137,12 @@ describe("resolve", () => {
     await service.resolve(identity({ email: "  Neil@Example.COM " }));
     const byEmail = calls.find((c) => c.operation === "DescribeUserByEmail");
     const link = calls.find((c) => c.operation === "CreateUserIdentity");
-    // The column carries a CHECK that it equals lower(email), so anything
-    // else would be a row nobody can find, or a failed insert.
+    // The lookup is against the generated column, so the input has to be
+    // normalized the same way Postgres computes it.
     expect(byEmail?.variables).toMatchObject({ email: "neil@example.com" });
-    expect(link?.variables).toMatchObject({ email: "neil@example.com" });
+    // The identity's email is the audit trail, not a key: it keeps the
+    // casing the provider gave, and nothing on the write path normalizes.
+    expect(link?.variables).toMatchObject({ email: "  Neil@Example.COM " });
   });
 });
 
@@ -163,5 +168,23 @@ describe("createSession", () => {
       deviceName: null,
       expiresTime: "2026-10-24T12:00:00.000Z",
     });
+  });
+});
+
+describe("normalizeEmail", () => {
+  it.each([
+    ["lowercases", "Neil@Example.COM", "neil@example.com"],
+    ["trims", "  neil@example.com  ", "neil@example.com"],
+    ["does both", " Neil@Example.COM ", "neil@example.com"],
+    // Not stripped: the local part is opaque to everyone but the receiving
+    // server, so a+b@x and a@x are not reliably the same mailbox.
+    [
+      "leaves plus-addressing alone",
+      "neil+olympus@example.com",
+      "neil+olympus@example.com",
+    ],
+    ["leaves dots alone", "n.fritz@example.com", "n.fritz@example.com"],
+  ])("%s", (_what, input, expected) => {
+    expect(normalizeEmail(input)).toBe(expected);
   });
 });

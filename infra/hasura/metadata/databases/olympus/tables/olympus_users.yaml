@@ -7,11 +7,14 @@ configuration:
       custom_name: createdTime
     display_name:
       custom_name: displayName
+    email_normalized:
+      custom_name: emailNormalized
     updated_at:
       custom_name: lastUpdatedTime
   custom_column_names:
     created_at: createdTime
     display_name: displayName
+    email_normalized: emailNormalized
     updated_at: lastUpdatedTime
   custom_root_fields: {}
 array_relationships:
