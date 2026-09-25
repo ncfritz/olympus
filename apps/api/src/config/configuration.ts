@@ -1,9 +1,5 @@
 import { ConfigType, registerAs } from "@nestjs/config";
 import {
-import {
-  parseProviders,
-  type ProviderConfig,
-} from "../auth/clients/providers";
   AmqpConfig,
   ConfigValidationError,
   EnvReader,
@@ -13,6 +9,7 @@ import {
   readRuntimeConfig,
   RuntimeConfig,
 } from "@ncfritz/olympus-nest";
+import { parseProviders, type ProviderConfig } from "../auth/clients/providers";
 
 export { ConfigValidationError };
 export type { AmqpConfig, LoggingConfig };
@@ -57,6 +54,12 @@ export type AuthConfig = {
     signingKeys?: string;
     /** Where the site is served, for exact redirect-URI matching. */
     clientOrigins: string[];
+    /**
+     * Where a browser reaches the API, for the redirect URI the providers
+     * are registered with — one canonical origin, not whichever the person
+     * arrived on. e.g. https://olympus.ncfritz.net/api
+     */
+    publicBaseUrl?: string;
     providers: ProviderConfig[];
   };
   services: {
@@ -178,6 +181,7 @@ const readAuthConfig = (read: EnvReader): AuthConfig => {
     users: {
       signingKeys: read.optional("AUTH_SIGNING_KEYS"),
       clientOrigins: read.list("AUTH_CLIENT_ORIGINS", []),
+      publicBaseUrl: read.optional("AUTH_PUBLIC_BASE_URL"),
       providers:
         providersRaw === undefined
           ? []
