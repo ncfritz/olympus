@@ -27,26 +27,26 @@ from its OpenAPI page and the break-glass CLI.
 ## Phase 0 — Scaffolding
 
 1. **ADR 0020 accepted** (2026-09-25).
-2. **`apps/harpocrates/signer`**: a FastAPI app with `pyproject.toml` managed by
+2. **Done 2026-09-25.** **`apps/harpocrates/signer`**: a FastAPI app with `pyproject.toml` managed by
    `uv`; `ruff` (lint and format), `pyright` (strict), `pytest`. A
    `package.json` whose `build`, `lint`, `test` and `openapi` scripts
    call them, so `pnpm turbo run build lint test` covers it like any
    other package. The Docker image builds in the central build (ADR
    0011).
-3. **`docs/conventions/python.md`**: the rules for the signer, in the
+3. **Done 2026-09-25.** **`docs/conventions/python.md`**: the rules for the signer, in the
    shape of the other convention documents, and `CLAUDE.md` pointing at
    it for `apps/harpocrates/signer`.
-4. **`apps/harpocrates/service`**: a NestJS app on the shared packages
+4. **Done 2026-09-25.** **`apps/harpocrates/service`**: a NestJS app on the shared packages
    (`@ncfritz/olympus-nest`: config, logger, metrics), Prisma for its
    database, an `openapi` task writing `apps/harpocrates/service/openapi/harpocrates.json`, and
    `packages/sdk` generating a `harpocrates` client from it. A generated client
    for the signer's document, internal to `apps/harpocrates/service`.
-5. **Dev CA**: `scripts/dev-ca.sh` takes production's three tiers (a
+5. **Done 2026-09-25.** **Dev CA**: `scripts/dev-ca.sh` takes production's three tiers (a
    root, two intermediates, the issuing CAs beneath them) and adds a
    **TLS Issuing CA Dev**, name-constrained to `localhost` and
    `internal.localhost`; it writes every CA key as encrypted PKCS#8, the
    format the signer imports.
-6. **Dev compose**: `apps/harpocrates/docker-compose.yml` runs
+6. **Done 2026-09-25.** **Dev compose**: `apps/harpocrates/docker-compose.yml` runs
    `harpocrates-postgres` on its own port, beside the existing Postgres
    and Hasura; both services run from the workspace (`pnpm dev`), the
    signer on a socket in `apps/harpocrates/.run/` (git-ignored).

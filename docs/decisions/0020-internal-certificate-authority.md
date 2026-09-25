@@ -182,7 +182,7 @@ ncfritz.net Root CA 1                          offline
 │   └── ncfritz.net TLS Issuing CA 1 - G1      online   new: internal hosts, ACME
 └── ncfritz.net Intermediate CA 2              offline
     ├── ncfritz.net Device Issuing CA 1        online   Olympus Devices (existing)
-    ├── ncfritz.net Service Issuing CA 1       online   Olympus Services (existing)
+    ├── ncfritz.net Service Issuing CA 1 - G1  online   Olympus Services (existing)
     └── ncfritz.net Signing Issuing CA 1 - G1  online   new: code, mail, documents
 ```
 

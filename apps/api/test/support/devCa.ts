@@ -10,7 +10,7 @@ const root = path.resolve(__dirname, "../../../..");
 const certs = path.join(root, "infra/dev-ca/certs");
 
 export const devCa = (): string => {
-  if (!fs.existsSync(path.join(certs, "api.crt"))) {
+  if (!fs.existsSync(path.join(certs, "keys/root-1-g1.p8"))) {
     execFileSync("bash", [path.join(root, "scripts/dev-ca.sh")], {
       stdio: "ignore",
     });
@@ -31,8 +31,11 @@ export const servicesConfig = (port = 0) => ({
   certificate: path.join(devCa(), "api.crt"),
   key: path.join(devCa(), "api.key"),
   ca: path.join(devCa(), "services-ca.crt"),
+  // One list per CA in the chain (ADR 0023): the Service CA, its
+  // intermediate and the root.
   revocationLists: [
     path.join(devCa(), "services.crl"),
+    path.join(devCa(), "intermediate-2.crl"),
     path.join(devCa(), "root.crl"),
   ],
 });

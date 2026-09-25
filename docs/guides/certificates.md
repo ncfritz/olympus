@@ -6,8 +6,10 @@ root; the internal CA ([ADR 0020](../decisions/0020-internal-certificate-authori
 replaces this later.
 
 For development nothing here is needed: `scripts/dev-ca.sh` writes a
-throwaway copy of the whole hierarchy into `infra/dev-ca/certs`, with the
-same names, and the tests use it.
+throwaway copy of the whole hierarchy into `infra/dev-ca/certs`, in the
+same shape with `Dev` in every name (`ncfritz.net Dev Service Issuing CA
+1 - G1`), and the tests use it. It also writes every CA's key as encrypted
+PKCS#8 for Harpocrates's signer to import.
 
 ## The hierarchy
 
