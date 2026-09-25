@@ -1,5 +1,9 @@
 import { ConfigType, registerAs } from "@nestjs/config";
 import {
+import {
+  parseProviders,
+  type ProviderConfig,
+} from "../auth/clients/providers";
   AmqpConfig,
   ConfigValidationError,
   EnvReader,
@@ -47,6 +51,14 @@ export type AuthConfig = {
    * chain alone does not tell them apart (ADR 0023). Unset: not checked.
    */
   servicesIssuer?: string;
+  /** Signing in: unset until the token service is configured. */
+  users: {
+    /** A directory of ES256 PEMs; the last filename signs, all verify. */
+    signingKeys?: string;
+    /** Where the site is served, for exact redirect-URI matching. */
+    clientOrigins: string[];
+    providers: ProviderConfig[];
+  };
   services: {
     /** Off until the certificates are configured. */
     enabled: boolean;
@@ -158,10 +170,19 @@ const readAuthConfig = (read: EnvReader): AuthConfig => {
       "TLS_CERT, TLS_KEY and TLS_CA_SERVICES are set together or not at all",
     );
   }
+  const providersRaw = read.optional("AUTH_OIDC_PROVIDERS");
   return {
     modes,
     serviceRoles: readServiceRoles(read),
     servicesIssuer: read.optional("AUTH_SERVICES_ISSUER"),
+    users: {
+      signingKeys: read.optional("AUTH_SIGNING_KEYS"),
+      clientOrigins: read.list("AUTH_CLIENT_ORIGINS", []),
+      providers:
+        providersRaw === undefined
+          ? []
+          : parseProviders(providersRaw, read.problems),
+    },
     services: {
       enabled,
       port: read.port("SERVICES_LISTEN_PORT", 3443),
