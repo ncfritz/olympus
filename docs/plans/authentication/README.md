@@ -83,7 +83,7 @@ tests.
 Not yet done here: nothing rejects. Both listeners default to `report`,
 and no agent presents a certificate until phase 2.
 
-## Phase 2 — Agents on mTLS
+## Phase 2 — Agents on mTLS — done 2026-09-24
 
 1. `@ncfritz/olympus-client`: Node-only TLS options (certificate, key, CA)
    on a keep-alive HTTPS agent; the Nest module reads `API_CLIENT_CERT`,
@@ -113,7 +113,11 @@ and no agent presents a certificate until phase 2.
    2026-09-24**, and the listener runs on them. Outstanding: four `OU=prod`
    client certificates, one per on-host agent.
 5. Done when the report-only log shows every agent request identified
-   and none that would be rejected.
+   and none that would be rejected. **done 2026-09-24**, though lightly:
+   `auth_decisions_total` has no per-service label, so `allow` rising does
+   not prove all five deployments are getting through. The per-client
+   counter (ADR 0017's `client` label) is what would, and phase 7 is where
+   that becomes something watched rather than something checked by hand.
 
 Found in the Docker audit (2026-09-21): the notification agent relays
 to browsers through the API's Socket.IO gateway, which runs on the users

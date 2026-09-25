@@ -1,0 +1,38 @@
+table:
+  name: users
+  schema: olympus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    display_name:
+      custom_name: displayName
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    display_name: displayName
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+array_relationships:
+  - name: identities
+    using:
+      foreign_key_constraint_on:
+        column: user_id
+        table:
+          name: user_identities
+          schema: olympus
+  - name: roles
+    using:
+      foreign_key_constraint_on:
+        column: user_id
+        table:
+          name: user_roles
+          schema: olympus
+  - name: sessions
+    using:
+      foreign_key_constraint_on:
+        column: user_id
+        table:
+          name: sessions
+          schema: olympus

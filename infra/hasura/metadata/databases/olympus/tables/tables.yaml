@@ -136,3 +136,7 @@
 - '!include olympus_notification_statistics.yaml'
 - '!include olympus_notification_type.yaml'
 - '!include olympus_notifications.yaml'
+- '!include olympus_sessions.yaml'
+- '!include olympus_user_identities.yaml'
+- '!include olympus_user_roles.yaml'
+- '!include olympus_users.yaml'

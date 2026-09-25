@@ -1,0 +1,41 @@
+table:
+  name: sessions
+  schema: olympus
+configuration:
+  column_config:
+    client_id:
+      custom_name: clientId
+    created_at:
+      custom_name: createdTime
+    device_name:
+      custom_name: deviceName
+    expires_at:
+      custom_name: expiresTime
+    last_used_at:
+      custom_name: lastUsedTime
+    previous_token_hash:
+      custom_name: previousTokenHash
+    refresh_token_hash:
+      custom_name: refreshTokenHash
+    revoked_at:
+      custom_name: revokedTime
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+  custom_column_names:
+    client_id: clientId
+    created_at: createdTime
+    device_name: deviceName
+    expires_at: expiresTime
+    last_used_at: lastUsedTime
+    previous_token_hash: previousTokenHash
+    refresh_token_hash: refreshTokenHash
+    revoked_at: revokedTime
+    updated_at: lastUpdatedTime
+    user_id: userId
+  custom_root_fields: {}
+object_relationships:
+  - name: user
+    using:
+      foreign_key_constraint_on: user_id
