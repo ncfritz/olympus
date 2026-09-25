@@ -8,6 +8,17 @@ export type PartialGraphSource = { toString(): string | undefined };
 /** Enough of a Nest `Logger` to report with. */
 export type BootstrapLogger = { error(message: string, stack?: string): void };
 
+/**
+ * Overrides, for tests: which environment to read as, and where to write.
+ * The directory is a parameter so a test can point at one that does not
+ * exist and get a real failure, rather than mock `fs` — a namespace import
+ * cannot be spied on under ESM, and a mocked write proves less anyway.
+ */
+export type GraphDumpOptions = {
+  environment?: string;
+  directory?: string;
+};
+
 /** Where the partial graph went, or why it did not go anywhere. */
 export type GraphDump =
   { written: string } | { skipped: "production" } | { failed: string };
@@ -22,10 +33,14 @@ export type GraphDump =
  */
 export const writePartialGraph = (
   graph: PartialGraphSource,
-  environment: string | undefined = process.env.NODE_ENV,
+  options: GraphDumpOptions = {},
 ): GraphDump => {
+  const environment = options.environment ?? process.env.NODE_ENV;
   if (environment === "production") return { skipped: "production" };
-  const file = path.join(os.tmpdir(), "olympus-partial-graph.json");
+  const file = path.join(
+    options.directory ?? os.tmpdir(),
+    "olympus-partial-graph.json",
+  );
   try {
     fs.writeFileSync(file, graph.toString() ?? "");
     return { written: file };
@@ -47,13 +62,14 @@ export const reportBootstrapFailure = (
   error: unknown,
   graph: PartialGraphSource,
   logger: BootstrapLogger,
+  options: GraphDumpOptions = {},
 ): void => {
   logger.error(
     "🤯🤯🤯 Error during bootstrap!",
     error instanceof Error ? error.stack : String(error),
   );
 
-  const dump = writePartialGraph(graph);
+  const dump = writePartialGraph(graph, options);
   if ("written" in dump) {
     logger.error(`Partial dependency graph: ${dump.written}`);
   } else if ("failed" in dump) {
