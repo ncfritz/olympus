@@ -72,11 +72,13 @@ export const toBaseDomainObject = (
     adult: input.adult,
     backdropPath: input.backdropPath,
     createdTime: moment(input.createdTime),
-    firstAirDate: input.firstAirDate ? moment(input.firstAirDate) : undefined,
+    firstAirDate: input.firstAirDate
+      ? moment.utc(input.firstAirDate)
+      : undefined,
     homepage: input.homepage,
     id: input.id,
     inProduction: input.inProduction,
-    lastAirDate: input.lastAirDate ? moment(input.lastAirDate) : undefined,
+    lastAirDate: input.lastAirDate ? moment.utc(input.lastAirDate) : undefined,
     lastUpdatedTime: moment(input.lastUpdatedTime),
     name: input.name,
     numberOfEpisodes: input.numberOfEpisodes,

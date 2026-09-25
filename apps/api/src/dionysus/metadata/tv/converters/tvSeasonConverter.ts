@@ -22,7 +22,7 @@ export const toSparseDomainObject = (
   input: GraphQlSparseTvSeason,
 ): SparseSeason => {
   return {
-    airDate: input.airDate ? moment(input.airDate) : undefined,
+    airDate: input.airDate ? moment.utc(input.airDate) : undefined,
     createdTime: moment(input.createdTime),
     id: input.id,
     lastUpdatedTime: moment(input.lastUpdatedTime),

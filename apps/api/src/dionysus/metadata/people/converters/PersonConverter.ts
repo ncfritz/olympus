@@ -22,10 +22,10 @@ import {
 export const toBaseDomainObject = (input: GraphQlBasePerson): BasePerson => {
   return {
     adult: input.adult,
-    birthday: input.birthday ? moment(input.birthday) : undefined,
+    birthday: input.birthday ? moment.utc(input.birthday) : undefined,
     birthplace: input.birthplace,
     createdTime: moment(input.createdTime),
-    deathday: input.deathday ? moment(input.deathday) : undefined,
+    deathday: input.deathday ? moment.utc(input.deathday) : undefined,
     gender: getGender(input.gender),
     homepage: input.homepage,
     id: input.id,

@@ -193,7 +193,7 @@ export const toSparseDomainObject = (
     overview: input.overview,
     popularity: input.popularity,
     posterPath: input.posterPath,
-    releaseDate: input.releaseDate ? moment(input.releaseDate) : undefined,
+    releaseDate: input.releaseDate ? moment.utc(input.releaseDate) : undefined,
     revenue: input.revenue,
     runtime: input.runtime,
     status: input.status,
@@ -226,7 +226,7 @@ export const toMovieReleaseDateDomainObject = (
       ? toLanguageDomainObject(input.language)
       : undefined,
     lastUpdatedTime: moment(input.lastUpdatedTime),
-    releaseDate: moment(input.releaseDate),
+    releaseDate: moment.utc(input.releaseDate),
     note: input.note,
     type: input.type,
   };
