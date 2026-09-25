@@ -1,0 +1,14 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Harpocrates Signer API",
+    "description": "The signer of Harpocrates, the internal certificate authority: keys, certificate and revocation list signing, and escrow. Reached only over a Unix socket, by the Harpocrates service.",
+    "contact": {
+      "name": "Neil Fritz",
+      "url": "https://ncfritz.net/",
+      "email": "ncfritz@ncfritz.net"
+    },
+    "version": "0.0.0"
+  },
+  "paths": {}
+}

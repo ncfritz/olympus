@@ -8,6 +8,7 @@ code:
 - `docs/conventions/api.md`: `apps/api`
 - `docs/conventions/agent.md`: `agents/*`
 - `docs/conventions/ux.md`: `apps/site`, `packages/ui`, `packages/theme`
+- `docs/conventions/python.md`: `apps/harpocrates/signer`
 - `docs/decisions/`: why things are the way they are. Don't contradict an
   Accepted ADR without proposing a new one.
 

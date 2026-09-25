@@ -1,0 +1,3 @@
+# The Olympus API's rules, as the service's document uses (python.md):
+# `pnpm lint:openapi`, also part of `pnpm check:conventions`.
+extends: ["../../api/.spectral.yaml"]

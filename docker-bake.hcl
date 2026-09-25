@@ -35,10 +35,9 @@ group "default" {
 }
 
 # The certificate authority (ADR 0020): its own stack, deployed apart from
-# the services so a platform deploy never restarts it. The signer joins it
-# with its own Dockerfile.
+# the services so a platform deploy never restarts it.
 group "harpocrates" {
-  targets = ["harpocrates"]
+  targets = ["harpocrates", "harpocrates-signer"]
 }
 
 group "services" {
@@ -122,6 +121,19 @@ target "harpocrates" {
     RUNTIME_PACKAGES = "openssl"
   }
   tags = image("harpocrates")
+}
+
+# The signer holds the CA's keys; Python, with its own Dockerfile.
+target "harpocrates-signer" {
+  context    = "."
+  dockerfile = "infra/docker/python/Dockerfile"
+  platforms  = ["linux/arm64"]
+  args = {
+    APP_DIR      = "apps/harpocrates/signer"
+    MODULE       = "harpocrates_signer"
+    GIT_REVISION = GIT_REVISION
+  }
+  tags = image("harpocrates-signer")
 }
 
 target "minerva-calendar-console" {

@@ -9,6 +9,7 @@ infra/hasura/metadata
 infra/hasura/migrations
 apps/api/openapi
 agents/*/agent/openapi
+apps/harpocrates/*/openapi
 
 **/__snapshots__
 turbo/generators/templates

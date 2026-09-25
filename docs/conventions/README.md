@@ -12,6 +12,7 @@ lists the existing deviations in [`../roadmap.md`](../roadmap.md).
 | API     | [api.md](api.md)         | `apps/api`                                   |
 | Agent   | [agent.md](agent.md)     | `agents/*`                                   |
 | UX      | [ux.md](ux.md)           | `apps/site`, `packages/ui`, `packages/theme` |
+| Python  | [python.md](python.md)   | `apps/harpocrates/signer`                    |
 
 ## How the conventions are enforced
 
@@ -23,7 +24,8 @@ lists the existing deviations in [`../roadmap.md`](../roadmap.md).
 | Model schema and enum snapshots                           | `packages/model`                        | Present                                        |
 | API controller check (`check:conventions`)                | `apps/api`                              | Present                                        |
 | Spectral (`lint:openapi`)                                 | Generated OpenAPI documents             | Present                                        |
-| Committed OpenAPI documents are current (`check:openapi`) | `apps/api/openapi`                      | Present                                        |
+| Committed OpenAPI documents are current (`check:openapi`) | `apps/api/openapi`, `apps/harpocrates`  | Present                                        |
+| Ruff, Pyright `strict`                                    | Python (`python.md`)                    | Present                                        |
 | Breaking-change detection                                 | OpenAPI documents                       | Deferred: review `openapi/*.json` diffs in PRs |
 | Inline-style lint rule                                    | UX styling                              | Present as a warning (ADR 0012)                |
 
