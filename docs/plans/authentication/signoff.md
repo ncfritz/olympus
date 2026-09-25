@@ -138,13 +138,13 @@ F5.6 and F5.7 record what iOS does; if F5.6 fails, the fallback
 
 ## F7 — Agent request (NAS)
 
-| Id   | Env | Steps                                                                                        | Expected                                                              | Evidence          |
-| ---- | --- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ----------------- |
-| F7.1 | INT | The NAS asset agent runs its handlers                                                        | work completes; principal `service/dionysus-asset-agent/nas`          | API log           |
-| F7.2 | INT | From the NAS: `openssl s_client -connect api.olympus.internal.ncfritz.net:3443` with no cert | handshake fails                                                       | terminal output   |
-| F7.3 | INT | The server certificate the NAS sees                                                          | names `api.olympus.internal.ncfritz.net`; chains to the internal root | `s_client` output |
-| F7.4 | INT | Revoke the NAS certificate only                                                              | the NAS agent is refused; the Mac Mini asset agent keeps working      | API log           |
-| F7.5 | INT | From another LAN machine, `curl http://<mac-mini>:3100`                                      | connection refused (3100 not published)                               | terminal output   |
+| Id   | Env | Steps                                                                                        | Expected                                                                          | Evidence          |
+| ---- | --- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------- |
+| F7.1 | INT | The NAS asset agent runs its handlers                                                        | work completes; `auth_decisions_total{listener="services",outcome="allow"}` rises | `/api/metrics`    |
+| F7.2 | INT | From the NAS: `openssl s_client -connect api.olympus.internal.ncfritz.net:3443` with no cert | handshake fails                                                                   | terminal output   |
+| F7.3 | INT | The server certificate the NAS sees                                                          | names `api.olympus.internal.ncfritz.net`; chains to the internal root             | `s_client` output |
+| F7.4 | INT | Revoke the NAS certificate only                                                              | the NAS agent's handshake fails; the prod asset agent keeps working               | agent log         |
+| F7.5 | INT | From another LAN machine, `curl http://<mac-mini>:3100`                                      | connection refused (3100 not published)                                           | terminal output   |
 
 ## F8 — Certificate issuance and revocation
 

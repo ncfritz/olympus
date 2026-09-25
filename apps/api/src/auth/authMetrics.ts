@@ -28,12 +28,17 @@ const KNOWN = [
   "not a TLS connection",
   "unknown service",
   "client header mismatch",
+  "wrong issuer",
   "role",
 ] as const;
 
 const reasonLabel = (reason: string | undefined): string => {
   if (!reason) return "none";
   if (reason.startsWith("unknown service")) return "unknown service";
+  // A certificate the handshake accepted but the wrong CA signed: a device
+  // certificate on the services listener (ADR 0023). Worth its own label —
+  // it means something quite different from an unknown service.
+  if (reason.startsWith("issuer ")) return "wrong issuer";
   if (reason.startsWith("client header")) return "client header mismatch";
   if (reason.startsWith("needs one of")) return "role";
   return KNOWN.find((known) => reason === known) ?? "other";

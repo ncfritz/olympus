@@ -139,6 +139,19 @@ describe("AuthGuard", () => {
     ]);
   });
 
+  it("counts a wrong issuer separately from an unknown service", async () => {
+    // A device certificate on the services listener: the handshake accepts
+    // it, the issuer check does not (ADR 0023). It used to land in `other`.
+    guard({
+      reason:
+        'issuer "ncfritz.net Device Issuing CA 1 - G1" is not ' +
+        '"ncfritz.net Service Issuing CA 1 - G1"',
+    }).canActivate(context(request({ listener: "services" })));
+    expect(await counted()).toEqual([
+      'auth_decisions_total{listener="services",outcome="would_reject",reason="wrong issuer"} 1',
+    ]);
+  });
+
   it("allows a principal that has one of the required roles", () => {
     expect(
       guard(
