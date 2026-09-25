@@ -1,0 +1,17 @@
+{
+  "extends": "@ncfritz/olympus-config/tsconfig/nest.json",
+  "compilerOptions": {
+    // Built with tsc (nest build), not webpack: Prisma's client and engines
+    // stay in node_modules, as in the Minerva calendar sync agent.
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "isolatedModules": false,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    // Tests are type-checked with the sources.
+    "rootDir": "${configDir}",
+    "types": ["node"]
+  },
+  "include": ["${configDir}/src/**/*.ts", "${configDir}/test/**/*.ts"],
+  "exclude": []
+}

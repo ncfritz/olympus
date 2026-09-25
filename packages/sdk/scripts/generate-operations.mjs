@@ -9,8 +9,9 @@ import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { API_DOCUMENTS } from "./documents.mjs";
+
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const APIS = ["olympus", "dionysus", "minerva"];
 const METHODS = ["get", "put", "post", "delete", "patch", "head", "options"];
 
 export const operationsOf = (api, document) =>
@@ -51,10 +52,8 @@ export const operations: readonly Operation[] = ${JSON.stringify(operations, nul
 `;
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  for (const api of APIS) {
-    const document = JSON.parse(
-      readFileSync(join(root, `../../apps/api/openapi/${api}.json`), "utf8"),
-    );
+  for (const [api, file] of Object.entries(API_DOCUMENTS)) {
+    const document = JSON.parse(readFileSync(join(root, file), "utf8"));
     const dir = join(root, "src/generated", api);
     writeFileSync(
       join(dir, "operations.gen.ts"),

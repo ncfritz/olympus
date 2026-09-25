@@ -1,0 +1,25 @@
+# Development only (docs/plans/internal-ca, phase 0): Harpocrates's own
+# Postgres, on 5433 so it sits beside the data stack's on 5432. The
+# service and the signer run from the workspace (`pnpm dev`). Production
+# is infra/docker/compose/harpocrates.yml (phase 4).
+name: harpocrates-dev
+
+services:
+  harpocrates-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: harpocrates
+      POSTGRES_PASSWORD: harpocrates
+      POSTGRES_DB: harpocrates
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - harpocrates-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U harpocrates"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+volumes:
+  harpocrates-postgres:

@@ -10,6 +10,10 @@
       "types": "./dist/dionysus/index.d.ts",
       "default": "./dist/dionysus/index.js"
     },
+    "./harpocrates": {
+      "types": "./dist/harpocrates/index.d.ts",
+      "default": "./dist/harpocrates/index.js"
+    },
     "./minerva": {
       "types": "./dist/minerva/index.d.ts",
       "default": "./dist/minerva/index.js"
@@ -32,6 +36,7 @@
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "0.99.0",
+    "@ncfritz/harpocrates-service": "workspace:*",
     "@ncfritz/olympus-api": "workspace:*",
     "@ncfritz/olympus-config": "workspace:*",
     "eslint": "catalog:",

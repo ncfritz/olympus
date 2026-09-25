@@ -1,0 +1,12 @@
+// Harpocrates's own database (ADR 0020, Data): harpocrates-postgres, not
+// the data stack's Postgres, and not tracked by Hasura. Tables, columns,
+// foreign keys and constraints; no JSON documents in rows (ADR 0007).
+// Models arrive with phase 2 of docs/plans/internal-ca.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

@@ -31,7 +31,14 @@ function "image" {
 }
 
 group "default" {
-  targets = ["services", "hasura", "rabbitmq"]
+  targets = ["services", "harpocrates", "hasura", "rabbitmq"]
+}
+
+# The certificate authority (ADR 0020): its own stack, deployed apart from
+# the services so a platform deploy never restarts it. The signer joins it
+# with its own Dockerfile.
+group "harpocrates" {
+  targets = ["harpocrates"]
 }
 
 group "services" {
@@ -104,6 +111,17 @@ target "minerva-calendar-agent" {
     RUNTIME_PACKAGES = "openssl"
   }
   tags = image("minerva-calendar-agent")
+}
+
+target "harpocrates" {
+  inherits = ["_node"]
+  args = {
+    APP = "@ncfritz/harpocrates-service"
+    # Prisma's client and query engine, for this image's platform.
+    POST_DEPLOY      = "node node_modules/prisma/build/index.js generate --schema prisma/schema.prisma"
+    RUNTIME_PACKAGES = "openssl"
+  }
+  tags = image("harpocrates")
 }
 
 target "minerva-calendar-console" {

@@ -1,0 +1,26 @@
+{
+  "openapi": "3.1.1",
+  "paths": {},
+  "info": {
+    "title": "Harpocrates API",
+    "description": "Management API of Harpocrates, the internal certificate authority: issuers, profiles, certificates, revocation and ACME accounts.",
+    "version": "0.0.0",
+    "contact": {
+      "name": "Neil Fritz",
+      "url": "https://ncfritz.net",
+      "email": "ncfritz@ncfritz.net"
+    }
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {}
+  }
+}
