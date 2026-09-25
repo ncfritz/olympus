@@ -84,7 +84,7 @@ const escapeValue = (value: string): string =>
  * last RDN first, `,` between RDNs, `+` within one. (@peculiar's own
  * toString() keeps the DER order, which no parser reads back the same way.)
  */
-const rfc4514 = (name: x509.Name): string =>
+export const rfc4514 = (name: x509.Name): string =>
   name
     .toJSON()
     .slice()

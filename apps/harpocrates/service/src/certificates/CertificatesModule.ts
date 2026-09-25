@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { CrlsModule } from "../crls/CrlsModule";
 import { IssuersModule } from "../issuers/IssuersModule";
 import { ProfilesModule } from "../profiles/ProfilesModule";
 import { CreateCertificateController } from "./controllers/CreateCertificateController";
@@ -11,7 +12,7 @@ import { RevokeCertificateController } from "./controllers/RevokeCertificateCont
 import { CertificateService } from "./services/CertificateService";
 
 @Module({
-  imports: [IssuersModule, ProfilesModule],
+  imports: [IssuersModule, ProfilesModule, CrlsModule],
   controllers: [
     ListCertificatesController,
     CreateCertificateController,

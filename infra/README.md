@@ -4,6 +4,7 @@
 | --------- | --------------------------------------------------------------------------------------------------------------- |
 | `hasura/` | Hasura v2 project: `migrations/` and `metadata/` under version control (ADR 0004, 0005)                         |
 | `docker/` | Dockerfiles, compose files, env files and secrets tooling (ADR 0011, 0019); the bake file is `/docker-bake.hcl` |
+| `nas/`    | What runs on the NAS outside Docker: the revocation list pull for its nginx (ADR 0020)                          |
 
 ## Reverse proxy (nginx)
 

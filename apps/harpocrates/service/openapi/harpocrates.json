@@ -2187,6 +2187,295 @@
           "Certificates"
         ]
       }
+    },
+    "/v1/issuer/{issuerId}/crls": {
+      "get": {
+        "description": "The CA's lists, newest first (the last 100): their numbers, validity, where each came from, and whether it is published or why publishing it failed.",
+        "operationId": "ListIssuerCrls",
+        "parameters": [
+          {
+            "name": "issuerId",
+            "required": true,
+            "in": "path",
+            "description": "The CA's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The lists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListIssuerCrlsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists a CA's revocation lists",
+        "tags": [
+          "Revocation Lists"
+        ]
+      },
+      "post": {
+        "description": "Offers a list signed elsewhere (XCA's last, or an offline CA's) for publication. Refused unless the CA's certificate verifies it, it has not lapsed, and its number is above every one the CA has. Its serials are carried into the CA's later lists, and an online CA signs a fresh list straight after.",
+        "operationId": "ImportIssuerCrl",
+        "parameters": [
+          {
+            "name": "issuerId",
+            "required": true,
+            "in": "path",
+            "description": "The CA's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The list, PEM.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportIssuerCrlRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The list was imported.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The CA's lists"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportIssuerCrlResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Imports a CA's revocation list",
+        "tags": [
+          "Revocation Lists"
+        ]
+      }
+    },
+    "/v1/ceremony/{ceremonyId}/crl": {
+      "post": {
+        "description": "The ceremony's CA signs its next list, valid for 13 months (CRL_OFFLINE_VALIDITY_DAYS), which is then published with the rest. Due once a year and whenever a CA below it is revoked.",
+        "operationId": "SignCeremonyCrl",
+        "parameters": [
+          {
+            "name": "ceremonyId",
+            "required": true,
+            "in": "path",
+            "description": "The open ceremony",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The list was signed.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The CA's lists"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignCeremonyCrlResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Signs an offline CA's revocation list in a ceremony",
+        "tags": [
+          "Ceremonies"
+        ]
+      }
     }
   },
   "info": {
@@ -2214,6 +2503,9 @@
     },
     {
       "name": "Profiles"
+    },
+    {
+      "name": "Revocation Lists"
     },
     {
       "name": "Signer"
@@ -3773,6 +4065,133 @@
           "format",
           "fileName",
           "data"
+        ]
+      },
+      "CrlSource": {
+        "type": "string",
+        "description": "Where it came from",
+        "enum": [
+          "signed",
+          "ceremony",
+          "imported"
+        ]
+      },
+      "RevocationList": {
+        "type": "object",
+        "properties": {
+          "issuerId": {
+            "type": "string",
+            "description": "The CA that signed it"
+          },
+          "number": {
+            "type": "number",
+            "description": "Its CRL number: each of a CA's lists has a higher one"
+          },
+          "source": {
+            "description": "Where it came from",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CrlSource"
+              }
+            ]
+          },
+          "thisUpdate": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was issued"
+          },
+          "nextUpdate": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it lapses; relying parties refuse everything below the CA after that"
+          },
+          "entries": {
+            "type": "number",
+            "description": "How many serials it lists"
+          },
+          "publishedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was published and read back from the distribution URL"
+          },
+          "publishAttempts": {
+            "type": "number",
+            "description": "How many times publishing it has been tried"
+          },
+          "lastError": {
+            "type": "string",
+            "description": "Why the last attempt to publish it failed"
+          },
+          "url": {
+            "type": "string",
+            "description": "Where relying parties fetch the CA's current list"
+          }
+        },
+        "required": [
+          "issuerId",
+          "number",
+          "source",
+          "thisUpdate",
+          "nextUpdate",
+          "entries",
+          "publishAttempts",
+          "url"
+        ]
+      },
+      "ListIssuerCrlsResponse": {
+        "type": "object",
+        "properties": {
+          "crls": {
+            "description": "The CA's lists, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RevocationList"
+            }
+          }
+        },
+        "required": [
+          "crls"
+        ]
+      },
+      "ImportIssuerCrlRequest": {
+        "type": "object",
+        "properties": {
+          "crl": {
+            "type": "string",
+            "description": "The list, PEM: signed by the CA elsewhere (XCA, an offline ceremony), with a number above any the CA has"
+          }
+        },
+        "required": [
+          "crl"
+        ]
+      },
+      "ImportIssuerCrlResponse": {
+        "type": "object",
+        "properties": {
+          "crl": {
+            "description": "The imported list, published with the next run",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RevocationList"
+              }
+            ]
+          }
+        },
+        "required": [
+          "crl"
+        ]
+      },
+      "SignCeremonyCrlResponse": {
+        "type": "object",
+        "properties": {
+          "crl": {
+            "description": "The offline CA's new list, published with the next run",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RevocationList"
+              }
+            ]
+          }
+        },
+        "required": [
+          "crl"
         ]
       }
     }

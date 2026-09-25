@@ -183,6 +183,39 @@ What differs from the steps below:
 
 ## Phase 3 — Revocation lists and monitoring
 
+**Done 2026-09-25** (steps 1 to 6; the sign-off runs on DEV are
+outstanding, and C6.2–C6.3 on the NAS are phase 4's). Described in
+[the service's README](../../../apps/harpocrates/service/README.md),
+Revocation lists and Metrics and alerts. What differs from the steps
+below:
+
+- **The API** needed a change after all: Node's TLS takes PEM lists only,
+  and a watch on a file misses its replacement by rename (how lists are
+  published). It now reads DER or PEM and polls the files every 5
+  seconds (`apps/api/src/auth/servicesListener.ts`). Its production
+  `TLS_CRL_SERVICES` moves to the published lists at the cutover (phase
+  4); `apps/api/dev.env.example` shows the development ones.
+- **Imported lists** (`POST /issuer/{id}/crls`, `cli import-crl`): how
+  an offline CA's list signed elsewhere, and XCA's last lists, reach
+  publication. Numbers continue from them, and their serials are kept
+  (`imported_revocations`) and carried into every list the CA signs
+  after, so XCA's revocations survive the cutover.
+- **Development**: `scripts/dev-ca-import.sh` adopts the dev CA (its
+  offline CAs, its issuing CAs with their keys, and its lists), and the
+  dev compose serves the published directory on `8480`, so C5 and C6.1
+  run against the dev CA the API already trusts.
+- **Offline CAs' lists** list only their imported revocations: nothing
+  revokes a CA yet (a follow-up below).
+- **Alerts** are `apps/harpocrates/service/monitoring/harpocrates.rules.yml`,
+  tested with `promtool` in `check:conventions`; the monitoring stack
+  loads them from a checkout. "Certificates under their profile's
+  threshold" uses `harpocrates_profile_renewal_due_days` (validity less
+  renewal age) and `certificate_expiry_days{renewal="manual"}`, which
+  is every certificate until phases 5 and 6.
+- **The NAS**: `infra/nas/crl-pull.sh`, verifying each list against its
+  own CA's pinned certificate, every 15 minutes from DSM's Task
+  Scheduler (`infra/nas/README.md`).
+
 1. **Scheduling**: a list per issuer, numbered monotonically, valid 7
    days, signed daily and on every revocation; retries while sealed.
 2. **Publication**: DER list and issuer certificate written to the
@@ -356,6 +389,16 @@ From phase 2:
       `openssh-blacklist` fingerprints) in the key checks.
 - [ ] A sweep for generated keys with no certificate after a day.
 - [ ] Run `pnpm test:e2e` in CI, with a Postgres service and `uv`.
+
+From phase 3:
+
+- [ ] Revoking a CA: `POST /issuer/{id}/revoke`, the parent's next list
+      (a ceremony for an offline parent) carrying it, and the console
+      offering reissue from a successor (ADR 0020).
+- [ ] Load `monitoring/harpocrates.rules.yml` in the monitoring stack's
+      Prometheus and scrape the service as job `harpocrates`.
+- [ ] `brew install prometheus` on the Mac, for `check:alerts`.
+- [ ] Install the NAS pull (`infra/nas/README.md`) at the cutover.
 
 ## Later
 

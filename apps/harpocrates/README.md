@@ -21,6 +21,7 @@ except one it hands to the operator once.
 | `3200` | The management API, `/health` and `/metrics` |
 | `9443` | Renewal and ACME, over TLS (phases 5 and 6)  |
 | `5433` | `harpocrates-postgres` in development        |
+| `8480` | The distribution host in development (nginx) |
 
 ## Development
 
@@ -30,14 +31,23 @@ installs the Python version itself); the rules are
 
 ```sh
 cd apps/harpocrates
-docker compose up -d                          # harpocrates-postgres
+mkdir -p .run/published                       # before compose mounts it
+docker compose up -d                          # harpocrates-postgres, the distribution host
 cp service/dev.env.example service/dev.env
 cp signer/dev.env.example signer/dev.env
 pnpm --filter "@ncfritz/harpocrates-*" dev    # both, from the workspace
 curl --unix-socket .run/signer.sock http://signer/health
 pnpm --filter @ncfritz/harpocrates-signer signer initialise   # once: prints the unseal key
 pnpm --filter @ncfritz/harpocrates-service prisma:deploy      # the service's schema
+../../scripts/dev-ca-import.sh                # once: adopt the dev CA and its lists
+curl -sI http://localhost:8480/crl/service-issuing-1-g1.crl
 ```
+
+The unseal key goes in `.run/unseal-key` (`SIGNER_UNSEAL_KEY_FILE`).
+Once the dev CA is adopted, the API can read its lists from
+`.run/published/crl/` (the commented `TLS_CRL_SERVICES` in
+`apps/api/dev.env.example`), and a revocation here reaches its services
+listener within seconds.
 
 Each package's README has the rest: the
 [service](service/README.md) (API, rules, CLI, environment) and the

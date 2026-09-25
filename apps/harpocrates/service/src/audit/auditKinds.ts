@@ -15,6 +15,10 @@ export const AuditKind = {
   CertificateRenewed: "certificate.renewed",
   CertificateRevoked: "certificate.revoked",
   ProfileUpdated: "profile.updated",
+  CrlSigned: "crl.signed",
+  CrlImported: "crl.imported",
+  CrlPublished: "crl.published",
+  CrlPublicationFailed: "crl.publication-failed",
   SignerSealed: "signer.sealed",
   SignerUnsealed: "signer.unsealed",
 } as const;

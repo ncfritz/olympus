@@ -103,16 +103,16 @@ recovery passphrase is used.
 
 ## C5 — Revocation and revocation lists
 
-| Id   | Env | Steps                                                                   | Expected                                                                            | Evidence                          |
-| ---- | --- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------- |
-| C5.1 | DEV | Revoke `svc-issued` with reason `keyCompromise`                         | a new list for its issuer within a minute, number one higher, containing the serial | `openssl crl -text`               |
-| C5.2 | DEV | The list's validity                                                     | next update 7 days after this update                                                | `openssl crl -text`               |
-| C5.3 | DEV | Leave it a day                                                          | a new list with the next number, though nothing was revoked                         | published directory; `crls` table |
-| C5.4 | DEV | Fetch `http://…/crl/<issuer>.crl` and `/ca/<issuer>.crt`                | plain HTTP `200`, no redirect, no authentication; DER                               | `curl -v`                         |
-| C5.5 | DEV | Make the distribution URL unreachable; revoke                           | publication recorded as failed; the alert fires; the list is retried                | log; alert                        |
-| C5.6 | DEV | A published list within 2 days of its next update (short test lifetime) | the expiry alert fires                                                              | alert                             |
-| C5.7 | DEV | Sign the root's list in a ceremony; offer `crl-forged` for publication  | the first is verified and published; the second is refused                          | response; published directory     |
-| C5.8 | DEV | Seal; wait past a daily publication; unseal                             | the missed list is signed as soon as the signer unseals                             | log; `crls` table                 |
+| Id   | Env | Steps                                                                       | Expected                                                                            | Evidence                          |
+| ---- | --- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------- |
+| C5.1 | DEV | Revoke `svc-issued` with reason `keyCompromise`                             | a new list for its issuer within a minute, number one higher, containing the serial | `openssl crl -text`               |
+| C5.2 | DEV | The list's validity                                                         | next update 7 days after this update                                                | `openssl crl -text`               |
+| C5.3 | DEV | Leave it a day                                                              | a new list with the next number, though nothing was revoked                         | published directory; `crls` table |
+| C5.4 | DEV | Fetch `http://…/crl/<issuer>.crl` and `/ca/<issuer>.crt`                    | plain HTTP `200`, no redirect, no authentication; DER                               | `curl -v`                         |
+| C5.5 | DEV | Make the distribution URL unreachable; revoke                               | publication recorded as failed; the alert fires; the list is retried                | log; alert                        |
+| C5.6 | DEV | A published list within 2 days of its next update (`CRL_VALIDITY_HOURS=47`) | the expiry alert fires                                                              | alert                             |
+| C5.7 | DEV | Sign the root's list in a ceremony; offer `crl-forged` for publication      | the first is verified and published; the second is refused                          | response; published directory     |
+| C5.8 | DEV | Seal; wait past a daily publication; unseal                                 | the missed list is signed as soon as the signer unseals                             | log; `crls` table                 |
 
 ## C6 — Relying parties
 

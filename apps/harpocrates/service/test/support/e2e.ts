@@ -25,10 +25,60 @@ export const EXPORT_PASSPHRASE = "offline media passphrase";
  */
 export const E2E_DATABASE_URL = process.env.HARPOCRATES_E2E_DATABASE_URL;
 
+/**
+ * The distribution host, as nginx serves the published directory: plain
+ * HTTP, static files, no redirects. Stoppable, to make publication fail.
+ */
+export class DistributionServer {
+  private server?: http.Server;
+  port = 0;
+  /** Requests answered with this instead of the file, by path. */
+  readonly overrides = new Map<string, Buffer>();
+
+  constructor(readonly root: string) {}
+
+  get url(): string {
+    return `http://127.0.0.1:${this.port}`;
+  }
+
+  async start(): Promise<void> {
+    this.server = http.createServer((req, res) => {
+      const route = decodeURIComponent((req.url ?? "/").split("?")[0]);
+      const override = this.overrides.get(route);
+      const file = path.join(this.root, path.normalize(route));
+      if (!override && (!file.startsWith(this.root) || !fs.existsSync(file))) {
+        res.writeHead(404).end();
+        return;
+      }
+      res.writeHead(200, {
+        "Content-Type": route.endsWith(".crl")
+          ? "application/pkix-crl"
+          : "application/pkix-cert",
+      });
+      res.end(override ?? fs.readFileSync(file));
+    });
+    await new Promise<void>((resolve) =>
+      this.server!.listen(this.port, "127.0.0.1", resolve),
+    );
+    this.port = (this.server.address() as { port: number }).port;
+  }
+
+  async stop(): Promise<void> {
+    const server = this.server;
+    this.server = undefined;
+    if (!server) return;
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+}
+
 export type Harness = {
   app: INestApplication;
   prisma: PrismaClient;
   dir: string;
+  /** The published directory and the server in front of it. */
+  published: string;
+  distribution: DistributionServer;
   admin: string;
   operator: string;
   close: () => Promise<void>;
@@ -167,7 +217,14 @@ export const startHarness = async (): Promise<Harness> => {
       },
     );
 
+    const published = path.join(dir, "published");
+    fs.mkdirSync(published);
+    const distribution = new DistributionServer(published);
+    await distribution.start();
+
     process.env.DATABASE_URL = databaseUrl;
+    process.env.PKI_PUBLISHED_DIR = published;
+    process.env.PKI_DISTRIBUTION_URL = distribution.url;
     process.env.SIGNER_SOCKET_PATH = socketPath;
     process.env.SIGNER_TOKEN_FILE = tokenFile;
 
@@ -181,10 +238,13 @@ export const startHarness = async (): Promise<Harness> => {
       app,
       prisma,
       dir,
+      published,
+      distribution,
       admin: await bearer(["pki-admin"]),
       operator: await bearer(["pki-operator"]),
       close: async () => {
         await app.close();
+        await distribution.stop();
         await prisma.$executeRawUnsafe(`DROP SCHEMA "${schema}" CASCADE`);
         await prisma.$disconnect();
         signer.kill("SIGTERM");
@@ -198,9 +258,12 @@ export const startHarness = async (): Promise<Harness> => {
   }
 };
 
+type Offline = { id: string; certificate: string; encryptedKey: string };
+
 export type Hierarchy = {
-  root: { id: string; certificate: string };
-  intermediate: { id: string; certificate: string };
+  /** The offline CAs, with their keys as they left for offline media. */
+  root: Offline;
+  intermediate: Offline;
   issuing: Record<string, { id: string; certificate: string }>;
 };
 
@@ -271,8 +334,11 @@ export const buildHierarchy = async (
     .expect(204);
 
   return {
-    root: rootBody.issuer,
-    intermediate: intermediateBody.issuer,
+    root: { ...rootBody.issuer, encryptedKey: rootBody.encryptedKey },
+    intermediate: {
+      ...intermediateBody.issuer,
+      encryptedKey: intermediateBody.encryptedKey,
+    },
     issuing,
   };
 };

@@ -1,0 +1,139 @@
+# Harpocrates's alerts (ADR 0020, Monitoring), for the monitoring stack's
+# Prometheus to load from a checkout (rule_files). Alerting lives there so
+# it never depends on the CA being up. The metrics are the service's
+# /metrics, scraped as job "harpocrates"; README.md beside this lists them.
+#
+# Tested with `promtool test rules harpocrates.rules.test.yml` in the
+# service's check:conventions.
+groups:
+  - name: harpocrates
+    rules:
+      - alert: HarpocratesDown
+        expr: up{job="harpocrates"} == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Harpocrates is not answering scrapes
+          description: >-
+            Nothing is issued, renewed or revoked, and no list is signed,
+            while it is down. The lists already published keep working
+            until their next update; the list alerts below keep firing
+            from the last values scraped.
+
+      - alert: HarpocratesSignerSealed
+        expr: harpocrates_signer_sealed == 1
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: The signer has been sealed or unreachable for 10 minutes
+          description: >-
+            Nothing can be signed, lists included: unseal it with the
+            recovery passphrase (console or `harpocrates-signer unseal`),
+            or find out why it was sealed. The audit log records who sealed it.
+
+      - alert: HarpocratesCrlPublicationFailing
+        expr: harpocrates_crl_publication_pending_seconds > 300
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.issuer }}'s newest revocation list is not published"
+          description: >-
+            It has waited {{ $value | humanizeDuration }}: written to the
+            published directory, or read back from the distribution URL,
+            failed. The CA's lists show the error (GET
+            /v1/issuer/{{ $labels.issuer }}/crls); publication is retried.
+
+      - alert: HarpocratesCrlSigningFailing
+        expr: increase(harpocrates_crl_signing_failures_total{reason!="sealed"}[30m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.issuer }}'s revocation list could not be signed"
+          description: >-
+            The signer refused it or the call failed ({{ $labels.reason }});
+            the service's log has the message. Sealed signers alert on
+            their own.
+
+      # The last value scraped, not the current one: while the service is
+      # down the list still lapses, and this still fires (sign-off C16.2).
+      - alert: HarpocratesCrlExpiring
+        expr: >-
+          max_over_time(harpocrates_crl_next_update_timestamp_seconds{tier="issuing"}[8d])
+          - time() < 2 * 86400
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.issuer }}'s published revocation list lapses within 2 days"
+          description: >-
+            It lapses in {{ $value | humanizeDuration }}; after that every
+            relying party refuses every certificate the CA issued. Lists
+            are re-signed daily, so the service, the signer or publication
+            has been failing for days.
+
+      - alert: HarpocratesOfflineCrlExpiring
+        expr: >-
+          max_over_time(harpocrates_crl_next_update_timestamp_seconds{tier!="issuing"}[30d])
+          - time() < 60 * 86400
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.issuer }}'s revocation list lapses within 60 days"
+          description: >-
+            It lapses in {{ $value | humanizeDuration }}, and it can only
+            be re-signed in a ceremony (POST /v1/ceremony/{id}/crl), with
+            the offline media and the passphrase. A lapsed list breaks
+            every relying party beneath the CA.
+
+      - alert: HarpocratesCrlMissing
+        expr: >-
+          harpocrates_issuing_window_days
+          unless on(issuer) harpocrates_crl_next_update_timestamp_seconds
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.issuer }} is active and has no published revocation list"
+          description: >-
+            An online CA's is signed within a minute of it starting; an
+            offline CA's needs a ceremony or an imported list.
+
+      - alert: HarpocratesIssuingWindowClosing
+        expr: harpocrates_issuing_window_days < 365
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.issuer }} stops issuing within a year"
+          description: >-
+            {{ $value | printf "%.0f" }} days until it can no longer fit its
+            longest certificate. Create its successor (the next generation)
+            in a ceremony before then.
+
+      # The profile's threshold: its validity less the age it renews at.
+      # Only certificates nothing renews by itself; renewal and ACME
+      # (phases 5 and 6) set renewal="automatic" on theirs.
+      - alert: HarpocratesCertificateNeedsRenewal
+        expr: >-
+          certificate_expiry_days{renewal="manual"}
+          < on(profile) group_left() harpocrates_profile_renewal_due_days
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.subject }} is due for renewal"
+          description: >-
+            It expires in {{ $value | printf "%.0f" }} days
+            ({{ $labels.profile }} certificate from {{ $labels.issuer }},
+            serial {{ $labels.serial }}), and nothing renews it by itself.
+
+      - alert: HarpocratesCertificateExpiring
+        expr: certificate_expiry_days < 7
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.subject }} expires within a week"
+          description: >-
+            {{ $value | printf "%.1f" }} days left ({{ $labels.profile }}
+            certificate from {{ $labels.issuer }}, serial
+            {{ $labels.serial }}), whether or not something should have
+            renewed it.

@@ -40,6 +40,9 @@ export class PkiGaugeService implements OnModuleInit {
       "certificate_expiry_days",
       "harpocrates_issuing_window_days",
       "harpocrates_signer_sealed",
+      "harpocrates_profile_renewal_due_days",
+      "harpocrates_crl_next_update_timestamp_seconds",
+      "harpocrates_crl_publication_pending_seconds",
     ]) {
       register.removeSingleMetric(name);
     }
@@ -49,7 +52,7 @@ export class PkiGaugeService implements OnModuleInit {
     new Gauge({
       name: "certificate_expiry_days",
       help: "Days until each valid certificate the CA knows of expires",
-      labelNames: ["issuer", "profile", "subject", "serial"],
+      labelNames: ["issuer", "profile", "subject", "serial", "renewal"],
       async collect() {
         this.reset();
         const rows = await quietly(() =>
@@ -74,6 +77,9 @@ export class PkiGaugeService implements OnModuleInit {
               profile: row.profileId ?? "none",
               subject: row.subject,
               serial: row.serial,
+              // Whether it renews itself or needs a person: nothing renews
+              // itself until renewal and ACME (phases 5 and 6).
+              renewal: "manual",
             },
             days(row.notAfter),
           );
@@ -97,6 +103,90 @@ export class PkiGaugeService implements OnModuleInit {
           this.set(
             { issuer: row.id },
             days(issuingWindowClosesAt(row.notAfter!, row.maxValidityDays)),
+          );
+        }
+      },
+    });
+
+    new Gauge({
+      name: "harpocrates_profile_renewal_due_days",
+      help: "Days before expiry a certificate of each profile is due for renewal: its validity less its renewal age",
+      labelNames: ["profile"],
+      async collect() {
+        this.reset();
+        const rows = await quietly(() =>
+          prisma.profile.findMany({
+            select: { id: true, validityDays: true, renewAtDays: true },
+          }),
+        );
+        for (const row of rows) {
+          this.set({ profile: row.id }, row.validityDays - row.renewAtDays);
+        }
+      },
+    });
+
+    // Absolute times, not days left: after the service stops, the last
+    // value still says when the list lapses (max_over_time in the rules).
+    new Gauge({
+      name: "harpocrates_crl_next_update_timestamp_seconds",
+      help: "When each CA's newest published revocation list lapses, as a Unix time",
+      labelNames: ["issuer", "tier"],
+      async collect() {
+        this.reset();
+        const rows = await quietly(() =>
+          prisma.issuer.findMany({
+            where: { crls: { some: { publishedAt: { not: null } } } },
+            select: {
+              id: true,
+              tier: true,
+              crls: {
+                where: { publishedAt: { not: null } },
+                orderBy: { number: "desc" },
+                take: 1,
+                select: { nextUpdate: true },
+              },
+            },
+          }),
+        );
+        for (const row of rows) {
+          const newest = row.crls[0];
+          if (!newest) continue;
+          this.set(
+            { issuer: row.id, tier: row.tier },
+            Math.floor(newest.nextUpdate.getTime() / 1000),
+          );
+        }
+      },
+    });
+
+    new Gauge({
+      name: "harpocrates_crl_publication_pending_seconds",
+      help: "How long each CA's newest list has waited to be published; 0 once it is",
+      labelNames: ["issuer", "tier"],
+      async collect() {
+        this.reset();
+        const rows = await quietly(() =>
+          prisma.issuer.findMany({
+            where: { crls: { some: {} } },
+            select: {
+              id: true,
+              tier: true,
+              crls: {
+                orderBy: { number: "desc" },
+                take: 1,
+                select: { createdAt: true, publishedAt: true },
+              },
+            },
+          }),
+        );
+        for (const row of rows) {
+          const newest = row.crls[0];
+          if (!newest) continue;
+          this.set(
+            { issuer: row.id, tier: row.tier },
+            newest.publishedAt
+              ? 0
+              : Math.round((Date.now() - newest.createdAt.getTime()) / 1000),
           );
         }
       },

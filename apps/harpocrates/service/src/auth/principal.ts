@@ -8,15 +8,18 @@ export enum PkiRole {
   Operator = "pki-operator",
 }
 
-/** Who made a request: a user of the API's tokens, or the break-glass CLI. */
+/**
+ * Who did something: a user of the API's tokens, the break-glass CLI, or
+ * Harpocrates itself (the scheduler).
+ */
 export type Principal = {
-  /** `user:<sub>` or `cli:<name>`: what the audit log records. */
+  /** `user:<sub>`, `cli:<name>` or `system`: what the audit log records. */
   id: string;
   roles: PkiRole[];
   /** When the session's sign-in completed, in seconds; 0 for the CLI. */
   authTime: number;
-  /** api or cli. */
-  surface: "api" | "cli";
+  /** Where it came from (ADR 0020, Audit). */
+  surface: "api" | "cli" | "system";
 };
 
 export type AuthenticatedRequest = Request & { principal?: Principal };
@@ -26,5 +29,5 @@ export const SYSTEM: Principal = {
   id: "system",
   roles: [PkiRole.Admin],
   authTime: 0,
-  surface: "cli",
+  surface: "system",
 };

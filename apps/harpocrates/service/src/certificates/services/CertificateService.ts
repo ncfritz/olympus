@@ -12,6 +12,7 @@ import { AuditKind } from "../../audit/auditKinds";
 import { AuditService } from "../../audit/services/AuditService";
 import type { Principal } from "../../auth/principal";
 import { pkiConfig, type PkiConfigType } from "../../config/configuration";
+import { CrlScheduler } from "../../crls/services/CrlScheduler";
 import type { IssuerWithRules } from "../../issuers/converters/IssuerConverter";
 import { addDays } from "../../issuers/issuingWindow";
 import { IssuerService, startNow } from "../../issuers/services/IssuerService";
@@ -115,6 +116,7 @@ export class CertificateService {
     private readonly profiles: ProfileService,
     private readonly keys: KeyService,
     private readonly audit: AuditService,
+    private readonly scheduler: CrlScheduler,
     @Inject(pkiConfig.KEY) private readonly pki: PkiConfigType,
   ) {}
 
@@ -419,6 +421,11 @@ export class CertificateService {
           tx,
         );
       }
+      // Each issuer's next list carries it: the scheduler signs one now.
+      await tx.issuer.updateMany({
+        where: { id: { in: [...new Set(lineage.map((c) => c.issuerId))] } },
+        data: { crlDueAt: new Date() },
+      });
       if (compromised && key && !key.blockedAt) {
         await tx.key.update({
           where: { id: key.id },
@@ -440,6 +447,7 @@ export class CertificateService {
     for (const certificate of lineage) {
       revocations.inc({ issuer: certificate.issuerId, reason: request.reason });
     }
+    void this.scheduler.kick();
     // An escrowed key goes with its lineage's last valid certificate.
     if (key?.location === "signer" && key.signerKeyId && !key.destroyedAt) {
       const remaining = await this.prisma.certificate.count({

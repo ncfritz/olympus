@@ -22,6 +22,9 @@ export default mergeConfig(
         AUTH_JWKS_FILE: "test/fixtures/jwks.json",
         PKI_REALM: "ncfritz.net Test",
         PKI_DISTRIBUTION_URL: "http://pki.internal.localhost",
+        PKI_PUBLISHED_DIR: "/nonexistent/published",
+        // The e2e tests run the scheduler's steps themselves.
+        CRL_SCHEDULE_SECONDS: "0",
       },
       outputFile: { html: "test-report/index.html" },
       projects: [

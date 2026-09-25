@@ -8,6 +8,7 @@ const REQUIRED = {
   SIGNER_SOCKET_PATH: "/run/harpocrates/signer.sock",
   SIGNER_TOKEN_FILE: "/run/secrets/harpocrates_signer_token",
   AUTH_JWKS_URL: "http://olympus-api:3100/.well-known/jwks.json",
+  PKI_PUBLISHED_DIR: "/srv/harpocrates/published",
 };
 
 describe("readConfig", () => {
@@ -30,7 +31,31 @@ describe("readConfig", () => {
       realm: "ncfritz.net",
       organization: "ncfritz.net",
       distributionUrl: "http://pki.internal.ncfritz.net",
+      publishedDir: "/srv/harpocrates/published",
     });
+    expect(config.crl).toEqual({
+      validityHours: 168,
+      refreshHours: 24,
+      offlineValidityDays: 395,
+      scheduleSeconds: 30,
+    });
+  });
+
+  it("turns the scheduler off with 0 seconds", () => {
+    expect(
+      readConfig({ ...REQUIRED, CRL_SCHEDULE_SECONDS: "0" }).crl
+        .scheduleSeconds,
+    ).toBe(0);
+  });
+
+  it("refuses a list that expires before it is replaced", () => {
+    expect(() =>
+      readConfig({
+        ...REQUIRED,
+        CRL_VALIDITY_HOURS: "24",
+        CRL_REFRESH_HOURS: "24",
+      }),
+    ).toThrow(/CRL_REFRESH_HOURS must be less than CRL_VALIDITY_HOURS/);
   });
 
   it("keeps the API explorer off in production unless asked", () => {
@@ -67,12 +92,17 @@ describe("readConfig", () => {
       readConfig({
         LISTEN_PORT: "not-a-port",
         AUTH_RECENT_SIGN_IN_SECONDS: "-1",
+        CRL_SCHEDULE_SECONDS: "-5",
       });
       expect.unreachable();
     } catch (error) {
       expect(error).toBeInstanceOf(ConfigValidationError);
       expect(String(error)).toMatch(/SIGNER_SOCKET_PATH/);
       expect(String(error)).toMatch(/AUTH_RECENT_SIGN_IN_SECONDS/);
+      expect(String(error)).toMatch(/PKI_PUBLISHED_DIR/);
+      expect(String(error)).toMatch(
+        /CRL_SCHEDULE_SECONDS must be an integer of at least 0/,
+      );
     }
   });
 });

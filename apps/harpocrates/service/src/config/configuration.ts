@@ -40,6 +40,22 @@ export type PkiConfig = {
   organization: string;
   /** Where lists and CA certificates are published (ADR 0020, Distribution). */
   distributionUrl: string;
+  /**
+   * The directory the distribution host serves (the
+   * `harpocrates-published` volume): `crl/<slug>.crl`, `ca/<slug>.crt`.
+   */
+  publishedDir: string;
+};
+
+export type CrlConfig = {
+  /** How long an online CA's list is valid (ADR 0020: 7 days). */
+  validityHours: number;
+  /** How often an online CA's list is re-signed with nothing revoked (daily). */
+  refreshHours: number;
+  /** How long an offline CA's list, signed in a ceremony, is valid (13 months). */
+  offlineValidityDays: number;
+  /** How often the scheduler runs, in seconds; 0 turns it off (the CLI, tests). */
+  scheduleSeconds: number;
 };
 
 export type HarpocratesConfig = {
@@ -48,14 +64,24 @@ export type HarpocratesConfig = {
   signer: SignerConfig;
   auth: AuthConfig;
   pki: PkiConfig;
+  crl: CrlConfig;
 };
 
-const positiveInt = (read: EnvReader, name: string, fallback: number) => {
+const integer = (
+  read: EnvReader,
+  name: string,
+  fallback: number,
+  minimum = 1,
+) => {
   const raw = read.optional(name);
   if (raw === undefined) return fallback;
   const value = Number(raw);
-  if (!Number.isInteger(value) || value < 1) {
-    read.problems.push(`${name} must be a positive integer, got "${raw}"`);
+  if (!Number.isInteger(value) || value < minimum) {
+    read.problems.push(
+      minimum === 1
+        ? `${name} must be a positive integer, got "${raw}"`
+        : `${name} must be an integer of at least ${minimum}, got "${raw}"`,
+    );
     return fallback;
   }
   return value;
@@ -75,7 +101,7 @@ export const readConfig = (
     jwksUrl: read.optional("AUTH_JWKS_URL"),
     jwksFile: read.optional("AUTH_JWKS_FILE"),
     audience: read.string("AUTH_AUDIENCE", "olympus-api"),
-    recentSignInSeconds: positiveInt(read, "AUTH_RECENT_SIGN_IN_SECONDS", 300),
+    recentSignInSeconds: integer(read, "AUTH_RECENT_SIGN_IN_SECONDS", 300),
   };
   if (!auth.jwksUrl === !auth.jwksFile) {
     read.problems.push("set exactly one of AUTH_JWKS_URL and AUTH_JWKS_FILE");
@@ -98,8 +124,20 @@ export const readConfig = (
       distributionUrl: read
         .string("PKI_DISTRIBUTION_URL", "http://pki.internal.ncfritz.net")
         .replace(/\/+$/, ""),
+      publishedDir: read.string("PKI_PUBLISHED_DIR"),
+    },
+    crl: {
+      validityHours: integer(read, "CRL_VALIDITY_HOURS", 7 * 24),
+      refreshHours: integer(read, "CRL_REFRESH_HOURS", 24),
+      offlineValidityDays: integer(read, "CRL_OFFLINE_VALIDITY_DAYS", 395),
+      scheduleSeconds: integer(read, "CRL_SCHEDULE_SECONDS", 30, 0),
     },
   };
+  if (config.crl.refreshHours >= config.crl.validityHours) {
+    read.problems.push(
+      "CRL_REFRESH_HOURS must be less than CRL_VALIDITY_HOURS: a list must be replaced before it expires",
+    );
+  }
   if (read.problems.length) throw new ConfigValidationError(read.problems);
   return config;
 };
@@ -125,12 +163,14 @@ export const authConfig = registerAs(
   () => readConfig(process.env).auth,
 );
 export const pkiConfig = registerAs("pki", () => readConfig(process.env).pki);
+export const crlConfig = registerAs("crl", () => readConfig(process.env).crl);
 
 export type ServerConfigType = ConfigType<typeof serverConfig>;
 export type LoggingConfigType = ConfigType<typeof loggingConfig>;
 export type SignerConfigType = ConfigType<typeof signerConfig>;
 export type AuthConfigType = ConfigType<typeof authConfig>;
 export type PkiConfigType = ConfigType<typeof pkiConfig>;
+export type CrlConfigType = ConfigType<typeof crlConfig>;
 
 export const ALL_CONFIG = [
   serverConfig,
@@ -138,4 +178,5 @@ export const ALL_CONFIG = [
   signerConfig,
   authConfig,
   pkiConfig,
+  crlConfig,
 ];

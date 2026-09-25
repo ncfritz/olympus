@@ -5,6 +5,7 @@ import { AuthModule } from "./auth/AuthModule";
 import { CeremoniesModule } from "./ceremonies/CeremoniesModule";
 import { CertificatesModule } from "./certificates/CertificatesModule";
 import { ALL_CONFIG } from "./config/configuration";
+import { CrlsModule } from "./crls/CrlsModule";
 import { IssuersModule } from "./issuers/IssuersModule";
 import { KeysModule } from "./keys/KeysModule";
 import { MetricsModule } from "./metrics/MetricsModule";
@@ -31,6 +32,7 @@ import { StoreModule } from "./store/StoreModule";
     CeremoniesModule,
     ProfilesModule,
     CertificatesModule,
+    CrlsModule,
   ],
 })
 export class AppModule {}
