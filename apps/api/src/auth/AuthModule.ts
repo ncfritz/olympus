@@ -1,5 +1,6 @@
 import { Global, Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
+import { GraphQLClientModule } from "../infra/GraphQLClientModule";
 import { AuthGuard } from "./AuthGuard";
 import { RateLimitGuard } from "./limits/RateLimitGuard";
 import { AuthorizationCodeService } from "./codes/AuthorizationCodeService";
@@ -17,6 +18,9 @@ import { ServiceIdentityService } from "./services/ServiceIdentityService";
 /** Authentication for both listeners (ADR 0018), as the global guard. */
 @Global()
 @Module({
+  // UserDirectoryService talks to Hasura, and a global module does not
+  // inherit AppModule's imports: what AuthModule needs, AuthModule imports.
+  imports: [GraphQLClientModule],
   controllers: [
     BeginSignInController,
     CompleteSignInController,
