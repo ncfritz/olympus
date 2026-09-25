@@ -312,6 +312,16 @@ node --test infra/docker/rabbitmq/test/*.test.mjs
 an unknown command, no environment chosen — because those are the ones a
 silent exit hides.
 
+The shell scripts are shellcheck-clean, which nothing enforces, so it is
+worth running when one changes:
+
+```sh
+shellcheck infra/docker/stack.sh ../../scripts/dev-ca.sh
+```
+
+`stack.sh` targets bash 3.2, which is what macOS ships; shellcheck takes
+that from the shebang.
+
 ### RabbitMQ users
 
 `rabbitmq/users.json` lists the vhosts and one user per service, each
