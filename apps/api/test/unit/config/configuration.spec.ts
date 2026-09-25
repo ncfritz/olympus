@@ -19,6 +19,9 @@ describe("readConfig", () => {
       port: 3100,
       apiExplorer: true,
       corsOrigins: ["http://localhost:3000"],
+      // Nothing is trusted unless a deployment says so, so request.ip is the
+      // immediate peer and the auth rate limits count it as one caller.
+      trustedProxies: [],
     });
     expect(config.hasura.endpoint).toBe("http://localhost:8080/v1/graphql");
     expect(config.amqp.uri).toBe(

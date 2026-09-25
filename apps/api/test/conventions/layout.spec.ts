@@ -21,6 +21,7 @@ const specsUnder = (dir: string): string[] =>
 const ENV_READERS = new Set([
   "config/configuration.ts", // the typed namespaces
   "main.ts", // validates the configuration before Nest starts
+  "authUser.ts", // the auth:user CLI, which reads the same env file
   "AppModule.ts", // envFilePath from NODE_ENV
   "openapiEnv.ts", // placeholders for OpenAPI generation
   "schema/documentBuilder.ts", // npm_package_version for info.version

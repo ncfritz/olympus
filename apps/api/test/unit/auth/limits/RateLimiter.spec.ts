@@ -105,10 +105,25 @@ describe("RateLimiter", () => {
 
   it("drops windows it no longer needs", () => {
     const limiter = new RateLimiter();
+    // A ceiling high enough that all fifty are allowed, so all fifty get a
+    // window of their own to be swept.
+    const roomy: RateLimit = { perClient: 2, global: 500, windowSeconds: 60 };
     for (let i = 0; i < 50; i += 1) {
-      limiter.check("e", `client-${i}`, LIMIT, START);
+      limiter.check("e", `client-${i}`, roomy, START);
     }
     expect(limiter.size(START)).toBeGreaterThan(50);
     expect(limiter.size(START + 60_000)).toBe(0);
+  });
+
+  it("does not grow a window per address once the ceiling is reached", () => {
+    // Which matters when the per-client key can be forged: the ceiling is
+    // checked first, so a flood of invented addresses is refused without
+    // each one costing a map entry.
+    const limiter = new RateLimiter();
+    for (let i = 0; i < 1_000; i += 1) {
+      limiter.check("e", `spoofed-${i}`, LIMIT, START);
+    }
+    // The three that got through, plus the global window.
+    expect(limiter.size(START)).toBe(4);
   });
 });

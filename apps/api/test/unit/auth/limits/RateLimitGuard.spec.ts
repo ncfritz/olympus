@@ -43,19 +43,21 @@ const reflector = (limit: RateLimit | undefined) =>
       key === RATE_LIMIT ? limit : undefined,
   }) as unknown as Reflector;
 
-const counted = (endpoint: string, scope: string): number =>
-  (
-    register.getSingleMetric("auth_rate_limited_total") as unknown as {
-      get: () => {
-        values: { labels: Record<string, string>; value: number }[];
+/** prom-client's `get()` is async, so this is too. */
+const counted = async (endpoint: string, scope: string): Promise<number> => {
+  const metric = register.getSingleMetric("auth_rate_limited_total") as
+    | undefined
+    | {
+        get: () => Promise<{
+          values: { labels: Record<string, string>; value: number }[];
+        }>;
       };
-    }
-  )
-    .get()
-    .values.filter(
-      (v) => v.labels.endpoint === endpoint && v.labels.scope === scope,
-    )
+  if (metric === undefined) return 0;
+  const { values } = await metric.get();
+  return values
+    .filter((v) => v.labels.endpoint === endpoint && v.labels.scope === scope)
     .reduce((total, v) => total + v.value, 0);
+};
 
 describe("RateLimitGuard", () => {
   let captured: Captured;
@@ -93,13 +95,13 @@ describe("RateLimitGuard", () => {
     expect(captured.headers["Retry-After"]).toBe("60");
   });
 
-  it("counts the refusal, by endpoint and scope", () => {
+  it("counts the refusal, by endpoint and scope", async () => {
     const guard = new RateLimitGuard(reflector(LIMIT));
     guard.canActivate(context("10.0.0.1", captured));
     guard.canActivate(context("10.0.0.1", captured));
     expect(() => guard.canActivate(context("10.0.0.1", captured))).toThrow();
-    expect(counted("BeginSignInController", "client")).toBe(1);
-    expect(counted("BeginSignInController", "global")).toBe(0);
+    expect(await counted("BeginSignInController", "client")).toBe(1);
+    expect(await counted("BeginSignInController", "global")).toBe(0);
   });
 
   it("counts addresses separately", () => {
@@ -132,7 +134,7 @@ describe("RateLimitGuard", () => {
     );
   });
 
-  it("refuses on the ceiling, with the global scope, before any client is over", () => {
+  it("refuses on the ceiling, with the global scope, before any client is over", async () => {
     const ceiling: RateLimit = {
       perClient: 5,
       global: 2,
@@ -144,8 +146,8 @@ describe("RateLimitGuard", () => {
     expect(() => guard.canActivate(context("10.0.0.3", captured))).toThrow(
       HttpException,
     );
-    expect(counted("BeginSignInController", "global")).toBe(1);
-    expect(counted("BeginSignInController", "client")).toBe(0);
+    expect(await counted("BeginSignInController", "global")).toBe(1);
+    expect(await counted("BeginSignInController", "client")).toBe(0);
   });
 });
 
