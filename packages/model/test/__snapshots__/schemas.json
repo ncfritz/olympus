@@ -3457,6 +3457,34 @@
     ],
     "type": "object"
   },
+  "CreateTokenResponse": {
+    "properties": {
+      "access_token": {
+        "description": "The access token: a JWT, signed ES256, good for ten minutes",
+        "type": "string"
+      },
+      "expires_in": {
+        "description": "Seconds until the access token expires",
+        "example": 600,
+        "type": "number"
+      },
+      "refresh_token": {
+        "description": "The refresh token, for a client that receives it in the body. Absent for the site, which is given it in an httpOnly cookie instead so that it never reaches JavaScript",
+        "type": "string"
+      },
+      "token_type": {
+        "description": "Always `Bearer`",
+        "example": "Bearer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "access_token",
+      "expires_in",
+      "token_type"
+    ],
+    "type": "object"
+  },
   "CreateWorkflowRequest": {
     "properties": {},
     "type": "object"
@@ -3997,6 +4025,21 @@
     },
     "required": [
       "step"
+    ],
+    "type": "object"
+  },
+  "DescribeJsonWebKeySetResponse": {
+    "properties": {
+      "keys": {
+        "description": "Every key the API currently verifies with, newest last. A token outlives a rotation because its `kid` names the key that signed it",
+        "items": {
+          "$ref": "#/components/schemas/PublicSigningKey"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "keys"
     ],
     "type": "object"
   },
@@ -12644,6 +12687,52 @@
       "createdTime",
       "lastUpdatedTime",
       "productionCompany"
+    ],
+    "type": "object"
+  },
+  "PublicSigningKey": {
+    "properties": {
+      "alg": {
+        "description": "The algorithm this key is for",
+        "example": "ES256",
+        "type": "string"
+      },
+      "crv": {
+        "description": "The curve",
+        "example": "P-256",
+        "type": "string"
+      },
+      "kid": {
+        "description": "Key identifier: the RFC 7638 thumbprint of this key, which is what an access token's `kid` header names",
+        "type": "string"
+      },
+      "kty": {
+        "description": "Key type. Always `EC` for the ES256 keys the API signs with",
+        "example": "EC",
+        "type": "string"
+      },
+      "use": {
+        "description": "What the key is for",
+        "example": "sig",
+        "type": "string"
+      },
+      "x": {
+        "description": "The public point's x coordinate, base64url",
+        "type": "string"
+      },
+      "y": {
+        "description": "The public point's y coordinate, base64url",
+        "type": "string"
+      }
+    },
+    "required": [
+      "alg",
+      "crv",
+      "kid",
+      "kty",
+      "use",
+      "x",
+      "y"
     ],
     "type": "object"
   },

@@ -11,7 +11,7 @@ import { CompleteSignInController } from "./controllers/CompleteSignInController
 import { CreateTokenController } from "./controllers/CreateTokenController";
 import { OidcProviderRegistry } from "./providers/OidcProviderRegistry";
 import { ProviderLoginService } from "./providers/ProviderLoginService";
-import { DescribeJsonWebKeySetController } from "./tokens/controllers/DescribeJsonWebKeySetController";
+import { DescribeJsonWebKeySetController } from "./controllers/DescribeJsonWebKeySetController";
 import { SigningKeyService } from "./tokens/SigningKeyService";
 import { ServiceIdentityService } from "./services/ServiceIdentityService";
 

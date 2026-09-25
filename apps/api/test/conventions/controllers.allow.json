@@ -1,4 +1,10 @@
 {
   "class-name ListNotificationTypesController": "src/olympus/notifications/controllers/ListNotificationTypesController.ts: class ListNotificationTypesController for operation ListNotificationsTypes",
-  "file-name ListNotificationTypesController": "src/olympus/notifications/controllers/ListNotificationTypesController.ts: file ListNotificationTypesController.ts for operation ListNotificationsTypes"
+  "file-name ListNotificationTypesController": "src/olympus/notifications/controllers/ListNotificationTypesController.ts: file ListNotificationTypesController.ts for operation ListNotificationsTypes",
+  "standard-errors BeginSignInController": "OAuth endpoint. Its 400s are documented individually because what they mean is specific (an unregistered redirect_uri is deliberately not a redirect), and there is no 404: the route takes no resource id.",
+  "standard-errors CompleteSignInController": "OAuth endpoint. Its one 400 (no pending sign-in for that state) is documented on the operation; there is no resource to 404 on.",
+  "standard-errors CreateTokenController": "RFC 6749 \u00a75.2 defines the error body as { error, error_description }, which is not this API's standard error shape. Documenting the standard one here would describe a response the endpoint must never send.",
+  "success-response BeginSignInController": "Answers only 302, to the identity provider. There is no 2xx it can send.",
+  "success-response CompleteSignInController": "Answers only 302, back to the client \u2014 with a code or with error=access_denied. There is no 2xx it can send.",
+  "version DescribeJsonWebKeySetController": "/.well-known/jwks.json is fixed by RFC 8615 and RFC 7517: a client looking for a key set looks there and nowhere else, so the path cannot carry /v1."
 }

@@ -8,9 +8,9 @@ import {
 } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiProduces } from "@nestjs/swagger";
 import { type Response } from "express";
-import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-import { Public } from "../../authDecorators";
-import { SigningKeyService } from "../SigningKeyService";
+import { ApiStandardErrorResponses } from "../../utils/controllerDecorators";
+import { Public } from "../authDecorators";
+import { SigningKeyService } from "../tokens/SigningKeyService";
 
 /**
  * The public half of the access-token signing keys.
