@@ -399,7 +399,7 @@ The old compose files, the retired server blocks under
 `config/servers/_retired/` and the pre-monorepo images are still on the
 Mac Mini. They cost nothing but disk and they are the rollback.
 
-## Phase 5 — A new host, and the NAS
+## Phase 5 — A new host, and the NAS (done 2026-09-24)
 
 1. `docs/guides/new-host.md`: from an empty machine to a running
    platform (Docker, the repository, a secrets directory, `bootstrap`,
@@ -441,6 +441,65 @@ Mac Mini. They cost nothing but disk and they are the rollback.
 
    `AUTH_MODE_SERVICES=report` means an unknown service is recorded rather
    than refused, so this can go in before `AUTH_SERVICE_ROLES` is complete.
+
+### What it found
+
+The NAS is the first machine in this migration that is a plain Linux host
+with real uids and real ACLs. Docker Desktop had been papering over file
+ownership on both the Mac Mini and the laptop, so phase 3.8's rehearsal
+could not have caught most of this.
+
+1. **DSM ignores `/etc/docker/certs.d`.** The per-registry trust directory
+   that works everywhere else does nothing on Container Manager, and the
+   pull keeps failing with `certificate signed by unknown authority` no
+   matter how correct the bundle in it is. It reads DSM's own store:
+   one `.crt` file per certificate under
+   `/usr/syno/etc/security-profile/ca-bundle-profile/ca-certificates`,
+   applied with `update-ca-certificates.sh`, then a package restart.
+   A concatenated bundle is not read.
+
+2. **`ssh <host> docker` gets a shell whose `PATH` has no Synology package
+   directories**, so a Docker context over SSH fails with `command not
+found` until there is a link into `/usr/bin`. Compose runs client-side,
+   so DSM's own Compose version never matters — only that a daemon answers.
+
+3. **Synology ACLs override the mode bits.** A directory reading
+   `drwxrwxrwx+` is unreachable to a uid the ACL does not name, and it
+   presents as _missing_ rather than refused: `existsSync` says no and the
+   next line tries to create it. The agent runs as the account that owns
+   the media (`1028:100`) rather than the image's `node`; chowning the
+   media instead would break everything else on the NAS.
+
+4. **`check` cannot verify a remote stack's secrets**, and said they were
+   all missing. Compose resolves secret paths on the Docker host; the
+   shell testing them is on the machine you typed on. A false "missing" is
+   worse than no check, so it now says the files are elsewhere. `check`
+   also swallowed its own failures into a temp file nothing read — both
+   fixed, with tests.
+
+5. **The mTLS certificate could not be deferred**, though this plan said it
+   could. See phase 5's item 2 and
+   [ADR 0023](../../decisions/0023-service-certificates-are-checked-by-issuer.md),
+   which came out of it: the chain does not separate services from devices,
+   and nothing was checking the issuer.
+
+6. **Every Node image we had ever built was a webpack development bundle.**
+   `webpack.config.js` picks its mode from `NODE_ENV` at build time and the
+   build stage never set it, so `process.env.NODE_ENV` was compiled into
+   the bundles as `"development"` — which no runtime setting can undo, and
+   which is why a guard on it kept firing in an image whose environment
+   said production. This is the most valuable thing the phase found and it
+   has nothing to do with the NAS.
+
+   Production mode minifies, which needs materially more memory than the
+   builds before it: `bake` building every target at once now exhausts the
+   builder. Build serially, or cap the builder's parallelism.
+
+An `allow` is silent — the guard logs only what it would reject — so the
+evidence for the NAS working is
+`auth_decisions_total{listener="services",outcome="allow"}` rather than a
+log line. The authentication signoff said "API log" for F7.1 and has been
+corrected.
 
 ## Phase 6 — Backups
 
