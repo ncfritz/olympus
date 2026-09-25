@@ -1,6 +1,2194 @@
 {
   "openapi": "3.1.1",
-  "paths": {},
+  "paths": {
+    "/v1/audit/events": {
+      "get": {
+        "description": "The audit log, newest first, filtered by kind, principal or subject; page with `before`.",
+        "operationId": "ListAuditEvents",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "description": "Only this kind",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "principal",
+            "required": false,
+            "in": "query",
+            "description": "Only this principal",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subjectType",
+            "required": false,
+            "in": "query",
+            "description": "Only events about this kind of thing",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subjectId",
+            "required": false,
+            "in": "query",
+            "description": "Only events about this thing",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "description": "Events before this sequence: the next page",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "How many, newest first (100 by default, at most 500)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The events.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAuditEventsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists audit events",
+        "tags": [
+          "Audit"
+        ]
+      }
+    },
+    "/v1/audit/verification": {
+      "get": {
+        "description": "Walks the audit log from its first event, recomputing every hash, and says whether the chain holds and where it first breaks.",
+        "operationId": "GetAuditVerification",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The verification.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAuditVerificationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Verifies the audit log",
+        "tags": [
+          "Audit"
+        ]
+      }
+    },
+    "/v1/signer/status": {
+      "get": {
+        "description": "Whether the signer is initialised and unsealed, why not, and its open ceremony.",
+        "operationId": "DescribeSignerStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The seal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeSignerStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Describes the signer's seal",
+        "tags": [
+          "Signer"
+        ]
+      }
+    },
+    "/v1/signer/seal": {
+      "post": {
+        "description": "Has the signer forget its keys and end any ceremony. It stays sealed across restarts until unsealed with the recovery passphrase.",
+        "operationId": "SealSigner",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "The signer is sealed."
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Seals the signer",
+        "tags": [
+          "Signer"
+        ]
+      }
+    },
+    "/v1/signer/unseal": {
+      "post": {
+        "description": "Unseals the signer with the recovery passphrase, which also lifts a deliberate seal.",
+        "operationId": "UnsealSigner",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The recovery passphrase.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnsealSignerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The signer is unsealed."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unseals the signer",
+        "tags": [
+          "Signer"
+        ]
+      }
+    },
+    "/v1/issuers": {
+      "get": {
+        "description": "Every CA, roots first, with its status, validity, issuing window and rules; the tree follows parentId.",
+        "operationId": "ListIssuers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The CAs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListIssuersResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists the certificate authorities",
+        "tags": [
+          "Issuers"
+        ]
+      }
+    },
+    "/v1/issuers/roots": {
+      "post": {
+        "description": "Creates a root CA as a ceremony: the signer generates its key and self-signs, and the key is returned encrypted, once. Harpocrates keeps no copy.",
+        "operationId": "CreateRootIssuer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The root's number, generation and export passphrase.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRootIssuerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The root was created.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The new CA"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateRootIssuerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Creates a root",
+        "tags": [
+          "Issuers"
+        ]
+      }
+    },
+    "/v1/issuers/import": {
+      "post": {
+        "description": "Imports an existing CA, parents first: a root or intermediate by its certificate alone (its key stays offline), an issuing CA with its encrypted key, which goes to the signer.",
+        "operationId": "ImportIssuer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The CA to import.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportIssuerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The CA was imported.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The imported CA"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportIssuerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Imports a certificate authority",
+        "tags": [
+          "Issuers"
+        ]
+      }
+    },
+    "/v1/issuer/{issuerId}": {
+      "get": {
+        "description": "A CA with its certificate and the chain above it, nearest first.",
+        "operationId": "DescribeIssuer",
+        "parameters": [
+          {
+            "name": "issuerId",
+            "required": true,
+            "in": "path",
+            "description": "The CA's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The CA.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeIssuerResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Describes a certificate authority",
+        "tags": [
+          "Issuers"
+        ]
+      }
+    },
+    "/v1/ceremonies": {
+      "post": {
+        "description": "Puts an offline CA's key in the signer for one ceremony: an hour at most, and never across a restart or a seal. One ceremony at a time.",
+        "operationId": "OpenCeremony",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The offline CA and its key.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenCeremonyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The ceremony is open.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The ceremony"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenCeremonyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Opens a ceremony",
+        "tags": [
+          "Ceremonies"
+        ]
+      }
+    },
+    "/v1/ceremony/{ceremonyId}": {
+      "get": {
+        "description": "Who opened a ceremony, for which CA, and whether it is closed.",
+        "operationId": "DescribeCeremony",
+        "parameters": [
+          {
+            "name": "ceremonyId",
+            "required": true,
+            "in": "path",
+            "description": "The ceremony's ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The ceremony.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeCeremonyResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Describes a ceremony",
+        "tags": [
+          "Ceremonies"
+        ]
+      },
+      "delete": {
+        "description": "Has the signer forget the offline CA's key. Closing one the signer has already ended is not an error.",
+        "operationId": "CloseCeremony",
+        "parameters": [
+          {
+            "name": "ceremonyId",
+            "required": true,
+            "in": "path",
+            "description": "The ceremony's ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The ceremony is closed."
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Closes a ceremony",
+        "tags": [
+          "Ceremonies"
+        ]
+      }
+    },
+    "/v1/ceremony/{ceremonyId}/intermediates": {
+      "post": {
+        "description": "Creates an offline intermediate below the ceremony's root: the signer generates its key, the root signs it, and the key is returned encrypted, once.",
+        "operationId": "CreateIntermediateIssuer",
+        "parameters": [
+          {
+            "name": "ceremonyId",
+            "required": true,
+            "in": "path",
+            "description": "The open ceremony",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The intermediate's number, generation, constraints and export passphrase.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIntermediateIssuerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The intermediate was created.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The new CA"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateIntermediateIssuerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Creates an intermediate in a ceremony",
+        "tags": [
+          "Ceremonies"
+        ]
+      }
+    },
+    "/v1/ceremony/{ceremonyId}/issuing": {
+      "post": {
+        "description": "Creates an online issuing CA below the ceremony's intermediate: its key is generated in the signer's store, the intermediate signs it, and it is registered to sign certificates.",
+        "operationId": "CreateIssuingIssuer",
+        "parameters": [
+          {
+            "name": "ceremonyId",
+            "required": true,
+            "in": "path",
+            "description": "The open ceremony",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The issuing CA's purpose, number, generation, usages, constraints and maximum validity.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIssuingIssuerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The issuing CA was created.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The new CA"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateIssuingIssuerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Creates an issuing CA in a ceremony",
+        "tags": [
+          "Ceremonies"
+        ]
+      }
+    },
+    "/v1/profiles": {
+      "get": {
+        "description": "Every profile: what its certificates may be, how they are enrolled and which issuer they come from.",
+        "operationId": "ListProfiles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The profiles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListProfilesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists the profiles",
+        "tags": [
+          "Profiles"
+        ]
+      }
+    },
+    "/v1/profile/{profileId}": {
+      "get": {
+        "description": "One profile and its rules.",
+        "operationId": "DescribeProfile",
+        "parameters": [
+          {
+            "name": "profileId",
+            "required": true,
+            "in": "path",
+            "description": "The profile's name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The profile.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Describes a profile",
+        "tags": [
+          "Profiles"
+        ]
+      },
+      "put": {
+        "description": "Pins a profile to an issuer, or unpins it; its other rules come from migrations.",
+        "operationId": "UpdateProfile",
+        "parameters": [
+          {
+            "name": "profileId",
+            "required": true,
+            "in": "path",
+            "description": "The profile's name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The issuer to pin it to.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The profile was updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Updates a profile",
+        "tags": [
+          "Profiles"
+        ]
+      }
+    },
+    "/v1/certificates": {
+      "get": {
+        "description": "Certificates, soonest to expire first, by issuer, profile, state, text or how soon they expire.",
+        "operationId": "ListCertificates",
+        "parameters": [
+          {
+            "name": "issuerId",
+            "required": false,
+            "in": "query",
+            "description": "Only this issuer's",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "profileId",
+            "required": false,
+            "in": "query",
+            "description": "Only this profile's",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "description": "Only in this state",
+            "schema": {
+              "$ref": "#/components/schemas/CertificateState"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Subject, name or serial containing this text",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expiringWithinDays",
+            "required": false,
+            "in": "query",
+            "description": "Only valid certificates expiring within this many days",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "Page size (50 by default, at most 500)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "startPage",
+            "required": false,
+            "in": "query",
+            "description": "The page, from 0",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The certificates.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListCertificatesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists certificates",
+        "tags": [
+          "Certificates"
+        ]
+      },
+      "post": {
+        "description": "Issues a certificate under a profile, from the subscriber's CSR or with a key the signer generates and escrows. The profile's rules, the key's history and the signer's invariants all apply; a refusal is a 422 and is recorded in the audit log.",
+        "operationId": "CreateCertificate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The profile, subject, names and CSR.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCertificateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The certificate was issued.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The certificate"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateCertificateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Issues a certificate",
+        "tags": [
+          "Certificates"
+        ]
+      }
+    },
+    "/v1/certificate/{certificateId}": {
+      "get": {
+        "description": "A certificate with its PEM, chain, key history, renewals and revocation.",
+        "operationId": "DescribeCertificate",
+        "parameters": [
+          {
+            "name": "certificateId",
+            "required": true,
+            "in": "path",
+            "description": "The certificate's ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The certificate.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeCertificateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Describes a certificate",
+        "tags": [
+          "Certificates"
+        ]
+      }
+    },
+    "/v1/certificate/{certificateId}/download": {
+      "get": {
+        "description": "The certificate as a file: PEM, DER, or PEM followed by the CAs above it, without the root, as a server presents it.",
+        "operationId": "DownloadCertificate",
+        "parameters": [
+          {
+            "name": "certificateId",
+            "required": true,
+            "in": "path",
+            "description": "The certificate's ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "pem (the default), der, or chain: it and the CAs above it, PEM, without the root",
+            "schema": {
+              "$ref": "#/components/schemas/CertificateFormat"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file.",
+            "content": {
+              "application/x-pem-file": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pkix-cert": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/x-pem-file": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/pkix-cert": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/x-pem-file": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/pkix-cert": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/x-pem-file": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/pkix-cert": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/x-pem-file": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/pkix-cert": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Downloads a certificate",
+        "tags": [
+          "Certificates"
+        ]
+      }
+    },
+    "/v1/certificate/{certificateId}/renew": {
+      "post": {
+        "description": "Issues a certificate with the same subject, names and profile, from the profile's current issuer. The key is certified again while it is younger than the profile's maximum key age; a CSR for a new key rekeys, and a generated key past its age is replaced.",
+        "operationId": "RenewCertificate",
+        "parameters": [
+          {
+            "name": "certificateId",
+            "required": true,
+            "in": "path",
+            "description": "The certificate to renew",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "A CSR, to rekey.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenewCertificateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The renewal was issued.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The renewal"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenewCertificateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Renews a certificate",
+        "tags": [
+          "Certificates"
+        ]
+      }
+    },
+    "/v1/certificate/{certificateId}/revoke": {
+      "post": {
+        "description": "Revokes a certificate with a reason. For keyCompromise the key is blocked for good and every certificate for it is revoked; an escrowed key is destroyed with its last valid certificate.",
+        "operationId": "RevokeCertificate",
+        "parameters": [
+          {
+            "name": "certificateId",
+            "required": true,
+            "in": "path",
+            "description": "The certificate to revoke",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The reason and a comment.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeCertificateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The certificates were revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeCertificateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revokes a certificate",
+        "tags": [
+          "Certificates"
+        ]
+      }
+    },
+    "/v1/certificate/{certificateId}/key-export": {
+      "post": {
+        "description": "Exports the escrowed key of a certificate whose key the signer generated, encrypted under a passphrase, with a reason. pki-admin only, after a recent sign-in; every export is recorded.",
+        "operationId": "ExportCertificateKey",
+        "parameters": [
+          {
+            "name": "certificateId",
+            "required": true,
+            "in": "path",
+            "description": "The certificate whose key to export",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The format, passphrase and reason.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportCertificateKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The key, as a file.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportCertificateKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Exports a certificate's escrowed key",
+        "tags": [
+          "Certificates"
+        ]
+      }
+    }
+  },
   "info": {
     "title": "Harpocrates API",
     "description": "Management API of Harpocrates, the internal certificate authority: issuers, profiles, certificates, revocation and ACME accounts.",
@@ -11,7 +2199,26 @@
       "email": "ncfritz@ncfritz.net"
     }
   },
-  "tags": [],
+  "tags": [
+    {
+      "name": "Audit"
+    },
+    {
+      "name": "Ceremonies"
+    },
+    {
+      "name": "Certificates"
+    },
+    {
+      "name": "Issuers"
+    },
+    {
+      "name": "Profiles"
+    },
+    {
+      "name": "Signer"
+    }
+  ],
   "servers": [],
   "components": {
     "securitySchemes": {
@@ -21,6 +2228,1553 @@
         "type": "http"
       }
     },
-    "schemas": {}
+    "schemas": {
+      "AuditAttribute": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Its name"
+          },
+          "value": {
+            "type": "string",
+            "description": "Its value"
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ]
+      },
+      "AuditEvent": {
+        "type": "object",
+        "properties": {
+          "sequence": {
+            "type": "string",
+            "description": "Its position in the chain"
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it happened"
+          },
+          "kind": {
+            "type": "string",
+            "description": "What happened, e.g. certificate.issued"
+          },
+          "principal": {
+            "type": "string",
+            "description": "Who: user:<id>, cli:<name> or system"
+          },
+          "surface": {
+            "type": "string",
+            "description": "Where from: api, cli, acme, renewal or system"
+          },
+          "subjectType": {
+            "type": "string",
+            "description": "The kind of thing it concerns: issuer, certificate, key"
+          },
+          "subjectId": {
+            "type": "string",
+            "description": "The ID of the thing it concerns"
+          },
+          "reason": {
+            "type": "string",
+            "description": "The reason given, where one is required"
+          },
+          "attributes": {
+            "description": "Its details",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditAttribute"
+            }
+          },
+          "hash": {
+            "type": "string",
+            "description": "Its hash, which the next event's covers"
+          }
+        },
+        "required": [
+          "sequence",
+          "occurredAt",
+          "kind",
+          "principal",
+          "surface",
+          "attributes",
+          "hash"
+        ]
+      },
+      "ListAuditEventsResponse": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "description": "The events, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEvent"
+            }
+          }
+        },
+        "required": [
+          "events"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "What went wrong"
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code"
+          }
+        },
+        "required": [
+          "message",
+          "statusCode"
+        ]
+      },
+      "AuditVerification": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "number",
+            "description": "How many events verified"
+          },
+          "valid": {
+            "type": "boolean",
+            "description": "Whether every event's hash and link hold"
+          },
+          "brokenAt": {
+            "type": "string",
+            "description": "The first event that does not hold"
+          }
+        },
+        "required": [
+          "events",
+          "valid"
+        ]
+      },
+      "GetAuditVerificationResponse": {
+        "type": "object",
+        "properties": {
+          "verification": {
+            "description": "Whether the chain holds",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AuditVerification"
+              }
+            ]
+          }
+        },
+        "required": [
+          "verification"
+        ]
+      },
+      "SealReason": {
+        "type": "string",
+        "enum": [
+          "uninitialised",
+          "deliberate",
+          "no-unseal-key",
+          "wrong-unseal-key"
+        ],
+        "description": "Why it is sealed"
+      },
+      "SignerStatus": {
+        "type": "object",
+        "properties": {
+          "initialised": {
+            "type": "boolean",
+            "description": "Whether the signer's store is initialised"
+          },
+          "sealed": {
+            "type": "boolean",
+            "description": "Whether it is sealed: nothing signs while it is"
+          },
+          "reason": {
+            "description": "Why it is sealed",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SealReason"
+              }
+            ]
+          },
+          "ceremonyId": {
+            "type": "string",
+            "description": "The signer's open ceremony, if any"
+          }
+        },
+        "required": [
+          "initialised",
+          "sealed"
+        ]
+      },
+      "DescribeSignerStatusResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "description": "The signer's seal",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SignerStatus"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "UnsealSignerRequest": {
+        "type": "object",
+        "properties": {
+          "passphrase": {
+            "type": "string",
+            "description": "The recovery passphrase"
+          }
+        },
+        "required": [
+          "passphrase"
+        ]
+      },
+      "IssuerTier": {
+        "type": "string",
+        "description": "A CA's tier: roots and intermediates are offline, issuing CAs online",
+        "enum": [
+          "root",
+          "intermediate",
+          "issuing"
+        ]
+      },
+      "IssuerStatus": {
+        "type": "string",
+        "description": "Whether a CA signs: pending (no certificate yet), active, closed (nothing new) or revoked",
+        "enum": [
+          "pending",
+          "active",
+          "closed",
+          "revoked"
+        ]
+      },
+      "Names": {
+        "type": "object",
+        "properties": {
+          "dns": {
+            "description": "DNS names",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ip": {
+            "description": "IP addresses (for a CA's constraints, networks: 10.0.0.0/8)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "email": {
+            "description": "Email addresses (for a CA's constraints, domains)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "uri": {
+            "description": "URIs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "NameConstraints": {
+        "type": "object",
+        "properties": {
+          "permitted": {
+            "description": "Subtrees every name must fall within, by type",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Names"
+              }
+            ]
+          },
+          "excluded": {
+            "description": "Subtrees no name may fall within, by type",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Names"
+              }
+            ]
+          }
+        }
+      },
+      "Issuer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The CA's slug, e.g. tls-issuing-1-g1"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The CA's subject, RFC 4514"
+          },
+          "tier": {
+            "description": "The CA's tier",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuerTier"
+              }
+            ]
+          },
+          "status": {
+            "description": "Whether the CA signs",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuerStatus"
+              }
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "description": "What an issuing CA is for: TLS, Service, Device, Signing"
+          },
+          "number": {
+            "type": "number",
+            "description": "Tells apart CAs of the same purpose and tier"
+          },
+          "generation": {
+            "type": "number",
+            "description": "Counts successors: a successor keeps the number"
+          },
+          "parentId": {
+            "type": "string",
+            "description": "The CA that signed this one, when it is in Harpocrates"
+          },
+          "offline": {
+            "type": "boolean",
+            "description": "Whether its key is offline (roots and intermediates) rather than in the signer"
+          },
+          "notBefore": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when the CA's validity starts"
+          },
+          "notAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when the CA expires"
+          },
+          "issuingWindowClosesAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when the CA stops issuing, because its longest certificate would no longer fit"
+          },
+          "pathLength": {
+            "type": "number",
+            "description": "Its path length constraint"
+          },
+          "maxValidityDays": {
+            "type": "number",
+            "description": "The longest certificate it signs, in days"
+          },
+          "extendedKeyUsages": {
+            "description": "The extended key usages it may sign, as dotted OIDs; empty means not restricted",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nameConstraints": {
+            "description": "Its name constraints",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NameConstraints"
+              }
+            ]
+          },
+          "crlUrl": {
+            "type": "string",
+            "description": "Where its revocation list is published"
+          },
+          "caIssuersUrl": {
+            "type": "string",
+            "description": "Where its certificate is published"
+          }
+        },
+        "required": [
+          "id",
+          "subject",
+          "tier",
+          "status",
+          "number",
+          "generation",
+          "offline",
+          "maxValidityDays",
+          "extendedKeyUsages",
+          "nameConstraints",
+          "crlUrl",
+          "caIssuersUrl"
+        ]
+      },
+      "ListIssuersResponse": {
+        "type": "object",
+        "properties": {
+          "issuers": {
+            "description": "Every CA, parents before children",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issuer"
+            }
+          }
+        },
+        "required": [
+          "issuers"
+        ]
+      },
+      "KeyAlgorithm": {
+        "type": "string",
+        "description": "A key type the signer generates",
+        "enum": [
+          "P-256",
+          "RSA-2048"
+        ]
+      },
+      "CreateRootIssuerRequest": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "number",
+            "description": "The root's number, 1 for the first"
+          },
+          "generation": {
+            "type": "number",
+            "description": "Its generation, 1 unless it succeeds a root"
+          },
+          "algorithm": {
+            "description": "The root's key type (P-256 by default)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyAlgorithm"
+              }
+            ]
+          },
+          "exportPassphrase": {
+            "type": "string",
+            "description": "The passphrase the root's key is exported under, at least 12 characters"
+          }
+        },
+        "required": [
+          "number",
+          "generation",
+          "exportPassphrase"
+        ]
+      },
+      "FullIssuer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The CA's slug, e.g. tls-issuing-1-g1"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The CA's subject, RFC 4514"
+          },
+          "tier": {
+            "description": "The CA's tier",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuerTier"
+              }
+            ]
+          },
+          "status": {
+            "description": "Whether the CA signs",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuerStatus"
+              }
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "description": "What an issuing CA is for: TLS, Service, Device, Signing"
+          },
+          "number": {
+            "type": "number",
+            "description": "Tells apart CAs of the same purpose and tier"
+          },
+          "generation": {
+            "type": "number",
+            "description": "Counts successors: a successor keeps the number"
+          },
+          "parentId": {
+            "type": "string",
+            "description": "The CA that signed this one, when it is in Harpocrates"
+          },
+          "offline": {
+            "type": "boolean",
+            "description": "Whether its key is offline (roots and intermediates) rather than in the signer"
+          },
+          "notBefore": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when the CA's validity starts"
+          },
+          "notAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when the CA expires"
+          },
+          "issuingWindowClosesAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when the CA stops issuing, because its longest certificate would no longer fit"
+          },
+          "pathLength": {
+            "type": "number",
+            "description": "Its path length constraint"
+          },
+          "maxValidityDays": {
+            "type": "number",
+            "description": "The longest certificate it signs, in days"
+          },
+          "extendedKeyUsages": {
+            "description": "The extended key usages it may sign, as dotted OIDs; empty means not restricted",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nameConstraints": {
+            "description": "Its name constraints",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NameConstraints"
+              }
+            ]
+          },
+          "crlUrl": {
+            "type": "string",
+            "description": "Where its revocation list is published"
+          },
+          "caIssuersUrl": {
+            "type": "string",
+            "description": "Where its certificate is published"
+          },
+          "certificate": {
+            "type": "string",
+            "description": "Its certificate, PEM"
+          },
+          "chain": {
+            "description": "The certificates above it, PEM, nearest first",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "subject",
+          "tier",
+          "status",
+          "number",
+          "generation",
+          "offline",
+          "maxValidityDays",
+          "extendedKeyUsages",
+          "nameConstraints",
+          "crlUrl",
+          "caIssuersUrl",
+          "chain"
+        ]
+      },
+      "CreateRootIssuerResponse": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "description": "The new CA",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullIssuer"
+              }
+            ]
+          },
+          "encryptedKey": {
+            "type": "string",
+            "description": "Its private key, encrypted PKCS#8 under the export passphrase: store it on offline media and in the password manager. Harpocrates keeps no copy."
+          }
+        },
+        "required": [
+          "issuer",
+          "encryptedKey"
+        ]
+      },
+      "ImportIssuerRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The slug to know it by, e.g. services-xca"
+          },
+          "certificate": {
+            "type": "string",
+            "description": "Its certificate, PEM"
+          },
+          "chain": {
+            "description": "The certificates above it, PEM, nearest first; each must be in Harpocrates already, or be the root",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tier": {
+            "description": "Its tier: roots and intermediates are imported offline",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuerTier"
+              }
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "description": "What an issuing CA is for"
+          },
+          "number": {
+            "type": "number",
+            "description": "Its number"
+          },
+          "generation": {
+            "type": "number",
+            "description": "Its generation"
+          },
+          "maxValidityDays": {
+            "type": "number",
+            "description": "The longest certificate it may sign, in days"
+          },
+          "extendedKeyUsages": {
+            "description": "The extended key usages it may sign, dotted OIDs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "privateKey": {
+            "type": "string",
+            "description": "An issuing CA's key, encrypted PKCS#8 (as XCA exports it); offline CAs are imported without one"
+          },
+          "passphrase": {
+            "type": "string",
+            "description": "The key's passphrase"
+          }
+        },
+        "required": [
+          "id",
+          "certificate",
+          "chain",
+          "tier",
+          "number",
+          "generation",
+          "maxValidityDays",
+          "extendedKeyUsages"
+        ]
+      },
+      "ImportIssuerResponse": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "description": "The imported CA",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullIssuer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "issuer"
+        ]
+      },
+      "DescribeIssuerResponse": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "description": "The CA",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullIssuer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "issuer"
+        ]
+      },
+      "OpenCeremonyRequest": {
+        "type": "object",
+        "properties": {
+          "issuerId": {
+            "type": "string",
+            "description": "The offline CA to open a ceremony for"
+          },
+          "privateKey": {
+            "type": "string",
+            "description": "Its key, encrypted PKCS#8, from offline media"
+          },
+          "passphrase": {
+            "type": "string",
+            "description": "The key's passphrase"
+          }
+        },
+        "required": [
+          "issuerId",
+          "privateKey",
+          "passphrase"
+        ]
+      },
+      "Ceremony": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ceremony's ID"
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "The offline CA whose key is held"
+          },
+          "principal": {
+            "type": "string",
+            "description": "Who opened it"
+          },
+          "openedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it opened"
+          },
+          "closedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it closed (or timed out, as far as the service saw)"
+          }
+        },
+        "required": [
+          "id",
+          "issuerId",
+          "principal",
+          "openedAt"
+        ]
+      },
+      "OpenCeremonyResponse": {
+        "type": "object",
+        "properties": {
+          "ceremony": {
+            "description": "The open ceremony",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Ceremony"
+              }
+            ]
+          }
+        },
+        "required": [
+          "ceremony"
+        ]
+      },
+      "DescribeCeremonyResponse": {
+        "type": "object",
+        "properties": {
+          "ceremony": {
+            "description": "The ceremony",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Ceremony"
+              }
+            ]
+          }
+        },
+        "required": [
+          "ceremony"
+        ]
+      },
+      "CreateIntermediateIssuerRequest": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "number",
+            "description": "The root's number, 1 for the first"
+          },
+          "generation": {
+            "type": "number",
+            "description": "Its generation, 1 unless it succeeds a root"
+          },
+          "algorithm": {
+            "description": "The root's key type (P-256 by default)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyAlgorithm"
+              }
+            ]
+          },
+          "exportPassphrase": {
+            "type": "string",
+            "description": "The passphrase the root's key is exported under, at least 12 characters"
+          },
+          "nameConstraints": {
+            "description": "Name constraints for the intermediate",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NameConstraints"
+              }
+            ]
+          }
+        },
+        "required": [
+          "number",
+          "generation",
+          "exportPassphrase"
+        ]
+      },
+      "CreateIntermediateIssuerResponse": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "description": "The new CA",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullIssuer"
+              }
+            ]
+          },
+          "encryptedKey": {
+            "type": "string",
+            "description": "Its private key, encrypted PKCS#8 under the export passphrase: store it on offline media and in the password manager. Harpocrates keeps no copy."
+          }
+        },
+        "required": [
+          "issuer",
+          "encryptedKey"
+        ]
+      },
+      "CreateIssuingIssuerRequest": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "description": "What it is for: TLS, Service, Device, Signing"
+          },
+          "number": {
+            "type": "number",
+            "description": "Its number among CAs of the same purpose"
+          },
+          "generation": {
+            "type": "number",
+            "description": "Its generation, 1 unless it succeeds a CA"
+          },
+          "maxValidityDays": {
+            "type": "number",
+            "description": "The longest certificate it may sign, in days"
+          },
+          "extendedKeyUsages": {
+            "description": "The extended key usages it may sign, dotted OIDs; written into its certificate",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nameConstraints": {
+            "description": "Its name constraints",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NameConstraints"
+              }
+            ]
+          }
+        },
+        "required": [
+          "purpose",
+          "number",
+          "generation",
+          "maxValidityDays",
+          "extendedKeyUsages"
+        ]
+      },
+      "CreateIssuingIssuerResponse": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "description": "The new issuing CA, registered with the signer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullIssuer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "issuer"
+        ]
+      },
+      "NameType": {
+        "type": "string",
+        "description": "The alternative name types it allows",
+        "enum": [
+          "dns",
+          "ip",
+          "email",
+          "uri"
+        ]
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The profile's name, e.g. internal-tls"
+          },
+          "description": {
+            "type": "string",
+            "description": "What it is for"
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "The issuer it is pinned to; unset, the active issuing CA of its purpose"
+          },
+          "issuerPurpose": {
+            "type": "string",
+            "description": "The purpose of the issuing CA it issues from"
+          },
+          "keyAlgorithm": {
+            "description": "The key type its certificates certify",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyAlgorithm"
+              }
+            ]
+          },
+          "validityDays": {
+            "type": "number",
+            "description": "How long its certificates are valid, in days"
+          },
+          "renewAtDays": {
+            "type": "number",
+            "description": "How many days into a certificate's life it is renewed"
+          },
+          "maxKeyAgeDays": {
+            "type": "number",
+            "description": "How old a key may be and still be renewed, in days"
+          },
+          "allowCsr": {
+            "type": "boolean",
+            "description": "Whether a subscriber may submit a CSR"
+          },
+          "allowGenerated": {
+            "type": "boolean",
+            "description": "Whether the signer may generate (and escrow) the key"
+          },
+          "legacyExport": {
+            "type": "boolean",
+            "description": "Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain)"
+          },
+          "requireSan": {
+            "type": "boolean",
+            "description": "Whether a certificate needs at least one alternative name"
+          },
+          "keyUsages": {
+            "description": "Its key usages",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "extendedKeyUsages": {
+            "description": "Its extended key usages, dotted OIDs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nameTypes": {
+            "type": "array",
+            "description": "The alternative name types it allows",
+            "items": {
+              "$ref": "#/components/schemas/NameType"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "description",
+          "issuerPurpose",
+          "keyAlgorithm",
+          "validityDays",
+          "renewAtDays",
+          "maxKeyAgeDays",
+          "allowCsr",
+          "allowGenerated",
+          "legacyExport",
+          "requireSan",
+          "keyUsages",
+          "extendedKeyUsages",
+          "nameTypes"
+        ]
+      },
+      "ListProfilesResponse": {
+        "type": "object",
+        "properties": {
+          "profiles": {
+            "description": "Every profile",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Profile"
+            }
+          }
+        },
+        "required": [
+          "profiles"
+        ]
+      },
+      "DescribeProfileResponse": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "description": "The profile",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Profile"
+              }
+            ]
+          }
+        },
+        "required": [
+          "profile"
+        ]
+      },
+      "UpdateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "issuerId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The issuer to pin it to; null to follow the active CA of its purpose"
+          }
+        }
+      },
+      "UpdateProfileResponse": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "description": "The profile, updated",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Profile"
+              }
+            ]
+          }
+        },
+        "required": [
+          "profile"
+        ]
+      },
+      "CertificateState": {
+        "type": "string",
+        "enum": [
+          "valid",
+          "revoked",
+          "expired"
+        ],
+        "description": "A certificate's state: valid, revoked or expired"
+      },
+      "RevocationReason": {
+        "type": "string",
+        "description": "Why a certificate was revoked (RFC 5280)",
+        "enum": [
+          "unspecified",
+          "keyCompromise",
+          "cACompromise",
+          "affiliationChanged",
+          "superseded",
+          "cessationOfOperation",
+          "privilegeWithdrawn"
+        ]
+      },
+      "Revocation": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "description": "Why it was revoked",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RevocationReason"
+              }
+            ]
+          },
+          "revokedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was revoked"
+          },
+          "principal": {
+            "type": "string",
+            "description": "Who revoked it"
+          },
+          "comment": {
+            "type": "string",
+            "description": "What they said about it"
+          }
+        },
+        "required": [
+          "reason",
+          "revokedAt",
+          "principal"
+        ]
+      },
+      "KeyLocation": {
+        "type": "string",
+        "enum": [
+          "signer",
+          "subscriber",
+          "offline"
+        ],
+        "description": "Where its private key is: escrowed in the signer, or with the subscriber only"
+      },
+      "Certificate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "The CA that issued it"
+          },
+          "profileId": {
+            "type": "string",
+            "description": "The profile it was issued under"
+          },
+          "serial": {
+            "type": "string",
+            "description": "Its serial, hex"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Its subject, RFC 4514"
+          },
+          "names": {
+            "description": "Its alternative names",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Names"
+              }
+            ]
+          },
+          "notBefore": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it becomes valid"
+          },
+          "notAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it expires"
+          },
+          "state": {
+            "description": "Whether it is valid, revoked or expired",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateState"
+              }
+            ]
+          },
+          "revocation": {
+            "description": "Its revocation, if it was revoked",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revocation"
+              }
+            ]
+          },
+          "keyLocation": {
+            "description": "Where its private key is: escrowed in the signer, or with the subscriber only",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyLocation"
+              }
+            ]
+          },
+          "keyAlgorithm": {
+            "type": "string",
+            "description": "Its key type, e.g. P-256"
+          },
+          "keyCreatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when its key was first certified; renewal rekeys past the profile's maximum key age"
+          },
+          "renewsId": {
+            "type": "string",
+            "description": "The certificate it renewed"
+          },
+          "renewedById": {
+            "type": "string",
+            "description": "The certificate that renewed it"
+          }
+        },
+        "required": [
+          "id",
+          "issuerId",
+          "serial",
+          "subject",
+          "names",
+          "notBefore",
+          "notAfter",
+          "state",
+          "keyLocation",
+          "keyAlgorithm",
+          "keyCreatedAt"
+        ]
+      },
+      "ListCertificatesResponse": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "The total number of matching items across all pages"
+          },
+          "certificates": {
+            "description": "The certificates, soonest to expire first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Certificate"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "certificates"
+        ]
+      },
+      "CertificateSubject": {
+        "type": "object",
+        "properties": {
+          "commonName": {
+            "type": "string",
+            "description": "The common name: an app name, a person-device, a host"
+          },
+          "organizationalUnit": {
+            "type": "string",
+            "description": "The organizational unit: a service's deployment, a device kind"
+          },
+          "organization": {
+            "type": "string",
+            "description": "The organization (the configured one by default)"
+          }
+        },
+        "required": [
+          "commonName"
+        ]
+      },
+      "CreateCertificateRequest": {
+        "type": "object",
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "The profile to issue under"
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "An issuer other than the profile's, among those able to sign it"
+          },
+          "subject": {
+            "description": "Its subject",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateSubject"
+              }
+            ]
+          },
+          "names": {
+            "description": "Its alternative names, of the types the profile allows",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Names"
+              }
+            ]
+          },
+          "csr": {
+            "type": "string",
+            "description": "The subscriber's CSR, PEM; without one the signer generates (and escrows) the key, if the profile allows"
+          }
+        },
+        "required": [
+          "profileId",
+          "subject"
+        ]
+      },
+      "FullCertificate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "The CA that issued it"
+          },
+          "profileId": {
+            "type": "string",
+            "description": "The profile it was issued under"
+          },
+          "serial": {
+            "type": "string",
+            "description": "Its serial, hex"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Its subject, RFC 4514"
+          },
+          "names": {
+            "description": "Its alternative names",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Names"
+              }
+            ]
+          },
+          "notBefore": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it becomes valid"
+          },
+          "notAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it expires"
+          },
+          "state": {
+            "description": "Whether it is valid, revoked or expired",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateState"
+              }
+            ]
+          },
+          "revocation": {
+            "description": "Its revocation, if it was revoked",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revocation"
+              }
+            ]
+          },
+          "keyLocation": {
+            "description": "Where its private key is: escrowed in the signer, or with the subscriber only",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyLocation"
+              }
+            ]
+          },
+          "keyAlgorithm": {
+            "type": "string",
+            "description": "Its key type, e.g. P-256"
+          },
+          "keyCreatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when its key was first certified; renewal rekeys past the profile's maximum key age"
+          },
+          "renewsId": {
+            "type": "string",
+            "description": "The certificate it renewed"
+          },
+          "renewedById": {
+            "type": "string",
+            "description": "The certificate that renewed it"
+          },
+          "certificate": {
+            "type": "string",
+            "description": "It, PEM"
+          },
+          "chain": {
+            "description": "The CAs above it, PEM, nearest first, up to the root",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "issuerId",
+          "serial",
+          "subject",
+          "names",
+          "notBefore",
+          "notAfter",
+          "state",
+          "keyLocation",
+          "keyAlgorithm",
+          "keyCreatedAt",
+          "certificate",
+          "chain"
+        ]
+      },
+      "CreateCertificateResponse": {
+        "type": "object",
+        "properties": {
+          "certificate": {
+            "description": "The new certificate",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullCertificate"
+              }
+            ]
+          }
+        },
+        "required": [
+          "certificate"
+        ]
+      },
+      "DescribeCertificateResponse": {
+        "type": "object",
+        "properties": {
+          "certificate": {
+            "description": "The certificate",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullCertificate"
+              }
+            ]
+          }
+        },
+        "required": [
+          "certificate"
+        ]
+      },
+      "CertificateFormat": {
+        "type": "string",
+        "enum": [
+          "pem",
+          "der",
+          "chain"
+        ]
+      },
+      "RenewCertificateRequest": {
+        "type": "object",
+        "properties": {
+          "csr": {
+            "type": "string",
+            "description": "A CSR, PEM: with a new key it rekeys; without one the same key is certified again while it is young enough"
+          }
+        }
+      },
+      "RenewCertificateResponse": {
+        "type": "object",
+        "properties": {
+          "certificate": {
+            "description": "The renewal",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullCertificate"
+              }
+            ]
+          }
+        },
+        "required": [
+          "certificate"
+        ]
+      },
+      "RevokeCertificateRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "description": "Why; keyCompromise also blocks the key for good and revokes every certificate for it",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RevocationReason"
+              }
+            ]
+          },
+          "comment": {
+            "type": "string",
+            "description": "A comment for the audit log"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "RevokeCertificateResponse": {
+        "type": "object",
+        "properties": {
+          "certificates": {
+            "description": "The certificates revoked: this one, and for keyCompromise every other for the key",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Certificate"
+            }
+          }
+        },
+        "required": [
+          "certificates"
+        ]
+      },
+      "KeyExportFormat": {
+        "type": "string",
+        "description": "How an escrowed key is exported: encrypted PKCS#8, PKCS#12 with the chain, or legacy PKCS#12 (SHA-1, 3DES, no chain)",
+        "enum": [
+          "pem",
+          "pkcs12",
+          "pkcs12-legacy"
+        ]
+      },
+      "ExportCertificateKeyRequest": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "description": "The file format",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyExportFormat"
+              }
+            ]
+          },
+          "passphrase": {
+            "type": "string",
+            "description": "The passphrase the file is encrypted under"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why the key is exported, for the audit log"
+          }
+        },
+        "required": [
+          "format",
+          "passphrase",
+          "reason"
+        ]
+      },
+      "ExportCertificateKeyResponse": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "description": "The file format",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyExportFormat"
+              }
+            ]
+          },
+          "fileName": {
+            "type": "string",
+            "description": "A file name for it"
+          },
+          "data": {
+            "type": "string",
+            "description": "The file, base64"
+          }
+        },
+        "required": [
+          "format",
+          "fileName",
+          "data"
+        ]
+      }
+    }
   }
 }

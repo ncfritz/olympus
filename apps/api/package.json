@@ -54,7 +54,7 @@
     "cookie-parser": "^1.4.7",
     "express": "^5.2.1",
     "graphql-request": "^7.4.0",
-    "jose": "^6.2.3",
+    "jose": "catalog:",
     "moment": "catalog:",
     "moment-timezone": "^0.6.2",
     "multer": "^2.2.0",

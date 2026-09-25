@@ -111,6 +111,32 @@ verify` / `openssl crl -verify`; each invariant has a refusal test;
 
 ## Phase 2 — Management core
 
+**Done 2026-09-25** (steps 1 to 10, with the exceptions below; the
+sign-off runs on DEV are outstanding). Described in
+[the service's README](../../../apps/harpocrates/service/README.md).
+What differs from the steps below:
+
+- **External CAs** (CSR out, certificate in, `pending` between) are not
+  built: the signer has no endpoint that makes a CSR for a key it holds.
+  The `pending` status and the `external` and `csr` columns are in the
+  schema for it. Importing an existing CA is built.
+- **Weak keys**: ROCA and close primes (Fermat) are checked; the Debian
+  blocklist is not.
+- **Serials** are drawn when the certificate is signed, and the unique
+  `(issuer, serial)` catches the 2^-159 collision, rather than reserved
+  first in the certificate's transaction.
+- **PKCS#12** is only through `key-export` (admin, recent sign-in), not
+  a download: it carries the private key.
+- **Generated keys** are destroyed at once when the request they were
+  made for fails; a sweep for keys orphaned by a crash between the two is
+  not built.
+- `harpocrates_refusals_total{invariant}` counts refusals, beside the
+  metrics listed; the CLI adds `audit-verify` to `issue`, `revoke` and
+  `status`.
+- The e2e tests (`pnpm test:e2e`) run the service against Postgres and a
+  signer spawned with `uv`, and are skipped without
+  `HARPOCRATES_E2E_DATABASE_URL`: nothing in CI runs them yet.
+
 1. **Schema** (Prisma migrations): `issuers`, `ceremonies`, `profiles`,
    `keys`, `enrollments`, `certificates`, `revocations`, `crls`,
    `escrow_exports`, `audit_events`. Foreign keys and constraints
@@ -321,6 +347,15 @@ Loose ends from phase 0, to close on the Mac before phase 4 at the latest:
 - [ ] Confirm the Signing CA's place under Intermediate CA 2.
 - [ ] `apps/api/openapi/olympus.json` is stale on `main` (the `/auth/me`
       and `/auth/sessions` endpoints); regenerate it, apart from this work.
+
+From phase 2:
+
+- [ ] External CAs: a signer endpoint that makes a CSR for a key it
+      holds, then `pending` issuers and the certificate coming back.
+- [ ] The Debian weak-key blocklist (`openssl-blacklist` and
+      `openssh-blacklist` fingerprints) in the key checks.
+- [ ] A sweep for generated keys with no certificate after a day.
+- [ ] Run `pnpm test:e2e` in CI, with a Postgres service and `uv`.
 
 ## Later
 

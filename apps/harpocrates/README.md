@@ -35,7 +35,13 @@ cp service/dev.env.example service/dev.env
 cp signer/dev.env.example signer/dev.env
 pnpm --filter "@ncfritz/harpocrates-*" dev    # both, from the workspace
 curl --unix-socket .run/signer.sock http://signer/health
+pnpm --filter @ncfritz/harpocrates-signer signer initialise   # once: prints the unseal key
+pnpm --filter @ncfritz/harpocrates-service prisma:deploy      # the service's schema
 ```
+
+Each package's README has the rest: the
+[service](service/README.md) (API, rules, CLI, environment) and the
+[signer](signer/README.md) (store, seal, invariants).
 
 `.run/` holds the signer's socket and development store; it is
 git-ignored.

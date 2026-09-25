@@ -4,6 +4,8 @@
  * is created but never initialized: no database or signer is contacted.
  */
 import "source-map-support/register";
+// First: AppModule's configuration requires these when it is loaded.
+import "./openapiEnv";
 
 import { NestFactory } from "@nestjs/core";
 import * as fs from "fs";

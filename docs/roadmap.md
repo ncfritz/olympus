@@ -15,7 +15,7 @@
 | 8a  | Minerva calendar sync import (ADR 0016)                                                              | **done** (2026-09-20)                                                                    |
 | 8b  | Minerva → Hasura integration (ADR 0013)                                                              |                                                                                          |
 | 9   | Authentication (ADR 0018, [plan](plans/authentication/README.md))                                    | phases 0 and 1 **done** (2026-09-20); phases 2-8 planned                                 |
-| 10  | Internal CA: Harpocrates (ADR 0020, [plan](plans/internal-ca/README.md))                             | phases 0 and 1 done; next: phase 2                                                       |
+| 10  | Internal CA: Harpocrates (ADR 0020, [plan](plans/internal-ca/README.md))                             | phases 0 to 2 done; next: phase 3                                                        |
 | 11  | Olympus Control: the console suite (ADR 0021, [plan](plans/console/README.md))                       | planned; after the Docker work                                                           |
 | —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                                                                  |
 | —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                                                                                 |
