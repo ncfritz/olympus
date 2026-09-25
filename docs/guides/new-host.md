@@ -86,6 +86,10 @@ the API's 3443 listener and any agent on another machine do not.
 Either pull what the registry already has — set `IMAGE_PREFIX` and the
 tags in the environment file — or build here.
 
+**Build serially if memory is tight.** The bundles are minified, and
+`bake` builds every target at once by default: `cannot allocate memory`
+in a build step is the VM, not the disk.
+
 **Check the tag is not older than the fixes you need.** In phase 4 the
 pinned tag predated two fixes, and the stack running on it gave no sign,
 because the services that would have broken were the ones not yet
@@ -176,15 +180,17 @@ for that service alone.
 
 From the two rehearsals, roughly in the order they were found:
 
-| Symptom                                                 | Cause                                                                                      |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `FATAL: database "olympus" does not exist`              | a data directory created without `POSTGRES_DB`                                             |
-| Agents restart, `permission denied` reading a package   | build-context file modes reaching the runtime user; the deploy stage's `chmod -R a+rX`     |
-| Agents restart, `Cannot find module …/dist/…`           | a package whose own `.gitignore` excluded `dist` and which declared no `files`             |
-| Slow lookups, `EAI_AGAIN`, `fetch failed`               | the daemon's `dns` set to a list ending in public servers                                  |
-| A registry push that resolves but times out             | building on the registry's own host; use `--load`                                          |
-| `password authentication failed` for a role you did set | the secret's _name_ read as the role name, or an unencoded character in the connection URL |
-| nginx will not start after a config change              | an `upstream` naming something that is down, or a directive missing its semicolon          |
+| Symptom                                                 | Cause                                                                                                       |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `FATAL: database "olympus" does not exist`              | a data directory created without `POSTGRES_DB`                                                              |
+| Agents restart, `permission denied` reading a package   | build-context file modes reaching the runtime user; the deploy stage's `chmod -R a+rX`                      |
+| Agents restart, `Cannot find module …/dist/…`           | a package whose own `.gitignore` excluded `dist` and which declared no `files`                              |
+| Slow lookups, `EAI_AGAIN`, `fetch failed`               | the daemon's `dns` set to a list ending in public servers                                                   |
+| A registry push that resolves but times out             | building on the registry's own host; use `--load`                                                           |
+| `password authentication failed` for a role you did set | the secret's _name_ read as the role name, or an unencoded character in the connection URL                  |
+| nginx will not start after a config change              | an `upstream` naming something that is down, or a directive missing its semicolon                           |
+| A directory that plainly exists reported as missing     | an ACL (the `+` in `drwxrwxrwx+`) that does not name the container's uid; run as the uid that owns the data |
+| `cannot allocate memory` in a build step                | production bundles minify; build targets serially or cap the builder's parallelism                          |
 
 `packages/config/test/unit/packaging.spec.ts` now fails the build for the
 `dist` case, and the Dockerfiles handle the file modes, so those two
