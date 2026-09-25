@@ -63,6 +63,7 @@ catalog:
 # npm "overrides" carried over from olympus-api.
 overrides:
   "@apollo/server": ^5.5.1
+  "openid-client": ^6.8.8
 
 # pnpm 10 blocks dependency install scripts unless listed here.
 onlyBuiltDependencies:

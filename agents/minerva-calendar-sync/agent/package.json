@@ -59,7 +59,7 @@
     "googleapis": "^180.0.0",
     "moment": "catalog:",
     "nest-winston": "catalog:",
-    "openid-client": "^6.8.8",
+    "openid-client": "catalog:",
     "prisma": "^6.19.3",
     "prom-client": "catalog:",
     "reflect-metadata": "catalog:",
