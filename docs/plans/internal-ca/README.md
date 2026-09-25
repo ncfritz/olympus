@@ -238,6 +238,37 @@ below:
 
 ## Phase 4 — Production cutover from XCA
 
+**Built 2026-09-25; the cutover itself is outstanding.** Everything it
+needs is in the repository: the stack, nginx, the imports, the CLI
+ceremonies, and [the cutover guide](../../guides/harpocrates-cutover.md),
+which is step 3 to 6 below as commands, with the record to fill in. What
+differs from the steps below:
+
+- **XCA's exports, not its database**: every certificate as PEM and each
+  CA's list generated at the cutover; `import-certificates` records the
+  certificates under the CAs that signed them and `import-crl` revokes
+  what the lists name, with XCA's dates and reasons. Nothing depends on
+  XCA's database layout.
+- **Ceremonies from the CLI** (`cli ceremony --plan`), with passphrases
+  asked for on the terminal: the API's need an access token with a recent
+  sign-in, and nothing mints one yet (the console, phase 7, or the auth
+  tester). `cli export-key` likewise, for device certificates. The
+  ceremonies' plans are `apps/harpocrates/ceremonies`.
+- **Directories, not named volumes**: the published directory is
+  `${DATA_DIR}/harpocrates/published`, bind-mounted into the stack, nginx
+  (`nginx/pki.conf`) and the API, as the other stacks keep their data.
+- `bootstrap` makes the stack's secrets (random), except the unseal key,
+  which starts empty (an empty file is no key: the signer starts sealed)
+  until `initialise`.
+- The signer has no network (`network_mode: none`); the socket is shared
+  through a volume, group read-write for gid 10001, which the service
+  joins.
+- The API's `TLS_CRL_SERVICES` switch is a commented line in
+  `env/prod/olympus-api.env`, uncommented at step 10 of the guide, not
+  before: the lists must be published first.
+- The service reads `DATABASE_URL_FILE`, so the URL with its password is
+  a file secret like the rest.
+
 1. **The `harpocrates` stack** in `infra/docker/compose/harpocrates.yml`
    on ADR 0019's conventions (shared `x-service`, file secrets for the
    signer token and the Postgres password, pinned images), with
@@ -399,6 +430,22 @@ From phase 3:
       Prometheus and scrape the service as job `harpocrates`.
 - [ ] `brew install prometheus` on the Mac, for `check:alerts`.
 - [ ] Install the NAS pull (`infra/nas/README.md`) at the cutover.
+      From phase 4:
+
+- [ ] Run the cutover ([the guide](../../guides/harpocrates-cutover.md))
+      and its sign-off (C8, C1.2, C5.4, C6, C4.7, C12, C13.5), and fill
+      in its record.
+- [ ] Before the ceremonies, confirm the plans' name constraints: the
+      TLS CA's LAN range (`192.168.15.0/24`) and the Signing CA's mail
+      domains (`ncfritz.net`).
+- [ ] Build and push the images; neither Harpocrates image has been
+      built yet:
+      `docker buildx bake harpocrates services --push`.
+- [ ] The internal DNS record `pki.internal.ncfritz.net`.
+
+- [ ] Run the outstanding DEV sign-offs: phase 1 (C1, C2, C13.1–C13.4),
+      phase 2 (C3, C4.1–C4.6, C7, C14) and phase 3 (C5, C6.1,
+      C16.1–C16.2).
 
 ## Later
 

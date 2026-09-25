@@ -64,6 +64,12 @@ def test_starts_sealed_without_the_unseal_key(paths):
     assert restart(paths).status().reason is SealReason.NO_UNSEAL_KEY
 
 
+def test_an_empty_unseal_key_file_is_no_key(paths):
+    initialised(paths)
+    paths[1].write_text("")
+    assert restart(paths).status().reason is SealReason.NO_UNSEAL_KEY
+
+
 def test_starts_sealed_with_the_wrong_unseal_key(paths):
     initialised(paths)
     paths[1].write_text(encode_unseal_key(envelope.random_key()))

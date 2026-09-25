@@ -1,3 +1,6 @@
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { describe, expect, it } from "vitest";
 import {
   ConfigValidationError,
@@ -5,6 +8,8 @@ import {
 } from "../../../src/config/configuration";
 
 const REQUIRED = {
+  DATABASE_URL:
+    "postgresql://harpocrates:secret@harpocrates-postgres/harpocrates",
   SIGNER_SOCKET_PATH: "/run/harpocrates/signer.sock",
   SIGNER_TOKEN_FILE: "/run/secrets/harpocrates_signer_token",
   AUTH_JWKS_URL: "http://olympus-api:3100/.well-known/jwks.json",
@@ -39,6 +44,20 @@ describe("readConfig", () => {
       offlineValidityDays: 395,
       scheduleSeconds: 30,
     });
+  });
+
+  it("reads the database URL from a file, as the stack mounts it", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "harpocrates-config-"));
+    const file = path.join(dir, "database_url");
+    fs.writeFileSync(
+      file,
+      "postgresql://harpocrates:from-file@db/harpocrates\n",
+    );
+    const { DATABASE_URL: _, ...rest } = REQUIRED;
+    expect(readConfig({ ...rest, DATABASE_URL_FILE: file }).database.url).toBe(
+      "postgresql://harpocrates:from-file@db/harpocrates",
+    );
+    fs.rmSync(dir, { recursive: true });
   });
 
   it("turns the scheduler off with 0 seconds", () => {
@@ -100,6 +119,7 @@ describe("readConfig", () => {
       expect(String(error)).toMatch(/SIGNER_SOCKET_PATH/);
       expect(String(error)).toMatch(/AUTH_RECENT_SIGN_IN_SECONDS/);
       expect(String(error)).toMatch(/PKI_PUBLISHED_DIR/);
+      expect(String(error)).toMatch(/DATABASE_URL/);
       expect(String(error)).toMatch(
         /CRL_SCHEDULE_SECONDS must be an integer of at least 0/,
       );

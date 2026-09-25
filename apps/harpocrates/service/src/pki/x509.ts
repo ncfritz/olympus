@@ -133,10 +133,10 @@ export type ParsedCsr = {
   algorithm: string;
 };
 
-export const parseCsr = async (pem: string): Promise<ParsedCsr> => {
-  const csr = new x509.Pkcs10CertificateRequest(pem);
+/** The alternative names in a SubjectAlternativeName extension. */
+const sanNames = (extensions: readonly x509.Extension[]): SubjectNames => {
   const names: SubjectNames = [];
-  const san = csr.extensions.find(
+  const san = extensions.find(
     (extension): extension is x509.SubjectAlternativeNameExtension =>
       extension instanceof x509.SubjectAlternativeNameExtension,
   );
@@ -146,6 +146,27 @@ export const parseCsr = async (pem: string): Promise<ParsedCsr> => {
     if (name.type === "email") names.push({ type: "email", value: name.value });
     if (name.type === "url") names.push({ type: "uri", value: name.value });
   }
+  return names;
+};
+
+/** A certificate's alternative names. */
+export const certificateNames = (pem: string): SubjectNames =>
+  sanNames(new x509.X509Certificate(pem).extensions);
+
+/** Each certificate in PEM text (a bundle), or the one DER certificate. */
+export const splitCertificates = (data: string | Buffer): string[] => {
+  const text = typeof data === "string" ? data : data.toString("latin1");
+  const pems =
+    text.match(
+      /-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g,
+    ) ?? [];
+  if (pems.length > 0) return pems.map((pem) => `${pem}\n`);
+  return typeof data === "string" ? [] : [certificatePem(data)];
+};
+
+export const parseCsr = async (pem: string): Promise<ParsedCsr> => {
+  const csr = new x509.Pkcs10CertificateRequest(pem);
+  const names = sanNames(csr.extensions);
   return {
     pem,
     der: Buffer.from(csr.rawData),

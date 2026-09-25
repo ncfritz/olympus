@@ -2,6 +2,8 @@ import { ApiTimestamp, PaginatedResults } from "@ncfritz/olympus-model";
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
+  ArrayNotEmpty,
+  IsArray,
   IsIn,
   IsInt,
   IsNotEmpty,
@@ -292,6 +294,30 @@ export class CreateCertificateRequest {
   csr?: string;
 }
 
+export class ImportCertificatesRequest {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The profile they are taken as issued under: renewing one later follows it",
+  })
+  @IsString()
+  @IsNotEmpty()
+  profileId: string;
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description:
+      "The certificates, PEM; each item may hold several (an XCA export)",
+  })
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  certificates: string[];
+}
+
 export class RenewCertificateRequest {
   @ApiProperty({
     type: String,
@@ -477,6 +503,49 @@ export class RevokeCertificateResponse {
       "The certificates revoked: this one, and for keyCompromise every other for the key",
   })
   certificates: Certificate[];
+}
+
+/** A certificate an import passed over, and why. */
+export class SkippedCertificate {
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "Its subject, RFC 4514, if it could be read",
+  })
+  subject?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "Its serial, hex, if it could be read",
+  })
+  serial?: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Why it was not imported",
+  })
+  reason: string;
+}
+
+export class ImportCertificatesResponse {
+  @ApiProperty({
+    type: () => Certificate,
+    isArray: true,
+    required: true,
+    description: "The certificates imported",
+  })
+  imported: Certificate[];
+
+  @ApiProperty({
+    type: () => SkippedCertificate,
+    isArray: true,
+    required: true,
+    description:
+      "Those passed over: already imported, CAs, keys of CAs, or signed by no CA here",
+  })
+  skipped: SkippedCertificate[];
 }
 
 export class ListCertificatesResponse extends PaginatedResults {

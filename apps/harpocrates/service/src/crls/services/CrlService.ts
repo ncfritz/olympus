@@ -257,7 +257,7 @@ export class CrlService {
         });
       }
       if (source === "imported") {
-        await this.carry(tx, issuer.id, parsed, number);
+        await this.carry(tx, principal, issuer.id, parsed, number);
       }
       const created: CrlRow = await tx.crl.create({
         data: {
@@ -294,38 +294,93 @@ export class CrlService {
     return toDomainObject({ ...row, issuer: { crlUrl: issuer.crlUrl } });
   }
 
-  /** An imported list's serials that no revoked certificate here accounts for. */
+  /**
+   * An imported list's serials: a certificate here that it names is
+   * revoked, with the list's date and reason (XCA's revocations, at the
+   * cutover); one it names that is not here is kept as an imported
+   * revocation, so the CA's later lists carry it.
+   */
   private async carry(
     tx: Parameters<Parameters<PrismaService["$transaction"]>[0]>[0],
+    principal: Principal,
     issuerId: string,
     parsed: ParsedCrl,
     number: bigint,
   ): Promise<void> {
-    const known = new Set(
+    const certificates = new Map(
       (
         await tx.certificate.findMany({
           where: {
             issuerId,
-            status: "revoked",
             serial: { in: parsed.entries.map((e) => e.serial) },
           },
-          select: { serial: true },
+          include: { enrollment: { select: { key: true } } },
         })
-      ).map((c) => c.serial),
+      ).map((c) => [c.serial, c]),
     );
     for (const entry of parsed.entries) {
-      if (known.has(entry.serial)) continue;
-      await tx.importedRevocation.upsert({
-        where: { issuerId_serial: { issuerId, serial: entry.serial } },
-        create: {
-          issuerId,
-          serial: entry.serial,
-          revokedAt: entry.revokedAt,
+      const certificate = certificates.get(entry.serial);
+      if (!certificate) {
+        await tx.importedRevocation.upsert({
+          where: { issuerId_serial: { issuerId, serial: entry.serial } },
+          create: {
+            issuerId,
+            serial: entry.serial,
+            revokedAt: entry.revokedAt,
+            reason: entry.reason,
+            crlNumber: number,
+          },
+          update: {},
+        });
+        continue;
+      }
+      if (certificate.status === "revoked") continue;
+      await tx.revocation.create({
+        data: {
+          certificateId: certificate.id,
           reason: entry.reason,
-          crlNumber: number,
+          comment: `Listed in ${issuerId}'s imported list ${number}`,
+          principal: principal.id,
+          revokedAt: entry.revokedAt,
         },
-        update: {},
       });
+      await tx.certificate.update({
+        where: { id: certificate.id },
+        data: { status: "revoked" },
+      });
+      await this.audit.record(
+        {
+          kind: AuditKind.CertificateRevoked,
+          principal,
+          subjectType: "certificate",
+          subjectId: certificate.id,
+          reason: `Listed in ${issuerId}'s imported list ${number}`,
+          attributes: {
+            issuerId,
+            serial: certificate.serial,
+            reason: entry.reason,
+            revokedAt: entry.revokedAt.toISOString(),
+          },
+        },
+        tx,
+      );
+      const key = certificate.enrollment?.key;
+      if (entry.reason === "keyCompromise" && key && !key.blockedAt) {
+        await tx.key.update({
+          where: { id: key.id },
+          data: { blockedAt: new Date() },
+        });
+        await this.audit.record(
+          {
+            kind: AuditKind.KeyBlocked,
+            principal,
+            subjectType: "key",
+            subjectId: key.id,
+            attributes: { spkiSha256: key.spkiSha256 },
+          },
+          tx,
+        );
+      }
     }
   }
 

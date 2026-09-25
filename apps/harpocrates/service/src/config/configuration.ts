@@ -15,6 +15,14 @@ export type ServerConfig = RuntimeConfig & {
   apiExplorer: boolean;
 };
 
+export type DatabaseConfig = {
+  /**
+   * harpocrates-postgres (ADR 0020, Data): DATABASE_URL, or the file
+   * DATABASE_URL_FILE names (a secret: the URL carries the password).
+   */
+  url: string;
+};
+
 export type SignerConfig = {
   /** The signer's Unix socket (ADR 0020): its only transport. */
   socketPath: string;
@@ -61,6 +69,7 @@ export type CrlConfig = {
 export type HarpocratesConfig = {
   server: ServerConfig;
   logging: LoggingConfig;
+  database: DatabaseConfig;
   signer: SignerConfig;
   auth: AuthConfig;
   pki: PkiConfig;
@@ -89,7 +98,7 @@ const integer = (
 
 /**
  * The service's configuration from environment variables (see
- * dev.env.example). DATABASE_URL is read by Prisma itself.
+ * dev.env.example).
  * @throws ConfigValidationError listing every invalid or missing variable
  */
 export const readConfig = (
@@ -113,6 +122,7 @@ export const readConfig = (
         read.boolean("ENABLE_API_EXPLORER", false) || !runtime.isProduction,
     },
     logging: readLoggingConfig(read, runtime.isProduction),
+    database: { url: read.string("DATABASE_URL") },
     signer: {
       socketPath: read.string("SIGNER_SOCKET_PATH"),
       tokenFile: read.string("SIGNER_TOKEN_FILE"),
@@ -154,6 +164,10 @@ export const loggingConfig = registerAs(
   "logging",
   () => readConfig(process.env).logging,
 );
+export const databaseConfig = registerAs(
+  "database",
+  () => readConfig(process.env).database,
+);
 export const signerConfig = registerAs(
   "signer",
   () => readConfig(process.env).signer,
@@ -167,6 +181,7 @@ export const crlConfig = registerAs("crl", () => readConfig(process.env).crl);
 
 export type ServerConfigType = ConfigType<typeof serverConfig>;
 export type LoggingConfigType = ConfigType<typeof loggingConfig>;
+export type DatabaseConfigType = ConfigType<typeof databaseConfig>;
 export type SignerConfigType = ConfigType<typeof signerConfig>;
 export type AuthConfigType = ConfigType<typeof authConfig>;
 export type PkiConfigType = ConfigType<typeof pkiConfig>;
@@ -175,6 +190,7 @@ export type CrlConfigType = ConfigType<typeof crlConfig>;
 export const ALL_CONFIG = [
   serverConfig,
   loggingConfig,
+  databaseConfig,
   signerConfig,
   authConfig,
   pkiConfig,

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Adopts the dev CA (scripts/dev-ca.sh) into the development Harpocrates,
-# as phase 4 adopts XCA's (ADR 0020): the root and the intermediates as
-# offline CAs (certificates only), the issuing CAs with their keys into
-# the signer, and each CA's last list, so the numbering continues and the
-# dev CA's revocations (svc-revoked, dev-revoked) stay revoked. From then
+# as the cutover adopts XCA's (docs/guides/harpocrates-cutover.md): the
+# root and the intermediates as offline CAs (certificates only), the
+# issuing CAs with their keys into the signer, every certificate they
+# issued, and each CA's last list, so the numbering continues and the dev
+# CA's revocations (svc-revoked, dev-revoked) stay revoked. A rehearsal of
+# the production cutover, on throwaway keys. From then
 # on the service signs the issuing CAs' lists and publishes them where the
 # API's TLS_CRL_SERVICES can read them (apps/api/dev.env.example).
 #
@@ -64,6 +66,21 @@ issuing devices device-issuing-1-g1 Device intermediate-2 "$CLIENT_AUTH"
 issuing signing signing-issuing-1-g1 Signing intermediate-2 \
   "$CODE_SIGNING" "$EMAIL" "$DOCUMENT_SIGNING"
 issuing tls tls-issuing-1-g1 TLS intermediate-1 "$SERVER_AUTH"
+
+# certificates <profile> <file>...
+certificates() {
+  local profile=$1
+  shift
+  local files=()
+  for file in "$@"; do files+=(--file "$file"); done
+  cli import-certificates --profile "$profile" "${files[@]}"
+}
+
+echo "certificates"
+certificates service "$certs"/agents/*.crt
+certificates api-server "$certs/api.crt"
+certificates device "$certs"/devices/*.crt
+certificates internal-tls "$certs"/tls/*.crt
 
 echo "lists"
 cli import-crl --issuer root-1-g1 --crl "$certs/root.crl"

@@ -7,6 +7,7 @@ network can reach the signer; only what mounts the socket's volume can.
 import http.client
 import json
 import logging
+import os
 import socket
 from pathlib import Path
 
@@ -18,6 +19,11 @@ logger = logging.getLogger(__name__)
 
 #: The socket's directory: the owner and its group (the service) only.
 SOCKET_DIR_MODE = 0o750
+
+#: What the socket is created with: read and write for the owner and its
+#: group, which the service joins (`group_add` in the stack), nothing for
+#: anyone else. Connecting to a socket needs write permission on it.
+SOCKET_UMASK = 0o007
 
 
 def prepare_socket(path: Path) -> None:
@@ -31,6 +37,7 @@ def prepare_socket(path: Path) -> None:
 def serve(config: Config, *, reload: bool = False) -> None:
     """Serve the API on the configured socket until stopped."""
     prepare_socket(config.socket_path)
+    os.umask(SOCKET_UMASK)
     logger.info("Serving on %s", config.socket_path)
     uvicorn.run(
         "harpocrates_signer.app:create_app",

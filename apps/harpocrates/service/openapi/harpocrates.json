@@ -2188,6 +2188,85 @@
         ]
       }
     },
+    "/v1/certificates/import": {
+      "post": {
+        "description": "Records certificates XCA issued, each under the CA here that signed it, with its serial, dates and key, as issued under the named profile. Already imported ones, CAs, CA keys and certificates no CA here signed are passed over and listed. Import the CAs first, and their last revocation lists after, which revoke what they name.",
+        "operationId": "ImportCertificates",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The profile, and the certificates as PEM.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportCertificatesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What was imported and what was passed over.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportCertificatesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Imports certificates another CA product issued",
+        "tags": [
+          "Certificates"
+        ]
+      }
+    },
     "/v1/issuer/{issuerId}/crls": {
       "get": {
         "description": "The CA's lists, newest first (the last 100): their numbers, validity, where each came from, and whether it is published or why publishing it failed.",
@@ -2256,7 +2335,7 @@
         ]
       },
       "post": {
-        "description": "Offers a list signed elsewhere (XCA's last, or an offline CA's) for publication. Refused unless the CA's certificate verifies it, it has not lapsed, and its number is above every one the CA has. Its serials are carried into the CA's later lists, and an online CA signs a fresh list straight after.",
+        "description": "Offers a list signed elsewhere (XCA's last, or an offline CA's) for publication. Refused unless the CA's certificate verifies it, it has not lapsed, and its number is above every one the CA has. Certificates here that it names are revoked with its dates and reasons; serials not here are carried into the CA's later lists. An online CA signs a fresh list straight after.",
         "operationId": "ImportIssuerCrl",
         "parameters": [
           {
@@ -3158,6 +3237,10 @@
           "passphrase": {
             "type": "string",
             "description": "The key's passphrase"
+          },
+          "closed": {
+            "type": "boolean",
+            "description": "Import an issuing CA closed: it signs its revocation lists and nothing new (XCA's Issuing CA 1 and 2)"
           }
         },
         "required": [
@@ -4065,6 +4148,69 @@
           "format",
           "fileName",
           "data"
+        ]
+      },
+      "ImportCertificatesRequest": {
+        "type": "object",
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "The profile they are taken as issued under: renewing one later follows it"
+          },
+          "certificates": {
+            "description": "The certificates, PEM; each item may hold several (an XCA export)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "profileId",
+          "certificates"
+        ]
+      },
+      "SkippedCertificate": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "Its subject, RFC 4514, if it could be read"
+          },
+          "serial": {
+            "type": "string",
+            "description": "Its serial, hex, if it could be read"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why it was not imported"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "ImportCertificatesResponse": {
+        "type": "object",
+        "properties": {
+          "imported": {
+            "description": "The certificates imported",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Certificate"
+            }
+          },
+          "skipped": {
+            "description": "Those passed over: already imported, CAs, keys of CAs, or signed by no CA here",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkippedCertificate"
+            }
+          }
+        },
+        "required": [
+          "imported",
+          "skipped"
         ]
       },
       "CrlSource": {

@@ -42,7 +42,7 @@ export class ImportIssuerCrlController {
   @ApiOperation({
     summary: "Imports a CA's revocation list",
     description:
-      "Offers a list signed elsewhere (XCA's last, or an offline CA's) for publication. Refused unless the CA's certificate verifies it, it has not lapsed, and its number is above every one the CA has. Its serials are carried into the CA's later lists, and an online CA signs a fresh list straight after.",
+      "Offers a list signed elsewhere (XCA's last, or an offline CA's) for publication. Refused unless the CA's certificate verifies it, it has not lapsed, and its number is above every one the CA has. Certificates here that it names are revoked with its dates and reasons; serials not here are carried into the CA's later lists. An online CA signs a fresh list straight after.",
     operationId: "ImportIssuerCrl",
     tags: ["Revocation Lists"],
   })

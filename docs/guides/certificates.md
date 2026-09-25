@@ -1,126 +1,170 @@
-# Issuing certificates in XCA
+# Issuing certificates with Harpocrates
 
-The certificates behind [ADR 0018](../decisions/0018-authentication.md).
-They are issued by hand, from the XCA database that holds the internal
-root; the internal CA ([ADR 0020](../decisions/0020-internal-certificate-authority.md))
-replaces this later.
+The certificates behind [ADR 0018](../decisions/0018-authentication.md),
+issued by Harpocrates, the internal CA
+([ADR 0020](../decisions/0020-internal-certificate-authority.md)). XCA
+issued them until [the cutover](harpocrates-cutover.md); it is retired.
 
-For development nothing here is needed: `scripts/dev-ca.sh` writes a
-throwaway copy of the whole hierarchy into `infra/dev-ca/certs`, in the
-same shape with `Dev` in every name (`ncfritz.net Dev Service Issuing CA
-1 - G1`), and the tests use it. It also writes every CA's key as encrypted
-PKCS#8 for Harpocrates's signer to import.
+For development, `scripts/dev-ca.sh` writes a throwaway copy of the whole
+hierarchy into `infra/dev-ca/certs`, in the same shape with `Dev` in every
+name, and the tests use it. `scripts/dev-ca-import.sh` adopts it into the
+development Harpocrates, so development issues and revokes the way
+production does.
+
+## Where to do it
+
+- **The console**, at `https://control.olympus.ncfritz.net/harpocrates/ca`,
+  once it exists (plan phase 7).
+- **The API**, at `https://control.olympus.ncfritz.net/harpocrates/ca/api/v1`,
+  with an access token from the API (roles `pki-operator` or
+  `pki-admin`); `openapi/harpocrates.json` in the service describes it.
+- **The CLI**, in the container, for everything until then and whenever
+  the API cannot be reached. It acts with `pki-admin`'s rights and is
+  audited like anything else:
+
+  ```sh
+  hcli() { infra/docker/stack.sh compose harpocrates exec -it harpocrates node dist/cli.js "$@"; }
+  ```
+
+  Files go in and out with
+  `infra/docker/stack.sh compose harpocrates cp <from> <to>` (a container
+  path is `harpocrates:/tmp/...`).
 
 ## The hierarchy
 
 ```
-ncfritz.net Root CA 1
-├── ncfritz.net Intermediate CA 1
-│   ├── ncfritz.net Issuing CA 1 - G1     devices on the network: NAS, router
-│   └── ncfritz.net Issuing CA 2 - G1     server certificates, api.olympus…
-└── ncfritz.net Intermediate CA 2
-    ├── ncfritz.net Device Issuing CA 1   people's devices (the border)
-    └── ncfritz.net Service Issuing CA 1  services (the API's 3443)
+ncfritz.net Root CA 1                          offline
+├── ncfritz.net Intermediate CA 1              offline
+│   ├── ncfritz.net Issuing CA 1 - G1          closed    network devices, until they expire
+│   ├── ncfritz.net Issuing CA 2 - G1          closed    servers, until they expire
+│   └── ncfritz.net TLS Issuing CA 1 - G1      online    internal hosts: *.internal.ncfritz.net
+└── ncfritz.net Intermediate CA 2              offline
+    ├── ncfritz.net Device Issuing CA 1        online    people's devices (the border)
+    ├── ncfritz.net Service Issuing CA 1 - G1  online    services (the API's 3443)
+    └── ncfritz.net Signing Issuing CA 1 - G1  online    code, mail, documents
 ```
 
-Everything is ECDSA P-256. ADR 0018 calls the last two Olympus Services
-and Olympus Devices; those are their roles, and the names above are what
-XCA holds.
+Everything is ECDSA P-256, except where a device needs RSA (the
+printer's `legacy-device` profile). Offline CAs' keys are on offline media
+and in the password manager, and are only in the signer during a
+ceremony.
 
-A device certificate must not act as a service. The chain does not enforce
-that on its own — the two issuing CAs are siblings, so a trust store that
-terminates at the root accepts either — so the API checks the issuer's
-common name against `AUTH_SERVICES_ISSUER`
-([ADR 0023](../decisions/0023-service-certificates-are-checked-by-issuer.md)).
-Getting the signing CA right therefore matters as much as getting the
-subject right.
+**A request names a profile, not a CA.** The profile decides the key
+type, validity, usages and names, and which CA signs; that is how a device
+certificate never comes from the Service CA. The API still checks the
+issuer's name for services (`AUTH_SERVICES_ISSUER`,
+[ADR 0023](../decisions/0023-service-certificates-are-checked-by-issuer.md)).
 
-## One-off: the issuing CAs
-
-Both already exist under `Intermediate CA 2`. If one has to be recreated:
-signed by `Intermediate CA 2`, template `[default] CA`, key EC /
-`prime256v1`, `O = ncfritz.net`, `OU = Infrastructure`, validity 5 years,
-extensions `Certificate Authority` with path length `0` (it signs no
-further CAs) and key usage `Certificate Sign`, `CRL Sign`.
-
-Export each with **everything above it** in one file — the chain has to
-terminate at a self-signed certificate in the verifier's store, so the
-file is the issuing CA, `Intermediate CA 2` and `Root CA 1`, in that
-order: `services-ca.crt`, `devices-ca.crt`.
-
-Every CA above a leaf must allow one below it: a path length of 0 two
-levels up fails with "path length constraint exceeded", and the CA has to
-be reissued.
-
-## The API's server certificate
-
-Signed by **Service Issuing CA 1**, template `[default] TLS_server`:
-
-- `CN = olympus-api`, `O = ncfritz.net`.
-- Subject alternative names, all of them — a client verifies the name it
-  dialled: `DNS:olympus-api` (the Docker network),
-  `DNS:api.olympus.internal.ncfritz.net` (the NAS and anything off that
-  network), `DNS:localhost`, `IP:127.0.0.1`.
-- Extended key usage `TLS Web Server Authentication`. Validity 1 year.
-- Export the certificate and its key as PEM: `TLS_CERT`, `TLS_KEY`.
+| Profile         | Signed by  | Key                        | For                           |
+| --------------- | ---------- | -------------------------- | ----------------------------- |
+| `service`       | Service CA | CSR or generated           | an agent's client certificate |
+| `api-server`    | Service CA | CSR or generated           | the API's `3443`              |
+| `device`        | Device CA  | generated, exported        | a person's phone or laptop    |
+| `internal-tls`  | TLS CA     | CSR or generated           | an internal host's HTTPS      |
+| `legacy-device` | TLS CA     | generated, RSA, legacy P12 | the printer                   |
+| `code-signing`  | Signing CA | CSR                        | signing code                  |
+| `email`         | Signing CA | generated, exported        | S/MIME                        |
+| `document`      | Signing CA | CSR or generated           | signing documents             |
 
 ## A service certificate
 
 One per **deployment**, not per service: the asset agent runs on the
 Docker host and on the NAS, and each has its own.
 
-- Signed by **Service Issuing CA 1** (ADR 0018's Olympus Services),
-  template `[default] TLS_client`. The API rejects a certificate signed by
-  anything else, whatever its subject says.
 - `CN` is the service's app name exactly as it sends `X-Olympus-Client`
-  and as `AUTH_SERVICE_ROLES` names it: `dionysus-asset-agent`. The API
-  refuses a request whose header and certificate disagree.
-- `OU` is the deployment: `prod`, `nas`. The API records it on the
-  principal; it is how two deployments of one service are told apart.
-- Extended key usage `TLS Web Client Authentication`. Validity 1 year.
-- Export the certificate and key as PEM into that deployment's own TLS
-  directory — `${SECRETS_DIR}/tls/<service>` on the Docker host, mounted at
-  `/run/secrets/tls` — as **`client.crt`**, **`client.key`** and
-  **`services-ca.crt`**. The same three names in every deployment: the
-  directory already says which agent it is, which is what lets one setting
-  serve them all. The key is read once at start, so a renewed certificate
-  needs a restart.
-- Add the service to the API's `AUTH_SERVICE_ROLES` before it calls, or
-  every request is counted as an unknown service.
+  and as `AUTH_SERVICE_ROLES` names it (`dionysus-asset-agent`); the API
+  refuses a request whose header and certificate disagree. `OU` is the
+  deployment: `prod`, `nas`.
+- Make the key where it will live, and send the CSR:
+
+  ```sh
+  dir=/Users/ncfritz/Docker/secrets/tls/dionysus-asset-agent
+  openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes \
+    -keyout $dir/client.key -out $dir/client.csr -subj /CN=dionysus-asset-agent/OU=prod
+  infra/docker/stack.sh compose harpocrates cp $dir/client.csr harpocrates:/tmp/
+  infra/docker/stack.sh compose harpocrates exec -T harpocrates node dist/cli.js \
+    issue --profile service --cn dionysus-asset-agent --ou prod --csr /tmp/client.csr \
+    > $dir/client.crt
+  ```
+
+- `services-ca.crt` beside them is the chain: the Service CA,
+  Intermediate CA 2 and the root
+  (`http://pki.internal.ncfritz.net/ca/<slug>.crt`, DER).
+- The key is read once at start, so a renewed certificate needs a
+  restart. Add the service to the API's `AUTH_SERVICE_ROLES` before it
+  calls, or every request is counted as an unknown service.
+
+## The API's server certificate
+
+The `api-server` profile, from the Service CA, with every name a client
+dials: `olympus-api` (the Docker network),
+`api.olympus.internal.ncfritz.net` (the NAS and anything off that
+network), `localhost` and `127.0.0.1`:
+
+```sh
+hcli issue --profile api-server --cn olympus-api --csr /tmp/api.csr \
+  --dns olympus-api --dns api.olympus.internal.ncfritz.net --dns localhost --ip 127.0.0.1
+```
 
 ## A device certificate
 
-- Signed by **Olympus Devices**, template `[default] TLS_client`.
-- `CN = <person>-<device>` (`neil-iphone`), `OU` the device kind.
-  Validity 1 year.
-- Export as PKCS#12 with a passphrase: that is what an iPhone
-  configuration profile and a browser both import. The passphrase goes to
-  the person over a different channel than the file.
+The key is generated in the signer and exported once as PKCS#12, which
+is what an iPhone configuration profile and a browser import:
+
+```sh
+hcli issue --profile device --cn neil-iphone --ou iphone
+hcli export-key --certificate <id> --format pkcs12 --reason "Neil's new iPhone" \
+  --out /tmp/neil-iphone.p12
+infra/docker/stack.sh compose harpocrates cp harpocrates:/tmp/neil-iphone.p12 .
+```
+
+`export-key` asks for the file's passphrase. It goes to the person over a
+different channel than the file. Delete the container's copy afterwards.
+Exporting is audited with its reason; over the API it needs `pki-admin`
+and a sign-in within the last five minutes.
 
 ## Revocation
 
-A CRL comes from the CA that signed the certificate below it, so a
-verifier needs one per signing authority in the chain — three, for this
-hierarchy ([ADR 0023](../decisions/0023-service-certificates-are-checked-by-issuer.md)):
-the issuing CA's, `Intermediate CA 2`'s and `Root CA 1`'s. Revoke in XCA,
-then export all three:
+```sh
+hcli revoke --certificate <id> --reason keyCompromise
+```
 
-- The API (`TLS_CRL_SERVICES`) takes them as separate files, because Node
-  reads only the first list in a file. It reloads them within seconds of
-  the files changing; no restart.
-- nginx (`ssl_crl`) takes its three concatenated into one file, and
-  reloads with `nginx -s reload`.
+That is all. Within a minute the CA signs a new list, publishes it to
+`http://pki.internal.ncfritz.net/crl/<slug>.crl`, reads it back, and the
+relying parties pick it up: the API within seconds (it polls its
+`TLS_CRL_SERVICES` files), the NAS at its next pull (every 15 minutes).
+`keyCompromise` revokes every certificate for that key and refuses the
+key for good.
 
-`Intermediate CA 2` and `Root CA 1` sign both chains, so their lists are
-shared: four files across the system, three per verifier.
-
-Export every list on each revocation, and before `nextUpdate` regardless.
-An expired list is treated as no list, and Node checks the whole chain, so
-one stale file refuses every service — it fails closed.
+Lists are re-signed daily and valid for a week, so nobody exports them
+any more; an alert fires if one is within two days of lapsing
+(`harpocrates_crl_next_update_timestamp_seconds`). The offline CAs'
+lists are the exception: 13 months, re-signed in a ceremony
+(`hcli ceremony --issuer <slug> --key <file> --crl`), with an alert two
+months ahead.
 
 ## Renewal
 
-Nothing renews on its own yet. A year ahead of expiry, issue the
-replacement from the same XCA entry (**Renew**, keeping the key or with a
-new one), export it over the old file and restart the service. The
-`certificate_expiry_days` metric of phase 7 is what tells you it is due.
+Nothing renews on its own yet (phase 5). `certificate_expiry_days` and
+the renewal alert say when one is due, by its profile:
+
+issue the same request again with a new CSR, or renew over the API
+(`POST /v1/certificate/<id>/renew`, which keeps the key while it is
+younger than the profile's maximum key age). Put the new certificate over
+the old file and restart the service.
+
+## Ceremonies
+
+Creating an issuing CA, or signing an offline CA's list, needs that
+offline CA's key in the signer for one ceremony. Copy the key from the
+offline media into the container and run:
+
+```sh
+hcli ceremony --issuer intermediate-1-g1 --key /tmp/intermediate-1-g1.p8 --remove-key \
+  --plan /tmp/plan.json --crl
+```
+
+A plan lists the issuing CAs to create
+(`apps/harpocrates/ceremonies` has the cutover's). The key file is
+removed once the ceremony opens, and the key leaves the signer when it
+closes, whatever happened.

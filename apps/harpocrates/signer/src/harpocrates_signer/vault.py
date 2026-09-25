@@ -116,7 +116,8 @@ class Vault:
 
     def _open_with_unseal_key(self) -> None:
         path = self._unseal_key_file
-        if path is None or not path.is_file():
+        # An empty file is no key: the stack's secret before `initialise`.
+        if path is None or not path.is_file() or path.stat().st_size == 0:
             self._reason = SealReason.NO_UNSEAL_KEY
             return
         wrapped = self._store.setting(MASTER_BY_UNSEAL_KEY)

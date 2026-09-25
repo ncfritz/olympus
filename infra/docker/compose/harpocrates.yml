@@ -1,0 +1,171 @@
+# Harpocrates, the internal CA (ADR 0020, Deployment; ADR 0019's
+# conventions). The same file on every host that runs it; its settings are
+# infra/docker/env/<env>/harpocrates.env, the wiring is here. Deploy with
+# infra/docker/stack.sh up harpocrates, before olympus (the API reads the
+# lists this stack publishes) and nginx (which serves them).
+#
+#   harpocrates-postgres  its own database, on a network nothing else joins
+#   harpocrates-signer    the private keys; no network at all, only the
+#                         socket's volume
+#   harpocrates-migrate   applies the service's migrations, then exits
+#   harpocrates           the management API and the list scheduler
+#
+# The published directory (${DATA_DIR}/harpocrates/published) is written
+# here and mounted read-only by nginx, which serves it as
+# http://pki.internal.ncfritz.net, and by the API, which reads the Service
+# CA's chain's lists from it.
+
+name: harpocrates
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
+x-service: &service
+  restart: unless-stopped
+  init: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging: *logging
+
+services:
+  harpocrates-postgres:
+    # The major version must match the data directory's.
+    image: postgres:${HARPOCRATES_POSTGRES_VERSION:?}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: harpocrates
+      POSTGRES_DB: harpocrates
+      POSTGRES_PASSWORD_FILE: /run/secrets/harpocrates_postgres_password
+    secrets:
+      - harpocrates_postgres_password
+    volumes:
+      - ${DATA_DIR:?}/harpocrates/postgres:/var/lib/postgresql/data
+    networks:
+      - harpocrates
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U harpocrates"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    stop_grace_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    logging: *logging
+
+  harpocrates-signer:
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/harpocrates-signer:${OLYMPUS_TAG:?}
+    environment:
+      SIGNER_SOCKET_PATH: /run/service/signer.sock
+      SIGNER_STORE_PATH: /data/signer.db
+      SIGNER_TOKEN_FILE: /run/secrets/harpocrates_signer_token
+      # Empty until `initialise` writes it: the signer then starts sealed
+      # (docs/guides/harpocrates-cutover.md).
+      SIGNER_UNSEAL_KEY_FILE: /run/secrets/harpocrates_signer_unseal_key
+      SIGNER_LOG_LEVEL: ${HARPOCRATES_SIGNER_LOG_LEVEL:-INFO}
+    secrets:
+      - harpocrates_signer_token
+      - harpocrates_signer_unseal_key
+    volumes:
+      # The socket, shared with the service; the image's /run/service
+      # gives the volume its owner (the signer) and mode (0750).
+      - harpocrates-socket:/run/service
+      # The key store, uid 10001's. Never in the same backup as the
+      # unseal key, which is in SECRETS_DIR.
+      - ${DATA_DIR:?}/harpocrates/signer:/data
+    # No listener in any configuration (ADR 0020): nothing on any network
+    # can reach it, and it reaches nothing.
+    network_mode: none
+
+  harpocrates-migrate:
+    image: ${IMAGE_PREFIX:?}/harpocrates:${OLYMPUS_TAG:?}
+    depends_on:
+      harpocrates-postgres:
+        condition: service_healthy
+    entrypoint: ["sh", "-c"]
+    command:
+      - >-
+        DATABASE_URL="$$(cat /run/secrets/harpocrates_database_url)"
+        exec node node_modules/prisma/build/index.js migrate deploy
+        --schema prisma/schema.prisma
+    secrets:
+      - harpocrates_database_url
+    networks:
+      - harpocrates
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging: *logging
+
+  harpocrates:
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/harpocrates:${OLYMPUS_TAG:?}
+    depends_on:
+      harpocrates-migrate:
+        condition: service_completed_successfully
+      harpocrates-signer:
+        condition: service_healthy
+    env_file: ../env/${OLYMPUS_ENV:?}/harpocrates.env
+    environment:
+      LISTEN_PORT: "3200"
+      ENABLE_CONSOLE_LOGGING: "true"
+      FILE_LOGGING_ENABLED: "false"
+      LOKI_URL: ${LOKI_URL:-}
+      DATABASE_URL_FILE: /run/secrets/harpocrates_database_url
+      SIGNER_SOCKET_PATH: /run/harpocrates-signer/signer.sock
+      SIGNER_TOKEN_FILE: /run/secrets/harpocrates_signer_token
+      # Users' access tokens are the API's (ADR 0018), verified against
+      # its keys over the edge network.
+      AUTH_JWKS_URL: http://olympus-api:3100/.well-known/jwks.json
+      PKI_PUBLISHED_DIR: /srv/harpocrates/published
+    secrets:
+      - harpocrates_database_url
+      - harpocrates_signer_token
+    # The signer's group: its socket is group read-write, nothing else.
+    group_add:
+      - "10001"
+    volumes:
+      - harpocrates-socket:/run/harpocrates-signer
+      - ${DATA_DIR:?}/harpocrates/published:/srv/harpocrates/published
+    # Publication reads each list back through the distribution URL: the
+    # host's nginx, whatever this container's DNS says of the name.
+    extra_hosts:
+      - "pki.internal.ncfritz.net:host-gateway"
+    networks:
+      - harpocrates
+      # nginx publishes the API at /harpocrates/ca/api on the control host,
+      # and the API's key set is here.
+      - edge
+      - monitoring
+
+volumes:
+  harpocrates-socket:
+
+networks:
+  # Postgres and the service only: nothing else reaches the CA's database.
+  harpocrates:
+    name: harpocrates
+    internal: true
+  edge:
+    name: olympus-edge
+    external: true
+  monitoring:
+    name: ${MONITORING_NETWORK:?}
+    external: true
+
+secrets:
+  harpocrates_postgres_password:
+    file: ${SECRETS_DIR:?}/harpocrates_postgres_password
+  harpocrates_database_url:
+    file: ${SECRETS_DIR:?}/harpocrates_database_url
+  harpocrates_signer_token:
+    file: ${SECRETS_DIR:?}/harpocrates_signer_token
+  harpocrates_signer_unseal_key:
+    file: ${SECRETS_DIR:?}/harpocrates_signer_unseal_key

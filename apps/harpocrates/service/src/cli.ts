@@ -15,8 +15,23 @@
  *         --number <n> --generation <g> [--purpose <purpose>]
  *         --certificate <file> [--chain <file>]...
  *         [--max-validity-days <days>] [--eku <oid>]...
- *         [--key <encrypted PKCS#8 file> --passphrase-file <file>]
+ *         [--key <encrypted PKCS#8 file> --passphrase-file <file>] [--closed]
+ *   import-certificates --profile <id> --file <PEM bundle or DER>...
  *   import-crl --issuer <slug> --crl <file, PEM or DER>
+ *   export-key --certificate <id> --format <pem|pkcs12|pkcs12-legacy>
+ *         --reason <text> --out <file> [--passphrase-file <file>]
+ *   ceremony --issuer <slug> --key <encrypted PKCS#8 file>
+ *         [--passphrase-file <file>] [--plan <JSON file>] [--crl] [--remove-key]
+ *
+ * A ceremony opens the offline CA's key in the signer, creates the issuing
+ * CAs its plan lists ({"issuing": [CreateIssuingIssuerRequest, ...]}),
+ * signs its list with --crl, and closes, whatever happened. A passphrase
+ * not given as a file is asked for on the terminal (`exec -it`), never an
+ * argument; --remove-key deletes the key file once the ceremony is open.
+ *
+ * The cutover from XCA (docs/guides/harpocrates-cutover.md) is these three
+ * in order: the CAs, what they issued, then their last lists, which revoke
+ * what they name.
  *
  * A revocation here asks for a new list; the running service's scheduler
  * signs it (this process never schedules anything).
@@ -27,22 +42,98 @@
 import "source-map-support/register";
 
 import { NestFactory } from "@nestjs/core";
+import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
 import * as fs from "fs";
 import * as os from "os";
+import * as readline from "readline";
+import { Writable } from "stream";
 import { AppModule } from "./AppModule";
 import { AuditService } from "./audit/services/AuditService";
+import { CeremonyService } from "./ceremonies/services/CeremonyService";
 import { PkiRole, type Principal } from "./auth/principal";
+import { CertificateImportService } from "./certificates/services/CertificateImportService";
 import { CertificateService } from "./certificates/services/CertificateService";
 import { readConfig } from "./config/configuration";
 import { CrlScheduler } from "./crls/services/CrlScheduler";
 import { CrlService } from "./crls/services/CrlService";
 import type { IssuerTierName } from "./issuers/issuerNames";
 import { IssuerService } from "./issuers/services/IssuerService";
-import type { RevocationReasonName } from "./model/certificates";
+import type {
+  ExportFormatName,
+  RevocationReasonName,
+} from "./model/certificates";
+import { CreateIssuingIssuerRequest } from "./model/issuers";
 import { toPem } from "./pki/x509";
 import { SealService } from "./signer/services/SealService";
 
 type Options = Record<string, string[]>;
+
+/** Flags that take no value. */
+const SWITCHES = new Set(["closed", "crl", "remove-key"]);
+
+/** Asked for on the terminal without echoing it. */
+const promptSecret = (label: string): Promise<string> => {
+  if (!process.stdin.isTTY) {
+    return Promise.reject(
+      new Error(
+        `${label}: no terminal to ask on (docker compose exec -it), and no --passphrase-file`,
+      ),
+    );
+  }
+  return new Promise((resolve) => {
+    const muted = new Writable({ write: (_chunk, _encoding, done) => done() });
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: muted,
+      terminal: true,
+    });
+    process.stderr.write(`${label}: `);
+    rl.question("", (answer) => {
+      rl.close();
+      process.stderr.write("\n");
+      resolve(answer);
+    });
+  });
+};
+
+const passphraseFor = async (options: Options, label: string) => {
+  const file = one(options, "passphrase-file");
+  return file ? fs.readFileSync(file, "utf8").trim() : promptSecret(label);
+};
+
+/** A ceremony's plan: the issuing CAs it creates, each checked as the API checks it. */
+const readPlan = async (
+  file: string | undefined,
+): Promise<CreateIssuingIssuerRequest[]> => {
+  if (!file) return [];
+  const plan = JSON.parse(fs.readFileSync(file, "utf8")) as {
+    issuing?: unknown[];
+  };
+  const requests = (plan.issuing ?? []).map((item) =>
+    plainToInstance(CreateIssuingIssuerRequest, item),
+  );
+  for (const request of requests) {
+    const errors = await validate(request, {
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    });
+    if (errors.length) {
+      throw new Error(
+        `the plan's issuing CA ${JSON.stringify(item(request))} is invalid: ${errors
+          .flatMap((e) => Object.values(e.constraints ?? {}))
+          .join("; ")}`,
+      );
+    }
+  }
+  return requests;
+};
+
+const item = (request: CreateIssuingIssuerRequest) => ({
+  purpose: request.purpose,
+  number: request.number,
+  generation: request.generation,
+});
 
 const parse = (args: string[]): { command?: string; options: Options } => {
   const [command, ...rest] = args;
@@ -50,6 +141,10 @@ const parse = (args: string[]): { command?: string; options: Options } => {
   for (let i = 0; i < rest.length; i += 1) {
     const flag = rest[i];
     if (!flag.startsWith("--")) throw new Error(`unexpected ${flag}`);
+    if (SWITCHES.has(flag.slice(2))) {
+      (options[flag.slice(2)] ??= []).push("true");
+      continue;
+    }
     const value = rest[i + 1];
     if (value === undefined) throw new Error(`${flag} needs a value`);
     (options[flag.slice(2)] ??= []).push(value);
@@ -67,7 +162,7 @@ const required = (options: Options, name: string): string => {
   return value;
 };
 
-const USAGE = `usage: cli.js status | issue --profile <id> --cn <name> [...] | revoke --certificate <id> --reason <reason> | audit-verify | crls | import-issuer --id <slug> --tier <tier> [...] | import-crl --issuer <slug> --crl <file>`;
+const USAGE = `usage: cli.js status | issue --profile <id> --cn <name> [...] | revoke --certificate <id> --reason <reason> | audit-verify | crls | import-issuer --id <slug> --tier <tier> [...] | import-certificates --profile <id> --file <file>... | import-crl --issuer <slug> --crl <file> | export-key --certificate <id> --format <format> --reason <text> --out <file> | ceremony --issuer <slug> --key <file> [--plan <file>] [--crl]`;
 
 const integerOption = (options: Options, name: string, fallback?: number) => {
   const raw = one(options, name);
@@ -177,9 +272,8 @@ async function main(args: string[]): Promise<number> {
       }
       case "import-issuer": {
         const keyFile = one(options, "key");
-        const passphraseFile = one(options, "passphrase-file");
-        if (Boolean(keyFile) !== Boolean(passphraseFile)) {
-          throw new Error("--key and --passphrase-file go together");
+        if (one(options, "passphrase-file") && !keyFile) {
+          throw new Error("--passphrase-file is for a --key");
         }
         const tier = required(options, "tier") as IssuerTierName;
         const issuer = await app.get(IssuerService).import(principal, {
@@ -198,11 +292,41 @@ async function main(args: string[]): Promise<number> {
           maxValidityDays: integerOption(options, "max-validity-days", 825),
           extendedKeyUsages: options.eku ?? [],
           privateKey: keyFile ? fs.readFileSync(keyFile, "utf8") : undefined,
-          passphrase: passphraseFile
-            ? fs.readFileSync(passphraseFile, "utf8").trim()
+          passphrase: keyFile
+            ? await passphraseFor(options, "The key's passphrase")
             : undefined,
+          closed: one(options, "closed") === "true",
         });
         console.log(`imported ${issuer.id}: ${issuer.subject}`);
+        return 0;
+      }
+      case "import-certificates": {
+        const files = options.file ?? [];
+        if (files.length === 0) throw new Error("--file is required");
+        const result = await app
+          .get(CertificateImportService)
+          .import(principal, {
+            profileId: required(options, "profile"),
+            certificates: files.map((file) => {
+              const data = fs.readFileSync(file);
+              return data.includes("-----BEGIN")
+                ? data.toString("utf8")
+                : toPem(data, "CERTIFICATE");
+            }),
+          });
+        for (const certificate of result.imported) {
+          console.log(
+            `imported ${certificate.issuerId} ${certificate.serial} ${certificate.subject} (${certificate.state})`,
+          );
+        }
+        for (const skipped of result.skipped) {
+          console.log(
+            `skipped ${skipped.serial ?? "?"} ${skipped.subject ?? ""}: ${skipped.reason}`,
+          );
+        }
+        console.error(
+          `${result.imported.length} imported, ${result.skipped.length} skipped`,
+        );
         return 0;
       }
       case "import-crl": {
@@ -216,6 +340,71 @@ async function main(args: string[]): Promise<number> {
         console.log(
           `imported ${crl.issuerId} list ${crl.number} (${crl.entries} serials)`,
         );
+        return 0;
+      }
+      case "export-key": {
+        const out = required(options, "out");
+        const exported = await app
+          .get(CertificateService)
+          .exportKey(principal, required(options, "certificate"), {
+            format: required(options, "format") as ExportFormatName,
+            reason: required(options, "reason"),
+            passphrase: await passphraseFor(
+              options,
+              "A passphrase for the exported key",
+            ),
+          });
+        fs.writeFileSync(out, Buffer.from(exported.data, "base64"), {
+          mode: 0o600,
+        });
+        console.log(`wrote ${out} (${exported.format}; audited)`);
+        return 0;
+      }
+      case "ceremony": {
+        const issuerId = required(options, "issuer");
+        const keyFile = required(options, "key");
+        const plan = await readPlan(one(options, "plan"));
+        const crl = one(options, "crl") === "true";
+        if (plan.length === 0 && !crl) {
+          throw new Error("nothing to do: give a --plan, --crl, or both");
+        }
+        const privateKey = fs.readFileSync(keyFile, "utf8");
+        const passphrase = await passphraseFor(
+          options,
+          `${issuerId}'s key passphrase`,
+        );
+        const ceremonies = app.get(CeremonyService);
+        const ceremony = await ceremonies.open(
+          principal,
+          issuerId,
+          privateKey,
+          passphrase,
+        );
+        console.log(`opened ceremony ${ceremony.id} for ${issuerId}`);
+        // Once the signer has it: a wrong passphrase leaves the file to retry.
+        if (one(options, "remove-key") === "true") fs.rmSync(keyFile);
+        try {
+          for (const request of plan) {
+            const issuer = await ceremonies.createIssuing(
+              principal,
+              ceremony.id,
+              request,
+            );
+            console.log(`created ${issuer.id}: ${issuer.subject}`);
+            console.log(issuer.certificate);
+          }
+          if (crl) {
+            const list = await app
+              .get(CrlService)
+              .signInCeremony(principal, ceremony.id);
+            console.log(
+              `signed ${issuerId} list ${list.number}, next update ${list.nextUpdate.toISOString()}; the service publishes it`,
+            );
+          }
+        } finally {
+          await ceremonies.close(principal, ceremony.id);
+          console.log(`closed ceremony ${ceremony.id}`);
+        }
         return 0;
       }
       default:

@@ -256,6 +256,11 @@ export class IssuerService {
       generation: request.generation,
     };
     if (request.tier !== "issuing") {
+      if (request.closed) {
+        throw new BadRequestException(
+          "Only an issuing CA is imported closed; offline CAs sign no certificates anyway",
+        );
+      }
       if (request.privateKey) {
         throw new BadRequestException(
           "Offline CAs are imported without their key",
@@ -294,6 +299,7 @@ export class IssuerService {
       extendedKeyUsages: request.extendedKeyUsages,
       constraints: [],
       kind: AuditKind.IssuerImported,
+      closed: request.closed,
     });
     return this.describe(request.id);
   }
@@ -317,6 +323,8 @@ export class IssuerService {
         value: string;
       }[];
       kind: typeof AuditKind.IssuerCreated | typeof AuditKind.IssuerImported;
+      /** Signs its lists and nothing new (an XCA CA kept to its end). */
+      closed?: boolean;
     },
   ): Promise<void> {
     const certificate = parseCertificate(issuing.certificatePem);
@@ -340,7 +348,7 @@ export class IssuerService {
           id: issuing.id,
           subject: certificate.subject,
           tier: "issuing",
-          status: "active",
+          status: issuing.closed ? "closed" : "active",
           purpose: issuing.parts.purpose,
           number: issuing.parts.number,
           generation: issuing.parts.generation,
@@ -372,6 +380,7 @@ export class IssuerService {
             notAfter: certificate.notAfter.toISOString(),
             keyLocation: "signer",
             maxValidityDays: issuing.maxValidityDays,
+            status: issuing.closed ? "closed" : "active",
           },
         },
         tx,

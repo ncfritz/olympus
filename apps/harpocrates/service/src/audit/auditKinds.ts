@@ -13,6 +13,7 @@ export const AuditKind = {
   RequestRefused: "request.refused",
   CertificateIssued: "certificate.issued",
   CertificateRenewed: "certificate.renewed",
+  CertificateImported: "certificate.imported",
   CertificateRevoked: "certificate.revoked",
   ProfileUpdated: "profile.updated",
   CrlSigned: "crl.signed",

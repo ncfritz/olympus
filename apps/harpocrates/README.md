@@ -10,6 +10,11 @@ console, built, versioned and deployed together:
 | `signer/` `@ncfritz/harpocrates-signer`   | Python (FastAPI) | Holds the private keys; generates keys, signs certificates and lists; nothing else |
 | `console/` `@ncfritz/harpocrates-console` | Next.js          | The operator's console on Olympus Control, `/harpocrates/ca` (phase 7)             |
 
+In production they run as the `harpocrates` stack
+(`infra/docker/compose/harpocrates.yml`, [infra/docker](../../infra/docker/README.md#harpocrates)),
+brought up and adopted from XCA by [the cutover guide](../../docs/guides/harpocrates-cutover.md);
+issuing and revoking is [the certificates guide](../../docs/guides/certificates.md).
+
 The service reaches the signer over a Unix socket with a shared token;
 the signer has no network listener. The service never sees a private key
 except one it hands to the operator once.

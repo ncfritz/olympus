@@ -3,6 +3,7 @@
  * on but AppModule requires. Imported by openapi.ts before AppModule; the
  * files they name are never read: nothing connects.
  */
+process.env.DATABASE_URL ||= "postgresql://openapi@localhost/none";
 process.env.SIGNER_SOCKET_PATH ||= "/nonexistent/signer.sock";
 process.env.SIGNER_TOKEN_FILE ||= "/nonexistent/token";
 process.env.PKI_PUBLISHED_DIR ||= "/nonexistent/published";

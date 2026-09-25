@@ -1,3 +1,4 @@
+import os
 import socket
 import threading
 import time
@@ -7,6 +8,7 @@ from pathlib import Path
 import pytest
 import uvicorn
 
+from harpocrates_signer import transport
 from harpocrates_signer.__main__ import main
 from harpocrates_signer.app import create_app
 from harpocrates_signer.config import Config
@@ -97,3 +99,24 @@ def test_the_socket_directory_is_not_world_readable(tmp_path: Path):
     socket_path = tmp_path / "run" / "signer.sock"
     prepare_socket(socket_path)
     assert socket_path.parent.stat().st_mode & 0o007 == 0
+
+
+def test_the_socket_is_the_owner_and_group_s_only(
+    config: Config, monkeypatch: pytest.MonkeyPatch
+):
+    """The service connects as a member of the signer's group (the stack's
+    group_add): the socket must be group-writable, and nothing else."""
+    seen: list[int] = []
+
+    def run(*_args: object, **_kwargs: object) -> None:
+        current = os.umask(0)
+        os.umask(current)
+        seen.append(current)
+
+    previous = os.umask(0o022)
+    monkeypatch.setattr(transport.uvicorn, "run", run)
+    try:
+        transport.serve(config)
+    finally:
+        os.umask(previous)
+    assert seen == [0o007]

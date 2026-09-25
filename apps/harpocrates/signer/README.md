@@ -70,14 +70,18 @@ check:conventions`.
 
 ## Environment
 
-| Variable                          | Default | Meaning                                                   |
-| --------------------------------- | ------- | --------------------------------------------------------- |
-| `SIGNER_SOCKET_PATH`              | —       | The Unix socket to serve on                               |
-| `SIGNER_STORE_PATH`               | —       | The SQLite store                                          |
-| `SIGNER_TOKEN_FILE`               | —       | The shared token, at least 32 characters (a secret)       |
-| `SIGNER_UNSEAL_KEY_FILE`          | unset   | The unseal key (a secret); unset or missing: start sealed |
-| `SIGNER_CEREMONY_TIMEOUT_SECONDS` | `3600`  | How long a ceremony may hold a key, 1 to 3600             |
-| `SIGNER_LOG_LEVEL`                | `INFO`  | `DEBUG`, `INFO`, `WARNING` or `ERROR`                     |
+| Variable                          | Default | Meaning                                                          |
+| --------------------------------- | ------- | ---------------------------------------------------------------- |
+| `SIGNER_SOCKET_PATH`              | —       | The Unix socket to serve on                                      |
+| `SIGNER_STORE_PATH`               | —       | The SQLite store                                                 |
+| `SIGNER_TOKEN_FILE`               | —       | The shared token, at least 32 characters (a secret)              |
+| `SIGNER_UNSEAL_KEY_FILE`          | unset   | The unseal key (a secret); unset, missing or empty: start sealed |
+| `SIGNER_CEREMONY_TIMEOUT_SECONDS` | `3600`  | How long a ceremony may hold a key, 1 to 3600                    |
+| `SIGNER_LOG_LEVEL`                | `INFO`  | `DEBUG`, `INFO`, `WARNING` or `ERROR`                            |
 
 The image is `infra/docker/python/Dockerfile`, target `harpocrates-signer`
-in `/docker-bake.hcl`.
+in `/docker-bake.hcl`; the stack is `infra/docker/compose/harpocrates.yml`,
+where it has no network at all. The socket is created read-write for its
+owner and group (uid and gid 10001) only, and the service joins that
+group; the socket's directory is a volume mounted at the image's
+`/run/service`.

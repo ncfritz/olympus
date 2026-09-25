@@ -35,7 +35,12 @@ FROM python:${PYTHON_VERSION}-slim AS runtime
 # writes goes to volumes. A fixed id, so a volume's ownership can be set
 # on the host.
 RUN groupadd --system --gid 10001 service \
-    && useradd --system --uid 10001 --gid service --no-create-home service
+    && useradd --system --uid 10001 --gid service --no-create-home service \
+    && install -d -o service -g service -m 0750 /run/service
+# /run/service is where a service puts its sockets. A named volume mounted
+# there starts as a copy of it, owner and mode included, so the service can
+# bind in it and its group's members (another container, with group_add
+# 10001) can reach what it binds.
 COPY --from=build /app/.venv /app/.venv
 ENV PATH=/app/.venv/bin:${PATH} \
     PYTHONUNBUFFERED=1

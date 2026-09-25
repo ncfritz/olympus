@@ -229,9 +229,13 @@ model Key {
   @@map("keys")
 }
 
+/// csr: the subscriber's key. generated: the signer's (escrowed).
+/// imported: a certificate another CA product issued (XCA), with its key
+/// wherever it was.
 enum EnrollmentMode {
   csr
   generated
+  imported
 }
 
 /// The request that introduced a key: its CSR, subject, names and profile.

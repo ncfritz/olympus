@@ -3,6 +3,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
   IsArray,
+  IsBoolean,
   IsIn,
   IsInt,
   IsNotEmpty,
@@ -438,6 +439,16 @@ export class ImportIssuerRequest {
   @IsOptional()
   @IsString()
   passphrase?: string;
+
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    description:
+      "Import an issuing CA closed: it signs its revocation lists and nothing new (XCA's Issuing CA 1 and 2)",
+  })
+  @IsOptional()
+  @IsBoolean()
+  closed?: boolean;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */

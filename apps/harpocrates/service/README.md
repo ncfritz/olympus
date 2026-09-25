@@ -96,6 +96,7 @@ from it.
 | `GET /certificate/{id}/download` (`pem`, `der`, `chain`)               | either role           |
 | `POST /certificate/{id}/renew`, `POST /certificate/{id}/revoke`        | either role           |
 | `POST /certificate/{id}/key-export` (PEM, PKCS#12, legacy PKCS#12)     | admin, recent sign-in |
+| `POST /certificates/import` (another CA product's, XCA's)              | admin                 |
 | `GET /signer/status`; `POST /signer/seal`, `POST /signer/unseal`       | either role; admin    |
 | `GET /audit/events`, `GET /audit/verification`                         | either role           |
 | `GET /issuer/{id}/crls`                                                | either role           |
@@ -162,12 +163,26 @@ crls                       # sign what is due and publish what is not out, now
 import-issuer --id <slug> --tier <root|intermediate|issuing> --number <n> --generation <g>
               [--purpose <purpose>] --certificate <file> [--chain <file>]...
               [--max-validity-days <days>] [--eku <oid>]...
-              [--key <encrypted PKCS#8> --passphrase-file <file>]
+              [--key <encrypted PKCS#8> [--passphrase-file <file>]] [--closed]
 import-crl --issuer <slug> --crl <file>   # PEM or DER
+import-certificates --profile <id> --file <PEM bundle or DER>...
+export-key --certificate <id> --format <pem|pkcs12|pkcs12-legacy> --reason <text> --out <file>
+ceremony --issuer <slug> --key <encrypted PKCS#8> [--plan <JSON>] [--crl] [--remove-key]
 ```
 
-`scripts/dev-ca-import.sh` uses the import commands to adopt the dev CA
-(`scripts/dev-ca.sh`) into the development service, lists included.
+`import-issuer --closed` imports an issuing CA that signs its lists and
+nothing new. A passphrase not given with `--passphrase-file` is asked for
+on the terminal, never taken as an argument. `ceremony` opens the offline
+CA's key in the signer, creates the issuing CAs its plan lists
+(`../ceremonies`), signs its list with `--crl`, and closes whatever
+happens. The API's ceremony and export operations need a recent sign-in;
+until something can mint one (the console, phase 7), these are how.
+
+In the stack, `infra/docker/stack.sh compose harpocrates exec -it
+harpocrates node dist/cli.js <command>`. The cutover from XCA is the
+import commands and three ceremonies ([the guide](../../../docs/guides/harpocrates-cutover.md));
+`scripts/dev-ca-import.sh` rehearses the imports against the dev CA
+(`scripts/dev-ca.sh`).
 
 The e2e tests need `HARPOCRATES_E2E_DATABASE_URL`, a database they may
 create and drop schemas in, and `uv` for the signer; without the URL
@@ -181,24 +196,24 @@ HARPOCRATES_E2E_DATABASE_URL=postgresql://harpocrates:harpocrates@localhost:5433
 
 ## Environment
 
-| Variable                      | Default                           | Meaning                                                        |
-| ----------------------------- | --------------------------------- | -------------------------------------------------------------- |
-| `DATABASE_URL`                | —                                 | `harpocrates-postgres` (read by Prisma)                        |
-| `LISTEN_PORT`                 | `3200`                            | The management API, `/health` and `/metrics`                   |
-| `SIGNER_SOCKET_PATH`          | —                                 | The signer's socket                                            |
-| `SIGNER_TOKEN_FILE`           | —                                 | The shared token (a secret)                                    |
-| `AUTH_JWKS_URL`               | —                                 | The API's published keys; or                                   |
-| `AUTH_JWKS_FILE`              | —                                 | the same as a file (exactly one of the two)                    |
-| `AUTH_AUDIENCE`               | `olympus-api`                     | The tokens' audience                                           |
-| `AUTH_RECENT_SIGN_IN_SECONDS` | `300`                             | How recent a sign-in ceremonies and escrow export need         |
-| `PKI_REALM`                   | `ncfritz.net`                     | The prefix of CA names: `<realm> TLS Issuing CA 1 - G1`        |
-| `PKI_ORGANIZATION`            | `ncfritz.net`                     | `O=` in the names it issues                                    |
-| `PKI_DISTRIBUTION_URL`        | `http://pki.internal.ncfritz.net` | Where lists and CA certificates are served, and read back from |
-| `PKI_PUBLISHED_DIR`           | —                                 | The directory the distribution host serves                     |
-| `CRL_VALIDITY_HOURS`          | `168`                             | An online CA's list's validity                                 |
-| `CRL_REFRESH_HOURS`           | `24`                              | How old an online CA's list gets before it is re-signed        |
-| `CRL_OFFLINE_VALIDITY_DAYS`   | `395`                             | An offline CA's list's validity, signed in a ceremony          |
-| `CRL_SCHEDULE_SECONDS`        | `30`                              | How often the scheduler runs; `0` turns it off                 |
+| Variable                      | Default                           | Meaning                                                                                |
+| ----------------------------- | --------------------------------- | -------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                | —                                 | `harpocrates-postgres`; or `DATABASE_URL_FILE`, a file holding it (the stack's secret) |
+| `LISTEN_PORT`                 | `3200`                            | The management API, `/health` and `/metrics`                                           |
+| `SIGNER_SOCKET_PATH`          | —                                 | The signer's socket                                                                    |
+| `SIGNER_TOKEN_FILE`           | —                                 | The shared token (a secret)                                                            |
+| `AUTH_JWKS_URL`               | —                                 | The API's published keys; or                                                           |
+| `AUTH_JWKS_FILE`              | —                                 | the same as a file (exactly one of the two)                                            |
+| `AUTH_AUDIENCE`               | `olympus-api`                     | The tokens' audience                                                                   |
+| `AUTH_RECENT_SIGN_IN_SECONDS` | `300`                             | How recent a sign-in ceremonies and escrow export need                                 |
+| `PKI_REALM`                   | `ncfritz.net`                     | The prefix of CA names: `<realm> TLS Issuing CA 1 - G1`                                |
+| `PKI_ORGANIZATION`            | `ncfritz.net`                     | `O=` in the names it issues                                                            |
+| `PKI_DISTRIBUTION_URL`        | `http://pki.internal.ncfritz.net` | Where lists and CA certificates are served, and read back from                         |
+| `PKI_PUBLISHED_DIR`           | —                                 | The directory the distribution host serves                                             |
+| `CRL_VALIDITY_HOURS`          | `168`                             | An online CA's list's validity                                                         |
+| `CRL_REFRESH_HOURS`           | `24`                              | How old an online CA's list gets before it is re-signed                                |
+| `CRL_OFFLINE_VALIDITY_DAYS`   | `395`                             | An offline CA's list's validity, signed in a ceremony                                  |
+| `CRL_SCHEDULE_SECONDS`        | `30`                              | How often the scheduler runs; `0` turns it off                                         |
 
 Logging is the shared set (`LOKI_URL`, `CONSOLE_LOGGING_LEVEL`, ...) in
 `dev.env.example`.

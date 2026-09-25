@@ -25,7 +25,8 @@ die() { echo "stack.sh: $*" >&2; exit 1; }
 # Secrets a service can run without: an empty file means "not configured".
 OPTIONAL_SECRETS="syno_smtp_password socks_proxy_username socks_proxy_password
 content_ssh_password dionysus_cdn_ssh_password dionysus_library_ssh_password
-nzbgeek_api_key nzbget_password tmdb_api_key google_oauth_client_secret"
+nzbgeek_api_key nzbget_password tmdb_api_key google_oauth_client_secret
+harpocrates_signer_unseal_key"
 
 is_optional() {
   case " $(printf '%s' "$OPTIONAL_SECRETS" | tr '\n' ' ') " in *" $1 "*) return 0 ;; esac
@@ -88,7 +89,8 @@ bootstrap() {
   for dir in postgres rabbitmq/data registry \
     dionysus/uploads dionysus/asset-agents/data dionysus/metadata-agents/data \
     dionysus/search-agents/data minerva/credentials/google \
-    minerva/credentials/microsoft olympus/site/olr; do
+    minerva/credentials/microsoft olympus/site/olr \
+    harpocrates/postgres harpocrates/signer harpocrates/published; do
     mkdir -p "$DATA_DIR/$dir"
   done
   echo "data     $DATA_DIR"
@@ -103,10 +105,27 @@ bootstrap() {
   for name in $OPTIONAL_SECRETS; do
     [ -e "$SECRETS_DIR/$name" ] || { : > "$SECRETS_DIR/$name"; chmod 600 "$SECRETS_DIR/$name"; }
   done
+  # Harpocrates's (compose/harpocrates.yml): random, made once. The
+  # database URL carries the password, so the two are made together.
+  generate_secret harpocrates_signer_token
+  if [ ! -e "$SECRETS_DIR/harpocrates_postgres_password" ]; then
+    generate_secret harpocrates_postgres_password
+    printf 'postgresql://harpocrates:%s@harpocrates-postgres:5432/harpocrates\n' \
+      "$(cat "$SECRETS_DIR/harpocrates_postgres_password")" \
+      > "$SECRETS_DIR/harpocrates_database_url"
+    chmod 600 "$SECRETS_DIR/harpocrates_database_url"
+  fi
   echo "secrets  $SECRETS_DIR (optional ones created empty)"
   echo
   echo "Next: put the required secrets in $SECRETS_DIR (infra/docker/README.md,"
   echo "Secrets), run 'stack.sh rabbitmq-users', then 'stack.sh check'."
+}
+
+# A random secret (hex, so it needs no escaping in a URL), unless it exists.
+generate_secret() {
+  local path="$SECRETS_DIR/$1"
+  [ -e "$path" ] && return 0
+  (umask 077 && openssl rand -hex 32 > "$path")
 }
 
 # The secret files the stack's enabled services mount: "name<TAB>path".
