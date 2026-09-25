@@ -2,6 +2,7 @@ import { Global, Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
 import { AuthGuard } from "./AuthGuard";
 import { AuthorizationCodeService } from "./codes/AuthorizationCodeService";
+import { UserDirectoryService } from "./users/UserDirectoryService";
 import { DescribeJsonWebKeySetController } from "./tokens/controllers/DescribeJsonWebKeySetController";
 import { SigningKeyService } from "./tokens/SigningKeyService";
 import { ServiceIdentityService } from "./services/ServiceIdentityService";
@@ -14,12 +15,14 @@ import { ServiceIdentityService } from "./services/ServiceIdentityService";
     AuthorizationCodeService,
     SigningKeyService,
     ServiceIdentityService,
+    UserDirectoryService,
     { provide: APP_GUARD, useClass: AuthGuard },
   ],
   exports: [
     AuthorizationCodeService,
     ServiceIdentityService,
     SigningKeyService,
+    UserDirectoryService,
   ],
 })
 export class AuthModule {}

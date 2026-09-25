@@ -1,0 +1,231 @@
+import { Injectable, Logger } from "@nestjs/common";
+import { gql, GraphQLClient } from "graphql-request";
+import { BASE_SESSION, USER_WITH_ROLES } from "./queries/users";
+
+/** A user who may sign in, with the roles their tokens will carry. */
+export type DirectoryUser = {
+  id: string;
+  displayName: string;
+  email: string;
+  roles: string[];
+};
+
+type GraphQlUser = {
+  id: string;
+  displayName: string;
+  email: string;
+  disabled: boolean;
+  roles: { role: string }[];
+};
+
+export type Resolution = { user: DirectoryUser } | { reason: string };
+
+/**
+ * What the provider told us about whoever just signed in.
+ *
+ * `emailVerified` is the provider's own claim and it is load-bearing: the
+ * first sign-in links an identity to a user **by email**, so an
+ * unverified address would let anyone who can set their profile email to
+ * yours become you. It is a parameter rather than something the caller
+ * checks, so that it cannot be forgotten at a call site.
+ */
+export type ProviderIdentity = {
+  provider: string;
+  /** The provider's stable identifier for the account. */
+  subject: string;
+  email: string;
+  emailVerified: boolean;
+};
+
+const user = (row: GraphQlUser): DirectoryUser => ({
+  id: row.id,
+  displayName: row.displayName,
+  email: row.email,
+  roles: row.roles.map((entry) => entry.role),
+});
+
+/**
+ * Users, their provider identities and their sessions (ADR 0018). The only
+ * part of the API that reads or writes them, and it does so through Hasura
+ * like everything else.
+ *
+ * A user who does not already exist is refused. Signing in does not create
+ * anyone: `pnpm --filter @ncfritz/olympus-api auth:user` does that, on
+ * purpose, because a home lab's user list is short and deliberate.
+ */
+@Injectable()
+export class UserDirectoryService {
+  private readonly logger = new Logger(UserDirectoryService.name);
+
+  constructor(private readonly graphQLClient: GraphQLClient) {}
+
+  /**
+   * The user behind a provider identity: by subject if we have seen it
+   * before, otherwise by verified email, which links it.
+   */
+  async resolve(identity: ProviderIdentity): Promise<Resolution> {
+    const known = await this.byIdentity(identity.provider, identity.subject);
+    if (known !== undefined) {
+      return known.disabled
+        ? { reason: `user ${known.id} is disabled` }
+        : { user: user(known) };
+    }
+
+    if (!identity.emailVerified) {
+      return {
+        reason: `${identity.provider} did not verify ${identity.email}`,
+      };
+    }
+
+    const match = await this.byEmail(identity.email);
+    if (match === undefined) {
+      return { reason: `no user with the email ${identity.provider} gave` };
+    }
+    if (match.disabled) return { reason: `user ${match.id} is disabled` };
+
+    await this.linkIdentity(match.id, identity);
+    this.logger.log(
+      `linked ${identity.provider} identity to user ${match.id} by email`,
+    );
+    return { user: user(match) };
+  }
+
+  private async byIdentity(
+    provider: string,
+    subject: string,
+  ): Promise<GraphQlUser | undefined> {
+    const query = gql`
+      query DescribeUserByIdentity($provider: String!, $subject: String!) {
+        olympus_user_identities(
+          where: {
+            provider: { _eq: $provider }
+            subject: { _eq: $subject }
+          }
+          limit: 1
+        ) {
+          user {
+            ${USER_WITH_ROLES}
+          }
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      olympus_user_identities: { user: GraphQlUser }[];
+    }>(query, { provider, subject });
+    return response.olympus_user_identities[0]?.user;
+  }
+
+  /**
+   * By email, exactly. Addresses are stored lowercased — a CHECK constraint
+   * insists — so this is an equality comparison rather than `_ilike`, which
+   * would treat an underscore in an address as a wildcard and match someone
+   * else's.
+   */
+  private async byEmail(email: string): Promise<GraphQlUser | undefined> {
+    const query = gql`
+      query DescribeUserByEmail($email: String!) {
+        olympus_users(where: { email: { _eq: $email } }, limit: 1) {
+          ${USER_WITH_ROLES}
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      olympus_users: GraphQlUser[];
+    }>(query, { email: email.trim().toLowerCase() });
+    return response.olympus_users[0];
+  }
+
+  private async linkIdentity(
+    userId: string,
+    identity: ProviderIdentity,
+  ): Promise<void> {
+    const mutation = gql`
+      mutation CreateUserIdentity(
+        $userId: uuid!
+        $provider: String!
+        $subject: String!
+        $email: String!
+      ) {
+        insert_olympus_user_identities_one(
+          object: {
+            userId: $userId
+            provider: $provider
+            subject: $subject
+            email: $email
+          }
+        ) {
+          id
+        }
+      }
+    `;
+    await this.graphQLClient.request(mutation, {
+      userId,
+      provider: identity.provider,
+      subject: identity.subject,
+      email: identity.email.trim().toLowerCase(),
+    });
+  }
+
+  /**
+   * Records a session and returns when it began: the token's `auth_time`,
+   * which refresh carries unchanged.
+   */
+  async createSession(session: {
+    userId: string;
+    clientId: string;
+    deviceName?: string;
+    refreshTokenHash: string;
+    expiresAt: Date;
+  }): Promise<{ id: string; createdTime: string }> {
+    const mutation = gql`
+      mutation CreateSession(
+        $userId: uuid!
+        $clientId: String!
+        $deviceName: String
+        $refreshTokenHash: String!
+        $expiresTime: timestamptz!
+      ) {
+        insert_olympus_sessions_one(
+          object: {
+            userId: $userId
+            clientId: $clientId
+            deviceName: $deviceName
+            refreshTokenHash: $refreshTokenHash
+            expiresTime: $expiresTime
+          }
+        ) {
+          id
+          createdTime
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      insert_olympus_sessions_one: { id: string; createdTime: string };
+    }>(mutation, {
+      userId: session.userId,
+      clientId: session.clientId,
+      deviceName: session.deviceName ?? null,
+      refreshTokenHash: session.refreshTokenHash,
+      expiresTime: session.expiresAt.toISOString(),
+    });
+    return response.insert_olympus_sessions_one;
+  }
+
+  /** A user's live sessions, newest first (ListSessions, step 8). */
+  async listSessions(userId: string): Promise<unknown[]> {
+    const query = gql`
+      query ListSessions($userId: uuid!) {
+        olympus_sessions(
+          where: { userId: { _eq: $userId }, revokedTime: { _is_null: true } }
+          order_by: { createdTime: desc }
+        ) {
+          ${BASE_SESSION}
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      olympus_sessions: unknown[];
+    }>(query, { userId });
+    return response.olympus_sessions;
+  }
+}
