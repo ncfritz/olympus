@@ -42,6 +42,7 @@ export class UserIdentityService {
         userId: verified.claims.sub,
         roles: verified.claims.roles,
         client: verified.claims.clientId,
+        sessionId: verified.claims.sessionId,
       },
     };
   }

@@ -12,6 +12,13 @@ export type AccessTokenClaims = {
   sub: string;
   /** Which client asked for it. */
   clientId: string;
+  /**
+   * The session this token was issued from, `sid` on the wire (OIDC's own
+   * name for it). Without it an authenticated request cannot tell which of
+   * a user's sessions it belongs to, so nothing can say "this device" or
+   * "you have just signed yourself out".
+   */
+  sessionId: string;
   roles: string[];
   /**
    * When the session's provider sign-in completed, in seconds. Refresh
@@ -31,6 +38,7 @@ export const issueAccessToken = async (
 ): Promise<string> =>
   new jose.SignJWT({
     client_id: claims.clientId,
+    sid: claims.sessionId,
     roles: claims.roles,
     auth_time: claims.authTime,
   })
@@ -71,18 +79,22 @@ export const verifyAccessToken = async (
       audience: AUDIENCE,
     });
     const clientId = payload.client_id;
+    const sessionId = payload.sid;
     const roles = payload.roles;
     const authTime = payload.auth_time;
     if (
       typeof payload.sub !== "string" ||
       typeof clientId !== "string" ||
+      typeof sessionId !== "string" ||
       typeof authTime !== "number" ||
       !Array.isArray(roles) ||
       !roles.every((role): role is string => typeof role === "string")
     ) {
       return { reason: "claims are not the shape we issue" };
     }
-    return { claims: { sub: payload.sub, clientId, roles, authTime } };
+    return {
+      claims: { sub: payload.sub, clientId, sessionId, roles, authTime },
+    };
   } catch (error: unknown) {
     const code =
       error instanceof jose.errors.JOSEError

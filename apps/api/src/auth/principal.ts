@@ -13,6 +13,8 @@ export interface UserPrincipal {
   roles: string[];
   /** The client the token was issued to, e.g. olympus-site. */
   client: string;
+  /** The session the token was issued from (`sid`). */
+  sessionId: string;
 }
 
 export interface ServicePrincipal {

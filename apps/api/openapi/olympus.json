@@ -1,6 +1,225 @@
 {
   "openapi": "3.1.1",
   "paths": {
+    "/auth/authorize": {
+      "get": {
+        "description": "Validates the client's authorization request and redirects the browser to the identity provider. The authorization-code flow with PKCE; every client is public, so `code_challenge` is required and only S256 is accepted.",
+        "operationId": "BeginSignIn",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "code_challenge_method",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "S256"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "code_challenge",
+            "required": true,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "response_type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "code"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "required": true,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "client_id",
+            "required": true,
+            "in": "query",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "To the identity provider."
+          },
+          "400": {
+            "description": "The request is not one this client registered. Deliberately not a redirect: an unvalidated redirect_uri is an open redirect."
+          },
+          "429": {
+            "description": "Over the rate limit; `Retry-After` says for how long."
+          }
+        },
+        "summary": "Begins a sign-in",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/callback/{provider}": {
+      "get": {
+        "description": "The identity provider's redirect. Exchanges the provider's code, resolves the user, and redirects back to the client with an authorization code — or with `error=access_denied` if the person may not sign in.",
+        "operationId": "CompleteSignIn",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Back to the client."
+          },
+          "400": {
+            "description": "There is no pending sign-in for this state, so there is nowhere safe to redirect to."
+          },
+          "429": {
+            "description": "Over the rate limit; `Retry-After` says for how long."
+          }
+        },
+        "summary": "Completes a sign-in",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/token": {
+      "post": {
+        "description": "RFC 6749 §4.1.3. Form-encoded, with the PKCE `code_verifier`. The refresh token is returned in the body, except to the site, which receives it in an httpOnly cookie scoped to the auth path so that it never reaches JavaScript.",
+        "operationId": "CreateToken",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "grant_type",
+                  "code",
+                  "redirect_uri",
+                  "client_id",
+                  "code_verifier"
+                ],
+                "properties": {
+                  "grant_type": {
+                    "type": "string",
+                    "enum": [
+                      "authorization_code"
+                    ]
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "redirect_uri": {
+                    "type": "string"
+                  },
+                  "client_id": {
+                    "type": "string"
+                  },
+                  "code_verifier": {
+                    "type": "string"
+                  },
+                  "device_name": {
+                    "type": "string",
+                    "description": "Shown in the session list; optional"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tokens.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`{ error, error_description }` per RFC 6749. Which check failed is in the log, not the response."
+          },
+          "429": {
+            "description": "Over the rate limit; `Retry-After` says for how long. A plain 429 rather than an OAuth error: RFC 6749 has no code for it."
+          }
+        },
+        "summary": "Exchanges an authorization code for tokens",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/.well-known/jwks.json": {
+      "get": {
+        "description": "Every key the API currently verifies access tokens with, as a JSON Web Key Set. An access token's `kid` header names which one signed it, so a token issued before a rotation still verifies. Empty where signing in is not configured.",
+        "operationId": "DescribeJsonWebKeySet",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The key set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeJsonWebKeySetResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The keys that verify the API's access tokens",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
     "/olympus/ping": {
       "get": {
         "description": "Checks that the API is running and returns the hosts it is configured to use.",
@@ -773,12 +992,119 @@
       "name": "Admin"
     },
     {
+      "name": "Authentication"
+    },
+    {
       "name": "Notifications"
     }
   ],
   "servers": [],
   "components": {
     "schemas": {
+      "CreateTokenResponse": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "description": "The access token: a JWT, signed ES256, good for ten minutes"
+          },
+          "token_type": {
+            "type": "string",
+            "description": "Always `Bearer`",
+            "example": "Bearer"
+          },
+          "expires_in": {
+            "type": "number",
+            "description": "Seconds until the access token expires",
+            "example": 600
+          },
+          "refresh_token": {
+            "type": "string",
+            "description": "The refresh token, for a client that receives it in the body. Absent for the site, which is given it in an httpOnly cookie instead so that it never reaches JavaScript"
+          }
+        },
+        "required": [
+          "access_token",
+          "token_type",
+          "expires_in"
+        ]
+      },
+      "PublicSigningKey": {
+        "type": "object",
+        "properties": {
+          "kty": {
+            "type": "string",
+            "description": "Key type. Always `EC` for the ES256 keys the API signs with",
+            "example": "EC"
+          },
+          "crv": {
+            "type": "string",
+            "description": "The curve",
+            "example": "P-256"
+          },
+          "x": {
+            "type": "string",
+            "description": "The public point's x coordinate, base64url"
+          },
+          "y": {
+            "type": "string",
+            "description": "The public point's y coordinate, base64url"
+          },
+          "alg": {
+            "type": "string",
+            "description": "The algorithm this key is for",
+            "example": "ES256"
+          },
+          "use": {
+            "type": "string",
+            "description": "What the key is for",
+            "example": "sig"
+          },
+          "kid": {
+            "type": "string",
+            "description": "Key identifier: the RFC 7638 thumbprint of this key, which is what an access token's `kid` header names"
+          }
+        },
+        "required": [
+          "kty",
+          "crv",
+          "x",
+          "y",
+          "alg",
+          "use",
+          "kid"
+        ]
+      },
+      "DescribeJsonWebKeySetResponse": {
+        "type": "object",
+        "properties": {
+          "keys": {
+            "description": "Every key the API currently verifies with, newest last. A token outlives a rotation because its `kid` names the key that signed it",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicSigningKey"
+            }
+          }
+        },
+        "required": [
+          "keys"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "statusCode": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "message",
+          "statusCode"
+        ]
+      },
       "SystemConfiguration": {
         "type": "object",
         "properties": {
@@ -810,21 +1136,6 @@
         },
         "required": [
           "config"
-        ]
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string"
-          },
-          "statusCode": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "message",
-          "statusCode"
         ]
       },
       "TestRequest": {

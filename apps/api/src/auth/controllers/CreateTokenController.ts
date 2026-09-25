@@ -200,6 +200,7 @@ export class CreateTokenController {
       refreshDelivery: client.refreshToken,
       refresh,
       userId: current.user.id,
+      sessionId: session.id,
       roles: current.user.roles,
       // The session's creation, not now: refresh carries it unchanged, so a
       // token can be asked to prove a recent sign-in.
@@ -222,6 +223,7 @@ export class CreateTokenController {
       refreshDelivery: RefreshDelivery;
       refresh: NewRefreshToken;
       userId: string;
+      sessionId: string;
       roles: string[];
       authTime: number;
       keys: SigningKeys;
@@ -230,6 +232,7 @@ export class CreateTokenController {
     const accessToken = await issueAccessToken(issued.keys, {
       sub: issued.userId,
       clientId: issued.clientId,
+      sessionId: issued.sessionId,
       roles: issued.roles,
       authTime: issued.authTime,
     });
@@ -376,6 +379,9 @@ export class CreateTokenController {
       refreshDelivery: client.refreshToken,
       refresh: next,
       userId: current.user.id,
+      // The same session across a rotation: rotating the token does not
+      // start a new one, which is what makes the session list stable.
+      sessionId: session.id,
       roles: current.user.roles,
       // Unchanged across refresh, so a recent-sign-in requirement means
       // signing in again rather than refreshing again.

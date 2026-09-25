@@ -34,6 +34,7 @@ const request = (authorization?: string) =>
 const CLAIMS = {
   sub: "5f1a0c6e-0000-4000-8000-000000000001",
   clientId: "olympus-site",
+  sessionId: "9c2f4b1a-0000-4000-8000-0000000000aa",
   roles: ["user", "admin"],
   authTime: 1_790_000_000,
 };
@@ -57,6 +58,7 @@ describe("UserIdentityService", () => {
         userId: CLAIMS.sub,
         roles: CLAIMS.roles,
         client: "olympus-site",
+        sessionId: CLAIMS.sessionId,
       },
     });
   });

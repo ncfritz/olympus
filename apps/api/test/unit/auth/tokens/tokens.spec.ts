@@ -31,6 +31,7 @@ const directory = async (names: string[]) => {
 const claims = {
   sub: "5f1a0c6e-0000-4000-8000-000000000001",
   clientId: "olympus-site",
+  sessionId: "9c2f4b1a-0000-4000-8000-0000000000aa",
   roles: ["user", "admin"],
   authTime: 1_790_000_000,
 };
@@ -154,6 +155,7 @@ describe("access tokens", () => {
   it("refuses a token for another audience", async () => {
     const token = await new jose.SignJWT({
       client_id: claims.clientId,
+      sid: claims.sessionId,
       roles: claims.roles,
       auth_time: claims.authTime,
     })
@@ -165,6 +167,32 @@ describe("access tokens", () => {
       .sign(keys.signer.privateKey);
     await expect(verifyAccessToken(keys, token)).resolves.toEqual({
       reason: "ERR_JWT_CLAIM_VALIDATION_FAILED",
+    });
+  });
+
+  it("carries the session as `sid`, OIDC's name for it", async () => {
+    const token = await issueAccessToken(keys, claims);
+    // On the wire, not just in our own type: a client reading the token
+    // looks for sid.
+    expect(jose.decodeJwt(token).sid).toBe(claims.sessionId);
+  });
+
+  it("refuses a token with no session in it", async () => {
+    // A token issued before sid existed, or one somebody built by hand.
+    // There is no sensible default for "which session", so it is not valid.
+    const token = await new jose.SignJWT({
+      client_id: claims.clientId,
+      roles: claims.roles,
+      auth_time: claims.authTime,
+    })
+      .setProtectedHeader({ alg: "ES256", kid: keys.signer.kid })
+      .setSubject(claims.sub)
+      .setAudience(AUDIENCE)
+      .setIssuedAt()
+      .setExpirationTime("10m")
+      .sign(keys.signer.privateKey);
+    await expect(verifyAccessToken(keys, token)).resolves.toEqual({
+      reason: "claims are not the shape we issue",
     });
   });
 
