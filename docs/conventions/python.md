@@ -49,9 +49,12 @@ src/<module>/                the package (src layout; installed, not on sys.path
   __init__.py                what the service is, in its docstring
   __main__.py                the command line: serve, health, openapi, ...
   config.py                  read_config(env) -> Config
-  app.py                     create_app(): the FastAPI application
+  errors.py                  the exceptions, each with its status and code
+  models.py                  the wire shapes (Pydantic), and their conversion
+  app.py                     create_app(): routers, error handlers, lifespan
   transport.py               serving, and the client side of the socket
-  <feature>.py               a router per feature (health.py, ...)
+  <subject>.py               the domain, free of HTTP (vault.py, signing.py, ...)
+  api/<feature>.py           a router per feature (health.py, keys.py, ...)
 openapi/<name>.json          the API document, generated and committed
 test/
   unit/                      mirrors src/<module>/ (test_<file>.py)
@@ -70,7 +73,8 @@ test/
 - `config.py` reads every variable in `read_config(env)`, collects every
   problem and raises one `ConfigError` listing them all, as
   `@ncfritz/olympus-nest`'s `EnvReader` does. `__main__` reads it before
-  anything starts. `os.environ` is read nowhere else.
+  anything starts. `os.environ` is read nowhere else, except by the app
+  factory when Uvicorn builds the app itself (`serve --reload`).
 - Names are UPPER_SNAKE with the service's prefix (`SIGNER_SOCKET_PATH`).
   Every variable is in `dev.env.example`.
 - Secrets arrive as files (Compose secrets, ADR 0019), named by a
@@ -94,11 +98,19 @@ test/
 
 ## Types and errors
 
-- Pyright `strict` over `src` and `test`: every public function is
-  annotated; `Any` and `# type: ignore` need a comment saying why.
+- Pyright `strict` over `src`, and its standard mode over `test`
+  (fixtures and response bodies are not annotated line by line): every
+  public function in `src` is annotated; `Any` and `# type: ignore`
+  need a comment saying why.
 - Immutable data is a frozen `dataclass`; wire shapes are Pydantic.
-- Raise specific exceptions and turn them into HTTP errors at the edge.
-  A signer refusal says which invariant, never what a key is.
+- Raise specific exceptions and turn them into HTTP errors at the edge:
+  each is a `SignerError` subclass named `<What>Error` (Ruff's `N818`)
+  carrying its status and a stable code, and `create_app` answers with
+  an `ErrorResponse`. Pydantic's own validation errors answer `400` in
+  the same shape. A signer refusal (`RefusedError`, `422`) names its
+  invariant, never what a key is.
+- Wire shapes are camelCase (`alias_generator=to_camel`), like the rest
+  of Olympus, and forbid unknown fields.
 
 ## Logging
 

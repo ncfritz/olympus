@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Harpocrates Signer API",
-    "description": "The signer of Harpocrates, the internal certificate authority: keys, certificate and revocation list signing, and escrow. Reached only over a Unix socket, by the Harpocrates service.",
+    "description": "The signer of Harpocrates, the internal certificate authority: keys, certificate and revocation list signing, ceremonies and escrow. Reached only over a Unix socket, by the Harpocrates service, with a shared token.",
     "contact": {
       "name": "Neil Fritz",
       "url": "https://ncfritz.net/",
@@ -10,5 +10,2865 @@
     },
     "version": "0.0.0"
   },
-  "paths": {}
+  "paths": {
+    "/v1/status": {
+      "get": {
+        "tags": [
+          "Seal"
+        ],
+        "summary": "Describes the seal",
+        "description": "Whether the store is initialised and unsealed, why not, and the open ceremony. Answers while sealed.",
+        "operationId": "DescribeStatus",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/initialise": {
+      "post": {
+        "tags": [
+          "Seal"
+        ],
+        "summary": "Initialises the store",
+        "description": "Sets the recovery passphrase on an empty store and returns a new unseal key, once: it becomes the `harpocrates_signer_unseal_key` secret. Refused on a store that already has a master key.",
+        "operationId": "Initialise",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PassphraseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsealKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The store is not in the state this needs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/unseal": {
+      "post": {
+        "tags": [
+          "Seal"
+        ],
+        "summary": "Unseals with the recovery passphrase",
+        "description": "Opens the store with the recovery passphrase. This is also what lifts a deliberate seal; the unseal key alone does not.",
+        "operationId": "Unseal",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PassphraseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The passphrase is wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The store is not in the state this needs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/seal": {
+      "post": {
+        "tags": [
+          "Seal"
+        ],
+        "summary": "Seals the signer",
+        "description": "Forgets the keys and ends any ceremony, and stays sealed across restarts until unsealed with the recovery passphrase.",
+        "operationId": "Seal",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The store is not in the state this needs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/unseal-key/rotate": {
+      "post": {
+        "tags": [
+          "Seal"
+        ],
+        "summary": "Rotates the unseal key",
+        "description": "Rewraps the master key under a new unseal key and returns it, once. The old one stops working at once; replace the secret before the next restart.",
+        "operationId": "RotateUnsealKey",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsealKeyResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/passphrase": {
+      "put": {
+        "tags": [
+          "Seal"
+        ],
+        "summary": "Changes the recovery passphrase",
+        "description": "Rewraps the master key under a new passphrase; the current one must be given.",
+        "operationId": "ChangePassphrase",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePassphraseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The passphrase is wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The store is not in the state this needs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/keys": {
+      "post": {
+        "tags": [
+          "Keys"
+        ],
+        "summary": "Generates a key",
+        "description": "An issuer's key (it signs) or a subject's (it is certified, and kept: escrow). Only the public key is returned.",
+        "operationId": "GenerateKey",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/keys/import": {
+      "post": {
+        "tags": [
+          "Keys"
+        ],
+        "summary": "Imports a key",
+        "description": "An encrypted PKCS#8 key, as XCA exports it: an issuing CA's, at the cutover. Refused if the store already holds it.",
+        "operationId": "ImportKey",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The store is not in the state this needs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/keys/{key_id}": {
+      "get": {
+        "tags": [
+          "Keys"
+        ],
+        "summary": "Describes a key",
+        "description": "Its purpose, algorithm and public key; never the private key.",
+        "operationId": "DescribeKey",
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Keys"
+        ],
+        "summary": "Destroys a key",
+        "description": "Deletes an escrowed subject key for good, keeping its public key so it can never be certified again. Issuer keys are refused.",
+        "operationId": "DestroyKey",
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The store is not in the state this needs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/keys/{key_id}/export": {
+      "post": {
+        "tags": [
+          "Keys"
+        ],
+        "summary": "Exports an escrowed key",
+        "description": "A subject key, encrypted: PKCS#8 PEM, PKCS#12 (AES-256), or legacy PKCS#12 (SHA-1 and 3DES, no chain). The service decides who may and records it; an issuer's key is refused.",
+        "operationId": "ExportEscrowedKey",
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/issuers": {
+      "post": {
+        "tags": [
+          "Issuers"
+        ],
+        "summary": "Registers an issuer",
+        "description": "An issuing CA (path length 0) whose key is in the store, with the chain above it, its maximum validity and the extended key usages it may sign.",
+        "operationId": "RegisterIssuer",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterIssuerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The store is not in the state this needs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/issuers/{issuer_id}": {
+      "get": {
+        "tags": [
+          "Issuers"
+        ],
+        "summary": "Describes an issuer",
+        "description": "Its certificate, chain, maximum validity and usages.",
+        "operationId": "DescribeIssuer",
+        "parameters": [
+          {
+            "name": "issuer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Issuer Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuerResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/issuers/{issuer_id}/certificates": {
+      "post": {
+        "tags": [
+          "Issuers"
+        ],
+        "summary": "Signs a certificate",
+        "description": "A leaf certificate exactly as specified, after the invariants: never a CA, within the issuer's validity and maximum, its usages, and every name constraint up its chain.",
+        "operationId": "SignCertificate",
+        "parameters": [
+          {
+            "name": "issuer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Issuer Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateSpec"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/issuers/{issuer_id}/crls": {
+      "post": {
+        "tags": [
+          "Issuers"
+        ],
+        "summary": "Signs a revocation list",
+        "description": "A list with the given number, dates and entries.",
+        "operationId": "SignCrl",
+        "parameters": [
+          {
+            "name": "issuer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Issuer Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrlSpec"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrlResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ceremonies": {
+      "post": {
+        "tags": [
+          "Ceremonies"
+        ],
+        "summary": "Opens a ceremony",
+        "description": "Imports an offline CA's key for this ceremony only. It is forgotten when the ceremony closes, times out, the signer is sealed or restarts; one ceremony at a time.",
+        "operationId": "OpenCeremony",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenCeremonyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CeremonyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The store is not in the state this needs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ceremonies/current": {
+      "get": {
+        "tags": [
+          "Ceremonies"
+        ],
+        "summary": "Describes the open ceremony",
+        "description": "The open ceremony, or 404 when there is none.",
+        "operationId": "DescribeCeremony",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CeremonyResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ceremonies/{ceremony_id}": {
+      "delete": {
+        "tags": [
+          "Ceremonies"
+        ],
+        "summary": "Closes a ceremony",
+        "description": "Forgets the offline CA's key.",
+        "operationId": "CloseCeremony",
+        "parameters": [
+          {
+            "name": "ceremony_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ceremony Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ceremonies/{ceremony_id}/certificates": {
+      "post": {
+        "tags": [
+          "Ceremonies"
+        ],
+        "summary": "Signs a CA certificate in a ceremony",
+        "description": "A CA below the ceremony's (a path length below its own): an issuing CA whose key is in the store, or a cross-signed successor.",
+        "operationId": "SignCeremonyCertificate",
+        "parameters": [
+          {
+            "name": "ceremony_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ceremony Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateSpec"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ceremonies/{ceremony_id}/crls": {
+      "post": {
+        "tags": [
+          "Ceremonies"
+        ],
+        "summary": "Signs a revocation list in a ceremony",
+        "description": "The offline CA's own list.",
+        "operationId": "SignCeremonyCrl",
+        "parameters": [
+          {
+            "name": "ceremony_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ceremony Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrlSpec"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrlResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ceremonies/{ceremony_id}/cas": {
+      "post": {
+        "tags": [
+          "Ceremonies"
+        ],
+        "summary": "Creates an offline intermediate in a ceremony",
+        "description": "Generates a key, has the ceremony's CA sign it, and returns the key encrypted, once. The signer keeps nothing.",
+        "operationId": "CreateIntermediateCa",
+        "parameters": [
+          {
+            "name": "ceremony_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ceremony Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfflineCaSpec"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineCaResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/roots": {
+      "post": {
+        "tags": [
+          "Ceremonies"
+        ],
+        "summary": "Creates a root",
+        "description": "Generates a key, self-signs, and returns the key encrypted, once. The signer keeps nothing: the root is offline from its first moment.",
+        "operationId": "CreateRootCa",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfflineCaSpec"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineCaResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CeremonyResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "subject": {
+            "type": "string",
+            "title": "Subject"
+          },
+          "openedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Openedat"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expiresat"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "subject",
+          "openedAt",
+          "expiresAt"
+        ],
+        "title": "CeremonyResponse"
+      },
+      "CertificateResponse": {
+        "properties": {
+          "certificate": {
+            "type": "string",
+            "title": "Certificate",
+            "description": "PEM."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "certificate"
+        ],
+        "title": "CertificateResponse"
+      },
+      "CertificateSpec": {
+        "properties": {
+          "subject": {
+            "type": "string",
+            "title": "Subject",
+            "description": "RFC 4514, e.g. CN=olympus-api,O=ncfritz.net"
+          },
+          "serial": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{1,40}$",
+            "title": "Serial",
+            "description": "Hex, at most 159 bits."
+          },
+          "notBefore": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Notbefore"
+          },
+          "notAfter": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Notafter"
+          },
+          "keyUsage": {
+            "items": {
+              "$ref": "#/components/schemas/KeyUsageName"
+            },
+            "type": "array",
+            "title": "Keyusage"
+          },
+          "extendedKeyUsages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Extendedkeyusages",
+            "description": "Dotted OIDs."
+          },
+          "sans": {
+            "$ref": "#/components/schemas/Names"
+          },
+          "publicKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publickey",
+            "description": "PEM."
+          },
+          "csr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csr",
+            "description": "PEM."
+          },
+          "keyId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyid"
+          },
+          "ca": {
+            "type": "boolean",
+            "title": "Ca",
+            "default": false
+          },
+          "pathLength": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pathlength"
+          },
+          "nameConstraints": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NameConstraintsSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "crlDistributionPoints": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Crldistributionpoints"
+          },
+          "issuerUrls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Issuerurls"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "subject",
+          "serial",
+          "notBefore",
+          "notAfter",
+          "keyUsage"
+        ],
+        "title": "CertificateSpec",
+        "description": "Everything the certificate says. Exactly one of publicKey, csr and\nkeyId gives the subject's key; a CSR's own subject and extensions are\nignored, its signature is checked."
+      },
+      "ChangePassphraseRequest": {
+        "properties": {
+          "current": {
+            "type": "string",
+            "title": "Current"
+          },
+          "new": {
+            "type": "string",
+            "minLength": 12,
+            "title": "New"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "current",
+          "new"
+        ],
+        "title": "ChangePassphraseRequest"
+      },
+      "CrlResponse": {
+        "properties": {
+          "crl": {
+            "type": "string",
+            "title": "Crl",
+            "description": "PEM."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "crl"
+        ],
+        "title": "CrlResponse"
+      },
+      "CrlSpec": {
+        "properties": {
+          "number": {
+            "type": "integer",
+            "exclusiveMaximum": 9007199254740992.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Number"
+          },
+          "thisUpdate": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Thisupdate"
+          },
+          "nextUpdate": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Nextupdate"
+          },
+          "revoked": {
+            "items": {
+              "$ref": "#/components/schemas/RevokedSpec"
+            },
+            "type": "array",
+            "title": "Revoked"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "number",
+          "thisUpdate",
+          "nextUpdate"
+        ],
+        "title": "CrlSpec"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "type": "string",
+            "title": "Error",
+            "description": "A stable code: sealed, refused, not-found, ..."
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "invariant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invariant",
+            "description": "For `refused`: which invariant."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "error",
+          "message"
+        ],
+        "title": "ErrorResponse"
+      },
+      "ExportFormatName": {
+        "type": "string",
+        "enum": [
+          "pem",
+          "pkcs12",
+          "pkcs12-legacy"
+        ],
+        "title": "ExportFormatName"
+      },
+      "ExportKeyRequest": {
+        "properties": {
+          "format": {
+            "$ref": "#/components/schemas/ExportFormatName"
+          },
+          "passphrase": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Passphrase"
+          },
+          "certificate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate",
+            "description": "PEM; required for PKCS#12."
+          },
+          "chain": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Chain",
+            "description": "PEM, issuer first; left out of legacy PKCS#12."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "format",
+          "passphrase"
+        ],
+        "title": "ExportKeyRequest"
+      },
+      "ExportKeyResponse": {
+        "properties": {
+          "format": {
+            "$ref": "#/components/schemas/ExportFormatName"
+          },
+          "data": {
+            "type": "string",
+            "title": "Data",
+            "description": "The file, base64."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "format",
+          "data"
+        ],
+        "title": "ExportKeyResponse"
+      },
+      "GenerateKeyRequest": {
+        "properties": {
+          "purpose": {
+            "$ref": "#/components/schemas/KeyPurpose"
+          },
+          "algorithm": {
+            "$ref": "#/components/schemas/KeyAlgorithm",
+            "default": "P-256"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "purpose"
+        ],
+        "title": "GenerateKeyRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ImportKeyRequest": {
+        "properties": {
+          "purpose": {
+            "$ref": "#/components/schemas/KeyPurpose"
+          },
+          "privateKey": {
+            "type": "string",
+            "title": "Privatekey",
+            "description": "Encrypted PKCS#8, PEM."
+          },
+          "passphrase": {
+            "type": "string",
+            "title": "Passphrase"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "purpose",
+          "privateKey",
+          "passphrase"
+        ],
+        "title": "ImportKeyRequest"
+      },
+      "IssuerResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "keyId": {
+            "type": "string",
+            "title": "Keyid"
+          },
+          "certificate": {
+            "type": "string",
+            "title": "Certificate"
+          },
+          "chain": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Chain"
+          },
+          "maxValidityDays": {
+            "type": "integer",
+            "title": "Maxvaliditydays"
+          },
+          "extendedKeyUsages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Extendedkeyusages"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "keyId",
+          "certificate",
+          "chain",
+          "maxValidityDays",
+          "extendedKeyUsages"
+        ],
+        "title": "IssuerResponse"
+      },
+      "KeyAlgorithm": {
+        "type": "string",
+        "enum": [
+          "P-256",
+          "RSA-2048"
+        ],
+        "title": "KeyAlgorithm",
+        "description": "What the signer generates. P-256 everywhere (ADR 0018); RSA 2048 for\ndevices that need it (the printer)."
+      },
+      "KeyPurpose": {
+        "type": "string",
+        "enum": [
+          "issuer",
+          "subject"
+        ],
+        "title": "KeyPurpose",
+        "description": "An issuer's key signs; a subject's key is certified (and may be escrowed)."
+      },
+      "KeyResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "purpose": {
+            "$ref": "#/components/schemas/KeyPurpose"
+          },
+          "algorithm": {
+            "type": "string",
+            "title": "Algorithm"
+          },
+          "publicKey": {
+            "type": "string",
+            "title": "Publickey",
+            "description": "SubjectPublicKeyInfo, PEM."
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "destroyed": {
+            "type": "boolean",
+            "title": "Destroyed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "purpose",
+          "algorithm",
+          "publicKey",
+          "createdAt",
+          "destroyed"
+        ],
+        "title": "KeyResponse"
+      },
+      "KeyUsageName": {
+        "type": "string",
+        "enum": [
+          "digital_signature",
+          "content_commitment",
+          "key_encipherment",
+          "data_encipherment",
+          "key_agreement",
+          "key_cert_sign",
+          "crl_sign"
+        ],
+        "title": "KeyUsageName"
+      },
+      "NameConstraintsSpec": {
+        "properties": {
+          "permitted": {
+            "$ref": "#/components/schemas/Names"
+          },
+          "excluded": {
+            "$ref": "#/components/schemas/Names"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "NameConstraintsSpec",
+        "description": "For a CA: `ip` entries are networks (`10.0.0.0/8`)."
+      },
+      "Names": {
+        "properties": {
+          "dns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Dns"
+          },
+          "ip": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ip"
+          },
+          "email": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Email"
+          },
+          "uri": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Uri"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Names"
+      },
+      "OfflineCaResponse": {
+        "properties": {
+          "certificate": {
+            "type": "string",
+            "title": "Certificate",
+            "description": "PEM."
+          },
+          "encryptedKey": {
+            "type": "string",
+            "title": "Encryptedkey",
+            "description": "Encrypted PKCS#8, PEM: store it offline. Shown once."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "certificate",
+          "encryptedKey"
+        ],
+        "title": "OfflineCaResponse"
+      },
+      "OfflineCaSpec": {
+        "properties": {
+          "certificate": {
+            "$ref": "#/components/schemas/CertificateSpec",
+            "description": "Its certificate; no key is given: it is generated."
+          },
+          "algorithm": {
+            "$ref": "#/components/schemas/KeyAlgorithm",
+            "default": "P-256"
+          },
+          "exportPassphrase": {
+            "type": "string",
+            "minLength": 12,
+            "title": "Exportpassphrase"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "certificate",
+          "exportPassphrase"
+        ],
+        "title": "OfflineCaSpec",
+        "description": "A new offline CA: a root, or an intermediate signed in a ceremony."
+      },
+      "OpenCeremonyRequest": {
+        "properties": {
+          "privateKey": {
+            "type": "string",
+            "title": "Privatekey",
+            "description": "The offline CA's encrypted PKCS#8, PEM."
+          },
+          "passphrase": {
+            "type": "string",
+            "title": "Passphrase"
+          },
+          "certificate": {
+            "type": "string",
+            "title": "Certificate",
+            "description": "The offline CA's certificate, PEM."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "privateKey",
+          "passphrase",
+          "certificate"
+        ],
+        "title": "OpenCeremonyRequest"
+      },
+      "PassphraseRequest": {
+        "properties": {
+          "passphrase": {
+            "type": "string",
+            "minLength": 12,
+            "title": "Passphrase"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "passphrase"
+        ],
+        "title": "PassphraseRequest"
+      },
+      "RegisterIssuerRequest": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,62}$",
+            "title": "Id",
+            "description": "The CA's slug."
+          },
+          "keyId": {
+            "type": "string",
+            "title": "Keyid"
+          },
+          "certificate": {
+            "type": "string",
+            "title": "Certificate",
+            "description": "The issuer's certificate, PEM."
+          },
+          "chain": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Chain",
+            "description": "The CAs above it, PEM, nearest first; their name constraints and extended key usages bind what it signs."
+          },
+          "maxValidityDays": {
+            "type": "integer",
+            "maximum": 3650.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Maxvaliditydays"
+          },
+          "extendedKeyUsages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Extendedkeyusages",
+            "description": "Dotted OIDs this issuer may put in a certificate."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "keyId",
+          "certificate",
+          "maxValidityDays",
+          "extendedKeyUsages"
+        ],
+        "title": "RegisterIssuerRequest"
+      },
+      "RevocationReason": {
+        "type": "string",
+        "enum": [
+          "unspecified",
+          "keyCompromise",
+          "cACompromise",
+          "affiliationChanged",
+          "superseded",
+          "cessationOfOperation",
+          "privilegeWithdrawn"
+        ],
+        "title": "RevocationReason"
+      },
+      "RevokedSpec": {
+        "properties": {
+          "serial": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{1,40}$",
+            "title": "Serial"
+          },
+          "revokedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Revokedat"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/RevocationReason",
+            "default": "unspecified"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "serial",
+          "revokedAt"
+        ],
+        "title": "RevokedSpec"
+      },
+      "SealReason": {
+        "type": "string",
+        "enum": [
+          "uninitialised",
+          "deliberate",
+          "no-unseal-key",
+          "wrong-unseal-key"
+        ],
+        "title": "SealReason",
+        "description": "Why the signer is sealed; what the service shows and alerts on."
+      },
+      "StatusResponse": {
+        "properties": {
+          "initialised": {
+            "type": "boolean",
+            "title": "Initialised"
+          },
+          "sealed": {
+            "type": "boolean",
+            "title": "Sealed"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SealReason"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why it is sealed, if it is."
+          },
+          "ceremony": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CeremonyResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The open ceremony."
+          },
+          "keys": {
+            "type": "integer",
+            "title": "Keys",
+            "description": "Keys held, not counting destroyed ones."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "initialised",
+          "sealed",
+          "reason",
+          "ceremony",
+          "keys"
+        ],
+        "title": "StatusResponse"
+      },
+      "UnsealKeyResponse": {
+        "properties": {
+          "unsealKey": {
+            "type": "string",
+            "title": "Unsealkey",
+            "description": "32 bytes, base64: the Compose secret. Shown once."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "unsealKey"
+        ],
+        "title": "UnsealKeyResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Seal",
+      "description": "Initialise, unseal, seal, and their secrets."
+    },
+    {
+      "name": "Keys",
+      "description": "Generate, import, destroy and export keys."
+    },
+    {
+      "name": "Issuers",
+      "description": "Online issuers and what they sign."
+    },
+    {
+      "name": "Ceremonies",
+      "description": "Offline CAs, one ceremony at a time."
+    }
+  ]
 }

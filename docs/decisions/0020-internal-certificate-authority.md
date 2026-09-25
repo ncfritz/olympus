@@ -114,11 +114,13 @@ signing API is what an HSM would give us, drawn in software.
   signer mount. No network listener at all, so nothing else on any Docker
   network can reach it, and there is no certificate to bootstrap before
   the CA exists. A shared token (a Compose secret) is checked as well.
-- **API**: `status`, `unseal`, `seal`, `keys` (generate; import),
-  `sign/certificate`, `sign/crl`, `sign/ssh`, `sign/krl`,
-  `escrow/export`, and ceremonies for offline CAs (`ceremony/open`,
-  `ceremony/close`). Inputs are fully formed: subject, extensions,
-  validity, serial and the public key or CSR. It has its own OpenAPI
+- **API** (`/v1`): the seal (`status`, `initialise`, `unseal`, `seal`,
+  rotating the unseal key and the passphrase); `keys` (generate, import,
+  destroy, export an escrowed one); `issuers` (register, and sign
+  certificates and lists with one); ceremonies for offline CAs (open,
+  sign, create an intermediate, close) and `roots`; SSH certificates and
+  KRLs from phase 8. Inputs are fully formed: subject, extensions,
+  validity, serial and the public key, CSR or key id. It has its own OpenAPI
   document; `harpocrates` calls it through a generated client that is
   not part of `packages/sdk`.
 - **Invariants it enforces itself**, whatever `harpocrates` asks:

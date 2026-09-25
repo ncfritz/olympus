@@ -3,6 +3,7 @@ dist
 coverage
 test-report
 node_modules
+**/.venv
 pnpm-lock.yaml
 **/src/generated/**
 infra/hasura/metadata

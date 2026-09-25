@@ -5,6 +5,7 @@ network can reach the signer; only what mounts the socket's volume can.
 """
 
 import http.client
+import json
 import logging
 import socket
 from pathlib import Path
@@ -61,5 +62,30 @@ def get_over_socket(path: Path, route: str, timeout: float = 5.0) -> int:
     try:
         connection.request("GET", route)
         return connection.getresponse().status
+    finally:
+        connection.close()
+
+
+def call_over_socket(
+    path: Path,
+    method: str,
+    route: str,
+    token: str,
+    body: dict[str, object] | None = None,
+    timeout: float = 30.0,
+) -> tuple[int, dict[str, object] | None]:
+    """Call the API over the socket with the token: what the CLI does."""
+    connection = _UnixConnection(path, timeout)
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = None
+    if body is not None:
+        payload = json.dumps(body).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+    try:
+        connection.request(method, route, body=payload, headers=headers)
+        response = connection.getresponse()
+        raw = response.read()
+        parsed: dict[str, object] | None = json.loads(raw) if raw else None
+        return response.status, parsed
     finally:
         connection.close()

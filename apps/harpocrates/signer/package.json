@@ -17,7 +17,8 @@
     "lint:openapi": "spectral lint \"openapi/*.json\" --fail-severity=error",
     "clean": "rm -rf .venv .pytest_cache .ruff_cache",
     "start": "uv run --locked --env-file dev.env python -m harpocrates_signer serve",
-    "dev": "uv run --locked --env-file dev.env python -m harpocrates_signer serve --reload"
+    "dev": "uv run --locked --env-file dev.env python -m harpocrates_signer serve --reload",
+    "signer": "uv run --locked --env-file dev.env python -m harpocrates_signer"
   },
   "devDependencies": {
     "@stoplight/spectral-cli": "catalog:",

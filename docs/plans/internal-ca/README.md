@@ -56,6 +56,15 @@ pass, and the SDK builds with an empty `harpocrates` client; no functional flows
 
 ## Phase 1 — The signer
 
+**Done 2026-09-25** (steps 1 to 10; the sign-off runs on DEV are
+outstanding). What differs from the steps below: the key store's check
+value is AES-GCM's own tag; the ceremony, escrow and signing operations
+are resources (`/v1/issuers/{id}/certificates`,
+`/v1/ceremonies/{id}/cas`, `/v1/keys/{id}/export`, ...), described in
+[the signer's README](../../../apps/harpocrates/signer/README.md); the
+CLI's commands call the running signer over its socket; and registering
+an issuer also checks that its chain signs it.
+
 1. **Key store**: SQLite on the signer's volume. Per-key data keys
    (AES-256-GCM), wrapped by a key-encryption key from Argon2id over the
    passphrase; a check value to reject a wrong passphrase.
