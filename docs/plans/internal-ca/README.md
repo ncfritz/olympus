@@ -296,6 +296,23 @@ verify` / `openssl crl -verify`; each invariant has a refusal test;
 
 **Sign-off:** C15.
 
+## Follow-ups
+
+Loose ends from phase 0, to close on the Mac before phase 4 at the latest:
+
+- [ ] `pnpm install` on the Mac: the lockfile changes were made on Linux.
+- [ ] Add `intermediate-2.crl` to `TLS_CRL_SERVICES` in the API's own
+      `dev.env` and `local.env`, which are not in git.
+- [ ] Run `scripts/dev-ca.sh --force` with macOS's `openssl` (LibreSSL);
+      it was checked with OpenSSL 3 only.
+- [ ] Confirm the Device CA's name in XCA (`… Device Issuing CA 1`, with
+      or without `- G1`) and correct ADR 0020's tree if it differs.
+- [ ] Build the `harpocrates-signer` image on the Mac Mini
+      (`docker buildx bake harpocrates`); it has never been built.
+- [ ] Confirm the Signing CA's place under Intermediate CA 2.
+- [ ] `apps/api/openapi/olympus.json` is stale on `main` (the `/auth/me`
+      and `/auth/sessions` endpoints); regenerate it, apart from this work.
+
 ## Later
 
 - SCEP for iOS device enrollment through a configuration profile.
