@@ -3,8 +3,12 @@ import { ApiProperty } from "@nestjs/swagger";
 /**
  * One public key, in the JSON Web Key shape RFC 7517 defines. Only the
  * fields an ES256 verifier needs: no private material ever appears here.
+ *
+ * Not called `JsonWebKey`: that is a global type in both lib.dom and Node's
+ * webcrypto typings, and a class exported under that name shadows it for
+ * every consumer of this package.
  */
-export class JsonWebKey {
+export class PublicSigningKey {
   @ApiProperty({
     type: String,
     required: true,
@@ -63,10 +67,10 @@ export class JsonWebKey {
 /** The key set a client verifies the API's access tokens against. */
 export class DescribeJsonWebKeySetResponse {
   @ApiProperty({
-    type: () => [JsonWebKey],
+    type: () => [PublicSigningKey],
     required: true,
     description:
       "Every key the API currently verifies with, newest last. A token outlives a rotation because its `kid` names the key that signed it",
   })
-  keys: JsonWebKey[];
+  keys: PublicSigningKey[];
 }
