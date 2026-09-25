@@ -19,6 +19,7 @@ import {
   type RequestWithPrincipal,
 } from "./principal";
 import { ServiceIdentityService } from "./services/ServiceIdentityService";
+import { UserIdentityService } from "./users/UserIdentityService";
 
 /**
  * Authenticates every request (ADR 0018): the services listener from the
@@ -36,6 +37,7 @@ export class AuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly services: ServiceIdentityService,
+    private readonly users: UserIdentityService,
     @Inject(authConfig.KEY) private readonly auth: AuthConfigType,
   ) {}
 
@@ -94,8 +96,10 @@ export class AuthGuard implements CanActivate {
         ? { principal: identity.principal }
         : { reason: identity.reason };
     }
-    // Users: the token strategy arrives with the token service (phase 3).
-    return { reason: "no credentials" };
+    const identity = await this.users.identify(request);
+    return "principal" in identity
+      ? { principal: identity.principal }
+      : { reason: identity.reason };
   }
 
   private record(

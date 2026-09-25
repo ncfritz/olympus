@@ -12,6 +12,10 @@ import type {
 import type { ServiceIdentity } from "../../../src/auth/services/ServiceIdentityService";
 import type { ServiceIdentityService } from "../../../src/auth/services/ServiceIdentityService";
 import type {
+  UserIdentity,
+  UserIdentityService,
+} from "../../../src/auth/users/UserIdentityService";
+import type {
   AuthConfigType,
   AuthMode,
 } from "../../../src/config/configuration";
@@ -55,10 +59,15 @@ const guard = (
   identity: ServiceIdentity,
   metadata: Record<string, unknown> = {},
   modes?: Partial<Record<"users" | "services", AuthMode>>,
+  /** What the users listener resolves to; its own spec covers the details. */
+  userIdentity: UserIdentity = { reason: "no credentials" },
 ) =>
   new AuthGuard(
     reflector(metadata),
     { identify: () => identity } as unknown as ServiceIdentityService,
+    {
+      identify: () => Promise.resolve(userIdentity),
+    } as unknown as UserIdentityService,
     config(modes),
   );
 

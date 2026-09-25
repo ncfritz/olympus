@@ -29,6 +29,8 @@ const KNOWN = [
   "unknown service",
   "client header mismatch",
   "wrong issuer",
+  "invalid token",
+  "tokens not configured",
   "role",
 ] as const;
 
@@ -39,6 +41,11 @@ const reasonLabel = (reason: string | undefined): string => {
   // certificate on the services listener (ADR 0023). Worth its own label —
   // it means something quite different from an unknown service.
   if (reason.startsWith("issuer ")) return "wrong issuer";
+  // Every way a token fails verification is one label: the detail (expired,
+  // unknown kid, bad signature) is in the log, and a metric with a label per
+  // failure mode is a cardinality problem waiting to happen.
+  if (reason.startsWith("invalid token")) return "invalid token";
+  if (reason === "tokens are not configured") return "tokens not configured";
   if (reason.startsWith("client header")) return "client header mismatch";
   if (reason.startsWith("needs one of")) return "role";
   return KNOWN.find((known) => reason === known) ?? "other";
