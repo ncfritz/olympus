@@ -16,3 +16,11 @@ export const BASE_SESSION = `id
   lastUsedTime
   expiresTime
   revokedTime`;
+
+/** Just enough of a session to decide whether a refresh may proceed. */
+export const SESSION_FOR_REFRESH = `id
+  userId
+  clientId
+  createdTime
+  expiresTime
+  revokedTime`;

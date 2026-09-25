@@ -1,6 +1,10 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
-import { BASE_SESSION, USER_WITH_ROLES } from "./queries/users";
+import {
+  BASE_SESSION,
+  SESSION_FOR_REFRESH,
+  USER_WITH_ROLES,
+} from "./queries/users";
 
 /** A user who may sign in, with the roles their tokens will carry. */
 export type DirectoryUser = {
@@ -8,6 +12,16 @@ export type DirectoryUser = {
   displayName: string;
   email: string;
   roles: string[];
+};
+
+export type GraphQlSession = {
+  id: string;
+  userId: string;
+  clientId: string;
+  /** The token's `auth_time`: when the provider sign-in completed. */
+  createdTime: string;
+  expiresTime: string;
+  revokedTime: string | null;
 };
 
 type GraphQlUser = {
@@ -252,6 +266,112 @@ export class UserDirectoryService {
       expiresTime: session.expiresAt.toISOString(),
     });
     return response.insert_olympus_sessions_one;
+  }
+
+  /**
+   * The session a refresh token belongs to, by its hash — or, if the token
+   * has already been rotated away, the session it *used* to belong to.
+   *
+   * Both in one query, because the second case is reuse detection and the
+   * answer decides whether to rotate or to revoke. `matched` says which.
+   */
+  async findSessionByRefreshToken(hash: string): Promise<
+    | {
+        matched: "current" | "previous";
+        session: GraphQlSession;
+      }
+    | undefined
+  > {
+    const query = gql`
+      query DescribeSessionByRefreshToken($hash: String!) {
+        current: olympus_sessions(
+          where: { refreshTokenHash: { _eq: $hash } }
+          limit: 1
+        ) {
+          ${SESSION_FOR_REFRESH}
+        }
+        previous: olympus_sessions(
+          where: { previousTokenHash: { _eq: $hash } }
+          limit: 1
+        ) {
+          ${SESSION_FOR_REFRESH}
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      current: GraphQlSession[];
+      previous: GraphQlSession[];
+    }>(query, { hash });
+    const current = response.current[0];
+    if (current !== undefined) return { matched: "current", session: current };
+    const previous = response.previous[0];
+    if (previous !== undefined) {
+      return { matched: "previous", session: previous };
+    }
+    return undefined;
+  }
+
+  /**
+   * Swaps a session's refresh token for a new one, keeping the old hash as
+   * `previousTokenHash` so that presenting it again is detectable.
+   *
+   * Conditional on the hash still being the current one, and it reports
+   * whether it changed anything. Two refreshes racing with the same token
+   * would otherwise both rotate, and the chain would lose a link: this way
+   * exactly one wins, and the loser's token is now a *previous* hash, which
+   * is reuse by ADR 0018's definition.
+   */
+  async rotateSession(
+    sessionId: string,
+    expectedHash: string,
+    nextHash: string,
+  ): Promise<boolean> {
+    const mutation = gql`
+      mutation RotateSession(
+        $id: uuid!
+        $expected: String!
+        $next: String!
+        $now: timestamptz!
+      ) {
+        update_olympus_sessions(
+          where: { id: { _eq: $id }, refreshTokenHash: { _eq: $expected } }
+          _set: {
+            refreshTokenHash: $next
+            previousTokenHash: $expected
+            lastUsedTime: $now
+          }
+        ) {
+          affected_rows
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      update_olympus_sessions: { affected_rows: number };
+    }>(mutation, {
+      id: sessionId,
+      expected: expectedHash,
+      next: nextHash,
+      now: new Date().toISOString(),
+    });
+    return response.update_olympus_sessions.affected_rows === 1;
+  }
+
+  /** Ends a session: reuse detection, or signing out. */
+  async revokeSession(sessionId: string): Promise<void> {
+    const mutation = gql`
+      mutation RevokeSession($id: uuid!, $now: timestamptz!) {
+        update_olympus_sessions(
+          where: { id: { _eq: $id }, revokedTime: { _is_null: true } }
+          _set: { revokedTime: $now }
+        ) {
+          affected_rows
+        }
+      }
+    `;
+    await this.graphQLClient.request(mutation, {
+      id: sessionId,
+      now: new Date().toISOString(),
+    });
   }
 
   /** A user's live sessions, newest first (ListSessions, step 8). */

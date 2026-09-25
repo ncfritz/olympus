@@ -7,6 +7,7 @@ import {
   Inject,
   Logger,
   Post,
+  Req,
   Res,
 } from "@nestjs/common";
 import {
@@ -15,14 +16,19 @@ import {
   ApiOkResponse,
   ApiResponse,
 } from "@nestjs/swagger";
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { authConfig, type AuthConfigType } from "../../config/configuration";
 import { Public } from "../authDecorators";
-import { resolveClients } from "../clients/clients";
+import { resolveClients, type RefreshDelivery } from "../clients/clients";
 import { AuthorizationCodeService } from "../codes/AuthorizationCodeService";
 import { SigningKeyService } from "../tokens/SigningKeyService";
+import type { SigningKeys } from "../tokens/signingKeys";
 import { ACCESS_TOKEN_SECONDS, issueAccessToken } from "../tokens/accessTokens";
-import { newRefreshToken } from "../tokens/refreshTokens";
+import {
+  hashRefreshToken,
+  newRefreshToken,
+  type NewRefreshToken,
+} from "../tokens/refreshTokens";
 import { UserDirectoryService } from "../users/UserDirectoryService";
 
 /** The cookie the site's refresh token lives in. */
@@ -96,6 +102,7 @@ export class CreateTokenController {
   async handle(
     @Body()
     body: Record<string, unknown>,
+    @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
     const fail = (error: string, description: string, reason: string): void => {
@@ -112,10 +119,14 @@ export class CreateTokenController {
     };
 
     const grantType = field("grant_type");
+    if (grantType === "refresh_token") {
+      await this.refresh(field, request, response, fail);
+      return;
+    }
     if (grantType !== "authorization_code") {
       fail(
         "unsupported_grant_type",
-        "this endpoint supports authorization_code",
+        "this endpoint supports authorization_code and refresh_token",
         `grant_type was ${grantType ?? "absent"}`,
       );
       return;
@@ -177,37 +188,194 @@ export class CreateTokenController {
       expiresAt: refresh.expiresAt,
     });
 
-    const accessToken = await issueAccessToken(keys, {
-      sub: current.user.id,
+    await this.issue(response, {
       clientId,
+      refreshDelivery: client.refreshToken,
+      refresh,
+      userId: current.user.id,
       roles: current.user.roles,
       // The session's creation, not now: refresh carries it unchanged, so a
       // token can be asked to prove a recent sign-in.
       authTime: Math.floor(new Date(session.createdTime).getTime() / 1000),
+      keys,
+    });
+    this.logger.log(`issued tokens to ${clientId} for session ${session.id}`);
+  }
+
+  /**
+   * The response both grants send: an access token, and a refresh token
+   * wherever this client keeps one. One place, so the two grants cannot
+   * drift on the cookie's attributes — which are what stop a script reading
+   * it and what decide whether the browser sends it at all.
+   */
+  private async issue(
+    response: Response,
+    issued: {
+      clientId: string;
+      refreshDelivery: RefreshDelivery;
+      refresh: NewRefreshToken;
+      userId: string;
+      roles: string[];
+      authTime: number;
+      keys: SigningKeys;
+    },
+  ): Promise<void> {
+    const accessToken = await issueAccessToken(issued.keys, {
+      sub: issued.userId,
+      clientId: issued.clientId,
+      roles: issued.roles,
+      authTime: issued.authTime,
     });
 
-    const body_: CreateTokenResponse = {
+    const body: CreateTokenResponse = {
       access_token: accessToken,
       token_type: "Bearer",
       expires_in: ACCESS_TOKEN_SECONDS,
     };
 
-    if (client.refreshToken === "cookie") {
+    if (issued.refreshDelivery === "cookie") {
       // Scoped to the auth path, so it is sent to /token and /logout and
       // nowhere else, and httpOnly so no script can read it.
-      response.cookie(REFRESH_COOKIE, refresh.token, {
+      response.cookie(REFRESH_COOKIE, issued.refresh.token, {
         httpOnly: true,
         secure: true,
         sameSite: "strict",
         path: this.refreshCookiePath(),
-        expires: refresh.expiresAt,
+        expires: issued.refresh.expiresAt,
       });
     } else {
-      body_.refresh_token = refresh.token;
+      body.refresh_token = issued.refresh.token;
     }
 
-    this.logger.log(`issued tokens to ${clientId} for session ${session.id}`);
-    response.status(HttpStatus.OK).send(body_);
+    response.status(HttpStatus.OK).send(body);
+  }
+
+  /**
+   * The refresh grant: rotate, or detect a token that has already been
+   * rotated away and end the session (ADR 0018).
+   */
+  private async refresh(
+    field: (name: string) => string | undefined,
+    request: Request,
+    response: Response,
+    fail: (error: string, description: string, reason: string) => void,
+  ): Promise<void> {
+    const clientId = field("client_id");
+    const client =
+      clientId === undefined
+        ? undefined
+        : resolveClients(this.auth.users.clientOrigins).get(clientId);
+    if (client === undefined || clientId === undefined) {
+      fail("invalid_client", "unknown client", `unknown client ${clientId}`);
+      return;
+    }
+
+    // The site's is in the cookie and never in the body: a refresh token in
+    // a form field is one a script could have read.
+    const presented =
+      client.refreshToken === "cookie"
+        ? (request.cookies as Record<string, string> | undefined)?.[
+            REFRESH_COOKIE
+          ]
+        : field("refresh_token");
+    if (presented === undefined || presented === "") {
+      fail("invalid_request", "a refresh token is required", "none presented");
+      return;
+    }
+
+    const hash = hashRefreshToken(presented);
+    const found = await this.users.findSessionByRefreshToken(hash);
+    if (found === undefined) {
+      fail("invalid_grant", "the refresh token is not valid", "unknown token");
+      return;
+    }
+
+    if (found.matched === "previous") {
+      // Already rotated away. Either someone is replaying a stolen token, or
+      // the real client raced itself — and we cannot tell which, so the
+      // session ends. ADR 0018 chose this deliberately: two simultaneous
+      // refreshes will sign someone out, which is the price of detecting a
+      // theft at all.
+      await this.users.revokeSession(found.session.id);
+      this.logger.warn(
+        `refresh token reused: session ${found.session.id} revoked`,
+      );
+      fail(
+        "invalid_grant",
+        "the refresh token is not valid",
+        "a rotated token was presented again",
+      );
+      return;
+    }
+
+    const session = found.session;
+    if (session.revokedTime !== null) {
+      fail(
+        "invalid_grant",
+        "the refresh token is not valid",
+        "session revoked",
+      );
+      return;
+    }
+    if (new Date(session.expiresTime).getTime() <= Date.now()) {
+      fail(
+        "invalid_grant",
+        "the refresh token is not valid",
+        "session expired",
+      );
+      return;
+    }
+    if (session.clientId !== clientId) {
+      // A token issued to one client being used by another.
+      fail(
+        "invalid_grant",
+        "the refresh token is not valid",
+        `session belongs to ${session.clientId}`,
+      );
+      return;
+    }
+
+    const keys = this.keys.available();
+    if (keys === undefined) {
+      fail(
+        "temporarily_unavailable",
+        "signing in is not configured",
+        "AUTH_SIGNING_KEYS is unset",
+      );
+      return;
+    }
+
+    const current = await this.users.describe(session.userId);
+    if ("reason" in current) {
+      // A disabled user's session stops working here rather than at expiry.
+      await this.users.revokeSession(session.id);
+      fail("invalid_grant", "the refresh token is not valid", current.reason);
+      return;
+    }
+
+    const next = newRefreshToken();
+    if (!(await this.users.rotateSession(session.id, hash, next.hash))) {
+      // Someone else rotated it between the lookup and the update.
+      fail(
+        "invalid_grant",
+        "the refresh token is not valid",
+        "the token was rotated concurrently",
+      );
+      return;
+    }
+
+    await this.issue(response, {
+      clientId,
+      refreshDelivery: client.refreshToken,
+      refresh: next,
+      userId: current.user.id,
+      roles: current.user.roles,
+      // Unchanged across refresh, so a recent-sign-in requirement means
+      // signing in again rather than refreshing again.
+      authTime: Math.floor(new Date(session.createdTime).getTime() / 1000),
+      keys,
+    });
+    this.logger.log(`refreshed session ${session.id} for ${clientId}`);
   }
 
   /**
