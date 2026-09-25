@@ -39,7 +39,7 @@ export class AuthGuard implements CanActivate {
     @Inject(authConfig.KEY) private readonly auth: AuthConfigType,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithPrincipal>();
     const listener: Listener = request.listener ?? "users";
 
@@ -52,7 +52,7 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    const { principal, reason } = this.resolve(request, listener);
+    const { principal, reason } = await this.resolve(request, listener);
     request.principal = principal;
 
     const required = this.reflector.getAllAndOverride<string[]>(
@@ -84,10 +84,10 @@ export class AuthGuard implements CanActivate {
     throw new UnauthorizedException();
   }
 
-  private resolve(
+  private async resolve(
     request: RequestWithPrincipal,
     listener: Listener,
-  ): { principal?: Principal; reason?: string } {
+  ): Promise<{ principal?: Principal; reason?: string }> {
     if (listener === "services") {
       const identity = this.services.identify(request);
       return "principal" in identity
