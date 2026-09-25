@@ -30,19 +30,20 @@ const issued = (): AuthorizationCode => ({
 describe("pending authorizations", () => {
   it("returns what it was given, once", () => {
     const service = new AuthorizationCodeService();
-    const state = service.beginAuthorization(pending());
-    expect(service.takeAuthorization(state)).toEqual(pending());
+    service.rememberAuthorization("provider-state", pending());
+    expect(service.takeAuthorization("provider-state")).toEqual(pending());
     // A provider callback replayed finds nothing.
-    expect(service.takeAuthorization(state)).toBeUndefined();
+    expect(service.takeAuthorization("provider-state")).toBeUndefined();
   });
 
-  it("gives every sign-in a different state", () => {
+  it("is keyed by the state the provider will return", () => {
+    // openid-client generates it and checks it coming back, so this store
+    // uses that value rather than a second one of its own.
     const service = new AuthorizationCodeService();
-    const states = new Set(
-      Array.from({ length: 50 }, () => service.beginAuthorization(pending())),
-    );
-    expect(states.size).toBe(50);
-    for (const state of states) expect(state).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    service.rememberAuthorization("a", pending());
+    service.rememberAuthorization("b", { ...pending(), provider: "github" });
+    expect(service.takeAuthorization("a")?.provider).toBe("google");
+    expect(service.takeAuthorization("b")?.provider).toBe("github");
   });
 
   it("does not return an unknown state", () => {

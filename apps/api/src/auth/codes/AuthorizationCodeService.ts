@@ -55,11 +55,16 @@ export class AuthorizationCodeService {
     CODE_TTL_SECONDS,
   );
 
-  /** Begins a sign-in; the returned state is what we send the provider. */
-  beginAuthorization(pending: PendingAuthorization): string {
-    const state = randomToken();
+  /**
+   * Remembers a sign-in against the state the provider will return.
+   *
+   * The state is not ours to invent: openid-client generates it for the
+   * provider leg and checks it on the way back, so the store is keyed by
+   * that same value rather than by a second one we would then have to carry
+   * alongside it.
+   */
+  rememberAuthorization(state: string, pending: PendingAuthorization): void {
     this.pending.put(state, pending);
-    return state;
   }
 
   /** The authorization we were waiting on, once. */
