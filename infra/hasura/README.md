@@ -21,6 +21,29 @@ The CLI and the engine read these; nothing here holds a credential.
 | `HASURA_GRAPHQL_ADMIN_SECRET` | the admin secret                                              |
 | `HASURA_GRAPHQL_DATABASE_URL` | the `olympus` source's connection string (read by the engine) |
 
+## Pointing the CLI at an environment
+
+`config.yaml` names `http://localhost:8080`, which is the laptop's own data
+stack. Anything else is an override, and the CLI reads overrides from
+`infra/hasura/.env` — gitignored, like every other env file. Putting the
+admin secret there rather than on the command line keeps it out of `ps` and
+out of shell history.
+
+| Engine                  | `HASURA_GRAPHQL_ENDPOINT`                 | `HASURA_GRAPHQL_ADMIN_SECRET`            |
+| ----------------------- | ----------------------------------------- | ---------------------------------------- |
+| the laptop's data stack | `http://localhost:8080` (the default)     | that laptop's `hasura_admin_secret`      |
+| `hasura-dev`            | `http://olympus.dev.ncfritz.net:8081`     | the Mac Mini's `hasura_dev_admin_secret` |
+| production              | `http://127.0.0.1:8080`, on the Mini only | the Mac Mini's `hasura_admin_secret`     |
+
+`hasura-dev` is published on the LAN (`LAN_BIND`) because the IDE runs on
+another machine. Production's engine is bound to loopback, so applying to it
+by hand means running the CLI on the Mac Mini — and usually shouldn't be
+done at all: a schema change reaches production by deploying the Hasura
+image, which carries `migrations/` and applies them at start (ADR 0019).
+
+So a schema change goes to `hasura-dev` with the CLI, and to production with
+an image.
+
 ## Day to day
 
 ```sh
