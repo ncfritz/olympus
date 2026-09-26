@@ -24,7 +24,21 @@ there as in production.
 cd infra/hasura
 hasura migrate status --database-name olympus
 hasura migrate apply --database-name olympus
+hasura metadata apply
 ```
+
+**Both.** A migration changes Postgres; the engine's metadata is what
+decides which columns exist in GraphQL and what they are called there —
+`email_normalized` is exposed as `emailNormalized`. Applying only the
+migration leaves the column in the database and absent from the schema the
+API queries, which fails as
+`field 'emailNormalized' not found in type 'olympus_users_bool_exp'`.
+
+The deployed Hasura image applies migrations _and_ metadata when it starts
+(ADR 0019), so this is a two-command step only when the CLI is driving it —
+which is `hasura-dev`, by hand. If a column is added without the metadata
+files changing, `hasura metadata reload` is what makes the engine
+re-inspect the database.
 
 `users.email_normalized` is the column an identity is linked by, and it
 arrived after the tables did. Without it every lookup by email fails and
@@ -190,6 +204,7 @@ restart drops sign-ins that are mid-flight.
 | Symptom                                                   | Cause                                                                                                                        |
 | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | Google: `redirect_uri_mismatch`                           | The URI registered with Google is not `<AUTH_PUBLIC_BASE_URL>/v1/auth/callback/google` exactly, including any `/api` prefix. |
+| `field '…' not found in type 'olympus_users_bool_exp'`    | The migration was applied and the metadata was not. `hasura metadata apply`.                                                 |
 | `400 unknown provider`                                    | The `provider` in the query is not a `name` in the providers file.                                                           |
 | `400 redirect_uri is not registered`                      | The **client's** URI, not the API's. Loopback must be `127.0.0.1` — `localhost` is deliberately not accepted.                |
 | Redirected back with `error=access_denied`                | Deliberately vague. The reason is in the API's log: no such user, an unverified address, or a disabled one.                  |
