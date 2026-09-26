@@ -6,7 +6,10 @@
 import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import * as fs from "fs";
 import { GraphQLClient } from "graphql-request";
+import * as os from "os";
+import * as path from "path";
 import request from "supertest";
 import { vi } from "vitest";
 import { configureApp } from "../../src/configureApp";
@@ -38,6 +41,8 @@ export type TestAppOptions = {
 
 export type TestApp = {
   app: INestApplication;
+  /** Where this app writes uploads, and where agents would read them. */
+  paths: { upload: string; publish: string };
   http: () => ReturnType<typeof request>;
   graphql: GraphQLMock;
   amqp: AmqpMock;
@@ -53,8 +58,23 @@ export async function createTestApp(
   const graphql = new GraphQLMock();
   const amqp: AmqpMock = { publish: vi.fn().mockResolvedValue(true) };
 
+  // Its own directories, not one path shared by every file. Test files run
+  // in parallel processes, so a single DIONYSUS_UPLOAD_PATH is a directory
+  // one file can delete while another is still writing to it.
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "olympus-api-test-"));
+  const paths = {
+    upload: path.join(scratch, "upload"),
+    publish: path.join(scratch, "publish"),
+  };
+  fs.mkdirSync(paths.upload, { recursive: true });
+  fs.mkdirSync(paths.publish, { recursive: true });
+
   const previous = new Map<string, string | undefined>();
-  for (const [name, value] of Object.entries(options.env ?? {})) {
+  for (const [name, value] of Object.entries({
+    DIONYSUS_UPLOAD_PATH: paths.upload,
+    DIONYSUS_PUBLISH_PATH: paths.publish,
+    ...options.env,
+  })) {
     previous.set(name, process.env[name]);
     if (value === undefined) delete process.env[name];
     else process.env[name] = value;
@@ -94,8 +114,15 @@ export async function createTestApp(
   );
   await app.init();
 
+  // Listening once, rather than letting supertest bind and unbind a port for
+  // every request: one app, one port for its lifetime. Several hundred
+  // bind/close cycles across parallel processes is churn with nothing to
+  // recommend it.
+  await app.listen(0);
+
   return {
     app,
+    paths,
     http: () => request(app.getHttpServer()),
     graphql,
     amqp,
@@ -106,6 +133,7 @@ export async function createTestApp(
     close: async () => {
       await app.close();
       restore();
+      fs.rmSync(scratch, { recursive: true, force: true });
     },
   };
 }

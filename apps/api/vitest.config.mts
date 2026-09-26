@@ -11,8 +11,6 @@ export default mergeConfig(
         CONSOLE_LOGGING_LEVEL: "error",
         HASURA_HOST: "hasura.test",
         AMQP_HOST: "amqp.test",
-        DIONYSUS_UPLOAD_PATH: "/tmp/olympus-api-test/upload",
-        DIONYSUS_PUBLISH_PATH: "/tmp/olympus-api-test/publish",
       },
       outputFile: { html: "test-report/index.html" },
     },

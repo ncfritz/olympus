@@ -22,7 +22,6 @@ import { createTestApp, type TestApp } from "../../support/testApp";
 const NOW = new Date("2026-09-18T12:00:00.000Z");
 const TODAY = Date.parse("2026-09-18T00:00:00.000Z");
 const WORKFLOW = `/v1/dionysus/content/workflow/${INGEST_ID}`;
-const UPLOAD_DIR = process.env.DIONYSUS_UPLOAD_PATH!;
 
 const workflowExists = {
   dionysus_content_asset_ingest_workflows_by_pk: { id: INGEST_ID },
@@ -30,13 +29,14 @@ const workflowExists = {
 
 describe("Dionysus content ingestion workflows API", () => {
   let t: TestApp;
+  /** This app's own upload directory, made and removed with it. */
+  let uploadDir: string;
   beforeAll(async () => {
-    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
     t = await createTestApp();
+    uploadDir = t.paths.upload;
   });
   afterAll(async () => {
-    await t.app.close();
-    fs.rmSync(UPLOAD_DIR, { recursive: true, force: true });
+    await t.close();
   });
   beforeEach(() => t.reset());
 
@@ -112,7 +112,7 @@ describe("Dionysus content ingestion workflows API", () => {
       });
       const stored = String(message.assetLocation).split("/").pop()!;
       expect(stored).toMatch(/^[0-9a-f]{32}-clip one\.mov$/);
-      expect(fs.readFileSync(`${UPLOAD_DIR}/${stored}`, "utf8")).toBe("one");
+      expect(fs.readFileSync(`${uploadDir}/${stored}`, "utf8")).toBe("one");
     });
 
     it("keeps uploads inside the upload directory", async () => {
@@ -124,7 +124,7 @@ describe("Dionysus content ingestion workflows API", () => {
 
       const [, , message] = t.amqp.publish.mock.calls[0];
       const stored = String(message.assetLocation).split("/").pop()!;
-      expect(fs.existsSync(`${UPLOAD_DIR}/${stored}`)).toBe(true);
+      expect(fs.existsSync(`${uploadDir}/${stored}`)).toBe(true);
       expect(stored).toMatch(/^[0-9a-f]{32}-escape\.mov$/);
     });
 
