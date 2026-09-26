@@ -139,6 +139,9 @@ list_stacks() {
     # `ps -a`, so a container that exited is visible rather than absent --
     # a crash loop looks exactly like "not started" otherwise.
     ps=$(compose "$stack" ps -a --format json 2>/dev/null || true)
+    # The script is single-quoted so the shell leaves it alone: every $ in it
+    # belongs to JavaScript. What node needs is passed as environment.
+    # shellcheck disable=SC2016
     printf '%s' "$config" | STACK="$stack" PS="$ps" node -e '
       let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => {
         const services = Object.keys(JSON.parse(s).services ?? {}).sort();
@@ -184,6 +187,8 @@ build_targets() {
   # trace where a sentence belongs.
   config=$(compose "$stack" config --format json 2>&1) ||
     die "$stack: $(printf '%s' "$config" | head -1)"
+  # As above: single-quoted for node, not for the shell.
+  # shellcheck disable=SC2016
   printf '%s' "$config" | STACK="$stack" WANTED="$*" node -e '
     let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => {
       const services = Object.entries(JSON.parse(s).services ?? {});
@@ -257,6 +262,9 @@ build() {
     die "IMAGE_PREFIX names no registry, so there is nowhere to --push"
 
   local targets
+  # Split on purpose: each service name is its own argument, and this script
+  # is bash 3.2, so a list is a string rather than an array.
+  # shellcheck disable=SC2086
   targets=$(build_targets "$stack" $services) || exit 1
   [ -n "$targets" ] || die "$stack has no images this repository builds"
 
