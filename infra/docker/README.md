@@ -27,6 +27,7 @@ paths) is in the compose files.
 infra/docker/stack.sh bootstrap prod       # once: networks, data and secrets dirs
 infra/docker/stack.sh rabbitmq-users       # RabbitMQ's users, into the secrets dir
 infra/docker/stack.sh check                # every setting and secret in place
+infra/docker/stack.sh list                 # every stack and container, as a tree
 infra/docker/stack.sh up                   # this environment's STACKS, in order
 infra/docker/stack.sh up olympus           # or one stack
 infra/docker/stack.sh logs olympus -f dionysus-asset-agent
@@ -150,6 +151,33 @@ docker run --rm alpine nslookup accounts.google.com
 ```
 
 ## Building images
+
+Day to day, `stack.sh build` — it works out which images a stack's services
+need from the services themselves, and tags them with the commit:
+
+```sh
+infra/docker/stack.sh build --load olympus                # every image the stack runs
+infra/docker/stack.sh build --load olympus olympus-api    # one service's
+infra/docker/stack.sh build --push olympus dionysus-asset-agent
+infra/docker/stack.sh build --load olympus -- --set asset-agent.platform=linux/arm64
+```
+
+There is no default output, on purpose. `--load` puts the image in the local
+image store, which is what this machine's Compose services pull from and the
+right answer on the host that also hosts the registry — a push from there
+goes out and back in through nginx. `--push` is the only one that reaches
+another machine, which the NAS's asset agent needs. Either default would be
+silently wrong half the time.
+
+It refuses to build from a dirty tree, because the tag is the commit and
+`OLYMPUS_TAG` is what a rollback sets back: an image tagged with a commit it
+was not built from is a problem that surfaces months later. `--dirty` says
+you know.
+
+Services whose image this repository does not build — Postgres, the registry
+— are skipped.
+
+### Underneath
 
 `/docker-bake.hcl` lists every image, its platforms and tags. It sits at
 the repository root because `docker buildx bake` looks for it in the

@@ -5,6 +5,9 @@
 #                                             environment this machine is,
 #                                             create networks and directories
 #   infra/docker/stack.sh check [stack...]    every setting and secret in place
+#   infra/docker/stack.sh list [stack...]     stacks and their containers, as a tree
+#   infra/docker/stack.sh build (--push|--load) <stack> [service...]
+#                                             build this stack's images at HEAD
 #   infra/docker/stack.sh up [stack...|all]   check, then start (in order)
 #   infra/docker/stack.sh down [stack...|all] stop (in reverse order)
 #   infra/docker/stack.sh pull|ps|logs|restart <stack> [args...]
@@ -122,6 +125,155 @@ secret_files() {
     });'
 }
 
+# Every service a stack defines, with the state of its container. A service
+# with no container is shown too: "what is this stack meant to run" is as
+# useful as "what is running", and only listing containers hides a stack that
+# is down.
+list_stacks() {
+  local stack config ps
+  for stack in $(stacks forward "$@"); do
+    if ! config=$(compose "$stack" config --format json 2>&1); then
+      printf '%s\n    (cannot read: %s)\n' "$stack" "$(printf '%s' "$config" | head -1)"
+      continue
+    fi
+    # `ps -a`, so a container that exited is visible rather than absent --
+    # a crash loop looks exactly like "not started" otherwise.
+    ps=$(compose "$stack" ps -a --format json 2>/dev/null || true)
+    printf '%s' "$config" | STACK="$stack" PS="$ps" node -e '
+      let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => {
+        const services = Object.keys(JSON.parse(s).services ?? {}).sort();
+        // Compose has emitted both a JSON array and one object per line,
+        // depending on its version. Accept either.
+        const raw = process.env.PS || "";
+        let rows;
+        try {
+          rows = JSON.parse(raw);
+          if (!Array.isArray(rows)) rows = [rows];
+        } catch {
+          rows = raw.split("\n").filter(Boolean).flatMap((line) => {
+            try { return [JSON.parse(line)]; } catch { return []; }
+          });
+        }
+        const byService = new Map(rows.map((r) => [r.Service, r]));
+        const running = rows.filter((r) => r.State === "running").length;
+        console.log(`${process.env.STACK}  (${running}/${services.length} running)`);
+        services.forEach((name, i) => {
+          const row = byService.get(name);
+          // The tag it is actually running, which is the thing a deploy gets
+          // wrong: OLYMPUS_TAG says what should be there, this says what is.
+          const tag = row?.Image?.includes(":") ? row.Image.split(":").pop() : "";
+          const status = row ? row.Status : "not created";
+          const branch = i === services.length - 1 ? "└──" : "├──";
+          console.log(
+            `${branch} ${name.padEnd(28)}${status.padEnd(26)}${tag}`.trimEnd(),
+          );
+        });
+      });'
+  done
+}
+
+# The bake targets behind a stack's services, from each service's own image
+# name -- which is what docker-bake.hcl calls its targets. Derived rather
+# than kept as a table of service -> target, because a table is a second
+# place to forget a service.
+build_targets() {
+  local stack=$1 config
+  shift
+  # Captured, not piped: a stack whose settings are incomplete makes `compose
+  # config` fail, and piping nothing into node produces a JavaScript stack
+  # trace where a sentence belongs.
+  config=$(compose "$stack" config --format json 2>&1) ||
+    die "$stack: $(printf '%s' "$config" | head -1)"
+  printf '%s' "$config" | STACK="$stack" WANTED="$*" node -e '
+    let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      const services = Object.entries(JSON.parse(s).services ?? {});
+      const wanted = (process.env.WANTED || "").split(" ").filter(Boolean);
+      const missing = wanted.filter((w) => !services.some(([n]) => n === w));
+      if (missing.length) {
+        console.error(`no such service in ${process.env.STACK}: ${missing.join(", ")}`);
+        process.exit(1);
+      }
+      const chosen = wanted.length
+        ? services.filter(([n]) => wanted.includes(n))
+        : services;
+      const ours = [], theirs = [];
+      for (const [name, service] of chosen) {
+        const image = String(service.image ?? "");
+        // <registry>/olympus/<name>:<tag>, or olympus/<name>:<tag> with no
+        // registry: the <name> is the bake target.
+        const match = /^(?:.*\/)?olympus\/([^/:]+):/.exec(image);
+        if (match) ours.push(match[1]);
+        else theirs.push(`${name} (${image || "no image"})`);
+      }
+      // Postgres, the registry, nginx: nothing here builds them.
+      if (theirs.length && wanted.length) {
+        console.error(`not ours, nothing to build: ${theirs.join(", ")}`);
+      }
+      console.log([...new Set(ours)].join(" "));
+    });'
+}
+
+build() {
+  local output="" dirty="" stack="" services="" passthru="" root registry tag
+  local revision builder=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --push | --load) output=${1#--} ;;
+      --dirty) dirty=yes ;;
+      --) shift; passthru="$*"; break ;;
+      -*) die "unknown option '$1' (--push, --load, --dirty)" ;;
+      *) if [ -z "$stack" ]; then stack=$1; else services="$services $1"; fi ;;
+    esac
+    shift
+  done
+
+  # No default, deliberately. --load puts the image in the local store, which
+  # is what the Compose services on that machine pull from and the right
+  # answer on the host that also hosts the registry -- a push from there is a
+  # round trip out and back through nginx. --push is the only thing that
+  # reaches another machine, which the NAS's asset agent needs. Guessing
+  # either way is silently wrong half the time.
+  [ -n "$output" ] || die "build needs --push or --load (see infra/docker/README.md, Building images)"
+  [ -n "$stack" ] || die "usage: stack.sh build (--push|--load) <stack> [service...] [-- bake args]"
+
+  root=$(cd "$here/../.." && pwd)
+  # The tag is the commit, and a rollback sets OLYMPUS_TAG back to one. An
+  # image built from a dirty tree and tagged with a clean commit's sha is a
+  # lie that only shows up when someone rolls back to it.
+  if [ -z "$dirty" ] && [ -n "$(git -C "$root" status --porcelain)" ]; then
+    die "the tree has uncommitted changes: commit them, or pass --dirty to tag this build with $(git -C "$root" rev-parse --short HEAD) anyway"
+  fi
+  tag=$(git -C "$root" rev-parse --short HEAD)
+  revision=$(git -C "$root" rev-parse HEAD)
+
+  # docker-bake.hcl names images <REGISTRY>/olympus/<target>, so the registry
+  # is whatever IMAGE_PREFIX has before that.
+  case "$IMAGE_PREFIX" in
+    olympus) registry="" ;;
+    */olympus) registry=${IMAGE_PREFIX%/olympus} ;;
+    *) die "IMAGE_PREFIX is '$IMAGE_PREFIX'; docker-bake.hcl builds <registry>/olympus/<name>" ;;
+  esac
+  [ -n "$registry" ] || [ "$output" = load ] ||
+    die "IMAGE_PREFIX names no registry, so there is nowhere to --push"
+
+  local targets
+  targets=$(build_targets "$stack" $services) || exit 1
+  [ -n "$targets" ] || die "$stack has no images this repository builds"
+
+  # Two platforms cannot be loaded into one image store, so a --load of a
+  # multi-platform target needs `-- --set <target>.platform=linux/arm64`.
+  [ "$output" = load ] || builder="--builder olympus"
+
+  echo "== $stack: $targets"
+  echo "   tag $tag${registry:+, registry $registry}, --$output"
+  # shellcheck disable=SC2086
+  (
+    cd "$root" &&
+      REGISTRY="$registry" TAG="$tag" GIT_REVISION="$revision" \
+        docker buildx bake $builder "--$output" $targets $passthru
+  )
+}
+
 check() {
   local list stack problems=0 name path output remote=""
   list=$(stacks forward "$@")
@@ -164,8 +316,14 @@ check() {
   [ "$problems" -eq 0 ] || die "$problems problem(s)"
 }
 
+# The header, to the first line that is not a comment. Not a line range: one
+# went stale the moment this file grew, and the help then stopped mid-sentence.
+usage() {
+  awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"
+}
+
 command=${1:-}
-[ -n "$command" ] || { sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
+[ -n "$command" ] || { usage; exit 2; }
 shift
 
 case "$command" in
@@ -175,6 +333,14 @@ case "$command" in
   check)
     load_env
     check "$@"
+    ;;
+  list)
+    load_env
+    list_stacks "$@"
+    ;;
+  build)
+    load_env
+    build "$@"
     ;;
   up)
     load_env
@@ -210,6 +376,6 @@ case "$command" in
     node "$here/rabbitmq/definitions.mjs" "$SECRETS_DIR" --generate-missing
     ;;
   *)
-    die "unknown command '$command' (bootstrap, check, up, down, pull, ps, logs, restart, compose, rabbitmq-users)"
+    die "unknown command '$command' (bootstrap, check, list, build, up, down, pull, ps, logs, restart, compose, rabbitmq-users)"
     ;;
 esac
