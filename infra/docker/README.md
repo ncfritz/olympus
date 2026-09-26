@@ -241,6 +241,32 @@ infra/docker/compose/registry.yml up -d`.
 5. The internal DNS record: `registry.internal.ncfritz.net` → the Mac
    Mini.
 
+### The web UI
+
+`registry-ui` in the same compose file serves the same name at `/`, with
+`/v2/` still the registry's API. Same origin on purpose: the UI's requests
+go to `/v2/` on the host the browser is already on, so there is nothing to
+configure for CORS and — the part that matters — no credentials live
+anywhere. The registry answers `401` exactly as it did, and the browser asks
+the person; a UI holding its own login would quietly undo the reason the
+registry has one.
+
+Set `REGISTRY_UI_VERSION`; the tag is not pinned in the compose file because
+every other third-party image here takes its version from the environment.
+
+Deleting a tag is what it is for — a tag per commit adds up — with two
+things it does not do:
+
+- **It frees no disk.** A deleted manifest leaves its blobs behind until
+  `docker compose -f infra/docker/compose/registry.yml exec registry \
+registry garbage-collect /etc/distribution/config.yml` runs. Do that with
+  the registry read-only or stopped; a garbage collection racing a push can
+  collect a blob the push has just uploaded and not yet referenced.
+- **It removes a rollback target.** `OLYMPUS_TAG` is a commit, and setting it
+  back is the rollback; a tag that has been deleted is a rollback that no
+  longer works. `stack.sh list` shows which tags are actually running, which
+  is the thing to check before deleting anything.
+
 On every machine that pulls or pushes: trust the internal root (in the
 system keychain, or `~/.docker/certs.d/registry.internal.ncfritz.net/ca.crt`
 for Docker Desktop and `/etc/docker/certs.d/...` on the NAS), then
