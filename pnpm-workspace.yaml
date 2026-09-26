@@ -40,6 +40,7 @@ catalog:
   rxjs: ^7.8.2
   moment: ^2.30.1
   nest-winston: ^1.10.2
+  openid-client: ^6.8.8
   prom-client: ^15.1.3
   winston: ^3.19.0
   winston-daily-rotate-file: ^5.0.0
@@ -63,7 +64,6 @@ catalog:
 # npm "overrides" carried over from olympus-api.
 overrides:
   "@apollo/server": ^5.5.1
-  "openid-client": ^6.8.8
 
 # pnpm 10 blocks dependency install scripts unless listed here.
 onlyBuiltDependencies:
