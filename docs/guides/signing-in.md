@@ -222,13 +222,31 @@ install -m 600 /dev/null "$SECRETS_DIR/olympus_oidc_providers"
 $EDITOR "$SECRETS_DIR/olympus_oidc_providers"
 ```
 
-Then the images, dev's Hasura first (ADR 0019), and `stack.sh check` before
-`up`:
+Then the images. The migration travels in the Hasura image, so this is two
+deploys and three tags, and the Hasura one goes to dev first (ADR 0019).
+`infra/docker/README.md` has the bake command; on the Mac Mini it is
+`--load`, because the registry is on that host.
 
 ```sh
+# 1. Build hasura and api at this commit.
+# 2. HASURA_DEV_TAG in env/prod.env, then:
+infra/docker/stack.sh up hasura-dev
+hasura migrate status --database-name olympus     # against hasura-dev
+
+# 3. HASURA_TAG, then:
+infra/docker/stack.sh up data
+
+# 4. OLYMPUS_TAG, then:
 infra/docker/stack.sh check
-infra/docker/stack.sh up data olympus
+infra/docker/stack.sh up olympus
+
+# 5. nginx, for X-Forwarded-For. It mounts from the checkout, so it is
+#    managed on the host that runs it rather than through DOCKER_CONTEXT.
+infra/docker/stack.sh up nginx
 ```
+
+`hasura-dev` already has this migration if it was applied by hand, and the
+image applying it again is a no-op — Hasura records versions.
 
 Both files are optional as far as `stack.sh` is concerned, and an empty one
 means the same as an absent setting: signing in is unavailable and
