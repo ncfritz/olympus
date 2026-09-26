@@ -220,6 +220,140 @@
         ]
       }
     },
+    "/auth/me": {
+      "get": {
+        "description": "The user the access token belongs to, with the roles they hold now rather than the ones their token was issued with. Answers 401 if the user has since been disabled or removed, which is sooner than their token expires.",
+        "operationId": "DescribeCurrentUser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The signed-in user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeCurrentUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, one that does not verify, or a user who has since been disabled or removed."
+          }
+        },
+        "summary": "Describes the signed-in user",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/sessions": {
+      "get": {
+        "description": "Every session of the caller's that has not been revoked or expired, newest first, with the one the request was made from marked `current`. Nothing here identifies a refresh token.",
+        "operationId": "ListSessions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The caller's live sessions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSessionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          }
+        },
+        "summary": "Lists the signed-in user's sessions",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/sessions/{sessionId}": {
+      "delete": {
+        "description": "Ends a session of the caller's, so its refresh token stops working. An access token already issued from it stays valid until it expires, within ten minutes. A session that is not the caller's answers 404, exactly as a session that does not exist.",
+        "operationId": "RevokeSession",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "description": "The id of the session to revoke, from ListSessions",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The session has been revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeSessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Revokes one of the signed-in user's sessions",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "description": "Revokes the session the access token was issued from and clears the site's refresh cookie. The access token itself stays valid for its remaining minutes, because authenticating a request does not read the database. Signing out twice is not an error.",
+        "operationId": "SignOut",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The session has been ended and the refresh cookie cleared.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignOutResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          }
+        },
+        "summary": "Signs the caller out of its current session",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
     "/olympus/ping": {
       "get": {
         "description": "Checks that the API is running and returns the hosts it is configured to use.",
@@ -1103,6 +1237,136 @@
         "required": [
           "message",
           "statusCode"
+        ]
+      },
+      "CurrentUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The user's id"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "The name to show for them"
+          },
+          "email": {
+            "type": "string",
+            "description": "Their email address, in the casing they were created with. Addresses are matched case-insensitively, so this is for display and not a key"
+          },
+          "roles": {
+            "description": "The roles they hold now. May differ from the `roles` claim in a token issued before they last changed",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "email",
+          "roles"
+        ]
+      },
+      "DescribeCurrentUserResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "description": "The signed-in user",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrentUser"
+              }
+            ]
+          }
+        },
+        "required": [
+          "user"
+        ]
+      },
+      "UserSession": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The session's id, which is what RevokeSession takes"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "The client this session was created for, e.g. `olympus-site`"
+          },
+          "deviceName": {
+            "type": "string",
+            "description": "What the client called the device when it signed in. Absent where it did not say"
+          },
+          "current": {
+            "type": "boolean",
+            "description": "Whether this is the session the request was made from — the `sid` in the caller's own access token. Revoking it signs this device out"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the sign-in completed. Unchanged when the refresh token rotates"
+          },
+          "lastUsedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the session last refreshed. Absent until it has"
+          },
+          "expiresTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the session expires and signing in again is needed"
+          }
+        },
+        "required": [
+          "id",
+          "clientId",
+          "current",
+          "createdTime",
+          "expiresTime"
+        ]
+      },
+      "ListSessionsResponse": {
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "description": "Every session of the signed-in user that has not been revoked or expired, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserSession"
+            }
+          }
+        },
+        "required": [
+          "sessions"
+        ]
+      },
+      "RevokeSessionResponse": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "The session that was revoked"
+          },
+          "signedOutThisDevice": {
+            "type": "boolean",
+            "description": "Whether the caller revoked the session it was calling from. When true the client's own tokens are now dead and it should discard them and sign in again"
+          }
+        },
+        "required": [
+          "sessionId",
+          "signedOutThisDevice"
+        ]
+      },
+      "SignOutResponse": {
+        "type": "object",
+        "properties": {
+          "signedOut": {
+            "type": "boolean",
+            "description": "Whether a live session was ended. False where it had already expired or been revoked — signing out twice is not an error"
+          }
+        },
+        "required": [
+          "signedOut"
         ]
       },
       "SystemConfiguration": {

@@ -139,8 +139,13 @@ on `3443`. Before phase 8 the gateway needs a service path for the agent
    | `olympus-ios`         | public | `olympus://auth`                                                                                  | response body   |
    | `olympus-auth-tester` | public | `http://127.0.0.1:*/callback` (loopback), `olympus-auth-tester://auth`                            | response body   |
 
-3. **Providers**: GitHub (OAuth), Google (OIDC), Synology SSO (OIDC), each
-   an API OAuth application with the API's callback URLs. Identities link
+3. **Providers**: Google (OIDC), Synology SSO (OIDC), each
+   an API OAuth application with the API's callback URLs. **GitHub is out
+   for now**: it publishes a discovery document but implements no OpenID
+   Connect in its OAuth flows and issues no ID tokens for users, and the
+   provider path reads the subject and verified email from an ID token's
+   claims. It needs a second, non-OIDC path calling `/user` and
+   `/user/emails` — worth doing, not worth blocking sign-in on. Identities link
    to users by verified email on first sign-in; a user who doesn't exist
    is refused. `pnpm --filter @ncfritz/olympus-api auth:user` adds users
    and sets roles — `add`, `show`, `list`, `roles`, `disable`/`enable` and

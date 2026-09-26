@@ -3537,6 +3537,36 @@
     ],
     "type": "object"
   },
+  "CurrentUser": {
+    "properties": {
+      "displayName": {
+        "description": "The name to show for them",
+        "type": "string"
+      },
+      "email": {
+        "description": "Their email address, in the casing they were created with. Addresses are matched case-insensitively, so this is for display and not a key",
+        "type": "string"
+      },
+      "id": {
+        "description": "The user's id",
+        "type": "string"
+      },
+      "roles": {
+        "description": "The roles they hold now. May differ from the `roles` claim in a token issued before they last changed",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "displayName",
+      "email",
+      "id",
+      "roles"
+    ],
+    "type": "object"
+  },
   "DecoratedMediaAssetDownload": {
     "properties": {
       "createdTime": {
@@ -4025,6 +4055,22 @@
     },
     "required": [
       "step"
+    ],
+    "type": "object"
+  },
+  "DescribeCurrentUserResponse": {
+    "properties": {
+      "user": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CurrentUser"
+          }
+        ],
+        "description": "The signed-in user"
+      }
+    },
+    "required": [
+      "user"
     ],
     "type": "object"
   },
@@ -6545,6 +6591,21 @@
     "required": [
       "count",
       "tvSeries"
+    ],
+    "type": "object"
+  },
+  "ListSessionsResponse": {
+    "properties": {
+      "sessions": {
+        "description": "Every session of the signed-in user that has not been revoked or expired, newest first",
+        "items": {
+          "$ref": "#/components/schemas/UserSession"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "sessions"
     ],
     "type": "object"
   },
@@ -12752,6 +12813,23 @@
     ],
     "type": "object"
   },
+  "RevokeSessionResponse": {
+    "properties": {
+      "sessionId": {
+        "description": "The session that was revoked",
+        "type": "string"
+      },
+      "signedOutThisDevice": {
+        "description": "Whether the caller revoked the session it was calling from. When true the client's own tokens are now dead and it should discard them and sign in again",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "sessionId",
+      "signedOutThisDevice"
+    ],
+    "type": "object"
+  },
   "RuntimeStatistic": {
     "properties": {
       "count": {
@@ -13313,6 +13391,18 @@
     },
     "required": [
       "rating"
+    ],
+    "type": "object"
+  },
+  "SignOutResponse": {
+    "properties": {
+      "signedOut": {
+        "description": "Whether a live session was ended. False where it had already expired or been revoked — signing out twice is not an error",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "signedOut"
     ],
     "type": "object"
   },
@@ -15818,6 +15908,46 @@
     },
     "required": [
       "workflows"
+    ],
+    "type": "object"
+  },
+  "UserSession": {
+    "properties": {
+      "clientId": {
+        "description": "The client this session was created for, e.g. `olympus-site`",
+        "type": "string"
+      },
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the sign-in completed. Unchanged when the refresh token rotates",
+        "type": "string"
+      },
+      "current": {
+        "description": "Whether this is the session the request was made from — the `sid` in the caller's own access token. Revoking it signs this device out",
+        "type": "boolean"
+      },
+      "deviceName": {
+        "description": "What the client called the device when it signed in. Absent where it did not say",
+        "type": "string"
+      },
+      "expiresTime": {
+        "description": "An ISO-8601 formatted string indicating when the session expires and signing in again is needed",
+        "type": "string"
+      },
+      "id": {
+        "description": "The session's id, which is what RevokeSession takes",
+        "type": "string"
+      },
+      "lastUsedTime": {
+        "description": "An ISO-8601 formatted string indicating when the session last refreshed. Absent until it has",
+        "type": "string"
+      }
+    },
+    "required": [
+      "clientId",
+      "createdTime",
+      "current",
+      "expiresTime",
+      "id"
     ],
     "type": "object"
   },
