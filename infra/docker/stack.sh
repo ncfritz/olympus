@@ -89,7 +89,7 @@ bootstrap() {
   done
 
   local dir
-  for dir in postgres rabbitmq/data registry \
+  for dir in postgres rabbitmq/data registry registry-ui \
     dionysus/uploads dionysus/asset-agents/data dionysus/metadata-agents/data \
     dionysus/search-agents/data minerva/credentials/google \
     minerva/credentials/microsoft olympus/site/olr; do

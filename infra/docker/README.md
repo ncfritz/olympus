@@ -243,29 +243,58 @@ infra/docker/compose/registry.yml up -d`.
 
 ### The web UI
 
-`registry-ui` in the same compose file serves the same name at `/`, with
-`/v2/` still the registry's API. Same origin on purpose: the UI's requests
-go to `/v2/` on the host the browser is already on, so there is nothing to
-configure for CORS and — the part that matters — no credentials live
-anywhere. The registry answers `401` exactly as it did, and the browser asks
-the person; a UI holding its own login would quietly undo the reason the
-registry has one.
+`registry-ui` in the same compose file — [eznix86/docker-registry-ui][ui] —
+serves the same name at `/`, with `/v2/` still the registry's API.
 
-Set `REGISTRY_UI_VERSION`; the tag is not pinned in the compose file because
-every other third-party image here takes its version from the environment.
+It is a **server-side** app: it talks to the registry itself and scrapes tags
+into SQLite, rather than the browser calling `/v2/`. So it holds a registry
+login of its own, and a full-access one, because htpasswd auth has no scopes.
+That single fact decides the rest of this section. A UI holding a registry
+password with no front door of its own undoes the only thing that stops
+anything on the LAN replacing an Olympus image — so it signs people in with
+Google first.
 
-Deleting a tag is what it is for — a tag per commit adds up — with two
-things it does not do:
+Set up, on the Mac Mini:
 
-- **It frees no disk.** A deleted manifest leaves its blobs behind until
+1. `REGISTRY_UI_VERSION` and `REGISTRY_UI_ALLOWED_EMAILS` in
+   `env/prod.env`. The allowlist is **not optional**: with none, the UI
+   admits any account Google authenticates, which is everyone alive.
+   Authentication is not authorization.
+2. A Google OAuth client — the API's can be reused — with
+   `https://registry.internal.ncfritz.net/oauth/callback` among its
+   authorized redirect URIs. Google never resolves that name; only the
+   browser does, and the browser is on the LAN.
+3. `$SECRETS_DIR/registry-ui.env`, mode 600. This app reads credentials from
+   the environment rather than from files, so they cannot be Docker secrets;
+   `SECRETS_DIR` is git-ignored and `env/prod/` is not.
+
+   ```sh
+   REGISTRY_AUTH=$(printf 'olympus:<the registry password>' | base64)
+   OIDC_ISSUER_URL=https://accounts.google.com
+   OIDC_CLIENT_ID=….apps.googleusercontent.com
+   OIDC_CLIENT_SECRET=…
+   OIDC_REDIRECT_URI=https://registry.internal.ncfritz.net/oauth/callback
+   SESSION_SECRET=$(openssl rand -hex 32)
+   ```
+
+4. `stack.sh check registry`, then `stack.sh up registry`. A missing
+   `registry-ui.env` fails `check`, because Compose will not resolve the file.
+
+Deleting a tag is what makes a UI worth having — a tag per commit adds up —
+with two things it does not do:
+
+- **It frees no disk.** A deleted manifest leaves its blobs until
   `docker compose -f infra/docker/compose/registry.yml exec registry \
 registry garbage-collect /etc/distribution/config.yml` runs. Do that with
-  the registry read-only or stopped; a garbage collection racing a push can
-  collect a blob the push has just uploaded and not yet referenced.
-- **It removes a rollback target.** `OLYMPUS_TAG` is a commit, and setting it
-  back is the rollback; a tag that has been deleted is a rollback that no
-  longer works. `stack.sh list` shows which tags are actually running, which
-  is the thing to check before deleting anything.
+  the registry stopped or read-only: a collection racing a push can collect a
+  blob the push has uploaded and not yet referenced.
+- **It removes a rollback target.** `OLYMPUS_TAG` is a commit and setting it
+  back is the rollback, so a deleted tag is a rollback that no longer works.
+  `stack.sh list` shows which tags are actually running, which is what to
+  check first. `DISABLE_TAG_DELETION=true` turns deletion off if the trade
+  stops being worth it.
+
+[ui]: https://github.com/eznix86/docker-registry-ui
 
 On every machine that pulls or pushes: trust the internal root (in the
 system keychain, or `~/.docker/certs.d/registry.internal.ncfritz.net/ca.crt`

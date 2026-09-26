@@ -10,12 +10,14 @@
 # registry does the login: without one, anything on the LAN could replace
 # an Olympus image. See infra/docker/README.md (Registry).
 #
-# registry-ui is the human face of the same thing, served at / on the same
-# name. Same origin is the point: the UI's own requests go to /v2/ on the
-# host the browser is already on, so there is no CORS to configure and --
-# more to the point -- no credentials anywhere. The registry answers 401 as
-# it always did and the browser asks the person, rather than the UI holding
-# a login that would undo the registry's.
+# registry-ui (eznix86/docker-registry-ui) is the human face of the same
+# thing, served at / on the same name. It is a server-side app: it talks to
+# the registry itself over olympus-edge, which means it holds a registry
+# login of its own -- a full-access one, since htpasswd auth has no scopes.
+# That credential is the reason it signs people in with Google before it will
+# show anything: without a front door, a UI holding a registry password
+# undoes the only thing stopping anything on the LAN replacing an Olympus
+# image.
 
 name: registry
 
@@ -53,24 +55,43 @@ services:
       retries: 3
 
   registry-ui:
-    image: joxit/docker-registry-ui:${REGISTRY_UI_VERSION:?}
+    image: ghcr.io/eznix86/docker-registry-ui:${REGISTRY_UI_VERSION:?}
     restart: unless-stopped
     environment:
-      # Its own origin. The browser resolves /v2/ against this, which the
-      # shared nginx already serves from the registry, so the UI needs no
-      # proxy of its own (NGINX_PROXY_PASS_URL) and the registry needs no
-      # CORS headers.
-      REGISTRY_URL: https://${REGISTRY_HOST:-registry.internal.ncfritz.net}
-      REGISTRY_TITLE: Olympus
-      # One registry, so no menu for adding others.
-      SINGLE_REGISTRY: "true"
-      # Deleting a tag is the reason this exists: a tag per commit adds up.
-      # Two things it does not do, both in infra/docker/README.md -- it frees
-      # no disk until `registry garbage-collect` runs, and a tag that is gone
-      # is a tag OLYMPUS_TAG can no longer be rolled back to.
-      DELETE_IMAGES: "true"
-      SHOW_CONTENT_DIGEST: "true"
-      NGINX_LISTEN_PORT: "8080"
+      # 0.0.0.0, not the image's default of localhost: bound to localhost
+      # inside the container, nothing outside it -- nginx included -- can
+      # reach it, and the symptom is a 502 with a healthy container.
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: "3000"
+      # Over olympus-edge, so the registry's own TLS is not involved. It
+      # scrapes tags into SQLite rather than asking on every page load.
+      REGISTRY_URL: http://registry:3478
+      # What the UI shows people to pull with, which is not how it reaches it.
+      REGISTRY_SETTINGS_PUBLIC_HOST: ${REGISTRY_HOST:-registry.internal.ncfritz.net}
+      # Absolute, because the default is relative to a working directory this
+      # file should not have to know.
+      DATABASE_CONNECTION: sqlite
+      DATABASE_URL: /data/ui.db
+      # Who may sign in. Required, and required for a reason: with no
+      # allowlist this app lets in *any* account the provider authenticates,
+      # which for Google is everyone alive. Authentication is not
+      # authorization, and this is the line between them.
+      OIDC_ALLOWED_EMAILS: ${REGISTRY_UI_ALLOWED_EMAILS:?}
+      # Deleting a tag is what a management UI is for. Two things it does not
+      # do, both in infra/docker/README.md: it frees no disk until
+      # `registry garbage-collect` runs, and a tag that is gone is a tag
+      # OLYMPUS_TAG can no longer be rolled back to. DISABLE_TAG_DELETION
+      # turns it off if that trade stops being worth it.
+      DISABLE_TAG_DELETION: "false"
+      SHOW_USAGE_BAR: "true"
+    # The rest is credentials -- REGISTRY_AUTH, OIDC_CLIENT_ID,
+    # OIDC_CLIENT_SECRET, OIDC_ISSUER_URL, OIDC_REDIRECT_URI, SESSION_SECRET
+    # -- and this app reads them from the environment rather than from files,
+    # so they cannot be Docker secrets. They live in a file in SECRETS_DIR
+    # instead, which is git-ignored, rather than in env/prod/, which is not.
+    env_file: ${SECRETS_DIR:?}/registry-ui.env
+    volumes:
+      - ${DATA_DIR:?}/registry-ui:/data
     networks:
       - edge
     security_opt:
@@ -80,11 +101,9 @@ services:
       options:
         max-size: 10m
         max-file: "5"
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+    # No healthcheck: the image is a Go binary and may carry no shell or
+    # wget, and a healthcheck that cannot run reports unhealthy forever,
+    # which is worse than none.
 
 networks:
   edge:
