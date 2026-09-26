@@ -78,14 +78,24 @@ services:
       # at the publish path.
       DIONYSUS_UPLOAD_PATH: /olympus/uploads
       DIONYSUS_PUBLISH_PATH: /dionysus/uploads
+      # Signing in (ADR 0018, docs/guides/signing-in.md). The providers file
+      # carries client secrets, so it is a secret; the signing keys are a
+      # directory, which a secret cannot be, so they are a read-only mount.
+      AUTH_SIGNING_KEYS: /run/secrets/auth-signing-keys
+      AUTH_OIDC_PROVIDERS_FILE: /run/secrets/olympus_oidc_providers
     secrets:
       - source: amqp_olympus_api
         target: amqp_password
       - hasura_admin_secret
+      - olympus_oidc_providers
     volumes:
       - ${DATA_DIR:?}/dionysus/uploads:/olympus/uploads
       # The services listener's certificate, key, CA and revocation lists.
       - ${SECRETS_DIR:?}/tls/olympus-api:/run/secrets/tls:ro
+      # Every ES256 key that verifies an access token; the last by filename
+      # signs. Read-only, and read once at start: adding a key is
+      # `scripts/signing-keys.sh` and a restart.
+      - ${SECRETS_DIR:?}/auth-signing-keys:/run/secrets/auth-signing-keys:ro
     ports:
       # The mTLS listener, for the NAS's asset agent (ADR 0018).
       - "${LAN_BIND:-127.0.0.1}:3443:3443"
@@ -346,5 +356,10 @@ secrets:
     file: ${SECRETS_DIR:?}/minerva_auth_jwt_secret
   minerva_oidc_providers:
     file: ${SECRETS_DIR:?}/minerva_oidc_providers
+  # The API's own, not Minerva's: the same file shape, a different OAuth
+  # client. One file for both would mean one client secret in two places and
+  # no way to rotate either app's without the other's.
+  olympus_oidc_providers:
+    file: ${SECRETS_DIR:?}/olympus_oidc_providers
   google_oauth_client_secret:
     file: ${SECRETS_DIR:?}/google_oauth_client_secret

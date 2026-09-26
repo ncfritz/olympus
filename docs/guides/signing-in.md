@@ -199,6 +199,47 @@ Authorization codes and pending sign-ins are held in memory, so **this
 works on one API instance only** until they move to a shared store. A
 restart drops sign-ins that are mid-flight.
 
+## In production
+
+The same five things, wired differently. The paths are in
+`infra/docker/compose/olympus.yml` because they are wiring;
+`AUTH_PUBLIC_BASE_URL` and `AUTH_CLIENT_ORIGINS` are in
+`infra/docker/env/prod/olympus-api.env` because they are not.
+
+| Piece         | How                                                             |
+| ------------- | --------------------------------------------------------------- |
+| the migration | ships in the Hasura image, which applies it at start (ADR 0019) |
+| signing keys  | `${SECRETS_DIR}/auth-signing-keys`, mounted read-only           |
+| the providers | `${SECRETS_DIR}/olympus_oidc_providers`, a Docker secret        |
+| the settings  | `prod/olympus-api.env`                                          |
+
+On the host, before deploying:
+
+```sh
+scripts/signing-keys.sh "$SECRETS_DIR/auth-signing-keys"
+# the providers JSON, as in section 3, with the production redirect URI
+install -m 600 /dev/null "$SECRETS_DIR/olympus_oidc_providers"
+$EDITOR "$SECRETS_DIR/olympus_oidc_providers"
+```
+
+Then the images, dev's Hasura first (ADR 0019), and `stack.sh check` before
+`up`:
+
+```sh
+infra/docker/stack.sh check
+infra/docker/stack.sh up data olympus
+```
+
+Both files are optional as far as `stack.sh` is concerned, and an empty one
+means the same as an absent setting: signing in is unavailable and
+everything else works. The API logs which key it signs with at start, or
+warns that the directory holds no `.pem` — it will not refuse to start over
+it, because one unconfigured feature should not take every endpoint down.
+
+nginx has to be forwarding the client address for the rate limits to count
+callers apart (`X-Forwarded-For`, with `TRUSTED_PROXIES`), so deploy the
+nginx configuration too if it has not been.
+
 ## What tends to go wrong
 
 | Symptom                                                   | Cause                                                                                                                        |

@@ -25,7 +25,8 @@ die() { echo "stack.sh: $*" >&2; exit 1; }
 # Secrets a service can run without: an empty file means "not configured".
 OPTIONAL_SECRETS="syno_smtp_password socks_proxy_username socks_proxy_password
 content_ssh_password dionysus_cdn_ssh_password dionysus_library_ssh_password
-nzbgeek_api_key nzbget_password tmdb_api_key google_oauth_client_secret"
+nzbgeek_api_key nzbget_password tmdb_api_key google_oauth_client_secret
+minerva_oidc_providers olympus_oidc_providers"
 
 is_optional() {
   case " $(printf '%s' "$OPTIONAL_SECRETS" | tr '\n' ' ') " in *" $1 "*) return 0 ;; esac
