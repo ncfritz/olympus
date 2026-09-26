@@ -69,15 +69,13 @@ describe("the signed-in user's own endpoints", () => {
       join(keys, "2026-01-01.pem"),
       await jose.exportPKCS8(privateKey),
     );
-    process.env.AUTH_SIGNING_KEYS = keys;
 
-    t = await createTestApp();
+    t = await createTestApp({ env: { AUTH_SIGNING_KEYS: keys } });
     token = await tokenFor({});
   });
 
   afterAll(async () => {
-    await t.app.close();
-    delete process.env.AUTH_SIGNING_KEYS;
+    await t.close();
   });
 
   beforeEach(() => t.reset());

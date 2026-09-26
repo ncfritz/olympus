@@ -3,11 +3,13 @@ import {
   type ExecutionContext,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   Logger,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { type Request, type Response } from "express";
+import { authConfig, type AuthConfigType } from "../../config/configuration";
 import { recordRateLimited } from "../authMetrics";
 import { RATE_LIMIT } from "./rateLimits";
 import { type RateLimit, RateLimiter } from "./RateLimiter";
@@ -30,9 +32,16 @@ export class RateLimitGuard implements CanActivate {
   private readonly logger = new Logger(RateLimitGuard.name);
   private readonly limiter = new RateLimiter();
 
-  constructor(private readonly reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    @Inject(authConfig.KEY) private readonly auth: AuthConfigType,
+  ) {}
 
   canActivate(context: ExecutionContext): boolean {
+    // AUTH_RATE_LIMITS=off, for an environment where the limits are in the
+    // way rather than doing their job.
+    if (this.auth.rateLimits === "off") return true;
+
     const limit = this.reflector.getAllAndOverride<RateLimit | undefined>(
       RATE_LIMIT,
       [context.getHandler(), context.getClass()],

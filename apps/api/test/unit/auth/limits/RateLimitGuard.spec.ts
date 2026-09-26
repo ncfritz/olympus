@@ -9,6 +9,7 @@ import {
   RATE_LIMIT,
 } from "../../../../src/auth/limits/rateLimits";
 import type { RateLimit } from "../../../../src/auth/limits/RateLimiter";
+import type { AuthConfigType } from "../../../../src/config/configuration";
 
 const LIMIT: RateLimit = { perClient: 2, global: 10, windowSeconds: 60 };
 
@@ -36,6 +37,9 @@ const context = (
     getHandler: () => ({ name: handlerName }),
     getClass: () => ({ name: className }),
   }) as unknown as ExecutionContext;
+
+const config = (rateLimits: "on" | "off" = "on") =>
+  ({ rateLimits }) as unknown as AuthConfigType;
 
 const reflector = (limit: RateLimit | undefined) =>
   ({
@@ -68,20 +72,29 @@ describe("RateLimitGuard", () => {
   });
 
   it("lets a route with no limit through", () => {
-    const guard = new RateLimitGuard(reflector(undefined));
+    const guard = new RateLimitGuard(reflector(undefined), config());
+    for (let i = 0; i < 100; i += 1) {
+      expect(guard.canActivate(context("10.0.0.1", captured))).toBe(true);
+    }
+  });
+
+  it("lets everything through when the limits are switched off", () => {
+    // AUTH_RATE_LIMITS=off. The switch exists because this mechanism's own
+    // failure mode is refusing legitimate people.
+    const guard = new RateLimitGuard(reflector(LIMIT), config("off"));
     for (let i = 0; i < 100; i += 1) {
       expect(guard.canActivate(context("10.0.0.1", captured))).toBe(true);
     }
   });
 
   it("allows requests up to the limit", () => {
-    const guard = new RateLimitGuard(reflector(LIMIT));
+    const guard = new RateLimitGuard(reflector(LIMIT), config());
     expect(guard.canActivate(context("10.0.0.1", captured))).toBe(true);
     expect(guard.canActivate(context("10.0.0.1", captured))).toBe(true);
   });
 
   it("answers 429 with Retry-After once over it", () => {
-    const guard = new RateLimitGuard(reflector(LIMIT));
+    const guard = new RateLimitGuard(reflector(LIMIT), config());
     guard.canActivate(context("10.0.0.1", captured));
     guard.canActivate(context("10.0.0.1", captured));
     let thrown: unknown;
@@ -96,7 +109,7 @@ describe("RateLimitGuard", () => {
   });
 
   it("counts the refusal, by endpoint and scope", async () => {
-    const guard = new RateLimitGuard(reflector(LIMIT));
+    const guard = new RateLimitGuard(reflector(LIMIT), config());
     guard.canActivate(context("10.0.0.1", captured));
     guard.canActivate(context("10.0.0.1", captured));
     expect(() => guard.canActivate(context("10.0.0.1", captured))).toThrow();
@@ -105,7 +118,7 @@ describe("RateLimitGuard", () => {
   });
 
   it("counts addresses separately", () => {
-    const guard = new RateLimitGuard(reflector(LIMIT));
+    const guard = new RateLimitGuard(reflector(LIMIT), config());
     guard.canActivate(context("10.0.0.1", captured));
     guard.canActivate(context("10.0.0.1", captured));
     expect(() => guard.canActivate(context("10.0.0.1", captured))).toThrow();
@@ -113,7 +126,7 @@ describe("RateLimitGuard", () => {
   });
 
   it("counts handlers separately, so one endpoint cannot exhaust another", () => {
-    const guard = new RateLimitGuard(reflector(LIMIT));
+    const guard = new RateLimitGuard(reflector(LIMIT), config());
     const one = () =>
       guard.canActivate(context("10.0.0.1", captured, "BeginSignInController"));
     one();
@@ -126,7 +139,7 @@ describe("RateLimitGuard", () => {
 
   it("puts every request with no address in one bucket", () => {
     // Which is the point: a missing address is not a free pass.
-    const guard = new RateLimitGuard(reflector(LIMIT));
+    const guard = new RateLimitGuard(reflector(LIMIT), config());
     guard.canActivate(context(undefined, captured));
     guard.canActivate(context(undefined, captured));
     expect(() => guard.canActivate(context(undefined, captured))).toThrow(
@@ -140,7 +153,7 @@ describe("RateLimitGuard", () => {
       global: 2,
       windowSeconds: 60,
     };
-    const guard = new RateLimitGuard(reflector(ceiling));
+    const guard = new RateLimitGuard(reflector(ceiling), config());
     expect(guard.canActivate(context("10.0.0.1", captured))).toBe(true);
     expect(guard.canActivate(context("10.0.0.2", captured))).toBe(true);
     expect(() => guard.canActivate(context("10.0.0.3", captured))).toThrow(

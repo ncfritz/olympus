@@ -48,6 +48,15 @@ export type AuthMode = "report" | "enforce";
 export type AuthConfig = {
   /** Per listener: `report` logs and counts what it would reject. */
   modes: { users: AuthMode; services: AuthMode };
+  /**
+   * Whether the auth endpoints' rate limits apply.
+   *
+   * On by default, and there is an off switch because this is a mechanism
+   * whose own failure mode is refusing legitimate people: a limit that turns
+   * out to be too low, or a per-caller key that stops telling callers apart,
+   * locks users out, and the fix should not have to be a deploy.
+   */
+  rateLimits: "on" | "off";
   /** Certificate common name -> the roles that service has. */
   serviceRoles: Record<string, string[]>;
   /**
@@ -185,6 +194,11 @@ const readAuthConfig = (read: EnvReader): AuthConfig => {
   const providersRaw = read.optional("AUTH_OIDC_PROVIDERS");
   return {
     modes,
+    rateLimits: read.oneOf<"on" | "off">(
+      "AUTH_RATE_LIMITS",
+      ["on", "off"],
+      "on",
+    ),
     serviceRoles: readServiceRoles(read),
     servicesIssuer: read.optional("AUTH_SERVICES_ISSUER"),
     users: {

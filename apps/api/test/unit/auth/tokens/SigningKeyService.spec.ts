@@ -16,6 +16,7 @@ const pem = async () => {
 const config = (signingKeys?: string) =>
   ({
     modes: { users: "report", services: "report" },
+    rateLimits: "on",
     serviceRoles: {},
     users: { signingKeys, clientOrigins: [], providers: [] },
     services: {

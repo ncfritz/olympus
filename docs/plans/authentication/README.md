@@ -177,7 +177,16 @@ on `3443`. Before phase 8 the gateway needs a service path for the agent
    **done 2026-09-25.**
 7. Tests: every endpoint and error, PKCE, reuse detection, expiry, a
    disabled user, the provider callbacks with a fake provider, and the
-   migration against the dev Hasura.
+   migration against the dev Hasura — **done 2026-09-26**
+   (`test/api/signIn.spec.ts`, `sessions.spec.ts`, `authRateLimits.spec.ts`).
+   The fake provider is a fake `ProviderLoginService`, not a fake identity
+   provider: what this API owns is the code store, its own PKCE check, the
+   order `authorize` refuses things in, whether a failure is a 400 or a
+   redirect, and the session lifecycle, and a fake service drives all of
+   those plus the answers a real provider will not give on demand. That
+   leaves openid-client's own leg to the live sign-in and to phase 4's
+   tester. The migration was applied to `hasura-dev` by hand and proved by
+   signing in (docs/guides/signing-in.md).
 
 ## Phase 4 — Auth testers
 
