@@ -188,7 +188,7 @@ pattern for desktop apps (RFC 8252 loopback redirect):
 
 | Command                                | Does                                                                      |
 | -------------------------------------- | ------------------------------------------------------------------------- |
-| `login --provider github [--external]` | PKCE with a loopback redirect; opens the browser; stores tokens in a file |
+| `login --provider google [--external]` | PKCE with a loopback redirect; opens the browser; stores tokens in a file |
 | `whoami`                               | `DescribeCurrentUser`, and the decoded token claims                       |
 | `call <method> <path>`                 | any API call with the access token                                        |
 | `refresh`, `refresh --replay`          | rotates; `--replay` presents the previous token again (reuse detection)   |
