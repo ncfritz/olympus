@@ -77,6 +77,14 @@ services:
       # file should not have to know.
       DATABASE_CONNECTION: sqlite
       DATABASE_URL: /data/ui.db
+      # It serves pages from that database, not from the registry, and syncs
+      # on start and then on this interval. Set explicitly because the
+      # consequence is not obvious: anything pushed since the last sync is
+      # invisible until the next one, and a sync that failed -- a wrong
+      # credential, say -- leaves an empty UI rather than an error. Fifteen
+      # minutes rather than the default hour, since a deploy pushes a tag and
+      # then someone goes looking for it.
+      SCRAPER_SYNC_INTERVAL: 15m
       # Who may sign in. Required, and required for a reason: with no
       # allowlist this app lets in *any* account the provider authenticates,
       # which for Google is everyone alive. Authentication is not
