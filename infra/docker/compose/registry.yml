@@ -92,6 +92,20 @@ services:
     env_file: ${SECRETS_DIR:?}/registry-ui.env
     volumes:
       - ${DATA_DIR:?}/registry-ui:/data
+    # Docker's DNS only knows a name while that container exists, so starting
+    # first means `registry` does not resolve -- and this app spends its retry
+    # budget in under a second (three attempts, 200ms apart) before giving up
+    # until its next sync. Waiting for healthy rather than merely started,
+    # because "the container exists" and "the registry answers" are not the
+    # same moment.
+    #
+    # This orders a `compose up`. It does not order a Docker daemon restart,
+    # where both are started by the daemon and `restart: unless-stopped`
+    # decides: after a host reboot the UI may come up first and need its next
+    # sync, or a restart, to find the registry.
+    depends_on:
+      registry:
+        condition: service_healthy
     networks:
       - edge
     security_opt:
