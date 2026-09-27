@@ -10,6 +10,7 @@
 #                                             build this stack's images at HEAD
 #   infra/docker/stack.sh up [stack...|all]   check, then start (in order)
 #   infra/docker/stack.sh down [stack...|all] stop (in reverse order)
+#   infra/docker/stack.sh nginx-reload         validate and reload the server blocks
 #   infra/docker/stack.sh pull|ps|logs|restart <stack> [args...]
 #   infra/docker/stack.sh compose <stack> [args...]   anything else
 #   infra/docker/stack.sh rabbitmq-users      write the RabbitMQ definitions
@@ -282,6 +283,18 @@ build() {
   )
 }
 
+# nginx serves its Olympus server blocks from the checkout, so editing one
+# changes nothing a `compose up` can see: the service definition is identical
+# and the running nginx keeps the config it parsed at start. Reloading is the
+# operation, and `-t` comes first because this nginx serves every site on the
+# host -- reloading a broken config takes all of them down, not just the one
+# that was edited.
+nginx_reload() {
+  compose nginx exec -T nginx nginx -t
+  compose nginx exec -T nginx nginx -s reload
+  echo "nginx: reloaded"
+}
+
 check() {
   local list stack problems=0 name path output remote=""
   list=$(stacks forward "$@")
@@ -350,6 +363,10 @@ case "$command" in
     load_env
     build "$@"
     ;;
+  nginx-reload)
+    load_env
+    nginx_reload
+    ;;
   up)
     load_env
     check "$@"
@@ -384,6 +401,6 @@ case "$command" in
     node "$here/rabbitmq/definitions.mjs" "$SECRETS_DIR" --generate-missing
     ;;
   *)
-    die "unknown command '$command' (bootstrap, check, list, build, up, down, pull, ps, logs, restart, compose, rabbitmq-users)"
+    die "unknown command '$command' (bootstrap, check, list, build, up, down, nginx-reload, pull, ps, logs, restart, compose, rabbitmq-users)"
     ;;
 esac

@@ -240,9 +240,11 @@ infra/docker/stack.sh up data
 infra/docker/stack.sh check
 infra/docker/stack.sh up olympus
 
-# 5. nginx, for X-Forwarded-For. It mounts from the checkout, so it is
-#    managed on the host that runs it rather than through DOCKER_CONTEXT.
-infra/docker/stack.sh up nginx
+# 5. nginx, for X-Forwarded-For. Its server blocks are mounted from the
+#    checkout, so `up` sees no change and the running nginx keeps the config
+#    it parsed at start -- a reload is the operation. Run it on the host that
+#    serves them rather than through DOCKER_CONTEXT.
+infra/docker/stack.sh nginx-reload
 ```
 
 `hasura-dev` already has this migration if it was applied by hand, and the
