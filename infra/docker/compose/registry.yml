@@ -34,6 +34,11 @@ services:
       REGISTRY_AUTH_HTPASSWD_PATH: /run/secrets/registry_htpasswd
       # So `garbage-collect` can reclaim the space of deleted tags.
       REGISTRY_STORAGE_DELETE_ENABLED: "true"
+      # Registry 3 ships OpenTelemetry on, pointed at a collector on
+      # localhost that is not there, and logs a failed export every few
+      # seconds. Nothing here collects traces (ADR 0017 is metrics), so the
+      # export is noise that buries the lines worth reading.
+      OTEL_SDK_DISABLED: "true"
     secrets:
       - registry_htpasswd
     volumes:

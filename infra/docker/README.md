@@ -266,15 +266,45 @@ Set up, on the Mac Mini:
    browser does, and the browser is on the LAN.
 3. `$SECRETS_DIR/registry-ui.env`, mode 600. This app reads credentials from
    the environment rather than from files, so they cannot be Docker secrets;
-   `SECRETS_DIR` is git-ignored and `env/prod/` is not.
+   `SECRETS_DIR` is git-ignored and `env/prod/` is not. The file is literal —
+   nothing expands in it:
 
-   ```sh
-   REGISTRY_AUTH=$(printf 'olympus:<the registry password>' | base64)
+   ```
+   REGISTRY_AUTH=b2x5bXB1czpub3QtdGhlLXJlYWwtb25l
    OIDC_ISSUER_URL=https://accounts.google.com
    OIDC_CLIENT_ID=….apps.googleusercontent.com
    OIDC_CLIENT_SECRET=…
    OIDC_REDIRECT_URI=https://registry.internal.ncfritz.net/oauth/callback
-   SESSION_SECRET=$(openssl rand -hex 32)
+   SESSION_SECRET=…
+   ```
+
+   `REGISTRY_AUTH` is base64 of `username:password`, and **`echo` will get it
+   wrong**: `echo "olympus:$password" | base64` encodes a trailing newline, so
+   the registry decodes the right username and a password with an extra byte
+   on the end and answers `authentication failure` for a password that is
+   otherwise correct. The two differ in a way that looks like the shorter one
+   is truncated — `echo` produces `==` padding where `printf` produces none —
+   which is exactly the wrong conclusion to draw.
+
+   Write both generated values straight into the file, so neither the password
+   nor the result goes through shell history:
+
+   ```sh
+   read -rsp 'registry password: ' p; echo
+   {
+     printf 'REGISTRY_AUTH=%s\n' "$(printf 'olympus:%s' "$p" | base64 | tr -d '\n')"
+     printf 'SESSION_SECRET=%s\n' "$(openssl rand -hex 32)"
+   } >> "$SECRETS_DIR/registry-ui.env"
+   unset p
+   ```
+
+   To check an existing one without printing it, ask only whether it ends in a
+   newline:
+
+   ```sh
+   sed -n 's/^REGISTRY_AUTH=//p' "$SECRETS_DIR/registry-ui.env" | tr -d '\n' |
+     base64 -d | od -An -tx1 | tr -d ' \n' | grep -q '0a$' &&
+     echo "trailing newline: this is the bug" || echo "no trailing newline"
    ```
 
 4. `stack.sh check registry`, then `stack.sh up registry`. A missing
