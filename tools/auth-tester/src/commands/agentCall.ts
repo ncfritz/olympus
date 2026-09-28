@@ -4,7 +4,7 @@ import { type Flags, optional, required } from "../args";
 import { readServiceIdentity } from "../certificate";
 import { TesterError } from "../errors";
 import { method, request } from "../http";
-import { printAnswer } from "../output";
+import { printAnswer, reportModeNote } from "../output";
 import { missingPrefix } from "../paths";
 import type { Settings } from "../settings";
 
@@ -67,6 +67,8 @@ export const agentCall = async (
 
   const answer = await request(clients, { method: method(asked), path });
   printAnswer(answer);
+  const served = reportModeNote(as, identity.commonName, answer.status);
+  if (served !== undefined) console.log(served);
   if (answer.status === 404) {
     const hint = missingPrefix(path);
     if (hint !== undefined) console.log(hint);

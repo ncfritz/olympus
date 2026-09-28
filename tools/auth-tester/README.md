@@ -75,7 +75,11 @@ missing.
 
 **`agent-call`** sends `X-Olympus-Client` as the certificate's common name,
 because the API rejects a request where the two disagree. `--as` is how you
-exercise that rejection deliberately rather than hitting it by accident.
+exercise that rejection deliberately rather than hitting it by accident — and
+until phase 8 the answer is still a 200, because `AUTH_MODE_SERVICES=report`
+records what it would reject and serves the request. The tester says so when
+the header and the certificate disagree and the call succeeds anyway, since
+reading the status code would otherwise say the check does not exist.
 
 A `socket hang up` here is a socket closed with no answer, which a refused
 certificate and a port held by something else both produce: the request never

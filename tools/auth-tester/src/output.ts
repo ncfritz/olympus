@@ -92,3 +92,26 @@ export const printSessions = (sessions: PrintableSession[]): void => {
     );
   }
 };
+
+/**
+ * Why a call the API ought to have refused was served anyway.
+ *
+ * Report mode (ADR 0018): until phase 8 the guard resolves the caller,
+ * records what it would have rejected and lets the request through. So the
+ * one thing a test of a rejection must not do is read the status code -- a
+ * 200 here is the guard agreeing with you, not disagreeing, and without this
+ * note it reads as the check not existing.
+ */
+export const reportModeNote = (
+  sent: string,
+  certificate: string,
+  status: number,
+): string | undefined =>
+  sent === certificate || status >= 400
+    ? undefined
+    : [
+        `The header said ${sent} and the certificate said ${certificate}, and the call was served.`,
+        'That is report mode: the guard recorded auth_decisions_total{listener="services",outcome="would_reject",reason="client header mismatch"}',
+        "rather than refusing it. `curl -s <api>/metrics | grep auth_decisions_total` has the count;",
+        "AUTH_MODE_SERVICES=enforce is what turns it into a 401.",
+      ].join(" ");
