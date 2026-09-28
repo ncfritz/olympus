@@ -152,6 +152,13 @@ The tester defaults to `http://localhost:3001/v1`; `--api` or
 `OLYMPUS_API_BASE_URL` points it elsewhere, and it refuses to send one
 environment's tokens to another.
 
+`tools/auth-tester-mobile` is the same proof from an iPhone, and it is the only
+one for the three questions a terminal cannot answer: the system authentication
+session (`ASWebAuthenticationSession`), the Keychain, and whether an app can
+present a client certificate on `3443` at all. Its README is the walk-through.
+It needs a development build rather than Expo Go, because it carries a native
+module — React Native cannot present a client certificate.
+
 ## Proving it by hand
 
 The same flow in six commands, which is worth doing once anyway — it is what a
@@ -289,19 +296,20 @@ per-client bucket.
 
 ## What tends to go wrong
 
-| Symptom                                                   | Cause                                                                                                                        |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Google: `redirect_uri_mismatch`                           | The URI registered with Google is not `<AUTH_PUBLIC_BASE_URL>/v1/auth/callback/google` exactly, including any `/api` prefix. |
-| `field '…' not found in type 'olympus_users_bool_exp'`    | The migration was applied and the metadata was not. `hasura metadata apply`.                                                 |
-| `400 unknown provider`                                    | The `provider` in the query is not a `name` in the providers file.                                                           |
-| `400 redirect_uri is not registered`                      | The **client's** URI, not the API's. Loopback must be `127.0.0.1` — `localhost` is deliberately not accepted.                |
-| Redirected back with `error=access_denied`                | Deliberately vague. The reason is in the API's log: no such user, an unverified address, or a disabled one.                  |
-| `temporarily_unavailable`, "signing in is not configured" | `AUTH_SIGNING_KEYS` is unset or the directory holds no `.pem`.                                                               |
-| `invalid_grant` on a code that looks right                | More than sixty seconds since the callback, or the code was already used — one attempt each.                                 |
-| `invalid_grant` on a refresh token that was working       | It was rotated. Presenting the previous one revokes the session, by design.                                                  |
-| `401` from `/v1/auth/me` right after signing in           | The user was disabled or removed after the token was issued; it is read from the directory, not the token.                   |
-| A sign-in that starts fine and fails at the callback      | More than one API instance, or a restart in between: the pending authorization is in memory.                                 |
-| `socket hang up` from `:3443`                             | Something else holds the port, or the listener refused the certificate — see below.                                          |
+| Symptom                                                   | Cause                                                                                                                                              |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Google: `redirect_uri_mismatch`                           | The URI registered with Google is not `<AUTH_PUBLIC_BASE_URL>/v1/auth/callback/google` exactly, including any `/api` prefix.                       |
+| `field '…' not found in type 'olympus_users_bool_exp'`    | The migration was applied and the metadata was not. `hasura metadata apply`.                                                                       |
+| `400 unknown provider`                                    | The `provider` in the query is not a `name` in the providers file.                                                                                 |
+| `400 redirect_uri is not registered`                      | The **client's** URI, not the API's. Loopback must be `127.0.0.1` — `localhost` is deliberately not accepted.                                      |
+| Redirected back with `error=access_denied`                | Deliberately vague. The reason is in the API's log: no such user, an unverified address, or a disabled one.                                        |
+| `temporarily_unavailable`, "signing in is not configured" | `AUTH_SIGNING_KEYS` is unset or the directory holds no `.pem`.                                                                                     |
+| `invalid_grant` on a code that looks right                | More than sixty seconds since the callback, or the code was already used — one attempt each.                                                       |
+| `invalid_grant` on a refresh token that was working       | It was rotated. Presenting the previous one revokes the session, by design.                                                                        |
+| `401` from `/v1/auth/me` right after signing in           | The user was disabled or removed after the token was issued; it is read from the directory, not the token.                                         |
+| A sign-in that starts fine and fails at the callback      | More than one API instance, or a restart in between: the pending authorization is in memory.                                                       |
+| `socket hang up` from `:3443`                             | Something else holds the port, or the listener refused the certificate — see below.                                                                |
+| A certificate error from a phone pointed at `:3443`       | `api.crt` does not carry the address the phone used — `localhost` and `127.0.0.1` are the phone. `./scripts/dev-ca.sh --force --san IP:<address>`. |
 
 ### `socket hang up` on the services listener
 

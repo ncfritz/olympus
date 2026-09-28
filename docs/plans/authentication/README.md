@@ -258,13 +258,18 @@ deployment contains.
   the Keychain with `expo-secure-store`.
 - API calls through `@ncfritz/olympus-client` with its auth option (the
   first React Native use of the package).
-- A local Expo module, `client-identity` (Swift): imports an identity
-  (`.p12` picked from Files, with its password) into the app's Keychain, and
-  performs requests on a `URLSession` that answers client-certificate
-  challenges with it. React Native's own networking can't present a client
-  certificate, so the client package gets an axios adapter over this module
-  (`createOlympusClients({ axios: { adapter } })`). The same module is what
-  the iOS app will use.
+- A local Expo module, `client-identity` (Swift, **2026-09-28**): imports an
+  identity (`.p12` picked from Files, with its password) and performs requests
+  on a `URLSession` that answers client-certificate challenges with it. React
+  Native's own networking can't present a client certificate, so the client
+  package is pointed at the module by an axios adapter
+  (`createOlympusClients({ axios: { adapter } })`) — the generated SDK, the
+  interceptors and the metrics are unchanged, and only the transport differs.
+  The same module is what the iOS app will use.
+
+  The identity is held **in memory**, not added to the Keychain: a tester that
+  installed identities permanently would leave them behind after a reinstall,
+  and when to persist one is the real app's decision rather than this one's.
 
   It also pins the CA it validates the server against, because a phone does
   not trust the dev CA and installing a throwaway root on every test device

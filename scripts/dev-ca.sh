@@ -6,6 +6,11 @@
 #
 #   ./scripts/dev-ca.sh            # create what is missing
 #   ./scripts/dev-ca.sh --force    # start again from nothing
+#   ./scripts/dev-ca.sh --force --san IP:192.168.1.10
+#                                  # more names for the API's certificate: a
+#                                  # phone reaches this machine by address, and
+#                                  # a name the certificate does not carry fails
+#                                  # validation however well the CA is trusted
 #
 #   Dev Root CA 1                     pathlen:2
 #   |- Dev Intermediate CA 1          pathlen:1
@@ -33,8 +38,29 @@ out="$ca/certs"
 days=3650
 pass=olympus
 
-[[ "${1:-}" == "--force" ]] && rm -rf "$ca"
-if [[ -f "$out/api.crt" && "${1:-}" != "--force" ]]; then
+force=
+extra_san=
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  --force) force=yes ;;
+  --san)
+    [[ -n "${2:-}" ]] || {
+      echo "--san needs a value, e.g. --san IP:192.168.1.10" >&2
+      exit 2
+    }
+    extra_san="$extra_san,$2"
+    shift
+    ;;
+  *)
+    echo "unknown argument: $1" >&2
+    exit 2
+    ;;
+  esac
+  shift
+done
+
+[[ -n "$force" ]] && rm -rf "$ca"
+if [[ -f "$out/api.crt" && -z "$force" ]]; then
   echo "infra/dev-ca already exists; --force to recreate"
   exit 0
 fi
@@ -211,7 +237,7 @@ done
 echo "API server certificate"
 key "$out/api.key"
 csr "$out/api.key" "$ca/api.csr" "/CN=olympus-api/O=Olympus Dev"
-SAN="DNS:olympus-api,DNS:localhost,DNS:host.docker.internal,DNS:api.olympus.internal.localhost,IP:127.0.0.1" \
+SAN="DNS:olympus-api,DNS:localhost,DNS:host.docker.internal,DNS:api.olympus.internal.localhost,IP:127.0.0.1$extra_san" \
   issue services v3_server "$ca/api.csr" "$out/api.crt"
 
 # client <authority> <directory> <name> <subject> [openssl ca flags...]
@@ -321,7 +347,11 @@ The chain is three authorities deep, like the real one:
                        for Node, which reads only the first list in a file
   keys/<authority>.p8  the authority's key as encrypted PKCS#8, the format
                        the signer imports
-  api.crt / api.key    the API's server certificate
+  api.crt / api.key    the API's server certificate, from the service issuer --
+                       so services-ca.crt is what a client validating the
+                       listener trusts, as well as what the listener trusts.
+                       --san adds names to it; a phone reaching this machine by
+                       address needs its address in there
   agents/<name>.*      one per agent, plus dionysus-asset-agent-nas (the same
                        name, another deployment), svc-revoked, svc-expired
                        and svc-wrong-ca (from the device issuer). The .p12 of

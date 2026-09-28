@@ -3,6 +3,7 @@ import {
   baseUrlOf,
   isResolved,
   resolve,
+  servicesUrlFor,
   type Target,
 } from "../../src/endpoints";
 
@@ -177,5 +178,46 @@ describe("baseUrlOf", () => {
         path: "/api/v1",
       }),
     ).toBe("http://olympus.ncfritz.net/api/v1");
+  });
+});
+
+describe("servicesUrlFor", () => {
+  /** A second port with its own certificate, always TLS (ADR 0018). */
+  it("is the listener on the machine a custom target names", () => {
+    expect(
+      servicesUrlFor({
+        kind: "custom",
+        protocol: "http",
+        host: "192.168.1.10",
+      }),
+    ).toBe("https://192.168.1.10:3443/v1");
+  });
+
+  it("takes the host and leaves the target's own port behind", () => {
+    expect(
+      servicesUrlFor({
+        kind: "custom",
+        protocol: "http",
+        host: "laptop.local:3001",
+        port: "3001",
+      }),
+    ).toBe("https://laptop.local:3443/v1");
+  });
+
+  /**
+   * nginx terminates TLS at the named front doors, so a certificate presented
+   * there reaches nginx and stops: there is nothing to suggest.
+   */
+  it("is nothing for a named environment", () => {
+    expect(servicesUrlFor({ kind: "named", name: "dev" })).toBeUndefined();
+  });
+
+  it("is nothing until there is a host", () => {
+    expect(
+      servicesUrlFor({ kind: "custom", protocol: "https", host: " " }),
+    ).toBeUndefined();
+    expect(
+      servicesUrlFor({ kind: "custom", protocol: "https", host: "no spaces" }),
+    ).toBeUndefined();
   });
 });

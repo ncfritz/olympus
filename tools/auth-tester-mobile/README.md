@@ -133,3 +133,90 @@ Beside each sits a presence marker, written _without_ authentication, because
 ID was declined or the item was invalidated by a biometric change. Without the
 marker, cancelling a prompt reads as "not signed in" — and the app would
 cheerfully start a second session for someone who was already in one.
+
+## Certificate calls
+
+The other half of ADR 0018, and the half a terminal cannot answer: the services
+listener on `3443` authenticates the **caller**, by the certificate it presents,
+with no token and no user. The question this section exists for is whether an app
+can present one at all.
+
+It cannot, not on its own: React Native's networking has no way to answer a
+client-certificate challenge, because the identity has to reach a `URLSession`
+delegate and only native code holds one. So the transport is swapped and nothing
+else is — `createOlympusClients({ axios: { adapter } })` with an adapter over the
+`client-identity` module, and above it the same generated SDK, the same
+interceptors, the same `X-Olympus-Client`. If the SDK works here it works in the
+iOS app.
+
+Four things, in order:
+
+1. **The listener.** Its own port, reached **directly**: a certificate presented
+   at one of the named front doors reaches nginx, which terminates TLS, and
+   stops there. The field suggests `https://<the host above>:3443/v1`.
+2. **Choose .p12** — an identity from the Files app, and **Import** with its
+   passphrase. `scripts/dev-ca.sh` writes one per agent under
+   `infra/dev-ca/certs/agents/`, passphrase `olympus`; AirDrop one to the phone.
+   The subject appears on screen, which is how you see which identity is
+   presenting.
+3. **Choose CA** — `infra/dev-ca/certs/services-ca.crt`, the whole chain. The
+   API's own certificate comes from the service issuer, so this one bundle is
+   both what the listener trusts for callers and what a caller trusts for it. A
+   phone does not know a private CA, and installing a throwaway root on a test
+   device is worse than holding its certificate: the evaluation is the system's,
+   only against these authorities and **not** the system's as well, so a public
+   certificate for the same name does not pass either.
+4. **The client name** — `X-Olympus-Client`, defaulting to the certificate's
+   common name. The API refuses a request where the two disagree, which is worth
+   doing on purpose and not by accident, so it can be typed. With
+   `AUTH_MODE_SERVICES=report` it is logged rather than refused, and a
+   deliberate mismatch answers 200.
+
+What each answer means:
+
+| Presenting                                  | Expected                                                   |
+| ------------------------------------------- | ---------------------------------------------------------- |
+| `agents/dionysus-search-agent.p12`          | 200 — an app can present a client certificate              |
+| `devices/dev-valid.p12`                     | refused: a device identity is not a service one (ADR 0023) |
+| `agents/svc-revoked.p12`, `svc-expired.p12` | refused during the handshake                               |
+| nothing imported                            | refused, and worth seeing: the call still goes out         |
+
+A refused handshake has **no status**. The listener never accepted the caller, so
+there is nothing to answer with; what lands in the log is whatever the system
+said about it, and the reason — which certificate, which check — is in the API's
+log rather than on the phone.
+
+**The name has to be in the certificate.** A phone reaches a laptop by address,
+and `api.crt` carries `localhost` and `127.0.0.1`, which on a phone mean the
+phone. Trusting the CA does not help: the evaluation still checks the name.
+Reissue with it:
+
+```sh
+./scripts/dev-ca.sh --force --san IP:192.168.1.10
+```
+
+Failing that, the error is a certificate one and reads like a broken CA import.
+
+## The client-identity module
+
+`modules/client-identity`, a local Expo module, Swift, iOS only. It imports a
+PKCS#12, holds the identity, and makes requests on a `URLSession` whose delegate
+answers both halves of the handshake: the client certificate with the identity,
+and the server's trust evaluation against the authorities it was given.
+
+The identity is held **in memory**, not added to the Keychain. A tester that
+installed identities permanently would leave them behind after a reinstall, and
+choosing when to persist one is the real app's decision rather than this one's.
+"Forget" is therefore honest: there was never anything on disk.
+
+It needs a development build — `npx expo prebuild --clean` once, then
+`npx expo run:ios`. There is no web implementation and there cannot be: the
+certificate store belongs to the browser, and a page can neither choose from it
+nor hold a key. The `.web.ts` variant says exactly that and throws.
+
+The translation between an axios request and the module is `src/mutualTls.ts`,
+which is where the tests are: the module arrives as an argument rather than an
+import, so what it does with a URL, with headers, with a body and with a status
+is testable without a device. `src/identity.ts` is the wiring that passes the
+real one, and its type annotation is what keeps the two declarations of the
+native shapes from drifting.

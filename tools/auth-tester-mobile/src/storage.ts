@@ -9,6 +9,14 @@ export type Settings = {
   ephemeral: boolean;
   /** Face ID to read the stored tokens. Off for a simulator, which never prompts. */
   requireAuthentication: boolean;
+  /**
+   * The services listener, as typed. Not derived from the target: it is a
+   * different port and is reached directly rather than through nginx, so the
+   * host may be right while everything else about the URL is not.
+   */
+  servicesBaseUrl?: string;
+  /** `X-Olympus-Client` for certificate calls; the certificate's common name by default. */
+  serviceClientName?: string;
 };
 
 export const loadSettings = async (): Promise<Settings | undefined> => {

@@ -24,6 +24,7 @@ import {
   resolve,
 } from "./src/endpoints";
 import { type Called, createCaller, type Listed } from "./src/api";
+import { CertificateCalls } from "./src/CertificateCalls";
 import { PROVIDER, REDIRECT_URI, signIn } from "./src/signIn";
 import { styles } from "./src/styles";
 import {
@@ -576,6 +577,21 @@ export default function App() {
             <Text style={styles.buttonQuietText}>Sign out</Text>
           </Pressable>
         </View>
+
+        {loaded && (
+          <CertificateCalls
+            target={settings.target}
+            baseUrl={settings.servicesBaseUrl ?? ""}
+            clientName={settings.serviceClientName ?? ""}
+            onChange={(next) =>
+              change({
+                ...settings,
+                servicesBaseUrl: next.baseUrl,
+                serviceClientName: next.clientName,
+              })
+            }
+          />
+        )}
 
         <Text style={styles.heading}>This device</Text>
         <Text style={styles.note}>

@@ -128,6 +128,27 @@ export const baseUrlOf = (target: Target): string | undefined => {
   return "baseUrl" in answer ? answer.baseUrl : undefined;
 };
 
+/**
+ * The services listener (ADR 0018): a second port, with its own certificate,
+ * that authenticates a caller by the one it presents.
+ */
+export const SERVICES_PORT = "3443";
+
+/**
+ * Where the services listener answers on the machine a custom target names.
+ *
+ * Only for a custom target: the named front doors are nginx, which terminates
+ * TLS -- a client certificate presented there reaches nginx and stops, so the
+ * only way to exercise the border is to talk to the listener directly. Always
+ * `https`, since a cleartext port could not ask for a certificate at all.
+ */
+export const servicesUrlFor = (target: Target): string | undefined => {
+  if (target.kind === "named") return undefined;
+  const host = (target.host.trim().split(":")[0] ?? "").toLowerCase();
+  if (host === "" || !HOST.test(host)) return undefined;
+  return `https://${host}:${SERVICES_PORT}${DIRECT_PATH}`;
+};
+
 export const isResolved = (answer: Resolved | Unresolved): answer is Resolved =>
   "baseUrl" in answer;
 

@@ -72,6 +72,28 @@ Two things it is deliberately not:
   It exists when React Native cannot do the thing at all — presenting a
   client certificate, for instance — and not to wrap something JavaScript
   already reaches.
+- `npx create-expo-module@latest --local <name>` scaffolds one under
+  `modules/<name>`: `expo-module.config.json` names the platforms it supports
+  and the Swift class to register, `ios/` holds the module and its podspec, and
+  `src/` holds the TypeScript surface. Autolinking finds it; the app imports it
+  by relative path (`../modules/client-identity`).
+- **Narrow the platforms to the ones that exist.** `platforms: ["apple"]` with
+  no Android in the config is honest; a scaffolded Android directory nobody
+  compiles is not. The `.web.ts` variant stays, and every function on it
+  throws with the reason — a page cannot hold a key or choose from the
+  browser's certificate store — because the bundler resolves it on web whether
+  or not the config mentions web.
+- **Declare the surface by hand.** There is no generator: the `declare class`
+  in `src/<Name>Module.ts` is what TypeScript believes, and nothing checks it
+  against the Swift. Reading the Swift is the review.
+- A new native module means `npx expo prebuild --clean` and another
+  `npx expo run:ios`; a JavaScript-only change does not.
+- Anything that has to reach the module _and_ be unit-tested is two files: the
+  translation, with the module's function passed in as an argument, and the
+  wiring that passes it. `tools/auth-tester-mobile/src/mutualTls.ts` and
+  `src/identity.ts` are that pair, and the second's type annotation is what
+  keeps the re-declared shapes in `src/nativeShapes.ts` honest — see the test
+  boundary below for why they are re-declared at all.
 
 ## Layout and tests
 

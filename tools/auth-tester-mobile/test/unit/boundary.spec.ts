@@ -12,7 +12,13 @@ import { describe, expect, it } from "vitest";
  * do with the code. Keeping the boundary is cheaper than transforming React
  * Native to test the parts of this app that are just code.
  */
-const PURE = ["called.ts", "endpoints.ts", "keys.ts", "session.ts"];
+const PURE = [
+  "called.ts",
+  "endpoints.ts",
+  "keys.ts",
+  "mutualTls.ts",
+  "session.ts",
+];
 
 const source = (file: string): string =>
   fs.readFileSync(path.join(__dirname, "../../src", file), "utf8");
