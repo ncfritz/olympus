@@ -1,13 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
-import type { FormAnswer } from "../../src/oauth";
+import type { FormAnswer, FormPost } from "../../src/oauth";
 import { checkReuseDetection } from "../../src/reuse";
 
+// Typed as a `FormPost`, which is what makes `post.mock.calls[n][1]` the form
+// this asserts on: a `vi.fn` over a zero-argument function has an empty tuple
+// for its calls, and indexing it does not compile.
 const answering = (...answers: Partial<FormAnswer>[]) => {
   const queue = [...answers];
-  return vi.fn(async (): Promise<FormAnswer> => {
+  const post: FormPost = async () => {
     const next = queue.shift() ?? { status: 500 };
     return { status: 200, body: {}, headers: {}, ...next };
-  });
+  };
+  return vi.fn(post);
 };
 
 const REFUSED = { status: 400, body: { error: "invalid_grant" } };
