@@ -15,12 +15,13 @@ import { IoProvider } from "socket.io-react-hook";
 import { AuthProvider } from "../auth/AuthProvider";
 import AuthWrapper from "../components/layout/AuthWrapper";
 import { store } from "../redux/store";
+import { GOOGLE_MAPS_API_KEY } from "../utils/constants";
 
 const App = ({ Component, pageProps }: AppProps) => {
   return (
     <IoProvider>
       <CookiesProvider>
-        <APIProvider apiKey={"AIzaSyC9lBe6ekSrwsw5QUVoGzmM80vxB509SXM"}>
+        <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
           <Provider store={store}>
             <AuthProvider>
               <AuthWrapper>

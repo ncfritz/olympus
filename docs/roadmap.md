@@ -336,9 +336,13 @@ status` is only clean while the installed version matches the committed one --
   so both must be rotated at the source: a new secret for the GitHub OAuth app,
   and `NEXTAUTH_SECRET` retired outright once phase 5 removes NextAuth.
 
-- A Google Maps API key is hard-coded in `src/pages/_app.tsx`. Move it to
-  `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, and restrict the key by referrer in
-  the Google console.
+- **Rotate credentials**: the Google Maps API key. It was hard-coded in the
+  site's `src/pages/_app.tsx` and is now read from
+  `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (2026-09-28), but it stayed in the site's
+  history through the import and was in every bundle the site has ever served,
+  so the value itself has to go: a new key in the Google console, restricted by
+  HTTP referrer to the site's own names. A browser key is public by design --
+  restricting it is what limits the damage, not hiding it.
 - `eslint.ignoreDuringBuilds: true` and `reactStrictMode: false` in
   `next.config.mjs`.
 - About 1,700 inline style objects in about 225 files.
