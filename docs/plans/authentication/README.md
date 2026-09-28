@@ -310,7 +310,18 @@ everything else wait for the site's own conventions work.
    [docs/guides/certificates.md](../../guides/certificates.md)).
 3. `certificate_expiry_days` per certificate the API loads, so a renewal
    is due long before a handshake starts failing.
-4. Dashboards later (the monitoring conversation): `auth_decisions_total`
+4. **`iss` on access tokens.** The API issues none and
+   `verifyAccessToken` does not ask for one. RFC 9068 requires it, and
+   anything that validates a token without being this API — nginx, the site
+   reading claims, a service that arrives later — looks for it. Two deploys
+   in this order: emit it (from `AUTH_PUBLIC_BASE_URL`), then require it on
+   verify once nothing in circulation predates the first. Requiring it in one
+   deploy invalidates every token already issued, which is a sign-out for
+   everybody. Not urgent: the signing keys already stop a token crossing
+   environments, since another environment's `kid` is unknown — so this is
+   conformance rather than a hole, and `jti` stays out (nothing reads the
+   database to authenticate, so there is nothing to look a token up in).
+5. Dashboards later (the monitoring conversation): `auth_decisions_total`
    and the request metrics by client.
 
 ## Phase 8 — Enforcement
