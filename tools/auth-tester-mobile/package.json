@@ -9,7 +9,7 @@
     "start": "expo start",
     "ios": "expo start --ios",
     "android": "expo start --android",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
     "lint": "expo lint",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@ncfritz/olympus-config": "workspace:*",
+    "@types/node": "catalog:",
     "@types/react": "~19.2.2",
     "@vitest/coverage-v8": "catalog:",
     "typescript": "catalog:",
