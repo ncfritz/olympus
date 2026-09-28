@@ -1,9 +1,10 @@
 import { EditOutlined, InboxOutlined, SearchOutlined } from "@ant-design/icons";
 import { Avatar, Badge, Button, Col, Input, Layout, Row } from "antd";
-import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useSocket, useSocketEvent } from "socket.io-react-hook";
+import { useAuth } from "../../auth/AuthProvider";
+import { initials } from "../../auth/initials";
 import notificationsApi from "../../api/notificationsApi";
 import onairApi from "../../api/onairApi";
 import { useAppSelector } from "../../redux/hooks";
@@ -21,7 +22,7 @@ import { Events, publish } from "../../utils/events";
 const { Header } = Layout;
 
 const AuthHeader: React.FunctionComponent = () => {
-  const session = useSession();
+  const auth = useAuth();
   const dispatch = useDispatch();
   const { socket } = useSocket("/notifications");
 
@@ -195,12 +196,17 @@ const AuthHeader: React.FunctionComponent = () => {
               </Col>
               <Col>
                 <Avatar
-                  src={session.data?.user?.image}
                   style={{ cursor: "pointer" }}
                   onClick={() => {
                     setSettingsOpen(true);
                   }}
-                />
+                >
+                  {initials(
+                    auth.status === "signed-in"
+                      ? auth.user.displayName
+                      : undefined,
+                  )}
+                </Avatar>
               </Col>
             </Row>
           </Col>

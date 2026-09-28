@@ -1,76 +1,21 @@
-import { GithubOutlined } from "@ant-design/icons";
-import { Button, Card, Space, Spin } from "antd";
+import { GoogleOutlined } from "@ant-design/icons";
+import { Alert, Button, Card, Space } from "antd";
 import { Content } from "antd/lib/layout/layout";
-import type { BuiltInProviderType } from "next-auth/providers/index";
-import {
-  type ClientSafeProvider,
-  getProviders,
-  type LiteralUnion,
-  signIn,
-} from "next-auth/react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useState } from "react";
+import { PROVIDERS } from "../../auth/providers";
+import { API_BASE_URL } from "../../auth/interceptors";
+import { startSignIn } from "../../auth/signIn";
 
-interface ProviderMeta {
-  name: string;
-  icon: ReactNode;
-}
-
-const PROVIDER_META: Record<string, ProviderMeta> = {
-  github: {
-    name: "GitHub",
-    icon: <GithubOutlined />,
-  },
+const ICONS: Record<string, ReactNode> = {
+  google: <GoogleOutlined />,
 };
 
 const SignInPage: React.FunctionComponent = () => {
-  const [loadingProviders, setLoadingProviders] = useState(true);
-  const [providers, setProviders] = useState<
-    | Record<LiteralUnion<BuiltInProviderType, string>, ClientSafeProvider>
-    | undefined
-  >();
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoadingProviders(true);
-        const res = await getProviders();
-        setProviders(res === null ? undefined : res);
-      } finally {
-        setTimeout(() => {
-          setLoadingProviders(false);
-        }, 1500);
-      }
-    })();
-  }, []);
-  let providersList: ReactNode | ReactNode[] = (
-    <Space style={{ width: "100%" }}>
-      <Spin size={"large"} />
-    </Space>
-  );
-
-  if (!loadingProviders) {
-    providersList = Object.values(providers!).map((provider) => {
-      const providerMeta = PROVIDER_META[provider.name];
-
-      if (!providerMeta) {
-        return undefined;
-      }
-
-      return (
-        <Button
-          key={`oauth-btn-${provider.name}`}
-          icon={providerMeta.icon}
-          size={"large"}
-          block={true}
-          onClick={async () => {
-            await signIn(provider.id);
-          }}
-        >
-          Log in with {providerMeta.name}
-        </Button>
-      );
-    });
-  }
+  // Set while the browser is on its way out to the provider: the navigation is
+  // not instant, and two clicks would be two sign-ins with two verifiers, of
+  // which only the second could be completed.
+  const [leaving, setLeaving] = useState(false);
+  const [problem, setProblem] = useState<string | undefined>(undefined);
 
   return (
     <Content
@@ -86,14 +31,41 @@ const SignInPage: React.FunctionComponent = () => {
       <Card
         style={{ width: 450 }}
         hoverable={false}
-        cover={<img src={"/auth_header.png"} />}
+        cover={<img src={"/auth_header.png"} alt={"Olympus"} />}
       >
         <Space
           direction={"vertical"}
           size={16}
           style={{ display: "flex", flexGrow: 1, alignItems: "center" }}
         >
-          {providersList}
+          {problem !== undefined && (
+            <Alert type={"error"} message={problem} showIcon={true} />
+          )}
+          {PROVIDERS.map((provider) => (
+            <Button
+              key={`provider-${provider.id}`}
+              icon={ICONS[provider.id]}
+              size={"large"}
+              block={true}
+              loading={leaving}
+              onClick={() => {
+                setProblem(undefined);
+                setLeaving(true);
+                startSignIn(API_BASE_URL, provider.id).catch(
+                  (error: unknown) => {
+                    setLeaving(false);
+                    setProblem(
+                      error instanceof Error
+                        ? error.message
+                        : "Sign-in could not be started.",
+                    );
+                  },
+                );
+              }}
+            >
+              Log in with {provider.label}
+            </Button>
+          ))}
         </Space>
       </Card>
     </Content>

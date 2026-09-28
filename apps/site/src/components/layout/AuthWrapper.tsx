@@ -1,9 +1,11 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { Spin } from "antd";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import { useCallback, useEffect } from "react";
 import { useCookies } from "react-cookie";
+import { useAuth } from "../../auth/AuthProvider";
 import SignInPage from "../../pages/auth/signin";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { setCurtain } from "../../redux/slices/blackCurtainSlice";
@@ -67,10 +69,27 @@ const AuthWrapper: React.FunctionComponent<AuthWrapperProps> = ({
     };
   }, [handleKeyPress]);
 
-  const { data: session } = useSession();
+  const auth = useAuth();
+  const router = useRouter();
   let content;
 
-  if (session) {
+  if (router.pathname.startsWith("/auth/")) {
+    // The sign-in and callback pages have to render before there is a session:
+    // the callback page is where one is obtained. Wrapping them in the check
+    // would replace the callback with the sign-in page and lose the code.
+    content = <NoAuthLayout>{children}</NoAuthLayout>;
+  } else if (auth.status === "loading") {
+    // The refresh cookie is httpOnly, so "signed in?" is a round trip. Showing
+    // the sign-in page while it is in flight would flash it at everybody who
+    // already is.
+    content = (
+      <NoAuthLayout>
+        <div style={{ display: "flex", justifyContent: "center", padding: 64 }}>
+          <Spin size={"large"} />
+        </div>
+      </NoAuthLayout>
+    );
+  } else if (auth.status === "signed-in") {
     content = <AuthLayout>{children}</AuthLayout>;
   } else {
     content = (

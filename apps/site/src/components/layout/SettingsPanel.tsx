@@ -8,8 +8,10 @@ import {
   Switch,
   Typography,
 } from "antd";
-import { DateTime } from "luxon";
-import { signOut, useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import authApi from "../../api/authApi";
+import { useAuth } from "../../auth/AuthProvider";
+import { initials } from "../../auth/initials";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { setCurtain } from "../../redux/slices/blackCurtainSlice";
 
@@ -19,15 +21,40 @@ const SettingsPanel: React.FunctionComponent<
   SettingsPanelProps
 > = ({}: SettingsPanelProps) => {
   const dispatch = useAppDispatch();
-  const session = useSession();
+  const auth = useAuth();
+  const user = auth.status === "signed-in" ? auth.user : undefined;
 
   const blackCurtainEnabled = useAppSelector(
     (state) => state.blackCurtain.active,
   );
 
-  const expirationTime = DateTime.fromISO(
-    session.data?.expires || DateTime.now().toISO(),
-  ).toMillis();
+  /**
+   * When this browser's session ends, which is the refresh token's expiry and
+   * not the access token's ten minutes. Nothing in the page knows it -- the
+   * refresh token is a cookie no script can read -- so it is asked for. The
+   * countdown NextAuth fed from `session.expires` had the same meaning.
+   */
+  const [expiresAt, setExpiresAt] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (user === undefined) return;
+    let current = true;
+    void (async () => {
+      try {
+        const sessions = (await authApi.listSessions()).data.sessions;
+        const mine = sessions.find((session) => session.current);
+        if (current && mine !== undefined) {
+          setExpiresAt(new Date(mine.expiresTime).getTime());
+        }
+      } catch {
+        // Worth a blank countdown and nothing more: the panel's job is the
+        // switch and the sign-out button.
+      }
+    })();
+    return () => {
+      current = false;
+    };
+  }, [user]);
 
   return (
     <Flex vertical={true} style={{ height: "100%" }}>
@@ -40,7 +67,9 @@ const SettingsPanel: React.FunctionComponent<
           borderBottom: "1px solid #efefef",
         }}
       >
-        <Avatar size={96} src={session.data?.user?.image} shape={"square"} />
+        <Avatar size={96} shape={"square"}>
+          {initials(user?.displayName)}
+        </Avatar>
         <Space
           direction={"vertical"}
           size={0}
@@ -50,20 +79,22 @@ const SettingsPanel: React.FunctionComponent<
             level={4}
             style={{ marginBottom: 4, lineHeight: 1 }}
           >
-            {session.data?.user?.name}
+            {user?.displayName}
           </Typography.Title>
           <Typography.Title
             level={5}
             style={{ fontWeight: 400, lineHeight: 1 }}
           >
-            {session.data?.user?.email}
+            {user?.email}
           </Typography.Title>
-          <Statistic.Countdown
-            title="Expiration"
-            value={expirationTime}
-            format="DD [days], HH [hours] mm:ss"
-            valueStyle={{ fontSize: 18 }}
-          />
+          {expiresAt !== undefined && (
+            <Statistic.Countdown
+              title="Expiration"
+              value={expiresAt}
+              format="DD [days], HH [hours] mm:ss"
+              valueStyle={{ fontSize: 18 }}
+            />
+          )}
         </Space>
       </Space>
       <Flex
@@ -106,7 +137,7 @@ const SettingsPanel: React.FunctionComponent<
             danger={true}
             type={"primary"}
             onClick={() => {
-              signOut();
+              void auth.signOut();
             }}
           >
             Log Out
