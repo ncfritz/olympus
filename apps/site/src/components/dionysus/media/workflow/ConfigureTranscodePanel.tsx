@@ -1,6 +1,6 @@
 import { CheckOutlined } from "@ant-design/icons";
 import type {
-  MediaAssetWorkflow,
+  DecoratedMediaAssetWorkflow,
   MediaAssetWorkflowStep,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Button, Card, Empty, Result, Radio, Space, Typography } from "antd";
@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from "uuid";
 const DynamicReactJson = dynamic(import("react-json-view"), { ssr: false });
 
 export interface ConfigureTranscodePanelProps {
-  workflow: MediaAssetWorkflow;
+  workflow: DecoratedMediaAssetWorkflow;
 }
 
 const ConfigureTranscodePanel: React.FunctionComponent<

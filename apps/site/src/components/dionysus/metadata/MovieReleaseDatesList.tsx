@@ -24,6 +24,8 @@ const MovieReleaseDateList: React.FunctionComponent<
 
     if (releaseDates && releaseDates.length > 0) {
       releaseDates.forEach((item) => {
+        // Grouped by country: a release the API sent without one has no bucket.
+        if (!item.country) return;
         if (!newData.has(item.country.id)) {
           newCountryData.set(item.country.id, item.country);
           newData.set(item.country.id, []);
@@ -68,7 +70,12 @@ const MovieReleaseDateList: React.FunctionComponent<
             direction={"vertical"}
           >
             {item.map((release) => {
-              const releaseDate = DateTime.fromISO(release.releaseDate);
+              // `???` is what this component already shows for a certification
+              // it was not given; an absent date reads the same way, and
+              // `fromISO(undefined)` would print "Invalid DateTime".
+              const releaseDate = release.releaseDate
+                ? DateTime.fromISO(release.releaseDate).toLocaleString()
+                : "???";
 
               return (
                 <Space
@@ -95,7 +102,7 @@ const MovieReleaseDateList: React.FunctionComponent<
                     <Typography.Text
                       style={{ fontSize: "11px", color: "#666666" }}
                     >
-                      ({releaseDate.toLocaleString()})
+                      ({releaseDate})
                     </Typography.Text>
                   </Space>
                   {release.note && (

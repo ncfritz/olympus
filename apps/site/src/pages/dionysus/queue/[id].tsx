@@ -3,7 +3,7 @@ import {
   LoadingOutlined,
   OrderedListOutlined,
 } from "@ant-design/icons";
-import type { MediaAssetWorkflow } from "@ncfritz/olympus-sdk/dionysus";
+import type { DecoratedMediaAssetWorkflow } from "@ncfritz/olympus-sdk/dionysus";
 import { Empty, Space, Steps } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -38,7 +38,7 @@ const IndexPage: React.FunctionComponent = () => {
 
   const [workflow, workflowLoading, workflowError, fetchWorkflow] = useFetch<
     string,
-    MediaAssetWorkflow
+    DecoratedMediaAssetWorkflow
   >({
     dataType: "Media workflow",
     watch: [id],

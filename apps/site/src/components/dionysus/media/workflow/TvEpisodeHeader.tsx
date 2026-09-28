@@ -39,7 +39,11 @@ const TvEpisodeHeader: React.FunctionComponent<TvEpisodeHeaderProps> = ({
     </LoadingWrapper>
   );
 
-  if (episode) {
+  // The series is the whole of this header -- poster, name, link -- and the SDK
+  // now types it optional, so an episode without one has nothing to draw. It
+  // keeps the loading placeholder, which beats what it did before: read
+  // `backdropPath` off undefined and throw during render.
+  if (episode?.series) {
     const headerBackgroundUrl = episode?.series.backdropPath
       ? `https://image.tmdb.org/t/p/w1280/${episode.series.backdropPath}`
       : "/section_header.png";
@@ -150,7 +154,7 @@ const TvEpisodeHeader: React.FunctionComponent<TvEpisodeHeaderProps> = ({
                 level={4}
                 style={{ color: "#ffffffcc", marginBottom: 3 }}
               >
-                Season {episode.season.seasonNumber}
+                Season {episode.seasonNumber}
               </Typography.Title>
             </Link>
             <Typography.Title

@@ -20,8 +20,11 @@ import { getProgressColor } from "./util";
 import { v4 as uuidv4 } from "uuid";
 
 export interface TvEpisodeListProps {
-  series: BaseTvSeries;
-  episodes: SparseEpisode[];
+  // Optional, because the caller hands this `loading` and `error` and renders it
+  // while the season is still arriving -- which the body below has always
+  // handled, with an Empty. Only the types claimed otherwise.
+  series?: BaseTvSeries;
+  episodes?: SparseEpisode[];
   currentEpisode?: number;
   loading: boolean;
   error: any;
@@ -203,7 +206,7 @@ const TvEpisodeList: React.FunctionComponent<TvEpisodeListProps> = ({
 }: TvEpisodeListProps) => {
   const episodeCards: ReactNode[] = [];
 
-  if (episodes) {
+  if (episodes && series) {
     episodes.forEach((episode) => {
       episodeCards.push(
         <TvEpisodeListCard

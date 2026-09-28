@@ -1,6 +1,6 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import type {
-  MediaAssetWorkflow,
+  DecoratedMediaAssetWorkflow,
   MediaAssetWorkflowStep,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Empty, Radio, Result, Space } from "antd";
@@ -13,7 +13,7 @@ import MediaAssetFFMpegDetails from "../../../content/MediaAssetFFMpegDetails";
 import MediaAssetHandbrakeDetails from "../../../content/MediaAssetHandbrakeDetails";
 
 export interface MetadataDetailsPanelProps {
-  workflow: MediaAssetWorkflow;
+  workflow: DecoratedMediaAssetWorkflow;
   metadataStepType: "extract_original_metadata" | "extract_new_metadata";
 }
 

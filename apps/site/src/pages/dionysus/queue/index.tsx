@@ -9,7 +9,7 @@ import {
 } from "@ant-design/icons";
 import type {
   FilterDefinition,
-  MediaAssetWorkflowListItem,
+  DecoratedMediaAssetWorkflow,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
   Button,
@@ -47,7 +47,9 @@ import { useFetch } from "../../../hooks/useFetch";
 import { CertificationOutlined, MovieIcon, TvIcon } from "../../../icons";
 import { buildFilterDefinitionForTable } from "../../../utils/filters";
 
-type OnChange = NonNullable<TableProps<MediaAssetWorkflowListItem>["onChange"]>;
+type OnChange = NonNullable<
+  TableProps<DecoratedMediaAssetWorkflow>["onChange"]
+>;
 type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
@@ -65,7 +67,7 @@ const IndexPage: React.FunctionComponent = () => {
   >(undefined);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [selectedRows, setSelectedRows] = useState<
-    MediaAssetWorkflowListItem[]
+    DecoratedMediaAssetWorkflow[]
   >([]);
   const [processingRows, setProcessingRows] = useState(false);
   const [processingStatus, setProcessingStatus] = useState({
@@ -77,7 +79,7 @@ const IndexPage: React.FunctionComponent = () => {
   });
 
   const [workflows, workflowsLoading, workflowsError, fetchWorkflows] =
-    useFetch<undefined, MediaAssetWorkflowListItem[]>({
+    useFetch<undefined, DecoratedMediaAssetWorkflow[]>({
       dataType: "workflows",
       watch: [workflowsPage, workflowsSort, workflowsFilters],
       params: undefined,
@@ -95,7 +97,7 @@ const IndexPage: React.FunctionComponent = () => {
 
   const onSelectChange = (
     newSelectedRowKeys: React.Key[],
-    newSelectedRows: MediaAssetWorkflowListItem[],
+    newSelectedRows: DecoratedMediaAssetWorkflow[],
   ) => {
     setSelectedRowKeys(newSelectedRowKeys);
     setSelectedRows(newSelectedRows);
@@ -128,7 +130,7 @@ const IndexPage: React.FunctionComponent = () => {
   };
 
   const processRows = async (
-    process: (job: MediaAssetWorkflowListItem) => Promise<boolean>,
+    process: (job: DecoratedMediaAssetWorkflow) => Promise<boolean>,
   ) => {
     setProcessingRows(true);
 
@@ -171,7 +173,7 @@ const IndexPage: React.FunctionComponent = () => {
     }
   };
 
-  const columns: ColumnsType<MediaAssetWorkflowListItem> = [
+  const columns: ColumnsType<DecoratedMediaAssetWorkflow> = [
     {
       key: "asset",
       title: "Asset",

@@ -21,6 +21,8 @@ const MovieAlternativeTitlesList: React.FunctionComponent<
 
     if (alternativeTitles && alternativeTitles.length > 0) {
       alternativeTitles.forEach((item) => {
+        // Grouped by country: a title the API sent without one has no bucket.
+        if (!item.country) return;
         if (!newData.has(item.country.id)) {
           newCountryData.set(item.country.id, item.country);
           newData.set(item.country.id, []);

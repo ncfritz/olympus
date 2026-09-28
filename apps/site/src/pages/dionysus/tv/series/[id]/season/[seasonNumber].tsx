@@ -137,9 +137,14 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
     </Space>
   );
 
-  if (tvSeason) {
-    const headerBackgroundUrl = tvSeason?.series.backdropPath
-      ? `https://image.tmdb.org/t/p/w1280/${tvSeason.series.backdropPath}`
+  // Every link on this page is built from the series id, and the SDK now types
+  // the relation optional, so a season without its series has nothing to draw.
+  if (tvSeason?.series) {
+    // Taken out once: a narrowed property does not stay narrowed inside a
+    // callback, because it could change between the check and the call.
+    const series = tvSeason.series;
+    const headerBackgroundUrl = series.backdropPath
+      ? `https://image.tmdb.org/t/p/w1280/${series.backdropPath}`
       : "/section_header.png";
     const airDate = tvSeason.airDate
       ? DateTime.fromISO(tvSeason.airDate)
@@ -188,7 +193,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               return (
                 <TvEpisodeSummaryCard
                   episode={entry}
-                  seriesId={tvSeason.series.id}
+                  seriesId={series.id}
                   initialSearchConfiguration={entry.searchConfiguration}
                 />
               );
@@ -271,7 +276,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               size={350}
               bordered={false}
               errorLevel={"H"}
-              value={`${OLYMPUS_HOST}/dionysus/tv/series/${tvSeason.series.id}/season/${tvSeason.seasonNumber}`}
+              value={`${OLYMPUS_HOST}/dionysus/tv/series/${series.id}/season/${tvSeason.seasonNumber}`}
             />
           </Space>
         ),
@@ -312,7 +317,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               return (
                 <TvEpisodeSearchResultsCard
                   episode={entry}
-                  seriesId={tvSeason.series.id}
+                  seriesId={series.id}
                   initialSearchConfiguration={entry.searchConfiguration}
                 />
               );
@@ -406,7 +411,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
           style={{ display: "flex", alignItems: "center" }}
           styles={{ item: { height: 200 } }}
         >
-          <Link href={`/dionysus/tv/series/${tvSeason.series.id}`}>
+          <Link href={`/dionysus/tv/series/${series.id}`}>
             <Image
               preview={false}
               style={{
@@ -415,7 +420,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
                 borderRadius: 8,
                 margin: 24,
               }}
-              src={`https://image.tmdb.org/t/p/w342/${tvSeason.series.posterPath}}`}
+              src={`https://image.tmdb.org/t/p/w342/${series.posterPath}}`}
               alt={"Poster"}
             />
           </Link>
@@ -424,16 +429,16 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
             size={8}
             style={{ alignItems: "start", marginTop: 24 }}
           >
-            <Link href={`/dionysus/tv/series/${tvSeason.series.id}`}>
+            <Link href={`/dionysus/tv/series/${series.id}`}>
               <Typography.Title
                 level={1}
                 style={{ color: "#ffffffdd", marginBottom: 0 }}
               >
-                {tvSeason?.series.name}
+                {series.name}
               </Typography.Title>
             </Link>
             <Link
-              href={`/dionysus/tv/series/${tvSeason.series.id}/season/${tvSeason.seasonNumber}`}
+              href={`/dionysus/tv/series/${series.id}/season/${tvSeason.seasonNumber}`}
             >
               <Typography.Title
                 level={4}
@@ -488,7 +493,7 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
               <SearchConfigurationButton
                 mediaType={"tv_season"}
                 mediaId={tvSeason.id}
-                seriesId={tvSeason.series.id}
+                seriesId={series.id}
                 seasonNumber={tvSeason.seasonNumber}
                 searchConfiguration={searchConfiguration}
                 zIndex={10000}

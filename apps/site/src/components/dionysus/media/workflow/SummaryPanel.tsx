@@ -1,5 +1,5 @@
 import type {
-  MediaAssetWorkflow,
+  DecoratedMediaAssetWorkflow,
   MediaAssetWorkflowStep,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Empty, Result, Space, Typography } from "antd";
@@ -8,7 +8,7 @@ import { getStepLabel } from "../utils";
 import StepProgress from "./StepProgress";
 
 export interface SummaryPanelProps {
-  workflow: MediaAssetWorkflow;
+  workflow: DecoratedMediaAssetWorkflow;
 }
 
 const SummaryPanel: React.FunctionComponent<SummaryPanelProps> = ({

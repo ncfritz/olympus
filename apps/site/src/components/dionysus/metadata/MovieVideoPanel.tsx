@@ -30,6 +30,8 @@ const MovieVideoPanel: React.FunctionComponent<MovieVideoPanelProps> = ({
     const newLanguages: Map<string, Language> = new Map();
 
     videos.forEach((item) => {
+      // Grouped by language: a video the API sent without one has no bucket.
+      if (!item.language) return;
       if (!newVideoTypeMap.has(item.type)) {
         newVideoTypeMap.set(item.type, new Map());
       }

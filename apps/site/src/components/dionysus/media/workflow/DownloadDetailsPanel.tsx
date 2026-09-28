@@ -1,7 +1,7 @@
 import { CaretRightOutlined } from "@ant-design/icons";
 import type {
   MediaAssetDownload,
-  MediaAssetWorkflow,
+  DecoratedMediaAssetWorkflow,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Button, Collapse, Empty, Result, Space, Typography } from "antd";
 import axios from "axios";
@@ -20,7 +20,7 @@ import { v4 as uuidv4 } from "uuid";
 import StepProgress from "./StepProgress";
 
 export interface DownloadDetailsPanelProps {
-  workflow: MediaAssetWorkflow;
+  workflow: DecoratedMediaAssetWorkflow;
   download?: MediaAssetDownload;
 }
 

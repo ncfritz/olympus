@@ -42,6 +42,8 @@ const CollectionImagesPanel: React.FunctionComponent<
     const newLanguages: Map<string, Language> = new Map();
 
     images.forEach((item) => {
+      // Grouped by language: an image the API sent without one has no bucket.
+      if (!item.language) return;
       if (!newImageTypeMap.has(item.type)) {
         newImageTypeMap.set(item.type, new Map());
       }

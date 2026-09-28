@@ -198,7 +198,9 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
 
   let content = <></>;
 
-  if (episode) {
+  // The series carries every link, and the season is passed on as a required
+  // prop; the SDK now types both relations optional.
+  if (episode?.series && episode.season) {
     const headerBackgroundUrl = episode?.series.backdropPath
       ? `https://image.tmdb.org/t/p/w1280/${episode.series.backdropPath}`
       : "/section_header.png";

@@ -1,6 +1,6 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import type {
-  MediaAssetWorkflow,
+  DecoratedMediaAssetWorkflow,
   MediaAssetWorkflowStep,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Button, Col, Empty, Result, Row, Space, Typography } from "antd";
@@ -15,7 +15,7 @@ const MediaAssetPreviewPlayer = dynamic(
 );
 
 export interface VerifyConfigurationPanelProps {
-  workflow: MediaAssetWorkflow;
+  workflow: DecoratedMediaAssetWorkflow;
 }
 
 const VerifyConfigurationPanel: React.FunctionComponent<

@@ -1,6 +1,6 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import type {
-  MediaAssetWorkflow,
+  DecoratedMediaAssetWorkflow,
   MediaAssetWorkflowStep,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Empty, Result, Space } from "antd";
@@ -8,7 +8,7 @@ import React, { useEffect, useState } from "react";
 import StepProgress from "./StepProgress";
 
 export interface UploadPanelProps {
-  workflow: MediaAssetWorkflow;
+  workflow: DecoratedMediaAssetWorkflow;
 }
 
 const UploadPanel: React.FunctionComponent<UploadPanelProps> = ({
