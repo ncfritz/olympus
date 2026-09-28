@@ -122,15 +122,21 @@ public class ClientIdentityModule: Module {
       if status == errSecAuthFailed {
         throw ClientIdentityFailure(message: "the passphrase does not open that file")
       }
+      // `as?` to a CoreFoundation type is refused by the compiler, because the
+      // bridge always succeeds and the optional it hands back would be a lie.
+      // So the type is checked by its ID and then cast unconditionally, which is
+      // the same test written where it actually happens.
       guard status == errSecSuccess,
         let imported = items as? [[String: Any]],
         let first = imported.first,
-        let identity = first[kSecImportItemIdentity as String] as? SecIdentity
+        let held = first[kSecImportItemIdentity as String],
+        CFGetTypeID(held as CFTypeRef) == SecIdentityGetTypeID()
       else {
         throw ClientIdentityFailure(
           message: "no identity in that file (SecPKCS12Import returned \(status))"
         )
       }
+      let identity = held as! SecIdentity
 
       self.identity = identity
       self.chain = (first[kSecImportItemCertChain as String] as? [SecCertificate]) ?? []
