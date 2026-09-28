@@ -2,7 +2,9 @@ import type { INestApplication } from "@nestjs/common";
 import { Logger } from "@nestjs/common";
 import * as fs from "fs";
 import * as https from "https";
+import type * as tls from "tls";
 import type { AuthConfig } from "../config/configuration";
+import { recordAuthDecision } from "./authMetrics";
 import type { Listener, RequestWithPrincipal } from "./principal";
 
 const logger = new Logger("ServicesListener");
@@ -43,6 +45,23 @@ export const createServicesListener = (
       express(request, response);
     },
   );
+
+  /**
+   * A refused handshake, said out loud.
+   *
+   * Without this the only symptom is the caller's "socket hang up": the
+   * request never reaches the guard, so nothing is logged and
+   * `auth_decisions_total` never moves -- a listener whose whole job is to
+   * refuse connections was refusing them invisibly. The reason is OpenSSL's,
+   * which names the actual fault (an unknown CA, a revoked certificate, no
+   * certificate at all) rather than leaving it to be guessed at.
+   */
+  server.on("tlsClientError", (error: Error, socket: tls.TLSSocket) => {
+    logger.warn(
+      `Refused a connection from ${socket.remoteAddress ?? "an unknown address"}: ${error.message}`,
+    );
+    recordAuthDecision("services", "reject", "handshake");
+  });
 
   for (const path of services.revocationLists) {
     // `persistent: false` so a watcher never holds the process open.
