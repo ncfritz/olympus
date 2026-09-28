@@ -16,10 +16,16 @@ import Security
  * app's decision, not this one's.
  */
 
-/** Anything the caller can act on, thrown as a plain Swift error. */
-struct ClientIdentityFailure: LocalizedError {
-  let message: String
-  var errorDescription: String? { message }
+/**
+ * Anything the caller can act on.
+ *
+ * An Expo `Exception` rather than a plain Swift error: a plain one reaches
+ * JavaScript wrapped in `UnexpectedException`, which puts "unexpected" in front
+ * of every message this module means to give -- including the ones that are the
+ * answer, like a listener refusing the certificate.
+ */
+final class ClientIdentityFailure: GenericException<String> {
+  override public var reason: String { param }
 }
 
 struct RequestOptions: Record {
@@ -111,7 +117,7 @@ public class ClientIdentityModule: Module {
      */
     AsyncFunction("importIdentity") { (base64: String, password: String) -> [String: Any] in
       guard let data = Data(base64Encoded: base64) else {
-        throw ClientIdentityFailure(message: "that is not base64")
+        throw ClientIdentityFailure("that is not base64")
       }
       var items: CFArray?
       let status = SecPKCS12Import(
@@ -120,7 +126,7 @@ public class ClientIdentityModule: Module {
         &items
       )
       if status == errSecAuthFailed {
-        throw ClientIdentityFailure(message: "the passphrase does not open that file")
+        throw ClientIdentityFailure("the passphrase does not open that file")
       }
       // `as?` to a CoreFoundation type is refused by the compiler, because the
       // bridge always succeeds and the optional it hands back would be a lie.
@@ -133,7 +139,7 @@ public class ClientIdentityModule: Module {
         CFGetTypeID(held as CFTypeRef) == SecIdentityGetTypeID()
       else {
         throw ClientIdentityFailure(
-          message: "no identity in that file (SecPKCS12Import returned \(status))"
+          "no identity in that file (SecPKCS12Import returned \(status))"
         )
       }
       let identity = held as! SecIdentity
@@ -178,7 +184,7 @@ public class ClientIdentityModule: Module {
      */
     AsyncFunction("request") { (options: RequestOptions) -> [String: Any] in
       guard let url = URL(string: options.url) else {
-        throw ClientIdentityFailure(message: "\(options.url) is not a URL")
+        throw ClientIdentityFailure("\(options.url) is not a URL")
       }
       var request = URLRequest(url: url)
       request.httpMethod = options.method.uppercased()
@@ -226,15 +232,15 @@ public class ClientIdentityModule: Module {
       }.resume()
 
       if waiting.wait(timeout: .now() + options.timeout + 5) == .timedOut {
-        throw ClientIdentityFailure(message: "the request did not finish")
+        throw ClientIdentityFailure("the request did not finish")
       }
       if let failure {
         // A refused handshake arrives here, and its message is the only account
         // of it: the listener has nothing to say to a caller it never accepted.
-        throw ClientIdentityFailure(message: failure.localizedDescription)
+        throw ClientIdentityFailure(failure.localizedDescription)
       }
       guard let answer else {
-        throw ClientIdentityFailure(message: "no response and no error, which should not happen")
+        throw ClientIdentityFailure("no response and no error, which should not happen")
       }
       return answer
     }
@@ -251,12 +257,12 @@ public class ClientIdentityModule: Module {
       guard let der = Data(base64Encoded: base64),
         let certificate = SecCertificateCreateWithData(nil, der as CFData)
       else {
-        throw ClientIdentityFailure(message: "a PEM block is not a certificate")
+        throw ClientIdentityFailure("a PEM block is not a certificate")
       }
       certificates.append(certificate)
     }
     if certificates.isEmpty && !pem.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-      throw ClientIdentityFailure(message: "no BEGIN CERTIFICATE block in that file")
+      throw ClientIdentityFailure("no BEGIN CERTIFICATE block in that file")
     }
     return certificates
   }
