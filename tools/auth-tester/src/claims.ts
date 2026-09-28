@@ -41,6 +41,16 @@ const segment = (part: string, what: string): Record<string, unknown> => {
   return parsed as Record<string, unknown>;
 };
 
+/**
+ * Wide enough for the longest name printed here -- `client_id`, `auth_time` --
+ * so the values line up in one column instead of the longer names shoving
+ * theirs out of it.
+ */
+const NAME_WIDTH = 9;
+
+const line = (name: string, value: string): string =>
+  `  ${name.padEnd(NAME_WIDTH)} ${value}`;
+
 /** The claims as lines, for printing: the ones that mean something first. */
 export const describeToken = (token: DecodedToken): string[] => {
   const known = [
@@ -55,17 +65,17 @@ export const describeToken = (token: DecodedToken): string[] => {
     "exp",
   ];
   const lines = [
-    `  alg     ${string_(token.header.alg)}`,
-    `  kid     ${string_(token.header.kid)}`,
+    line("alg", string_(token.header.alg)),
+    line("kid", string_(token.header.kid)),
   ];
   for (const name of known) {
     if (name in token.claims) {
-      lines.push(`  ${name.padEnd(7)} ${claim(name, token.claims[name])}`);
+      lines.push(line(name, claim(name, token.claims[name])));
     }
   }
   for (const [name, value] of Object.entries(token.claims)) {
     if (!known.includes(name)) {
-      lines.push(`  ${name.padEnd(7)} ${string_(value)}`);
+      lines.push(line(name, string_(value)));
     }
   }
   return lines;
