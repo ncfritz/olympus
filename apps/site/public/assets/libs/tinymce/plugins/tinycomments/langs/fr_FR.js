@@ -1,0 +1,60 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("fr-FR", {
+  " (edited)": "(modifi\xe9)",
+  "1 comment will be deleted. You can't undo this action.": "1 commentaire sera supprim\xe9. Vous ne pouvez pas annuler cette action.",
+  "1 comment will be resolved. You can't undo this action.": "1 commentaire sera r\xe9solu. Vous ne pouvez pas annuler cette action.",
+  "1 day ago": "il y a 1 jour",
+  "1 hour ago": "il y a 1 heure",
+  "1 minute ago": "il y a 1 minute",
+  "1 month ago": "il y a 1 mois",
+  "1 reply": "1 r\xe9ponse",
+  "1 week ago": "il y a 1 semaine",
+  "1 year ago": "il y a 1 an",
+  "Add comment": "Ajouter un commentaire",
+  "Add comment...": "Ajouter un commentaire...",
+  "Are you sure you want to delete this comment?": "\xcates-vous s\xfbr de vouloir supprimer ce commentaire ?",
+  "Clear": "Effacer",
+  "Comment": "Commentaire",
+  "Comment Actions": "Actions de commentaire",
+  "Comment or mention with @": "Commentez ou mentionnez avec @",
+  "Comments": "Commentaires",
+  "Conversation Actions": "Actions de conversation",
+  "Delete": "Supprimer",
+  "Delete all conversations": "Supprimer toutes les conversations",
+  "Delete all conversations in the content? This cannot be undone.": "Voulez-vous supprimer toutes les conversations dans le contenu\xa0? Vous ne pourrez pas revenir en arri\xe8re.",
+  "Delete comment": "Supprimer le commentaire",
+  "Delete conversation": "Supprimer la conversation",
+  "Delete this conversation?": "Supprimer cette conversation ?",
+  "Edit": "Modifier",
+  "No users found": "Aucun utilisateur n'a \xe9t\xe9 trouv\xe9",
+  "Resolve": "R\xe9soudre",
+  "Resolve conversation": "R\xe9soudre la conversation",
+  "Resolve this conversation?": "R\xe9soudre cette conversation ?",
+  "SHOW LESS": "AFFICHER MOINS",
+  "SHOW MORE": "AFFICHER PLUS",
+  "Save": "Enregistrer",
+  "Saving": "Enregistrement",
+  "Show comments": "Afficher les commentaires",
+  "You are not allowed to delete all the conversations": "Vous n'\xeates pas autoris\xe9 \xe0 supprimer toutes les conversations",
+  "You are not allowed to delete this comment": "Vous n'\xeates pas autoris\xe9 \xe0 supprimer ce commentaire",
+  "You are not allowed to delete this conversation": "Vous n'\xeates pas autoris\xe9 \xe0 supprimer cette conversation",
+  "You are not allowed to edit this comment": "Vous n'\xeates pas autoris\xe9 \xe0 modifier ce commentaire",
+  "You are not allowed to resolve this conversation": "Vous n'\xeates pas autoris\xe9 \xe0 r\xe9soudre cette conversation",
+  "a moment ago": "il y a un instant",
+  "{0} comments will be deleted. You can't undo this action.": "{0} commentaires seront supprim\xe9s. Vous ne pouvez pas annuler cette action.",
+  "{0} comments will be resolved. You can't undo this action.": "{0} commentaires seront supprim\xe9s. Vous ne pouvez pas annuler cette action.",
+  "{0} days ago": "il y a {0} jours",
+  "{0} hours ago": "il y a {0} heures",
+  "{0} minutes ago": "il y a {0} minutes",
+  "{0} months ago": "il y a {0} mois",
+  "{0} replies": "{0} r\xe9ponses",
+  "{0} weeks ago": "il y a {0} semaines",
+  "{0} years ago": "il y a {0} ans"
+});
+
+console.warn('TinyMCE language code "fr_FR" is deprecated, please use "fr-FR" instead.');

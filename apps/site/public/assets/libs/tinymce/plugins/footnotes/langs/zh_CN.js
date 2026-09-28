@@ -1,0 +1,12 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("zh-CN", {
+  "Insert footnote": "\u63d2\u5165\u811a\u6ce8",
+  "Update footnotes": "\u66f4\u65b0\u811a\u6ce8"
+});
+
+console.warn('TinyMCE language code "zh_CN" is deprecated, please use "zh-CN" instead.');

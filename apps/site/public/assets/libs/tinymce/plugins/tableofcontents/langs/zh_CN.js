@@ -1,0 +1,12 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("zh-CN", {
+  "Table of contents": "\u76ee\u5f55",
+  "Update": "\u66f4\u65b0"
+});
+
+console.warn('TinyMCE language code "zh_CN" is deprecated, please use "zh-CN" instead.');

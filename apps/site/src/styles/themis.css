@@ -1,0 +1,68 @@
+section.ant-layout {
+
+  background-color: #fff;
+}
+
+.vtext {
+  writing-mode: vertical-lr;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center
+}
+
+.dataCell:hover {
+  background-color: #fffbf5;
+}
+
+.dataCell {
+  padding: 4px;
+}
+.b-b1 { border-bottom: 1px solid #e6e6e6; }
+.b-b1-d { border-bottom: 1px dashed #e6e6e6; }
+.b-t1 { border-top: 1px solid #e6e6e6; }
+.b-t1-d { border-top: 1px dashed #e6e6e6; }
+.b-r1 { border-right: 1px solid #e6e6e6; }
+.b-r1-d { border-right: 1px dashed #e6e6e6; }
+.b-l1 { border-left: 1px solid #e6e6e6; }
+.b-l1-d { border-left: 1px dashed #e6e6e6; }
+
+.p5 {
+  padding: 5px;
+}
+
+.t-c {
+  display: flex;
+  justify-content: center;
+  align-content: center;
+}
+
+.t-c-b {
+  display: flex;
+  justify-content: center;
+  align-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.break {
+  border-top: 3px red dashed;
+}
+
+@media print {
+  header,
+  aside,
+  .edit_button,
+  .actions {
+    display: none!important;
+  }
+  section.main {
+    margin: 0px !important;
+  }
+  .break {
+    page-break-before: always;
+    border: none !important;
+  }
+  .print-break-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

@@ -1,0 +1,171 @@
+.oa-event {
+    padding: 1px;
+    border: 1px solid #e6e6e6;
+    margin-left: 12px;
+    border-left: 8px !important;
+    border-left-style: solid !important;
+    background-color: #ffffff;
+}
+.oa-event.selected {
+    background-color: #fffcf4;
+}
+
+.oa-event.minerva-event {
+    padding: 8px 8px 8px 16px !important;
+}
+.oa-event.no-gutter {
+    margin-left: 0px !important;
+}
+
+.oa-event .fc-event-main {
+    color: #333333;
+    padding: 4px;
+}
+.fc-event-selected .fc-event-main {
+    background-color: #d4dbe1 !important;
+}
+.oa-event-detail {
+    padding: 8px;
+    border: 1px solid #e6e6e6;
+    border-left-width: 10px !important;
+    border-radius: 6px;
+    height: 90px;
+}
+.oa-status-free {
+    border-left-color: #d3d3d3 !important;
+}
+.oa-status-busy {
+    border-left-color: #937bd1 !important;
+}
+.oa-status-oof {
+    border-left-color: #813d5f !important;
+}
+.oa-status-tentative {
+    border-left: 1px solid #cccccc !important;
+    padding-left: 8px !important;
+}
+.oa-override-clear {
+    border-color: #dddddd !important;
+    background:
+            linear-gradient(45deg, transparent 45%, #dddddd 45%, #dddddd 55%, transparent 55%) 0 0/10px 10px,
+            linear-gradient(45deg, transparent 45%, #dddddd 45%, #dddddd 55%, transparent 55%) 5px 0px/10px 10px;
+}
+.oa-override-free {
+    border-color: #009900 !important;
+    background:
+            linear-gradient(45deg, transparent 45%, #009900 45%, #009900 55%, transparent 55%) 0 0/10px 10px,
+            linear-gradient(45deg, transparent 45%, #009900 45%, #009900 55%, transparent 55%) 5px 0px/10px 10px;
+}
+.oa-override-interrupt {
+    border-color: #ffcc00 !important;
+    background:
+            linear-gradient(45deg, transparent 45%, #ffcc00 45%, #ffcc00 55%, transparent 55%) 0 0/10px 10px,
+            linear-gradient(45deg, transparent 45%, #ffcc00 45%, #ffcc00 55%, transparent 55%) 5px 0px/10px 10px;
+}
+.oa-override-dnd {
+    border-color: #ff0000 !important;
+    background:
+            linear-gradient(45deg, transparent 45%, #ff0000 45%, #ff0000 55%, transparent 55%) 0 0/10px 10px,
+            linear-gradient(45deg, transparent 45%, #ff0000 45%, #ff0000 55%, transparent 55%) 5px 0px/10px 10px;
+}
+.oa-status-tentative:before {
+    content: "";
+    z-index: 10;
+    height: 100%;
+    width: 8px;
+    left: 0px;
+    top: 0px;
+    display: block;
+    position: absolute;
+    background:
+            linear-gradient(-45deg, transparent 45%, #937bd1 45%, #937bd1 55%, transparent 55%) 0 0/10px 10px,
+            linear-gradient(-45deg, transparent 45%, #937bd1 45%, #937bd1 55%, transparent 55%) 5px 0px/10px 10px;
+    border-radius: 6px 0px 0px 6px;
+}
+
+.oa-light-status-clear {
+    background-color: #dddddd;
+}
+.oa-light-status-free {
+    background-color: #009900;
+}
+.oa-light-status-interrupt {
+    background-color: #ffdd00;
+}
+.oa-light-status-dnd {
+    background-color: #cc0000;
+}
+
+.oa-signal-event {
+    margin-left: 0px !important;
+}
+.oa-signal-clear {
+    border-color: transparent !important;
+}
+.oa-signal-free {
+    border-color: #009900 !important;
+}
+.oa-signal-interrupt {
+    border-color: #ffdd00 !important;
+}
+.oa-signal-dnd {
+    border-color: #cc0000 !important;
+}
+
+.fc-scrollgrid {
+    border: none !important;
+}
+
+.fc-col-header-cell-cushion, .fc-event-title {
+    font-weight: normal !important;
+    color: #333333 !important;
+}
+.fc-event-time {
+    font-weight: 600 !important;
+    color: #666666;
+}
+.fc-daygrid-day-number {
+    color: #666666;
+    font-weight: 600;
+}
+.fc-non-business {
+    background-color: #e6e6e633 !important;
+}
+.fc-timegrid-bg-harness .fc-event {
+    border-top: none !important;
+    border-bottom: none !important;
+}
+.fc-scrollgrid th[role="presentation"],
+.fc-scrollgrid td[role="presentation"] {
+    border-width: 0px !important;
+}
+
+.fc-dayGridMonth-view .fc-scroller-harness.fc-scroller-harness-liquid,
+.fc-dayGridMonth-view .fc-scroller.fc-scroller-liquid-absolute {
+    overflow: visible !important;
+}
+
+
+/* HTML: <div class="ribbon">Your text content</div> */
+.ribbon {
+    font-size: 11px;
+    font-weight: bold;
+    color: #fff;
+}
+.ribbon {
+    --f: .5em; /* control the folded part*/
+    --r: .8em; /* control the ribbon shape */
+
+    position: absolute;
+    top: -1px;
+    left: -6px;
+    padding-inline: .25em;
+    line-height: 1.8;
+    background: #cc0000;
+    border-bottom: var(--f) solid #0005;
+    border-right: var(--r) solid #0000;
+    clip-path:
+            polygon(calc(100% - var(--r)) 0,0 0,0 calc(100% - var(--f)),var(--f) 100%,
+            var(--f) calc(100% - var(--f)),calc(100% - var(--r)) calc(100% - var(--f)),
+            100% calc(50% - var(--f)/2));
+}

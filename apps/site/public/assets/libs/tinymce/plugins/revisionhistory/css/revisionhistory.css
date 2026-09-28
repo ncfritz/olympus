@@ -1,0 +1,10 @@
+/*!
+ * Tiny Comments plugin
+ *
+ * Copyright (c) 2023 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ *
+ * Version: 8.8.0-184
+ */
+
+body .tox-revisionhistory__annotation--added{background-color:rgba(120,171,70,0.2) !important;outline:2px solid #78AB46 !important;text-decoration:none}body .tox-revisionhistory__annotation--added *{text-decoration:none}body .tox-revisionhistory__annotation--added img{outline:2px solid #78AB46 !important}body .tox-revisionhistory__annotation--modified{background-color:rgba(0,108,231,0.2) !important;outline:2px solid #006ce7 !important;text-decoration:none}body .tox-revisionhistory__annotation--modified *{text-decoration:none}body .tox-revisionhistory__annotation--modified img{outline:2px solid #006ce7 !important}body .tox-revisionhistory__annotation--removed{background-color:rgba(204,0,0,0.2) !important;outline:2px solid #c00 !important;text-decoration:none}body .tox-revisionhistory__annotation--removed *{text-decoration:none}body .tox-revisionhistory__annotation--removed img{outline:2px solid #c00 !important}

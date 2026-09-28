@@ -1,0 +1,60 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("sl-SI", {
+  " (edited)": "(urejeno)",
+  "1 comment will be deleted. You can't undo this action.": "1 komentar bo izbrisan. Tega dejanja ni mogo\u010de razveljaviti.",
+  "1 comment will be resolved. You can't undo this action.": "1 komentar bo razre\u0161en. Tega dejanja ni mogo\u010de razveljaviti.",
+  "1 day ago": "pred 1 dnem",
+  "1 hour ago": "pred 1 uro",
+  "1 minute ago": "pred 1 minuto",
+  "1 month ago": "pred 1 mesecem",
+  "1 reply": "1 odgovor",
+  "1 week ago": "pred 1 tednom",
+  "1 year ago": "pred 1 letom",
+  "Add comment": "Dodaj komentar",
+  "Add comment...": "Dodaj komentar ...",
+  "Are you sure you want to delete this comment?": "Ali ste prepri\u010dani, da \u017eelite izbrisati ta komentar?",
+  "Clear": "Po\u010disti",
+  "Comment": "Komentar",
+  "Comment Actions": "Dejanja za komentarje",
+  "Comment or mention with @": "Komentar ali omemba z znakom @",
+  "Comments": "Komentarji",
+  "Conversation Actions": "Dejanja za pogovor",
+  "Delete": "Izbri\u0161i",
+  "Delete all conversations": "Izbri\u0161i vse pogovore",
+  "Delete all conversations in the content? This cannot be undone.": "Ali \u017eelite izbrisati vse pogovore v vsebini? Tega ni mogo\u010de razveljaviti.",
+  "Delete comment": "Izbri\u0161i komentar",
+  "Delete conversation": "Izbri\u0161i pogovor",
+  "Delete this conversation?": "Ali \u017eelite izbrisati ta pogovor?",
+  "Edit": "Uredi",
+  "No users found": "Noben uporabnik ni bil najden",
+  "Resolve": "Razre\u0161i",
+  "Resolve conversation": "Razre\u0161i pogovor",
+  "Resolve this conversation?": "Ali \u017eelite razre\u0161iti ta pogovor?",
+  "SHOW LESS": "PRIKA\u017dI MANJ",
+  "SHOW MORE": "PRIKA\u017dI VE\u010c",
+  "Save": "Shrani",
+  "Saving": "Shranjevanje",
+  "Show comments": "Prika\u017ei komentarje",
+  "You are not allowed to delete all the conversations": "Ne smete izbrisati vseh pogovorov.",
+  "You are not allowed to delete this comment": "Tega komentarja ne smete izbrisati.",
+  "You are not allowed to delete this conversation": "Tega pogovora ne smete izbrisati.",
+  "You are not allowed to edit this comment": "Nimate pravic za urejanje tega komentarja.",
+  "You are not allowed to resolve this conversation": "Tega pogovora ne smete razre\u0161iti.",
+  "a moment ago": "ravnokar",
+  "{0} comments will be deleted. You can't undo this action.": "Toliko komentarjev bo izbrisanih: {0} Tega dejanja ni mogo\u010de razveljaviti.",
+  "{0} comments will be resolved. You can't undo this action.": "\u0160tevilo razre\u0161enih komentarjev: {0} Tega dejanja ni mogo\u010de razveljaviti.",
+  "{0} days ago": "pred toliko dnevi: {0}",
+  "{0} hours ago": "pred toliko urami: {0}",
+  "{0} minutes ago": "pred toliko minutami: {0}",
+  "{0} months ago": "pred toliko meseci: {0}",
+  "{0} replies": "\u0160t. odgovorov: {0}",
+  "{0} weeks ago": "pred toliko tedni: {0}",
+  "{0} years ago": "pred toliko leti: {0}"
+});
+
+console.warn('TinyMCE language code "sl_SI" is deprecated, please use "sl-SI" instead.');

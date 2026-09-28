@@ -1,0 +1,13 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("uk", {
+  "Document typography has been enhanced": "\u0422\u0438\u043f\u043e\u0433\u0440\u0430\u0444\u0456\u043a\u0443 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430 \u0431\u0443\u043b\u043e \u043f\u043e\u043b\u0456\u043f\u0448\u0435\u043d\u043e",
+  "Enhance": "\u041f\u043e\u043b\u0456\u043f\u0448\u0438\u0442\u0438",
+  "Language": "\u041c\u043e\u0432\u0430",
+  "The selected content typography has been enhanced": "\u0422\u0438\u043f\u043e\u0433\u0440\u0430\u0444\u0456\u043a\u0443 \u0432\u0438\u0431\u0440\u0430\u043d\u043e\u0433\u043e \u0432\u043c\u0456\u0441\u0442\u0443 \u0431\u0443\u043b\u043e \u043f\u043e\u043b\u0456\u043f\u0448\u0435\u043d\u043e",
+  "Typography": "\u0422\u0438\u043f\u043e\u0433\u0440\u0430\u0444\u0456\u043a\u0430"
+});

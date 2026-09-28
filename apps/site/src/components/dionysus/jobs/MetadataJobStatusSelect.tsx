@@ -1,0 +1,60 @@
+import type { MetadataFetchJobStatus } from "@ncfritz/olympus-sdk/dionysus";
+import { Select } from "antd";
+import React, { type CSSProperties } from "react";
+import { getMetadataJobStatusIndicator } from "./utils";
+
+export interface MetadataJobStatusSelectProps {
+  value: string | undefined;
+  onChange: (value: MetadataFetchJobStatus) => void;
+  style?: CSSProperties;
+  bordered?: boolean;
+}
+
+const MetadataJobStatusSelect: React.FunctionComponent<
+  MetadataJobStatusSelectProps
+> = ({
+  value,
+  onChange,
+  style,
+  bordered = false,
+}: MetadataJobStatusSelectProps) => {
+  return (
+    <Select
+      value={value}
+      onChange={onChange}
+      style={style || { width: 200 }}
+      variant={bordered ? "outlined" : "borderless"}
+      options={[
+        {
+          value: "fetched",
+          label: getMetadataJobStatusIndicator("fetched", true),
+        },
+        {
+          value: "fetching",
+          label: getMetadataJobStatusIndicator("fetching", true),
+        },
+        {
+          value: "invalidated",
+          label: getMetadataJobStatusIndicator("invalidated", true),
+        },
+        {
+          value: "failed",
+          label: getMetadataJobStatusIndicator("failed", true),
+        },
+        {
+          value: "not_found",
+          label: getMetadataJobStatusIndicator("not_found", true),
+        },
+        {
+          value: "cancelled",
+          label: getMetadataJobStatusIndicator("cancelled", true),
+        },
+        {
+          value: "queued",
+          label: getMetadataJobStatusIndicator("queued", true),
+        },
+      ]}
+    />
+  );
+};
+export default MetadataJobStatusSelect;

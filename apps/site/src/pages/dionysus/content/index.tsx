@@ -1,0 +1,167 @@
+import { HomeOutlined, VideoCameraOutlined } from "@ant-design/icons";
+import type { FullContentAssetChannel } from "@ncfritz/olympus-sdk/dionysus";
+import { Button, Empty, Space, Typography } from "antd";
+import { Content } from "antd/lib/layout/layout";
+import Link from "next/link";
+import React, { type ReactNode } from "react";
+import { ScrollMenu } from "react-horizontal-scrolling-menu";
+import contentApi from "../../../api/contentApi";
+import LoadingWrapper from "../../../components/common/LoadingWrapper";
+import ContentAssetChannelCard from "../../../components/content/ContentAssetChannelCard";
+import ContentAssetStatistics from "../../../components/content/ContentAssetStatistics";
+import ContentAssetTable from "../../../components/content/ContentAssetTable";
+import ContentAuthWrapper from "../../../components/content/ContentAuthWrapper";
+import {
+  LeftArrow,
+  RightArrow,
+} from "../../../components/content/scroller/arrows";
+import OlympusBreadcrumbs from "../../../components/layout/OlympusBreadcrumbs";
+import { useFetch } from "../../../hooks/useFetch";
+import "react-horizontal-scrolling-menu/dist/styles.css";
+
+const IndexPage: React.FunctionComponent = () => {
+  const [channels, channelsLoading, channelsError] = useFetch<
+    undefined,
+    FullContentAssetChannel[]
+  >({
+    dataType: "content channels",
+    params: undefined,
+    watch: [],
+    fetchFunction: async () => {
+      return (
+        await contentApi.listContentAssetChannels(
+          0,
+          10,
+          { field: "lastUpdatedTime", order: "desc" },
+          { name: "favorite", type: "eq", value: true },
+        )
+      ).data.channels;
+    },
+  });
+
+  let channelsContent: ReactNode = <Empty />;
+
+  if (channels?.length > 0) {
+    const channelCards: React.ReactElement<{
+      itemId: string;
+    }>[] = [];
+
+    channels.forEach((channel, index) => {
+      channelCards.push(
+        <ContentAssetChannelCard
+          key={`channel-${channel.id}`}
+          initialChannel={channel}
+          category={channel.category}
+          index={index}
+          itemId={`c-${channel.id}`}
+          showActions={false}
+        />,
+      );
+    });
+
+    channelsContent = (
+      <ScrollMenu LeftArrow={LeftArrow} RightArrow={RightArrow}>
+        {channelCards}
+      </ScrollMenu>
+    );
+  }
+
+  return (
+    <ContentAuthWrapper>
+      <OlympusBreadcrumbs
+        items={[
+          {
+            title: (
+              <Link href={"/"}>
+                <Space size={4}>
+                  <HomeOutlined />
+                  <span>Home</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/dionysus"}>
+                <Space>
+                  <VideoCameraOutlined />
+                  <span>Dionysus</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Space>
+                <VideoCameraOutlined />
+                <span>Content</span>
+              </Space>
+            ),
+          },
+        ]}
+      />
+      <Content
+        style={{
+          height: "calc(100vh - 92px)",
+          overflowX: "hidden",
+          overflowY: "auto",
+          marginTop: 28,
+        }}
+      >
+        <ContentAssetStatistics />
+        <Space
+          direction={"vertical"}
+          size={0}
+          style={{
+            width: "100%",
+            borderTop: "1px solid #efefef",
+          }}
+          styles={{ item: {} }}
+        >
+          <Space
+            direction={"horizontal"}
+            style={{
+              width: "100%",
+              justifyContent: "space-between",
+            }}
+          >
+            <Typography.Title
+              level={5}
+              style={{ paddingTop: 16, paddingLeft: 16, marginBottom: 0 }}
+            >
+              Favorite Channels
+            </Typography.Title>
+            <Button type={"text"} href={"/dionysus/content/channels"}>
+              View All Channels
+            </Button>
+          </Space>
+          <LoadingWrapper
+            loading={!channels || channelsLoading}
+            error={channelsError}
+            style={{ padding: 16, paddingBottom: 0 }}
+          >
+            {channelsContent}
+          </LoadingWrapper>
+          <Typography.Title level={5} style={{ paddingLeft: 16 }}>
+            Favorite Assets
+          </Typography.Title>
+          <ContentAssetTable
+            filters={{
+              type: "gt",
+              name: "rating",
+              value: 0,
+            }}
+            initialSort={{
+              field: "rating",
+              order: "desc",
+            }}
+            pageSize={10}
+            scrollY={"calc(100vh - 880px)"}
+          />
+        </Space>
+      </Content>
+    </ContentAuthWrapper>
+  );
+};
+
+export default IndexPage;
