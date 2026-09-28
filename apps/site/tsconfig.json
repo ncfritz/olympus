@@ -24,6 +24,15 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true
   },
-  "exclude": ["node_modules", "build", "scripts", "webpack", "jest", "public"],
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"]
+  "exclude": [
+    "node_modules",
+    ".next",
+    "build",
+    "scripts",
+    "webpack",
+    "jest",
+    "public",
+    "test"
+  ],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
 }
