@@ -2,7 +2,7 @@ import { Alert, Button, Card, Space, Spin } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { pageSession } from "../../auth/AuthProvider";
+import { pageSession } from "../../auth/pageSession";
 import { API_BASE_URL } from "../../auth/interceptors";
 import { completeSignIn } from "../../auth/signIn";
 

@@ -301,6 +301,13 @@ check the consumers when the metadata and asset agents are imported.
 
 ### Site
 
+- **Notifications are broadcast to every connected socket.** The gateway's
+  `send` is `server.emit`, so every client receives every `notification.push` and
+  `notification.refresh` regardless of who it is for -- the REST endpoints are
+  per-user, the socket is not. Authenticating the handshake (2026-09-28) stopped
+  strangers listening; it did not make the stream per-user. The fix is a room per
+  user and emitting to it, which needs the publisher to know the recipient.
+
 - **`public/assets/libs/tinymce` is build output under version control.**
   `next.config.mjs` copies `node_modules/tinymce` into it with
   `copy-webpack-plugin`, so every build rewrites 239 tracked files and `git

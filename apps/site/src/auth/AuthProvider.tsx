@@ -1,5 +1,4 @@
 import type { CurrentUser } from "@ncfritz/olympus-sdk/olympus";
-import { refreshFromCookie } from "@ncfritz/olympus-auth-flow";
 import {
   createContext,
   type ReactNode,
@@ -9,22 +8,8 @@ import {
   useState,
 } from "react";
 import authApi from "../api/authApi";
-import { API_BASE_URL, attachSession } from "./interceptors";
-import { createSession, type Session } from "./session";
-import { CLIENT_ID, tokenEndpoint } from "./tokenEndpoint";
-
-/**
- * The session, made once for the life of the page.
- *
- * At module scope on purpose: the SDK's clients are module singletons, so the
- * interceptors that read this are installed once, and a session rebuilt by a
- * re-render would leave them holding the old one.
- */
-const session: Session = createSession({
-  refresh: () =>
-    refreshFromCookie(tokenEndpoint(API_BASE_URL), { clientId: CLIENT_ID }),
-});
-attachSession(session);
+import { pageSession as session } from "./pageSession";
+import type { Session } from "./session";
 
 export type AuthState =
   /** Asking the API whether the refresh cookie is still good. */
@@ -118,6 +103,3 @@ const describeSelf = async (): Promise<CurrentUser | undefined> => {
     return undefined;
   }
 };
-
-/** The session, for the sign-in pages, which are outside the provider. */
-export const pageSession = session;

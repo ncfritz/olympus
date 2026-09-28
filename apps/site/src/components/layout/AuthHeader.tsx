@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { useSocket, useSocketEvent } from "socket.io-react-hook";
 import { useAuth } from "../../auth/AuthProvider";
 import { initials } from "../../auth/initials";
+import { SOCKET_OPTIONS } from "../../auth/socket";
 import notificationsApi from "../../api/notificationsApi";
 import onairApi from "../../api/onairApi";
 import { useAppSelector } from "../../redux/hooks";
@@ -24,7 +25,7 @@ const { Header } = Layout;
 const AuthHeader: React.FunctionComponent = () => {
   const auth = useAuth();
   const dispatch = useDispatch();
-  const { socket } = useSocket("/notifications");
+  const { socket } = useSocket("/notifications", SOCKET_OPTIONS);
 
   const unreadNotificationsCount = useAppSelector(
     (state) => state.notifications.unreadCount,

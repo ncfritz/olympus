@@ -329,6 +329,8 @@ The site is imported (`docs/guides/repo-import.md`) and changed **only**
 where authentication needs it; conventions, styles, the SDK wrappers and
 everything else wait for the site's own conventions work.
 
+**Steps 1-5 done 2026-09-28; step 7 was a no-op; step 6 unchanged.**
+
 1. Import with history into `apps/site`; the minimum to build in the
    workspace (package name, TS/ESLint config only where the build fails).
 2. Remove NextAuth (`[...nextauth]`, `useSession` in `AuthHeader`,
@@ -347,6 +349,35 @@ everything else wait for the site's own conventions work.
 6. The content-auth cookie flow is unchanged.
 7. nginx on the Mac Mini: remove any route that sends `/api/auth/` to
    NextAuth, so all of `/api/` goes to the API.
+
+**What the steps turned out to mean.** The import carried 537 commits and a
+`.env.local` that had held `NEXTAUTH_SECRET` and `GITHUB_CLIENT_SECRET`; both are
+redacted from every commit and listed in `docs/roadmap.md` for rotation at the
+source. The site keeps React 18 and Next 15 -- the workspace catalog is 19 and 16
+-- because a React major landing in the same week as the sign-in rewrite would
+make every failure ambiguous; the drift is the site's own conventions work.
+
+The flow is `packages/auth-flow`, which gained `exchangeCodeForCookie` and
+`refreshFromCookie` for a client whose refresh token it never sees. The piece
+worth knowing about is in `apps/site/src/auth/session.ts`: **one rotation at a
+time.** A page load fires a dozen calls, and a dozen refreshes of one token is
+indistinguishable from a theft, so the API would end the session -- opening the
+site would sign you out.
+
+Step 5 needed the API too. The notifications gateway authenticated nobody: it
+accepted any connection that could reach the port and then sent it every
+notification. It now verifies the handshake's token with the same code the HTTP
+guard uses, and obeys the same `AUTH_MODE_USERS`, so the site moves over without
+a flag day.
+
+Step 7 was already true: nginx sends `/api/v1/`, `/api-spec`, `/api/metrics` and
+`/socket.io` to the API and everything else to the site. NextAuth lived at
+`/api/auth/` **on the site**, so deleting the route was the whole of it.
+
+Still open: the gateway broadcasts every notification to every connected client
+(`server.emit`), which authenticating the socket does not change -- see
+`docs/roadmap.md`. And the site has no working container image; its Dockerfile is
+the pre-import one and `docker-bake.hcl` has no target for it.
 
 ## Phase 6 — Border
 
