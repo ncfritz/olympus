@@ -369,7 +369,7 @@ export default function App() {
                 onPress={() => custom({ path: option })}
                 style={[
                   styles.protocol,
-                  path === option && styles.protocolChosen,
+                  apiPath === option && styles.protocolChosen,
                 ]}
               >
                 <Text
