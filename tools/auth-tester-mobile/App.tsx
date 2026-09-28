@@ -1,6 +1,6 @@
 import { AuthFlowError, decodeToken } from "@ncfritz/olympus-auth-flow";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import {
   type ApiPath,
+  baseUrlOf,
   DEFAULT_TARGET,
   describe,
   DIRECT_PATH,
@@ -23,6 +24,7 @@ import {
   type NamedTarget,
   resolve,
 } from "./src/endpoints";
+import { type Called, createCaller } from "./src/api";
 import { PROVIDER, REDIRECT_URI, signIn } from "./src/signIn";
 import {
   clearTokens,
@@ -50,13 +52,15 @@ export default function App() {
   const [host, setHost] = useState("");
   const [port, setPort] = useState("");
   const [protocol, setProtocol] = useState<"http" | "https">("http");
-  const [path, setPath] = useState<ApiPath>(DIRECT_PATH);
+  const [apiPath, setApiPath] = useState<ApiPath>(DIRECT_PATH);
   // undefined until it has been looked for: "no tokens" and "not looked yet"
   // are different things to say.
   const [tokens, setTokens] = useState<StoredTokens | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   /** What the last attempt did, in a line. */
   const [outcome, setOutcome] = useState<string | undefined>(undefined);
+  const [log, setLog] = useState<Called[]>([]);
+  const [path, setCallPath] = useState("/olympus/ping");
 
   // What was chosen last time, so the tester comes back where it was.
   useEffect(() => {
@@ -68,7 +72,7 @@ export default function App() {
           setHost(stored.target.host);
           setPort(stored.target.port ?? "");
           setProtocol(stored.target.protocol);
-          setPath(stored.target.path ?? DIRECT_PATH);
+          setApiPath(stored.target.path ?? DIRECT_PATH);
         }
       }
       setLoaded(true);
@@ -81,7 +85,32 @@ export default function App() {
   };
 
   const resolved = resolve(settings.target);
-  const baseUrl = isResolved(resolved) ? resolved.baseUrl : undefined;
+  // A string rather than a property of `resolved`: see `baseUrlOf`.
+  const baseUrl = baseUrlOf(settings.target);
+
+  // One set of clients per API, holding its tokens in memory so that a call
+  // does not prompt for Face ID. Rebuilt when the target changes, which is also
+  // when the tokens do.
+  const caller = useMemo(
+    () =>
+      baseUrl === undefined
+        ? undefined
+        : createCaller({
+            apiBaseUrl: baseUrl,
+            persist: (rotated) =>
+              saveTokens(baseUrl, rotated, {
+                requireAuthentication: settings.requireAuthentication,
+              }),
+            // A rotation happens inside a call; this is how the screen hears.
+            onChange: (rotated) =>
+              setTokens(
+                rotated === undefined
+                  ? { state: "none" }
+                  : { state: "signed-in", tokens: rotated },
+              ),
+          }),
+    [baseUrl, settings.requireAuthentication],
+  );
 
   // Whether this target has tokens, asked again whenever the target changes:
   // each one keeps its own, so switching does not sign anything out. No
@@ -99,12 +128,16 @@ export default function App() {
       });
       // The target can change while Face ID is on screen; the answer to the
       // question nobody is asking any more is dropped.
-      if (current) setTokens(found);
+      if (!current) return;
+      setTokens(found);
+      caller?.session.hold(
+        found.state === "signed-in" ? found.tokens : undefined,
+      );
     })();
     return () => {
       current = false;
     };
-  }, [baseUrl, settings.requireAuthentication]);
+  }, [baseUrl, settings.requireAuthentication, caller]);
 
   const start = async (baseUrlNow: string) => {
     setBusy(true);
@@ -129,6 +162,7 @@ export default function App() {
         requireAuthentication: settings.requireAuthentication,
       });
       setTokens({ state: "signed-in", tokens: result.tokens });
+      caller?.session.hold(result.tokens);
       setOutcome(`Signed in with ${PROVIDER}.`);
     } catch (error: unknown) {
       // An AuthFlowError is the API refusing a grant, which is an answer and
@@ -146,7 +180,13 @@ export default function App() {
   const forget = async (baseUrlNow: string) => {
     await clearTokens(baseUrlNow);
     setTokens({ state: "none" });
+    caller?.session.hold(undefined);
     setOutcome("Forgotten on this device. The session itself is still open.");
+  };
+
+  const run = async (call: () => Promise<Called>) => {
+    const called = await call();
+    setLog((entries) => [called, ...entries].slice(0, 20));
   };
 
   const claims = () => {
@@ -206,11 +246,11 @@ export default function App() {
       path: ApiPath;
     }>,
   ) => {
-    const values = { protocol, host, port, path, ...next };
+    const values = { protocol, host, port, path: apiPath, ...next };
     setProtocol(values.protocol);
     setHost(values.host);
     setPort(values.port);
-    setPath(values.path);
+    setApiPath(values.path);
     change({
       ...settings,
       target: {
@@ -284,7 +324,7 @@ export default function App() {
                 <Text
                   style={[
                     styles.protocolText,
-                    path === option && styles.protocolTextChosen,
+                    apiPath === option && styles.protocolTextChosen,
                   ]}
                 >
                   {option}
@@ -364,6 +404,62 @@ export default function App() {
           )}
         </Pressable>
         {outcome !== undefined && <Text style={styles.note}>{outcome}</Text>}
+
+        <Text style={styles.heading}>Calls</Text>
+        <Text style={styles.note}>
+          Through @ncfritz/olympus-client, with the access token attached and
+          refreshed when it has expired.
+        </Text>
+        <View style={styles.inputs}>
+          <Pressable
+            onPress={() => {
+              if (caller) void run(() => caller.whoami());
+            }}
+            disabled={caller === undefined}
+            style={[styles.small, caller === undefined && styles.buttonOff]}
+          >
+            <Text style={styles.smallText}>Who am I</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              if (caller) void run(() => caller.sessions());
+            }}
+            disabled={caller === undefined}
+            style={[styles.small, caller === undefined && styles.buttonOff]}
+          >
+            <Text style={styles.smallText}>Sessions</Text>
+          </Pressable>
+        </View>
+        <View style={styles.inputs}>
+          <TextInput
+            value={path}
+            onChangeText={setCallPath}
+            placeholder="/olympus/ping"
+            autoCapitalize="none"
+            autoCorrect={false}
+            style={[styles.input, styles.hostInput]}
+          />
+          <Pressable
+            onPress={() => {
+              if (caller) void run(() => caller.get(path));
+            }}
+            disabled={caller === undefined}
+            style={[styles.small, caller === undefined && styles.buttonOff]}
+          >
+            <Text style={styles.smallText}>GET</Text>
+          </Pressable>
+        </View>
+        {log.map((called, at) => (
+          <View key={`${called.path}-${at}`} style={styles.called}>
+            <Text style={styles.calledHead}>
+              {called.method} {called.path} · {called.status ?? "—"} ·{" "}
+              {called.took}ms
+            </Text>
+            <Text style={styles.calledBody} numberOfLines={4}>
+              {called.answer}
+            </Text>
+          </View>
+        ))}
 
         <Text style={styles.heading}>This device</Text>
         <Text style={styles.note}>
@@ -467,6 +563,23 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
   },
   buttonQuietText: { color: "#444", fontSize: 15 },
+  small: {
+    borderRadius: 8,
+    backgroundColor: "#0a5",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  smallText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+  called: {
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    paddingVertical: 6,
+    gap: 2,
+  },
+  calledHead: { fontSize: 12, fontFamily: "Menlo", color: "#063" },
+  calledBody: { fontSize: 11, fontFamily: "Menlo", color: "#444" },
   claims: { marginTop: 8, gap: 4 },
   claim: { flexDirection: "row", gap: 8 },
   claimName: { width: 80, fontSize: 12, color: "#666", fontFamily: "Menlo" },

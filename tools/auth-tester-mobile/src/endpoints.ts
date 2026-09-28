@@ -115,6 +115,19 @@ export const resolve = (target: Target): Resolved | Unresolved => {
   return { baseUrl };
 };
 
+/**
+ * Just the base URL, or nothing.
+ *
+ * A primitive on purpose: a screen that derives its dependencies from a
+ * property of an object cannot be memoized by the React Compiler, which will
+ * not assume the object is never mutated -- so it skips the component whole.
+ * `resolve` is still there for the problem and the warning.
+ */
+export const baseUrlOf = (target: Target): string | undefined => {
+  const answer = resolve(target);
+  return "baseUrl" in answer ? answer.baseUrl : undefined;
+};
+
 export const isResolved = (answer: Resolved | Unresolved): answer is Resolved =>
   "baseUrl" in answer;
 

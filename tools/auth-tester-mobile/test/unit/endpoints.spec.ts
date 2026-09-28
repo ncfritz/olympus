@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isResolved, resolve, type Target } from "../../src/endpoints";
+import {
+  baseUrlOf,
+  isResolved,
+  resolve,
+  type Target,
+} from "../../src/endpoints";
 
 const url = (target: Target): string => {
   const answer = resolve(target);
@@ -146,5 +151,31 @@ describe("resolve", () => {
       host: "olympus.ncfritz.net",
     });
     expect(isResolved(answer) && answer.warning).toBeUndefined();
+  });
+});
+
+describe("baseUrlOf", () => {
+  it("is the URL when there is one", () => {
+    expect(baseUrlOf({ kind: "named", name: "dev" })).toBe(
+      "https://olympus.dev.ncfritz.net/api/v1",
+    );
+  });
+
+  it("is nothing when the target does not resolve", () => {
+    expect(
+      baseUrlOf({ kind: "custom", protocol: "http", host: "" }),
+    ).toBeUndefined();
+  });
+
+  /** A warning is not a refusal: the URL still comes back. */
+  it("is the URL even when it comes with a warning", () => {
+    expect(
+      baseUrlOf({
+        kind: "custom",
+        protocol: "http",
+        host: "olympus.ncfritz.net",
+        path: "/api/v1",
+      }),
+    ).toBe("http://olympus.ncfritz.net/api/v1");
   });
 });

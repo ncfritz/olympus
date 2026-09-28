@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
  * do with the code. Keeping the boundary is cheaper than transforming React
  * Native to test two pure functions.
  */
-const PURE = ["endpoints.ts", "keys.ts"];
+const PURE = ["endpoints.ts", "keys.ts", "session.ts"];
 
 const imports = (file: string): string[] =>
   [
@@ -23,7 +23,14 @@ const imports = (file: string): string[] =>
 
 describe("the unit-tested modules", () => {
   it.each(PURE)("%s imports nothing off the device", (file: string) => {
-    expect(imports(file).filter((from) => !from.startsWith("."))).toEqual([]);
+    // The shared flow package is platform-free by construction -- it is tested
+    // with no ambient types at all -- so importing it keeps a module pure.
+    expect(
+      imports(file).filter(
+        (from) =>
+          !from.startsWith(".") && from !== "@ncfritz/olympus-auth-flow",
+      ),
+    ).toEqual([]);
   });
 
   it("covers every module the specs import", () => {

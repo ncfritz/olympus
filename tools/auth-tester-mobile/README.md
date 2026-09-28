@@ -85,6 +85,23 @@ token — which is what the next commit's calls will do.
 "Forget tokens on this device" is local only. It is not `SignOut`: the session
 stays open on the API, which is a difference worth being able to see.
 
+## Calls
+
+Through `@ncfritz/olympus-client` with its `auth` option — the package the
+agents and the site use — so this is that option's first run on a phone. "Who
+am I" and "Sessions" go through `AuthApi`; the path field is any `GET` relative
+to the base URL. Each one lands in the log with its status and how long it took.
+
+The tokens are held **in memory** once read, and the Keychain is written
+through on rotation. A provider that read the Keychain per request would prompt
+for Face ID per request.
+
+One rotation at a time, which is the part worth knowing: two calls either side
+of an expiry would otherwise each refresh, and the second would present a token
+the first had already rotated away — which the API cannot tell from a stolen one
+and answers by ending the session (ADR 0018). Two buttons pressed quickly would
+sign you out. `test/unit/session.spec.ts` holds that case open.
+
 ## Tokens
 
 One Keychain item per API, so signing in to dev does not sign you out of
