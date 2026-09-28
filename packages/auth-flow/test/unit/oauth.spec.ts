@@ -26,6 +26,32 @@ const TOKENS = {
 };
 
 describe("authorizeUrl", () => {
+  const built = authorizeUrl("http://localhost:3001/v1/", {
+    clientId: "olympus-auth-tester",
+    redirectUri: "http://127.0.0.1:52345/callback",
+    challenge: "a".repeat(43),
+    state: "some-state",
+    provider: "google",
+  });
+
+  /**
+   * Spelled out because this string is built by hand: React Native's `URL` is
+   * partial, so the package cannot use it, and an encoding fault here reads as
+   * the API refusing a redirect_uri it never received intact.
+   */
+  it("percent-encodes what has to be encoded, and nothing else", () => {
+    expect(built).toBe(
+      "http://localhost:3001/v1/auth/authorize" +
+        "?client_id=olympus-auth-tester" +
+        "&redirect_uri=http%3A%2F%2F127.0.0.1%3A52345%2Fcallback" +
+        "&response_type=code" +
+        `&code_challenge=${"a".repeat(43)}` +
+        "&code_challenge_method=S256" +
+        "&state=some-state" +
+        "&provider=google",
+    );
+  });
+
   const url = new URL(
     authorizeUrl("http://localhost:3001/v1/", {
       clientId: "olympus-auth-tester",

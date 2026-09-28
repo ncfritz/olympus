@@ -38,15 +38,22 @@ export const authorizeUrl = (
     provider: string;
   },
 ): string => {
-  const url = new URL(`${apiBaseUrl.replace(/\/+$/, "")}/auth/authorize`);
-  url.searchParams.set("client_id", request.clientId);
-  url.searchParams.set("redirect_uri", request.redirectUri);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("code_challenge", request.challenge);
-  url.searchParams.set("code_challenge_method", CODE_CHALLENGE_METHOD);
-  url.searchParams.set("state", request.state);
-  url.searchParams.set("provider", request.provider);
-  return url.href;
+  // Assembled by hand rather than with `URL` and `searchParams`. React
+  // Native's `URL` is a partial, non-spec implementation -- which is why
+  // react-native-url-polyfill exists -- and a package that has to run there
+  // cannot depend on it. `encodeURIComponent` is in the language.
+  const query = Object.entries({
+    client_id: request.clientId,
+    redirect_uri: request.redirectUri,
+    response_type: "code",
+    code_challenge: request.challenge,
+    code_challenge_method: CODE_CHALLENGE_METHOD,
+    state: request.state,
+    provider: request.provider,
+  })
+    .map(([name, value]) => `${name}=${encodeURIComponent(value)}`)
+    .join("&");
+  return `${apiBaseUrl.replace(/\/+$/, "")}/auth/authorize?${query}`;
 };
 
 /** RFC 6749 §4.1.3: the authorization code for tokens. */
