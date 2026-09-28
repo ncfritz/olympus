@@ -102,6 +102,27 @@ the first had already rotated away — which the API cannot tell from a stolen o
 and answers by ending the session (ADR 0018). Two buttons pressed quickly would
 sign you out. `test/unit/session.spec.ts` holds that case open.
 
+## Refresh, replay, revoke, sign out
+
+**Refresh** rotates now, through the same one-at-a-time path a call uses, so the
+button and a call cannot rotate twice. `sid` and `auth_time` come back
+unchanged: rotating a token does not start a session.
+
+**Replay previous** presents the token the last rotation replaced, and then the
+live one. Both refused is reuse detection — the replay rejected _and_ the
+session ended (ADR 0018). The second request is the whole point: an API that
+had merely forgotten the old token would refuse the replay and leave the session
+alone, and calling that detection would be believing a test that cannot fail.
+The verdict is one of `revoked`, `refused-only` or `accepted`, and the check
+itself is `checkReuseDetection` in the shared package — the CLI runs the same
+code, so the two testers cannot disagree about what passing means.
+
+**Sessions** lists them with a Revoke on each, including this device's own.
+Revoking your own kills the refresh token while the access token lives out its
+ten minutes, which the log says when it happens.
+
+**Sign out** is the real `SignOut`, not the local forget below it.
+
 ## Tokens
 
 One Keychain item per API, so signing in to dev does not sign you out of

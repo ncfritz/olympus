@@ -129,4 +129,42 @@ describe("createSession", () => {
     held.hold(undefined);
     expect(seen).toEqual([TOKENS, undefined]);
   });
+
+  describe("refreshNow", () => {
+    it("rotates a token that has not expired", async () => {
+      const { held, refresh, persisted } = session({ now: FRESH });
+      held.hold(TOKENS);
+
+      const next = await held.refreshNow();
+      expect(next.accessToken).toBe("a-rotated-token");
+      expect(refresh).toHaveBeenCalledWith("the-held-refresh-token");
+      expect(persisted).toHaveLength(1);
+    });
+
+    /** The button and a call refreshing at once must not both rotate. */
+    it("shares the one-at-a-time guard with the provider", async () => {
+      let release: ((issued: IssuedTokens) => void) | undefined;
+      const { held, refresh } = session({
+        now: SPENT,
+        refresh: () =>
+          new Promise<IssuedTokens>((resolve) => {
+            release = resolve;
+          }),
+      });
+      held.hold(TOKENS);
+
+      const byButton = held.refreshNow();
+      const byCall = held.accessToken();
+      release?.(ROTATED);
+
+      expect((await byButton).accessToken).toBe("a-rotated-token");
+      expect(await byCall).toBe("a-rotated-token");
+      expect(refresh).toHaveBeenCalledTimes(1);
+    });
+
+    it("says so when there is nothing to refresh", async () => {
+      const { held } = session({ now: FRESH });
+      await expect(held.refreshNow()).rejects.toThrow(/not signed in/);
+    });
+  });
 });

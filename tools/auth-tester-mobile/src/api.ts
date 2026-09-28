@@ -1,4 +1,10 @@
-import { refreshTokens } from "@ncfritz/olympus-auth-flow";
+import {
+  checkReuseDetection,
+  type FormAnswer,
+  oauthError,
+  refreshTokens,
+  type ReuseVerdict,
+} from "@ncfritz/olympus-auth-flow";
 import { AuthApi, createOlympusClients } from "@ncfritz/olympus-client";
 import { CLIENT_ID, formPoster } from "./signIn";
 import { createSession, type Session } from "./session";
@@ -21,7 +27,28 @@ export type Caller = {
   get(path: string): Promise<Called>;
   /** The endpoints that answer about the caller, each as a log line. */
   whoami(): Promise<Called>;
-  sessions(): Promise<Called>;
+  /** The caller's sessions: the log line, and the list to show. */
+  sessions(): Promise<{ called: Called; listed: Listed[] }>;
+  /** Rotates now, whether or not the access token has expired. */
+  refresh(): Promise<Called>;
+  /**
+   * Presents the token the last rotation replaced, then the live one. Both
+   * dead afterwards unless the verdict says otherwise.
+   */
+  replay(): Promise<{ called: Called; verdict: ReuseVerdict }>;
+  /** Ends one of the caller's sessions; its own is allowed. */
+  revoke(sessionId: string): Promise<{ called: Called; itsOwn: boolean }>;
+  /** Ends the session these tokens came from, at the API. */
+  signOut(): Promise<Called>;
+};
+
+/** A session as the screen shows it. */
+export type Listed = {
+  id: string;
+  clientId: string;
+  deviceName?: string;
+  current: boolean;
+  expiresTime: string;
 };
 
 /**
@@ -91,6 +118,11 @@ export const createCaller = (options: {
   };
 
   const auth = new AuthApi(clients);
+
+  /** An answer from the token endpoint, in a line. */
+  const answered = (answer: FormAnswer): string =>
+    `${answer.status} ${oauthError(answer)?.error ?? JSON.stringify(answer.body)}`;
+
   return {
     session,
     auth,
@@ -104,6 +136,108 @@ export const createCaller = (options: {
         return { status: response.status, body: response.data };
       }),
     whoami: () => timed("GET", "/auth/me", () => auth.describeCurrentUser()),
-    sessions: () => timed("GET", "/auth/sessions", () => auth.listSessions()),
+
+    sessions: async () => {
+      let listed: Listed[] = [];
+      const called = await timed("GET", "/auth/sessions", async () => {
+        const sessions = await auth.listSessions();
+        listed = sessions.map((session) => ({
+          id: session.id,
+          clientId: session.clientId,
+          ...(session.deviceName === undefined
+            ? {}
+            : { deviceName: session.deviceName }),
+          current: session.current,
+          expiresTime: session.expiresTime,
+        }));
+        return sessions;
+      });
+      return { called, listed };
+    },
+
+    // Through the session, so an explicit refresh and one a call triggers are
+    // the same rotation, held and written through the same way.
+    refresh: async () => {
+      const started = Date.now();
+      try {
+        const next = await session.refreshNow();
+        return {
+          method: "POST",
+          path: "/auth/token",
+          status: 200,
+          took: Date.now() - started,
+          answer: `rotated; sid and auth_time unchanged, and the access token now expires at ${new Date(next.accessTokenExpiresAt).toISOString()}`,
+        };
+      } catch (error: unknown) {
+        return {
+          method: "POST",
+          path: "/auth/token",
+          took: Date.now() - started,
+          answer: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
+
+    replay: async () => {
+      const held = session.current();
+      const started = Date.now();
+      if (held?.previousRefreshToken === undefined) {
+        return {
+          called: {
+            method: "POST",
+            path: "/auth/token",
+            took: 0,
+            answer: "no previous refresh token to replay: refresh once first",
+          },
+          verdict: "refused-only",
+        };
+      }
+      const checked = await checkReuseDetection(post, {
+        clientId: CLIENT_ID,
+        previousRefreshToken: held.previousRefreshToken,
+        refreshToken: held.refreshToken,
+      });
+      const said = {
+        revoked: `reuse detected: the replay was refused (${answered(checked.replayed)}) and so was the live token (${answered(checked.live)}), so the session is revoked`,
+        "refused-only": `the replay was refused (${answered(checked.replayed)}) but the live token still works: the session was NOT revoked`,
+        accepted: `the API ISSUED TOKENS for a rotated refresh token (${answered(checked.replayed)}). Reuse detection is not working`,
+      }[checked.verdict];
+      // Both tokens are dead when the session went, and what the app holds is
+      // untrustworthy when the rotated one was honoured.
+      if (checked.verdict !== "refused-only") session.hold(undefined);
+      return {
+        called: {
+          method: "POST",
+          path: "/auth/token",
+          status: checked.replayed.status,
+          took: Date.now() - started,
+          answer: said,
+        },
+        verdict: checked.verdict,
+      };
+    },
+
+    revoke: async (sessionId) => {
+      let itsOwn = false;
+      const called = await timed(
+        "DELETE",
+        `/auth/sessions/${sessionId}`,
+        async () => {
+          const result = await auth.revokeSession(sessionId);
+          itsOwn = result.signedOutThisDevice;
+          return result;
+        },
+      );
+      // Revoking this device's own session kills the refresh token, though the
+      // access token lives out its ten minutes (ADR 0018).
+      if (itsOwn) session.hold(undefined);
+      return { called, itsOwn };
+    },
+
+    signOut: async () => {
+      const called = await timed("POST", "/auth/logout", () => auth.signOut());
+      session.hold(undefined);
+      return called;
+    },
   };
 };

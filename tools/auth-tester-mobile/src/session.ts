@@ -1,5 +1,6 @@
 import {
   afterIssue,
+  AuthFlowError,
   expired,
   type IssuedTokens,
   type SavedTokens,
@@ -27,6 +28,12 @@ export type Session = {
    * with no token is the same code path as one with it.
    */
   accessToken(): Promise<string | undefined>;
+  /**
+   * Rotates now, whether or not the access token has expired: the tester's
+   * Refresh button. Shares the one-at-a-time guard with `accessToken`, so it
+   * cannot race a call that is refreshing on its own.
+   */
+  refreshNow(): Promise<SavedTokens>;
 };
 
 export const createSession = (options: {
@@ -45,19 +52,26 @@ export const createSession = (options: {
   // otherwise each refresh, and the second would present a token the first
   // had already rotated away -- which the API reads as a stolen token and
   // answers by ending the session (ADR 0018).
-  let rotating: Promise<string | undefined> | undefined;
+  let rotating: Promise<SavedTokens> | undefined;
 
   const hold = (tokens: SavedTokens | undefined) => {
     held = tokens;
     options.onChange?.(tokens);
   };
 
-  const rotate = async (tokens: SavedTokens): Promise<string | undefined> => {
+  const rotate = async (tokens: SavedTokens): Promise<SavedTokens> => {
     const issued = await options.refresh(tokens.refreshToken);
     const next = afterIssue(tokens, issued, options.now?.());
     hold(next);
     await options.persist(next);
-    return next.accessToken;
+    return next;
+  };
+
+  const rotateOnce = (tokens: SavedTokens): Promise<SavedTokens> => {
+    rotating ??= rotate(tokens).finally(() => {
+      rotating = undefined;
+    });
+    return rotating;
   };
 
   return {
@@ -69,10 +83,16 @@ export const createSession = (options: {
       if (options.stale === true || !expired(tokens, options.now?.())) {
         return tokens.accessToken;
       }
-      rotating ??= rotate(tokens).finally(() => {
-        rotating = undefined;
-      });
-      return rotating;
+      return (await rotateOnce(tokens)).accessToken;
+    },
+    refreshNow: async () => {
+      const tokens = held;
+      if (tokens === undefined) {
+        throw new AuthFlowError(
+          "not signed in, so there is nothing to refresh",
+        );
+      }
+      return rotateOnce(tokens);
     },
   };
 };

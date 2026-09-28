@@ -35,4 +35,6 @@ request.
 
 `afterIssue` keeps the refresh token a rotation replaced, because reuse
 detection is a flow worth being able to exercise: presenting it again must be
-refused _and_ must end the session.
+refused _and_ must end the session. `checkReuseDetection` is that procedure —
+both requests, and a verdict of `revoked`, `refused-only` or `accepted` — shared
+so that the CLI and the phone cannot disagree about what passing means.

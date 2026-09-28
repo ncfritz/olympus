@@ -24,7 +24,7 @@ import {
   type NamedTarget,
   resolve,
 } from "./src/endpoints";
-import { type Called, createCaller } from "./src/api";
+import { type Called, createCaller, type Listed } from "./src/api";
 import { PROVIDER, REDIRECT_URI, signIn } from "./src/signIn";
 import {
   clearTokens,
@@ -61,6 +61,7 @@ export default function App() {
   const [outcome, setOutcome] = useState<string | undefined>(undefined);
   const [log, setLog] = useState<Called[]>([]);
   const [path, setCallPath] = useState("/olympus/ping");
+  const [sessions, setSessions] = useState<Listed[] | undefined>(undefined);
 
   // What was chosen last time, so the tester comes back where it was.
   useEffect(() => {
@@ -184,9 +185,59 @@ export default function App() {
     setOutcome("Forgotten on this device. The session itself is still open.");
   };
 
-  const run = async (call: () => Promise<Called>) => {
-    const called = await call();
+  const record = (called: Called) => {
     setLog((entries) => [called, ...entries].slice(0, 20));
+  };
+
+  const run = async (call: () => Promise<Called>) => {
+    record(await call());
+  };
+
+  /** Everything the API knows about these tokens is gone; forget them here too. */
+  const dropTokens = async (baseUrlNow: string) => {
+    await clearTokens(baseUrlNow);
+    setTokens({ state: "none" });
+    setSessions(undefined);
+  };
+
+  const list = async () => {
+    if (caller === undefined) return;
+    const { called, listed } = await caller.sessions();
+    record(called);
+    setSessions(called.status === 200 ? listed : undefined);
+  };
+
+  const replay = async (baseUrlNow: string) => {
+    if (caller === undefined) return;
+    const { called, verdict } = await caller.replay();
+    record(called);
+    // Refused and revoked leaves both tokens dead; an accepted replay leaves
+    // what is held here untrustworthy. Either way, start again.
+    if (verdict !== "refused-only") await dropTokens(baseUrlNow);
+  };
+
+  const revoke = async (baseUrlNow: string, sessionId: string) => {
+    if (caller === undefined) return;
+    const { called, itsOwn } = await caller.revoke(sessionId);
+    record(called);
+    if (itsOwn) {
+      await dropTokens(baseUrlNow);
+      record({
+        method: "note",
+        path: "",
+        took: 0,
+        answer:
+          "that was this device's session: the refresh token is dead, though the access token would be accepted for its remaining minutes (ADR 0018)",
+      });
+    } else {
+      await list();
+    }
+  };
+
+  const out = async (baseUrlNow: string) => {
+    if (caller === undefined) return;
+    record(await caller.signOut());
+    await dropTokens(baseUrlNow);
   };
 
   const claims = () => {
@@ -422,7 +473,7 @@ export default function App() {
           </Pressable>
           <Pressable
             onPress={() => {
-              if (caller) void run(() => caller.sessions());
+              void list();
             }}
             disabled={caller === undefined}
             style={[styles.small, caller === undefined && styles.buttonOff]}
@@ -460,6 +511,71 @@ export default function App() {
             </Text>
           </View>
         ))}
+
+        {sessions !== undefined && (
+          <View style={styles.claims}>
+            {sessions.map((session) => (
+              <View key={session.id} style={styles.called}>
+                <Text style={styles.calledHead}>
+                  {session.current ? "● " : "○ "}
+                  {session.clientId}
+                  {session.deviceName === undefined
+                    ? ""
+                    : ` · ${session.deviceName}`}
+                </Text>
+                <Text style={styles.calledBody}>
+                  {session.id} · expires {session.expiresTime}
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    if (baseUrl !== undefined) void revoke(baseUrl, session.id);
+                  }}
+                  style={[styles.small, styles.buttonQuiet, styles.revoke]}
+                >
+                  <Text style={styles.buttonQuietText}>
+                    Revoke{session.current ? " (this one)" : ""}
+                  </Text>
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <Text style={styles.heading}>Tokens</Text>
+        <Text style={styles.note}>
+          Refresh rotates now; the replay presents the token the last rotation
+          replaced, and then the live one — both refused is reuse detection, and
+          the session is gone with them (ADR 0018).
+        </Text>
+        <View style={styles.inputs}>
+          <Pressable
+            onPress={() => {
+              if (caller) void run(() => caller.refresh());
+            }}
+            disabled={caller === undefined}
+            style={[styles.small, caller === undefined && styles.buttonOff]}
+          >
+            <Text style={styles.smallText}>Refresh</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              if (baseUrl !== undefined) void replay(baseUrl);
+            }}
+            disabled={caller === undefined}
+            style={[styles.small, caller === undefined && styles.buttonOff]}
+          >
+            <Text style={styles.smallText}>Replay previous</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              if (baseUrl !== undefined) void out(baseUrl);
+            }}
+            disabled={caller === undefined}
+            style={[styles.small, styles.buttonQuiet]}
+          >
+            <Text style={styles.buttonQuietText}>Sign out</Text>
+          </Pressable>
+        </View>
 
         <Text style={styles.heading}>This device</Text>
         <Text style={styles.note}>
@@ -580,6 +696,7 @@ const styles = StyleSheet.create({
   },
   calledHead: { fontSize: 12, fontFamily: "Menlo", color: "#063" },
   calledBody: { fontSize: 11, fontFamily: "Menlo", color: "#444" },
+  revoke: { marginTop: 6, alignSelf: "flex-start" },
   claims: { marginTop: 8, gap: 4 },
   claim: { flexDirection: "row", gap: 8 },
   claimName: { width: 80, fontSize: 12, color: "#666", fontFamily: "Menlo" },

@@ -1,7 +1,8 @@
 import {
   afterIssue,
-  attemptRefresh,
+  checkReuseDetection,
   decodeToken,
+  type FormAnswer,
   oauthError,
   refreshTokens,
 } from "@ncfritz/olympus-auth-flow";
@@ -40,6 +41,10 @@ export const refresh = async (tester: Tester): Promise<void> => {
  * what tells a refusal apart from a revocation -- a refusal alone would be
  * satisfied by an API that simply did not recognise the old token.
  */
+/** How an answer reads in a line: the OAuth error if there is one. */
+const answered = (answer: FormAnswer): string =>
+  `${answer.status} ${oauthError(answer)?.error ?? JSON.stringify(answer.body)}`;
+
 export const replay = async (tester: Tester): Promise<void> => {
   const saved = tester.tokens();
   const previous = saved.previousRefreshToken;
@@ -49,27 +54,21 @@ export const replay = async (tester: Tester): Promise<void> => {
     );
   }
 
-  const replayed = await attemptRefresh(tester.post, {
+  const checked = await checkReuseDetection(tester.post, {
     clientId: saved.clientId,
-    refreshToken: previous,
+    previousRefreshToken: previous,
+    refreshToken: saved.refreshToken,
   });
-  const refusal = oauthError(replayed);
-  if (replayed.status === 200) {
-    // Reuse detection is the whole reason rotation is worth having.
+
+  if (checked.verdict === "accepted") {
     console.log(
       "The API ISSUED TOKENS for a refresh token that had already been rotated. Reuse detection is not working.",
     );
     throw new TesterError("a rotated refresh token was accepted");
   }
-  console.log(
-    `The replay was refused: ${replayed.status} ${refusal?.error ?? JSON.stringify(replayed.body)}`,
-  );
+  console.log(`The replay was refused: ${answered(checked.replayed)}`);
 
-  const live = await attemptRefresh(tester.post, {
-    clientId: saved.clientId,
-    refreshToken: saved.refreshToken,
-  });
-  if (live.status === 200) {
+  if (checked.verdict === "refused-only") {
     console.log(
       "The live refresh token still works, so the session was NOT revoked: the replay was only refused.",
     );
@@ -78,7 +77,7 @@ export const replay = async (tester: Tester): Promise<void> => {
     );
   }
   console.log(
-    `The live token is refused too: ${live.status} ${oauthError(live)?.error ?? JSON.stringify(live.body)}. The session is revoked, which is reuse detection working.`,
+    `The live token is refused too: ${answered(checked.live)}. The session is revoked, which is reuse detection working.`,
   );
 
   tester.store.clear();
