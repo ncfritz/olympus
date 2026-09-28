@@ -10,6 +10,11 @@ import { fakeApi } from "../support/fakeApi";
  * as. Arguments are placeholders; the SDK's types check the rest.
  */
 const ARGS: Record<string, unknown[]> = {
+  // AuthApi
+  describeCurrentUser: [],
+  listSessions: [],
+  revokeSession: ["session-1"],
+  signOut: [],
   // ContentApi
   createContentAsset: [{}],
   addContentAssetTagToAsset: ["asset-1", { name: "hls", type: "system" }],

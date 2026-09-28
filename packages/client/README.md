@@ -32,7 +32,11 @@ out is the same code path rather than a special case.
 The token is fetched before the call is timed, so a provider that refreshes
 does not charge the call it interrupted for its own round trip.
 
-- Wrappers, one per API area, constructed with those clients:
+`AuthApi` is the caller's own account and sessions:
+`describeCurrentUser`, `listSessions`, `revokeSession` and `signOut`. None of
+them takes a user, because the endpoints read it from the token.
+
+- Wrappers, one per API area, constructed with those clients: `AuthApi` and
   `NotificationApi` (Olympus), `ContentApi`, `MediaApi`, `MediaSearchApi`,
   `MetadataApi`, `JobApi` and `MetadataWorkflowApi` (Dionysus). A method is
   named after the SDK function it calls, takes plain arguments and returns
