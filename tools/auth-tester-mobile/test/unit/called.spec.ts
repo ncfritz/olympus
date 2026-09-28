@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { timed } from "../../src/called";
+import { logged, timed } from "../../src/called";
 
 describe("timed", () => {
   it("reports a plain answer as a 200, as JSON", async () => {
@@ -54,5 +54,30 @@ describe("timed", () => {
       Promise.resolve(undefined),
     );
     expect(called.answer).toBe("(no body)");
+  });
+});
+
+describe("logged", () => {
+  /**
+   * Two identical calls have to be two rows: the log is keyed on this so that
+   * removing one animates the row that was swiped rather than its neighbour.
+   */
+  it("numbers every call, even an identical one", () => {
+    const call = {
+      method: "GET",
+      path: "/olympus/ping",
+      took: 1,
+      answer: "{}",
+    };
+    const first = logged(call);
+    const second = logged(call);
+    expect(second.id).toBeGreaterThan(first.id);
+  });
+
+  it("changes nothing else about the call", () => {
+    const call = { method: "GET", path: "/auth/me", took: 7, answer: "{}" };
+    const { id, ...rest } = logged(call);
+    expect(rest).toEqual(call);
+    expect(typeof id).toBe("number");
   });
 });

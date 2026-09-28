@@ -76,3 +76,20 @@ export const timed = async (
     };
   }
 };
+
+/** A call in the log, which needs an identity of its own to be removed by. */
+export type Logged = Called & { id: number };
+
+let last = 0;
+
+/**
+ * Numbers a call for the log.
+ *
+ * A counter rather than the position in the list: a row keyed on its index is a
+ * different row as soon as one above it goes, so removing the first entry would
+ * animate the wrong one away and leave the text of its neighbour behind.
+ */
+export const logged = (called: Called): Logged => {
+  last += 1;
+  return { ...called, id: last };
+};

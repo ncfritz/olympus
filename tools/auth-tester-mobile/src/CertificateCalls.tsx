@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
-import type { Called } from "./called";
+import { CallLog } from "./CallLog";
+import { logged, type Logged } from "./called";
 import { checkServicesUrl, servicesUrlFor, type Target } from "./endpoints";
 import {
   forgetIdentity,
@@ -48,7 +49,7 @@ export const CertificateCalls = ({
   const [authorities, setAuthorities] = useState<string | undefined>(undefined);
   const [note, setNote] = useState<string | undefined>(undefined);
   const [path, setPath] = useState("/olympus/ping");
-  const [log, setLog] = useState<Called[]>([]);
+  const [log, setLog] = useState<Logged[]>([]);
   const [busy, setBusy] = useState(false);
 
   // Nothing is copied from the target into state: the suggestion is what the
@@ -136,7 +137,7 @@ export const CertificateCalls = ({
     attempt(async () => {
       if (caller === undefined) return undefined;
       const called = await caller.get(path);
-      setLog((entries) => [called, ...entries].slice(0, 20));
+      setLog((entries) => [logged(called), ...entries].slice(0, 20));
       return undefined;
     });
 
@@ -274,17 +275,12 @@ export const CertificateCalls = ({
         </Pressable>
       </View>
 
-      {log.map((called, at) => (
-        <View key={`${called.path}-${at}`} style={styles.called}>
-          <Text style={styles.calledHead}>
-            {called.method} {called.path} · {called.status ?? "—"} ·{" "}
-            {called.took}ms
-          </Text>
-          <Text style={styles.calledBody} numberOfLines={4}>
-            {called.answer}
-          </Text>
-        </View>
-      ))}
+      <CallLog
+        entries={log}
+        onClear={(id) =>
+          setLog((entries) => entries.filter((entry) => entry.id !== id))
+        }
+      />
     </View>
   );
 };

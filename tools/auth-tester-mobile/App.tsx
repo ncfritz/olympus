@@ -24,6 +24,8 @@ import {
   resolve,
 } from "./src/endpoints";
 import { type Called, createCaller, type Listed } from "./src/api";
+import { CallLog } from "./src/CallLog";
+import { logged, type Logged } from "./src/called";
 import { CertificateCalls } from "./src/CertificateCalls";
 import { PROVIDER, REDIRECT_URI, signIn } from "./src/signIn";
 import { styles } from "./src/styles";
@@ -60,7 +62,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   /** What the last attempt did, in a line. */
   const [outcome, setOutcome] = useState<string | undefined>(undefined);
-  const [log, setLog] = useState<Called[]>([]);
+  const [log, setLog] = useState<Logged[]>([]);
   const [path, setCallPath] = useState("/olympus/ping");
   const [sessions, setSessions] = useState<Listed[] | undefined>(undefined);
 
@@ -187,7 +189,7 @@ export default function App() {
   };
 
   const record = (called: Called) => {
-    setLog((entries) => [called, ...entries].slice(0, 20));
+    setLog((entries) => [logged(called), ...entries].slice(0, 20));
   };
 
   const run = async (call: () => Promise<Called>) => {
@@ -501,17 +503,12 @@ export default function App() {
             <Text style={styles.smallText}>GET</Text>
           </Pressable>
         </View>
-        {log.map((called, at) => (
-          <View key={`${called.path}-${at}`} style={styles.called}>
-            <Text style={styles.calledHead}>
-              {called.method} {called.path} · {called.status ?? "—"} ·{" "}
-              {called.took}ms
-            </Text>
-            <Text style={styles.calledBody} numberOfLines={4}>
-              {called.answer}
-            </Text>
-          </View>
-        ))}
+        <CallLog
+          entries={log}
+          onClear={(id) =>
+            setLog((entries) => entries.filter((entry) => entry.id !== id))
+          }
+        />
 
         {sessions !== undefined && (
           <View style={styles.claims}>
