@@ -1,21 +1,13 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "outDir": "build/dist",
     "module": "esnext",
     "target": "es6",
-    "lib": [
-      "es6",
-      "es2021",
-      "dom",
-      "esnext",
-      "dom.iterable"
-    ],
+    "lib": ["es6", "es2021", "dom", "esnext", "dom.iterable"],
     "sourceMap": true,
     "allowJs": true,
     "jsx": "preserve",
     "moduleResolution": "bundler",
-    "rootDir": "src",
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
@@ -32,16 +24,6 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true
   },
-  "exclude": [
-    "node_modules",
-    "build",
-    "scripts",
-    "webpack",
-    "jest",
-    "public",
-  ],
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
-  ]
+  "exclude": ["node_modules", "build", "scripts", "webpack", "jest", "public"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"]
 }

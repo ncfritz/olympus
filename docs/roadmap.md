@@ -301,6 +301,14 @@ check the consumers when the metadata and asset agents are imported.
 
 ### Site
 
+- **Rotate credentials**: `NEXTAUTH_SECRET` and the GitHub OAuth app's
+  `GITHUB_CLIENT_SECRET`. Both were committed to `olympus-site` in a
+  `.env.local` and lived in its history until the import (2026-09-28), which
+  dropped the file from every commit and redacted the values. That does nothing
+  about the copies on GitHub and on any machine that has ever cloned the repo,
+  so both must be rotated at the source: a new secret for the GitHub OAuth app,
+  and `NEXTAUTH_SECRET` retired outright once phase 5 removes NextAuth.
+
 - A Google Maps API key is hard-coded in `src/pages/_app.tsx`. Move it to
   `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, and restrict the key by referrer in
   the Google console.

@@ -1,3 +1,9 @@
+# The pre-import Dockerfile, kept for reference and **not working**: it runs
+# `npm ci` against a package-lock this import deleted, and pulls @ncfritz
+# packages from GitHub's registry rather than from the workspace. A site image
+# is the docker plan's to write, alongside the others in docker-bake.hcl, which
+# has no target for this one yet.
+
 FROM node:22-alpine AS base
 
 # Set up build to allow pullin gfrom GitHub NPM repos

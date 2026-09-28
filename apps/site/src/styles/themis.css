@@ -1,5 +1,4 @@
 section.ant-layout {
-
   background-color: #fff;
 }
 
@@ -7,7 +6,7 @@ section.ant-layout {
   writing-mode: vertical-lr;
   display: flex;
   justify-content: flex-end;
-  align-items: center
+  align-items: center;
 }
 
 .dataCell:hover {
@@ -17,14 +16,30 @@ section.ant-layout {
 .dataCell {
   padding: 4px;
 }
-.b-b1 { border-bottom: 1px solid #e6e6e6; }
-.b-b1-d { border-bottom: 1px dashed #e6e6e6; }
-.b-t1 { border-top: 1px solid #e6e6e6; }
-.b-t1-d { border-top: 1px dashed #e6e6e6; }
-.b-r1 { border-right: 1px solid #e6e6e6; }
-.b-r1-d { border-right: 1px dashed #e6e6e6; }
-.b-l1 { border-left: 1px solid #e6e6e6; }
-.b-l1-d { border-left: 1px dashed #e6e6e6; }
+.b-b1 {
+  border-bottom: 1px solid #e6e6e6;
+}
+.b-b1-d {
+  border-bottom: 1px dashed #e6e6e6;
+}
+.b-t1 {
+  border-top: 1px solid #e6e6e6;
+}
+.b-t1-d {
+  border-top: 1px dashed #e6e6e6;
+}
+.b-r1 {
+  border-right: 1px solid #e6e6e6;
+}
+.b-r1-d {
+  border-right: 1px dashed #e6e6e6;
+}
+.b-l1 {
+  border-left: 1px solid #e6e6e6;
+}
+.b-l1-d {
+  border-left: 1px dashed #e6e6e6;
+}
 
 .p5 {
   padding: 5px;
@@ -52,7 +67,7 @@ section.ant-layout {
   aside,
   .edit_button,
   .actions {
-    display: none!important;
+    display: none !important;
   }
   section.main {
     margin: 0px !important;
