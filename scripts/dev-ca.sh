@@ -259,6 +259,18 @@ for device in dev-valid dev-revoked dev-expired dev-wrong-ca; do
     -certfile "$ca/devices/ca.crt" -passout "pass:$pass" 2>/dev/null
 done
 
+# The service identities as PKCS#12 as well: an app importing one is how the
+# mobile tester proves it can present a client certificate at all, and pairing
+# it with a device identity against the same listener is how it proves the
+# listener tells them apart (ADR 0023).
+for agent in dionysus-asset-agent dionysus-metadata-agent dionysus-search-agent \
+  olympus-notification-agent dionysus-asset-agent-nas svc-revoked svc-expired \
+  svc-wrong-ca; do
+  openssl pkcs12 -export -macalg sha256 -out "$out/agents/$agent.p12" \
+    -inkey "$out/agents/$agent.key" -in "$out/agents/$agent.crt" \
+    -certfile "$ca/services/ca.crt" -passout "pass:$pass" 2>/dev/null
+done
+
 echo "TLS certificates"
 server tls tls localhost "/CN=localhost/O=Olympus Dev" \
   "DNS:localhost,DNS:harpocrates.internal.localhost,IP:127.0.0.1"
@@ -312,7 +324,9 @@ The chain is three authorities deep, like the real one:
   api.crt / api.key    the API's server certificate
   agents/<name>.*      one per agent, plus dionysus-asset-agent-nas (the same
                        name, another deployment), svc-revoked, svc-expired
-                       and svc-wrong-ca (from the device issuer)
+                       and svc-wrong-ca (from the device issuer). The .p12 of
+                       each is for an app or a phone importing an identity;
+                       the password is "olympus"
   devices/dev-*.*      device certificates and .p12 files, including
                        dev-wrong-ca (from the service issuer)
   tls/localhost.*      a server certificate from the TLS issuer, and

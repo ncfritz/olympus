@@ -258,13 +258,29 @@ deployment contains.
   the Keychain with `expo-secure-store`.
 - API calls through `@ncfritz/olympus-client` with its auth option (the
   first React Native use of the package).
-- A local Expo module, `client-identity` (Swift): imports a device
-  certificate (`.p12` from Files, with its password) into the app's
-  Keychain, and performs requests on a `URLSession` that answers
-  client-certificate challenges with it. React Native's own networking
-  can't present a client certificate, so the client package gets an axios
-  adapter over this module (`createOlympusClients({ axios: { adapter } })`).
-  The same module is what the iOS app will use.
+- A local Expo module, `client-identity` (Swift): imports an identity
+  (`.p12` picked from Files, with its password) into the app's Keychain, and
+  performs requests on a `URLSession` that answers client-certificate
+  challenges with it. React Native's own networking can't present a client
+  certificate, so the client package gets an axios adapter over this module
+  (`createOlympusClients({ axios: { adapter } })`). The same module is what
+  the iOS app will use.
+
+  It also pins the CA it validates the server against, because a phone does
+  not trust the dev CA and installing a throwaway root on every test device
+  is worse than holding a PEM — and the iOS app will pin the internal CA for
+  the same reason.
+
+  **What it can prove before the border exists (phase 6):** the API's own
+  `3443` listener is an mTLS listener, so importing an agent identity there
+  answers the question the module exists for — can an app present a client
+  certificate on its own requests — and importing a _device_ identity against
+  the same listener proves it is refused, which is ADR 0023's rule seen from a
+  phone rather than from a Node test. `scripts/dev-ca.sh` writes a `.p12` per
+  agent identity (**2026-09-28**) for exactly this. What still waits for phase 6
+  is the only question no code of ours can answer: whether
+  `ASWebAuthenticationSession` presents a certificate installed by
+  configuration profile.
 
 The risks it retires:
 
