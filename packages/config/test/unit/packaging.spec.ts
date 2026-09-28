@@ -18,14 +18,35 @@ import { describe, expect, it } from "vitest";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, "../../../..");
 
-/** The workspaces pnpm-workspace.yaml globs, expanded. */
-const WORKSPACE_GLOBS = [
-  "apps/*",
-  "agents/*",
-  "agents/*/agent",
-  "agents/*/console",
-  "packages/*",
-];
+/**
+ * The globs from pnpm-workspace.yaml, read rather than copied.
+ *
+ * A copy is worse than no check at all: adding a glob to the workspace and
+ * not to the copy leaves everything under it silently uncovered, and nothing
+ * fails to say so. The file's `packages:` list is a flat sequence of quoted
+ * strings, so it needs a reader rather than a YAML parser.
+ */
+const WORKSPACE_GLOBS = ((): string[] => {
+  const file = fs.readFileSync(path.join(repo, "pnpm-workspace.yaml"), "utf8");
+  const globs: string[] = [];
+  let inPackages = false;
+  for (const line of file.split("\n")) {
+    if (/^packages:/.test(line)) {
+      inPackages = true;
+      continue;
+    }
+    if (!inPackages) continue;
+    const entry = /^\s+-\s*["']?([^"'#\s]+)["']?/.exec(line);
+    if (entry !== null) {
+      globs.push(entry[1]!);
+      continue;
+    }
+    // An indented comment or a blank line is still inside the list;
+    // anything at the left margin has ended it.
+    if (/^\S/.test(line)) break;
+  }
+  return globs;
+})();
 
 const directoriesIn = (parent: string): string[] => {
   const full = path.join(repo, parent);
@@ -103,8 +124,24 @@ const builds = (pkg: Package): boolean =>
   pkg.scripts.build !== undefined && !/\bnext build\b/.test(pkg.scripts.build);
 
 describe("what workspace packages ship", () => {
+  it("reads the workspace's own globs", () => {
+    // Each of these is a shape the reader has to handle: a plain glob, one
+    // nested two deep, and the one that arrived last.
+    expect(WORKSPACE_GLOBS).toEqual(
+      expect.arrayContaining([
+        "apps/*",
+        "packages/*",
+        "agents/*/console",
+        "tools/*",
+      ]),
+    );
+  });
+
   it("finds the workspace", () => {
     expect(packages.map((pkg) => pkg.name)).toContain("@ncfritz/olympus-sdk");
+    expect(packages.map((pkg) => pkg.name)).toContain(
+      "@ncfritz/olympus-auth-tester",
+    );
   });
 
   it("declares `files` wherever the output is built", () => {
