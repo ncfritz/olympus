@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { presenceKey, slug, tokensKey } from "../../src/storage";
+import { presenceKey, slug, tokensKey } from "../../src/keys";
 
 /** SecureStore keys hold alphanumerics, `.`, `-` and `_`, and nothing else. */
 const ALLOWED = /^[A-Za-z0-9.\-_]+$/;

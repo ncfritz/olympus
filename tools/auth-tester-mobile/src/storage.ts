@@ -1,31 +1,7 @@
 import type { SavedTokens } from "@ncfritz/olympus-auth-flow";
 import * as SecureStore from "expo-secure-store";
 import type { Target } from "./endpoints";
-
-/**
- * SecureStore keys may hold alphanumerics, `.`, `-` and `_`, and a base URL
- * holds none of the punctuation that matters to it, so this is a mapping
- * rather than a hash: a key you can read in a debugger is worth more here than
- * one that is shorter.
- */
-export const slug = (value: string): string =>
-  value.replace(/[^A-Za-z0-9.\-_]+/g, "-");
-
-export const tokensKey = (baseUrl: string): string => `tokens.${slug(baseUrl)}`;
-
-/**
- * Written without `requireAuthentication`, beside the tokens that need it.
- *
- * `getItemAsync` resolves **null** when Face ID is declined, and null again
- * when there is nothing stored, and an app that cannot tell those apart shows
- * "not signed in" to someone who simply cancelled a prompt -- then signs them
- * in again, issuing a second session for no reason. The marker is how the two
- * are told apart; it holds no secret.
- */
-export const presenceKey = (baseUrl: string): string =>
-  `${tokensKey(baseUrl)}.present`;
-
-const SETTINGS = "settings";
+import { presenceKey, SETTINGS_KEY, tokensKey } from "./keys";
 
 export type Settings = {
   target: Target;
@@ -36,7 +12,7 @@ export type Settings = {
 };
 
 export const loadSettings = async (): Promise<Settings | undefined> => {
-  const stored = await SecureStore.getItemAsync(SETTINGS);
+  const stored = await SecureStore.getItemAsync(SETTINGS_KEY);
   if (stored === null) return undefined;
   try {
     return JSON.parse(stored) as Settings;
@@ -47,7 +23,7 @@ export const loadSettings = async (): Promise<Settings | undefined> => {
 };
 
 export const saveSettings = (settings: Settings): Promise<void> =>
-  SecureStore.setItemAsync(SETTINGS, JSON.stringify(settings));
+  SecureStore.setItemAsync(SETTINGS_KEY, JSON.stringify(settings));
 
 export type StoredTokens =
   | { state: "none" }

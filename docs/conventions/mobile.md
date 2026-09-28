@@ -58,6 +58,13 @@ is a finding.
 - Tests in `test/`, as everywhere else in this repository. Unit tests for the
   pure parts; anything that needs a device is a sign-off step in the plan, not
   a test.
+- **A unit test must not import a module that reaches React Native.** Its
+  sources are Flow-typed, and the test runner refuses them outright (`Parse
+failure: Flow is not supported`) -- so a spec that touches
+  `expo-secure-store`, or anything else that pulls React Native in, dies on the
+  parse rather than on the code. Keep the pure part in its own module and test
+  that; `tools/auth-tester-mobile/test/unit/boundary.spec.ts` is the guard,
+  and it is cheaper than teaching the runner to transform React Native.
 - Flow logic that is not about the screen belongs in
   `packages/auth-flow` — platform-free, shared with the CLI tester and the
   site. The app's own code is screens, storage and the native module.
