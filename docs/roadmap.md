@@ -301,6 +301,17 @@ check the consumers when the metadata and asset agents are imported.
 
 ### Site
 
+- **`public/assets/libs/tinymce` is build output under version control.**
+  `next.config.mjs` copies `node_modules/tinymce` into it with
+  `copy-webpack-plugin`, so every build rewrites 239 tracked files and `git
+status` is only clean while the installed version matches the committed one --
+  which is why `tinymce` is pinned to an exact 8.8.2 rather than a caret. The
+  directory also holds a `tinymce-premium` overlay that nothing copies: those
+  plugin directories are there because somebody put them there, they carry no
+  version, and a `tinymce` upgrade leaves them behind. Untracking the directory
+  needs the build to reproduce all of it, premium included, which is the site's
+  conventions work rather than this phase's.
+
 - **433 lint warnings**, which the site arrived with: 271
   `@typescript-eslint/no-unused-vars`, 143 `@typescript-eslint/no-explicit-any`
   and 19 others, across 154 files. The same ESLint on the pre-import repository

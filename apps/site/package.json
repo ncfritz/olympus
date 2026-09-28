@@ -107,7 +107,7 @@
     "socket.io-client": "^4.8.1",
     "socket.io-react-hook": "^2.4.5",
     "styled-components": "^6.1.14",
-    "tinymce": "^8.8.0",
+    "tinymce": "8.8.2",
     "tinymce-premium": "^8.8.0",
     "typescript": "^5.4.5",
     "typescript-eslint": "^8.34.1",
