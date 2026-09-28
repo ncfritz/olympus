@@ -37,6 +37,79 @@ describe("createOlympusClients", () => {
     ]);
   });
 
+  describe("auth", () => {
+    it("sends the token the provider returns", async () => {
+      const api = fakeApi(undefined, { auth: () => "a-token" });
+      api.reply(200, { movie: { id: 603 } });
+      await new MetadataApi(api.clients).describeMovie(603);
+      expect(api.sent[0]?.headers).toMatchObject({
+        authorization: "Bearer a-token",
+      });
+    });
+
+    it("sends no header when there is no token yet", async () => {
+      // Not signed in is the ordinary state, not an error: the request goes
+      // out unauthenticated and the API decides.
+      const api = fakeApi(undefined, { auth: () => undefined });
+      api.reply(200, { movie: { id: 603 } });
+      await new MetadataApi(api.clients).describeMovie(603);
+      expect(api.sent[0]?.headers).not.toHaveProperty("authorization");
+    });
+
+    it("asks again for every request", async () => {
+      // The whole reason this is a function. A token lives ten minutes and a
+      // client is held for the life of a process; asking once would send an
+      // expired token from then on.
+      const tokens = ["first", "second"];
+      const api = fakeApi(undefined, { auth: () => tokens.shift() });
+      api.reply(200, { movie: { id: 1 } });
+      api.reply(200, { movie: { id: 2 } });
+      await new MetadataApi(api.clients).describeMovie(1);
+      await new MetadataApi(api.clients).describeMovie(2);
+      expect(api.sent.map((r) => r.headers.authorization)).toEqual([
+        "Bearer first",
+        "Bearer second",
+      ]);
+    });
+
+    it("accepts a provider that has to go and get one", async () => {
+      const api = fakeApi(undefined, {
+        auth: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          return "fetched";
+        },
+      });
+      api.reply(200, { movie: { id: 603 } });
+      await new MetadataApi(api.clients).describeMovie(603);
+      expect(api.sent[0]?.headers).toMatchObject({
+        authorization: "Bearer fetched",
+      });
+    });
+
+    it("does not charge the call for the time the provider took", async () => {
+      // A provider that refreshes makes a request of its own; counting it
+      // here would blame this call for someone else's round trip.
+      const api = fakeApi(undefined, {
+        auth: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          return "slow";
+        },
+      });
+      api.reply(200, { movie: { id: 603 } });
+      await new MetadataApi(api.clients).describeMovie(603);
+      expect(api.observed[0]?.durationSeconds).toBeLessThan(0.05);
+    });
+
+    it("sends the caller's name with or without a token", async () => {
+      const api = fakeApi(undefined, { auth: () => "a-token" });
+      api.reply(200, { movie: { id: 603 } });
+      await new MetadataApi(api.clients).describeMovie(603);
+      expect(api.sent[0]?.headers).toMatchObject({
+        "x-olympus-client": "test-agent",
+      });
+    });
+  });
+
   it("uses each API's own client", async () => {
     const api = fakeApi();
     api.reply(200, { notificationId: "n-1" });

@@ -8,7 +8,7 @@ import {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { vi } from "vitest";
-import { createOlympusClients } from "../../src";
+import { createOlympusClients, type OlympusClientOptions } from "../../src";
 
 export type SentRequest = {
   method: string;
@@ -20,7 +20,10 @@ export type SentRequest = {
 type Reply = { status: number; data?: unknown } | Error;
 
 /** Olympus clients over a fake transport that records requests and plays replies. */
-export const fakeApi = (baseUrl = "http://olympus-api:3100/v1") => {
+export const fakeApi = (
+  baseUrl = "http://olympus-api:3100/v1",
+  extra: Partial<OlympusClientOptions> = {},
+) => {
   const sent: SentRequest[] = [];
   const observed: RequestObservation[] = [];
   const replies: Reply[] = [];
@@ -70,6 +73,7 @@ export const fakeApi = (baseUrl = "http://olympus-api:3100/v1") => {
     clientName: "test-agent",
     metrics,
     axios: { adapter },
+    ...extra,
   });
 
   return {
