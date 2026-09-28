@@ -236,10 +236,12 @@ Two decisions the table did not settle:
   the question is whether `ASWebAuthenticationSession` and an app's own
   requests can present one, which is what the mobile tester is for.
 
-**`apps/auth-tester-mobile` (React Native, Expo)**, the mobile proof of
-concept, built the way the iOS app will be:
+**`tools/auth-tester-mobile` (React Native, Expo)**, the mobile proof of
+concept, built the way the iOS app will be. Under `tools/` rather than
+`apps/`, with the CLI: nobody but us ever runs it, and `apps/` is what a
+deployment contains.
 
-- An Expo app in the workspace; Turbo runs its typecheck, lint and unit
+- An Expo app in the workspace (`tools/*` is a workspace glob); Turbo runs its typecheck, lint and unit
   tests; the app itself is built with a development build
   (`npx expo run:ios`, Xcode on a Mac), not Expo Go, because it has a
   native module.
