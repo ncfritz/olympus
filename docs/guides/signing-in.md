@@ -278,7 +278,14 @@ it, because one unconfigured feature should not take every endpoint down.
 
 nginx has to be forwarding the client address for the rate limits to count
 callers apart (`X-Forwarded-For`, with `TRUSTED_PROXIES`), so deploy the
-nginx configuration too if it has not been.
+nginx configuration too if it has not been — and remember that a mounted
+server block is not reloaded by `up` (`stack.sh nginx-reload`).
+
+The same applies to `olympus.dev.ncfritz.net`, where prod's nginx proxies to a
+dev-host over the LAN: that block forwards the address too, and the API on the
+dev-host needs `TRUSTED_PROXIES=uniquelocal` to believe it. Both were added on
+2026-09-28; before that, every caller of dev's auth endpoints shared one
+per-client bucket.
 
 ## What tends to go wrong
 
