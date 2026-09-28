@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   baseUrlOf,
+  checkServicesUrl,
   isResolved,
   resolve,
   servicesUrlFor,
@@ -218,6 +219,47 @@ describe("servicesUrlFor", () => {
     ).toBeUndefined();
     expect(
       servicesUrlFor({ kind: "custom", protocol: "https", host: "no spaces" }),
+    ).toBeUndefined();
+  });
+});
+
+describe("checkServicesUrl", () => {
+  it("has nothing to say about the listener itself", () => {
+    expect(checkServicesUrl("https://127.0.0.1:3443/v1")).toEqual({});
+    expect(checkServicesUrl(" https://192.168.1.10:3443/v1 ")).toEqual({});
+  });
+
+  /**
+   * openssl answers a plaintext request on a TLS socket by dropping the
+   * connection, and the app reports that as the network being lost -- so this
+   * one has to be refused before it is made.
+   */
+  it("refuses a scheme that cannot present a certificate", () => {
+    expect(checkServicesUrl("http://127.0.0.1:3443/v1").problem).toMatch(
+      /cleartext/,
+    );
+    expect(checkServicesUrl("127.0.0.1:3443/v1").problem).toMatch(/scheme/);
+    expect(checkServicesUrl("   ").problem).toBe("a base URL is needed");
+  });
+
+  /** The certificate stops at nginx, and the call arrives looking anonymous. */
+  it("warns about a named front door", () => {
+    expect(
+      checkServicesUrl("https://olympus.dev.ncfritz.net/api/v1").warning,
+    ).toMatch(/nginx/);
+  });
+
+  it("warns about a port that is not the listener's", () => {
+    expect(checkServicesUrl("https://127.0.0.1:3001/v1").warning).toMatch(
+      /3443/,
+    );
+    expect(checkServicesUrl("https://127.0.0.1/v1").warning).toMatch(/443/);
+  });
+
+  /** A warning is not a refusal: the call is still worth making on purpose. */
+  it("leaves a warned URL callable", () => {
+    expect(
+      checkServicesUrl("https://127.0.0.1:3001/v1").problem,
     ).toBeUndefined();
   });
 });

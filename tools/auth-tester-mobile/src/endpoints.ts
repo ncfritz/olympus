@@ -149,6 +149,60 @@ export const servicesUrlFor = (target: Target): string | undefined => {
   return `https://${host}:${SERVICES_PORT}${DIRECT_PATH}`;
 };
 
+export type ServicesUrlCheck = {
+  /** The call cannot work at all, so there is no point making it. */
+  problem?: string;
+  /** It will reach something, and probably not the thing that was meant. */
+  warning?: string;
+};
+
+/**
+ * What is wrong with a services base URL.
+ *
+ * Every one of these was a real round trip through a device, a listener and an
+ * API log before it was a line here. The listener says nothing useful about any
+ * of them: a call to the wrong port is refused for the wrong reason, a call to
+ * a front door arrives with the certificate stripped and looks anonymous, and
+ * cleartext on a TLS socket is answered by dropping the connection.
+ */
+export const checkServicesUrl = (url: string): ServicesUrlCheck => {
+  const trimmed = url.trim();
+  if (trimmed === "") return { problem: "a base URL is needed" };
+
+  const scheme = /^([A-Za-z][A-Za-z0-9+.-]*):\/\//.exec(trimmed);
+  if (scheme === null) {
+    return { problem: `${trimmed} needs a scheme: https://` };
+  }
+  if (scheme[1]!.toLowerCase() !== "https") {
+    // openssl answers a plaintext request on a TLS socket by dropping the
+    // connection, which the app reports as the network being lost.
+    return {
+      problem: `${scheme[1]!}:// cannot present a certificate: a cleartext port never asks for one, and this listener answers plaintext by hanging up`,
+    };
+  }
+
+  const authority = trimmed.slice(scheme[0].length).split("/")[0] ?? "";
+  const [host, port] = authority.split(":");
+  if (
+    Object.values(NAMED).some((named) => named.host === host?.toLowerCase())
+  ) {
+    return {
+      warning: `${host!} is nginx, which terminates TLS: the certificate stops there and the call arrives on the users listener with no credentials at all`,
+    };
+  }
+  if (port === undefined || port === "") {
+    return {
+      warning: `no port, so 443: the services listener is ${SERVICES_PORT}`,
+    };
+  }
+  if (port !== SERVICES_PORT) {
+    return {
+      warning: `${port} is not the services listener (${SERVICES_PORT}), and a listener that never asks for a certificate will call this anonymous`,
+    };
+  }
+  return {};
+};
+
 export const isResolved = (answer: Resolved | Unresolved): answer is Resolved =>
   "baseUrl" in answer;
 

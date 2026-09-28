@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import type { Called } from "./called";
-import { servicesUrlFor, type Target } from "./endpoints";
+import { checkServicesUrl, servicesUrlFor, type Target } from "./endpoints";
 import {
   forgetIdentity,
   type ImportedIdentity,
@@ -60,17 +60,19 @@ export const CertificateCalls = ({
     identity === undefined ? undefined : clientNameFor(identity.subject);
   const clientName = typedName.trim() === "" ? suggestedName : typedName.trim();
   const usable = clientName !== undefined && isClientName(clientName);
+  const checked = checkServicesUrl(baseUrl ?? "");
+  const reachable = checked.problem === undefined;
 
   const caller = useMemo(
     () =>
-      baseUrl === undefined || clientName === undefined || !usable
+      baseUrl === undefined || clientName === undefined || !usable || !reachable
         ? undefined
         : createServiceCaller({
             baseUrl,
             clientName,
             request: nativeRequest,
           }),
-    [baseUrl, clientName, usable],
+    [baseUrl, clientName, usable, reachable],
   );
 
   const keep = (next: { baseUrl?: string; clientName?: string }) => {
@@ -159,9 +161,17 @@ export const CertificateCalls = ({
           style={[styles.input, styles.hostInput]}
         />
       </View>
+      <Text style={styles.rowDetail}>{baseUrl ?? "nothing to call yet"}</Text>
+      {checked.problem !== undefined && (
+        <Text style={styles.warning}>{checked.problem}</Text>
+      )}
+      {checked.warning !== undefined && (
+        <Text style={styles.warning}>{checked.warning}</Text>
+      )}
       <Text style={styles.note}>
         The listener is reached directly: a certificate presented at one of the
-        named front doors reaches nginx and stops there.
+        named front doors reaches nginx and stops there. The line above is the
+        URL this will actually call — an empty field uses the suggestion.
       </Text>
 
       <View style={styles.inputs}>
