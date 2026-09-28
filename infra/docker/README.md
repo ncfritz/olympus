@@ -158,9 +158,17 @@ need from the services themselves, and tags them with the commit:
 ```sh
 infra/docker/stack.sh build --load olympus                # every image the stack runs
 infra/docker/stack.sh build --load olympus olympus-api    # one service's
-infra/docker/stack.sh build --push olympus dionysus-asset-agent
+infra/docker/stack.sh build --push --env prod olympus     # production's, from the laptop
 infra/docker/stack.sh build --load olympus -- --set asset-agent.platform=linux/arm64
 ```
+
+`--env` is which environment's images to build, not which machine you are on.
+They are usually the same and it can be left out; they differ for the case
+that matters most here — the laptop runs `local`, whose images are
+`olympus/<name>` with no registry, and pushing production's images from the
+laptop is the _preferred_ way to fill the registry, because a push from the
+Mac Mini goes out and back in through nginx (ADR 0022: environments are
+named, not machines).
 
 There is no default output, on purpose. `--load` puts the image in the local
 image store, which is what this machine's Compose services pull from and the

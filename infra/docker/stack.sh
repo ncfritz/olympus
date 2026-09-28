@@ -6,8 +6,10 @@
 #                                             create networks and directories
 #   infra/docker/stack.sh check [stack...]    every setting and secret in place
 #   infra/docker/stack.sh list [stack...]     stacks and their containers, as a tree
-#   infra/docker/stack.sh build (--push|--load) <stack> [service...]
-#                                             build this stack's images at HEAD
+#   infra/docker/stack.sh build (--push|--load) [--env <env>] <stack> [service...]
+#                                             build this stack's images at HEAD;
+#                                             --env builds another
+#                                             environment's from this machine
 #   infra/docker/stack.sh up [stack...|all]   check, then start (in order)
 #   infra/docker/stack.sh down [stack...|all] stop (in reverse order)
 #   infra/docker/stack.sh nginx-reload         validate and reload the server blocks
@@ -42,9 +44,18 @@ known_envs() {
   for f in "$here"/env/*.env; do basename "$f" .env; done | tr '\n' ' '
 }
 
+# This machine's environment, or one named explicitly. The two differ when
+# building images for an environment this machine does not run: the laptop
+# runs `local` and builds production's images, which is the whole point of
+# environments being named rather than being machines (ADR 0022).
 load_env() {
-  [ -f "$env_file_marker" ] || die "no environment yet: run 'stack.sh bootstrap <env>' (one of: $(known_envs))"
-  OLYMPUS_ENV=$(cat "$env_file_marker")
+  local named=${1:-}
+  if [ -n "$named" ]; then
+    OLYMPUS_ENV=$named
+  else
+    [ -f "$env_file_marker" ] || die "no environment yet: run 'stack.sh bootstrap <env>' (one of: $(known_envs))"
+    OLYMPUS_ENV=$(cat "$env_file_marker")
+  fi
   ENV_FILE="$here/env/$OLYMPUS_ENV.env"
   [ -f "$ENV_FILE" ] || die "no $ENV_FILE"
   set -a
@@ -220,18 +231,26 @@ build_targets() {
 }
 
 build() {
-  local output="" dirty="" stack="" services="" passthru="" root registry tag
-  local revision builder=""
+  local output="" dirty="" env_name="" stack="" services="" passthru=""
+  local root registry tag revision builder=""
   while [ $# -gt 0 ]; do
     case "$1" in
       --push | --load) output=${1#--} ;;
       --dirty) dirty=yes ;;
+      --env)
+        shift
+        env_name=${1:-}
+        [ -n "$env_name" ] || die "--env needs a name (one of: $(known_envs))"
+        ;;
       --) shift; passthru="$*"; break ;;
-      -*) die "unknown option '$1' (--push, --load, --dirty)" ;;
+      -*) die "unknown option '$1' (--push, --load, --dirty, --env)" ;;
       *) if [ -z "$stack" ]; then stack=$1; else services="$services $1"; fi ;;
     esac
     shift
   done
+
+  # After the flags, because --env decides which one.
+  load_env "$env_name"
 
   # No default, deliberately. --load puts the image in the local store, which
   # is what the Compose services on that machine pull from and the right
@@ -260,7 +279,7 @@ build() {
     *) die "IMAGE_PREFIX is '$IMAGE_PREFIX'; docker-bake.hcl builds <registry>/olympus/<name>" ;;
   esac
   [ -n "$registry" ] || [ "$output" = load ] ||
-    die "IMAGE_PREFIX names no registry, so there is nowhere to --push"
+    die "the '$OLYMPUS_ENV' environment's IMAGE_PREFIX names no registry, so there is nowhere to --push. To build another environment's images from this machine: stack.sh build --push --env prod $stack"
 
   local targets
   # Split on purpose: each service name is its own argument, and this script
@@ -274,7 +293,7 @@ build() {
   [ "$output" = load ] || builder="--builder olympus"
 
   echo "== $stack: $targets"
-  echo "   tag $tag${registry:+, registry $registry}, --$output"
+  echo "   $OLYMPUS_ENV, tag $tag${registry:+, registry $registry}, --$output"
   # shellcheck disable=SC2086
   (
     cd "$root" &&
@@ -360,7 +379,6 @@ case "$command" in
     list_stacks "$@"
     ;;
   build)
-    load_env
     build "$@"
     ;;
   nginx-reload)
