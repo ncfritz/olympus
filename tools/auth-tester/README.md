@@ -67,12 +67,18 @@ refusal alone would be satisfied by an API that had simply forgotten the old
 token. If either succeeds, the command says which expectation broke and exits
 non-zero.
 
+**`call`** takes a path relative to the base URL, which already carries the
+version — and the API's layout catches people out: a domain's endpoints are
+behind its own prefix (`/olympus/ping`, `/dionysus/movie/603`) while
+authentication is not (`/auth/me`). A 404 says so when the prefix looks
+missing.
+
 **`agent-call`** sends `X-Olympus-Client` as the certificate's common name,
 because the API rejects a request where the two disagree. `--as` is how you
 exercise that rejection deliberately rather than hitting it by accident.
 
 ```sh
-auth-tester agent-call GET /ping \
+auth-tester agent-call GET /olympus/ping \
   --cert infra/dev-ca/agents/dionysus-metadata-agent/client.crt \
   --key  infra/dev-ca/agents/dionysus-metadata-agent/client.key \
   --ca   infra/dev-ca/services-ca.crt

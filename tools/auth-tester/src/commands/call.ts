@@ -1,6 +1,7 @@
 import { TesterError } from "../errors";
 import { method, request } from "../http";
 import { printAnswer } from "../output";
+import { missingPrefix } from "../paths";
 import type { Tester } from "../tester";
 
 /**
@@ -8,9 +9,9 @@ import type { Tester } from "../tester";
  * client attaches it.
  *
  * The path is relative to the base URL, which already includes the version:
- * `call GET /auth/me`, `call GET /ping`. Nothing is thrown for a 4xx -- the
- * refusal is what is being looked at -- but the exit status follows it, so
- * this is usable from a script.
+ * `call GET /auth/me`, `call GET /olympus/ping`. Nothing is thrown for a 4xx
+ * -- the refusal is what is being looked at -- but the exit status follows it,
+ * so this is usable from a script.
  */
 export const call = async (tester: Tester, args: string[]): Promise<number> => {
   const [asked, path] = args;
@@ -30,5 +31,9 @@ export const call = async (tester: Tester, args: string[]): Promise<number> => {
     path,
   });
   printAnswer(answer);
+  if (answer.status === 404) {
+    const hint = missingPrefix(path);
+    if (hint !== undefined) console.log(hint);
+  }
   return answer.status >= 400 ? 1 : 0;
 };

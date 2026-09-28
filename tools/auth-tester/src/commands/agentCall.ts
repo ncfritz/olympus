@@ -5,6 +5,7 @@ import { readServiceIdentity } from "../certificate";
 import { TesterError } from "../errors";
 import { method, request } from "../http";
 import { printAnswer } from "../output";
+import { missingPrefix } from "../paths";
 import type { Settings } from "../settings";
 
 /** Lower case letters, digits and dashes: what the metrics label allows. */
@@ -26,7 +27,7 @@ export const agentCall = async (
   const [asked, path] = args;
   if (asked === undefined || path === undefined) {
     throw new TesterError(
-      "a method and a path are required: agent-call GET /ping",
+      "a method and a path are required: agent-call GET /olympus/ping",
     );
   }
 
@@ -66,5 +67,9 @@ export const agentCall = async (
 
   const answer = await request(clients, { method: method(asked), path });
   printAnswer(answer);
+  if (answer.status === 404) {
+    const hint = missingPrefix(path);
+    if (hint !== undefined) console.log(hint);
+  }
   return answer.status >= 400 ? 1 : 0;
 };
