@@ -17,7 +17,6 @@ import {
   NAMED,
   type NamedTarget,
   resolve,
-  type Target,
 } from "./src/endpoints";
 import {
   loadSettings,
@@ -43,7 +42,9 @@ export default function App() {
   const [host, setHost] = useState("");
   const [port, setPort] = useState("");
   const [protocol, setProtocol] = useState<"http" | "https">("http");
-  const [tokens, setTokens] = useState<StoredTokens>({ state: "none" });
+  // undefined until it has been looked for: "no tokens" and "not looked yet"
+  // are different things to say.
+  const [tokens, setTokens] = useState<StoredTokens | undefined>(undefined);
 
   // What was chosen last time, so the tester comes back where it was.
   useEffect(() => {
@@ -70,20 +71,26 @@ export default function App() {
   const baseUrl = isResolved(resolved) ? resolved.baseUrl : undefined;
 
   // Whether this target has tokens, asked again whenever the target changes:
-  // each one keeps its own, so switching does not sign anything out.
+  // each one keeps its own, so switching does not sign anything out. No
+  // `setTokens` in the body of this effect -- a synchronous setState in an
+  // effect is a cascading render, and there is nothing to say synchronously:
+  // with no target resolved there is nothing to look for, and the screen says
+  // that from `baseUrl` itself.
   useEffect(() => {
-    if (baseUrl === undefined) {
-      setTokens({ state: "none" });
-      return;
-    }
+    if (baseUrl === undefined) return;
+    let current = true;
     void (async () => {
-      setTokens(
-        await loadTokens(baseUrl, {
-          requireAuthentication: settings.requireAuthentication,
-          prompt: PROMPT,
-        }),
-      );
+      const found = await loadTokens(baseUrl, {
+        requireAuthentication: settings.requireAuthentication,
+        prompt: PROMPT,
+      });
+      // The target can change while Face ID is on screen; the answer to the
+      // question nobody is asking any more is dropped.
+      if (current) setTokens(found);
     })();
+    return () => {
+      current = false;
+    };
   }, [baseUrl, settings.requireAuthentication]);
 
   const named = (name: NamedTarget) => {
@@ -222,11 +229,15 @@ export default function App() {
 
         <Text style={styles.heading}>This device</Text>
         <Text style={styles.note}>
-          {tokens.state === "signed-in"
-            ? `Signed in to ${describe(settings.target)} as ${tokens.tokens.provider}, saved ${tokens.tokens.savedAt}.`
-            : tokens.state === "locked"
-              ? "Tokens are stored for this API but were not unlocked."
-              : "No tokens for this API yet."}
+          {baseUrl === undefined
+            ? "Nothing to look for until the API above resolves."
+            : tokens === undefined
+              ? "Looking…"
+              : tokens.state === "signed-in"
+                ? `Signed in to ${describe(settings.target)} as ${tokens.tokens.provider}, saved ${tokens.tokens.savedAt}.`
+                : tokens.state === "locked"
+                  ? "Tokens are stored for this API but were not unlocked."
+                  : "No tokens for this API yet."}
         </Text>
         <Text style={styles.note}>Redirect: olympus-auth-tester://auth</Text>
       </ScrollView>

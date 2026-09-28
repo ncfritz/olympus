@@ -6,17 +6,18 @@
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
-    "./tsconfig/base.json": "./tsconfig/base.json",
-    "./tsconfig/library.json": "./tsconfig/library.json",
-    "./tsconfig/react-library.json": "./tsconfig/react-library.json",
-    "./tsconfig/nest.json": "./tsconfig/nest.json",
-    "./tsconfig/next.json": "./tsconfig/next.json",
+    "./eslint/mobile": "./eslint/mobile.js",
     "./eslint/node": "./eslint/node.js",
     "./eslint/react": "./eslint/react.js",
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/library.json": "./tsconfig/library.json",
+    "./tsconfig/nest.json": "./tsconfig/nest.json",
+    "./tsconfig/next.json": "./tsconfig/next.json",
+    "./tsconfig/react-library.json": "./tsconfig/react-library.json",
+    "./vitest/coverage": "./vitest/coverage.js",
     "./vitest/nest": "./vitest/nest.js",
     "./vitest/node": "./vitest/node.js",
-    "./vitest/react": "./vitest/react.js",
-    "./vitest/coverage": "./vitest/coverage.js"
+    "./vitest/react": "./vitest/react.js"
   },
   "scripts": {
     "test": "vitest run",
@@ -24,12 +25,13 @@
   },
   "dependencies": {
     "@eslint/js": "catalog:",
+    "@swc/core": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
     "globals": "catalog:",
     "typescript-eslint": "catalog:",
-    "unplugin-swc": "catalog:",
-    "@swc/core": "catalog:"
+    "unplugin-swc": "catalog:"
   },
   "peerDependencies": {
     "eslint": "catalog:",

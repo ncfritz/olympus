@@ -20,6 +20,23 @@ an Expo, EAS or React Native API:
 This applies to reviews as much as to writing: "that is not the current API"
 is a finding.
 
+## Linting
+
+`@ncfritz/olympus-config/eslint/mobile`, and the task is a plain `eslint .`.
+
+Two things it is deliberately not:
+
+- **not `expo lint`.** It offers to install and configure ESLint the first time
+  it runs, and a prompt inside a Turbo task can never be answered -- the task
+  hangs or fails with nothing to show for it.
+- **not `eslint-config-expo`.** Its bundled `eslint-plugin-react` throws on
+  ESLint 10 (`contextOrFilename.getFilename is not a function`, the rule context
+  it removed), despite the config's `eslint: ">=8.10"` peer range. Using it
+  would mean a second ESLint major in the workspace for one package. The preset
+  is the repo's own shape plus `eslint-plugin-react-hooks`, which does support
+  ESLint 10 and carries the rules this code needs -- `set-state-in-effect` and
+  the dependency checks earn their place on the first run.
+
 ## Dependencies
 
 - `npx expo install <package>`, never `pnpm add`. It resolves the version
