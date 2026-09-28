@@ -24,6 +24,19 @@ export class UserIdentityService {
     if (header === undefined) return { reason: "no credentials" };
     const match = BEARER.exec(header);
     if (match === null) return { reason: "no credentials" };
+    return this.identifyToken(match[1]!);
+  }
+
+  /**
+   * The same identity from a bare token, for a caller that does not have an
+   * `Authorization` header to read: the notifications gateway, where the token
+   * arrives in the Socket.IO handshake rather than in a header.
+   *
+   * Shared so that the socket and the HTTP request cannot come to different
+   * conclusions about the same token.
+   */
+  async identifyToken(token: string): Promise<UserIdentity> {
+    if (token === "") return { reason: "no credentials" };
 
     const keys = this.keys.available();
     if (keys === undefined) {
@@ -32,7 +45,7 @@ export class UserIdentityService {
       return { reason: "tokens are not configured" };
     }
 
-    const verified = await verifyAccessToken(keys, match[1]!);
+    const verified = await verifyAccessToken(keys, token);
     if ("reason" in verified)
       return { reason: `invalid token: ${verified.reason}` };
 
