@@ -61,6 +61,25 @@ Two switches:
 - **Face ID for stored tokens** — `requireAuthentication` on the Keychain item.
   A simulator never prompts, which is why this can be turned off.
 
+## Signing in
+
+The button hands `authorizeUrl` to `openAuthSessionAsync` and waits for
+`olympus-auth-tester://auth`. Then, in order: the `state` is compared (the API
+returns it untouched, and checking it is the client's own half of the bargain),
+an `error` parameter is reported as-is — one code for every reason, the API's log
+has which — and the code is exchanged for tokens over `fetch`, form-encoded,
+naming itself with `X-Olympus-Client`.
+
+The exchange does not go through `@ncfritz/olympus-client`: that carries an
+access token, and this is the call that issues one.
+
+Afterwards the claims are on screen, decoded and **not** verified. Whether the
+signature is good is the API's answer to give, and it gives it by accepting the
+token — which is what the next commit's calls will do.
+
+"Forget tokens on this device" is local only. It is not `SignOut`: the session
+stays open on the API, which is a difference worth being able to see.
+
 ## Tokens
 
 One Keychain item per API, so signing in to dev does not sign you out of

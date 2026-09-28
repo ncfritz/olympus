@@ -15,6 +15,19 @@ export type FormAnswer = {
   headers: Record<string, string | undefined>;
 };
 
+/**
+ * `application/x-www-form-urlencoded`, which is what the token endpoint takes
+ * and what a query string is. By hand, so a caller with no `URLSearchParams`
+ * worth trusting -- React Native's -- encodes the same way as one that has it.
+ */
+export const formBody = (form: Record<string, string>): string =>
+  Object.entries(form)
+    .map(
+      ([name, value]) =>
+        `${encodeURIComponent(name)}=${encodeURIComponent(value)}`,
+    )
+    .join("&");
+
 /** How the token endpoint is spoken to; the HTTP is somebody else's job. */
 export type FormPost = (
   path: string,
@@ -42,7 +55,7 @@ export const authorizeUrl = (
   // Native's `URL` is a partial, non-spec implementation -- which is why
   // react-native-url-polyfill exists -- and a package that has to run there
   // cannot depend on it. `encodeURIComponent` is in the language.
-  const query = Object.entries({
+  const query = formBody({
     client_id: request.clientId,
     redirect_uri: request.redirectUri,
     response_type: "code",
@@ -50,9 +63,7 @@ export const authorizeUrl = (
     code_challenge_method: CODE_CHALLENGE_METHOD,
     state: request.state,
     provider: request.provider,
-  })
-    .map(([name, value]) => `${name}=${encodeURIComponent(value)}`)
-    .join("&");
+  });
   return `${apiBaseUrl.replace(/\/+$/, "")}/auth/authorize?${query}`;
 };
 

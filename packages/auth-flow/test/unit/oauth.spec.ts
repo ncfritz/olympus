@@ -4,6 +4,7 @@ import {
   authorizeUrl,
   exchangeCode,
   type FormAnswer,
+  formBody,
   oauthError,
   refreshTokens,
 } from "../../src/oauth";
@@ -193,5 +194,17 @@ describe("oauthError", () => {
     expect(
       oauthError({ status: 502, body: "<html>", headers: {} }),
     ).toBeUndefined();
+  });
+});
+
+describe("formBody", () => {
+  it("percent-encodes both halves of every pair", () => {
+    expect(
+      formBody({ grant_type: "refresh_token", refresh_token: "a/b+c=" }),
+    ).toBe("grant_type=refresh_token&refresh_token=a%2Fb%2Bc%3D");
+  });
+
+  it("is empty for nothing, not `=`", () => {
+    expect(formBody({})).toBe("");
   });
 });
