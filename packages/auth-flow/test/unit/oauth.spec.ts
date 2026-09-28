@@ -3,9 +3,11 @@ import {
   attemptRefresh,
   authorizeUrl,
   exchangeCode,
+  exchangeCodeForCookie,
   type FormAnswer,
   formBody,
   oauthError,
+  refreshFromCookie,
   refreshTokens,
 } from "../../src/oauth";
 
@@ -206,5 +208,105 @@ describe("formBody", () => {
 
   it("is empty for nothing, not `=`", () => {
     expect(formBody({})).toBe("");
+  });
+});
+
+/**
+ * The site's delivery: the refresh token is in an httpOnly cookie the browser
+ * holds, so the answer carries an access token and nothing else.
+ */
+const COOKIE_TOKENS = {
+  access_token: "an-access-token",
+  token_type: "Bearer",
+  expires_in: 600,
+};
+
+describe("exchangeCodeForCookie", () => {
+  it("sends the same grant and expects no refresh token back", async () => {
+    const post = answering({ body: COOKIE_TOKENS });
+    const issued = await exchangeCodeForCookie(post, {
+      code: "a-code",
+      redirectUri: "https://olympus.ncfritz.net/auth/callback",
+      clientId: "olympus-site",
+      verifier: "a-verifier",
+      deviceName: "Firefox on a Mac",
+    });
+
+    expect(post).toHaveBeenCalledWith("/auth/token", {
+      grant_type: "authorization_code",
+      code: "a-code",
+      redirect_uri: "https://olympus.ncfritz.net/auth/callback",
+      client_id: "olympus-site",
+      code_verifier: "a-verifier",
+      device_name: "Firefox on a Mac",
+    });
+    expect(issued).toEqual({ accessToken: "an-access-token", expiresIn: 600 });
+  });
+
+  /** The refusals are the same code as the body delivery's, and must stay so. */
+  it("reads a refusal the same way", async () => {
+    await expect(
+      exchangeCodeForCookie(
+        answering({ status: 400, body: { error: "invalid_grant" } }),
+        {
+          code: "a-code",
+          redirectUri: "https://olympus.ncfritz.net/auth/callback",
+          clientId: "olympus-site",
+          verifier: "a-verifier",
+          deviceName: "a browser",
+        },
+      ),
+    ).rejects.toThrow(/invalid_grant/);
+  });
+
+  it("ignores a refresh token if one turns up anyway", async () => {
+    const issued = await exchangeCodeForCookie(
+      answering({ body: { ...COOKIE_TOKENS, refresh_token: "unexpected" } }),
+      {
+        code: "a-code",
+        redirectUri: "https://olympus.ncfritz.net/auth/callback",
+        clientId: "olympus-site",
+        verifier: "a-verifier",
+        deviceName: "a browser",
+      },
+    );
+    expect(issued).toEqual({ accessToken: "an-access-token", expiresIn: 600 });
+  });
+});
+
+describe("refreshFromCookie", () => {
+  it("sends no token, because the browser sends the cookie", async () => {
+    const post = answering({ body: COOKIE_TOKENS });
+    const issued = await refreshFromCookie(post, { clientId: "olympus-site" });
+
+    expect(post).toHaveBeenCalledWith("/auth/token", {
+      grant_type: "refresh_token",
+      client_id: "olympus-site",
+    });
+    expect(issued).toEqual({ accessToken: "an-access-token", expiresIn: 600 });
+  });
+
+  /**
+   * This is also how a page asks "am I signed in?", so the refusal has to be a
+   * thrown error a caller can turn into "no" rather than something silent.
+   */
+  it("refuses when there is no cookie to present", async () => {
+    await expect(
+      refreshFromCookie(
+        answering({ status: 400, body: { error: "invalid_request" } }),
+        { clientId: "olympus-site" },
+      ),
+    ).rejects.toThrow(/invalid_request/);
+  });
+});
+
+describe("the body delivery", () => {
+  it("still insists on a refresh token", async () => {
+    await expect(
+      refreshTokens(answering({ body: COOKIE_TOKENS }), {
+        clientId: "olympus-auth-tester",
+        refreshToken: "a-refresh-token",
+      }),
+    ).rejects.toThrow(/cookie/);
   });
 });
