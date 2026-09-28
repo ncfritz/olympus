@@ -51,6 +51,13 @@ from its OpenAPI page and the break-glass CLI.
 **Sign-off:** both services start, `/health` answers, the Turbo tasks
 pass, and the SDK builds with an empty `pki` client; no functional flows.
 
+**A constraint on every TLS server certificate this issues:** 825 days of
+validity, at most. Apple refuses a longer one and does so against a private
+anchor as well, reporting it as the client cancelling rather than as anything to
+do with the certificate — so an iPhone on the house network is what would find
+it, one afternoon, with nothing in any log to say why. `docs/guides/certificates.md`
+has the rest of that page's requirements; the templates already satisfy them.
+
 ## Phase 1 — The signer
 
 1. **Key store**: SQLite on the signer's volume. Per-key data keys

@@ -65,6 +65,18 @@ Signed by **Service Issuing CA 1**, template `[default] TLS_server`:
 - Extended key usage `TLS Web Server Authentication`. Validity 1 year.
 - Export the certificate and its key as PEM: `TLS_CERT`, `TLS_KEY`.
 
+**Do not lengthen that year past 825 days.** Apple refuses a TLS server
+certificate issued after 1 July 2019 whose validity is longer, and it refuses it
+whatever anchor the certificate chains to -- a private CA the device has been
+given is not an exemption. What a caller sees is the trust evaluation failing,
+which `URLSession` reports as the _client_ cancelling: nothing at either end says
+the certificate was too long-lived. The same page requires the name in a subject
+alternative name rather than the common name, `id-kp-serverAuth` in an extended
+key usage, SHA-2 throughout the chain, and RSA of at least 2048 bits or an
+elliptic curve of at least 256. The dev CA caps its server certificates at 825
+days for this reason and nothing else
+(<https://support.apple.com/en-us/103769>).
+
 ## A service certificate
 
 One per **deployment**, not per service: the asset agent runs on the

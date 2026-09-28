@@ -36,6 +36,13 @@ root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ca="$root_dir/infra/dev-ca"
 out="$ca/certs"
 days=3650
+# Server certificates only, and not decoration: Apple refuses a TLS server
+# certificate issued after 1 July 2019 whose validity exceeds 825 days, and it
+# refuses it whatever anchor it chains to -- a private CA the device has been
+# given is no exemption. The trust evaluation simply fails, which URLSession
+# reports as the *client* cancelling, so nothing anywhere says "too long".
+# Authorities are not subject to it and keep the ten years.
+server_days=825
 pass=olympus
 
 force=
@@ -238,7 +245,7 @@ echo "API server certificate"
 key "$out/api.key"
 csr "$out/api.key" "$ca/api.csr" "/CN=olympus-api/O=Olympus Dev"
 SAN="DNS:olympus-api,DNS:localhost,DNS:host.docker.internal,DNS:api.olympus.internal.localhost,IP:127.0.0.1$extra_san" \
-  issue services v3_server "$ca/api.csr" "$out/api.crt"
+  issue services v3_server "$ca/api.csr" "$out/api.crt" -days "$server_days"
 
 # client <authority> <directory> <name> <subject> [openssl ca flags...]
 client() {
@@ -254,7 +261,8 @@ server() {
   local authority=$1 dir=$2 name=$3 subject=$4 san=$5
   key "$out/$dir/$name.key"
   csr "$out/$dir/$name.key" "$ca/$name.csr" "$subject"
-  SAN="$san" issue "$authority" v3_server "$ca/$name.csr" "$out/$dir/$name.crt"
+  SAN="$san" issue "$authority" v3_server "$ca/$name.csr" \
+    "$out/$dir/$name.crt" -days "$server_days"
 }
 
 echo "agent certificates"
@@ -347,7 +355,9 @@ The chain is three authorities deep, like the real one:
                        for Node, which reads only the first list in a file
   keys/<authority>.p8  the authority's key as encrypted PKCS#8, the format
                        the signer imports
-  api.crt / api.key    the API's server certificate, from the service issuer --
+  api.crt / api.key    the API's server certificate, valid 825 days because
+                       Apple refuses a longer one whatever anchor it chains to.
+                       From the service issuer --
                        so services-ca.crt is what a client validating the
                        listener trusts, as well as what the listener trusts.
                        --san adds names to it; a phone reaching this machine by
