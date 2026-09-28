@@ -6,6 +6,7 @@ import type * as tls from "tls";
 import type { AuthConfig } from "../config/configuration";
 import { recordAuthDecision } from "./authMetrics";
 import type { Listener, RequestWithPrincipal } from "./principal";
+import { revocationCoverage, revocationWarnings } from "./services/revocation";
 
 const logger = new Logger("ServicesListener");
 
@@ -46,6 +47,17 @@ export const createServicesListener = (
     },
   );
 
+  // Checked once, at startup, because the handshake failure it prevents is
+  // silent at both ends (see revocation.ts).
+  const coverage = revocationCoverage(
+    fs.readFileSync(services.ca, "utf8"),
+    services.revocationLists.map((path) => fs.readFileSync(path, "utf8")),
+  );
+  logger.log(
+    `${coverage.authorities} service authorities, ${coverage.lists} revocation lists`,
+  );
+  for (const warning of revocationWarnings(coverage)) logger.warn(warning);
+
   /**
    * A refused handshake, said out loud.
    *
@@ -54,7 +66,9 @@ export const createServicesListener = (
    * `auth_decisions_total` never moves -- a listener whose whole job is to
    * refuse connections was refusing them invisibly. The reason is OpenSSL's,
    * which names the actual fault (an unknown CA, a revoked certificate, no
-   * certificate at all) rather than leaving it to be guessed at.
+   * certificate at all) -- except where TLS 1.3 leaves it nothing to report
+   * but a reset, which is what a chain rejected for want of a revocation list
+   * looks like. The startup check above is for that one.
    */
   server.on("tlsClientError", (error: Error, socket: tls.TLSSocket) => {
     logger.warn(

@@ -79,10 +79,10 @@ exercise that rejection deliberately rather than hitting it by accident.
 
 A `socket hang up` here is a socket closed with no answer, which a refused
 certificate and a port held by something else both produce: the request never
-reaches the application either way. The API logs the OpenSSL reason, and
-`lsof -nP -iTCP:3443 -sTCP:LISTEN` says who holds the port — the `olympus`
-stack publishes `127.0.0.1:3443`, which can answer over IPv4 while the
-workspace API holds the IPv6 wildcard.
+reaches the application either way, and under TLS 1.3 a refused certificate
+tells neither end why. `docs/guides/signing-in.md` has both causes; the one
+that costs an afternoon is a `TLS_CRL_SERVICES` missing an authority's list,
+because a chain is checked against a list from every authority in it.
 
 ```sh
 auth-tester agent-call GET /olympus/ping \

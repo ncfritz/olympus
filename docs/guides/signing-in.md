@@ -298,21 +298,48 @@ nginx configuration too if it has not been.
 
 ### `socket hang up` on the services listener
 
-Two things can hold 3443 at once. The workspace API takes the IPv6 wildcard
-(`*:3443`), while the `olympus` stack publishes `127.0.0.1:3443` and Docker's
+Two causes, and the first is invisible.
+
+**A revocation list is missing.** A client's chain is checked against a CRL
+from _every_ authority in it, so the dev CA's three-tier services chain needs
+three lists:
+
+```sh
+TLS_CRL_SERVICES=.../services.crl,.../intermediate-2.crl,.../root.crl
+```
+
+With one missing, every client certificate is refused during the handshake and
+**neither end is told why**: under TLS 1.3 the client's handshake completes
+before the server validates its certificate, so the caller sees the connection
+drop with no alert and the listener reports the caller hanging up. The one
+thing that says so plainly is
+
+```sh
+openssl verify -CAfile services-ca.crt \
+  -CRLfile <(cat services.crl intermediate-2.crl root.crl) -crl_check_all \
+  agents/dionysus-search-agent.crt
+```
+
+which fails with `unable to get certificate CRL` at the depth whose list is
+absent. The listener now logs its authority and list counts at startup and
+warns when there are fewer lists than authorities, which is the cheap version
+of the same check. A file holding several lists does not help: Node reads only
+the first in a file, which is why this setting is a list of paths.
+
+**Something else holds the port.** The workspace API takes the IPv6 wildcard
+(`*:3443`) while the `olympus` stack publishes `127.0.0.1:3443`, and Docker's
 forwarder sets `SO_REUSEADDR`, so the narrower IPv4 bind coexists with it and
-answers whatever arrives over IPv4. Node's `autoSelectFamily` is happy to
-choose IPv4, so a client can reach the container while `openssl s_client`,
-which resolves `localhost` to `::1` first, reaches the API — and so proves
-nothing about what the client reached.
+answers whatever arrives over IPv4 — which Node's `autoSelectFamily` may well
+choose, while `openssl s_client` resolves `localhost` to `::1` first and
+reaches the API. So `s_client` succeeding proves nothing about what a client
+reached.
 
 ```sh
 lsof -nP -iTCP:3443 -sTCP:LISTEN     # node on *:3443, com.docker on 127.0.0.1:3443
 infra/docker/stack.sh down olympus   # or move the published port
 ```
 
-The same symptom is what a certificate the listener refuses looks like, since
-the request never reaches the application either way. The listener logs the
-OpenSSL reason and counts it as
-`auth_decisions_total{outcome="reject",reason="handshake"}`, so the API's log
-is what tells the two apart.
+The listener logs refused handshakes as
+`auth_decisions_total{outcome="reject",reason="handshake"}` with OpenSSL's own
+message — which for the CRL case is only `socket hang up`, because that is all
+TLS 1.3 leaves it.
