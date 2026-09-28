@@ -186,9 +186,21 @@ What each answer means:
 | nothing imported                            | refused, and worth seeing: the call still goes out         |
 
 A refused handshake has **no status**. The listener never accepted the caller, so
-there is nothing to answer with; what lands in the log is whatever the system
-said about it, and the reason — which certificate, which check — is in the API's
-log rather than on the phone.
+there is nothing to answer with, and under TLS 1.3 the listener cannot say much
+either: the client's handshake completes before the server validates its
+certificate, so every refusal reaches the API's log as a caller that hung up.
+
+Which end refused is in the app's message, and nowhere else:
+
+| The app says                      | Who refused whom                                  |
+| --------------------------------- | ------------------------------------------------- |
+| `cancelled`                       | the app refused the **server** — trust evaluation |
+| `The network connection was lost` | the listener refused the **client's** certificate |
+
+A trust evaluation fails for the reasons Apple's own page gives, and the one that
+costs an afternoon is validity: a server certificate good for more than 825 days
+is refused against a private anchor as well, with nothing anywhere naming the
+cause (`docs/guides/certificates.md`).
 
 **The name has to be in the certificate.** A phone reaches a laptop by address,
 and `api.crt` carries `localhost` and `127.0.0.1`, which on a phone mean the

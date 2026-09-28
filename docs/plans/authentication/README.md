@@ -276,16 +276,36 @@ deployment contains.
   is worse than holding a PEM — and the iOS app will pin the internal CA for
   the same reason.
 
-  **What it can prove before the border exists (phase 6):** the API's own
-  `3443` listener is an mTLS listener, so importing an agent identity there
-  answers the question the module exists for — can an app present a client
-  certificate on its own requests — and importing a _device_ identity against
-  the same listener proves it is refused, which is ADR 0023's rule seen from a
-  phone rather than from a Node test. `scripts/dev-ca.sh` writes a `.p12` per
-  agent identity (**2026-09-28**) for exactly this. What still waits for phase 6
-  is the only question no code of ours can answer: whether
-  `ASWebAuthenticationSession` presents a certificate installed by
+  **Proven on a device, 2026-09-28.** `dionysus-search-agent.p12` imported into
+  the app reaches `GET /olympus/ping` on the `3443` listener, which answers the
+  question the module exists for: an app's own requests can present a client
+  certificate. `devices/dev-valid.p12` against the same listener is refused
+  during the handshake, because its issuer is the device issuer and the listener
+  trusts the service one — ADR 0023's rule seen from a phone rather than from a
+  Node test, and enforced by TLS rather than by the guard, which is why
+  `AUTH_MODE_SERVICES=report` does not soften it. `scripts/dev-ca.sh` writes a
+  `.p12` per agent identity for exactly this.
+
+  What still waits for phase 6 is the only question no code of ours can answer:
+  whether `ASWebAuthenticationSession` presents a certificate installed by
   configuration profile.
+
+  **What the afternoon cost, so it is not paid twice.** Nothing on either side
+  of a failed handshake says what was wrong with it, and the two directions are
+  told apart only by which error arrives:
+
+  | The app says                      | Who refused whom                                     |
+  | --------------------------------- | ---------------------------------------------------- |
+  | `cancelled`                       | the app refused the **server**: the trust evaluation |
+  | `The network connection was lost` | the listener refused the **client's** certificate    |
+
+  Both leave the listener logging a caller that hung up, because under TLS 1.3
+  the client's handshake completes before the server validates its certificate.
+  Three separate causes wore that same face: a base URL pointing at the users
+  listener or at nginx, cleartext on a TLS socket, and a server certificate valid
+  for longer than the 825 days Apple permits — the last against a private anchor
+  as well, which is recorded in `docs/guides/certificates.md` and in the internal
+  CA's plan.
 
 The risks it retires:
 
@@ -293,7 +313,9 @@ The risks it retires:
    installed by configuration profile at the border.
 2. That the app's own requests can't use profile-installed identities,
    so the app must import the `.p12` itself (a second install step for
-   users), and that the native module and adapter handle it.
+   users), and that the native module and adapter handle it. **Retired
+   2026-09-28**: they do, and `@ncfritz/olympus-client` needs nothing but an
+   axios adapter to go through them.
 3. The custom-scheme redirect, Keychain storage, refresh when the app
    returns from the background, and `@ncfritz/olympus-client` under React
    Native.
