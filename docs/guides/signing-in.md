@@ -294,3 +294,25 @@ nginx configuration too if it has not been.
 | `invalid_grant` on a refresh token that was working       | It was rotated. Presenting the previous one revokes the session, by design.                                                  |
 | `401` from `/v1/auth/me` right after signing in           | The user was disabled or removed after the token was issued; it is read from the directory, not the token.                   |
 | A sign-in that starts fine and fails at the callback      | More than one API instance, or a restart in between: the pending authorization is in memory.                                 |
+| `socket hang up` from `:3443`                             | Something else holds the port, or the listener refused the certificate — see below.                                          |
+
+### `socket hang up` on the services listener
+
+Two things can hold 3443 at once. The workspace API takes the IPv6 wildcard
+(`*:3443`), while the `olympus` stack publishes `127.0.0.1:3443` and Docker's
+forwarder sets `SO_REUSEADDR`, so the narrower IPv4 bind coexists with it and
+answers whatever arrives over IPv4. Node's `autoSelectFamily` is happy to
+choose IPv4, so a client can reach the container while `openssl s_client`,
+which resolves `localhost` to `::1` first, reaches the API — and so proves
+nothing about what the client reached.
+
+```sh
+lsof -nP -iTCP:3443 -sTCP:LISTEN     # node on *:3443, com.docker on 127.0.0.1:3443
+infra/docker/stack.sh down olympus   # or move the published port
+```
+
+The same symptom is what a certificate the listener refuses looks like, since
+the request never reaches the application either way. The listener logs the
+OpenSSL reason and counts it as
+`auth_decisions_total{outcome="reject",reason="handshake"}`, so the API's log
+is what tells the two apart.
