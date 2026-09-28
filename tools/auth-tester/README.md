@@ -4,6 +4,12 @@ The sign-in flows from a terminal: phase 4 of
 [the authentication plan](../../docs/plans/authentication/README.md), and the
 scripted half of its sign-off.
 
+The flow itself lives in
+[`@ncfritz/olympus-auth-flow`](../../packages/auth-flow/README.md), platform-free
+and shared with the mobile tester, so the two cannot drift apart on what the
+flow is. This package is the terminal around it: the loopback listener, the
+token file, the certificate reading, and the printing.
+
 It is a real client rather than a script that pokes the endpoints —
 authorization code with PKCE, an RFC 8252 loopback redirect, tokens in a
 mode-600 file, a refresh when the access token has run out, and every call

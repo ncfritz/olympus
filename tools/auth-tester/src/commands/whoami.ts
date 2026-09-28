@@ -1,4 +1,5 @@
-import { decodeToken, describeToken } from "../claims";
+import { decodeToken } from "@ncfritz/olympus-auth-flow";
+import { describeToken } from "../claims";
 import { apiCall, printUser } from "../output";
 import type { Tester } from "../tester";
 

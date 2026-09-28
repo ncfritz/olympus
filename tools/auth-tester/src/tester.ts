@@ -3,12 +3,17 @@ import {
   createOlympusClients,
   type OlympusClients,
 } from "@ncfritz/olympus-client";
+import {
+  type FormPost,
+  refreshTokens,
+  type SavedTokens,
+} from "@ncfritz/olympus-auth-flow";
 import { accessTokenProvider } from "./accessToken";
 import { TesterError } from "./errors";
 import { formPoster } from "./http";
-import { type FormPost, refreshTokens } from "./oauth";
+
 import type { Settings } from "./settings";
-import { type SavedTokens, TokenStore } from "./tokenStore";
+import { TokenStore } from "./tokenStore";
 
 export type Tester = {
   settings: Settings;

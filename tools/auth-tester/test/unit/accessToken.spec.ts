@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { accessTokenProvider } from "../../src/accessToken";
-import type { IssuedTokens } from "../../src/oauth";
-import { type SavedTokens, TokenStore } from "../../src/tokenStore";
+import type { IssuedTokens, SavedTokens } from "@ncfritz/olympus-auth-flow";
+import type { TokenStore } from "../../src/tokenStore";
 
 const SAVED: SavedTokens = {
   apiBaseUrl: "http://localhost:3001/v1",

@@ -11,6 +11,7 @@
  * point is that the flows are proved by something that implements them the way
  * an app has to, before a site or an iOS app depends on them.
  */
+import { AuthFlowError } from "@ncfritz/olympus-auth-flow";
 import { parseArguments } from "./args";
 import { TesterError } from "./errors";
 import { agentCall } from "./commands/agentCall";
@@ -108,7 +109,9 @@ async function run(argv: string[]): Promise<number> {
 run(process.argv.slice(2))
   .then((status) => process.exit(status))
   .catch((error: unknown) => {
-    if (error instanceof TesterError) {
+    // Either error is something the person running this can act on: a bad
+    // flag, or the API refusing a grant. Anything else prints whole.
+    if (error instanceof TesterError || error instanceof AuthFlowError) {
       console.error(error.message);
     } else {
       // A connection refused, a TLS handshake, a bug in here: the detail is

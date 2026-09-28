@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "..",
+    // The tests run in Node and inject a Node adapter, which is the point:
+    // the injection is exercised rather than mocked away.
+    "types": ["node"]
+  },
+  "include": ["../src/**/*.ts", "./**/*.ts"],
+  "exclude": []
+}

@@ -1,6 +1,10 @@
+import {
+  afterIssue,
+  expired,
+  type IssuedTokens,
+} from "@ncfritz/olympus-auth-flow";
 import { TesterError } from "./errors";
-import type { IssuedTokens } from "./oauth";
-import { afterIssue, expired, type TokenStore } from "./tokenStore";
+import type { TokenStore } from "./tokenStore";
 
 export type Refresher = (refreshToken: string) => Promise<IssuedTokens>;
 

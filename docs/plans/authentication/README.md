@@ -219,7 +219,11 @@ pattern for desktop apps (RFC 8252 loopback redirect):
 | `--device-cert <p12>`                  | presents a device certificate (the border, phase 6)                       |
 
 **Done 2026-09-27**, apart from `--device-cert`. `tools/*` is a workspace
-glob; `tools/auth-tester/README.md` is what each command proves.
+glob; `tools/auth-tester/README.md` is what each command proves. The flow
+itself is `packages/auth-flow` (**2026-09-28**), platform-free and shared with
+the mobile tester: PKCE with the platform's crypto injected, the two grants
+over an injected form POST, and the claims decoder — so the two testers cannot
+disagree about what the flow is.
 `@ncfritz/olympus-client` gained `AuthApi` (the four endpoints that answer
 about the caller) and the tester's calls go through it with the `auth`
 option, so the option is exercised by something that has to refresh.

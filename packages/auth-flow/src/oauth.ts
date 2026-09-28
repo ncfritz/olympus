@@ -1,4 +1,4 @@
-import { TesterError } from "./errors";
+import { AuthFlowError } from "./errors";
 import { CODE_CHALLENGE_METHOD } from "./pkce";
 
 export type IssuedTokens = {
@@ -116,7 +116,7 @@ export const oauthError = (
 const issued = (answer: FormAnswer): IssuedTokens => {
   if (answer.status === 429) {
     const retry = answer.headers["retry-after"];
-    throw new TesterError(
+    throw new AuthFlowError(
       `the API is rate limiting the token endpoint${
         retry === undefined ? "" : `; try again in ${retry}s`
       }`,
@@ -124,14 +124,14 @@ const issued = (answer: FormAnswer): IssuedTokens => {
   }
   const refused = oauthError(answer);
   if (refused !== undefined) {
-    throw new TesterError(
+    throw new AuthFlowError(
       `the API refused: ${refused.error}${
         refused.description === undefined ? "" : ` (${refused.description})`
       }`,
     );
   }
   if (answer.status !== 200) {
-    throw new TesterError(
+    throw new AuthFlowError(
       `the token endpoint answered ${answer.status}: ${JSON.stringify(answer.body)}`,
     );
   }
@@ -141,7 +141,7 @@ const issued = (answer: FormAnswer): IssuedTokens => {
   const refreshToken = body.refresh_token;
   const expiresIn = body.expires_in;
   if (typeof accessToken !== "string" || typeof expiresIn !== "number") {
-    throw new TesterError(
+    throw new AuthFlowError(
       "the token endpoint answered 200 without an access token",
     );
   }
@@ -149,7 +149,7 @@ const issued = (answer: FormAnswer): IssuedTokens => {
     // This client is registered for refresh tokens in the body. Getting none
     // means it has been changed to the cookie delivery the site uses, which
     // a CLI cannot hold.
-    throw new TesterError(
+    throw new AuthFlowError(
       "no refresh token in the response: this client is configured to receive it in a cookie",
     );
   }

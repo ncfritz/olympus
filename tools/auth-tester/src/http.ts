@@ -1,6 +1,6 @@
 import type { OlympusClients } from "@ncfritz/olympus-client";
 import { TesterError } from "./errors";
-import type { FormAnswer } from "./oauth";
+import type { FormAnswer } from "@ncfritz/olympus-auth-flow";
 
 export type Answer = {
   status: number;

@@ -1,8 +1,13 @@
-import { decodeToken, describeToken } from "../claims";
+import {
+  afterIssue,
+  attemptRefresh,
+  decodeToken,
+  oauthError,
+  refreshTokens,
+} from "@ncfritz/olympus-auth-flow";
+import { describeToken } from "../claims";
 import { TesterError } from "../errors";
-import { attemptRefresh, oauthError, refreshTokens } from "../oauth";
 import type { Tester } from "../tester";
-import { afterIssue } from "../tokenStore";
 
 /** Rotates the refresh token: the new one replaces the one presented. */
 export const refresh = async (tester: Tester): Promise<void> => {

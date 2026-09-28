@@ -1,10 +1,16 @@
 {
-  "name": "@ncfritz/olympus-auth-tester",
-  "description": "Olympus auth tester: the sign-in, refresh and session flows from a terminal (ADR 0018)",
+  "name": "@ncfritz/olympus-auth-flow",
+  "description": "The user sign-in flow of ADR 0018 as platform-free functions: PKCE, the token grants, access-token claims",
   "version": "0.0.0",
   "private": true,
   "author": "Neil Fritz (ncfritz@ncfritz.net)",
   "license": "Apache-2.0",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
@@ -12,16 +18,8 @@
     "lintfix": "eslint src test --fix",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "auth-tester": "node dist/main.js",
     "clean": "rm -rf dist"
   },
-  "dependencies": {
-    "@ncfritz/olympus-auth-flow": "workspace:*",
-    "@ncfritz/olympus-client": "workspace:*"
-  },
-  "files": [
-    "dist"
-  ],
   "devDependencies": {
     "@ncfritz/olympus-config": "workspace:*",
     "@types/node": "catalog:",
@@ -30,5 +28,8 @@
     "prettier": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

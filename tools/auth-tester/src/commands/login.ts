@@ -1,13 +1,18 @@
 import * as os from "os";
 import { openInBrowser } from "../browser";
-import { decodeToken, describeToken } from "../claims";
+import {
+  afterIssue,
+  authorizeUrl,
+  createPkce,
+  decodeToken,
+  exchangeCode,
+} from "@ncfritz/olympus-auth-flow";
+import { describeToken } from "../claims";
 import { TesterError } from "../errors";
 import { listenForRedirect } from "../loopback";
-import { authorizeUrl, exchangeCode } from "../oauth";
 import { apiCall, printUser } from "../output";
-import { challengeFor, newState, newVerifier } from "../pkce";
+import { nodeCrypto } from "../nodeCrypto";
 import type { Tester } from "../tester";
-import { afterIssue } from "../tokenStore";
 
 /**
  * The authorization-code flow with PKCE, the way a desktop or CLI client has
@@ -25,12 +30,13 @@ export const login = async (tester: Tester): Promise<void> => {
     settings.port,
   );
   try {
-    const verifier = newVerifier();
-    const state = newState();
+    const pkce = createPkce(nodeCrypto);
+    const verifier = await pkce.newVerifier();
+    const state = await pkce.newState();
     const url = authorizeUrl(settings.apiBaseUrl, {
       clientId: settings.clientId,
       redirectUri: listener.redirectUri,
-      challenge: challengeFor(verifier),
+      challenge: await pkce.challengeFor(verifier),
       state,
       provider: settings.provider,
     });
