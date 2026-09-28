@@ -38,10 +38,12 @@ from its OpenAPI page and the break-glass CLI.
    database, an `openapi` task writing `apps/pki/openapi/pki.json`, and
    `packages/sdk` generating a `pki` client from it. A generated client
    for the signer's document, internal to `apps/pki`.
-5. **Dev CA**: `scripts/dev-ca.sh` adds an **Internal TLS Dev**
-   intermediate, name-constrained to `localhost` and
-   `internal.localhost`, and writes the intermediates' keys as encrypted
-   PKCS#8, the format the signer imports.
+5. **Dev CA**: **done 2026-09-28** — `scripts/dev-ca.sh` builds the
+   hierarchy three deep with an issuing CA per purpose, including a TLS
+   issuer name-constrained to `localhost`, `internal.localhost` and
+   `127.0.0.0/8` (with `tls/out-of-bounds.crt` for a name it forbids), and
+   writes every authority's key as encrypted PKCS#8 — the format the
+   signer imports — under `certs/keys/`. The passphrase is `olympus`.
 6. **Dev compose**: `pki-postgres` alongside the existing Postgres and
    Hasura; both services run from the workspace (`pnpm dev`), the signer
    on a socket in a git-ignored directory.

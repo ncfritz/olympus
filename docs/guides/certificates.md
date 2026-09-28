@@ -6,8 +6,11 @@ root; the internal CA ([ADR 0020](../decisions/0020-internal-certificate-authori
 replaces this later.
 
 For development nothing here is needed: `scripts/dev-ca.sh` writes a
-throwaway copy of the whole hierarchy into `infra/dev-ca/certs`, with the
-same names, and the tests use it.
+throwaway copy of the whole hierarchy into `infra/dev-ca/certs` — the same
+shape and the same names with `Dev` in them — and the tests use it. Its
+`certs/README.txt` says what each file is for, including which revocation
+lists a relying party needs: one from every authority in the chain, which at
+this depth is three.
 
 ## The hierarchy
 

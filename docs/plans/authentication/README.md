@@ -32,16 +32,29 @@ Phases 2 and 3 are independent and can run in either order or together.
    workspace-only `dev.yml` it started with is gone), applying both on
    start. API tests keep using the GraphQL double; the auth migration
    gets an integration test against the real Hasura.
-3. **Dev CA** (`scripts/dev-ca.sh`): **done 2026-09-20** — a throwaway
-   root with Olympus Services and Olympus Devices intermediates (ECDSA
-   P-256), the API's `3443` server certificate (`olympus-api`,
+3. **Dev CA** (`scripts/dev-ca.sh`): **done 2026-09-20**, rewritten
+   **2026-09-28** — a throwaway copy of the real hierarchy
+   ([certificates.md](../../guides/certificates.md)): a root, two
+   intermediates, and an issuing CA per purpose — service, device,
+   signing, and a TLS issuer name-constrained to `localhost` (ECDSA
+   P-256). With it the API's `3443` server certificate (`olympus-api`,
    `localhost`, `api.olympus.internal.localhost`, `127.0.0.1`), a
-   certificate per agent deployment, device certificates, and the
-   revoked, expired and wrong-intermediate certificates the sign-off
-   cases need, in a git-ignored `infra/dev-ca/`. Checked against a Node
-   TLS server: valid agent certificates are accepted and the revoked,
-   expired, wrong-intermediate, device and missing ones are refused
-   during the handshake.
+   certificate per agent deployment, device certificates and `.p12`s, the
+   authorities' keys as encrypted PKCS#8, and the revoked, expired,
+   wrong-issuer and out-of-constraint certificates the sign-off cases
+   need, in a git-ignored `infra/dev-ca/`. Checked against a Node TLS
+   server: valid agent certificates are accepted and the revoked,
+   expired, wrong-issuer, device and missing ones are refused during the
+   handshake.
+
+   The depth is the point rather than fidelity for its own sake. A chain
+   is checked against a revocation list from **every** authority in it, so
+   a three-deep chain needs three lists — and a two-deep fixture lets a
+   `TLS_CRL_SERVICES` that names two of three pass, which is a listener
+   that refuses every client certificate and says so to nobody. That is
+   what happened to `dev.env`, and the script's own shape is now what
+   would have caught it.
+
 4. **Dev compose**: Postgres and Hasura (**done**). The API runs from
    the workspace against them, so its two listeners are configured in
    `apps/api/dev.env`, not in compose; the border nginx arrives in phase 6.
