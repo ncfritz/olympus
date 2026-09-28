@@ -29,6 +29,9 @@ Two things it is deliberately not:
 - **not `expo lint`.** It offers to install and configure ESLint the first time
   it runs, and a prompt inside a Turbo task can never be answered -- the task
   hangs or fails with nothing to show for it.
+- **not run over the native project.** `ios/` and `android/` are generated and
+  hold Flow-typed JavaScript no TypeScript parser will read, so the preset
+  ignores them, as `.prettierignore` does. Both were learned the hard way.
 - **not `eslint-config-expo`.** Its bundled `eslint-plugin-react` throws on
   ESLint 10 (`contextOrFilename.getFilename is not a function`, the rule context
   it removed), despite the config's `eslint: ">=8.10"` peer range. Using it

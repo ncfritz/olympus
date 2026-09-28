@@ -13,7 +13,20 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default [
-  { ignores: [".expo/**", "dist/**", "coverage/**", "web-build/**"] },
+  {
+    ignores: [
+      ".expo/**",
+      "dist/**",
+      "coverage/**",
+      "web-build/**",
+      // The generated native projects. `expo prebuild` and CocoaPods write
+      // thousands of files under these, including Flow-typed JavaScript that
+      // no TypeScript parser will read -- and linting generated code is
+      // pointless even where it parses.
+      "ios/**",
+      "android/**",
+    ],
+  },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   // The flat variants live under `configs.flat`; `configs.recommended` at the
