@@ -1,0 +1,109 @@
+import * as fs from "fs";
+import * as path from "path";
+import { TesterError } from "./errors";
+import type { IssuedTokens } from "./oauth";
+
+export type SavedTokens = {
+  /** The API these were issued by: sending them to another one is a mistake. */
+  apiBaseUrl: string;
+  clientId: string;
+  provider: string;
+  accessToken: string;
+  /** Milliseconds since the epoch, from `expires_in` when it was issued. */
+  accessTokenExpiresAt: number;
+  refreshToken: string;
+  /**
+   * The refresh token the last rotation replaced, kept for one reason:
+   * `refresh --replay` presents it again to prove reuse detection ends the
+   * session. Nothing else reads it, and a client that is not testing the
+   * API should not keep one.
+   */
+  previousRefreshToken?: string;
+  /** The `sid` of the session these belong to, for the session list. */
+  sessionId?: string;
+  savedAt: string;
+};
+
+/**
+ * The tokens on disk.
+ *
+ * A file, mode 600, in a mode-700 directory: a refresh token is a credential
+ * that lives for weeks, and the tester is run on a laptop that has other
+ * accounts on it. Nothing here prints a token -- `whoami` prints claims,
+ * which are not secret -- so the file is the only place one exists.
+ */
+export class TokenStore {
+  constructor(readonly location: string) {}
+
+  read(): SavedTokens | undefined {
+    let contents: string;
+    try {
+      contents = fs.readFileSync(this.location, "utf8");
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === "ENOENT") return undefined;
+      throw error;
+    }
+    try {
+      return JSON.parse(contents) as SavedTokens;
+    } catch {
+      throw new TesterError(
+        `${this.location} is not readable as JSON; delete it and sign in again`,
+      );
+    }
+  }
+
+  /** The tokens, or a sentence saying to sign in. */
+  require(): SavedTokens {
+    const saved = this.read();
+    if (saved === undefined) {
+      throw new TesterError(`not signed in (no ${this.location}): run login`);
+    }
+    return saved;
+  }
+
+  save(tokens: SavedTokens): void {
+    fs.mkdirSync(path.dirname(this.location), { recursive: true, mode: 0o700 });
+    fs.writeFileSync(this.location, `${JSON.stringify(tokens, null, 2)}\n`, {
+      mode: 0o600,
+    });
+    // `mode` above applies only when the file is created, and an existing
+    // file keeps whatever it had -- including a mode from before this was
+    // careful about it.
+    fs.chmodSync(this.location, 0o600);
+  }
+
+  clear(): void {
+    try {
+      fs.rmSync(this.location);
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code !== "ENOENT") throw error;
+    }
+  }
+}
+
+/**
+ * The saved tokens after an exchange or a rotation. The token being replaced
+ * becomes `previousRefreshToken`, which is what `refresh --replay` presents.
+ */
+export const afterIssue = (
+  was: Omit<
+    SavedTokens,
+    "accessToken" | "accessTokenExpiresAt" | "refreshToken" | "savedAt"
+  > &
+    Partial<Pick<SavedTokens, "refreshToken">>,
+  issued: IssuedTokens,
+  now = Date.now(),
+): SavedTokens => ({
+  ...was,
+  accessToken: issued.accessToken,
+  accessTokenExpiresAt: now + issued.expiresIn * 1000,
+  refreshToken: issued.refreshToken,
+  ...(was.refreshToken === undefined
+    ? {}
+    : { previousRefreshToken: was.refreshToken }),
+  savedAt: new Date(now).toISOString(),
+});
+
+/** Whether the access token is spent, with a margin for the call itself. */
+export const expired = (saved: SavedTokens, now = Date.now()): boolean =>
+  saved.accessTokenExpiresAt - 30_000 <= now;

@@ -5,6 +5,8 @@ packages:
   - "agents/*/agent"
   - "agents/*/console"
   - "packages/*"
+  # Developer tools: not deployed, not depended on by anything that is.
+  - "tools/*"
 
 # Shared dependency versions. Workspace packages reference these with "catalog:"
 # so a version bump happens in exactly one place. See docs/decisions/0002.

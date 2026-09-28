@@ -135,8 +135,28 @@ it as verified. See [the user directory](users.md).
 
 ## Proving it
 
-`tools/auth-tester` is phase 4. Until then the flow is six commands, which
-is worth doing once anyway — it is the flow a client implements.
+```sh
+pnpm install                                     # tools/* is a workspace glob
+pnpm --filter @ncfritz/olympus-auth-tester build
+pnpm --filter @ncfritz/olympus-auth-tester auth-tester login
+pnpm --filter @ncfritz/olympus-auth-tester auth-tester whoami
+```
+
+`tools/auth-tester` is a real client — PKCE, a loopback redirect, tokens in a
+mode-600 file, a refresh when the access token runs out — so a sign-in that
+works there works for an app. Its README says what each command proves;
+`refresh --replay` is the interesting one, because reuse detection succeeding
+looks like a failure.
+
+The tester defaults to `http://localhost:3001/v1`; `--api` or
+`OLYMPUS_API_BASE_URL` points it elsewhere, and it refuses to send one
+environment's tokens to another.
+
+## Proving it by hand
+
+The same flow in six commands, which is worth doing once anyway — it is what a
+client implements, and it is what to fall back on when the tester itself is
+what looks broken.
 
 A PKCE pair:
 

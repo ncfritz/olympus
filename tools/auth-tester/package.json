@@ -1,0 +1,33 @@
+{
+  "name": "@ncfritz/olympus-auth-tester",
+  "description": "Olympus auth tester: the sign-in, refresh and session flows from a terminal (ADR 0018)",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
+    "lint": "eslint src test",
+    "lintfix": "eslint src test --fix",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "auth-tester": "node dist/main.js",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@ncfritz/olympus-client": "workspace:*"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@ncfritz/olympus-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

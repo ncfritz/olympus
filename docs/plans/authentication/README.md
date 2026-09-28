@@ -205,6 +205,24 @@ pattern for desktop apps (RFC 8252 loopback redirect):
 | `agent-call --cert --key <path>`       | a call on `3443` with a service certificate                               |
 | `--device-cert <p12>`                  | presents a device certificate (the border, phase 6)                       |
 
+**Done 2026-09-27**, apart from `--device-cert`. `tools/*` is a workspace
+glob; `tools/auth-tester/README.md` is what each command proves.
+`@ncfritz/olympus-client` gained `AuthApi` (the four endpoints that answer
+about the caller) and the tester's calls go through it with the `auth`
+option, so the option is exercised by something that has to refresh.
+
+Two decisions the table did not settle:
+
+- **`--external` is a URL from the environment**
+  (`OLYMPUS_EXTERNAL_API_BASE_URL`), not a different default. The two runs
+  it exists for are the same commands against two fronts — the workspace
+  API here, the border in phase 6 — and naming the URL once keeps a
+  sign-off run from depending on somebody remembering a port.
+- **`--device-cert` is deferred to phase 6 and may not arrive at all.** Node's
+  HTTPS client presenting a `.p12` proves nothing that phase 6 is asking:
+  the question is whether `ASWebAuthenticationSession` and an app's own
+  requests can present one, which is what the mobile tester is for.
+
 **`apps/auth-tester-mobile` (React Native, Expo)**, the mobile proof of
 concept, built the way the iOS app will be:
 
