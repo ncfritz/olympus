@@ -12,7 +12,9 @@
 #                                             environment's from this machine
 #   infra/docker/stack.sh up [stack...|all]   check, then start (in order)
 #   infra/docker/stack.sh down [stack...|all] stop (in reverse order)
-#   infra/docker/stack.sh nginx-reload         validate and reload the server blocks
+#   infra/docker/stack.sh nginx-reload [stack]  validate and reload the server
+#                                             blocks (default nginx; `border`
+#                                             for the public edge)
 #   infra/docker/stack.sh pull|ps|logs|restart <stack> [args...]
 #   infra/docker/stack.sh compose <stack> [args...]   anything else
 #   infra/docker/stack.sh rabbitmq-users      write the RabbitMQ definitions
@@ -308,10 +310,14 @@ build() {
 # operation, and `-t` comes first because this nginx serves every site on the
 # host -- reloading a broken config takes all of them down, not just the one
 # that was edited.
+# Validate, then reload: never the other way round, and never a reload without
+# the validation. `nginx -s reload` on a bad configuration leaves the old one
+# running and says nothing, so the next restart is when you find out.
 nginx_reload() {
-  compose nginx exec -T nginx nginx -t
-  compose nginx exec -T nginx nginx -s reload
-  echo "nginx: reloaded"
+  local stack=${1:-nginx}
+  compose "$stack" exec -T nginx nginx -t
+  compose "$stack" exec -T nginx nginx -s reload
+  echo "$stack: reloaded"
 }
 
 check() {
@@ -383,7 +389,7 @@ case "$command" in
     ;;
   nginx-reload)
     load_env
-    nginx_reload
+    nginx_reload "$@"
     ;;
   up)
     load_env

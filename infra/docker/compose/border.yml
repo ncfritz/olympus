@@ -1,0 +1,69 @@
+# The border (ADR 0018, authentication plan phase 6): the public edge, on the
+# NAS. Let's Encrypt for the browser's half of the handshake, an Olympus Devices
+# certificate required for ours, then forwarded over HTTPS to the Mac Mini.
+#
+# On the NAS because that is the machine the router forwards to, and because the
+# Mac Mini's nginx has the host's other sites in it — a device certificate
+# required there would be required for them too.
+#
+# Driven from the Mac Mini over a Docker context, like compose/nas.yml, and
+# deliberately absent from STACKS so `up` and `down` never touch it by accident:
+#
+#   DOCKER_CONTEXT=nas infra/docker/stack.sh up border
+#   DOCKER_CONTEXT=nas infra/docker/stack.sh nginx-reload border
+#
+# **The one place drift can start.** Compose resolves bind mounts on the Docker
+# host, so NAS_BORDER_CONFIG_DIR is a path on the NAS and not this checkout —
+# unlike compose/nginx.yml, which mounts `../nginx` because it runs on the
+# machine the checkout is on. The configuration in `infra/docker/nginx-border/`
+# is the source; getting it to the NAS is a deploy step:
+#
+#   rsync -a --delete infra/docker/nginx-border/ nas:${NAS_BORDER_CONFIG_DIR}/
+#
+# The docker plan's phase 4 is the argument for doing that rather than editing
+# the NAS's copy: blocks in this repository that the running nginx had never
+# read cost an afternoon. Baking the configuration into an image built from here
+# (ADR 0011) would remove the step entirely, which is the better end state and
+# is noted in the authentication plan.
+
+name: border
+
+services:
+  nginx:
+    image: nginx:${NGINX_VERSION:?}
+    restart: unless-stopped
+    ports:
+      # 443 for the site and the API; 80 only for the ACME http-01 challenge
+      # and the redirect. Both need a router forward.
+      - "80:80"
+      - "443:443"
+    volumes:
+      # The whole configuration, read-only: the main nginx.conf and the server
+      # blocks. This nginx serves nothing but the border, so unlike the Mac
+      # Mini's there is no host-owned nginx.conf to leave behind.
+      - ${NAS_BORDER_CONFIG_DIR:?}/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${NAS_BORDER_CONFIG_DIR:?}/conf.d:/etc/nginx/conf.d:ro
+      # The Olympus Devices chain and its revocation list, and the internal CA
+      # the forward to the Mac Mini is verified against. Not secrets — they are
+      # public certificates — but host state, and they change on every
+      # revocation (ADR 0018: monthly at least).
+      - ${NAS_BORDER_DIR:?}/certs:/etc/nginx/border:ro
+      # Let's Encrypt's live directory, written by whatever renews it.
+      - ${NAS_BORDER_DIR:?}/letsencrypt:/etc/letsencrypt:ro
+      # The http-01 webroot, which the renewer writes and nginx serves.
+      - ${NAS_BORDER_DIR:?}/acme:/var/www/acme:ro
+      - ${NAS_BORDER_DIR:?}/logs:/var/log/nginx
+    healthcheck:
+      test: ["CMD", "nginx", "-t", "-q"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+    # No olympus-* networks: none of them exist on this machine. The Mac Mini is
+    # reached over the LAN by name, resolved per request (see the server blocks).
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"

@@ -394,6 +394,57 @@ the pre-import one and `docker-bake.hcl` has no target for it.
 6. iOS profile and `.p12` for the tester; the phase 4 risks confirmed on a
    real device outside the LAN.
 
+**The configuration is written (2026-09-28); none of it is deployed.** Not in
+`infra/nginx/` as item 3 said -- the convention ADR 0019 settled on is
+`infra/docker/`, so the border's nginx lives in `infra/docker/nginx-border/`
+(its own `nginx.conf` and `conf.d/olympus-border.conf`) with
+`infra/docker/compose/border.yml` to run it and `NAS_BORDER_*` in `prod.env`.
+`stack.sh nginx-reload` takes a stack name now, so the border validates and
+reloads the same way the inside does.
+
+Both files pass `nginx -t` against real certificate and revocation files at the
+paths they name. Two things that check could not cover: `http2 on;` needs nginx
+1.25.1 and the validator available was 1.24 (production is 1.29.3), and nothing
+here proves a forward actually works.
+
+**Item 3 needs no change.** The Mac Mini's block already answers
+`olympus.ncfritz.net` alongside the internal name, and the border preserves the
+`Host`, so the forwarded traffic is accepted as it stands.
+
+**Prerequisites, each of which fails as a handshake and not as a message.**
+
+- The Mac Mini's server certificate has to carry `olympus.internal.ncfritz.net`,
+  because the border sets `proxy_ssl_name` to it and verifies. Its file is named
+  `olympus.ncfritz.net.crt`, which says nothing about the SANs:
+  `openssl x509 -in olympus.ncfritz.net.crt -noout -ext subjectAltName`.
+- `ssl_client_certificate` must be the **Olympus Devices chain**, not the root:
+  siblings under one parent mean a root-terminated store accepts a service
+  certificate too (ADR 0023), and nginx cannot check an issuer the way the API
+  does.
+- `ssl_crl` wants both lists in **one** file, which is the opposite of what the
+  API needs (Node reads only the first list in a file).
+- Server certificates get 825 days at most, and Apple enforces that against a
+  private anchor as well -- `docs/guides/certificates.md`. Let's Encrypt's are 90,
+  so this is about the Mac Mini's internal one.
+- The router has to forward 80 as well as 443, or http-01 cannot answer and the
+  certificates have to come from dns-01.
+
+**Open, and it will be found by whatever follows a `Location` header.**
+`api.olympus.ncfritz.net` forwards to the Mac Mini's `/api/`, which sets
+`X-Forwarded-Prefix /api`, so a resource created through that name answers
+`Location: /api/v1/...` -- and resolved against that origin it is
+`https://api.olympus.ncfritz.net/api/v1/...`, which the border would forward as
+`/api/api/v1/...`. Either the border declares the prefix and the Mac Mini honours
+what it declares, or that name reaches the API without the `/api` hop. Both amend
+ADR 0018, so the configuration implements the ADR as written and says so where it
+does it.
+
+**Worth doing before this is deployed twice:** the configuration reaches the NAS
+by `rsync` from the checkout, because Compose resolves bind mounts on the Docker
+host and the checkout is on the Mac Mini. That is the drift the docker plan's
+phase 4 spent an afternoon on. Baking it into an image built from here (ADR 0011)
+removes the copy, and the NAS already pulls one image from the registry.
+
 ## Phase 7 — Operations
 
 1. Signing key rotation: add a key, sign with it, retire the old one
