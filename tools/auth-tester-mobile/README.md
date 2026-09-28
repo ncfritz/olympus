@@ -41,11 +41,16 @@ The API to point at, persisted between launches:
 | Production       | `https://olympus.ncfritz.net/api/v1`          |
 | Internal         | `https://olympus.internal.ncfritz.net/api/v1` |
 | Dev              | `https://olympus.dev.ncfritz.net/api/v1`      |
-| A host of my own | protocol, host, optional port, then `/api/v1` |
+| A host of my own | protocol, host, optional port, and the path   |
 
 Production and Internal are one nginx server block, so they are two names for
 one API rather than two environments — worth knowing when an answer differs
 between them, because it should not.
+
+The path is a choice for a custom host because it is not the same everywhere:
+an API run from the workspace serves `/v1` itself, and the `/api` in front of
+the named hosts is nginx's. The wrong one answers 404 — from the router or from
+nginx — and neither says which mistake it was.
 
 `localhost` on a phone is the phone, so a laptop is reached by address.
 `http://` to anything but the local network is refused by App Transport

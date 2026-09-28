@@ -13,6 +13,13 @@ agents/*/agent/openapi
 **/__snapshots__
 turbo/generators/templates
 
+# Generated native projects (Continuous Native Generation): everything under
+# these is written by `expo prebuild` and CocoaPods, and formatting it is both
+# pointless and destructive -- it rewrites Pods metadata and xcframework
+# manifests that the build reads.
+tools/*/ios
+tools/*/android
+
 # Email templates: Prettier cannot parse Handlebars partials, and
 # whitespace in them reaches the rendered mail.
 *.handlebars

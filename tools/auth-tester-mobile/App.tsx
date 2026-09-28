@@ -14,8 +14,10 @@ import {
   View,
 } from "react-native";
 import {
+  type ApiPath,
   DEFAULT_TARGET,
   describe,
+  DIRECT_PATH,
   isResolved,
   NAMED,
   type NamedTarget,
@@ -48,6 +50,7 @@ export default function App() {
   const [host, setHost] = useState("");
   const [port, setPort] = useState("");
   const [protocol, setProtocol] = useState<"http" | "https">("http");
+  const [path, setPath] = useState<ApiPath>(DIRECT_PATH);
   // undefined until it has been looked for: "no tokens" and "not looked yet"
   // are different things to say.
   const [tokens, setTokens] = useState<StoredTokens | undefined>(undefined);
@@ -65,6 +68,7 @@ export default function App() {
           setHost(stored.target.host);
           setPort(stored.target.port ?? "");
           setProtocol(stored.target.protocol);
+          setPath(stored.target.path ?? DIRECT_PATH);
         }
       }
       setLoaded(true);
@@ -195,18 +199,25 @@ export default function App() {
 
   const customChosen = settings.target.kind === "custom";
   const custom = (
-    next: Partial<{ protocol: "http" | "https"; host: string; port: string }>,
+    next: Partial<{
+      protocol: "http" | "https";
+      host: string;
+      port: string;
+      path: ApiPath;
+    }>,
   ) => {
-    const values = { protocol, host, port, ...next };
+    const values = { protocol, host, port, path, ...next };
     setProtocol(values.protocol);
     setHost(values.host);
     setPort(values.port);
+    setPath(values.path);
     change({
       ...settings,
       target: {
         kind: "custom",
         protocol: values.protocol,
         host: values.host,
+        path: values.path,
         ...(values.port === "" ? {} : { port: values.port }),
       },
     });
@@ -259,6 +270,32 @@ export default function App() {
               </Pressable>
             ))}
           </View>
+
+          <View style={styles.protocols}>
+            {(["/v1", "/api/v1"] as const).map((option) => (
+              <Pressable
+                key={option}
+                onPress={() => custom({ path: option })}
+                style={[
+                  styles.protocol,
+                  path === option && styles.protocolChosen,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.protocolText,
+                    path === option && styles.protocolTextChosen,
+                  ]}
+                >
+                  {option}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={styles.note}>
+            An API from the workspace serves /v1 itself; the /api in front of
+            the hosts above is nginx&apos;s.
+          </Text>
 
           <View style={styles.inputs}>
             <TextInput

@@ -7,6 +7,16 @@
  */
 export type NamedTarget = "production" | "internal" | "dev";
 
+/**
+ * Where the API answers, which is not the same everywhere: an API run from the
+ * workspace serves `/v1` itself, and the `/api` in front of it is nginx's,
+ * added by whatever publishes it. Pointing at a laptop with `/api/v1` gets a
+ * 404 from the router, and pointing at a front door with `/v1` gets one from
+ * nginx -- neither says which mistake it was, so it is a choice rather than a
+ * guess.
+ */
+export type ApiPath = "/v1" | "/api/v1";
+
 export type Target =
   | { kind: "named"; name: NamedTarget }
   | {
@@ -15,6 +25,8 @@ export type Target =
       /** A host name or an address, optionally with `:port`. */
       host: string;
       port?: string;
+      /** Absent in settings stored before this was a choice: `/v1` then. */
+      path?: ApiPath;
     };
 
 export const NAMED: Record<
@@ -39,11 +51,13 @@ export const NAMED: Record<
 };
 
 /**
- * The path the API is published under, with the version every Olympus client
- * carries. nginx serves it at `/api` and the API adds it back to Location
- * headers from `X-Forwarded-Prefix`, so this is one string, not two decisions.
+ * What the named front doors publish: nginx takes `/api` off and the API adds
+ * it back to its Location headers from `X-Forwarded-Prefix`.
  */
-export const API_PATH = "/api/v1";
+export const API_PATH: ApiPath = "/api/v1";
+
+/** What an API serves when nothing is in front of it: `pnpm dev` on a laptop. */
+export const DIRECT_PATH: ApiPath = "/v1";
 
 export const DEFAULT_TARGET: Target = { kind: "named", name: "dev" };
 
@@ -91,7 +105,7 @@ export const resolve = (target: Target): Resolved | Unresolved => {
     return { problem: `${port} is not a port between 1 and 65535` };
   }
 
-  const baseUrl = `${target.protocol}://${host}${port === "" ? "" : `:${port}`}${API_PATH}`;
+  const baseUrl = `${target.protocol}://${host}${port === "" ? "" : `:${port}`}${target.path ?? DIRECT_PATH}`;
   if (target.protocol === "http" && !LOCAL.test(host)) {
     return {
       baseUrl,
@@ -108,4 +122,6 @@ export const isResolved = (answer: Resolved | Unresolved): answer is Resolved =>
 export const describe = (target: Target): string =>
   target.kind === "named"
     ? NAMED[target.name].label
-    : `${target.protocol}://${target.host}${target.port ? `:${target.port}` : ""}`;
+    : `${target.protocol}://${target.host}${target.port ? `:${target.port}` : ""}${
+        target.path ?? DIRECT_PATH
+      }`;

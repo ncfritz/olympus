@@ -34,18 +34,49 @@ describe("resolve", () => {
         protocol: "http",
         host: "192.168.1.10",
         port: "3001",
+        path: "/v1",
       }),
-    ).toBe("http://192.168.1.10:3001/api/v1");
+    ).toBe("http://192.168.1.10:3001/v1");
     expect(
-      url({ kind: "custom", protocol: "https", host: "Olympus.Test" }),
+      url({
+        kind: "custom",
+        protocol: "https",
+        host: "Olympus.Test",
+        path: "/api/v1",
+      }),
     ).toBe("https://olympus.test/api/v1");
+  });
+
+  /**
+   * An API run from the workspace serves `/v1` itself; the `/api` in front of
+   * the named hosts is nginx's. The wrong one is a 404 from the router or from
+   * nginx, and neither of them says which mistake it was.
+   */
+  it("puts the API where it actually answers", () => {
+    const laptop = {
+      kind: "custom",
+      protocol: "http",
+      host: "192.168.1.10",
+      port: "3001",
+    } as const;
+    expect(url({ ...laptop, path: "/v1" })).toBe("http://192.168.1.10:3001/v1");
+    expect(url({ ...laptop, path: "/api/v1" })).toBe(
+      "http://192.168.1.10:3001/api/v1",
+    );
+  });
+
+  /** Settings stored before the path was a choice meant a direct API. */
+  it("defaults a custom target to /v1 when no path was stored", () => {
+    expect(url({ kind: "custom", protocol: "http", host: "10.0.0.2" })).toBe(
+      "http://10.0.0.2/v1",
+    );
   });
 
   /** `192.168.1.10:3001` is what a phone keyboard produces in one field. */
   it("takes the port from the host when it is typed there", () => {
     expect(
       url({ kind: "custom", protocol: "http", host: " 192.168.1.10:3001 " }),
-    ).toBe("http://192.168.1.10:3001/api/v1");
+    ).toBe("http://192.168.1.10:3001/v1");
   });
 
   it("prefers a port typed in the host to one left in the port field", () => {
@@ -56,7 +87,7 @@ describe("resolve", () => {
         host: "10.0.0.2:8080",
         port: "3001",
       }),
-    ).toBe("http://10.0.0.2:8080/api/v1");
+    ).toBe("http://10.0.0.2:8080/v1");
   });
 
   it("says what is wrong rather than building a URL that cannot work", () => {
