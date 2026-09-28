@@ -1,0 +1,86 @@
+import {
+  authorizeUrl,
+  createPkce,
+  exchangeCodeForCookie,
+  type IssuedAccess,
+  parseRedirect,
+} from "@ncfritz/olympus-auth-flow";
+import { browserCrypto } from "./browserCrypto";
+import {
+  type Callback,
+  checkCallback,
+  isCallbackReady,
+  PENDING_KEY,
+  readPending,
+} from "./pending";
+import { CLIENT_ID, tokenEndpoint } from "./tokenEndpoint";
+
+const pkce = createPkce(browserCrypto);
+
+/** Where the API sends the browser back, and what the client registered. */
+export const redirectUri = (): string =>
+  `${window.location.origin}/auth/callback`;
+
+/**
+ * Starts a sign-in: leaves the verifier and state in this tab, then hands the
+ * browser to the API, which hands it to the provider.
+ *
+ * A full navigation rather than a popup or an iframe. The provider decides what
+ * authenticating looks like -- a password, a passkey, a second factor -- and
+ * that is a page of theirs, in the address bar, where the person can see whose
+ * it is.
+ */
+export const startSignIn = async (
+  apiBaseUrl: string,
+  provider: string,
+  returnTo = window.location.pathname + window.location.search,
+): Promise<void> => {
+  const verifier = await pkce.newVerifier();
+  const state = await pkce.newState();
+  sessionStorage.setItem(
+    PENDING_KEY,
+    JSON.stringify({ verifier, state, returnTo }),
+  );
+  window.location.assign(
+    authorizeUrl(apiBaseUrl, {
+      clientId: CLIENT_ID,
+      redirectUri: redirectUri(),
+      challenge: await pkce.challengeFor(verifier),
+      state,
+      provider,
+    }),
+  );
+};
+
+export type Completion =
+  { tokens: IssuedAccess; returnTo: string } | { problem: string };
+
+/**
+ * Finishes a sign-in on the callback page: checks what came back, exchanges the
+ * code, and forgets the pending request either way -- a verifier is good for one
+ * attempt, and leaving it behind for a second is the thing PKCE exists to stop.
+ */
+export const completeSignIn = async (
+  apiBaseUrl: string,
+  search: string = window.location.search,
+): Promise<Completion> => {
+  const pending = readPending(sessionStorage.getItem(PENDING_KEY));
+  sessionStorage.removeItem(PENDING_KEY);
+
+  const checked: Callback = checkCallback(
+    parseRedirect(`?${search.replace(/^\?/, "")}`),
+    pending,
+  );
+  if (!isCallbackReady(checked)) return { problem: checked.problem };
+
+  const tokens = await exchangeCodeForCookie(tokenEndpoint(apiBaseUrl), {
+    code: checked.code,
+    redirectUri: redirectUri(),
+    clientId: CLIENT_ID,
+    verifier: checked.verifier,
+    // What the session list will call this browser. `userAgent` is what there
+    // is; the alternative is asking, and nobody wants to be asked.
+    deviceName: navigator.userAgent.slice(0, 120),
+  });
+  return { tokens, returnTo: checked.returnTo };
+};

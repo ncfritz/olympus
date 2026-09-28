@@ -15,9 +15,11 @@
     "start:local": "env-cmd -f local.env next start",
     "lint": "eslint ./src",
     "lintfix": "eslint ./src --fix",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
     "analyze:client": "RSDOCTOR=true rsdoctor analyze --profile .next/.rsdoctor/manifest.json",
-    "analyze:server": "RSDOCTOR=true rsdoctor analyze --profile .next/server/.rsdoctor/manifest.json"
+    "analyze:server": "RSDOCTOR=true rsdoctor analyze --profile .next/server/.rsdoctor/manifest.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@ant-design/icons": "^6.2.5",
@@ -56,6 +58,7 @@
     "@typescript-eslint/eslint-plugin": "^8.22.0",
     "@typescript-eslint/parser": "^8.22.0",
     "@vis.gl/react-google-maps": "^1.5.1",
+    "@vitest/coverage-v8": "catalog:",
     "antd": "^6.4.3",
     "antd-css-utilities": "^2.1.0",
     "antd-mask-input": "^2.0.7",
@@ -114,9 +117,12 @@
     "usehooks-ts": "^3.1.0",
     "uuid": "^11.0.5",
     "uuid-time": "^1.0.0",
+    "vitest": "catalog:",
     "webpack-dev-server": "^5.2.0"
   },
   "dependencies": {
+    "@ncfritz/olympus-auth-flow": "workspace:*",
+    "@ncfritz/olympus-metrics": "workspace:*",
     "@rc-component/collapse": "^1.2.0",
     "@rc-component/steps": "^1.2.2",
     "csstype": "^3.2.3",
