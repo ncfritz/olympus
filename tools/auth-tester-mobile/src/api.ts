@@ -6,19 +6,12 @@ import {
   type ReuseVerdict,
 } from "@ncfritz/olympus-auth-flow";
 import { AuthApi, createOlympusClients } from "@ncfritz/olympus-client";
+import { type Answered, type Called, timed } from "./called";
 import { CLIENT_ID, formPoster } from "./signIn";
 import { createSession, type Session } from "./session";
 import type { SavedTokens } from "@ncfritz/olympus-auth-flow";
 
-export type Called = {
-  method: string;
-  path: string;
-  status?: number;
-  /** Milliseconds, as the app saw them: the round trip plus any rotation. */
-  took: number;
-  /** A line of what came back, or what went wrong. */
-  answer: string;
-};
+export type { Called };
 
 export type Caller = {
   session: Session;
@@ -80,43 +73,6 @@ export const createCaller = (options: {
     auth: session.accessToken,
   });
 
-  const timed = async (
-    method: string,
-    path: string,
-    call: () => Promise<unknown>,
-  ): Promise<Called> => {
-    const started = Date.now();
-    try {
-      const answer = await call();
-      return {
-        method,
-        path,
-        status: 200,
-        took: Date.now() - started,
-        answer: JSON.stringify(answer),
-      };
-    } catch (error: unknown) {
-      // The SDK throws for a 4xx, and the status is the interesting part: a
-      // 401 here means the token was refused, which is a result, not a crash.
-      const status = (error as { response?: { status?: unknown } } | undefined)
-        ?.response?.status;
-      const body = (error as { response?: { data?: unknown } } | undefined)
-        ?.response?.data;
-      return {
-        method,
-        path,
-        ...(typeof status === "number" ? { status } : {}),
-        took: Date.now() - started,
-        answer:
-          body === undefined
-            ? error instanceof Error
-              ? error.message
-              : String(error)
-            : JSON.stringify(body),
-      };
-    }
-  };
-
   const auth = new AuthApi(clients);
 
   /** An answer from the token endpoint, in a line. */
@@ -127,10 +83,12 @@ export const createCaller = (options: {
     session,
     auth,
     get: (path) =>
-      timed("GET", path, async () => {
+      timed("GET", path, async (): Promise<Answered> => {
         const response = await clients.olympus.instance.request({
           method: "GET",
           url: path,
+          // The status is the result: a 404 from the router says the path was
+          // wrong, which is worth seeing rather than throwing over.
           validateStatus: () => true,
         });
         return { status: response.status, body: response.data };

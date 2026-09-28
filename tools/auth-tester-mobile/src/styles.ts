@@ -1,0 +1,86 @@
+/**
+ * Every style on the screen, in one place: the sections are separate components
+ * and they are one screen, so a second StyleSheet would be a second set of
+ * greys.
+ */
+import { StyleSheet } from "react-native";
+
+export const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: "#fff" },
+  content: { padding: 16, gap: 8 },
+  title: { fontSize: 22, fontWeight: "600" },
+  subtitle: { fontSize: 13, color: "#444", fontFamily: "Menlo" },
+  warning: { fontSize: 13, color: "#8a4b00" },
+  heading: { fontSize: 13, fontWeight: "600", marginTop: 16, color: "#666" },
+  row: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    padding: 12,
+    gap: 2,
+  },
+  chosen: { borderColor: "#0a5", backgroundColor: "#f4fbf7" },
+  rowTitle: { fontSize: 16 },
+  rowDetail: { fontSize: 13, color: "#444", fontFamily: "Menlo" },
+  note: { fontSize: 12, color: "#666" },
+  protocols: { flexDirection: "row", gap: 8, marginTop: 8 },
+  protocol: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  protocolChosen: { borderColor: "#0a5", backgroundColor: "#e8f7ef" },
+  protocolText: { fontSize: 14, color: "#444" },
+  protocolTextChosen: { color: "#063", fontWeight: "600" },
+  inputs: { flexDirection: "row", gap: 8, marginTop: 8 },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 15,
+  },
+  hostInput: { flex: 1 },
+  portInput: { width: 84 },
+  setting: { flexDirection: "row", alignItems: "center", gap: 12 },
+  settingText: { flex: 1, gap: 2 },
+  button: {
+    marginTop: 12,
+    borderRadius: 10,
+    backgroundColor: "#0a5",
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  buttonOff: { backgroundColor: "#b9d9c8" },
+  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  buttonQuiet: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  buttonQuietText: { color: "#444", fontSize: 15 },
+  small: {
+    borderRadius: 8,
+    backgroundColor: "#0a5",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  smallText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+  called: {
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    paddingVertical: 6,
+    gap: 2,
+  },
+  calledHead: { fontSize: 12, fontFamily: "Menlo", color: "#063" },
+  calledBody: { fontSize: 11, fontFamily: "Menlo", color: "#444" },
+  revoke: { marginTop: 6, alignSelf: "flex-start" },
+  claims: { marginTop: 8, gap: 4 },
+  claim: { flexDirection: "row", gap: 8 },
+  claimName: { width: 80, fontSize: 12, color: "#666", fontFamily: "Menlo" },
+  claimValue: { flex: 1, fontSize: 12, fontFamily: "Menlo" },
+});
