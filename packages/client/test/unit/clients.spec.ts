@@ -38,13 +38,26 @@ describe("createOlympusClients", () => {
   });
 
   describe("auth", () => {
+    /**
+     * The Authorization header, whatever case axios kept it in.
+     *
+     * Header names are case-insensitive on the wire and Node lowercases what
+     * it receives, so which case axios chose is not behaviour worth asserting
+     * -- and asserting it is how a test comes to pass for the wrong reason:
+     * `not.toHaveProperty("authorization")` is satisfied by a header stored as
+     * `Authorization`, so the absence case below was true no matter what the
+     * code did.
+     */
+    const authorization = (headers: Record<string, unknown>) =>
+      Object.entries(headers).find(
+        ([name]) => name.toLowerCase() === "authorization",
+      )?.[1];
+
     it("sends the token the provider returns", async () => {
       const api = fakeApi(undefined, { auth: () => "a-token" });
       api.reply(200, { movie: { id: 603 } });
       await new MetadataApi(api.clients).describeMovie(603);
-      expect(api.sent[0]?.headers).toMatchObject({
-        authorization: "Bearer a-token",
-      });
+      expect(authorization(api.sent[0]!.headers)).toBe("Bearer a-token");
     });
 
     it("sends no header when there is no token yet", async () => {
@@ -53,7 +66,7 @@ describe("createOlympusClients", () => {
       const api = fakeApi(undefined, { auth: () => undefined });
       api.reply(200, { movie: { id: 603 } });
       await new MetadataApi(api.clients).describeMovie(603);
-      expect(api.sent[0]?.headers).not.toHaveProperty("authorization");
+      expect(authorization(api.sent[0]!.headers)).toBeUndefined();
     });
 
     it("asks again for every request", async () => {
@@ -66,7 +79,7 @@ describe("createOlympusClients", () => {
       api.reply(200, { movie: { id: 2 } });
       await new MetadataApi(api.clients).describeMovie(1);
       await new MetadataApi(api.clients).describeMovie(2);
-      expect(api.sent.map((r) => r.headers.authorization)).toEqual([
+      expect(api.sent.map((r) => authorization(r.headers))).toEqual([
         "Bearer first",
         "Bearer second",
       ]);
@@ -81,9 +94,7 @@ describe("createOlympusClients", () => {
       });
       api.reply(200, { movie: { id: 603 } });
       await new MetadataApi(api.clients).describeMovie(603);
-      expect(api.sent[0]?.headers).toMatchObject({
-        authorization: "Bearer fetched",
-      });
+      expect(authorization(api.sent[0]!.headers)).toBe("Bearer fetched");
     });
 
     it("does not charge the call for the time the provider took", async () => {
