@@ -1,3 +1,4 @@
+import type { Meeting } from "@ncfritz/olympus-sdk/minerva";
 import {
   CalendarOutlined,
   CaretDownOutlined,
@@ -12,7 +13,7 @@ import notesApi from "../../../api/notestApi";
 import TimelineEntry from "../../notes/TimelineEntry";
 
 export interface PreviousMeetingProps {
-  event: any;
+  event: Meeting;
   showMeta: boolean;
 }
 
@@ -59,7 +60,7 @@ const PreviousMeeting: React.FunctionComponent<PreviousMeetingProps> = ({
   };
 
   const startTime = DateTime.fromISO(event.startTime);
-  const endTime = DateTime.fromISO(event.endTime);
+  const endTime = DateTime.fromISO(event.endTime ?? "");
 
   let timelineContents: ReactNode | ReactNode[];
 

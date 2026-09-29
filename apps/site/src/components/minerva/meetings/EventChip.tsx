@@ -1,3 +1,4 @@
+import type { Meeting } from "@ncfritz/olympus-sdk/minerva";
 import { CalendarOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import { Space, Typography } from "antd";
 import { DateTime } from "luxon";
@@ -5,7 +6,7 @@ import React, { type CSSProperties } from "react";
 import styled from "styled-components";
 
 export interface EventChipProps {
-  event: any;
+  event: Meeting | any;
   onClick?: (event: any) => Promise<void>;
   titleOverride?: string;
   style?: CSSProperties;

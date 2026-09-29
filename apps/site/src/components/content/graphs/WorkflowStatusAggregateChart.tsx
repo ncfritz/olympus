@@ -1,11 +1,13 @@
 "use client";
 
+import type { GetContentIngestionWorkflowStatisticsResponse } from "@ncfritz/olympus-sdk/dionysus";
+
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts";
 import React from "react";
 
 export interface WorkflowStatusAggregateChartProps {
-  stats: any;
+  stats: GetContentIngestionWorkflowStatisticsResponse;
 }
 
 const WorkflowStatusAggregateChart: React.FunctionComponent<

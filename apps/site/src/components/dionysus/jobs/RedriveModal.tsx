@@ -1,3 +1,4 @@
+import type { GetMetadataFetchJobStatusStatisticsResponse } from "@ncfritz/olympus-sdk/dionysus";
 import type {
   MetadataFetchJobStatus,
   MetadataJobType,
@@ -22,7 +23,7 @@ import MetadataJobStatusSelect from "./MetadataJobStatusSelect";
 export interface RedriveModalProps {
   open: boolean;
   onClose: () => void;
-  statistics: any;
+  statistics: GetMetadataFetchJobStatusStatisticsResponse;
 }
 
 const RedriveModal: React.FunctionComponent<RedriveModalProps> = ({

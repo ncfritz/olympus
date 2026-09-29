@@ -1,3 +1,4 @@
+import type { WebSocketNotificationLevel } from "@ncfritz/olympus-sdk/olympus";
 import {
   CheckCircleFilled,
   CloseCircleFilled,
@@ -8,8 +9,8 @@ import { Radio, Space } from "antd";
 import React from "react";
 
 export interface WebSocketLevelButtonProps {
-  level: any;
-  selectedLevel: any;
+  level: string;
+  selectedLevel: WebSocketNotificationLevel | undefined;
   label: string;
 }
 

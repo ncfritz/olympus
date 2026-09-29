@@ -5,7 +5,7 @@ import Highcharts from "highcharts";
 import React from "react";
 
 export interface SearchExecutionsRuntimeSparklineChartProps {
-  stats: any;
+  stats: number[];
 }
 
 const SearchExecutionsRuntimeSparklineChart = ({

@@ -1,5 +1,7 @@
 "use client";
 
+import type { GetSummaryResponse } from "@ncfritz/olympus-sdk/minerva";
+
 import { Space, Spin } from "antd";
 import { DateTime } from "luxon";
 import * as React from "react";
@@ -11,7 +13,7 @@ interface NotesTypeGraphProps {
   date: DateTime;
   days: number;
   summaryLoading: boolean;
-  summary: any;
+  summary: GetSummaryResponse | undefined;
 }
 
 const NotesTypeGraph: React.FunctionComponent<NotesTypeGraphProps> = ({
@@ -40,7 +42,9 @@ const NotesTypeGraph: React.FunctionComponent<NotesTypeGraphProps> = ({
       [0, 1, 2, 3, 4, 5].forEach((i) => {
         const type = config[i].type;
         series[0].data[i] +=
-          key in counts && counts[key][type] ? counts[key][type] : 0;
+          key in counts && (counts[key] as Record<string, number>)[type]
+            ? (counts[key] as Record<string, number>)[type]
+            : 0;
       });
     }
 

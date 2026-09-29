@@ -1,11 +1,18 @@
 "use client";
 
+import type {
+  GetContentIngestionWorkflowStatisticsResponse,
+  GetMetadataWorkflowStatisticsResponse,
+} from "@ncfritz/olympus-sdk/dionysus";
+
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts";
 import React from "react";
 
 export type WorkflowStatusChartProps = {
-  stats: any;
+  stats:
+    | GetContentIngestionWorkflowStatisticsResponse
+    | GetMetadataWorkflowStatisticsResponse;
 };
 
 const WorkflowStatusChart = ({ stats }: WorkflowStatusChartProps) => {

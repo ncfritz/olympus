@@ -1,11 +1,13 @@
 "use client";
 
+import type { GetMetadataFetchJobStatusStatisticsResponse } from "@ncfritz/olympus-sdk/dionysus";
+
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts";
 import React from "react";
 
 export interface MetadataFetchJobExpirationChartProps {
-  stats: any;
+  stats: GetMetadataFetchJobStatusStatisticsResponse;
 }
 
 const MetadataFetchJobExpirationChart = ({

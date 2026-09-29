@@ -21,7 +21,7 @@ export interface TvEpisodeListProps {
   episodes?: SparseEpisode[];
   currentEpisode?: number;
   loading: boolean;
-  error: any;
+  error: Error | undefined;
 }
 
 export interface TvEpisodeListCardProps {

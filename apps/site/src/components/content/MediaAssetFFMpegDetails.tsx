@@ -25,7 +25,7 @@ import { JsonIcon } from "../../icons";
 const DynamicReactJson = dynamic(import("react-json-view"), { ssr: false });
 
 export interface MediaAssetFFMpegDetailsProps {
-  metadata: any;
+  metadata: any | undefined;
   showRaw: boolean;
   allowRawToggle?: boolean;
 }

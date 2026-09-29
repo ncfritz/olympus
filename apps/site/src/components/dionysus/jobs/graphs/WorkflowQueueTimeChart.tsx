@@ -1,11 +1,13 @@
 "use client";
 
+import type { GetMetadataWorkflowStatisticsResponse } from "@ncfritz/olympus-sdk/dionysus";
+
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts";
 import React from "react";
 
 export interface WorkflowQueueTimeChartProps {
-  stats: any;
+  stats: GetMetadataWorkflowStatisticsResponse;
 }
 
 const WorkflowQueueTimeChart = ({ stats }: WorkflowQueueTimeChartProps) => {

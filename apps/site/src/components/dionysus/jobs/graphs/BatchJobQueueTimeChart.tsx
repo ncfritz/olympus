@@ -1,11 +1,13 @@
 "use client";
 
+import type { GetBatchJobStatsResponse } from "@ncfritz/olympus-sdk/dionysus";
+
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts";
 import React from "react";
 
 export interface BatchJobQueueTimeChartProps {
-  stats: any;
+  stats: GetBatchJobStatsResponse;
 }
 
 const BatchJobQueueTimeChart = ({ stats }: BatchJobQueueTimeChartProps) => {

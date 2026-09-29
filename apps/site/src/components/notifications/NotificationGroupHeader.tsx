@@ -1,3 +1,4 @@
+import type { NotificationGroup } from "@ncfritz/olympus-sdk/olympus";
 import { DatabaseOutlined } from "@ant-design/icons";
 import { Badge, Space, Typography } from "antd";
 
@@ -12,7 +13,7 @@ type NotificationLevelCounts = {
 export interface NotificationGroupHeaderProps {
   notificationStatistics: Record<string, NotificationLevelCounts>;
   unreadCount: number;
-  group: any;
+  group: NotificationGroup;
 }
 
 const NotificationGroupHeader: React.FunctionComponent<

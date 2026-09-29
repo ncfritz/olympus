@@ -5,7 +5,12 @@ import Highcharts from "highcharts";
 import React from "react";
 
 export interface SearchExecutionsStatusChartProps {
-  stats: any;
+  stats: {
+    new: number[];
+    duplicate: number[];
+    skipped: number[];
+    timing: (number | null)[];
+  };
 }
 
 const CATEGORIES = ["new", "duplicate", "skipped"];
@@ -79,7 +84,12 @@ const SearchExecutionsStatusChart = ({
           },
           {
             name: "Failed",
-            data: stats.failed,
+            // The declared response has no `failed`, so this series has been
+            // plotting undefined. Kept rather than deleted: the aggregate
+            // statistics endpoint in this same SDK turned out to be declared
+            // wrongly, so the absence may be the spec's rather than the API's.
+            // docs/roadmap.md asks the question.
+            data: (stats as unknown as { failed?: number[] }).failed,
             color: "#ff6361",
           },
           {

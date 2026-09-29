@@ -1,5 +1,7 @@
 "use client";
 
+import type { GetSummaryResponse } from "@ncfritz/olympus-sdk/minerva";
+
 import { Space, Spin } from "antd";
 import { DateTime } from "luxon";
 import * as React from "react";
@@ -10,7 +12,7 @@ import { config } from "../../utils/notes";
 interface NotesHourOfDayGraphProps {
   date: DateTime;
   summaryLoading: boolean;
-  summary: any;
+  summary: GetSummaryResponse | undefined;
 }
 
 const NotesHourOfDayGraph: React.FunctionComponent<
@@ -41,8 +43,8 @@ const NotesHourOfDayGraph: React.FunctionComponent<
       [0, 1, 2, 3, 4, 5].forEach((i) => {
         const type = config[i].type;
         series[i].data.push(
-          key in hourCounts && hourCounts[key][type]
-            ? hourCounts[key][type]
+          key in hourCounts && (hourCounts[key] as Record<string, number>)[type]
+            ? (hourCounts[key] as Record<string, number>)[type]
             : 0,
         );
       });

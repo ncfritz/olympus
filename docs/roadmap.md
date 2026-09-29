@@ -313,6 +313,15 @@ check the consumers when the metadata and asset agents are imported.
   the disagreement. The fix is the decorator, a regenerated SDK, and removing
   that cast and its local type.
 
+- **Does `GetMediaAssetSearchExecutionStatistics` return a `failed` series?** The
+  declared response has `new`, `duplicate`, `skipped` and `timing`, and
+  `SearchExecutionsStatusChart` plots a fifth series from `stats.failed` -- so
+  either the chart has been drawing an empty series for some time, or this is a
+  second endpoint whose declaration is incomplete. The chart casts across it for
+  now, with the reason at the cast. Answering it means looking at what the
+  endpoint actually returns; the aggregate-statistics entry above is why that is
+  worth doing rather than assuming the spec is right.
+
 ### Site
 
 - **Notifications are broadcast to every connected socket.** The gateway's

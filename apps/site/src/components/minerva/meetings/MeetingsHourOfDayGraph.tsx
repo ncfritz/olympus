@@ -1,5 +1,7 @@
 "use client";
 
+import type { GetMeetingStatisticsResponse } from "@ncfritz/olympus-sdk/minerva";
+
 import { Space, Spin } from "antd";
 import { DateTime } from "luxon";
 import * as React from "react";
@@ -10,7 +12,7 @@ import { MeetingStatusTypes } from "../../../utils/meetings";
 interface MeetingsHourOfDayGraphProps {
   date: DateTime;
   summaryLoading: boolean;
-  summary: any;
+  summary: GetMeetingStatisticsResponse | undefined;
   width?: number;
 }
 
@@ -46,8 +48,10 @@ const MeetingsHourOfDayGraph: React.FunctionComponent<
 
       MeetingStatusTypes.forEach((type, count) => {
         series[count].data.push(
-          key in hourCounts && hourCounts[key][type]
-            ? hourCounts[key][type].count
+          hourCounts !== undefined &&
+            key in hourCounts &&
+            (hourCounts[key] as Record<string, { count: number }>)[type]
+            ? (hourCounts[key] as Record<string, { count: number }>)[type].count
             : 0,
         );
       });

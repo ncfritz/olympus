@@ -1,12 +1,14 @@
 "use client";
 
+import type { ContentStatisticsResponse } from "@ncfritz/olympus-sdk/dionysus";
+
 import { Space, Spin } from "antd";
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts";
 
 interface ContentDimensionGraphProps {
   loading: boolean;
-  data: any;
+  data: ContentStatisticsResponse | undefined;
   title: string;
   height?: number;
 }
@@ -41,7 +43,7 @@ const ContentDimensionGraph: React.FunctionComponent<
             style: { fontSize: 10 },
           },
           xAxis: {
-            categories: data.categories,
+            categories: data?.categories,
             lineWidth: 0,
           },
           yAxis: {
@@ -50,7 +52,7 @@ const ContentDimensionGraph: React.FunctionComponent<
           legend: {
             enabled: false,
           },
-          series: data.series,
+          series: data?.series,
           credits: {
             enabled: false,
           },

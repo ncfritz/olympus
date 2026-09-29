@@ -1,3 +1,4 @@
+import type { GetMetadataFetchJobStatusStatisticsResponse } from "@ncfritz/olympus-sdk/dionysus";
 import type {
   MetadataFetchJobStatus,
   MetadataJobType,
@@ -6,7 +7,7 @@ import { Typography } from "antd";
 import { getMetadataJobStatusIndicator } from "../jobs/utils";
 
 export interface MetadataStatusTableProps {
-  statistics: any;
+  statistics: GetMetadataFetchJobStatusStatisticsResponse;
   onCellClick?: (
     type?: MetadataJobType,
     status?: MetadataFetchJobStatus,
@@ -85,7 +86,8 @@ const MetadataStatusTable: React.FunctionComponent<
                 onClick={() => {
                   if (onCellClick) {
                     onCellClick(
-                      statistics.expiration.series[index].name,
+                      statistics.expiration.series[index]
+                        .name as MetadataJobType,
                       "fetched",
                     );
                   }
@@ -100,7 +102,8 @@ const MetadataStatusTable: React.FunctionComponent<
                 onClick={() => {
                   if (onCellClick) {
                     onCellClick(
-                      statistics.expiration.series[index].name,
+                      statistics.expiration.series[index]
+                        .name as MetadataJobType,
                       "fetching",
                     );
                   }
@@ -115,7 +118,8 @@ const MetadataStatusTable: React.FunctionComponent<
                 onClick={() => {
                   if (onCellClick) {
                     onCellClick(
-                      statistics.expiration.series[index].name,
+                      statistics.expiration.series[index]
+                        .name as MetadataJobType,
                       "invalidated",
                     );
                   }
@@ -130,7 +134,8 @@ const MetadataStatusTable: React.FunctionComponent<
                 onClick={() => {
                   if (onCellClick) {
                     onCellClick(
-                      statistics.expiration.series[index].name,
+                      statistics.expiration.series[index]
+                        .name as MetadataJobType,
                       "failed",
                     );
                   }
@@ -145,7 +150,8 @@ const MetadataStatusTable: React.FunctionComponent<
                 onClick={() => {
                   if (onCellClick) {
                     onCellClick(
-                      statistics.expiration.series[index].name,
+                      statistics.expiration.series[index]
+                        .name as MetadataJobType,
                       "not_found",
                     );
                   }
@@ -160,7 +166,8 @@ const MetadataStatusTable: React.FunctionComponent<
                 onClick={() => {
                   if (onCellClick) {
                     onCellClick(
-                      statistics.expiration.series[index].name,
+                      statistics.expiration.series[index]
+                        .name as MetadataJobType,
                       "cancelled",
                     );
                   }
@@ -175,7 +182,8 @@ const MetadataStatusTable: React.FunctionComponent<
                 onClick={() => {
                   if (onCellClick) {
                     onCellClick(
-                      statistics.expiration.series[index].name,
+                      statistics.expiration.series[index]
+                        .name as MetadataJobType,
                       "queued",
                     );
                   }

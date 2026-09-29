@@ -1,3 +1,4 @@
+import type { NotificationTypeWithProtocols } from "@ncfritz/olympus-sdk/olympus";
 import { Checkbox, Typography } from "antd";
 import { useState } from "react";
 import notificationsApi from "../../api/notificationsApi";
@@ -11,7 +12,7 @@ export interface NotificationSettings {
 }
 
 export interface NotificationSettingsListEntryProps {
-  notificationType: any;
+  notificationType: NotificationTypeWithProtocols;
   initialSettings: NotificationSettings;
   afterUpdate: () => Promise<void>;
 }

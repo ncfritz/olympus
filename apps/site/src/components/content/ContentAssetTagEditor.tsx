@@ -1,3 +1,4 @@
+import type { ContentAsset } from "@ncfritz/olympus-sdk/dionysus";
 import {
   CloudOutlined,
   DesktopOutlined,
@@ -24,7 +25,7 @@ import contentApi from "../../api/contentApi";
 import ContentAssetTagElement from "./ContentAssetTagElement";
 
 export interface ContentAssetTagEditorProps {
-  asset: any;
+  asset: ContentAsset | any;
   onTagRemoved?: (tag: ContentAssetTag) => Promise<void>;
 }
 
