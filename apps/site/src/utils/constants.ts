@@ -40,12 +40,3 @@ export const DIONYSUS_CDN_HOST = required(
  */
 export const GOOGLE_MAPS_API_KEY =
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-
-/**
- * The Tomorrow.io key the weather widget's map tiles are fetched with. Same
- * reasoning as the Maps key above: it is in the bundle by necessity, so it is
- * restricted at the provider rather than hidden here, and it is optional
- * because a widget with no weather overlay is obviously broken.
- */
-export const TOMORROW_IO_API_KEY =
-  process.env.NEXT_PUBLIC_TOMORROW_IO_API_KEY || "";

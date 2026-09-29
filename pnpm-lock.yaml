@@ -1421,6 +1421,9 @@ importers:
       '@svgr/webpack':
         specifier: ^8.1.0
         version: 8.1.0(typescript@5.9.3)
+      '@types/google.maps':
+        specifier: ^3.66.4
+        version: 3.66.4
       '@types/luxon':
         specifier: ^3.4.2
         version: 3.7.5

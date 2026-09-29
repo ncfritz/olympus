@@ -1,6 +1,6 @@
 import { Col, Row } from "antd";
 import { Content } from "antd/lib/layout/layout";
-import WeatherForecastWidget from "../components/widgets/weather/WeatherForecastWidget";
+import WeatherWidget from "../components/widgets/weather/WeatherWidget";
 
 const IndexPage: React.FunctionComponent = () => {
   return (
@@ -17,7 +17,7 @@ const IndexPage: React.FunctionComponent = () => {
         <Row>
           <Col span={14}>Somewhere! Over the rainbow</Col>
           <Col span={10}>
-            <WeatherForecastWidget />
+            <WeatherWidget />
           </Col>
         </Row>
       </Content>

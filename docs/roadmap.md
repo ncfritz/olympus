@@ -438,17 +438,12 @@ status` is only clean while the installed version matches the committed one --
   is for and why that restriction is the standing control; keeping the value out
   of this repository is what makes rotating it worth doing at all.
 
-- **Rotate credentials**: the Tomorrow.io API key that was hard-coded in the
-  site's `src/components/widgets/weather/WeatherForecastWidget.tsx`, in the
-  weather map's tile URL. Same story as the Maps key, and the same treatment:
-  the key is read from `NEXT_PUBLIC_TOMORROW_IO_API_KEY` (2026-09-29) and
-  reaches `next build` as the `tomorrow_key` buildx secret, named per
-  environment by `TOMORROW_KEY_SECRET` (`tomorrow_io_api_key` in production).
-  It was in the repository and in every bundle served, so the value has to be
-  replaced at Tomorrow.io; restrict the new one to `*.ncfritz.net` there if
-  their console allows it, since it is public in the bundle either way. Until
-  the secret file exists the widget draws its map with no weather overlay. The weather plan (phase 4) removes Tomorrow.io altogether, after
-  which the key is revoked rather than rotated.
+- **Revoke credentials**: the Tomorrow.io API key that was hard-coded in the
+  site's weather widget until 2026-09-29. The weather work (ADR 0024, plan
+  phase 4) removed Tomorrow.io altogether: the widget, its constant, the
+  `tomorrow_key` build secret and `TOMORROW_KEY_SECRET`. The key was in the
+  repository and in every bundle served, so it is revoked at Tomorrow.io,
+  and `SECRETS_DIR/tomorrow_io_api_key` deleted, once phase 4 is deployed.
 
 - **Rotate credentials**: `src/pages/content.tsx` is a scratch page on the
   public `/content` route whose only content is a `QRCode` for an

@@ -1,0 +1,248 @@
+/*
+ * The weather widget (docs/plans/weather/design.md). A CSS module rather
+ * than inline style objects (docs/conventions/ux.md, Styling); colours are
+ * the site's existing ones until packages/theme exists.
+ */
+
+.card {
+  background: #ffffff;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 8px 6px;
+  border-bottom: 3px solid #004673;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.section:first-of-type {
+  border-top: 0;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #595959;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.muted {
+  font-size: 12px;
+  color: #595959;
+}
+
+/* Now */
+
+.nowRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nowTemperature {
+  font-size: 44px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.nowCondition {
+  font-size: 16px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  background: #fafafa;
+  border-radius: 6px;
+}
+
+.statValue {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Next 24 hours */
+
+.hours {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+
+.hour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.hourTemperature {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.chance {
+  min-height: 16px;
+  font-size: 12px;
+  color: #0958d9;
+}
+
+/* 5 days */
+
+.day {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+}
+
+.dayName {
+  width: 48px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dayChance {
+  width: 36px;
+  text-align: right;
+  font-size: 12px;
+  color: #0958d9;
+}
+
+.dayLow {
+  width: 32px;
+  text-align: right;
+  color: #595959;
+}
+
+.dayHigh {
+  width: 32px;
+  font-weight: 500;
+}
+
+.track {
+  position: relative;
+  flex-grow: 1;
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+}
+
+.bar {
+  position: absolute;
+  top: 0;
+  height: 6px;
+  background: #69b1ff;
+  border-radius: 3px;
+}
+
+/* Map */
+
+.map {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mapNote {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 4px;
+  font-size: 12px;
+  color: #595959;
+}
+
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #595959;
+}
+
+.swatch {
+  width: 18px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.attribution {
+  padding: 8px;
+  border-top: 1px solid #f0f0f0;
+  font-size: 11px;
+  color: #595959;
+}
+
+/* Managing locations */
+
+.suggestion {
+  display: flex;
+  flex-direction: column;
+}
+
+.poweredBy {
+  padding: 4px 12px;
+  text-align: right;
+  font-size: 11px;
+  color: #595959;
+}
+
+.locationRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.locationLabel {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+ol.hours,
+.section ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

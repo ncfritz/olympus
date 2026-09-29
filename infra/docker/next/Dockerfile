@@ -66,16 +66,13 @@ COPY --from=prune /pruned/full/ .
 # The traced output carries workspace packages out of the build context
 # with their modes, and the runtime drops to `node`: a file left at 0600
 # by a developer's umask would be unreadable there.
-# The Maps and Tomorrow.io keys arrive as secrets rather than arguments: a
-# browser key is
+# The Maps key arrives as a secret rather than an argument: a browser key is
 # public by design -- it ends up in the bundle either way -- but an argument is
 # also in `docker history`, which is a worse place for it than it needs to be.
 # Absent, the app compiles without a key and draws no map, which is deliberate:
 # only the hosts it could be silently wrong about are required.
 RUN --mount=type=secret,id=maps_key \
-    --mount=type=secret,id=tomorrow_key \
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="$(cat /run/secrets/maps_key 2>/dev/null || true)" \
-    NEXT_PUBLIC_TOMORROW_IO_API_KEY="$(cat /run/secrets/tomorrow_key 2>/dev/null || true)" \
     pnpm turbo run build --filter="${APP}..." \
     && mkdir -p "${APP_DIR}/public" \
     && chmod -R a+rX "${APP_DIR}/.next/standalone" "${APP_DIR}/.next/static" \

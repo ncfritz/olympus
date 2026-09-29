@@ -197,7 +197,7 @@ tasks pass.
 
 **Sign-off:** W4, W5 against the API.
 
-## Phase 4 — The widget
+## Phase 4 — The widget — built 2026-09-29, not signed off
 
 1. **`src/api/weatherApi.ts`** over the regenerated SDK.
 2. **Components** in `components/widgets/weather/`, one per file, styled
@@ -226,6 +226,24 @@ tasks pass.
    the roadmap's rotation item becomes "revoke the key".
 7. **Tests**: components with React Testing Library and the SDK mocked:
    the location switch, each state, the day grouping's rendering.
+8. **As built**:
+   - The site's tests are node-only by design (`apps/site/vitest.config.mts`:
+     no React, no DOM), so the logic the components need is pure
+     functions in `src/utils/weather.ts` (times at the location's offset,
+     day labels, the shared range bars, which location opens, list moves,
+     the radar loop), unit-tested; the components themselves are signed
+     off by W1–W5.
+   - Styles are a CSS module (`WeatherWidget.module.css`): the site has no
+     `antd-style`, and a module needs no new dependency. Two inline styles
+     remain where the value is data (a range bar's position, a legend
+     swatch's colour).
+   - Locations are reordered with move up and down buttons rather than the
+     design's drag handle: keyboard-drivable, no drag library.
+   - The Stations view switch arrives with phase 8; until then the widget
+     is the Forecast view alone.
+   - Signed out, the widget says to sign in; the locations are the user's.
+   - `@types/google.maps` joins the site's dev dependencies for the Places
+     types.
 
 **Sign-off:** W1–W5 in the site, W9.
 
