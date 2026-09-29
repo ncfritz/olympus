@@ -4,6 +4,7 @@ import {
   isCallbackReady,
   type Pending,
   readPending,
+  returnableTo,
 } from "../../src/auth/pending";
 
 const pending: Pending = {
@@ -85,5 +86,40 @@ describe("checkCallback", () => {
     expect(checkCallback({ state: "a-state" }, pending)).toEqual({
       problem: expect.stringContaining("no authorization code"),
     });
+  });
+});
+
+describe("returnableTo", () => {
+  it("keeps the page the person was on", () => {
+    expect(returnableTo("/dionysus/movies?page=2")).toBe(
+      "/dionysus/movies?page=2",
+    );
+  });
+
+  /**
+   * The loop this exists for: "Start again" navigates to /auth/signin, a
+   * sign-in begun from there records it, and the callback sends the browser
+   * back to the sign-in page it has just finished with -- a successful sign-in
+   * that reads as a failed one.
+   */
+  it("refuses an auth page, which would land a finished sign-in back on one", () => {
+    expect(returnableTo("/auth/signin")).toBe("/");
+    expect(returnableTo("/auth/callback?code=abc")).toBe("/");
+    expect(returnableTo("/auth")).toBe("/");
+  });
+
+  /** It has been through sessionStorage, so it is not trusted to be a path. */
+  it("refuses anything that is not a path on this site", () => {
+    expect(returnableTo("//evil.example/wherever")).toBe("/");
+    expect(returnableTo("https://evil.example/wherever")).toBe("/");
+    expect(returnableTo("dionysus/movies")).toBe("/");
+    expect(returnableTo("")).toBe("/");
+    expect(returnableTo(undefined)).toBe("/");
+    expect(returnableTo(7)).toBe("/");
+  });
+
+  /** A path that merely starts with the letters is a page like any other. */
+  it("keeps a path that only looks like one", () => {
+    expect(returnableTo("/authors/asimov")).toBe("/authors/asimov");
   });
 });

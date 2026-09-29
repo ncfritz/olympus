@@ -12,6 +12,7 @@ import {
   isCallbackReady,
   PENDING_KEY,
   readPending,
+  returnableTo,
 } from "./pending";
 import { CLIENT_ID, tokenEndpoint } from "./tokenEndpoint";
 
@@ -33,7 +34,7 @@ export const redirectUri = (): string =>
 export const startSignIn = async (
   apiBaseUrl: string,
   provider: string,
-  returnTo = window.location.pathname + window.location.search,
+  returnTo = returnableTo(window.location.pathname + window.location.search),
 ): Promise<void> => {
   const verifier = await pkce.newVerifier();
   const state = await pkce.newState();

@@ -20,6 +20,26 @@ export type Pending = {
  */
 export const PENDING_KEY = "olympus.auth.pending";
 
+/**
+ * Where a completed sign-in may send the browser.
+ *
+ * Anything else becomes the root, for two reasons. A path under `/auth/` is how
+ * a sign-in returns to the page that started it and then asks to sign in again:
+ * "Start again" navigates to `/auth/signin`, a sign-in begun from there records
+ * it, and the callback sends the browser back to a sign-in page it has just
+ * finished with -- which looks exactly like a failure, and was one to read.
+ *
+ * And this value has been through `sessionStorage`, so it is not trusted to be
+ * a path at all: a scheme, a host, or the `//host` form that a browser reads as
+ * one, are all refused rather than handed to a redirect.
+ */
+export const returnableTo = (raw: unknown): string => {
+  if (typeof raw !== "string") return "/";
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/";
+  if (raw === "/auth" || raw.startsWith("/auth/")) return "/";
+  return raw;
+};
+
 export const readPending = (raw: string | null): Pending | undefined => {
   if (raw === null) return undefined;
   try {
@@ -31,8 +51,7 @@ export const readPending = (raw: string | null): Pending | undefined => {
     return {
       verifier,
       state,
-      returnTo:
-        typeof returnTo === "string" && returnTo !== "" ? returnTo : "/",
+      returnTo: returnableTo(returnTo),
     };
   } catch {
     return undefined;
