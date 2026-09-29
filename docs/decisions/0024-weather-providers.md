@@ -1,6 +1,6 @@
 # 0024. Weather: OpenWeather for forecasts, RainViewer for radar, stations pushed locally
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-29
 
 ## Context
@@ -111,7 +111,7 @@ secrets, and backfilled stretches are sparser than pushed ones.
 **Raw archive.** Every push and every backfill response is appended, as
 received, to one JSON Lines file per station per day under the API's
 data volume, compressed with zstd when the day closes. Finished days are
-copied to the NAS (`nfa01.sea.ncfritz.net`, share `Weather`) by Airflow.
+copied to the NAS (`nfs01.sea.ncfritz.net`, share `Weather`) by Airflow.
 The archive is the source of truth: the weather tables can be rebuilt
 from it by replay, so they are left out of the database backup. Requests
 to Ambient carry its keys and are never archived; only its responses

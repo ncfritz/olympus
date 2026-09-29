@@ -112,7 +112,7 @@ recorded exception.
 1. Every push appears as one line in the day's file, in order, with the
    query as received.
 2. At the day's end the file is compressed and its SHA-256 recorded.
-3. The nightly copy puts it on `nfa01.sea.ncfritz.net` (`Weather`); the
+3. The nightly copy puts it on `nfs01.sea.ncfritz.net` (`Weather`); the
    checksum matches; local days are removed only after 30 days and a good
    copy.
 4. No archive line contains an Ambient API key.

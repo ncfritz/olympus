@@ -32,6 +32,6 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0021](0021-control-host-and-console-navigation.md)        | The control host and console navigation                                   | Accepted                    |
 | [0022](0022-environments-not-machines.md)                  | Environments are named, machines are not                                  | Accepted                    |
 | [0023](0023-service-certificates-are-checked-by-issuer.md) | A service certificate is checked by its issuer, not only its chain        | Accepted                    |
-| [0024](0024-weather-providers.md)                          | Weather: OpenWeather forecasts, RainViewer radar, stations pushed locally | Proposed                    |
+| [0024](0024-weather-providers.md)                          | Weather: OpenWeather forecasts, RainViewer radar, stations pushed locally | Accepted                    |
 
 New records: copy [template.md](template.md), take the next number.

@@ -56,9 +56,9 @@ Added to `readConfig()`, `dev.env.example`, the API README table and
 | `WEATHER_STATION_STALE_SECONDS`      | `600`   | A station with no reading for this long is "not reporting"                                                                   |
 | `WEATHER_STATION_ALLOWED_CIDRS`      | —       | Required for the push route to accept anything: the LAN ranges the consoles are on                                           |
 
-## Phase 0 — Accounts and scaffolding — done 2026-09-29 (ADR pending)
+## Phase 0 — Accounts and scaffolding — done 2026-09-29
 
-1. **ADR 0024 accepted.**
+1. **ADR 0024 accepted**: **done** 2026-09-29.
 2. **OpenWeather**: **done** — a free account with no payment method; the key in
    `${SECRETS_DIR}/openweather_api_key`, mounted as a Compose secret on
    the API. It never reaches the site.
@@ -239,7 +239,7 @@ tasks pass.
    `docs/guides/weather-stations.md` records the settings, registering a
    station and capturing a request for a test fixture.
 7. **NAS copy**: an Airflow DAG, nightly, copies finished `.jsonl.zst`
-   days to the `Weather` share on `nfa01.sea.ncfritz.net`, checks each
+   days to the `Weather` share on `nfs01.sea.ncfritz.net`, checks each
    against its SHA-256, and removes local days older than 30 days only
    once their copy has checked out.
 8. **Database backup**: the weather tables' data is excluded from the
