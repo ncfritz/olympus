@@ -60,14 +60,10 @@ export default [
     },
   },
   {
-    files: [
-      "**/*.js",
-      "**/*.mjs",
-      "**/*.cjs",
-      "**/*.ts",
-      "**/*.tsx",
-      "**/*.json",
-    ],
+    // Not "**/*.json": listing it here opted JSON into being linted as
+    // JavaScript, and `{` at the top of package.json duly reported as an
+    // expression whose value is unused. Three of the site's warnings were that.
+    files: ["**/*.js", "**/*.mjs", "**/*.cjs", "**/*.ts", "**/*.tsx"],
     languageOptions: {
       globals: {
         ...globals.node,
