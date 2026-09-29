@@ -329,7 +329,8 @@ The site is imported (`docs/guides/repo-import.md`) and changed **only**
 where authentication needs it; conventions, styles, the SDK wrappers and
 everything else wait for the site's own conventions work.
 
-**Steps 1-5 done 2026-09-28; step 7 was a no-op; step 6 unchanged.**
+**Steps 1-5 done 2026-09-28; step 7 was a no-op; step 6 unchanged. Not signed
+off -- see the end of this section.**
 
 1. Import with history into `apps/site`; the minimum to build in the
    workspace (package name, TS/ESLint config only where the build fails).
@@ -374,10 +375,52 @@ Step 7 was already true: nginx sends `/api/v1/`, `/api-spec`, `/api/metrics` and
 `/socket.io` to the API and everything else to the site. NextAuth lived at
 `/api/auth/` **on the site**, so deleting the route was the whole of it.
 
-Still open: the gateway broadcasts every notification to every connected client
-(`server.emit`), which authenticating the socket does not change -- see
-`docs/roadmap.md`. And the site has no working container image; its Dockerfile is
-the pre-import one and `docker-bake.hcl` has no target for it.
+**What signing in through a browser found (2026-09-29).** Four bugs, all in the
+site half, none of them visible to the unit tests -- which had passed throughout
+-- and three of the four the same shape: work that is correct once, done more
+than once.
+
+- `5358491f` The callback page ran its effect twice, because `useRouter`'s object
+  changes identity when the route becomes ready, and `completeSignIn` consumes a
+  one-shot value. The first run exchanged the code and had its success discarded
+  by its own cleanup; the second found `sessionStorage` already emptied and
+  reported a callback belonging to no sign-in. Completion is memoised per
+  document now, as `session.ts` memoises a rotation.
+- `03d717e8` A sign-in begun from `/auth/signin` -- which the callback page's own
+  "Start again" button navigates to -- recorded that page as where to return, so
+  a successful sign-in ended back on the sign-in page, indistinguishable from a
+  failed one. `returnableTo` refuses a path under `/auth/`, and anything that is
+  not a path on this site.
+- `fc285924` `AuthProvider` asked the API to use the refresh cookie on every
+  page, the callback page included, racing the code exchange there: two
+  sessions, two `Set-Cookie`s, and which one the browser kept decided by which
+  reply landed last. One ordering away from the API seeing a refresh token twice
+  and ending the session by design. It waits for the session the exchange
+  produces instead.
+- `7f301bce` `socket.io-react-hook` throws from its own event handlers when a
+  handshake is in flight across an unmount, and awaiting a token rotation before
+  answering the handshake held one open across exactly that window. The
+  handshake answers from the held token now. The library defect is untouched and
+  is in `docs/roadmap.md`.
+
+Reaching the site at all first cost a day in the infrastructure underneath it,
+for a reason worth reading once: `infra/docker/README.md`, on a Docker network
+claiming `192.168.0.0/20` and taking the LAN away from every container on the
+host.
+
+**Not signed off.** The matrix asks for F1 (INT), F2, F3 (INT), F4 and F10. INT
+is the site running on the Mac Mini, and there is no image to run: the site has
+no `docker-bake.hcl` target, its Dockerfile is the pre-import one, and
+`compose/olympus.yml`'s `site` profile still starts `SITE_IMAGE`, the
+pre-monorepo build -- so `olympus.internal.ncfritz.net` is serving the NextAuth
+site today. What the pass above exercised was the dev host: a checkout on a
+developer's machine behind the Mini's nginx (ADR 0019, 0022). That is not INT
+and is not recorded as it. The phase stays open until the site has an image and
+the cases are run against it.
+
+Also still open: the gateway broadcasts every notification to every connected
+client (`server.emit`), which authenticating the socket does not change -- see
+`docs/roadmap.md`.
 
 ## Phase 6 — Border
 
