@@ -346,6 +346,11 @@ status` is only clean while the installed version matches the committed one --
   errors in `apps/site/eslint.config.mjs`; both of those change when the count
   reaches zero.
 
+  Eight of the remaining `any`s are in the OnAir components and their client, and
+  they stay: those endpoints are being replaced by the Minerva calendar sync, so
+  typing `onairApi` from what the components read would be work thrown away --
+  the new APIs bring their own types. The rest are not waiting on anything.
+
   Two things the pass found and did not fix, because they are decisions about
   features rather than about warnings: `OnAirEvent` ignores an `updateFunction`
   prop that `CalendarPanel` still computes and passes, and `MovieVideoList`
