@@ -29,7 +29,8 @@ const NotificationSink: React.FunctionComponent = () => {
     let type: IconType = "info";
     let message: string | ReactNode = "Unknown";
     let description: string | ReactNode = "Unknown description";
-    let formatter: NotificationFormatter<any> | undefined = undefined;
+    let formatter: NotificationFormatter<NotificationPayload> | undefined =
+      undefined;
 
     // The plain designation is set by the notification agent and designates that the payload will contain the
     // message title and body.  The notification agent may specify different types, which will need to be
@@ -50,7 +51,11 @@ const NotificationSink: React.FunctionComponent = () => {
         e.detail.payload?.value?.message ||
         "Error: The 'plain' type event did not contain a 'value.message' element";
     } else if (e.detail.messageType) {
-      formatter = getFormatterForMessageType(e.detail.messageType);
+      // The formatter is chosen at runtime from the message type, so which
+      // payload it declares cannot be known here; the sink hands it the
+      // payload the notification agent sent.
+      formatter = getFormatterForMessageType(e.detail.messageType) as
+        NotificationFormatter<NotificationPayload> | undefined;
     }
 
     if (formatter) {

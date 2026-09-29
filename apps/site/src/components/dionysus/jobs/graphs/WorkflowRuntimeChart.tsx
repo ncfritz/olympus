@@ -2,10 +2,11 @@
 
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts";
+import type { GetMetadataWorkflowStatisticsResponse } from "@ncfritz/olympus-sdk/dionysus";
 import React from "react";
 
 export interface WorkflowJobRuntimeChartProps {
-  stats: any;
+  stats: GetMetadataWorkflowStatisticsResponse;
 }
 
 const WorkflowJobRuntimeChart = ({ stats }: WorkflowJobRuntimeChartProps) => {

@@ -6,6 +6,10 @@ import { useAuth } from "../../auth/AuthProvider";
 import { initials } from "../../auth/initials";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { notificationsSocket } from "../../auth/pageSession";
+import type {
+  NotificationPushMessage,
+  NotificationRefreshMessage,
+} from "../../auth/notifications";
 import notificationsApi from "../../api/notificationsApi";
 import onairApi from "../../api/onairApi";
 import { useAppSelector } from "../../redux/hooks";
@@ -65,7 +69,7 @@ const AuthHeader: React.FunctionComponent = () => {
   };
 
   // Stable, so the subscription is not torn down and rebuilt on every render.
-  const onNotificationPush = useCallback((message: any) => {
+  const onNotificationPush = useCallback((message: NotificationPushMessage) => {
     if (message && !message.ghost) {
       publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         eventId: message.eventId,
@@ -81,7 +85,7 @@ const AuthHeader: React.FunctionComponent = () => {
     }
   }, []);
   const onNotificationRefresh = useCallback(
-    (message: any) => {
+    (message: NotificationRefreshMessage) => {
       publish(Events.NOTIFICATIONS_REFRESH_EVENT, {
         groupId: message.groupId,
       });

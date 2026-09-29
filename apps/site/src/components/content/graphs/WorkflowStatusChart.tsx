@@ -5,7 +5,11 @@ import Highcharts from "highcharts";
 import React from "react";
 
 export type WorkflowStatusChartProps = {
-  stats: any;
+  /**
+   * Either workflow statistics response; the metadata and content ingestion
+   * responses both carry a status series keyed by status name.
+   */
+  stats: { series: { status: Record<string, number[][]> } };
 };
 
 const WorkflowStatusChart = ({ stats }: WorkflowStatusChartProps) => {

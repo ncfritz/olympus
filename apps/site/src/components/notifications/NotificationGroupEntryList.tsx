@@ -24,7 +24,9 @@ const NotificationGroupEntryList: React.FunctionComponent<
   const [notificationCount, setNotificationCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] =
     useState<boolean>(false);
-  const [notificationsError, setNotificationsError] = useState<any>(undefined);
+  const [notificationsError, setNotificationsError] = useState<
+    Error | undefined
+  >(undefined);
 
   useEffect(() => {
     subscribe(Events.NOTIFICATIONS_REFRESH_EVENT, onRefreshEvent);

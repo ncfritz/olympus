@@ -18,7 +18,7 @@ const MeetingNoteAssociation: React.FunctionComponent<AssociatedItemProps> = ({
     undefined,
   );
   const [loading, setLoading] = useState(false);
-  const [loaingError, setLoadingError] = useState<any>(undefined);
+  const [loaingError, setLoadingError] = useState<Error | undefined>(undefined);
 
   const loadMeeting = async () => {
     setLoadingError(undefined);

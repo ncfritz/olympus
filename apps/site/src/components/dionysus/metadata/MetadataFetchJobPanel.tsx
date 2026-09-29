@@ -20,7 +20,7 @@ const MetadataFetchJobPanel: React.FunctionComponent<
 
   const [job, setJob] = useState<MetadataFetchJob | undefined>(undefined);
   const [jobLoading, setJobLoading] = useState(false);
-  const [jobError, setJobError] = useState<any>(undefined);
+  const [jobError, setJobError] = useState<Error | undefined>(undefined);
 
   const fetchMetadataFetchJob = async (quiet = false) => {
     if (!quiet) {

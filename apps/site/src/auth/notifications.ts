@@ -17,6 +17,31 @@
 export const NOTIFICATIONS_NAMESPACE = "/notifications";
 
 /**
+ * A notification the agent pushes over the socket. This is the websocket
+ * destination's own envelope, not the stored notification the REST API
+ * returns, so it is declared here from what the agent sends.
+ */
+export interface NotificationPushMessage {
+  eventId: string;
+  notificationId: string;
+  messageType: string;
+  level: string;
+  durable: boolean;
+  closable: boolean;
+  deleteOnClose: boolean;
+  visibleDuration: number;
+  payload?: unknown;
+  /** Set on keep-alive pushes, which carry no notification to display. */
+  ghost?: boolean;
+}
+
+/** Tells the client its unread count changed, without carrying a notification. */
+export interface NotificationRefreshMessage {
+  groupId?: string;
+  unreadCount: number;
+}
+
+/**
  * The part of a socket used here. Structural, so what follows can be tested
  * against a double instead of a server.
  */

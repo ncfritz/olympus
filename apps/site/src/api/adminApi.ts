@@ -1,4 +1,7 @@
-import { sendAmqpTestMessage } from "@ncfritz/olympus-sdk/olympus";
+import {
+  sendAmqpTestMessage,
+  type TestRequest,
+} from "@ncfritz/olympus-sdk/olympus";
 import { client } from "@ncfritz/olympus-sdk/minerva";
 
 class AdminApi {
@@ -11,7 +14,7 @@ class AdminApi {
 
   async sendAmqpTestMessage(
     exchange: string,
-    payload: any,
+    payload: Record<string, unknown>,
     routingKey?: string,
   ) {
     await sendAmqpTestMessage({
@@ -21,7 +24,10 @@ class AdminApi {
       query: {
         routingKey: routingKey,
       },
-      body: payload,
+      // The endpoint publishes the request body verbatim, so a consumer sees
+      // exactly what is sent here. The spec declares a { payload } envelope
+      // that nothing unwraps, hence the cast; see the roadmap.
+      body: payload as TestRequest,
     });
   }
 }
