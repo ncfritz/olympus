@@ -21,7 +21,7 @@ const ContentAuthWrapper: React.FunctionComponent<ContentAuthWrapperProps> = ({
   const [otp, setOtp] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
-  const [authError, setAuthError] = useState<any>(undefined);
+  const [authError, setAuthError] = useState<boolean | undefined>(undefined);
 
   const handleOnChange = async (value: string) => {
     setOtp(value);

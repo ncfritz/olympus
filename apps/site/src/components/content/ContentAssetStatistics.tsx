@@ -2,9 +2,33 @@ import { Col, Row, Statistic } from "antd";
 import prettyBytes from "pretty-bytes";
 import prettyMilliseconds from "pretty-ms";
 import React, { useEffect, useState } from "react";
+import type { ContentStatisticsResponse } from "@ncfritz/olympus-sdk/dionysus";
 import contentApi from "../../api/contentApi";
 import { useAppSelector } from "../../redux/hooks";
 import ContentDimensionGraph from "./ContentDimensionGraph";
+
+/** What a content statistics call returns; the SDK exports no name for it. */
+/**
+ * What the aggregate statistics endpoint actually returns, copied from the API's
+ * own `ContentAssetAggregateStatistics` (apps/api, ContentAssetService).
+ *
+ * Not from the SDK, because the SDK is wrong here: that controller's
+ * `@ApiOkResponse` declares `ContentStatisticsResponse` -- the categories-and-
+ * series shape the four distribution endpoints return -- so the generated client
+ * describes this endpoint as returning something it does not. Typing this
+ * component is what found it; docs/roadmap.md carries the fix.
+ */
+type AggregateStatistics = {
+  count: number;
+  minSize: number;
+  maxSize: number;
+  avgSize: number;
+  totalSize: number;
+  minDuration: number;
+  maxDuration: number;
+  avgDuration: number;
+  totalDuration: number;
+};
 
 const ContentAssetStatistics: React.FunctionComponent = () => {
   const blackCurtainEnabled = useAppSelector(
@@ -12,12 +36,21 @@ const ContentAssetStatistics: React.FunctionComponent = () => {
   );
 
   const [loading, setLoading] = useState(true);
-  const [heightStatistics, setHeightStatistics] = useState<any>(undefined);
-  const [widthStatistics, setWidthStatistics] = useState<any>(undefined);
-  const [durationStatistics, setDurationStatistics] = useState<any>(undefined);
-  const [sizeStatistics, setSizeStatistics] = useState<any>(undefined);
-  const [aggregateStatistics, setAggregateStatistics] =
-    useState<any>(undefined);
+  const [heightStatistics, setHeightStatistics] = useState<
+    ContentStatisticsResponse | undefined
+  >(undefined);
+  const [widthStatistics, setWidthStatistics] = useState<
+    ContentStatisticsResponse | undefined
+  >(undefined);
+  const [durationStatistics, setDurationStatistics] = useState<
+    ContentStatisticsResponse | undefined
+  >(undefined);
+  const [sizeStatistics, setSizeStatistics] = useState<
+    ContentStatisticsResponse | undefined
+  >(undefined);
+  const [aggregateStatistics, setAggregateStatistics] = useState<
+    AggregateStatistics | undefined
+  >(undefined);
 
   const fetchAssetStatistics = async () => {
     setLoading(true);
@@ -41,7 +74,11 @@ const ContentAssetStatistics: React.FunctionComponent = () => {
       setWidthStatistics(widthStatisticsResponse.data);
       setDurationStatistics(durationStatisticsResponse.data);
       setSizeStatistics(sizeStatisticsResponse.data);
-      setAggregateStatistics(aggregateStatisticsResponse.data);
+      // The cast is the spec bug above: the SDK types this response as
+      // `ContentStatisticsResponse`, and the endpoint does not return that.
+      setAggregateStatistics(
+        aggregateStatisticsResponse.data as unknown as AggregateStatistics,
+      );
     } finally {
       setLoading(false);
     }
@@ -97,35 +134,37 @@ const ContentAssetStatistics: React.FunctionComponent = () => {
         <Col span={2} style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}>
           <Statistic
             title={"Count"}
-            value={loading ? 0 : aggregateStatistics.count}
+            value={loading ? 0 : (aggregateStatistics?.count ?? 0)}
             loading={loading}
           />
         </Col>
         <Col span={2} style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}>
           <Statistic
             title={"Min Size"}
-            value={loading ? 0 : prettyBytes(aggregateStatistics.minSize)}
+            value={loading ? 0 : prettyBytes(aggregateStatistics?.minSize ?? 0)}
             loading={loading}
           />
         </Col>
         <Col span={3} style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}>
           <Statistic
             title={"Max Size"}
-            value={loading ? 0 : prettyBytes(aggregateStatistics.maxSize)}
+            value={loading ? 0 : prettyBytes(aggregateStatistics?.maxSize ?? 0)}
             loading={loading}
           />
         </Col>
         <Col span={3} style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}>
           <Statistic
             title={"Avg Size"}
-            value={loading ? 0 : prettyBytes(aggregateStatistics.avgSize)}
+            value={loading ? 0 : prettyBytes(aggregateStatistics?.avgSize ?? 0)}
             loading={loading}
           />
         </Col>
         <Col span={2} style={{ borderRight: "1px solid #f0f0f0", padding: 16 }}>
           <Statistic
             title={"Total Size"}
-            value={loading ? 0 : prettyBytes(aggregateStatistics.totalSize)}
+            value={
+              loading ? 0 : prettyBytes(aggregateStatistics?.totalSize ?? 0)
+            }
             loading={loading}
           />
         </Col>
@@ -133,7 +172,9 @@ const ContentAssetStatistics: React.FunctionComponent = () => {
           <Statistic
             title={"Min Duration"}
             value={
-              loading ? 0 : prettyMilliseconds(aggregateStatistics.minDuration)
+              loading
+                ? 0
+                : prettyMilliseconds(aggregateStatistics?.minDuration ?? 0)
             }
             loading={loading}
           />
@@ -142,7 +183,9 @@ const ContentAssetStatistics: React.FunctionComponent = () => {
           <Statistic
             title={"Max Duration"}
             value={
-              loading ? 0 : prettyMilliseconds(aggregateStatistics.maxDuration)
+              loading
+                ? 0
+                : prettyMilliseconds(aggregateStatistics?.maxDuration ?? 0)
             }
             loading={loading}
           />
@@ -151,7 +194,9 @@ const ContentAssetStatistics: React.FunctionComponent = () => {
           <Statistic
             title={"Avg Duration"}
             value={
-              loading ? 0 : prettyMilliseconds(aggregateStatistics.avgDuration)
+              loading
+                ? 0
+                : prettyMilliseconds(aggregateStatistics?.avgDuration ?? 0)
             }
             loading={loading}
           />
@@ -162,7 +207,7 @@ const ContentAssetStatistics: React.FunctionComponent = () => {
             value={
               loading
                 ? 0
-                : prettyMilliseconds(aggregateStatistics.totalDuration)
+                : prettyMilliseconds(aggregateStatistics?.totalDuration ?? 0)
             }
             loading={loading}
           />

@@ -1,3 +1,4 @@
+import type { GetMeetingSummaryResponse } from "@ncfritz/olympus-sdk/minerva";
 import {
   CaretDownOutlined,
   CaretRightOutlined,
@@ -79,15 +80,21 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   const [targetEventId, setTargetEventId] = useState<string | undefined>(
     undefined,
   );
-  const [event, setEvent] = useState<any>(undefined);
-  const [nextEventInSeries, setNextEventInSeries] = useState<any>(undefined);
+  const [event, setEvent] = useState<RawMeeting | undefined | undefined>(
+    undefined,
+  );
+  const [nextEventInSeries, setNextEventInSeries] = useState<
+    RawMeeting | undefined | undefined
+  >(undefined);
   const [previousEventsInSeries, setPreviousEventsInSeries] = useState<
     RawMeeting[]
   >([]);
   const [eventNotes, setEventNotes] = useState<Note[]>([]);
   const [eventLoading, setEventLoading] = useState(false);
   const [, setEventError] = useState(false);
-  const [summary, setSummary] = useState<any>(undefined);
+  const [summary, setSummary] = useState<GetMeetingSummaryResponse | undefined>(
+    undefined,
+  );
   const [, setSummaryLoading] = useState(false);
   const [, setSummaryError] = useState(false);
   const [notedEditorOpen, setNotedEditorOpen] = useState(false);

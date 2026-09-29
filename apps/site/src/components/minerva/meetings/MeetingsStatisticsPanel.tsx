@@ -1,3 +1,4 @@
+import type { GetMeetingStatisticsResponse } from "@ncfritz/olympus-sdk/minerva";
 import { Alert, Button, Space, Spin } from "antd";
 import { type DateTime } from "luxon";
 import React, { useCallback, useEffect, useState } from "react";
@@ -14,7 +15,9 @@ export interface MeetingStatisticsPanelProps {
 const MeetingStatisticsPanel: React.FunctionComponent<
   MeetingStatisticsPanelProps
 > = ({ startDate, dayCount }) => {
-  const [statistics, setStatistics] = useState<any>(undefined);
+  const [statistics, setStatistics] = useState<
+    GetMeetingStatisticsResponse | undefined
+  >(undefined);
   const [statisticsLoading, setStatisticsLoading] = useState(false);
   const [statisticsError, setStatisticsError] = useState(false);
 

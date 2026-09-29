@@ -1,3 +1,4 @@
+import type { GetMeetingSummaryResponse } from "@ncfritz/olympus-sdk/minerva";
 import { HomeOutlined, RadarChartOutlined } from "@ant-design/icons";
 import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -63,7 +64,9 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
     to: end.toJSDate(),
   });
   const [events, setEvents] = useState<EventInput[]>([]);
-  const [summary, setSummary] = useState<any>(undefined);
+  const [summary, setSummary] = useState<GetMeetingSummaryResponse | undefined>(
+    undefined,
+  );
   const [, setSummaryLoading] = useState(false);
 
   const renderDay = (day: Date) => {

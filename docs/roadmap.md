@@ -299,6 +299,20 @@ check the consumers when the metadata and asset agents are imported.
 - Non-TypeScript publishers (the NZBGet scripts) are checked against
   generated JSON Schemas; add a schema to `pnpm schemas` for any other.
 
+### API
+
+- **`GetContentAssetAggregateStatistics` is declared with the wrong response
+  type.** The controller's `@ApiOkResponse` says `ContentStatisticsResponse` --
+  the categories-and-series shape the four distribution endpoints return -- while
+  the service returns `ContentAssetAggregateStatistics`, nine numbers (count, and
+  min/max/avg/total for size and duration). So the OpenAPI document is wrong, the
+  generated SDK inherited it, and `apps/site`'s statistics panel has to cast
+  across the gap (`ContentAssetStatistics.tsx`, with the reason at the cast).
+
+  Found by typing that panel, 2026-09-29: the `any` on its state had been hiding
+  the disagreement. The fix is the decorator, a regenerated SDK, and removing
+  that cast and its local type.
+
 ### Site
 
 - **Notifications are broadcast to every connected socket.** The gateway's

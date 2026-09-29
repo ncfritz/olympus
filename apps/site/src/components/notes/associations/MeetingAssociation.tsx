@@ -1,3 +1,4 @@
+import type { Meeting } from "@ncfritz/olympus-sdk/minerva";
 import { ReloadOutlined } from "@ant-design/icons";
 import { Alert, Avatar, Button, Space, Spin, Typography } from "antd";
 import React, { useEffect, useState } from "react";
@@ -13,7 +14,9 @@ const MeetingNoteAssociation: React.FunctionComponent<AssociatedItemProps> = ({
   open,
   item,
 }: AssociatedItemProps) => {
-  const [meeting, setMeeting] = useState<any>(undefined);
+  const [meeting, setMeeting] = useState<Meeting | undefined | undefined>(
+    undefined,
+  );
   const [loading, setLoading] = useState(false);
   const [loaingError, setLoadingError] = useState<any>(undefined);
 
