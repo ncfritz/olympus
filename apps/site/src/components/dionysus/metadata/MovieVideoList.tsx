@@ -1,9 +1,4 @@
-import {
-  QuestionCircleFilled,
-  SafetyCertificateFilled,
-  VideoCameraOutlined,
-  YoutubeFilled,
-} from "@ant-design/icons";
+import { SafetyCertificateFilled } from "@ant-design/icons";
 import type { Video } from "@ncfritz/olympus-sdk/dionysus";
 import { Card, Descriptions, Empty, List, Space, Typography } from "antd";
 import ReactPlayer from "react-player";
@@ -28,14 +23,11 @@ const MovieVideoList: React.FunctionComponent<MovieVideoListProps> = ({
         dataSource={videos}
         renderItem={(item) => {
           let srcUrl;
-          let icon = <QuestionCircleFilled />;
 
           if (item.site === "YouTube") {
             srcUrl = `https://www.youtube.com/watch?v=${item.key}`;
-            icon = <YoutubeFilled />;
           } else if (item.site === "Vimeo") {
             srcUrl = `https://vimeo.com/${item.key}`;
-            icon = <VideoCameraOutlined />;
           }
 
           return (

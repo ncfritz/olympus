@@ -24,7 +24,7 @@ import {
 import type { BreadcrumbItemType } from "antd/lib/breadcrumb/Breadcrumb";
 import { DateTime, Interval } from "luxon";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
@@ -59,7 +59,6 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
 }: DayViewProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pathName = usePathname();
 
   const calendarRef = useRef<FullCalendar>(null);
 

@@ -319,8 +319,8 @@ status` is only clean while the installed version matches the committed one --
   needs the build to reproduce all of it, premium included, which is the site's
   conventions work rather than this phase's.
 
-- **295 lint warnings**, down from the 442 the site arrived with (2026-09-29),
-  across 126 files. `next.config.mjs` hides them from the build with
+- **165 lint warnings**, down from the 442 the site arrived with (2026-09-29),
+  across 84 files. `next.config.mjs` hides them from the build with
   `eslint: { ignoreDuringBuilds: true }`, and they are warnings rather than
   errors in `apps/site/eslint.config.mjs` so the workspace lint task is honest
   rather than red. What is left, and why each part is where it is:
@@ -328,13 +328,12 @@ status` is only clean while the installed version matches the committed one --
   - **143 `@typescript-eslint/no-explicit-any`.** Typing work, not lint work:
     many are where a generated SDK type exists and was never reached for. This
     is also what `strict` will land on, so the two belong together.
-  - **130 `@typescript-eslint/no-unused-vars`**, now all locals -- mostly
-    destructured tuples whose later elements nobody reads. Each needs a look: a
-    hook whose result is discarded still has to be called, so the fix is to stop
-    destructuring rather than to delete the call.
   - **22 others**: `no-useless-catch` (5, in the API wrappers), `no-empty` (2),
-    `no-empty-pattern` (5), `no-unused-expressions` (5),
+    `no-empty-pattern` (5 -- all of them `({}: Props) =>` component signatures
+    that destructure nothing), `no-unused-expressions` (5),
     `no-empty-object-type` (5).
+
+  `no-unused-vars` is at zero, from 277.
 
   Turning them into errors, and adopting `@ncfritz/olympus-config/eslint/react`
   in place of the site's own config, wait on the catalog upgrade -- that config

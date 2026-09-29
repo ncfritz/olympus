@@ -28,18 +28,6 @@ const TranscriptionButton: React.FunctionComponent<
   const [transcript, setTranscript] = useState("");
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder>();
 
-  const appendDelta = (current: string, delta: string): string => {
-    if (!delta.trim()) {
-      return current;
-    }
-
-    if (!current.trim()) {
-      return delta.trim();
-    }
-
-    return `${current.trimEnd()} ${delta.trimStart()}`;
-  };
-
   const startListening = async () => {
     setTranscript("");
 

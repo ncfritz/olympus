@@ -252,8 +252,6 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
         </Space>
       );
     } else if (version === 3 || version === 5) {
-      const hash = [];
-
       versionInfoPanel = (
         <Space orientation={"vertical"} size={8} style={{ marginTop: 16 }}>
           <UUIDPartRow

@@ -79,22 +79,18 @@ const NotificationSettingsListEntry: React.FunctionComponent<
     setLoading(true);
 
     try {
-      const updateResponse = await notificationsApi.updateNotificationSetting(
-        notificationType.id,
-        {
-          notificationSetting: {
-            webSocketEnabled:
-              notificationType.supportsWebSocket &&
-              newSettings.webSocketEnabled,
-            synoChatEnabled:
-              notificationType.supportsSynoChat && newSettings.synoChatEnabled,
-            synoMailEnabled:
-              notificationType.supportsSynoMail && newSettings.synoMailEnabled,
-            emailEnabled:
-              notificationType.supportsEmail && newSettings.emailEnabled,
-          },
+      await notificationsApi.updateNotificationSetting(notificationType.id, {
+        notificationSetting: {
+          webSocketEnabled:
+            notificationType.supportsWebSocket && newSettings.webSocketEnabled,
+          synoChatEnabled:
+            notificationType.supportsSynoChat && newSettings.synoChatEnabled,
+          synoMailEnabled:
+            notificationType.supportsSynoMail && newSettings.synoMailEnabled,
+          emailEnabled:
+            notificationType.supportsEmail && newSettings.emailEnabled,
         },
-      );
+      });
 
       publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "success",

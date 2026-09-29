@@ -5,9 +5,8 @@ import type {
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Card, Empty, Rate, Space, Spin, Typography } from "antd";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
-import { ScrollMenu, VisibilityContext } from "react-horizontal-scrolling-menu";
+import { ScrollMenu } from "react-horizontal-scrolling-menu";
 import contentApi from "../../api/contentApi";
 import useDrag from "../../hooks/useDrag";
 import { useAppSelector } from "../../redux/hooks";
@@ -22,9 +21,6 @@ export interface SimilarContentAssetsScrollerProps {
 const SimilarContentAssetScroller: React.FunctionComponent<
   SimilarContentAssetsScrollerProps
 > = ({ asset, tags }: SimilarContentAssetsScrollerProps) => {
-  type scrollVisibilityApiType = React.ContextType<typeof VisibilityContext>;
-
-  const router = useRouter();
   const blackCurtainEnabled = useAppSelector(
     (state) => state.blackCurtain.active,
   );
@@ -34,7 +30,7 @@ const SimilarContentAssetScroller: React.FunctionComponent<
   const [assetsError, setAssetsError] = useState<any>();
   const [selected] = React.useState([]);
 
-  const { dragStop, dragMove } = useDrag();
+  const { dragStop } = useDrag();
 
   const fetchAssets = async () => {
     setAssetsLoading(true);
@@ -58,15 +54,6 @@ const SimilarContentAssetScroller: React.FunctionComponent<
       await fetchAssets();
     })();
   }, [tags, blackCurtainEnabled]);
-
-  const handleDrag =
-    ({ scrollContainer }: scrollVisibilityApiType) =>
-    (ev: React.MouseEvent) =>
-      dragMove(ev, (posDiff) => {
-        if (scrollContainer.current) {
-          scrollContainer.current.scrollLeft += posDiff;
-        }
-      });
 
   const isItemSelected = (id: string) => !!selected.find((el) => el === id);
 

@@ -1,7 +1,6 @@
 import { EventImpl } from "@fullcalendar/core/internal";
 import { Space, Typography } from "antd";
 import { DateTime } from "luxon";
-import { useState } from "react";
 
 interface OnAirEventProps {
   event: EventImpl;
@@ -12,22 +11,10 @@ interface OnAirEventProps {
 const OnAirEvent: React.FunctionComponent<OnAirEventProps> = ({
   event,
   openFunction,
-  updateFunction,
 }: OnAirEventProps) => {
-  const [, setOpen] = useState(false);
-
-  const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen);
-  };
-
   const start = DateTime.fromJSDate(event.start!);
   const end = DateTime.fromJSDate(event.end!);
   const duration = end.diff(start);
-
-  const setOverrideStatus = async (status: string) => {
-    await updateFunction(event.id, status);
-    setOpen(false);
-  };
 
   let onairStatus = "clear";
 
