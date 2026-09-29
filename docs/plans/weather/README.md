@@ -160,7 +160,7 @@ tasks pass.
 
 **Sign-off:** W2, W3 against the API.
 
-## Phase 3 — Map layers and radar
+## Phase 3 — Map layers and radar — built 2026-09-29, not signed off
 
 1. **Layer tiles**: `GetWeatherMapTile`
    `GET /weather/map/:layer/:z/:x/:y` for `temperature`, `precipitation`,
@@ -184,6 +184,16 @@ tasks pass.
    tiles.
 5. **Tests**: layer and frame validation, cache hits, the byte bound, the
    guard.
+6. **As built**: layer zoom is limited to 0–10 (the widget sits at 8),
+   radar to 0–7, and a tile off the map at its zoom is a 400 before any
+   provider call. Radar is RainViewer's one remaining free scheme
+   (Universal Blue, 256-pixel, smoothed, snow shown); a frame's ID is its
+   capture time, and its tiles are cached for as long as it is listed
+   (2 hours 10 minutes from capture). The frame list is refetched every
+   five minutes and served for up to 30 minutes while RainViewer fails.
+   OpenWeather's allowance is one bucket of 55 a minute shared with
+   forecasts, of which tiles may not take the last 10; RainViewer's is 90
+   a minute. `lru-cache` is the API's only new dependency.
 
 **Sign-off:** W4, W5 against the API.
 

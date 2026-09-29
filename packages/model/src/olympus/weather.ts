@@ -21,6 +21,15 @@ export enum WeatherConditionKind {
   Clear = "clear",
 }
 
+/** The forecast map layers OpenWeather's free plan draws (ADR 0024). */
+export enum WeatherMapLayer {
+  Temperature = "temperature",
+  Precipitation = "precipitation",
+  Clouds = "clouds",
+  Wind = "wind",
+  Pressure = "pressure",
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Domain Objects                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -420,6 +429,23 @@ export class WeatherForecast {
   stale: boolean;
 }
 
+/** One frame of past radar (RainViewer), ten minutes apart. */
+export class RadarFrame {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The frame's ID, used to ask for its tiles",
+  })
+  id: string;
+
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the radar was captured",
+  })
+  time: Moment;
+}
+
 /** What a user supplies to add a location. */
 export class BaseWeatherLocation extends PickType(WeatherLocation, [
   "label",
@@ -528,4 +554,14 @@ export class DescribeWeatherForecastResponse {
     description: "The location's forecast.",
   })
   weatherForecast: WeatherForecast;
+}
+
+export class ListRadarFramesResponse {
+  @ApiProperty({
+    type: () => RadarFrame,
+    isArray: true,
+    required: true,
+    description: "The past radar frames available, oldest first.",
+  })
+  radarFrames: RadarFrame[];
 }

@@ -6889,6 +6889,21 @@
     ],
     "type": "object"
   },
+  "ListRadarFramesResponse": {
+    "properties": {
+      "radarFrames": {
+        "description": "The past radar frames available, oldest first.",
+        "items": {
+          "$ref": "#/components/schemas/RadarFrame"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "radarFrames"
+    ],
+    "type": "object"
+  },
   "ListSessionsResponse": {
     "properties": {
       "sessions": {
@@ -13117,6 +13132,23 @@
       "use",
       "x",
       "y"
+    ],
+    "type": "object"
+  },
+  "RadarFrame": {
+    "properties": {
+      "id": {
+        "description": "The frame's ID, used to ask for its tiles",
+        "type": "string"
+      },
+      "time": {
+        "description": "An ISO-8601 formatted string indicating when the radar was captured",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "time"
     ],
     "type": "object"
   },

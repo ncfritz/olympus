@@ -6,14 +6,20 @@ import {
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
 import { CreateWeatherLocationController } from "./controllers/CreateWeatherLocationController";
 import { DeleteWeatherLocationController } from "./controllers/DeleteWeatherLocationController";
+import { GetRadarTileController } from "./controllers/GetRadarTileController";
+import { GetWeatherMapTileController } from "./controllers/GetWeatherMapTileController";
+import { ListRadarFramesController } from "./controllers/ListRadarFramesController";
 import { DescribeWeatherForecastController } from "./controllers/DescribeWeatherForecastController";
 import { DescribeWeatherLocationController } from "./controllers/DescribeWeatherLocationController";
 import { ListWeatherLocationsController } from "./controllers/ListWeatherLocationsController";
 import { ReorderWeatherLocationsController } from "./controllers/ReorderWeatherLocationsController";
 import { UpdateWeatherLocationController } from "./controllers/UpdateWeatherLocationController";
 import { OpenWeatherClient } from "./providers/OpenWeatherClient";
+import { OpenWeatherLimiter } from "./providers/OpenWeatherLimiter";
+import { RainViewerClient } from "./providers/RainViewerClient";
 import { WeatherForecastService } from "./services/WeatherForecastService";
 import { WeatherLocationService } from "./services/WeatherLocationService";
+import { WeatherTileService } from "./services/WeatherTileService";
 
 /**
  * Weather: forecasts, map tiles and the house's stations (ADR 0024,
@@ -26,6 +32,9 @@ import { WeatherLocationService } from "./services/WeatherLocationService";
     WeatherLocationService,
     WeatherForecastService,
     OpenWeatherClient,
+    OpenWeatherLimiter,
+    RainViewerClient,
+    WeatherTileService,
   ],
   controllers: [
     ListWeatherLocationsController,
@@ -33,6 +42,9 @@ import { WeatherLocationService } from "./services/WeatherLocationService";
     CreateWeatherLocationController,
     DescribeWeatherLocationController,
     DescribeWeatherForecastController,
+    ListRadarFramesController,
+    GetRadarTileController,
+    GetWeatherMapTileController,
     UpdateWeatherLocationController,
     DeleteWeatherLocationController,
   ],

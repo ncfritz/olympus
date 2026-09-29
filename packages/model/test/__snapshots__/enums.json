@@ -318,6 +318,13 @@
     "Snow": "snow",
     "Thunderstorm": "thunderstorm"
   },
+  "WeatherMapLayer": {
+    "Clouds": "clouds",
+    "Precipitation": "precipitation",
+    "Pressure": "pressure",
+    "Temperature": "temperature",
+    "Wind": "wind"
+  },
   "WebSocketNotificationLevel": {
     "ERROR": "error",
     "INFO": "info",

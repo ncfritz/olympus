@@ -56,6 +56,7 @@
     "express": "^5.2.1",
     "graphql-request": "^7.4.0",
     "jose": "^6.2.3",
+    "lru-cache": "^11.5.2",
     "moment": "catalog:",
     "moment-timezone": "^0.6.2",
     "multer": "^2.2.0",

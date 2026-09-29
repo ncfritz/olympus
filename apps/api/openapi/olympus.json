@@ -1508,6 +1508,245 @@
           "Weather"
         ]
       }
+    },
+    "/olympus/weather/radar/frames": {
+      "get": {
+        "description": "The last two hours of radar, ten minutes apart, oldest first. The list changes every ten minutes; a frame's ID is how its tiles are asked for.",
+        "operationId": "ListRadarFrames",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The radar frames available now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListRadarFramesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The provider is not answering, is rate limiting this server, or is not configured."
+          }
+        },
+        "summary": "Lists the past radar frames",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/radar/{frameId}/{z}/{x}/{y}": {
+      "get": {
+        "description": "One tile of a past radar frame from RainViewer. Zoom 7 is the finest there is; a map at a closer zoom scales these tiles up.",
+        "operationId": "GetRadarTile",
+        "parameters": [
+          {
+            "name": "frameId",
+            "required": true,
+            "in": "path",
+            "description": "A frame ID from ListRadarFrames",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "z",
+            "required": true,
+            "in": "path",
+            "description": "The zoom level",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "x",
+            "required": true,
+            "in": "path",
+            "description": "The tile column at that zoom",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "y",
+            "required": true,
+            "in": "path",
+            "description": "The tile row at that zoom",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The tile, a 256-pixel PNG.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "How long the browser may keep the tile"
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The provider is not answering, is rate limiting this server, or is not configured."
+          }
+        },
+        "summary": "Gets a radar tile",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/map/{layer}/{z}/{x}/{y}": {
+      "get": {
+        "description": "One tile of a forecast layer from OpenWeather, cached by the API and marked for the browser to cache for as long as the API will.",
+        "operationId": "GetWeatherMapTile",
+        "parameters": [
+          {
+            "name": "layer",
+            "required": true,
+            "in": "path",
+            "description": "The layer to draw",
+            "schema": {
+              "$ref": "#/components/schemas/WeatherMapLayer"
+            }
+          },
+          {
+            "name": "z",
+            "required": true,
+            "in": "path",
+            "description": "The zoom level",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "x",
+            "required": true,
+            "in": "path",
+            "description": "The tile column at that zoom",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "y",
+            "required": true,
+            "in": "path",
+            "description": "The tile row at that zoom",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The tile, a 256-pixel PNG.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "How long the browser may keep the tile"
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The provider is not answering, is rate limiting this server, or is not configured."
+          }
+        },
+        "summary": "Gets a forecast map layer tile",
+        "tags": [
+          "Weather"
+        ]
+      }
     }
   },
   "info": {
@@ -3212,6 +3451,48 @@
         },
         "required": [
           "weatherForecast"
+        ]
+      },
+      "RadarFrame": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The frame's ID, used to ask for its tiles"
+          },
+          "time": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the radar was captured"
+          }
+        },
+        "required": [
+          "id",
+          "time"
+        ]
+      },
+      "ListRadarFramesResponse": {
+        "type": "object",
+        "properties": {
+          "radarFrames": {
+            "description": "The past radar frames available, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RadarFrame"
+            }
+          }
+        },
+        "required": [
+          "radarFrames"
+        ]
+      },
+      "WeatherMapLayer": {
+        "type": "string",
+        "enum": [
+          "temperature",
+          "precipitation",
+          "clouds",
+          "wind",
+          "pressure"
         ]
       },
       "PartialWeatherLocation": {
