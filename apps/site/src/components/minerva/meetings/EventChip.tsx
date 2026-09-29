@@ -6,7 +6,7 @@ import React, { type CSSProperties } from "react";
 import styled from "styled-components";
 
 export interface EventChipProps {
-  event: Meeting | any;
+  event: Meeting;
   onClick?: (event: any) => Promise<void>;
   titleOverride?: string;
   style?: CSSProperties;
@@ -25,7 +25,7 @@ const EventChip: React.FunctionComponent<EventChipProps> = ({
   style,
 }) => {
   const start = DateTime.fromISO(event.startTime);
-  const end = DateTime.fromISO(event.endTime);
+  const end = event.endTime ? DateTime.fromISO(event.endTime) : undefined;
 
   return (
     <HoverableSpace
@@ -57,7 +57,8 @@ const EventChip: React.FunctionComponent<EventChipProps> = ({
       <Space orientation={"horizontal"} size={8}>
         <ClockCircleOutlined />
         <Typography.Text style={{ fontSize: "12px" }}>
-          {start.toFormat("t")} - {end.toFormat("t")}
+          {start.toFormat("t")}
+          {end && ` - ${end.toFormat("t")}`}
         </Typography.Text>
       </Space>
     </HoverableSpace>

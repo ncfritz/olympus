@@ -48,10 +48,10 @@ const ContentProcessingPage: React.FunctionComponent = () => {
   const [untaggedCount, setUntaggedCount] = useState(0);
   const [taggedCount, setTaggedCount] = useState(0);
   const [, setAssetLoading] = useState(true);
-  const [assetError, setAssetError] = useState<any>();
+  const [assetError, setAssetError] = useState<Error | undefined>();
   const [tags, setTags] = useState<ContentAssetTag[]>([]);
   const [, setTagsLoading] = useState(true);
-  const [, setTagsError] = useState<any>();
+  const [, setTagsError] = useState<Error | undefined>();
   const [, setProcessedTags] = useState<
     Record<ContentTagType, ContentAssetTag[]> | undefined
   >(undefined);

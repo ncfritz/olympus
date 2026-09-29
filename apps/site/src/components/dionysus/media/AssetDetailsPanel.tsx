@@ -3,6 +3,7 @@ import { Empty, Form, Switch, Tabs, type TabsProps } from "antd";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { DIONYSUS_CDN_HOST } from "../../../utils/constants";
+import type { FFProbeMetadata } from "../../../utils/ffprobe";
 import LoadingWrapper from "../../common/LoadingWrapper";
 import MediaAssetFFMpegDetails from "../../content/MediaAssetFFMpegDetails";
 
@@ -18,18 +19,22 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
   const [assetMetadataError, setAssetMetadataError] = useState<
     Error | undefined
   >(undefined);
-  const [assetMetadata, setAssetMetadata] = useState(undefined);
+  const [assetMetadata, setAssetMetadata] = useState<
+    FFProbeMetadata | undefined
+  >(undefined);
   const [originalMetadataLoading, setOriginalMetadataLoading] = useState(true);
   const [originalMetadataError, setOriginalMetadataError] = useState<
     Error | undefined
   >(undefined);
-  const [originalMetadata, setOriginalMetadata] = useState(undefined);
+  const [originalMetadata, setOriginalMetadata] = useState<
+    FFProbeMetadata | undefined
+  >(undefined);
   const [showRawMetadata, setShowRawMetadata] = useState(false);
 
   const fetchMetadata = async (
     mdType: "metadata" | "original_metadata",
-    setMetadata: (md?: any) => void,
-    setError: (e: any) => void,
+    setMetadata: (md?: FFProbeMetadata) => void,
+    setError: (e?: Error) => void,
     setLoading: (loading: boolean) => void,
   ) => {
     setLoading(true);

@@ -1,8 +1,9 @@
-import { Form, Switch, Tabs, type TabsProps } from "antd";
+import { Empty, Form, Switch, Tabs, type TabsProps } from "antd";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { CONTENT_CDN_HOST } from "../../utils/constants";
 import LoadingWrapper from "../common/LoadingWrapper";
+import type { FFProbeMetadata } from "../../utils/ffprobe";
 import MediaAssetFFMpegDetails from "./MediaAssetFFMpegDetails";
 
 export interface ContentAssetDetailsPanelProps {
@@ -16,8 +17,12 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
   const [metadataError, setMetadataError] = useState<Error | undefined>(
     undefined,
   );
-  const [assetMetadata, setAssetMetadata] = useState(undefined);
-  const [originalMetadata, setOriginalMetadata] = useState(undefined);
+  const [assetMetadata, setAssetMetadata] = useState<
+    FFProbeMetadata | undefined
+  >(undefined);
+  const [originalMetadata, setOriginalMetadata] = useState<
+    FFProbeMetadata | undefined
+  >(undefined);
   const [showRawMetadata, setShowRawMetadata] = useState(false);
 
   const fetchMetadata = async () => {
@@ -55,10 +60,14 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
       label: `Asset Metadata`,
       children: (
         <LoadingWrapper loading={metadataLoading} error={metadataError}>
-          <MediaAssetFFMpegDetails
-            metadata={assetMetadata}
-            showRaw={showRawMetadata}
-          />
+          {assetMetadata ? (
+            <MediaAssetFFMpegDetails
+              metadata={assetMetadata}
+              showRaw={showRawMetadata}
+            />
+          ) : (
+            <Empty />
+          )}
         </LoadingWrapper>
       ),
     },
@@ -67,10 +76,14 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
       label: `Original Metadata`,
       children: (
         <LoadingWrapper loading={metadataLoading} error={metadataError}>
-          <MediaAssetFFMpegDetails
-            metadata={originalMetadata}
-            showRaw={showRawMetadata}
-          />
+          {originalMetadata ? (
+            <MediaAssetFFMpegDetails
+              metadata={originalMetadata}
+              showRaw={showRawMetadata}
+            />
+          ) : (
+            <Empty />
+          )}
         </LoadingWrapper>
       ),
     },

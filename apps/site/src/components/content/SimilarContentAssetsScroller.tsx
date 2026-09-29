@@ -27,7 +27,7 @@ const SimilarContentAssetScroller: React.FunctionComponent<
 
   const [assets, setAssets] = useState<ContentAsset[]>([]);
   const [assetsLoading, setAssetsLoading] = useState(true);
-  const [assetsError, setAssetsError] = useState<any>();
+  const [assetsError, setAssetsError] = useState<Error | undefined>();
   const [selected] = React.useState([]);
 
   const { dragStop } = useDrag();

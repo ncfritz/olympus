@@ -8,6 +8,7 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useFetch } from "../../../../hooks/useFetch";
 import { DIONYSUS_CDN_HOST } from "../../../../utils/constants";
+import type { FFProbeMetadata } from "../../../../utils/ffprobe";
 import LoadingWrapper from "../../../common/LoadingWrapper";
 import MediaAssetFFMpegDetails from "../../../content/MediaAssetFFMpegDetails";
 import MediaAssetHandbrakeDetails from "../../../content/MediaAssetHandbrakeDetails";
@@ -29,7 +30,7 @@ const MetadataDetailsPanel: React.FunctionComponent<
 
   const [ffmpegMetadata, ffmpegMetaLoading, ffmpegMetaError] = useFetch<
     undefined,
-    any
+    FFProbeMetadata
   >({
     dataType: undefined,
     params: undefined,

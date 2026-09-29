@@ -25,7 +25,7 @@ import contentApi from "../../api/contentApi";
 import ContentAssetTagElement from "./ContentAssetTagElement";
 
 export interface ContentAssetTagEditorProps {
-  asset: ContentAsset | any;
+  asset: ContentAsset;
   onTagRemoved?: (tag: ContentAssetTag) => Promise<void>;
 }
 
@@ -39,13 +39,13 @@ const ContentAssetTagEditor: React.FunctionComponent<
 
   const [assetTags, setAssetTags] = useState(asset.tags);
   const [assetTagsLoading, setAssetTagsLoading] = useState(false);
-  const [, setAssetTagsError] = useState<any>();
+  const [, setAssetTagsError] = useState<Error | undefined>();
 
   const [availableAssetTags, setAvailableAssetTags] = useState<
     ContentAssetTag[]
   >([]);
   const [, setAvailableAssetTagsLoading] = useState(true);
-  const [, setAvailableAssetTagsError] = useState<any>();
+  const [, setAvailableAssetTagsError] = useState<Error | undefined>();
 
   const [tagOptions, setTagOptions] = useState<
     { value: string; label: string }[]

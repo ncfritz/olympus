@@ -22,15 +22,19 @@ import dynamic from "next/dynamic";
 import { type ReactNode, useState } from "react";
 import ReactCountryFlag from "react-country-flag/src";
 import { JsonIcon } from "../../icons";
+import type { FFProbeMetadata } from "../../utils/ffprobe";
 const DynamicReactJson = dynamic(import("react-json-view"), { ssr: false });
 
 export interface MediaAssetFFMpegDetailsProps {
-  metadata: any | undefined;
+  metadata: FFProbeMetadata;
   showRaw: boolean;
   allowRawToggle?: boolean;
 }
 
-export const getTitleExtra = (subtitleLanguageCode: string, title: string) => {
+export const getTitleExtra = (
+  subtitleLanguageCode?: string,
+  title?: string,
+) => {
   let titleExtra: ReactNode = undefined;
 
   if (subtitleLanguageCode) {
@@ -94,7 +98,7 @@ export const metadataValue = (value: ReactNode, span = 4) => {
   );
 };
 
-export const tagsSection = (tags: Record<string, string>) => {
+export const tagsSection = (tags?: Record<string, string>) => {
   const rows: ReactNode[] = [];
   const tagsContent: ReactNode[] = [];
 
@@ -243,7 +247,6 @@ const MediaAssetFFMpegDetails: React.FunctionComponent<
     const streams: CollapseProps["items"] = [];
     const chapters: CollapseProps["items"] = [];
 
-    // @ts-expect-error No types for FFMpeg probe data
     metadata.streams?.forEach((stream) => {
       const rows: ReactNode[] = [];
 
