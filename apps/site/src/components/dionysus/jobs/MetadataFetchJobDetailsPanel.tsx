@@ -82,7 +82,7 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
 
       await postUpdate();
       close();
-    } catch (e) {}
+    } catch {}
   };
 
   return (

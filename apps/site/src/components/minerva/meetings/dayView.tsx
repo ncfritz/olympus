@@ -162,7 +162,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
         setEvents(parsedEvents);
         setRawEvents(getMeetingsResponse.data.items);
         await loadSummary();
-      } catch (e) {
+      } catch {
         publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
           type: "error",
           message: "Failed to load meetings",
@@ -215,7 +215,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
 
           setEvents(newEvents);
         }
-      } catch (e) {
+      } catch {
         publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
           type: "error",
           message: "Failed to load meeting",
@@ -250,7 +250,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
         summaryDays,
       );
       setSummary(summaryResponse.data);
-    } catch (e) {
+    } catch {
       publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Failed to load meeting summary",
@@ -269,7 +269,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
         targetEventId!,
       );
       setEventNotes(notesResponse.data.notes);
-    } catch (e) {
+    } catch {
       publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Failed to load notes",

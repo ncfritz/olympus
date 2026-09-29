@@ -159,7 +159,7 @@ const MetadataWorkflowsPage: React.FunctionComponent = () => {
           await process(value);
 
           currentStatus.success++;
-        } catch (e) {
+        } catch {
           currentStatus.failed++;
         }
 

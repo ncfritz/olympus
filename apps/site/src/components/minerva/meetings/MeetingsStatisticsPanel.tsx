@@ -28,7 +28,7 @@ const MeetingStatisticsPanel: React.FunctionComponent<
         dayCount,
       );
       setStatistics(summaryResponse.data);
-    } catch (e) {
+    } catch {
       const endDate = startDate.plus({ days: dayCount });
       publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",

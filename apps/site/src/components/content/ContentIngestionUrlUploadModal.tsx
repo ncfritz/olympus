@@ -49,7 +49,7 @@ const ContentIngestionUrlUploadModal: React.FunctionComponent<
 
       try {
         new URL(value);
-      } catch (e) {
+      } catch {
         status = "error";
       }
 
@@ -92,7 +92,7 @@ const ContentIngestionUrlUploadModal: React.FunctionComponent<
         await new Promise((resolve) => setTimeout(resolve, 900));
 
         newUrls.get(value.uid)!.status = "done";
-      } catch (e) {
+      } catch {
         newUrls.get(value.uid)!.status = "error";
       } finally {
         setToProcess(newUrls);

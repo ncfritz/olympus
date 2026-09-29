@@ -76,7 +76,7 @@ const ContentAssetChannelCategoryModal: React.FunctionComponent<
       }
 
       closeModal();
-    } catch (e) {
+    } catch {
       publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Unable to create category",

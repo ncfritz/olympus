@@ -106,7 +106,7 @@ const UUIDDecoderPanel: React.FunctionComponent<UUIDDecoderPanelProps> = ({
       ]);
 
       setError(false);
-    } catch (e) {
+    } catch {
       setError(true);
     }
   };

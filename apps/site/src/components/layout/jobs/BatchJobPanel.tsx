@@ -163,7 +163,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
           await process(value);
 
           currentStatus.success++;
-        } catch (e) {
+        } catch {
           currentStatus.failed++;
         }
 

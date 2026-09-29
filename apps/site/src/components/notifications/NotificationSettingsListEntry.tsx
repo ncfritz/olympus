@@ -105,7 +105,7 @@ const NotificationSettingsListEntry: React.FunctionComponent<
       });
 
       await afterUpdate();
-    } catch (e) {
+    } catch {
       publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Unable to update settings",

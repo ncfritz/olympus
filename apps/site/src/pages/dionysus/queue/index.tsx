@@ -152,7 +152,7 @@ const IndexPage: React.FunctionComponent = () => {
           } else {
             currentStatus.skipped++;
           }
-        } catch (e) {
+        } catch {
           currentStatus.failed++;
         }
 

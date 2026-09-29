@@ -111,7 +111,7 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
       const endOfView = startDate.endOf("month").endOf("week");
       const summaryResponse = await meetingsApi.getSummary(endOfView, 42);
       setSummary(summaryResponse.data);
-    } catch (e) {
+    } catch {
       publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
         type: "error",
         message: "Failed to load meetings",
