@@ -102,8 +102,13 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
   // This prevents Antd from stealing focus from TinyMCE
   // https://stackoverflow.com/questions/17271634/tinymce-modal-in-jquery-modal-not-editable
   useEffect(() => {
-    const handleFocusIn = (event: any) => {
-      if (event.target.closest(".tox-tinymce-aux, .tox-dialog")) {
+    const handleFocusIn = (event: FocusEvent) => {
+      const target = event.target;
+
+      if (
+        target instanceof Element &&
+        target.closest(".tox-tinymce-aux, .tox-dialog")
+      ) {
         event.stopImmediatePropagation();
       }
     };

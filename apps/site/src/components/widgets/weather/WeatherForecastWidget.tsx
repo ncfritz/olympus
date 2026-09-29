@@ -161,7 +161,7 @@ const WeatherForecastWidget: React.FunctionComponent = () => {
             maxZoom={15}
             minZoom={8}
           >
-            <WeatherMapOverlay layers={weatherMapTileLayer} />
+            <WeatherMapOverlay layers={[weatherMapTileLayer]} />
           </Map>
           <Tabs
             className={"compactTabs noHolder"}

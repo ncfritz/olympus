@@ -1,4 +1,4 @@
-import { Layout, Tabs } from "antd";
+import { Layout, Tabs, type TabsProps } from "antd";
 import React, { type CSSProperties, type ReactNode } from "react";
 import { useDispatch } from "react-redux";
 import { useAppSelector } from "../../redux/hooks";
@@ -11,7 +11,7 @@ const { Content, Sider } = Layout;
 
 export interface CollapsibleTabPanelProps {
   children: ReactNode | ReactNode[];
-  tabs: any[];
+  tabs: TabsProps["items"];
   width: number;
   style?: CSSProperties;
   tabContentStyle?: CSSProperties;

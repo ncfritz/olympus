@@ -1,8 +1,15 @@
-import { GoogleMapsOverlay } from "@deck.gl/google-maps";
+import {
+  GoogleMapsOverlay,
+  type GoogleMapsOverlayProps,
+} from "@deck.gl/google-maps";
 import { useMap } from "@vis.gl/react-google-maps";
 import { useEffect, useMemo } from "react";
 
-export const WeatherMapOverlay = ({ layers }: { layers: any }) => {
+export const WeatherMapOverlay = ({
+  layers,
+}: {
+  layers: GoogleMapsOverlayProps["layers"];
+}) => {
   const deck = useMemo(() => new GoogleMapsOverlay({ interleaved: true }), []);
 
   const map = useMap();

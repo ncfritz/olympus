@@ -1,3 +1,4 @@
+import type { Note } from "@ncfritz/olympus-sdk/minerva";
 import { Button, Form, Radio } from "antd";
 import { useState } from "react";
 import * as React from "react";
@@ -7,7 +8,7 @@ import Markdown from "react-markdown";
 import { getIconForType } from "../../utils/notes";
 
 export interface NoteMarkdownEditorProps {
-  entry: any;
+  entry: Note;
   closeAction?: () => void;
   saveCallback: () => Promise<void>;
   noteSaving: boolean;

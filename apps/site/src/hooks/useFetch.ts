@@ -1,5 +1,5 @@
 import { notification } from "antd";
-import { useEffect, useState } from "react";
+import { type DependencyList, useEffect, useState } from "react";
 
 export interface UseFetchOptions<O, T> {
   params: O;
@@ -7,7 +7,8 @@ export interface UseFetchOptions<O, T> {
   fetchFunction: (options: O) => Promise<T>;
   validateOptions?: (options: O) => boolean;
   quiet?: boolean;
-  watch?: any[];
+  /** Values the fetch re-runs on, as a React dependency list. */
+  watch?: DependencyList;
   notifyOnError?: boolean;
   dataType?: string;
   noWatch?: boolean;

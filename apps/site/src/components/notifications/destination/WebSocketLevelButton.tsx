@@ -6,7 +6,7 @@ import {
   WarningFilled,
 } from "@ant-design/icons";
 import { Radio, Space } from "antd";
-import React from "react";
+import React, { type ReactNode } from "react";
 
 export interface WebSocketLevelButtonProps {
   level: string;
@@ -14,7 +14,7 @@ export interface WebSocketLevelButtonProps {
   label: string;
 }
 
-const getColorAndIconForLevel = (level: any): [string, any] => {
+const getColorAndIconForLevel = (level: string): [string, ReactNode] => {
   switch (level) {
     case "success":
       return ["#52c41a", <CheckCircleFilled />];

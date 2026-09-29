@@ -8,6 +8,18 @@ import NotesEditorForm, {
   type NotesFormInput,
 } from "./NotesEditorForm";
 
+/**
+ * A message from the transcription service's websocket. The service is not one
+ * of ours and has no spec, so this is declared from what the button reads.
+ */
+interface TranscriptionMessage {
+  type?: "config" | "ready_to_stop" | "snapshot" | "diff" | string;
+  status?: string;
+  lines: { text: string }[];
+  error?: boolean;
+  message?: string;
+}
+
 const TranscriptionButton: React.FunctionComponent = () => {
   const websocketRef = useRef<WebSocket | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -54,7 +66,7 @@ const TranscriptionButton: React.FunctionComponent = () => {
     };
 
     websocket.onmessage = (event) => {
-      const message: any = JSON.parse(event.data);
+      const message = JSON.parse(event.data) as TranscriptionMessage;
       console.log(message);
 
       switch (message.type) {
@@ -63,7 +75,7 @@ const TranscriptionButton: React.FunctionComponent = () => {
         case "ready_to_stop":
           break;
         case "snapshot":
-          setTranscript(message.lines.map((line: any) => line.text).join(" "));
+          setTranscript(message.lines.map((line) => line.text).join(" "));
           break;
         case "diff":
           break;
@@ -72,7 +84,7 @@ const TranscriptionButton: React.FunctionComponent = () => {
             break;
           }
 
-          setTranscript(message.lines.map((line: any) => line.text).join(" "));
+          setTranscript(message.lines.map((line) => line.text).join(" "));
           break;
       }
 

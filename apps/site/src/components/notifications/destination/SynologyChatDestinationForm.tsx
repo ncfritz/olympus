@@ -14,7 +14,7 @@ const SynologyChatDestinationForm: React.FunctionComponent<
         <Controller
           name="synoChatDestination.destinationType"
           control={control}
-          render={({ field }: { field: any }) => (
+          render={({ field }) => (
             <Select
               {...field}
               options={[
@@ -38,7 +38,7 @@ const SynologyChatDestinationForm: React.FunctionComponent<
         <Controller
           name="synoChatDestination.destination"
           control={control}
-          render={({ field }: { field: any }) => (
+          render={({ field }) => (
             <Select
               {...field}
               options={[

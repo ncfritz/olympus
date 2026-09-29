@@ -25,8 +25,9 @@ const ProductionCompaniesIndexPage: React.FunctionComponent = () => {
   >([]);
   const [productionCompaniesLoading, setProductionCompaniesLoading] =
     useState(true);
-  const [productionCompaniesError, setProductionCompaniesError] =
-    useState<any>();
+  const [productionCompaniesError, setProductionCompaniesError] = useState<
+    Error | undefined
+  >();
   const [productionCompaniesCount, setProductionCompaniesCount] = useState(0);
   const [productionCompaniesPage, setProductionCompaniesPage] = useState(0);
   const [productionCompaniesSort, setProductionCompaniesSort] =

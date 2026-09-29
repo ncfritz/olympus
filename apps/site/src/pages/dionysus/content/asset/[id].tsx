@@ -3,7 +3,10 @@ import {
   HomeOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
-import type { ContentAssetTag } from "@ncfritz/olympus-sdk/dionysus";
+import type {
+  ContentAsset,
+  ContentAssetTag,
+} from "@ncfritz/olympus-sdk/dionysus";
 import { Col, Result, Row, Space, Spin, Typography } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import dynamic from "next/dynamic";
@@ -35,7 +38,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
     (state) => state.blackCurtain.active,
   );
 
-  const [asset, setAsset] = useState<any>();
+  const [asset, setAsset] = useState<ContentAsset | undefined>();
   const [assetLoading, setAssetLoading] = useState(true);
   const [assetError, setAssetError] = useState<Error | undefined>();
   const [hlsEnabled, setHlsEnabled] = useState(true);
@@ -56,7 +59,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
   };
 
   const getTagsOfType = (type: string): ContentAssetTag[] => {
-    return asset.tags.filter((tag: ContentAssetTag) => {
+    return (asset?.tags ?? []).filter((tag) => {
       return tag.type === type;
     });
   };
@@ -102,7 +105,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
         subTitle="Please check and modify the following information before resubmitting."
       />
     );
-  } else if (!assetLoading) {
+  } else if (!assetLoading && asset) {
     const minHeight = 550;
     const maxHeight = 600;
     const maxWidth = 800;

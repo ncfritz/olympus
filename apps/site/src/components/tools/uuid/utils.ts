@@ -103,7 +103,7 @@ export const getVariant = (rawUuid: number[]) => {
   }
 };
 
-const parseUuid = (s: any, buf?: any[], offset?: number) => {
+const parseUuid = (s: string, buf?: number[], offset?: number): number[] => {
   let i;
   const byteToHex: string[] = [];
   const hexToByte: Record<string, number> = {};
@@ -116,35 +116,34 @@ const parseUuid = (s: any, buf?: any[], offset?: number) => {
   i = (buf && offset) || 0;
   let ii = 0;
 
-  buf = buf || [];
-  s.toLowerCase().replace(/[0-9a-f]{2}/g, function (oct: any) {
+  const bytes = buf || [];
+  s.toLowerCase().replace(/[0-9a-f]{2}/g, function (oct: string) {
     if (ii < 16) {
       // Don't overflow!
-      buf[i + ii++] = hexToByte[oct];
+      bytes[i + ii++] = hexToByte[oct];
     }
+
+    // The rewritten string is discarded; this is a walk, not a substitution.
+    return oct;
   });
 
   // Zero out remaining bytes if string was short
   while (ii < 16) {
-    buf[i + ii++] = 0;
+    bytes[i + ii++] = 0;
   }
 
-  return buf;
+  return bytes;
 };
 
-export const v1time = (buf: any, offset?: number) => {
-  if (typeof buf === "string") {
-    if (offset) {
-      throw new Error("Offset in string v1 uuid not valid.");
-    }
-
-    buf = parseUuid(buf);
+export const v1time = (uuid: string | ArrayLike<number>, offset?: number) => {
+  if (typeof uuid === "string" && offset) {
+    throw new Error("Offset in string v1 uuid not valid.");
   }
 
   let msec = 0;
   let nsec = 0;
-  let i = (buf && offset) || 0;
-  const b = buf || [];
+  const b = typeof uuid === "string" ? parseUuid(uuid) : uuid;
+  let i = offset || 0;
 
   // inspect version at offset 6
   if ((b[i + 6] & 0x10) != 0x10) {
@@ -182,19 +181,15 @@ export const v1time = (buf: any, offset?: number) => {
   return msec;
 };
 
-export const v6time = (buf: any, offset?: number) => {
-  if (typeof buf === "string") {
-    if (offset) {
-      throw new Error("Offset in string v1 uuid not valid.");
-    }
-
-    buf = parseUuid(buf);
+export const v6time = (uuid: string | ArrayLike<number>, offset?: number) => {
+  if (typeof uuid === "string" && offset) {
+    throw new Error("Offset in string v1 uuid not valid.");
   }
 
   let msec = 0;
   let nsec = 0;
-  let i = (buf && offset) || 0;
-  const b = buf || [];
+  const b = typeof uuid === "string" ? parseUuid(uuid) : uuid;
+  let i = offset || 0;
 
   // inspect version at offset 6
   if ((b[i + 6] & 0x60) != 0x60) {

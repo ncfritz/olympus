@@ -7,11 +7,28 @@ type ListFSContentsRequest = {
   filterMethod: "include" | "exclude";
 };
 
+type FSEntry = {
+  name: string;
+  path: string;
+  mode: number;
+  uid: number;
+  gid: number;
+  directory: boolean;
+  file: boolean;
+  symlink: boolean;
+  blockSize: number;
+  blocks: number;
+  size: number;
+  lastModified: Date;
+  created: Date;
+  lastAccess: Date;
+};
+
 type ListFSContentsRespnse = {
   count: number;
   filtered: number;
   unfiltered: number;
-  contents: any[];
+  contents: FSEntry[];
 };
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
