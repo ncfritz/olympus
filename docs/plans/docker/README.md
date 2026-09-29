@@ -564,19 +564,36 @@ _when_.
    safe on redelivery (`docs/conventions/agent.md`), which is the same property
    that makes losing one survivable.
 
-4. **The dev refresh, by hand.** `stack.sh refresh-dev [<date>]`: terminate
-   connections to `olympus_dev`, drop and recreate it, `pg_restore` the chosen
-   archive, re-own it to the `olympus_dev` role, then apply the dev Hasura
-   metadata from this repository.
+4. **The dev refresh, by hand.** `stack.sh refresh-dev [<date>] [--yes]`: stop
+   `hasura-dev`, terminate what is still connected to `olympus_dev`, drop and
+   recreate it owned by the `olympus_dev` role, `pg_restore` production's
+   archive into it, and start `hasura-dev` again.
 
-   Not on a schedule, and the last step is why. `hasura-dev` keeps its metadata
-   _in_ `olympus_dev` (`compose/hasura-dev.yml`), so restoring production over
-   that database replaces whatever schema change was being tried there. A
-   nightly refresh would quietly destroy the thing that database exists for. Run
-   by hand, by somebody who means it; re-applying the metadata afterwards leaves
-   `hasura-dev` usable and makes the run prove both halves -- that the data
-   restores, and that the metadata in the repository still applies to it. This
-   belongs in the administrative console when there is one.
+   There is no metadata step, and that was a mistake in an earlier draft of
+   this: `hasura-dev` runs our Hasura image, whose `cli-migrations` entrypoint
+   applies the migrations and the metadata it carries on start
+   (`infra/docker/hasura`). Starting it _is_ the apply. So a run proves both
+   halves for nothing -- that the archive restores, and that what is committed
+   still applies to what came out of it.
+
+   Not on a schedule, though. `hasura-dev` keeps its metadata _in_
+   `olympus_dev` (`compose/hasura-dev.yml`), so this destroys whatever schema
+   change was being tried there, including anything edited in its console and
+   never exported. A nightly refresh would quietly destroy the thing that
+   database exists for; by hand, it confirms the date first. This belongs in the
+   administrative console when there is one.
+
+   The archive is piped in over stdin rather than mounted, so nothing has to be
+   visible to the Postgres container -- but it does have to be visible to the
+   shell, which means running this on the host that holds the archives, like
+   the nginx stack.
+
+   It ends by naming `hasura metadata diff`, which is worth running every time
+   for a reason this phase did not originally see. Metadata has historically
+   been edited by hand in the console, while a deploy applies the repository's
+   copy over whatever the engine has. So drift between the two is not a
+   curiosity, it is work that the next deploy will overwrite, and a refresh is
+   the natural moment to find out.
 
 5. **Being told when it fails.** A backup that stops silently is the failure
    this phase exists to prevent, so "no news" must not be the success signal:

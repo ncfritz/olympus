@@ -18,6 +18,9 @@
 #   infra/docker/stack.sh pull|ps|logs|restart <stack> [args...]
 #   infra/docker/stack.sh compose <stack> [args...]   anything else
 #   infra/docker/stack.sh rabbitmq-users      write the RabbitMQ definitions
+#   infra/docker/stack.sh refresh-dev [<date>] [--yes]
+#                                             rebuild olympus_dev from a
+#                                             nightly archive
 #
 # An environment's settings are infra/docker/env/<env>.env (prod, local);
 # its secrets are files in SECRETS_DIR. With DOCKER_CONTEXT set this drives
@@ -364,6 +367,102 @@ build() {
 # Validate, then reload: never the other way round, and never a reload without
 # the validation. `nginx -s reload` on a bad configuration leaves the old one
 # running and says nothing, so the next restart is when you find out.
+# psql as the superuser inside the running Postgres. The local socket is
+# trusted there, so no password is needed and none is passed.
+psql_postgres() {
+  compose data exec -T postgres psql -v ON_ERROR_STOP=1 -U postgres "$@"
+}
+
+# Rebuilds olympus_dev from a production archive (docs/plans/docker/README.md,
+# phase 6, and ADR 0019: that database exists to be a copy of production).
+#
+# By hand, never on a schedule. hasura-dev keeps its metadata *in* olympus_dev,
+# so this destroys whatever schema change was being tried there -- including
+# anything edited in its console and never exported to infra/hasura/metadata.
+#
+# It ends by starting hasura-dev, and that is the interesting part: the image
+# carries migrations and metadata and its entrypoint applies them on start
+# (infra/docker/hasura), so no CLI step is needed here and a run proves both
+# halves -- that the archive restores, and that what is committed still applies
+# to what came out of it.
+#
+# The archive is piped in over stdin rather than mounted, so nothing has to be
+# visible to the Postgres container; it does have to be visible to this shell,
+# which means running this on the host that holds the archives.
+refresh_dev() {
+  local when="" yes=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --yes) yes=1 ;;
+      -*) die "refresh-dev: unknown option $1" ;;
+      *) [ -z "$when" ] || die "refresh-dev: one date, not two"; when=$1 ;;
+    esac
+    shift
+  done
+
+  local backups="$DATA_DIR/backups"
+  [ -d "$backups" ] || die "no $backups -- either the nightly DAG has not run
+(infra/airflow) or this is not the host holding the archives"
+  if [ -z "$when" ] || [ "$when" = latest ]; then
+    when=$(ls -1 "$backups" | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' | sort | tail -1)
+    [ -n "$when" ] || die "no dated archive in $backups"
+  fi
+  local archive="$backups/$when/olympus.dump"
+  [ -f "$archive" ] || die "no $archive"
+
+  # Roles live outside every database, so a database with no role to own it is
+  # a restore that fails halfway. globals.sql in the archive is where it is.
+  psql_postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname = 'olympus_dev'" \
+    | grep -q 1 || die "no olympus_dev role -- create it first; the archive's
+globals.sql has the one production uses"
+
+  if [ -z "$yes" ]; then
+    echo "This drops olympus_dev and rebuilds it from $when."
+    echo "hasura-dev keeps its metadata in that database: anything tried in its"
+    echo "console and not exported to infra/hasura/metadata is lost."
+    printf 'Type the date to continue: '
+    local answer
+    read -r answer
+    [ "$answer" = "$when" ] || die "not confirmed"
+  fi
+
+  echo "== hasura-dev down"
+  compose hasura-dev down
+
+  echo "== olympus_dev"
+  # A drop needs no connections at all, and the engine is not the only thing
+  # that may have one -- a console left open in a browser reconnects.
+  psql_postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+    WHERE datname = 'olympus_dev' AND pid <> pg_backend_pid()" > /dev/null
+  psql_postgres -c "DROP DATABASE IF EXISTS olympus_dev"
+  psql_postgres -c "CREATE DATABASE olympus_dev OWNER olympus_dev"
+
+  echo "== restore $when"
+  # --no-owner with --role: everything is created as olympus_dev and owned by
+  # it, whatever owned it in production.
+  if ! compose data exec -T postgres pg_restore -U postgres -d olympus_dev \
+    --no-owner --role=olympus_dev --no-privileges < "$archive"; then
+    die "pg_restore reported errors -- which is this drill failing, not noise;
+the output above says what it could not restore"
+  fi
+
+  echo "== hasura-dev up"
+  compose hasura-dev up -d --remove-orphans
+  cat <<'NEXT'
+
+hasura-dev is applying migrations and metadata from its image now. What to look
+at, in order:
+
+  stack.sh logs hasura-dev -f
+  cd infra/hasura && hasura migrate status --database-name olympus
+  cd infra/hasura && hasura metadata diff
+
+A diff there is drift between this repository and the metadata production was
+running, which is worth knowing either way: a deploy applies the repository's
+copy over production's, so drift is work about to be overwritten.
+NEXT
+}
+
 nginx_reload() {
   local stack=${1:-nginx}
   compose "$stack" exec -T nginx nginx -t
@@ -441,6 +540,10 @@ case "$command" in
   nginx-reload)
     load_env
     nginx_reload "$@"
+    ;;
+  refresh-dev)
+    load_env
+    refresh_dev "$@"
     ;;
   up)
     load_env
