@@ -1,6 +1,8 @@
 import { refreshFromCookie } from "@ncfritz/olympus-auth-flow";
+import { io, type Socket } from "socket.io-client";
 import { API_BASE_URL, attachSession } from "./interceptors";
 import { createSession, type Session } from "./session";
+import { NOTIFICATIONS_NAMESPACE } from "./notifications";
 import { createSocketAuth } from "./socket";
 import { completeSignIn, createCompleter } from "./signIn";
 import { CLIENT_ID, tokenEndpoint } from "./tokenEndpoint";
@@ -33,3 +35,27 @@ export const completeOnce = createCompleter(() => completeSignIn(API_BASE_URL));
  * would read as new options to the hook that takes them, and reconnect.
  */
 export const SOCKET_OPTIONS = { auth: createSocketAuth(pageSession) };
+
+let notifications: Socket | undefined;
+
+/**
+ * The notifications connection: one per document, opened the first time
+ * something asks for it.
+ *
+ * One per document rather than one per component, which is the mistake the
+ * replaced dependency encoded. Tying a socket's lifetime to a header that
+ * mounts and unmounts while the session settles means connecting and tearing
+ * down mid-handshake, and a handshake cannot be cancelled. This one outlives
+ * every render, and Socket.IO's own reconnection is left to do its job.
+ */
+export const notificationsSocket = (): Socket =>
+  (notifications ??= io(NOTIFICATIONS_NAMESPACE, SOCKET_OPTIONS));
+
+/**
+ * Closes it, for a sign-out. A sign-in later in the same document opens a new
+ * one, with a token of its own.
+ */
+export const closeNotificationsSocket = (): void => {
+  notifications?.disconnect();
+  notifications = undefined;
+};

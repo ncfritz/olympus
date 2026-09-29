@@ -8,7 +8,10 @@ import {
   useState,
 } from "react";
 import authApi from "../api/authApi";
-import { pageSession as session } from "./pageSession";
+import {
+  closeNotificationsSocket,
+  pageSession as session,
+} from "./pageSession";
 import { isCallbackPath } from "./signIn";
 import type { Session } from "./session";
 
@@ -103,6 +106,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Whatever the API said: the page holds no usable token either way,
           // and leaving it signed in because sign-out failed is the worse end.
           session.hold(undefined);
+          // The socket authenticates once, in its handshake, so a signed-out
+          // page holding an open one is a connection the API accepted for
+          // somebody who has left.
+          closeNotificationsSocket();
           setState({ status: "signed-out" });
         }
       },

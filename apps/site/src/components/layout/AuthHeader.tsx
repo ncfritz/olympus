@@ -1,11 +1,11 @@
 import { EditOutlined, InboxOutlined, SearchOutlined } from "@ant-design/icons";
 import { Avatar, Badge, Button, Col, Input, Layout, Row } from "antd";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { useSocket, useSocketEvent } from "socket.io-react-hook";
 import { useAuth } from "../../auth/AuthProvider";
 import { initials } from "../../auth/initials";
-import { SOCKET_OPTIONS } from "../../auth/pageSession";
+import { useSocketEvent } from "../../hooks/useSocketEvent";
+import { notificationsSocket } from "../../auth/pageSession";
 import notificationsApi from "../../api/notificationsApi";
 import onairApi from "../../api/onairApi";
 import { useAppSelector } from "../../redux/hooks";
@@ -25,7 +25,9 @@ const { Header } = Layout;
 const AuthHeader: React.FunctionComponent = () => {
   const auth = useAuth();
   const dispatch = useDispatch();
-  const { socket } = useSocket("/notifications", SOCKET_OPTIONS);
+  // The connection belongs to the document, not to this header: `useState`
+  // so asking for it is not a side effect of rendering.
+  const [socket] = useState(notificationsSocket);
 
   const unreadNotificationsCount = useAppSelector(
     (state) => state.notifications.unreadCount,
@@ -62,33 +64,34 @@ const AuthHeader: React.FunctionComponent = () => {
     }
   };
 
-  useSocketEvent(socket, "notification.push", {
-    onMessage: (message: any) => {
-      if (message && !message.ghost) {
-        publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
-          eventId: message.eventId,
-          notificationId: message.notificationId,
-          messageType: message.messageType,
-          type: message.level,
-          durable: message.durable,
-          closable: message.closable,
-          deleteOnClose: message.durable && message.deleteOnClose,
-          visibleDuration: message.visibleDuration,
-          payload: message.payload,
-        });
-      }
-    },
-    keepPrevious: true,
-  });
-  useSocketEvent(socket, "notification.refresh", {
-    onMessage: (message: any) => {
+  // Stable, so the subscription is not torn down and rebuilt on every render.
+  const onNotificationPush = useCallback((message: any) => {
+    if (message && !message.ghost) {
+      publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
+        eventId: message.eventId,
+        notificationId: message.notificationId,
+        messageType: message.messageType,
+        type: message.level,
+        durable: message.durable,
+        closable: message.closable,
+        deleteOnClose: message.durable && message.deleteOnClose,
+        visibleDuration: message.visibleDuration,
+        payload: message.payload,
+      });
+    }
+  }, []);
+  const onNotificationRefresh = useCallback(
+    (message: any) => {
       publish(Events.NOTIFICATIONS_REFRESH_EVENT, {
         groupId: message.groupId,
       });
       dispatch(setUnreadCount(message.unreadCount));
     },
-    keepPrevious: true,
-  });
+    [dispatch],
+  );
+
+  useSocketEvent(socket, "notification.push", onNotificationPush);
+  useSocketEvent(socket, "notification.refresh", onNotificationRefresh);
 
   useEffect(() => {
     (async () => {

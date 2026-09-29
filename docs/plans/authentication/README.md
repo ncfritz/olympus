@@ -397,11 +397,18 @@ than once.
   reply landed last. One ordering away from the API seeing a refresh token twice
   and ending the session by design. It waits for the session the exchange
   produces instead.
-- `7f301bce` `socket.io-react-hook` throws from its own event handlers when a
-  handshake is in flight across an unmount, and awaiting a token rotation before
-  answering the handshake held one open across exactly that window. The
-  handshake answers from the held token now. The library defect is untouched and
-  is in `docs/roadmap.md`.
+- `7f301bce`, then `socket.io-react-hook` removed altogether. The library throws
+  from its own event handlers when a handshake is in flight across an unmount:
+  it notifies connections by looking a key up in a ref, and leaves those
+  handlers attached to sockets whose entry it has deleted. Answering the
+  handshake from the held token rather than awaiting a rotation narrowed the
+  window and did not close it, and the package was last released in August 2024,
+  so there was no guarded version to move to. What the site used of it was one
+  namespace, two events and a token in the handshake -- now `listen`,
+  `useSocketEvent` and a connection that belongs to the document rather than to
+  a header that mounts and unmounts while the session settles. That last part is
+  the actual fix: a handshake cannot be cancelled, so nothing should be tying one
+  to a component's lifetime.
 
 Reaching the site at all first cost a day in the infrastructure underneath it,
 for a reason worth reading once: `infra/docker/README.md`, on a Docker network
