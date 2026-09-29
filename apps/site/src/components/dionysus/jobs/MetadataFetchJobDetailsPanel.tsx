@@ -82,7 +82,9 @@ const MetadataFetchJobDetailsPanel: React.FunctionComponent<
 
       await postUpdate();
       close();
-    } catch {}
+    } catch (e) {
+      console.log("Unable to update the metadata fetch job", e);
+    }
   };
 
   return (

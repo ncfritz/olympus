@@ -319,21 +319,23 @@ status` is only clean while the installed version matches the committed one --
   needs the build to reproduce all of it, premium included, which is the site's
   conventions work rather than this phase's.
 
-- **165 lint warnings**, down from the 442 the site arrived with (2026-09-29),
-  across 84 files. `next.config.mjs` hides them from the build with
+- **143 `@typescript-eslint/no-explicit-any`**, and nothing else: down from the
+  442 warnings across seven rules the site arrived with (2026-09-29), now across
+  76 files. `no-unused-vars` went from 277 to zero, and the other five rules are
+  empty.
+
+  What is left is typing work rather than lint work. Many of the 143 are where a
+  generated SDK type exists and was never reached for, which is also what
+  `strict` will land on -- so the `any`s and `strict` are one job, not two, and
+  neither is a sweep. `next.config.mjs` still hides them from the build with
   `eslint: { ignoreDuringBuilds: true }`, and they are warnings rather than
-  errors in `apps/site/eslint.config.mjs` so the workspace lint task is honest
-  rather than red. What is left, and why each part is where it is:
+  errors in `apps/site/eslint.config.mjs`; both of those change when the count
+  reaches zero.
 
-  - **143 `@typescript-eslint/no-explicit-any`.** Typing work, not lint work:
-    many are where a generated SDK type exists and was never reached for. This
-    is also what `strict` will land on, so the two belong together.
-  - **22 others**: `no-useless-catch` (5, in the API wrappers), `no-empty` (2),
-    `no-empty-pattern` (5 -- all of them `({}: Props) =>` component signatures
-    that destructure nothing), `no-unused-expressions` (5),
-    `no-empty-object-type` (5).
-
-  `no-unused-vars` is at zero, from 277.
+  Two things the pass found and did not fix, because they are decisions about
+  features rather than about warnings: `OnAirEvent` ignores an `updateFunction`
+  prop that `CalendarPanel` still computes and passes, and `MovieVideoList`
+  computed a per-site video icon that was never rendered (removed).
 
   Turning them into errors, and adopting `@ncfritz/olympus-config/eslint/react`
   in place of the site's own config, wait on the catalog upgrade -- that config

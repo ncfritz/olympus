@@ -37,7 +37,6 @@ const ContentAuthWrapper: React.FunctionComponent<ContentAuthWrapperProps> = ({
       setAuthorized(checkAuthResponse.data.authorized);
     } catch {
       setAuthorized(false);
-    } finally {
     }
   };
 

@@ -53,10 +53,10 @@ const UUIDPartRow: React.FunctionComponent<UUIDPartRowProps> = ({
               ...hoverStyle,
             }}
             onMouseEnter={() => {
-              onHover && onHover(type.label);
+              onHover?.(type.label);
             }}
             onMouseLeave={() => {
-              onHover && onHover(undefined);
+              onHover?.(undefined);
             }}
           >
             {type.label}
