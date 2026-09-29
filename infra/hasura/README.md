@@ -62,6 +62,51 @@ Deployments run our Hasura image (`infra/docker/hasura`), which carries
 a schema change ships as an image, to `hasura-dev` first (ADR 0019). The
 laptop runs the same image in its `data` stack (`infra/docker/stack.sh`).
 
+### Applying a migration to `hasura-dev` by hand
+
+The CLI takes its target from `infra/hasura/.env` (gitignored) or from the
+environment. `hasura-dev` has its **own** admin secret,
+`SECRETS_DIR/hasura_dev_admin_secret`; `hasura_admin_secret` beside it is
+production's, and dev refuses it.
+
+From the laptop, `infra/hasura/.env`:
+
+```sh
+HASURA_GRAPHQL_ENDPOINT=http://olympus.dev.ncfritz.net:8081
+HASURA_GRAPHQL_ADMIN_SECRET=<contents of SECRETS_DIR/hasura_dev_admin_secret on the Mac Mini>
+```
+
+From the Mac Mini, whose checkout has no `.env` (so the CLI falls back to
+`http://localhost:8080`, which is production's port there), set both in the
+shell instead. Reading the secret from its file keeps it out of shell
+history:
+
+```sh
+export SECRETS_DIR=/Users/ncfritz/Docker/secrets
+export HASURA_GRAPHQL_ENDPOINT=http://olympus.dev.ncfritz.net:8081
+export HASURA_GRAPHQL_ADMIN_SECRET="$(cat "$SECRETS_DIR/hasura_dev_admin_secret")"
+```
+
+Then, either way:
+
+```sh
+cd infra/hasura
+hasura migrate status --database-name olympus   # the new migration shows "Not Present" on the server
+hasura migrate apply --database-name olympus
+hasura metadata apply
+```
+
+The source is `olympus` on `hasura-dev` too; there it is backed by the
+`olympus_dev` database. A wrong secret fails at `migrate status` with an
+access error, before anything is changed.
+
+Production, if it ever has to be done by hand rather than by deploying the
+image, is only reachable on the Mac Mini: the same commands with
+`HASURA_GRAPHQL_ENDPOINT=http://127.0.0.1:8080` and
+`HASURA_GRAPHQL_ADMIN_SECRET="$(cat "$SECRETS_DIR/hasura_admin_secret")"`.
+Unset both afterwards (`unset HASURA_GRAPHQL_ENDPOINT HASURA_GRAPHQL_ADMIN_SECRET`)
+so the next command in that shell cannot land on the wrong engine.
+
 ## The baseline
 
 `migrations/olympus/1789862400000_init` is the schema as it stood on
