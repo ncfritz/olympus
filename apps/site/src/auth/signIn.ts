@@ -18,9 +18,24 @@ import { CLIENT_ID, tokenEndpoint } from "./tokenEndpoint";
 
 const pkce = createPkce(browserCrypto);
 
+/** The one path the API is registered to send the browser back to. */
+export const CALLBACK_PATH = "/auth/callback";
+
 /** Where the API sends the browser back, and what the client registered. */
 export const redirectUri = (): string =>
-  `${window.location.origin}/auth/callback`;
+  `${window.location.origin}${CALLBACK_PATH}`;
+
+/**
+ * Whether this document is the one finishing a sign-in.
+ *
+ * The callback page obtains a session from the authorization code, so anything
+ * else that would ask the API to use the refresh cookie has to stand aside.
+ * Both replies set that cookie, so which session the browser keeps comes down
+ * to which landed last -- and a refresh token presented twice is
+ * indistinguishable from a stolen one, which ends the session (ADR 0018),
+ * signing the person out at the moment they signed in.
+ */
+export const isCallbackPath = (path: string): boolean => path === CALLBACK_PATH;
 
 /**
  * Starts a sign-in: leaves the verifier and state in this tab, then hands the

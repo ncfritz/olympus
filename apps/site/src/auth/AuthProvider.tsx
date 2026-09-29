@@ -9,6 +9,7 @@ import {
 } from "react";
 import authApi from "../api/authApi";
 import { pageSession as session } from "./pageSession";
+import { isCallbackPath } from "./signIn";
 import type { Session } from "./session";
 
 export type AuthState =
@@ -40,14 +41,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let current = true;
-    void (async () => {
-      // The refresh cookie is httpOnly, so the only way to know whether this
-      // browser is signed in is to ask the API to use it.
-      const restored = await session.restore();
-      if (!restored) {
-        if (current) setState({ status: "signed-out" });
-        return;
-      }
+
+    const settle = async () => {
       const user = await describeSelf();
       // The tab can be closed, or sign out, while this is in flight; the answer
       // to a question nobody is asking any more is dropped.
@@ -58,6 +53,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             : { status: "signed-in", user },
         );
       }
+    };
+
+    // On the callback page the session comes from the code exchange, not from
+    // the cookie (see isCallbackPath), so this waits for it instead of asking
+    // for one in parallel. Nothing off /auth/ renders until it arrives, and the
+    // callback page shows its own progress and its own errors meanwhile.
+    if (isCallbackPath(window.location.pathname)) {
+      if (session.held() !== undefined) {
+        void settle();
+        return () => {
+          current = false;
+        };
+      }
+      const stop = session.watch((held) => {
+        if (held === undefined) return;
+        stop();
+        void settle();
+      });
+      return () => {
+        current = false;
+        stop();
+      };
+    }
+
+    void (async () => {
+      // The refresh cookie is httpOnly, so the only way to know whether this
+      // browser is signed in is to ask the API to use it.
+      const restored = await session.restore();
+      if (!restored) {
+        if (current) setState({ status: "signed-out" });
+        return;
+      }
+      await settle();
     })();
     return () => {
       current = false;

@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { type Completion, createCompleter } from "../../src/auth/signIn";
+import {
+  CALLBACK_PATH,
+  type Completion,
+  createCompleter,
+  isCallbackPath,
+} from "../../src/auth/signIn";
 
 const issued = {
   tokens: { accessToken: "an-access-token", expiresIn: 900 },
@@ -53,5 +58,28 @@ describe("createCompleter", () => {
     await expect(once()).resolves.toBe(refused);
 
     expect(complete).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("isCallbackPath", () => {
+  it("is the path the API is registered to return to", () => {
+    expect(isCallbackPath(CALLBACK_PATH)).toBe(true);
+  });
+
+  /**
+   * What it guards: on that page the session comes from the code exchange, so
+   * AuthProvider must not ask the API to use the refresh cookie in parallel.
+   * Both replies set the cookie, and a refresh token presented twice looks like
+   * a stolen one.
+   */
+  it("is not any other page, including the sign-in page beside it", () => {
+    expect(isCallbackPath("/auth/signin")).toBe(false);
+    expect(isCallbackPath("/")).toBe(false);
+    expect(isCallbackPath("/dionysus/movies")).toBe(false);
+    // A prefix match would have made these true; the query and hash are not
+    // part of `window.location.pathname`, and a trailing slash is a different
+    // page to the router.
+    expect(isCallbackPath("/auth/callback/google")).toBe(false);
+    expect(isCallbackPath("/auth/callbackish")).toBe(false);
   });
 });
