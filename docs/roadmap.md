@@ -17,6 +17,7 @@
 | 9   | Authentication (ADR 0018, [plan](plans/authentication/README.md))                                    | phases 0 and 1 **done** (2026-09-20); phases 2-8 planned                                 |
 | 10  | Internal CA: PKI service and signer (ADR 0020, [plan](plans/internal-ca/README.md))                  | proposed                                                                                 |
 | 11  | Olympus Control: the console suite (ADR 0021, [plan](plans/console/README.md))                       | planned; after the Docker work                                                           |
+| 12  | Weather: forecasts, radar, stations (ADR 0024, [plan](plans/weather/README.md))                      | proposed                                                                                 |
 | —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                                                                  |
 | —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                                                                                 |
 | —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                                                                                 |
@@ -446,7 +447,8 @@ status` is only clean while the installed version matches the committed one --
   It was in the repository and in every bundle served, so the value has to be
   replaced at Tomorrow.io; restrict the new one to `*.ncfritz.net` there if
   their console allows it, since it is public in the bundle either way. Until
-  the secret file exists the widget draws its map with no weather overlay.
+  the secret file exists the widget draws its map with no weather overlay. The weather plan (phase 4) removes Tomorrow.io altogether, after
+  which the key is revoked rather than rotated.
 
 - **Rotate credentials**: `src/pages/content.tsx` is a scratch page on the
   public `/content` route whose only content is a `QRCode` for an
