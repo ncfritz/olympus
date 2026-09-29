@@ -161,7 +161,7 @@ const NotesTimelineEntryType: React.FunctionComponent<
         color: config[entry.type].color,
         backgroundColor: open
           ? `${config[entry.type].color}20`
-          : config[entry.type].backgroundColor,
+          : config[entry.type].secondaryColor,
         display: "flex",
         alignItems: "center",
         alignContent: "center",

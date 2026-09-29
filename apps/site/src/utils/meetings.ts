@@ -7,7 +7,7 @@ export const MeetingStatusTypes = [
   "NoData",
 ];
 
-export const config: Record<string, Record<string, any>> = {
+export const config: Record<string, { color: string }> = {
   Free: {
     color: "#32485c",
   },

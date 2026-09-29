@@ -253,7 +253,7 @@ const NotesTimelineBlock: React.FunctionComponent<NotesTimelineBlockProps> = ({
               const filtered = typeFilters[config[i].type];
 
               let color = config[i].color;
-              const backgroundColor = config[i].backgroundColor;
+              const backgroundColor = config[i].secondaryColor;
 
               if (filtered || total <= 0) {
                 color = "#cccccc";

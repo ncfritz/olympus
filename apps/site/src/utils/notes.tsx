@@ -5,7 +5,18 @@ import {
   QuestionCircleOutlined,
   WarningFilled,
 } from "@ant-design/icons";
+import type { ReactNode } from "react";
 import { PredictiveAnalysisIcon } from "../icons";
+
+/** How a note type is drawn: its label, its icon and its two colours. */
+export type NoteTypeConfig = {
+  type: string;
+  label: string;
+  icon: ReactNode;
+  color: string;
+  /** The pale tint behind a collapsed entry. */
+  secondaryColor: string;
+};
 
 export interface NoteAssociation {
   itemId: string;
@@ -13,7 +24,7 @@ export interface NoteAssociation {
   createdTime: string;
 }
 
-export const config: Record<number, Record<string, any>> = {
+export const config: Record<number, NoteTypeConfig> = {
   0: {
     type: "note",
     label: "Note",

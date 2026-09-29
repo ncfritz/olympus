@@ -7,7 +7,13 @@ import { useState } from "react";
 import { STYLE_SHIFT_WORKER } from "../../../utils/maps";
 import { WeatherMapOverlay } from "./WeatherMapOverlay";
 
-const locations: Record<string, any> = {
+/** A place the widget can show a forecast for. */
+type WeatherLocation = {
+  label: string;
+  location: { lat: number; lng: number };
+};
+
+const locations: Record<string, WeatherLocation> = {
   az: {
     label: "Arizona",
     location: {

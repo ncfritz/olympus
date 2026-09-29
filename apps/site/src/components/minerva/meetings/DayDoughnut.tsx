@@ -1,8 +1,11 @@
 import * as React from "react";
 
+/** One meeting type's share of a day, as the summary reports it. */
+type MeetingTypeSummary = { totalDurationMin: number };
+
 interface DayProps {
   day: number;
-  types: Record<number, any>;
+  types: Record<string, MeetingTypeSummary>;
 }
 
 enum CalculationMode {

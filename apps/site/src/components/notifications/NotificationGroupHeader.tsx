@@ -1,8 +1,16 @@
 import { DatabaseOutlined } from "@ant-design/icons";
 import { Badge, Space, Typography } from "antd";
 
+/** How many notifications a group holds at each level. */
+type NotificationLevelCounts = {
+  info?: number;
+  success?: number;
+  warning?: number;
+  error?: number;
+};
+
 export interface NotificationGroupHeaderProps {
-  notificationStatistics: Record<string, any>;
+  notificationStatistics: Record<string, NotificationLevelCounts>;
   unreadCount: number;
   group: any;
 }

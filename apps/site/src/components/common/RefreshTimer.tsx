@@ -74,7 +74,7 @@ const RefreshTimer: React.FunctionComponent<RefreshTimerProps> = ({
     };
   }, []);
 
-  let content: any = <></>;
+  let content: React.ReactNode = <></>;
 
   if (showProgress && !disabled) {
     if (renderProgress) {

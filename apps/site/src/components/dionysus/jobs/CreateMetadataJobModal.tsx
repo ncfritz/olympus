@@ -27,7 +27,7 @@ interface FormInput {
   bypassCache: boolean;
   ttl: number;
   jitter: number;
-  context: Record<any, any>;
+  context: Record<string, string>;
 }
 
 export interface CreateMetadataJobModalProps {

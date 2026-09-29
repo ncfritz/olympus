@@ -80,7 +80,7 @@ const ContentAssetFilterPanel: React.FunctionComponent<
     setContentTags(tagGroups);
   }, [tags]);
 
-  let content: any;
+  let content: React.ReactNode;
 
   if (tagsLoading) {
     content = <Spin size={"large"} />;
