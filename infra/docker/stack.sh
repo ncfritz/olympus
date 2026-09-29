@@ -30,6 +30,37 @@ env_file_marker="$here/env/.current"
 
 die() { echo "stack.sh: $*" >&2; exit 1; }
 
+# Olympus's own networks and the subnet each is created with. Docker allocates
+# from `172.17.0.0/12` in /16s and then, once that pool is gone, from
+# **`192.168.0.0/16` in /20s** -- and the first of those is 192.168.0.0/20,
+# which is 192.168.0.0 through 192.168.15.255. A host running a dozen other
+# stacks exhausts the first pool, so a network created without a subnet lands
+# on top of a home LAN in 192.168.x. The route then lives in Docker's VM
+# rather than in any one container, so *every* container on the host loses the
+# LAN while keeping the internet, and it arrives as a connect timeout with no
+# packet ever reaching the destination. Naming the subnets makes this a
+# property of this repository instead of a property of how many networks the
+# host happens to have. 10.210/16 because the host's other stacks are in
+# 172.16/12 and the LAN is in 192.168/16.
+#
+# $MONITORING_NETWORK is deliberately absent: in prod it is another stack's
+# network (grafana_grafana_net) that Olympus only joins, so its subnet is not
+# ours to choose.
+NETWORK_SUBNETS="olympus-data:10.210.1.0/24
+olympus-graphql:10.210.2.0/24
+olympus-backend:10.210.3.0/24
+olympus-edge:10.210.4.0/24"
+
+subnet_for() {
+  local line
+  while IFS= read -r line; do
+    case "$line" in "$1:"*) printf '%s' "${line#*:}"; return 0 ;; esac
+  done <<EOF
+$NETWORK_SUBNETS
+EOF
+  return 1
+}
+
 # Secrets a service can run without: an empty file means "not configured".
 OPTIONAL_SECRETS="syno_smtp_password socks_proxy_username socks_proxy_password
 content_ssh_password dionysus_cdn_ssh_password dionysus_library_ssh_password
@@ -93,10 +124,28 @@ bootstrap() {
   echo "$name" > "$env_file_marker"
   load_env
 
-  local net
+  local net want have
   for net in olympus-data olympus-graphql olympus-backend olympus-edge "$MONITORING_NETWORK"; do
+    want=$(subnet_for "$net" || true)
     if docker network inspect "$net" >/dev/null 2>&1; then
-      echo "network  $net (exists)"
+      have=$(docker network inspect \
+        -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' "$net" 2>/dev/null)
+      have=${have% }
+      if [ -n "$want" ] && [ "$have" != "$want" ]; then
+        echo "network  $net (exists on $have, wanted $want)"
+        case "$have" in 192.168.*)
+          echo "         192.168.x is where home LANs live, and a Docker network"
+          echo "         over the LAN's own range takes the LAN away from every"
+          echo "         container on this host -- not just the ones on it." ;;
+        esac
+        echo "         Left as it is. To move it: stop the stacks using it,"
+        echo "         \`docker network rm $net\`, then bootstrap again."
+      else
+        echo "network  $net (exists)"
+      fi
+    elif [ -n "$want" ]; then
+      docker network create --subnet "$want" "$net" >/dev/null \
+        && echo "network  $net (created, $want)"
     else
       docker network create "$net" >/dev/null && echo "network  $net (created)"
     fi

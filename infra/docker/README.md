@@ -150,6 +150,64 @@ docker run --rm alpine cat /etc/resolv.conf
 docker run --rm alpine nslookup accounts.google.com
 ```
 
+### Network subnets, and the LAN disappearing from every container
+
+`stack.sh bootstrap` creates Olympus's networks with explicit subnets out of
+`10.210.0.0/16` (`NETWORK_SUBNETS` in the script). That is not tidiness. A
+network created without one takes whatever Docker's allocator offers, and
+Docker allocates from `172.17.0.0/12` in /16s and then, once that pool is
+gone, from **`192.168.0.0/16` in /20s**. The first allocation out of that
+second pool is `192.168.0.0/20` -- `192.168.0.0` through `192.168.15.255`,
+which on a home LAN in `192.168.x` is the LAN.
+
+The Mac Mini hit this: fifteen networks across the other stacks had consumed
+`172.16/12` down to its last slot, so the monorepo migration's new networks
+fell through into `192.168`, and `olympus-data` landed on the range holding
+both the development laptop and the router.
+
+What it looks like is worth knowing, because nothing points at Docker:
+
+- Containers reach the internet perfectly. Only the LAN is gone.
+- **Every** container on the host is affected, not only the ones attached to
+  the offending network -- the route lives in Docker's VM, so a bare
+  `docker run --rm alpine` fails the same way. That is what rules out any one
+  stack's configuration.
+- A connect timeout, never a refusal, and `tcpdump` on the destination sees
+  no SYN at all: the packets are delivered into a bridge inside the VM.
+- `host.docker.internal` keeps working, since the host gateway is on a
+  different subnet.
+
+It presents as an nginx problem, because nginx is what proxies to a machine
+on the LAN. Two days of the dev server block were spent on resolvers, ports,
+IPv6, timeouts and macOS's Local Network privacy grant before the subnet was
+the thing that was wrong.
+
+Check it directly rather than inferring it:
+
+```sh
+docker network ls -q | xargs -n1 \
+  docker network inspect -f '{{.Name}}: {{range .IPAM.Config}}{{.Subnet}} {{end}}'
+```
+
+Anything on `192.168.x` deserves suspicion on a LAN that is also `192.168.x`.
+`stack.sh bootstrap` reports a network whose subnet is not the one this
+repository names, and says how to move it -- it will not recreate it, because
+that means disconnecting whatever is running on it:
+
+```sh
+./stack.sh down all
+docker network rm olympus-data olympus-graphql olympus-backend
+./stack.sh bootstrap prod     # recreates them on 10.210.x
+./stack.sh up all
+```
+
+Networks Compose creates for itself (`<project>_default`, `nginx_net`) are
+still allocated by Docker, and so is any other stack's, so the host's
+`default-address-pools` is worth setting too -- a base of `10.211.0.0/16` in
+/24s keeps every future implicit network away from both `192.168/16` and the
+`172.16/12` the other stacks are using. Docker Desktop: Settings, Docker
+Engine.
+
 ## Building images
 
 Day to day, `stack.sh build` — it works out which images a stack's services
