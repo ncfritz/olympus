@@ -51,14 +51,9 @@ variable "NEXT_PUBLIC_ONAIR_API_HOST" {
   default = ""
 }
 
-# The Maps key, as a buildx secret. `stack.sh build` exports both of these from
-# the environment file; building bake directly without them just omits the
-# secret, and the site then draws no map.
-variable "SECRETS_DIR" {
-  default = ""
-}
-
-variable "MAPS_KEY_SECRET" {
+# A browser key: compiled into the bundle, so public whatever is done with it,
+# and restricted by HTTP referrer in the Google console rather than kept quiet.
+variable "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY" {
   default = ""
 }
 
@@ -191,10 +186,8 @@ target "site" {
     NEXT_PUBLIC_CONTENT_CDN_HOST    = NEXT_PUBLIC_CONTENT_CDN_HOST
     NEXT_PUBLIC_DIONYSUS_CDN_HOST   = NEXT_PUBLIC_DIONYSUS_CDN_HOST
     NEXT_PUBLIC_ONAIR_API_HOST      = NEXT_PUBLIC_ONAIR_API_HOST
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
   }
-  secret = SECRETS_DIR != "" && MAPS_KEY_SECRET != "" ? [
-    "id=maps_key,src=${SECRETS_DIR}/${MAPS_KEY_SECRET}"
-  ] : []
   tags = image("site")
 }
 
