@@ -1,7 +1,7 @@
 import { CheckCircleFilled } from "@ant-design/icons";
 import { Menu, Space } from "antd";
 import type { MenuItemType } from "antd/es/menu/interface";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import FilterWrapper from "./FilterWrapper";
 
 export interface CheckboxFilterProps {

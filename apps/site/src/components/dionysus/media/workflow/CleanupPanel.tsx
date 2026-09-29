@@ -5,7 +5,6 @@ import type {
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Empty, Result, Space } from "antd";
 import React, { useEffect, useState } from "react";
-import StepProgress from "./StepProgress";
 
 export interface CleanupPanelProps {
   workflow: DecoratedMediaAssetWorkflow;

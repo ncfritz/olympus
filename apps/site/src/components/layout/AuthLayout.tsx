@@ -1,6 +1,5 @@
 import {
   ApiOutlined,
-  AudioOutlined,
   EditOutlined,
   HeartOutlined,
   HomeOutlined,

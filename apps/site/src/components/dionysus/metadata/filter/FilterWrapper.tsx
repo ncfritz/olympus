@@ -1,7 +1,6 @@
 import { CloseCircleFilled, FilterFilled } from "@ant-design/icons";
 import { Button, Divider, Dropdown, Flex, Space } from "antd";
 import React, { type ReactNode, useState } from "react";
-import { flushSync } from "react-dom";
 
 export interface FilterWrapperProps {
   label: ReactNode;

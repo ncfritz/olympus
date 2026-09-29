@@ -1,5 +1,5 @@
 import type { Movie } from "@ncfritz/olympus-sdk/dionysus";
-import { Image, Space, Spin, Typography } from "antd";
+import { Image, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import prettyMilliseconds from "pretty-ms";
 import React, { type ReactNode } from "react";

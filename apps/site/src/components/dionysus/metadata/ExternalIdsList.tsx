@@ -1,5 +1,5 @@
 import type { ExternalId } from "@ncfritz/olympus-sdk/dionysus";
-import { Button, Col, Empty, Row, Space, Typography } from "antd";
+import { Button, Empty, Space, Typography } from "antd";
 import React from "react";
 import Description from "../../common/Description";
 import { getExternalIdIcon } from "./util";

@@ -3,7 +3,7 @@ import type {
   SparseSeason,
   MediaAssetSearchConfiguration,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Badge, Card, Image, Progress, Space, Typography } from "antd";
+import { Card, Image, Progress, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import { useEffect, useState } from "react";

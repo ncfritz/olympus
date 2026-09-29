@@ -1,7 +1,6 @@
 import { HomeOutlined } from "@ant-design/icons";
 import type { Collection } from "@ncfritz/olympus-sdk/dionysus";
-import { Layout, Space, Spin, Typography, Tabs } from "antd";
-import { Content } from "antd/lib/layout/layout";
+import { Space, Spin, Typography, Tabs } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useState } from "react";

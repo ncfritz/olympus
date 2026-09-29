@@ -5,7 +5,6 @@ import {
   HourglassOutlined,
   RedoOutlined,
   ReloadOutlined,
-  SaveOutlined,
 } from "@ant-design/icons";
 import type {
   FilterDefinition,

@@ -1,18 +1,12 @@
-import {
-  CheckCircleFilled,
-  EyeFilled,
-  FileImageOutlined,
-  PauseCircleFilled,
-  StarFilled,
-} from "@ant-design/icons";
+import { FileImageOutlined, StarFilled } from "@ant-design/icons";
 import type {
   MediaAssetSearchConfiguration,
   SparseEpisode,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Badge, Card, Image, Progress, Space, Typography } from "antd";
+import { Card, Image, Progress, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Events, subscribe, unsubscribe } from "../../../utils/events";
 import Description from "../../common/Description";
 import MediaBannerWrapper from "../media/MediaBannerWrapper";

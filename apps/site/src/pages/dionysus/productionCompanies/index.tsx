@@ -1,6 +1,5 @@
 import { HomeOutlined } from "@ant-design/icons";
-import { Affix, Layout, notification, Space, type TableProps } from "antd";
-import { Content } from "antd/lib/layout/layout";
+import { notification, Space, type TableProps } from "antd";
 import Link from "next/link";
 import React, { type ReactNode, useEffect, useState } from "react";
 import type { SortOptions } from "../../../api/common";

@@ -2,7 +2,7 @@ import type {
   ContentAsset,
   FilterDefinition,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Card, Image, List, Space, Typography } from "antd";
+import { Card, List, Typography } from "antd";
 import contentApi from "../../api/contentApi";
 import { useFetch } from "../../hooks/useFetch";
 import LoadingWrapper from "../common/LoadingWrapper";

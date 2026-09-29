@@ -3,7 +3,7 @@ import { Button, Divider, Form, Input, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import { useForm, Controller, type SubmitHandler } from "react-hook-form";
 import React, { type ReactNode, useEffect, useState } from "react";
-import { parse as uuidParse, v6, version as uuidVersion } from "uuid";
+import { parse as uuidParse, version as uuidVersion } from "uuid";
 import {
   buttonItemLayout,
   CLOCK_HIGH,

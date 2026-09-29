@@ -3,7 +3,6 @@
 import type { SeasonStatistic } from "@ncfritz/olympus-sdk/dionysus";
 import HighchartsReact from "highcharts-react-official";
 import Highcharts from "highcharts";
-import { DateTime } from "luxon";
 import React, { useEffect, useState } from "react";
 import metadataApi from "../../../../api/metadataApi";
 import { useFetch } from "../../../../hooks/useFetch";

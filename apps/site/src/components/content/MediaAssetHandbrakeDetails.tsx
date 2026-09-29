@@ -13,9 +13,8 @@ import {
   Space,
   Typography,
 } from "antd";
-import Title from "antd/es/skeleton/Title";
 import dynamic from "next/dynamic";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { JsonIcon } from "../../icons";
 import {
   disabled,

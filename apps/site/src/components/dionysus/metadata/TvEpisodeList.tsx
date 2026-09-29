@@ -1,15 +1,9 @@
-import {
-  CheckCircleFilled,
-  EyeFilled,
-  FileImageOutlined,
-  PauseCircleFilled,
-  StarFilled,
-} from "@ant-design/icons";
+import { FileImageOutlined, StarFilled } from "@ant-design/icons";
 import type {
   SparseEpisode,
   BaseTvSeries,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Badge, Card, Empty, Image, Progress, Space, Typography } from "antd";
+import { Card, Empty, Image, Progress, Space, Typography } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import React, { type ReactNode, useEffect, useState } from "react";

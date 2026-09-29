@@ -3,8 +3,7 @@ import type {
   PersonDepartmentStatistic,
   PersonLifeStatistic,
 } from "@ncfritz/olympus-sdk/dionysus";
-import { Affix, Col, Layout, Row, Space } from "antd";
-import { Content } from "antd/lib/layout/layout";
+import { Col, Row, Space } from "antd";
 import Link from "next/link";
 import React from "react";
 import metadataApi from "../../api/metadataApi";

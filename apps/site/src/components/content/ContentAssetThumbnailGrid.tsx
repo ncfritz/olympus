@@ -1,5 +1,5 @@
 import type { ContentAsset } from "@ncfritz/olympus-sdk/dionysus";
-import { Image, Space, Spin } from "antd";
+import { Space } from "antd";
 import { v4 as uuidv4 } from "uuid";
 import ContentAssetFixedRatioImage from "./ContentAssetFixedRatioImage";
 

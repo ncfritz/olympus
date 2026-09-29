@@ -11,7 +11,6 @@ import {
 import type {
   BaseImage,
   BasePerson,
-  BaseTvSeries,
   TypedImage,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Image, type MenuProps, Space, Typography } from "antd";

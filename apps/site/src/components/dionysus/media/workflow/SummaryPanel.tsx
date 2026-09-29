@@ -1,9 +1,6 @@
-import type {
-  DecoratedMediaAssetWorkflow,
-  MediaAssetWorkflowStep,
-} from "@ncfritz/olympus-sdk/dionysus";
+import type { DecoratedMediaAssetWorkflow } from "@ncfritz/olympus-sdk/dionysus";
 import { Empty, Result, Space, Typography } from "antd";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { getStepLabel } from "../utils";
 import StepProgress from "./StepProgress";
 

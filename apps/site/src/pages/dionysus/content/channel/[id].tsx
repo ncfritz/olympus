@@ -12,7 +12,6 @@ import type {
   FilterDefinition,
 } from "@ncfritz/olympus-sdk/dionysus";
 import { Button, Space, Spin, Typography } from "antd";
-import { Content } from "antd/lib/layout/layout";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/router";

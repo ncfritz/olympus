@@ -10,8 +10,6 @@ import type {
   BaseTvSeries,
 } from "@ncfritz/olympus-sdk/dionysus";
 import {
-  Affix,
-  Layout,
   QRCode,
   Space,
   Spin,
@@ -20,7 +18,6 @@ import {
   type TabsProps,
   Typography,
 } from "antd";
-import { Content } from "antd/lib/layout/layout";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React from "react";
