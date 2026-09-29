@@ -263,7 +263,20 @@ build_targets() {
       const wanted = (process.env.WANTED || "").split(" ").filter(Boolean);
       const missing = wanted.filter((w) => !services.some(([n]) => n === w));
       if (missing.length) {
-        console.error(`no such service in ${process.env.STACK}: ${missing.join(", ")}`);
+        // Passing an image target where a service goes is an easy slip: the
+        // site is service `olympus-site` and target `site`. Say so rather than
+        // just refusing.
+        const named = (w) => {
+          const hit = services.find(([, svc]) =>
+            new RegExp(`(?:^|/)olympus/${w.replace(/[^\w-]/g, "")}:`).test(
+              String(svc.image ?? ""),
+            ),
+          );
+          return hit ? `${w} (the image target; its service is ${hit[0]})` : w;
+        };
+        console.error(
+          `no such service in ${process.env.STACK}: ${missing.map(named).join(", ")}`,
+        );
         process.exit(1);
       }
       const chosen = wanted.length
