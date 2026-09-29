@@ -11,12 +11,15 @@ export interface GenreTagCloudChartProps {
   tvSeriesStats: GenreStatistic[];
 }
 
+/** A genre, weighted by how many titles carry it, for the tag cloud. */
+type GenreTag = { name: string; weight: number; color: string };
+
 const GenreTagCloudChart: React.FunctionComponent<GenreTagCloudChartProps> = ({
   movieStats,
   tvSeriesStats,
 }: GenreTagCloudChartProps) => {
-  const [movieTags, setMovieTags] = useState<any[]>([]);
-  const [tvSeriesTags, setTvSeriesTags] = useState<any[]>([]);
+  const [movieTags, setMovieTags] = useState<GenreTag[]>([]);
+  const [tvSeriesTags, setTvSeriesTags] = useState<GenreTag[]>([]);
 
   useEffect(() => {
     if (movieStats?.length > 0) {

@@ -47,10 +47,10 @@ const ContentProcessingPage: React.FunctionComponent = () => {
   const [asset, setAsset] = useState<ContentAsset>();
   const [untaggedCount, setUntaggedCount] = useState(0);
   const [taggedCount, setTaggedCount] = useState(0);
-  const [, setAssetLoading] = useState<any>(true);
+  const [, setAssetLoading] = useState(true);
   const [assetError, setAssetError] = useState<any>();
   const [tags, setTags] = useState<ContentAssetTag[]>([]);
-  const [, setTagsLoading] = useState<any>(true);
+  const [, setTagsLoading] = useState(true);
   const [, setTagsError] = useState<any>();
   const [, setProcessedTags] = useState<any>(undefined);
   const [currentThumbIndex, setCurrentThumbIndex] = useState(1);

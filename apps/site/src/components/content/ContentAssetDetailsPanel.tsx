@@ -13,7 +13,9 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
   ContentAssetDetailsPanelProps
 > = ({ assetId }: ContentAssetDetailsPanelProps) => {
   const [metadataLoading, setMetadataLoading] = useState(true);
-  const [metadataError, setMetadataError] = useState<any>(false);
+  const [metadataError, setMetadataError] = useState<Error | undefined>(
+    undefined,
+  );
   const [assetMetadata, setAssetMetadata] = useState(undefined);
   const [originalMetadata, setOriginalMetadata] = useState(undefined);
   const [showRawMetadata, setShowRawMetadata] = useState(false);

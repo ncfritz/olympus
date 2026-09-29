@@ -36,7 +36,7 @@ const ContentAssetDetailsPage: React.FunctionComponent = () => {
   );
 
   const [asset, setAsset] = useState<any>();
-  const [assetLoading, setAssetLoading] = useState<any>(true);
+  const [assetLoading, setAssetLoading] = useState(true);
   const [assetError, setAssetError] = useState<any>();
   const [hlsEnabled, setHlsEnabled] = useState(true);
   const [thumbsGenerated, setThumbsGenerated] = useState(true);

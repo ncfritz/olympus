@@ -36,12 +36,14 @@ const ContentAssetTagEditor: React.FunctionComponent<
   const [tagAddedLoading, setTagAddedLoading] = useState(false);
   const [tagsModified, setTagsModified] = useState(false);
 
-  const [assetTags, setAssetTags] = useState<any>(asset.tags);
-  const [assetTagsLoading, setAssetTagsLoading] = useState<any>(false);
+  const [assetTags, setAssetTags] = useState(asset.tags);
+  const [assetTagsLoading, setAssetTagsLoading] = useState(false);
   const [, setAssetTagsError] = useState<any>();
 
-  const [availableAssetTags, setAvailableAssetTags] = useState<any[]>([]);
-  const [, setAvailableAssetTagsLoading] = useState<any>(true);
+  const [availableAssetTags, setAvailableAssetTags] = useState<
+    ContentAssetTag[]
+  >([]);
+  const [, setAvailableAssetTagsLoading] = useState(true);
   const [, setAvailableAssetTagsError] = useState<any>();
 
   const [tagOptions, setTagOptions] = useState<

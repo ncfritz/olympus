@@ -53,6 +53,14 @@ export interface DayViewProps {
   breadcrumbs: Partial<BreadcrumbItemType>[];
 }
 
+/**
+ * A meeting as the API returns it. Taken from the call because the SDK exports
+ * no name for it, and restating the shape here would be a second copy to keep.
+ */
+type RawMeeting = Awaited<
+  ReturnType<typeof meetingsApi.getMeetings>
+>["data"]["items"][number];
+
 const DayView: React.FunctionComponent<DayViewProps> = ({
   startDate,
   breadcrumbs,
@@ -64,7 +72,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
 
   const [selectedDate, setSelectedDate] = useState(startDate);
   const [dayPickerCurrent, setDayPickerCurrent] = useState(startDate);
-  const [rawEvents, setRawEvents] = useState<any[]>([]);
+  const [rawEvents, setRawEvents] = useState<RawMeeting[]>([]);
   const [events, setEvents] = useState<EventInput[]>([]);
   const [, setEventsLoading] = useState(false);
   const [, setEventsError] = useState(false);
@@ -73,9 +81,9 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   );
   const [event, setEvent] = useState<any>(undefined);
   const [nextEventInSeries, setNextEventInSeries] = useState<any>(undefined);
-  const [previousEventsInSeries, setPreviousEventsInSeries] = useState<any[]>(
-    [],
-  );
+  const [previousEventsInSeries, setPreviousEventsInSeries] = useState<
+    RawMeeting[]
+  >([]);
   const [eventNotes, setEventNotes] = useState<Note[]>([]);
   const [eventLoading, setEventLoading] = useState(false);
   const [, setEventError] = useState(false);

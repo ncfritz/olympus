@@ -15,11 +15,14 @@ const ContentAssetDetailsPanel: React.FunctionComponent<
   ContentAssetDetailsPanelProps
 > = ({ assetType, assetId }: ContentAssetDetailsPanelProps) => {
   const [assetMetadataLoading, setAssetMetadataLoading] = useState(true);
-  const [assetMetadataError, setAssetMetadataError] = useState<any>(false);
+  const [assetMetadataError, setAssetMetadataError] = useState<
+    Error | undefined
+  >(undefined);
   const [assetMetadata, setAssetMetadata] = useState(undefined);
   const [originalMetadataLoading, setOriginalMetadataLoading] = useState(true);
-  const [originalMetadataError, setOriginalMetadataError] =
-    useState<any>(false);
+  const [originalMetadataError, setOriginalMetadataError] = useState<
+    Error | undefined
+  >(undefined);
   const [originalMetadata, setOriginalMetadata] = useState(undefined);
   const [showRawMetadata, setShowRawMetadata] = useState(false);
 

@@ -15,7 +15,7 @@ export interface MovieLocationsMapProps {
 export const MovieLocationsMap: React.FunctionComponent<
   MovieLocationsMapProps
 > = ({ mediaType }: MovieLocationsMapProps) => {
-  const [data, setData] = useState<any>([]);
+  const [data, setData] = useState<(string | number)[][]>([]);
   const [locationStats] = useFetch<undefined, LocationStatistic[]>({
     dataType: "movie locations",
     watch: [],

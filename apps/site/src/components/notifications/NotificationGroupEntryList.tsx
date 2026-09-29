@@ -8,11 +8,19 @@ export interface NotificationGroupEntryListProps {
   groupId: string;
 }
 
+/**
+ * A notification as the API returns it, taken from the call: the SDK exports no
+ * name for it, and `Notification` is already a DOM type.
+ */
+type StoredNotification = Awaited<
+  ReturnType<typeof notificationsApi.listNotificationsInGroup>
+>["data"]["notifications"][number];
+
 const NotificationGroupEntryList: React.FunctionComponent<
   NotificationGroupEntryListProps
 > = ({ groupId }: NotificationGroupEntryListProps) => {
   const [page, setPage] = useState(0);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<StoredNotification[]>([]);
   const [notificationCount, setNotificationCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] =
     useState<boolean>(false);

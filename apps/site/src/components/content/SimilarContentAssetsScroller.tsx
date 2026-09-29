@@ -26,7 +26,7 @@ const SimilarContentAssetScroller: React.FunctionComponent<
   );
 
   const [assets, setAssets] = useState<ContentAsset[]>([]);
-  const [assetsLoading, setAssetsLoading] = useState<any>(true);
+  const [assetsLoading, setAssetsLoading] = useState(true);
   const [assetsError, setAssetsError] = useState<any>();
   const [selected] = React.useState([]);
 

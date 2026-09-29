@@ -24,7 +24,7 @@ const ProductionCompaniesIndexPage: React.FunctionComponent = () => {
     SparseProductionCompanyWithContentCounts[]
   >([]);
   const [productionCompaniesLoading, setProductionCompaniesLoading] =
-    useState<any>(true);
+    useState(true);
   const [productionCompaniesError, setProductionCompaniesError] =
     useState<any>();
   const [productionCompaniesCount, setProductionCompaniesCount] = useState(0);
