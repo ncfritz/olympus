@@ -5,7 +5,7 @@ import { useDispatch } from "react-redux";
 import { useSocket, useSocketEvent } from "socket.io-react-hook";
 import { useAuth } from "../../auth/AuthProvider";
 import { initials } from "../../auth/initials";
-import { SOCKET_OPTIONS } from "../../auth/socket";
+import { SOCKET_OPTIONS } from "../../auth/pageSession";
 import notificationsApi from "../../api/notificationsApi";
 import onairApi from "../../api/onairApi";
 import { useAppSelector } from "../../redux/hooks";

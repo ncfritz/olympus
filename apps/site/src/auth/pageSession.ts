@@ -1,6 +1,7 @@
 import { refreshFromCookie } from "@ncfritz/olympus-auth-flow";
 import { API_BASE_URL, attachSession } from "./interceptors";
 import { createSession, type Session } from "./session";
+import { createSocketAuth } from "./socket";
 import { completeSignIn, createCompleter } from "./signIn";
 import { CLIENT_ID, tokenEndpoint } from "./tokenEndpoint";
 
@@ -26,3 +27,9 @@ attachSession(pageSession);
  * calls it, and the authorization code it spends can only be spent once.
  */
 export const completeOnce = createCompleter(() => completeSignIn(API_BASE_URL));
+
+/**
+ * The Socket.IO handshake's options, built once. A new object on every render
+ * would read as new options to the hook that takes them, and reconnect.
+ */
+export const SOCKET_OPTIONS = { auth: createSocketAuth(pageSession) };
