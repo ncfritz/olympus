@@ -6,24 +6,7 @@
  * it is never caught at all.
  */
 
-/**
- * A setting the bundle must not be built without.
- *
- * The hosts below say where data comes from, and the fallbacks they used to
- * carry were the development ones -- so a production build with a mistyped or
- * forgotten argument produced a working site quietly pointed at dev. Throwing
- * here fails `next build`, which is the last moment this is cheap.
- */
-export const required = (name: string, value: string | undefined): string => {
-  if (value === undefined || value === "") {
-    throw new Error(
-      `${name} is not set. The site compiles it in, so it has to be set where ` +
-        "the bundle is built: apps/site/dev.env for `pnpm dev`, the site " +
-        "target in docker-bake.hcl for the image.",
-    );
-  }
-  return value;
-};
+import { required } from "./settings";
 
 /** Which environment the site says it is. `dev` when unset, as documented. */
 export const ENVIRONMENT = process.env.NEXT_PUBLIC_ENVIRONMENT || "dev";

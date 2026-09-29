@@ -1,5 +1,5 @@
 import axios from "axios";
-import { required } from "../utils/constants";
+import { required } from "../utils/settings";
 
 const ONAIR_URL = required(
   "NEXT_PUBLIC_ONAIR_API_HOST",
