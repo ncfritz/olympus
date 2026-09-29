@@ -32,15 +32,20 @@ Maps), NOAA MRMS radar (US only), RainViewer.
 
 ## Decision
 
-### Forecasts: OpenWeather
+### Forecasts: OpenWeather, free plan only
 
-- **One Call API 4.0** for current conditions, hourly, daily and
-  government alerts, on its free allowance of 1,000 calls a day (billed
-  per call beyond it). The account's daily call limit is set to 1,000 in
-  the OpenWeather console so the allowance cannot turn into a bill.
-- **Weather Maps 1.0** (free: 60 calls a minute, 1,000,000 a month) for
-  the map layers it offers: temperature, precipitation, clouds, pressure,
-  wind.
+The free plan (60 calls a minute, 1,000,000 a month, no card) and nothing
+billed per call. One Call is not used, so there are no government alerts
+and no hourly or daily endpoint:
+
+- **Current Weather API** for conditions now.
+- **5 day / 3 hour Forecast API** for the rest. "Today" is the next eight
+  3-hour steps; the 5-day view is those steps grouped by local day (high,
+  low, the most significant condition, the highest chance of
+  precipitation). The free plan's data refreshes about every two hours,
+  so the widget is no fresher than that.
+- **Weather Maps 1.0** for the map layers it offers: temperature,
+  precipitation, clouds, pressure, wind.
 - **Geocoding API** is not used: places come from Google (below).
 - Attribution to OpenWeather is shown on the widget, as its licence
   (ODbL) requires.
@@ -51,9 +56,9 @@ OpenWeather's free layers are model output, not radar, and its radar is
 on the paid Weather Maps 2.0. RainViewer's free Weather Maps API is the
 one free global radar: the past two hours in 10-minute frames, personal
 use, one colour scheme, **zoom capped at 7** since 2026-01-01, and 100
-requests per IP per minute. At the widget's fixed zoom the radar tiles
-are drawn from zoom 7 and scaled up, so radar is coarser than the other
-layers. Where NOAA radar covers a location (the US) it can be added later
+requests per IP per minute. The widget's map is fixed at zoom 8, so the
+radar is drawn from zoom-7 tiles scaled up one level and is a little
+coarser than the other layers. Where NOAA radar covers a location (the US) it can be added later
 as a sharper layer without changing this decision.
 
 ### Places: Google
@@ -78,9 +83,9 @@ The site never calls a weather provider. The API (Olympus domain,
   applies to one well-behaved server;
 - serves the last good forecast, marked stale, when a provider fails.
 
-The call budget: one forecast refresh per distinct location every 30
-minutes is 48 calls a day, so the 1,000-call allowance covers about 20
-distinct locations across all users.
+The call budget: two calls (current and forecast) per distinct location
+every 15 minutes is 192 a day, about 5,800 a month, against a free
+allowance of 1,000,000; tiles are the larger share and are cached.
 
 ### Locations: a table per user
 
@@ -104,12 +109,12 @@ per key) stays available as a fallback and is not used by default.
   secret. Its key can be revoked rather than rotated.
 - The API gains outbound HTTP to three providers and its first cache;
   both need metrics (ADR 0017) and tests with the providers mocked.
-- One Call is the only thing here that can cost money; the console cap
-  is what keeps it at zero and has to be set before the key is used.
+- Nothing here is billed: every provider is used on a free plan with no
+  payment method on file. Hourly steps are three hours wide and there are
+  no alerts; moving to One Call later would be a new record.
 - Radar is coarse at the widget's zoom and covers only the past, never a
   forecast.
 - The consoles' upload format is not a documented API; parsing it is
   written against captured requests and tested with them.
-- Open questions for the design and plan: how much station history to
-  keep, the forecast refresh interval, and whether alerts appear in the
-  widget.
+- Station readings are kept for 30 days, a retention setting that can be
+  raised later without a schema change.
