@@ -2,9 +2,7 @@ import { Alert, Button, Card, Space, Spin } from "antd";
 import { Content } from "antd/lib/layout/layout";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { pageSession } from "../../auth/pageSession";
-import { API_BASE_URL } from "../../auth/interceptors";
-import { completeSignIn } from "../../auth/signIn";
+import { completeOnce, pageSession } from "../../auth/pageSession";
 
 /**
  * Where the API sends the browser back with an authorization code.
@@ -24,7 +22,9 @@ const CallbackPage: React.FunctionComponent = () => {
     let current = true;
     void (async () => {
       try {
-        const done = await completeSignIn(API_BASE_URL);
+        // `completeOnce`, not the completion itself: this effect runs again
+        // when the router object changes, and the code and verifier are spent.
+        const done = await completeOnce();
         if (!current) return;
         if ("problem" in done) {
           setProblem(done.problem);

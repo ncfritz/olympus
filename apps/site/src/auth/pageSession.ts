@@ -1,6 +1,7 @@
 import { refreshFromCookie } from "@ncfritz/olympus-auth-flow";
 import { API_BASE_URL, attachSession } from "./interceptors";
 import { createSession, type Session } from "./session";
+import { completeSignIn, createCompleter } from "./signIn";
 import { CLIENT_ID, tokenEndpoint } from "./tokenEndpoint";
 
 /**
@@ -18,3 +19,10 @@ export const pageSession: Session = createSession({
 });
 
 attachSession(pageSession);
+
+/**
+ * The callback page's one completion, at module scope for the same reason the
+ * session is: it survives the re-renders and effect re-runs of the page that
+ * calls it, and the authorization code it spends can only be spent once.
+ */
+export const completeOnce = createCompleter(() => completeSignIn(API_BASE_URL));

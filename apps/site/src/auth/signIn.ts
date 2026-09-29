@@ -84,3 +84,28 @@ export const completeSignIn = async (
   });
   return { tokens, returnTo: checked.returnTo };
 };
+
+/**
+ * Wraps a completion so it happens once per document, whatever React does with
+ * the callback page.
+ *
+ * `completeSignIn` consumes a one-shot value: it takes the pending request out
+ * of `sessionStorage` before it does anything else, because a verifier left
+ * behind for a second attempt is the thing PKCE exists to stop. A second call
+ * therefore finds nothing and reports a callback belonging to no sign-in --
+ * which in practice was not a hostile callback but the callback page's own
+ * effect running again when the router object changed, with the second run's
+ * verdict being the one the person saw and the first run's success discarded.
+ *
+ * Memoising the in-flight completion makes a later caller await the first
+ * one's result, as session.ts's `rotating` does for concurrent refreshes.
+ * Unlike that one it is never cleared: a completion is once per document, and a
+ * fresh attempt arrives as a fresh document -- both the API's redirect back and
+ * "Start again" are full navigations, not client-side ones.
+ */
+export const createCompleter = (
+  complete: () => Promise<Completion>,
+): (() => Promise<Completion>) => {
+  let completing: Promise<Completion> | undefined;
+  return () => (completing ??= complete());
+};
