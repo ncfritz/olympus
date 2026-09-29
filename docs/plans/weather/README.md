@@ -56,17 +56,19 @@ Added to `readConfig()`, `dev.env.example`, the API README table and
 | `WEATHER_STATION_STALE_SECONDS`      | `600`   | A station with no reading for this long is "not reporting"                                                                   |
 | `WEATHER_STATION_ALLOWED_CIDRS`      | —       | Required for the push route to accept anything: the LAN ranges the consoles are on                                           |
 
-## Phase 0 — Accounts and scaffolding
+## Phase 0 — Accounts and scaffolding — done 2026-09-29 (ADR pending)
 
 1. **ADR 0024 accepted.**
-2. **OpenWeather**: a free account with no payment method; the key in
+2. **OpenWeather**: **done** — a free account with no payment method; the key in
    `${SECRETS_DIR}/openweather_api_key`, mounted as a Compose secret on
    the API. It never reaches the site.
-3. **Google**: the Places API (New) enabled on the existing Maps key,
+3. **Google**: **done** — the Places API (New) enabled on the existing Maps key,
    which stays restricted by referrer.
-4. **`weatherConfig`** with the variables above, validated at boot.
-5. **`olympus/weather`**: `WeatherModule` added to `OLYMPUS_MODULES`,
-   with no operations yet; `packages/model` gets the `weather/` folder.
+4. **`weatherConfig`**: **done** — the variables above, validated at
+   boot; the key as the `openweather_api_key` Compose secret.
+5. **`olympus/weather`**: **done** — `WeatherModule` in `OLYMPUS_MODULES`,
+   no operations yet; it warns at boot without the key or the push
+   ranges. The model's `olympus/weather.ts` arrives with phase 1's shapes.
 
 **Sign-off:** the API boots with and without the key, and the Turbo
 tasks pass.

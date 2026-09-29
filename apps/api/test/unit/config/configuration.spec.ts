@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ConfigValidationError,
+  isCidr,
   readConfig,
 } from "../../../src/config/configuration";
 
@@ -163,4 +164,81 @@ describe("readConfig: authentication", () => {
       'AUTH_SERVICE_ROLES entries are "<service>:<role>|<role>", got "dionysus-asset-agent"',
     ]);
   });
+
+  it("defaults the weather settings to a safe, unconfigured state", () => {
+    const { weather } = readConfig(REQUIRED);
+    expect(weather).toEqual({
+      openWeatherApiKey: undefined,
+      ambient: undefined,
+      providerTimeoutMs: 5000,
+      forecast: { ttlSeconds: 900, maxStaleSeconds: 21600 },
+      tiles: { cacheMb: 128, ttlSeconds: 1800 },
+      stations: {
+        sampleRetentionHours: 48,
+        staleSeconds: 600,
+        // Nothing is accepted from anywhere until a deployment says where.
+        allowedCidrs: [],
+        archiveDir: "/olympus/weather/archive",
+      },
+    });
+  });
+
+  it("reads the weather settings", () => {
+    const { weather } = readConfig({
+      ...REQUIRED,
+      OPENWEATHER_API_KEY: "ow-key",
+      AMBIENT_APPLICATION_KEY: "app-key",
+      AMBIENT_API_KEY: "api-key",
+      WEATHER_FORECAST_TTL_SECONDS: "600",
+      WEATHER_TILE_CACHE_MB: "64",
+      WEATHER_STATION_ALLOWED_CIDRS: "192.168.1.0/24, 10.0.0.5, fd00::/8",
+      WEATHER_ARCHIVE_DIR: "/archive",
+    });
+    expect(weather.openWeatherApiKey).toBe("ow-key");
+    expect(weather.ambient).toEqual({
+      applicationKey: "app-key",
+      apiKey: "api-key",
+    });
+    expect(weather.forecast.ttlSeconds).toBe(600);
+    expect(weather.tiles.cacheMb).toBe(64);
+    expect(weather.stations.allowedCidrs).toEqual([
+      "192.168.1.0/24",
+      "10.0.0.5",
+      "fd00::/8",
+    ]);
+    expect(weather.stations.archiveDir).toBe("/archive");
+  });
+
+  it("refuses half the Ambient keys, bad numbers and bad ranges", () => {
+    let error: unknown;
+    try {
+      readConfig({
+        ...REQUIRED,
+        AMBIENT_API_KEY: "api-key",
+        WEATHER_TILE_CACHE_MB: "lots",
+        WEATHER_FORECAST_TTL_SECONDS: "0",
+        WEATHER_STATION_ALLOWED_CIDRS: "192.168.1.0/33,lan",
+      });
+    } catch (e) {
+      error = e;
+    }
+    expect((error as ConfigValidationError).problems).toEqual([
+      "AMBIENT_APPLICATION_KEY and AMBIENT_API_KEY are set together or not at all",
+      'WEATHER_STATION_ALLOWED_CIDRS entries are addresses or CIDR ranges, got "192.168.1.0/33"',
+      'WEATHER_STATION_ALLOWED_CIDRS entries are addresses or CIDR ranges, got "lan"',
+      "WEATHER_FORECAST_TTL_SECONDS must be a whole number of at least 1",
+      "WEATHER_TILE_CACHE_MB must be a whole number of at least 1",
+    ]);
+  });
+});
+
+describe("isCidr", () => {
+  it.each(["10.0.0.0/8", "192.168.1.7", "::1", "fd00::/8", "0.0.0.0/0"])(
+    "accepts %s",
+    (value) => expect(isCidr(value)).toBe(true),
+  );
+  it.each(["10.0.0.0/33", "10.0.0/8", "fd00::/129", "lan", "10.0.0.0/8/1", ""])(
+    "refuses %s",
+    (value) => expect(isCidr(value)).toBe(false),
+  );
 });

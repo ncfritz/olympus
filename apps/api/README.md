@@ -116,3 +116,19 @@ Levels are Winston's: `error`, `warn`, `info`, `http`, `verbose`,
 | --------------------- | ---------------------------------------------- | -------- |
 | DIONYSUS_UPLOAD_PATH  | Where UploadAssets writes files                | required |
 | DIONYSUS_PUBLISH_PATH | The same directory as the ingest agents see it | required |
+
+##### Weather (ADR 0024)
+
+| Variable                                 | Usage                                                                             | Default                    |
+| ---------------------------------------- | --------------------------------------------------------------------------------- | -------------------------- |
+| OPENWEATHER_API_KEY                      | OpenWeather's key (free plan); without it forecasts and map layers answer 503     | (unset)                    |
+| AMBIENT_APPLICATION_KEY, AMBIENT_API_KEY | ambientweather.net keys for backfill; both or neither                             | (unset)                    |
+| WEATHER_PROVIDER_TIMEOUT_MS              | Per provider call                                                                 | `5000`                     |
+| WEATHER_FORECAST_TTL_SECONDS             | How long a forecast is served before it is refetched                              | `900`                      |
+| WEATHER_FORECAST_MAX_STALE_SECONDS       | How long the last good forecast is served, marked stale, while the provider fails | `21600`                    |
+| WEATHER_TILE_CACHE_MB                    | The tile cache's size                                                             | `128`                      |
+| WEATHER_TILE_TTL_SECONDS                 | OpenWeather layer tiles                                                           | `1800`                     |
+| WEATHER_SAMPLE_RETENTION_HOURS           | How long parsed station pushes are kept                                           | `48`                       |
+| WEATHER_STATION_STALE_SECONDS            | After this long without a sample a station is not reporting                       | `600`                      |
+| WEATHER_STATION_ALLOWED_CIDRS            | Where station pushes may come from; empty refuses them all                        | (empty)                    |
+| WEATHER_ARCHIVE_DIR                      | Where the raw station archive is written                                          | `/olympus/weather/archive` |

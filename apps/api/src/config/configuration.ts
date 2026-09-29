@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { ConfigType, registerAs } from "@nestjs/config";
 import {
   AmqpConfig,
@@ -92,6 +93,41 @@ export type AuthConfig = {
   };
 };
 
+/** Weather: forecasts, map tiles and the house's stations (ADR 0024). */
+export type WeatherConfig = {
+  /** Unset: forecasts and map layers answer 503 (the boot log says so). */
+  openWeatherApiKey?: string;
+  /** Backfill from ambientweather.net; off unless both are set. */
+  ambient?: { applicationKey: string; apiKey: string };
+  /** Per provider call. */
+  providerTimeoutMs: number;
+  forecast: {
+    /** How long a fetched forecast is served before it is refetched. */
+    ttlSeconds: number;
+    /** How long the last good one is served, marked stale, on failure. */
+    maxStaleSeconds: number;
+  };
+  tiles: {
+    /** The tile cache's bound; least recently used tiles go first. */
+    cacheMb: number;
+    /** OpenWeather layer tiles; radar tiles live as long as their frame. */
+    ttlSeconds: number;
+  };
+  stations: {
+    /** Parsed pushes are deleted after this; the tiers keep their own. */
+    sampleRetentionHours: number;
+    /** A station with no sample for this long is not reporting. */
+    staleSeconds: number;
+    /**
+     * Where a push may come from (by the forwarded address). Empty: the
+     * push route accepts nothing, which is the safe way to be unconfigured.
+     */
+    allowedCidrs: string[];
+    /** Where the raw archive is written: one JSONL file per station-day. */
+    archiveDir: string;
+  };
+};
+
 export type AppConfig = {
   server: ServerConfig;
   auth: AuthConfig;
@@ -99,6 +135,7 @@ export type AppConfig = {
   amqp: AmqpConfig;
   logging: LoggingConfig;
   dionysus: DionysusConfig;
+  weather: WeatherConfig;
 };
 
 /**
@@ -142,8 +179,10 @@ export const readConfig = (
     publishPath: read.string("DIONYSUS_PUBLISH_PATH"),
   };
 
+  const weather = readWeatherConfig(read);
+
   if (read.problems.length) throw new ConfigValidationError(read.problems);
-  return { server, auth, hasura, amqp, logging, dionysus };
+  return { server, auth, hasura, amqp, logging, dionysus, weather };
 };
 
 /**
@@ -221,6 +260,81 @@ const readAuthConfig = (read: EnvReader): AuthConfig => {
   };
 };
 
+/** A whole number of at least `min`, or the fallback when unset. */
+const readInteger = (
+  read: EnvReader,
+  name: string,
+  fallback: number,
+  min = 1,
+): number => {
+  const raw = read.optional(name);
+  if (raw === undefined) return fallback;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < min) {
+    read.problems.push(`${name} must be a whole number of at least ${min}`);
+    return fallback;
+  }
+  return value;
+};
+
+/** `192.168.1.0/24`, `fd00::/8`, or a bare address (one host). */
+export const isCidr = (value: string): boolean => {
+  const [address, prefix, ...rest] = value.split("/");
+  const family = isIP(address ?? "");
+  if (family === 0 || rest.length > 0) return false;
+  if (prefix === undefined) return true;
+  const bits = Number(prefix);
+  return /^\d+$/.test(prefix) && bits >= 0 && bits <= (family === 4 ? 32 : 128);
+};
+
+const readWeatherConfig = (read: EnvReader): WeatherConfig => {
+  const applicationKey = read.optional("AMBIENT_APPLICATION_KEY");
+  const apiKey = read.optional("AMBIENT_API_KEY");
+  if (Boolean(applicationKey) !== Boolean(apiKey)) {
+    read.problems.push(
+      "AMBIENT_APPLICATION_KEY and AMBIENT_API_KEY are set together or not at all",
+    );
+  }
+  const allowedCidrs = read.list("WEATHER_STATION_ALLOWED_CIDRS", []);
+  for (const cidr of allowedCidrs) {
+    if (!isCidr(cidr)) {
+      read.problems.push(
+        `WEATHER_STATION_ALLOWED_CIDRS entries are addresses or CIDR ranges, got "${cidr}"`,
+      );
+    }
+  }
+  return {
+    openWeatherApiKey: read.optional("OPENWEATHER_API_KEY"),
+    ambient: applicationKey && apiKey ? { applicationKey, apiKey } : undefined,
+    providerTimeoutMs: readInteger(read, "WEATHER_PROVIDER_TIMEOUT_MS", 5000),
+    forecast: {
+      ttlSeconds: readInteger(read, "WEATHER_FORECAST_TTL_SECONDS", 900),
+      maxStaleSeconds: readInteger(
+        read,
+        "WEATHER_FORECAST_MAX_STALE_SECONDS",
+        21600,
+      ),
+    },
+    tiles: {
+      cacheMb: readInteger(read, "WEATHER_TILE_CACHE_MB", 128),
+      ttlSeconds: readInteger(read, "WEATHER_TILE_TTL_SECONDS", 1800),
+    },
+    stations: {
+      sampleRetentionHours: readInteger(
+        read,
+        "WEATHER_SAMPLE_RETENTION_HOURS",
+        48,
+      ),
+      staleSeconds: readInteger(read, "WEATHER_STATION_STALE_SECONDS", 600),
+      allowedCidrs,
+      archiveDir: read.string(
+        "WEATHER_ARCHIVE_DIR",
+        "/olympus/weather/archive",
+      ),
+    },
+  };
+};
+
 /*
  * Typed configuration namespaces. Inject one with
  * `@Inject(hasuraConfig.KEY) hasura: ConfigType<typeof hasuraConfig>`, or
@@ -251,11 +365,17 @@ export const dionysusConfig = registerAs(
   () => readConfig(process.env).dionysus,
 );
 
+export const weatherConfig = registerAs(
+  "weather",
+  () => readConfig(process.env).weather,
+);
+
 export type ServerConfigType = ConfigType<typeof serverConfig>;
 export type AuthConfigType = ConfigType<typeof authConfig>;
 export type HasuraConfigType = ConfigType<typeof hasuraConfig>;
 export type AmqpConfigType = ConfigType<typeof amqpConfig>;
 export type DionysusConfigType = ConfigType<typeof dionysusConfig>;
+export type WeatherConfigType = ConfigType<typeof weatherConfig>;
 
 export const ALL_CONFIG = [
   serverConfig,
@@ -264,4 +384,5 @@ export const ALL_CONFIG = [
   amqpConfig,
   loggingConfig,
   dionysusConfig,
+  weatherConfig,
 ];

@@ -83,11 +83,14 @@ services:
       # directory, which a secret cannot be, so they are a read-only mount.
       AUTH_SIGNING_KEYS: /run/secrets/auth-signing-keys
       AUTH_OIDC_PROVIDERS_FILE: /run/secrets/olympus_oidc_providers
+      # Weather (ADR 0024). The key never reaches the site.
+      OPENWEATHER_API_KEY_FILE: /run/secrets/openweather_api_key
     secrets:
       - source: amqp_olympus_api
         target: amqp_password
       - hasura_admin_secret
       - olympus_oidc_providers
+      - openweather_api_key
     volumes:
       - ${DATA_DIR:?}/dionysus/uploads:/olympus/uploads
       # The services listener's certificate, key, CA and revocation lists.
@@ -343,6 +346,8 @@ secrets:
     file: ${SECRETS_DIR:?}/nzbget_password
   tmdb_api_key:
     file: ${SECRETS_DIR:?}/tmdb_api_key
+  openweather_api_key:
+    file: ${SECRETS_DIR:?}/openweather_api_key
   minerva_auth_jwt_secret:
     file: ${SECRETS_DIR:?}/minerva_auth_jwt_secret
   minerva_oidc_providers:

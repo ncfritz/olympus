@@ -46,3 +46,6 @@ infra/docker/env/.current
 
 # Scratch output from Claude sessions.
 Claude outputs/
+
+# The API's raw weather archive when run from the workspace
+weather-archive/
