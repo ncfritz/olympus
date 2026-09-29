@@ -77,30 +77,62 @@ recorded exception.
 
 ## W6 — Station push
 
-1. Both consoles report; readings arrive about once a minute with
-   `observed_at` from the console.
+1. Both consoles report at their shortest interval; samples arrive with
+   `observed_at` from the console, and indoor readings with them.
 2. A request with an unregistered MAC is 403 and stores nothing.
 3. The report path from outside the LAN (a phone on mobile data, and the
    public host name) is refused by nginx.
 4. A repeated request stores one row.
 
-## W7 — Station views
+## W7 — Rollups
 
-1. The Stations view shows both stations' latest readings, matching the
-   consoles' displays.
-2. Unplugging one console: "not reporting" after 10 minutes, with the
-   time of its last reading.
-3. The history page's 24 h, 7 d and 30 d ranges; 7 and 30 days plot
-   30-minute averages, and the rain chart's daily totals match the
-   console.
+1. For one hour of real samples, the 1m buckets' count, average,
+   minimum and maximum match the samples computed by hand (a SQL query
+   over `weather_station_samples`).
+2. The 5m, 15m, 30m and 1h buckets for that hour match the same
+   statistics computed directly from the samples.
+3. Rain over a midnight reset, and wind from either side of north, come
+   out right.
+4. Stopping the API for ten minutes: after it starts the tiers catch up
+   with no duplicate or missing buckets beyond the gap.
 
 ## W8 — Retention
 
-1. With retention set to 1 day in DEV, the hourly job removes older rows
-   and logs the count.
-2. Raising it keeps rows longer with no schema change.
+1. With the tiers' retention shortened in DEV, pruning removes each
+   tier's old rows and the samples after 48 hours, and logs the counts.
+2. Restoring the retention takes effect without a migration.
 
 ## W9 — Tomorrow.io removed
 
 1. No reference to Tomorrow.io in the repository or the built bundle.
 2. The key is revoked at Tomorrow.io; the roadmap item is closed.
+
+## W10 — Raw archive
+
+1. Every push appears as one line in the day's file, in order, with the
+   query as received.
+2. At the day's end the file is compressed and its SHA-256 recorded.
+3. The nightly copy puts it on `nfa01.sea.ncfritz.net` (`Weather`); the
+   checksum matches; local days are removed only after 30 days and a good
+   copy.
+4. No archive line contains an Ambient API key.
+5. The database backup holds the weather schema and no weather rows.
+
+## W11 — Backfill
+
+1. Stopping ingest for an hour (the listener down), then restoring it:
+   the gap fills from ambientweather.net within an hour, at 5-minute
+   steps, marked `backfill`, and the responses are archived.
+2. No pushed sample is replaced.
+
+## W12 — Station views
+
+1. The Stations view shows both stations' latest readings, matching the
+   consoles' displays.
+2. Unplugging one console: "not reporting" after 10 minutes, with the
+   time of its last reading.
+3. The history page: each preset and a custom range pick the expected
+   resolution; an override to a finer tier works where one covers the
+   range; the rain chart's daily totals match the console.
+4. Replay: drop the weather rows in DEV, replay the archive, and the
+   history page shows the same charts as before.

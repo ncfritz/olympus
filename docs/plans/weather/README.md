@@ -6,19 +6,21 @@ deployable state and a functional sign-off against
 [signoff.md](signoff.md). The Tomorrow.io widget keeps working until
 phase 4 replaces it.
 
-| Phase | Delivers                                                        | Depends on                                          | Sign-off flows |
-| ----- | --------------------------------------------------------------- | --------------------------------------------------- | -------------- |
-| 0     | Accounts, configuration, empty feature in the API and model     | —                                                   | —              |
-| 1     | Locations: schema and operations                                | 0                                                   | W1 (API)       |
-| 2     | Forecasts: provider client, cache, degraded answers             | 1                                                   | W2, W3 (API)   |
-| 3     | Map layers and radar through the API                            | 0                                                   | W4, W5 (API)   |
-| 4     | The widget's Forecast view; Tomorrow.io removed                 | 1, 2, 3; sign-in on the site (authentication ph. 5) | W1–W5, W9      |
-| 5     | Stations: schema, LAN push, retention                           | 0                                                   | W6, W8         |
-| 6     | The Stations view and the station history page                  | 4, 5                                                | W7             |
-| Later | NOAA radar for US locations; One Call (a new ADR); more history |                                                     |                |
+| Phase | Delivers                                                                                     | Depends on                                          | Sign-off flows |
+| ----- | -------------------------------------------------------------------------------------------- | --------------------------------------------------- | -------------- |
+| 0     | Accounts, configuration, empty feature in the API and model                                  | —                                                   | —              |
+| 1     | Locations: schema and operations                                                             | 0                                                   | W1 (API)       |
+| 2     | Forecasts: provider client, cache, degraded answers                                          | 1                                                   | W2, W3 (API)   |
+| 3     | Map layers and radar through the API                                                         | 0                                                   | W4, W5 (API)   |
+| 4     | The widget's Forecast view; Tomorrow.io removed                                              | 1, 2, 3; sign-in on the site (authentication ph. 5) | W1–W5, W9      |
+| 5     | Stations: schema, LAN push, raw archive and its NAS copy                                     | 0                                                   | W6, W10        |
+| 6     | Rollups: tiers, retention, replay                                                            | 5                                                   | W7, W8         |
+| 7     | Backfill from ambientweather.net                                                             | 6                                                   | W11            |
+| 8     | The Stations view, the history page and the series operation                                 | 4, 6                                                | W12            |
+| Later | NOAA radar for US locations; One Call (a new ADR); other stations and sensors as metric rows |                                                     |                |
 
-Phases 1–3 and 5 are API work and independent of each other after 0;
-phase 5 can go first if the stations matter more than the forecast.
+Phases 1–3 and 5–7 are API work: the forecast line (1–4) and the
+station line (5–8) are independent of each other after 0.
 
 ## Where the code goes
 
@@ -195,23 +197,19 @@ tasks pass.
 
 **Sign-off:** W1–W5 in the site, W9.
 
-## Phase 5 — Stations
+## Phase 5 — Stations: ingest and archive
 
 1. **Migration**:
    - `weather_stations`: `id`, `name`, `mac_address` (`macaddr`,
      unique), `created_at`, `updated_at`.
-   - `weather_station_readings`: `id`, `station_id` (cascade),
-     `observed_at` (the console's `dateutc`), `received_at`, and a column
-     per reading the WS-5000 sends, in its own units (°F, mph, inHg, in,
-     W/m²), decided from captured requests: outdoor and indoor
-     temperature and humidity, feels like, dew point, wind speed, gust,
-     direction and daily peak gust, rain rate, hourly, event, daily,
-     weekly, monthly and yearly rain, relative and absolute pressure, UV,
-     solar radiation, and battery flags. Unique
-     `(station_id, observed_at)`; that pair is also the index.
-   - The view `weather_station_readings_30m`: 30-minute averages (sums
-     for rain, maxima for gusts) grouped with `date_bin`, tracked in
-     Hasura.
+   - `weather_station_samples`: `id`, `station_id` (cascade),
+     `observed_at` (the console's `dateutc`), `received_at`, `source`
+     (`push` or `backfill`), and a column per reading in the console's own
+     units, decided from captured requests: outdoor and indoor
+     temperature and humidity, dew point and feels like (derived when the
+     push lacks them), wind speed, gust and direction, rain rate and the
+     daily total, relative and absolute pressure, UV, solar radiation,
+     battery. Unique `(station_id, observed_at)`, which is also the index.
 2. **Station registration**: `CreateWeatherStation`,
    `UpdateWeatherStation`, `DeleteWeatherStation`, `@Roles("admin")`, no
    UI; used from the OpenAPI page.
@@ -223,36 +221,107 @@ tasks pass.
    console's malformed query (`path&PASSKEY=…` when the path has no
    `?`) is normalized by the ingest listener. A repeated
    `(station, observed_at)` is ignored.
-4. **Ingest listener**: `weather-ingest.conf`, an HTTP server on the
-   internal name `weather.internal.ncfritz.net` (the consoles cannot do
-   TLS), `allow` for the LAN ranges and `deny all`, proxying the one
-   path to the API. The public server blocks that path outright.
-5. **Retention**: `@nestjs/schedule`, hourly: delete readings older than
-   `WEATHER_STATION_RETENTION_DAYS` in one mutation, logged with the
-   count.
-6. **Consoles**: each WS-5000's Customized upload set to the ingest
-   name, path `/weather/station/report?`, an interval of 60 seconds;
-   `docs/guides/weather-stations.md` records the settings and how to
-   register a station.
-7. **Tests**: parsing from captured requests of both consoles; the
-   CIDR and MAC checks; the duplicate; retention.
+4. **Archive**: before parsing, the request is appended as one line to
+   `<archive>/<mac>/<yyyy>/<mm>/<dd>.jsonl` (UTC days):
+   `{"receivedAt", "source": "push", "remote", "query"}`. The first write
+   of a day compresses the previous day to `.jsonl.zst` and records its
+   SHA-256 beside it. A write that fails is logged and counted; the
+   sample is still stored.
+5. **Ingest listener**: `weather-ingest.conf`, an HTTP server on the
+   internal name `weather.internal.ncfritz.net` (or the Mac Mini's
+   address, if the console takes only an IP; the consoles cannot do
+   TLS), `allow` for the LAN ranges and `deny all`, proxying the one path
+   to the API. The public server blocks that path outright.
+6. **Consoles**: each WS-5000's Customized upload set to the listener,
+   path `/weather/station/report?`, the shortest interval it offers;
+   `docs/guides/weather-stations.md` records the settings, registering a
+   station and capturing a request for a test fixture.
+7. **NAS copy**: an Airflow DAG, nightly, copies finished `.jsonl.zst`
+   days to the `Weather` share on `nfa01.sea.ncfritz.net`, checks each
+   against its SHA-256, and removes local days older than 30 days only
+   once their copy has checked out.
+8. **Database backup**: the weather tables' data is excluded from the
+   Postgres backup (`--exclude-table-data`), the schema is not.
+9. **Tests**: parsing from captured requests of both consoles; the CIDR
+   and MAC checks; the duplicate; the archive line and the day rollover.
 
-**Sign-off:** W6, W8.
+**Sign-off:** W6, W10.
 
-## Phase 6 — Station views
+## Phase 6 — Rollups, retention, replay
 
-1. **Operations**: `ListWeatherStations` `GET /weather/stations` (each
-   with its latest reading and whether it is reporting, against
-   `WEATHER_STATION_STALE_SECONDS`); `ListWeatherStationReadings`
-   `GET /weather/station/:stationId/readings?range=24h|7d|30d` (raw for
-   24 hours, the 30-minute view otherwise). Both
-   `@RequiresIdentity()`: stations are the house's, shared by every
-   user.
+1. **Migration**:
+   - `weather_metrics`: `id`, `name` (`outdoor_temperature`, …), `unit`,
+     `rollup` (`mean`, `sum`, `max`, `vector_x`, `vector_y`), seeded
+     with the WS-5000's readings.
+   - `weather_rollup_tiers`: `name`, `bucket` (interval), `retention`
+     (interval, null for always), `source_tier`; seeded 1m, 5m, 15m, 30m,
+     1h.
+   - `weather_station_rollups`: `station_id`, `metric_id`, `tier`,
+     `bucket_start`, `sample_count`, `sum`, `min`, `max`, `first`,
+     `last`; primary key `(station_id, metric_id, tier, bucket_start)`.
+   - SQL functions, `VOLATILE`, tracked in Hasura as mutations:
+     `weather_rollup_samples(from, to)` builds 1m from samples,
+     `weather_rollup_tier(tier, from, to)` builds a tier from its source
+     tier, `weather_prune()` applies every retention. Each upserts whole
+     buckets, so a rerun rewrites rather than adds.
+2. **Derived metrics**: rain per sample from the daily total (a drop is a
+   reset: the new total is the amount); wind as speed × sin and cos of
+   the direction; dew point and feels like where the push lacks them.
+3. **Schedule** (`@nestjs/schedule`, one API instance): every minute, the
+   1m buckets that closed at least 30 seconds ago; each coarser tier as
+   its buckets close, a minute behind its source; hourly, pruning. A run
+   that falls behind (the API was down) catches up from the last bucket
+   it wrote, within the samples' retention.
+4. **Replay**: `ReplayWeatherArchive` (`@Roles("admin")`, `202`) and
+   `pnpm --filter @ncfritz/olympus-api weather:replay --from --to` read
+   the archive for a range (local days, or a restored copy from the NAS),
+   upsert the samples, and rebuild every tier for the buckets touched.
+   Samples older than their retention are loaded, rolled up and removed
+   again in the same run.
+5. **Metrics**: rollup lag per tier, rows written, rows pruned.
+6. **Tests**: each rollup kind against hand-computed buckets (including a
+   rain reset and wind around north); tier from tier equals tier from
+   samples; reruns are idempotent; pruning; replay of a captured day.
+
+**Sign-off:** W7, W8.
+
+## Phase 7 — Backfill
+
+1. **`AmbientClient`**: `GET /v1/devices/:mac` (up to 288 records,
+   `endDate` to page back), rate-limited below 1 request a second,
+   `@ExecuteWithMetrics`; the keys never logged and never archived.
+2. **Gaps**: at start and hourly, per station, find runs of missing 1m
+   buckets longer than 10 minutes within the samples' retention (older
+   gaps with an explicit replay), fetch them, archive each response
+   (`"source": "backfill"`), store its records as samples with
+   `source = backfill` (never replacing a pushed sample), and roll up the
+   buckets touched.
+3. **Tests**: gap finding; paging; that pushed samples win.
+
+**Sign-off:** W11.
+
+## Phase 8 — Station views
+
+1. **Operations**:
+   - `ListWeatherStations` `GET /weather/stations`: each station with its
+     latest sample and whether it is reporting (against
+     `WEATHER_STATION_STALE_SECONDS`).
+   - `ListWeatherStationSeries`
+     `GET /weather/station/:stationId/series?metrics=&from=&to=&resolution=`:
+     for each metric, points of time, average, minimum, maximum (and sum
+     for rain). `resolution` is a tier or `auto`: the finest tier whose
+     retention covers `from` and whose points fit in 2,000. Wind
+     direction is recombined from its components here. The operation is
+     general on purpose, for the other historical displays to come.
+   - Both `@RequiresIdentity()`: stations are the house's, shared by every
+     user.
 2. **Site**: the widget's Stations view (`StationsView`, `StationCard`,
    a 24-hour sparkline) refreshed every minute while visible; the page
-   `/weather/stations` with the station and range choices, summary
-   tiles and the six charts, using the chart library the site already
+   `/weather/stations` with the station choice, range presets, a date
+   range picker, the resolution, summary tiles and the charts (average
+   line, minimum–maximum band), using the chart library the site already
    has.
-3. **Tests**: operations; the not-reporting state; the page's ranges.
+3. **Tests**: operations, including the `auto` choice at each tier's
+   edge; the not-reporting state; the page's ranges.
 
-**Sign-off:** W7.
+**Sign-off:** W12.

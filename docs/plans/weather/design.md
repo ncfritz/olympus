@@ -54,11 +54,20 @@ humidity, and battery. **History** in the header opens the station page.
 
 ## Station history page
 
-`/weather/stations`: choose a station (or compare both) and a range of
-24 hours, 7 days or 30 days. A row of summary tiles, then charts:
-temperature with dew point, humidity, wind speed with gust, pressure,
-daily rain totals and solar radiation. The 24-hour range plots every
-reading; longer ranges plot 30-minute averages.
+`/weather/stations`: choose a station (or compare both) and a range:
+presets for 24 hours, 7, 30 and 90 days, a year and everything, or any
+dates in a range picker. The resolution follows the range (the finest
+tier that still holds the whole range and keeps a chart to about 2,000
+points) and can be overridden where a finer tier covers the range. A row
+of summary tiles, then charts: temperature with dew point, indoor
+temperature and humidity, outdoor humidity, wind speed with gust,
+pressure, rain per bucket and solar radiation. Each line is the bucket's
+average with its minimum–maximum as a band.
+
+The history is meant to sit beside other historical data later, so the
+operation behind the page is general: any station, any metrics, any
+range, a resolution or `auto`. The page is its first user, not its only
+one.
 
 ## States
 
