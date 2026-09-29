@@ -62,6 +62,10 @@ variable "MAPS_KEY_SECRET" {
   default = ""
 }
 
+variable "TOMORROW_KEY_SECRET" {
+  default = ""
+}
+
 function "image" {
   params = [name]
   result = [notequal(REGISTRY, "") ? "${REGISTRY}/olympus/${name}:${TAG}" : "olympus/${name}:${TAG}"]
@@ -192,9 +196,14 @@ target "site" {
     NEXT_PUBLIC_DIONYSUS_CDN_HOST   = NEXT_PUBLIC_DIONYSUS_CDN_HOST
     NEXT_PUBLIC_ONAIR_API_HOST      = NEXT_PUBLIC_ONAIR_API_HOST
   }
-  secret = SECRETS_DIR != "" && MAPS_KEY_SECRET != "" ? [
-    "id=maps_key,src=${SECRETS_DIR}/${MAPS_KEY_SECRET}"
-  ] : []
+  secret = concat(
+    SECRETS_DIR != "" && MAPS_KEY_SECRET != "" ? [
+      "id=maps_key,src=${SECRETS_DIR}/${MAPS_KEY_SECRET}"
+    ] : [],
+    SECRETS_DIR != "" && TOMORROW_KEY_SECRET != "" ? [
+      "id=tomorrow_key,src=${SECRETS_DIR}/${TOMORROW_KEY_SECRET}"
+    ] : []
+  )
   tags = image("site")
 }
 

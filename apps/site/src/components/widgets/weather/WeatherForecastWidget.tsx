@@ -4,6 +4,7 @@ import { BitmapLayer } from "@deck.gl/layers";
 import { Map } from "@vis.gl/react-google-maps";
 import { Button, Card, Popover, Space, Tabs, Typography } from "antd";
 import { useState } from "react";
+import { TOMORROW_IO_API_KEY } from "../../../utils/constants";
 import { STYLE_SHIFT_WORKER } from "../../../utils/maps";
 import { WeatherMapOverlay } from "./WeatherMapOverlay";
 
@@ -68,7 +69,7 @@ const WeatherForecastWidget: React.FunctionComponent = () => {
   }
 
   const weatherMapTileLayer = new TileLayer({
-    data: `https://api.tomorrow.io/v4/map/tile/{z}/{x}/{y}/${mapViewType}/now.png?apikey=GNNX5smBVKHSrp0BeOEWzjWkKGZ5Kpe0`,
+    data: `https://api.tomorrow.io/v4/map/tile/{z}/{x}/{y}/${mapViewType}/now.png?apikey=${TOMORROW_IO_API_KEY}`,
     minZoom: 0,
     maxZoom: 19,
     tileSize: 256,

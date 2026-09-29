@@ -402,6 +402,26 @@ status` is only clean while the installed version matches the committed one --
   is for and why that restriction is the standing control; keeping the value out
   of this repository is what makes rotating it worth doing at all.
 
+- **Rotate credentials**: the Tomorrow.io API key that was hard-coded in the
+  site's `src/components/widgets/weather/WeatherForecastWidget.tsx`, in the
+  weather map's tile URL. Same story as the Maps key, and the same treatment:
+  the key is read from `NEXT_PUBLIC_TOMORROW_IO_API_KEY` (2026-09-29) and
+  reaches `next build` as the `tomorrow_key` buildx secret, named per
+  environment by `TOMORROW_KEY_SECRET` (`tomorrow_io_api_key` in production).
+  It was in the repository and in every bundle served, so the value has to be
+  replaced at Tomorrow.io; restrict the new one to `*.ncfritz.net` there if
+  their console allows it, since it is public in the bundle either way. Until
+  the secret file exists the widget draws its map with no weather overlay.
+
+- **Rotate credentials**: `src/pages/content.tsx` is a scratch page on the
+  public `/content` route whose only content is a `QRCode` for an
+  `otpauth://totp/...` URI with a live TOTP seed in it. Whatever account that
+  seed belongs to should have its authenticator re-enrolled, and the page
+  itself deleted rather than parameterised -- it looks like something used once
+  to test the QR component. Both the seed and the Maps key predate this
+  repository, so redacting them from history is the same `git filter-repo
+--replace-text` pass, if it is worth one.
+
 - `eslint.ignoreDuringBuilds: true` and `reactStrictMode: false` in
   `next.config.mjs`.
 - About 1,700 inline style objects in about 225 files.
