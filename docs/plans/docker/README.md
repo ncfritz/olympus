@@ -503,8 +503,99 @@ corrected.
 
 ## Phase 6 — Backups
 
-1. Nightly `pg_dump` per database and RabbitMQ's definitions, to the NAS,
-   with a retention.
-2. The restore drill: `olympus_dev` rebuilt from last night's backup on a
-   schedule, so the backups are known to restore; local refreshes
-   from the same files.
+Airflow runs the schedule; this repository owns the jobs. The host already runs
+Airflow for nightly work of its own and takes its DAGs from a GitHub
+repository, so Olympus's go the same way: reviewed here, deployed by the
+mechanism already in place. `infra/airflow/` is the root, and backups are only
+the first thing that will live in it.
+
+That is a new prerequisite, and it cuts against ADR 0019's goal of reproducing
+the platform from the repository, a directory of secrets and a backup -- a new
+host would come up with no schedule. Keeping the DAGs here is what keeps the
+_what_ in the repository; `docs/guides/new-host.md` has to name Airflow for the
+_when_.
+
+1. **`infra/airflow/`** -- `dags/`, and a README naming which DAGs exist, what
+   each needs from the host (the Docker socket, the `olympus-data` network, the
+   secret files) and how to run one by hand. Python beside a TypeScript
+   monorepo: it stays out of `pnpm`, out of turbo's graph and out of prettier's
+   and ESLint's reach, which also means nothing in the workspace checks it.
+   Whether that earns a Python formatter is open; it is one file to begin with.
+
+2. **`olympus_backup`, nightly.** Every task runs in
+   `postgres:${POSTGRES_VERSION}` -- the stack's own tag -- on `olympus-data`,
+   with `${SECRETS_DIR}/postgres_password` mounted read-only. `pg_dump` has to
+   be at least the server's version, and reusing the tag the stack already pins
+   makes that true by construction rather than by remembering; mounting the
+   secret keeps the password in one place instead of copying it into an Airflow
+   connection.
+
+   1. `globals` -- `pg_dumpall --globals-only`. Roles live outside every
+      database, so without this a restore onto a fresh host has no `olympus_dev`
+      role to own `olympus_dev`, and nothing says so until that moment.
+   2. `dump_olympus`, `dump_olympus_dev` -- `pg_dump -Fc`, so a restore can be
+      selective and the archive is compressed. Hasura's metadata sits inside
+      these (`hdb_catalog`) and comes along with them, but it is
+      version-controlled (ADR 0006) and the repository is where it is restored
+      from. What these archives are for is the data.
+   3. `verify` -- `pg_restore --list` on each archive, and a non-empty globals
+      file. Cheap, and it catches a truncated archive on the night it happens
+      rather than on the night it is needed.
+   4. `retain` -- seven daily, four weekly, six monthly, to start. Deleting is
+      the only destructive step here, so it runs last and only if `verify`
+      passed.
+
+   Into `${DATA_DIR}/backups/<date>/` on the Mac Mini, which is the honest limit
+   of this phase: it survives a bad migration, a dropped table and a botched
+   metadata apply, and it does not survive a dead Mac Mini. Getting the archives
+   off the host is deliberately later work rather than something to half-do now.
+
+3. **RabbitMQ: a record, not a restore artifact.** This phase used to say
+   "RabbitMQ's definitions ... with a retention", which overstates what they
+   are. The definitions are generated from this repository and the secrets
+   (`infra/docker/rabbitmq/definitions.mjs` writes
+   `${SECRETS_DIR}/rabbitmq_definitions`), and every agent declares its own
+   exchanges and queues at start, so a broker rebuilt from the repository and
+   started arrives at the same topology. An export from the management API is
+   still worth keeping -- it is the broker as it actually is rather than as the
+   generator would have it, and the difference is whatever was created by hand
+   -- but it is a diagnostic, not something a rebuild depends on. Messages in
+   queues are not backed up and are not meant to be: handlers are required to be
+   safe on redelivery (`docs/conventions/agent.md`), which is the same property
+   that makes losing one survivable.
+
+4. **The dev refresh, by hand.** `stack.sh refresh-dev [<date>]`: terminate
+   connections to `olympus_dev`, drop and recreate it, `pg_restore` the chosen
+   archive, re-own it to the `olympus_dev` role, then apply the dev Hasura
+   metadata from this repository.
+
+   Not on a schedule, and the last step is why. `hasura-dev` keeps its metadata
+   _in_ `olympus_dev` (`compose/hasura-dev.yml`), so restoring production over
+   that database replaces whatever schema change was being tried there. A
+   nightly refresh would quietly destroy the thing that database exists for. Run
+   by hand, by somebody who means it; re-applying the metadata afterwards leaves
+   `hasura-dev` usable and makes the run prove both halves -- that the data
+   restores, and that the metadata in the repository still applies to it. This
+   belongs in the administrative console when there is one.
+
+5. **Being told when it fails.** A backup that stops silently is the failure
+   this phase exists to prevent, so "no news" must not be the success signal:
+   Airflow's failure callback, to the Synology Chat webhook already in the
+   secrets directory. And because the full restore is not on a schedule, what
+   proves the archives restore is running `refresh-dev` -- before a schema
+   change, and not less than monthly.
+
+**Not backed up, deliberately:** the media on the NAS, which is its own
+business; `SECRETS_DIR`, which is one of the three things a rebuild needs and is
+kept apart from the other two on purpose (ADR 0019); registry images, which the
+repository rebuilds; the schema and Hasura's metadata, which are
+version-controlled.
+
+**Done when:** last night's archive restores into `olympus_dev` and `hasura-dev`
+serves it; a deliberately truncated archive fails `verify`; and a failed run is
+noticed without anyone going to look.
+
+**To confirm before the DAG is written:** whether Airflow's worker has the
+Docker socket. Without it the tasks have to run inside the worker, which means
+`pg_dump` from Airflow's own image and the version coupling this shape is
+otherwise free of.
