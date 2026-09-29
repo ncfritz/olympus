@@ -1300,6 +1300,36 @@
     ],
     "type": "object"
   },
+  "BaseWeatherLocation": {
+    "properties": {
+      "label": {
+        "description": "The name the user gave the location, shown in the widget",
+        "type": "string"
+      },
+      "latitude": {
+        "description": "The latitude of the location in degrees, -90 to 90",
+        "type": "number"
+      },
+      "longitude": {
+        "description": "The longitude of the location in degrees, -180 to 180",
+        "type": "number"
+      },
+      "placeId": {
+        "description": "The Google place ID the location was chosen from, if any",
+        "type": "string"
+      },
+      "placeName": {
+        "description": "Google's formatted name for the place, shown under the label when managing locations",
+        "type": "string"
+      }
+    },
+    "required": [
+      "label",
+      "latitude",
+      "longitude"
+    ],
+    "type": "object"
+  },
   "BatchJob": {
     "properties": {
       "createdTime": {
@@ -3485,6 +3515,38 @@
     ],
     "type": "object"
   },
+  "CreateWeatherLocationRequest": {
+    "properties": {
+      "weatherLocation": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseWeatherLocation"
+          }
+        ],
+        "description": "The location to add at the end of the caller's list."
+      }
+    },
+    "required": [
+      "weatherLocation"
+    ],
+    "type": "object"
+  },
+  "CreateWeatherLocationResponse": {
+    "properties": {
+      "weatherLocation": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WeatherLocation"
+          }
+        ],
+        "description": "The location as added."
+      }
+    },
+    "required": [
+      "weatherLocation"
+    ],
+    "type": "object"
+  },
   "CreateWorkflowRequest": {
     "properties": {},
     "type": "object"
@@ -4230,6 +4292,22 @@
     },
     "required": [
       "tvSeries"
+    ],
+    "type": "object"
+  },
+  "DescribeWeatherLocationResponse": {
+    "properties": {
+      "weatherLocation": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WeatherLocation"
+          }
+        ],
+        "description": "The location."
+      }
+    },
+    "required": [
+      "weatherLocation"
     ],
     "type": "object"
   },
@@ -6806,6 +6884,21 @@
     "required": [
       "count",
       "tvSeries"
+    ],
+    "type": "object"
+  },
+  "ListWeatherLocationsResponse": {
+    "properties": {
+      "weatherLocations": {
+        "description": "The caller's locations, in their order.",
+        "items": {
+          "$ref": "#/components/schemas/WeatherLocation"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "weatherLocations"
     ],
     "type": "object"
   },
@@ -12254,6 +12347,19 @@
     ],
     "type": "object"
   },
+  "PartialWeatherLocation": {
+    "properties": {
+      "isDefault": {
+        "description": "Whether the widget opens on this location. At most one of a user's locations is the default",
+        "type": "boolean"
+      },
+      "label": {
+        "description": "The name the user gave the location, shown in the widget",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
   "PartialWorkflow": {
     "properties": {
       "finishedTime": {
@@ -12810,6 +12916,36 @@
     },
     "required": [
       "channel"
+    ],
+    "type": "object"
+  },
+  "ReorderWeatherLocationsRequest": {
+    "properties": {
+      "locationIds": {
+        "description": "Every one of the caller's location IDs, in the order they should appear.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "locationIds"
+    ],
+    "type": "object"
+  },
+  "ReorderWeatherLocationsResponse": {
+    "properties": {
+      "weatherLocations": {
+        "description": "The caller's locations in their new order.",
+        "items": {
+          "$ref": "#/components/schemas/WeatherLocation"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "weatherLocations"
     ],
     "type": "object"
   },
@@ -15864,6 +16000,38 @@
     ],
     "type": "object"
   },
+  "UpdateWeatherLocationRequest": {
+    "properties": {
+      "weatherLocation": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialWeatherLocation"
+          }
+        ],
+        "description": "The changes to make to the location."
+      }
+    },
+    "required": [
+      "weatherLocation"
+    ],
+    "type": "object"
+  },
+  "UpdateWeatherLocationResponse": {
+    "properties": {
+      "weatherLocation": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WeatherLocation"
+          }
+        ],
+        "description": "The location with the changes applied."
+      }
+    },
+    "required": [
+      "weatherLocation"
+    ],
+    "type": "object"
+  },
   "UpdateWorkflowRequest": {
     "properties": {
       "workflow": {
@@ -16033,6 +16201,60 @@
       "site",
       "size",
       "type"
+    ],
+    "type": "object"
+  },
+  "WeatherLocation": {
+    "properties": {
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the location was added",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the location",
+        "type": "string"
+      },
+      "isDefault": {
+        "description": "Whether the widget opens on this location. At most one of a user's locations is the default",
+        "type": "boolean"
+      },
+      "label": {
+        "description": "The name the user gave the location, shown in the widget",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the location was last changed",
+        "type": "string"
+      },
+      "latitude": {
+        "description": "The latitude of the location in degrees, -90 to 90",
+        "type": "number"
+      },
+      "longitude": {
+        "description": "The longitude of the location in degrees, -180 to 180",
+        "type": "number"
+      },
+      "placeId": {
+        "description": "The Google place ID the location was chosen from, if any",
+        "type": "string"
+      },
+      "placeName": {
+        "description": "Google's formatted name for the place, shown under the label when managing locations",
+        "type": "string"
+      },
+      "position": {
+        "description": "Where the location sits in the user's list; lower comes first",
+        "type": "number"
+      }
+    },
+    "required": [
+      "createdTime",
+      "id",
+      "isDefault",
+      "label",
+      "latitude",
+      "longitude",
+      "position"
     ],
     "type": "object"
   },

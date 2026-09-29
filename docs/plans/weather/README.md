@@ -73,33 +73,45 @@ Added to `readConfig()`, `dev.env.example`, the API README table and
 **Sign-off:** the API boots with and without the key, and the Turbo
 tasks pass.
 
-## Phase 1 — Locations
+## Phase 1 — Locations — built 2026-09-29, not signed off
 
-1. **Migration** `weather_locations` in the `olympus` schema: `id` (uuid),
-   `user_id` (references `users`, cascade on delete), `label`,
-   `place_id` (Google), `place_name` (Google's formatted name),
+1. **Migration** `1790720000000_weather_locations` in the `olympus`
+   schema: `id` (uuid), `user_id` (references `users`, cascade on delete),
+   `label` (not blank), `place_id` and `place_name` (Google; optional),
    `latitude`, `longitude` (checked ranges), `position`, `is_default`,
-   `created_at`, `updated_at`. Unique `(user_id, position)`, deferrable,
-   so a reorder is one statement; a partial unique index allows one
-   default per user. Hasura: admin only.
+   `created_at`, `updated_at` (the shared trigger). Unique
+   `(user_id, position)`, deferred to commit, so a reorder is one
+   transaction; a partial unique index allows one default per user.
+   Hasura: admin only, custom column names in camelCase.
 2. **Operations**, each `@RequiresIdentity()` and scoped to the caller's
    `userId`, so another user's location is a 404, never a 403:
 
    | Operation                 | Route                                  |
    | ------------------------- | -------------------------------------- |
    | `ListWeatherLocations`    | `GET /weather/locations`               |
-   | `CreateWeatherLocation`   | `POST /weather/location`               |
-   | `UpdateWeatherLocation`   | `PATCH /weather/location/:locationId`  |
+   | `CreateWeatherLocation`   | `POST /weather/locations`              |
+   | `DescribeWeatherLocation` | `GET /weather/location/:locationId`    |
+   | `UpdateWeatherLocation`   | `PUT /weather/location/:locationId`    |
    | `DeleteWeatherLocation`   | `DELETE /weather/location/:locationId` |
    | `ReorderWeatherLocations` | `PUT /weather/locations/order`         |
 
-   Create appends at the end; the first location a user adds becomes the
-   default; setting a default clears the old one in the same mutation;
-   deleting the default leaves none (the widget falls back to the
-   first).
+   Create appends at the end and answers with a `Location` header; the
+   first location a user adds becomes the default. Update changes the
+   label or the default (a different place is a new location); setting a
+   default clears the old one in the same mutation
+   (`SetDefaultWeatherLocation`), and an empty change is a 304. Deleting
+   the default leaves none (the widget falls back to the first). Reorder
+   takes every one of the caller's IDs exactly once. The API validates
+   the body itself (the global `ValidationPipe` is off), and a location
+   ID that is not a UUID is a 400 before Hasura.
 
 3. **Tests**: converter units; endpoint tests for each operation,
-   including another user's id (404) and no identity (401).
+   including another user's id (404), no identity (401) and bad input
+   (400, before Hasura). The migration applied over the baseline in a
+   scratch Postgres, with its constraints and `down.sql` exercised.
+
+**Still to do before sign-off:** `hasura migrate apply` and
+`hasura metadata apply` against `hasura-dev`.
 
 **Sign-off:** W1 against the API from its OpenAPI page.
 

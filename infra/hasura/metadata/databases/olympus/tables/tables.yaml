@@ -140,3 +140,4 @@
 - '!include olympus_user_identities.yaml'
 - '!include olympus_user_roles.yaml'
 - '!include olympus_users.yaml'
+- '!include olympus_weather_locations.yaml'

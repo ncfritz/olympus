@@ -3,6 +3,7 @@ import type { GraphQlNotification } from "../../src/olympus/notifications/conver
 import type { GraphQlNotificationGroup } from "../../src/olympus/notifications/converters/NotificationGroupConverter";
 import type { GraphQlNotificationSetting } from "../../src/olympus/notifications/converters/NotificationSettingConverter";
 import type { GraphQlFullNotificationType } from "../../src/olympus/notifications/converters/NotificationTypeConverter";
+import type { GraphQlWeatherLocation } from "../../src/olympus/weather/converters/WeatherLocationConverter";
 
 export const base64Json = (value: unknown) =>
   Buffer.from(JSON.stringify(value)).toString("base64");
@@ -61,5 +62,23 @@ export const graphQlNotificationSetting = (
   synoMail: false,
   synoChat: true,
   email: false,
+  ...overrides,
+});
+
+export const WEATHER_LOCATION_ID = "7d3e2a10-0000-4000-8000-000000000001";
+
+export const graphQlWeatherLocation = (
+  overrides: Partial<GraphQlWeatherLocation> = {},
+): GraphQlWeatherLocation => ({
+  id: WEATHER_LOCATION_ID,
+  label: "Washington",
+  placeId: "ChIJplace-mill-creek",
+  placeName: "Mill Creek, WA, USA",
+  latitude: 47.8525684,
+  longitude: -122.238287,
+  position: 0,
+  isDefault: true,
+  createdTime: "2026-09-29T12:00:00Z",
+  lastUpdatedTime: "2026-09-29T12:30:00Z",
   ...overrides,
 });

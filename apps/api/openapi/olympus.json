@@ -1105,6 +1105,350 @@
           "Notifications"
         ]
       }
+    },
+    "/olympus/weather/locations": {
+      "get": {
+        "description": "Every place the caller keeps a forecast for, in the order they arranged them.",
+        "operationId": "ListWeatherLocations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The caller's locations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListWeatherLocationsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the signed-in user's weather locations",
+        "tags": [
+          "Weather"
+        ]
+      },
+      "post": {
+        "description": "Adds a place to the end of the caller's list, usually one chosen in a Google place search. The first location a user adds becomes their default.",
+        "operationId": "CreateWeatherLocation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateWeatherLocation operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWeatherLocationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The location was added.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the created weather location"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateWeatherLocationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Adds a weather location for the signed-in user",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/locations/order": {
+      "put": {
+        "description": "Puts the caller's locations in the order given. The list must name each of the caller's locations exactly once.",
+        "operationId": "ReorderWeatherLocations",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ReorderWeatherLocations operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderWeatherLocationsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The locations were put in the new order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderWeatherLocationsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reorders the signed-in user's weather locations",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/location/{locationId}": {
+      "get": {
+        "description": "Returns a single location of the caller's. Another user's location is not found.",
+        "operationId": "DescribeWeatherLocation",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the location",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The location was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeWeatherLocationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Describes one of the signed-in user's weather locations",
+        "tags": [
+          "Weather"
+        ]
+      },
+      "put": {
+        "description": "Relabels a location, or makes it the default, which clears the previous default. The place itself cannot change: a different place is a new location.",
+        "operationId": "UpdateWeatherLocation",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the location to change",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateWeatherLocation operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWeatherLocationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The location with the changes applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateWeatherLocationResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The request named nothing to change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Changes one of the signed-in user's weather locations",
+        "tags": [
+          "Weather"
+        ]
+      },
+      "delete": {
+        "description": "Removes a location from the caller's list. Removing the default leaves none; the widget then opens on the first location.",
+        "operationId": "DeleteWeatherLocation",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the location to remove",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The location was removed."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Removes one of the signed-in user's weather locations",
+        "tags": [
+          "Weather"
+        ]
+      }
     }
   },
   "info": {
@@ -1130,6 +1474,9 @@
     },
     {
       "name": "Notifications"
+    },
+    {
+      "name": "Weather"
     }
   ],
   "servers": [],
@@ -2346,6 +2693,228 @@
         },
         "required": [
           "notificationSetting"
+        ]
+      },
+      "WeatherLocation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the location"
+          },
+          "label": {
+            "type": "string",
+            "description": "The name the user gave the location, shown in the widget"
+          },
+          "placeId": {
+            "type": "string",
+            "description": "The Google place ID the location was chosen from, if any"
+          },
+          "placeName": {
+            "type": "string",
+            "description": "Google's formatted name for the place, shown under the label when managing locations"
+          },
+          "latitude": {
+            "type": "number",
+            "description": "The latitude of the location in degrees, -90 to 90"
+          },
+          "longitude": {
+            "type": "number",
+            "description": "The longitude of the location in degrees, -180 to 180"
+          },
+          "position": {
+            "type": "number",
+            "description": "Where the location sits in the user's list; lower comes first"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether the widget opens on this location. At most one of a user's locations is the default"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the location was added"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the location was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "latitude",
+          "longitude",
+          "position",
+          "isDefault",
+          "createdTime"
+        ]
+      },
+      "ListWeatherLocationsResponse": {
+        "type": "object",
+        "properties": {
+          "weatherLocations": {
+            "description": "The caller's locations, in their order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeatherLocation"
+            }
+          }
+        },
+        "required": [
+          "weatherLocations"
+        ]
+      },
+      "ReorderWeatherLocationsRequest": {
+        "type": "object",
+        "properties": {
+          "locationIds": {
+            "description": "Every one of the caller's location IDs, in the order they should appear.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "locationIds"
+        ]
+      },
+      "ReorderWeatherLocationsResponse": {
+        "type": "object",
+        "properties": {
+          "weatherLocations": {
+            "description": "The caller's locations in their new order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeatherLocation"
+            }
+          }
+        },
+        "required": [
+          "weatherLocations"
+        ]
+      },
+      "BaseWeatherLocation": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The name the user gave the location, shown in the widget"
+          },
+          "placeId": {
+            "type": "string",
+            "description": "The Google place ID the location was chosen from, if any"
+          },
+          "placeName": {
+            "type": "string",
+            "description": "Google's formatted name for the place, shown under the label when managing locations"
+          },
+          "latitude": {
+            "type": "number",
+            "description": "The latitude of the location in degrees, -90 to 90"
+          },
+          "longitude": {
+            "type": "number",
+            "description": "The longitude of the location in degrees, -180 to 180"
+          }
+        },
+        "required": [
+          "label",
+          "latitude",
+          "longitude"
+        ]
+      },
+      "CreateWeatherLocationRequest": {
+        "type": "object",
+        "properties": {
+          "weatherLocation": {
+            "description": "The location to add at the end of the caller's list.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseWeatherLocation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherLocation"
+        ]
+      },
+      "CreateWeatherLocationResponse": {
+        "type": "object",
+        "properties": {
+          "weatherLocation": {
+            "description": "The location as added.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherLocation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherLocation"
+        ]
+      },
+      "DescribeWeatherLocationResponse": {
+        "type": "object",
+        "properties": {
+          "weatherLocation": {
+            "description": "The location.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherLocation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherLocation"
+        ]
+      },
+      "PartialWeatherLocation": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The name the user gave the location, shown in the widget"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether the widget opens on this location. At most one of a user's locations is the default"
+          }
+        }
+      },
+      "UpdateWeatherLocationRequest": {
+        "type": "object",
+        "properties": {
+          "weatherLocation": {
+            "description": "The changes to make to the location.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialWeatherLocation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherLocation"
+        ]
+      },
+      "UpdateWeatherLocationResponse": {
+        "type": "object",
+        "properties": {
+          "weatherLocation": {
+            "description": "The location with the changes applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherLocation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherLocation"
         ]
       }
     }
