@@ -73,7 +73,7 @@ Added to `readConfig()`, `dev.env.example`, the API README table and
 **Sign-off:** the API boots with and without the key, and the Turbo
 tasks pass.
 
-## Phase 1 — Locations — built 2026-09-29, not signed off
+## Phase 1 — Locations — built 2026-09-29, applied to `hasura-dev`; W1 open
 
 1. **Migration** `1790720000000_weather_locations` in the `olympus`
    schema: `id` (uuid), `user_id` (references `users`, cascade on delete),
@@ -110,12 +110,9 @@ tasks pass.
    (400, before Hasura). The migration applied over the baseline in a
    scratch Postgres, with its constraints and `down.sql` exercised.
 
-**Still to do before sign-off:** `hasura migrate apply` and
-`hasura metadata apply` against `hasura-dev`.
-
 **Sign-off:** W1 against the API from its OpenAPI page.
 
-## Phase 2 — Forecasts
+## Phase 2 — Forecasts — built 2026-09-29, not signed off
 
 1. **`OpenWeatherClient`**: `current` and `forecast` (5 day / 3 hour) for a
    coordinate with `units=imperial`; each method `@ExecuteWithMetrics`
@@ -149,6 +146,17 @@ tasks pass.
 6. **Tests**: the client mocked in the Nest testing module; hit, miss,
    coalesced misses, stale on failure, 503 past the stale limit, a key
    that is missing, a 401 and a 429 from the provider.
+7. **As built**: `axios` joins the pnpm catalog for the API's client. The
+   model's `WeatherForecast` carries `current`, `next`, `days`,
+   `utcOffsetSeconds`, `fetchedTime` and `stale`, with each condition as a
+   `WeatherConditionKind` (thunderstorm, snow, rain, drizzle, fog, cloudy,
+   partly cloudy, clear) beside the provider's own words. The cache holds
+   the provider's responses and shapes them on every read, so "next" and
+   "today" start at the moment of the request even from a stale entry. A
+   day's condition is its most significant wet weather with at least a 50%
+   chance, otherwise what its daytime steps show most. Provider failures
+   are logged once per place every ten minutes, without the URL (which
+   carries the key).
 
 **Sign-off:** W2, W3 against the API.
 

@@ -1449,6 +1449,65 @@
           "Weather"
         ]
       }
+    },
+    "/olympus/weather/location/{locationId}/forecast": {
+      "get": {
+        "description": "The conditions now, the next 24 hours in 3-hour steps and five local days, from OpenWeather. Forecasts are cached; while the provider is failing the last one fetched is returned marked stale, for a while.",
+        "operationId": "DescribeWeatherForecast",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the location",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The location's forecast, fresh or stale.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeWeatherForecastResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Forecasts are not configured, or the provider is failing and the last forecast is too old to show."
+          }
+        },
+        "summary": "Describes the forecast for one of the signed-in user's locations",
+        "tags": [
+          "Weather"
+        ]
+      }
     }
   },
   "info": {
@@ -2870,6 +2929,289 @@
         },
         "required": [
           "weatherLocation"
+        ]
+      },
+      "WeatherConditionKind": {
+        "type": "string",
+        "description": "The kind of weather, for choosing an icon",
+        "enum": [
+          "thunderstorm",
+          "snow",
+          "rain",
+          "drizzle",
+          "fog",
+          "cloudy",
+          "partly_cloudy",
+          "clear"
+        ]
+      },
+      "CurrentWeather": {
+        "type": "object",
+        "properties": {
+          "observedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the conditions were observed"
+          },
+          "conditionKind": {
+            "description": "The kind of weather now",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherConditionKind"
+              }
+            ]
+          },
+          "condition": {
+            "type": "string",
+            "description": "The provider's description of the weather now, e.g. light rain"
+          },
+          "isDaytime": {
+            "type": "boolean",
+            "description": "Whether it is daytime at the location"
+          },
+          "temperatureF": {
+            "type": "number",
+            "description": "The temperature in degrees Fahrenheit"
+          },
+          "feelsLikeF": {
+            "type": "number",
+            "description": "What the temperature feels like, in degrees Fahrenheit"
+          },
+          "highF": {
+            "type": "number",
+            "description": "Today's expected high in degrees Fahrenheit, from now and the rest of today's forecast"
+          },
+          "lowF": {
+            "type": "number",
+            "description": "Today's expected low in degrees Fahrenheit, from now and the rest of today's forecast"
+          },
+          "humidityPct": {
+            "type": "number",
+            "description": "Relative humidity as a percentage"
+          },
+          "dewPointF": {
+            "type": "number",
+            "description": "The dew point in degrees Fahrenheit, calculated from temperature and humidity"
+          },
+          "pressureHpa": {
+            "type": "number",
+            "description": "Sea-level pressure in hectopascals"
+          },
+          "pressureInHg": {
+            "type": "number",
+            "description": "Sea-level pressure in inches of mercury"
+          },
+          "windSpeedMph": {
+            "type": "number",
+            "description": "The wind speed in miles per hour"
+          },
+          "windGustMph": {
+            "type": "number",
+            "description": "The wind gust speed in miles per hour, when reported"
+          },
+          "windDirectionDeg": {
+            "type": "number",
+            "description": "The direction the wind blows from, in degrees clockwise from north"
+          },
+          "visibilityMi": {
+            "type": "number",
+            "description": "The visibility in miles, when reported; the provider reports at most about 6.2"
+          },
+          "cloudCoverPct": {
+            "type": "number",
+            "description": "Cloud cover as a percentage"
+          },
+          "sunriseTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating today's sunrise"
+          },
+          "sunsetTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating today's sunset"
+          }
+        },
+        "required": [
+          "observedTime",
+          "conditionKind",
+          "condition",
+          "isDaytime",
+          "temperatureF",
+          "feelsLikeF",
+          "highF",
+          "lowF",
+          "humidityPct",
+          "dewPointF",
+          "pressureHpa",
+          "pressureInHg",
+          "windSpeedMph",
+          "windDirectionDeg",
+          "cloudCoverPct",
+          "sunriseTime",
+          "sunsetTime"
+        ]
+      },
+      "ForecastStep": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the step starts"
+          },
+          "conditionKind": {
+            "description": "The kind of weather expected in the step",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherConditionKind"
+              }
+            ]
+          },
+          "condition": {
+            "type": "string",
+            "description": "The provider's description of the weather expected in the step"
+          },
+          "isDaytime": {
+            "type": "boolean",
+            "description": "Whether the step is in daytime at the location"
+          },
+          "temperatureF": {
+            "type": "number",
+            "description": "The expected temperature in degrees Fahrenheit"
+          },
+          "precipitationChancePct": {
+            "type": "number",
+            "description": "The chance of precipitation in the step, as a percentage"
+          },
+          "precipitationIn": {
+            "type": "number",
+            "description": "The expected rain and snow (as water) in the step, in inches"
+          },
+          "windSpeedMph": {
+            "type": "number",
+            "description": "The expected wind speed in miles per hour"
+          }
+        },
+        "required": [
+          "time",
+          "conditionKind",
+          "condition",
+          "isDaytime",
+          "temperatureF",
+          "precipitationChancePct",
+          "precipitationIn",
+          "windSpeedMph"
+        ]
+      },
+      "ForecastDay": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "The local date, YYYY-MM-DD"
+          },
+          "conditionKind": {
+            "description": "The most significant kind of weather expected that day",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherConditionKind"
+              }
+            ]
+          },
+          "condition": {
+            "type": "string",
+            "description": "The provider's description of the day's most significant weather"
+          },
+          "highF": {
+            "type": "number",
+            "description": "The day's expected high in degrees Fahrenheit"
+          },
+          "lowF": {
+            "type": "number",
+            "description": "The day's expected low in degrees Fahrenheit"
+          },
+          "precipitationChancePct": {
+            "type": "number",
+            "description": "The highest chance of precipitation in any of the day's steps, as a percentage"
+          },
+          "precipitationIn": {
+            "type": "number",
+            "description": "The expected rain and snow (as water) over the day's steps, in inches"
+          }
+        },
+        "required": [
+          "date",
+          "conditionKind",
+          "condition",
+          "highF",
+          "lowF",
+          "precipitationChancePct",
+          "precipitationIn"
+        ]
+      },
+      "WeatherForecast": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string",
+            "description": "The ID of the location the forecast is for"
+          },
+          "utcOffsetSeconds": {
+            "type": "number",
+            "description": "The location's offset from UTC in seconds, which decides where its days begin"
+          },
+          "current": {
+            "description": "The conditions now",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrentWeather"
+              }
+            ]
+          },
+          "next": {
+            "description": "The next eight 3-hour steps",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForecastStep"
+            }
+          },
+          "days": {
+            "description": "Today and the four days after it, in local days",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForecastDay"
+            }
+          },
+          "fetchedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the forecast was fetched from the provider"
+          },
+          "stale": {
+            "type": "boolean",
+            "description": "Whether the provider is failing and this is the last forecast fetched while it worked"
+          }
+        },
+        "required": [
+          "locationId",
+          "utcOffsetSeconds",
+          "current",
+          "next",
+          "days",
+          "fetchedTime",
+          "stale"
+        ]
+      },
+      "DescribeWeatherForecastResponse": {
+        "type": "object",
+        "properties": {
+          "weatherForecast": {
+            "description": "The location's forecast.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherForecast"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherForecast"
         ]
       },
       "PartialWeatherLocation": {

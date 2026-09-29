@@ -6,10 +6,13 @@ import {
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
 import { CreateWeatherLocationController } from "./controllers/CreateWeatherLocationController";
 import { DeleteWeatherLocationController } from "./controllers/DeleteWeatherLocationController";
+import { DescribeWeatherForecastController } from "./controllers/DescribeWeatherForecastController";
 import { DescribeWeatherLocationController } from "./controllers/DescribeWeatherLocationController";
 import { ListWeatherLocationsController } from "./controllers/ListWeatherLocationsController";
 import { ReorderWeatherLocationsController } from "./controllers/ReorderWeatherLocationsController";
 import { UpdateWeatherLocationController } from "./controllers/UpdateWeatherLocationController";
+import { OpenWeatherClient } from "./providers/OpenWeatherClient";
+import { WeatherForecastService } from "./services/WeatherForecastService";
 import { WeatherLocationService } from "./services/WeatherLocationService";
 
 /**
@@ -19,12 +22,17 @@ import { WeatherLocationService } from "./services/WeatherLocationService";
  */
 @Module({
   imports: [GraphQLClientModule],
-  providers: [WeatherLocationService],
+  providers: [
+    WeatherLocationService,
+    WeatherForecastService,
+    OpenWeatherClient,
+  ],
   controllers: [
     ListWeatherLocationsController,
     ReorderWeatherLocationsController,
     CreateWeatherLocationController,
     DescribeWeatherLocationController,
+    DescribeWeatherForecastController,
     UpdateWeatherLocationController,
     DeleteWeatherLocationController,
   ],

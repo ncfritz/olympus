@@ -48,6 +48,7 @@
     "@nestjs/platform-socket.io": "^11.1.23",
     "@nestjs/swagger": "catalog:",
     "@nestjs/websockets": "^11.1.23",
+    "axios": "catalog:",
     "body-parser": "^2.3.0",
     "class-transformer": "catalog:",
     "class-validator": "catalog:",

@@ -308,6 +308,16 @@
     "BOT": "bot",
     "CHANNEL": "channel"
   },
+  "WeatherConditionKind": {
+    "Clear": "clear",
+    "Cloudy": "cloudy",
+    "Drizzle": "drizzle",
+    "Fog": "fog",
+    "PartlyCloudy": "partly_cloudy",
+    "Rain": "rain",
+    "Snow": "snow",
+    "Thunderstorm": "thunderstorm"
+  },
   "WebSocketNotificationLevel": {
     "ERROR": "error",
     "INFO": "info",
