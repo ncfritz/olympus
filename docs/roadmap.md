@@ -326,8 +326,18 @@ status` is only clean while the installed version matches the committed one --
   `eslint: { ignoreDuringBuilds: true }`. They are warnings in
   `apps/site/eslint.config.mjs` so that the workspace lint task is honest rather
   than red; turning them back into errors belongs with the site's conventions
-  work, along with `strict` and the ~90 dependencies filed under
-  `devDependencies`.
+  work, along with `strict`.
+- **The site's dependency versions.** Its tooling is behind the workspace
+  catalog -- ESLint 8 against 10, TypeScript 5.4 against 6.0, prettier 3.2
+  against 3.8, `globals`, `typescript-eslint`, `@types/node` -- and adopting
+  `catalog:` for those means two major upgrades whose first effect is new errors
+  in code that already has 433 warnings, so it wants doing deliberately rather
+  than as part of a tidy-up. Separately and larger: React 18 against the
+  catalog's 19, Next 15 against 16, antd 6.4 against 6.6, which the import
+  deliberately deferred (`docs/plans/authentication/README.md`, phase 5). Until
+  both are done the site is the one workspace package that cannot say
+  `catalog:` for anything.
+
 - **Rotate credentials**: `NEXTAUTH_SECRET` and the GitHub OAuth app's
   `GITHUB_CLIENT_SECRET`. Both were committed to `olympus-site` in a
   `.env.local` and lived in its history until the import (2026-09-28), which
