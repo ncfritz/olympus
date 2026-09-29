@@ -308,6 +308,25 @@ check the consumers when the metadata and asset agents are imported.
   strangers listening; it did not make the stream per-user. The fix is a room per
   user and emitting to it, which needs the publisher to know the recipient.
 
+- **`socket.io-react-hook` crashes on a connection torn down mid-handshake.**
+  It keeps connections in a ref keyed by namespace and notifies them by looking
+  the key up. When the component that asked for one unmounts it deletes the
+  entry, but its own `connect`, `connect_error` and `disconnect` handlers stay
+  attached to the socket and still do that lookup, so an attempt in flight
+  across an unmount throws from inside `IoProvider`: "Cannot read properties of
+  undefined (reading 'subscribers')" -- a library frame, above anything of
+  ours, and not catchable where it happens. Seen after a sign-in
+  (2026-09-29), when the header mounts and the session is still settling.
+
+  Answering the handshake in the same tick wherever possible (`createSocketAuth`)
+  moved us out of the window rather than closing it: a slow enough unmount still
+  lands there. Either a version of the hook that guards those lookups -- 2.4.5
+  is current, so this wants an issue upstream first -- or a hook of our own over
+  `socket.io-client`, which is what this one is: a ref of sockets, a set of
+  subscribers and four event handlers, against a dependency that also decides
+  when to reconnect and how to key a namespace. The second is the smaller
+  surface of the two and belongs with the site's conventions work.
+
 - **`public/assets/libs/tinymce` is build output under version control.**
   `next.config.mjs` copies `node_modules/tinymce` into it with
   `copy-webpack-plugin`, so every build rewrites 239 tracked files and `git
