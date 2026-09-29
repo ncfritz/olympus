@@ -10,6 +10,7 @@ import React from "react";
 import adminApi from "../../../../api/adminApi";
 import { useFetch } from "../../../../hooks/useFetch";
 import { DIONYSUS_CDN_HOST, ENVIRONMENT } from "../../../../utils/constants";
+import type { NzbMetadata } from "../../../../utils/nzb";
 import LoadingWrapper from "../../../common/LoadingWrapper";
 import RefreshTimer from "../../../common/RefreshTimer";
 import Timestamp from "../../../data/Timestamp";
@@ -28,7 +29,7 @@ const DownloadDetailsPanel: React.FunctionComponent<
   DownloadDetailsPanelProps
 > = ({ workflow, download }: DownloadDetailsPanelProps) => {
   const [nzbMetadata, nzbMetaLoading, nzbMetaError, fetchNzbMetadata] =
-    useFetch<undefined, any>({
+    useFetch<undefined, NzbMetadata>({
       dataType: undefined,
       params: undefined,
       watch: [workflow.id],
@@ -171,7 +172,7 @@ const DownloadDetailsPanel: React.FunctionComponent<
           expandIcon={({ isActive }) => (
             <CaretRightOutlined rotate={isActive ? 90 : 0} />
           )}
-          items={nzbMetadata.files.map((file: any) => {
+          items={(nzbMetadata.files ?? []).map((file) => {
             return {
               key: uuidv4(),
               label: (

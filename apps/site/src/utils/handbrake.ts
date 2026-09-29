@@ -26,7 +26,7 @@ export interface HandBrakeTrackAttributes {
 }
 
 export interface HandBrakeAudioTrack {
-  TrackNumber?: number;
+  TrackNumber: number;
   Description?: string;
   Name?: string;
   Language?: string;
@@ -44,7 +44,7 @@ export interface HandBrakeAudioTrack {
 }
 
 export interface HandBrakeSubtitleTrack {
-  TrackNumber?: number;
+  TrackNumber: number;
   Name?: string;
   Language?: string;
   LanguageCode?: string;

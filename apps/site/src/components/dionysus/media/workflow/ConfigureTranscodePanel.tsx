@@ -12,6 +12,7 @@ import ReactCountryFlag from "react-country-flag/src";
 import mediaApi from "../../../../api/mediaApi";
 import { useFetch } from "../../../../hooks/useFetch";
 import { DIONYSUS_CDN_HOST } from "../../../../utils/constants";
+import type { HandBrakeMetadata } from "../../../../utils/handbrake";
 import LoadingWrapper from "../../../common/LoadingWrapper";
 import SearchResultTag from "../SearchResultTag";
 import { v4 as uuidv4 } from "uuid";
@@ -19,6 +20,13 @@ const DynamicReactJson = dynamic(import("react-json-view"), { ssr: false });
 
 export interface ConfigureTranscodePanelProps {
   workflow: DecoratedMediaAssetWorkflow;
+}
+
+/** The track selection the configure_transcode step writes to the CDN. */
+interface TranscodeTracks {
+  videoTrackIndex: number;
+  audioTrackIndex: number;
+  subtitleTrackIndex?: number;
 }
 
 const ConfigureTranscodePanel: React.FunctionComponent<
@@ -38,7 +46,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
 
   const [mediaMetadata, mediaMetaLoading, mediaMetaError] = useFetch<
     undefined,
-    any
+    HandBrakeMetadata
   >({
     dataType: undefined,
     params: undefined,
@@ -63,7 +71,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
     transcodeJobConfig,
     transcodeJobConfigLoading,
     transcodeJobConfigError,
-  ] = useFetch<undefined, any>({
+  ] = useFetch<undefined, Record<string, unknown>>({
     dataType: undefined,
     params: undefined,
     watch: [workflow.id],
@@ -83,7 +91,10 @@ const ConfigureTranscodePanel: React.FunctionComponent<
     },
   });
 
-  const [mediaTracks] = useFetch<MediaAssetWorkflowStep | undefined, any>({
+  const [mediaTracks] = useFetch<
+    MediaAssetWorkflowStep | undefined,
+    TranscodeTracks
+  >({
     dataType: undefined,
     params: step,
     watch: [step?.id],
@@ -131,8 +142,8 @@ const ConfigureTranscodePanel: React.FunctionComponent<
   if (mediaMetadata) {
     const title = mediaMetadata.TitleList[mediaMetadata.MainFeature];
     const videoTracks = [title];
-    const audioTracks: any[] = title.AudioList;
-    const subtitleTracks: any[] = title.SubtitleList;
+    const audioTracks = title.AudioList ?? [];
+    const subtitleTracks = title.SubtitleList ?? [];
 
     const step = workflow.steps.find(
       (step) => step.type === "configure_transcode",
