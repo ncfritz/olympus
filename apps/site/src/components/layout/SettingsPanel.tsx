@@ -15,11 +15,7 @@ import { initials } from "../../auth/initials";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { setCurtain } from "../../redux/slices/blackCurtainSlice";
 
-export interface SettingsPanelProps {}
-
-const SettingsPanel: React.FunctionComponent<
-  SettingsPanelProps
-> = ({}: SettingsPanelProps) => {
+const SettingsPanel: React.FunctionComponent = () => {
   const dispatch = useAppDispatch();
   const auth = useAuth();
   const user = auth.status === "signed-in" ? auth.user : undefined;

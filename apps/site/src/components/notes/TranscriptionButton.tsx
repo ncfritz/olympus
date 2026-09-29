@@ -8,11 +8,7 @@ import NotesEditorForm, {
   type NotesFormInput,
 } from "./NotesEditorForm";
 
-export interface TranscriptionButtonProps {}
-
-const TranscriptionButton: React.FunctionComponent<
-  TranscriptionButtonProps
-> = ({}: TranscriptionButtonProps) => {
+const TranscriptionButton: React.FunctionComponent = () => {
   const websocketRef = useRef<WebSocket | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
 

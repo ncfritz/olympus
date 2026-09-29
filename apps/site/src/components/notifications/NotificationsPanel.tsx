@@ -8,11 +8,7 @@ import NotificationForm from "./NotificationForm";
 import NotificationsList from "./NotificationsList";
 import NotificationSettings from "./NotificationsSettings";
 
-export interface NotificationPanelProps {}
-
-const NotificationsPanel: React.FunctionComponent<
-  NotificationPanelProps
-> = ({}: NotificationPanelProps) => {
+const NotificationsPanel: React.FunctionComponent = () => {
   return (
     <Flex vertical={true} style={{ height: "100%" }}>
       <Flex

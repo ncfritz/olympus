@@ -6,8 +6,6 @@ import { useCookies } from "react-cookie";
 import { decodeJwt } from "jose";
 import { Events, publish } from "../../utils/events";
 
-export interface AuthSessionTimerProps {}
-
 const GRADIENTS = [
   "#eb0000",
   "#eb0900",
@@ -111,9 +109,7 @@ const GRADIENTS = [
   "#00e62e",
 ];
 
-const AuthSessionTimer: React.FunctionComponent<
-  AuthSessionTimerProps
-> = ({}: AuthSessionTimerProps) => {
+const AuthSessionTimer: React.FunctionComponent = () => {
   const [cookies, , removeCookie] = useCookies(["x-dionysus-content-auth"]);
   const [percent, setPercent] = useState(0);
   const [remainingMs, setRemainingMs] = useState(0);

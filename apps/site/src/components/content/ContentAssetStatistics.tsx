@@ -6,11 +6,7 @@ import contentApi from "../../api/contentApi";
 import { useAppSelector } from "../../redux/hooks";
 import ContentDimensionGraph from "./ContentDimensionGraph";
 
-export interface ContentAssetStatisticsProps {}
-
-const ContentAssetStatistics: React.FunctionComponent<
-  ContentAssetStatisticsProps
-> = ({}: ContentAssetStatisticsProps) => {
+const ContentAssetStatistics: React.FunctionComponent = () => {
   const blackCurtainEnabled = useAppSelector(
     (state) => state.blackCurtain.active,
   );
