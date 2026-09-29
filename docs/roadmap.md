@@ -336,18 +336,18 @@ status` is only clean while the installed version matches the committed one --
   so both must be rotated at the source: a new secret for the GitHub OAuth app,
   and `NEXTAUTH_SECRET` retired outright once phase 5 removes NextAuth.
 
-- **Restrict the Google Maps API key** by HTTP referrer, to the site's own
-  names, in the Google console. That is the control that matters: a browser key
-  is compiled into the bundle and served to everyone who loads a page, so it is
-  public by design and no amount of hiding changes that.
+- **Rotate credentials**: the Google Maps API key that was hard-coded in the
+  site's `src/pages/_app.tsx`. It stayed in that repository's history through the
+  import and was in every bundle the site has ever served, so the value itself
+  has to be replaced in the Google console.
 
-  It was hard-coded in `src/pages/_app.tsx`, moved to
-  `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (2026-09-28), and now lives in
-  `infra/docker/env/<env>.env` (2026-09-29) -- which is committed, deliberately.
-  So rotating it is a one-time cleanup of the key that leaked through the
-  import's history rather than an ongoing practice: a replacement committed here
-  is in this repository's history the same way. Rotate once, restrict, and leave
-  it.
+  What replaces it does not come back here. The key is read from
+  `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (2026-09-28) and lives in the host's
+  `SECRETS_DIR`, reaching `next build` as a buildx secret (2026-09-29) --
+  `MAPS_KEY_SECRET` names the file per environment. Compiled into the bundle it
+  is public either way, which is what the referrer restriction to `*.ncfritz.net`
+  is for and why that restriction is the standing control; keeping the value out
+  of this repository is what makes rotating it worth doing at all.
 
 - `eslint.ignoreDuringBuilds: true` and `reactStrictMode: false` in
   `next.config.mjs`.
