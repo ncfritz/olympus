@@ -124,7 +124,7 @@ const ContentAssetTagInput: React.FunctionComponent<
                   }),
                 );
               }}
-              afterAdd={async (tag) => {
+              afterAdd={async () => {
                 await fetchTags(true);
               }}
               titleStyle={titleStyle}

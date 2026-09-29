@@ -72,9 +72,6 @@ const SimilarContentAssetScroller: React.FunctionComponent<
   const isItemSelected = (id: string) => !!selected.find((el) => el === id);
 
   function ScrollMenuItem({
-    selected,
-    title,
-    itemId,
     asset,
   }: {
     selected: boolean;

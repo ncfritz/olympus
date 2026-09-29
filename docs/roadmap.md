@@ -319,14 +319,28 @@ status` is only clean while the installed version matches the committed one --
   needs the build to reproduce all of it, premium included, which is the site's
   conventions work rather than this phase's.
 
-- **433 lint warnings**, which the site arrived with: 271
-  `@typescript-eslint/no-unused-vars`, 143 `@typescript-eslint/no-explicit-any`
-  and 19 others, across 154 files. The same ESLint on the pre-import repository
-  reports the same 433, and `next.config.mjs` hides them from the build with
-  `eslint: { ignoreDuringBuilds: true }`. They are warnings in
-  `apps/site/eslint.config.mjs` so that the workspace lint task is honest rather
-  than red; turning them back into errors belongs with the site's conventions
-  work, along with `strict`.
+- **295 lint warnings**, down from the 442 the site arrived with (2026-09-29),
+  across 126 files. `next.config.mjs` hides them from the build with
+  `eslint: { ignoreDuringBuilds: true }`, and they are warnings rather than
+  errors in `apps/site/eslint.config.mjs` so the workspace lint task is honest
+  rather than red. What is left, and why each part is where it is:
+
+  - **143 `@typescript-eslint/no-explicit-any`.** Typing work, not lint work:
+    many are where a generated SDK type exists and was never reached for. This
+    is also what `strict` will land on, so the two belong together.
+  - **130 `@typescript-eslint/no-unused-vars`**, now all locals -- mostly
+    destructured tuples whose later elements nobody reads. Each needs a look: a
+    hook whose result is discarded still has to be called, so the fix is to stop
+    destructuring rather than to delete the call.
+  - **22 others**: `no-useless-catch` (5, in the API wrappers), `no-empty` (2),
+    `no-empty-pattern` (5), `no-unused-expressions` (5),
+    `no-empty-object-type` (5).
+
+  Turning them into errors, and adopting `@ncfritz/olympus-config/eslint/react`
+  in place of the site's own config, wait on the catalog upgrade -- that config
+  needs ESLint 9 or later and brings the inline-style ratchet of
+  `docs/conventions/ux.md` with it.
+
 - **The site's dependency versions.** Its tooling is behind the workspace
   catalog -- ESLint 8 against 10, TypeScript 5.4 against 6.0, prettier 3.2
   against 3.8, `globals`, `typescript-eslint`, `@types/node` -- and adopting

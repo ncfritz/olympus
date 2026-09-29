@@ -99,7 +99,7 @@ const MinervaMenu: React.FunctionComponent = () => {
       selectedKeys={[sideMenuItem]}
       openKeys={sideMenuSubMenuItems}
       mode={"inline"}
-      onSelect={({ item, key, keyPath, selectedKeys, domEvent }) => {
+      onSelect={({ key }) => {
         setSideMenuItem(getKeyForPath(key));
 
         const path = getPathForKey(key);

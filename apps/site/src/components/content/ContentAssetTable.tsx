@@ -182,7 +182,7 @@ const ContentAssetTable: React.FunctionComponent<ContentAssetTableProps> = ({
           <Space orientation={"vertical"}>
             <ContentAssetRating
               asset={record}
-              onRatingSet={async (value) => {
+              onRatingSet={async () => {
                 api["success"]({
                   message: "Success",
                   description: "The rating was set successfully",
@@ -262,7 +262,7 @@ const ContentAssetTable: React.FunctionComponent<ContentAssetTableProps> = ({
         }
       }}
       expandable={{
-        expandIcon: ({ expanded, onExpand, record }) => (
+        expandIcon: ({ onExpand, record }) => (
           <Space
             style={{ margin: 0, padding: 0 }}
             onClick={(e) => onExpand(record, e)}

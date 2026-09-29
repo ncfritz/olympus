@@ -58,7 +58,7 @@ const CalendarPanel: React.FunctionComponent<CalendarPanelProps> = ({
         allDaySlot={false}
         slotDuration={{ minutes: 15 }}
         slotLabelInterval={{ hour: 1 }}
-        validRange={(date) => {
+        validRange={() => {
           return {
             start: rangeStart,
             end: rangeEnd,

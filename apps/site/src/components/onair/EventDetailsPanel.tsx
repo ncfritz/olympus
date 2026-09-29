@@ -76,10 +76,10 @@ const EventDetailsPanel: React.FunctionComponent<EventDetailsPanelProps> = ({
                 {event.extendedProps.type === "Override" ? (
                   <OnAirOverrideEvent
                     event={event}
-                    openFunction={(e) => {
+                    openFunction={() => {
                       return;
                     }}
-                    updateFunction={async (id, status, start, end) => {
+                    updateFunction={async (_id, _status, _start) => {
                       return;
                     }}
                     removeFunction={async () => {
@@ -92,7 +92,7 @@ const EventDetailsPanel: React.FunctionComponent<EventDetailsPanelProps> = ({
                     openFunction={() => {
                       return;
                     }}
-                    updateFunction={async (id, status) => {
+                    updateFunction={async (_id) => {
                       return;
                     }}
                   />

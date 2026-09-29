@@ -55,10 +55,7 @@ const nextConfig = {
     "rc-tooltip",
     "react-syntax-highlighter",
   ],
-  webpack: (
-    config,
-    { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack },
-  ) => {
+  webpack: (config) => {
     const fileLoaderRule = config.module.rules.find((rule) =>
       rule.test?.test?.(".svg"),
     );

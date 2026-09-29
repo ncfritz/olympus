@@ -115,7 +115,7 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
             theme={"dark"}
             defaultSelectedKeys={["/"]}
             selectedKeys={[menuItem]}
-            onSelect={({ item, key, keyPath, selectedKeys, domEvent }) => {
+            onSelect={({ key }) => {
               setMenuItem(key);
               router.push(key, key, { shallow: true });
             }}
@@ -211,7 +211,7 @@ const AuthLayout: React.FunctionComponent<AuthLayoutProps> = ({ children }) => {
             }}
             collapsible={true}
             collapsed={!submenuExpanded}
-            onCollapse={(collapsed, type) => {
+            onCollapse={(_collapsed) => {
               dispatch(toggleSubmenuExpanded());
             }}
           >

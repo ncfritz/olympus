@@ -38,7 +38,7 @@ const UUIDList: React.FunctionComponent<UUIDListProps> = ({
             column: 2,
           }}
           dataSource={values}
-          renderItem={(item, index) => {
+          renderItem={(item) => {
             return (
               <>
                 <Typography.Text style={{ fontFamily: "monospace" }}>

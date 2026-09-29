@@ -17,8 +17,6 @@ interface OnAirOverrideEventProps {
 const OnAirOverrideEvent: React.FunctionComponent<OnAirOverrideEventProps> = ({
   event,
   openFunction,
-  updateFunction,
-  removeFunction,
 }: OnAirOverrideEventProps) => {
   const start = DateTime.fromJSDate(event.start!);
   const end = DateTime.fromJSDate(event.end!);

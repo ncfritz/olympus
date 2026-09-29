@@ -197,7 +197,7 @@ const CreateBatchJobModal: React.FunctionComponent<
           <Controller
             name={"publish"}
             control={control}
-            render={({ field, fieldState }) => (
+            render={({ field }) => (
               <Form.Item {...rowProps} label={"Publish Notification"}>
                 <Switch {...field} />
               </Form.Item>

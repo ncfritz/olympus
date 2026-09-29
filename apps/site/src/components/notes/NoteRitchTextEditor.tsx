@@ -44,7 +44,7 @@ const NoteRichTextEditor: React.FunctionComponent<NoteRichTextEditorProps> = ({
         <Editor
           ref={editorRef}
           tinymceScriptSrc="/assets/libs/tinymce/tinymce.js"
-          onInit={(event, editor) => {
+          onInit={(_event) => {
             setEditorLoaded(true);
           }}
           onEditorChange={onChange}

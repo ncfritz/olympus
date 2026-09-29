@@ -16,7 +16,7 @@ export interface NoteMarkdownEditorProps {
 const NoteMarkdownEditor: React.FunctionComponent = ({
   entry,
   closeAction,
-  saveCallback,
+
   noteSaving,
 }: NoteMarkdownEditorProps) => {
   //const dispatch = useDispatch();

@@ -250,12 +250,12 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
     dataType: "TV series",
     watch: [sort, filters, tvSeriesPage],
     params: undefined,
-    beforeDataRequest: async (params) => {
+    beforeDataRequest: async () => {
       if (tvSeriesPage === 0) {
         setAggregateTvSeries([]);
       }
     },
-    validateOptions: (options) => {
+    validateOptions: () => {
       return initialFiltersSet;
     },
     fetchFunction: async () => {

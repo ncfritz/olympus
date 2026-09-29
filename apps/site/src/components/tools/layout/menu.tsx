@@ -65,7 +65,7 @@ const ToolsMenu: React.FunctionComponent = () => {
       selectedKeys={[sideMenuItem]}
       openKeys={sideMenuSubMenuItems}
       mode={"inline"}
-      onSelect={({ item, key, keyPath, selectedKeys, domEvent }) => {
+      onSelect={({ key }) => {
         setSideMenuItem(key);
         router.push(key, key, { shallow: true });
       }}

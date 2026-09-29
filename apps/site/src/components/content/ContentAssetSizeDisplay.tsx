@@ -22,7 +22,7 @@ const ContentAssetSizeDisplay: React.FunctionComponent<
             type={"line"}
             size={"small"}
             showInfo={true}
-            format={(percent, successPercent) => {
+            format={(_percent) => {
               return `${growth.toFixed(2)}%`;
             }}
             strokeColor={growth < 0 ? "#0000cc" : "#990000"}

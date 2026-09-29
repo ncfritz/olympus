@@ -318,7 +318,7 @@ const ContentAssetChannelModal: React.FunctionComponent<
           <Controller
             name={"rating"}
             control={control}
-            render={({ field, fieldState }) => (
+            render={({ field }) => (
               <Rate
                 defaultValue={field.value}
                 count={5}
@@ -337,7 +337,7 @@ const ContentAssetChannelModal: React.FunctionComponent<
           <Controller
             name={"duration"}
             control={control}
-            render={({ field, fieldState }) => (
+            render={({ field }) => (
               <Slider
                 range={true}
                 marks={{
@@ -364,7 +364,7 @@ const ContentAssetChannelModal: React.FunctionComponent<
           <Controller
             name={"quality"}
             control={control}
-            render={({ field, fieldState }) => (
+            render={({ field }) => (
               <Slider
                 range={true}
                 marks={{
@@ -401,7 +401,7 @@ const ContentAssetChannelModal: React.FunctionComponent<
           <Controller
             name={"tags"}
             control={control}
-            render={({ field, fieldState }) => (
+            render={({ field }) => (
               <ContentAssetTagInput
                 defaultValue={
                   initialData && !selectedTags

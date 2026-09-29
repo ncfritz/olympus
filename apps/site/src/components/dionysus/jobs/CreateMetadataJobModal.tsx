@@ -293,7 +293,7 @@ const CreateMetadataJobModal: React.FunctionComponent<
           <Controller
             name={"publish"}
             control={control}
-            render={({ field, fieldState }) => (
+            render={({ field }) => (
               <Form.Item {...rowProps} label={"Publish"}>
                 <Switch {...field} />
               </Form.Item>
@@ -302,7 +302,7 @@ const CreateMetadataJobModal: React.FunctionComponent<
           <Controller
             name={"bypassCache"}
             control={control}
-            render={({ field, fieldState }) => (
+            render={({ field }) => (
               <Form.Item {...rowProps} label={"Bypass Cache"}>
                 <Switch {...field} />
               </Form.Item>
@@ -311,7 +311,7 @@ const CreateMetadataJobModal: React.FunctionComponent<
           <Controller
             name="context"
             control={control}
-            render={({ field, fieldState }) => (
+            render={({ field }) => (
               <Form.Item
                 {...rowProps}
                 label={"Context"}

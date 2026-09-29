@@ -49,12 +49,12 @@ const MoviesIndexPage: React.FunctionComponent = () => {
     dataType: "movies",
     watch: [sort, filters, moviesPage],
     params: undefined,
-    beforeDataRequest: async (params) => {
+    beforeDataRequest: async () => {
       if (moviesPage === 0) {
         setAggregateMovies([]);
       }
     },
-    validateOptions: (options) => {
+    validateOptions: () => {
       return initialFiltersSet;
     },
     fetchFunction: async () => {

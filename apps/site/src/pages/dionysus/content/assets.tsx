@@ -242,7 +242,7 @@ const ContentAssetsPage: React.FunctionComponent = () => {
           style={{
             height: "calc(100vh - 399px)",
           }}
-          onResize={(sizes) => {
+          onResize={() => {
             setFilterPanelSize(filterPanelSize <= 0 ? 300 : 0);
           }}
         >

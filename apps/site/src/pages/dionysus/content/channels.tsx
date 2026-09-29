@@ -97,7 +97,7 @@ const ChannelsPage: React.FunctionComponent = () => {
             height: "calc(100vh - 174px)",
           }}
         >
-          {categories.map((category, index) => {
+          {categories.map((category) => {
             return (
               <ContentAssetChannelCategoryRow
                 key={`category-${category.id}`}

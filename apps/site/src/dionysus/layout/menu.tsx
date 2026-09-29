@@ -90,7 +90,7 @@ const DionysusMenu: React.FunctionComponent = () => {
       selectedKeys={[sideMenuItem]}
       openKeys={submenuExpanded ? sideMenuSubMenuItems : undefined}
       mode={"inline"}
-      onSelect={({ item, key, keyPath, selectedKeys, domEvent }) => {
+      onSelect={({ key }) => {
         setSideMenuItem(key);
         router.push(key, key, { shallow: true });
       }}

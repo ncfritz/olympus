@@ -98,7 +98,7 @@ const NotificationGroupEntryList: React.FunctionComponent<
         size={"small"}
         style={{ marginBottom: notificationCount > 10 ? 0 : 32 }}
         dataSource={notifications}
-        renderItem={(item, index) => {
+        renderItem={(item) => {
           return (
             <NotificationListEntry
               notification={item}

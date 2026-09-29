@@ -278,7 +278,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
     }
   };
 
-  const afterNoteUpdate = async (updated: Note, isPermanent?: boolean) => {
+  const afterNoteUpdate = async (_updated: Note) => {
     await updateNotes();
   };
 

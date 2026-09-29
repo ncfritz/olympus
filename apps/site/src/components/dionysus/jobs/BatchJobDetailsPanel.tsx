@@ -12,7 +12,7 @@ export interface BatchJobDetailsPanelProps {
 
 const BatchJobDetailsPanel: React.FunctionComponent<
   BatchJobDetailsPanelProps
-> = ({ job, close }: BatchJobDetailsPanelProps) => {
+> = ({ job }: BatchJobDetailsPanelProps) => {
   if (!job) {
     return <Empty description={"No Batch Job Found"} />;
   }
