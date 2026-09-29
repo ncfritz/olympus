@@ -107,13 +107,10 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
         .crew,
   });
 
-  const [
-    searchConfiguration,
-    searchConfigurationLoading,
-    searchConfigurationError,
-    fetchSearchConfiguration,
-    setSearchConfiguration,
-  ] = useFetch<number, MediaAssetSearchConfiguration>({
+  const [searchConfiguration, searchConfigurationLoading] = useFetch<
+    number,
+    MediaAssetSearchConfiguration
+  >({
     dataType: "search configuration",
     watch: [tvSeason],
     params: tvSeason?.id,

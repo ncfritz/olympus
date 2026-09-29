@@ -16,7 +16,7 @@ const SeasonEpisodeCalendar: React.FunctionComponent<
   const calendarRef = useRef<FullCalendar>(null);
 
   const [startDate, setStartDate] = useState<DateTime>(DateTime.utc());
-  const [endDate, setEndDate] = useState<DateTime>(DateTime.utc());
+  const [, setEndDate] = useState<DateTime>(DateTime.utc());
   const [events, setEvents] = useState<EventInput[]>([]);
   const [months, setMonths] = useState(3);
   const [loading, setLoading] = useState(false);

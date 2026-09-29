@@ -243,7 +243,7 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
     favoriteFilter,
   ]);
 
-  const [tvSeries, tvSeriesLoading, tvSeriesError, fetchTvSeries] = useFetch<
+  const [, tvSeriesLoading, tvSeriesError] = useFetch<
     undefined,
     BaseTvSeries[]
   >({
@@ -278,10 +278,7 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
     },
   });
 
-  const [languages, languagesLoading, languagesError] = useFetch<
-    undefined,
-    Language[]
-  >({
+  const [languages] = useFetch<undefined, Language[]>({
     dataType: "languages",
     watch: [],
     params: undefined,
@@ -295,7 +292,7 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
       ).data.languages,
   });
 
-  const [genres, genresLoading, genresError] = useFetch<undefined, Genre[]>({
+  const [genres] = useFetch<undefined, Genre[]>({
     dataType: "genres",
     watch: [],
     params: undefined,
@@ -305,7 +302,7 @@ const TvSeriesIndexPage: React.FunctionComponent = () => {
       ).data.genres.filter((genre) => genre.type === "TV"),
   });
 
-  const [stats, statsLoading, statsError] = useFetch<
+  const [stats, statsLoading] = useFetch<
     undefined,
     GetTvSeriesAggregateStatisticsResponse
   >({

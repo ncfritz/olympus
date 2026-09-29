@@ -14,7 +14,7 @@ const OnAirEvent: React.FunctionComponent<OnAirEventProps> = ({
   openFunction,
   updateFunction,
 }: OnAirEventProps) => {
-  const [open, setOpen] = useState(false);
+  const [, setOpen] = useState(false);
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);

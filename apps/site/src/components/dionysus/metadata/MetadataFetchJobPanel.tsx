@@ -16,7 +16,7 @@ export interface MetadataFetchJobPanelProps {
 const MetadataFetchJobPanel: React.FunctionComponent<
   MetadataFetchJobPanelProps
 > = ({ id, type }: MetadataFetchJobPanelProps) => {
-  const [api, contextHolder] = notification.useNotification();
+  const [api] = notification.useNotification();
 
   const [job, setJob] = useState<MetadataFetchJob | undefined>(undefined);
   const [jobLoading, setJobLoading] = useState(false);

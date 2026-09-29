@@ -5,7 +5,7 @@ import {
   RadarChartOutlined,
 } from "@ant-design/icons";
 import type { GetSummaryResponse, Note } from "@ncfritz/olympus-sdk/minerva";
-import { Empty, Layout, Space, Spin, Switch, Typography } from "antd";
+import { Empty, Space, Spin, Switch, Typography } from "antd";
 import type { BreadcrumbItemType } from "antd/lib/breadcrumb/Breadcrumb";
 import { DateTime, Interval } from "luxon";
 import Link from "next/link";
@@ -23,8 +23,6 @@ import NoteTypeFilterButton from "./NoteTypeFilterButton";
 import NotesTimelineBlock from "./TimelineBlock";
 import { Events, subscribe, unsubscribe } from "../../utils/events";
 import { v4 as uuidv4 } from "uuid";
-
-const { Sider, Content } = Layout;
 
 export interface NotesPageProps {
   startDate: DateTime;

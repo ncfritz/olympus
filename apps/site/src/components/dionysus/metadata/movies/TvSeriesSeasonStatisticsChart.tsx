@@ -10,12 +10,9 @@ import { useFetch } from "../../../../hooks/useFetch";
 const TvSeriesSeasonStatisticsChart: React.FunctionComponent = () => {
   const [categories, setCategories] = useState<number[]>([]);
   const [data, setData] = useState<number[]>([]);
-  const [pointWidth, setPointWidth] = useState(5);
+  const [pointWidth] = useState(5);
 
-  const [stats, statsLoading, statsError] = useFetch<
-    undefined,
-    SeasonStatistic[]
-  >({
+  const [stats] = useFetch<undefined, SeasonStatistic[]>({
     dataType: "movies",
     watch: [],
     params: undefined,

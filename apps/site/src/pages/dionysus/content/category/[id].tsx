@@ -28,7 +28,7 @@ const DuplicatesPage: React.FunctionComponent = () => {
   const { id } = router.query;
 
   const [channelsPage, setChannelsPage] = useState(0);
-  const [channelsSort, setChannelsort] = useState<SortOptions>({
+  const [channelsSort] = useState<SortOptions>({
     field: "favorite",
     order: "desc",
   });
@@ -59,16 +59,18 @@ const DuplicatesPage: React.FunctionComponent = () => {
     return response.channels;
   };
 
-  const [category, categoryLoading, categoryError, getchCategory, setCategory] =
-    useFetch<string, FullContentAssetChannelCategory>({
-      dataType: "content asset channel category",
-      params: id as string,
-      watch: [id],
-      fetchFunction: async (o) => {
-        return (await contentApi.describeContentAssetChannelCategory(o)).data
-          .category;
-      },
-    });
+  const [category, categoryLoading, categoryError, , setCategory] = useFetch<
+    string,
+    FullContentAssetChannelCategory
+  >({
+    dataType: "content asset channel category",
+    params: id as string,
+    watch: [id],
+    fetchFunction: async (o) => {
+      return (await contentApi.describeContentAssetChannelCategory(o)).data
+        .category;
+    },
+  });
 
   const [, channelsLoading, channelsError] = useFetch<
     FullContentAssetChannelCategory,

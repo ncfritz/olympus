@@ -48,13 +48,11 @@ const ContentAssetFilterPanel: React.FunctionComponent<
 
   const [debouncedName] = useDebounce<string>(name, 750);
 
-  const [tags, tagsLoading, tagsError] = useFetch<undefined, ContentAssetTag[]>(
-    {
-      dataType: "tags",
-      params: undefined,
-      fetchFunction: async () => (await contentApi.listTags()).data.tags,
-    },
-  );
+  const [tags, tagsLoading] = useFetch<undefined, ContentAssetTag[]>({
+    dataType: "tags",
+    params: undefined,
+    fetchFunction: async () => (await contentApi.listTags()).data.tags,
+  });
 
   useEffect(() => {
     onNameChange(debouncedName);

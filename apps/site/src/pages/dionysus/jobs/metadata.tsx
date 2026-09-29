@@ -84,7 +84,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
   const [redriveModalOpen, setRedriveModalOpen] = useState(false);
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
 
-  const [jobStats, jobStatsLoading, jobStatsError, fetchStatistics] = useFetch<
+  const [jobStats, jobStatsLoading, , fetchStatistics] = useFetch<
     undefined,
     GetMetadataFetchJobStatusStatisticsResponse
   >({
@@ -97,7 +97,7 @@ const MetadataFetchJobsPage: React.FunctionComponent = () => {
   const [
     metadataFetchJobs,
     metadataFetchJobsLoading,
-    metadataFetchJobsError,
+    ,
     fetchMetadataFetchJobs,
   ] = useFetch<undefined, ListMetadataFetchJobsResponse>({
     dataType: "metadata fetch jobs",

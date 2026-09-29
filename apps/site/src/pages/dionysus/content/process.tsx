@@ -42,17 +42,17 @@ const ContentAssetPreviewPlayer = dynamic(
 );
 
 const ContentProcessingPage: React.FunctionComponent = () => {
-  const [api, contextHolder] = notification.useNotification();
+  const [api] = notification.useNotification();
 
   const [asset, setAsset] = useState<ContentAsset>();
   const [untaggedCount, setUntaggedCount] = useState(0);
   const [taggedCount, setTaggedCount] = useState(0);
-  const [assetLoading, setAssetLoading] = useState<any>(true);
+  const [, setAssetLoading] = useState<any>(true);
   const [assetError, setAssetError] = useState<any>();
   const [tags, setTags] = useState<ContentAssetTag[]>([]);
-  const [tagsLoading, setTagsLoading] = useState<any>(true);
-  const [tagsError, setTagsError] = useState<any>();
-  const [processedTags, setProcessedTags] = useState<any>(undefined);
+  const [, setTagsLoading] = useState<any>(true);
+  const [, setTagsError] = useState<any>();
+  const [, setProcessedTags] = useState<any>(undefined);
   const [currentThumbIndex, setCurrentThumbIndex] = useState(1);
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedTags, setSelectedTags] = useState<ContentAssetTag[]>([]);

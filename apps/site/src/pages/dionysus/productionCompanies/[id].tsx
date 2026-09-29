@@ -48,7 +48,7 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
         (await metadataApi.describeProductionCompany(o)).data.company,
     });
 
-  const [movies, moviesLoading, moviesError] = useFetch<number, SparseMovie[]>({
+  const [movies, moviesLoading] = useFetch<number, SparseMovie[]>({
     dataType: "production company movies",
     watch: [id],
     params: id as unknown as number,
@@ -56,10 +56,7 @@ const ProductionCompanyDetailPage: React.FunctionComponent = () => {
       (await metadataApi.listMoviesForProductionCompany(o)).data.movies,
   });
 
-  const [tvSeries, tvSeriesLoading, tvSeriesError] = useFetch<
-    number,
-    BaseTvSeries[]
-  >({
+  const [tvSeries, tvSeriesLoading] = useFetch<number, BaseTvSeries[]>({
     dataType: "production company TV series",
     watch: [id],
     params: id as unknown as number,

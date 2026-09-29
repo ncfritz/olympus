@@ -98,19 +98,15 @@ const MovieDetailPage: React.FunctionComponent = () => {
     fetchFunction: async (o) => (await metadataApi.listMovieCrew(o)).data.crew,
   });
 
-  const [
-    recommendations,
-    recommendationsLoading,
-    recommendationsError,
-    fetchRecommendations,
-  ] = useFetch<number, SparseMovie[]>({
-    dataType: "movie recommendations",
-    watch: [movie?.id],
-    params: id as unknown as number,
-    validateOptions: (o) => o !== undefined,
-    fetchFunction: async (o) =>
-      (await metadataApi.listMovieRecommendations(o)).data.recommendations,
-  });
+  const [recommendations, recommendationsLoading, , fetchRecommendations] =
+    useFetch<number, SparseMovie[]>({
+      dataType: "movie recommendations",
+      watch: [movie?.id],
+      params: id as unknown as number,
+      validateOptions: (o) => o !== undefined,
+      fetchFunction: async (o) =>
+        (await metadataApi.listMovieRecommendations(o)).data.recommendations,
+    });
 
   const [collections, collectionsLoading, collectionsError, fetchCollections] =
     useFetch<number, Collection[]>({
@@ -125,8 +121,8 @@ const MovieDetailPage: React.FunctionComponent = () => {
   const [
     searchConfiguration,
     searchConfigurationLoading,
-    searchConfigurationError,
-    fetchSearchConfiguration,
+    ,
+    ,
     setSearchConfiguration,
   ] = useFetch<number, MediaAssetSearchConfiguration>({
     dataType: "search configuration",

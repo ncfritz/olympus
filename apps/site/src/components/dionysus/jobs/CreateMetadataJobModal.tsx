@@ -47,7 +47,7 @@ const CreateMetadataJobModal: React.FunctionComponent<
     handleSubmit,
     control,
     reset,
-    formState: { isValid, isDirty, isSubmitting },
+    formState: { isValid, isSubmitting },
   } = useForm<FormInput>({
     defaultValues: {
       type: undefined,

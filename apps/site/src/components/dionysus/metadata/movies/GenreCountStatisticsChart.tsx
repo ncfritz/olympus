@@ -17,10 +17,7 @@ const GenreCountStatisticsChart: React.FunctionComponent<
   const [categories, setCategories] = useState<string[]>([]);
   const [data, setData] = useState<number[]>([]);
 
-  const [stats, statsLoading, statsError] = useFetch<
-    undefined,
-    GenreCountStatistic[]
-  >({
+  const [stats] = useFetch<undefined, GenreCountStatistic[]>({
     dataType: "movies",
     watch: [],
     params: undefined,

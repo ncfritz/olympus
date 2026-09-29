@@ -16,10 +16,7 @@ export const MovieLocationsMap: React.FunctionComponent<
   MovieLocationsMapProps
 > = ({ mediaType }: MovieLocationsMapProps) => {
   const [data, setData] = useState<any>([]);
-  const [locationStats, locationStatsLoading, locationStatsError] = useFetch<
-    undefined,
-    LocationStatistic[]
-  >({
+  const [locationStats] = useFetch<undefined, LocationStatistic[]>({
     dataType: "movie locations",
     watch: [],
     params: undefined,

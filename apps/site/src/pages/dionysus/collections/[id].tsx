@@ -17,10 +17,7 @@ const MovieDetailPage: React.FunctionComponent = () => {
 
   const [activeTab, setActiveTab] = useState("t-main-general");
 
-  const [collection, collectionLoading, collectionError] = useFetch<
-    number,
-    Collection
-  >({
+  const [collection, collectionLoading] = useFetch<number, Collection>({
     dataType: "collection details",
     watch: [id],
     params: id as unknown as number,

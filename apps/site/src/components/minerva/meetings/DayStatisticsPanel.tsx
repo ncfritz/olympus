@@ -22,7 +22,6 @@ const DayStatisticsPanel: React.FunctionComponent<DayStatisticsPanelProps> = ({
   onEventClick,
 }) => {
   const [topAttendees, setTopAttendees] = useState<AttendeeCount[]>([]);
-  const [statusTimes, setStatusTimes] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const attendeeCounts: Record<string, AttendeeCount> = {};

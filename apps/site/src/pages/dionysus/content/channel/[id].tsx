@@ -37,7 +37,7 @@ const ChannelDetailsPage: React.FunctionComponent = () => {
   const { id } = router.query;
 
   const [assetsPage, setAssetsPage] = useState(0);
-  const [assetsSort, setAssetsSort] = useState<SortOptions>({
+  const [assetsSort] = useState<SortOptions>({
     field: "rating",
     order: "desc",
   });
@@ -68,15 +68,17 @@ const ChannelDetailsPage: React.FunctionComponent = () => {
     return response.assets;
   };
 
-  const [channel, channelLoading, channelError, fetchChannel, setChannel] =
-    useFetch<string, FullContentAssetChannel>({
-      dataType: "content asset channel",
-      params: id as string,
-      watch: [id],
-      fetchFunction: async (o) => {
-        return (await contentApi.describeContentAssetChannel(o)).data.channel;
-      },
-    });
+  const [channel, channelLoading, channelError, , setChannel] = useFetch<
+    string,
+    FullContentAssetChannel
+  >({
+    dataType: "content asset channel",
+    params: id as string,
+    watch: [id],
+    fetchFunction: async (o) => {
+      return (await contentApi.describeContentAssetChannel(o)).data.channel;
+    },
+  });
 
   const [, assetsLoading, assetsError] = useFetch<
     FullContentAssetChannel,

@@ -58,10 +58,7 @@ const MovieFilterBar: React.FunctionComponent<MovieFilterBarProps> = ({
 
   const [debouncedTitleFilter] = useDebounce<string>(titleFilter, 300);
 
-  const [languages, languagesLoading, languagesError] = useFetch<
-    undefined,
-    Language[]
-  >({
+  const [languages] = useFetch<undefined, Language[]>({
     dataType: "languages",
     watch: [],
     params: undefined,
@@ -75,7 +72,7 @@ const MovieFilterBar: React.FunctionComponent<MovieFilterBarProps> = ({
       ).data.languages,
   });
 
-  const [genres, genresLoading, genresError] = useFetch<undefined, Genre[]>({
+  const [genres] = useFetch<undefined, Genre[]>({
     dataType: "genres",
     watch: [],
     params: undefined,

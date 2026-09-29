@@ -25,7 +25,7 @@ const NoteAssociations: React.FunctionComponent<NoteAssociationsProps> = ({
     return;
   }
 
-  const [open, setOpen] = useState(false);
+  const [open] = useState(false);
 
   let content = <></>;
 

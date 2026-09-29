@@ -18,12 +18,9 @@ const MovieReleaseYearStatisticsChart: React.FunctionComponent<
 > = ({ mediaType, size = 10 }: MovieReleaseYearStatisticsChartProps) => {
   const [categories, setCategories] = useState<number[]>([]);
   const [data, setData] = useState<number[]>([]);
-  const [pointWidth, setPointWidth] = useState(size);
+  const [pointWidth] = useState(size);
 
-  const [stats, statsLoading, statsError] = useFetch<
-    undefined,
-    YearStatistic[]
-  >({
+  const [stats] = useFetch<undefined, YearStatistic[]>({
     dataType: "movies",
     watch: [],
     params: undefined,

@@ -15,7 +15,7 @@ const UUIDList: React.FunctionComponent<UUIDListProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  const [copiedValue, copy] = useCopyToClipboard();
+  const [, copy] = useCopyToClipboard();
 
   return values && values?.length > 0 ? (
     <Space

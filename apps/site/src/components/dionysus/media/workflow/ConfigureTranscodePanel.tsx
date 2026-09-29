@@ -83,10 +83,7 @@ const ConfigureTranscodePanel: React.FunctionComponent<
     },
   });
 
-  const [mediaTracks, mediaTracksLoading, mediaTracksError] = useFetch<
-    MediaAssetWorkflowStep | undefined,
-    any
-  >({
+  const [mediaTracks] = useFetch<MediaAssetWorkflowStep | undefined, any>({
     dataType: undefined,
     params: step,
     watch: [step?.id],

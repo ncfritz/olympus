@@ -10,7 +10,7 @@ import { useFetch } from "../../hooks/useFetch";
 import { CertificationOutlined } from "../../icons";
 
 const IndexPage: React.FunctionComponent = () => {
-  const [jobStats, jobStatsLoading, jobStatsError, fetchStatistics] = useFetch<
+  const [jobStats, jobStatsLoading, jobStatsError] = useFetch<
     undefined,
     GetMetadataFetchJobStatusStatisticsResponse
   >({

@@ -32,7 +32,7 @@ const CreateBatchJobModal: React.FunctionComponent<
     control,
     reset,
     watch,
-    formState: { isValid, isDirty, isSubmitting },
+    formState: { isValid, isSubmitting },
   } = useForm<FormInput>({
     defaultValues: {
       type: type,

@@ -16,7 +16,7 @@ const UUIDInfoPanel: React.FunctionComponent<UUIDInfoPanelProps> = ({
   activeInfoKey,
   setActiveInfoKey,
 }: UUIDInfoPanelProps) => {
-  const [copiedValue, copy] = useCopyToClipboard();
+  const [, copy] = useCopyToClipboard();
 
   return (
     <Space

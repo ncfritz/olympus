@@ -175,8 +175,8 @@ const TvEpisodeDetailPage: React.FunctionComponent = () => {
   const [
     searchConfiguration,
     searchConfigurationLoading,
-    searchConfigurationError,
-    fetchSearchConfiguration,
+    ,
+    ,
     setSearchConfiguration,
   ] = useFetch<number, MediaAssetSearchConfiguration>({
     dataType: "search configuration",

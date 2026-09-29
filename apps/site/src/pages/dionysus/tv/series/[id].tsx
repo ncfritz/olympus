@@ -120,8 +120,8 @@ const TvSeriesDetailPage: React.FunctionComponent = () => {
   const [
     searchConfiguration,
     searchConfigurationLoading,
-    searchConfigurationError,
-    fetchSearchConfiguration,
+    ,
+    ,
     setSearchConfiguration,
   ] = useFetch<TvSeries, MediaAssetSearchConfiguration>({
     dataType: "search configuration",

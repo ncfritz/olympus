@@ -114,9 +114,7 @@ const GRADIENTS = [
 const AuthSessionTimer: React.FunctionComponent<
   AuthSessionTimerProps
 > = ({}: AuthSessionTimerProps) => {
-  const [cookies, setCookie, removeCookie] = useCookies([
-    "x-dionysus-content-auth",
-  ]);
+  const [cookies, , removeCookie] = useCookies(["x-dionysus-content-auth"]);
   const [percent, setPercent] = useState(0);
   const [remainingMs, setRemainingMs] = useState(0);
 

@@ -21,7 +21,7 @@ const NoteMarkdownEditor: React.FunctionComponent = ({
 }: NoteMarkdownEditorProps) => {
   //const dispatch = useDispatch();
 
-  const [type, setType] = useState(0);
+  const [, setType] = useState(0);
   const [flagged, setFlagged] = useState(false);
   const [value, setValue] = useState("");
 

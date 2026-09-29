@@ -83,7 +83,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
   const [targetStatus, setTargetStatus] = useState<JobStatus>("created");
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
 
-  const [jobs, jobsLoading, jobsError, fetchJobs] = useFetch<
+  const [jobs, jobsLoading, , fetchJobs] = useFetch<
     undefined,
     ListBatchJobsResponse
   >({
@@ -102,7 +102,7 @@ const BatchJobPanel: React.FunctionComponent<BatchJobsPanelProps> = ({
       ).data,
   });
 
-  const [jobStats, jobStatsLoading, jobStatsError, fetchStatistics] = useFetch<
+  const [jobStats, jobStatsLoading, , fetchStatistics] = useFetch<
     undefined,
     GetBatchJobStatsByTypeResponse
   >({

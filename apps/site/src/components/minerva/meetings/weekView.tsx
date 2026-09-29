@@ -30,7 +30,7 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
   const router = useRouter();
   const calendarRef = useRef<FullCalendar>(null);
 
-  const [dayPickerCurrent, setDayPickerCurrent] = useState(startDate);
+  const [dayPickerCurrent] = useState(startDate);
 
   let start = startDate.startOf("day");
   const endOfMonth = dayPickerCurrent.endOf("month");
@@ -64,7 +64,7 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
   });
   const [events, setEvents] = useState<EventInput[]>([]);
   const [summary, setSummary] = useState<any>(undefined);
-  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [, setSummaryLoading] = useState(false);
 
   const renderDay = (day: Date) => {
     if (summary && summary.statusStatistics) {

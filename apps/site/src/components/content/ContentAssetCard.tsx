@@ -29,8 +29,7 @@ const ContentAssetCard: React.FunctionComponent<ContentAssetCardProps> = ({
 }: ContentAssetCardProps) => {
   const [modelOpen, setModalOpen] = useState(false);
 
-  const [width, height, aspectRatio, adjustment] =
-    calculateAssetDimensions(asset);
+  const [width, height, aspectRatio] = calculateAssetDimensions(asset);
   const thumbHeight = aspectRatio > 1 ? (height - 3 * 8) / 4 : (height - 8) / 2;
   const thumbWidth = thumbHeight * aspectRatio;
 

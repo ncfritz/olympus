@@ -23,9 +23,8 @@ const NotificationSettingsListEntry: React.FunctionComponent<
   initialSettings,
   afterUpdate,
 }: NotificationSettingsListEntryProps) => {
-  const [settings, setSettings] =
-    useState<NotificationSettings>(initialSettings);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [settings] = useState<NotificationSettings>(initialSettings);
+  const [, setLoading] = useState<boolean>(false);
 
   const enabledCount = () => {
     let enabled = 0;

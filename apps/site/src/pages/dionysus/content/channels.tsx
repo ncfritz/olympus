@@ -28,16 +28,14 @@ const ContentAssetChannelCategoryRow = dynamic(
 const ChannelsPage: React.FunctionComponent = () => {
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
-  const [categoriesCount, setCategoriesCount] = useState(0);
-  const [categoriesPage, setCategoriesPage] = useState(0);
-  const [categoriesPageSize, setCategoriesPageSize] = useState(50);
-  const [categoriesSort, setCategoriesSort] = useState<SortOptions>({
+  const [, setCategoriesCount] = useState(0);
+  const [categoriesPage] = useState(0);
+  const [categoriesPageSize] = useState(50);
+  const [categoriesSort] = useState<SortOptions>({
     field: "createdTime",
     order: "desc",
   });
-  const [categoriesFilters, setCategoriesFilters] = useState<
-    FilterDefinition | undefined
-  >(undefined);
+  const [categoriesFilters] = useState<FilterDefinition | undefined>(undefined);
   const [categories, categoriesLoading, categoriesError, fetchCategories] =
     useFetch<undefined, FullContentAssetChannelCategory[]>({
       dataType: "content asset channel categories",

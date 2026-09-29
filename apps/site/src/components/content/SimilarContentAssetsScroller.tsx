@@ -32,10 +32,9 @@ const SimilarContentAssetScroller: React.FunctionComponent<
   const [assets, setAssets] = useState<ContentAsset[]>([]);
   const [assetsLoading, setAssetsLoading] = useState<any>(true);
   const [assetsError, setAssetsError] = useState<any>();
-  const [selected, setSelected] = React.useState([]);
-  const [position, setPosition] = React.useState(0);
+  const [selected] = React.useState([]);
 
-  const { dragStart, dragStop, dragMove, dragging } = useDrag();
+  const { dragStop, dragMove } = useDrag();
 
   const fetchAssets = async () => {
     setAssetsLoading(true);

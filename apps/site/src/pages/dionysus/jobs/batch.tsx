@@ -27,7 +27,7 @@ const BatchJobsPage: React.FunctionComponent = () => {
   );
   const [activeTab, setActiveTab] = useState(query.get("tab") || "movies");
 
-  const [jobStats, jobStatsLoading, jobStatsError, fetchStatistics] = useFetch<
+  const [jobStats, jobStatsLoading, , fetchStatistics] = useFetch<
     undefined,
     GetBatchJobStatsResponse
   >({

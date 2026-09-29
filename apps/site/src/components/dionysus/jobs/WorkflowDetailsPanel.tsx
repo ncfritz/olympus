@@ -34,10 +34,7 @@ export interface WorkflowDetailsPanelProps {
 const WorkflowDetailsPanel = ({ workflowId }: WorkflowDetailsPanelProps) => {
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
 
-  const [workflow, workflowLoading, workflowError] = useFetch<
-    string,
-    Workflow | undefined
-  >({
+  const [workflow] = useFetch<string, Workflow | undefined>({
     dataType: "metadata workflow",
     default: undefined,
     watch: [workflowId],

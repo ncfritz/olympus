@@ -36,10 +36,7 @@ const GenresIndexPage: React.FunctionComponent = () => {
   );
   const [affix, setAffix] = useState(false);
 
-  const [movies, moviesLoading, moviesError, fetchMovies] = useFetch<
-    undefined,
-    SparseMovie[]
-  >({
+  const [, moviesLoading, moviesError] = useFetch<undefined, SparseMovie[]>({
     dataType: "movies",
     watch: [sort, filters, moviesPage],
     params: undefined,
@@ -76,10 +73,7 @@ const GenresIndexPage: React.FunctionComponent = () => {
     setMoviesPage(moviesPage + 1);
   };
 
-  const [movieStats, movieStatsLoading, movieStatsError] = useFetch<
-    undefined,
-    GenreStatistic[]
-  >({
+  const [movieStats] = useFetch<undefined, GenreStatistic[]>({
     dataType: "movie genres",
     watch: [],
     params: undefined,
@@ -87,10 +81,7 @@ const GenresIndexPage: React.FunctionComponent = () => {
       (await metadataApi.getMovieGenreStatistics()).data.statistics,
   });
 
-  const [tvSeriesStats, tvSeriesStatsLoading, tvSeriesStatsError] = useFetch<
-    undefined,
-    GenreStatistic[]
-  >({
+  const [tvSeriesStats] = useFetch<undefined, GenreStatistic[]>({
     dataType: "TV series genres",
     watch: [],
     params: undefined,

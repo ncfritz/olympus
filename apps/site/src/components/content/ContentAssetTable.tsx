@@ -60,7 +60,7 @@ const ContentAssetTable: React.FunctionComponent<ContentAssetTableProps> = ({
 
   const [api] = notification.useNotification();
 
-  const [assets, assetsLoading, assetsError, fetchAssets] = useFetch<
+  const [assets, assetsLoading, , fetchAssets] = useFetch<
     undefined,
     ContentAsset[]
   >({

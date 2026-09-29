@@ -18,7 +18,7 @@ type GetSingle<T> = T extends (infer U)[] ? U : never;
 type Sorts = GetSingle<Parameters<OnChange>[2]>;
 
 const ProductionCompaniesIndexPage: React.FunctionComponent = () => {
-  const [api, contextHolder] = notification.useNotification();
+  const [api] = notification.useNotification();
 
   const [productionCompanies, setProductionCompanies] = useState<
     SparseProductionCompanyWithContentCounts[]

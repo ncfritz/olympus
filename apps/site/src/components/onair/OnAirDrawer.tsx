@@ -15,11 +15,11 @@ const OnAirDrawer: React.FunctionComponent<OnAirDrawerProps> = ({
   open,
   onClose,
 }: OnAirDrawerProps) => {
-  const [messageApi, contextHolder] = notification.useNotification();
+  const [messageApi] = notification.useNotification();
 
   const [events, setEvents] = useState<any[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
-  const [eventsError, setEventsError] = useState<any>(undefined);
+  const [, setEventsError] = useState<any>(undefined);
   const [targetEvent, setTargetEvent] = useState<EventImpl | undefined>(
     undefined,
   );

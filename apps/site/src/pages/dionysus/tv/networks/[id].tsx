@@ -35,10 +35,7 @@ const NetworkDetailPage: React.FunctionComponent = () => {
   const router = useRouter();
   const { id } = router.query;
 
-  const [network, networkLoading, networkError] = useFetch<
-    number,
-    NetworkWithContentCounts
-  >({
+  const [network, networkLoading] = useFetch<number, NetworkWithContentCounts>({
     dataType: "TV network",
     watch: [id],
     params: id as unknown as number,
@@ -46,10 +43,7 @@ const NetworkDetailPage: React.FunctionComponent = () => {
       (await metadataApi.describeNetwork(o)).data.network,
   });
 
-  const [tvSeries, tvSeriesLoading, tvSeriesError] = useFetch<
-    number,
-    BaseTvSeries[]
-  >({
+  const [tvSeries, tvSeriesLoading] = useFetch<number, BaseTvSeries[]>({
     dataType: "network TV series",
     watch: [id],
     params: id as unknown as number,

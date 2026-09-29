@@ -90,8 +90,7 @@ const NotificationForm: React.FunctionComponent = () => {
   >([]);
   const [notificationTypesLoading, setNotificationTypesLoading] =
     useState<boolean>(false);
-  const [notificationTypesError, setNotificationTypesError] =
-    useState<unknown>(undefined);
+  const [, setNotificationTypesError] = useState<unknown>(undefined);
   const [notificationType, setNotificationType] = useState<
     NotificationTypeWithProtocols | undefined
   >(undefined);

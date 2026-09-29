@@ -45,7 +45,7 @@ const PersonDetailPage: React.FunctionComponent = () => {
 
   const [activeTab, setActiveTab] = useState("t-main-general");
 
-  const [person, personLoading, personError] = useFetch<string, Person>({
+  const [person] = useFetch<string, Person>({
     dataType: "person details",
     watch: [id],
     params: id as string,
@@ -53,7 +53,7 @@ const PersonDetailPage: React.FunctionComponent = () => {
       (await metadataApi.describePerson(o as unknown as number)).data.person,
   });
 
-  const [castCredits, castCreditsLoading, castCreditsError] = useFetch<
+  const [castCredits, castCreditsLoading] = useFetch<
     number,
     PersonMovieCastCredit[]
   >({
@@ -65,7 +65,7 @@ const PersonDetailPage: React.FunctionComponent = () => {
       (await metadataApi.listMovieCastRolesForPerson(o)).data.credits,
   });
 
-  const [crewCredits, crewCreditsLoading, crewCreditsError] = useFetch<
+  const [crewCredits, crewCreditsLoading] = useFetch<
     number,
     PersonMovieCrewCredit[]
   >({

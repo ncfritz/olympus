@@ -38,14 +38,13 @@ const PeopleIndexPage: React.FunctionComponent = () => {
       (await metadataApi.getPeopleDeathdayStatistics()).data.statistics,
   });
 
-  const [departmentStats, departmentStatsLoading, departmentStatsError] =
-    useFetch<undefined, PersonDepartmentStatistic[]>({
-      dataType: "person department",
-      watch: [],
-      params: undefined,
-      fetchFunction: async () =>
-        (await metadataApi.getPeopleDepartmentStatistics()).data.statistics,
-    });
+  const [departmentStats] = useFetch<undefined, PersonDepartmentStatistic[]>({
+    dataType: "person department",
+    watch: [],
+    params: undefined,
+    fetchFunction: async () =>
+      (await metadataApi.getPeopleDepartmentStatistics()).data.statistics,
+  });
 
   return (
     <>

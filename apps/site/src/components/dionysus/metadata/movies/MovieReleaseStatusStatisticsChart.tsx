@@ -17,10 +17,7 @@ const MovieReleaseStatusStatisticsChart: React.FunctionComponent<
   const [categories, setCategories] = useState<string[]>([]);
   const [data, setData] = useState<number[]>([]);
 
-  const [stats, statsLoading, statsError] = useFetch<
-    undefined,
-    StatusStatistic[]
-  >({
+  const [stats] = useFetch<undefined, StatusStatistic[]>({
     dataType: "movies",
     watch: [],
     params: undefined,

@@ -67,8 +67,8 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   const [dayPickerCurrent, setDayPickerCurrent] = useState(startDate);
   const [rawEvents, setRawEvents] = useState<any[]>([]);
   const [events, setEvents] = useState<EventInput[]>([]);
-  const [eventsLoading, setEventsLoading] = useState(false);
-  const [eventsError, setEventsError] = useState(false);
+  const [, setEventsLoading] = useState(false);
+  const [, setEventsError] = useState(false);
   const [targetEventId, setTargetEventId] = useState<string | undefined>(
     undefined,
   );
@@ -79,10 +79,10 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   );
   const [eventNotes, setEventNotes] = useState<Note[]>([]);
   const [eventLoading, setEventLoading] = useState(false);
-  const [eventError, setEventError] = useState(false);
+  const [, setEventError] = useState(false);
   const [summary, setSummary] = useState<any>(undefined);
-  const [summaryLoading, setSummaryLoading] = useState(false);
-  const [summaryError, setSummaryError] = useState(false);
+  const [, setSummaryLoading] = useState(false);
+  const [, setSummaryError] = useState(false);
   const [notedEditorOpen, setNotedEditorOpen] = useState(false);
   const [showMeta, setShowMeta] = useState(true);
 

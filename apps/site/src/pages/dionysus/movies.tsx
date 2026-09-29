@@ -42,10 +42,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
   );
   const [affix, setAffix] = useState(false);
 
-  const [movies, moviesLoading, moviesError, fetchMovies] = useFetch<
-    undefined,
-    SparseMovie[]
-  >({
+  const [, moviesLoading, moviesError] = useFetch<undefined, SparseMovie[]>({
     dataType: "movies",
     watch: [sort, filters, moviesPage],
     params: undefined,
@@ -82,7 +79,7 @@ const MoviesIndexPage: React.FunctionComponent = () => {
     setMoviesPage(moviesPage + 1);
   };
 
-  const [stats, statsLoading, statsError] = useFetch<
+  const [stats, statsLoading] = useFetch<
     undefined,
     GetMovieAggregateStatisticsResponse
   >({
