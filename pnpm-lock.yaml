@@ -1240,6 +1240,9 @@ importers:
       react-audio-visualize:
         specifier: ^1.2.0
         version: 1.2.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      socket.io-client:
+        specifier: ^4.8.1
+        version: 4.8.3
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
@@ -1499,12 +1502,6 @@ importers:
       redoc:
         specifier: ^2.5.0
         version: 2.5.4(core-js@3.50.0)(mobx@6.16.1)(react-dom@18.3.1(react@18.3.1))(react-native@0.86.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react-native@0.86.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@18.3.1))(react@18.3.1))
-      socket.io-client:
-        specifier: ^4.8.1
-        version: 4.8.3
-      socket.io-react-hook:
-        specifier: ^2.4.5
-        version: 2.4.5(react@18.3.1)
       styled-components:
         specifier: ^6.1.14
         version: 6.5.3(react-dom@18.3.1(react@18.3.1))(react-native@0.86.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@18.3.1))(react@18.3.1)
@@ -11468,9 +11465,6 @@ packages:
   parse5@8.0.1:
     resolution: {integrity: sha512-z1e/HMG90obSGeidlli3hj7cbocou0/wa5HacvI3ASx34PecNjNQeaHNo5WIZpWofN9kgkqV1q5YvXe3F0FoPw==}
 
-  parseuri@0.0.6:
-    resolution: {integrity: sha512-AUjen8sAkGgao7UyCX6Ahv0gIK2fABKmYjvP4xmy5JaKvcbTRueIqIPHLAfq30xJddqSE033IOMUSOMCcK3Sow==}
-
   parseurl@1.3.3:
     resolution: {integrity: sha512-CiyeOxFT/JZyN5m0z9PfXw4SCBJ6Sygz1Dpl0wqjlhDEGGBP1GnsUVEL0p63hoG1fcj3fHynXi9NYO4nWOL+qQ==}
     engines: {node: '>= 0.8'}
@@ -12561,17 +12555,9 @@ packages:
     resolution: {integrity: sha512-uP0bpjWrjQmUt5DTHq9RuoCBdFJF10cdX9X+a368j/Ft0wmaVgxlrjvK3kjvgCODOMMOz9lcaRzxmso0bTWZ/g==}
     engines: {node: '>=10.0.0'}
 
-  socket.io-mock@1.3.2:
-    resolution: {integrity: sha512-p4MQBue3NAR8bXIHynRJxK/C+J3I3NpnnpgjptgLFSWv4u9Bdkubf2t0GCmyLmUTi03up0Cx/hQwzQfOpD187g==}
-
   socket.io-parser@4.2.7:
     resolution: {integrity: sha512-IH/iSeO9T6gz1KkFleGDWkG9N3dl4jXVYUtMhIqH10Md0ttMer8nUNWiP1DKuNrybD2xBrixLJdCC9J6ECoYkg==}
     engines: {node: '>=10.0.0'}
-
-  socket.io-react-hook@2.4.5:
-    resolution: {integrity: sha512-Kg5De27c785SW3iXttXwDC9SrK3Y4live9DsueZSZYTjyo7dk3vrvyue+K/q3S+eYjkdADNq2PAvSHVl4OSZ/g==}
-    peerDependencies:
-      react: '*'
 
   socket.io@4.8.1:
     resolution: {integrity: sha512-oZ7iUCxph8WYRHHcjBEc9unw3adt5CmSNlppj/5Q4k2RIrhl8Z5yY2Xr4j9zj0+wzVZ0bxmYoGSzKJnRl6A4yg==}
@@ -12664,9 +12650,6 @@ packages:
   ssh2@1.17.0:
     resolution: {integrity: sha512-wPldCk3asibAjQ/kziWQQt1Wh3PgDFpC0XpwclzKcdT1vql6KeYxf5LIt4nlFkUeR8WuphYMKqUA56X4rjbfgQ==}
     engines: {node: '>=10.16.0'}
-
-  stable-hash@0.0.3:
-    resolution: {integrity: sha512-c63fvNCQ7ip1wBfPv54MflMA5L6OE5J0p6Fg13IpKft4JAFoNal8+s/jtJ8PibrwqXm4onnbeQsADs8k0NQGUA==}
 
   stable-hash@0.0.5:
     resolution: {integrity: sha512-+L3ccpzibovGXFK+Ap/f8LOS0ahMrHTf3xu7mMLSpEGU0EO9ucaysSylKo9eRDFNhWve/y275iPmIZ4z39a9iA==}
@@ -25891,8 +25874,6 @@ snapshots:
     dependencies:
       entities: 8.1.0
 
-  parseuri@0.0.6: {}
-
   parseurl@1.3.3: {}
 
   pascalcase@0.1.1: {}
@@ -27303,28 +27284,12 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  socket.io-mock@1.3.2:
-    dependencies:
-      component-emitter: 1.3.1
-
   socket.io-parser@4.2.7:
     dependencies:
       '@socket.io/component-emitter': 3.1.2
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
-
-  socket.io-react-hook@2.4.5(react@18.3.1):
-    dependencies:
-      parseuri: 0.0.6
-      react: 18.3.1
-      socket.io-client: 4.8.3
-      socket.io-mock: 1.3.2
-      stable-hash: 0.0.3
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
 
   socket.io@4.8.1:
     dependencies:
@@ -27451,8 +27416,6 @@ snapshots:
     optionalDependencies:
       cpu-features: 0.0.10
       nan: 2.29.0
-
-  stable-hash@0.0.3: {}
 
   stable-hash@0.0.5: {}
 
