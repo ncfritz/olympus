@@ -1,4 +1,4 @@
-import type { Meeting } from "@ncfritz/olympus-sdk/minerva";
+import type { Meeting, Note } from "@ncfritz/olympus-sdk/minerva";
 import {
   CalendarOutlined,
   CaretDownOutlined,
@@ -22,7 +22,7 @@ const PreviousMeeting: React.FunctionComponent<PreviousMeetingProps> = ({
   showMeta,
 }: PreviousMeetingProps) => {
   const [notesOpen, setNotesOpen] = useState(false);
-  const [notes, setNotes] = useState<any[] | undefined>(undefined);
+  const [notes, setNotes] = useState<Note[] | undefined>(undefined);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 

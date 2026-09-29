@@ -7,6 +7,7 @@ import {
   getNextCalendarItemOccurrence,
   listCalendarItems,
   listPreviousCalendarItemOccurrences,
+  type Meeting,
 } from "@ncfritz/olympus-sdk/minerva";
 import { DateTime } from "luxon";
 
@@ -92,12 +93,14 @@ class MeetingsApi {
     });
   }
 
-  toEvent(meeting: any): EventInput {
+  toEvent(meeting: Meeting): EventInput {
     return {
       id: meeting.id,
       allDay: meeting.isAllDay,
       start: DateTime.fromISO(meeting.startTime).toJSDate(),
-      end: DateTime.fromISO(meeting.endTime).toJSDate(),
+      end: meeting.endTime
+        ? DateTime.fromISO(meeting.endTime).toJSDate()
+        : undefined,
       title: meeting.subject,
       editable: false,
       classNames: ["oa-event", `oa-status-${meeting.status.toLowerCase()}`],

@@ -1,5 +1,6 @@
 "use client";
 
+import type { GetMeetingStatisticsResponse } from "@ncfritz/olympus-sdk/minerva";
 import { Space, Spin } from "antd";
 import { DateTime } from "luxon";
 import * as React from "react";
@@ -10,7 +11,7 @@ import { MeetingStatusTypes } from "../../../utils/meetings";
 interface MeetingsHourOfDayGraphProps {
   date: DateTime;
   summaryLoading: boolean;
-  summary: any;
+  summary: GetMeetingStatisticsResponse | undefined;
   width?: number;
 }
 
@@ -55,11 +56,7 @@ const MeetingsDayOfWeekGraph: React.FunctionComponent<
       xCategories.push(LABELS[key]);
 
       MeetingStatusTypes.forEach((type, count) => {
-        series[count].data.push(
-          key in dayCounts && dayCounts[key][type]
-            ? dayCounts[key][type].count
-            : 0,
-        );
+        series[count].data.push(dayCounts?.[key]?.[type]?.count ?? 0);
       });
     }
 

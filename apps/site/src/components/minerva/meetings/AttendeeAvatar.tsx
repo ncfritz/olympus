@@ -1,8 +1,9 @@
+import type { MeetingAttendee } from "@ncfritz/olympus-sdk/minerva";
 import { Avatar, Popover, Space, Typography } from "antd";
 import React from "react";
 
 export interface AttendeeAvatarProps {
-  attendee: any;
+  attendee: MeetingAttendee;
 }
 
 const AttendeeAvatar: React.FunctionComponent<AttendeeAvatarProps> = ({

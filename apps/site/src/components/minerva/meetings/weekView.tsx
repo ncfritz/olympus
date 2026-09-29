@@ -95,7 +95,7 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
         );
         const parsedEvents: EventInput[] = [];
 
-        rawEvents.data.items.forEach((rawEvent: any) => {
+        rawEvents.data.items.forEach((rawEvent) => {
           parsedEvents.push(meetingsApi.toEvent(rawEvent));
         });
 

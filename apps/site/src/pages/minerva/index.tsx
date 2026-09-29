@@ -38,7 +38,7 @@ const IndexPage: React.FunctionComponent = () => {
       const rawEvents = await meetingsApi.getMeetings(startDate, 1);
       const parsedEvents: EventInput[] = [];
 
-      rawEvents.data.items.forEach((rawEvent: any) => {
+      rawEvents.data.items.forEach((rawEvent) => {
         const event = meetingsApi.toEvent(rawEvent);
 
         parsedEvents.push(event);

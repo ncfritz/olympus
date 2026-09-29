@@ -47,13 +47,7 @@ const MeetingsHourOfDayGraph: React.FunctionComponent<
       const key = d.toFormat("HH");
 
       MeetingStatusTypes.forEach((type, count) => {
-        series[count].data.push(
-          hourCounts !== undefined &&
-            key in hourCounts &&
-            (hourCounts[key] as Record<string, { count: number }>)[type]
-            ? (hourCounts[key] as Record<string, { count: number }>)[type].count
-            : 0,
-        );
+        series[count].data.push(hourCounts?.[key]?.[type]?.count ?? 0);
       });
     }
 

@@ -169,7 +169,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
         const getMeetingsResponse = await meetingsApi.getMeetings(start, 1);
         const parsedEvents: EventInput[] = [];
 
-        getMeetingsResponse.data.items.forEach((rawEvent: any) => {
+        getMeetingsResponse.data.items.forEach((rawEvent) => {
           parsedEvents.push(meetingsApi.toEvent(rawEvent));
         });
 
@@ -424,7 +424,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
               maxPopoverTrigger={"click"}
               size={"large"}
             >
-              {event.attendees.map((attendee: any) => {
+              {event.attendees.map((attendee) => {
                 return <AttendeeAvatar attendee={attendee} key={uuidv4()} />;
               })}
             </Avatar.Group>
@@ -672,7 +672,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
                 children: (
                   <DayStatisticsPanel
                     events={rawEvents}
-                    onEventClick={async (event: any) => {
+                    onEventClick={async (event) => {
                       setTargetEventId(event.id);
                     }}
                   />

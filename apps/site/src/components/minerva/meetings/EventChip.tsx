@@ -7,7 +7,7 @@ import styled from "styled-components";
 
 export interface EventChipProps {
   event: Meeting;
-  onClick?: (event: any) => Promise<void>;
+  onClick?: (event: Meeting) => Promise<void>;
   titleOverride?: string;
   style?: CSSProperties;
 }

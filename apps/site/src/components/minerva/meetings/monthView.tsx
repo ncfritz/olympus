@@ -39,7 +39,7 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
       const rawEvents = await meetingsApi.getMeetings(start, days);
       const parsedEvents: EventInput[] = [];
 
-      rawEvents.data.items.forEach((rawEvent: any) => {
+      rawEvents.data.items.forEach((rawEvent) => {
         const parsedEvent = meetingsApi.toEvent(rawEvent);
 
         if (!parsedEvent.allDay) {

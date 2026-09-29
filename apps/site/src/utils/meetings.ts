@@ -5,7 +5,10 @@ export const MeetingStatusTypes = [
   "OOF",
   "WorkingElsewhere",
   "NoData",
-];
+] as const;
+
+/** The statuses above, as the keys of MeetingStatusStatistics. */
+export type MeetingStatusType = (typeof MeetingStatusTypes)[number];
 
 export const config: Record<string, { color: string }> = {
   Free: {

@@ -2,11 +2,12 @@ import { CaretDownOutlined, CaretRightOutlined } from "@ant-design/icons";
 import type { ItemType } from "@rc-component/collapse/lib/interface";
 import { Avatar, Collapse, Empty, Flex, Space, Typography } from "antd";
 import React, { useEffect, useState } from "react";
+import type { Meeting } from "@ncfritz/olympus-sdk/minerva";
 import EventChip from "./EventChip";
 
 export interface DayStatisticsPanelProps {
-  events: any[];
-  onEventClick?: (event: any) => Promise<void>;
+  events: Meeting[];
+  onEventClick?: (event: Meeting) => Promise<void>;
 }
 
 interface AttendeeCount {
@@ -14,7 +15,7 @@ interface AttendeeCount {
   alias: string;
   name: string;
   count: number;
-  events: any[];
+  events: Meeting[];
 }
 
 const DayStatisticsPanel: React.FunctionComponent<DayStatisticsPanelProps> = ({
@@ -36,22 +37,30 @@ const DayStatisticsPanel: React.FunctionComponent<DayStatisticsPanelProps> = ({
           return;
         }
 
-        event.attendees.forEach((attendee: any) => {
+        event.attendees.forEach((attendee) => {
           if (attendee.type !== "Mailbox" || attendee.alias === "ncfritz") {
             return;
           }
 
-          if (!Object.keys(attendeeCounts).includes(attendee.alias)) {
-            attendeeCounts[attendee.alias] = {
+          // Without an alias there is nothing to count an attendee under; they
+          // would otherwise all collapse into a single unnamed bucket.
+          if (!attendee.alias) {
+            return;
+          }
+
+          const alias = attendee.alias;
+
+          if (!Object.keys(attendeeCounts).includes(alias)) {
+            attendeeCounts[alias] = {
               email: attendee.email,
-              alias: attendee.alias,
+              alias: alias,
               name: `${attendee.givenName} ${attendee.surname}`,
               count: 1,
               events: [event],
             };
           } else {
-            attendeeCounts[attendee.alias].count++;
-            attendeeCounts[attendee.alias].events.push(event);
+            attendeeCounts[alias].count++;
+            attendeeCounts[alias].events.push(event);
           }
         });
       });
