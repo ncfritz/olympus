@@ -1,26 +1,41 @@
 import {
-  ArrowDownOutlined,
-  ArrowUpOutlined,
+  CheckSquareOutlined,
   DeleteOutlined,
+  HolderOutlined,
 } from "@ant-design/icons";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   type BaseWeatherLocation,
   type WeatherLocation,
 } from "@ncfritz/olympus-sdk/olympus";
 import {
   Button,
+  Empty,
   Flex,
   Input,
-  List,
   message,
   Modal,
   Popconfirm,
-  Radio,
   Typography,
 } from "antd";
 import { useEffect, useState } from "react";
 import weatherApi from "../../../api/weatherApi";
-import { moveItem } from "../../../utils/weather";
 import PlaceSearch from "./PlaceSearch";
 import styles from "./WeatherWidget.module.css";
 
@@ -36,15 +51,19 @@ export interface ManageLocationsModalProps {
  * Adding, relabelling, ordering and removing the user's locations. Each
  * change is saved as it is made; Done only closes.
  *
- * The design drew a drag handle; this uses move up and down buttons, which a
- * keyboard can drive and which need no drag library.
+ * Rows reorder by dragging their handle, with a mouse, a finger or the
+ * keyboard (focus the handle, Space to pick up, arrows to move, Space to
+ * drop). The new order shows at once and is saved; if saving fails it goes
+ * back to what the server has.
  */
 const ManageLocationsModal: React.FunctionComponent<
   ManageLocationsModalProps
 > = ({ open, locations, onClose, onChanged }: ManageLocationsModalProps) => {
+  const [ordered, setOrdered] = useState<WeatherLocation[]>(locations);
   const [labels, setLabels] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    setOrdered(locations);
     setLabels(
       Object.fromEntries(
         locations.map((location) => [location.id, location.label]),
@@ -52,12 +71,22 @@ const ManageLocationsModal: React.FunctionComponent<
     );
   }, [locations]);
 
+  const sensors = useSensors(
+    // A few pixels of movement before a drag starts, so a click on the
+    // handle is still a click.
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
   const save = async (work: () => Promise<unknown>, failure: string) => {
     try {
       await work();
       await onChanged();
     } catch {
       message.error(failure);
+      setOrdered(locations);
     }
   };
 
@@ -82,14 +111,17 @@ const ManageLocationsModal: React.FunctionComponent<
     );
   };
 
-  const move = (from: number, to: number) =>
-    save(
-      () =>
-        weatherApi.reorderLocations(
-          moveItem(locations, from, to).map((location) => location.id),
-        ),
+  const reorder = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const from = ordered.findIndex((location) => location.id === active.id);
+    const to = ordered.findIndex((location) => location.id === over.id);
+    const next = arrayMove(ordered, from, to);
+    setOrdered(next);
+    void save(
+      () => weatherApi.reorderLocations(next.map((location) => location.id)),
       "Could not reorder the locations",
     );
+  };
 
   return (
     <Modal
@@ -109,89 +141,145 @@ const ManageLocationsModal: React.FunctionComponent<
     >
       <Flex vertical gap={16}>
         <PlaceSearch onChoose={add} />
-        <Radio.Group
-          value={locations.find((location) => location.isDefault)?.id}
-          onChange={(event) =>
-            void save(
-              () =>
-                weatherApi.updateLocation(event.target.value, {
-                  isDefault: true,
-                }),
-              "Could not change the default",
-            )
-          }
-        >
-          <List
-            dataSource={locations}
-            locale={{ emptyText: "No locations yet. Search above to add one." }}
-            renderItem={(location, index) => (
-              <List.Item>
-                <div className={styles.locationRow}>
-                  <Flex vertical>
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<ArrowUpOutlined />}
-                      aria-label={`Move ${location.label} up`}
-                      disabled={index === 0}
-                      onClick={() => void move(index, index - 1)}
-                    />
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<ArrowDownOutlined />}
-                      aria-label={`Move ${location.label} down`}
-                      disabled={index === locations.length - 1}
-                      onClick={() => void move(index, index + 1)}
-                    />
-                  </Flex>
-                  <div className={styles.locationLabel}>
-                    <Input
-                      aria-label={`Label for ${location.label}`}
-                      value={labels[location.id] ?? location.label}
-                      maxLength={100}
-                      onChange={(event) =>
-                        setLabels((all) => ({
-                          ...all,
-                          [location.id]: event.target.value,
-                        }))
-                      }
-                      onBlur={() => relabel(location)}
-                      onPressEnter={() => relabel(location)}
-                    />
-                    {location.placeName && (
-                      <span className={styles.muted}>{location.placeName}</span>
-                    )}
-                  </div>
-                  <Radio
-                    value={location.id}
-                    aria-label={`Make ${location.label} the default`}
-                  >
-                    Default
-                  </Radio>
-                  <Popconfirm
-                    title={`Remove ${location.label}?`}
-                    okText="Remove"
-                    onConfirm={() =>
+        {ordered.length === 0 ? (
+          <Empty description="No locations yet. Search above to add one." />
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={reorder}
+          >
+            <SortableContext
+              items={ordered.map((location) => location.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <ol className={styles.locationList} aria-label="Your locations">
+                {ordered.map((location) => (
+                  <LocationRow
+                    key={location.id}
+                    location={location}
+                    label={labels[location.id] ?? location.label}
+                    onLabelChange={(value) =>
+                      setLabels((all) => ({ ...all, [location.id]: value }))
+                    }
+                    onLabelCommit={() => relabel(location)}
+                    onMakeDefault={() =>
+                      save(
+                        () =>
+                          weatherApi.updateLocation(location.id, {
+                            isDefault: true,
+                          }),
+                        "Could not change the default",
+                      )
+                    }
+                    onRemove={() =>
                       save(
                         () => weatherApi.deleteLocation(location.id),
                         "Could not remove the location",
                       )
                     }
-                  >
-                    <Button
-                      type="text"
-                      icon={<DeleteOutlined />}
-                      aria-label={`Remove ${location.label}`}
-                    />
-                  </Popconfirm>
-                </div>
-              </List.Item>
-            )}
-          />
-        </Radio.Group>
+                  />
+                ))}
+              </ol>
+            </SortableContext>
+          </DndContext>
+        )}
       </Flex>
     </Modal>
+  );
+};
+
+interface LocationRowProps {
+  location: WeatherLocation;
+  label: string;
+  onLabelChange: (value: string) => void;
+  onLabelCommit: () => void;
+  onMakeDefault: () => Promise<void>;
+  onRemove: () => Promise<void>;
+}
+
+/** One location: drag handle, label, default and remove. */
+const LocationRow = ({
+  location,
+  label,
+  onLabelChange,
+  onLabelCommit,
+  onMakeDefault,
+  onRemove,
+}: LocationRowProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: location.id });
+
+  return (
+    <li
+      ref={setNodeRef}
+      className={`${styles.locationRow} ${isDragging ? styles.locationRowDragging : ""}`}
+      // dnd-kit moves the row by transform while it is dragged.
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+    >
+      <Button
+        ref={setActivatorNodeRef}
+        type="text"
+        className={styles.dragHandle}
+        icon={<HolderOutlined />}
+        aria-label={`Reorder ${location.label}`}
+        {...attributes}
+        {...listeners}
+      />
+      <div className={styles.locationLabel}>
+        <Input
+          aria-label={`Label for ${location.label}`}
+          value={label}
+          maxLength={100}
+          onChange={(event) => onLabelChange(event.target.value)}
+          onBlur={onLabelCommit}
+          onPressEnter={onLabelCommit}
+        />
+        {location.placeName && (
+          <span className={styles.muted}>{location.placeName}</span>
+        )}
+      </div>
+      {location.isDefault ? (
+        <Button
+          color="green"
+          variant="solid"
+          icon={<CheckSquareOutlined />}
+          aria-pressed
+          aria-label={`${location.label} is the default`}
+        >
+          Default
+        </Button>
+      ) : (
+        <Button
+          color="green"
+          variant="text"
+          aria-pressed={false}
+          aria-label={`Make ${location.label} the default`}
+          onClick={() => void onMakeDefault()}
+        >
+          Default
+        </Button>
+      )}
+      <Popconfirm
+        title={`Remove ${location.label}?`}
+        okText="Remove"
+        okButtonProps={{ danger: true }}
+        onConfirm={onRemove}
+      >
+        <Button
+          danger
+          icon={<DeleteOutlined />}
+          aria-label={`Remove ${location.label}`}
+        />
+      </Popconfirm>
+    </li>
   );
 };
 

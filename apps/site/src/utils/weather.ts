@@ -96,15 +96,63 @@ export const chooseLocation = (
   return (locations.find((location) => location.isDefault) ?? locations[0])?.id;
 };
 
-/** The list with the item at `from` moved to `to`. */
-export const moveItem = <T>(items: T[], from: number, to: number): T[] => {
-  if (from === to || from < 0 || from >= items.length) return items;
-  const next = [...items];
-  const [moved] = next.splice(from, 1);
-  next.splice(Math.max(0, Math.min(to, next.length)), 0, moved);
-  return next;
-};
-
 /** The frame after `index` in a loop of `count`. */
 export const nextFrame = (index: number, count: number): number =>
   count === 0 ? 0 : (index + 1) % count;
+
+/**
+ * Colours for temperatures (°F), coldest first. A temperature between two
+ * stops is mixed between their colours, so one temperature is always one
+ * colour, whichever day it appears in.
+ */
+export const TEMPERATURE_STOPS: [number, string][] = [
+  [10, "#2f54eb"],
+  [32, "#1677ff"],
+  [45, "#13c2c2"],
+  [58, "#52c41a"],
+  [70, "#fadb14"],
+  [82, "#fa8c16"],
+  [95, "#f5222d"],
+];
+
+const hex = (color: string) =>
+  [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16));
+
+/** The colour of a temperature, as `rgb(r, g, b)`. */
+export const temperatureColor = (temperatureF: number): string => {
+  const stops = TEMPERATURE_STOPS;
+  if (temperatureF <= stops[0][0]) return rgb(hex(stops[0][1]));
+  const last = stops[stops.length - 1];
+  if (temperatureF >= last[0]) return rgb(hex(last[1]));
+  const upper = stops.findIndex(([at]) => at >= temperatureF);
+  const [fromAt, fromColor] = stops[upper - 1];
+  const [toAt, toColor] = stops[upper];
+  const t = (temperatureF - fromAt) / (toAt - fromAt);
+  const a = hex(fromColor);
+  const b = hex(toColor);
+  return rgb(a.map((channel, i) => Math.round(channel + (b[i] - channel) * t)));
+};
+
+const rgb = ([r, g, b]: number[]) => `rgb(${r}, ${g}, ${b})`;
+
+/**
+ * A day's bar as a left-to-right gradient from its low to its high, with
+ * every stop it passes on the way, so a bar crossing freezing shows the
+ * blue-to-cyan turn where it happens rather than a smear of two ends.
+ */
+export const temperatureGradient = (lowF: number, highF: number): string => {
+  if (highF <= lowF) return temperatureColor(lowF);
+  const span = highF - lowF;
+  const points = [
+    lowF,
+    ...TEMPERATURE_STOPS.map(([at]) => at).filter(
+      (at) => at > lowF && at < highF,
+    ),
+    highF,
+  ];
+  const stops = points.map(
+    (at) =>
+      `${temperatureColor(at)} ${Math.round(((at - lowF) / span) * 100)}%`,
+  );
+  return `linear-gradient(90deg, ${stops.join(", ")})`;
+};

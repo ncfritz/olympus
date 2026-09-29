@@ -7,9 +7,10 @@ import {
   degrees,
   formatClock,
   formatHour,
-  moveItem,
   nextFrame,
   rangeBars,
+  temperatureColor,
+  temperatureGradient,
 } from "../../src/utils/weather";
 
 const PACIFIC = -25_200;
@@ -71,15 +72,24 @@ describe("weather helpers", () => {
     expect(chooseLocation([])).toBeUndefined();
   });
 
-  it("moves an item within a list", () => {
-    expect(moveItem(["a", "b", "c"], 0, 2)).toEqual(["b", "c", "a"]);
-    expect(moveItem(["a", "b", "c"], 2, 0)).toEqual(["c", "a", "b"]);
-    expect(moveItem(["a", "b"], 1, 1)).toEqual(["a", "b"]);
-  });
-
   it("loops the radar frames", () => {
     expect(nextFrame(0, 13)).toBe(1);
     expect(nextFrame(12, 13)).toBe(0);
     expect(nextFrame(0, 0)).toBe(0);
+  });
+
+  it("colours a temperature at a stop, between stops, and past the ends", () => {
+    expect(temperatureColor(58)).toBe("rgb(82, 196, 26)");
+    expect(temperatureColor(-20)).toBe(temperatureColor(10));
+    expect(temperatureColor(120)).toBe(temperatureColor(95));
+    // Halfway from 58 (green) to 70 (yellow).
+    expect(temperatureColor(64)).toBe("rgb(166, 208, 23)");
+  });
+
+  it("draws a day's bar through every stop it crosses", () => {
+    expect(temperatureGradient(49, 61)).toBe(
+      "linear-gradient(90deg, rgb(38, 195, 142) 0%, rgb(82, 196, 26) 75%, rgb(124, 202, 25) 100%)",
+    );
+    expect(temperatureGradient(55, 55)).toBe(temperatureColor(55));
   });
 });

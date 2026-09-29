@@ -6,6 +6,7 @@ import {
 } from "@ant-design/icons";
 import { type WeatherLocation } from "@ncfritz/olympus-sdk/olympus";
 import { Button, Dropdown, Tag } from "antd";
+import styles from "./WeatherWidget.module.css";
 
 export interface LocationMenuProps {
   locations: WeatherLocation[];
@@ -37,10 +38,14 @@ const LocationMenu: React.FunctionComponent<LocationMenuProps> = ({
             key: location.id,
             icon: location.id === selectedId ? <CheckOutlined /> : <span />,
             label: (
-              <>
-                {location.label}
-                {location.isDefault && <Tag bordered={false}>Default</Tag>}
-              </>
+              <span className={styles.menuLabel}>
+                <span>{location.label}</span>
+                {location.isDefault && (
+                  <Tag bordered={false} color="green">
+                    Default
+                  </Tag>
+                )}
+              </span>
             ),
           })),
           ...(locations.length > 0 ? [{ type: "divider" as const }] : []),

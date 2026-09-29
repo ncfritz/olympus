@@ -237,13 +237,18 @@ tasks pass.
      `antd-style`, and a module needs no new dependency. Two inline styles
      remain where the value is data (a range bar's position, a legend
      swatch's colour).
-   - Locations are reordered with move up and down buttons rather than the
-     design's drag handle: keyboard-drivable, no drag library.
+   - Locations reorder by dragging a handle (`@dnd-kit`: pointer, touch
+     and keyboard). The default is a green button with a check when set
+     and green text when not; remove is a danger button.
+   - The five days' bars are coloured by temperature: one colour scale
+     (`TEMPERATURE_STOPS`) from 10 °F to 95 °F, each bar a gradient from
+     its low to its high through every stop it crosses.
    - The Stations view switch arrives with phase 8; until then the widget
      is the Forecast view alone.
    - Signed out, the widget says to sign in; the locations are the user's.
    - `@types/google.maps` joins the site's dev dependencies for the Places
-     types.
+     types, and `@dnd-kit/core`, `/sortable` and `/utilities` its
+     dependencies for the drag.
 
 **Sign-off:** W1–W5 in the site, W9.
 

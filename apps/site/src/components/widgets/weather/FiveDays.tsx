@@ -1,5 +1,11 @@
 import { type ForecastDay } from "@ncfritz/olympus-sdk/olympus";
-import { chance, dayLabel, degrees, rangeBars } from "../../../utils/weather";
+import {
+  chance,
+  dayLabel,
+  degrees,
+  rangeBars,
+  temperatureGradient,
+} from "../../../utils/weather";
 import ConditionIcon from "./ConditionIcon";
 import styles from "./WeatherWidget.module.css";
 
@@ -37,10 +43,12 @@ const FiveDays: React.FunctionComponent<FiveDaysProps> = ({
             >
               <span
                 className={styles.bar}
-                // The one style computed from data: where the bar sits.
+                // Computed from data: where the bar sits on the shared
+                // scale, and its low-to-high temperature colours.
                 style={{
                   left: `${bars[index].left}%`,
                   width: `${bars[index].width}%`,
+                  background: temperatureGradient(day.lowF, day.highF),
                 }}
               />
             </span>

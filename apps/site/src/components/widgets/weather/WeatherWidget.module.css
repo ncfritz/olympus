@@ -156,11 +156,11 @@
   border-radius: 3px;
 }
 
+/* Its background is the day's temperature gradient, set from data. */
 .bar {
   position: absolute;
   top: 0;
   height: 6px;
-  background: #69b1ff;
   border-radius: 3px;
 }
 
@@ -226,11 +226,47 @@
   color: #595959;
 }
 
+.locationList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menuLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.menuLabel :global(.ant-tag) {
+  margin-inline-end: 0;
+}
+
 .locationRow {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  background: #ffffff;
+}
+
+.locationRowDragging {
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.dragHandle {
+  cursor: grab;
+  touch-action: none;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
 }
 
 .locationLabel {
