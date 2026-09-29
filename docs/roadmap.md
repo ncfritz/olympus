@@ -322,6 +322,16 @@ check the consumers when the metadata and asset agents are imported.
   endpoint actually returns; the aggregate-statistics entry above is why that is
   worth doing rather than assuming the spec is right.
 
+- **`SendAmqpTestMessage` declares a `{ payload }` envelope that nothing
+  unwraps.** The controller takes a `TestRequest` body and publishes it to the
+  exchange as-is, so a consumer receives `{ payload: ... }` rather than the
+  message inside it -- while `apps/site` sends the message flat, which is what
+  the media trigger consumer expects and why the workflow button works.
+  Whichever side is right, the declaration and the publisher disagree: either
+  the controller should publish `request.payload`, or the body should be the
+  message. The site casts across it for now, with the reason at the cast
+  (`apps/site/src/api/adminApi.ts`). Found by typing that method, 2026-09-29.
+
 ### Site
 
 - **Notifications are broadcast to every connected socket.** The gateway's
@@ -342,28 +352,53 @@ status` is only clean while the installed version matches the committed one --
   needs the build to reproduce all of it, premium included, which is the site's
   conventions work rather than this phase's.
 
-- **143 `@typescript-eslint/no-explicit-any`**, and nothing else: down from the
-  442 warnings across seven rules the site arrived with (2026-09-29), now across
-  76 files. `no-unused-vars` went from 277 to zero, and the other five rules are
-  empty.
+- **8 `@typescript-eslint/no-explicit-any`**, and nothing else: down from the
+  442 warnings across seven rules the site arrived with (2026-09-29).
+  `no-unused-vars` went from 277 to zero, and the other five rules are empty.
 
-  What is left is typing work rather than lint work. Many of the 143 are where a
-  generated SDK type exists and was never reached for, which is also what
-  `strict` will land on -- so the `any`s and `strict` are one job, not two, and
-  neither is a sweep. `next.config.mjs` still hides them from the build with
-  `eslint: { ignoreDuringBuilds: true }`, and they are warnings rather than
-  errors in `apps/site/eslint.config.mjs`; both of those change when the count
-  reaches zero.
+  All eight are in the OnAir components and their client, and they stay: those
+  endpoints are being replaced by the Minerva calendar sync, so typing
+  `onairApi` from what the components read would be work thrown away -- the new
+  APIs bring their own types. `next.config.mjs` still hides warnings from the
+  build with `eslint: { ignoreDuringBuilds: true }`, and they are warnings
+  rather than errors in `apps/site/eslint.config.mjs`; both of those change when
+  the OnAir move lands and the count reaches zero.
 
-  Eight of the remaining `any`s are in the OnAir components and their client, and
-  they stay: those endpoints are being replaced by the Minerva calendar sync, so
-  typing `onairApi` from what the components read would be work thrown away --
-  the new APIs bring their own types. The rest are not waiting on anything.
+  What the typing turned out to be, for the record, was three kinds of work. A
+  generated SDK type existed and had never been reached for -- the meetings
+  views, the workflow charts, the notes, the content asset page. Or the data has
+  no spec because it does not come from our API: the ffprobe and HandBrake
+  metadata and the NZB summary the media pipeline publishes to the CDN
+  (`src/utils/ffprobe.ts`, `handbrake.ts`, `nzb.ts`), the notifications socket's
+  own envelope (`src/auth/notifications.ts`), the transcription service's
+  websocket. Or the `any` was standing in for a library's type that was there
+  all along -- antd's `TabsProps["items"]`, react-hook-form's render props,
+  React's `DependencyList`, deck.gl's `GoogleMapsOverlayProps`.
 
-  Two things the pass found and did not fix, because they are decisions about
+  Six bugs came out of it, each one a place where `any` had been hiding that a
+  value could be absent: `ContentAssetDetailsPanel` and the asset page both
+  rendered before their fetch resolved and read fields off `undefined`;
+  `EventChip` and `meetingsApi.toEvent` formatted `Meeting.endTime`, which is
+  optional, so an open-ended meeting rendered an invalid date; and
+  `DayStatisticsPanel` keyed its attendee tally on the optional `alias`, so
+  every attendee without one collapsed into a single unnamed bucket. The
+  statistics panel that would crash on a failed fetch and the fourteen demoted
+  `"use client"` directives came out of the earlier passes.
+
+  Three things the pass found and did not fix, because they are decisions about
   features rather than about warnings: `OnAirEvent` ignores an `updateFunction`
-  prop that `CalendarPanel` still computes and passes, and `MovieVideoList`
-  computed a per-site video icon that was never rendered (removed).
+  prop that `CalendarPanel` still computes and passes, `MovieVideoList` computed
+  a per-site video icon that was never rendered (removed), and
+  `MediaAssetFFMpegDetails` collects a `chapters` list it never populates, so
+  the chapters section can never draw.
+
+  Two more that want a decision rather than a type: `useFetch` declares its data
+  as `T` while holding it as `T | undefined`, so every caller is told the value
+  is there before the first fetch resolves and after a failure -- which is what
+  three of the bugs above actually were, and fixing the signature touches every
+  caller. And `src/components/notes/NoteMarkdownEditor.tsx` has no callers and
+  never wired its props into `React.FunctionComponent`; it is typed now, but it
+  probably wants deleting.
 
   Turning them into errors, and adopting `@ncfritz/olympus-config/eslint/react`
   in place of the site's own config, wait on the catalog upgrade -- that config
