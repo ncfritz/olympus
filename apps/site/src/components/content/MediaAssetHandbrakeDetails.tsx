@@ -24,10 +24,11 @@ import {
   metadataValue,
   tagsSection,
 } from "./MediaAssetFFMpegDetails";
+import type { HandBrakeMetadata } from "../../utils/handbrake";
 const DynamicReactJson = dynamic(import("react-json-view"), { ssr: false });
 
 export interface MediaAssetHandbrakeDetailsProps {
-  metadata: any;
+  metadata: HandBrakeMetadata;
   showRaw: boolean;
   allowRawToggle?: boolean;
 }
@@ -100,239 +101,209 @@ const MediaAssetHandbrakeDetails: React.FunctionComponent<
     let subtitleStreams: CollapseProps["items"] = [];
     let chapters: CollapseProps["items"] = [];
 
-    audioStreams = (title.AudioList as any[]).map(
-      (stream: any, index: number) => {
-        return {
-          label: (
-            <Space orientation={"horizontal"} size={4}>
-              <SoundOutlined />
-              {stream.Description}
-            </Space>
-          ),
-          key: `audioStream-${index}`,
-          children: (
-            <>
-              <Row>
-                {metadataLabel("Language")}
-                {metadataValue(stream.Language)}
-                {metadataLabel("Language Code")}
-                {metadataValue(stream.LanguageCode)}
-                {metadataLabel("Track")}
-                {metadataValue(stream.TrackNumber)}
-              </Row>
-              <Row>
-                {metadataLabel("Channels")}
-                {metadataValue(stream.ChannelCount)}
-                {metadataLabel("Channel Layout")}
-                {metadataValue(stream.ChannelLayout)}
-                {metadataLabel("Channel Layout Name")}
-                {metadataValue(stream.ChannelLayoutName)}
-              </Row>
-              <Row>
-                {metadataLabel("Codec")}
-                {metadataValue(stream.CodecName)}
-                {metadataLabel("Codec Id")}
-                {metadataValue(stream.Codec)}
-                {metadataLabel("Codec Param")}
-                {metadataValue(stream.CodecParam)}
-              </Row>
-              <Row>
-                {metadataLabel("Bit Rate")}
-                {metadataValue(stream.BitRate)}
-                {metadataLabel("Sample Rate")}
-                {metadataValue(stream.SampleRate)}
-                {metadataLabel("LFE Count")}
-                {metadataValue(stream.LFECount)}
-              </Row>
-              <Row style={{ marginTop: 8, borderBottom: "1px solid #efefef" }}>
-                <Col span={4}>
-                  <Typography.Text
-                    strong={true}
-                    style={{
-                      display: "flex",
-                      justifyContent: "end",
-                      marginRight: 8,
-                    }}
-                  >
-                    Attributes
-                  </Typography.Text>
-                </Col>
-              </Row>
-              <Row>
-                {metadataLabel("Commentary", 4)}
-                {metadataValue(
-                  stream.Attributes.Commentary ? enabled : disabled,
-                  1,
-                )}
-                {metadataLabel("Alt Commentary", 4)}
-                {metadataValue(
-                  stream.Attributes.AltCommentary ? enabled : disabled,
-                  1,
-                )}
-                {metadataLabel("Default", 4)}
-                {metadataValue(
-                  stream.Attributes.Default ? enabled : disabled,
-                  1,
-                )}
-                {metadataLabel("Normal", 4)}
-                {metadataValue(
-                  stream.Attributes.Normal ? enabled : disabled,
-                  1,
-                )}
-              </Row>
-              <Row>
-                {metadataLabel("Secondary", 4)}
-                {metadataValue(
-                  stream.Attributes.Secondary ? enabled : disabled,
-                  1,
-                )}
-                {metadataLabel("Visually Impaired", 4)}
-                {metadataValue(
-                  stream.Attributes.VisuallyImpaired ? enabled : disabled,
-                  1,
-                )}
-              </Row>
-            </>
-          ),
-        };
-      },
-    );
-    subtitleStreams = (title.SubtitleList as any[]).map(
-      (stream: any, index: number) => {
-        const titleExtra = getTitleExtra(stream.LanguageCode, stream.Name);
-
-        return {
-          label: (
-            <Space
-              orientation={"horizontal"}
-              size={8}
-              style={{ alignItems: "center" }}
-            >
-              <FileTextOutlined />
-              <Typography.Text
-                style={{ fontSize: "12px", fontFamily: "monospace" }}
-              >
-                {stream.Language}
-              </Typography.Text>
-              {titleExtra && ["-", titleExtra]}
-            </Space>
-          ),
-          key: `audioStream-${index}`,
-          children: (
-            <>
-              <Row>
-                {metadataLabel("Language")}
-                {metadataValue(stream.Language)}
-                {metadataLabel("Language Code")}
-                {metadataValue(stream.LanguageCode)}
-                {metadataLabel("Track")}
-                {metadataValue(stream.TrackNumber)}
-              </Row>
-              <Row>
-                {metadataLabel("Source")}
-                {metadataValue(stream.Source)}
-                {metadataLabel("Source Name")}
-                {metadataValue(stream.SourceName)}
-                {metadataLabel("Format")}
-                {metadataValue(stream.Format)}
-              </Row>
-              <Row style={{ marginTop: 8, borderBottom: "1px solid #efefef" }}>
-                <Col span={4}>
-                  <Typography.Text
-                    strong={true}
-                    style={{
-                      display: "flex",
-                      justifyContent: "end",
-                      marginRight: 8,
-                    }}
-                  >
-                    Attributes
-                  </Typography.Text>
-                </Col>
-              </Row>
-              <Row>
-                {metadataLabel("4:3 Ratio", 4)}
-                {metadataValue(
-                  stream.Attributes["4By3"] ? enabled : disabled,
-                  1,
-                )}
-                {metadataLabel("Children", 4)}
-                {metadataValue(
-                  stream.Attributes.Children ? enabled : disabled,
-                  1,
-                )}
-                {metadataLabel("Closed Caption", 4)}
-                {metadataValue(
-                  stream.Attributes.Default ? enabled : disabled,
-                  1,
-                )}
-                {metadataLabel("ClosedCaption", 4)}
-                {metadataValue(
-                  stream.Attributes.ClosedCaption ? enabled : disabled,
-                  1,
-                )}
-              </Row>
-              <Row>
-                {metadataLabel("Default", 4)}
-                {metadataValue(
-                  stream.Attributes.Default ? enabled : disabled,
-                  1,
-                )}
-                {metadataLabel("Forced", 4)}
-                {metadataValue(
-                  stream.Attributes.Forced ? enabled : disabled,
-                  1,
-                )}
-                {metadataLabel("Large", 4)}
-                {metadataValue(stream.Attributes.Large ? enabled : disabled, 1)}
-                {metadataLabel("Letterbox", 4)}
-                {metadataValue(
-                  stream.Attributes.Letterbox ? enabled : disabled,
-                  1,
-                )}
-              </Row>
-              <Row>
-                {metadataLabel("Normal", 4)}
-                {metadataValue(
-                  stream.Attributes.Normal ? enabled : disabled,
-                  1,
-                )}
-                {metadataLabel("Panoramic Scan", 4)}
-                {metadataValue(
-                  stream.Attributes.PanScan ? enabled : disabled,
-                  1,
-                )}
-                {metadataLabel("Wide", 4)}
-                {metadataValue(stream.Attributes.Wide ? enabled : disabled, 1)}
-              </Row>
-            </>
-          ),
-        };
-      },
-    );
-    chapters = (title.ChapterList as any[]).map(
-      (chapter: any, index: number) => {
-        return {
-          label: chapter.Name || "Unknown",
-          key: `chapter-${index}`,
-          children: (
+    audioStreams = (title.AudioList ?? []).map((stream, index) => {
+      return {
+        label: (
+          <Space orientation={"horizontal"} size={4}>
+            <SoundOutlined />
+            {stream.Description}
+          </Space>
+        ),
+        key: `audioStream-${index}`,
+        children: (
+          <>
             <Row>
-              {metadataLabel("Duration")}
-              {metadataValue(
-                `${String(chapter.Duration.Hours).padStart(2, "0")}:${String(
-                  chapter.Duration.Minutes,
-                ).padStart(2, "0")}:${String(chapter.Duration.Seconds).padStart(
-                  2,
-                  "0",
-                )}`,
-              )}
-              {metadataLabel("Ticks")}
-              {metadataValue(chapter.Duration.Ticks)}
+              {metadataLabel("Language")}
+              {metadataValue(stream.Language)}
+              {metadataLabel("Language Code")}
+              {metadataValue(stream.LanguageCode)}
+              {metadataLabel("Track")}
+              {metadataValue(stream.TrackNumber)}
             </Row>
-          ),
-        };
-      },
-    );
+            <Row>
+              {metadataLabel("Channels")}
+              {metadataValue(stream.ChannelCount)}
+              {metadataLabel("Channel Layout")}
+              {metadataValue(stream.ChannelLayout)}
+              {metadataLabel("Channel Layout Name")}
+              {metadataValue(stream.ChannelLayoutName)}
+            </Row>
+            <Row>
+              {metadataLabel("Codec")}
+              {metadataValue(stream.CodecName)}
+              {metadataLabel("Codec Id")}
+              {metadataValue(stream.Codec)}
+              {metadataLabel("Codec Param")}
+              {metadataValue(stream.CodecParam)}
+            </Row>
+            <Row>
+              {metadataLabel("Bit Rate")}
+              {metadataValue(stream.BitRate)}
+              {metadataLabel("Sample Rate")}
+              {metadataValue(stream.SampleRate)}
+              {metadataLabel("LFE Count")}
+              {metadataValue(stream.LFECount)}
+            </Row>
+            <Row style={{ marginTop: 8, borderBottom: "1px solid #efefef" }}>
+              <Col span={4}>
+                <Typography.Text
+                  strong={true}
+                  style={{
+                    display: "flex",
+                    justifyContent: "end",
+                    marginRight: 8,
+                  }}
+                >
+                  Attributes
+                </Typography.Text>
+              </Col>
+            </Row>
+            <Row>
+              {metadataLabel("Commentary", 4)}
+              {metadataValue(
+                stream.Attributes.Commentary ? enabled : disabled,
+                1,
+              )}
+              {metadataLabel("Alt Commentary", 4)}
+              {metadataValue(
+                stream.Attributes.AltCommentary ? enabled : disabled,
+                1,
+              )}
+              {metadataLabel("Default", 4)}
+              {metadataValue(stream.Attributes.Default ? enabled : disabled, 1)}
+              {metadataLabel("Normal", 4)}
+              {metadataValue(stream.Attributes.Normal ? enabled : disabled, 1)}
+            </Row>
+            <Row>
+              {metadataLabel("Secondary", 4)}
+              {metadataValue(
+                stream.Attributes.Secondary ? enabled : disabled,
+                1,
+              )}
+              {metadataLabel("Visually Impaired", 4)}
+              {metadataValue(
+                stream.Attributes.VisuallyImpaired ? enabled : disabled,
+                1,
+              )}
+            </Row>
+          </>
+        ),
+      };
+    });
+    subtitleStreams = (title.SubtitleList ?? []).map((stream, index) => {
+      const titleExtra = getTitleExtra(stream.LanguageCode, stream.Name);
+
+      return {
+        label: (
+          <Space
+            orientation={"horizontal"}
+            size={8}
+            style={{ alignItems: "center" }}
+          >
+            <FileTextOutlined />
+            <Typography.Text
+              style={{ fontSize: "12px", fontFamily: "monospace" }}
+            >
+              {stream.Language}
+            </Typography.Text>
+            {titleExtra && ["-", titleExtra]}
+          </Space>
+        ),
+        key: `audioStream-${index}`,
+        children: (
+          <>
+            <Row>
+              {metadataLabel("Language")}
+              {metadataValue(stream.Language)}
+              {metadataLabel("Language Code")}
+              {metadataValue(stream.LanguageCode)}
+              {metadataLabel("Track")}
+              {metadataValue(stream.TrackNumber)}
+            </Row>
+            <Row>
+              {metadataLabel("Source")}
+              {metadataValue(stream.Source)}
+              {metadataLabel("Source Name")}
+              {metadataValue(stream.SourceName)}
+              {metadataLabel("Format")}
+              {metadataValue(stream.Format)}
+            </Row>
+            <Row style={{ marginTop: 8, borderBottom: "1px solid #efefef" }}>
+              <Col span={4}>
+                <Typography.Text
+                  strong={true}
+                  style={{
+                    display: "flex",
+                    justifyContent: "end",
+                    marginRight: 8,
+                  }}
+                >
+                  Attributes
+                </Typography.Text>
+              </Col>
+            </Row>
+            <Row>
+              {metadataLabel("4:3 Ratio", 4)}
+              {metadataValue(stream.Attributes["4By3"] ? enabled : disabled, 1)}
+              {metadataLabel("Children", 4)}
+              {metadataValue(
+                stream.Attributes.Children ? enabled : disabled,
+                1,
+              )}
+              {metadataLabel("Closed Caption", 4)}
+              {metadataValue(stream.Attributes.Default ? enabled : disabled, 1)}
+              {metadataLabel("ClosedCaption", 4)}
+              {metadataValue(
+                stream.Attributes.ClosedCaption ? enabled : disabled,
+                1,
+              )}
+            </Row>
+            <Row>
+              {metadataLabel("Default", 4)}
+              {metadataValue(stream.Attributes.Default ? enabled : disabled, 1)}
+              {metadataLabel("Forced", 4)}
+              {metadataValue(stream.Attributes.Forced ? enabled : disabled, 1)}
+              {metadataLabel("Large", 4)}
+              {metadataValue(stream.Attributes.Large ? enabled : disabled, 1)}
+              {metadataLabel("Letterbox", 4)}
+              {metadataValue(
+                stream.Attributes.Letterbox ? enabled : disabled,
+                1,
+              )}
+            </Row>
+            <Row>
+              {metadataLabel("Normal", 4)}
+              {metadataValue(stream.Attributes.Normal ? enabled : disabled, 1)}
+              {metadataLabel("Panoramic Scan", 4)}
+              {metadataValue(stream.Attributes.PanScan ? enabled : disabled, 1)}
+              {metadataLabel("Wide", 4)}
+              {metadataValue(stream.Attributes.Wide ? enabled : disabled, 1)}
+            </Row>
+          </>
+        ),
+      };
+    });
+    chapters = (title.ChapterList ?? []).map((chapter, index) => {
+      return {
+        label: chapter.Name || "Unknown",
+        key: `chapter-${index}`,
+        children: (
+          <Row>
+            {metadataLabel("Duration")}
+            {metadataValue(
+              `${String(chapter.Duration.Hours).padStart(2, "0")}:${String(
+                chapter.Duration.Minutes,
+              ).padStart(2, "0")}:${String(chapter.Duration.Seconds).padStart(
+                2,
+                "0",
+              )}`,
+            )}
+            {metadataLabel("Ticks")}
+            {metadataValue(chapter.Duration.Ticks)}
+          </Row>
+        ),
+      };
+    });
 
     content = (
       <Space orientation={"vertical"} size={0} style={{ width: "100%" }}>
@@ -361,9 +332,9 @@ const MediaAssetHandbrakeDetails: React.FunctionComponent<
           {metadataValue(title.Path, 20)}
         </Row>
         {tagsSection({
-          Index: title.Index,
-          Playlist: title.Playlist,
-          Type: title.Type,
+          Index: `${title.Index}`,
+          Playlist: `${title.Playlist}`,
+          Type: `${title.Type}`,
           VideoCodec: title.VideoCodec,
           InterlaceDetected: `${title.InterlaceDetected}`,
           KeepDuplicateTitles: `${title.KeepDuplicateTitles}`,

@@ -9,6 +9,7 @@ import React, { useEffect, useState } from "react";
 import { useFetch } from "../../../../hooks/useFetch";
 import { DIONYSUS_CDN_HOST } from "../../../../utils/constants";
 import type { FFProbeMetadata } from "../../../../utils/ffprobe";
+import type { HandBrakeMetadata } from "../../../../utils/handbrake";
 import LoadingWrapper from "../../../common/LoadingWrapper";
 import MediaAssetFFMpegDetails from "../../../content/MediaAssetFFMpegDetails";
 import MediaAssetHandbrakeDetails from "../../../content/MediaAssetHandbrakeDetails";
@@ -56,7 +57,7 @@ const MetadataDetailsPanel: React.FunctionComponent<
   });
 
   const [handbrakeMetadata, handbrakeMetaLoading, handbrakeMetaError] =
-    useFetch<undefined, any>({
+    useFetch<undefined, HandBrakeMetadata>({
       dataType: undefined,
       params: undefined,
       watch: [workflow.id],
