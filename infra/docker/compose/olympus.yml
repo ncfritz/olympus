@@ -209,21 +209,12 @@ services:
     networks:
       - edge
 
-  # The site's pre-monorepo image, as it runs today, until the site is
-  # imported (roadmap phase 3). Its configuration is inside the image.
+  # The site (apps/site). No profile and nothing to configure: what it needs is
+  # compiled into the bundle at build time (docker-bake.hcl's site target), and
+  # nginx proxies to it by name on the edge network at port 3000.
   olympus-site:
-    # Unset where the profile is off; a name that fails to pull if it is
-    # on without one.
-    image: ${SITE_IMAGE:-site-image-not-set}
-    # Built on the Mac Mini and never pushed anywhere: use it as it is.
-    pull_policy: never
-    profiles: [site]
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    logging: *logging
-    volumes:
-      - ${DATA_DIR:?}/olympus/site/olr:/olr
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/site:${OLYMPUS_TAG:?}
     networks:
       - edge
 

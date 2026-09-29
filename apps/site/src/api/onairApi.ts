@@ -1,7 +1,10 @@
 import axios from "axios";
+import { required } from "../utils/constants";
 
-const ONAIR_URL =
-  process.env.NEXT_PUBLIC_ONAIR_API_HOST || "https://onair.sea.ncfritz.net";
+const ONAIR_URL = required(
+  "NEXT_PUBLIC_ONAIR_API_HOST",
+  process.env.NEXT_PUBLIC_ONAIR_API_HOST,
+);
 
 const getStatus = async () => {
   try {

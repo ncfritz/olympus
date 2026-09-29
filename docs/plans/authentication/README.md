@@ -416,11 +416,9 @@ claiming `192.168.0.0/20` and taking the LAN away from every container on the
 host.
 
 **Not signed off.** The matrix asks for F1 (INT), F2, F3 (INT), F4 and F10. INT
-is the site running on the Mac Mini, and there is no image to run: the site has
-no `docker-bake.hcl` target, its Dockerfile is the pre-import one, and
-`compose/olympus.yml`'s `site` profile still starts `SITE_IMAGE`, the
-pre-monorepo build -- so `olympus.internal.ncfritz.net` is serving the NextAuth
-site today. What the pass above exercised was the dev host: a checkout on a
+is the site running on the Mac Mini. As of 2026-09-29 it has a
+`docker-bake.hcl` target and a Compose service pointing at it, but no image has
+been built yet, so that host is still serving the pre-monorepo NextAuth build. What the pass above exercised was the dev host: a checkout on a
 developer's machine behind the Mini's nginx (ADR 0019, 0022). That is not INT
 and is not recorded as it. The phase stays open until the site has an image and
 the cases are run against it.

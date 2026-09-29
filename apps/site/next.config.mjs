@@ -1,5 +1,5 @@
-import { RsdoctorWebpackPlugin } from "@rsdoctor/webpack-plugin";
 import CopyPlugin from "copy-webpack-plugin";
+import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -89,6 +89,15 @@ const nextConfig = {
     );
 
     if (process.env.RSDOCTOR) {
+      // Required here rather than imported at the top of this file, because
+      // @rsdoctor/webpack-plugin brings a native binding (@rspack/resolver) and
+      // an import would make every build depend on one being published for the
+      // platform doing the building. The image builds on Alpine, where that is
+      // a less travelled path than glibc, and a bundle analyser nobody asked
+      // for is no reason for a build to fail.
+      const { RsdoctorWebpackPlugin } = createRequire(import.meta.url)(
+        "@rsdoctor/webpack-plugin",
+      );
       if (config.name === "client") {
         config.plugins.push(
           new RsdoctorWebpackPlugin({

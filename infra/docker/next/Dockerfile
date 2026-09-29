@@ -35,10 +35,26 @@ ARG PNPM_VERSION
 # unset when they are empty.
 ARG NEXT_PUBLIC_API_URL=""
 ARG NEXT_PUBLIC_BASE_PATH=""
+# The site's, which names where it sends people and where its media comes from
+# (apps/site/src/utils/constants.ts). Empty here on purpose: the app requires
+# the ones it cannot be wrong about, so a build that forgets an argument fails
+# rather than compiling in a development host.
+ARG NEXT_PUBLIC_ENVIRONMENT=""
+ARG NEXT_PUBLIC_OLYMPUS_HOST=""
+ARG NEXT_PUBLIC_CONTENT_CDN_HOST=""
+ARG NEXT_PUBLIC_DIONYSUS_CDN_HOST=""
+ARG NEXT_PUBLIC_ONAIR_API_HOST=""
+ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=""
 ENV TURBO_TELEMETRY_DISABLED=1 \
     NEXT_TELEMETRY_DISABLED=1 \
     NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
     NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH} \
+    NEXT_PUBLIC_ENVIRONMENT=${NEXT_PUBLIC_ENVIRONMENT} \
+    NEXT_PUBLIC_OLYMPUS_HOST=${NEXT_PUBLIC_OLYMPUS_HOST} \
+    NEXT_PUBLIC_CONTENT_CDN_HOST=${NEXT_PUBLIC_CONTENT_CDN_HOST} \
+    NEXT_PUBLIC_DIONYSUS_CDN_HOST=${NEXT_PUBLIC_DIONYSUS_CDN_HOST} \
+    NEXT_PUBLIC_ONAIR_API_HOST=${NEXT_PUBLIC_ONAIR_API_HOST} \
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY} \
     npm_config_store_dir=/pnpm/store
 RUN npm install --global --no-fund --no-audit pnpm@${PNPM_VERSION}
 WORKDIR /repo
