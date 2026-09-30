@@ -3,7 +3,15 @@ import {
   type WeatherForecast,
   type WeatherLocation,
 } from "@ncfritz/olympus-sdk/olympus";
-import { Alert, Button, Empty, Result, Skeleton } from "antd";
+import {
+  Alert,
+  Button,
+  Empty,
+  Result,
+  Skeleton,
+  Tabs,
+  type TabsProps,
+} from "antd";
 import { useEffect, useState } from "react";
 import weatherApi from "../../../api/weatherApi";
 import { useAuth } from "../../../auth/AuthProvider";
@@ -19,7 +27,6 @@ import LocationMenu from "./LocationMenu";
 import ManageLocationsModal from "./ManageLocationsModal";
 import NextHours from "./NextHours";
 import StationsView from "./StationsView";
-import WeatherTabs, { panelId, tabId, type WeatherView } from "./WeatherTabs";
 import WeatherMap from "./WeatherMap";
 import styles from "./WeatherWidget.module.css";
 
@@ -28,6 +35,8 @@ const FORECAST_REFRESH_MS = 15 * 60 * 1000;
 
 /** Which view the widget last showed, per browser. */
 const VIEW_KEY = "weather.view";
+
+type WeatherView = "forecast" | "stations";
 
 /**
  * The home page's weather (docs/plans/weather/design.md), in two views:
@@ -39,13 +48,16 @@ const WeatherWidget: React.FunctionComponent = () => {
   const auth = useAuth();
   if (auth.status !== "signed-in") {
     return (
-      <Frame>
-        {auth.status === "loading" ? (
-          <Skeleton active />
-        ) : (
-          <Empty description="Sign in to see the weather for your places." />
-        )}
-      </Frame>
+      <Frame
+        view="forecast"
+        forecast={
+          auth.status === "loading" ? (
+            <Skeleton active />
+          ) : (
+            <Empty description="Sign in to see the weather for your places." />
+          )
+        }
+      />
     );
   }
   return <SignedInWeather />;
@@ -62,28 +74,11 @@ const SignedInWeather: React.FunctionComponent = () => {
     setView(next);
     storeToLocalStorage(VIEW_KEY, next);
   };
-  const tabs = (extra?: React.ReactNode) => (
-    <WeatherTabs view={view} onChange={choose} extra={extra} />
-  );
 
-  if (view === "stations") {
-    return (
-      <Frame tabs={tabs()} view={view}>
-        <StationsView />
-      </Frame>
-    );
-  }
-  return <ForecastView tabs={tabs} />;
-};
-
-const ForecastView = ({
-  tabs,
-}: {
-  tabs: (extra: React.ReactNode) => React.ReactNode;
-}) => {
+  // The locations live here rather than in the Forecast tab: their menu is
+  // in the tab bar.
   const [picked, setPicked] = useState<string | undefined>();
   const [managing, setManaging] = useState(false);
-
   const [locations, locationsLoading, locationsError, reloadLocations] =
     useFetch<Record<string, never>, WeatherLocation[]>({
       params: {},
@@ -91,8 +86,63 @@ const ForecastView = ({
       fetchFunction: () => weatherApi.listLocations(),
       dataType: "weather locations",
     });
-
   const selectedId = chooseLocation(locations, picked);
+
+  return (
+    <>
+      <Frame
+        view={view}
+        onChange={choose}
+        extra={
+          view === "forecast" && (
+            <LocationMenu
+              locations={locations}
+              selectedId={selectedId}
+              onSelect={setPicked}
+              onManage={() => setManaging(true)}
+            />
+          )
+        }
+        forecast={
+          <ForecastView
+            locations={locations}
+            locationsLoading={locationsLoading}
+            locationsError={Boolean(locationsError)}
+            reloadLocations={() => void reloadLocations(false)}
+            selectedId={selectedId}
+            onManage={() => setManaging(true)}
+          />
+        }
+        stations={<StationsView />}
+      />
+      <ManageLocationsModal
+        open={managing}
+        locations={locations}
+        onClose={() => setManaging(false)}
+        onChanged={async (added) => {
+          await reloadLocations(true);
+          if (added) setPicked(added.id);
+        }}
+      />
+    </>
+  );
+};
+
+const ForecastView = ({
+  locations,
+  locationsLoading,
+  locationsError,
+  reloadLocations,
+  selectedId,
+  onManage,
+}: {
+  locations: WeatherLocation[];
+  locationsLoading: boolean;
+  locationsError: boolean;
+  reloadLocations: () => void;
+  selectedId?: string;
+  onManage: () => void;
+}) => {
   const selected = locations.find((location) => location.id === selectedId);
 
   const [
@@ -124,30 +174,19 @@ const ForecastView = ({
     return () => clearInterval(timer);
   }, [selectedId]);
 
-  const header = (
-    <LocationMenu
-      locations={locations}
-      selectedId={selectedId}
-      onSelect={setPicked}
-      onManage={() => setManaging(true)}
-    />
-  );
-
   return (
-    <Frame tabs={tabs(header)} view="forecast">
+    <>
       {locationsLoading ? (
         <Skeleton active />
       ) : locationsError ? (
         <Result
           status="warning"
           title="Your locations could not be loaded"
-          extra={
-            <Button onClick={() => void reloadLocations(false)}>Retry</Button>
-          }
+          extra={<Button onClick={reloadLocations}>Retry</Button>}
         />
       ) : locations.length === 0 ? (
         <Empty description="No locations yet. Add a place to see its forecast and map.">
-          <Button type="primary" onClick={() => setManaging(true)}>
+          <Button type="primary" onClick={onManage}>
             Add a location
           </Button>
         </Empty>
@@ -214,44 +253,50 @@ const ForecastView = ({
           </div>
         </>
       )}
-      <ManageLocationsModal
-        open={managing}
-        locations={locations}
-        onClose={() => setManaging(false)}
-        onChanged={async (added) => {
-          await reloadLocations(true);
-          if (added) setPicked(added.id);
-        }}
-      />
-    </Frame>
+    </>
   );
 };
 
 /**
- * The card: the heading on its own line, the tab bar on the blue rule,
- * then the chosen view's panel. Without a view (signed out, loading) the
- * bar is drawn empty so the card looks the same.
+ * The card: the heading on its own line, then AntD's tabs with their bar
+ * on the blue rule and anything extra (the location menu) at its right.
+ * A tab's content is dropped while another is shown, so Stations stops
+ * polling when it is hidden.
  */
 const Frame = ({
-  tabs,
   view,
-  children,
+  onChange,
+  extra,
+  forecast,
+  stations,
 }: {
-  tabs?: React.ReactNode;
-  view?: WeatherView;
-  children: React.ReactNode;
-}) => (
-  <div className={styles.card}>
-    <h2 className={styles.title}>Weather</h2>
-    {tabs ?? <WeatherTabs />}
-    <div
-      role={view ? "tabpanel" : undefined}
-      id={view ? panelId(view) : undefined}
-      aria-labelledby={view ? tabId(view) : undefined}
-    >
-      {children}
+  view: WeatherView;
+  onChange?: (view: WeatherView) => void;
+  extra?: React.ReactNode;
+  forecast: React.ReactNode;
+  /** Signed out there is no Stations tab. */
+  stations?: React.ReactNode;
+}) => {
+  const items: TabsProps["items"] = [
+    { key: "forecast", label: "Forecast", children: forecast },
+  ];
+  if (stations) {
+    items.push({ key: "stations", label: "Stations", children: stations });
+  }
+  return (
+    <div className={styles.card}>
+      <h2 className={styles.title}>Weather</h2>
+      <Tabs
+        id="weather"
+        className={styles.tabs}
+        activeKey={view}
+        items={items}
+        onChange={(key) => onChange?.(key as WeatherView)}
+        tabBarExtraContent={{ right: extra || undefined }}
+        destroyOnHidden
+      />
     </div>
-  </div>
-);
+  );
+};
 
 export default WeatherWidget;

@@ -516,11 +516,13 @@ console reach the ingest listener, and its range stays in
   Metrics are checked against `weather_metrics` (plus `wind_direction`),
   at most 12 a request. Tier retentions come from Postgres's interval
   text.
-- The widget is two tabs, Forecast and Stations (`WeatherTabs`, an ARIA
-  tablist with arrow keys), under a "Weather" heading of its own line: the
-  tabs sit left on the blue rule, the location menu right on the same
-  line (Forecast only). The tab is remembered per browser
-  (`weather.view`). The Stations view polls every minute while
+- The widget is AntD tabs, Forecast and Stations, under a "Weather"
+  heading of its own line, like the site's other tabbed panels: the tab
+  bar sits on the blue rule in place of AntD's grey line, with the
+  location menu as its extra content at the right (Forecast only). The
+  locations are fetched above the tabs for that. A hidden tab's content is
+  dropped (`destroyOnHidden`), so Stations polls only while shown. The tab
+  is remembered per browser (`weather.view`). The Stations view polls every minute while
   the page is visible without the site's error notification (a failed
   refresh keeps the last readings and says so), and moves "12 s ago" on
   every ten seconds. Each card's sparkline is the last 24 hours of
