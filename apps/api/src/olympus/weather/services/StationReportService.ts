@@ -6,19 +6,15 @@ import {
   Injectable,
   Logger,
 } from "@nestjs/common";
-import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import {
   weatherConfig,
   type WeatherConfigType,
 } from "../../../config/configuration";
-import {
-  AmbientReportError,
-  normalizeMac,
-  parseAmbientReport,
-} from "../stations/ambientReport";
-import { StationArchive } from "../stations/StationArchive";
+import { normalizeMac } from "../stations/ambientReport";
+import { type ArchiveLine, StationArchive } from "../stations/StationArchive";
 import { recordStationReport } from "../weatherMetrics";
+import { WeatherIngestService } from "./WeatherIngestService";
 import { WeatherStationService } from "./WeatherStationService";
 
 /** How often a refused station or address is logged, per key. */
@@ -38,9 +34,9 @@ export type StationPush = {
  *
  * In order: the push must come from `WEATHER_STATION_ALLOWED_CIDRS`; its
  * PASSKEY must be a registered station's MAC; it is archived as received;
- * then parsed and stored. A repeat of a stored reading is ignored. A push
- * that fails to parse is still in the archive, so a parser fix can replay
- * it.
+ * then it goes the way every archive line goes (WeatherIngestService). A
+ * repeat of a stored reading is ignored. A push that fails to parse is
+ * still in the archive, so a parser fix can replay it.
  */
 @Injectable()
 export class StationReportService {
@@ -49,9 +45,9 @@ export class StationReportService {
   private readonly lastLogged = new Map<string, number>();
 
   constructor(
-    private readonly graphQLClient: GraphQLClient,
     private readonly stations: WeatherStationService,
     private readonly archive: StationArchive,
+    private readonly ingest: WeatherIngestService,
     @Inject(weatherConfig.KEY) weather: WeatherConfigType,
   ) {
     for (const cidr of weather.stations.allowedCidrs) {
@@ -88,52 +84,22 @@ export class StationReportService {
       throw new ForbiddenException();
     }
 
-    await this.archive.append(macAddress, {
+    const line: ArchiveLine = {
       receivedAt: receivedAt.toISOString(),
       source: "push",
       remote,
       query: push.rawQuery,
-    });
-
-    let parsed;
-    try {
-      parsed = parseAmbientReport(push.query, receivedAt);
-    } catch (error) {
-      if (!(error instanceof AmbientReportError)) throw error;
-      recordStationReport("invalid");
-      throw new BadRequestException(error.message);
-    }
-
-    const document = gql`
-      mutation CreateWeatherStationSample(
-        $object: olympus_weather_station_samples_insert_input!
-      ) {
-        insert_olympus_weather_station_samples_one(
-          object: $object
-          on_conflict: {
-            constraint: weather_station_samples_station_id_observed_at_key
-            update_columns: []
-          }
-        ) {
-          id
-        }
-      }
-    `;
-    type Result = {
-      insert_olympus_weather_station_samples_one: { id: number } | null;
     };
-    const result = await this.graphQLClient.request<Result>(document, {
-      object: {
-        stationId: station.id,
-        observedTime: parsed.observedAt.toISOString(),
-        receivedTime: receivedAt.toISOString(),
-        source: "push",
-        ...parsed.readings,
-      },
-    });
-    const outcome = result.insert_olympus_weather_station_samples_one
-      ? "stored"
-      : "duplicate";
+    await this.archive.append(macAddress, line);
+
+    // Archived first, so a push that fails to parse can be replayed once
+    // the parser is fixed.
+    const { counts, errors } = await this.ingest.ingest([{ macAddress, line }]);
+    if (counts.invalid > 0) {
+      recordStationReport("invalid");
+      throw new BadRequestException(errors[0]);
+    }
+    const outcome = counts.stored > 0 ? "stored" : "duplicate";
     recordStationReport(outcome);
     return outcome;
   }

@@ -1,6 +1,6 @@
 # 0025. Weather data reaches dev by replay for history and a relay for live pushes
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-29
 
 ## Context

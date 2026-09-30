@@ -132,3 +132,4 @@ Levels are Winston's: `error`, `warn`, `info`, `http`, `verbose`,
 | WEATHER_STATION_STALE_SECONDS            | After this long without a sample a station is not reporting                       | `600`                      |
 | WEATHER_STATION_ALLOWED_CIDRS            | Where station pushes may come from; empty refuses them all                        | (empty)                    |
 | WEATHER_ARCHIVE_DIR                      | Where the raw station archive is written                                          | `/olympus/weather/archive` |
+| WEATHER_ROLLUPS_ENABLED                  | Build the station tiers and prune on a schedule; one instance per database        | `true`                     |

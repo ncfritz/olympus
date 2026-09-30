@@ -2108,6 +2108,69 @@
           "Weather"
         ]
       }
+    },
+    "/olympus/weather/archive/replay": {
+      "post": {
+        "description": "Loads a range of UTC days from this API's station archive again: each line parsed and stored, then every tier rebuilt for the day and retention applied. Runs in the background; its summary is logged. One replay at a time. For another archive (the NAS copy, prod's from dev) use weather:replay.",
+        "operationId": "ReplayWeatherArchive",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ReplayWeatherArchive operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplayWeatherArchiveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The replay has started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an admin."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A replay is already running."
+          }
+        },
+        "summary": "Replays the raw station archive",
+        "tags": [
+          "Weather"
+        ]
+      }
     }
   },
   "info": {
@@ -4006,6 +4069,59 @@
         },
         "required": [
           "weatherStation"
+        ]
+      },
+      "WeatherArchiveReplayMode": {
+        "type": "string",
+        "description": "ignore (the default) keeps stored readings; replace overwrites them",
+        "enum": [
+          "ignore",
+          "replace"
+        ]
+      },
+      "WeatherArchiveReplay": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "The first UTC day to replay, YYYY-MM-DD"
+          },
+          "to": {
+            "type": "string",
+            "description": "The last UTC day to replay, YYYY-MM-DD, inclusive"
+          },
+          "macAddress": {
+            "type": "string",
+            "description": "Only this station's archive, by its console's MAC address; every station when absent"
+          },
+          "mode": {
+            "description": "ignore (the default) keeps stored readings; replace overwrites them",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherArchiveReplayMode"
+              }
+            ]
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ]
+      },
+      "ReplayWeatherArchiveRequest": {
+        "type": "object",
+        "properties": {
+          "replay": {
+            "description": "The days to replay, and how.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherArchiveReplay"
+              }
+            ]
+          }
+        },
+        "required": [
+          "replay"
         ]
       },
       "PartialWeatherLocation": {

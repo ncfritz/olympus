@@ -308,6 +308,10 @@
     "BOT": "bot",
     "CHANNEL": "channel"
   },
+  "WeatherArchiveReplayMode": {
+    "Ignore": "ignore",
+    "Replace": "replace"
+  },
   "WeatherConditionKind": {
     "Clear": "clear",
     "Cloudy": "cloudy",

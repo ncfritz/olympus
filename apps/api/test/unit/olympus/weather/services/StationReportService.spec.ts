@@ -3,6 +3,7 @@ import { BadRequestException, ForbiddenException } from "@nestjs/common";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WeatherConfigType } from "../../../../../src/config/configuration";
 import { StationReportService } from "../../../../../src/olympus/weather/services/StationReportService";
+import { WeatherIngestService } from "../../../../../src/olympus/weather/services/WeatherIngestService";
 import {
   ambientPush,
   WEATHER_STATION_ID,
@@ -31,16 +32,18 @@ describe("StationReportService", () => {
 
   beforeEach(() => {
     request = vi.fn().mockResolvedValue({
-      insert_olympus_weather_station_samples_one: { id: 1 },
+      insert_olympus_weather_station_samples: { affected_rows: 1 },
     });
     findByMac = vi.fn(async (mac: string) =>
       mac === WEATHER_STATION_MAC ? STATION : undefined,
     );
     append = vi.fn().mockResolvedValue(true);
+    // The real ingest path over the mocked client: the push is stored the
+    // way every archive line is.
     service = new StationReportService(
-      { request } as never,
       { findByMac } as never,
       { append } as never,
+      new WeatherIngestService({ request } as never, { findByMac } as never),
       {
         stations: {
           allowedCidrs: ["192.168.15.0/24", "192.168.0.0/24", "10.9.8.7"],
@@ -61,7 +64,7 @@ describe("StationReportService", () => {
         query: received.rawQuery,
       }),
     );
-    const { object } = request.mock.calls[0][1];
+    const [object] = request.mock.calls[0][1].objects;
     expect(object).toMatchObject({
       stationId: WEATHER_STATION_ID,
       observedTime: "2026-09-29T19:59:44.000Z",
@@ -76,7 +79,7 @@ describe("StationReportService", () => {
 
   it("calls a reading already stored a duplicate", async () => {
     request.mockResolvedValue({
-      insert_olympus_weather_station_samples_one: null,
+      insert_olympus_weather_station_samples: { affected_rows: 0 },
     });
     await expect(service.report(push("192.168.15.20"))).resolves.toBe(
       "duplicate",

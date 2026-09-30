@@ -73,6 +73,9 @@ export async function createTestApp(
   for (const [name, value] of Object.entries({
     DIONYSUS_UPLOAD_PATH: paths.upload,
     DIONYSUS_PUBLISH_PATH: paths.publish,
+    // The rollup schedule would call Hasura every minute; a test that wants
+    // it constructs the scheduler itself.
+    WEATHER_ROLLUPS_ENABLED: "false",
     ...options.env,
   })) {
     previous.set(name, process.env[name]);

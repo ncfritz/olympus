@@ -145,11 +145,54 @@ removed. The `olympus_weather_archive` DAG
 `Weather` share on `nfs01.sea.ncfritz.net` every night, checks them there,
 and removes local days older than 30 days once their copy checks.
 
-The archive is the samples' backup: the nightly database dump leaves their
-rows out. Replaying it into the tables is phase 6.
+The archive is the samples' and rollups' backup: the nightly database dump
+leaves their rows out.
+
+## History: tiers and replay
+
+Samples are kept for 48 hours (`WEATHER_SAMPLE_RETENTION_HOURS`). What lasts
+is the tiers: one row per station, metric and bucket in
+`weather_station_rollups`, with the bucket's count, sum, minimum, maximum,
+first and last.
+
+| Tier | Bucket     | Kept for |
+| ---- | ---------- | -------- |
+| 1m   | 1 minute   | 7 days   |
+| 5m   | 5 minutes  | 30 days  |
+| 15m  | 15 minutes | 90 days  |
+| 30m  | 30 minutes | 180 days |
+| 1h   | 1 hour     | always   |
+
+The API builds them every minute and prunes hourly, where
+`WEATHER_ROLLUPS_ENABLED` is on (the default; one API per database).
+`weather_rollup_lag_seconds{tier}` says how far behind each tier is: a few of
+its buckets is normal, growing means the schedule has stopped. After an outage
+each tier catches up from where it stopped, and samples the 1m tier has not
+reached are not pruned.
+
+**Replay** loads a range of the archive again, a day at a time: every line
+parsed with this environment's parser and stored, every tier rebuilt for the
+day, retention applied. Run it after `refresh-dev` (whose restore has no
+weather rows), on a new machine, after a parser fix, or for a gap:
+
+```sh
+pnpm --filter @ncfritz/olympus-api build
+# dev (olympus_dev), from prod's archive on the Mac Mini or the NAS copy:
+pnpm --filter @ncfritz/olympus-api weather:replay 2026-09-01 2026-09-29 \
+  --dir /Users/ncfritz/Docker/data/weather/archive
+# after a parser fix, overwriting what is stored:
+pnpm --filter @ncfritz/olympus-api weather:replay 2026-09-29 2026-09-29 --replace
+# production, inside the container, against its own archive:
+docker compose exec olympus-api node dist/weatherReplay.js 2026-09-29 2026-09-29
+```
+
+`ReplayWeatherArchive` on the OpenAPI page does the same against the API's
+own archive, in the background (admins only). Both skip lines from a station
+the environment has not registered; after `refresh-dev` prod's stations are
+already there. Replaying a range twice is harmless.
 
 ## Removing a station
 
-`DeleteWeatherStation` removes it and, by cascade, its samples. Its archive
+`DeleteWeatherStation` removes it and, by cascade, its samples and rollups. Its archive
 stays, on disk and on the NAS; registering the same MAC again and replaying
 brings the history back.

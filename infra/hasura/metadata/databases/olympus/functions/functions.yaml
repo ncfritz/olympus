@@ -3,3 +3,6 @@
 - '!include minerva_meeting_status_statistics.yaml'
 - '!include minerva_notes_hour_statistics.yaml'
 - '!include minerva_notes_type_statistics.yaml'
+- '!include olympus_weather_prune.yaml'
+- '!include olympus_weather_rollup_samples.yaml'
+- '!include olympus_weather_rollup_tier.yaml'

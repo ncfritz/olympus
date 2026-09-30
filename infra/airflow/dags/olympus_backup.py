@@ -38,7 +38,10 @@ ENVIRONMENT = os.environ.get("OLYMPUS_ENV", "prod")
 DAILY, WEEKLY, MONTHLY = 7, 4, 6
 
 # Tables whose rows come back from somewhere other than this backup.
-REBUILT_TABLES = ["olympus.weather_station_samples"]
+REBUILT_TABLES = [
+    "olympus.weather_station_samples",
+    "olympus.weather_station_rollups",
+]
 
 DATA_NETWORK = "olympus-data"
 # RabbitMQ is on another network, and its management port is published only on
@@ -154,10 +157,10 @@ with DAG(
     # platform is using, and there is all night.
     for database in DATABASES:
         # -Fc: compressed, and restorable a table at a time. The weather
-        # stations' samples are rebuilt from their raw archive, which
-        # olympus_weather_archive copies to the NAS (ADR 0024), so only their
-        # table's definition is dumped: a year of readings every ~16 seconds
-        # would otherwise be most of every archive, every night.
+        # stations' samples and rollups are rebuilt from their raw archive,
+        # which olympus_weather_archive copies to the NAS (ADR 0024), so only
+        # their tables' definitions are dumped: a year of readings every ~16
+        # seconds would otherwise be most of every archive, every night.
         current = step(
             "dump_" + database,
             'pg_dump -h postgres -U postgres -Fc -f "$DIR/'

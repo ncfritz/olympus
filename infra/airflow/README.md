@@ -86,10 +86,11 @@ the host is later work.
 Restoring one is `stack.sh refresh-dev`, by hand, which is also what proves the
 archives restore — run it before a schema change, and not less than monthly.
 
-The weather stations' samples are dumped as a definition without rows
-(`REBUILT_TABLES`): they are rebuilt from the raw archive below, and a year of
-readings every ~16 seconds would otherwise be most of every dump. A restore
-brings the table back empty; replaying the archive fills it.
+The weather stations' samples and rollups are dumped as definitions without
+rows (`REBUILT_TABLES`): they are rebuilt from the raw archive below, and a
+year of readings every ~16 seconds would otherwise be most of every dump. A
+restore brings the tables back empty; `weather:replay` fills them
+([the guide](../../docs/guides/weather-stations.md)).
 
 ### `olympus_weather_archive`
 

@@ -31,6 +31,8 @@
     "auth:user": "node --env-file=dev.env dist/authUser.js",
     "auth:user:local": "node --env-file=local.env dist/authUser.js",
     "auth:user:prod": "node --env-file=production.env dist/authUser.js",
+    "weather:replay": "node --env-file=dev.env dist/weatherReplay.js",
+    "weather:replay:local": "node --env-file=local.env dist/weatherReplay.js",
     "check:openapi": "rm -rf .openapi-check && node dist/openapi.js .openapi-check > /dev/null && diff -r openapi .openapi-check && rm -rf .openapi-check",
     "lint:openapi": "spectral lint \"openapi/*.json\" --fail-severity=error"
   },

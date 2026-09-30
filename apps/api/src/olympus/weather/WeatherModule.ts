@@ -8,9 +8,14 @@ import { CreateWeatherStationController } from "./controllers/CreateWeatherStati
 import { DeleteWeatherStationController } from "./controllers/DeleteWeatherStationController";
 import { DescribeWeatherStationController } from "./controllers/DescribeWeatherStationController";
 import { ListWeatherStationsController } from "./controllers/ListWeatherStationsController";
+import { ReplayWeatherArchiveController } from "./controllers/ReplayWeatherArchiveController";
 import { ReportWeatherStationReadingController } from "./controllers/ReportWeatherStationReadingController";
 import { UpdateWeatherStationController } from "./controllers/UpdateWeatherStationController";
 import { StationReportService } from "./services/StationReportService";
+import { WeatherIngestService } from "./services/WeatherIngestService";
+import { WeatherReplayService } from "./services/WeatherReplayService";
+import { WeatherRollupScheduler } from "./services/WeatherRollupScheduler";
+import { WeatherRollupService } from "./services/WeatherRollupService";
 import { WeatherStationService } from "./services/WeatherStationService";
 import { StationArchive } from "./stations/StationArchive";
 import { CreateWeatherLocationController } from "./controllers/CreateWeatherLocationController";
@@ -47,6 +52,10 @@ import { WeatherTileService } from "./services/WeatherTileService";
     WeatherStationService,
     StationReportService,
     StationArchive,
+    WeatherIngestService,
+    WeatherRollupService,
+    WeatherReplayService,
+    WeatherRollupScheduler,
   ],
   controllers: [
     ListWeatherLocationsController,
@@ -64,6 +73,7 @@ import { WeatherTileService } from "./services/WeatherTileService";
     DescribeWeatherStationController,
     UpdateWeatherStationController,
     DeleteWeatherStationController,
+    ReplayWeatherArchiveController,
     UpdateWeatherLocationController,
     DeleteWeatherLocationController,
   ],

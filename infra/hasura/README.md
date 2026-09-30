@@ -107,6 +107,18 @@ image, is only reachable on the Mac Mini: the same commands with
 Unset both afterwards (`unset HASURA_GRAPHQL_ENDPOINT HASURA_GRAPHQL_ADMIN_SECRET`)
 so the next command in that shell cannot land on the wrong engine.
 
+### SQL functions and their checks
+
+Logic that lives in SQL (the weather rollups, say) has a check script in
+`tests/`: plain SQL that sets up rows, calls the functions, raises on the
+first value that is wrong, and rolls everything back. Run one against a
+database with the migrations applied (`olympus_dev`, or a scratch
+Postgres) before committing a change to those functions:
+
+```sh
+psql -v ON_ERROR_STOP=1 -f tests/weather_rollups.sql <database>
+```
+
 ## The baseline
 
 `migrations/olympus/1789862400000_init` is the schema as it stood on

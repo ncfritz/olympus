@@ -1,0 +1,5 @@
+function:
+  name: weather_prune
+  schema: olympus
+configuration:
+  exposed_as: mutation

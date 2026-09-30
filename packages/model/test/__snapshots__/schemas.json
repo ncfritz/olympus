@@ -13287,6 +13287,22 @@
     ],
     "type": "object"
   },
+  "ReplayWeatherArchiveRequest": {
+    "properties": {
+      "replay": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WeatherArchiveReplay"
+          }
+        ],
+        "description": "The days to replay, and how."
+      }
+    },
+    "required": [
+      "replay"
+    ],
+    "type": "object"
+  },
   "RevokeSessionResponse": {
     "properties": {
       "sessionId": {
@@ -16573,6 +16589,43 @@
       "type"
     ],
     "type": "object"
+  },
+  "WeatherArchiveReplay": {
+    "properties": {
+      "from": {
+        "description": "The first UTC day to replay, YYYY-MM-DD",
+        "type": "string"
+      },
+      "macAddress": {
+        "description": "Only this station's archive, by its console's MAC address; every station when absent",
+        "type": "string"
+      },
+      "mode": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WeatherArchiveReplayMode"
+          }
+        ],
+        "description": "ignore (the default) keeps stored readings; replace overwrites them"
+      },
+      "to": {
+        "description": "The last UTC day to replay, YYYY-MM-DD, inclusive",
+        "type": "string"
+      }
+    },
+    "required": [
+      "from",
+      "to"
+    ],
+    "type": "object"
+  },
+  "WeatherArchiveReplayMode": {
+    "description": "How a replay treats a reading already stored",
+    "enum": [
+      "ignore",
+      "replace"
+    ],
+    "type": "string"
   },
   "WeatherConditionKind": {
     "description": "The kind of weather, for choosing an icon",

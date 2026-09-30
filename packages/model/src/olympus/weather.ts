@@ -30,6 +30,15 @@ export enum WeatherMapLayer {
   Pressure = "pressure",
 }
 
+/**
+ * How a replay treats a reading already stored (ADR 0025): `ignore` keeps
+ * it, `replace` overwrites it (after a parser fix).
+ */
+export enum WeatherArchiveReplayMode {
+  Ignore = "ignore",
+  Replace = "replace",
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Domain Objects                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -496,6 +505,43 @@ export class PartialWeatherStation extends PartialType(
   PickType(WeatherStation, ["name"] as const),
 ) {}
 
+/** A range of the raw station archive to load again (plan phase 6). */
+export class WeatherArchiveReplay {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The first UTC day to replay, YYYY-MM-DD",
+  })
+  from: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The last UTC day to replay, YYYY-MM-DD, inclusive",
+  })
+  to: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "Only this station's archive, by its console's MAC address; every station when absent",
+  })
+  macAddress?: string;
+
+  @ApiProperty({
+    enum: () => WeatherArchiveReplayMode,
+    enumName: "WeatherArchiveReplayMode",
+    enumSchema: {
+      description: "How a replay treats a reading already stored",
+    },
+    required: false,
+    description:
+      "ignore (the default) keeps stored readings; replace overwrites them",
+  })
+  mode?: WeatherArchiveReplayMode;
+}
+
 /** What a user supplies to add a location. */
 export class BaseWeatherLocation extends PickType(WeatherLocation, [
   "label",
@@ -562,6 +608,15 @@ export class UpdateWeatherStationRequest {
     description: "The changes to make to the station.",
   })
   weatherStation: PartialWeatherStation;
+}
+
+export class ReplayWeatherArchiveRequest {
+  @ApiProperty({
+    type: () => WeatherArchiveReplay,
+    required: true,
+    description: "The days to replay, and how.",
+  })
+  replay: WeatherArchiveReplay;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */

@@ -1,0 +1,13 @@
+table:
+  name: weather_rollup_tiers
+  schema: olympus
+configuration:
+  column_config:
+    built_until:
+      custom_name: builtUntil
+    source_tier:
+      custom_name: sourceTier
+  custom_column_names:
+    built_until: builtUntil
+    source_tier: sourceTier
+  custom_root_fields: {}

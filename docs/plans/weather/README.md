@@ -337,7 +337,7 @@ console reach the ingest listener, and its range stays in
   `olympus.weather_station_samples`' rows. Phase 6 adds the rollups to
   that list.
 
-## Phase 6 — Rollups, retention, replay
+## Phase 6 — Rollups, retention, replay — built 2026-09-29, not signed off
 
 1. **Migration**:
    - `weather_metrics`: `id`, `name` (`outdoor_temperature`, …), `unit`,
@@ -380,6 +380,45 @@ console reach the ingest listener, and its range stays in
    samples; reruns are idempotent; pruning; replay of a captured day.
 
 **Sign-off:** W7, W8.
+
+**As built.** Where it differs from the list above:
+
+- `weather_metrics` has a `source` column naming the samples column (or
+  derived value: `rain_in`, `wind_x_mph`, `wind_y_mph`) it rolls up, with a
+  check listing the allowed ones; the function picks the value by name
+  with `to_jsonb`, so a metric over an existing column is a row. `uv_index`
+  and `rain_rate` default to `max`; all six statistics are kept for every
+  metric regardless. Metrics are 16: outdoor and indoor temperature and
+  humidity, dew point, feels like, wind speed, gust and its two
+  components, rain, rain rate, both pressures, UV, solar radiation.
+- `weather_rollup_tiers.built_until` records how far each tier is built;
+  the functions move it forward only, and never past now, so a replay of
+  old or current days cannot confuse the schedule.
+- Hasura needs a tracked table as a mutation function's return type:
+  `weather_rollup_results` (tier, rows written, rows pruned), which holds
+  no rows, like `minerva.*_statistics_type`.
+- Rain from the daily total looks back up to a day for the previous
+  sample; with none, a sample's amount is 0.
+- Schedule: `setInterval`, no new dependency. Every minute each tier is
+  built from a bucket before its `built_until` (so late arrivals land) up
+  to 30 seconds ago (1m) or its source's `built_until`; hourly, pruning,
+  which keeps samples the 1m tier has not reached and the day before them.
+  Neither runs while a replay does. `WEATHER_ROLLUPS_ENABLED` (default on)
+  turns it off for the tests and a second API.
+- Ingest is one service, `WeatherIngestService`: archive lines in, parsed
+  with this environment's parser, one insert per batch; the push path now
+  goes through it (same answers, same metrics), and phase 9's import will.
+  Backfill lines are counted and skipped until phase 7.
+- Replay reads `.jsonl.zst` once its checksum exists, else the plain file,
+  so today's unsealed day replays too. Per day: ingest in batches of 500,
+  every tier for the day, then prune with the finished day kept for the
+  next day's rain. `ReplayWeatherArchive` reads only the API's own
+  archive; `weather:replay` (built like `auth:user`) takes `--dir`,
+  `--station` and `--replace`.
+- The rollups' rows are left out of the backup too.
+- `infra/hasura/tests/weather_rollups.sql` checks the functions against
+  hand-computed buckets (a rain reset, wind across north, tier from tier,
+  reruns, pruning), in a transaction it rolls back.
 
 ## Phase 7 — Backfill
 

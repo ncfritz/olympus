@@ -179,6 +179,7 @@ describe("readConfig: authentication", () => {
         // Nothing is accepted from anywhere until a deployment says where.
         allowedCidrs: [],
         archiveDir: "/olympus/weather/archive",
+        rollupsEnabled: true,
       },
     });
   });

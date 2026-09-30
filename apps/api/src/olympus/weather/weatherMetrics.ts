@@ -1,4 +1,4 @@
-import { Counter } from "prom-client";
+import { Counter, Gauge } from "prom-client";
 
 /**
  * How the weather caches answered (ADR 0024): `hit` served from the cache,
@@ -50,4 +50,44 @@ export const recordArchive = (
   result: "written" | "failed" | "sealed" | "seal_failed",
 ): void => {
   archive.inc({ result });
+};
+
+/** Rollup rows written and pruned, by tier (`samples` for pruned samples). */
+const rollupRows = new Counter({
+  name: "weather_rollup_rows_total",
+  help: "Weather rollup rows written or pruned, by tier",
+  labelNames: ["tier", "operation"],
+});
+
+export const recordRollupRows = (
+  tier: string,
+  operation: "written" | "pruned",
+  rows: number,
+): void => {
+  if (rows > 0) rollupRows.inc({ tier, operation }, rows);
+};
+
+/**
+ * How far each tier is behind the clock: now less its built_until. A few
+ * of the tier's buckets is normal; growing means the schedule has stopped.
+ */
+const rollupLag = new Gauge({
+  name: "weather_rollup_lag_seconds",
+  help: "Seconds between now and the end of each tier's last built bucket",
+  labelNames: ["tier"],
+});
+
+export const recordRollupLag = (tier: string, seconds: number): void => {
+  rollupLag.set({ tier }, seconds);
+};
+
+/** Archive lines replayed, by outcome (WeatherIngestService's, or unreadable). */
+const replayLines = new Counter({
+  name: "weather_replay_lines_total",
+  help: "Weather archive lines replayed, by outcome",
+  labelNames: ["result"],
+});
+
+export const recordReplayLines = (result: string, lines: number): void => {
+  if (lines > 0) replayLines.inc({ result }, lines);
 };

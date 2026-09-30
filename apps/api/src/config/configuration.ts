@@ -125,6 +125,12 @@ export type WeatherConfig = {
     allowedCidrs: string[];
     /** Where the raw archive is written: one JSONL file per station-day. */
     archiveDir: string;
+    /**
+     * Whether this instance builds the tiers and prunes on a schedule
+     * (plan phase 6). One instance per database should; off for the tests
+     * and for a second instance against the same database.
+     */
+    rollupsEnabled: boolean;
   };
 };
 
@@ -331,6 +337,7 @@ const readWeatherConfig = (read: EnvReader): WeatherConfig => {
         "WEATHER_ARCHIVE_DIR",
         "/olympus/weather/archive",
       ),
+      rollupsEnabled: read.boolean("WEATHER_ROLLUPS_ENABLED", true),
     },
   };
 };
