@@ -252,7 +252,7 @@ tasks pass.
 
 **Sign-off:** W1–W5 in the site, W9.
 
-## Phase 5 — Stations: ingest and archive
+## Phase 5 — Stations: ingest and archive — built 2026-09-29, not signed off
 
 Starts with one station, the WS-5000 on firmware 4.3.8, which takes a
 host name as well as an address for its custom server. The second is at
@@ -307,6 +307,34 @@ console reach the ingest listener, and its range stays in
    and MAC checks; the duplicate; the archive line and the day rollover.
 
 **Sign-off:** W6, W10.
+
+**As built.** Where it differs from the list above:
+
+- Listing and describing stations (`ListWeatherStations`,
+  `DescribeWeatherStation`) are there for every signed-in user, for the
+  station views; only registering, renaming and removing are an admin's.
+  A rename is the only update: a console's MAC is its identity.
+- The sample columns are every reading the WS-5000 sends: wind as
+  instant, 10-minute average and gust, with the day's maximum gust; rain
+  as rate, event, day, week, month and year; both batteries. Dew point
+  and feels-like are derived (`utils/meteorology.ts`) when the push lacks
+  them. Unknown parameters are not stored but stay in the archive.
+- The address check is the API's alone. nginx does no `allow`/`deny` of
+  its own: behind Docker Desktop's port publishing the address nginx sees
+  may not be the console's, and two lists of ranges are one more to keep
+  in step. The ingest listener replaces `X-Forwarded-For` with what it
+  saw, so a console cannot claim an address; the archive's `remote` shows
+  what the API was given, which is how W6 checks it.
+- No query normalization: the console's path ends in `?`, so its
+  `&PASSKEY=…` lands in the query. A path without the `?` is a 404, which
+  the guide warns about.
+- The public block is a regex on the normalized path, so the trailing
+  slash the API's routing accepts is refused too.
+- The NAS copy is `infra/airflow/dags/olympus_weather_archive.py` over an
+  NFS volume the Docker daemon mounts (`WEATHER_NAS_HOST`,
+  `WEATHER_NAS_EXPORT` in `prod.env`); the backup excludes
+  `olympus.weather_station_samples`' rows. Phase 6 adds the rollups to
+  that list.
 
 ## Phase 6 — Rollups, retention, replay
 

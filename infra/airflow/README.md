@@ -1,7 +1,8 @@
 # Airflow
 
 Scheduled work that belongs to Olympus but is not part of any service: the
-nightly backups today ([the plan](../../docs/plans/docker/README.md), phase 6),
+nightly backups ([the plan](../../docs/plans/docker/README.md), phase 6) and
+the weather archive's copy to the NAS,
 more later. Airflow decides **when**; what runs is here, reviewed like the rest
 of the repository and deployed the same way the host's other DAGs are, from
 git.
@@ -85,12 +86,41 @@ the host is later work.
 Restoring one is `stack.sh refresh-dev`, by hand, which is also what proves the
 archives restore — run it before a schema change, and not less than monthly.
 
+The weather stations' samples are dumped as a definition without rows
+(`REBUILT_TABLES`): they are rebuilt from the raw archive below, and a year of
+readings every ~16 seconds would otherwise be most of every dump. A restore
+brings the table back empty; replaying the archive fills it.
+
+### `olympus_weather_archive`
+
+Nightly at 03:07, after the backups. The API writes every station push to
+`${DATA_DIR}/weather/archive/<MAC>/<yyyy>/<mm>/<dd>.jsonl` and seals each UTC
+day as `<dd>.jsonl.zst` with a `sha256sum` file beside it
+([ADR 0024](../../docs/decisions/0024-weather-providers.md),
+[the guide](../../docs/guides/weather-stations.md)).
+
+- **`copy`** puts every sealed day the NAS does not have yet onto the `Weather`
+  share on `WEATHER_NAS_HOST`, under a temporary name until whole, and checks it
+  there with `sha256sum -c` against the local checksum. A copy that does not
+  check fails the task.
+- **`prune`** removes local days older than 30 days, and only those whose NAS
+  copy checks; one that does not is logged and kept, and the next `copy` sends
+  it again. A day still being written is never touched.
+
+The share is an NFS volume the Docker daemon mounts for the task's container
+(`WEATHER_NAS_HOST`, `WEATHER_NAS_EXPORT` in the environment file), so the
+worker mounts nothing and holds no credentials. The share's NFS permissions
+have to allow the Mac Mini, read/write; Docker Desktop's VM reaches the NAS
+through the Mac's address from an unprivileged port, so the rule also needs
+"Allow connections from non-privileged ports".
+
 ## By hand
 
 ```sh
 # Once, from the repository, against the Airflow host:
 airflow dags test olympus_backup 2026-09-29     # a whole run, no scheduler
 airflow tasks test olympus_backup verify 2026-09-29
+airflow tasks test olympus_weather_archive copy 2026-09-29
 ```
 
 `retain` is the one to read twice before running with a date you care about.

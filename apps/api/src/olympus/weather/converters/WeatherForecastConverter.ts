@@ -11,6 +11,7 @@ import type {
   OpenWeatherForecastEntry,
   OpenWeatherSnapshot,
 } from "../providers/openWeatherTypes";
+import { dewPointF } from "../utils/meteorology";
 
 const STEP_SECONDS = 3 * 60 * 60;
 const NEXT_STEPS = 8;
@@ -233,19 +234,6 @@ export const kindOf = (id: number): WeatherConditionKind => {
   if (id === 800) return WeatherConditionKind.Clear;
   if (id === 801 || id === 802) return WeatherConditionKind.PartlyCloudy;
   return WeatherConditionKind.Cloudy;
-};
-
-/** Dew point from temperature and relative humidity (Magnus, °F in and out). */
-export const dewPointF = (
-  temperatureF: number,
-  humidityPct: number,
-): number => {
-  const a = 17.62;
-  const b = 243.12;
-  const celsius = ((temperatureF - 32) * 5) / 9;
-  const gamma =
-    Math.log(Math.max(humidityPct, 1) / 100) + (a * celsius) / (b + celsius);
-  return ((b * gamma) / (a - gamma)) * (9 / 5) + 32;
 };
 
 const significance = (kind: WeatherConditionKind) => SIGNIFICANCE.indexOf(kind);

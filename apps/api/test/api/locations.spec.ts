@@ -636,12 +636,14 @@ describe("Location headers of created resources", () => {
 
   it("has a case for every operation that answers 201 with one resource", () => {
     // No GET route for a notification; an upload creates several workflows.
-    // CreateWeatherLocation needs a signed-in caller, which this app has no
-    // keys for; weatherLocations.spec.ts asserts its Location header.
+    // CreateWeatherLocation and CreateWeatherStation need a signed-in
+    // caller, which this app has no keys for; weatherLocations.spec.ts and
+    // weatherStations.spec.ts assert their Location headers.
     const exempt = [
       "CreateNotification",
       "UploadAssets",
       "CreateWeatherLocation",
+      "CreateWeatherStation",
     ];
     const creates = controllers
       .filter((c) => "201" in (c.routes[0]?.responses ?? {}))

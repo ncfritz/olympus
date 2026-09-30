@@ -4,6 +4,15 @@ import {
   type WeatherConfigType,
 } from "../../config/configuration";
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
+import { CreateWeatherStationController } from "./controllers/CreateWeatherStationController";
+import { DeleteWeatherStationController } from "./controllers/DeleteWeatherStationController";
+import { DescribeWeatherStationController } from "./controllers/DescribeWeatherStationController";
+import { ListWeatherStationsController } from "./controllers/ListWeatherStationsController";
+import { ReportWeatherStationReadingController } from "./controllers/ReportWeatherStationReadingController";
+import { UpdateWeatherStationController } from "./controllers/UpdateWeatherStationController";
+import { StationReportService } from "./services/StationReportService";
+import { WeatherStationService } from "./services/WeatherStationService";
+import { StationArchive } from "./stations/StationArchive";
 import { CreateWeatherLocationController } from "./controllers/CreateWeatherLocationController";
 import { DeleteWeatherLocationController } from "./controllers/DeleteWeatherLocationController";
 import { GetRadarTileController } from "./controllers/GetRadarTileController";
@@ -35,6 +44,9 @@ import { WeatherTileService } from "./services/WeatherTileService";
     OpenWeatherLimiter,
     RainViewerClient,
     WeatherTileService,
+    WeatherStationService,
+    StationReportService,
+    StationArchive,
   ],
   controllers: [
     ListWeatherLocationsController,
@@ -45,6 +57,13 @@ import { WeatherTileService } from "./services/WeatherTileService";
     ListRadarFramesController,
     GetRadarTileController,
     GetWeatherMapTileController,
+    // The static /weather/station/report before /weather/station/:stationId.
+    ReportWeatherStationReadingController,
+    ListWeatherStationsController,
+    CreateWeatherStationController,
+    DescribeWeatherStationController,
+    UpdateWeatherStationController,
+    DeleteWeatherStationController,
     UpdateWeatherLocationController,
     DeleteWeatherLocationController,
   ],

@@ -3,7 +3,6 @@ import moment from "moment";
 import { describe, expect, it } from "vitest";
 import {
   daysCondition,
-  dewPointF,
   kindOf,
   toDomainObject,
 } from "../../../../../src/olympus/weather/converters/WeatherForecastConverter";
@@ -280,12 +279,5 @@ describe("WeatherForecastConverter", () => {
     [804, WeatherConditionKind.Cloudy],
   ])("maps condition %i to %s", (id, kind) => {
     expect(kindOf(id)).toBe(kind);
-  });
-
-  it("derives a dew point that matches a psychrometric table", () => {
-    // 70 °F at 50% relative humidity has a dew point of about 50.5 °F.
-    expect(dewPointF(70, 50)).toBeCloseTo(50.5, 0);
-    // Saturated air: the dew point is the temperature.
-    expect(dewPointF(40, 100)).toBeCloseTo(40, 5);
   });
 });

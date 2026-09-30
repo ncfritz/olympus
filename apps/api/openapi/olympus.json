@@ -1747,6 +1747,367 @@
           "Weather"
         ]
       }
+    },
+    "/olympus/weather/station/report": {
+      "get": {
+        "description": "The Ambient Weather Customized upload: a GET with every reading as a query parameter and the console's MAC address as PASSKEY. Accepted only from WEATHER_STATION_ALLOWED_CIDRS and only for a registered station; archived as received, then stored. A repeated reading is stored once.",
+        "operationId": "ReportWeatherStationReading",
+        "parameters": [
+          {
+            "name": "dateutc",
+            "required": true,
+            "in": "query",
+            "description": "When the reading was taken, YYYY-MM-DD HH:mm:ss in UTC, or now",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PASSKEY",
+            "required": true,
+            "in": "query",
+            "description": "The console's MAC address",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The reading was stored, or was a repeat of one already stored.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not from an allowed address, or not a registered station."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Receives a weather station's reading",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/stations": {
+      "get": {
+        "description": "Every registered weather station, by name.",
+        "operationId": "ListWeatherStations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The registered stations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListWeatherStationsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the weather stations",
+        "tags": [
+          "Weather"
+        ]
+      },
+      "post": {
+        "description": "Registers a console by its MAC address, which it sends as PASSKEY. Until it is registered, its pushes are refused.",
+        "operationId": "CreateWeatherStation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateWeatherStation operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWeatherStationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The station was registered.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the registered station"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateWeatherStationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an admin."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Registers a weather station",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/station/{stationId}": {
+      "get": {
+        "description": "Returns a single registered weather station.",
+        "operationId": "DescribeWeatherStation",
+        "parameters": [
+          {
+            "name": "stationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the station",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The station was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeWeatherStationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Describes a weather station",
+        "tags": [
+          "Weather"
+        ]
+      },
+      "put": {
+        "description": "Changes a station's name. A different console is a different station: register it instead.",
+        "operationId": "UpdateWeatherStation",
+        "parameters": [
+          {
+            "name": "stationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the station to change",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateWeatherStation operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWeatherStationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The station with the changes applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateWeatherStationResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The request named nothing to change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an admin."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Renames a weather station",
+        "tags": [
+          "Weather"
+        ]
+      },
+      "delete": {
+        "description": "Unregisters a station and removes its samples. Its raw archive on disk is kept; registering the console again and replaying restores them.",
+        "operationId": "DeleteWeatherStation",
+        "parameters": [
+          {
+            "name": "stationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the station to remove",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The station was removed."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an admin."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Removes a weather station",
+        "tags": [
+          "Weather"
+        ]
+      }
     }
   },
   "info": {
@@ -3493,6 +3854,158 @@
           "clouds",
           "wind",
           "pressure"
+        ]
+      },
+      "WeatherStation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the station"
+          },
+          "name": {
+            "type": "string",
+            "description": "The station's name, as the widget shows it"
+          },
+          "macAddress": {
+            "type": "string",
+            "description": "The console's MAC address, which it sends as its PASSKEY, e.g. A0:B1:C2:D3:E4:F5"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the station was registered"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the station was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "macAddress",
+          "createdTime"
+        ]
+      },
+      "ListWeatherStationsResponse": {
+        "type": "object",
+        "properties": {
+          "weatherStations": {
+            "description": "The registered stations, by name.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeatherStation"
+            }
+          }
+        },
+        "required": [
+          "weatherStations"
+        ]
+      },
+      "BaseWeatherStation": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The station's name, as the widget shows it"
+          },
+          "macAddress": {
+            "type": "string",
+            "description": "The console's MAC address, which it sends as its PASSKEY, e.g. A0:B1:C2:D3:E4:F5"
+          }
+        },
+        "required": [
+          "name",
+          "macAddress"
+        ]
+      },
+      "CreateWeatherStationRequest": {
+        "type": "object",
+        "properties": {
+          "weatherStation": {
+            "description": "The station to register.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseWeatherStation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherStation"
+        ]
+      },
+      "CreateWeatherStationResponse": {
+        "type": "object",
+        "properties": {
+          "weatherStation": {
+            "description": "The station as registered.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherStation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherStation"
+        ]
+      },
+      "DescribeWeatherStationResponse": {
+        "type": "object",
+        "properties": {
+          "weatherStation": {
+            "description": "The station.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherStation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherStation"
+        ]
+      },
+      "PartialWeatherStation": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The station's name, as the widget shows it"
+          }
+        }
+      },
+      "UpdateWeatherStationRequest": {
+        "type": "object",
+        "properties": {
+          "weatherStation": {
+            "description": "The changes to make to the station.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialWeatherStation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherStation"
+        ]
+      },
+      "UpdateWeatherStationResponse": {
+        "type": "object",
+        "properties": {
+          "weatherStation": {
+            "description": "The station with the changes applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherStation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherStation"
         ]
       },
       "PartialWeatherLocation": {

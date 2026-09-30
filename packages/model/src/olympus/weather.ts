@@ -446,6 +446,56 @@ export class RadarFrame {
   time: Moment;
 }
 
+/** One of the house's weather stations, known by its console's MAC address. */
+export class WeatherStation {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The unique ID of the station",
+  })
+  id: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The station's name, as the widget shows it",
+  })
+  name: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The console's MAC address, which it sends as its PASSKEY, e.g. A0:B1:C2:D3:E4:F5",
+  })
+  macAddress: string;
+
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the station was registered",
+  })
+  createdTime: Moment;
+
+  @ApiTimestamp({
+    required: false,
+    description:
+      "An ISO-8601 formatted string indicating when the station was last changed",
+  })
+  lastUpdatedTime?: Moment;
+}
+
+/** What registering a station takes. */
+export class BaseWeatherStation extends PickType(WeatherStation, [
+  "name",
+  "macAddress",
+] as const) {}
+
+/** What may change about a station: its name. A new console is a new station. */
+export class PartialWeatherStation extends PartialType(
+  PickType(WeatherStation, ["name"] as const),
+) {}
+
 /** What a user supplies to add a location. */
 export class BaseWeatherLocation extends PickType(WeatherLocation, [
   "label",
@@ -494,6 +544,24 @@ export class ReorderWeatherLocationsRequest {
       "Every one of the caller's location IDs, in the order they should appear.",
   })
   locationIds: string[];
+}
+
+export class CreateWeatherStationRequest {
+  @ApiProperty({
+    type: () => BaseWeatherStation,
+    required: true,
+    description: "The station to register.",
+  })
+  weatherStation: BaseWeatherStation;
+}
+
+export class UpdateWeatherStationRequest {
+  @ApiProperty({
+    type: () => PartialWeatherStation,
+    required: true,
+    description: "The changes to make to the station.",
+  })
+  weatherStation: PartialWeatherStation;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -564,4 +632,41 @@ export class ListRadarFramesResponse {
     description: "The past radar frames available, oldest first.",
   })
   radarFrames: RadarFrame[];
+}
+
+export class ListWeatherStationsResponse {
+  @ApiProperty({
+    type: () => WeatherStation,
+    isArray: true,
+    required: true,
+    description: "The registered stations, by name.",
+  })
+  weatherStations: WeatherStation[];
+}
+
+export class DescribeWeatherStationResponse {
+  @ApiProperty({
+    type: () => WeatherStation,
+    required: true,
+    description: "The station.",
+  })
+  weatherStation: WeatherStation;
+}
+
+export class CreateWeatherStationResponse {
+  @ApiProperty({
+    type: () => WeatherStation,
+    required: true,
+    description: "The station as registered.",
+  })
+  weatherStation: WeatherStation;
+}
+
+export class UpdateWeatherStationResponse {
+  @ApiProperty({
+    type: () => WeatherStation,
+    required: true,
+    description: "The station with the changes applied.",
+  })
+  weatherStation: WeatherStation;
 }

@@ -1,0 +1,92 @@
+table:
+  name: weather_station_samples
+  schema: olympus
+configuration:
+  column_config:
+    battery_indoor_ok:
+      custom_name: batteryIndoorOk
+    battery_outdoor_ok:
+      custom_name: batteryOutdoorOk
+    dew_point_f:
+      custom_name: dewPointF
+    feels_like_f:
+      custom_name: feelsLikeF
+    indoor_humidity_pct:
+      custom_name: indoorHumidityPct
+    indoor_temperature_f:
+      custom_name: indoorTemperatureF
+    max_daily_gust_mph:
+      custom_name: maxDailyGustMph
+    observed_at:
+      custom_name: observedTime
+    outdoor_humidity_pct:
+      custom_name: outdoorHumidityPct
+    outdoor_temperature_f:
+      custom_name: outdoorTemperatureF
+    pressure_absolute_inhg:
+      custom_name: pressureAbsoluteInhg
+    pressure_relative_inhg:
+      custom_name: pressureRelativeInhg
+    rain_daily_in:
+      custom_name: rainDailyIn
+    rain_event_in:
+      custom_name: rainEventIn
+    rain_monthly_in:
+      custom_name: rainMonthlyIn
+    rain_rate_in_hr:
+      custom_name: rainRateInHr
+    rain_weekly_in:
+      custom_name: rainWeeklyIn
+    rain_yearly_in:
+      custom_name: rainYearlyIn
+    received_at:
+      custom_name: receivedTime
+    solar_radiation_wm2:
+      custom_name: solarRadiationWm2
+    station_id:
+      custom_name: stationId
+    uv_index:
+      custom_name: uvIndex
+    wind_direction_avg_10m_deg:
+      custom_name: windDirectionAvg10mDeg
+    wind_direction_deg:
+      custom_name: windDirectionDeg
+    wind_gust_mph:
+      custom_name: windGustMph
+    wind_speed_avg_10m_mph:
+      custom_name: windSpeedAvg10mMph
+    wind_speed_mph:
+      custom_name: windSpeedMph
+  custom_column_names:
+    battery_indoor_ok: batteryIndoorOk
+    battery_outdoor_ok: batteryOutdoorOk
+    dew_point_f: dewPointF
+    feels_like_f: feelsLikeF
+    indoor_humidity_pct: indoorHumidityPct
+    indoor_temperature_f: indoorTemperatureF
+    max_daily_gust_mph: maxDailyGustMph
+    observed_at: observedTime
+    outdoor_humidity_pct: outdoorHumidityPct
+    outdoor_temperature_f: outdoorTemperatureF
+    pressure_absolute_inhg: pressureAbsoluteInhg
+    pressure_relative_inhg: pressureRelativeInhg
+    rain_daily_in: rainDailyIn
+    rain_event_in: rainEventIn
+    rain_monthly_in: rainMonthlyIn
+    rain_rate_in_hr: rainRateInHr
+    rain_weekly_in: rainWeeklyIn
+    rain_yearly_in: rainYearlyIn
+    received_at: receivedTime
+    solar_radiation_wm2: solarRadiationWm2
+    station_id: stationId
+    uv_index: uvIndex
+    wind_direction_avg_10m_deg: windDirectionAvg10mDeg
+    wind_direction_deg: windDirectionDeg
+    wind_gust_mph: windGustMph
+    wind_speed_avg_10m_mph: windSpeedAvg10mMph
+    wind_speed_mph: windSpeedMph
+  custom_root_fields: {}
+object_relationships:
+  - name: station
+    using:
+      foreign_key_constraint_on: station_id

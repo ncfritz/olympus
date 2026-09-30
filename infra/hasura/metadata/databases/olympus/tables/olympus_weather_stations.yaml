@@ -1,0 +1,24 @@
+table:
+  name: weather_stations
+  schema: olympus
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    mac_address:
+      custom_name: macAddress
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    mac_address: macAddress
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+array_relationships:
+  - name: samples
+    using:
+      foreign_key_constraint_on:
+        column: station_id
+        table:
+          name: weather_station_samples
+          schema: olympus

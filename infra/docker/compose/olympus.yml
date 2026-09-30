@@ -93,6 +93,9 @@ services:
       - openweather_api_key
     volumes:
       - ${DATA_DIR:?}/dionysus/uploads:/olympus/uploads
+      # The weather stations' raw archive (WEATHER_ARCHIVE_DIR's default);
+      # a nightly job copies finished days to the NAS.
+      - ${DATA_DIR:?}/weather/archive:/olympus/weather/archive
       # The services listener's certificate, key, CA and revocation lists.
       - ${SECRETS_DIR:?}/tls/olympus-api:/run/secrets/tls:ro
       # Every ES256 key that verifies an access token; the last by filename

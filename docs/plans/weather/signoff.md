@@ -77,11 +77,15 @@ recorded exception.
 
 ## W6 — Station push
 
-1. Both consoles report at their shortest interval; samples arrive with
-   `observed_at` from the console, and indoor readings with them.
+1. The first console reports at its shortest interval; samples arrive
+   with `observed_at` from the console, and indoor readings with them.
+   The archive's `remote` for its pushes is the console's own address,
+   not Docker Desktop's (see the guide). The second console, once its
+   site's firewall allows it, repeats this.
 2. A request with an unregistered MAC is 403 and stores nothing.
 3. The report path from outside the LAN (a phone on mobile data, and the
-   public host name) is refused by nginx.
+   public host name, with and without a trailing slash) is refused: 404
+   from nginx on the public name, 403 from the API for any other way in.
 4. A repeated request stores one row.
 
 ## W7 — Rollups
