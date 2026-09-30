@@ -17,6 +17,7 @@ phase 4 replaces it.
 | 6     | Rollups: tiers, retention, replay                                                            | 5                                                   | W7, W8         |
 | 7     | Backfill from ambientweather.net                                                             | 6                                                   | W11            |
 | 8     | The Stations view, the history page and the series operation                                 | 4, 6                                                | W12            |
+| 9     | Weather data in dev: the relay of live pushes, replay for history (ADR 0025)                 | 5, 6                                                | W13            |
 | Later | NOAA radar for US locations; One Call (a new ADR); other stations and sensors as metric rows |                                                     |                |
 
 Phases 1–3 and 5–7 are API work: the forecast line (1–4) and the
@@ -366,7 +367,13 @@ console reach the ingest listener, and its range stays in
    the archive for a range (local days, or a restored copy from the NAS),
    upsert the samples, and rebuild every tier for the buckets touched.
    Samples older than their retention are loaded, rolled up and removed
-   again in the same run.
+   again in the same run. Built on one ingest function, an archive line
+   in (a push's query or a backfill response), which the push path and
+   phase 9's relay use too ([ADR 0025](../../decisions/0025-weather-data-in-dev.md)):
+   a source directory and a target environment are arguments, so dev
+   replays from the NAS copy or from prod's archive directory on the Mac
+   Mini, including today's unsealed file. Two modes: ignore repeats (the
+   default) and replace them (after a parser fix).
 5. **Metrics**: rollup lag per tier, rows written, rows pruned.
 6. **Tests**: each rollup kind against hand-computed buckets (including a
    rain reset and wind around north); tier from tier equals tier from
@@ -385,7 +392,11 @@ console reach the ingest listener, and its range stays in
    (`"source": "backfill"`), store its records as samples with
    `source = backfill` (never replacing a pushed sample), and roll up the
    buckets touched.
-3. **Tests**: gap finding; paging; that pushed samples win.
+3. **Prod only**: `WEATHER_BACKFILL_ENABLED`, true in prod alone. Dev
+   receives backfill responses as archive lines, through the relay and
+   replay (ADR 0025).
+4. **Tests**: gap finding; paging; that pushed samples win; nothing is
+   fetched with backfill off.
 
 **Sign-off:** W11.
 
@@ -414,3 +425,45 @@ console reach the ingest listener, and its range stays in
    edge; the not-reporting state; the page's ranges.
 
 **Sign-off:** W12.
+
+## Phase 9 — Weather data in dev
+
+[ADR 0025](../../decisions/0025-weather-data-in-dev.md). Needs phase 6's
+replay; independent of 7 and 8, so it can follow 6 directly.
+
+1. **Message**: `WeatherArchiveLine` in `packages/messages` (the MAC and
+   the archive line) and the fanout exchange `weather.station.reports`.
+2. **Publish**: `StationArchive.append` publishes each line it writes,
+   after writing it, when `WEATHER_RELAY_PUBLISH=true` (prod only). A
+   failed publish is logged once per ten minutes and counted
+   (`weather_relay_publish_total{result}`); the push is unaffected.
+3. **Broker** (`infra/docker/rabbitmq`): the `rabbitmq_shovel` plugin in
+   the image; in `users.json`, the two exchanges and a user,
+   `weather-shovel`, with exactly `/dionysus` and `/dionysus-dev`;
+   `definitions.mjs` writes the exchanges and a shovel from
+   `/dionysus`'s `weather.station.reports` to `/dionysus-dev`'s. First
+   check whether a definitions-imported shovel can use the local direct
+   URI (`amqp://`), which would make the user unnecessary. The
+   definitions test covers the shovel's vhosts and that no other user
+   gains a vhost.
+4. **Import**: `ImportWeatherStationReadings`
+   `POST /weather/station/readings`, `@Roles("agent")`, up to 500 lines:
+   each through phase 6's ingest function in ignore mode, no address
+   check, no archive write; a MAC this environment does not know is
+   skipped. Answers the counts (stored, duplicate, unknown station,
+   invalid).
+5. **Agent**: `agents/olympus-weather-relay`, from the agent generator
+   and `docs/conventions/agent.md`. It declares
+   `weather.station.reports.<WEATHER_RELAY_QUEUE>` (default
+   `olympus_dev`) on `/dionysus-dev` with a 48-hour message TTL, at most
+   30,000 messages with the oldest dropped, and a 7-day expiry; consumes
+   in batches of up to 500 or 5 seconds; acknowledges a batch once the
+   import answers. It runs in `local` and from the IDE. No prod image.
+6. **Docs**: the stations guide gains "Weather data in dev": replay after
+   `refresh-dev` or on a new machine, then start the relay; which queue
+   name a laptop with its own database uses.
+7. **Tests**: the publish on and off, and a broker failure not failing
+   a push; the import's counts and that it neither archives nor checks
+   addresses; the agent's batching and acknowledgement; the definitions.
+
+**Sign-off:** W13.

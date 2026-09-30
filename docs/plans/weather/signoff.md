@@ -140,3 +140,20 @@ recorded exception.
    range; the rain chart's daily totals match the console.
 4. Replay: drop the weather rows in DEV, replay the archive, and the
    history page shows the same charts as before.
+
+## W13 — Weather data in dev
+
+1. After `refresh-dev`, one replay from the NAS copy fills `olympus_dev`
+   up to the newest sealed day; the history page in dev matches prod's
+   for that range.
+2. Starting the relay agent against the dev API: dev's latest sample is
+   within a minute of prod's, and stays there.
+3. Stopping the relay for an hour, then starting it: the hour arrives
+   from the queue, with no gap and no duplicate rows.
+4. A line prod's parser rejected arrives in dev and is counted invalid
+   there too; with a parser change in dev, it is stored.
+5. Stopping RabbitMQ: prod's pushes are still stored and archived, and
+   the publish failures are counted.
+6. `/dionysus-dev`'s relay queue stays under its length limit with no
+   consumer for three days, and a laptop's own queue disappears a week
+   after its last use.

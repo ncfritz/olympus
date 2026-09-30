@@ -117,6 +117,9 @@ from it by replay, so they are left out of the database backup. Requests
 to Ambient carry its keys and are never archived; only its responses
 are.
 
+**Dev.** How the same data reaches dev, which receives no pushes of its
+own, is [ADR 0025](0025-weather-data-in-dev.md).
+
 **Samples.** Each push is parsed into `weather_station_samples`, one row
 per push and a column per reading, kept for 48 hours: long enough to roll
 up and to re-roll a late correction.
