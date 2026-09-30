@@ -27,7 +27,7 @@ describe("StationArchive", () => {
   const line = (receivedAt: string, query = "&tempf=58.1") => ({
     receivedAt,
     source: "push" as const,
-    remote: "192.168.15.20",
+    remote: "10.15.1.20",
     query,
   });
 
@@ -53,7 +53,7 @@ describe("StationArchive", () => {
       .split("\n")
       .map((text) => JSON.parse(text));
     expect(lines.map((l) => l.query)).toEqual(["&a=1", "&a=2"]);
-    expect(lines[0]).toMatchObject({ source: "push", remote: "192.168.15.20" });
+    expect(lines[0]).toMatchObject({ source: "push", remote: "10.15.1.20" });
   });
 
   it("seals the previous day on the first write of a new one", async () => {

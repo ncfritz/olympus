@@ -7,7 +7,7 @@ const MESSAGE = {
   line: {
     receivedAt: "2026-09-29T20:00:03.000Z",
     source: "push" as const,
-    remote: "192.168.15.20",
+    remote: "10.15.1.20",
     query: "&PASSKEY=A0:B1:C2:D3:E4:F5&tempf=58.1",
   },
 };
@@ -46,7 +46,7 @@ describe("WeatherArchiveLineHandler", () => {
         macAddress: "A0:B1:C2:D3:E4:F5",
         receivedAt: "2026-09-29T20:00:03.000Z",
         source: "push",
-        remote: "192.168.15.20",
+        remote: "10.15.1.20",
         query: "&PASSKEY=A0:B1:C2:D3:E4:F5&tempf=58.1",
         responseJson: undefined,
       },

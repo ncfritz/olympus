@@ -19,7 +19,7 @@ const push = (
 ): ArchiveLine => ({
   receivedAt,
   source: "push",
-  remote: "192.168.15.20",
+  remote: "10.15.1.20",
   query: ambientPush(overrides),
 });
 
@@ -290,7 +290,7 @@ describe("toIngestLines", () => {
     macAddress: "a0b1c2d3e4f5",
     receivedAt: "2026-09-29T20:00:03.000Z",
     source: "push",
-    remote: "192.168.15.20",
+    remote: "10.15.1.20",
     query: "&PASSKEY=A0:B1:C2:D3:E4:F5",
     ...overrides,
   });
@@ -302,7 +302,7 @@ describe("toIngestLines", () => {
         line: {
           receivedAt: "2026-09-29T20:00:03.000Z",
           source: "push",
-          remote: "192.168.15.20",
+          remote: "10.15.1.20",
           query: "&PASSKEY=A0:B1:C2:D3:E4:F5",
         },
       },

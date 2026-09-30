@@ -26,6 +26,11 @@ internal zone as the other `*.internal` names. The listener answers only that
 name: a console set up with a bare IP address lands on nginx's default server
 instead, so use the name.
 
+The consoles are on the IoT network, so two things have to hold there as
+well as on the main LAN: the DNS server the IoT network hands out has to
+answer the name, and the firewall has to let the IoT network reach the Mac
+Mini on port 80.
+
 ## 2. Register the station
 
 Registration is an admin's. The quickest way is the home page's weather
@@ -104,8 +109,9 @@ Within a minute of saving:
 
 ### When the address is wrong
 
-The allowed ranges are `192.168.15.0/24` and `192.168.0.0/24`
-(`WEATHER_STATION_ALLOWED_CIDRS` in `infra/docker/env/prod/olympus-api.env`).
+The allowed ranges are the IoT networks the consoles are on, `10.15.1.0/24`
+and `10.1.1.0/24` (`WEATHER_STATION_ALLOWED_CIDRS` in
+`infra/docker/env/prod/olympus-api.env`).
 nginx replaces `X-Forwarded-For` with the address it saw, and the API
 believes it because nginx is in `TRUSTED_PROXIES`. If what nginx sees is
 Docker Desktop's gateway rather than the console, either give nginx's port
@@ -136,7 +142,7 @@ by the UTC day it arrived:
 {
   "receivedAt": "2026-09-29T20:00:03.000Z",
   "source": "push",
-  "remote": "192.168.15.20",
+  "remote": "10.15.1.20",
   "query": "&PASSKEY=…&dateutc=2026-09-29+19:59:44&tempf=58.1…"
 }
 ```
