@@ -244,14 +244,24 @@
   margin-inline-end: 0;
 }
 
+/*
+ * A grid, so the handle, the label and both buttons share one row and one
+ * centre line, and the Google place name sits under the label only.
+ */
 .locationRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 8px;
-  width: 100%;
+  column-gap: 8px;
+  row-gap: 2px;
   padding: 8px 0;
   border-bottom: 1px solid #f0f0f0;
   background: #ffffff;
+}
+
+.placeName {
+  grid-column: 2;
+  padding-left: 12px;
 }
 
 .locationRowDragging {
@@ -267,13 +277,6 @@
 
 .dragHandle:active {
   cursor: grabbing;
-}
-
-.locationLabel {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 
 ol.hours,

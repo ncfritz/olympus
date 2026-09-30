@@ -1,0 +1,8 @@
+/* The home page's columns fill the window below the header and its margin. */
+.splitter {
+  height: calc(100vh - 64px - 32px);
+}
+
+.column {
+  padding: 0 8px;
+}

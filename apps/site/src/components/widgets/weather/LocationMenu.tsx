@@ -58,6 +58,7 @@ const LocationMenu: React.FunctionComponent<LocationMenuProps> = ({
       }}
     >
       <Button
+        type="text"
         icon={<EnvironmentOutlined />}
         aria-label={`Location: ${selected?.label ?? "none"}. Change location`}
       >

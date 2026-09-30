@@ -233,19 +233,14 @@ const LocationRow = ({
         {...attributes}
         {...listeners}
       />
-      <div className={styles.locationLabel}>
-        <Input
-          aria-label={`Label for ${location.label}`}
-          value={label}
-          maxLength={100}
-          onChange={(event) => onLabelChange(event.target.value)}
-          onBlur={onLabelCommit}
-          onPressEnter={onLabelCommit}
-        />
-        {location.placeName && (
-          <span className={styles.muted}>{location.placeName}</span>
-        )}
-      </div>
+      <Input
+        aria-label={`Label for ${location.label}`}
+        value={label}
+        maxLength={100}
+        onChange={(event) => onLabelChange(event.target.value)}
+        onBlur={onLabelCommit}
+        onPressEnter={onLabelCommit}
+      />
       {location.isDefault ? (
         <Button
           color="green"
@@ -279,6 +274,13 @@ const LocationRow = ({
           aria-label={`Remove ${location.label}`}
         />
       </Popconfirm>
+      {location.placeName && (
+        // Under the label, in the second column, so the controls above it
+        // stay on one line with the label.
+        <span className={`${styles.muted} ${styles.placeName}`}>
+          {location.placeName}
+        </span>
+      )}
     </li>
   );
 };
