@@ -1,8 +1,11 @@
 /* The home page's columns fill the window below the header and its margin. */
 .splitter {
   height: calc(100vh - 64px - 32px);
+  scrollbar-width: none;
 }
 
+/* Each column scrolls on its own, without a scrollbar. */
 .column {
   padding: 0 8px;
+  scrollbar-width: none;
 }

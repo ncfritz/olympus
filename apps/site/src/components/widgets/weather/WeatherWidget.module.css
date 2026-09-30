@@ -17,13 +17,15 @@
 
 /*
  * AntD's tabs, with their bar on the blue rule in place of AntD's grey
- * line: the tabs and their ink bar sit on it, the location menu at the
- * right is centred on the tabs.
+ * line. The rule is drawn inside the bar's bottom edge, behind its
+ * contents, so the tabs sit that much lower and the chosen tab's ink bar
+ * overlaps the rule; the location menu, centred in the bar, moves with
+ * them.
  */
 .tabs > :global(.ant-tabs-nav) {
   margin: 0;
   padding: 0 8px;
-  border-bottom: 3px solid #004673;
+  box-shadow: inset 0 -3px 0 #004673;
 }
 
 .tabs > :global(.ant-tabs-nav)::before {
