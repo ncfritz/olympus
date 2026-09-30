@@ -113,7 +113,7 @@ const WeatherMap: React.FunctionComponent<WeatherMapProps> = ({
     let fetcher = fetchers.current.get(frameId);
     if (!fetcher) {
       fetcher = ({ index: { x, y, z }, signal }) =>
-        decode(weatherApi.radarTile(frameId, z, x, y, signal), () =>
+        decode(weatherApi.radarTile(frameId, z, x, y, signal), signal, () =>
           setFailing(true),
         );
       fetchers.current.set(frameId, fetcher);
@@ -126,7 +126,7 @@ const WeatherMap: React.FunctionComponent<WeatherMapProps> = ({
       choice === "radar"
         ? undefined
         : ({ index: { x, y, z }, signal }: TileRequest) =>
-            decode(weatherApi.mapTile(choice, z, x, y, signal), () =>
+            decode(weatherApi.mapTile(choice, z, x, y, signal), signal, () =>
               setFailing(true),
             ),
     [choice],
@@ -246,15 +246,24 @@ const WeatherMap: React.FunctionComponent<WeatherMapProps> = ({
   );
 };
 
-/** A tile blob as an image deck.gl can draw; a failure is a gap, not a crash. */
+/**
+ * A tile blob as an image deck.gl can draw.
+ *
+ * A request deck.gl cancelled (the layer changed, the tile left the view)
+ * is rethrown: deck.gl drops a cancelled tile and asks again if it is
+ * needed, whereas an answer of `null` would be kept as the tile, empty for
+ * good. A request that failed is a gap: `null`, and the "unavailable" note.
+ */
 const decode = async (
   tile: Promise<Blob>,
+  signal: AbortSignal | undefined,
   onFailure: () => void,
 ): Promise<ImageBitmap | null> => {
   try {
     return await createImageBitmap(await tile);
   } catch (error) {
-    if ((error as { name?: string })?.name !== "CanceledError") onFailure();
+    if (signal?.aborted) throw error;
+    onFailure();
     return null;
   }
 };
@@ -277,10 +286,14 @@ const tileLayer = (
     opacity,
     onViewportLoad,
     renderSubLayers: (props) => {
+      // No image, no layer. A BitmapLayer given no image throws inside
+      // deck.gl's render loop (createTexture reads `image.constructor`),
+      // and after that the map draws no tiles until the page is reloaded.
+      if (!props.data) return null;
       const { boundingBox } = props.tile;
       return new BitmapLayer(props, {
         data: undefined,
-        image: props.data ?? undefined,
+        image: props.data,
         bounds: [
           boundingBox[0][0],
           boundingBox[0][1],
