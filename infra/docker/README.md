@@ -449,6 +449,16 @@ the service at `/run/secrets/<name>` (ADR 0019). Services built on
 `NAME_FILE`; setting both is refused at boot. A variable that is already
 a path (a key file) points at the secret directly.
 
+`SECRETS_DIR` is `~/Docker/secrets/<property>` on every machine,
+`/Users/ncfritz/Docker/secrets/olympus` for this repository in every
+environment, so each stack on a Docker host has its own namespace and a
+path means the same thing wherever the command runs. That matters because
+a command reads it in two places: a build reads the Maps key on the
+machine running `stack.sh` (the laptop, building production's images),
+while `up` mounts secrets from the Docker host's disk. On the laptop,
+`local` and `prod` share the folder, so a production build takes the Maps
+key found there; it must be a key production's site may use.
+
 | File in `${SECRETS_DIR}`                                                             | Stack      | Service                | As                                                                                                                        |
 | ------------------------------------------------------------------------------------ | ---------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `postgres_password`                                                                  | data       | Postgres               | `POSTGRES_PASSWORD_FILE`                                                                                                  |

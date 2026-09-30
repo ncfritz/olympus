@@ -82,7 +82,7 @@ shell instead. Reading the secret from its file keeps it out of shell
 history:
 
 ```sh
-export SECRETS_DIR=/Users/ncfritz/Docker/secrets
+export SECRETS_DIR=/Users/ncfritz/Docker/secrets/olympus
 export HASURA_GRAPHQL_ENDPOINT=http://olympus.dev.ncfritz.net:8081
 export HASURA_GRAPHQL_ADMIN_SECRET="$(cat "$SECRETS_DIR/hasura_dev_admin_secret")"
 ```
