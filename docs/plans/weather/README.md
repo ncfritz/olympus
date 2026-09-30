@@ -516,8 +516,11 @@ console reach the ingest listener, and its range stays in
   Metrics are checked against `weather_metrics` (plus `wind_direction`),
   at most 12 a request. Tier retentions come from Postgres's interval
   text.
-- The widget's header has a Forecast/Stations switch, remembered per
-  browser (`weather.view`). The Stations view polls every minute while
+- The widget is two tabs, Forecast and Stations (`WeatherTabs`, an ARIA
+  tablist with arrow keys), under a "Weather" heading of its own line: the
+  tabs sit left on the blue rule, the location menu right on the same
+  line (Forecast only). The tab is remembered per browser
+  (`weather.view`). The Stations view polls every minute while
   the page is visible without the site's error notification (a failed
   refresh keeps the last readings and says so), and moves "12 s ago" on
   every ten seconds. Each card's sparkline is the last 24 hours of

@@ -3,7 +3,7 @@ import {
   type WeatherForecast,
   type WeatherLocation,
 } from "@ncfritz/olympus-sdk/olympus";
-import { Alert, Button, Empty, Result, Segmented, Skeleton } from "antd";
+import { Alert, Button, Empty, Result, Skeleton } from "antd";
 import { useEffect, useState } from "react";
 import weatherApi from "../../../api/weatherApi";
 import { useAuth } from "../../../auth/AuthProvider";
@@ -19,13 +19,13 @@ import LocationMenu from "./LocationMenu";
 import ManageLocationsModal from "./ManageLocationsModal";
 import NextHours from "./NextHours";
 import StationsView from "./StationsView";
+import WeatherTabs, { panelId, tabId, type WeatherView } from "./WeatherTabs";
 import WeatherMap from "./WeatherMap";
 import styles from "./WeatherWidget.module.css";
 
 /** The API caches forecasts for 15 minutes; asking more often gains nothing. */
 const FORECAST_REFRESH_MS = 15 * 60 * 1000;
 
-type WeatherView = "forecast" | "stations";
 /** Which view the widget last showed, per browser. */
 const VIEW_KEY = "weather.view";
 
@@ -62,31 +62,25 @@ const SignedInWeather: React.FunctionComponent = () => {
     setView(next);
     storeToLocalStorage(VIEW_KEY, next);
   };
-  const switcher = (
-    <Segmented<WeatherView>
-      className={styles.viewSwitch}
-      size="small"
-      aria-label="Weather view"
-      options={[
-        { value: "forecast", label: "Forecast" },
-        { value: "stations", label: "Stations" },
-      ]}
-      value={view}
-      onChange={choose}
-    />
+  const tabs = (extra?: React.ReactNode) => (
+    <WeatherTabs view={view} onChange={choose} extra={extra} />
   );
 
   if (view === "stations") {
     return (
-      <Frame switcher={switcher}>
+      <Frame tabs={tabs()} view={view}>
         <StationsView />
       </Frame>
     );
   }
-  return <ForecastView switcher={switcher} />;
+  return <ForecastView tabs={tabs} />;
 };
 
-const ForecastView = ({ switcher }: { switcher: React.ReactNode }) => {
+const ForecastView = ({
+  tabs,
+}: {
+  tabs: (extra: React.ReactNode) => React.ReactNode;
+}) => {
   const [picked, setPicked] = useState<string | undefined>();
   const [managing, setManaging] = useState(false);
 
@@ -140,7 +134,7 @@ const ForecastView = ({ switcher }: { switcher: React.ReactNode }) => {
   );
 
   return (
-    <Frame switcher={switcher} extra={header}>
+    <Frame tabs={tabs(header)} view="forecast">
       {locationsLoading ? (
         <Skeleton active />
       ) : locationsError ? (
@@ -233,22 +227,30 @@ const ForecastView = ({ switcher }: { switcher: React.ReactNode }) => {
   );
 };
 
+/**
+ * The card: the heading on its own line, the tab bar on the blue rule,
+ * then the chosen view's panel. Without a view (signed out, loading) the
+ * bar is drawn empty so the card looks the same.
+ */
 const Frame = ({
-  switcher,
-  extra,
+  tabs,
+  view,
   children,
 }: {
-  switcher?: React.ReactNode;
-  extra?: React.ReactNode;
+  tabs?: React.ReactNode;
+  view?: WeatherView;
   children: React.ReactNode;
 }) => (
   <div className={styles.card}>
-    <div className={styles.header}>
-      <h2 className={styles.title}>Weather</h2>
-      {switcher}
-      {extra ?? <span />}
+    <h2 className={styles.title}>Weather</h2>
+    {tabs ?? <WeatherTabs />}
+    <div
+      role={view ? "tabpanel" : undefined}
+      id={view ? panelId(view) : undefined}
+      aria-labelledby={view ? tabId(view) : undefined}
+    >
+      {children}
     </div>
-    {children}
   </div>
 );
 

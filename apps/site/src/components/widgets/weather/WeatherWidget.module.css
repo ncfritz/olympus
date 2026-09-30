@@ -8,19 +8,67 @@
   background: #ffffff;
 }
 
-.header {
+.title {
+  margin: 0;
+  padding: 8px 8px 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/*
+ * The tab bar sits on the blue rule: the tabs at the left touch it, the
+ * location menu at the right is centred on the tabs' height.
+ */
+.tabBar {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 8px 6px;
+  min-height: 32px;
+  padding: 0 8px;
   border-bottom: 3px solid #004673;
 }
 
-.title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
+.tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.tab {
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: #595959;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.tab:hover {
+  background: #f0f5fa;
+  color: #1f1f1f;
+}
+
+.tab:focus-visible {
+  outline: 2px solid #1677ff;
+  outline-offset: -2px;
+}
+
+/* The chosen tab is the rule's colour, so it reads as part of the bar. */
+.tabSelected,
+.tabSelected:hover {
+  background: #004673;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.tabExtra {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  margin-left: auto;
 }
 
 .section {
@@ -356,8 +404,4 @@ ol.hours,
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-}
-
-.viewSwitch {
-  flex-shrink: 0;
 }
