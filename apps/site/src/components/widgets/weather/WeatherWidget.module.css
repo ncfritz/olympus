@@ -32,6 +32,11 @@
   display: none;
 }
 
+/* Room between the tab bar and the Stations tab's empty state. */
+.stationsEmpty {
+  padding-top: 24px;
+}
+
 .section {
   display: flex;
   flex-direction: column;

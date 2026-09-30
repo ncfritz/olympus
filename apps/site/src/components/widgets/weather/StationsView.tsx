@@ -71,13 +71,19 @@ const StationsView: React.FunctionComponent<StationsViewProps> = ({
   }
   if (stations.length === 0) {
     return onRegister ? (
-      <Empty description="No stations registered yet.">
+      <Empty
+        className={styles.stationsEmpty}
+        description="No stations registered yet."
+      >
         <Button type="primary" onClick={onRegister}>
           Register a station
         </Button>
       </Empty>
     ) : (
-      <Empty description="No stations registered yet. An admin registers them." />
+      <Empty
+        className={styles.stationsEmpty}
+        description="No stations registered yet. An admin registers them."
+      />
     );
   }
   return (
