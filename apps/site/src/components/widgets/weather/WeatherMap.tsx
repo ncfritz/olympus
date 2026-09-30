@@ -1,6 +1,6 @@
 import { PauseOutlined, CaretRightOutlined } from "@ant-design/icons";
 import { TileLayer } from "@deck.gl/geo-layers";
-import { BitmapLayer } from "@deck.gl/layers";
+import { BitmapLayer, ScatterplotLayer } from "@deck.gl/layers";
 import {
   type RadarFrame,
   type WeatherMapLayer,
@@ -132,7 +132,13 @@ const WeatherMap: React.FunctionComponent<WeatherMapProps> = ({
     [choice],
   );
 
-  const layers = useMemo(() => {
+  // Drawn last, so it sits over whichever weather layer is showing.
+  const marker = useMemo(
+    () => locationMarker(center),
+    [center.lat, center.lng],
+  );
+
+  const weather = useMemo(() => {
     if (choice !== "radar") {
       return [tileLayer(`layer-${choice}`, layerFetcher!, 10, LAYER_OPACITY)];
     }
@@ -149,6 +155,8 @@ const WeatherMap: React.FunctionComponent<WeatherMapProps> = ({
       ),
     );
   }, [choice, frames, frameIndex, layerFetcher, radarFetcher]);
+
+  const layers = useMemo(() => [...weather, marker], [weather, marker]);
 
   const frame = frameIndex !== undefined ? frames[frameIndex] : undefined;
   const radarUnavailable = choice === "radar" && framesError !== undefined;
@@ -267,6 +275,27 @@ const decode = async (
     return null;
   }
 };
+
+/**
+ * The location as a dot: the site's blue with a white ring, as drawn on the
+ * design canvas. A deck.gl layer rather than a Google marker: the legacy
+ * Marker is deprecated, and AdvancedMarker needs a map ID, which would
+ * replace the map's greyscale style.
+ */
+const locationMarker = (center: { lat: number; lng: number }) =>
+  new ScatterplotLayer<{ lat: number; lng: number }>({
+    id: "location-marker",
+    data: [center],
+    getPosition: (point) => [point.lng, point.lat],
+    radiusUnits: "pixels",
+    getRadius: 7,
+    lineWidthUnits: "pixels",
+    getLineWidth: 2.5,
+    stroked: true,
+    filled: true,
+    getFillColor: [0, 70, 115],
+    getLineColor: [255, 255, 255],
+  });
 
 const tileLayer = (
   id: string,
