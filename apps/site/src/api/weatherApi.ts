@@ -8,6 +8,8 @@ import {
   getWeatherMapTile,
   listRadarFrames,
   listWeatherLocations,
+  listWeatherStationSeries,
+  listWeatherStations,
   type PartialWeatherLocation,
   type RadarFrame,
   reorderWeatherLocations,
@@ -15,6 +17,8 @@ import {
   type WeatherForecast,
   type WeatherLocation,
   type WeatherMapLayer,
+  type WeatherStation,
+  type WeatherStationSeries,
 } from "@ncfritz/olympus-sdk/olympus";
 
 /**
@@ -66,6 +70,32 @@ class WeatherApi {
   async describeForecast(locationId: string): Promise<WeatherForecast> {
     const { data } = await describeWeatherForecast({ path: { locationId } });
     return data.weatherForecast;
+  }
+
+  /** The house's stations, each with its newest reading. */
+  async listStations(): Promise<WeatherStation[]> {
+    const { data } = await listWeatherStations();
+    return data.weatherStations;
+  }
+
+  /** A station's history: one series per metric, oldest point first. */
+  async stationSeries(
+    stationId: string,
+    metrics: string[],
+    from: Date,
+    to: Date,
+    resolution = "auto",
+  ): Promise<WeatherStationSeries[]> {
+    const { data } = await listWeatherStationSeries({
+      path: { stationId },
+      query: {
+        metrics: metrics.join(","),
+        from: from.toISOString(),
+        to: to.toISOString(),
+        resolution,
+      },
+    });
+    return data.weatherStationSeries;
   }
 
   async listRadarFrames(): Promise<RadarFrame[]> {

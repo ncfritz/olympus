@@ -8,8 +8,10 @@ export type RollupTier = {
   name: string;
   /** The bucket's length. */
   bucketSeconds: number;
-  /** Null for a tier kept for good. */
+  /** Null for a tier built from the samples. */
   sourceTier: string | null;
+  /** How long the tier's buckets are kept; null for good. */
+  retentionSeconds: number | null;
   /** Every bucket starting before this is built; null when none is. */
   builtUntil: Moment | null;
 };
@@ -17,6 +19,7 @@ export type RollupTier = {
 type GraphQlTier = {
   name: string;
   bucket: string;
+  retention: string | null;
   sourceTier: string | null;
   builtUntil: string | null;
 };
@@ -40,6 +43,7 @@ export class WeatherRollupService {
         olympus_weather_rollup_tiers {
           name
           bucket
+          retention
           sourceTier
           builtUntil
         }
@@ -52,8 +56,10 @@ export class WeatherRollupService {
     return result.olympus_weather_rollup_tiers
       .map((tier) => ({
         name: tier.name,
-        bucketSeconds: moment.duration(tier.bucket).asSeconds(),
+        bucketSeconds: intervalSeconds(tier.bucket),
         sourceTier: tier.sourceTier,
+        retentionSeconds:
+          tier.retention === null ? null : intervalSeconds(tier.retention),
         builtUntil: tier.builtUntil ? moment.utc(tier.builtUntil) : null,
       }))
       .sort((a, b) => a.bucketSeconds - b.bucketSeconds);
@@ -144,3 +150,23 @@ export class WeatherRollupService {
     return result.olympus_weather_rollup_tier;
   }
 }
+
+/**
+ * A Postgres interval as Hasura returns it (Postgres's own style:
+ * `00:05:00`, `7 days`, `1 day 02:00:00`), in seconds.
+ */
+export const intervalSeconds = (interval: string): number => {
+  const match = /^(?:(\d+) days? ?)?(?:(\d+):(\d{2}):(\d{2}))?$/.exec(
+    interval.trim(),
+  );
+  if (!match || interval.trim() === "") {
+    throw new Error(`Not an interval Postgres writes: ${interval}`);
+  }
+  const [, days, hours, minutes, seconds] = match;
+  return (
+    Number(days ?? 0) * 86_400 +
+    Number(hours ?? 0) * 3_600 +
+    Number(minutes ?? 0) * 60 +
+    Number(seconds ?? 0)
+  );
+};

@@ -473,7 +473,7 @@ console reach the ingest listener, and its range stays in
 - `weather_backfill_records_total{result}` (fetched, stored), and the
   client's calls under `Device.Data` with the other provider metrics.
 
-## Phase 8 — Station views
+## Phase 8 — Station views — Stations view built 2026-09-29; history page to come
 
 1. **Operations**:
    - `ListWeatherStations` `GET /weather/stations`: each station with its
@@ -498,6 +498,33 @@ console reach the ingest listener, and its range stays in
    edge; the not-reporting state; the page's ranges.
 
 **Sign-off:** W12.
+
+**As built so far** (the operations and the widget's Stations view):
+
+- `ListWeatherStations` and `DescribeWeatherStation` carry
+  `latestReading` (the newest sample, nulls left out, marked `push` or
+  `backfill`) and `reporting` (that reading within
+  `WEATHER_STATION_STALE_SECONDS`), from one nested query. A station with
+  no sample in the samples' retention has no reading and is not
+  reporting.
+- `ListWeatherStationSeries` points carry the bucket's count, mean
+  (sum ÷ count), minimum, maximum, sum, first and last. Besides the
+  tiers there is `1d`, whole UTC days combined from the hourly tier in
+  the API, which is exact (counts and sums add, extremes carry) and is
+  what lets a year fit in 2,000 points; `auto` picks it past about 83
+  days. A week at `5m` is 2,016 points, so `auto` gives a week at `15m`.
+  Metrics are checked against `weather_metrics` (plus `wind_direction`),
+  at most 12 a request. Tier retentions come from Postgres's interval
+  text.
+- The widget's header has a Forecast/Stations switch, remembered per
+  browser (`weather.view`). The Stations view polls every minute while
+  the page is visible without the site's error notification (a failed
+  refresh keeps the last readings and says so), and moves "12 s ago" on
+  every ten seconds. Each card's sparkline is the last 24 hours of
+  outdoor temperature at `15m`, refreshed every five minutes, the line
+  broken across gaps longer than two buckets. A backfilled newest reading
+  says so under the tiles.
+- The design's History link waits for the history page.
 
 ## Phase 9 — Weather data in dev — built 2026-09-29, not signed off
 

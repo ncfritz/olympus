@@ -3,27 +3,37 @@ import {
   type WeatherForecast,
   type WeatherLocation,
 } from "@ncfritz/olympus-sdk/olympus";
-import { Alert, Button, Empty, Result, Skeleton } from "antd";
+import { Alert, Button, Empty, Result, Segmented, Skeleton } from "antd";
 import { useEffect, useState } from "react";
 import weatherApi from "../../../api/weatherApi";
 import { useAuth } from "../../../auth/AuthProvider";
 import { useFetch } from "../../../hooks/useFetch";
+import {
+  loadFromLocalStorage,
+  storeToLocalStorage,
+} from "../../../utils/storage";
 import { chooseLocation, formatClock } from "../../../utils/weather";
 import CurrentConditions from "./CurrentConditions";
 import FiveDays from "./FiveDays";
 import LocationMenu from "./LocationMenu";
 import ManageLocationsModal from "./ManageLocationsModal";
 import NextHours from "./NextHours";
+import StationsView from "./StationsView";
 import WeatherMap from "./WeatherMap";
 import styles from "./WeatherWidget.module.css";
 
 /** The API caches forecasts for 15 minutes; asking more often gains nothing. */
 const FORECAST_REFRESH_MS = 15 * 60 * 1000;
 
+type WeatherView = "forecast" | "stations";
+/** Which view the widget last showed, per browser. */
+const VIEW_KEY = "weather.view";
+
 /**
- * The home page's weather (docs/plans/weather/design.md): the signed-in
- * user's locations, one at a time, with now, the next 24 hours, five days
- * and a map. Every panel follows the one selected location.
+ * The home page's weather (docs/plans/weather/design.md), in two views:
+ * Forecast, the signed-in user's locations one at a time, with now, the
+ * next 24 hours, five days and a map, every panel following the selected
+ * location; and Stations, the house's weather stations.
  */
 const WeatherWidget: React.FunctionComponent = () => {
   const auth = useAuth();
@@ -42,6 +52,41 @@ const WeatherWidget: React.FunctionComponent = () => {
 };
 
 const SignedInWeather: React.FunctionComponent = () => {
+  const [view, setView] = useState<WeatherView>("forecast");
+  // Read after mounting: the server render has no local storage.
+  useEffect(() => {
+    const stored = loadFromLocalStorage<unknown>(VIEW_KEY, "forecast");
+    if (stored === "stations") setView("stations");
+  }, []);
+  const choose = (next: WeatherView) => {
+    setView(next);
+    storeToLocalStorage(VIEW_KEY, next);
+  };
+  const switcher = (
+    <Segmented<WeatherView>
+      className={styles.viewSwitch}
+      size="small"
+      aria-label="Weather view"
+      options={[
+        { value: "forecast", label: "Forecast" },
+        { value: "stations", label: "Stations" },
+      ]}
+      value={view}
+      onChange={choose}
+    />
+  );
+
+  if (view === "stations") {
+    return (
+      <Frame switcher={switcher}>
+        <StationsView />
+      </Frame>
+    );
+  }
+  return <ForecastView switcher={switcher} />;
+};
+
+const ForecastView = ({ switcher }: { switcher: React.ReactNode }) => {
   const [picked, setPicked] = useState<string | undefined>();
   const [managing, setManaging] = useState(false);
 
@@ -95,7 +140,7 @@ const SignedInWeather: React.FunctionComponent = () => {
   );
 
   return (
-    <Frame extra={header}>
+    <Frame switcher={switcher} extra={header}>
       {locationsLoading ? (
         <Skeleton active />
       ) : locationsError ? (
@@ -189,16 +234,19 @@ const SignedInWeather: React.FunctionComponent = () => {
 };
 
 const Frame = ({
+  switcher,
   extra,
   children,
 }: {
+  switcher?: React.ReactNode;
   extra?: React.ReactNode;
   children: React.ReactNode;
 }) => (
   <div className={styles.card}>
     <div className={styles.header}>
       <h2 className={styles.title}>Weather</h2>
-      {extra}
+      {switcher}
+      {extra ?? <span />}
     </div>
     {children}
   </div>

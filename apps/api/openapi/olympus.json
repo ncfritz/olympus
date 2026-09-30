@@ -2109,6 +2109,98 @@
         ]
       }
     },
+    "/olympus/weather/station/{stationId}/series": {
+      "get": {
+        "description": "For each metric asked for, the buckets of one tier across a range: count, average, minimum, maximum, sum, first and last. wind_direction is the direction of each bucket's average wind. With resolution auto (the default) the tier is the finest that still holds the range's start and fits it in 2,000 points; 1d (whole UTC days, combined from the hourly tier) is the coarsest.",
+        "operationId": "ListWeatherStationSeries",
+        "parameters": [
+          {
+            "name": "stationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the station",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "metrics",
+            "required": true,
+            "in": "query",
+            "description": "Comma-separated metric names, e.g. outdoor_temperature,rain,wind_direction",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "The range's start, an ISO-8601 time",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "The range's end (exclusive), an ISO-8601 time",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolution",
+            "required": false,
+            "in": "query",
+            "description": "auto (the default), a tier (1m, 5m, 15m, 30m, 1h), or 1d: whole UTC days",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The series, one per metric, in the order asked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListWeatherStationSeriesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists a weather station's history as series",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
     "/olympus/weather/archive/replay": {
       "post": {
         "description": "Loads a range of UTC days from this API's station archive again: each line parsed and stored, then every tier rebuilt for the day and retention applied. Runs in the background; its summary is logged. One replay at a time. For another archive (the NAS copy, prod's from dev) use weather:replay.",
@@ -4042,6 +4134,131 @@
           "pressure"
         ]
       },
+      "WeatherArchiveRecordSource": {
+        "type": "string",
+        "description": "Where an archive line came from: a console's push, or a backfill response",
+        "enum": [
+          "push",
+          "backfill"
+        ]
+      },
+      "WeatherStationReading": {
+        "type": "object",
+        "properties": {
+          "observedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the console took the reading"
+          },
+          "source": {
+            "description": "Whether the reading was pushed or backfilled",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherArchiveRecordSource"
+              }
+            ]
+          },
+          "outdoorTemperatureF": {
+            "type": "number",
+            "description": "Outdoor temperature, °F"
+          },
+          "outdoorHumidityPct": {
+            "type": "number",
+            "description": "Outdoor relative humidity, %"
+          },
+          "indoorTemperatureF": {
+            "type": "number",
+            "description": "Indoor temperature, °F"
+          },
+          "indoorHumidityPct": {
+            "type": "number",
+            "description": "Indoor relative humidity, %"
+          },
+          "dewPointF": {
+            "type": "number",
+            "description": "Dew point, °F"
+          },
+          "feelsLikeF": {
+            "type": "number",
+            "description": "Feels-like temperature, °F"
+          },
+          "windSpeedMph": {
+            "type": "number",
+            "description": "Wind speed, mph"
+          },
+          "windSpeedAvg10mMph": {
+            "type": "number",
+            "description": "Wind speed averaged over 10 minutes, mph"
+          },
+          "windGustMph": {
+            "type": "number",
+            "description": "Wind gust, mph"
+          },
+          "maxDailyGustMph": {
+            "type": "number",
+            "description": "The day's highest gust so far, mph"
+          },
+          "windDirectionDeg": {
+            "type": "number",
+            "description": "Wind direction, degrees from north"
+          },
+          "windDirectionAvg10mDeg": {
+            "type": "number",
+            "description": "Wind direction averaged over 10 minutes, degrees from north"
+          },
+          "rainRateInHr": {
+            "type": "number",
+            "description": "Rain rate, inches an hour"
+          },
+          "rainEventIn": {
+            "type": "number",
+            "description": "Rain in the current event, inches"
+          },
+          "rainDailyIn": {
+            "type": "number",
+            "description": "Rain since the console's midnight, inches"
+          },
+          "rainWeeklyIn": {
+            "type": "number",
+            "description": "Rain this week, inches"
+          },
+          "rainMonthlyIn": {
+            "type": "number",
+            "description": "Rain this month, inches"
+          },
+          "rainYearlyIn": {
+            "type": "number",
+            "description": "Rain this year, inches"
+          },
+          "pressureRelativeInhg": {
+            "type": "number",
+            "description": "Barometric pressure adjusted to sea level, inHg"
+          },
+          "pressureAbsoluteInhg": {
+            "type": "number",
+            "description": "Barometric pressure at the station, inHg"
+          },
+          "uvIndex": {
+            "type": "number",
+            "description": "UV index"
+          },
+          "solarRadiationWm2": {
+            "type": "number",
+            "description": "Solar radiation, W/m²"
+          },
+          "batteryOutdoorOk": {
+            "type": "boolean",
+            "description": "Whether the outdoor sensor's battery is OK"
+          },
+          "batteryIndoorOk": {
+            "type": "boolean",
+            "description": "Whether the console's battery is OK"
+          }
+        },
+        "required": [
+          "observedTime",
+          "source"
+        ]
+      },
       "WeatherStation": {
         "type": "object",
         "properties": {
@@ -4064,6 +4281,18 @@
           "lastUpdatedTime": {
             "type": "string",
             "description": "An ISO-8601 formatted string indicating when the station was last changed"
+          },
+          "latestReading": {
+            "description": "The station's newest reading, when there is one within the samples' retention",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherStationReading"
+              }
+            ]
+          },
+          "reporting": {
+            "type": "boolean",
+            "description": "Whether the newest reading is recent (WEATHER_STATION_STALE_SECONDS)"
           }
         },
         "required": [
@@ -4151,6 +4380,98 @@
         },
         "required": [
           "weatherStation"
+        ]
+      },
+      "WeatherSeriesPoint": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the bucket starts"
+          },
+          "count": {
+            "type": "number",
+            "description": "The number of samples in the bucket"
+          },
+          "mean": {
+            "type": "number",
+            "description": "The average over the bucket; for wind direction, the direction of the average wind"
+          },
+          "min": {
+            "type": "number",
+            "description": "The lowest sample in the bucket"
+          },
+          "max": {
+            "type": "number",
+            "description": "The highest sample in the bucket"
+          },
+          "sum": {
+            "type": "number",
+            "description": "The samples added up: the total, for rain"
+          },
+          "first": {
+            "type": "number",
+            "description": "The bucket's first sample"
+          },
+          "last": {
+            "type": "number",
+            "description": "The bucket's last sample"
+          }
+        },
+        "required": [
+          "time",
+          "count",
+          "mean"
+        ]
+      },
+      "WeatherStationSeries": {
+        "type": "object",
+        "properties": {
+          "metric": {
+            "type": "string",
+            "description": "The metric, e.g. outdoor_temperature, or wind_direction"
+          },
+          "unit": {
+            "type": "string",
+            "description": "The metric's unit, e.g. F, mph, in, deg"
+          },
+          "rollup": {
+            "type": "string",
+            "description": "How the metric is read: mean, sum, max, or vector for wind direction"
+          },
+          "resolution": {
+            "type": "string",
+            "description": "The tier the points come from: 1m, 5m, 15m, 30m or 1h"
+          },
+          "points": {
+            "description": "The buckets that have samples, oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeatherSeriesPoint"
+            }
+          }
+        },
+        "required": [
+          "metric",
+          "unit",
+          "rollup",
+          "resolution",
+          "points"
+        ]
+      },
+      "ListWeatherStationSeriesResponse": {
+        "type": "object",
+        "properties": {
+          "weatherStationSeries": {
+            "description": "One series per metric asked for, in the order asked",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeatherStationSeries"
+            }
+          }
+        },
+        "required": [
+          "weatherStationSeries"
         ]
       },
       "PartialWeatherStation": {
@@ -4281,14 +4602,6 @@
           }
         },
         "required": [
-          "backfill"
-        ]
-      },
-      "WeatherArchiveRecordSource": {
-        "type": "string",
-        "description": "Where the line came from",
-        "enum": [
-          "push",
           "backfill"
         ]
       },

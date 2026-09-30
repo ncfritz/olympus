@@ -9,6 +9,7 @@ import { BackfillWeatherStationsController } from "./controllers/BackfillWeather
 import { CreateWeatherStationController } from "./controllers/CreateWeatherStationController";
 import { DeleteWeatherStationController } from "./controllers/DeleteWeatherStationController";
 import { DescribeWeatherStationController } from "./controllers/DescribeWeatherStationController";
+import { ListWeatherStationSeriesController } from "./controllers/ListWeatherStationSeriesController";
 import { ListWeatherStationsController } from "./controllers/ListWeatherStationsController";
 import { ImportWeatherStationReadingsController } from "./controllers/ImportWeatherStationReadingsController";
 import { ReplayWeatherArchiveController } from "./controllers/ReplayWeatherArchiveController";
@@ -16,6 +17,7 @@ import { ReportWeatherStationReadingController } from "./controllers/ReportWeath
 import { UpdateWeatherStationController } from "./controllers/UpdateWeatherStationController";
 import { StationReportService } from "./services/StationReportService";
 import { WeatherBackfillService } from "./services/WeatherBackfillService";
+import { WeatherSeriesService } from "./services/WeatherSeriesService";
 import { WeatherIngestService } from "./services/WeatherIngestService";
 import { WeatherReplayService } from "./services/WeatherReplayService";
 import { WeatherRollupScheduler } from "./services/WeatherRollupScheduler";
@@ -65,6 +67,7 @@ import { WeatherTileService } from "./services/WeatherTileService";
     WeatherRollupScheduler,
     AmbientClient,
     WeatherBackfillService,
+    WeatherSeriesService,
   ],
   controllers: [
     ListWeatherLocationsController,
@@ -80,6 +83,7 @@ import { WeatherTileService } from "./services/WeatherTileService";
     ListWeatherStationsController,
     CreateWeatherStationController,
     DescribeWeatherStationController,
+    ListWeatherStationSeriesController,
     UpdateWeatherStationController,
     DeleteWeatherStationController,
     ReplayWeatherArchiveController,

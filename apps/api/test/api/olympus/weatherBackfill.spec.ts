@@ -109,7 +109,13 @@ describe("BackfillWeatherStations", () => {
     }));
     t.graphql.on("ListWeatherRollupTiers", {
       olympus_weather_rollup_tiers: [
-        { name: "1m", bucket: "00:01:00", sourceTier: null, builtUntil: null },
+        {
+          name: "1m",
+          bucket: "00:01:00",
+          retention: "7 days",
+          sourceTier: null,
+          builtUntil: null,
+        },
       ],
     });
     t.graphql.on("RollupWeatherSamples", {

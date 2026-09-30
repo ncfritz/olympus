@@ -461,6 +461,300 @@ export class RadarFrame {
   time: Moment;
 }
 
+/**
+ * One reading of a station: a push, or a record backfilled from
+ * ambientweather.net. Every value is optional: a console reports what its
+ * sensors have.
+ */
+export class WeatherStationReading {
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the console took the reading",
+  })
+  observedTime: Moment;
+
+  @ApiProperty({
+    enum: () => WeatherArchiveRecordSource,
+    enumName: "WeatherArchiveRecordSource",
+    enumSchema: {
+      description:
+        "Where an archive line came from: a console's push, or a backfill response",
+    },
+    required: true,
+    description: "Whether the reading was pushed or backfilled",
+  })
+  source: WeatherArchiveRecordSource;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Outdoor temperature, °F",
+  })
+  outdoorTemperatureF?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Outdoor relative humidity, %",
+  })
+  outdoorHumidityPct?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Indoor temperature, °F",
+  })
+  indoorTemperatureF?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Indoor relative humidity, %",
+  })
+  indoorHumidityPct?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Dew point, °F",
+  })
+  dewPointF?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Feels-like temperature, °F",
+  })
+  feelsLikeF?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Wind speed, mph",
+  })
+  windSpeedMph?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Wind speed averaged over 10 minutes, mph",
+  })
+  windSpeedAvg10mMph?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Wind gust, mph",
+  })
+  windGustMph?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "The day's highest gust so far, mph",
+  })
+  maxDailyGustMph?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Wind direction, degrees from north",
+  })
+  windDirectionDeg?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Wind direction averaged over 10 minutes, degrees from north",
+  })
+  windDirectionAvg10mDeg?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Rain rate, inches an hour",
+  })
+  rainRateInHr?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Rain in the current event, inches",
+  })
+  rainEventIn?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Rain since the console's midnight, inches",
+  })
+  rainDailyIn?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Rain this week, inches",
+  })
+  rainWeeklyIn?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Rain this month, inches",
+  })
+  rainMonthlyIn?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Rain this year, inches",
+  })
+  rainYearlyIn?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Barometric pressure adjusted to sea level, inHg",
+  })
+  pressureRelativeInhg?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Barometric pressure at the station, inHg",
+  })
+  pressureAbsoluteInhg?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "UV index",
+  })
+  uvIndex?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Solar radiation, W/m²",
+  })
+  solarRadiationWm2?: number;
+
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    description: "Whether the outdoor sensor's battery is OK",
+  })
+  batteryOutdoorOk?: boolean;
+
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    description: "Whether the console's battery is OK",
+  })
+  batteryIndoorOk?: boolean;
+}
+
+/** One bucket of a series: the tier's statistics for it. */
+export class WeatherSeriesPoint {
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the bucket starts",
+  })
+  time: Moment;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The number of samples in the bucket",
+  })
+  count: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "The average over the bucket; for wind direction, the direction of the average wind",
+  })
+  mean: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "The lowest sample in the bucket",
+  })
+  min?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "The highest sample in the bucket",
+  })
+  max?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "The samples added up: the total, for rain",
+  })
+  sum?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "The bucket's first sample",
+  })
+  first?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "The bucket's last sample",
+  })
+  last?: number;
+}
+
+/** One metric of a station over a range, at one tier's resolution. */
+export class WeatherStationSeries {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The metric, e.g. outdoor_temperature, or wind_direction",
+  })
+  metric: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The metric's unit, e.g. F, mph, in, deg",
+  })
+  unit: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "How the metric is read: mean, sum, max, or vector for wind direction",
+  })
+  rollup: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The tier the points come from: 1m, 5m, 15m, 30m or 1h",
+  })
+  resolution: string;
+
+  @ApiProperty({
+    type: () => WeatherSeriesPoint,
+    isArray: true,
+    required: true,
+    description: "The buckets that have samples, oldest first",
+  })
+  points: WeatherSeriesPoint[];
+}
+
 /** One of the house's weather stations, known by its console's MAC address. */
 export class WeatherStation {
   @ApiProperty({
@@ -498,6 +792,21 @@ export class WeatherStation {
       "An ISO-8601 formatted string indicating when the station was last changed",
   })
   lastUpdatedTime?: Moment;
+  @ApiProperty({
+    type: () => WeatherStationReading,
+    required: false,
+    description:
+      "The station's newest reading, when there is one within the samples' retention",
+  })
+  latestReading?: WeatherStationReading;
+
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    description:
+      "Whether the newest reading is recent (WEATHER_STATION_STALE_SECONDS)",
+  })
+  reporting?: boolean;
 }
 
 /** What registering a station takes. */
@@ -829,6 +1138,16 @@ export class UpdateWeatherStationResponse {
     description: "The station with the changes applied.",
   })
   weatherStation: WeatherStation;
+}
+
+export class ListWeatherStationSeriesResponse {
+  @ApiProperty({
+    type: () => WeatherStationSeries,
+    isArray: true,
+    required: true,
+    description: "One series per metric asked for, in the order asked",
+  })
+  weatherStationSeries: WeatherStationSeries[];
 }
 
 export class ImportWeatherStationReadingsResponse {

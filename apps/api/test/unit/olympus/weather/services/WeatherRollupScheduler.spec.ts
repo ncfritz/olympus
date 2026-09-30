@@ -12,18 +12,21 @@ const tiers = (
   {
     name: "1m",
     bucketSeconds: 60,
+    retentionSeconds: 7 * 86_400,
     sourceTier: null,
     builtUntil: built["1m"] ? at(built["1m"]) : null,
   },
   {
     name: "5m",
     bucketSeconds: 300,
+    retentionSeconds: 30 * 86_400,
     sourceTier: "1m",
     builtUntil: built["5m"] ? at(built["5m"]) : null,
   },
   {
     name: "1h",
     bucketSeconds: 3600,
+    retentionSeconds: null,
     sourceTier: "5m",
     builtUntil: built["1h"] ? at(built["1h"]) : null,
   },

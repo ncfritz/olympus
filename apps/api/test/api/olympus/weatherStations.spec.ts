@@ -196,6 +196,7 @@ describe("Weather stations API", () => {
       ["get", `/v1/olympus/weather/station/${WEATHER_STATION_ID}`],
       ["put", `/v1/olympus/weather/station/${WEATHER_STATION_ID}`],
       ["delete", `/v1/olympus/weather/station/${WEATHER_STATION_ID}`],
+      ["get", `/v1/olympus/weather/station/${WEATHER_STATION_ID}/series`],
     ] as const)("%s %s answers 401", async (method, path) => {
       const res = await t.http()[method](path);
       expect(res.status).toBe(401);
@@ -230,6 +231,183 @@ describe("Weather stations API", () => {
       ]);
       expect(one.status).toBe(200);
       expect(one.body.weatherStation.name).toBe("Mill Creek");
+    });
+
+    it("lists each station with its newest reading and whether it is reporting", async () => {
+      const recent = new Date(Date.now() - 16_000).toISOString();
+      const old = new Date(Date.now() - 3_600_000).toISOString();
+      t.graphql.on("ListWeatherStations", {
+        olympus_weather_stations: [
+          graphQlWeatherStation({
+            samples: [
+              {
+                observedTime: recent,
+                source: "push",
+                outdoorTemperatureF: 58.1,
+                rainDailyIn: 0.21,
+                uvIndex: null,
+              },
+            ],
+          } as never),
+          graphQlWeatherStation({
+            id: "3b6f1d2c-0000-4000-8000-000000000002",
+            name: "Cabin",
+            samples: [
+              { observedTime: old, source: "push", outdoorTemperatureF: 50 },
+            ],
+          } as never),
+          graphQlWeatherStation({
+            id: "3b6f1d2c-0000-4000-8000-000000000003",
+            name: "New",
+            samples: [],
+          } as never),
+        ],
+      });
+
+      const res = await t
+        .http()
+        .get("/v1/olympus/weather/stations")
+        .set("authorization", `Bearer ${userToken}`);
+
+      expect(res.status).toBe(200);
+      const [home, cabin, fresh] = res.body.weatherStations;
+      expect(home.reporting).toBe(true);
+      expect(home.latestReading).toEqual({
+        observedTime: recent,
+        source: "push",
+        outdoorTemperatureF: 58.1,
+        rainDailyIn: 0.21,
+      });
+      expect(cabin.reporting).toBe(false);
+      expect(cabin.latestReading.observedTime).toBe(old);
+      expect(fresh.reporting).toBe(false);
+      expect(fresh).not.toHaveProperty("latestReading");
+      expect(t.graphql.calls("ListWeatherStations")[0].document).toMatch(
+        /samples\(order_by: \{ observedTime: desc \}, limit: 1\)/,
+      );
+    });
+
+    describe("ListWeatherStationSeries", () => {
+      const SERIES = `/v1/olympus/weather/station/${WEATHER_STATION_ID}/series`;
+
+      beforeEach(() => {
+        t.graphql.on("DescribeWeatherStation", (vars) => ({
+          olympus_weather_stations_by_pk:
+            (vars as { stationId: string }).stationId === WEATHER_STATION_ID
+              ? graphQlWeatherStation({ samples: [] } as never)
+              : null,
+        }));
+        t.graphql.on("ListWeatherRollupTiers", {
+          olympus_weather_rollup_tiers: [
+            {
+              name: "1m",
+              bucket: "00:01:00",
+              retention: "7 days",
+              sourceTier: null,
+              builtUntil: null,
+            },
+            {
+              name: "15m",
+              bucket: "00:15:00",
+              retention: "90 days",
+              sourceTier: "1m",
+              builtUntil: null,
+            },
+            {
+              name: "1h",
+              bucket: "01:00:00",
+              retention: null,
+              sourceTier: "15m",
+              builtUntil: null,
+            },
+          ],
+        });
+        t.graphql.on("ListWeatherMetrics", {
+          olympus_weather_metrics: [
+            { name: "outdoor_temperature", unit: "F", rollup: "mean" },
+          ],
+        });
+        t.graphql.on("ListWeatherStationSeries", {
+          olympus_weather_station_rollups: [
+            {
+              bucketStart: "2026-09-29T19:00:00+00:00",
+              sampleCount: 56,
+              sum: 3220,
+              min: 56.2,
+              max: 59.4,
+              first: 56.2,
+              last: 59.4,
+              metric: { name: "outdoor_temperature" },
+            },
+          ],
+        });
+      });
+
+      const get = (query: Record<string, string>, id = WEATHER_STATION_ID) =>
+        t
+          .http()
+          .get(SERIES.replace(WEATHER_STATION_ID, id))
+          .query(query)
+          .set("authorization", `Bearer ${userToken}`);
+
+      const day = {
+        metrics: "outdoor_temperature",
+        from: new Date(Date.now() - 86_400_000).toISOString(),
+        to: new Date().toISOString(),
+      };
+
+      it("answers the series at the resolution asked", async () => {
+        const res = await get({ ...day, resolution: "15m" });
+        expect(res.status).toBe(200);
+        expect(res.body.weatherStationSeries).toEqual([
+          {
+            metric: "outdoor_temperature",
+            unit: "F",
+            rollup: "mean",
+            resolution: "15m",
+            points: [
+              {
+                time: "2026-09-29T19:00:00.000Z",
+                count: 56,
+                mean: 57.5,
+                min: 56.2,
+                max: 59.4,
+                sum: 3220,
+                first: 56.2,
+                last: 59.4,
+              },
+            ],
+          },
+        ]);
+      });
+
+      it("picks the resolution itself by default", async () => {
+        await get(day);
+        expect(
+          t.graphql.calls("ListWeatherStationSeries")[0].variables,
+        ).toMatchObject({ tier: "1m", metrics: ["outdoor_temperature"] });
+      });
+
+      it.each([
+        ["no metrics", { ...day, metrics: "" }],
+        ["an unknown metric", { ...day, metrics: "humidex" }],
+        ["a bad time", { ...day, from: "yesterday" }],
+        ["a resolution there is not", { ...day, resolution: "2m" }],
+      ])("answers 400 to %s", async (_case, query) => {
+        const res = await get(query);
+        expect(res.status).toBe(400);
+        expect(t.graphql.calls("ListWeatherStationSeries")).toHaveLength(0);
+      });
+
+      it("answers 404 for a station that is not there", async () => {
+        const res = await get(day, "3b6f1d2c-0000-4000-8000-0000000000ff");
+        expect(res.status).toBe(404);
+      });
+
+      it("answers 400 for an ID that is not one", async () => {
+        const res = await get(day, "nope");
+        expect(res.status).toBe(400);
+      });
     });
 
     it.each([
@@ -371,12 +549,14 @@ describe("Weather stations API", () => {
           {
             name: "5m",
             bucket: "00:05:00",
+            retention: "30 days",
             sourceTier: "1m",
             builtUntil: null,
           },
           {
             name: "1m",
             bucket: "00:01:00",
+            retention: "7 days",
             sourceTier: null,
             builtUntil: null,
           },

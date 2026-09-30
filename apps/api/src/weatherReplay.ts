@@ -92,7 +92,10 @@ async function run(argv: string[]): Promise<void> {
   });
   const rollups = new WeatherRollupService(client);
   const replays = new WeatherReplayService(
-    new WeatherIngestService(client, new WeatherStationService(client)),
+    new WeatherIngestService(
+      client,
+      new WeatherStationService(client, config.weather),
+    ),
     rollups,
     config.weather,
   );

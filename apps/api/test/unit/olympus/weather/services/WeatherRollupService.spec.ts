@@ -1,6 +1,9 @@
 import moment from "moment";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { WeatherRollupService } from "../../../../../src/olympus/weather/services/WeatherRollupService";
+import {
+  intervalSeconds,
+  WeatherRollupService,
+} from "../../../../../src/olympus/weather/services/WeatherRollupService";
 
 const operation = (document: unknown) =>
   /\b(?:query|mutation)\s+(\w+)/.exec(String(document))?.[1];
@@ -18,18 +21,21 @@ describe("WeatherRollupService", () => {
               {
                 name: "1h",
                 bucket: "01:00:00",
+                retention: null,
                 sourceTier: "30m",
                 builtUntil: null,
               },
               {
                 name: "1m",
                 bucket: "00:01:00",
+                retention: "7 days",
                 sourceTier: null,
                 builtUntil: "2026-09-29T12:07:00+00:00",
               },
               {
                 name: "5m",
                 bucket: "00:05:00",
+                retention: "30 days",
                 sourceTier: "1m",
                 builtUntil: null,
               },
@@ -70,6 +76,11 @@ describe("WeatherRollupService", () => {
     ]);
     expect(tiers[0].builtUntil?.toISOString()).toBe("2026-09-29T12:07:00.000Z");
     expect(tiers[1].builtUntil).toBeNull();
+    expect(tiers.map((t) => t.retentionSeconds)).toEqual([
+      7 * 86_400,
+      30 * 86_400,
+      null,
+    ]);
   });
 
   it("builds the finest tier from the samples and the others from their source", async () => {
@@ -96,5 +107,21 @@ describe("WeatherRollupService", () => {
     expect(request.mock.calls[0][1]).toEqual({
       sampleCutoff: "2026-09-27T12:00:00.000Z",
     });
+  });
+});
+
+describe("intervalSeconds", () => {
+  it.each([
+    ["00:01:00", 60],
+    ["01:00:00", 3_600],
+    ["7 days", 604_800],
+    ["1 day", 86_400],
+    ["1 day 02:00:00", 93_600],
+  ])("reads %s", (interval, seconds) => {
+    expect(intervalSeconds(interval)).toBe(seconds);
+  });
+
+  it.each([[""], ["P7D"], ["7 weeks"]])("refuses %j", (interval) => {
+    expect(() => intervalSeconds(interval)).toThrow();
   });
 });

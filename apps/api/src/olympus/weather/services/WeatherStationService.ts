@@ -6,15 +6,24 @@ import {
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
 import { ClientError, gql, GraphQLClient } from "graphql-request";
+import moment from "moment";
+import {
+  weatherConfig,
+  type WeatherConfigType,
+} from "../../../config/configuration";
 import {
   GraphQlWeatherStation,
   toDomainObject,
 } from "../converters/WeatherStationConverter";
-import { WEATHER_STATION } from "../queries/weatherStations";
+import {
+  WEATHER_STATION,
+  WEATHER_STATION_WITH_LATEST,
+} from "../queries/weatherStations";
 import { normalizeMac } from "../stations/ambientReport";
 
 /** How long a MAC's lookup is trusted: a push comes every ~16 seconds. */
@@ -23,7 +32,8 @@ const MAX_NAME = 100;
 
 /**
  * The house's stations in Hasura. Registration is an admin's; every
- * signed-in user can list them. Pushes look a station up by MAC often, so
+ * signed-in user can list them, each with its newest reading and whether
+ * it is reporting (a reading within WEATHER_STATION_STALE_SECONDS). Pushes look a station up by MAC often, so
  * that lookup is cached briefly and forgotten on any change.
  */
 @Injectable()
@@ -33,26 +43,40 @@ export class WeatherStationService {
     { station: WeatherStation | undefined; at: number }
   >();
 
-  constructor(private readonly graphQLClient: GraphQLClient) {}
+  constructor(
+    private readonly graphQLClient: GraphQLClient,
+    @Inject(weatherConfig.KEY) private readonly weather: WeatherConfigType,
+  ) {}
+
+  /** Whether a station is reporting, as of now. */
+  private get reporting() {
+    return {
+      now: moment.utc(),
+      staleSeconds: this.weather.stations.staleSeconds,
+    };
+  }
 
   async list(): Promise<WeatherStation[]> {
     const document = gql`
       query ListWeatherStations {
         olympus_weather_stations(order_by: { name: asc }) {
-          ${WEATHER_STATION}
+          ${WEATHER_STATION_WITH_LATEST}
         }
       }
     `;
     type Result = { olympus_weather_stations: GraphQlWeatherStation[] };
     const result = await this.graphQLClient.request<Result>(document);
-    return result.olympus_weather_stations.map(toDomainObject);
+    const context = this.reporting;
+    return result.olympus_weather_stations.map((row) =>
+      toDomainObject(row, context),
+    );
   }
 
   async describe(stationId: string): Promise<WeatherStation> {
     const document = gql`
       query DescribeWeatherStation($stationId: uuid!) {
         olympus_weather_stations_by_pk(id: $stationId) {
-          ${WEATHER_STATION}
+          ${WEATHER_STATION_WITH_LATEST}
         }
       }
     `;
@@ -63,7 +87,10 @@ export class WeatherStationService {
       stationId,
     });
     if (!result.olympus_weather_stations_by_pk) throw notFound(stationId);
-    return toDomainObject(result.olympus_weather_stations_by_pk);
+    return toDomainObject(
+      result.olympus_weather_stations_by_pk,
+      this.reporting,
+    );
   }
 
   /** The station a console belongs to, or undefined for an unknown MAC. */

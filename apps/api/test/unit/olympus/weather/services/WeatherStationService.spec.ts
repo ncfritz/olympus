@@ -39,7 +39,12 @@ describe("WeatherStationService", () => {
           throw new Error(`unexpected ${operation(document)}`);
       }
     });
-    service = new WeatherStationService({ request } as never);
+    service = new WeatherStationService(
+      { request } as never,
+      {
+        stations: { staleSeconds: 600 },
+      } as never,
+    );
   });
 
   const lookups = () =>
