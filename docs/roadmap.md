@@ -50,6 +50,14 @@ Planned work outside the phases, in no particular order.
 4. **Feature (notification agent): interactive message tester,
    web-based.**
 5. **Feature (notification agent): delivery audit trail and metrics.**
+6. **Feature (site): Google Maps map ID, for light and dark themes.** The
+   weather map is styled in code (`STYLE_SHIFT_WORKER`, greyscale) and
+   marks the location with a deck.gl dot, because Google's classic
+   `Marker` is deprecated and its replacement, `AdvancedMarker`, only works
+   on a map with a map ID, which in turn replaces code styling with styles
+   kept in the Google Cloud console. Moving to map IDs (one per theme) goes
+   with the site's light and dark themes (ADR 0012); at that point the dot
+   becomes an `AdvancedMarker`.
 
 ## Model backlog
 

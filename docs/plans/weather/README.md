@@ -254,6 +254,12 @@ tasks pass.
 
 ## Phase 5 — Stations: ingest and archive
 
+Starts with one station, the WS-5000 on firmware 4.3.8, which takes a
+host name as well as an address for its custom server. The second is at
+another site; it follows once the firewall between the sites lets its
+console reach the ingest listener, and its range stays in
+`WEATHER_STATION_ALLOWED_CIDRS` until then.
+
 1. **Migration**:
    - `weather_stations`: `id`, `name`, `mac_address` (`macaddr`,
      unique), `created_at`, `updated_at`.
