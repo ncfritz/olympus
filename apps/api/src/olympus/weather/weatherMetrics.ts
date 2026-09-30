@@ -105,3 +105,17 @@ const relayPublish = new Counter({
 export const recordRelayPublish = (result: "published" | "failed"): void => {
   relayPublish.inc({ result });
 };
+
+/** Backfill's records fetched from ambientweather.net, and of them stored. */
+const backfillRecords = new Counter({
+  name: "weather_backfill_records_total",
+  help: "Weather station records backfilled from ambientweather.net, fetched and stored",
+  labelNames: ["result"],
+});
+
+export const recordBackfill = (
+  result: "records" | "stored",
+  count: number,
+): void => {
+  if (count > 0) backfillRecords.inc({ result }, count);
+};

@@ -128,6 +128,11 @@ recorded exception.
    the gap fills from ambientweather.net within an hour, at 5-minute
    steps, marked `backfill`, and the responses are archived.
 2. No pushed sample is replaced.
+3. No archive line and no log line contains either Ambient key.
+4. `BackfillWeatherStations` for a week before the first push: the 1h
+   tier covers it, and the daily rain totals match ambientweather.net's.
+5. Dev, with the relay running, receives the backfill lines and stores
+   them too.
 
 ## W12 — Station views
 

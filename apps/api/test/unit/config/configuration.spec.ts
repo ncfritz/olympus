@@ -182,6 +182,8 @@ describe("readConfig: authentication", () => {
         rollupsEnabled: true,
         // Only prod feeds the dev relay.
         relayPublish: false,
+        // Only prod fills gaps from ambientweather.net.
+        backfillEnabled: false,
       },
     });
   });

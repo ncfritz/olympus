@@ -34,6 +34,7 @@ describe("WeatherRollupScheduler", () => {
   let prune: ReturnType<typeof vi.fn>;
   let listTiers: ReturnType<typeof vi.fn>;
   let replays: { running: boolean };
+  let backfills: { running: boolean };
   let scheduler: WeatherRollupScheduler;
   const built: string[] = [];
 
@@ -41,6 +42,7 @@ describe("WeatherRollupScheduler", () => {
     new WeatherRollupScheduler(
       { tiers: listTiers, build, prune } as never,
       replays as never,
+      backfills as never,
       {
         stations: { sampleRetentionHours: 48, rollupsEnabled },
       } as WeatherConfigType,
@@ -55,6 +57,7 @@ describe("WeatherRollupScheduler", () => {
     prune = vi.fn(async () => ({}));
     listTiers = vi.fn();
     replays = { running: false };
+    backfills = { running: false };
     scheduler = make();
   });
 
@@ -163,6 +166,14 @@ describe("WeatherRollupScheduler", () => {
 
     it("waits while a replay runs", async () => {
       replays.running = true;
+      scheduler.onApplicationBootstrap();
+      await vi.advanceTimersByTimeAsync(60 * 60_000);
+      expect(build).not.toHaveBeenCalled();
+      expect(prune).not.toHaveBeenCalled();
+    });
+
+    it("waits while a backfill runs", async () => {
+      backfills.running = true;
       scheduler.onApplicationBootstrap();
       await vi.advanceTimersByTimeAsync(60 * 60_000);
       expect(build).not.toHaveBeenCalled();

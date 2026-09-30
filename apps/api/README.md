@@ -134,3 +134,4 @@ Levels are Winston's: `error`, `warn`, `info`, `http`, `verbose`,
 | WEATHER_ARCHIVE_DIR                      | Where the raw station archive is written                                          | `/olympus/weather/archive` |
 | WEATHER_ROLLUPS_ENABLED                  | Build the station tiers and prune on a schedule; one instance per database        | `true`                     |
 | WEATHER_RELAY_PUBLISH                    | Publish every archived station line for the dev relay (ADR 0025); prod only       | `false`                    |
+| WEATHER_BACKFILL_ENABLED                 | Fill station gaps from ambientweather.net (needs the Ambient keys); prod only     | `false`                    |

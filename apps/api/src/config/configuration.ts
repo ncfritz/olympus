@@ -136,6 +136,12 @@ export type WeatherConfig = {
      * (ADR 0025). Prod only: a dev API publishing would feed its own relay.
      */
     relayPublish: boolean;
+    /**
+     * Whether gaps are filled from ambientweather.net (plan phase 7). Prod
+     * only: dev receives prod's backfill through the relay and replay.
+     * Needs the Ambient keys too.
+     */
+    backfillEnabled: boolean;
   };
 };
 
@@ -344,6 +350,7 @@ const readWeatherConfig = (read: EnvReader): WeatherConfig => {
       ),
       rollupsEnabled: read.boolean("WEATHER_ROLLUPS_ENABLED", true),
       relayPublish: read.boolean("WEATHER_RELAY_PUBLISH", false),
+      backfillEnabled: read.boolean("WEATHER_BACKFILL_ENABLED", false),
     },
   };
 };

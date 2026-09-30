@@ -139,6 +139,22 @@
     ],
     "type": "object"
   },
+  "BackfillWeatherStationsRequest": {
+    "properties": {
+      "backfill": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WeatherStationBackfill"
+          }
+        ],
+        "description": "The days to fetch, and for which station."
+      }
+    },
+    "required": [
+      "backfill"
+    ],
+    "type": "object"
+  },
   "BaseCollection": {
     "properties": {
       "backdropPath": {
@@ -16655,6 +16671,10 @@
         "description": "The address a push came from, as the archiving API saw it",
         "type": "string"
       },
+      "responseJson": {
+        "description": "A backfill line's ambientweather.net response, as the JSON text it was received as",
+        "type": "string"
+      },
       "source": {
         "allOf": [
           {
@@ -16864,6 +16884,27 @@
       "id",
       "macAddress",
       "name"
+    ],
+    "type": "object"
+  },
+  "WeatherStationBackfill": {
+    "properties": {
+      "from": {
+        "description": "The first UTC day to fetch, YYYY-MM-DD",
+        "type": "string"
+      },
+      "stationId": {
+        "description": "Only this station, by its ID; every station when absent",
+        "type": "string"
+      },
+      "to": {
+        "description": "The last UTC day to fetch, YYYY-MM-DD, inclusive",
+        "type": "string"
+      }
+    },
+    "required": [
+      "from",
+      "to"
     ],
     "type": "object"
   },

@@ -12,6 +12,7 @@ import {
 } from "../../../config/configuration";
 import { recordRollupLag } from "../weatherMetrics";
 import { type RollupTier, WeatherRollupService } from "./WeatherRollupService";
+import { WeatherBackfillService } from "./WeatherBackfillService";
 import { WeatherReplayService } from "./WeatherReplayService";
 
 const MINUTE_MS = 60_000;
@@ -34,7 +35,8 @@ const LOG_EVERY_MS = 10 * MINUTE_MS;
  * has not reached yet.
  *
  * A run that is still going when the next is due is not overlapped, and
- * neither runs while a replay does: a replay builds and prunes as it goes.
+ * neither runs while a replay or a backfill does: those build as they go,
+ * and a prune between their insert and their rollup would lose samples.
  */
 @Injectable()
 export class WeatherRollupScheduler
@@ -48,6 +50,7 @@ export class WeatherRollupScheduler
   constructor(
     private readonly rollups: WeatherRollupService,
     private readonly replays: WeatherReplayService,
+    private readonly backfills: WeatherBackfillService,
     @Inject(weatherConfig.KEY) private readonly weather: WeatherConfigType,
   ) {}
 
@@ -124,7 +127,7 @@ export class WeatherRollupScheduler
   }
 
   private async tick(run: () => Promise<void>): Promise<void> {
-    if (this.busy || this.replays.running) return;
+    if (this.busy || this.replays.running || this.backfills.running) return;
     this.busy = true;
     try {
       await run();

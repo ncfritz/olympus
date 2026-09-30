@@ -420,7 +420,7 @@ console reach the ingest listener, and its range stays in
   hand-computed buckets (a rain reset, wind across north, tier from tier,
   reruns, pruning), in a transaction it rolls back.
 
-## Phase 7 — Backfill
+## Phase 7 — Backfill — built 2026-09-29, not signed off
 
 1. **`AmbientClient`**: `GET /v1/devices/:mac` (up to 288 records,
    `endDate` to page back), rate-limited below 1 request a second,
@@ -438,6 +438,40 @@ console reach the ingest listener, and its range stays in
    fetched with backfill off.
 
 **Sign-off:** W11.
+
+**As built.** Where it differs from the list above:
+
+- Gaps are found from the samples themselves, not the 1m tier: stretches
+  of more than 10 minutes with no sample between retention less an hour
+  and 15 minutes ago (the newest stretch may still be arriving), including
+  before the first sample and after the last.
+- Each gap is fetched from its end backwards, a page ending a millisecond
+  before the previous page's oldest record, until a page reaches the
+  gap's start, Ambient has nothing older, or a page does not move back.
+  Requests are queued one at a time, at least 1.1 seconds apart. Every
+  page is archived whole, as `{"receivedAt", "source": "backfill",
+"response"}`, then stored through the shared ingest path; each tier is
+  rebuilt over the whole hours the gap touched.
+- "Never replacing a pushed sample" is in the insert itself: a push
+  replaces a backfilled reading of the same moment, a backfilled reading
+  never replaces anything, and a replay after a parser fix (`replace`)
+  replaces a push with a push and a backfilled reading with a backfilled
+  one. Within one batch a push outranks a record of the same moment.
+- Older history is an admin's `BackfillWeatherStations`
+  (`POST /weather/stations/backfill`, `202`): a range of UTC days, oldest
+  first so each day's rain is measured from the day before, every day
+  rolled up as it is stored. The retention pruning then removes the
+  samples; the tiers keep them.
+- The rollup schedule waits while a backfill runs, as it does for a
+  replay.
+- Ambient records are read as the upload's query (the field names are the
+  same; `dateutc` is epoch milliseconds), so one parser serves both.
+- The relay carries a backfill response as `responseJson`, text, since the
+  model has no free-form objects; the import parses it.
+- The keys are the `ambient_application_key` and `ambient_api_key` Compose
+  secrets. `WEATHER_BACKFILL_ENABLED` without them warns and does nothing.
+- `weather_backfill_records_total{result}` (fetched, stored), and the
+  client's calls under `Device.Data` with the other provider metrics.
 
 ## Phase 8 — Station views
 

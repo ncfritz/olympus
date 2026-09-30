@@ -67,7 +67,11 @@ describe("WeatherIngestService", () => {
       source: "push",
       outdoorTemperatureF: 58.1,
     });
-    expect(request.mock.calls[0][1].updateColumns).toEqual([]);
+    // A push replaces only a backfilled reading of the same moment.
+    expect(request.mock.calls[0][1].onConflict).toMatchObject({
+      constraint: "weather_station_samples_station_id_observed_at_key",
+      where: { source: { _eq: "backfill" } },
+    });
   });
 
   it("stores a batch in one request", async () => {
@@ -131,20 +135,6 @@ describe("WeatherIngestService", () => {
     expect(request).not.toHaveBeenCalled();
   });
 
-  it("keeps backfill responses for phase 7, without storing them", async () => {
-    const { counts } = await service.ingest([
-      {
-        macAddress: WEATHER_STATION_MAC,
-        line: {
-          receivedAt: "2026-09-29T20:00:00Z",
-          source: "backfill",
-          response: [],
-        },
-      },
-    ]);
-    expect(counts.skipped).toBe(1);
-  });
-
   it("reads a query archived with its leading ?", async () => {
     const line = push();
     const { counts } = await service.ingest([
@@ -156,27 +146,141 @@ describe("WeatherIngestService", () => {
     expect(counts.stored).toBe(1);
   });
 
-  describe("replacing", () => {
-    it("overwrites every reading, clearing any the parser no longer reads", async () => {
-      await service.ingest(
-        [{ macAddress: WEATHER_STATION_MAC, line: push({ uv: "" }) }],
-        "replace",
-      );
-      const [row] = objects();
-      expect(row.uvIndex).toBeNull();
-      expect(row.outdoorTemperatureF).toBe(58.1);
-      const updateColumns = request.mock.calls[0][1].updateColumns as string[];
-      expect(updateColumns).toEqual(
-        expect.arrayContaining([
-          "outdoorTemperatureF",
-          "uvIndex",
-          "batteryIndoorOk",
-          "receivedTime",
-          "source",
-        ]),
-      );
-      expect(updateColumns).not.toContain("stationId");
-      expect(updateColumns).not.toContain("observedTime");
+  describe("what a reading already stored becomes", () => {
+    const backfill = (records: unknown[]): ArchiveLine => ({
+      receivedAt: "2026-09-29T21:00:00.000Z",
+      source: "backfill",
+      response: records,
+    });
+    const RECORD = { dateutc: 1790712000000, tempf: 57.5, humidity: 80 };
+
+    const onConflict = () =>
+      request.mock.calls[0][1].onConflict as {
+        update_columns: string[];
+        where?: unknown;
+      };
+
+    it.each([
+      ["a push, ignoring", "push", "ignore", true, true],
+      ["a push, replacing", "push", "replace", true, false],
+      ["a backfill, ignoring", "backfill", "ignore", false, false],
+      ["a backfill, replacing", "backfill", "replace", true, true],
+    ] as const)(
+      "%s: updates %s, only over a backfilled one %s",
+      async (_case, source, mode, updates, onlyOverBackfill) => {
+        await service.ingest(
+          [
+            {
+              macAddress: WEATHER_STATION_MAC,
+              line: source === "push" ? push({ uv: "" }) : backfill([RECORD]),
+            },
+          ],
+          mode,
+        );
+        const conflict = onConflict();
+        expect(conflict.update_columns.length > 0).toBe(updates);
+        expect(conflict.where !== undefined).toBe(onlyOverBackfill);
+        if (updates) {
+          expect(conflict.update_columns).toEqual(
+            expect.arrayContaining([
+              "outdoorTemperatureF",
+              "uvIndex",
+              "batteryIndoorOk",
+              "receivedTime",
+              "source",
+            ]),
+          );
+          expect(conflict.update_columns).not.toContain("stationId");
+          expect(conflict.update_columns).not.toContain("observedTime");
+          // Whatever it does not have becomes null, not the old value.
+          expect(objects()[0].uvIndex).toBeNull();
+        }
+      },
+    );
+  });
+
+  describe("backfill lines", () => {
+    const backfill = (response: unknown): ArchiveLine => ({
+      receivedAt: "2026-09-29T21:00:00.000Z",
+      source: "backfill",
+      response,
+    });
+
+    it("stores each record of the response as a backfilled sample", async () => {
+      const { counts } = await service.ingest([
+        {
+          macAddress: WEATHER_STATION_MAC,
+          line: backfill([
+            { dateutc: 1790712300000, tempf: 57.9, humidity: 81, battout: 1 },
+            { dateutc: 1790712000000, tempf: 57.5, humidity: 80 },
+          ]),
+        },
+      ]);
+      expect(counts).toMatchObject({ stored: 2, invalid: 0 });
+      expect(
+        objects().map((o) => [o.observedTime, o.source, o.outdoorTemperatureF]),
+      ).toEqual([
+        ["2026-09-29T20:05:00.000Z", "backfill", 57.9],
+        ["2026-09-29T20:00:00.000Z", "backfill", 57.5],
+      ]);
+      expect(objects()[0]).toMatchObject({
+        stationId: WEATHER_STATION_ID,
+        receivedTime: "2026-09-29T21:00:00.000Z",
+        batteryOutdoorOk: true,
+      });
+    });
+
+    it("counts a record with no usable time, and stores the rest", async () => {
+      const { counts, errors } = await service.ingest([
+        {
+          macAddress: WEATHER_STATION_MAC,
+          line: backfill([
+            { tempf: 50 },
+            "junk",
+            { dateutc: 1790712000000, tempf: 57.5 },
+          ]),
+        },
+      ]);
+      expect(counts).toMatchObject({ stored: 1, invalid: 2 });
+      expect(errors).toEqual([
+        "record has no dateutc",
+        "record has no dateutc",
+      ]);
+    });
+
+    it("counts a line whose response is not a list", async () => {
+      const { counts, errors } = await service.ingest([
+        { macAddress: WEATHER_STATION_MAC, line: backfill({ error: "x" }) },
+      ]);
+      expect(counts.invalid).toBe(1);
+      expect(errors).toEqual(["response is not a list of records"]);
+      expect(request).not.toHaveBeenCalled();
+    });
+
+    it("lets a push in the same batch outrank a record of the same moment", async () => {
+      const { counts } = await service.ingest([
+        {
+          macAddress: WEATHER_STATION_MAC,
+          line: backfill([
+            { dateutc: Date.parse("2026-09-29T19:59:44Z"), tempf: 1 },
+          ]),
+        },
+        { macAddress: WEATHER_STATION_MAC, line: push() },
+        {
+          macAddress: WEATHER_STATION_MAC,
+          line: backfill([
+            { dateutc: Date.parse("2026-09-29T19:59:44Z"), tempf: 2 },
+          ]),
+        },
+      ]);
+      // One insert, of the push: no backfill rows are left to write.
+      expect(request).toHaveBeenCalledTimes(1);
+      expect(objects()).toHaveLength(1);
+      expect(objects()[0]).toMatchObject({
+        source: "push",
+        outdoorTemperatureF: 58.1,
+      });
+      expect(counts).toMatchObject({ stored: 1, duplicate: 2 });
     });
   });
 });
@@ -221,7 +325,28 @@ describe("toIngestLines", () => {
     ["no time", [record({ receivedAt: 5 })]],
     ["an unknown source", [record({ source: "relay" })]],
     ["a remote that is not text", [record({ remote: 1 })]],
+    ["a response that is not JSON", [record({ responseJson: "{" })]],
   ])("refuses %s", (_case, records) => {
     expect(() => toIngestLines(records)).toThrow(BadRequestException);
+  });
+});
+
+describe("toIngestLines, backfill", () => {
+  it("reads a relayed backfill response from its JSON", () => {
+    const [line] = toIngestLines([
+      {
+        macAddress: "A0:B1:C2:D3:E4:F5",
+        receivedAt: "2026-09-29T21:00:00.000Z",
+        source: "backfill",
+        responseJson: '[{"dateutc":1790712000000,"tempf":57.5}]',
+      },
+    ]);
+    expect(line.line).toEqual({
+      receivedAt: "2026-09-29T21:00:00.000Z",
+      source: "backfill",
+      remote: undefined,
+      query: undefined,
+      response: [{ dateutc: 1790712000000, tempf: 57.5 }],
+    });
   });
 });

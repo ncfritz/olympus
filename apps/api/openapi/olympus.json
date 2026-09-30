@@ -2172,6 +2172,69 @@
         ]
       }
     },
+    "/olympus/weather/stations/backfill": {
+      "post": {
+        "description": "Fetches a range of UTC days of the stations' history (5-minute steps) from ambientweather.net, archives each response and stores its records, never replacing a pushed sample; then rebuilds the tiers for those days. Runs in the background; its summary is logged. Gaps within the samples' retention are filled hourly without asking; this is for older history. Only where WEATHER_BACKFILL_ENABLED and the Ambient keys are set.",
+        "operationId": "BackfillWeatherStations",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the BackfillWeatherStations operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackfillWeatherStationsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The backfill has started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an admin."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Backfill is off here, or one is already running."
+          }
+        },
+        "summary": "Backfills weather stations from ambientweather.net",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
     "/olympus/weather/station/readings": {
       "post": {
         "description": "Stores raw archive lines another environment received: each parsed with this API's parser and stored unless this environment already has the reading. For the dev relay agent (ADR 0025). No address check and no archive write: the lines were checked and archived where they arrived. Lines from a station this environment has not registered are counted and skipped.",
@@ -4184,6 +4247,43 @@
           "replay"
         ]
       },
+      "WeatherStationBackfill": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "The first UTC day to fetch, YYYY-MM-DD"
+          },
+          "to": {
+            "type": "string",
+            "description": "The last UTC day to fetch, YYYY-MM-DD, inclusive"
+          },
+          "stationId": {
+            "type": "string",
+            "description": "Only this station, by its ID; every station when absent"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ]
+      },
+      "BackfillWeatherStationsRequest": {
+        "type": "object",
+        "properties": {
+          "backfill": {
+            "description": "The days to fetch, and for which station.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherStationBackfill"
+              }
+            ]
+          }
+        },
+        "required": [
+          "backfill"
+        ]
+      },
       "WeatherArchiveRecordSource": {
         "type": "string",
         "description": "Where the line came from",
@@ -4218,6 +4318,10 @@
           "query": {
             "type": "string",
             "description": "A push's query string, exactly as received"
+          },
+          "responseJson": {
+            "type": "string",
+            "description": "A backfill line's ambientweather.net response, as the JSON text it was received as"
           }
         },
         "required": [

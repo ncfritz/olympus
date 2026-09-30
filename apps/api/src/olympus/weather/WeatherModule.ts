@@ -5,6 +5,7 @@ import {
 } from "../../config/configuration";
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
 import { RabbitModule } from "../../infra/RabbitModule";
+import { BackfillWeatherStationsController } from "./controllers/BackfillWeatherStationsController";
 import { CreateWeatherStationController } from "./controllers/CreateWeatherStationController";
 import { DeleteWeatherStationController } from "./controllers/DeleteWeatherStationController";
 import { DescribeWeatherStationController } from "./controllers/DescribeWeatherStationController";
@@ -14,6 +15,7 @@ import { ReplayWeatherArchiveController } from "./controllers/ReplayWeatherArchi
 import { ReportWeatherStationReadingController } from "./controllers/ReportWeatherStationReadingController";
 import { UpdateWeatherStationController } from "./controllers/UpdateWeatherStationController";
 import { StationReportService } from "./services/StationReportService";
+import { WeatherBackfillService } from "./services/WeatherBackfillService";
 import { WeatherIngestService } from "./services/WeatherIngestService";
 import { WeatherReplayService } from "./services/WeatherReplayService";
 import { WeatherRollupScheduler } from "./services/WeatherRollupScheduler";
@@ -31,6 +33,7 @@ import { DescribeWeatherLocationController } from "./controllers/DescribeWeather
 import { ListWeatherLocationsController } from "./controllers/ListWeatherLocationsController";
 import { ReorderWeatherLocationsController } from "./controllers/ReorderWeatherLocationsController";
 import { UpdateWeatherLocationController } from "./controllers/UpdateWeatherLocationController";
+import { AmbientClient } from "./providers/AmbientClient";
 import { OpenWeatherClient } from "./providers/OpenWeatherClient";
 import { OpenWeatherLimiter } from "./providers/OpenWeatherLimiter";
 import { RainViewerClient } from "./providers/RainViewerClient";
@@ -60,6 +63,8 @@ import { WeatherTileService } from "./services/WeatherTileService";
     WeatherRollupService,
     WeatherReplayService,
     WeatherRollupScheduler,
+    AmbientClient,
+    WeatherBackfillService,
   ],
   controllers: [
     ListWeatherLocationsController,
@@ -78,6 +83,7 @@ import { WeatherTileService } from "./services/WeatherTileService";
     UpdateWeatherStationController,
     DeleteWeatherStationController,
     ReplayWeatherArchiveController,
+    BackfillWeatherStationsController,
     ImportWeatherStationReadingsController,
     UpdateWeatherLocationController,
     DeleteWeatherLocationController,

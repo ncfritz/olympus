@@ -191,6 +191,39 @@ own archive, in the background (admins only). Both skip lines from a station
 the environment has not registered; after `refresh-dev` prod's stations are
 already there. Replaying a range twice is harmless.
 
+## Backfill
+
+When pushes stop reaching Olympus but the console carries on (the API or
+nginx down, a deploy), ambientweather.net still has the readings, at
+5-minute steps. Where `WEATHER_BACKFILL_ENABLED` and the Ambient keys are
+set (prod only), the API looks for gaps two minutes after it starts and
+hourly after that: any stretch of more than ten minutes without a sample
+in the last two days. It fetches each from Ambient, archives the
+responses (`"source": "backfill"`; never the request, which carries the
+keys) and stores the records as samples marked `backfill`. A pushed
+sample is never replaced by a backfilled one. The tiers are rebuilt over
+the hours touched.
+
+The keys are account-level: the application key and API key from
+ambientweather.net's account page, in `$SECRETS_DIR/ambient_application_key`
+and `$SECRETS_DIR/ambient_api_key`.
+
+For older history (the months before Olympus had stations, say), an admin
+calls `BackfillWeatherStations` on the OpenAPI page:
+
+```json
+{ "backfill": { "from": "2026-01-01", "to": "2026-09-28" } }
+```
+
+A day of one station is one request, and Ambient allows one a second, so a
+year is about six minutes. It runs in the background; the API's log has
+the summary. Backfilled stretches are sparser than pushed ones (every 5
+minutes rather than every 16 seconds), which the 1m tier shows and the
+coarser ones hide.
+
+`weather_backfill_records_total{result="records"}` counts what Ambient
+sent, `{result="stored"}` what was new.
+
 ## Weather data in dev
 
 The consoles push only to prod, so dev gets its data from prod

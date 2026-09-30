@@ -594,6 +594,38 @@ export class WeatherArchiveRecord {
     description: "A push's query string, exactly as received",
   })
   query?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "A backfill line's ambientweather.net response, as the JSON text it was received as",
+  })
+  responseJson?: string;
+}
+
+/** A range of a station's history to fetch from ambientweather.net (plan phase 7). */
+export class WeatherStationBackfill {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The first UTC day to fetch, YYYY-MM-DD",
+  })
+  from: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The last UTC day to fetch, YYYY-MM-DD, inclusive",
+  })
+  to: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "Only this station, by its ID; every station when absent",
+  })
+  stationId?: string;
 }
 
 /** What a user supplies to add a location. */
@@ -671,6 +703,15 @@ export class ReplayWeatherArchiveRequest {
     description: "The days to replay, and how.",
   })
   replay: WeatherArchiveReplay;
+}
+
+export class BackfillWeatherStationsRequest {
+  @ApiProperty({
+    type: () => WeatherStationBackfill,
+    required: true,
+    description: "The days to fetch, and for which station.",
+  })
+  backfill: WeatherStationBackfill;
 }
 
 export class ImportWeatherStationReadingsRequest {

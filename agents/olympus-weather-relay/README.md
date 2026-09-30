@@ -48,6 +48,6 @@ The dev API it calls needs `olympus-weather-relay-agent:agent` in
 `weather_relay_lines_total{result}`: `stored`, `duplicate`,
 `unknown_station` (the environment has not registered that station; after
 `refresh-dev` it has prod's), `invalid` (this environment's parser could
-not read it), `skipped` (backfill lines, until phase 7), and `failed` (the
+not read it), `skipped`, and `failed` (the
 API did not answer; the line went back on the queue after a wait of 5
 seconds, doubling to a minute).

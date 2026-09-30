@@ -122,6 +122,7 @@ describe("ImportWeatherStationReadings", () => {
         }),
         record({ query: ambientPush({ dateutc: "yesterday" }) }),
         record({ source: "backfill", query: undefined }),
+        record({ source: "backfill", query: undefined, responseJson: "[]" }),
       ],
     });
 
@@ -130,8 +131,9 @@ describe("ImportWeatherStationReadings", () => {
       stored: 2,
       duplicate: 0,
       unknownStation: 1,
-      invalid: 1,
-      skipped: 1,
+      // The bad time, and the backfill line with no response.
+      invalid: 2,
+      skipped: 0,
     });
     const { objects } = t.graphql.calls("CreateWeatherStationSamples")[0]
       .variables as { objects: Record<string, unknown>[] };
@@ -139,9 +141,10 @@ describe("ImportWeatherStationReadings", () => {
       WEATHER_STATION_ID,
       WEATHER_STATION_ID,
     ]);
+    // A push replaces only a backfilled reading.
     expect(
       t.graphql.calls("CreateWeatherStationSamples")[0].variables,
-    ).toMatchObject({ updateColumns: [] });
+    ).toMatchObject({ onConflict: { where: { source: { _eq: "backfill" } } } });
   });
 
   it("writes nothing to the archive and checks no address", async () => {
@@ -159,6 +162,10 @@ describe("ImportWeatherStationReadings", () => {
     ["no time", { records: [record({ receivedAt: undefined })] }],
     ["an unknown source", { records: [record({ source: "guess" })] }],
     ["a query that is not text", { records: [record({ query: 7 })] }],
+    [
+      "a response that is not JSON",
+      { records: [record({ source: "backfill", responseJson: "{nope" })] },
+    ],
   ])("answers 400 to %s, storing nothing", async (_case, body) => {
     const res = await asAgent(body);
     expect(res.status).toBe(400);

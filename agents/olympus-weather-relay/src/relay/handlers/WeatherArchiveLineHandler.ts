@@ -102,6 +102,9 @@ const toRecord = (
     source: line.source,
     remote: line.remote,
     query: line.query,
+    // A backfill response, as text: the receiving API parses it.
+    responseJson:
+      line.response === undefined ? undefined : JSON.stringify(line.response),
   };
 };
 

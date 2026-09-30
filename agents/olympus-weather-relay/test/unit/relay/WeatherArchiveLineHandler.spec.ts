@@ -48,8 +48,24 @@ describe("WeatherArchiveLineHandler", () => {
         source: "push",
         remote: "192.168.15.20",
         query: "&PASSKEY=A0:B1:C2:D3:E4:F5&tempf=58.1",
+        responseJson: undefined,
       },
     ]);
+  });
+
+  it("carries a backfill response as JSON text", async () => {
+    await handler.handle({
+      macAddress: "A0:B1:C2:D3:E4:F5",
+      line: {
+        receivedAt: "2026-09-29T21:00:00.000Z",
+        source: "backfill",
+        response: [{ dateutc: 1790712000000, tempf: 57.5 }],
+      },
+    });
+    expect(importWeatherStationReadings.mock.calls[0][0][0]).toMatchObject({
+      source: "backfill",
+      responseJson: '[{"dateutc":1790712000000,"tempf":57.5}]',
+    });
   });
 
   it("acknowledges a line the API could not use: retrying will not help", async () => {
