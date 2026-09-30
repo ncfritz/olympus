@@ -39,6 +39,12 @@ export enum WeatherArchiveReplayMode {
   Replace = "replace",
 }
 
+/** Where an archive line came from: a console's push, or a backfill response. */
+export enum WeatherArchiveRecordSource {
+  Push = "push",
+  Backfill = "backfill",
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Domain Objects                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -542,6 +548,54 @@ export class WeatherArchiveReplay {
   mode?: WeatherArchiveReplayMode;
 }
 
+/**
+ * One line of a raw station archive with the station it belongs to, as the
+ * dev relay forwards it (ADR 0025). Raw on purpose: the receiving API
+ * parses it with its own code.
+ */
+export class WeatherArchiveRecord {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The console's MAC address, e.g. A0:B1:C2:D3:E4:F5",
+  })
+  macAddress: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the archiving API received the line",
+  })
+  receivedAt: string;
+
+  @ApiProperty({
+    enum: () => WeatherArchiveRecordSource,
+    enumName: "WeatherArchiveRecordSource",
+    enumSchema: {
+      description:
+        "Where an archive line came from: a console's push, or a backfill response",
+    },
+    required: true,
+    description: "Where the line came from",
+  })
+  source: WeatherArchiveRecordSource;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "The address a push came from, as the archiving API saw it",
+  })
+  remote?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "A push's query string, exactly as received",
+  })
+  query?: string;
+}
+
 /** What a user supplies to add a location. */
 export class BaseWeatherLocation extends PickType(WeatherLocation, [
   "label",
@@ -617,6 +671,16 @@ export class ReplayWeatherArchiveRequest {
     description: "The days to replay, and how.",
   })
   replay: WeatherArchiveReplay;
+}
+
+export class ImportWeatherStationReadingsRequest {
+  @ApiProperty({
+    type: () => WeatherArchiveRecord,
+    isArray: true,
+    required: true,
+    description: "Up to 500 archive lines, stored with this API's parser.",
+  })
+  records: WeatherArchiveRecord[];
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -724,4 +788,41 @@ export class UpdateWeatherStationResponse {
     description: "The station with the changes applied.",
   })
   weatherStation: WeatherStation;
+}
+
+export class ImportWeatherStationReadingsResponse {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Readings stored",
+  })
+  stored: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Readings this environment already had",
+  })
+  duplicate: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Lines from a station this environment has not registered",
+  })
+  unknownStation: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Lines this environment's parser could not read",
+  })
+  invalid: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Lines kept for later, such as backfill responses",
+  })
+  skipped: number;
 }

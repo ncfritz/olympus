@@ -8,6 +8,7 @@ import {
   METADATA_JOB_TRIGGER_EXCHANGE,
   NOTIFICATIONS_TRIGGER_EXCHANGE,
   SEARCH_EXECUTION_TRIGGER_EXCHANGE,
+  WEATHER_STATION_REPORTS_EXCHANGE,
 } from "@ncfritz/olympus-messages";
 import { RabbitMQConfig, RabbitMQModule } from "@golevelup/nestjs-rabbitmq";
 import { Logger, Module } from "@nestjs/common";
@@ -32,6 +33,7 @@ import { amqpConfig, AmqpConfigType } from "../config/configuration";
             DOWNLOAD_TRIGGER_EXCHANGE,
             SEARCH_EXECUTION_TRIGGER_EXCHANGE,
             NOTIFICATIONS_TRIGGER_EXCHANGE,
+            WEATHER_STATION_REPORTS_EXCHANGE,
           ),
           connectionInitOptions: { wait: true },
           enableControllerDiscovery: true,

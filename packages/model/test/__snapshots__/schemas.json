@@ -5937,6 +5937,53 @@
     ],
     "type": "object"
   },
+  "ImportWeatherStationReadingsRequest": {
+    "properties": {
+      "records": {
+        "description": "Up to 500 archive lines, stored with this API's parser.",
+        "items": {
+          "$ref": "#/components/schemas/WeatherArchiveRecord"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "records"
+    ],
+    "type": "object"
+  },
+  "ImportWeatherStationReadingsResponse": {
+    "properties": {
+      "duplicate": {
+        "description": "Readings this environment already had",
+        "type": "number"
+      },
+      "invalid": {
+        "description": "Lines this environment's parser could not read",
+        "type": "number"
+      },
+      "skipped": {
+        "description": "Lines kept for later, such as backfill responses",
+        "type": "number"
+      },
+      "stored": {
+        "description": "Readings stored",
+        "type": "number"
+      },
+      "unknownStation": {
+        "description": "Lines from a station this environment has not registered",
+        "type": "number"
+      }
+    },
+    "required": [
+      "duplicate",
+      "invalid",
+      "skipped",
+      "stored",
+      "unknownStation"
+    ],
+    "type": "object"
+  },
   "JobStatus": {
     "description": "The status of the batch job",
     "enum": [
@@ -16589,6 +16636,48 @@
       "type"
     ],
     "type": "object"
+  },
+  "WeatherArchiveRecord": {
+    "properties": {
+      "macAddress": {
+        "description": "The console's MAC address, e.g. A0:B1:C2:D3:E4:F5",
+        "type": "string"
+      },
+      "query": {
+        "description": "A push's query string, exactly as received",
+        "type": "string"
+      },
+      "receivedAt": {
+        "description": "An ISO-8601 formatted string indicating when the archiving API received the line",
+        "type": "string"
+      },
+      "remote": {
+        "description": "The address a push came from, as the archiving API saw it",
+        "type": "string"
+      },
+      "source": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WeatherArchiveRecordSource"
+          }
+        ],
+        "description": "Where the line came from"
+      }
+    },
+    "required": [
+      "macAddress",
+      "receivedAt",
+      "source"
+    ],
+    "type": "object"
+  },
+  "WeatherArchiveRecordSource": {
+    "description": "Where an archive line came from: a console's push, or a backfill response",
+    "enum": [
+      "push",
+      "backfill"
+    ],
+    "type": "string"
   },
   "WeatherArchiveReplay": {
     "properties": {

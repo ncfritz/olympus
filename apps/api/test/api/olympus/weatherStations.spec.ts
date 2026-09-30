@@ -9,6 +9,7 @@ import {
 import { tmpdir } from "os";
 import { join } from "path";
 import * as jose from "jose";
+import type { Test } from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { issueAccessToken } from "../../../src/auth/tokens/accessTokens";
 import { SigningKeyService } from "../../../src/auth/tokens/SigningKeyService";
@@ -68,6 +69,8 @@ describe("Weather stations API", () => {
         TRUSTED_PROXIES: "loopback",
         WEATHER_STATION_ALLOWED_CIDRS: "192.168.15.0/24,192.168.0.0/24",
         WEATHER_ARCHIVE_DIR: archive,
+        // As prod: every archived push is published for the dev relay.
+        WEATHER_RELAY_PUBLISH: "true",
       },
     });
     userToken = await tokenFor(["user"]);
@@ -134,6 +137,28 @@ describe("Weather stations API", () => {
         remote: "192.168.0.31",
         query: ambientPush(),
       });
+    });
+
+    it("publishes the archived push for the dev relay", async () => {
+      await push("192.168.15.20");
+      expect(t.amqp.publish).toHaveBeenCalledWith(
+        "weather.station.reports",
+        "weather.archive.line",
+        {
+          macAddress: WEATHER_STATION_MAC,
+          line: expect.objectContaining({
+            source: "push",
+            remote: "192.168.15.20",
+            query: ambientPush(),
+          }),
+        },
+        { persistent: true },
+      );
+    });
+
+    it("publishes nothing it refused", async () => {
+      await push("10.1.2.3");
+      expect(t.amqp.publish).not.toHaveBeenCalled();
     });
 
     it("answers 200 for a repeat, storing it once", async () => {
@@ -224,7 +249,7 @@ describe("Weather stations API", () => {
   });
 
   describe("as an admin", () => {
-    const as = (request: { set: (k: string, v: string) => unknown }) =>
+    const as = (request: Test) =>
       request.set("authorization", `Bearer ${adminToken}`);
 
     it("registers a station, with its Location", async () => {
@@ -308,7 +333,7 @@ describe("Weather stations API", () => {
   });
 
   describe("ReplayWeatherArchive", () => {
-    const replay = (token: string, body: unknown) =>
+    const replay = (token: string, body: object) =>
       t
         .http()
         .post("/v1/olympus/weather/archive/replay")

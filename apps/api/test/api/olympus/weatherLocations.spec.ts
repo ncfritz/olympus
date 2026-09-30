@@ -2,6 +2,7 @@ import { mkdtempSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import * as jose from "jose";
+import type { Test } from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { issueAccessToken } from "../../../src/auth/tokens/accessTokens";
 import { SigningKeyService } from "../../../src/auth/tokens/SigningKeyService";
@@ -42,8 +43,7 @@ describe("Weather locations API", () => {
       authTime: 1_790_000_000,
     });
 
-  const as = (request: { set: (k: string, v: string) => unknown }) =>
-    request.set("authorization", `Bearer ${token}`);
+  const as = (request: Test) => request.set("authorization", `Bearer ${token}`);
 
   beforeAll(async () => {
     const keys = mkdtempSync(join(tmpdir(), "auth-keys-"));

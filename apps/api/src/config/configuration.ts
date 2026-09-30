@@ -131,6 +131,11 @@ export type WeatherConfig = {
      * and for a second instance against the same database.
      */
     rollupsEnabled: boolean;
+    /**
+     * Whether every archived line is also published for the dev relay
+     * (ADR 0025). Prod only: a dev API publishing would feed its own relay.
+     */
+    relayPublish: boolean;
   };
 };
 
@@ -338,6 +343,7 @@ const readWeatherConfig = (read: EnvReader): WeatherConfig => {
         "/olympus/weather/archive",
       ),
       rollupsEnabled: read.boolean("WEATHER_ROLLUPS_ENABLED", true),
+      relayPublish: read.boolean("WEATHER_RELAY_PUBLISH", false),
     },
   };
 };

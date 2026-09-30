@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { WeatherIngestService } from "../../../../../src/olympus/weather/services/WeatherIngestService";
+import { BadRequestException } from "@nestjs/common";
+import {
+  toIngestLines,
+  WeatherIngestService,
+} from "../../../../../src/olympus/weather/services/WeatherIngestService";
 import type { ArchiveLine } from "../../../../../src/olympus/weather/stations/StationArchive";
 import {
   ambientPush,
@@ -174,5 +178,50 @@ describe("WeatherIngestService", () => {
       expect(updateColumns).not.toContain("stationId");
       expect(updateColumns).not.toContain("observedTime");
     });
+  });
+});
+
+describe("toIngestLines", () => {
+  const record = (overrides: Record<string, unknown> = {}) => ({
+    macAddress: "a0b1c2d3e4f5",
+    receivedAt: "2026-09-29T20:00:03.000Z",
+    source: "push",
+    remote: "192.168.15.20",
+    query: "&PASSKEY=A0:B1:C2:D3:E4:F5",
+    ...overrides,
+  });
+
+  it("reads records as lines, with the MAC normalised", () => {
+    expect(toIngestLines([record()])).toEqual([
+      {
+        macAddress: WEATHER_STATION_MAC,
+        line: {
+          receivedAt: "2026-09-29T20:00:03.000Z",
+          source: "push",
+          remote: "192.168.15.20",
+          query: "&PASSKEY=A0:B1:C2:D3:E4:F5",
+        },
+      },
+    ]);
+  });
+
+  it("takes up to 500", () => {
+    expect(
+      toIngestLines(Array.from({ length: 500 }, () => record())),
+    ).toHaveLength(500);
+  });
+
+  it.each([
+    ["undefined", undefined],
+    ["an object", {}],
+    ["an empty list", []],
+    ["501 records", Array.from({ length: 501 }, () => record())],
+    ["a null record", [null]],
+    ["a bad MAC", [record({ macAddress: "nope" })]],
+    ["no time", [record({ receivedAt: 5 })]],
+    ["an unknown source", [record({ source: "relay" })]],
+    ["a remote that is not text", [record({ remote: 1 })]],
+  ])("refuses %s", (_case, records) => {
+    expect(() => toIngestLines(records)).toThrow(BadRequestException);
   });
 });

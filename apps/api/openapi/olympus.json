@@ -2171,6 +2171,66 @@
           "Weather"
         ]
       }
+    },
+    "/olympus/weather/station/readings": {
+      "post": {
+        "description": "Stores raw archive lines another environment received: each parsed with this API's parser and stored unless this environment already has the reading. For the dev relay agent (ADR 0025). No address check and no archive write: the lines were checked and archived where they arrived. Lines from a station this environment has not registered are counted and skipped.",
+        "operationId": "ImportWeatherStationReadings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ImportWeatherStationReadings operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportWeatherStationReadingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What became of the lines.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportWeatherStationReadingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Imports archived weather station lines",
+        "tags": [
+          "Weather"
+        ]
+      }
     }
   },
   "info": {
@@ -4122,6 +4182,95 @@
         },
         "required": [
           "replay"
+        ]
+      },
+      "WeatherArchiveRecordSource": {
+        "type": "string",
+        "description": "Where the line came from",
+        "enum": [
+          "push",
+          "backfill"
+        ]
+      },
+      "WeatherArchiveRecord": {
+        "type": "object",
+        "properties": {
+          "macAddress": {
+            "type": "string",
+            "description": "The console's MAC address, e.g. A0:B1:C2:D3:E4:F5"
+          },
+          "receivedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the archiving API received the line"
+          },
+          "source": {
+            "description": "Where the line came from",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherArchiveRecordSource"
+              }
+            ]
+          },
+          "remote": {
+            "type": "string",
+            "description": "The address a push came from, as the archiving API saw it"
+          },
+          "query": {
+            "type": "string",
+            "description": "A push's query string, exactly as received"
+          }
+        },
+        "required": [
+          "macAddress",
+          "receivedAt",
+          "source"
+        ]
+      },
+      "ImportWeatherStationReadingsRequest": {
+        "type": "object",
+        "properties": {
+          "records": {
+            "description": "Up to 500 archive lines, stored with this API's parser.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeatherArchiveRecord"
+            }
+          }
+        },
+        "required": [
+          "records"
+        ]
+      },
+      "ImportWeatherStationReadingsResponse": {
+        "type": "object",
+        "properties": {
+          "stored": {
+            "type": "number",
+            "description": "Readings stored"
+          },
+          "duplicate": {
+            "type": "number",
+            "description": "Readings this environment already had"
+          },
+          "unknownStation": {
+            "type": "number",
+            "description": "Lines from a station this environment has not registered"
+          },
+          "invalid": {
+            "type": "number",
+            "description": "Lines this environment's parser could not read"
+          },
+          "skipped": {
+            "type": "number",
+            "description": "Lines kept for later, such as backfill responses"
+          }
+        },
+        "required": [
+          "stored",
+          "duplicate",
+          "unknownStation",
+          "invalid",
+          "skipped"
         ]
       },
       "PartialWeatherLocation": {

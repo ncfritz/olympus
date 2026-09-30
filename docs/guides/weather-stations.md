@@ -191,6 +191,49 @@ own archive, in the background (admins only). Both skip lines from a station
 the environment has not registered; after `refresh-dev` prod's stations are
 already there. Replaying a range twice is harmless.
 
+## Weather data in dev
+
+The consoles push only to prod, so dev gets its data from prod
+([ADR 0025](../decisions/0025-weather-data-in-dev.md)): history by replay,
+live pushes by relay. Both carry the raw archive lines, so dev parses them
+with its own code, and both skip what dev already has.
+
+**The relay.** Prod's API publishes every line it archives
+(`WEATHER_RELAY_PUBLISH=true`, prod only) to the `weather.station.reports`
+exchange on `/dionysus`. The broker's `weather-relay` shovel carries them
+to the same exchange on `/dionysus-dev`, where
+`agents/olympus-weather-relay` reads them from
+`weather.station.reports.olympus_dev` and imports them through the dev
+API. The queue holds 48 hours of lines; start the relay and it catches up
+on the last two days.
+
+**After `refresh-dev`, or on a new machine:**
+
+1. Replay what is older than the queue, from prod's archive on the Mac
+   Mini (the last 30 days) or the NAS copy:
+
+   ```sh
+   pnpm --filter @ncfritz/olympus-api weather:replay 2026-09-01 2026-09-29 \
+     --dir /Users/ncfritz/Docker/data/weather/archive
+   ```
+
+2. Start the dev API with `olympus-weather-relay-agent:agent` in
+   `AUTH_SERVICE_ROLES` and its services listener on, then the relay
+   (`pnpm --filter @ncfritz/olympus-weather-relay-agent dev`; its README
+   has the settings).
+
+Overlap between the two is harmless. `refresh-dev` restores prod's
+stations, so dev knows the MACs; a laptop with a database of its own
+registers them there, and sets `WEATHER_RELAY_DATABASE` so its relay gets
+a queue, and every line, of its own.
+
+**Checking it:** on the broker's management page, the shovel
+(Admin → Shovel Status) is `running`, and the queue's depth falls to 0 once
+the relay is up. `weather_relay_publish_total{result="failed"}` in prod
+and `weather_relay_lines_total{result="failed"}` in the relay stay flat.
+If the shovel reports an access refusal, its user's permissions in
+`infra/docker/rabbitmq/users.json` are narrower than the shovel needs.
+
 ## Removing a station
 
 `DeleteWeatherStation` removes it and, by cascade, its samples and rollups. Its archive

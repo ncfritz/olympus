@@ -1,9 +1,14 @@
 import { parse as parseQuery } from "node:querystring";
-import { Injectable, Logger } from "@nestjs/common";
+import {
+  type WeatherArchiveRecord,
+  WeatherArchiveRecordSource,
+} from "@ncfritz/olympus-model";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import {
   AmbientReportError,
+  normalizeMac,
   parseAmbientReport,
   type SampleReadings,
 } from "../stations/ambientReport";
@@ -29,6 +34,66 @@ export type IngestResult = {
   counts: IngestCounts;
   /** Why each invalid line was, in order; for a push's 400. */
   errors: string[];
+};
+
+/** The most lines one import takes: one insert, well inside Hasura's limits. */
+export const MAX_IMPORT_RECORDS = 500;
+
+/**
+ * An import's records as ingest lines, checked (ImportWeatherStationReadings,
+ * ADR 0025). Each must name a station by MAC and carry the fields every
+ * archive line has; what the line says is the parser's business.
+ */
+export const toIngestLines = (records: unknown): IngestLine[] => {
+  if (!Array.isArray(records) || records.length === 0) {
+    throw new BadRequestException("records must be a non-empty array");
+  }
+  if (records.length > MAX_IMPORT_RECORDS) {
+    throw new BadRequestException(
+      `records may hold at most ${MAX_IMPORT_RECORDS} lines`,
+    );
+  }
+  return records.map((value: unknown, index) => {
+    const record = (value ?? {}) as Partial<WeatherArchiveRecord>;
+    const macAddress = normalizeMac(
+      typeof record.macAddress === "string" ? record.macAddress : undefined,
+    );
+    if (!macAddress) {
+      throw new BadRequestException(
+        `records[${index}].macAddress must be a MAC address`,
+      );
+    }
+    if (typeof record.receivedAt !== "string") {
+      throw new BadRequestException(
+        `records[${index}].receivedAt must be a time`,
+      );
+    }
+    if (
+      !Object.values(WeatherArchiveRecordSource).includes(
+        record.source as WeatherArchiveRecordSource,
+      )
+    ) {
+      throw new BadRequestException(
+        `records[${index}].source must be one of ${Object.values(WeatherArchiveRecordSource).join(", ")}`,
+      );
+    }
+    for (const field of ["remote", "query"] as const) {
+      if (record[field] !== undefined && typeof record[field] !== "string") {
+        throw new BadRequestException(
+          `records[${index}].${field} must be a string`,
+        );
+      }
+    }
+    return {
+      macAddress,
+      line: {
+        receivedAt: record.receivedAt,
+        source: record.source as WeatherArchiveRecordSource,
+        remote: record.remote,
+        query: record.query,
+      },
+    };
+  });
 };
 
 /** Every reading column, by its Hasura name, for a replacing insert. */

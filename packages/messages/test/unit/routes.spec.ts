@@ -27,6 +27,7 @@ describe("message routes", () => {
       ...messages.MEDIA_ASSET_TYPES.map(messages.searchExecutionRoute),
       messages.SEARCH_FANOUT_ROUTE,
     ],
+    weather: [messages.WEATHER_ARCHIVE_LINE_ROUTE],
   };
 
   it("match the snapshot", () => {

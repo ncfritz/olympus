@@ -82,6 +82,8 @@ const ARGS: Record<string, unknown[]> = {
   // NotificationApi
   sendNotification: [{}],
   createNotification: [{}],
+  // WeatherApi
+  importWeatherStationReadings: [[]],
 };
 
 const methods = OLYMPUS_APIS.flatMap((api) =>

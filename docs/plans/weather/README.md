@@ -465,7 +465,7 @@ console reach the ingest listener, and its range stays in
 
 **Sign-off:** W12.
 
-## Phase 9 — Weather data in dev
+## Phase 9 — Weather data in dev — built 2026-09-29, not signed off
 
 [ADR 0025](../../decisions/0025-weather-data-in-dev.md). Needs phase 6's
 replay; independent of 7 and 8, so it can follow 6 directly.
@@ -506,3 +506,38 @@ replay; independent of 7 and 8, so it can follow 6 directly.
    addresses; the agent's batching and acknowledgement; the definitions.
 
 **Sign-off:** W13.
+
+**As built.** Where it differs from the list above:
+
+- The message is `WeatherArchiveLineMessage` (`macAddress`, `line`) on
+  `weather.station.reports`, routing key `weather.archive.line`; the API's
+  `ArchiveLine` is now the contract's `WeatherArchiveLine`.
+- Publishing is `StationRelay`, which `StationArchive.append` calls after
+  a line is written, not awaited: the connection manager holds messages
+  while the broker is away, and the push does not wait for it.
+  `weather_relay_publish_total{result}`.
+- The broker's definitions gained `exchanges` (both vhosts, so the shovel's
+  ends exist before any service declares them), per-vhost `permissions`
+  for a user (`weather-shovel` reads prod's exchange through a server-named
+  queue and writes only dev's exchange), and `shovels`, written as dynamic
+  shovel parameters with `ack-mode: on-confirm`. The URIs carry the user's
+  password (the definitions file is a secret). The local direct URI was
+  not used: a user with only these permissions is easier to reason about
+  than whichever identity a definitions-imported shovel would run as. The
+  image enables `rabbitmq_shovel` and `rabbitmq_shovel_management`.
+- The import's shape is `records: WeatherArchiveRecord[]` (the line's
+  fields with its MAC, flat), up to 500, `@RequiresIdentity()` and
+  `@Roles("agent")`; answers the counts. Backfill lines carry no response
+  in the record yet; phase 7 adds it.
+- The agent handles one line at a time (`prefetchCount: 1`) rather than
+  batches: the agent conventions' handler shape, and a two-day backlog is
+  about 21,600 calls, minutes of work. A line the API answers for is
+  acknowledged whatever it made of it; one it does not answer for goes
+  back on the queue after 5 seconds, doubling to a minute. The queue name
+  comes from `WEATHER_RELAY_DATABASE`, bound as a named handler in
+  `RabbitModule` since a decorator cannot read configuration.
+  `weather_relay_lines_total{result}`.
+- `scripts/dev-ca.sh` issues `olympus-weather-relay-agent`, and the API's
+  env examples list it in `AUTH_SERVICE_ROLES`.
+- Two test helpers from earlier phases were loosely typed and failed the
+  API's `typecheck` task; fixed here.

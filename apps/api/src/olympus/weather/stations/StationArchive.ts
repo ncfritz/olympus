@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { createZstdCompress } from "node:zlib";
+import type { WeatherArchiveLine } from "@ncfritz/olympus-messages";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import moment, { type Moment } from "moment";
 import {
@@ -19,18 +20,13 @@ import {
   type WeatherConfigType,
 } from "../../../config/configuration";
 import { recordArchive } from "../weatherMetrics";
+import { StationRelay } from "./StationRelay";
 
-/** One line of the archive: a push as received, or a backfill response. */
-export type ArchiveLine = {
-  receivedAt: string;
-  source: "push" | "backfill";
-  /** The address the push came from, as the API saw it. */
-  remote?: string;
-  /** The push's query string, exactly as received. */
-  query?: string;
-  /** A backfill response body. Never the request, which carries the keys. */
-  response?: unknown;
-};
+/**
+ * One line of the archive: a push as received, or a backfill response. The
+ * same shape is what the dev relay carries (ADR 0025).
+ */
+export type ArchiveLine = WeatherArchiveLine;
 
 const DAY_FILE = /^(\d{2})\.jsonl$/;
 
@@ -44,6 +40,9 @@ const DAY_FILE = /^(\d{2})\.jsonl$/;
  * write of a new day seals every earlier day: compressed with zstd to
  * `<dd>.jsonl.zst`, beside `<dd>.jsonl.zst.sha256` in `sha256sum` format
  * so the NAS copy can be checked, and the plain file removed.
+ *
+ * Every line written is also handed to StationRelay, which publishes it
+ * for the dev relay where that is on (ADR 0025).
  */
 @Injectable()
 export class StationArchive {
@@ -53,6 +52,7 @@ export class StationArchive {
 
   constructor(
     @Inject(weatherConfig.KEY) private readonly weather: WeatherConfigType,
+    private readonly relay: StationRelay,
   ) {}
 
   /**
@@ -74,6 +74,9 @@ export class StationArchive {
       );
       return false;
     }
+    // What is archived is what dev receives; a line that could not be
+    // archived is not relayed either.
+    this.relay.publish(macAddress, line);
 
     const day = received.format("YYYY-MM-DD");
     if (this.lastDay.get(station) !== day) {

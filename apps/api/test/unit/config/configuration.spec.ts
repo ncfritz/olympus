@@ -180,6 +180,8 @@ describe("readConfig: authentication", () => {
         allowedCidrs: [],
         archiveDir: "/olympus/weather/archive",
         rollupsEnabled: true,
+        // Only prod feeds the dev relay.
+        relayPublish: false,
       },
     });
   });

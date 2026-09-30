@@ -91,3 +91,17 @@ const replayLines = new Counter({
 export const recordReplayLines = (result: string, lines: number): void => {
   if (lines > 0) replayLines.inc({ result }, lines);
 };
+
+/**
+ * Archive lines published for the dev relay (ADR 0025): `published`, or
+ * `failed` (the broker refused or was away; the push was stored anyway).
+ */
+const relayPublish = new Counter({
+  name: "weather_relay_publish_total",
+  help: "Weather archive lines published for the dev relay, by outcome",
+  labelNames: ["result"],
+});
+
+export const recordRelayPublish = (result: "published" | "failed"): void => {
+  relayPublish.inc({ result });
+};

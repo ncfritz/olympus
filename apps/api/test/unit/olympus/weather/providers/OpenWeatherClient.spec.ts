@@ -19,7 +19,7 @@ describe("OpenWeatherClient", () => {
     vi.spyOn(axios, "create").mockReturnValue({ get } as never);
 
   it("asks for both endpoints in imperial units with the key", async () => {
-    const get = vi.fn(async (path: string) => ({
+    const get = vi.fn(async (path: string, _options?: unknown) => ({
       status: 200,
       config: { method: "get" },
       data: path === "/weather" ? openWeatherCurrent() : openWeatherForecast(),

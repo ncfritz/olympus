@@ -8,6 +8,7 @@ export * from "./dionysus/MetadataWorkflowApi";
 export * from "./filters";
 export * from "./olympus/AuthApi";
 export * from "./olympus/NotificationApi";
+export * from "./olympus/WeatherApi";
 
 import { ContentApi } from "./dionysus/ContentApi";
 import { JobApi } from "./dionysus/JobApi";
@@ -17,6 +18,7 @@ import { MetadataApi } from "./dionysus/MetadataApi";
 import { MetadataWorkflowApi } from "./dionysus/MetadataWorkflowApi";
 import { AuthApi } from "./olympus/AuthApi";
 import { NotificationApi } from "./olympus/NotificationApi";
+import { WeatherApi } from "./olympus/WeatherApi";
 
 /** Every wrapper; each is constructed with the OlympusClients. */
 export const OLYMPUS_APIS = [
@@ -28,4 +30,5 @@ export const OLYMPUS_APIS = [
   MetadataApi,
   MetadataWorkflowApi,
   NotificationApi,
+  WeatherApi,
 ] as const;

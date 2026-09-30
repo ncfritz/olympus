@@ -10,7 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { zstdDecompressSync } from "node:zlib";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WeatherConfigType } from "../../../../../src/config/configuration";
 import {
   StationArchive,
@@ -22,6 +22,7 @@ const MAC = "A0:B1:C2:D3:E4:F5";
 describe("StationArchive", () => {
   let dir: string;
   let archive: StationArchive;
+  let publish: ReturnType<typeof vi.fn>;
 
   const line = (receivedAt: string, query = "&tempf=58.1") => ({
     receivedAt,
@@ -34,9 +35,11 @@ describe("StationArchive", () => {
 
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), "weather-archive-"));
-    archive = new StationArchive({
-      stations: { archiveDir: dir },
-    } as WeatherConfigType);
+    publish = vi.fn();
+    archive = new StationArchive(
+      { stations: { archiveDir: dir } } as WeatherConfigType,
+      { publish } as never,
+    );
   });
 
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
@@ -113,12 +116,20 @@ describe("StationArchive", () => {
     expect(archive.directoryFor(MAC)).toBe(join(dir, "A0-B1-C2-D3-E4-F5"));
   });
 
+  it("hands each line it writes to the relay", async () => {
+    const written = line("2026-09-29T08:00:00Z", "&a=1");
+    await archive.append(MAC, written);
+    expect(publish).toHaveBeenCalledWith(MAC, written);
+  });
+
   it("answers false, and does not throw, when it cannot write", async () => {
     // A file where the station's directory should be.
     writeFileSync(join(dir, "A0-B1-C2-D3-E4-F5"), "");
     await expect(
       archive.append(MAC, line("2026-09-29T08:00:00Z")),
     ).resolves.toBe(false);
+    // What was not archived is not relayed.
+    expect(publish).not.toHaveBeenCalled();
   });
 
   it("names a station's directory without colons", () => {

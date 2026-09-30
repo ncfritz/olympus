@@ -505,7 +505,13 @@ that from the shebang.
 
 `rabbitmq/users.json` lists the vhosts and one user per service, each
 allowed only its own vhosts; `olympus-dev` is the one user dev services
-share, on `/dionysus-dev`. To write the definitions for an environment:
+share, on `/dionysus-dev`. It also lists what crosses vhosts, which only
+the broker can set up: the `weather.station.reports` exchanges on both
+vhosts and the `weather-relay` shovel between them, as `weather-shovel`, a
+user with only the permissions that takes
+([ADR 0025](../../docs/decisions/0025-weather-data-in-dev.md)). The
+shovel's URIs carry that user's password. To write the definitions for an
+environment:
 
 ```sh
 node infra/docker/rabbitmq/definitions.mjs "$SECRETS_DIR" --generate-missing

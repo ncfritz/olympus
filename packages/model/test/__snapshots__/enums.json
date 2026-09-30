@@ -308,6 +308,10 @@
     "BOT": "bot",
     "CHANNEL": "channel"
   },
+  "WeatherArchiveRecordSource": {
+    "Backfill": "backfill",
+    "Push": "push"
+  },
   "WeatherArchiveReplayMode": {
     "Ignore": "ignore",
     "Replace": "replace"

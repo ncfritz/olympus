@@ -4,10 +4,12 @@ import {
   type WeatherConfigType,
 } from "../../config/configuration";
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
+import { RabbitModule } from "../../infra/RabbitModule";
 import { CreateWeatherStationController } from "./controllers/CreateWeatherStationController";
 import { DeleteWeatherStationController } from "./controllers/DeleteWeatherStationController";
 import { DescribeWeatherStationController } from "./controllers/DescribeWeatherStationController";
 import { ListWeatherStationsController } from "./controllers/ListWeatherStationsController";
+import { ImportWeatherStationReadingsController } from "./controllers/ImportWeatherStationReadingsController";
 import { ReplayWeatherArchiveController } from "./controllers/ReplayWeatherArchiveController";
 import { ReportWeatherStationReadingController } from "./controllers/ReportWeatherStationReadingController";
 import { UpdateWeatherStationController } from "./controllers/UpdateWeatherStationController";
@@ -18,6 +20,7 @@ import { WeatherRollupScheduler } from "./services/WeatherRollupScheduler";
 import { WeatherRollupService } from "./services/WeatherRollupService";
 import { WeatherStationService } from "./services/WeatherStationService";
 import { StationArchive } from "./stations/StationArchive";
+import { StationRelay } from "./stations/StationRelay";
 import { CreateWeatherLocationController } from "./controllers/CreateWeatherLocationController";
 import { DeleteWeatherLocationController } from "./controllers/DeleteWeatherLocationController";
 import { GetRadarTileController } from "./controllers/GetRadarTileController";
@@ -41,7 +44,7 @@ import { WeatherTileService } from "./services/WeatherTileService";
  * own: whose locations is never a parameter.
  */
 @Module({
-  imports: [GraphQLClientModule],
+  imports: [GraphQLClientModule, RabbitModule],
   providers: [
     WeatherLocationService,
     WeatherForecastService,
@@ -52,6 +55,7 @@ import { WeatherTileService } from "./services/WeatherTileService";
     WeatherStationService,
     StationReportService,
     StationArchive,
+    StationRelay,
     WeatherIngestService,
     WeatherRollupService,
     WeatherReplayService,
@@ -74,6 +78,7 @@ import { WeatherTileService } from "./services/WeatherTileService";
     UpdateWeatherStationController,
     DeleteWeatherStationController,
     ReplayWeatherArchiveController,
+    ImportWeatherStationReadingsController,
     UpdateWeatherLocationController,
     DeleteWeatherLocationController,
   ],
