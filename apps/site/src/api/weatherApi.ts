@@ -1,7 +1,9 @@
 import {
   type BaseWeatherLocation,
+  type BaseWeatherStation,
   client,
   createWeatherLocation,
+  createWeatherStation,
   deleteWeatherLocation,
   describeWeatherForecast,
   getRadarTile,
@@ -76,6 +78,14 @@ class WeatherApi {
   async listStations(): Promise<WeatherStation[]> {
     const { data } = await listWeatherStations();
     return data.weatherStations;
+  }
+
+  /** Registers a console by its MAC address (admins only). */
+  async createStation(station: BaseWeatherStation): Promise<WeatherStation> {
+    const { data } = await createWeatherStation({
+      body: { weatherStation: station },
+    });
+    return data.weatherStation;
   }
 
   /** A station's history: one series per metric, oldest point first. */

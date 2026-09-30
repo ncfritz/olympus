@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   ago,
+  apiErrorMessage,
   lowHigh,
+  normalizeMac,
   sparkline,
   stationTiles,
   tenths,
@@ -154,4 +156,40 @@ describe("lowHigh", () => {
   it("is undefined for no points", () => {
     expect(lowHigh([])).toBeUndefined();
   });
+});
+
+describe("normalizeMac", () => {
+  it.each([
+    ["A0:B1:C2:D3:E4:F5", "A0:B1:C2:D3:E4:F5"],
+    ["a0:b1:c2:d3:e4:f5", "A0:B1:C2:D3:E4:F5"],
+    ["A0-B1-C2-D3-E4-F5", "A0:B1:C2:D3:E4:F5"],
+    ["a0b1.c2d3.e4f5", "A0:B1:C2:D3:E4:F5"],
+    [" a0b1c2d3e4f5 ", "A0:B1:C2:D3:E4:F5"],
+  ])("reads %s as %s", (input, mac) => {
+    expect(normalizeMac(input)).toBe(mac);
+  });
+
+  it.each([[undefined], [""], ["A0:B1:C2:D3:E4"], ["G0:B1:C2:D3:E4:F5"]])(
+    "refuses %s",
+    (input) => {
+      expect(normalizeMac(input)).toBeUndefined();
+    },
+  );
+});
+
+describe("apiErrorMessage", () => {
+  it("reads the message from an error's body", () => {
+    expect(
+      apiErrorMessage({
+        response: { data: { message: "Already registered", statusCode: 409 } },
+      }),
+    ).toBe("Already registered");
+  });
+
+  it.each([[undefined], [new Error("network")], [{ response: {} }]])(
+    "has none for %s",
+    (error) => {
+      expect(apiErrorMessage(error)).toBeUndefined();
+    },
+  );
 });

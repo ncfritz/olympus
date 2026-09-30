@@ -123,3 +123,23 @@ export const lowHigh = (
         low: Math.min(...points.map((point) => point.min ?? point.mean)),
         high: Math.max(...points.map((point) => point.max ?? point.mean)),
       };
+
+/** A station's name: 1 to 100 characters, as the API allows. */
+export const MAX_STATION_NAME = 100;
+
+/**
+ * A console's MAC address as the API stores it (upper case, colons), or
+ * undefined if it is not one. Colons, dashes, dots or none are all fine.
+ */
+export const normalizeMac = (value: string | undefined): string | undefined => {
+  const hex = value?.replace(/[:.-]/g, "").trim().toUpperCase();
+  if (!hex || !/^[0-9A-F]{12}$/.test(hex)) return undefined;
+  return hex.match(/../g)!.join(":");
+};
+
+/** The message in an API error's body, if it has one. */
+export const apiErrorMessage = (error: unknown): string | undefined => {
+  const message = (error as { response?: { data?: { message?: unknown } } })
+    ?.response?.data?.message;
+  return typeof message === "string" && message ? message : undefined;
+};

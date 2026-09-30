@@ -1,4 +1,4 @@
-import { WarningOutlined } from "@ant-design/icons";
+import { PlusOutlined, WarningOutlined } from "@ant-design/icons";
 import {
   type WeatherForecast,
   type WeatherLocation,
@@ -25,6 +25,7 @@ import CurrentConditions from "./CurrentConditions";
 import FiveDays from "./FiveDays";
 import LocationMenu from "./LocationMenu";
 import ManageLocationsModal from "./ManageLocationsModal";
+import RegisterStationModal from "./RegisterStationModal";
 import NextHours from "./NextHours";
 import StationsView from "./StationsView";
 import WeatherMap from "./WeatherMap";
@@ -60,10 +61,10 @@ const WeatherWidget: React.FunctionComponent = () => {
       />
     );
   }
-  return <SignedInWeather />;
+  return <SignedInWeather admin={auth.user.roles.includes("admin")} />;
 };
 
-const SignedInWeather: React.FunctionComponent = () => {
+const SignedInWeather = ({ admin }: { admin: boolean }) => {
   const [view, setView] = useState<WeatherView>("forecast");
   // Read after mounting: the server render has no local storage.
   useEffect(() => {
@@ -88,19 +89,30 @@ const SignedInWeather: React.FunctionComponent = () => {
     });
   const selectedId = chooseLocation(locations, picked);
 
+  // Registering a station, for an admin; the Stations tab reloads after.
+  const [registering, setRegistering] = useState(false);
+  const [stationsVersion, setStationsVersion] = useState(0);
+  const register = admin ? () => setRegistering(true) : undefined;
+
   return (
     <>
       <Frame
         view={view}
         onChange={choose}
         extra={
-          view === "forecast" && (
+          view === "forecast" ? (
             <LocationMenu
               locations={locations}
               selectedId={selectedId}
               onSelect={setPicked}
               onManage={() => setManaging(true)}
             />
+          ) : (
+            register && (
+              <Button type="text" icon={<PlusOutlined />} onClick={register}>
+                Register station
+              </Button>
+            )
           )
         }
         forecast={
@@ -113,7 +125,9 @@ const SignedInWeather: React.FunctionComponent = () => {
             onManage={() => setManaging(true)}
           />
         }
-        stations={<StationsView />}
+        stations={
+          <StationsView version={stationsVersion} onRegister={register} />
+        }
       />
       <ManageLocationsModal
         open={managing}
@@ -124,6 +138,13 @@ const SignedInWeather: React.FunctionComponent = () => {
           if (added) setPicked(added.id);
         }}
       />
+      {admin && (
+        <RegisterStationModal
+          open={registering}
+          onClose={() => setRegistering(false)}
+          onRegistered={() => setStationsVersion((version) => version + 1)}
+        />
+      )}
     </>
   );
 };

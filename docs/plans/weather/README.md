@@ -522,7 +522,12 @@ console reach the ingest listener, and its range stays in
   location menu as its extra content at the right (Forecast only). The
   locations are fetched above the tabs for that. A hidden tab's content is
   dropped (`destroyOnHidden`), so Stations polls only while shown. The tab
-  is remembered per browser (`weather.view`). The Stations view polls every minute while
+  is remembered per browser (`weather.view`).
+- An admin registers a station from the Stations tab (`RegisterStationModal`,
+  CreateWeatherStation): **Register station** in the tab bar, or **Register
+  a station** when there are none. The MAC is checked as the API checks it
+  before sending, and the API's refusal (a MAC already registered) shows in
+  the modal. Others see the tab without either. The Stations view polls every minute while
   the page is visible without the site's error notification (a failed
   refresh keeps the last readings and says so), and moves "12 s ago" on
   every ten seconds. Each card's sparkline is the last 24 hours of

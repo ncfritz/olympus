@@ -28,8 +28,11 @@ instead, so use the name.
 
 ## 2. Register the station
 
-Registration is an admin's, on the API's OpenAPI page
-(`/olympus/api-spec`), signed in:
+Registration is an admin's. The quickest way is the home page's weather
+widget: on the **Stations** tab, **Register station** (or **Register a
+station** when there are none) asks for a name and the console's MAC and
+calls `CreateWeatherStation`. The same operation is on the API's OpenAPI
+page (`/olympus/api-spec`), signed in:
 
 1. Find the console's MAC: on the WS-5000, **Settings → Wi-Fi → Status**, or
    the router's client list. It is the PASSKEY, so it is the station's

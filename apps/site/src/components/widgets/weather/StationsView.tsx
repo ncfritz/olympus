@@ -14,8 +14,19 @@ const TICK_MS = 10 * 1000;
  * The house's stations (plan phase 8): each station's newest reading,
  * refreshed every minute while the page is visible. A refresh that fails
  * keeps what is on screen and says so, rather than notifying every minute.
+ * With none registered, an admin is offered registering one.
  */
-const StationsView: React.FunctionComponent = () => {
+export interface StationsViewProps {
+  /** Changes when a station is registered, to load the list again. */
+  version?: number;
+  /** Opens registering a station; only an admin has it. */
+  onRegister?: () => void;
+}
+
+const StationsView: React.FunctionComponent<StationsViewProps> = ({
+  version,
+  onRegister,
+}: StationsViewProps) => {
   const [stations, setStations] = useState<WeatherStation[] | undefined>();
   const [failed, setFailed] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -30,6 +41,10 @@ const StationsView: React.FunctionComponent = () => {
       setNow(Date.now());
     }
   };
+
+  useEffect(() => {
+    if (version) void load();
+  }, [version]);
 
   useEffect(() => {
     void load();
@@ -55,8 +70,14 @@ const StationsView: React.FunctionComponent = () => {
     );
   }
   if (stations.length === 0) {
-    return (
-      <Empty description="No stations registered. An admin adds one with CreateWeatherStation." />
+    return onRegister ? (
+      <Empty description="No stations registered yet.">
+        <Button type="primary" onClick={onRegister}>
+          Register a station
+        </Button>
+      </Empty>
+    ) : (
+      <Empty description="No stations registered yet. An admin registers them." />
     );
   }
   return (
