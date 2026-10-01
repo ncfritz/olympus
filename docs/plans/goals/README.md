@@ -48,7 +48,7 @@ migration test checks that an update moves `updated_at` and leaves
 
 No new configuration: the feature has no provider, secret or schedule.
 
-## Phase 0 — Decision and scaffolding — built 2026-10-01, not signed off
+## Phase 0 — Decision and scaffolding — done 2026-10-01
 
 1. **ADR 0026 accepted**: **done** 2026-10-01.
 2. **Model**: **done** — `minerva/goals/index.ts` and `minerva/tags.ts`, exported up
@@ -62,7 +62,7 @@ No new configuration: the feature has no provider, secret or schedule.
 **Sign-off:** the API boots, the menu entry opens the page, and the
 Turbo tasks pass.
 
-## Phase 1 — Tags — built 2026-10-01, not signed off
+## Phase 1 — Tags — done 2026-10-01
 
 1. **Migration** `1790900000000_minerva_tags`: **done** — `minerva.tags`:
    `id` (uuid), `user_id` (references `olympus.users`, cascade), `name`
@@ -99,7 +99,7 @@ Turbo tasks pass.
 
 **Sign-off:** G1 from the OpenAPI page.
 
-## Phase 2 — Categories and cycles — built 2026-10-01, not signed off
+## Phase 2 — Categories and cycles — done 2026-10-01
 
 1. **Migration** `1790910000000_minerva_goal_categories_cycles`: **done**
    - `minerva.goal_user_settings`: `user_id` (primary key, cascade),
@@ -166,7 +166,7 @@ Turbo tasks pass.
 
 **Sign-off:** G2 from the OpenAPI page.
 
-## Phase 3 — Goals — built 2026-10-01, not signed off
+## Phase 3 — Goals — done 2026-10-01
 
 1. **Migration** `1790920000000_minerva_goals`: **done**
    - `minerva.goals`: `id`, `user_id` (cascade), `category_id`
