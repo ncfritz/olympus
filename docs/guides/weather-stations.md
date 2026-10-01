@@ -9,9 +9,11 @@ sends an HTTP GET every ~16 seconds with each reading as a query
 parameter and its own MAC address as `PASSKEY`. The console cannot sign in
 and cannot do TLS, so it is let in by two things instead:
 
-- **where it is**: the push lands on a port-80 listener only the LAN can
-  reach (`infra/docker/nginx/weather-ingest.conf`), and the API accepts it
-  only from `WEATHER_STATION_ALLOWED_CIDRS`;
+- **where it is**: the push lands on a port-80 listener
+  (`infra/docker/nginx/weather-ingest.conf`) that the router lets only the
+  consoles reach from the IoT network, and the API accepts it only from
+  `WEATHER_STATION_ALLOWED_CIDRS` (on the Mini, Docker Desktop's gateway:
+  see _Where pushes come from_);
 - **what it is**: the MAC has to be a registered station.
 
 Anything else is a 403, logged once an hour per address or MAC, without the
@@ -88,10 +90,8 @@ Within a minute of saving:
    tail -n 1 "$DATA_DIR/weather/archive/A0-B1-C2-D3-E4-F5/$(date -u +%Y/%m/%d).jsonl"
    ```
 
-   Its `remote` should be the console's own address. If it is Docker
-   Desktop's instead (`192.168.65.x`, or whatever its VM network is), the
-   address check is seeing the Mac's port publishing rather than the
-   console, and every push is refused; see _When the address is wrong_.
+   Its `remote` is `192.168.65.1`, Docker Desktop's gateway, rather than
+   the console's own address; see _Where pushes come from_.
 
 3. **The samples**, in Hasura's console or with `psql`:
 
@@ -107,18 +107,31 @@ Within a minute of saving:
    `refused_address`, `refused_station` and `invalid` flat;
    `weather_archive_operations_total{result="failed"}` at zero.
 
-### When the address is wrong
+### Where pushes come from
 
-The allowed ranges are the IoT networks the consoles are on, `10.15.1.0/24`
-and `10.1.1.0/24` (`WEATHER_STATION_ALLOWED_CIDRS` in
-`infra/docker/env/prod/olympus-api.env`).
-nginx replaces `X-Forwarded-For` with the address it saw, and the API
-believes it because nginx is in `TRUSTED_PROXIES`. If what nginx sees is
-Docker Desktop's gateway rather than the console, either give nginx's port
-80 the host's network so it sees real peers, or — the lesser option — add
-that gateway address to the allowed list. The second leaves the LAN-only
-listener and the MAC as the whole of the check, and says so in the env
-file's comment if it is done.
+The consoles are on the IoT network at each site, `10.15.1.0/24` and
+`10.1.1.0/24`. nginx replaces `X-Forwarded-For` with the address it saw,
+and the API believes it because nginx is in `TRUSTED_PROXIES`; but on the
+Mini, Docker Desktop hands every request on a published port to nginx from
+its own gateway, `192.168.65.1`, so that is the address nginx sees, the API
+checks and the archive records, for every push.
+
+`WEATHER_STATION_ALLOWED_CIDRS` (in
+`infra/docker/env/prod/olympus-api.env`) therefore allows the gateway, and
+the address check that counts is the router's:
+
+- each console has a reserved address on its IoT network;
+- the firewall lets only those addresses reach the Mini on port 80 from
+  the IoT networks.
+
+The registered MAC is still checked on top. A push refused as
+`not in WEATHER_STATION_ALLOWED_CIDRS` with an address other than
+`192.168.65.1` means Docker Desktop's network has changed (its settings
+choose the range); put the new gateway in the allowed list.
+
+The IoT ranges stay in the list for a Docker that passes real addresses
+through: if that ever happens, the gateway entry can go, and the API's
+check is a real one again.
 
 ## 5. A new test fixture
 
