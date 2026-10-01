@@ -117,6 +117,45 @@
     "Past": "past",
     "Upcoming": "upcoming"
   },
+  "GoalHealth": {
+    "AtRisk": "at_risk",
+    "OffTrack": "off_track",
+    "OnTrack": "on_track"
+  },
+  "GoalHorizon": {
+    "Custom": "custom",
+    "Cycle": "cycle",
+    "Ongoing": "ongoing",
+    "Quarter": "quarter",
+    "Year": "year"
+  },
+  "GoalProgressMode": {
+    "Checkins": "checkins",
+    "Habit": "habit",
+    "Manual": "manual",
+    "Milestones": "milestones",
+    "Status": "status",
+    "Subgoals": "subgoals"
+  },
+  "GoalRollup": {
+    "Average": "average",
+    "Sum": "sum",
+    "Weighted": "weighted"
+  },
+  "GoalStatus": {
+    "Achieved": "achieved",
+    "Active": "active",
+    "Draft": "draft",
+    "Dropped": "dropped",
+    "Missed": "missed",
+    "Paused": "paused"
+  },
+  "GoalType": {
+    "Achievement": "achievement",
+    "Habit": "habit",
+    "Milestone": "milestone",
+    "Outcome": "outcome"
+  },
   "GroupType": {
     "FOUNDATION_STOCK_SERVICE": "FS",
     "HERDING": "HD",
@@ -127,6 +166,12 @@
     "TERRIER": "TR",
     "TOY": "TY",
     "WORKING": "WK"
+  },
+  "HabitFrequency": {
+    "Daily": "daily",
+    "Monthly": "monthly",
+    "Weekdays": "weekdays",
+    "Weekly": "weekly"
   },
   "JobStatus": {
     "CANCELLED": "cancelled",

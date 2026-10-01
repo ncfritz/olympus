@@ -1,28 +1,26 @@
 table:
-  name: tags
+  name: goal_tags
   schema: minerva
 configuration:
   column_config:
     created_at:
       custom_name: createdTime
+    goal_id:
+      custom_name: goalId
+    tag_id:
+      custom_name: tagId
     updated_at:
       custom_name: lastUpdatedTime
-    user_id:
-      custom_name: userId
   custom_column_names:
     created_at: createdTime
+    goal_id: goalId
+    tag_id: tagId
     updated_at: lastUpdatedTime
-    user_id: userId
   custom_root_fields: {}
 object_relationships:
-  - name: user
+  - name: goal
     using:
-      foreign_key_constraint_on: user_id
-array_relationships:
-  - name: goalTags
+      foreign_key_constraint_on: goal_id
+  - name: tag
     using:
-      foreign_key_constraint_on:
-        column: tag_id
-        table:
-          name: goal_tags
-          schema: minerva
+      foreign_key_constraint_on: tag_id

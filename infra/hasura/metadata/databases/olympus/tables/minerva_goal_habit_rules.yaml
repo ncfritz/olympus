@@ -1,0 +1,29 @@
+table:
+  name: goal_habit_rules
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    goal_id:
+      custom_name: goalId
+    quantity_target:
+      custom_name: quantityTarget
+    quantity_unit:
+      custom_name: quantityUnit
+    times_per_period:
+      custom_name: timesPerPeriod
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    goal_id: goalId
+    quantity_target: quantityTarget
+    quantity_unit: quantityUnit
+    times_per_period: timesPerPeriod
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: goal
+    using:
+      foreign_key_constraint_on: goal_id

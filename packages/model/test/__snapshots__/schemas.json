@@ -492,6 +492,113 @@
     ],
     "type": "object"
   },
+  "BaseGoal": {
+    "properties": {
+      "categoryId": {
+        "description": "The ID of the category the goal sits in",
+        "type": "string"
+      },
+      "cycleId": {
+        "description": "The ID of the 12-week cycle the goal is set for",
+        "type": "string"
+      },
+      "dueDate": {
+        "description": "When the goal is due, as YYYY-MM-DD; absent when ongoing",
+        "format": "date",
+        "type": "string"
+      },
+      "horizon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHorizon"
+          }
+        ],
+        "description": "The span the goal is set over"
+      },
+      "manualProgress": {
+        "description": "Progress set by hand, 0 to 100, in manual mode",
+        "type": "number"
+      },
+      "parentId": {
+        "description": "The ID of the goal this one is a sub-goal of",
+        "type": "string"
+      },
+      "progressMode": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalProgressMode"
+          }
+        ],
+        "description": "Where the goal's progress comes from: outcome goals check-ins or sub-goals; milestone goals milestones, sub-goals or by hand; habit goals their habit; achievement goals their status"
+      },
+      "rollup": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalRollup"
+          }
+        ],
+        "description": "How sub-goals combine, when progress comes from them; sum is for outcome goals"
+      },
+      "startDate": {
+        "description": "When the goal starts, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "startValue": {
+        "description": "An outcome goal's value when it started",
+        "type": "number"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalStatus"
+          }
+        ],
+        "description": "Where the goal is in its life"
+      },
+      "targetValue": {
+        "description": "An outcome goal's target; below the start value for a goal going down",
+        "type": "number"
+      },
+      "title": {
+        "description": "What the goal is, 1 to 120 characters",
+        "type": "string"
+      },
+      "tolerancePct": {
+        "default": 10,
+        "description": "How many points of progress behind pace still count as on track, 1 to 50",
+        "type": "number"
+      },
+      "type": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalType"
+          }
+        ],
+        "description": "What the goal measures; fixed once created"
+      },
+      "unit": {
+        "description": "An outcome goal's unit, e.g. lb or books",
+        "type": "string"
+      },
+      "weight": {
+        "default": 1,
+        "description": "The goal's weight among its siblings in a weighted rollup, above 0",
+        "type": "number"
+      },
+      "why": {
+        "description": "Why the goal matters, at most 500 characters",
+        "type": "string"
+      }
+    },
+    "required": [
+      "categoryId",
+      "horizon",
+      "title",
+      "type"
+    ],
+    "type": "object"
+  },
   "BaseGoalCategory": {
     "properties": {
       "color": {
@@ -547,6 +654,64 @@
     "required": [
       "name",
       "startDate"
+    ],
+    "type": "object"
+  },
+  "BaseGoalHabitRule": {
+    "properties": {
+      "frequency": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/HabitFrequency"
+          }
+        ],
+        "description": "How often the habit is due"
+      },
+      "quantityTarget": {
+        "description": "For a habit counted by quantity: the amount a day must reach to count",
+        "type": "number"
+      },
+      "quantityUnit": {
+        "description": "The quantity's unit, e.g. min or steps",
+        "type": "string"
+      },
+      "timesPerPeriod": {
+        "default": 1,
+        "description": "How many times in each period: 1 for daily and weekdays, up to 7 a week or 31 a month",
+        "type": "number"
+      },
+      "weekdays": {
+        "description": "For weekdays: the ISO days it is due, 1 (Monday) to 7 (Sunday)",
+        "items": {
+          "type": "number"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "frequency"
+    ],
+    "type": "object"
+  },
+  "BaseGoalMilestone": {
+    "properties": {
+      "dueDate": {
+        "description": "When the milestone is due, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "title": {
+        "description": "What the milestone is, 1 to 120 characters",
+        "type": "string"
+      },
+      "weight": {
+        "default": 1,
+        "description": "The milestone's share of the goal against the others' weights, above 0",
+        "type": "number"
+      }
+    },
+    "required": [
+      "title"
     ],
     "type": "object"
   },
@@ -3077,6 +3242,92 @@
     ],
     "type": "object"
   },
+  "CreateGoalMilestoneRequest": {
+    "properties": {
+      "goalMilestone": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseGoalMilestone"
+          }
+        ],
+        "description": "The milestone to add at the end of the goal's list."
+      }
+    },
+    "required": [
+      "goalMilestone"
+    ],
+    "type": "object"
+  },
+  "CreateGoalMilestoneResponse": {
+    "properties": {
+      "goalMilestone": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalMilestone"
+          }
+        ],
+        "description": "The milestone as added."
+      }
+    },
+    "required": [
+      "goalMilestone"
+    ],
+    "type": "object"
+  },
+  "CreateGoalRequest": {
+    "properties": {
+      "goal": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseGoal"
+          }
+        ],
+        "description": "The goal to create."
+      },
+      "habitRule": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseGoalHabitRule"
+          }
+        ],
+        "description": "A habit goal's schedule; required for a habit goal."
+      },
+      "milestones": {
+        "description": "A milestone goal's milestones, in order.",
+        "items": {
+          "$ref": "#/components/schemas/BaseGoalMilestone"
+        },
+        "type": "array"
+      },
+      "tagIds": {
+        "description": "The IDs of the caller's tags to put on the goal.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "goal"
+    ],
+    "type": "object"
+  },
+  "CreateGoalResponse": {
+    "properties": {
+      "goal": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FullGoal"
+          }
+        ],
+        "description": "The goal as created."
+      }
+    },
+    "required": [
+      "goal"
+    ],
+    "type": "object"
+  },
   "CreateKeywordRequest": {
     "properties": {
       "keyword": {
@@ -4507,6 +4758,22 @@
     ],
     "type": "object"
   },
+  "DescribeGoalResponse": {
+    "properties": {
+      "goal": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FullGoal"
+          }
+        ],
+        "description": "The goal, with its rule, milestones, sub-goals and tags."
+      }
+    },
+    "required": [
+      "goal"
+    ],
+    "type": "object"
+  },
   "DescribeJsonWebKeySetResponse": {
     "properties": {
       "keys": {
@@ -5382,6 +5649,220 @@
     ],
     "type": "object"
   },
+  "FullGoal": {
+    "properties": {
+      "categoryId": {
+        "description": "The ID of the category the goal sits in",
+        "type": "string"
+      },
+      "closeNote": {
+        "description": "What was learned, written when the goal closed",
+        "type": "string"
+      },
+      "closedOn": {
+        "description": "When the goal was achieved, missed or dropped, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the goal was created",
+        "type": "string"
+      },
+      "currentValue": {
+        "description": "An outcome goal's current value",
+        "type": "number"
+      },
+      "cycleId": {
+        "description": "The ID of the 12-week cycle the goal is set for",
+        "type": "string"
+      },
+      "deleted": {
+        "description": "Whether the goal is deleted and can be restored",
+        "type": "boolean"
+      },
+      "dueDate": {
+        "description": "When the goal is due, as YYYY-MM-DD; absent when ongoing",
+        "format": "date",
+        "type": "string"
+      },
+      "expectedProgress": {
+        "description": "Where pace says the goal should be today, 0 to 100; for active goals with a due date",
+        "type": "number"
+      },
+      "habitRule": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHabitRule"
+          }
+        ],
+        "description": "A habit goal's schedule"
+      },
+      "health": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHealth"
+          }
+        ],
+        "description": "How an active goal is doing; absent for others"
+      },
+      "horizon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHorizon"
+          }
+        ],
+        "description": "The span the goal is set over"
+      },
+      "id": {
+        "description": "The unique ID of the goal",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the goal was last changed",
+        "type": "string"
+      },
+      "manualProgress": {
+        "description": "Progress set by hand, 0 to 100, in manual mode",
+        "type": "number"
+      },
+      "milestones": {
+        "description": "The goal's milestones, in order",
+        "items": {
+          "$ref": "#/components/schemas/GoalMilestone"
+        },
+        "type": "array"
+      },
+      "parentId": {
+        "description": "The ID of the goal this one is a sub-goal of",
+        "type": "string"
+      },
+      "position": {
+        "description": "Where the goal sits in the user's lists; lower comes first",
+        "type": "number"
+      },
+      "progress": {
+        "description": "How far the goal has come, 0 to 100",
+        "type": "number"
+      },
+      "progressMode": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalProgressMode"
+          }
+        ],
+        "description": "Where the goal's progress comes from: outcome goals check-ins or sub-goals; milestone goals milestones, sub-goals or by hand; habit goals their habit; achievement goals their status"
+      },
+      "rollup": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalRollup"
+          }
+        ],
+        "description": "How sub-goals combine, when progress comes from them; sum is for outcome goals"
+      },
+      "startDate": {
+        "description": "When the goal starts, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "startValue": {
+        "description": "An outcome goal's value when it started",
+        "type": "number"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalStatus"
+          }
+        ],
+        "description": "Where the goal is in its life"
+      },
+      "subGoalIds": {
+        "description": "The IDs of the goal's sub-goals that are not deleted",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "subGoals": {
+        "description": "The goal's sub-goals that are not deleted, one level, in order",
+        "items": {
+          "$ref": "#/components/schemas/Goal"
+        },
+        "type": "array"
+      },
+      "tagIds": {
+        "description": "The IDs of the goal's tags",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "tags": {
+        "description": "The goal's tags, by name",
+        "items": {
+          "$ref": "#/components/schemas/Tag"
+        },
+        "type": "array"
+      },
+      "targetValue": {
+        "description": "An outcome goal's target; below the start value for a goal going down",
+        "type": "number"
+      },
+      "title": {
+        "description": "What the goal is, 1 to 120 characters",
+        "type": "string"
+      },
+      "tolerancePct": {
+        "default": 10,
+        "description": "How many points of progress behind pace still count as on track, 1 to 50",
+        "type": "number"
+      },
+      "type": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalType"
+          }
+        ],
+        "description": "What the goal measures; fixed once created"
+      },
+      "unit": {
+        "description": "An outcome goal's unit, e.g. lb or books",
+        "type": "string"
+      },
+      "weight": {
+        "default": 1,
+        "description": "The goal's weight among its siblings in a weighted rollup, above 0",
+        "type": "number"
+      },
+      "why": {
+        "description": "Why the goal matters, at most 500 characters",
+        "type": "string"
+      }
+    },
+    "required": [
+      "categoryId",
+      "createdTime",
+      "deleted",
+      "horizon",
+      "id",
+      "milestones",
+      "position",
+      "progress",
+      "progressMode",
+      "startDate",
+      "status",
+      "subGoalIds",
+      "subGoals",
+      "tagIds",
+      "tags",
+      "title",
+      "tolerancePct",
+      "type",
+      "weight"
+    ],
+    "type": "object"
+  },
   "FullProductionCompany": {
     "properties": {
       "alternativeNames": {
@@ -6134,6 +6615,188 @@
     ],
     "type": "object"
   },
+  "Goal": {
+    "properties": {
+      "categoryId": {
+        "description": "The ID of the category the goal sits in",
+        "type": "string"
+      },
+      "closeNote": {
+        "description": "What was learned, written when the goal closed",
+        "type": "string"
+      },
+      "closedOn": {
+        "description": "When the goal was achieved, missed or dropped, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the goal was created",
+        "type": "string"
+      },
+      "currentValue": {
+        "description": "An outcome goal's current value",
+        "type": "number"
+      },
+      "cycleId": {
+        "description": "The ID of the 12-week cycle the goal is set for",
+        "type": "string"
+      },
+      "deleted": {
+        "description": "Whether the goal is deleted and can be restored",
+        "type": "boolean"
+      },
+      "dueDate": {
+        "description": "When the goal is due, as YYYY-MM-DD; absent when ongoing",
+        "format": "date",
+        "type": "string"
+      },
+      "expectedProgress": {
+        "description": "Where pace says the goal should be today, 0 to 100; for active goals with a due date",
+        "type": "number"
+      },
+      "health": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHealth"
+          }
+        ],
+        "description": "How an active goal is doing; absent for others"
+      },
+      "horizon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHorizon"
+          }
+        ],
+        "description": "The span the goal is set over"
+      },
+      "id": {
+        "description": "The unique ID of the goal",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the goal was last changed",
+        "type": "string"
+      },
+      "manualProgress": {
+        "description": "Progress set by hand, 0 to 100, in manual mode",
+        "type": "number"
+      },
+      "parentId": {
+        "description": "The ID of the goal this one is a sub-goal of",
+        "type": "string"
+      },
+      "position": {
+        "description": "Where the goal sits in the user's lists; lower comes first",
+        "type": "number"
+      },
+      "progress": {
+        "description": "How far the goal has come, 0 to 100",
+        "type": "number"
+      },
+      "progressMode": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalProgressMode"
+          }
+        ],
+        "description": "Where the goal's progress comes from: outcome goals check-ins or sub-goals; milestone goals milestones, sub-goals or by hand; habit goals their habit; achievement goals their status"
+      },
+      "rollup": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalRollup"
+          }
+        ],
+        "description": "How sub-goals combine, when progress comes from them; sum is for outcome goals"
+      },
+      "startDate": {
+        "description": "When the goal starts, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "startValue": {
+        "description": "An outcome goal's value when it started",
+        "type": "number"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalStatus"
+          }
+        ],
+        "description": "Where the goal is in its life"
+      },
+      "subGoalIds": {
+        "description": "The IDs of the goal's sub-goals that are not deleted",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "tagIds": {
+        "description": "The IDs of the goal's tags",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "targetValue": {
+        "description": "An outcome goal's target; below the start value for a goal going down",
+        "type": "number"
+      },
+      "title": {
+        "description": "What the goal is, 1 to 120 characters",
+        "type": "string"
+      },
+      "tolerancePct": {
+        "default": 10,
+        "description": "How many points of progress behind pace still count as on track, 1 to 50",
+        "type": "number"
+      },
+      "type": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalType"
+          }
+        ],
+        "description": "What the goal measures; fixed once created"
+      },
+      "unit": {
+        "description": "An outcome goal's unit, e.g. lb or books",
+        "type": "string"
+      },
+      "weight": {
+        "default": 1,
+        "description": "The goal's weight among its siblings in a weighted rollup, above 0",
+        "type": "number"
+      },
+      "why": {
+        "description": "Why the goal matters, at most 500 characters",
+        "type": "string"
+      }
+    },
+    "required": [
+      "categoryId",
+      "createdTime",
+      "deleted",
+      "horizon",
+      "id",
+      "position",
+      "progress",
+      "progressMode",
+      "startDate",
+      "status",
+      "subGoalIds",
+      "tagIds",
+      "title",
+      "tolerancePct",
+      "type",
+      "weight"
+    ],
+    "type": "object"
+  },
   "GoalCategory": {
     "properties": {
       "archived": {
@@ -6287,6 +6950,171 @@
     ],
     "type": "string"
   },
+  "GoalHabitRule": {
+    "properties": {
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the rule was first saved",
+        "type": "string"
+      },
+      "frequency": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/HabitFrequency"
+          }
+        ],
+        "description": "How often the habit is due"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the rule was last changed",
+        "type": "string"
+      },
+      "quantityTarget": {
+        "description": "For a habit counted by quantity: the amount a day must reach to count",
+        "type": "number"
+      },
+      "quantityUnit": {
+        "description": "The quantity's unit, e.g. min or steps",
+        "type": "string"
+      },
+      "timesPerPeriod": {
+        "default": 1,
+        "description": "How many times in each period: 1 for daily and weekdays, up to 7 a week or 31 a month",
+        "type": "number"
+      },
+      "weekdays": {
+        "description": "For weekdays: the ISO days it is due, 1 (Monday) to 7 (Sunday)",
+        "items": {
+          "type": "number"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "createdTime",
+      "frequency",
+      "timesPerPeriod"
+    ],
+    "type": "object"
+  },
+  "GoalHealth": {
+    "description": "How an active goal is doing; absent for others",
+    "enum": [
+      "on_track",
+      "at_risk",
+      "off_track"
+    ],
+    "type": "string"
+  },
+  "GoalHorizon": {
+    "description": "The span the goal is set over",
+    "enum": [
+      "year",
+      "quarter",
+      "cycle",
+      "custom",
+      "ongoing"
+    ],
+    "type": "string"
+  },
+  "GoalMilestone": {
+    "properties": {
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the milestone was added",
+        "type": "string"
+      },
+      "done": {
+        "description": "Whether the milestone is done",
+        "type": "boolean"
+      },
+      "doneTime": {
+        "description": "An ISO-8601 formatted string indicating when the milestone was done",
+        "type": "string"
+      },
+      "dueDate": {
+        "description": "When the milestone is due, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "goalId": {
+        "description": "The ID of the goal the milestone belongs to",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the milestone",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the milestone was last changed",
+        "type": "string"
+      },
+      "position": {
+        "description": "Where the milestone sits in the goal's list; lower comes first",
+        "type": "number"
+      },
+      "title": {
+        "description": "What the milestone is, 1 to 120 characters",
+        "type": "string"
+      },
+      "weight": {
+        "default": 1,
+        "description": "The milestone's share of the goal against the others' weights, above 0",
+        "type": "number"
+      }
+    },
+    "required": [
+      "createdTime",
+      "done",
+      "goalId",
+      "id",
+      "position",
+      "title",
+      "weight"
+    ],
+    "type": "object"
+  },
+  "GoalProgressMode": {
+    "description": "Where the goal's progress comes from: outcome goals check-ins or sub-goals; milestone goals milestones, sub-goals or by hand; habit goals their habit; achievement goals their status",
+    "enum": [
+      "checkins",
+      "milestones",
+      "habit",
+      "status",
+      "subgoals",
+      "manual"
+    ],
+    "type": "string"
+  },
+  "GoalRollup": {
+    "description": "How sub-goals combine, when progress comes from them; sum is for outcome goals",
+    "enum": [
+      "average",
+      "weighted",
+      "sum"
+    ],
+    "type": "string"
+  },
+  "GoalStatus": {
+    "description": "Where the goal is in its life",
+    "enum": [
+      "draft",
+      "active",
+      "paused",
+      "achieved",
+      "missed",
+      "dropped"
+    ],
+    "type": "string"
+  },
+  "GoalType": {
+    "description": "What the goal measures; fixed once created",
+    "enum": [
+      "outcome",
+      "milestone",
+      "habit",
+      "achievement"
+    ],
+    "type": "string"
+  },
   "GroupType": {
     "description": "The group the dog belongs to",
     "enum": [
@@ -6299,6 +7127,16 @@
       "TR",
       "TY",
       "WK"
+    ],
+    "type": "string"
+  },
+  "HabitFrequency": {
+    "description": "How often the habit is due",
+    "enum": [
+      "daily",
+      "weekly",
+      "weekdays",
+      "monthly"
     ],
     "type": "string"
   },
@@ -6890,6 +7728,21 @@
     },
     "required": [
       "goalCycles"
+    ],
+    "type": "object"
+  },
+  "ListGoalsResponse": {
+    "properties": {
+      "goals": {
+        "description": "The caller's goals that match, in order.",
+        "items": {
+          "$ref": "#/components/schemas/Goal"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "goals"
     ],
     "type": "object"
   },
@@ -11143,6 +11996,108 @@
     ],
     "type": "object"
   },
+  "PartialGoal": {
+    "properties": {
+      "categoryId": {
+        "description": "The ID of the category the goal sits in",
+        "type": "string"
+      },
+      "closeNote": {
+        "description": "What was learned, written when the goal closed",
+        "type": "string"
+      },
+      "closedOn": {
+        "description": "When the goal was achieved, missed or dropped, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "cycleId": {
+        "description": "The ID of the 12-week cycle the goal is set for",
+        "type": "string"
+      },
+      "dueDate": {
+        "description": "When the goal is due, as YYYY-MM-DD; absent when ongoing",
+        "format": "date",
+        "type": "string"
+      },
+      "horizon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHorizon"
+          }
+        ],
+        "description": "The span the goal is set over"
+      },
+      "manualProgress": {
+        "description": "Progress set by hand, 0 to 100, in manual mode",
+        "type": "number"
+      },
+      "parentId": {
+        "description": "The ID of the goal this one is a sub-goal of",
+        "type": "string"
+      },
+      "progressMode": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalProgressMode"
+          }
+        ],
+        "description": "Where the goal's progress comes from: outcome goals check-ins or sub-goals; milestone goals milestones, sub-goals or by hand; habit goals their habit; achievement goals their status"
+      },
+      "rollup": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalRollup"
+          }
+        ],
+        "description": "How sub-goals combine, when progress comes from them; sum is for outcome goals"
+      },
+      "startDate": {
+        "description": "When the goal starts, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "startValue": {
+        "description": "An outcome goal's value when it started",
+        "type": "number"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalStatus"
+          }
+        ],
+        "description": "Where the goal is in its life"
+      },
+      "targetValue": {
+        "description": "An outcome goal's target; below the start value for a goal going down",
+        "type": "number"
+      },
+      "title": {
+        "description": "What the goal is, 1 to 120 characters",
+        "type": "string"
+      },
+      "tolerancePct": {
+        "default": 10,
+        "description": "How many points of progress behind pace still count as on track, 1 to 50",
+        "type": "number"
+      },
+      "unit": {
+        "description": "An outcome goal's unit, e.g. lb or books",
+        "type": "string"
+      },
+      "weight": {
+        "default": 1,
+        "description": "The goal's weight among its siblings in a weighted rollup, above 0",
+        "type": "number"
+      },
+      "why": {
+        "description": "Why the goal matters, at most 500 characters",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
   "PartialGoalCategory": {
     "properties": {
       "archived": {
@@ -11191,6 +12146,29 @@
       "weeks": {
         "default": 12,
         "description": "The number of weeks of execution, 1 to 26",
+        "type": "number"
+      }
+    },
+    "type": "object"
+  },
+  "PartialGoalMilestone": {
+    "properties": {
+      "done": {
+        "description": "Whether the milestone is done",
+        "type": "boolean"
+      },
+      "dueDate": {
+        "description": "When the milestone is due, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "title": {
+        "description": "What the milestone is, 1 to 120 characters",
+        "type": "string"
+      },
+      "weight": {
+        "default": 1,
+        "description": "The milestone's share of the goal against the others' weights, above 0",
         "type": "number"
       }
     },
@@ -13867,6 +14845,66 @@
     ],
     "type": "object"
   },
+  "ReorderGoalMilestonesRequest": {
+    "properties": {
+      "milestoneIds": {
+        "description": "Every one of the goal's milestone IDs, in the order they should appear.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "milestoneIds"
+    ],
+    "type": "object"
+  },
+  "ReorderGoalMilestonesResponse": {
+    "properties": {
+      "goalMilestones": {
+        "description": "The goal's milestones in their new order.",
+        "items": {
+          "$ref": "#/components/schemas/GoalMilestone"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "goalMilestones"
+    ],
+    "type": "object"
+  },
+  "ReorderGoalsRequest": {
+    "properties": {
+      "goalIds": {
+        "description": "Some of the caller's goals, in the order they should appear: their positions are shared out among them in this order.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "goalIds"
+    ],
+    "type": "object"
+  },
+  "ReorderGoalsResponse": {
+    "properties": {
+      "goals": {
+        "description": "The goals named, in their new order.",
+        "items": {
+          "$ref": "#/components/schemas/Goal"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "goals"
+    ],
+    "type": "object"
+  },
   "ReorderWeatherLocationsRequest": {
     "properties": {
       "locationIds": {
@@ -13910,6 +14948,22 @@
     },
     "required": [
       "replay"
+    ],
+    "type": "object"
+  },
+  "RestoreGoalResponse": {
+    "properties": {
+      "goal": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FullGoal"
+          }
+        ],
+        "description": "The goal, restored."
+      }
+    },
+    "required": [
+      "goal"
     ],
     "type": "object"
   },
@@ -16828,6 +17882,82 @@
     },
     "required": [
       "goalCycle"
+    ],
+    "type": "object"
+  },
+  "UpdateGoalMilestoneRequest": {
+    "properties": {
+      "goalMilestone": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialGoalMilestone"
+          }
+        ],
+        "description": "The changes to the milestone. A due date of null removes it."
+      }
+    },
+    "required": [
+      "goalMilestone"
+    ],
+    "type": "object"
+  },
+  "UpdateGoalMilestoneResponse": {
+    "properties": {
+      "goalMilestone": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalMilestone"
+          }
+        ],
+        "description": "The milestone with the changes applied."
+      }
+    },
+    "required": [
+      "goalMilestone"
+    ],
+    "type": "object"
+  },
+  "UpdateGoalRequest": {
+    "properties": {
+      "goal": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialGoal"
+          }
+        ],
+        "description": "The changes to the goal. Null clears an optional field; achieved, missed and dropped need closedOn."
+      },
+      "habitRule": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseGoalHabitRule"
+          }
+        ],
+        "description": "A habit goal's new schedule, replacing the old."
+      },
+      "tagIds": {
+        "description": "The goal's tags, replacing the old set.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "type": "object"
+  },
+  "UpdateGoalResponse": {
+    "properties": {
+      "goal": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FullGoal"
+          }
+        ],
+        "description": "The goal with the changes applied."
+      }
+    },
+    "required": [
+      "goal"
     ],
     "type": "object"
   },
