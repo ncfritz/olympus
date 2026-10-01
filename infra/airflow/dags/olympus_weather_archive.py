@@ -7,39 +7,52 @@ source of truth the samples and rollups can be rebuilt from, which is why the
 weather tables' rows are left out of the database backup: this copy is their
 backup.
 
-`copy` puts every sealed day on the NAS that is not there yet, and checks it
-there with `sha256sum -c`. `prune` then removes local days older than
-KEEP_DAYS, and only those whose NAS copy checks: a day that never made it
-stays until it does. A day still being written (a plain `.jsonl`) is never
-touched.
+`copy` puts every sealed day on the NAS that is not there yet, over SFTP, under
+a temporary name until whole, and checks it there: the copy is read back and
+its SHA-256 compared with the local checksum file (SFTP runs no commands on the
+NAS, and a day is small). `prune` then removes local days older than
+KEEP_DAYS, and only those whose NAS copy checks the same way: a day that never
+made it stays until it does. A day still being written (a plain `.jsonl`) is
+never touched.
 
-Like olympus_backup, the work runs in a container: the NAS share is an NFS
-volume the Docker daemon mounts, so Airflow's worker needs no mount of its own
-and no credentials.
+Unlike olympus_backup, the work runs in the worker: the NAS is reached the way
+the host's other DAGs reach it, through an Airflow SFTP connection
+(WEATHER_NAS_SFTP_CONNECTION, the `weather` user), and the archive is mounted
+into the worker at OLYMPUS_WEATHER_ARCHIVE (infra/airflow/README.md).
 """
 
 from __future__ import annotations
 
+import errno
+import hashlib
+import io
+import logging
 import os
-from datetime import timedelta
+import posixpath
+import re
+from datetime import date, timedelta
 from pathlib import Path
+from typing import IO, Protocol
 
 import pendulum
-from airflow.sdk import DAG
-from airflow.providers.docker.operators.docker import DockerOperator
-from docker.types import DriverConfig, Mount
+from airflow.sdk import DAG, get_current_context, task
 
 REPO = Path(os.environ.get("OLYMPUS_ROOT", Path(__file__).resolve().parents[3]))
 ENVIRONMENT = os.environ.get("OLYMPUS_ENV", "prod")
+
+# The archive, as the worker sees it.
+ARCHIVE = Path(os.environ.get("OLYMPUS_WEATHER_ARCHIVE", "/opt/olympus-weather-archive"))
 
 # How long a day stays on the Mac Mini once it is safely on the NAS: long
 # enough to replay a recent month without touching the NAS.
 KEEP_DAYS = 30
 
-# The run's day, as YYYY-MM-DD (UTC). Not `{{ ds }}`: Airflow 3 leaves it
-# undefined for a run triggered without a logical date, so a backup run by
-# hand would fail to render. Such a run still has `run_after`.
-DAY = "{{ (logical_date or dag_run.run_after).strftime('%Y-%m-%d') }}"
+# <MAC>/<yyyy>/<mm>/<dd>.jsonl.zst, the MAC with dashes.
+SEALED_DAY = re.compile(
+    r"^(?P<mac>[0-9A-F]{2}(?:-[0-9A-F]{2}){5})/(?P<year>\d{4})/(?P<month>\d{2})/(?P<day>\d{2})\.jsonl\.zst$"
+)
+
+log = logging.getLogger(__name__)
 
 
 def settings() -> dict[str, str]:
@@ -56,60 +69,155 @@ def settings() -> dict[str, str]:
 
 
 ENV = settings()
-# Any image with bash and coreutils; this one is already pulled for the
-# backups, and its tag has one home.
-IMAGE = "postgres:" + ENV["POSTGRES_VERSION"]
-
-ARCHIVE = Mount(
-    source=ENV["DATA_DIR"] + "/weather/archive", target="/archive", type="bind"
-)
-
-# The NAS share as an NFS volume. The daemon mounts it when the container
-# starts and lets go when it stops; nothing on the host is mounted for good.
-NAS = Mount(
-    source="olympus-weather-nas",
-    target="/nas",
-    type="volume",
-    driver_config=DriverConfig(
-        name="local",
-        options={
-            "type": "nfs",
-            "o": "addr=" + ENV["WEATHER_NAS_HOST"] + ",rw,nfsvers=4",
-            "device": ":" + ENV["WEATHER_NAS_EXPORT"],
-        },
-    ),
-)
+CONNECTION = ENV["WEATHER_NAS_SFTP_CONNECTION"]
+REMOTE_ROOT = ENV["WEATHER_NAS_SFTP_DIR"]
 
 
-def step(task_id: str, script: str) -> DockerOperator:
-    return DockerOperator(
-        task_id=task_id,
-        image=IMAGE,
-        mounts=[ARCHIVE, NAS],
-        # See olympus_backup: the worker's own temporary directory is a path
-        # the daemon cannot resolve.
-        mount_tmp_dir=False,
-        auto_remove="success",
-        command=["bash", "-euo", "pipefail", "-c", script],
-    )
+class Sftp(Protocol):
+    """What these tasks use of paramiko's SFTPClient."""
+
+    def open(self, filename: str, mode: str = "r") -> IO[bytes]: ...
+    def putfo(self, fl: IO[bytes], remotepath: str) -> object: ...
+    def rename(self, oldpath: str, newpath: str) -> None: ...
+    def remove(self, path: str) -> None: ...
+    def mkdir(self, path: str) -> None: ...
+    def stat(self, path: str) -> object: ...
 
 
-# Every sealed day under /archive: <MAC>/<yyyy>/<mm>/<dd>.jsonl.zst.sha256,
-# one per line, oldest first. `find` rather than a glob, so no day is
-# missed however many stations there are.
-SEALED = "find /archive -name '*.jsonl.zst.sha256' | sort"
+class CopyFailed(Exception):
+    """A day's NAS copy does not match its checksum."""
 
-# True when the NAS has this day, whole. The checksum file is the local
-# one, so a copy the NAS has mangled does not vouch for itself.
-ON_NAS = """
-on_nas() {
-  local sum="$1" rel base
-  rel="${sum#/archive/}"; rel="${rel%/*}"
-  base="$(basename "$sum" .sha256)"
-  [ -f "/nas/$rel/$base" ] || return 1
-  (cd "/nas/$rel" && sha256sum --check --status "$sum")
-}
-"""
+
+def sealed_days(root: Path) -> list[str]:
+    """Every sealed day under the archive, relative and oldest first."""
+    days = []
+    for path in root.rglob("*.jsonl.zst"):
+        relative = path.relative_to(root).as_posix()
+        if SEALED_DAY.match(relative) and path.with_name(path.name + ".sha256").exists():
+            days.append(relative)
+    return sorted(days, key=lambda rel: (day_of(rel), rel))
+
+
+def day_of(relative: str) -> date:
+    match = SEALED_DAY.match(relative)
+    if not match:
+        raise ValueError(relative + " is not a sealed day")
+    return date(int(match["year"]), int(match["month"]), int(match["day"]))
+
+
+def expected_sum(root: Path, relative: str) -> str:
+    """The day's SHA-256, from the checksum file the API wrote beside it."""
+    return (root / (relative + ".sha256")).read_text().split()[0].lower()
+
+
+def sha256_of(stream: IO[bytes]) -> str:
+    digest = hashlib.sha256()
+    for chunk in iter(lambda: stream.read(1 << 16), b""):
+        digest.update(chunk)
+    return digest.hexdigest()
+
+
+def remote_sum(sftp: Sftp, path: str) -> str | None:
+    """The SHA-256 of a file on the NAS, read back; None when it is not there."""
+    try:
+        with sftp.open(path, "rb") as remote:
+            return sha256_of(remote)
+    except OSError as error:
+        if error.errno == errno.ENOENT or isinstance(error, FileNotFoundError):
+            return None
+        raise
+
+
+def makedirs(sftp: Sftp, path: str) -> None:
+    """mkdir -p, one level at a time; SFTP has no recursive mkdir."""
+    parts = [part for part in path.split("/") if part]
+    current = "/" if path.startswith("/") else ""
+    for part in parts:
+        current = posixpath.join(current, part) if current else part
+        try:
+            sftp.stat(current)
+        except OSError:
+            sftp.mkdir(current)
+
+
+def remove_quietly(sftp: Sftp, path: str) -> None:
+    try:
+        sftp.remove(path)
+    except OSError:
+        pass
+
+
+def copy_day(sftp: Sftp, root: Path, remote_root: str, relative: str) -> bool:
+    """Puts one day on the NAS unless it is there whole; True when it copied."""
+    want = expected_sum(root, relative)
+    local = root / relative
+    with local.open("rb") as stream:
+        if sha256_of(stream) != want:
+            raise CopyFailed(relative + " does not match its own checksum file")
+
+    remote = posixpath.join(remote_root, relative)
+    if remote_sum(sftp, remote) == want:
+        return False
+
+    makedirs(sftp, posixpath.dirname(remote))
+    partial = remote + ".partial"
+    with local.open("rb") as stream:
+        sftp.putfo(stream, partial)
+    # SFTP's rename will not replace a file; a copy there that did not check
+    # goes first.
+    remove_quietly(sftp, remote)
+    sftp.rename(partial, remote)
+    if remote_sum(sftp, remote) != want:
+        raise CopyFailed("the NAS copy of " + relative + " does not check")
+    sum_text = (root / (relative + ".sha256")).read_bytes()
+    remove_quietly(sftp, remote + ".sha256")
+    sftp.putfo(io.BytesIO(sum_text), remote + ".sha256")
+    return True
+
+
+def copy_all(sftp: Sftp, root: Path, remote_root: str) -> tuple[int, int]:
+    """Every sealed day the NAS does not have whole: (copied, already there)."""
+    copied = present = 0
+    failed = []
+    for relative in sealed_days(root):
+        try:
+            if copy_day(sftp, root, remote_root, relative):
+                copied += 1
+                log.info("copied %s", relative)
+            else:
+                present += 1
+        except CopyFailed as error:
+            log.error("%s", error)
+            failed.append(relative)
+    log.info("copied %d, already there %d", copied, present)
+    if failed:
+        raise CopyFailed(str(len(failed)) + " days did not copy: " + ", ".join(failed))
+    return copied, present
+
+
+def prune_all(sftp: Sftp, root: Path, remote_root: str, today: date, keep_days: int) -> int:
+    """Local days older than keep_days whose NAS copy checks, removed."""
+    cutoff = today - timedelta(days=keep_days)
+    removed = 0
+    for relative in sealed_days(root):
+        if day_of(relative) >= cutoff:
+            continue
+        if remote_sum(sftp, posixpath.join(remote_root, relative)) == expected_sum(root, relative):
+            (root / relative).unlink()
+            (root / (relative + ".sha256")).unlink()
+            removed += 1
+        else:
+            log.warning("keeping %s: its NAS copy does not check", relative)
+    log.info("removed %d days older than %s", removed, cutoff.isoformat())
+    return removed
+
+
+def run_day() -> date:
+    """The run's day (UTC): its logical date, or run_after for a run without one."""
+    context = get_current_context()
+    when = context.get("logical_date") or context["dag_run"].run_after
+    return pendulum.instance(when).in_timezone("UTC").date()
+
 
 with DAG(
     dag_id="olympus_weather_archive",
@@ -123,53 +231,19 @@ with DAG(
     default_args={"retries": 1, "retry_delay": timedelta(minutes=10)},
     tags=["olympus", "weather"],
 ):
-    copy = step(
-        "copy",
-        ON_NAS
-        + SEALED
-        + """ > /tmp/sealed
-        copied=0; present=0
-        while read -r sum; do
-          if on_nas "$sum"; then present=$((present + 1)); continue; fi
-          rel="${sum#/archive/}"; rel="${rel%/*}"
-          base="$(basename "$sum" .sha256)"
-          mkdir -p "/nas/$rel"
-          # Under a temporary name until whole, as the API does locally.
-          cp "/archive/$rel/$base" "/nas/$rel/$base.partial"
-          mv "/nas/$rel/$base.partial" "/nas/$rel/$base"
-          cp "$sum" "/nas/$rel/$base.sha256"
-          on_nas "$sum" || { echo "copy of $rel/$base does not check" >&2; exit 1; }
-          echo "copied $rel/$base"
-          copied=$((copied + 1))
-        done < /tmp/sealed
-        echo "copied $copied, already there $present"
-        """,
-    )
 
-    prune = step(
-        "prune",
-        ON_NAS
-        + 'cutoff="$(date -d "' + DAY + ' - '
-        + str(KEEP_DAYS)
-        + ' days" +%Y-%m-%d)"\n'
-        + SEALED
-        + """ > /tmp/sealed
-        removed=0
-        while read -r sum; do
-          rel="${sum#/archive/}"
-          # <MAC>/<yyyy>/<mm>/<dd>.jsonl.zst.sha256 -> yyyy-mm-dd
-          IFS=/ read -r _mac year month file <<< "$rel"
-          day="$year-$month-${file%%.*}"
-          [[ "$day" < "$cutoff" ]] || continue
-          if on_nas "$sum"; then
-            rm -- "${sum%.sha256}" "$sum"
-            removed=$((removed + 1))
-          else
-            echo "keeping ${rel%.sha256}: its NAS copy does not check" >&2
-          fi
-        done < /tmp/sealed
-        echo "removed $removed days older than $cutoff"
-        """,
-    )
+    @task
+    def copy() -> None:
+        from airflow.providers.sftp.hooks.sftp import SFTPHook
 
-    copy >> prune
+        with SFTPHook(ssh_conn_id=CONNECTION).get_managed_conn() as sftp:
+            copy_all(sftp, ARCHIVE, REMOTE_ROOT)
+
+    @task
+    def prune() -> None:
+        from airflow.providers.sftp.hooks.sftp import SFTPHook
+
+        with SFTPHook(ssh_conn_id=CONNECTION).get_managed_conn() as sftp:
+            prune_all(sftp, ARCHIVE, REMOTE_ROOT, run_day(), KEEP_DAYS)
+
+    copy() >> prune()

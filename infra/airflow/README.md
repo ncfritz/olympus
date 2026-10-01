@@ -20,24 +20,31 @@ nothing in the workspace checks it.
 
 ## What a DAG here needs from the host
 
-The DAGs run their work in containers rather than in the worker, so that
-`pg_dump` comes from the same `postgres:<version>` image the stack pins and can
-never be older than the server it dumps. That needs:
+`olympus_backup` runs its work in containers rather than in the worker, so
+that `pg_dump` comes from the same `postgres:<version>` image the stack pins
+and can never be older than the server it dumps. `olympus_weather_archive`
+runs in the worker and reaches the NAS over SFTP, as the host's other DAGs do.
+Between them they need:
 
-| Requirement                                                  | Why                                                                                                                                         |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/var/run/docker.sock` in the worker                         | `DockerOperator`. Without it the work runs in the worker and `pg_dump` comes from Airflow's own image.                                      |
-| `apache-airflow-providers-docker` >= 3.0                     | `auto_remove` takes `"success"`, not `True`.                                                                                                |
-| The `olympus-data` network reachable                         | `postgres` is not published off `127.0.0.1`; containers reach it by name on that network.                                                   |
-| The `olympus-backend` network reachable                      | RabbitMQ's management port is published only on the host's loopback, so the same applies to it.                                             |
-| This repository readable by the DAG processor and the worker | Both import the DAGs, which read settings from `infra/docker/env/<env>.env`; `OLYMPUS_ROOT` says where the checkout is mounted.             |
-| `OLYMPUS_ENV`, if not `prod`                                 | Chooses the environment file.                                                                                                               |
-| `OLYMPUS_ALERT_WEBHOOK_FILE`, a path in the worker           | A file holding the webhook URL failures are reported to, mounted into the worker. Unset, failures are logged as errors and nothing is sent. |
+| Requirement                                                         | Why                                                                                                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/var/run/docker.sock` in the worker                                | `DockerOperator`. Without it the work runs in the worker and `pg_dump` comes from Airflow's own image.                                      |
+| `apache-airflow-providers-docker` >= 3.0                            | `auto_remove` takes `"success"`, not `True`.                                                                                                |
+| `apache-airflow-providers-sftp`                                     | The archive's copy: `SFTPHook` on the connection named by `WEATHER_NAS_SFTP_CONNECTION`.                                                    |
+| That SFTP connection                                                | `olympus_weather_nas`: the NAS, as the `weather` user, whose password lives in the connection.                                              |
+| The archive in the worker, read/write, at `OLYMPUS_WEATHER_ARCHIVE` | `${DATA_DIR}/weather/archive`; `prune` deletes the days it has copied.                                                                      |
+| The `olympus-data` network reachable                                | `postgres` is not published off `127.0.0.1`; containers reach it by name on that network.                                                   |
+| The `olympus-backend` network reachable                             | RabbitMQ's management port is published only on the host's loopback, so the same applies to it.                                             |
+| This repository readable by the DAG processor and the worker        | Both import the DAGs, which read settings from `infra/docker/env/<env>.env`; `OLYMPUS_ROOT` says where the checkout is mounted.             |
+| `OLYMPUS_ENV`, if not `prod`                                        | Chooses the environment file.                                                                                                               |
+| `OLYMPUS_ALERT_WEBHOOK_FILE`, a path in the worker                  | A file holding the webhook URL failures are reported to, mounted into the worker. Unset, failures are logged as errors and nothing is sent. |
 
-Nothing here needs read access to `SECRETS_DIR`. A password file is
-bind-mounted into the container by path and the Docker daemon resolves it on the
-host, so Airflow never opens one and no copy reaches Airflow's database. Two are
-used: `postgres_password` and `rabbitmq/admin.password`.
+The backups need no read access to `SECRETS_DIR`. A password file is
+bind-mounted into the container by path and the Docker daemon resolves it on
+the host, so Airflow never opens one and no copy reaches Airflow's database. Two
+are used: `postgres_password` and `rabbitmq/admin.password`. The archive's NAS
+password is the exception, by choice: it is an Airflow connection, like the
+host's other SFTP jobs.
 
 Image tags come from the environment file like every other version in this
 platform — `POSTGRES_VERSION` for the database work, and `BACKUP_HTTP_IMAGE` for
@@ -54,7 +61,7 @@ as `root`, because that image's own user cannot read a `0600` secret owned by
 somebody else.
 
 Written for Airflow 3 (tried on 3.3.0 with `apache-airflow-providers-docker`
-4.6.0): `DAG` comes from `airflow.sdk`, and a run's day is its logical date or,
+4.6.0 and `apache-airflow-providers-sftp` 6.1.0): `DAG` comes from `airflow.sdk`, and a run's day is its logical date or,
 for a run triggered without one, its `run_after`, since Airflow 3 leaves
 `{{ ds }}` undefined then.
 
@@ -76,7 +83,7 @@ configuration, and the other DAGs stay where they are.
    FROM apache/airflow:3.3.0
    # ...
    RUN pip install --no-cache-dir "apache-airflow==${AIRFLOW_VERSION}" \
-       "apache-airflow-providers-docker>=4.6"
+       "apache-airflow-providers-docker>=4.6" "apache-airflow-providers-sftp>=6.1"
    ```
 
 2. **The checkout's path**, in `~/Docker/compose/.env`:
@@ -102,20 +109,30 @@ configuration, and the other DAGs stay where they are.
      - ${OLYMPUS_CHECKOUT:?}/infra/airflow/dags:/opt/airflow/dags/olympus:ro
    ```
 
-   The worker also gets the Docker socket and, if there is one, the alert
-   webhook:
+   The worker also gets the Docker socket, the archive (read/write: `prune`
+   deletes what it has copied) and, if there is one, the alert webhook:
 
    ```yaml
+     OLYMPUS_WEATHER_ARCHIVE: /opt/olympus-weather-archive
      OLYMPUS_ALERT_WEBHOOK_FILE: /run/secrets/olympus_alert_webhook
      # ...
      - /var/run/docker.sock:/var/run/docker.sock
+     - /Users/ncfritz/Docker/data/weather/archive:/opt/olympus-weather-archive
      - /Users/ncfritz/Docker/secrets/olympus/<webhook file>:/run/secrets/olympus_alert_webhook:ro
    ```
 
    The image's user is in group `root` (`user: 50000:0`), which Docker
    Desktop's socket allows.
 
-4. `docker compose build && docker compose up -d`, then check, from
+4. **The NAS and the connection.** On `nfs01`: a `weather` user with
+   read/write on the `Weather` share and SFTP allowed (Control Panel >
+   Application Privileges). In Airflow (Admin > Connections), connection
+   `olympus_weather_nas`: type SFTP, host `nfs01.sea.ncfritz.net`, login
+   `weather`, its password, and the port and host-key settings your other
+   SFTP connections use. The share is `/Weather` to that user
+   (`WEATHER_NAS_SFTP_DIR`).
+
+5. `docker compose build && docker compose up -d`, then check, from
    `~/Docker/compose`:
 
    ```sh
@@ -125,7 +142,7 @@ configuration, and the other DAGs stay where they are.
    docker compose exec airflow-worker airflow dags list | grep olympus
    ```
 
-5. **One run of each by hand, in the worker** (it has the socket), before the
+6. **One run of each by hand, in the worker** (it has the socket), before the
    schedule. New DAGs arrive paused (`DAGS_ARE_PAUSED_AT_CREATION`):
 
    ```sh
@@ -186,19 +203,18 @@ day as `<dd>.jsonl.zst` with a `sha256sum` file beside it
 [the guide](../../docs/guides/weather-stations.md)).
 
 - **`copy`** puts every sealed day the NAS does not have yet onto the `Weather`
-  share on `WEATHER_NAS_HOST`, under a temporary name until whole, and checks it
-  there with `sha256sum -c` against the local checksum. A copy that does not
-  check fails the task.
+  share over SFTP, under a temporary name until whole, then reads the copy
+  back and compares its SHA-256 with the local checksum file (SFTP runs no
+  commands on the NAS; a day is small). A local day that does not match its own
+  checksum file, or a copy that does not check, fails the task, after the
+  other days have been tried.
 - **`prune`** removes local days older than 30 days, and only those whose NAS
-  copy checks; one that does not is logged and kept, and the next `copy` sends
-  it again. A day still being written is never touched.
+  copy checks the same way; one that does not is logged and kept, and the next
+  `copy` sends it again. A day still being written is never touched.
 
-The share is an NFS volume the Docker daemon mounts for the task's container
-(`WEATHER_NAS_HOST`, `WEATHER_NAS_EXPORT` in the environment file), so the
-worker mounts nothing and holds no credentials. The share's NFS permissions
-have to allow the Mac Mini, read/write; Docker Desktop's VM reaches the NAS
-through the Mac's address from an unprivileged port, so the rule also needs
-"Allow connections from non-privileged ports".
+Both run in the worker with `SFTPHook` on `WEATHER_NAS_SFTP_CONNECTION`, into
+`WEATHER_NAS_SFTP_DIR` (`prod.env`), the way the host's other SFTP jobs reach
+the NAS.
 
 ## By hand
 
@@ -211,3 +227,15 @@ airflow tasks test olympus_weather_archive copy 2026-09-29
 ```
 
 `retain` is the one to read twice before running with a date you care about.
+
+## Tests
+
+The weather archive's copy and prune have tests against a fake SFTP client, in
+a virtualenv with Airflow 3 and the SFTP provider (nothing in the workspace runs
+them):
+
+```sh
+python -m venv .venv && . .venv/bin/activate
+pip install "apache-airflow==3.3.0" apache-airflow-providers-sftp pytest
+python -m pytest infra/airflow/tests
+```

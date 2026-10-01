@@ -345,9 +345,10 @@ console reach the ingest listener, and its range stays in
   the guide warns about.
 - The public block is a regex on the normalized path, so the trailing
   slash the API's routing accepts is refused too.
-- The NAS copy is `infra/airflow/dags/olympus_weather_archive.py` over an
-  NFS volume the Docker daemon mounts (`WEATHER_NAS_HOST`,
-  `WEATHER_NAS_EXPORT` in `prod.env`); the backup excludes
+- The NAS copy is `infra/airflow/dags/olympus_weather_archive.py` over SFTP
+  through an Airflow connection, as the host's other jobs reach the NAS
+  (`WEATHER_NAS_SFTP_CONNECTION`, `WEATHER_NAS_SFTP_DIR` in `prod.env`; at
+  first an NFS volume, changed before it ran); the backup excludes
   `olympus.weather_station_samples`' rows. Phase 6 adds the rollups to
   that list.
 
