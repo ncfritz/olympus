@@ -118,9 +118,49 @@
   padding: 4px 0;
 }
 
-.hourTemperature {
-  font-size: 14px;
+/*
+ * The curve's band: the first column's holds the SVG for all eight (eight
+ * times its width), every column's holds its own value over its point.
+ */
+.hourPlot {
+  position: relative;
+  align-self: stretch;
+}
+
+.hourCurve {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.hourValue {
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
   font-weight: 500;
+  line-height: 16px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Pressure's values are five characters: smaller, so a narrow column fits. */
+.hourValueLong {
+  font-size: 12px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .chance {
