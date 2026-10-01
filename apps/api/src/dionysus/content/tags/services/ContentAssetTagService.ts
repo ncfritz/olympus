@@ -146,7 +146,7 @@ export class ContentAssetTagService {
   /** @throws ConflictException when a tag of that type and name exists */
   async create(tag: BaseContentAssetTag): Promise<ContentAssetTag> {
     const insertRequest = gql`
-      mutation CreateTag($type: String, $name: String) {
+      mutation CreateContentAssetTag($type: String, $name: String) {
         insert_dionysus_content_tags_one(
           object: { name: $name, type: $type }
           on_conflict: { constraint: content_tags_name_type_key }

@@ -161,7 +161,9 @@ const CASES: Case[] = [
     url: `${D}/content/assetTags`,
     body: { tag: { name: "beach", type: "user" } },
     graphql: {
-      CreateTag: { insert_dionysus_content_tags_one: graphQlContentTag() },
+      CreateContentAssetTag: {
+        insert_dionysus_content_tags_one: graphQlContentTag(),
+      },
     },
   },
   {

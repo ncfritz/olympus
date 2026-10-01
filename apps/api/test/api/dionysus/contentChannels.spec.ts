@@ -553,7 +553,7 @@ describe("Dionysus content channels and tags API", () => {
 
     describe("POST /v1/dionysus/content/assetTags (CreateContentAssetTag)", () => {
       it("creates the tag", async () => {
-        t.graphql.on("CreateTag", {
+        t.graphql.on("CreateContentAssetTag", {
           insert_dionysus_content_tags_one: graphQlContentTag(),
         });
 
@@ -567,7 +567,9 @@ describe("Dionysus content channels and tags API", () => {
       });
 
       it("answers 409 for an existing tag", async () => {
-        t.graphql.on("CreateTag", { insert_dionysus_content_tags_one: null });
+        t.graphql.on("CreateContentAssetTag", {
+          insert_dionysus_content_tags_one: null,
+        });
 
         await t
           .http()
