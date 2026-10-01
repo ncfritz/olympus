@@ -143,9 +143,8 @@ Turbo tasks pass.
    - Categories: `archived: true` archives (hides from pickers, keeps its
      goals) and `false` brings it back; `vision: null` removes the vision;
      an empty change is a 304; a duplicate name is a 409. Reorder names
-     every category, archived ones included. Deleting is a plain delete
-     until goals exist; phase 3 refuses it (409) for a category with goals
-     unless the body names one to move them to.
+     every category, archived ones included. Deleting a category that
+     holds goals needs `moveTo` (built in phase 3).
    - Cycles: listed latest first. Each answers its `endDate` (the last
      day of the execution weeks), `bufferEndDate`, `status` (upcoming,
      current, buffer, past) and, while current or in its buffer,
@@ -167,77 +166,124 @@ Turbo tasks pass.
 
 **Sign-off:** G2 from the OpenAPI page.
 
-## Phase 3 — Goals
+## Phase 3 — Goals — built 2026-10-01, not signed off
 
-1. **Migration** `<ts>_minerva_goals`:
-   - `minerva.goals`: `id`, `user_id`, `category_id` (restrict),
-     `parent_id` (self, restrict), `cycle_id` (set null), `title`,
-     `why`, `type`, `status` (`draft`, `active`, `paused`, `achieved`,
-     `missed`, `dropped`), `horizon` (`year`, `quarter`, `cycle`,
-     `custom`, `ongoing`), `start_date`, `due_date` (null only when
-     ongoing), `progress_mode` (`manual`, `checkins`, `milestones`,
-     `habit`, `subgoals`), `rollup` (`average`, `weighted`, `sum`),
-     `weight`, `manual_progress`, `position`, outcome columns (`unit`,
-     `start_value`, `target_value`, `direction` `up`/`down`,
-     `tolerance_pct`, default 10), `closed_on`, `close_note`,
-     `deleted_at`, audit columns. `CHECK`s: the outcome columns together
-     exactly when the type is outcome; `due_date >= start_date`; a cycle
-     only when the horizon is cycle; `progress_mode` allowed for the type
-     (habit → habit; milestone → milestones or subgoals; outcome →
-     checkins or subgoals; achievement → manual).
+1. **Migration** `1790920000000_minerva_goals`: **done**
+   - `minerva.goals`: `id`, `user_id` (cascade), `category_id`
+     (restrict), `parent_id` (self, restrict, never itself), `cycle_id`
+     (restrict), `title` (1 to 120), `why` (at most 500), `type`
+     (`outcome`, `milestone`, `habit`, `achievement`), `status` (`draft`,
+     `active`, `paused`, `achieved`, `missed`, `dropped`), `horizon`
+     (`year`, `quarter`, `cycle`, `custom`, `ongoing`), `start_date`,
+     `due_date`, `progress_mode`, `rollup` (`average`, `weighted`,
+     `sum`), `weight` (default 1), `manual_progress` (0–100), `position`,
+     outcome columns (`unit`, `start_value`, `target_value`),
+     `tolerance_pct` (1–50, default 10), `closed_on`, `close_note`,
+     `deleted_at`, audit columns. `CHECK`s:
+     - the progress mode allowed for the type: outcome → checkins or
+       subgoals; milestone → milestones, subgoals or manual; habit →
+       habit; achievement → status;
+     - `rollup` exactly when the mode is subgoals, and `sum` only for an
+       outcome; `manual_progress` exactly when the mode is manual;
+     - the start and target values exactly when the type is outcome, and
+       different; a unit only for an outcome;
+     - `due_date >= start_date`; no due date exactly when ongoing; a cycle
+       exactly when the horizon is cycle; `closed_on` exactly when the
+       goal is achieved, missed or dropped.
    - `minerva.goal_habit_rules`: `goal_id` (pk, cascade), `frequency`
-     (`daily`, `weekly`, `weekdays`, `monthly`), `times_per_period`,
-     `weekdays` (bitmask 1–127, required for `weekdays`),
-     `quantity_target`, `quantity_unit`, audit columns. Saving a goal's
+     (`daily`, `weekly`, `weekdays`, `monthly`), `times_per_period` (1 for
+     daily and weekdays, up to 7 weekly, up to 31 monthly), `weekdays`
+     (bitmask 1–127, exactly for `weekdays`), `quantity_target`,
+     `quantity_unit` (only with a target), audit columns. Saving a goal's
      rule again is an upsert on `goal_id`, so `created_at` survives.
    - `minerva.goal_milestones`: `id`, `goal_id` (cascade), `title`,
-     `due_date`, `weight` (default 1), `position`, `done_at`, audit
-     columns.
+     `due_date`, `weight` (default 1), `position` (unique per goal,
+     deferred), `done_at`, audit columns.
    - `minerva.goal_tags`: `goal_id`, `tag_id` (both cascade), audit
      columns, primary key on the pair. Setting a goal's tags removes the
      dropped ones and inserts the new ones, leaving the kept rows as they
      were.
-   - The API refuses a parent that would make a cycle (a goal under its
-     own descendant): 400.
-2. **Progress engine** in `goals/progress/`, pure and unit-tested before
-   any controller uses it: `outcomeProgress`, `milestoneProgress`,
-   `habitAdherence` (periods by the rule, in a given timezone),
-   `rollup` (bottom-up over a tree, with the three methods; `sum` only
-   when the children share a unit), `pace` (expected value and band on a
-   date), `health`. Tables of cases, including direction `down`, a target
-   already passed, a goal paused part-way and a habit whose rule changed.
-3. **Operations**, tag `Goals`:
+   - Changed from the first draft: no `direction` column (an outcome goes
+     down when its target is below its start); an achievement's mode is
+     `status` and manual progress is for milestone goals only; the cycle
+     key is restrict, and `DeleteGoalCycle` makes the cycle's goals
+     custom-horizon goals in the same mutation.
+2. **Progress engine** in `goals/progress/`: **done** — pure functions,
+   unit-tested before any controller used them:
+   - `measures.ts`: outcome progress (either direction, clamped 0–100, a
+     target already passed is 100), milestone progress (by weight),
+     `pace` (expected progress from start to due, 100 on the due day) and
+     health against the goal's tolerance (on track within it, at risk
+     within twice it, off track beyond);
+   - `habits.ts`: adherence over the last 28 days, 4 weeks or 3 months
+     by the rule, the current period counting only as much as is done,
+     the start date clipping the first period, and the current and best
+     streak; health at 80 % and 60 %;
+   - `engine.ts`: `computeProgress(goals, today)` rolls sub-goals up
+     bottom-up (average, weighted or sum), guards against a cycle, counts
+     an achieved goal as 100, leaves dropped and deleted sub-goals out,
+     and gives health only to active goals.
+   - Limits until the history exists: the engine reads the goal and rule
+     as they are now, so a goal paused part-way has no pace and a habit
+     whose rule changed is measured by the new rule throughout.
+     Check-ins and habit logs come in phase 4; until then an outcome
+     reads its start value and a habit has no completions.
+3. **Operations**, tag `Goals`: **done**
 
    | Operation               | Route                                         |
    | ----------------------- | --------------------------------------------- |
    | `ListGoals`             | `GET /goals`                                  |
    | `CreateGoal`            | `POST /goals`                                 |
+   | `ReorderGoals`          | `PUT /goals/order`                            |
    | `DescribeGoal`          | `GET /goal/:goalId`                           |
    | `UpdateGoal`            | `PUT /goal/:goalId`                           |
    | `DeleteGoal`            | `DELETE /goal/:goalId`                        |
    | `RestoreGoal`           | `POST /goal/:goalId/restore`                  |
-   | `ReorderGoals`          | `PUT /goals/order`                            |
    | `CreateGoalMilestone`   | `POST /goal/:goalId/milestones`               |
+   | `ReorderGoalMilestones` | `PUT /goal/:goalId/milestones/order`          |
    | `UpdateGoalMilestone`   | `PUT /goal/:goalId/milestone/:milestoneId`    |
    | `DeleteGoalMilestone`   | `DELETE /goal/:goalId/milestone/:milestoneId` |
-   | `ReorderGoalMilestones` | `PUT /goal/:goalId/milestones/order`          |
-   - `ListGoals` filters by status (default: draft, active and paused),
-     category, cycle, horizon, tag and parent, and returns every goal
-     with its computed progress, expected progress, health and the ids of
-     its sub-goals, so the site can draw the board, roadmap and focus
-     list from one call.
-   - `DescribeGoal` returns the `FullGoal`: the goal, its habit rule,
-     milestones, sub-goals (one level, with their progress) and tags.
+   - Every operation reads the user's goals whole (a user holds tens) and
+     works progress out for today in the caller's timezone.
+   - `ListGoals` filters by status (a comma list; default draft, active
+     and paused), category, cycle, horizon, tag and parent (`none` for top
+     level), and returns each goal with its progress, current value,
+     expected progress, health, tag ids and sub-goal ids, so the site can
+     draw the board, roadmap and focus list from one call.
+   - `DescribeGoal` returns the `FullGoal`: the goal, its habit rule
+     (weekdays as ISO days), milestones, sub-goals (one level, with their
+     progress) and tags. It describes a deleted goal too, marked
+     `deleted`.
    - `CreateGoal` takes the habit rule, milestones and tag ids in the same
-     body and writes them in one mutation, with a `Location` header.
-   - Status changes go through `UpdateGoal`; moving to `achieved`,
-     `missed` or `dropped` needs `closedOn` and sets nothing else (the
-     close-out comes in phase 4).
+     body and writes them in one mutation, last in order, with a
+     `Location` header. A new goal is draft or active. A cycle goal with
+     no dates takes its cycle's start and end.
+   - `UpdateGoal` lays the changes over the goal as it stands and checks
+     the whole, then sends one mutation for the goal, its rule and its
+     tags. A goal's type cannot change (400). Moving to `achieved`,
+     `missed` or `dropped` needs `closedOn` (the close-out comes in phase
+     4); reopening clears it. Naming nothing is a 304; naming only what
+     is already so answers the goal without a mutation.
+   - `DeleteGoal` is soft (`deleted_at`) and refuses a goal with live
+     sub-goals (409). `RestoreGoal` refuses a goal that is not deleted or
+     whose parent is (409).
+   - `ReorderGoals` takes some goals and shares the positions they
+     already hold out in the order given, so a board column reorders
+     alone. `ReorderGoalMilestones` names every milestone exactly once.
+   - `CreateGoalMilestone` answers 201 with no `Location`: a milestone
+     has no route of its own to read it from.
+   - The rules phase 2 deferred: deleting a category with goals needs
+     `?moveTo=<categoryId>` and moves them in the same mutation (409
+     without it); every tag answers `goalCount`, its live goals.
 
-4. **Tests**: the engine's tables; converter units; endpoint tests per
-   operation, including another user's goal (404), a parent cycle (400),
-   an outcome without a target (400), deleting a goal with sub-goals
-   (409), and the rollup of a three-level tree in `ListGoals`.
+4. **Tests**: **done** — the engine's tables (65 cases), converter and
+   value-check units, and endpoint tests for all eleven operations:
+   another user's goal (404), a parent under its own sub-goal (400), an
+   outcome without a target (400), every cross-field rule (400, before
+   Hasura), deleting a goal with sub-goals (409), restore's two refusals
+   (409), the rollup of a three-level tree in `ListGoals`, and the exact
+   variables each mutation sends. `infra/hasura/tests/minerva_goals.sql`
+   checks every `CHECK`, key and cascade, with `down.sql` exercised.
 
 **Sign-off:** G3 and G4 from the OpenAPI page.
 

@@ -58,12 +58,21 @@ recorded exception.
 3. A milestone ticked moves the goal's progress by its weight.
 4. Pause, resume, delete, restore: lists follow; a goal with sub-goals
    cannot be deleted.
+5. A goal's type cannot be changed; closing it as missed needs a date,
+   and reopening it clears the date.
+6. Deleting a category that holds goals is refused, and with
+   `moveTo` the goals move to the named category.
+7. Deleting a cycle leaves its goals as custom-horizon goals on the same
+   dates.
+8. A tag's `goalCount` counts the live goals that carry it.
+9. `infra/hasura/tests/minerva_goals.sql` passes against `hasura-dev`'s
+   database.
 
 ## G4 — Sub-goals and rollup
 
 1. A three-level tree (year → cycle → milestone and habit) rolls up by
-   average, then by weight; `sum` is offered only when the children share
-   a unit.
+   average, then by weight; `sum` is accepted only on an outcome goal and
+   adds the sub-goals that share its unit.
 2. Moving a goal under its own sub-goal is refused.
 3. The UI shows three levels and expands past them.
 

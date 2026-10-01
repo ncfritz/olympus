@@ -18,7 +18,7 @@
 | 10  | Internal CA: PKI service and signer (ADR 0020, [plan](plans/internal-ca/README.md))                  | proposed                                                                                 |
 | 11  | Olympus Control: the console suite (ADR 0021, [plan](plans/console/README.md))                       | planned; after the Docker work                                                           |
 | 12  | Weather: forecasts, radar, stations (ADR 0024, [plan](plans/weather/README.md))                      | proposed                                                                                 |
-| 13  | Minerva goals: categories, goals, check-ins, habits (ADR 0026, [plan](plans/goals/README.md))        | planned; ADR accepted 2026-10-01                                                         |
+| 13  | Minerva goals: categories, goals, check-ins, habits (ADR 0026, [plan](plans/goals/README.md))        | phases 0–3 built (2026-10-01), not signed off; phases 4–9 planned                        |
 | —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                                                                  |
 | —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                                                                                 |
 | —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                                                                                 |
