@@ -127,6 +127,10 @@ const toStep = (entry: OpenWeatherForecastEntry): ForecastStep => {
       ? entry.sys.pod === "d"
       : isDaytime(condition.icon),
     temperatureF: round(entry.main.temp, 1),
+    feelsLikeF: round(entry.main.feels_like, 1),
+    humidityPct: entry.main.humidity,
+    pressureHpa: entry.main.pressure,
+    pressureInHg: round(entry.main.pressure * IN_HG_PER_HPA, 2),
     precipitationChancePct: Math.round((entry.pop ?? 0) * 100),
     precipitationIn: round(precipitationMm(entry) / MM_PER_INCH, 2),
     windSpeedMph: round(entry.wind.speed, 1),

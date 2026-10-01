@@ -59,7 +59,14 @@ export const step = (
   extra: Partial<OpenWeatherForecastEntry> = {},
 ): OpenWeatherForecastEntry => ({
   dt,
-  main: { temp, temp_min: temp, temp_max: temp },
+  main: {
+    temp,
+    feels_like: temp - 1,
+    temp_min: temp,
+    temp_max: temp,
+    pressure: 1015,
+    humidity: 70,
+  },
   weather: [weather],
   wind: { speed: 6.5 },
   pop: 0,

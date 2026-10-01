@@ -125,6 +125,31 @@ describe("WeatherForecastConverter", () => {
         precipitationIn: 0.1,
       });
     });
+
+    it("gives each step's feels-like, humidity and pressure", () => {
+      const forecast = openWeatherForecast();
+      forecast.list[0] = step(FIRST_STEP, 55, undefined, {
+        main: {
+          temp: 55,
+          feels_like: 52.44,
+          temp_min: 55,
+          temp_max: 55,
+          pressure: 1009,
+          humidity: 83,
+        },
+      });
+      const { next } = toDomainObject(
+        openWeatherSnapshot({ forecast }),
+        context(FIRST_STEP - H),
+      );
+      expect(next[0]).toMatchObject({
+        temperatureF: 55,
+        feelsLikeF: 52.4,
+        humidityPct: 83,
+        pressureHpa: 1009,
+        pressureInHg: 29.8,
+      });
+    });
   });
 
   describe("days", () => {

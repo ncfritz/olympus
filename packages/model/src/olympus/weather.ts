@@ -309,6 +309,35 @@ export class ForecastStep {
   @ApiProperty({
     type: Number,
     required: true,
+    description:
+      "What the expected temperature feels like, in degrees Fahrenheit, accounting for humidity and wind",
+  })
+  feelsLikeF: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The expected relative humidity as a percentage",
+  })
+  humidityPct: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The expected sea-level pressure in hectopascals",
+  })
+  pressureHpa: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The expected sea-level pressure in inches of mercury",
+  })
+  pressureInHg: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
     description: "The chance of precipitation in the step, as a percentage",
   })
   precipitationChancePct: number;

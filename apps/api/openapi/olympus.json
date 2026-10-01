@@ -3954,6 +3954,22 @@
             "type": "number",
             "description": "The expected temperature in degrees Fahrenheit"
           },
+          "feelsLikeF": {
+            "type": "number",
+            "description": "What the expected temperature feels like, in degrees Fahrenheit, accounting for humidity and wind"
+          },
+          "humidityPct": {
+            "type": "number",
+            "description": "The expected relative humidity as a percentage"
+          },
+          "pressureHpa": {
+            "type": "number",
+            "description": "The expected sea-level pressure in hectopascals"
+          },
+          "pressureInHg": {
+            "type": "number",
+            "description": "The expected sea-level pressure in inches of mercury"
+          },
           "precipitationChancePct": {
             "type": "number",
             "description": "The chance of precipitation in the step, as a percentage"
@@ -3973,6 +3989,10 @@
           "condition",
           "isDaytime",
           "temperatureF",
+          "feelsLikeF",
+          "humidityPct",
+          "pressureHpa",
+          "pressureInHg",
           "precipitationChancePct",
           "precipitationIn",
           "windSpeedMph"

@@ -34,7 +34,15 @@ export type OpenWeatherCurrent = {
 
 export type OpenWeatherForecastEntry = {
   dt: number;
-  main: { temp: number; temp_min: number; temp_max: number };
+  main: {
+    temp: number;
+    feels_like: number;
+    temp_min: number;
+    temp_max: number;
+    /** Sea level, hPa. */
+    pressure: number;
+    humidity: number;
+  };
   weather: OpenWeatherCondition[];
   wind: { speed: number };
   /** The probability of precipitation, 0–1. */
