@@ -102,7 +102,8 @@ recorded exception.
    minimum and maximum match the samples computed by hand (a SQL query
    over `weather_station_samples`).
 2. The 5m, 15m, 30m and 1h buckets for that hour match the same
-   statistics computed directly from the samples.
+   statistics computed directly from the samples. Both by
+   [`checks/w7-rollups.sql`](checks/w7-rollups.sql).
 3. Rain over a midnight reset, and wind from either side of north, come
    out right.
 4. Stopping the API for ten minutes: after it starts the tiers catch up
