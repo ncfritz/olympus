@@ -48,14 +48,14 @@ migration test checks that an update moves `updated_at` and leaves
 
 No new configuration: the feature has no provider, secret or schedule.
 
-## Phase 0 — Decision and scaffolding
+## Phase 0 — Decision and scaffolding — built 2026-10-01, not signed off
 
 1. **ADR 0026 accepted**: **done** 2026-10-01.
-2. **Model**: `minerva/goals/index.ts` and `minerva/tags.ts`, exported up
+2. **Model**: **done** — `minerva/goals/index.ts` and `minerva/tags.ts`, exported up
    to `src/index.ts`; no shapes yet.
-3. **API**: `TagsModule` and `GoalsModule` in `MINERVA_MODULES`, no
+3. **API**: **done** — `TagsModule` and `GoalsModule` in `MINERVA_MODULES`, no
    operations.
-4. **Site**: a Goals entry in the Minerva menu (`AimOutlined`), between
+4. **Site**: **done** — a Goals entry in the Minerva menu (`AimOutlined`), between
    Tasks and Review, opening an empty `pages/minerva/goals/index.tsx`
    behind the sign-in the weather widget already uses.
 

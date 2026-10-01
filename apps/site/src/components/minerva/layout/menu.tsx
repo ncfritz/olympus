@@ -1,4 +1,5 @@
 import {
+  AimOutlined,
   BarChartOutlined,
   CalendarOutlined,
   CarryOutOutlined,
@@ -19,6 +20,7 @@ const SUB_MENUS = {
 };
 
 const MATCHERS = {
+  "^/minerva/goals(/.*)?$": "/minerva/goals",
   "meetings/\\d{4}/\\d{2}/\\d{2}": "meetings-day",
   "meetings/\\d{4}/W\\d{2}": "meetings-week",
   "meetings/\\d{4}/\\d{2}": "meetings-month",
@@ -125,6 +127,11 @@ const MinervaMenu: React.FunctionComponent = () => {
           key: `/${BASE_PATH}/tasks`,
           icon: <ScheduleOutlined />,
           label: "Tasks",
+        },
+        {
+          key: `/${BASE_PATH}/goals`,
+          icon: <AimOutlined />,
+          label: "Goals",
         },
         {
           key: "review-container",
