@@ -17,6 +17,7 @@ describe("readConfig", () => {
       nodeEnv: "development",
       isProduction: false,
       appName: "olympus-api-development",
+      serviceName: "olympus-api",
       port: 3100,
       apiExplorer: true,
       corsOrigins: ["http://localhost:3000"],

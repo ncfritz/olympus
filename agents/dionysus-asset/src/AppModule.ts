@@ -66,7 +66,8 @@ const enabled = (handlers: Record<string, Type>): Type[] =>
       inject: [olympusConfig.KEY, runtimeConfig.KEY],
       useFactory: (olympus: OlympusConfigType, runtime: RuntimeConfigType) => ({
         baseUrl: olympus.baseUrl,
-        clientName: runtime.appName,
+        // The certificate's name: the API checks the header against it.
+        clientName: runtime.serviceName,
         tls: olympus.tls,
       }),
     }),

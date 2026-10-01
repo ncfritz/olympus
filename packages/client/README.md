@@ -57,7 +57,7 @@ OlympusClientModule.forRootAsync({
   inject: [olympusConfig.KEY, runtimeConfig.KEY],
   useFactory: (olympus: OlympusConfigType, runtime: RuntimeConfigType) => ({
     baseUrl: olympus.apiBaseUrl, // API_BASE_URL, with /v1
-    clientName: runtime.appName,
+    clientName: runtime.serviceName, // the certificate's name
     tls: olympus.tls, // API_CLIENT_CERT, API_CLIENT_KEY, API_CA_CERT
   }),
 }),

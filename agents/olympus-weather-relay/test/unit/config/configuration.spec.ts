@@ -12,6 +12,8 @@ describe("readConfig", () => {
     expect(config.relay).toEqual({ database: "olympus_dev" });
     expect(config.amqp.redactedUri).toContain("dionysus-dev");
     expect(config.runtime.appName).toMatch(/^olympus-weather-relay-agent/);
+    // The certificate's name, in every environment.
+    expect(config.runtime.serviceName).toBe("olympus-weather-relay-agent");
   });
 
   it("takes the database it feeds", () => {

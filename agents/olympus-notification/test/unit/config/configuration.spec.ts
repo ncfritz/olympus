@@ -10,6 +10,8 @@ describe("readConfig", () => {
     expect(config.runtime.appName).toBe(
       "olympus-notification-agent-development",
     );
+    // The certificate's name, in every environment.
+    expect(config.runtime.serviceName).toBe("olympus-notification-agent");
     expect(config.runtime.port).toBe(3100);
     expect(config.amqp.redactedUri).toBe(
       "amqp://admin:***@localhost:5672/%2Fdionysus-dev",

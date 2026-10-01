@@ -99,7 +99,9 @@ export class GmailHandler extends SmtpHandler {
   type-only and no code builds `/v1/` URLs. **[checked]**
 - `AppModule` imports `OlympusClientModule.forRootAsync(...)` with
   `baseUrl` from `API_BASE_URL` (including `/v1`) and `clientName` from
-  the app name; inject the wrappers by class (`MetadataApi`,
+  `runtime.serviceName`, the name on the agent's certificate. Not
+  `runtime.appName`: outside production that gains `-<NODE_ENV>`, and the
+  API refuses a client header that differs from the certificate. Inject the wrappers by class (`MetadataApi`,
   `NotificationApi`, ...).
 - A call the wrappers don't cover is added to the package (named after
   the SDK function, with its placeholder in the package's `apis.spec.ts`),
