@@ -78,8 +78,16 @@ What the repository already has, and lacks:
   document.
 - Dates a person picks (start, due, milestone due, check-in date, habit
   day) are `date`, not timestamps: a habit day is the caller's local day,
-  from the `x-ncfritz-tz` header. Audit columns are timestamps with the
-  shared `updated_at` trigger.
+  from the `x-ncfritz-tz` header.
+- **Every table carries `created_at` and `updated_at`**, join tables and
+  one-per-goal tables included: `timestamp with time zone`, not null,
+  default `now()`, with `updated_at` kept by
+  `minerva.set_current_timestamp_updated_at()` through a
+  `set_minerva_<table>_updated_at` trigger. Hasura exposes them as
+  `createdTime` and `lastUpdatedTime`, and every model class has both,
+  dropped from create and update shapes with `AUDIT_FIELDS`. A row that is
+  replaced rather than updated (a habit rule saved again, a tag set on a
+  goal) is updated in place by an upsert, so its `created_at` survives.
 - Goals are soft-deleted (`deleted_at`) with a Restore operation, like
   notes. A goal with live sub-goals cannot be deleted (409).
 

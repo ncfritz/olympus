@@ -38,6 +38,14 @@ health and execution and does no I/O. Every operation is
 `@RequiresIdentity()`, takes the caller with `requireUser(principal)` and
 passes `user.userId` to the service, which scopes every query by it.
 
+Every table below has the audit columns: `created_at` and `updated_at`
+(`timestamp with time zone`, not null, default `now()`), the
+`set_minerva_<table>_updated_at` trigger on
+`minerva.set_current_timestamp_updated_at()`, and the custom names
+`createdTime` and `lastUpdatedTime` in the metadata. Each phase's
+migration test checks that an update moves `updated_at` and leaves
+`created_at`.
+
 No new configuration: the feature has no provider, secret or schedule.
 
 ## Phase 0 — Decision and scaffolding
@@ -58,7 +66,7 @@ Turbo tasks pass.
 
 1. **Migration** `<ts>_minerva_tags`: `minerva.tags` — `id` (uuid),
    `user_id` (references `olympus.users`, cascade), `name` (not blank),
-   `colour` (optional, `#rrggbb` checked), `created_at`, `updated_at`.
+   `colour` (optional, `#rrggbb` checked), audit columns.
    Unique `(user_id, lower(name))`.
 2. **Operations**, tag `Tags`:
 
@@ -140,12 +148,15 @@ Turbo tasks pass.
    - `minerva.goal_habit_rules`: `goal_id` (pk, cascade), `frequency`
      (`daily`, `weekly`, `weekdays`, `monthly`), `times_per_period`,
      `weekdays` (bitmask 1–127, required for `weekdays`),
-     `quantity_target`, `quantity_unit`.
+     `quantity_target`, `quantity_unit`, audit columns. Saving a goal's
+     rule again is an upsert on `goal_id`, so `created_at` survives.
    - `minerva.goal_milestones`: `id`, `goal_id` (cascade), `title`,
      `due_date`, `weight` (default 1), `position`, `done_at`, audit
      columns.
-   - `minerva.goal_tags`: `goal_id`, `tag_id` (both cascade), primary key
-     on the pair.
+   - `minerva.goal_tags`: `goal_id`, `tag_id` (both cascade), audit
+     columns, primary key on the pair. Setting a goal's tags removes the
+     dropped ones and inserts the new ones, leaving the kept rows as they
+     were.
    - The API refuses a parent that would make a cycle (a goal under its
      own descendant): 400.
 2. **Progress engine** in `goals/progress/`, pure and unit-tested before
@@ -304,7 +315,7 @@ Built with or after the daily and weekly reviews, which do not exist yet.
 Built with Tasks.
 
 1. **Migration**: `minerva.task_goals` (`task_id`, `goal_id`, optional
-   `milestone_id`; primary key on task and goal).
+   `milestone_id`, audit columns; primary key on task and goal).
 2. The `tasks` progress mode (milestone and outcome goals), a milestone
    ticking itself when its linked tasks are all done, and tasks in the
    execution score.
