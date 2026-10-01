@@ -9,6 +9,7 @@ import {
   formatHour,
   nextFrame,
   rangeBars,
+  NO_TEMPERATURE_COLOR,
   temperatureColor,
   temperatureGradient,
 } from "../../src/utils/weather";
@@ -84,6 +85,14 @@ describe("weather helpers", () => {
     expect(temperatureColor(120)).toBe(temperatureColor(95));
     // Halfway from 58 (green) to 70 (yellow).
     expect(temperatureColor(64)).toBe("rgb(166, 208, 23)");
+  });
+
+  it("colours a temperature that is not a number neutral grey, not a throw", () => {
+    // An API older than the step's field sends none: undefined, read as NaN.
+    expect(temperatureColor(Number.NaN)).toBe(NO_TEMPERATURE_COLOR);
+    expect(temperatureColor(undefined as unknown as number)).toBe(
+      NO_TEMPERATURE_COLOR,
+    );
   });
 
   it("draws a day's bar through every stop it crosses", () => {

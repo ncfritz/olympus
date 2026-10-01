@@ -118,8 +118,15 @@ export const TEMPERATURE_STOPS: [number, string][] = [
 const hex = (color: string) =>
   [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16));
 
-/** The colour of a temperature, as `rgb(r, g, b)`. */
+/** The colour of no temperature: a missing value, drawn but not read. */
+export const NO_TEMPERATURE_COLOR = "rgb(191, 191, 191)";
+
+/**
+ * The colour of a temperature, as `rgb(r, g, b)`; neutral grey for one that
+ * is not a number, which matches no stop.
+ */
 export const temperatureColor = (temperatureF: number): string => {
+  if (!Number.isFinite(temperatureF)) return NO_TEMPERATURE_COLOR;
   const stops = TEMPERATURE_STOPS;
   if (temperatureF <= stops[0][0]) return rgb(hex(stops[0][1]));
   const last = stops[stops.length - 1];
