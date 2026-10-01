@@ -1457,6 +1457,687 @@
           "Tags"
         ]
       }
+    },
+    "/minerva/goals/categories": {
+      "get": {
+        "description": "Every category the caller has, archived ones included, in their order. The first time a user's categories are read they are given the six starter categories, once.",
+        "operationId": "ListGoalCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The caller's categories.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListGoalCategoriesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the signed-in user's goal categories",
+        "tags": [
+          "Goal Categories"
+        ]
+      },
+      "post": {
+        "description": "Adds a category at the end of the caller's list. A name the caller already has, in any case, is refused.",
+        "operationId": "CreateGoalCategory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateGoalCategory operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGoalCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The category was created.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the created category"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateGoalCategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The caller already has a category with that name."
+          }
+        },
+        "summary": "Creates a goal category for the signed-in user",
+        "tags": [
+          "Goal Categories"
+        ]
+      }
+    },
+    "/minerva/goals/categories/order": {
+      "put": {
+        "description": "Puts the caller's categories in the order given, which must name every one of them, archived ones included, exactly once.",
+        "operationId": "ReorderGoalCategories",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ReorderGoalCategories operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderGoalCategoriesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The caller's categories in their new order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderGoalCategoriesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reorders the signed-in user's goal categories",
+        "tags": [
+          "Goal Categories"
+        ]
+      }
+    },
+    "/minerva/goals/category/{categoryId}": {
+      "get": {
+        "description": "Returns a single category of the caller's, with its vision. Another user's category is not found.",
+        "operationId": "DescribeGoalCategory",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the category",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The category was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeGoalCategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Describes one of the signed-in user's goal categories",
+        "tags": [
+          "Goal Categories"
+        ]
+      },
+      "put": {
+        "description": "Renames a category, changes its colour, icon or vision, or archives it or brings it back. An archived category leaves the pickers and keeps its goals.",
+        "operationId": "UpdateGoalCategory",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the category to change",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateGoalCategory operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGoalCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The category with the changes applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateGoalCategoryResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The request named nothing to change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The caller already has a category with the new name."
+          }
+        },
+        "summary": "Changes one of the signed-in user's goal categories",
+        "tags": [
+          "Goal Categories"
+        ]
+      },
+      "delete": {
+        "description": "Removes a category from the caller's list. To keep a category's goals out of sight without deleting it, archive it instead.",
+        "operationId": "DeleteGoalCategory",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the category to delete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The category was deleted."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Deletes one of the signed-in user's goal categories",
+        "tags": [
+          "Goal Categories"
+        ]
+      }
+    },
+    "/minerva/goals/cycles": {
+      "get": {
+        "description": "Every 12-week cycle the caller has, latest first, each marked with where today falls against it and, while it runs, today's week.",
+        "operationId": "ListGoalCycles",
+        "parameters": [
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The caller's cycles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListGoalCyclesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the signed-in user's goal cycles",
+        "tags": [
+          "Goal Cycles"
+        ]
+      },
+      "post": {
+        "description": "Adds a 12-week cycle starting on a Monday, with a buffer week after it unless told otherwise. A cycle overlapping another of the caller's, buffer weeks included, is refused.",
+        "operationId": "CreateGoalCycle",
+        "parameters": [
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateGoalCycle operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGoalCycleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The cycle was created.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the created cycle"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateGoalCycleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The cycle would overlap another of the caller's."
+          }
+        },
+        "summary": "Creates a goal cycle for the signed-in user",
+        "tags": [
+          "Goal Cycles"
+        ]
+      }
+    },
+    "/minerva/goals/cycle/{cycleId}": {
+      "get": {
+        "description": "Returns a single cycle of the caller's, with where today falls against it. Another user's cycle is not found.",
+        "operationId": "DescribeGoalCycle",
+        "parameters": [
+          {
+            "name": "cycleId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the cycle",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The cycle was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeGoalCycleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Describes one of the signed-in user's goal cycles",
+        "tags": [
+          "Goal Cycles"
+        ]
+      },
+      "put": {
+        "description": "Renames a cycle or moves or resizes it. A change that would overlap another of the caller's cycles is refused.",
+        "operationId": "UpdateGoalCycle",
+        "parameters": [
+          {
+            "name": "cycleId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the cycle to change",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateGoalCycle operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGoalCycleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The cycle with the changes applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateGoalCycleResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The request named nothing to change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The changed cycle would overlap another of the caller's."
+          }
+        },
+        "summary": "Changes one of the signed-in user's goal cycles",
+        "tags": [
+          "Goal Cycles"
+        ]
+      },
+      "delete": {
+        "description": "Removes a cycle from the caller's list. Goals set for it keep their dates.",
+        "operationId": "DeleteGoalCycle",
+        "parameters": [
+          {
+            "name": "cycleId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the cycle to delete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The cycle was deleted."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Deletes one of the signed-in user's goal cycles",
+        "tags": [
+          "Goal Cycles"
+        ]
+      }
     }
   },
   "info": {
@@ -1473,6 +2154,12 @@
     {
       "name": "Minerva",
       "description": ""
+    },
+    {
+      "name": "Goal Categories"
+    },
+    {
+      "name": "Goal Cycles"
     },
     {
       "name": "Meetings"
@@ -2530,6 +3217,490 @@
         },
         "required": [
           "tag"
+        ]
+      },
+      "GoalCategoryIcon": {
+        "type": "string",
+        "enum": [
+          "heart",
+          "laptop",
+          "team",
+          "wallet",
+          "book",
+          "home",
+          "star",
+          "compass",
+          "trophy",
+          "smile"
+        ],
+        "description": "The icon shown beside the category's name"
+      },
+      "GoalCategory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the category"
+          },
+          "name": {
+            "type": "string",
+            "description": "The category's name, 1 to 50 characters, unique among the user's categories whatever its case"
+          },
+          "color": {
+            "type": "string",
+            "description": "The category's colour as a lowercase hex value such as #52c41a"
+          },
+          "icon": {
+            "description": "The icon shown beside the category's name",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCategoryIcon"
+              }
+            ]
+          },
+          "vision": {
+            "type": "string",
+            "description": "What good looks like in this area of life, at most 2,000 characters"
+          },
+          "position": {
+            "type": "number",
+            "description": "Where the category sits in the user's list; lower comes first"
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "Whether the category is archived: hidden from pickers, its goals kept"
+          },
+          "archivedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the category was archived"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the category was created"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the category was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "color",
+          "icon",
+          "position",
+          "archived",
+          "createdTime"
+        ]
+      },
+      "ListGoalCategoriesResponse": {
+        "type": "object",
+        "properties": {
+          "goalCategories": {
+            "description": "The caller's categories, in their order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalCategory"
+            }
+          }
+        },
+        "required": [
+          "goalCategories"
+        ]
+      },
+      "BaseGoalCategory": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The category's name, 1 to 50 characters, unique among the user's categories whatever its case"
+          },
+          "color": {
+            "type": "string",
+            "description": "The category's colour as a lowercase hex value such as #52c41a"
+          },
+          "icon": {
+            "description": "The icon shown beside the category's name",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCategoryIcon"
+              }
+            ]
+          },
+          "vision": {
+            "type": "string",
+            "description": "What good looks like in this area of life, at most 2,000 characters"
+          }
+        },
+        "required": [
+          "name",
+          "color",
+          "icon"
+        ]
+      },
+      "CreateGoalCategoryRequest": {
+        "type": "object",
+        "properties": {
+          "goalCategory": {
+            "description": "The category to add at the end of the caller's list.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseGoalCategory"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCategory"
+        ]
+      },
+      "CreateGoalCategoryResponse": {
+        "type": "object",
+        "properties": {
+          "goalCategory": {
+            "description": "The category as created.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCategory"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCategory"
+        ]
+      },
+      "ReorderGoalCategoriesRequest": {
+        "type": "object",
+        "properties": {
+          "categoryIds": {
+            "description": "Every one of the caller's category IDs, archived ones included, in the order they should appear.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "categoryIds"
+        ]
+      },
+      "ReorderGoalCategoriesResponse": {
+        "type": "object",
+        "properties": {
+          "goalCategories": {
+            "description": "The caller's categories in their new order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalCategory"
+            }
+          }
+        },
+        "required": [
+          "goalCategories"
+        ]
+      },
+      "DescribeGoalCategoryResponse": {
+        "type": "object",
+        "properties": {
+          "goalCategory": {
+            "description": "The category.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCategory"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCategory"
+        ]
+      },
+      "PartialGoalCategory": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The category's name, 1 to 50 characters, unique among the user's categories whatever its case"
+          },
+          "color": {
+            "type": "string",
+            "description": "The category's colour as a lowercase hex value such as #52c41a"
+          },
+          "icon": {
+            "description": "The icon shown beside the category's name",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCategoryIcon"
+              }
+            ]
+          },
+          "vision": {
+            "type": "string",
+            "description": "What good looks like in this area of life, at most 2,000 characters"
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "Whether the category is archived: hidden from pickers, its goals kept"
+          }
+        }
+      },
+      "UpdateGoalCategoryRequest": {
+        "type": "object",
+        "properties": {
+          "goalCategory": {
+            "description": "The changes to the category. A vision of null removes it; archived true archives it and false brings it back.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialGoalCategory"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCategory"
+        ]
+      },
+      "UpdateGoalCategoryResponse": {
+        "type": "object",
+        "properties": {
+          "goalCategory": {
+            "description": "The category with the changes applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCategory"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCategory"
+        ]
+      },
+      "GoalCycleStatus": {
+        "type": "string",
+        "enum": [
+          "upcoming",
+          "current",
+          "buffer",
+          "past"
+        ],
+        "description": "Where today falls against the cycle, in the caller's timezone"
+      },
+      "GoalCycle": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the cycle"
+          },
+          "name": {
+            "type": "string",
+            "description": "The cycle's name, 1 to 50 characters, e.g. Cycle 4"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The day the cycle starts, a Monday, as YYYY-MM-DD"
+          },
+          "weeks": {
+            "type": "number",
+            "default": 12,
+            "description": "The number of weeks of execution, 1 to 26"
+          },
+          "bufferWeeks": {
+            "type": "number",
+            "default": 1,
+            "description": "The number of buffer weeks after the execution weeks, 0 to 2"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The last day of the execution weeks, a Sunday, as YYYY-MM-DD"
+          },
+          "bufferEndDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The last day of the buffer weeks, a Sunday, as YYYY-MM-DD; the end date when there are none"
+          },
+          "status": {
+            "description": "Where today falls against the cycle, in the caller's timezone",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCycleStatus"
+              }
+            ]
+          },
+          "currentWeek": {
+            "type": "number",
+            "description": "Today's week of the cycle, from 1, while it is current or in its buffer; buffer weeks follow the execution weeks"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the cycle was created"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the cycle was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "startDate",
+          "weeks",
+          "bufferWeeks",
+          "endDate",
+          "bufferEndDate",
+          "status",
+          "createdTime"
+        ]
+      },
+      "ListGoalCyclesResponse": {
+        "type": "object",
+        "properties": {
+          "goalCycles": {
+            "description": "The caller's cycles, latest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalCycle"
+            }
+          }
+        },
+        "required": [
+          "goalCycles"
+        ]
+      },
+      "BaseGoalCycle": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The cycle's name, 1 to 50 characters, e.g. Cycle 4"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The day the cycle starts, a Monday, as YYYY-MM-DD"
+          },
+          "weeks": {
+            "type": "number",
+            "default": 12,
+            "description": "The number of weeks of execution, 1 to 26"
+          },
+          "bufferWeeks": {
+            "type": "number",
+            "default": 1,
+            "description": "The number of buffer weeks after the execution weeks, 0 to 2"
+          }
+        },
+        "required": [
+          "name",
+          "startDate"
+        ]
+      },
+      "CreateGoalCycleRequest": {
+        "type": "object",
+        "properties": {
+          "goalCycle": {
+            "description": "The cycle to create.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseGoalCycle"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCycle"
+        ]
+      },
+      "CreateGoalCycleResponse": {
+        "type": "object",
+        "properties": {
+          "goalCycle": {
+            "description": "The cycle as created.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCycle"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCycle"
+        ]
+      },
+      "DescribeGoalCycleResponse": {
+        "type": "object",
+        "properties": {
+          "goalCycle": {
+            "description": "The cycle.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCycle"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCycle"
+        ]
+      },
+      "PartialGoalCycle": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The cycle's name, 1 to 50 characters, e.g. Cycle 4"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The day the cycle starts, a Monday, as YYYY-MM-DD"
+          },
+          "weeks": {
+            "type": "number",
+            "default": 12,
+            "description": "The number of weeks of execution, 1 to 26"
+          },
+          "bufferWeeks": {
+            "type": "number",
+            "default": 1,
+            "description": "The number of buffer weeks after the execution weeks, 0 to 2"
+          }
+        }
+      },
+      "UpdateGoalCycleRequest": {
+        "type": "object",
+        "properties": {
+          "goalCycle": {
+            "description": "The changes to the cycle.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialGoalCycle"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCycle"
+        ]
+      },
+      "UpdateGoalCycleResponse": {
+        "type": "object",
+        "properties": {
+          "goalCycle": {
+            "description": "The cycle with the changes applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCycle"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCycle"
         ]
       }
     }

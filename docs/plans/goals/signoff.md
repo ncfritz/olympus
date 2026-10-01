@@ -44,6 +44,10 @@ recorded exception.
    keep it and it leaves the pickers.
 4. A cycle starting on a Tuesday is refused; one overlapping another is
    refused; today's week in Cycle 4 is 4 of 12 on 2026-10-01.
+5. `user-b` deletes all six starter categories; listing again gives none
+   back.
+6. `infra/hasura/tests/minerva_goal_categories_cycles.sql` passes against
+   `hasura-dev`'s database.
 
 ## G3 — Goals of each type
 

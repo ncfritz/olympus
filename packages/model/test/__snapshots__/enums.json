@@ -99,6 +99,24 @@
     "MOVIE": "Movie",
     "TV": "TV"
   },
+  "GoalCategoryIcon": {
+    "Book": "book",
+    "Compass": "compass",
+    "Heart": "heart",
+    "Home": "home",
+    "Laptop": "laptop",
+    "Smile": "smile",
+    "Star": "star",
+    "Team": "team",
+    "Trophy": "trophy",
+    "Wallet": "wallet"
+  },
+  "GoalCycleStatus": {
+    "Buffer": "buffer",
+    "Current": "current",
+    "Past": "past",
+    "Upcoming": "upcoming"
+  },
   "GroupType": {
     "FOUNDATION_STOCK_SERVICE": "FS",
     "HERDING": "HD",

@@ -1,6 +1,8 @@
 /** Hasura rows for Minerva tables, as the API's queries receive them. */
 import type { GraphQlMeeting } from "../../src/minerva/meetings/converters/MeetingConverter";
 import type { GraphQlNote } from "../../src/minerva/notes/converters/NoteConverter";
+import type { GraphQlGoalCategory } from "../../src/minerva/goals/converters/GoalCategoryConverter";
+import type { GraphQlGoalCycle } from "../../src/minerva/goals/converters/GoalCycleConverter";
 import type { GraphQlTag } from "../../src/minerva/tags/converters/TagConverter";
 
 export const graphQlNote = (
@@ -81,5 +83,38 @@ export const graphQlTag = (
   color: "#1677ff",
   createdTime: "2026-10-01T12:00:00Z",
   lastUpdatedTime: "2026-10-01T12:30:00Z",
+  ...overrides,
+});
+
+export const GOAL_CATEGORY_ID = "6a2d9e40-0000-4000-8000-000000000001";
+
+export const graphQlGoalCategory = (
+  overrides: Partial<GraphQlGoalCategory> = {},
+): GraphQlGoalCategory => ({
+  id: GOAL_CATEGORY_ID,
+  name: "Health",
+  color: "#52c41a",
+  icon: "heart",
+  vision: "Strong enough to ride all day at 60.",
+  position: 0,
+  archivedTime: null,
+  createdTime: "2026-10-01T12:00:00Z",
+  lastUpdatedTime: "2026-10-01T12:30:00Z",
+  ...overrides,
+});
+
+export const GOAL_CYCLE_ID = "2e7b4c90-0000-4000-8000-000000000001";
+
+/** Cycle 4 on the design canvas: Sep 7 to Nov 29 2026, buffer to Dec 6. */
+export const graphQlGoalCycle = (
+  overrides: Partial<GraphQlGoalCycle> = {},
+): GraphQlGoalCycle => ({
+  id: GOAL_CYCLE_ID,
+  name: "Cycle 4",
+  startDate: "2026-09-07",
+  weeks: 12,
+  bufferWeeks: 1,
+  createdTime: "2026-09-01T12:00:00Z",
+  lastUpdatedTime: null,
   ...overrides,
 });

@@ -1,6 +1,3 @@
-/*
- * Goals (ADR 0026): the shapes arrive with docs/plans/goals phases 2-4,
- * one file per area (categories, cycles, goals, check-ins, habits), each
- * exported from here.
- */
-export {};
+/* Goals (ADR 0026): one file per area, each exported from here. */
+export * from "./categories";
+export * from "./cycles";

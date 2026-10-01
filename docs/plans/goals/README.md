@@ -99,43 +99,71 @@ Turbo tasks pass.
 
 **Sign-off:** G1 from the OpenAPI page.
 
-## Phase 2 — Categories and cycles
+## Phase 2 — Categories and cycles — built 2026-10-01, not signed off
 
-1. **Migration** `<ts>_minerva_goal_categories_cycles`:
-   - `minerva.goal_categories`: `id`, `user_id`, `name` (not blank,
-     unique per user), `colour`, `icon` (an icon name from a fixed list
-     in the model), `vision` (text, optional), `position` (unique per
-     user, deferred), `archived_at`, audit columns.
-   - `minerva.goal_cycles`: `id`, `user_id`, `name`, `start_date`
-     (checked to be a Monday), `weeks` (default 12, 1–26),
-     `buffer_weeks` (default 1, 0–2), audit columns. Unique
-     `(user_id, start_date)`; overlap is refused by the API (409).
-2. **Starter categories**: the first `ListGoalCategories` for a user with
-   none inserts Health, Work, Relationships, Finance, Learning and Home
-   (no visions), in one mutation, so every later list sees them. Renaming
-   or deleting them is like any other.
-3. **Operations**, tags `Goal Categories` and `Goal Cycles`:
+1. **Migration** `1790910000000_minerva_goal_categories_cycles`: **done**
+   - `minerva.goal_user_settings`: `user_id` (primary key, cascade),
+     `starter_categories_at`, audit columns. One row per user who has used
+     Goals; it records that the starter categories were given, so a user
+     who deletes them all is not given them again.
+   - `minerva.goal_categories`: `id`, `user_id`, `name` (1 to 50, unique
+     per user whatever the case), `color` (required, lowercase
+     `#rrggbb`), `icon` (one of the model's `GoalCategoryIcon`: heart,
+     laptop, team, wallet, book, home, star, compass, trophy, smile),
+     `vision` (at most 2,000 characters), `position` (unique per user,
+     deferred), `archived_at`, audit columns.
+   - `minerva.goal_cycles`: `id`, `user_id`, `name` (1 to 50),
+     `start_date` (a Monday), `weeks` (default 12, 1–26), `buffer_weeks`
+     (default 1, 0–2), audit columns. Unique `(user_id, start_date)`;
+     overlap, buffer weeks included, is refused by the API (409).
+2. **Starter categories**: **done** — the first `ListGoalCategories` for a
+   user with no settings row inserts the row and Health, Work,
+   Relationships, Finance, Learning and Home (each with a colour and icon,
+   no vision) after any categories the user already has, skipping names
+   they already use, in one mutation (`GiveStarterGoalCategories`). A
+   concurrent first read that got there first makes the settings insert a
+   conflict and this one gives nothing. `CreateGoalCategory` lists first,
+   so the starter set is never given after a user's own categories by
+   surprise.
+3. **Operations**, tags `Goal Categories` and `Goal Cycles`: **done**
 
    | Operation               | Route                                |
    | ----------------------- | ------------------------------------ |
    | `ListGoalCategories`    | `GET /goals/categories`              |
    | `CreateGoalCategory`    | `POST /goals/categories`             |
+   | `ReorderGoalCategories` | `PUT /goals/categories/order`        |
+   | `DescribeGoalCategory`  | `GET /goals/category/:categoryId`    |
    | `UpdateGoalCategory`    | `PUT /goals/category/:categoryId`    |
    | `DeleteGoalCategory`    | `DELETE /goals/category/:categoryId` |
-   | `ReorderGoalCategories` | `PUT /goals/categories/order`        |
    | `ListGoalCycles`        | `GET /goals/cycles`                  |
    | `CreateGoalCycle`       | `POST /goals/cycles`                 |
+   | `DescribeGoalCycle`     | `GET /goals/cycle/:cycleId`          |
    | `UpdateGoalCycle`       | `PUT /goals/cycle/:cycleId`          |
    | `DeleteGoalCycle`       | `DELETE /goals/cycle/:cycleId`       |
+   - Categories: `archived: true` archives (hides from pickers, keeps its
+     goals) and `false` brings it back; `vision: null` removes the vision;
+     an empty change is a 304; a duplicate name is a 409. Reorder names
+     every category, archived ones included. Deleting is a plain delete
+     until goals exist; phase 3 refuses it (409) for a category with goals
+     unless the body names one to move them to.
+   - Cycles: listed latest first. Each answers its `endDate` (the last
+     day of the execution weeks), `bufferEndDate`, `status` (upcoming,
+     current, buffer, past) and, while current or in its buffer,
+     `currentWeek`, all from today in the caller's timezone
+     (`x-ncfritz-tz`; an unknown zone is a 400). Weeks default to 12 and
+     buffer weeks to 1.
+   - Each Describe operation exists so that Create answers with a
+     `Location` header.
 
-   Deleting a category with goals in it is a 409 unless the body names a
-   category to move them to; archiving hides it from pickers and keeps
-   its goals. Deleting a cycle leaves its goals with their dates and no
-   cycle. `ListGoalCycles` marks the current one and each cycle's week
-   for today, in the caller's timezone.
-
-4. **Tests**: as phase 1, plus the starter set appearing exactly once
-   under two concurrent first lists.
+4. **Tests**: **done** — converter and date units (cycle status and week
+   on every boundary; today in Seattle against UTC); endpoint tests for
+   all eleven operations, including the starter set given once, the
+   concurrent first read, another user's ids (404), no identity (401),
+   overlaps and duplicates (409) and bad input (400, before Hasura);
+   `infra/hasura/tests/minerva_goal_categories_cycles.sql` for the
+   tables' constraints, the deferred position swap, audit times and
+   cascade, with `down.sql` exercised. `test/support/signedInApp.ts` holds
+   the signed-in test harness the goals specs share.
 
 **Sign-off:** G2 from the OpenAPI page.
 

@@ -492,6 +492,64 @@
     ],
     "type": "object"
   },
+  "BaseGoalCategory": {
+    "properties": {
+      "color": {
+        "description": "The category's colour as a lowercase hex value such as #52c41a",
+        "type": "string"
+      },
+      "icon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCategoryIcon"
+          }
+        ],
+        "description": "The icon shown beside the category's name"
+      },
+      "name": {
+        "description": "The category's name, 1 to 50 characters, unique among the user's categories whatever its case",
+        "type": "string"
+      },
+      "vision": {
+        "description": "What good looks like in this area of life, at most 2,000 characters",
+        "type": "string"
+      }
+    },
+    "required": [
+      "color",
+      "icon",
+      "name"
+    ],
+    "type": "object"
+  },
+  "BaseGoalCycle": {
+    "properties": {
+      "bufferWeeks": {
+        "default": 1,
+        "description": "The number of buffer weeks after the execution weeks, 0 to 2",
+        "type": "number"
+      },
+      "name": {
+        "description": "The cycle's name, 1 to 50 characters, e.g. Cycle 4",
+        "type": "string"
+      },
+      "startDate": {
+        "description": "The day the cycle starts, a Monday, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "weeks": {
+        "default": 12,
+        "description": "The number of weeks of execution, 1 to 26",
+        "type": "number"
+      }
+    },
+    "required": [
+      "name",
+      "startDate"
+    ],
+    "type": "object"
+  },
   "BaseImage": {
     "properties": {
       "createdTime": {
@@ -2955,6 +3013,70 @@
     ],
     "type": "object"
   },
+  "CreateGoalCategoryRequest": {
+    "properties": {
+      "goalCategory": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseGoalCategory"
+          }
+        ],
+        "description": "The category to add at the end of the caller's list."
+      }
+    },
+    "required": [
+      "goalCategory"
+    ],
+    "type": "object"
+  },
+  "CreateGoalCategoryResponse": {
+    "properties": {
+      "goalCategory": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCategory"
+          }
+        ],
+        "description": "The category as created."
+      }
+    },
+    "required": [
+      "goalCategory"
+    ],
+    "type": "object"
+  },
+  "CreateGoalCycleRequest": {
+    "properties": {
+      "goalCycle": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseGoalCycle"
+          }
+        ],
+        "description": "The cycle to create."
+      }
+    },
+    "required": [
+      "goalCycle"
+    ],
+    "type": "object"
+  },
+  "CreateGoalCycleResponse": {
+    "properties": {
+      "goalCycle": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCycle"
+          }
+        ],
+        "description": "The cycle as created."
+      }
+    },
+    "required": [
+      "goalCycle"
+    ],
+    "type": "object"
+  },
   "CreateKeywordRequest": {
     "properties": {
       "keyword": {
@@ -4350,6 +4472,38 @@
     },
     "required": [
       "user"
+    ],
+    "type": "object"
+  },
+  "DescribeGoalCategoryResponse": {
+    "properties": {
+      "goalCategory": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCategory"
+          }
+        ],
+        "description": "The category."
+      }
+    },
+    "required": [
+      "goalCategory"
+    ],
+    "type": "object"
+  },
+  "DescribeGoalCycleResponse": {
+    "properties": {
+      "goalCycle": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCycle"
+          }
+        ],
+        "description": "The cycle."
+      }
+    },
+    "required": [
+      "goalCycle"
     ],
     "type": "object"
   },
@@ -5980,6 +6134,159 @@
     ],
     "type": "object"
   },
+  "GoalCategory": {
+    "properties": {
+      "archived": {
+        "description": "Whether the category is archived: hidden from pickers, its goals kept",
+        "type": "boolean"
+      },
+      "archivedTime": {
+        "description": "An ISO-8601 formatted string indicating when the category was archived",
+        "type": "string"
+      },
+      "color": {
+        "description": "The category's colour as a lowercase hex value such as #52c41a",
+        "type": "string"
+      },
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the category was created",
+        "type": "string"
+      },
+      "icon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCategoryIcon"
+          }
+        ],
+        "description": "The icon shown beside the category's name"
+      },
+      "id": {
+        "description": "The unique ID of the category",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the category was last changed",
+        "type": "string"
+      },
+      "name": {
+        "description": "The category's name, 1 to 50 characters, unique among the user's categories whatever its case",
+        "type": "string"
+      },
+      "position": {
+        "description": "Where the category sits in the user's list; lower comes first",
+        "type": "number"
+      },
+      "vision": {
+        "description": "What good looks like in this area of life, at most 2,000 characters",
+        "type": "string"
+      }
+    },
+    "required": [
+      "archived",
+      "color",
+      "createdTime",
+      "icon",
+      "id",
+      "name",
+      "position"
+    ],
+    "type": "object"
+  },
+  "GoalCategoryIcon": {
+    "description": "The icon shown beside the category's name",
+    "enum": [
+      "heart",
+      "laptop",
+      "team",
+      "wallet",
+      "book",
+      "home",
+      "star",
+      "compass",
+      "trophy",
+      "smile"
+    ],
+    "type": "string"
+  },
+  "GoalCycle": {
+    "properties": {
+      "bufferEndDate": {
+        "description": "The last day of the buffer weeks, a Sunday, as YYYY-MM-DD; the end date when there are none",
+        "format": "date",
+        "type": "string"
+      },
+      "bufferWeeks": {
+        "default": 1,
+        "description": "The number of buffer weeks after the execution weeks, 0 to 2",
+        "type": "number"
+      },
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the cycle was created",
+        "type": "string"
+      },
+      "currentWeek": {
+        "description": "Today's week of the cycle, from 1, while it is current or in its buffer; buffer weeks follow the execution weeks",
+        "type": "number"
+      },
+      "endDate": {
+        "description": "The last day of the execution weeks, a Sunday, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the cycle",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the cycle was last changed",
+        "type": "string"
+      },
+      "name": {
+        "description": "The cycle's name, 1 to 50 characters, e.g. Cycle 4",
+        "type": "string"
+      },
+      "startDate": {
+        "description": "The day the cycle starts, a Monday, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCycleStatus"
+          }
+        ],
+        "description": "Where today falls against the cycle, in the caller's timezone"
+      },
+      "weeks": {
+        "default": 12,
+        "description": "The number of weeks of execution, 1 to 26",
+        "type": "number"
+      }
+    },
+    "required": [
+      "bufferEndDate",
+      "bufferWeeks",
+      "createdTime",
+      "endDate",
+      "id",
+      "name",
+      "startDate",
+      "status",
+      "weeks"
+    ],
+    "type": "object"
+  },
+  "GoalCycleStatus": {
+    "description": "Where today falls against the cycle, in the caller's timezone",
+    "enum": [
+      "upcoming",
+      "current",
+      "buffer",
+      "past"
+    ],
+    "type": "string"
+  },
   "GroupType": {
     "description": "The group the dog belongs to",
     "enum": [
@@ -6553,6 +6860,36 @@
     "required": [
       "count",
       "genres"
+    ],
+    "type": "object"
+  },
+  "ListGoalCategoriesResponse": {
+    "properties": {
+      "goalCategories": {
+        "description": "The caller's categories, in their order.",
+        "items": {
+          "$ref": "#/components/schemas/GoalCategory"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "goalCategories"
+    ],
+    "type": "object"
+  },
+  "ListGoalCyclesResponse": {
+    "properties": {
+      "goalCycles": {
+        "description": "The caller's cycles, latest first.",
+        "items": {
+          "$ref": "#/components/schemas/GoalCycle"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "goalCycles"
     ],
     "type": "object"
   },
@@ -10806,6 +11143,59 @@
     ],
     "type": "object"
   },
+  "PartialGoalCategory": {
+    "properties": {
+      "archived": {
+        "description": "Whether the category is archived: hidden from pickers, its goals kept",
+        "type": "boolean"
+      },
+      "color": {
+        "description": "The category's colour as a lowercase hex value such as #52c41a",
+        "type": "string"
+      },
+      "icon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCategoryIcon"
+          }
+        ],
+        "description": "The icon shown beside the category's name"
+      },
+      "name": {
+        "description": "The category's name, 1 to 50 characters, unique among the user's categories whatever its case",
+        "type": "string"
+      },
+      "vision": {
+        "description": "What good looks like in this area of life, at most 2,000 characters",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "PartialGoalCycle": {
+    "properties": {
+      "bufferWeeks": {
+        "default": 1,
+        "description": "The number of buffer weeks after the execution weeks, 0 to 2",
+        "type": "number"
+      },
+      "name": {
+        "description": "The cycle's name, 1 to 50 characters, e.g. Cycle 4",
+        "type": "string"
+      },
+      "startDate": {
+        "description": "The day the cycle starts, a Monday, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "weeks": {
+        "default": 12,
+        "description": "The number of weeks of execution, 1 to 26",
+        "type": "number"
+      }
+    },
+    "type": "object"
+  },
   "PartialIdentifiableImage": {
     "properties": {
       "filePath": {
@@ -13444,6 +13834,36 @@
     },
     "required": [
       "channel"
+    ],
+    "type": "object"
+  },
+  "ReorderGoalCategoriesRequest": {
+    "properties": {
+      "categoryIds": {
+        "description": "Every one of the caller's category IDs, archived ones included, in the order they should appear.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "categoryIds"
+    ],
+    "type": "object"
+  },
+  "ReorderGoalCategoriesResponse": {
+    "properties": {
+      "goalCategories": {
+        "description": "The caller's categories in their new order.",
+        "items": {
+          "$ref": "#/components/schemas/GoalCategory"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "goalCategories"
     ],
     "type": "object"
   },
@@ -16344,6 +16764,70 @@
     },
     "required": [
       "dog"
+    ],
+    "type": "object"
+  },
+  "UpdateGoalCategoryRequest": {
+    "properties": {
+      "goalCategory": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialGoalCategory"
+          }
+        ],
+        "description": "The changes to the category. A vision of null removes it; archived true archives it and false brings it back."
+      }
+    },
+    "required": [
+      "goalCategory"
+    ],
+    "type": "object"
+  },
+  "UpdateGoalCategoryResponse": {
+    "properties": {
+      "goalCategory": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCategory"
+          }
+        ],
+        "description": "The category with the changes applied."
+      }
+    },
+    "required": [
+      "goalCategory"
+    ],
+    "type": "object"
+  },
+  "UpdateGoalCycleRequest": {
+    "properties": {
+      "goalCycle": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialGoalCycle"
+          }
+        ],
+        "description": "The changes to the cycle."
+      }
+    },
+    "required": [
+      "goalCycle"
+    ],
+    "type": "object"
+  },
+  "UpdateGoalCycleResponse": {
+    "properties": {
+      "goalCycle": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCycle"
+          }
+        ],
+        "description": "The cycle with the changes applied."
+      }
+    },
+    "required": [
+      "goalCycle"
     ],
     "type": "object"
   },
