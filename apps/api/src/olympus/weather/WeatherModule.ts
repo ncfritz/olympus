@@ -39,6 +39,7 @@ import { AmbientClient } from "./providers/AmbientClient";
 import { OpenWeatherClient } from "./providers/OpenWeatherClient";
 import { OpenWeatherLimiter } from "./providers/OpenWeatherLimiter";
 import { RainViewerClient } from "./providers/RainViewerClient";
+import { WeatherForecastHistoryService } from "./services/WeatherForecastHistoryService";
 import { WeatherForecastService } from "./services/WeatherForecastService";
 import { WeatherLocationService } from "./services/WeatherLocationService";
 import { WeatherTileService } from "./services/WeatherTileService";
@@ -52,6 +53,7 @@ import { WeatherTileService } from "./services/WeatherTileService";
   imports: [GraphQLClientModule, RabbitModule],
   providers: [
     WeatherLocationService,
+    WeatherForecastHistoryService,
     WeatherForecastService,
     OpenWeatherClient,
     OpenWeatherLimiter,

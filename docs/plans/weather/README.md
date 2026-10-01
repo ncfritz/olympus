@@ -158,6 +158,20 @@ tasks pass.
    chance, otherwise what its daytime steps show most. Provider failures
    are logged once per place every ten minutes, without the URL (which
    carries the key).
+8. **Forecast history** (added after the widget): the free forecast starts
+   at the next step, so a day built from it alone lost its morning as the
+   day went on, and by the evening today's high and low were the evening's.
+   Every fetch is now also kept in Postgres
+   (`weather_forecast_steps`, the last forecast of each step, and
+   `weather_observed_temperatures`, each fetch's current temperature),
+   per place (the cache's rounded coordinate), for 48 hours, pruned at most
+   hourly. Today is built from the place's history since local midnight as
+   well as the snapshot (the snapshot's step wins at the same time), so
+   its high, low, chance and amount of rain and condition are the whole
+   day's; `next` is the snapshot's alone. Writing or reading the history
+   failing is logged and the forecast is served from the snapshot, as
+   before. Each step also carries feels like, humidity and pressure, for
+   the widget's 24-hour curve.
 
 **Sign-off:** W2, W3 against the API.
 

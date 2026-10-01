@@ -70,10 +70,27 @@ describe("Weather forecast API", () => {
 
   const get = () => t.http().get(PATH).set("authorization", `Bearer ${token}`);
 
+  /** The forecast history, empty unless a test gives it rows. */
+  const history = (steps: unknown[] = [], temperatures: unknown[] = []) => {
+    t.graphql.on("ListWeatherForecastHistory", {
+      olympus_weather_forecast_steps: steps,
+      olympus_weather_observed_temperatures: temperatures,
+    });
+    t.graphql.on("SaveWeatherForecastHistory", {
+      insert_olympus_weather_forecast_steps: { affected_rows: 40 },
+      insert_olympus_weather_observed_temperatures: { affected_rows: 1 },
+    });
+    t.graphql.on("PruneWeatherForecastHistory", {
+      delete_olympus_weather_forecast_steps: { affected_rows: 0 },
+      delete_olympus_weather_observed_temperatures: { affected_rows: 0 },
+    });
+  };
+
   it("answers the caller's location's forecast", async () => {
     t.graphql.on("DescribeWeatherLocation", {
       olympus_weather_locations: [graphQlWeatherLocation()],
     });
+    history();
     openWeather.snapshot.mockResolvedValue(openWeatherSnapshot());
 
     const res = await get();
@@ -93,6 +110,46 @@ describe("Weather forecast API", () => {
     expect(t.graphql.calls("DescribeWeatherLocation")[0].variables).toEqual({
       userId: USER,
       locationId: WEATHER_LOCATION_ID,
+    });
+    // The fetch is kept in the history for its place.
+    const saved = t.graphql.calls("SaveWeatherForecastHistory")[0].variables!;
+    expect(saved.steps).toHaveLength(40);
+    expect(saved.observed).toMatchObject({
+      latitude: 47.85,
+      temperatureF: 58.1,
+    });
+  });
+
+  it("builds today from the history, so the morning's low stays", async () => {
+    t.graphql.on("DescribeWeatherLocation", {
+      olympus_weather_locations: [graphQlWeatherLocation()],
+    });
+    history(
+      [
+        {
+          stepTime: "2026-09-29T12:00:00+00:00",
+          temperatureF: 41.3,
+          precipitationChance: 0,
+          precipitationMm: 0,
+          conditionId: 800,
+          conditionMain: "Clear",
+          conditionDescription: "clear sky",
+          conditionIcon: "01d",
+        },
+      ],
+      [{ observedTime: "2026-09-29T16:00:00+00:00", temperatureF: 47 }],
+    );
+    openWeather.snapshot.mockResolvedValue(openWeatherSnapshot());
+
+    const res = await get();
+
+    expect(res.status).toBe(200);
+    expect(res.body.weatherForecast.days[0].lowF).toBe(41.3);
+    expect(res.body.weatherForecast.current.lowF).toBe(41.3);
+    expect(t.graphql.calls("ListWeatherForecastHistory")[0].variables).toEqual({
+      latitude: 47.85,
+      longitude: -122.24,
+      from: "2026-09-29T07:00:00.000Z",
     });
   });
 

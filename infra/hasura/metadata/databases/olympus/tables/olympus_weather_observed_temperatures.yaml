@@ -1,0 +1,13 @@
+table:
+  name: weather_observed_temperatures
+  schema: olympus
+configuration:
+  column_config:
+    observed_at:
+      custom_name: observedTime
+    temperature_f:
+      custom_name: temperatureF
+  custom_column_names:
+    observed_at: observedTime
+    temperature_f: temperatureF
+  custom_root_fields: {}

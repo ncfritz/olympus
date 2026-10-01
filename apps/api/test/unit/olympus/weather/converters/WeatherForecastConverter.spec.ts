@@ -228,6 +228,61 @@ describe("WeatherForecastConverter", () => {
     });
   });
 
+  describe("today, with the history", () => {
+    // 1 PM in Seattle; this morning's steps are gone from the snapshot.
+    const NOW = FIRST_STEP - H;
+    const MORNING = FIRST_STEP - 9 * H; // 5 AM
+    const LATE_MORNING = FIRST_STEP - 6 * H; // 8 AM
+    const withHistory = (
+      steps: ReturnType<typeof step>[],
+      temperaturesF: number[] = [],
+      forecast = openWeatherForecast(),
+    ) =>
+      toDomainObject(openWeatherSnapshot({ forecast }), {
+        ...context(NOW),
+        history: { steps, temperaturesF },
+      });
+
+    it("keeps the morning's low after the morning has passed", () => {
+      const { days, current } = withHistory([step(MORNING, 41.3)]);
+      expect(days[0].lowF).toBe(41.3);
+      expect(days[0].highF).toBe(60);
+      expect(current.lowF).toBe(41.3);
+    });
+
+    it("counts the temperatures observed", () => {
+      const { days } = withHistory([], [63.4, 47]);
+      expect(days[0].highF).toBe(63.4);
+      expect(days[0].lowF).toBe(47);
+    });
+
+    it("keeps the morning's rain in the day's chance and total", () => {
+      const { days } = withHistory([
+        step(LATE_MORNING, 50, LIGHT_RAIN, { pop: 0.9, rain: { "3h": 2.54 } }),
+      ]);
+      expect(days[0].precipitationChancePct).toBe(90);
+      expect(days[0].precipitationIn).toBe(0.1);
+      expect(days[0].conditionKind).toBe(WeatherConditionKind.Rain);
+    });
+
+    it("prefers the snapshot's step to the history's at the same time", () => {
+      const { days } = withHistory([step(FIRST_STEP, 20)]);
+      // The snapshot's own 2 PM step (54) stands; 20 never counts.
+      expect(days[0].lowF).toBe(54);
+    });
+
+    it("leaves the next 24 hours to the snapshot", () => {
+      const { next } = withHistory([step(MORNING, 41.3)]);
+      expect(next[0].time.unix()).toBe(FIRST_STEP);
+    });
+
+    it("counts no history step from another day", () => {
+      const yesterday = MORNING - 24 * H;
+      const { days } = withHistory([step(yesterday, 10)]);
+      expect(days[0].lowF).toBe(54);
+    });
+  });
+
   describe("a day's condition", () => {
     const at = (i: number) => FIRST_STEP + i * 3 * H;
 

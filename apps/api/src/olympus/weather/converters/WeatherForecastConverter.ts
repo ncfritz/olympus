@@ -12,6 +12,7 @@ import type {
   OpenWeatherSnapshot,
 } from "../providers/openWeatherTypes";
 import { dewPointF } from "../utils/meteorology";
+import type { ForecastHistory } from "./WeatherForecastHistoryConverter";
 
 const STEP_SECONDS = 3 * 60 * 60;
 const NEXT_STEPS = 8;
@@ -47,6 +48,13 @@ export type ForecastContext = {
   stale: boolean;
   /** When the forecast is read: which steps are "next" and which day is today. */
   now: Moment;
+  /**
+   * What earlier fetches said of this place (WeatherForecastHistoryService):
+   * the steps the snapshot no longer has, and the temperatures observed.
+   * Today is built from them as well, so its high, low, chance and amount
+   * of rain and condition are the whole day's, not what is left of it.
+   */
+  history?: ForecastHistory;
 };
 
 /**
@@ -74,8 +82,18 @@ export const toDomainObject = (
 
   const today = localDate(nowSeconds);
   const currentCondition = primary(current.weather);
-  const days = buildDays(steps, localDate, today, {
-    temperatureF: current.main.temp,
+  // Every step of the snapshot, passed or not, then the history's for the
+  // times the snapshot no longer has: the snapshot's own are the newer.
+  const listed = new Set(forecast.list.map((entry) => entry.dt));
+  const daySteps = [
+    ...(context.history?.steps ?? []).filter((entry) => !listed.has(entry.dt)),
+    ...forecast.list,
+  ].sort((a, b) => a.dt - b.dt);
+  const days = buildDays(daySteps, localDate, today, {
+    temperaturesF: [
+      current.main.temp,
+      ...(context.history?.temperaturesF ?? []),
+    ],
     condition: currentCondition,
   });
   const todayDay = days[0];
@@ -139,14 +157,15 @@ const toStep = (entry: OpenWeatherForecastEntry): ForecastStep => {
 
 /**
  * Today and the next four local days. Today always exists: late in the
- * evening, when no step of it is left, it is built from the current
- * reading alone. Today's high and low include the current temperature.
+ * evening, when no step of it is left, it is built from what was observed
+ * alone. Today's high and low include the temperatures observed (now's,
+ * and the history's).
  */
 const buildDays = (
   steps: OpenWeatherForecastEntry[],
   localDate: (unixSeconds: number) => string,
   today: string,
-  now: { temperatureF: number; condition: OpenWeatherCondition },
+  now: { temperaturesF: number[]; condition: OpenWeatherCondition },
 ): ForecastDay[] => {
   const byDate = new Map<string, OpenWeatherForecastEntry[]>();
   byDate.set(today, []);
@@ -164,7 +183,7 @@ const buildDays = (
     .slice(0, DAYS)
     .map(([date, entries]) => {
       const temperatures = entries.map((entry) => entry.main.temp);
-      if (date === today) temperatures.push(now.temperatureF);
+      if (date === today) temperatures.push(...now.temperaturesF);
       const condition =
         entries.length > 0 ? daysCondition(entries) : now.condition;
       return {
