@@ -12,8 +12,8 @@ and cannot do TLS, so it is let in by two things instead:
 - **where it is**: the push lands on a port-80 listener
   (`infra/docker/nginx/weather-ingest.conf`) that the router lets only the
   consoles reach from the IoT network, and the API accepts it only from
-  `WEATHER_STATION_ALLOWED_CIDRS` (on the Mini, Docker Desktop's gateway:
-  see _Where pushes come from_);
+  `WEATHER_STATION_ALLOWED_CIDRS` (on the Mini, only Docker Desktop's
+  gateway: see _Where pushes come from_);
 - **what it is**: the MAC has to be a registered station.
 
 Anything else is a 403, logged once an hour per address or MAC, without the
@@ -117,8 +117,9 @@ its own gateway, `192.168.65.1`, so that is the address nginx sees, the API
 checks and the archive records, for every push.
 
 `WEATHER_STATION_ALLOWED_CIDRS` (in
-`infra/docker/env/prod/olympus-api.env`) therefore allows the gateway, and
-the address check that counts is the router's:
+`infra/docker/env/prod/olympus-api.env`) is therefore only the gateway,
+`192.168.65.1/32`, and which consoles may push is the router's firewall
+rules:
 
 - each console has a reserved address on its IoT network;
 - the firewall lets only those addresses reach the Mini on port 80 from
@@ -128,10 +129,6 @@ The registered MAC is still checked on top. A push refused as
 `not in WEATHER_STATION_ALLOWED_CIDRS` with an address other than
 `192.168.65.1` means Docker Desktop's network has changed (its settings
 choose the range); put the new gateway in the allowed list.
-
-The IoT ranges stay in the list for a Docker that passes real addresses
-through: if that ever happens, the gateway entry can go, and the API's
-check is a real one again.
 
 ## 5. A new test fixture
 
