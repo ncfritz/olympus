@@ -60,53 +60,60 @@ for a run triggered without one, its `run_after`, since Airflow 3 leaves
 
 ## Installing on the Mac Mini
 
-The Mini's Airflow is the Compose project in `~/Docker/compose` (Airflow 3,
-CeleryExecutor, its own DAG folder at `~/Docker/data/airflow/airflow/dags`).
-Olympus's DAGs are not copied there: the Mini's checkout of this repository is
-mounted into the containers, its `infra/airflow/dags` as a subfolder of the DAG
-folder, so a `git pull` on the Mini deploys them as it does the nginx
+The Mini's Airflow is the Compose project `airflow` in `~/Docker/compose`
+(Airflow 3, CeleryExecutor), built from `~/Docker/dockerfiles/airflow`, with
+its own DAG folder at `~/Docker/data/airflow/airflow/dags`. Olympus's DAGs are
+not copied there: the Mini's checkout of this repository is mounted into the
+two services that read them, its `infra/airflow/dags` as a subfolder of the
+DAG folder, so a `git pull` on the Mini deploys them as it does the nginx
 configuration, and the other DAGs stay where they are.
 
-1. **The Docker provider, in the image.** The project builds its own images
-   (`airflow-airflow-*`); in its Dockerfile, pinning Airflow so pip cannot
-   move it:
+1. **The image.** In the Dockerfile, pin the base (`latest` moves the next
+   time it is built, and these DAGs were tried on 3.3.0), and add the Docker
+   provider with Airflow pinned so pip cannot move it:
 
    ```dockerfile
+   FROM apache/airflow:3.3.0
+   # ...
    RUN pip install --no-cache-dir "apache-airflow==${AIRFLOW_VERSION}" \
        "apache-airflow-providers-docker>=4.6"
    ```
 
-   (`_PIP_ADDITIONAL_REQUIREMENTS` does the same at every start, slowly; it is
-   meant for trying things.)
+2. **The checkout's path**, in `~/Docker/compose/.env`:
+   `OLYMPUS_CHECKOUT=<the checkout on the Mini>`.
 
-2. **The checkout and the settings, for every Airflow service** (the DAG
-   processor parses the DAGs, the worker runs them), in the common block of
-   the compose file, with `OLYMPUS_CHECKOUT` the checkout's path on the Mini:
+3. **The DAG processor and the worker** (one parses the DAGs, the other runs
+   them) get the checkout and the settings. Only those two: `airflow-init`
+   chowns everything under `/opt/airflow`, which a read-only mount refuses. A
+   service that sets its own `volumes:` replaces the common list, so each
+   repeats it:
 
    ```yaml
    environment:
+     <<: *airflow-common-env
      OLYMPUS_ROOT: /opt/olympus
      OLYMPUS_ENV: prod
    volumes:
-     - ${OLYMPUS_CHECKOUT}:/opt/olympus:ro
-     - ${OLYMPUS_CHECKOUT}/infra/airflow/dags:/opt/airflow/dags/olympus:ro
+     - /Users/ncfritz/Docker/data/airflow/airflow/dags:/opt/airflow/dags
+     - /Users/ncfritz/Docker/data/airflow/airflow/logs:/opt/airflow/logs
+     - /Users/ncfritz/Docker/data/airflow/airflow/config:/opt/airflow/config
+     - /Users/ncfritz/Docker/data/airflow/airflow/plugins:/opt/airflow/plugins
+     - ${OLYMPUS_CHECKOUT:?}:/opt/olympus:ro
+     - ${OLYMPUS_CHECKOUT:?}/infra/airflow/dags:/opt/airflow/dags/olympus:ro
    ```
 
-3. **The Docker socket and the webhook, for the worker only** (a service that
-   sets its own `volumes:` replaces the common list, so repeat the common
-   entries there):
+   The worker also gets the Docker socket and, if there is one, the alert
+   webhook:
 
    ```yaml
-   airflow-worker:
-     environment:
-       OLYMPUS_ALERT_WEBHOOK_FILE: /run/secrets/olympus_alert_webhook
-     volumes:
-       # ...the common entries, then:
-       - /var/run/docker.sock:/var/run/docker.sock
-       - ~/Docker/secrets/olympus/<webhook file>:/run/secrets/olympus_alert_webhook:ro
+     OLYMPUS_ALERT_WEBHOOK_FILE: /run/secrets/olympus_alert_webhook
+     # ...
+     - /var/run/docker.sock:/var/run/docker.sock
+     - /Users/ncfritz/Docker/secrets/olympus/<webhook file>:/run/secrets/olympus_alert_webhook:ro
    ```
 
-   The image's user is in group `root`, which Docker Desktop's socket allows.
+   The image's user is in group `root` (`user: 50000:0`), which Docker
+   Desktop's socket allows.
 
 4. `docker compose build && docker compose up -d`, then check, from
    `~/Docker/compose`:
