@@ -31,6 +31,10 @@ recorded exception.
 2. Renaming a tag shows on every goal it is on; deleting it removes it
    from them.
 3. `user-b` lists no tags and gets 404 for `user-a`'s tag ids.
+4. A colour set on a tag is returned lowercase; setting it to null
+   removes it.
+5. `infra/hasura/tests/minerva_tags.sql` passes against `hasura-dev`'s
+   database.
 
 ## G2 — Categories and cycles
 

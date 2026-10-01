@@ -1316,6 +1316,22 @@
     ],
     "type": "object"
   },
+  "BaseTag": {
+    "properties": {
+      "color": {
+        "description": "The tag's colour as a lowercase hex value such as #1677ff; absent for the default chip",
+        "type": "string"
+      },
+      "name": {
+        "description": "The tag's name, 1 to 50 characters, unique among the user's tags whatever its case",
+        "type": "string"
+      }
+    },
+    "required": [
+      "name"
+    ],
+    "type": "object"
+  },
   "BaseWeatherLocation": {
     "properties": {
       "label": {
@@ -3520,6 +3536,38 @@
     ],
     "type": "object"
   },
+  "CreateTagRequest": {
+    "properties": {
+      "tag": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseTag"
+          }
+        ],
+        "description": "The tag to create."
+      }
+    },
+    "required": [
+      "tag"
+    ],
+    "type": "object"
+  },
+  "CreateTagResponse": {
+    "properties": {
+      "tag": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Tag"
+          }
+        ],
+        "description": "The tag as created."
+      }
+    },
+    "required": [
+      "tag"
+    ],
+    "type": "object"
+  },
   "CreateTokenResponse": {
     "properties": {
       "access_token": {
@@ -4461,6 +4509,22 @@
     },
     "required": [
       "tvSeries"
+    ],
+    "type": "object"
+  },
+  "DescribeTagResponse": {
+    "properties": {
+      "tag": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Tag"
+          }
+        ],
+        "description": "The tag."
+      }
+    },
+    "required": [
+      "tag"
     ],
     "type": "object"
   },
@@ -7124,6 +7188,21 @@
     },
     "required": [
       "guestStars"
+    ],
+    "type": "object"
+  },
+  "ListTagsResponse": {
+    "properties": {
+      "tags": {
+        "description": "The caller's tags, by name.",
+        "items": {
+          "$ref": "#/components/schemas/Tag"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "tags"
     ],
     "type": "object"
   },
@@ -12639,6 +12718,19 @@
     ],
     "type": "object"
   },
+  "PartialTag": {
+    "properties": {
+      "color": {
+        "description": "The tag's colour as a lowercase hex value such as #1677ff; absent for the default chip",
+        "type": "string"
+      },
+      "name": {
+        "description": "The tag's name, 1 to 50 characters, unique among the user's tags whatever its case",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
   "PartialTvSeriesCreatedBy": {
     "properties": {
       "creditId": {
@@ -15919,6 +16011,36 @@
     ],
     "type": "object"
   },
+  "Tag": {
+    "properties": {
+      "color": {
+        "description": "The tag's colour as a lowercase hex value such as #1677ff; absent for the default chip",
+        "type": "string"
+      },
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the tag was created",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the tag",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the tag was last changed",
+        "type": "string"
+      },
+      "name": {
+        "description": "The tag's name, 1 to 50 characters, unique among the user's tags whatever its case",
+        "type": "string"
+      }
+    },
+    "required": [
+      "createdTime",
+      "id",
+      "name"
+    ],
+    "type": "object"
+  },
   "TestRequest": {
     "properties": {
       "payload": {
@@ -16449,6 +16571,38 @@
     },
     "required": [
       "notificationSetting"
+    ],
+    "type": "object"
+  },
+  "UpdateTagRequest": {
+    "properties": {
+      "tag": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialTag"
+          }
+        ],
+        "description": "The changes to the tag. A color of null removes the tag's colour."
+      }
+    },
+    "required": [
+      "tag"
+    ],
+    "type": "object"
+  },
+  "UpdateTagResponse": {
+    "properties": {
+      "tag": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Tag"
+          }
+        ],
+        "description": "The tag with the changes applied."
+      }
+    },
+    "required": [
+      "tag"
     ],
     "type": "object"
   },

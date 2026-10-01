@@ -1154,6 +1154,309 @@
           "Notes"
         ]
       }
+    },
+    "/minerva/tags": {
+      "get": {
+        "description": "Every tag the caller has, by name. With a prefix, only the tags whose names start with it, whatever their case, for a tag picker.",
+        "operationId": "ListTags",
+        "parameters": [
+          {
+            "name": "prefix",
+            "required": false,
+            "in": "query",
+            "description": "Only tags whose names start with this text, ignoring case; at most 50 characters",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The caller's tags.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListTagsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the signed-in user's tags",
+        "tags": [
+          "Tags"
+        ]
+      },
+      "post": {
+        "description": "Adds a tag to the caller's set. A name the caller already has, in any case, is refused.",
+        "operationId": "CreateTag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateTag operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The tag was created.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the created tag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTagResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The caller already has a tag with that name."
+          }
+        },
+        "summary": "Creates a tag for the signed-in user",
+        "tags": [
+          "Tags"
+        ]
+      }
+    },
+    "/minerva/tag/{tagId}": {
+      "get": {
+        "description": "Returns a single tag of the caller's. Another user's tag is not found.",
+        "operationId": "DescribeTag",
+        "parameters": [
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the tag",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The tag was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeTagResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Describes one of the signed-in user's tags",
+        "tags": [
+          "Tags"
+        ]
+      },
+      "put": {
+        "description": "Renames a tag or changes its colour; the change shows wherever the tag is used. Renaming to a name the caller already has is refused.",
+        "operationId": "UpdateTag",
+        "parameters": [
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the tag to change",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateTag operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTagRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The tag with the changes applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateTagResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The request named nothing to change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The caller already has a tag with the new name."
+          }
+        },
+        "summary": "Changes one of the signed-in user's tags",
+        "tags": [
+          "Tags"
+        ]
+      },
+      "delete": {
+        "description": "Removes a tag from the caller's set, and from everything it was on.",
+        "operationId": "DeleteTag",
+        "parameters": [
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the tag to delete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The tag was deleted."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Deletes one of the signed-in user's tags",
+        "tags": [
+          "Tags"
+        ]
+      }
     }
   },
   "info": {
@@ -1176,6 +1479,9 @@
     },
     {
       "name": "Notes"
+    },
+    {
+      "name": "Tags"
     }
   ],
   "servers": [],
@@ -2071,6 +2377,160 @@
       "EmptyResponse": {
         "type": "object",
         "properties": {}
+      },
+      "Tag": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the tag"
+          },
+          "name": {
+            "type": "string",
+            "description": "The tag's name, 1 to 50 characters, unique among the user's tags whatever its case"
+          },
+          "color": {
+            "type": "string",
+            "description": "The tag's colour as a lowercase hex value such as #1677ff; absent for the default chip"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the tag was created"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the tag was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "createdTime"
+        ]
+      },
+      "ListTagsResponse": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "description": "The caller's tags, by name.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            }
+          }
+        },
+        "required": [
+          "tags"
+        ]
+      },
+      "BaseTag": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The tag's name, 1 to 50 characters, unique among the user's tags whatever its case"
+          },
+          "color": {
+            "type": "string",
+            "description": "The tag's colour as a lowercase hex value such as #1677ff; absent for the default chip"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateTagRequest": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "description": "The tag to create.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseTag"
+              }
+            ]
+          }
+        },
+        "required": [
+          "tag"
+        ]
+      },
+      "CreateTagResponse": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "description": "The tag as created.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Tag"
+              }
+            ]
+          }
+        },
+        "required": [
+          "tag"
+        ]
+      },
+      "DescribeTagResponse": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "description": "The tag.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Tag"
+              }
+            ]
+          }
+        },
+        "required": [
+          "tag"
+        ]
+      },
+      "PartialTag": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The tag's name, 1 to 50 characters, unique among the user's tags whatever its case"
+          },
+          "color": {
+            "type": "string",
+            "description": "The tag's colour as a lowercase hex value such as #1677ff; absent for the default chip"
+          }
+        }
+      },
+      "UpdateTagRequest": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "description": "The changes to the tag. A color of null removes the tag's colour.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialTag"
+              }
+            ]
+          }
+        },
+        "required": [
+          "tag"
+        ]
+      },
+      "UpdateTagResponse": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "description": "The tag with the changes applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Tag"
+              }
+            ]
+          }
+        },
+        "required": [
+          "tag"
+        ]
       }
     }
   }

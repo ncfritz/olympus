@@ -1,6 +1,7 @@
 /** Hasura rows for Minerva tables, as the API's queries receive them. */
 import type { GraphQlMeeting } from "../../src/minerva/meetings/converters/MeetingConverter";
 import type { GraphQlNote } from "../../src/minerva/notes/converters/NoteConverter";
+import type { GraphQlTag } from "../../src/minerva/tags/converters/TagConverter";
 
 export const graphQlNote = (
   overrides: Partial<GraphQlNote> = {},
@@ -67,5 +68,18 @@ export const graphQlMeeting = (
       },
     },
   ],
+  ...overrides,
+});
+
+export const TAG_ID = "4c8e1f20-0000-4000-8000-000000000001";
+
+export const graphQlTag = (
+  overrides: Partial<GraphQlTag> = {},
+): GraphQlTag => ({
+  id: TAG_ID,
+  name: "olympus",
+  color: "#1677ff",
+  createdTime: "2026-10-01T12:00:00Z",
+  lastUpdatedTime: "2026-10-01T12:30:00Z",
   ...overrides,
 });

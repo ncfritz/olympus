@@ -638,14 +638,16 @@ describe("Location headers of created resources", () => {
 
   it("has a case for every operation that answers 201 with one resource", () => {
     // No GET route for a notification; an upload creates several workflows.
-    // CreateWeatherLocation and CreateWeatherStation need a signed-in
-    // caller, which this app has no keys for; weatherLocations.spec.ts and
-    // weatherStations.spec.ts assert their Location headers.
+    // CreateWeatherLocation, CreateWeatherStation and CreateTag need a
+    // signed-in caller, which this app has no keys for;
+    // weatherLocations.spec.ts, weatherStations.spec.ts and
+    // minerva/tags.spec.ts assert their Location headers.
     const exempt = [
       "CreateNotification",
       "UploadAssets",
       "CreateWeatherLocation",
       "CreateWeatherStation",
+      "CreateTag",
     ];
     const creates = controllers
       .filter((c) => "201" in (c.routes[0]?.responses ?? {}))

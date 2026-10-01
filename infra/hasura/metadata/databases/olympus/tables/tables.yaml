@@ -131,6 +131,7 @@
 - '!include minerva_notes.yaml'
 - '!include minerva_notes_hour_statistics_type.yaml'
 - '!include minerva_notes_type_statistics_type.yaml'
+- '!include minerva_tags.yaml'
 - '!include olympus_notification_groups.yaml'
 - '!include olympus_notification_settings.yaml'
 - '!include olympus_notification_statistics.yaml'

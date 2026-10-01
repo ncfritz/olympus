@@ -62,28 +62,40 @@ No new configuration: the feature has no provider, secret or schedule.
 **Sign-off:** the API boots, the menu entry opens the page, and the
 Turbo tasks pass.
 
-## Phase 1 — Tags
+## Phase 1 — Tags — built 2026-10-01, not signed off
 
-1. **Migration** `<ts>_minerva_tags`: `minerva.tags` — `id` (uuid),
-   `user_id` (references `olympus.users`, cascade), `name` (not blank),
-   `colour` (optional, `#rrggbb` checked), audit columns.
-   Unique `(user_id, lower(name))`.
-2. **Operations**, tag `Tags`:
+1. **Migration** `1790900000000_minerva_tags`: **done** — `minerva.tags`:
+   `id` (uuid), `user_id` (references `olympus.users`, cascade), `name`
+   (1 to 50 characters, not blank), `color` (optional, lowercase
+   `#rrggbb`), audit columns. Unique `(user_id, lower(name))`. Hasura:
+   admin only, custom column names in camelCase.
+2. **Operations**, tag `Tags`: **done**
 
-   | Operation   | Route                |
-   | ----------- | -------------------- |
-   | `ListTags`  | `GET /tags`          |
-   | `CreateTag` | `POST /tags`         |
-   | `UpdateTag` | `PUT /tag/:tagId`    |
-   | `DeleteTag` | `DELETE /tag/:tagId` |
+   | Operation     | Route                |
+   | ------------- | -------------------- |
+   | `ListTags`    | `GET /tags`          |
+   | `CreateTag`   | `POST /tags`         |
+   | `DescribeTag` | `GET /tag/:tagId`    |
+   | `UpdateTag`   | `PUT /tag/:tagId`    |
+   | `DeleteTag`   | `DELETE /tag/:tagId` |
 
    A duplicate name (any case) is a 409. `ListTags` takes an optional
-   `prefix` for the tag picker and returns each tag's use count. Deleting
-   a tag removes it from everything it is on.
+   `prefix` for the tag picker, matched case-insensitively with LIKE's own
+   characters taken as text. Create trims the name, lowercases the colour
+   and answers with a `Location` header (hence `DescribeTag`). Update
+   renames or recolours (`color: null` removes it); an empty change is a 304. Deleting a tag removes it from everything it is on (the join
+   tables cascade). Each tag's use count arrives with `goal_tags` in
+   phase 3.
 
-3. **Tests**: converter units; endpoint tests including another user's
-   tag (404), no identity (401), duplicate (409) and bad input (400,
-   before Hasura).
+3. **Tests**: **done** — converter units; endpoint tests including
+   another user's tag (404), no identity (401), duplicate (409) and bad
+   input (400, before Hasura); `infra/hasura/tests/minerva_tags.sql` for
+   the table's constraints, audit times and cascade, run against the
+   migrations applied over the baseline, with `down.sql` exercised.
+4. **Fix on the way**: Dionysus's `CreateContentAssetTag` sent a Hasura
+   document named `CreateTag`, which the one-name-one-document check
+   caught once Minerva's `CreateTag` existed. It is now named after its
+   operation.
 
 **Sign-off:** G1 from the OpenAPI page.
 
