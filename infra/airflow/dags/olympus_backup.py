@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any
 
 import pendulum
-from airflow.models.dag import DAG
+from airflow.sdk import DAG
 from airflow.providers.docker.operators.docker import DockerOperator
 from docker.types import Mount
 
@@ -82,8 +82,13 @@ def secret(name: str) -> Mount:
     )
 
 
+# The run's day, as YYYY-MM-DD (UTC). Not `{{ ds }}`: Airflow 3 leaves it
+# undefined for a run triggered without a logical date, so a backup run by
+# hand would fail to render. Such a run still has `run_after`.
+DAY = "{{ (logical_date or dag_run.run_after).strftime('%Y-%m-%d') }}"
+
 # Every script starts here.
-PREAMBLE = '\nDIR=/backups/{{ ds }}\nmkdir -p "$DIR"\n'
+PREAMBLE = '\nDIR=/backups/' + DAY + '\nmkdir -p "$DIR"\n'
 
 # The password in the environment rather than on a command line, where `ps`
 # would show it.

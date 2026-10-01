@@ -24,15 +24,15 @@ The DAGs run their work in containers rather than in the worker, so that
 `pg_dump` comes from the same `postgres:<version>` image the stack pins and can
 never be older than the server it dumps. That needs:
 
-| Requirement                                      | Why                                                                                                    |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `/var/run/docker.sock` in the worker             | `DockerOperator`. Without it the work runs in the worker and `pg_dump` comes from Airflow's own image. |
-| `apache-airflow-providers-docker` >= 3.0         | `auto_remove` takes `"success"`, not `True`.                                                           |
-| The `olympus-data` network reachable             | `postgres` is not published off `127.0.0.1`; containers reach it by name on that network.              |
-| The `olympus-backend` network reachable          | RabbitMQ's management port is published only on the host's loopback, so the same applies to it.        |
-| This repository readable by the scheduler        | Settings are read from `infra/docker/env/<env>.env`. `OLYMPUS_ROOT` overrides where it looks.          |
-| `OLYMPUS_ENV`, if not `prod`                     | Chooses the environment file.                                                                          |
-| `OLYMPUS_ALERT_WEBHOOK_FILE`, a path on the host | Where a failure is reported. Unset, failures are logged as errors and nothing is sent.                 |
+| Requirement                                                  | Why                                                                                                                                         |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/var/run/docker.sock` in the worker                         | `DockerOperator`. Without it the work runs in the worker and `pg_dump` comes from Airflow's own image.                                      |
+| `apache-airflow-providers-docker` >= 3.0                     | `auto_remove` takes `"success"`, not `True`.                                                                                                |
+| The `olympus-data` network reachable                         | `postgres` is not published off `127.0.0.1`; containers reach it by name on that network.                                                   |
+| The `olympus-backend` network reachable                      | RabbitMQ's management port is published only on the host's loopback, so the same applies to it.                                             |
+| This repository readable by the DAG processor and the worker | Both import the DAGs, which read settings from `infra/docker/env/<env>.env`; `OLYMPUS_ROOT` says where the checkout is mounted.             |
+| `OLYMPUS_ENV`, if not `prod`                                 | Chooses the environment file.                                                                                                               |
+| `OLYMPUS_ALERT_WEBHOOK_FILE`, a path in the worker           | A file holding the webhook URL failures are reported to, mounted into the worker. Unset, failures are logged as errors and nothing is sent. |
 
 Nothing here needs read access to `SECRETS_DIR`. A password file is
 bind-mounted into the container by path and the Docker daemon resolves it on the
@@ -52,6 +52,84 @@ the worker, which the daemon cannot resolve; `network_mode` takes the network's
 real name (`olympus-data`), not Compose's service alias; and the HTTP task runs
 as `root`, because that image's own user cannot read a `0600` secret owned by
 somebody else.
+
+Written for Airflow 3 (tried on 3.3.0 with `apache-airflow-providers-docker`
+4.6.0): `DAG` comes from `airflow.sdk`, and a run's day is its logical date or,
+for a run triggered without one, its `run_after`, since Airflow 3 leaves
+`{{ ds }}` undefined then.
+
+## Installing on the Mac Mini
+
+The Mini's Airflow is the Compose project in `~/Docker/compose` (Airflow 3,
+CeleryExecutor, its own DAG folder at `~/Docker/data/airflow/airflow/dags`).
+Olympus's DAGs are not copied there: the Mini's checkout of this repository is
+mounted into the containers, its `infra/airflow/dags` as a subfolder of the DAG
+folder, so a `git pull` on the Mini deploys them as it does the nginx
+configuration, and the other DAGs stay where they are.
+
+1. **The Docker provider, in the image.** The project builds its own images
+   (`airflow-airflow-*`); in its Dockerfile, pinning Airflow so pip cannot
+   move it:
+
+   ```dockerfile
+   RUN pip install --no-cache-dir "apache-airflow==${AIRFLOW_VERSION}" \
+       "apache-airflow-providers-docker>=4.6"
+   ```
+
+   (`_PIP_ADDITIONAL_REQUIREMENTS` does the same at every start, slowly; it is
+   meant for trying things.)
+
+2. **The checkout and the settings, for every Airflow service** (the DAG
+   processor parses the DAGs, the worker runs them), in the common block of
+   the compose file, with `OLYMPUS_CHECKOUT` the checkout's path on the Mini:
+
+   ```yaml
+   environment:
+     OLYMPUS_ROOT: /opt/olympus
+     OLYMPUS_ENV: prod
+   volumes:
+     - ${OLYMPUS_CHECKOUT}:/opt/olympus:ro
+     - ${OLYMPUS_CHECKOUT}/infra/airflow/dags:/opt/airflow/dags/olympus:ro
+   ```
+
+3. **The Docker socket and the webhook, for the worker only** (a service that
+   sets its own `volumes:` replaces the common list, so repeat the common
+   entries there):
+
+   ```yaml
+   airflow-worker:
+     environment:
+       OLYMPUS_ALERT_WEBHOOK_FILE: /run/secrets/olympus_alert_webhook
+     volumes:
+       # ...the common entries, then:
+       - /var/run/docker.sock:/var/run/docker.sock
+       - ~/Docker/secrets/olympus/<webhook file>:/run/secrets/olympus_alert_webhook:ro
+   ```
+
+   The image's user is in group `root`, which Docker Desktop's socket allows.
+
+4. `docker compose build && docker compose up -d`, then check, from
+   `~/Docker/compose`:
+
+   ```sh
+   docker compose exec airflow-worker python -c \
+     'import docker; print(docker.from_env().ping())'            # True
+   docker compose exec airflow-dag-processor airflow dags list-import-errors
+   docker compose exec airflow-worker airflow dags list | grep olympus
+   ```
+
+5. **One run of each by hand, in the worker** (it has the socket), before the
+   schedule. New DAGs arrive paused (`DAGS_ARE_PAUSED_AT_CREATION`):
+
+   ```sh
+   docker compose exec airflow-worker airflow dags test olympus_weather_archive
+   docker compose exec airflow-worker airflow dags test olympus_backup
+   docker compose exec airflow-worker airflow dags unpause olympus_weather_archive
+   docker compose exec airflow-worker airflow dags unpause olympus_backup
+   ```
+
+   The archive's `copy` has nothing to send until a UTC day has been sealed
+   (the first push after midnight UTC seals the day before).
 
 ## The DAGs
 
@@ -117,9 +195,10 @@ through the Mac's address from an unprivileged port, so the rule also needs
 
 ## By hand
 
+In the worker (`docker compose exec airflow-worker ...` on the Mini):
+
 ```sh
-# Once, from the repository, against the Airflow host:
-airflow dags test olympus_backup 2026-09-29     # a whole run, no scheduler
+airflow dags test olympus_backup                # a whole run, today, no scheduler
 airflow tasks test olympus_backup verify 2026-09-29
 airflow tasks test olympus_weather_archive copy 2026-09-29
 ```

@@ -504,9 +504,10 @@ corrected.
 ## Phase 6 — Backups
 
 Airflow runs the schedule; this repository owns the jobs. The host already runs
-Airflow for nightly work of its own and takes its DAGs from a GitHub
-repository, so Olympus's go the same way: reviewed here, deployed by the
-mechanism already in place. `infra/airflow/` is the root, and backups are only
+Airflow for nightly work of its own, so Olympus's go there: reviewed here, and
+deployed from the Mini's checkout of this repository, mounted into Airflow's
+containers (its DAG folder is a plain directory, not synced from git;
+`infra/airflow/README.md`, _Installing on the Mac Mini_). `infra/airflow/` is the root, and backups are only
 the first thing that will live in it.
 
 That is a new prerequisite, and it cuts against ADR 0019's goal of reproducing
