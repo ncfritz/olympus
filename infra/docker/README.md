@@ -228,7 +228,16 @@ infra/docker/stack.sh build --load olympus                # every image the stac
 infra/docker/stack.sh build --load olympus olympus-api    # one service's
 infra/docker/stack.sh build --push --env prod olympus     # production's, from the laptop
 infra/docker/stack.sh build --load olympus -- --set asset-agent.platform=linux/arm64
+infra/docker/stack.sh build --push --env prod --parallel olympus   # all at once
 ```
+
+Images are built one at a time: a bake of several targets builds them side
+by side, and a few Node builds at once exhaust Docker Desktop's memory
+(`cannot allocate memory`). Layers are shared through the builder's cache,
+so one at a time costs little more than the slowest image. A failure stops
+the build and names the image; the ones before it are already built (or
+pushed). `--parallel` is the single bake of them all, for a machine with
+the memory to spare.
 
 `--env` is which environment's images to build, not which machine you are on.
 They are usually the same and it can be left out; they differ for the case

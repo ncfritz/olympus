@@ -6,9 +6,10 @@
 #                                             create networks and directories
 #   infra/docker/stack.sh check [stack...]    every setting and secret in place
 #   infra/docker/stack.sh list [stack...]     stacks and their containers, as a tree
-#   infra/docker/stack.sh build (--push|--load) [--env <env>] <stack> [service...]
-#                                             build this stack's images at HEAD;
-#                                             --env builds another
+#   infra/docker/stack.sh build (--push|--load) [--env <env>] [--parallel] <stack> [service...]
+#                                             build this stack's images at HEAD,
+#                                             one at a time (--parallel: all at
+#                                             once); --env builds another
 #                                             environment's from this machine
 #   infra/docker/stack.sh up [--tag <tag>] [stack...|all]
 #                                             check, then start (in order);
@@ -305,19 +306,20 @@ build_targets() {
 }
 
 build() {
-  local output="" dirty="" env_name="" stack="" services="" passthru=""
+  local output="" dirty="" env_name="" stack="" services="" passthru="" parallel=""
   local root registry tag revision builder=""
   while [ $# -gt 0 ]; do
     case "$1" in
       --push | --load) output=${1#--} ;;
       --dirty) dirty=yes ;;
+      --parallel) parallel=yes ;;
       --env)
         shift
         env_name=${1:-}
         [ -n "$env_name" ] || die "--env needs a name (one of: $(known_envs))"
         ;;
       --) shift; passthru="$*"; break ;;
-      -*) die "unknown option '$1' (--push, --load, --dirty, --env)" ;;
+      -*) die "unknown option '$1' (--push, --load, --dirty, --env, --parallel)" ;;
       *) if [ -z "$stack" ]; then stack=$1; else services="$services $1"; fi ;;
     esac
     shift
@@ -367,12 +369,34 @@ build() {
   [ "$output" = load ] || builder="--builder olympus"
 
   echo "== $stack: $targets"
-  echo "   $OLYMPUS_ENV, tag $tag${registry:+, registry $registry}, --$output"
+  echo "   $OLYMPUS_ENV, tag $tag${registry:+, registry $registry}, --$output${parallel:+, in parallel}"
+  # One bake per image by default. A bake of several targets builds them
+  # all at once, and a few Node builds side by side exhaust Docker
+  # Desktop's memory ("cannot allocate memory"). Layers are shared through
+  # the builder's cache either way, so one at a time costs little more
+  # than the slowest image. --parallel is the single bake.
+  local target
+  # shellcheck disable=SC2086
+  if [ -n "$parallel" ]; then
+    bake "$root" "$registry" "$tag" "$revision" "$builder" "$output" "$passthru" $targets
+  else
+    for target in $targets; do
+      echo "-- $target"
+      bake "$root" "$registry" "$tag" "$revision" "$builder" "$output" "$passthru" "$target" ||
+        die "$target failed to build; the images before it are built${output:+ (--$output)}"
+    done
+  fi
+}
+
+# One `docker buildx bake` of the targets given, from the repository root.
+bake() {
+  local root=$1 registry=$2 tag=$3 revision=$4 builder=$5 output=$6 passthru=$7
+  shift 7
   # shellcheck disable=SC2086
   (
     cd "$root" &&
       REGISTRY="$registry" TAG="$tag" GIT_REVISION="$revision" \
-        docker buildx bake $builder "--$output" $targets $passthru
+        docker buildx bake $builder "--$output" "$@" $passthru
   )
 }
 
