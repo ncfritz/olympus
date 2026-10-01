@@ -5,7 +5,11 @@ import { toDomainObject } from "../../../../../src/minerva/tags/converters/TagCo
 describe("TagConverter", () => {
   it("maps a row and parses its times", () => {
     const tag = toDomainObject(graphQlTag());
-    expect(tag).toMatchObject({ name: "olympus", color: "#1677ff" });
+    expect(tag).toMatchObject({
+      name: "olympus",
+      color: "#1677ff",
+      goalCount: 3,
+    });
     expect(tag.createdTime.toISOString()).toBe("2026-10-01T12:00:00.000Z");
     expect(tag.lastUpdatedTime?.toISOString()).toBe("2026-10-01T12:30:00.000Z");
   });

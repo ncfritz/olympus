@@ -472,33 +472,102 @@ describe("Goal categories API", () => {
   });
 
   describe("DeleteGoalCategory", () => {
-    it("deletes the caller's category", async () => {
-      ctx.t.graphql.on("DeleteGoalCategory", {
+    const OTHER_ID = "6a2d9e40-0000-4000-8000-000000000003";
+    const use = (goals: number, target: unknown[] = []) =>
+      ctx.t.graphql.on("GetGoalCategoryUse", {
+        category: [{ id: GOAL_CATEGORY_ID }],
+        target,
+        minerva_goals_aggregate: { aggregate: { count: goals } },
+      });
+    const remove = (query = "") =>
+      ctx.as(
+        ctx.t.http().delete(`${BASE}/category/${GOAL_CATEGORY_ID}${query}`),
+      );
+
+    it("deletes the caller's category with no goals", async () => {
+      use(0).on("DeleteGoalCategory", {
         delete_minerva_goal_categories: { affected_rows: 1 },
       });
 
-      const res = await ctx.as(
-        ctx.t.http().delete(`${BASE}/category/${GOAL_CATEGORY_ID}`),
-      );
+      const res = await remove();
 
       expect(res.status).toBe(204);
       expect(ctx.t.graphql.calls("DeleteGoalCategory")[0].variables).toEqual({
         userId: USER,
         categoryId: GOAL_CATEGORY_ID,
+        moveTo: GOAL_CATEGORY_ID,
+        move: false,
       });
     });
 
+    it("answers 409 for a category with goals and nowhere to move them", async () => {
+      use(3);
+
+      const res = await remove();
+
+      expect(res.status).toBe(409);
+      expect(res.body.message).toBe(
+        "The category has 3 goals; name a category to move them to",
+      );
+      expect(ctx.t.graphql.calls("DeleteGoalCategory")).toHaveLength(0);
+    });
+
+    it("moves the goals to another category and deletes, in one mutation", async () => {
+      use(3, [{ id: OTHER_ID, archivedTime: null }]).on("DeleteGoalCategory", {
+        update_minerva_goals: { affected_rows: 3 },
+        delete_minerva_goal_categories: { affected_rows: 1 },
+      });
+
+      const res = await remove(`?moveTo=${OTHER_ID}`);
+
+      expect(res.status).toBe(204);
+      expect(ctx.t.graphql.calls("GetGoalCategoryUse")[0].variables).toEqual({
+        userId: USER,
+        categoryId: GOAL_CATEGORY_ID,
+        moveTo: OTHER_ID,
+      });
+      expect(
+        ctx.t.graphql.calls("DeleteGoalCategory")[0].variables,
+      ).toMatchObject({ moveTo: OTHER_ID, move: true });
+    });
+
+    it.each([
+      ["is not the caller's", []],
+      ["is archived", [{ id: OTHER_ID, archivedTime: "2026-10-01T00:00:00Z" }]],
+    ])("answers 400 when the category to move to %s", async (_, target) => {
+      use(3, target);
+
+      const res = await remove(`?moveTo=${OTHER_ID}`);
+
+      expect(res.status).toBe(400);
+      expect(ctx.t.graphql.calls("DeleteGoalCategory")).toHaveLength(0);
+    });
+
+    it.each([
+      ["not an ID", "?moveTo=nope"],
+      ["the category itself", `?moveTo=${GOAL_CATEGORY_ID}`],
+    ])(
+      "answers 400 for a moveTo that is %s, before Hasura",
+      async (_, query) => {
+        const res = await remove(query);
+
+        expect(res.status).toBe(400);
+        expect(ctx.t.graphql.request).not.toHaveBeenCalled();
+      },
+    );
+
     it("answers 404 for someone else's category", async () => {
-      ctx.t.graphql.on("DeleteGoalCategory", {
-        delete_minerva_goal_categories: { affected_rows: 0 },
+      ctx.t.graphql.on("GetGoalCategoryUse", {
+        category: [],
+        target: [],
+        minerva_goals_aggregate: { aggregate: { count: 0 } },
       });
       await ctx.signInAs(OTHER_USER);
 
-      const res = await ctx.as(
-        ctx.t.http().delete(`${BASE}/category/${GOAL_CATEGORY_ID}`),
-      );
+      const res = await remove();
 
       expect(res.status).toBe(404);
+      expect(ctx.t.graphql.calls("DeleteGoalCategory")).toHaveLength(0);
     });
   });
 

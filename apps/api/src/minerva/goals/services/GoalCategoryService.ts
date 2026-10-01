@@ -23,6 +23,7 @@ import {
   checkName,
   checkOptionalText,
   isStringList,
+  isUuid,
 } from "../utils/validation";
 
 const MAX_VISION = 2000;
@@ -220,10 +221,85 @@ export class GoalCategoryService {
     }
   }
 
-  /** Removes one of the user's categories. */
-  async delete(userId: string, categoryId: string): Promise<void> {
+  /**
+   * Removes one of the user's categories. A category with goals, deleted
+   * ones included, is removed only when `moveTo` names another of the
+   * user's categories for them; they move in the same transaction.
+   */
+  async delete(
+    userId: string,
+    categoryId: string,
+    moveTo?: unknown,
+  ): Promise<void> {
+    if (moveTo !== undefined && (!isUuid(moveTo) || moveTo === categoryId)) {
+      throw new BadRequestException(
+        "moveTo must be the ID of another of your categories",
+      );
+    }
+    const useDocument = gql`
+      query GetGoalCategoryUse(
+        $userId: uuid!
+        $categoryId: uuid!
+        $moveTo: uuid!
+      ) {
+        category: minerva_goal_categories(
+          where: { id: { _eq: $categoryId }, userId: { _eq: $userId } }
+        ) {
+          id
+        }
+        target: minerva_goal_categories(
+          where: { id: { _eq: $moveTo }, userId: { _eq: $userId } }
+        ) {
+          id
+          archivedTime
+        }
+        minerva_goals_aggregate(
+          where: { categoryId: { _eq: $categoryId }, userId: { _eq: $userId } }
+        ) {
+          aggregate {
+            count
+          }
+        }
+      }
+    `;
+    type UseResult = {
+      category: { id: string }[];
+      target: { id: string; archivedTime: string | null }[];
+      minerva_goals_aggregate: { aggregate: { count: number } };
+    };
+    const use = await this.graphQLClient.request<UseResult>(useDocument, {
+      userId,
+      categoryId,
+      // A category ID that cannot exist, so the target comes back empty.
+      moveTo: moveTo ?? categoryId,
+    });
+    if (use.category.length === 0) throw notFound(categoryId);
+    const goals = use.minerva_goals_aggregate.aggregate.count;
+    const move = moveTo !== undefined;
+    if (goals > 0 && !move) {
+      throw new ConflictException(
+        `The category has ${goals} goal${goals === 1 ? "" : "s"}; name a category to move them to`,
+      );
+    }
+    if (move && (use.target.length === 0 || use.target[0].archivedTime)) {
+      throw new BadRequestException(
+        "moveTo must name another of your categories that is not archived",
+      );
+    }
+
     const document = gql`
-      mutation DeleteGoalCategory($userId: uuid!, $categoryId: uuid!) {
+      mutation DeleteGoalCategory(
+        $userId: uuid!
+        $categoryId: uuid!
+        $moveTo: uuid!
+        $move: Boolean!
+      ) {
+        update_minerva_goals(
+          where: { categoryId: { _eq: $categoryId }, userId: { _eq: $userId } }
+          _set: { categoryId: $moveTo }
+        ) @include(if: $move) {
+          affected_rows
+        }
         delete_minerva_goal_categories(
           where: { id: { _eq: $categoryId }, userId: { _eq: $userId } }
         ) {
@@ -235,6 +311,8 @@ export class GoalCategoryService {
     const result = await this.graphQLClient.request<Result>(document, {
       userId,
       categoryId,
+      moveTo: moveTo ?? categoryId,
+      move,
     });
     if (result.delete_minerva_goal_categories.affected_rows === 0) {
       throw notFound(categoryId);

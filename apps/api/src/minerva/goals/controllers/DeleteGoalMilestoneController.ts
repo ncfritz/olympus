@@ -19,27 +19,31 @@ import {
 } from "../../../auth/authDecorators";
 import { type Principal, requireUser } from "../../../auth/principal";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-import { GoalCycleService } from "../services/GoalCycleService";
+import { GoalMilestoneService } from "../services/GoalMilestoneService";
 
 @Controller({ version: "1" })
-export class DeleteGoalCycleController {
-  constructor(private readonly goalCycles: GoalCycleService) {}
+export class DeleteGoalMilestoneController {
+  constructor(private readonly goalMilestones: GoalMilestoneService) {}
 
-  @Delete("/goals/cycle/:cycleId")
+  @Delete("/goal/:goalId/milestone/:milestoneId")
   @RequiresIdentity()
   @ApiOperation({
-    summary: "Deletes one of the signed-in user's goal cycles",
-    description:
-      "Removes a cycle from the caller's list. Goals set for it keep their dates and become custom goals.",
-    operationId: "DeleteGoalCycle",
-    tags: ["Goal Cycles"],
+    summary: "Removes a milestone from one of the signed-in user's goals",
+    description: "Removes a milestone from a goal's list.",
+    operationId: "DeleteGoalMilestone",
+    tags: ["Goals"],
   })
   @ApiParam({
-    name: "cycleId",
-    description: "The ID of the cycle to delete",
+    name: "goalId",
+    description: "The ID of the goal",
     type: String,
   })
-  @ApiNoContentResponse({ description: "The cycle was deleted." })
+  @ApiParam({
+    name: "milestoneId",
+    description: "The ID of the milestone",
+    type: String,
+  })
+  @ApiNoContentResponse({ description: "The milestone was removed." })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     description: "No access token, or one that does not verify.",
@@ -47,11 +51,12 @@ export class DeleteGoalCycleController {
   @ApiStandardErrorResponses()
   async handle(
     @CurrentPrincipal() principal: Principal | undefined,
-    @Param("cycleId", ParseUUIDPipe) cycleId: string,
+    @Param("goalId", ParseUUIDPipe) goalId: string,
+    @Param("milestoneId", ParseUUIDPipe) milestoneId: string,
     @Res() response: Response,
   ): Promise<void> {
     const user = requireUser(principal);
-    await this.goalCycles.delete(user.userId, cycleId);
+    await this.goalMilestones.delete(user.userId, goalId, milestoneId);
     response.status(HttpStatus.NO_CONTENT).send();
   }
 }

@@ -148,10 +148,19 @@ export class GoalCycleService {
     }
   }
 
-  /** Removes one of the user's cycles. */
+  /**
+   * Removes one of the user's cycles. Its goals keep their dates and become
+   * custom goals, in the same transaction.
+   */
   async delete(userId: string, cycleId: string): Promise<void> {
     const document = gql`
       mutation DeleteGoalCycle($userId: uuid!, $cycleId: uuid!) {
+        update_minerva_goals(
+          where: { cycleId: { _eq: $cycleId }, userId: { _eq: $userId } }
+          _set: { cycleId: null, horizon: "custom" }
+        ) {
+          affected_rows
+        }
         delete_minerva_goal_cycles(
           where: { id: { _eq: $cycleId }, userId: { _eq: $userId } }
         ) {

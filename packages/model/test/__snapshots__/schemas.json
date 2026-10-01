@@ -17495,6 +17495,10 @@
         "description": "An ISO-8601 formatted string indicating when the tag was created",
         "type": "string"
       },
+      "goalCount": {
+        "description": "How many of the user's goals that are not deleted carry the tag",
+        "type": "number"
+      },
       "id": {
         "description": "The unique ID of the tag",
         "type": "string"
@@ -17510,6 +17514,7 @@
     },
     "required": [
       "createdTime",
+      "goalCount",
       "id",
       "name"
     ],

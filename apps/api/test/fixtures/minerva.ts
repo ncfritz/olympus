@@ -2,6 +2,10 @@
 import type { GraphQlMeeting } from "../../src/minerva/meetings/converters/MeetingConverter";
 import type { GraphQlNote } from "../../src/minerva/notes/converters/NoteConverter";
 import type { GraphQlGoalCategory } from "../../src/minerva/goals/converters/GoalCategoryConverter";
+import type {
+  GraphQlGoal,
+  GraphQlGoalMilestone,
+} from "../../src/minerva/goals/converters/GoalConverter";
 import type { GraphQlGoalCycle } from "../../src/minerva/goals/converters/GoalCycleConverter";
 import type { GraphQlTag } from "../../src/minerva/tags/converters/TagConverter";
 
@@ -83,6 +87,7 @@ export const graphQlTag = (
   color: "#1677ff",
   createdTime: "2026-10-01T12:00:00Z",
   lastUpdatedTime: "2026-10-01T12:30:00Z",
+  goalTags_aggregate: { aggregate: { count: 3 } },
   ...overrides,
 });
 
@@ -116,5 +121,75 @@ export const graphQlGoalCycle = (
   bufferWeeks: 1,
   createdTime: "2026-09-01T12:00:00Z",
   lastUpdatedTime: null,
+  ...overrides,
+});
+
+export const GOAL_ID = "9b1c0000-0000-4000-8000-000000000001";
+export const GOAL_MILESTONE_ID = "8c3d0000-0000-4000-8000-000000000001";
+
+export const graphQlGoalMilestone = (
+  overrides: Partial<GraphQlGoalMilestone> = {},
+): GraphQlGoalMilestone => ({
+  id: GOAL_MILESTONE_ID,
+  goalId: GOAL_ID,
+  title: "Data model and migrations",
+  dueDate: "2026-09-18",
+  weight: 1,
+  position: 0,
+  doneTime: "2026-09-18T20:00:00Z",
+  createdTime: "2026-09-07T12:00:00Z",
+  lastUpdatedTime: null,
+  ...overrides,
+});
+
+/**
+ * "Ship Minerva Goals v1" on the design canvas: a milestone goal in Cycle
+ * 4, two of its six milestones done.
+ */
+export const graphQlGoal = (
+  overrides: Partial<GraphQlGoal> = {},
+): GraphQlGoal => ({
+  id: GOAL_ID,
+  parentId: null,
+  categoryId: GOAL_CATEGORY_ID,
+  cycleId: GOAL_CYCLE_ID,
+  title: "Ship Minerva Goals v1",
+  why: "Goals belong next to the reviews.",
+  type: "milestone",
+  status: "active",
+  horizon: "cycle",
+  startDate: "2026-09-07",
+  dueDate: "2026-11-29",
+  progressMode: "milestones",
+  rollup: null,
+  weight: 1,
+  manualProgress: null,
+  position: 0,
+  unit: null,
+  startValue: null,
+  targetValue: null,
+  tolerancePct: 10,
+  closedOn: null,
+  closeNote: null,
+  deletedTime: null,
+  createdTime: "2026-09-07T12:00:00Z",
+  lastUpdatedTime: null,
+  habitRule: null,
+  milestones: [
+    "Data model and migrations",
+    "Hasura actions and triggers",
+    "Goals home and goal page",
+    "Check-in in Weekly Reflect",
+    "Habits strip on Minerva Home",
+    "iOS Goals view",
+  ].map((title, position) =>
+    graphQlGoalMilestone({
+      id: `8c3d0000-0000-4000-8000-00000000000${position + 1}`,
+      title,
+      position,
+      doneTime: position < 2 ? "2026-09-20T20:00:00Z" : null,
+    }),
+  ),
+  goalTags: [{ tag: graphQlTag() }],
   ...overrides,
 });

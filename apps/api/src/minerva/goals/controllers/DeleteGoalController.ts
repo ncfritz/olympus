@@ -19,27 +19,31 @@ import {
 } from "../../../auth/authDecorators";
 import { type Principal, requireUser } from "../../../auth/principal";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
-import { GoalCycleService } from "../services/GoalCycleService";
+import { GoalService } from "../services/GoalService";
 
 @Controller({ version: "1" })
-export class DeleteGoalCycleController {
-  constructor(private readonly goalCycles: GoalCycleService) {}
+export class DeleteGoalController {
+  constructor(private readonly goals: GoalService) {}
 
-  @Delete("/goals/cycle/:cycleId")
+  @Delete("/goal/:goalId")
   @RequiresIdentity()
   @ApiOperation({
-    summary: "Deletes one of the signed-in user's goal cycles",
+    summary: "Deletes one of the signed-in user's goals",
     description:
-      "Removes a cycle from the caller's list. Goals set for it keep their dates and become custom goals.",
-    operationId: "DeleteGoalCycle",
-    tags: ["Goal Cycles"],
+      "Deletes a goal so that it can be restored. A goal with sub-goals that are not deleted cannot be deleted.",
+    operationId: "DeleteGoal",
+    tags: ["Goals"],
   })
   @ApiParam({
-    name: "cycleId",
-    description: "The ID of the cycle to delete",
+    name: "goalId",
+    description: "The ID of the goal to delete",
     type: String,
   })
-  @ApiNoContentResponse({ description: "The cycle was deleted." })
+  @ApiNoContentResponse({ description: "The goal was deleted." })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: "The goal has sub-goals that are not deleted.",
+  })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     description: "No access token, or one that does not verify.",
@@ -47,11 +51,11 @@ export class DeleteGoalCycleController {
   @ApiStandardErrorResponses()
   async handle(
     @CurrentPrincipal() principal: Principal | undefined,
-    @Param("cycleId", ParseUUIDPipe) cycleId: string,
+    @Param("goalId", ParseUUIDPipe) goalId: string,
     @Res() response: Response,
   ): Promise<void> {
     const user = requireUser(principal);
-    await this.goalCycles.delete(user.userId, cycleId);
+    await this.goals.delete(user.userId, goalId);
     response.status(HttpStatus.NO_CONTENT).send();
   }
 }

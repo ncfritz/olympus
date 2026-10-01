@@ -334,10 +334,12 @@ describe("Goal cycles API", () => {
       );
 
       expect(res.status).toBe(204);
-      expect(ctx.t.graphql.calls("DeleteGoalCycle")[0].variables).toEqual({
-        userId: USER,
-        cycleId: GOAL_CYCLE_ID,
-      });
+      const call = ctx.t.graphql.calls("DeleteGoalCycle")[0];
+      expect(call.variables).toEqual({ userId: USER, cycleId: GOAL_CYCLE_ID });
+      // Its goals become custom goals first, in the same mutation.
+      expect(call.document).toMatch(
+        /update_minerva_goals[\s\S]*horizon: "custom"[\s\S]*delete_minerva_goal_cycles/,
+      );
     });
 
     it("answers 404 for someone else's cycle", async () => {

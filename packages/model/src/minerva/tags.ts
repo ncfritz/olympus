@@ -34,6 +34,14 @@ export class Tag {
   })
   color?: string;
 
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "How many of the user's goals that are not deleted carry the tag",
+  })
+  goalCount: number;
+
   @ApiTimestamp({
     required: true,
     description:

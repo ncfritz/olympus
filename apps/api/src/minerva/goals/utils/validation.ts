@@ -80,3 +80,37 @@ export const checkInteger = (
 /** A list of strings, as reorder operations take. */
 export const isStringList = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((item) => typeof item === "string");
+
+const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** Whether `value` is a UUID, as IDs are. */
+export const isUuid = (value: unknown): value is string =>
+  typeof value === "string" && UUID.test(value);
+
+/** A finite number from `min` to `max` (inclusive unless `exclusiveMin`). */
+export const checkNumber = (
+  value: unknown,
+  name: string,
+  problems: string[],
+  {
+    min,
+    max,
+    exclusiveMin = false,
+  }: { min?: number; max?: number; exclusiveMin?: boolean } = {},
+): number => {
+  const ok =
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    (min === undefined || (exclusiveMin ? value > min : value >= min)) &&
+    (max === undefined || value <= max);
+  if (!ok) {
+    const range =
+      min !== undefined && max !== undefined
+        ? ` ${exclusiveMin ? "above" : "from"} ${min} ${exclusiveMin ? "and at most" : "to"} ${max}`
+        : "";
+    problems.push(`${name} must be a number${range}`);
+    return min ?? 0;
+  }
+  return value;
+};
