@@ -193,7 +193,7 @@ what to look at when a first sign-in links the wrong account.
 A host built to here runs the platform and backs nothing up. The nightly
 backups are an Airflow DAG ([infra/airflow](../../infra/airflow/README.md)),
 and Airflow is not part of this repository — it is a stack of its own, so a new
-host needs one before anything is being kept. Until then `${DATA_DIR}/backups`
+host needs one before anything is being kept. Until then `${BACKUP_DIR}`
 stays empty, and nothing says so.
 
 What that Airflow needs is in

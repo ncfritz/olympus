@@ -161,15 +161,17 @@ bootstrap() {
   done
 
   local dir
-  # `backups` is where the nightly DAG writes (infra/airflow); it is created
-  # here so that the first run finds it rather than Docker creating it as root.
-  for dir in postgres rabbitmq/data registry registry-ui backups \
+  for dir in postgres rabbitmq/data registry registry-ui \
     dionysus/uploads dionysus/asset-agents/data dionysus/metadata-agents/data \
     dionysus/search-agents/data minerva/credentials/google \
     minerva/credentials/microsoft olympus/site/olr; do
     mkdir -p "$DATA_DIR/$dir"
   done
   echo "data     $DATA_DIR"
+  # Where the nightly DAG writes (infra/airflow). Created here because Docker
+  # refuses a bind mount whose source is missing, so the first run would fail.
+  mkdir -p "${BACKUP_DIR:-$DATA_DIR/backups}"
+  echo "backups  ${BACKUP_DIR:-$DATA_DIR/backups}"
 
   mkdir -p "$SECRETS_DIR/rabbitmq"
   chmod 700 "$SECRETS_DIR"
@@ -442,7 +444,7 @@ refresh_dev() {
     shift
   done
 
-  local backups="$DATA_DIR/backups"
+  local backups="${BACKUP_DIR:-$DATA_DIR/backups}"
   [ -d "$backups" ] || die "no $backups -- either the nightly DAG has not run
 (infra/airflow) or this is not the host holding the archives"
   if [ -z "$when" ] || [ "$when" = latest ]; then

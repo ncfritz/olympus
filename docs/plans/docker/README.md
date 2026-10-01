@@ -546,7 +546,7 @@ _when_.
       the only destructive step here, so it runs last and only if `verify`
       passed.
 
-   Into `${DATA_DIR}/backups/<date>/` on the Mac Mini, which is the honest limit
+   Into `${BACKUP_DIR}/<date>/` on the Mac Mini, which is the honest limit
    of this phase: it survives a bad migration, a dropped table and a botched
    metadata apply, and it does not survive a dead Mac Mini. Getting the archives
    off the host is deliberately later work rather than something to half-do now.

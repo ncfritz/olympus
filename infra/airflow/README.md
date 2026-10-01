@@ -157,7 +157,7 @@ configuration, and the other DAGs stay where they are.
 
 ## The DAGs
 
-### `olympus_backup`
+### `olympus_backup` (Olympus Backup)
 
 Nightly at 02:17. `globals` → a `pg_dump -Fc` per database →
 `rabbitmq_definitions` → `verify` → `retain`, in that order and one at a time —
@@ -180,7 +180,8 @@ it runs against the database the platform is using, and there is all night.
   and runs last because deleting is the only step here that cannot be undone.
   Directories that are not dated, and loose files, are left alone.
 
-Into `${DATA_DIR}/backups/<date>/` on the Mac Mini, which is this phase's
+Into `${BACKUP_DIR}/<date>/` on the Mac Mini (`/Users/ncfritz/Docker/data/olympus/backups`;
+`stack.sh bootstrap` creates it, and Docker will not mount a missing folder), which is this phase's
 honest limit: it survives a bad migration, a dropped table and a botched
 metadata apply. It does not survive a dead Mac Mini. Getting the archives off
 the host is later work.
@@ -194,7 +195,7 @@ year of readings every ~16 seconds would otherwise be most of every dump. A
 restore brings the tables back empty; `weather:replay` fills them
 ([the guide](../../docs/guides/weather-stations.md)).
 
-### `olympus_weather_archive`
+### `olympus_weather_archive` (Olympus Weather Archive)
 
 Nightly at 03:07, after the backups. The API writes every station push to
 `${DATA_DIR}/weather/archive/<MAC>/<yyyy>/<mm>/<dd>.jsonl` and seals each UTC

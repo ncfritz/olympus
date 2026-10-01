@@ -69,7 +69,12 @@ HTTP_IMAGE = ENV["BACKUP_HTTP_IMAGE"]
 # compose/data.yml's own default, for an environment that does not set it.
 DATABASES = [ENV.get("POSTGRES_DB", "olympus"), "olympus_dev"]
 
-BACKUPS = Mount(source=ENV["DATA_DIR"] + "/backups", target="/backups", type="bind")
+# BACKUP_DIR, or ${DATA_DIR}/backups for an environment file without one.
+BACKUPS = Mount(
+    source=ENV.get("BACKUP_DIR") or ENV["DATA_DIR"] + "/backups",
+    target="/backups",
+    type="bind",
+)
 
 
 def secret(name: str) -> Mount:
@@ -120,10 +125,11 @@ def announce_failure(context: dict[str, Any]) -> None:
         pass
 
 
-def step(task_id: str, script: str) -> DockerOperator:
+def step(task_id: str, name: str, script: str) -> DockerOperator:
     """A task in the image the stack pins, on the database's network."""
     return DockerOperator(
         task_id=task_id,
+        task_display_name=name,
         image=POSTGRES_IMAGE,
         network_mode=DATA_NETWORK,
         mounts=[BACKUPS, secret("postgres_password")],
@@ -137,6 +143,7 @@ def step(task_id: str, script: str) -> DockerOperator:
 
 with DAG(
     dag_id="olympus_backup",
+    dag_display_name="Olympus Backup",
     description="Olympus's databases, dumped nightly, verified, then pruned",
     # Not on the hour: everything else is.
     schedule="17 2 * * *",
@@ -155,6 +162,7 @@ with DAG(
     # until that moment.
     previous = step(
         "globals",
+        "Dump database roles",
         'pg_dumpall -h postgres -U postgres --globals-only > "$DIR/globals.sql"',
     )
 
@@ -168,6 +176,7 @@ with DAG(
         # seconds would otherwise be most of every archive, every night.
         current = step(
             "dump_" + database,
+            "Dump " + database + " database",
             'pg_dump -h postgres -U postgres -Fc -f "$DIR/'
             + database
             + '.dump" '
@@ -185,6 +194,7 @@ with DAG(
     # not know about.
     definitions = DockerOperator(
         task_id="rabbitmq_definitions",
+        task_display_name="Save RabbitMQ definitions",
         image=HTTP_IMAGE,
         network_mode=BROKER_NETWORK,
         # This image runs as its own unprivileged user; the secret is 0600 and
@@ -218,6 +228,7 @@ with DAG(
     # than on the night it is needed.
     verify = step(
         "verify",
+        "Verify backups",
         """
         test -s "$DIR/globals.sql"
         for archive in "$DIR"/*.dump; do
@@ -237,6 +248,7 @@ with DAG(
     # that cannot be undone.
     retain = step(
         "retain",
+        "Prune old backups",
         """
         cd /backups
         ls -1d 20*/ 2>/dev/null | sed 's#/$##' | sort -r > /tmp/all || true

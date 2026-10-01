@@ -221,6 +221,7 @@ def run_day() -> date:
 
 with DAG(
     dag_id="olympus_weather_archive",
+    dag_display_name="Olympus Weather Archive",
     description="The weather stations' sealed days, copied to the NAS and checked",
     # After the backups. The API seals a UTC day at the first push of the
     # next, which is late afternoon here, so yesterday's is always ready.
@@ -232,14 +233,14 @@ with DAG(
     tags=["olympus", "weather"],
 ):
 
-    @task
+    @task(task_display_name="Copy sealed days to NAS")
     def copy() -> None:
         from airflow.providers.sftp.hooks.sftp import SFTPHook
 
         with SFTPHook(ssh_conn_id=CONNECTION).get_managed_conn() as sftp:
             copy_all(sftp, ARCHIVE, REMOTE_ROOT)
 
-    @task
+    @task(task_display_name="Prune copied local days")
     def prune() -> None:
         from airflow.providers.sftp.hooks.sftp import SFTPHook
 
