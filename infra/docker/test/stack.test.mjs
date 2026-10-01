@@ -70,3 +70,66 @@ test("does not call a remote stack's secrets missing", () => {
   assert.match(all, /not checked here/);
   assert.doesNotMatch(all, /missing secret/);
 });
+
+// A `docker` that reports the tag Compose would interpolate instead of
+// running anything: `config --format json` answers an empty project (so
+// `check` finds no secrets to look at), everything else prints its command
+// and OLYMPUS_TAG.
+const stubDocker = () => {
+  const bin = mkdtempSync(join(tmpdir(), "docker-"));
+  writeFileSync(
+    join(bin, "docker"),
+    `#!/usr/bin/env bash
+case " $* " in
+  *" --format json "*) echo '{}' ;;
+  *" up "*) echo "up OLYMPUS_TAG=$OLYMPUS_TAG" ;;
+  *" pull "*) echo "pull OLYMPUS_TAG=$OLYMPUS_TAG" ;;
+esac
+`,
+    { mode: 0o755 },
+  );
+  return { PATH: `${bin}:${process.env.PATH}` };
+};
+
+test("up runs the env file's OLYMPUS_TAG by default", () => {
+  const { status, stdout } = run(fixture(), ["up", "olympus"], stubDocker());
+  assert.equal(status, 0);
+  assert.match(stdout, /up OLYMPUS_TAG=(?!fix123)\S+/);
+});
+
+test("up --tag runs that tag instead, this once, and says so", () => {
+  for (const args of [
+    ["up", "--tag", "fix123", "olympus"],
+    ["up", "olympus", "--tag=fix123"],
+  ]) {
+    const { status, stdout, stderr } = run(fixture(), args, stubDocker());
+    assert.equal(status, 0, stderr);
+    assert.match(stdout, /up OLYMPUS_TAG=fix123/);
+    assert.match(stderr, /OLYMPUS_TAG=fix123 for this run/);
+    // --tag is not taken for a stack's name.
+    assert.doesNotMatch(stdout + stderr, /no stack/);
+  }
+});
+
+test("pull --tag pulls that tag", () => {
+  const { status, stdout } = run(
+    fixture(),
+    ["pull", "olympus", "--tag", "fix123"],
+    stubDocker(),
+  );
+  assert.equal(status, 0);
+  assert.match(stdout, /pull OLYMPUS_TAG=fix123/);
+});
+
+test("refuses --tag without a tag, or with one Docker would not accept", () => {
+  for (const args of [
+    ["up", "olympus", "--tag"],
+    ["up", "--tag=", "olympus"],
+    ["up", "--tag", "not a tag", "olympus"],
+    ["up", "--tag", ".hidden", "olympus"],
+  ]) {
+    const { status, stderr } = run(fixture(), args, stubDocker());
+    assert.notEqual(status, 0, args.join(" "));
+    assert.match(stderr, /--tag/);
+  }
+});

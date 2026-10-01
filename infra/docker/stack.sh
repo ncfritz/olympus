@@ -10,12 +10,17 @@
 #                                             build this stack's images at HEAD;
 #                                             --env builds another
 #                                             environment's from this machine
-#   infra/docker/stack.sh up [stack...|all]   check, then start (in order)
+#   infra/docker/stack.sh up [--tag <tag>] [stack...|all]
+#                                             check, then start (in order);
+#                                             --tag runs that image tag
+#                                             instead of OLYMPUS_TAG, this
+#                                             once
 #   infra/docker/stack.sh down [stack...|all] stop (in reverse order)
 #   infra/docker/stack.sh nginx-reload [stack]  validate and reload the server
 #                                             blocks (default nginx; `border`
 #                                             for the public edge)
 #   infra/docker/stack.sh pull|ps|logs|restart <stack> [args...]
+#                                             (pull takes --tag too)
 #   infra/docker/stack.sh compose <stack> [args...]   anything else
 #   infra/docker/stack.sh rabbitmq-users      write the RabbitMQ definitions
 #   infra/docker/stack.sh refresh-dev [<date>] [--yes]
@@ -525,6 +530,40 @@ check() {
   [ "$problems" -eq 0 ] || die "$problems problem(s)"
 }
 
+# `--tag <tag>` (or `--tag=<tag>`) anywhere in the arguments: the image tag
+# of the images this repository builds (OLYMPUS_TAG), for this run only, so
+# a fix can be deployed without editing the env file. Run after load_env,
+# which sets OLYMPUS_TAG from it; Compose prefers the shell's value to the
+# env file's. Leaves the other arguments in ARGS: stack names and the
+# Compose arguments passed through never contain spaces.
+tag_option() {
+  local tag=""
+  ARGS=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --tag)
+        shift
+        tag=${1:-}
+        [ -n "$tag" ] || die "--tag needs an image tag, e.g. a commit's short sha"
+        ;;
+      --tag=*)
+        tag=${1#--tag=}
+        [ -n "$tag" ] || die "--tag needs an image tag, e.g. a commit's short sha"
+        ;;
+      *) ARGS="$ARGS $1" ;;
+    esac
+    shift
+  done
+  [ -n "$tag" ] || return 0
+  # Docker's own rule for a tag, so a typo fails here rather than as a pull
+  # of something that cannot exist.
+  printf '%s' "$tag" | grep -Eq '^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$' ||
+    die "--tag '$tag' is not an image tag"
+  echo "OLYMPUS_TAG=$tag for this run (env/$OLYMPUS_ENV.env has ${OLYMPUS_TAG:-none})" >&2
+  OLYMPUS_TAG=$tag
+  export OLYMPUS_TAG
+}
+
 # The header, to the first line that is not a comment. Not a line range: one
 # went stale the moment this file grew, and the help then stopped mid-sentence.
 usage() {
@@ -560,6 +599,10 @@ case "$command" in
     ;;
   up)
     load_env
+    tag_option "$@"
+    # Split on purpose: ARGS is a list of stack names (bash 3.2, no arrays).
+    # shellcheck disable=SC2086
+    set -- $ARGS
     check "$@"
     for stack in $(stacks forward "$@"); do
       echo "== $stack"
@@ -575,6 +618,11 @@ case "$command" in
     ;;
   pull | ps | logs | restart)
     load_env
+    if [ "$command" = pull ]; then
+      tag_option "$@"
+      # shellcheck disable=SC2086
+      set -- $ARGS
+    fi
     stack=${1:-}
     [ -n "$stack" ] || die "usage: stack.sh $command <stack> [args...]"
     shift

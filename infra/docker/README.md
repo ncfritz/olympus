@@ -30,8 +30,18 @@ infra/docker/stack.sh check                # every setting and secret in place
 infra/docker/stack.sh list                 # every stack and container, as a tree
 infra/docker/stack.sh up                   # this environment's STACKS, in order
 infra/docker/stack.sh up olympus           # or one stack
+infra/docker/stack.sh up --tag 1a2b3c4d olympus   # another image tag, this once
 infra/docker/stack.sh logs olympus -f dionysus-asset-agent
 ```
+
+`OLYMPUS_TAG` in `env/<env>.env` is the tag every stack runs, and what a
+deploy or a rollback commits. `--tag` on `up` (and `pull`) runs another
+for that command only, without editing the file: for trying a fix built
+with `stack.sh build --push --env prod`, say. It applies to the images this
+repository builds (`OLYMPUS_TAG`; Hasura and RabbitMQ keep their own
+tags), and the next `up` without it goes back to the file's, so once the
+fix is right, set it in the env file and commit it. With `DOCKER_CONTEXT=nas`
+it does the same for the NAS's asset agent.
 
 | Stack        | Services                                                                               | Runs on     |
 | ------------ | -------------------------------------------------------------------------------------- | ----------- |
