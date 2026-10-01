@@ -14,13 +14,13 @@ the flows on the real pieces: the providers, the consoles, the site.
 
 ## Fixtures
 
-| Fixture       | What                                                         |
-| ------------- | ------------------------------------------------------------ |
-| `user-a`      | a signed-in user with the four existing locations            |
-| `user-b`      | a second signed-in user with none                            |
-| `station-a/b` | the two WS-5000 consoles, registered                         |
-| `bad-key`     | the API started with an invalid `OPENWEATHER_API_KEY`        |
-| `no-egress`   | the API with provider hosts unreachable (a blocked DNS name) |
+| Fixture       | What                                                                                         |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| `user-a`      | a signed-in user with the four existing locations                                            |
+| `user-b`      | a second signed-in user with none                                                            |
+| `station-a/b` | the two WS-5000 consoles, registered (b once its site's firewall lets it reach the listener) |
+| `bad-key`     | the API started with an invalid `OPENWEATHER_API_KEY`                                        |
+| `no-egress`   | the API with provider hosts unreachable (a blocked DNS name)                                 |
 
 Every run records: date, environment, build (git commit), who ran it, and
 per case pass/fail with the evidence named in the case. A phase is signed
@@ -47,6 +47,11 @@ recorded exception.
 4. Two requests within the TTL make one provider call
    (`http_client_request_duration_seconds_count{server="openweather"}`
    rises by two: current and forecast).
+5. Today keeps its whole day: the high and low (5 days, and Now's) seen
+   in the evening are no narrower than the morning's, and today's rows in
+   `weather_forecast_steps` include steps that have passed.
+6. Next 24 hours: Temp, Feels like, Humidity and Pressure each draw the
+   curve with the values OpenWeather's forecast gives for those steps.
 
 ## W3 — Provider failure
 
@@ -79,14 +84,17 @@ recorded exception.
 
 1. The first console reports at its shortest interval; samples arrive
    with `observed_at` from the console, and indoor readings with them.
-   The archive's `remote` for its pushes is the console's own address,
-   not Docker Desktop's (see the guide). The second console, once its
-   site's firewall allows it, repeats this.
+   The archive's `remote` for its pushes is Docker Desktop's gateway,
+   `192.168.65.1` (the guide, _Where pushes come from_). The second
+   console, once its site's firewall allows it, repeats this.
 2. A request with an unregistered MAC is 403 and stores nothing.
 3. The report path from outside the LAN (a phone on mobile data, and the
    public host name, with and without a trailing slash) is refused: 404
    from nginx on the public name, 403 from the API for any other way in.
 4. A repeated request stores one row.
+5. The router is the address check: from another host on the IoT
+   network, the listener (`weather.internal.ncfritz.net:80`) cannot be
+   reached; from the console's reserved address it can.
 
 ## W7 — Rollups
 
@@ -120,7 +128,9 @@ recorded exception.
    checksum matches; local days are removed only after 30 days and a good
    copy.
 4. No archive line contains an Ambient API key.
-5. The database backup holds the weather schema and no weather rows.
+5. The database backup holds the weather schema and no station sample
+   or rollup rows (the forecast history's rows may be there: they are
+   two days of forecasts, harmless either way).
 
 ## W11 — Backfill
 
@@ -140,11 +150,16 @@ recorded exception.
    consoles' displays.
 2. Unplugging one console: "not reporting" after 10 minutes, with the
    time of its last reading.
-3. The history page: each preset and a custom range pick the expected
+3. _(Once the history page is built.)_ The history page: each preset and a custom range pick the expected
    resolution; an override to a finer tier works where one covers the
    range; the rain chart's daily totals match the console.
-4. Replay: drop the weather rows in DEV, replay the archive, and the
-   history page shows the same charts as before.
+4. _(Once the history page is built.)_ Replay: drop the weather rows in
+   DEV, replay the archive, and the history page shows the same charts as
+   before.
+5. Registering: an admin's Stations tab offers Register station (and
+   Register a station when there are none); a MAC in any of its forms is
+   accepted and shows at once; a MAC already registered is refused in the
+   modal; a user without `admin` sees neither.
 
 ## W13 — Weather data in dev
 
@@ -162,3 +177,16 @@ recorded exception.
 6. `/dionysus-dev`'s relay queue stays under its length limit with no
    consumer for three days, and a laptop's own queue disappears a week
    after its last use.
+
+## Runs
+
+### Run 1 — started 2026-10-01
+
+Environment PROD unless a case says otherwise; build `994621e2` for the
+repository checks (the deployed tag is recorded per case). Ran by Neil,
+with Claude for the repository and log checks.
+
+| Case | Result  | Evidence                                                                                                                                                                                                                      |
+| ---- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| W9.1 | partial | Repository: no reference to Tomorrow.io outside the roadmap item W9.2 closes, this plan and ADR 0024 (`git grep -i tomorrow`). A local site build (`.next`, 2026-10-01): none. The production image's build is still to grep. |
+| W4.2 | partial | The same local build: no `appid=` key and no OpenWeather URL but the attribution link. The production image's build is still to grep.                                                                                         |
