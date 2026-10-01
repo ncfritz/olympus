@@ -1,6 +1,7 @@
 import type { ForecastStep } from "@ncfritz/olympus-sdk/olympus";
 import { describe, expect, it } from "vitest";
 import {
+  availableMeasures,
   plot,
   STEP_MEASURES,
   stepMeasure,
@@ -78,5 +79,50 @@ describe("step measures", () => {
       "Humidity",
       "Pressure",
     ]);
+  });
+});
+
+describe("missing values", () => {
+  // An API older than these fields sends steps without them.
+  const old = { temperatureF: 72 } as ForecastStep;
+
+  it.each(["feelsLike", "humidity", "pressure"] as const)(
+    "reads a step without %s as missing and shows a dash",
+    (value) => {
+      const measure = stepMeasure(value);
+      const read = measure.read(old);
+      expect(read).toBeUndefined();
+      expect(measure.format(read)).toBe("—");
+    },
+  );
+
+  it("leaves a gap in the line where a value is missing", () => {
+    const { ys, d } = plot([60, undefined, 70, 80], { ...SIZE, minSpan: 10 });
+    expect(ys[1]).toBeUndefined();
+    expect(ys[0]).toBe(64);
+    // Two pieces: the first point alone, then the last two.
+    expect(d.match(/M/g)).toHaveLength(2);
+    expect(d).not.toMatch(/NaN/);
+  });
+
+  it("has nothing to draw when every value is missing", () => {
+    expect(plot([undefined, undefined], { ...SIZE, minSpan: 10 })).toEqual({
+      ys: [undefined, undefined],
+      d: "",
+    });
+  });
+
+  it("offers only the measures some step has", () => {
+    expect(availableMeasures([old])).toEqual(["temperature"]);
+    expect(
+      availableMeasures([
+        {
+          temperatureF: 72,
+          feelsLikeF: 71,
+          humidityPct: 50,
+          pressureInHg: 29.9,
+        } as ForecastStep,
+      ]),
+    ).toEqual(["temperature", "feelsLike", "humidity", "pressure"]);
   });
 });

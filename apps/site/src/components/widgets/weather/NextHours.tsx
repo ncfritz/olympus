@@ -2,6 +2,7 @@ import { type ForecastStep } from "@ncfritz/olympus-sdk/olympus";
 import { Segmented } from "antd";
 import { useId, useState } from "react";
 import {
+  availableMeasures,
   plot,
   STEP_MEASURES,
   type StepMeasure,
@@ -38,7 +39,11 @@ const NextHours: React.FunctionComponent<NextHoursProps> = ({
   steps,
   utcOffsetSeconds,
 }: NextHoursProps) => {
-  const [measureName, setMeasureName] = useState<StepMeasure>("temperature");
+  const [picked, setPicked] = useState<StepMeasure>("temperature");
+  // Only what the steps have: an API older than feels-like, humidity and
+  // pressure sends none of them, and its steps draw temperature.
+  const available = availableMeasures(steps);
+  const measureName = available.includes(picked) ? picked : "temperature";
   const measure = stepMeasure(measureName);
   const values = steps.map(measure.read);
   const { ys, d } = plot(values, { ...PLOT, minSpan: measure.minSpan });
@@ -80,13 +85,15 @@ const NextHours: React.FunctionComponent<NextHoursProps> = ({
                       x2={columns}
                       y2="0"
                     >
-                      {values.map((value, i) => (
-                        <stop
-                          key={i}
-                          offset={(i + 0.5) / columns}
-                          stopColor={measure.color(value)}
-                        />
-                      ))}
+                      {values.map((value, i) =>
+                        value === undefined ? null : (
+                          <stop
+                            key={i}
+                            offset={(i + 0.5) / columns}
+                            stopColor={measure.color(value)}
+                          />
+                        ),
+                      )}
                     </linearGradient>
                   </defs>
                   <path
@@ -105,7 +112,13 @@ const NextHours: React.FunctionComponent<NextHoursProps> = ({
                     ? styles.hourValueLong
                     : ""
                 }`}
-                style={{ top: ys[index] - LABEL_GAP - LABEL_HEIGHT }}
+                style={{
+                  // A missing value's dash sits in the middle of the band.
+                  top:
+                    (ys[index] ?? (PLOT.height + LABEL_HEIGHT) / 2) -
+                    LABEL_GAP -
+                    LABEL_HEIGHT,
+                }}
               >
                 <span className={styles.visuallyHidden}>{measure.name} </span>
                 {measure.format(values[index])}
@@ -121,9 +134,13 @@ const NextHours: React.FunctionComponent<NextHoursProps> = ({
         block
         size="small"
         aria-label="Measure shown"
-        options={STEP_MEASURES.map(({ value, label }) => ({ value, label }))}
+        options={STEP_MEASURES.map(({ value, label }) => ({
+          value,
+          label,
+          disabled: !available.includes(value),
+        }))}
         value={measureName}
-        onChange={setMeasureName}
+        onChange={setPicked}
       />
     </section>
   );

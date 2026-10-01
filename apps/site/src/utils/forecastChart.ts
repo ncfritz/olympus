@@ -15,8 +15,10 @@ export type StepMeasureSpec = {
   label: string;
   /** The measure's name, for screen readers. */
   name: string;
-  read: (step: ForecastStep) => number;
-  format: (value: number) => string;
+  /** The step's value; undefined when it has none (an older API). */
+  read: (step: ForecastStep) => number | undefined;
+  /** A value as its label; a dash for none. */
+  format: (value: number | undefined) => string;
   /**
    * The smallest range the curve's height stands for, so a measure that
    * barely moves (pressure over a calm day) draws nearly flat rather than
@@ -30,13 +32,26 @@ export type StepMeasureSpec = {
 const HUMIDITY = "#1677ff";
 const PRESSURE = "#08979c";
 
+/**
+ * A field as a number, or undefined: an API older than feels-like,
+ * humidity and pressure sends steps without them, and the type cannot
+ * say so.
+ */
+const field = (value: number | undefined): number | undefined =>
+  typeof value === "number" && Number.isFinite(value) ? value : undefined;
+
+const orDash =
+  (format: (value: number) => string) =>
+  (value: number | undefined): string =>
+    value === undefined ? "—" : format(value);
+
 export const STEP_MEASURES: StepMeasureSpec[] = [
   {
     value: "temperature",
     label: "Temp",
     name: "Temperature",
-    read: (step) => step.temperatureF,
-    format: degrees,
+    read: (step) => field(step.temperatureF),
+    format: orDash(degrees),
     minSpan: 10,
     color: temperatureColor,
   },
@@ -44,8 +59,8 @@ export const STEP_MEASURES: StepMeasureSpec[] = [
     value: "feelsLike",
     label: "Feels like",
     name: "Feels like",
-    read: (step) => step.feelsLikeF,
-    format: degrees,
+    read: (step) => field(step.feelsLikeF),
+    format: orDash(degrees),
     minSpan: 10,
     color: temperatureColor,
   },
@@ -53,8 +68,8 @@ export const STEP_MEASURES: StepMeasureSpec[] = [
     value: "humidity",
     label: "Humidity",
     name: "Humidity",
-    read: (step) => step.humidityPct,
-    format: (value) => `${Math.round(value)}%`,
+    read: (step) => field(step.humidityPct),
+    format: orDash((value) => `${Math.round(value)}%`),
     minSpan: 20,
     color: () => HUMIDITY,
   },
@@ -62,8 +77,8 @@ export const STEP_MEASURES: StepMeasureSpec[] = [
     value: "pressure",
     label: "Pressure",
     name: "Pressure, inches of mercury",
-    read: (step) => step.pressureInHg,
-    format: (value) => value.toFixed(2),
+    read: (step) => field(step.pressureInHg),
+    format: orDash((value) => value.toFixed(2)),
     minSpan: 0.2,
     color: () => PRESSURE,
   },
@@ -72,9 +87,18 @@ export const STEP_MEASURES: StepMeasureSpec[] = [
 export const stepMeasure = (value: StepMeasure): StepMeasureSpec =>
   STEP_MEASURES.find((measure) => measure.value === value) ?? STEP_MEASURES[0];
 
+/** The measures at least one step has, in the picker's order. */
+export const availableMeasures = (steps: ForecastStep[]): StepMeasure[] =>
+  STEP_MEASURES.filter((measure) =>
+    steps.some((step) => measure.read(step) !== undefined),
+  ).map((measure) => measure.value);
+
 export type Plot = {
-  /** Each value's height in the plot, in pixels from its top. */
-  ys: number[];
+  /**
+   * Each value's height in the plot, in pixels from its top; undefined
+   * where the value is missing.
+   */
+  ys: (number | undefined)[];
   /** A smooth path through them, x in columns (the i-th at i + 0.5). */
   d: string;
 };
@@ -87,7 +111,7 @@ export type Plot = {
  * so a label sits above its point rather than under the line.
  */
 export const plot = (
-  values: number[],
+  values: (number | undefined)[],
   {
     height,
     top,
@@ -95,17 +119,39 @@ export const plot = (
     minSpan,
   }: { height: number; top: number; bottom: number; minSpan: number },
 ): Plot => {
-  if (values.length === 0) return { ys: [], d: "" };
-  const low = Math.min(...values);
-  const high = Math.max(...values);
+  const present = values.filter(
+    (value): value is number => value !== undefined,
+  );
+  if (present.length === 0) return { ys: values.map(() => undefined), d: "" };
+  const low = Math.min(...present);
+  const high = Math.max(...present);
   const span = Math.max(high - low, minSpan);
   const floor = low - (span - (high - low)) / 2;
   const usable = height - top - bottom;
   const ys = values.map((value) =>
-    round(top + usable * (1 - (value - floor) / span)),
+    value === undefined
+      ? undefined
+      : round(top + usable * (1 - (value - floor) / span)),
   );
-  const xs = values.map((_, i) => i + 0.5);
-  return { ys, d: monotonePath(xs, ys) };
+  // A piece of line per run of present values, so a missing one is a gap.
+  const pieces: { xs: number[]; ys: number[] }[] = [];
+  let piece: { xs: number[]; ys: number[] } | undefined;
+  ys.forEach((y, i) => {
+    if (y === undefined) {
+      piece = undefined;
+      return;
+    }
+    if (!piece) {
+      piece = { xs: [], ys: [] };
+      pieces.push(piece);
+    }
+    piece.xs.push(i + 0.5);
+    piece.ys.push(y);
+  });
+  return {
+    ys,
+    d: pieces.map((run) => monotonePath(run.xs, run.ys)).join(" "),
+  };
 };
 
 /**
