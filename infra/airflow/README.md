@@ -31,7 +31,7 @@ Between them they need:
 | `/var/run/docker.sock` in the worker                                | `DockerOperator`. Without it the work runs in the worker and `pg_dump` comes from Airflow's own image.                                      |
 | `apache-airflow-providers-docker` >= 3.0                            | `auto_remove` takes `"success"`, not `True`.                                                                                                |
 | `apache-airflow-providers-sftp`                                     | The archive's copy: `SFTPHook` on the connection named by `WEATHER_NAS_SFTP_CONNECTION`.                                                    |
-| That SFTP connection                                                | `olympus_weather_nas`: the NAS, as the `weather` user, whose password lives in the connection.                                              |
+| That SFTP connection                                                | `olympus_weather_sftp`: the NAS, as the `weather` user, whose password lives in the connection.                                             |
 | The archive in the worker, read/write, at `OLYMPUS_WEATHER_ARCHIVE` | `${DATA_DIR}/weather/archive`; `prune` deletes the days it has copied.                                                                      |
 | The `olympus-data` network reachable                                | `postgres` is not published off `127.0.0.1`; containers reach it by name on that network.                                                   |
 | The `olympus-backend` network reachable                             | RabbitMQ's management port is published only on the host's loopback, so the same applies to it.                                             |
@@ -127,7 +127,7 @@ configuration, and the other DAGs stay where they are.
 4. **The NAS and the connection.** On `nfs01`: a `weather` user with
    read/write on the `Weather` share and SFTP allowed (Control Panel >
    Application Privileges). In Airflow (Admin > Connections), connection
-   `olympus_weather_nas`: type SFTP, host `nfs01.sea.ncfritz.net`, login
+   `olympus_weather_sftp`: type SFTP, host `nfs01.sea.ncfritz.net`, login
    `weather`, its password, and the port and host-key settings your other
    SFTP connections use. The share is `/Weather` to that user
    (`WEATHER_NAS_SFTP_DIR`).
