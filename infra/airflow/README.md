@@ -155,6 +155,16 @@ configuration, and the other DAGs stay where they are.
    The archive's `copy` has nothing to send until a UTC day has been sealed
    (the first push after midnight UTC seals the day before).
 
+   If `Dump database roles` fails with `password authentication failed for
+user "postgres"`: Postgres reads `postgres_password` only when it creates
+   an empty data directory, so a data directory older than the file keeps
+   the password it was created with, and nothing else checks it (`stack.sh`
+   uses the container's local socket; Hasura has its own URL). Make the two
+   agree: copy the password from `hasura_database_url` into the file when
+   that URL is `postgres`'s, otherwise set the role from the file with
+   `ALTER ROLE postgres PASSWORD`, reading it through psql's `\getenv` so it
+   is never on a command line.
+
 ## The DAGs
 
 ### `olympus_backup` (Olympus Backup)
