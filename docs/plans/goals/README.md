@@ -50,7 +50,7 @@ No new configuration: the feature has no provider, secret or schedule.
 
 ## Phase 0 — Decision and scaffolding
 
-1. **ADR 0026** reviewed and accepted.
+1. **ADR 0026 accepted**: **done** 2026-10-01.
 2. **Model**: `minerva/goals/index.ts` and `minerva/tags.ts`, exported up
    to `src/index.ts`; no shapes yet.
 3. **API**: `TagsModule` and `GoalsModule` in `MINERVA_MODULES`, no

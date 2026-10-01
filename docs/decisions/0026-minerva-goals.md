@@ -1,6 +1,6 @@
 # 0026. Minerva goals: per-user, relational, progress computed on read
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-01
 
 ## Context
