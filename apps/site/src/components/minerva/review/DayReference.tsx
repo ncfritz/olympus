@@ -1,12 +1,6 @@
 import type { Meeting, Note } from "@ncfritz/olympus-sdk/minerva";
-import { DateTime } from "luxon";
 import React from "react";
-import {
-  busyMinutes,
-  formatMinutes,
-  meetingSpans,
-} from "../../../utils/reviews";
-import DayCalendar from "./DayCalendar";
+import CalendarPane from "./CalendarPane";
 import NoteList from "./NoteList";
 import styles from "./Review.module.css";
 
@@ -36,19 +30,7 @@ const DayReference: React.FunctionComponent<DayReferenceProps> = ({
         <NoteList notes={notes} />
       </div>
     </section>
-    <section className={styles.calendarPane} aria-label={"Calendar"}>
-      <div className={styles.paneHeader}>
-        <span>Calendar</span>
-        <span className={styles.meta}>
-          {formatMinutes(
-            busyMinutes(meetingSpans(meetings, DateTime.fromISO(day))),
-          )}
-        </span>
-      </div>
-      <div className={styles.calendarFill}>
-        <DayCalendar day={day} meetings={meetings} />
-      </div>
-    </section>
+    <CalendarPane day={day} meetings={meetings} />
   </div>
 );
 

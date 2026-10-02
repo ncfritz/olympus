@@ -9,6 +9,8 @@ export interface DayCalendarProps {
   /** The day shown, YYYY-MM-DD. */
   day: string;
   meetings: Meeting[];
+  /** Planned blocks drawn with the meetings, apart from them. */
+  blocks?: { id: string; title: string; start: Date; end: Date }[];
 }
 
 /**
@@ -18,13 +20,24 @@ export interface DayCalendarProps {
 const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
   day,
   meetings,
+  blocks = [],
 }) => (
   <FullCalendar
     plugins={[timeGridPlugin]}
     viewClassNames={"minerva-cal hide-day-header"}
     initialView={"timeGridDay"}
     initialDate={DateTime.fromISO(day).toJSDate()}
-    events={meetings.filter((m) => !m.isDeleted).map(meetingsApi.toEvent)}
+    events={[
+      ...meetings.filter((m) => !m.isDeleted).map(meetingsApi.toEvent),
+      // A plan, not a meeting: drawn in the plan's green.
+      ...blocks.map((b) => ({
+        ...b,
+        editable: false,
+        backgroundColor: "#f6ffed",
+        borderColor: "#52c41a",
+        textColor: "#135200",
+      })),
+    ]}
     headerToolbar={false}
     height={"100%"}
     allDayText={""}

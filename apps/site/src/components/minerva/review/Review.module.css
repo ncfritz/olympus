@@ -615,3 +615,37 @@
 .addRow {
   margin-top: 8px;
 }
+
+/* A step with its calendar on the left and its work beside it. */
+.calendarStep {
+  display: flex;
+}
+
+.calendarStep .column {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The calendar pane on the left: the border on its right instead. */
+.calendarLeft {
+  border-left: 0;
+  border-right: 1px solid #f0f0f0;
+}
+
+/* The work's width, which the footer shares so their right edges meet. */
+.limited {
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* A line under a pane's heading. */
+.paneNote {
+  flex: none;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+  border-bottom: 1px solid #f0f0f0;
+}
