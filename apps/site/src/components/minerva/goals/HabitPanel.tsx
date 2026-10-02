@@ -121,20 +121,20 @@ const HabitPanel: React.FunctionComponent<{
       extra={<Text type={"secondary"}>{ruleText(goal)}</Text>}
     >
       <Row gutter={16}>
-        <Col span={8}>
+        <Col flex={"none"}>
           <Statistic
             title={"Adherence"}
             value={summary?.adherence ?? "–"}
             suffix={summary?.adherence !== undefined ? "%" : undefined}
           />
         </Col>
-        <Col span={8}>
+        <Col flex={"100px"}>
           <Statistic
             title={"Current streak"}
             value={summary?.currentStreak ?? 0}
           />
         </Col>
-        <Col span={8}>
+        <Col flex={"100px"}>
           <Statistic title={"Best streak"} value={summary?.bestStreak ?? 0} />
         </Col>
       </Row>
