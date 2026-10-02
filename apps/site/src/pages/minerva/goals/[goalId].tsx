@@ -300,7 +300,12 @@ const GoalPage: React.FunctionComponent = () => {
           <span key={"g"}>{goal.title}</span>,
         ]}
       />
-      <div style={{ padding: "16px 16px 0" }}>
+      <div
+        style={{
+          padding: "16px 32px 16px 16px",
+          borderBottom: "1px solid #f0f0f0",
+        }}
+      >
         <Flex justify={"space-between"} align={"start"} gap={16} wrap={true}>
           <Space
             orientation={"vertical"}
