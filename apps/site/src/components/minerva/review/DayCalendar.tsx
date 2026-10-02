@@ -3,6 +3,8 @@ import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import FullCalendar from "@fullcalendar/react";
 import type { Meeting, ReviewItemKind } from "@ncfritz/olympus-sdk/minerva";
+import { CloseOutlined } from "@ant-design/icons";
+import { Button } from "antd";
 import { DateTime } from "luxon";
 import React, { useEffect, useRef, useState } from "react";
 import meetingsApi from "../../../api/meetingsApi";
@@ -30,6 +32,8 @@ export interface DayCalendarProps {
    */
   blocks?: CalendarBlock[];
   onBlockChange?: (id: string, start: Date, end: Date) => void;
+  /** A block taken off: its close button, or dragged off the calendar. */
+  onBlockRemove?: (id: string) => void;
   /**
    * An item dropped from a list (a FullCalendar Draggable whose elements
    * carry `data-block-item`), at the time it was dropped on.
@@ -40,7 +44,7 @@ export interface DayCalendarProps {
 /** Moves and resizes snap to a quarter hour; a block is at least that. */
 const SNAP = 15;
 
-type Preview = { id: string; start: Date; end: Date };
+type Preview = { id: string; start: Date; end: Date; leaving?: boolean };
 
 /**
  * A day's calendar as Meetings draws it, as a time grid filling its
@@ -52,6 +56,7 @@ const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
   meetings,
   blocks = [],
   onBlockChange,
+  onBlockRemove,
   onBlockDrop,
 }) => {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -83,8 +88,25 @@ const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
     const end = DateTime.fromJSDate(block.end);
     const minutes = end.diff(start, "minutes").minutes;
     let moved: Preview | undefined;
+    let leaving = false;
 
     const move = (e: PointerEvent) => {
+      // A block dragged off the calendar is taken off when it is let go.
+      const box = rootRef.current?.getBoundingClientRect();
+      const outside =
+        mode === "move" &&
+        onBlockRemove !== undefined &&
+        box !== undefined &&
+        (e.clientX < box.left ||
+          e.clientX > box.right ||
+          e.clientY < box.top ||
+          e.clientY > box.bottom);
+      if (outside !== leaving) {
+        leaving = outside;
+        moved = { ...(moved ?? block), id: block.id, leaving };
+        setPreview(moved);
+      }
+      if (leaving) return;
       const delta = Math.round((e.clientY - startY) / perMinute / SNAP) * SNAP;
       let from = start;
       let to = end;
@@ -114,6 +136,10 @@ const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      if (leaving) {
+        onBlockRemove?.(block.id);
+        return;
+      }
       if (
         moved &&
         (+moved.start !== +block.start || +moved.end !== +block.end)
@@ -133,7 +159,10 @@ const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
   );
 
   return (
-    <div ref={rootRef} className={styles.calendarRoot}>
+    <div
+      ref={rootRef}
+      className={`${styles.calendarRoot} ${onBlockChange ? styles.calendarEditable : ""}`}
+    >
       <FullCalendar
         plugins={[timeGridPlugin, interactionPlugin]}
         viewClassNames={"minerva-cal hide-day-header"}
@@ -147,7 +176,11 @@ const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
             end: b.end,
             title: b.title,
             display: "background",
-            classNames: [styles.block, PLAN_KINDS[b.kind].block],
+            classNames: [
+              styles.block,
+              PLAN_KINDS[b.kind].block,
+              ...("leaving" in b && b.leaving ? [styles.blockLeaving] : []),
+            ],
             extendedProps: { block: b },
           })),
         ]}
@@ -174,6 +207,19 @@ const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
                   DateTime.fromJSDate(block.end),
                 )}
               </span>
+              {onBlockRemove && (
+                <Button
+                  className={styles.blockClose}
+                  size={"small"}
+                  type={"text"}
+                  icon={<CloseOutlined />}
+                  aria-label={`Take ${block.title} off the calendar`}
+                  title={"Take it off the calendar"}
+                  // Not the start of a move.
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => onBlockRemove(block.id)}
+                />
+              )}
               {onBlockChange && (
                 <div
                   className={styles.blockHandle}

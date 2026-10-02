@@ -610,10 +610,10 @@
   color: rgba(0, 0, 0, 0.35);
 }
 
-/* The add box under a list: its input and button joined, as AntD's compact
- * space draws them, so no row gap between. */
+/* The add box above a list: its input and button joined, as AntD's
+ * compact space draws them, so no row gap between. */
 .addRow {
-  margin-top: 8px;
+  margin-bottom: 4px;
 }
 
 /* A step with its calendar on the left and its work beside it. */
@@ -688,7 +688,7 @@
 .blockContent {
   position: absolute;
   inset: 0;
-  padding: 2px 6px;
+  padding: 2px 28px 2px 6px;
   font-size: 12px;
   line-height: 16px;
   overflow: hidden;
@@ -715,4 +715,31 @@
 
 .calendarRoot {
   height: 100%;
+}
+
+/* The time an item has blocked, beside it in its list. */
+.blockTime {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
+}
+
+/* A block's close button, at its top right. */
+.blockClose {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  z-index: 1;
+}
+
+/* A block dragged off the calendar, about to be removed. */
+.calendarFill .blockLeaving.blockLeaving {
+  opacity: 0.35;
+}
+
+/* A calendar whose blocks can be changed keeps a strip clear of meetings
+ * down its right side, so each block's close button, and a place to grab
+ * it, is never covered by a meeting over it. */
+.calendarEditable :global(.fc-timegrid-col-events) {
+  margin-right: 30px;
 }

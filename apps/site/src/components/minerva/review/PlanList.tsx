@@ -1,9 +1,4 @@
-import {
-  ClockCircleOutlined,
-  CloseOutlined,
-  HolderOutlined,
-  PlusOutlined,
-} from "@ant-design/icons";
+import { CloseOutlined, HolderOutlined, PlusOutlined } from "@ant-design/icons";
 import {
   closestCenter,
   DndContext,
@@ -22,16 +17,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ReviewItem, ReviewItemKind } from "@ncfritz/olympus-sdk/minerva";
-import {
-  Button,
-  Input,
-  Popover,
-  Space,
-  Tag,
-  TimePicker,
-  Typography,
-} from "antd";
-import dayjs, { type Dayjs } from "dayjs";
+import { Button, Input, Space, Tag, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import { formatBlock } from "../../../utils/reviews";
 import { PLAN_KINDS } from "./planKinds";
@@ -43,7 +29,7 @@ export interface PlanListProps {
   kind: ReviewItemKind;
   items: ReviewItem[];
   disabled?: boolean;
-  /** Whether items can be given a block of time. */
+  /** Whether to show an item's block of time, set on the calendar. */
   blocks?: boolean;
   /**
    * Whether an item's title can be dragged onto a calendar to block its
@@ -54,82 +40,21 @@ export interface PlanListProps {
   onAdd: (title: string) => Promise<void>;
   onRemove: (item: ReviewItem) => Promise<void>;
   onReorder: (ids: string[]) => Promise<void>;
-  onBlock?: (
-    item: ReviewItem,
-    block: { start: string; end: string } | null,
-  ) => Promise<void>;
   /** Anything more a row shows before its remove button. */
   extra?: (item: ReviewItem) => React.ReactNode;
 }
-
-/** Picks a block of time for an item, on its day. */
-const BlockPicker: React.FunctionComponent<{
-  item: ReviewItem;
-  onBlock: NonNullable<PlanListProps["onBlock"]>;
-  disabled: boolean;
-}> = ({ item, onBlock, disabled }) => {
-  const [open, setOpen] = useState(false);
-  const block = formatBlock(item.scheduledStart, item.scheduledEnd);
-  const at = (clock?: string) => (clock ? dayjs(clock, "HH:mm") : null);
-  return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-      trigger={"click"}
-      title={"Block time for it"}
-      content={
-        <Space orientation={"vertical"}>
-          <TimePicker.RangePicker
-            format={"HH:mm"}
-            minuteStep={15}
-            needConfirm={false}
-            value={[at(item.scheduledStart), at(item.scheduledEnd)]}
-            onChange={(range) => {
-              const [start, end] = (range ?? []) as (Dayjs | null)[];
-              if (start && end) {
-                void onBlock(item, {
-                  start: start.format("HH:mm"),
-                  end: end.format("HH:mm"),
-                }).then(() => setOpen(false));
-              }
-            }}
-          />
-          {block && (
-            <Button
-              size={"small"}
-              onClick={() =>
-                void onBlock(item, null).then(() => setOpen(false))
-              }
-            >
-              Clear the block
-            </Button>
-          )}
-        </Space>
-      }
-    >
-      <Button
-        size={"small"}
-        type={block ? "default" : "text"}
-        icon={<ClockCircleOutlined />}
-        disabled={disabled}
-        aria-label={block ? `Blocked ${block}; change` : "Block time"}
-      >
-        {block}
-      </Button>
-    </Popover>
-  );
-};
 
 const PlanRow: React.FunctionComponent<{
   item: ReviewItem;
   rank?: number;
   disabled: boolean;
   onRemove: PlanListProps["onRemove"];
-  onBlock?: PlanListProps["onBlock"];
+  showBlock: boolean;
   extra?: PlanListProps["extra"];
   calendarDrag: boolean;
-}> = ({ item, rank, disabled, onRemove, onBlock, extra, calendarDrag }) => {
+}> = ({ item, rank, disabled, onRemove, showBlock, extra, calendarDrag }) => {
   const kind = PLAN_KINDS[item.kind];
+  const block = formatBlock(item.scheduledStart, item.scheduledEnd);
   const sortable = useSortable({ id: item.id, disabled });
   return (
     <div
@@ -169,8 +94,10 @@ const PlanRow: React.FunctionComponent<{
         )}
       </div>
       {item.carryCount > 0 && <Tag color={"orange"}>Carried over</Tag>}
-      {onBlock && (
-        <BlockPicker item={item} onBlock={onBlock} disabled={disabled} />
+      {showBlock && block && (
+        <span className={styles.blockTime} title={"Blocked on the calendar"}>
+          {block}
+        </span>
       )}
       {extra?.(item)}
       <Button
@@ -187,8 +114,8 @@ const PlanRow: React.FunctionComponent<{
 
 /**
  * The next period's priorities or to-dos: drag (or move with the keyboard) to
- * reorder, add at the end, remove, and give an item a block of time (from its
- * clock, or by dragging its title onto the calendar).
+ * reorder, add at the end from the box at the top, remove, and show the time an
+ * item has blocked, which is set by dragging its title onto the calendar.
  */
 const PlanList: React.FunctionComponent<PlanListProps> = ({
   kind,
@@ -200,7 +127,6 @@ const PlanList: React.FunctionComponent<PlanListProps> = ({
   onAdd,
   onRemove,
   onReorder,
-  onBlock,
   extra,
 }) => {
   const [order, setOrder] = useState(items);
@@ -233,29 +159,6 @@ const PlanList: React.FunctionComponent<PlanListProps> = ({
 
   return (
     <div>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={dragEnd}
-      >
-        <SortableContext
-          items={order.map((i) => i.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {order.map((item, index) => (
-            <PlanRow
-              key={item.id}
-              item={item}
-              rank={kind === "priority" ? index + 1 : undefined}
-              disabled={disabled}
-              onRemove={onRemove}
-              onBlock={blocks ? onBlock : undefined}
-              extra={extra}
-              calendarDrag={calendarDrag}
-            />
-          ))}
-        </SortableContext>
-      </DndContext>
       {!disabled && (
         <Space.Compact className={styles.addRow} block={true}>
           <Input
@@ -275,6 +178,29 @@ const PlanList: React.FunctionComponent<PlanListProps> = ({
           </Button>
         </Space.Compact>
       )}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={dragEnd}
+      >
+        <SortableContext
+          items={order.map((i) => i.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {order.map((item, index) => (
+            <PlanRow
+              key={item.id}
+              item={item}
+              rank={kind === "priority" ? index + 1 : undefined}
+              disabled={disabled}
+              onRemove={onRemove}
+              showBlock={blocks}
+              extra={extra}
+              calendarDrag={calendarDrag}
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
     </div>
   );
 };

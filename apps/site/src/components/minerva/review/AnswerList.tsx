@@ -165,6 +165,25 @@ const AnswerList: React.FunctionComponent<AnswerListProps> = ({
 
   return (
     <div>
+      {!disabled && (
+        <Space.Compact className={styles.addRow} block={true}>
+          <Input
+            value={adding}
+            maxLength={MAX_ITEM}
+            placeholder={placeholder ?? "Add an item"}
+            aria-label={`Add to ${label}`}
+            onChange={(e) => setAdding(e.target.value)}
+            onPressEnter={() => void add()}
+          />
+          <Button
+            type={"primary"}
+            icon={<PlusOutlined />}
+            onClick={() => void add()}
+          >
+            Add
+          </Button>
+        </Space.Compact>
+      )}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -187,25 +206,6 @@ const AnswerList: React.FunctionComponent<AnswerListProps> = ({
           ))}
         </SortableContext>
       </DndContext>
-      {!disabled && (
-        <Space.Compact className={styles.addRow} block={true}>
-          <Input
-            value={adding}
-            maxLength={MAX_ITEM}
-            placeholder={placeholder ?? "Add an item"}
-            aria-label={`Add to ${label}`}
-            onChange={(e) => setAdding(e.target.value)}
-            onPressEnter={() => void add()}
-          />
-          <Button
-            type={"primary"}
-            icon={<PlusOutlined />}
-            onClick={() => void add()}
-          >
-            Add
-          </Button>
-        </Space.Compact>
-      )}
     </div>
   );
 };

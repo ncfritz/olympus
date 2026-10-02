@@ -29,8 +29,9 @@ export interface PlanTomorrowStepProps {
  * Step 3: tomorrow mapped out: its calendar on the left with its open time
  * above, and beside it the top priorities, to-dos and thoughts. An item's
  * title dragged onto the calendar blocks 30 minutes for it there; the block
- * then moves by dragging it and changes length by dragging its foot, drawn
- * behind the meetings so they keep their place.
+ * then moves by dragging it, changes length by dragging its foot, and comes
+ * off with its close button or by being dragged off the calendar. Blocks
+ * are drawn behind the meetings so they keep their place.
  */
 const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
   data,
@@ -87,6 +88,10 @@ const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
     if (item)
       void data.blockItem(item, { start: clock(start), end: clock(end) });
   };
+  const unplace = (id: string) => {
+    const item = itemOf(id);
+    if (item) void data.blockItem(item, null);
+  };
   const drop = (id: string, start: Date) => {
     const from = DateTime.fromJSDate(start);
     const dayEnd = date.endOf("day");
@@ -119,6 +124,7 @@ const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
             end: span.end.toJSDate(),
           }))}
           onBlockChange={disabled ? undefined : place}
+          onBlockRemove={disabled ? undefined : unplace}
           onBlockDrop={disabled ? undefined : drop}
           note={
             open.length
@@ -147,7 +153,6 @@ const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
             onAdd={(title) => data.addItem("priority", title)}
             onRemove={data.removeItem}
             onReorder={(ids) => data.reorderItems("priority", ids)}
-            onBlock={data.blockItem}
             calendarDrag={true}
           />
         </Card>
@@ -161,7 +166,6 @@ const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
             onAdd={(title) => data.addItem("todo", title)}
             onRemove={data.removeItem}
             onReorder={(ids) => data.reorderItems("todo", ids)}
-            onBlock={data.blockItem}
             calendarDrag={true}
           />
         </Card>
