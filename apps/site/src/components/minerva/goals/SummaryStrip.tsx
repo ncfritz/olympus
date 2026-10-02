@@ -6,6 +6,7 @@ import type {
 import { Col, Row, Statistic, Typography } from "antd";
 import React from "react";
 import { HEALTH, healthCounts } from "../../../utils/goals";
+import { HealthDot } from "./GoalBits";
 
 const { Text } = Typography;
 
@@ -41,7 +42,14 @@ const SummaryStrip: React.FunctionComponent<{
       {(["on_track", "at_risk", "off_track"] as const).map((h) => (
         <Col key={h} span={3} style={CELL}>
           <Statistic
-            title={HEALTH[h].label}
+            title={
+              <span
+                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                <HealthDot health={h} />
+                {HEALTH[h].label}
+              </span>
+            }
             value={counts[h]}
             loading={loading}
           />

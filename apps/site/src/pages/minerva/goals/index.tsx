@@ -1,5 +1,6 @@
 import type { FullGoal, Goal } from "@ncfritz/olympus-sdk/minerva";
-import { Flex, message, Spin } from "antd";
+import { PlusOutlined, SettingOutlined } from "@ant-design/icons";
+import { Button, Flex, message, Space, Spin, Typography } from "antd";
 import { DateTime } from "luxon";
 import { useRouter } from "next/router";
 import React, { useMemo, useState } from "react";
@@ -23,6 +24,8 @@ import {
   type HorizonChoice,
   inHorizon,
 } from "../../../utils/goals";
+
+const { Title } = Typography;
 
 /**
  * Goals home (docs/plans/goals/design.md): Board, Roadmap and Focus over
@@ -86,6 +89,31 @@ const GoalsPage: React.FunctionComponent = () => {
           overflowY: "auto",
         }}
       >
+        <Flex
+          justify={"space-between"}
+          align={"center"}
+          style={{ padding: 16 }}
+        >
+          <Title level={3} style={{ margin: 0 }}>
+            Goals
+          </Title>
+          <Space size={8}>
+            <Button
+              type={"text"}
+              icon={<SettingOutlined />}
+              onClick={() => setManaging(true)}
+            >
+              Manage categories
+            </Button>
+            <Button
+              type={"primary"}
+              icon={<PlusOutlined />}
+              onClick={() => setForm({ open: true })}
+            >
+              New goal
+            </Button>
+          </Space>
+        </Flex>
         <SummaryStrip
           goals={shown}
           execution={data.execution}
@@ -105,8 +133,7 @@ const GoalsPage: React.FunctionComponent = () => {
           tags={data.tags}
           onTags={setTagIds}
           onStatuses={setStatuses}
-          onManageCategories={() => setManaging(true)}
-          onNewGoal={() => setForm({ open: true })}
+          legend={view !== "roadmap"}
         />
         <div style={{ padding: 16 }}>
           {data.loading ? (
@@ -141,6 +168,15 @@ const GoalsPage: React.FunctionComponent = () => {
                 categories={data.categories}
                 today={today}
                 onAddGoal={(categoryId) => setForm({ open: true, categoryId })}
+                onReorder={async (categoryIds) => {
+                  try {
+                    await goalsApi.reorderCategories(categoryIds);
+                    await data.reload();
+                  } catch (error) {
+                    message.error("Could not save the new order");
+                    throw error;
+                  }
+                }}
               />
             )
           )}

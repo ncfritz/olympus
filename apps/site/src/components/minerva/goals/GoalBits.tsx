@@ -205,3 +205,110 @@ export const GoalProgress: React.FunctionComponent<{
     </div>
   );
 };
+
+/** Health's dot and text colours, as the design board draws them. */
+export const HEALTH_COLORS: Record<GoalHealth, { dot: string; text: string }> =
+  {
+    on_track: { dot: "#52c41a", text: "#237804" },
+    at_risk: { dot: "#fa8c16", text: "#ad4e00" },
+    off_track: { dot: "#f5222d", text: "#a8071a" },
+  };
+
+/** A small round dot in a health's colour; its meaning is said beside it. */
+export const HealthDot: React.FunctionComponent<{ health: GoalHealth }> = ({
+  health,
+}) => (
+  <span
+    aria-hidden={true}
+    style={{
+      display: "inline-block",
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      background: HEALTH_COLORS[health].dot,
+      flexShrink: 0,
+    }}
+  />
+);
+
+/** Health as a dot and its word, in the health's colour. */
+export const HealthLabel: React.FunctionComponent<{ health?: GoalHealth }> = ({
+  health,
+}) =>
+  health ? (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        fontSize: 12,
+        color: HEALTH_COLORS[health].text,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <HealthDot health={health} />
+      {HEALTH[health].label}
+    </span>
+  ) : null;
+
+/**
+ * The board's slim progress bar: filled to progress, a tick where pace
+ * says the goal should be; one label says both for screen readers.
+ */
+export const PaceBar: React.FunctionComponent<{
+  goal: Pick<Goal, "progress" | "expectedProgress" | "health">;
+  width?: number;
+}> = ({ goal, width = 120 }) => {
+  const fill =
+    goal.health === "off_track"
+      ? "#f5222d"
+      : goal.health === "at_risk"
+        ? "#fa8c16"
+        : "#4096ff";
+  const label =
+    goal.expectedProgress === undefined
+      ? `${formatValue(goal.progress)}% done`
+      : `${formatValue(goal.progress)}% done, pace ${formatValue(goal.expectedProgress)}%`;
+  return (
+    <span
+      role={"img"}
+      aria-label={label}
+      title={label}
+      style={{
+        position: "relative",
+        display: "block",
+        width,
+        height: 6,
+        borderRadius: 6,
+        background: "#f0f0f0",
+        flexShrink: 0,
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: `${Math.min(100, goal.progress)}%`,
+          borderRadius: 6,
+          background: fill,
+        }}
+      />
+      {goal.expectedProgress !== undefined && (
+        <span
+          aria-hidden={true}
+          style={{
+            position: "absolute",
+            left: `calc(${goal.expectedProgress}% - 1px)`,
+            top: -4,
+            width: 2,
+            height: 14,
+            background: "#1f1f1f",
+            borderRadius: 1,
+          }}
+        />
+      )}
+    </span>
+  );
+};
