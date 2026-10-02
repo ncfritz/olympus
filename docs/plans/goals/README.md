@@ -287,7 +287,7 @@ Turbo tasks pass.
 
 **Sign-off:** G3 and G4 from the OpenAPI page.
 
-## Phase 4 — Check-ins, habits and execution — built 2026-10-01, not signed off
+## Phase 4 — Check-ins, habits and execution — done 2026-10-01
 
 1. **Migration** `1790930000000_minerva_goal_checkins_habits`: **done**
    - `minerva.goal_checkins`: `id`, `goal_id` (cascade), `checkin_date`,
