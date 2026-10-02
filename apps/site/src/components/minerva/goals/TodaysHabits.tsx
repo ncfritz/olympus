@@ -1,6 +1,7 @@
 import type { GoalHabitDay } from "@ncfritz/olympus-sdk/minerva";
+import { CheckOutlined } from "@ant-design/icons";
 import {
-  Checkbox,
+  Button,
   Empty,
   Flex,
   InputNumber,
@@ -122,11 +123,25 @@ const HabitControl: React.FunctionComponent<{
       />
     );
   }
+  // A round check as the mocks draw it: outlined to log, filled green once
+  // logged (pressing it again undoes the day).
+  const met = habit.log?.met ?? false;
   return (
-    <Checkbox
-      checked={habit.log?.met ?? false}
-      onChange={(e) => onLog(habit, e.target.checked)}
-      aria-label={`${habit.goal.title}: done today`}
+    <Button
+      shape={"circle"}
+      icon={<CheckOutlined />}
+      aria-pressed={met}
+      aria-label={
+        met
+          ? `${habit.goal.title}: done today; undo`
+          : `Log ${habit.goal.title}`
+      }
+      onClick={() => onLog(habit, !met)}
+      style={
+        met
+          ? { background: "#237804", borderColor: "#237804", color: "#ffffff" }
+          : { color: "#6b6b6b" }
+      }
     />
   );
 };

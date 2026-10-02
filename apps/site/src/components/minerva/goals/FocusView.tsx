@@ -12,18 +12,15 @@ import type {
 import {
   Alert,
   Button,
-  Card,
-  Col,
+  Collapse,
   DatePicker,
-  Divider,
   Empty,
   Flex,
   List,
   message,
   Popover,
-  Row,
   Space,
-  Statistic,
+  Splitter,
   Tooltip,
   Typography,
 } from "antd";
@@ -40,11 +37,11 @@ import {
   metricText,
   rankForFocus,
 } from "../../../utils/goals";
-import { GoalProgress, GoalTypeIcon, HealthTag } from "./GoalBits";
+import { GoalTypeIcon, HealthLabel, PaceBar } from "./GoalBits";
 import { EXECUTION_TARGET } from "./SummaryStrip";
 import TodaysHabits from "./TodaysHabits";
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 export interface FocusViewProps {
   goals: Goal[];
@@ -171,11 +168,181 @@ const WeekBars: React.FunctionComponent<{
   );
 };
 
+/** A section heading in the mocks' style: small capitals. */
+const Heading: React.FunctionComponent<{ children: React.ReactNode }> = ({
+  children,
+}) => (
+  <span
+    style={{
+      fontSize: 12,
+      fontWeight: 600,
+      letterSpacing: "0.06em",
+      textTransform: "uppercase",
+      color: "#595959",
+    }}
+  >
+    {children}
+  </span>
+);
+
+/**
+ * The current cycle as the mocks draw it: its name, the week, its dates;
+ * a cell per week (done, this one, to come) and the buffer hatched; this
+ * week's and the cycle's execution.
+ */
+const CycleBanner: React.FunctionComponent<{
+  cycle?: GoalCycle;
+  execution?: GoalExecution;
+  cycleExecution?: GoalExecution;
+  today: string;
+}> = ({ cycle, execution, cycleExecution, today }) => {
+  const box: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 24,
+    padding: 16,
+    borderRadius: 8,
+    border: "1px solid #91caff",
+    background: "#e6f4ff",
+    marginBottom: 16,
+    flexWrap: "wrap",
+  };
+  if (!cycle) {
+    return (
+      <div style={box}>
+        <Text type={"secondary"}>
+          No cycle is running. Add one to plan in 12-week cycles.
+        </Text>
+      </div>
+    );
+  }
+  const week =
+    cycle.currentWeek ??
+    (cycle.status === "buffer"
+      ? cycle.weeks + 1
+      : cycle.status === "past"
+        ? cycle.weeks + cycle.bufferWeeks + 1
+        : 0);
+  const cells = Array.from(
+    { length: cycle.weeks + cycle.bufferWeeks },
+    (_, i) => i + 1,
+  );
+  const stat = (value: number | undefined, label: string, sub: string) => (
+    <Flex vertical={true}>
+      <span style={{ fontSize: 22, fontWeight: 600 }}>
+        {value === undefined ? "–" : `${formatValue(value)}%`}
+      </span>
+      <Text style={{ fontSize: 12, color: "#595959" }}>{label}</Text>
+      <Text type={"secondary"} style={{ fontSize: 12 }}>
+        {sub}
+      </Text>
+    </Flex>
+  );
+  return (
+    <div style={box}>
+      <Flex vertical={true} gap={4} style={{ width: 220 }}>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: "#0958d9",
+          }}
+        >
+          {cycle.name}
+        </span>
+        <span style={{ fontSize: 20, fontWeight: 600 }}>
+          {cycle.currentWeek !== undefined
+            ? `Week ${cycle.currentWeek} of ${cycle.weeks}`
+            : cycle.status === "buffer"
+              ? "Buffer week"
+              : cycle.status === "upcoming"
+                ? "Starts soon"
+                : "Finished"}
+        </span>
+        <Text style={{ fontSize: 13, color: "#595959" }}>
+          {formatDay(cycle.startDate, today)} –{" "}
+          {formatDay(cycle.endDate, today)}
+          {cycle.bufferWeeks > 0
+            ? `, buffer to ${formatDay(cycle.bufferEndDate, today)}`
+            : ""}
+        </Text>
+      </Flex>
+      <div
+        role={"img"}
+        aria-label={
+          cycle.currentWeek !== undefined
+            ? `Week ${cycle.currentWeek} of ${cycle.weeks}`
+            : cycle.status
+        }
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))`,
+          gap: 4,
+          flex: "1 1 200px",
+        }}
+      >
+        {cells.map((n) => {
+          const buffer = n > cycle.weeks;
+          const done = n < week;
+          const now = n === week;
+          return (
+            <span
+              key={n}
+              style={{
+                height: 10,
+                borderRadius: 2,
+                border: `1px solid ${done || now ? "#0958d9" : "#91caff"}`,
+                background: done
+                  ? "#0958d9"
+                  : now
+                    ? "#69b1ff"
+                    : buffer
+                      ? "repeating-linear-gradient(135deg, #d9d9d9 0 3px, #ffffff 3px 6px)"
+                      : "#ffffff",
+              }}
+            />
+          );
+        })}
+      </div>
+      <Flex gap={28}>
+        {stat(
+          execution?.score,
+          "execution this week",
+          execution
+            ? `${execution.done} of ${execution.due} · target ${EXECUTION_TARGET}%`
+            : `target ${EXECUTION_TARGET}%`,
+        )}
+        {stat(
+          cycleExecution?.score,
+          "cycle to date",
+          cycle.currentWeek !== undefined ? `weeks 1–${cycle.currentWeek}` : "",
+        )}
+      </Flex>
+    </div>
+  );
+};
+
+/** Collapse's look for the Focus sections: no borders, small-capital headings. */
+const section = (
+  key: string,
+  label: React.ReactNode,
+  children: React.ReactNode,
+  extra?: React.ReactNode,
+) => ({
+  key,
+  label: <Heading>{label}</Heading>,
+  extra,
+  children,
+  styles: { header: { paddingInline: 0 }, body: { paddingInline: 0 } },
+});
+
 /**
  * Focus: the current cycle, then goals ranked by what needs attention,
  * each with Check in; a goal at risk or worse on three check-ins running
- * asks for a decision. The side holds today's habits, the week and what
- * is due next.
+ * asks for a decision. A resizable split puts this week's bars, today's
+ * habits and what is due next beside it.
  */
 const FocusView: React.FunctionComponent<FocusViewProps> = ({
   goals,
@@ -236,12 +403,14 @@ const FocusView: React.FunctionComponent<FocusViewProps> = ({
               ? ` · in ${titles.get(goal.parentId)}`
               : ""}
           </Text>
-          <HealthTag health={goal.health} />
+          <HealthLabel health={goal.health} />
         </Flex>
         <Flex align={"center"} gap={16}>
-          <div style={{ flex: 1, maxWidth: 360 }}>
-            <GoalProgress goal={goal} />
-          </div>
+          <PaceBar
+            goal={goal}
+            width={"auto"}
+            style={{ flex: "1 1 60%", maxWidth: 360 }}
+          />
           <Text type={"secondary"} style={{ fontSize: 12 }}>
             {metricText(goal)}
           </Text>
@@ -279,105 +448,103 @@ const FocusView: React.FunctionComponent<FocusViewProps> = ({
   );
 
   return (
-    <Row gutter={[24, 24]}>
-      <Col xs={24} xl={16}>
-        {cycle && (
-          <Card size={"small"} style={{ marginBottom: 16 }}>
-            <Flex wrap={true} gap={32} align={"center"}>
-              <div>
-                <Title level={5} style={{ margin: 0 }}>
-                  {cycle.name}
-                </Title>
-                <Text>
-                  {cycle.currentWeek !== undefined
-                    ? `Week ${cycle.currentWeek} of ${cycle.weeks}`
-                    : cycle.status === "buffer"
-                      ? "Buffer week"
-                      : "Starts soon"}
-                </Text>
-                <br />
-                <Text type={"secondary"} style={{ fontSize: 12 }}>
-                  {formatDay(cycle.startDate, today)} –{" "}
-                  {formatDay(cycle.endDate, today)}
-                  {cycle.bufferWeeks > 0
-                    ? `, buffer to ${formatDay(cycle.bufferEndDate, today)}`
-                    : ""}
-                </Text>
-              </div>
-              <Statistic
-                title={"Execution this week"}
-                value={execution?.score ?? "–"}
-                suffix={execution?.score !== undefined ? "%" : undefined}
-              />
+    <Splitter>
+      <Splitter.Panel defaultSize={"66%"} min={"40%"} max={"80%"}>
+        <div style={{ paddingRight: 16 }}>
+          <CycleBanner
+            cycle={cycle}
+            execution={execution}
+            cycleExecution={cycleExecution}
+            today={today}
+          />
+          <Collapse
+            ghost={true}
+            defaultActiveKey={["attention", "fine"]}
+            items={[
+              ...(attention.length
+                ? [
+                    section(
+                      "attention",
+                      `Needs attention · ${attention.length}`,
+                      <List dataSource={attention} renderItem={row} />,
+                      <Text type={"secondary"} style={{ fontSize: 12 }}>
+                        Off track first, then at risk
+                      </Text>,
+                    ),
+                  ]
+                : []),
+              section(
+                "fine",
+                `On track · ${fine.length}`,
+                fine.length ? (
+                  <List dataSource={fine} renderItem={row} />
+                ) : (
+                  <Empty description={"No goals on track yet"} />
+                ),
+              ),
+            ]}
+          />
+        </div>
+      </Splitter.Panel>
+      <Splitter.Panel min={"20%"}>
+        <div style={{ paddingLeft: 16 }}>
+          <Flex
+            justify={"space-between"}
+            align={"baseline"}
+            style={{ paddingBlock: 12 }}
+          >
+            <Heading>This week</Heading>
+            {execution && (
               <Text type={"secondary"} style={{ fontSize: 12 }}>
-                {execution ? `${execution.done} of ${execution.due}` : ""} ·
-                target {EXECUTION_TARGET}%
-              </Text>
-              <Statistic
-                title={"Cycle to date"}
-                value={cycleExecution?.score ?? "–"}
-                suffix={cycleExecution?.score !== undefined ? "%" : undefined}
-              />
-            </Flex>
-          </Card>
-        )}
-        <Card
-          size={"small"}
-          title={`Needs attention · ${attention.length}`}
-          extra={<Text type={"secondary"}>Off track first, then at risk</Text>}
-          style={{ marginBottom: 16 }}
-        >
-          {attention.length ? (
-            <List dataSource={attention} renderItem={row} />
-          ) : (
-            <Empty description={"Nothing needs you right now"} />
-          )}
-        </Card>
-        <Card size={"small"} title={`On track · ${fine.length}`}>
-          <List dataSource={fine} renderItem={row} />
-        </Card>
-      </Col>
-      <Col xs={24} xl={8}>
-        <Card
-          size={"small"}
-          title={`Today’s habits · ${DateTime.fromISO(today).toFormat("ccc LLL d")}`}
-        >
-          <TodaysHabits onLogged={onChanged} />
-        </Card>
-        <Card size={"small"} title={"This week"} style={{ marginTop: 16 }}>
-          <WeekBars execution={execution} today={today} />
-          {execution && (
-            <>
-              <Divider style={{ marginBlock: 8 }} />
-              <Text>
                 {formatValue(execution.score)}% · {execution.done} of{" "}
                 {execution.due} done
               </Text>
-            </>
-          )}
-        </Card>
-        <Card size={"small"} title={"Due next"} style={{ marginTop: 16 }}>
-          {dueNext.length ? (
-            <List
-              size={"small"}
-              dataSource={dueNext}
-              renderItem={(g) => (
-                <List.Item>
-                  <Text type={"secondary"} style={{ width: 64 }}>
-                    {formatDay(g.dueDate, today)}
-                  </Text>
-                  <Link href={`/minerva/goals/${g.id}`} style={{ flex: 1 }}>
-                    {g.title}
-                  </Link>
-                </List.Item>
-              )}
-            />
-          ) : (
-            <Empty description={"Nothing due"} />
-          )}
-        </Card>
-      </Col>
-    </Row>
+            )}
+          </Flex>
+          <WeekBars execution={execution} today={today} />
+          <Collapse
+            ghost={true}
+            defaultActiveKey={["habits", "due"]}
+            style={{ marginTop: 8 }}
+            items={[
+              section(
+                "habits",
+                "Today’s habits",
+                <TodaysHabits onLogged={onChanged} />,
+                <Text type={"secondary"} style={{ fontSize: 12 }}>
+                  {DateTime.fromISO(today).toFormat("ccc LLL d")}
+                </Text>,
+              ),
+              section(
+                "due",
+                "Due next",
+                dueNext.length ? (
+                  <List
+                    size={"small"}
+                    dataSource={dueNext}
+                    renderItem={(g) => (
+                      <List.Item style={{ paddingInline: 0 }}>
+                        <Text type={"secondary"} style={{ width: 64 }}>
+                          {formatDay(g.dueDate, today)}
+                        </Text>
+                        <Link
+                          href={`/minerva/goals/${g.id}`}
+                          style={{ flex: 1 }}
+                        >
+                          {g.title}
+                        </Link>
+                      </List.Item>
+                    )}
+                  />
+                ) : (
+                  <Empty description={"Nothing due"} />
+                ),
+              ),
+            ]}
+          />
+        </div>
+      </Splitter.Panel>
+    </Splitter>
   );
 };
 
