@@ -9,7 +9,7 @@ import type {
   GoalType,
   Tag as GoalTag,
 } from "@ncfritz/olympus-sdk/minerva";
-import { Input, Segmented, Space } from "antd";
+import { Input, Radio, Space } from "antd";
 import React from "react";
 import {
   type HorizonChoice,
@@ -133,10 +133,12 @@ const GoalsFilterBar: React.FunctionComponent<GoalsFilterBarProps> = ({
         />
         <Space size={4} style={{ marginLeft: 8, fontSize: 12 }}>
           <span>Horizon</span>
-          <Segmented
+          <Radio.Group
             size={"small"}
+            optionType={"button"}
+            buttonStyle={"solid"}
             value={horizon}
-            onChange={(v) => onHorizon(v as HorizonChoice)}
+            onChange={(e) => onHorizon(e.target.value as HorizonChoice)}
             options={[
               { value: "all", label: "All" },
               { value: "year", label: String(year) },
@@ -167,14 +169,41 @@ const GoalsFilterBar: React.FunctionComponent<GoalsFilterBarProps> = ({
         />
       </Space>
       <Space orientation={"horizontal"} size={8}>
-        <Segmented
+        <Radio.Group
           size={"small"}
+          optionType={"button"}
+          buttonStyle={"solid"}
           value={view}
-          onChange={(v) => onView(v as GoalsView)}
+          onChange={(e) => onView(e.target.value as GoalsView)}
+          aria-label={"View"}
           options={[
-            { value: "board", label: "Board", icon: <AppstoreOutlined /> },
-            { value: "roadmap", label: "Roadmap", icon: <ScheduleOutlined /> },
-            { value: "focus", label: "Focus", icon: <AimOutlined /> },
+            {
+              value: "focus",
+              label: (
+                <Space size={4}>
+                  <AimOutlined />
+                  Focus
+                </Space>
+              ),
+            },
+            {
+              value: "board",
+              label: (
+                <Space size={4}>
+                  <AppstoreOutlined />
+                  Board
+                </Space>
+              ),
+            },
+            {
+              value: "roadmap",
+              label: (
+                <Space size={4}>
+                  <ScheduleOutlined />
+                  Roadmap
+                </Space>
+              ),
+            },
           ]}
         />
       </Space>
