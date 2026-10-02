@@ -1,7 +1,6 @@
 import {
   AimOutlined,
   AppstoreOutlined,
-  CheckCircleFilled,
   FilterFilled,
   ScheduleOutlined,
 } from "@ant-design/icons";
@@ -10,15 +9,14 @@ import type {
   GoalType,
   Tag as GoalTag,
 } from "@ncfritz/olympus-sdk/minerva";
-import { Input, Menu, Segmented, Space } from "antd";
-import React, { useState } from "react";
+import { Input, Segmented, Space } from "antd";
+import React from "react";
 import {
   type HorizonChoice,
   STATUS_LABEL,
   TYPE_LABEL,
 } from "../../../utils/goals";
 import CheckboxFilter from "../../dionysus/metadata/filter/CheckboxFilter";
-import FilterWrapper from "../../dionysus/metadata/filter/FilterWrapper";
 import { GoalTypeIcon } from "./GoalBits";
 
 export type GoalsView = "board" | "roadmap" | "focus";
@@ -75,42 +73,6 @@ const Legend: React.FunctionComponent = () => (
   </div>
 );
 
-/** The horizon, one choice at a time, in the filter bar's style. */
-const HorizonFilter: React.FunctionComponent<{
-  value: HorizonChoice;
-  onChange: (value: HorizonChoice) => void;
-  choices: { key: HorizonChoice; label: string }[];
-}> = ({ value, onChange, choices }) => {
-  const [picked, setPicked] = useState(value);
-  return (
-    <FilterWrapper
-      label={"Horizon"}
-      initialFiltersPresent={value !== "all"}
-      filters={
-        <Menu
-          style={{ boxShadow: "none" }}
-          selectedKeys={[picked]}
-          onClick={({ key }) => setPicked(key as HorizonChoice)}
-          items={choices.map((c) => ({
-            key: c.key,
-            label: (
-              <Space style={{ justifyContent: "space-between", width: "100%" }}>
-                {c.label}
-                {c.key === picked ? <CheckCircleFilled /> : undefined}
-              </Space>
-            ),
-          }))}
-        />
-      }
-      onReset={() => setPicked("all")}
-      onClose={() => {
-        onChange(picked);
-        return picked === "all" ? 0 : 1;
-      }}
-    />
-  );
-};
-
 /**
  * The goals home's bar, as Dionysus's: search and filters on the left,
  * the view switch on the right, and under it the legend. Both stay at the
@@ -156,17 +118,22 @@ const GoalsFilterBar: React.FunctionComponent<GoalsFilterBarProps> = ({
           value={title}
           onChange={(e) => onTitle(e.target.value)}
         />
-        <HorizonFilter
-          value={horizon}
-          onChange={onHorizon}
-          choices={[
-            { key: "all", label: "All" },
-            { key: "year", label: String(year) },
-            { key: "quarter", label: `Q${quarter}` },
-            ...(cycle ? [{ key: "cycle" as const, label: cycle.name }] : []),
-            { key: "ongoing", label: "Ongoing" },
-          ]}
-        />
+        <Space size={4} style={{ marginLeft: 8, fontSize: 12 }}>
+          <span>Horizon</span>
+          <Segmented
+            size={"small"}
+            value={horizon}
+            onChange={(v) => onHorizon(v as HorizonChoice)}
+            options={[
+              { value: "all", label: "All" },
+              { value: "year", label: String(year) },
+              { value: "quarter", label: `Q${quarter}` },
+              ...(cycle ? [{ value: "cycle", label: cycle.name }] : []),
+              { value: "ongoing", label: "Ongoing" },
+            ]}
+            aria-label={"Horizon"}
+          />
+        </Space>
         {tags.length > 0 && (
           <CheckboxFilter
             label={"Tags"}
