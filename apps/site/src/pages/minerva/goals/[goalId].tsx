@@ -415,7 +415,7 @@ const GoalPage: React.FunctionComponent = () => {
       </div>
       {/* The split fills the window below the header; each side scrolls on
           its own, without a visible scrollbar. */}
-      <div ref={rootRef} style={{ paddingInline: 16 }}>
+      <div ref={rootRef} style={{ paddingInline: 16, marginTop: 16 }}>
         <Splitter style={{ height }}>
           <Splitter.Panel
             defaultSize={"66%"}
