@@ -135,9 +135,12 @@ recorded exception.
 
 ## G9 — Notes on goals
 
-1. Linking an existing note and creating a new one from the goal page both
-   list under Linked notes, and the note shows the goal among its
-   associations.
+1. New note on a goal page saves a note that lists under Notes on that
+   goal, newest first, and not on other goals.
+2. Editing, flagging, deleting and restoring a note there behave as on
+   the Notes page.
+3. On the Notes page the note's associations name the goal and link to
+   it.
 
 ## G10 — Minerva Home
 

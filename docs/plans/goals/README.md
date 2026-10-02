@@ -449,12 +449,20 @@ Playwright tests.
 
 ## Phase 6 — Notes on goals
 
-1. `note_associations` rows with `item_type` `goal`; the model's
-   association type gains `Goal`.
-2. The goal page lists them through `GetNotesForEntity`, with Link note
-   (search existing) and New note (opens `NotesEditorModal` with the
-   association set).
-3. The note editor's associations picker offers goals.
+Notes are written from the goal page; linking an existing note is left out
+(Neil, 2026-10-01).
+
+1. A note on a goal is a `note_associations` row with `item_type` `goal`
+   (`GOAL_NOTE_ITEM_TYPE`); the item type is free text, so no migration.
+2. The goal page's Notes section lists them through `GetNotesForEntity`,
+   newest first, each edited, flagged, deleted or restored as on the
+   Notes page; New note opens the note editor in place and saves the note
+   linked to the goal. A deleted goal's notes are read-only.
+3. A note's associations show its goal (type and title, linking to the
+   goal page) wherever the notes timeline shows associations.
+
+Not in this phase: linking an existing note, unlinking, and a goal picker
+in the note editor.
 
 **Sign-off:** G9.
 

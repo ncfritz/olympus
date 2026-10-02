@@ -3,6 +3,7 @@ import { Collapse } from "antd";
 import { useState } from "react";
 import * as React from "react";
 import type { Note, NoteAssociation } from "@ncfritz/olympus-sdk/minerva";
+import GoalNoteAssociation from "./associations/GoalAssociation";
 import MeetingAssociation from "./associations/MeetingAssociation";
 
 export interface NoteAssociationsProps {
@@ -13,6 +14,13 @@ const getAssociationElement = (association: NoteAssociation, open: boolean) => {
   switch (association.itemType) {
     case "meeting":
       return <MeetingAssociation open={open} item={association} />;
+    case "goal":
+      return (
+        <GoalNoteAssociation
+          key={`${association.itemType}-${association.itemId}`}
+          item={association}
+        />
+      );
     default:
       return <>Nope</>;
   }

@@ -704,6 +704,9 @@ export const habitCountPercent = (habit: GoalHabitDay): number | undefined => {
   return Math.min(100, ((habit.log?.quantity ?? 0) / target) * 100);
 };
 
+/** A note linked to a goal: its note_associations item type (ADR 0026). */
+export const GOAL_NOTE_ITEM_TYPE = "goal";
+
 const WEEKDAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 /**

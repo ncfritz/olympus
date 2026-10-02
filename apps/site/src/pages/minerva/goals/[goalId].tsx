@@ -44,6 +44,7 @@ import {
   GoalTypeIcon,
   HealthTag,
 } from "../../../components/minerva/goals/GoalBits";
+import GoalNotes from "../../../components/minerva/goals/GoalNotes";
 import GoalSection from "../../../components/minerva/goals/GoalSection";
 import GoalFormDrawer from "../../../components/minerva/goals/GoalFormDrawer";
 import GoalsBreadcrumbs from "../../../components/minerva/goals/GoalsBreadcrumbs";
@@ -482,6 +483,8 @@ const GoalPage: React.FunctionComponent = () => {
                     </Text>
                   )}
               </GoalSection>
+
+              <GoalNotes goal={goal} readOnly={goal.deleted} />
 
               <GoalSection title={"Linked tasks"}>
                 <Empty
