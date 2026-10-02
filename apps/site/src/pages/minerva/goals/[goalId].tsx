@@ -285,7 +285,7 @@ const GoalPage: React.FunctionComponent = () => {
           <span key={"g"}>{goal.title}</span>,
         ]}
       />
-      <div style={{ padding: "44px 24px 24px" }}>
+      <div style={{ padding: 16 }}>
         <Row gutter={[24, 24]}>
           <Col xs={24} xl={16}>
             <Flex

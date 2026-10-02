@@ -108,7 +108,10 @@ const BoardView: React.FunctionComponent<BoardViewProps> = ({
             <Card
               size={"small"}
               style={{
-                borderTop: `3px solid ${category.color}`,
+                // As a note's coloured edge: the radius no wider than the
+                // border, so its inner side stays straight.
+                borderTop: `6px solid ${category.color}`,
+                borderRadius: 4,
                 height: "100%",
               }}
               title={

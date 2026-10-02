@@ -16,11 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type {
-  Goal,
-  GoalCategory,
-  GoalCategoryIcon,
-} from "@ncfritz/olympus-sdk/minerva";
+import type { Goal, GoalCategory } from "@ncfritz/olympus-sdk/minerva";
 import {
   Button,
   Card,
@@ -39,11 +35,9 @@ import {
 import React, { useEffect, useState } from "react";
 import goalsApi from "../../../api/goalsApi";
 import { apiProblems } from "../../../utils/goals";
-import { CATEGORY_ICONS, CategoryIcon } from "./GoalBits";
+import IconPicker from "./IconPicker";
 
 const { Text } = Typography;
-
-const ICONS = Object.keys(CATEGORY_ICONS) as GoalCategoryIcon[];
 
 export interface CategoriesDrawerProps {
   open: boolean;
@@ -107,7 +101,10 @@ const CategoryRow: React.FunctionComponent<{
       <Card
         size={"small"}
         style={{
-          borderLeft: `4px solid ${category.color}`,
+          // As a note's coloured edge: the radius no wider than the border,
+          // so its inner side stays straight.
+          borderLeft: `5px solid ${category.color}`,
+          borderRadius: 4,
           opacity: category.archived ? 0.6 : 1,
         }}
       >
@@ -124,22 +121,20 @@ const CategoryRow: React.FunctionComponent<{
           <Space orientation={"vertical"} style={{ flex: 1 }} size={8}>
             <Flex gap={8}>
               <ColorPicker
+                size={"small"}
                 value={category.color}
                 disabledAlpha={true}
                 onChangeComplete={(c) => save({ color: c.toHexString() })}
                 aria-label={`${category.name} colour`}
               />
-              <Select
+              <IconPicker
                 value={category.icon}
-                style={{ width: 72 }}
-                aria-label={`${category.name} icon`}
+                color={category.color}
+                label={`${category.name} icon`}
                 onChange={(icon) => save({ icon })}
-                options={ICONS.map((i) => ({
-                  value: i,
-                  label: <CategoryIcon icon={i} />,
-                }))}
               />
               <Input
+                size={"small"}
                 value={name}
                 maxLength={50}
                 aria-label={"Name"}
@@ -152,6 +147,7 @@ const CategoryRow: React.FunctionComponent<{
               />
             </Flex>
             <Input.TextArea
+              size={"small"}
               value={vision}
               maxLength={2000}
               autoSize={{ minRows: 1, maxRows: 4 }}
@@ -214,6 +210,7 @@ const CategoryRow: React.FunctionComponent<{
           Choose where they go.
         </p>
         <Select
+          size={"small"}
           style={{ width: "100%" }}
           value={moveTo}
           onChange={setMoveTo}
@@ -281,6 +278,32 @@ const CategoriesDrawer: React.FunctionComponent<CategoriesDrawerProps> = ({
       title={"Manage categories"}
       size={480}
     >
+      {/* Stays at the top while the list scrolls beneath it. */}
+      <div
+        style={{
+          position: "sticky",
+          top: -24,
+          zIndex: 2,
+          background: "#ffffff",
+          margin: "-24px -24px 16px",
+          padding: "16px 24px",
+          borderBottom: "1px solid #f0f0f0",
+        }}
+      >
+        <Space.Compact style={{ width: "100%" }}>
+          <Input
+            size={"small"}
+            value={adding}
+            maxLength={50}
+            placeholder={"New category"}
+            onChange={(e) => setAdding(e.target.value)}
+            onPressEnter={add}
+          />
+          <Button size={"small"} icon={<PlusOutlined />} onClick={add}>
+            Add
+          </Button>
+        </Space.Compact>
+      </div>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -307,18 +330,6 @@ const CategoriesDrawer: React.FunctionComponent<CategoriesDrawerProps> = ({
           </Space>
         </SortableContext>
       </DndContext>
-      <Space.Compact style={{ width: "100%", marginTop: 16 }}>
-        <Input
-          value={adding}
-          maxLength={50}
-          placeholder={"New category"}
-          onChange={(e) => setAdding(e.target.value)}
-          onPressEnter={add}
-        />
-        <Button icon={<PlusOutlined />} onClick={add}>
-          Add
-        </Button>
-      </Space.Compact>
     </Drawer>
   );
 };
