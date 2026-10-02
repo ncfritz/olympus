@@ -34,6 +34,8 @@ import {
   dueText,
   formatDay,
   formatValue,
+  type GoalRow,
+  goalTree,
   metricText,
   rankForFocus,
 } from "../../../utils/goals";
@@ -354,6 +356,9 @@ const CycleBanner: React.FunctionComponent<{
   );
 };
 
+/** How far each level of sub-goal is indented, in pixels. */
+const NEST = 24;
+
 /** Collapse's look for the Focus sections: no borders, small-capital headings. */
 const section = (
   key: string,
@@ -425,7 +430,9 @@ const FocusView: React.FunctionComponent<FocusViewProps> = ({
       .catch(() => setCycleExecution(undefined));
   }, [cycle]);
 
-  const row = (goal: Goal) => (
+  // A sub-goal sits under its parent when both are in the same section;
+  // otherwise it starts the row and names its parent.
+  const row = ({ goal, depth }: GoalRow) => (
     <List.Item
       key={goal.id}
       actions={[
@@ -438,7 +445,11 @@ const FocusView: React.FunctionComponent<FocusViewProps> = ({
         </Button>,
       ]}
     >
-      <Flex vertical={true} gap={4} style={{ width: "100%" }}>
+      <Flex
+        vertical={true}
+        gap={4}
+        style={{ width: "100%", paddingLeft: depth * NEST }}
+      >
         <Flex align={"center"} gap={8} wrap={true}>
           <GoalTypeIcon type={goal.type} />
           <Link href={`/minerva/goals/${goal.id}`}>
@@ -446,7 +457,7 @@ const FocusView: React.FunctionComponent<FocusViewProps> = ({
           </Link>
           <Text type={"secondary"}>
             {names.get(goal.categoryId)}
-            {goal.parentId && titles.get(goal.parentId)
+            {depth === 0 && goal.parentId && titles.get(goal.parentId)
               ? ` · in ${titles.get(goal.parentId)}`
               : ""}
           </Text>
@@ -521,7 +532,10 @@ const FocusView: React.FunctionComponent<FocusViewProps> = ({
                       section(
                         "attention",
                         `Needs attention · ${attention.length}`,
-                        <List dataSource={attention} renderItem={row} />,
+                        <List
+                          dataSource={goalTree(attention, Infinity)}
+                          renderItem={row}
+                        />,
                         <Text type={"secondary"} style={{ fontSize: 12 }}>
                           Off track first, then at risk
                         </Text>,
@@ -532,7 +546,10 @@ const FocusView: React.FunctionComponent<FocusViewProps> = ({
                   "fine",
                   `On track · ${fine.length}`,
                   fine.length ? (
-                    <List dataSource={fine} renderItem={row} />
+                    <List
+                      dataSource={goalTree(fine, Infinity)}
+                      renderItem={row}
+                    />
                   ) : (
                     <Empty description={"No goals on track yet"} />
                   ),

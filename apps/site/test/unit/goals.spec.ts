@@ -190,6 +190,27 @@ describe("goalTree", () => {
       ["loose", 0, 0],
     ]);
   });
+
+  it("keeps a ranked list's order, each sub-goal under its parent", () => {
+    const ranked = [
+      goal("kid-b", { parentId: "parent" }),
+      goal("other"),
+      goal("parent"),
+      goal("kid-a", { parentId: "parent" }),
+      goal("grandkid", { parentId: "kid-a" }),
+      goal("orphan", { parentId: "not-in-this-section" }),
+    ];
+    expect(goalTree(ranked, Infinity).map((r) => [r.goal.id, r.depth])).toEqual(
+      [
+        ["other", 0],
+        ["parent", 0],
+        ["kid-b", 1],
+        ["kid-a", 1],
+        ["grandkid", 2],
+        ["orphan", 0],
+      ],
+    );
+  });
 });
 
 describe("filters and counts", () => {
