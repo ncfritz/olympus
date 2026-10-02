@@ -468,8 +468,21 @@ in the note editor.
 
 ## Phase 7 — Minerva Home
 
-The goals strip (this cycle or quarter, health) and today's habits with
-one-tap logging, from `ListGoals` and `ListGoalHabitsForDay`.
+A Goals section above Add note, drawn as option B on the design canvas
+(Neil, 2026-10-01): a tab per goal type on the blue rule, as the home
+widget.
+
+1. Habits: today's habits from `ListGoalHabitsForDay`, logged in one tap
+   (the Focus list), done ones kept so a tap undoes them.
+2. Milestones, Outcomes and Achievements: the current cycle's active,
+   started goals of the type (Quarter switches to this quarter's), in
+   Focus's order, each with health, progress against pace, and Done on its
+   next milestone or Check in; a goal done today stays, marked done
+   (`ListGoals`, `ListGoalsForToday`).
+3. Above the tabs: the cycle's week and execution score, or the quarter's
+   week when no cycle is running, with Plan a cycle. Each tab says how many
+   are left today and its health counts. The tab and span are remembered
+   in the browser.
 
 **Sign-off:** G10.
 

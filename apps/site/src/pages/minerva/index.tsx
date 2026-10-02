@@ -11,6 +11,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import meetingsApi from "../../api/meetingsApi";
 import OlympusBreadcrumbs from "../../components/layout/OlympusBreadcrumbs";
+import GoalsPanel from "../../components/minerva/home/GoalsPanel";
 import NotesEditorForm, {
   NEW_NOTE,
   type NotesFormInput,
@@ -86,6 +87,9 @@ const IndexPage: React.FunctionComponent = () => {
         }}
       >
         <Content style={{ width: "calc(100vw - 993px)" }}>
+          <div style={{ padding: "16px 16px 8px" }}>
+            <GoalsPanel />
+          </div>
           <Collapse
             ghost={true}
             items={[

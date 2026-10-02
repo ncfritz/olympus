@@ -144,8 +144,12 @@ recorded exception.
 
 ## G10 — Minerva Home
 
-1. The goals strip and today's habits match the Goals home; logging a
-   habit there shows on the goal page.
+1. The Habits tab lists today's habits as Focus does; logging one there
+   shows on the goal page, and a tap on a done habit undoes it.
+2. The other tabs list the cycle's goals of their type in Focus's order;
+   Quarter lists this quarter's. Done ticks the next milestone and Check
+   in saves a check-in; either marks the goal done today.
+3. With no cycle running the section shows the quarter and Plan a cycle.
 
 ## G11 — The reviews
 

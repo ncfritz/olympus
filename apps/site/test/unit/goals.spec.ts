@@ -5,6 +5,7 @@ import type {
   GoalHabitDay,
   GoalHabitLog,
   GoalMilestone,
+  ListGoalsForTodayResponse,
 } from "@ncfritz/olympus-sdk/minerva";
 import { describe, expect, it } from "vitest";
 import {
@@ -25,6 +26,7 @@ import {
   habitCountPercent,
   habitGrid,
   habitTodayText,
+  homeGoalRows,
   habitTap,
   healthCounts,
   inHorizon,
@@ -32,6 +34,7 @@ import {
   metricText,
   outcomeNumbers,
   outcomeSeries,
+  quarterWeekText,
   quarterBands,
   rankForFocus,
   roadmapMark,
@@ -627,6 +630,56 @@ describe("the home widget's words", () => {
     expect(milestoneDueText(step("2026-09-28"), TODAY).text).toBe(
       "3 days late",
     );
+  });
+});
+
+describe("Minerva Home's goal tabs", () => {
+  const step = { id: "s1", title: "Wire the lights" } as GoalMilestone;
+  const today = (over: Partial<ListGoalsForTodayResponse> = {}) =>
+    ({
+      date: TODAY,
+      habits: [],
+      milestones: [],
+      outcomes: [],
+      achievements: [],
+      done: [],
+      active: { habit: 0, milestone: 0, outcome: 0, achievement: 0 },
+      ...over,
+    }) as ListGoalsForTodayResponse;
+
+  it("lists a type's active, started goals in the span, done today marked", () => {
+    const shed = goal("shed", { health: "at_risk", position: 1 });
+    const ship = goal("ship", { health: "on_track", position: 0 });
+    const goals = [
+      ship,
+      shed,
+      goal("later", { startDate: "2026-11-01" }),
+      goal("paused", { status: "paused" }),
+      goal("other", { cycleId: "c2" }),
+      goal("read", { type: "outcome", progressMode: "checkins" }),
+    ];
+    const rows = homeGoalRows(
+      goals,
+      "milestone",
+      (g) => g.cycleId !== "c2",
+      today({
+        milestones: [{ goal: shed, milestone: step }],
+        done: [ship],
+      }),
+    );
+    expect(
+      rows.map((r) => [r.goal.id, r.doneToday, r.milestone?.title]),
+    ).toEqual([
+      ["shed", false, "Wire the lights"],
+      ["ship", true, undefined],
+    ]);
+  });
+
+  it("says where today falls in its quarter", () => {
+    expect(quarterWeekText("2026-10-01")).toBe("Q4 · week 1 of 14");
+    expect(quarterWeekText("2026-10-05")).toBe("Q4 · week 2 of 14");
+    expect(quarterWeekText("2026-12-31")).toBe("Q4 · week 14 of 14");
+    expect(quarterWeekText("2026-07-01")).toBe("Q3 · week 1 of 14");
   });
 });
 

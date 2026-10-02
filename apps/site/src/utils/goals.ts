@@ -15,6 +15,7 @@ import type {
   GoalStatus,
   GoalType,
   HabitFrequency,
+  ListGoalsForTodayResponse,
   UpdateGoalRequest,
 } from "@ncfritz/olympus-sdk/minerva";
 import { DateTime } from "luxon";
@@ -702,6 +703,55 @@ export const habitCountPercent = (habit: GoalHabitDay): number | undefined => {
   const target = habit.habitRule.quantityTarget;
   if (!target) return undefined;
   return Math.min(100, ((habit.log?.quantity ?? 0) / target) * 100);
+};
+
+/** A goal on Minerva Home's tabs: left to do today, or already done today. */
+export type HomeGoalRow = {
+  goal: Goal;
+  doneToday: boolean;
+  /** A milestone goal's next step, while it is left to do today. */
+  milestone?: GoalMilestone;
+};
+
+/**
+ * One of Minerva Home's goal tabs: the active, started goals of a type
+ * that `inSpan` keeps, in Focus's order, each marked done today or not
+ * from ListGoalsForToday, a milestone goal left to do with its next step.
+ */
+export const homeGoalRows = (
+  goals: Goal[],
+  type: "milestone" | "outcome" | "achievement",
+  inSpan: (goal: Goal) => boolean,
+  today: ListGoalsForTodayResponse,
+): HomeGoalRow[] => {
+  const done = new Set(today.done.map((g) => g.id));
+  const steps = new Map(
+    today.milestones.map((s) => [s.goal.id, s.milestone] as const),
+  );
+  return rankForFocus(
+    goals.filter(
+      (g) =>
+        g.type === type &&
+        g.status === "active" &&
+        !g.deleted &&
+        g.startDate <= today.date &&
+        inSpan(g),
+    ),
+  ).map((goal) =>
+    done.has(goal.id)
+      ? { goal, doneToday: true }
+      : { goal, doneToday: false, milestone: steps.get(goal.id) },
+  );
+};
+
+/** Today's place in its calendar quarter: "Q4 · week 1 of 14". */
+export const quarterWeekText = (today: string): string => {
+  const t = DateTime.fromISO(today);
+  const first = t.startOf("quarter").startOf("week");
+  const last = t.endOf("quarter").startOf("week");
+  const week = Math.floor(t.startOf("week").diff(first, "weeks").weeks) + 1;
+  const weeks = Math.floor(last.diff(first, "weeks").weeks) + 1;
+  return `Q${t.quarter} · week ${week} of ${weeks}`;
 };
 
 /** A note linked to a goal: its note_associations item type (ADR 0026). */
