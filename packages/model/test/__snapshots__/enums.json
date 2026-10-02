@@ -361,6 +361,14 @@
     "NONE": 0,
     "RAR_PASS": 1
   },
+  "ReviewKind": {
+    "Daily": "daily",
+    "Weekly": "weekly"
+  },
+  "ReviewPromptSection": {
+    "Plan": "plan",
+    "Reflect": "reflect"
+  },
   "SMTPPriority": {
     "High": "2",
     "Highest": "1",

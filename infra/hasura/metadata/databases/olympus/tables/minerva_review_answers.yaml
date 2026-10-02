@@ -1,0 +1,41 @@
+table:
+  name: review_answers
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    prompt_id:
+      custom_name: promptId
+    review_id:
+      custom_name: reviewId
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+  custom_column_names:
+    created_at: createdTime
+    prompt_id: promptId
+    review_id: reviewId
+    updated_at: lastUpdatedTime
+    user_id: userId
+  custom_root_fields: {}
+object_relationships:
+  - name: prompt
+    using:
+      manual_configuration:
+        column_mapping:
+          prompt_id: id
+        insertion_order: null
+        remote_table:
+          name: review_prompts
+          schema: minerva
+  - name: review
+    using:
+      manual_configuration:
+        column_mapping:
+          review_id: id
+        insertion_order: null
+        remote_table:
+          name: reviews
+          schema: minerva

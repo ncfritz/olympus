@@ -1392,6 +1392,61 @@
     ],
     "type": "object"
   },
+  "BaseReview": {
+    "properties": {
+      "kind": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewKind"
+          }
+        ],
+        "description": "Whether the review is of a day or a week"
+      },
+      "period": {
+        "description": "The period reviewed: a day as YYYY-MM-DD; a week as YYYY-Www (2026-W40) or its Monday as YYYY-MM-DD",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "period"
+    ],
+    "type": "object"
+  },
+  "BaseReviewPrompt": {
+    "properties": {
+      "kind": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewKind"
+          }
+        ],
+        "description": "The kind of review that asks the prompt"
+      },
+      "label": {
+        "description": "The question, 1 to 120 characters",
+        "type": "string"
+      },
+      "placeholder": {
+        "description": "A hint shown in the empty answer box, at most 200 characters",
+        "type": "string"
+      },
+      "section": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewPromptSection"
+          }
+        ],
+        "description": "The step the prompt is asked in"
+      }
+    },
+    "required": [
+      "kind",
+      "label",
+      "section"
+    ],
+    "type": "object"
+  },
   "BaseSearchResultTag": {
     "properties": {
       "score": {
@@ -2205,6 +2260,22 @@
       "createdTime",
       "lastUpdatedTime",
       "movie"
+    ],
+    "type": "object"
+  },
+  "CompleteReviewResponse": {
+    "properties": {
+      "review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Review"
+          }
+        ],
+        "description": "The review, completed."
+      }
+    },
+    "required": [
+      "review"
     ],
     "type": "object"
   },
@@ -3911,6 +3982,70 @@
     ],
     "type": "object"
   },
+  "CreateReviewPromptRequest": {
+    "properties": {
+      "reviewPrompt": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseReviewPrompt"
+          }
+        ],
+        "description": "The prompt to add at the end of its kind and section."
+      }
+    },
+    "required": [
+      "reviewPrompt"
+    ],
+    "type": "object"
+  },
+  "CreateReviewPromptResponse": {
+    "properties": {
+      "reviewPrompt": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewPrompt"
+          }
+        ],
+        "description": "The prompt as created."
+      }
+    },
+    "required": [
+      "reviewPrompt"
+    ],
+    "type": "object"
+  },
+  "CreateReviewRequest": {
+    "properties": {
+      "review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseReview"
+          }
+        ],
+        "description": "The kind of review and the period it is of."
+      }
+    },
+    "required": [
+      "review"
+    ],
+    "type": "object"
+  },
+  "CreateReviewResponse": {
+    "properties": {
+      "review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Review"
+          }
+        ],
+        "description": "The review as started."
+      }
+    },
+    "required": [
+      "review"
+    ],
+    "type": "object"
+  },
   "CreateTVEpisodeRequest": {
     "properties": {
       "episode": {
@@ -4998,6 +5133,38 @@
     },
     "required": [
       "company"
+    ],
+    "type": "object"
+  },
+  "DescribeReviewPromptResponse": {
+    "properties": {
+      "reviewPrompt": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewPrompt"
+          }
+        ],
+        "description": "The prompt."
+      }
+    },
+    "required": [
+      "reviewPrompt"
+    ],
+    "type": "object"
+  },
+  "DescribeReviewResponse": {
+    "properties": {
+      "review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Review"
+          }
+        ],
+        "description": "The review."
+      }
+    },
+    "required": [
+      "review"
     ],
     "type": "object"
   },
@@ -9044,6 +9211,36 @@
     },
     "required": [
       "radarFrames"
+    ],
+    "type": "object"
+  },
+  "ListReviewPromptsResponse": {
+    "properties": {
+      "reviewPrompts": {
+        "description": "The caller's prompts: daily before weekly, Reflect before Plan, each in its order.",
+        "items": {
+          "$ref": "#/components/schemas/ReviewPrompt"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "reviewPrompts"
+    ],
+    "type": "object"
+  },
+  "ListReviewsResponse": {
+    "properties": {
+      "reviews": {
+        "description": "The caller's reviews in the range, oldest first.",
+        "items": {
+          "$ref": "#/components/schemas/Review"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "reviews"
     ],
     "type": "object"
   },
@@ -14242,6 +14439,65 @@
     ],
     "type": "object"
   },
+  "PartialReview": {
+    "properties": {
+      "balance": {
+        "description": "A week's balance, 1 (work-heavy) to 5 (balanced); never on a day",
+        "type": "number"
+      },
+      "energy": {
+        "description": "A day's energy, 1 (low) to 5 (high); never on a week",
+        "type": "number"
+      },
+      "focus": {
+        "description": "A day's focus, 1 (scattered) to 5 (locked in); never on a week",
+        "type": "number"
+      },
+      "mood": {
+        "description": "A day's mood, 1 (low) to 5 (high); never on a week",
+        "type": "number"
+      },
+      "overall": {
+        "description": "How the day or week went overall, 1 (low) to 5 (high)",
+        "type": "number"
+      },
+      "progress": {
+        "description": "A week's progress, 1 (stalled) to 5 (moved a lot); never on a day",
+        "type": "number"
+      },
+      "step": {
+        "description": "The guided step the author reached: 1 to 4 for a day, 1 to 5 for a week",
+        "type": "number"
+      }
+    },
+    "type": "object"
+  },
+  "PartialReviewAnswer": {
+    "properties": {
+      "body": {
+        "description": "What was written, at most 10,000 characters",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "PartialReviewPrompt": {
+    "properties": {
+      "archived": {
+        "description": "Whether the prompt is archived: no longer asked, its answers kept",
+        "type": "boolean"
+      },
+      "label": {
+        "description": "The question, 1 to 120 characters",
+        "type": "string"
+      },
+      "placeholder": {
+        "description": "A hint shown in the empty answer box, at most 200 characters",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
   "PartialSeason": {
     "properties": {
       "airDate": {
@@ -15701,6 +15957,54 @@
     ],
     "type": "object"
   },
+  "ReorderReviewPromptsRequest": {
+    "properties": {
+      "kind": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewKind"
+          }
+        ],
+        "description": "The kind of review whose prompts are reordered"
+      },
+      "promptIds": {
+        "description": "Every one of the caller's prompt IDs of that kind and section, archived ones included, in the order they should appear.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "section": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewPromptSection"
+          }
+        ],
+        "description": "The step whose prompts are reordered"
+      }
+    },
+    "required": [
+      "kind",
+      "promptIds",
+      "section"
+    ],
+    "type": "object"
+  },
+  "ReorderReviewPromptsResponse": {
+    "properties": {
+      "reviewPrompts": {
+        "description": "All of the caller's prompts, in their new order.",
+        "items": {
+          "$ref": "#/components/schemas/ReviewPrompt"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "reviewPrompts"
+    ],
+    "type": "object"
+  },
   "ReorderWeatherLocationsRequest": {
     "properties": {
       "locationIds": {
@@ -15762,6 +16066,208 @@
       "goal"
     ],
     "type": "object"
+  },
+  "Review": {
+    "properties": {
+      "answers": {
+        "description": "What the author wrote, one answer per prompt answered",
+        "items": {
+          "$ref": "#/components/schemas/ReviewAnswer"
+        },
+        "type": "array"
+      },
+      "balance": {
+        "description": "A week's balance, 1 (work-heavy) to 5 (balanced); never on a day",
+        "type": "number"
+      },
+      "completed": {
+        "description": "Whether the review has been completed; a completed review's ratings no longer change",
+        "type": "boolean"
+      },
+      "completedTime": {
+        "description": "An ISO-8601 formatted string indicating when the review was completed",
+        "type": "string"
+      },
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the review was started",
+        "type": "string"
+      },
+      "energy": {
+        "description": "A day's energy, 1 (low) to 5 (high); never on a week",
+        "type": "number"
+      },
+      "focus": {
+        "description": "A day's focus, 1 (scattered) to 5 (locked in); never on a week",
+        "type": "number"
+      },
+      "id": {
+        "description": "The unique ID of the review",
+        "type": "string"
+      },
+      "kind": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewKind"
+          }
+        ],
+        "description": "Whether the review is of a day or a week"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the review was last changed",
+        "type": "string"
+      },
+      "mood": {
+        "description": "A day's mood, 1 (low) to 5 (high); never on a week",
+        "type": "number"
+      },
+      "overall": {
+        "description": "How the day or week went overall, 1 (low) to 5 (high)",
+        "type": "number"
+      },
+      "periodEnd": {
+        "description": "The last day the review covers as YYYY-MM-DD: the day itself, or the week's Sunday",
+        "format": "date",
+        "type": "string"
+      },
+      "periodStart": {
+        "description": "The day reviewed, or the Monday of the ISO week reviewed, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "progress": {
+        "description": "A week's progress, 1 (stalled) to 5 (moved a lot); never on a day",
+        "type": "number"
+      },
+      "step": {
+        "description": "The guided step the author reached: 1 to 4 for a day, 1 to 5 for a week",
+        "type": "number"
+      }
+    },
+    "required": [
+      "answers",
+      "completed",
+      "createdTime",
+      "id",
+      "kind",
+      "periodEnd",
+      "periodStart",
+      "step"
+    ],
+    "type": "object"
+  },
+  "ReviewAnswer": {
+    "properties": {
+      "body": {
+        "description": "What was written, at most 10,000 characters",
+        "type": "string"
+      },
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the answer was first written",
+        "type": "string"
+      },
+      "editedLater": {
+        "description": "Whether the answer was written or last changed after its review was completed",
+        "type": "boolean"
+      },
+      "id": {
+        "description": "The unique ID of the answer",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the answer was last changed",
+        "type": "string"
+      },
+      "promptId": {
+        "description": "The prompt the answer is to",
+        "type": "string"
+      }
+    },
+    "required": [
+      "body",
+      "createdTime",
+      "editedLater",
+      "id",
+      "promptId"
+    ],
+    "type": "object"
+  },
+  "ReviewKind": {
+    "description": "Whether a review is of a day or of an ISO week",
+    "enum": [
+      "daily",
+      "weekly"
+    ],
+    "type": "string"
+  },
+  "ReviewPrompt": {
+    "properties": {
+      "archived": {
+        "description": "Whether the prompt is archived: no longer asked, its answers kept",
+        "type": "boolean"
+      },
+      "archivedTime": {
+        "description": "An ISO-8601 formatted string indicating when the prompt was archived",
+        "type": "string"
+      },
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the prompt was created",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the prompt",
+        "type": "string"
+      },
+      "kind": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewKind"
+          }
+        ],
+        "description": "The kind of review that asks the prompt"
+      },
+      "label": {
+        "description": "The question, 1 to 120 characters",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the prompt was last changed",
+        "type": "string"
+      },
+      "placeholder": {
+        "description": "A hint shown in the empty answer box, at most 200 characters",
+        "type": "string"
+      },
+      "position": {
+        "description": "Where the prompt sits among its kind and section; lower comes first",
+        "type": "number"
+      },
+      "section": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewPromptSection"
+          }
+        ],
+        "description": "The step the prompt is asked in"
+      }
+    },
+    "required": [
+      "archived",
+      "createdTime",
+      "id",
+      "kind",
+      "label",
+      "position",
+      "section"
+    ],
+    "type": "object"
+  },
+  "ReviewPromptSection": {
+    "description": "The guided step a review prompt is asked in",
+    "enum": [
+      "reflect",
+      "plan"
+    ],
+    "type": "string"
   },
   "RevokeSessionResponse": {
     "properties": {
@@ -19034,6 +19540,102 @@
     },
     "required": [
       "notificationSetting"
+    ],
+    "type": "object"
+  },
+  "UpdateReviewAnswerRequest": {
+    "properties": {
+      "answer": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialReviewAnswer"
+          }
+        ],
+        "description": "The answer as it should now read. A body that is empty or only whitespace removes the answer."
+      }
+    },
+    "required": [
+      "answer"
+    ],
+    "type": "object"
+  },
+  "UpdateReviewAnswerResponse": {
+    "properties": {
+      "answer": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewAnswer"
+          }
+        ],
+        "description": "The answer as saved."
+      }
+    },
+    "required": [
+      "answer"
+    ],
+    "type": "object"
+  },
+  "UpdateReviewPromptRequest": {
+    "properties": {
+      "reviewPrompt": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialReviewPrompt"
+          }
+        ],
+        "description": "The changes to the prompt. A placeholder of null removes it; archived true archives it and false brings it back."
+      }
+    },
+    "required": [
+      "reviewPrompt"
+    ],
+    "type": "object"
+  },
+  "UpdateReviewPromptResponse": {
+    "properties": {
+      "reviewPrompt": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewPrompt"
+          }
+        ],
+        "description": "The prompt with the changes applied."
+      }
+    },
+    "required": [
+      "reviewPrompt"
+    ],
+    "type": "object"
+  },
+  "UpdateReviewRequest": {
+    "properties": {
+      "review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialReview"
+          }
+        ],
+        "description": "The step reached and the ratings. A rating of null clears it; ratings are refused once the review is completed, and each kind takes only its own."
+      }
+    },
+    "required": [
+      "review"
+    ],
+    "type": "object"
+  },
+  "UpdateReviewResponse": {
+    "properties": {
+      "review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Review"
+          }
+        ],
+        "description": "The review with the changes applied."
+      }
+    },
+    "required": [
+      "review"
     ],
     "type": "object"
   },

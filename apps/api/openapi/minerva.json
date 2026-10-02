@@ -3799,6 +3799,842 @@
           "Goals"
         ]
       }
+    },
+    "/minerva/reviews/prompts": {
+      "get": {
+        "description": "Every prompt the caller has, archived ones included: daily before weekly, Reflect before Plan, each in its order. The first time a user's prompts are read they are given the starter prompts, once.",
+        "operationId": "ListReviewPrompts",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "description": "daily or weekly, for only that kind's prompts",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The caller's prompts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListReviewPromptsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the signed-in user's review prompts",
+        "tags": [
+          "Review Prompts"
+        ]
+      },
+      "post": {
+        "description": "Adds a prompt at the end of its kind and section; reviews of that kind ask it from then on.",
+        "operationId": "CreateReviewPrompt",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateReviewPrompt operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewPromptRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The prompt was created.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the created prompt"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateReviewPromptResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Another prompt was added to the section at the same time."
+          }
+        },
+        "summary": "Creates a review prompt for the signed-in user",
+        "tags": [
+          "Review Prompts"
+        ]
+      }
+    },
+    "/minerva/reviews/prompts/order": {
+      "put": {
+        "description": "Puts the caller's prompts of one kind and section in the order given, which must name every one of them, archived ones included, exactly once.",
+        "operationId": "ReorderReviewPrompts",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ReorderReviewPrompts operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderReviewPromptsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "All of the caller's prompts, in their new order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderReviewPromptsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reorders the signed-in user's review prompts in one section",
+        "tags": [
+          "Review Prompts"
+        ]
+      }
+    },
+    "/minerva/reviews/prompt/{promptId}": {
+      "get": {
+        "description": "Returns a single prompt of the caller's. Another user's prompt is not found.",
+        "operationId": "DescribeReviewPrompt",
+        "parameters": [
+          {
+            "name": "promptId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the prompt",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The prompt was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeReviewPromptResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Describes one of the signed-in user's review prompts",
+        "tags": [
+          "Review Prompts"
+        ]
+      },
+      "put": {
+        "description": "Rewords a prompt, changes or removes its placeholder, or archives it or brings it back. An archived prompt is no longer asked; reviews that answered it keep it.",
+        "operationId": "UpdateReviewPrompt",
+        "parameters": [
+          {
+            "name": "promptId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the prompt to change",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateReviewPrompt operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReviewPromptRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The prompt with the changes applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateReviewPromptResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The request named nothing to change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Changes one of the signed-in user's review prompts",
+        "tags": [
+          "Review Prompts"
+        ]
+      },
+      "delete": {
+        "description": "Removes a prompt that has never been answered. A prompt with answers is refused; archive it instead, so the reviews that answered it keep it.",
+        "operationId": "DeleteReviewPrompt",
+        "parameters": [
+          {
+            "name": "promptId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the prompt to delete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The prompt was deleted."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The prompt has answers."
+          }
+        },
+        "summary": "Deletes one of the signed-in user's review prompts",
+        "tags": [
+          "Review Prompts"
+        ]
+      }
+    },
+    "/minerva/reviews": {
+      "get": {
+        "description": "The caller's daily or weekly reviews whose periods start from one date to another, oldest first, each with its answers. The range is at most 400 days.",
+        "operationId": "ListReviews",
+        "parameters": [
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "The last period start to include, as YYYY-MM-DD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "The first period start to include, as YYYY-MM-DD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": true,
+            "in": "query",
+            "description": "daily or weekly",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The caller's reviews in the range.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListReviewsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the signed-in user's reviews of one kind in a range",
+        "tags": [
+          "Reviews"
+        ]
+      },
+      "post": {
+        "description": "Starts a daily review of a day or a weekly review of an ISO week, as a draft at step 1. A period after the current one where the caller is, or one the caller already has a review of, is refused.",
+        "operationId": "CreateReview",
+        "parameters": [
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateReview operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The review was started.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the review"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateReviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The caller already has a review of that kind and period."
+          }
+        },
+        "summary": "Starts a review for the signed-in user",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/minerva/review/{reviewId}": {
+      "get": {
+        "description": "Returns a single review of the caller's with its ratings and answers. Another user's review is not found.",
+        "operationId": "DescribeReview",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the review",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The review was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeReviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Describes one of the signed-in user's reviews",
+        "tags": [
+          "Reviews"
+        ]
+      },
+      "put": {
+        "description": "Sets the step reached and the ratings: overall on both kinds, mood, energy and focus on a day, progress and balance on a week, each 1 to 5 or null. Ratings are refused once the review is completed; the step still moves.",
+        "operationId": "UpdateReview",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the review to change",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateReview operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The review with the changes applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateReviewResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The request named nothing to change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The review is completed and a rating would change."
+          }
+        },
+        "summary": "Changes one of the signed-in user's reviews",
+        "tags": [
+          "Reviews"
+        ]
+      },
+      "delete": {
+        "description": "Removes a review and its answers for good. What happened in its period is untouched.",
+        "operationId": "DeleteReview",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the review to delete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The review was deleted."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Deletes one of the signed-in user's reviews",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/minerva/review/{reviewId}/complete": {
+      "post": {
+        "description": "Records when the review was completed, which locks its ratings; its answers stay editable and are marked as edited later. Completing it again changes nothing.",
+        "operationId": "CompleteReview",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the review to complete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The review, completed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteReviewResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The review was already completed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Completes one of the signed-in user's reviews",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/minerva/review/{reviewId}/answer/{promptId}": {
+      "put": {
+        "description": "Writes or rewrites the answer to a prompt of the caller's, of the review's kind. An answer saved again keeps its created time; one saved after the review was completed is marked as edited later. A body that is empty or only whitespace removes the answer.",
+        "operationId": "UpdateReviewAnswer",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the review",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "promptId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the prompt answered",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateReviewAnswer operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReviewAnswerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The answer as saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateReviewAnswerResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The body was empty, so there is no answer now."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Saves the answer to one of a review's prompts",
+        "tags": [
+          "Reviews"
+        ]
+      }
     }
   },
   "info": {
@@ -3830,6 +4666,12 @@
     },
     {
       "name": "Notes"
+    },
+    {
+      "name": "Review Prompts"
+    },
+    {
+      "name": "Reviews"
     },
     {
       "name": "Tags"
@@ -7323,6 +8165,608 @@
         },
         "required": [
           "goalHabitLog"
+        ]
+      },
+      "ReviewKind": {
+        "type": "string",
+        "description": "Whether a review is of a day or of an ISO week",
+        "enum": [
+          "daily",
+          "weekly"
+        ]
+      },
+      "ReviewPromptSection": {
+        "type": "string",
+        "description": "The guided step a review prompt is asked in",
+        "enum": [
+          "reflect",
+          "plan"
+        ]
+      },
+      "ReviewPrompt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the prompt"
+          },
+          "kind": {
+            "description": "The kind of review that asks the prompt",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewKind"
+              }
+            ]
+          },
+          "section": {
+            "description": "The step the prompt is asked in",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewPromptSection"
+              }
+            ]
+          },
+          "label": {
+            "type": "string",
+            "description": "The question, 1 to 120 characters"
+          },
+          "placeholder": {
+            "type": "string",
+            "description": "A hint shown in the empty answer box, at most 200 characters"
+          },
+          "position": {
+            "type": "number",
+            "description": "Where the prompt sits among its kind and section; lower comes first"
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "Whether the prompt is archived: no longer asked, its answers kept"
+          },
+          "archivedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the prompt was archived"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the prompt was created"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the prompt was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "section",
+          "label",
+          "position",
+          "archived",
+          "createdTime"
+        ]
+      },
+      "ListReviewPromptsResponse": {
+        "type": "object",
+        "properties": {
+          "reviewPrompts": {
+            "description": "The caller's prompts: daily before weekly, Reflect before Plan, each in its order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewPrompt"
+            }
+          }
+        },
+        "required": [
+          "reviewPrompts"
+        ]
+      },
+      "BaseReviewPrompt": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "The kind of review that asks the prompt",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewKind"
+              }
+            ]
+          },
+          "section": {
+            "description": "The step the prompt is asked in",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewPromptSection"
+              }
+            ]
+          },
+          "label": {
+            "type": "string",
+            "description": "The question, 1 to 120 characters"
+          },
+          "placeholder": {
+            "type": "string",
+            "description": "A hint shown in the empty answer box, at most 200 characters"
+          }
+        },
+        "required": [
+          "kind",
+          "section",
+          "label"
+        ]
+      },
+      "CreateReviewPromptRequest": {
+        "type": "object",
+        "properties": {
+          "reviewPrompt": {
+            "description": "The prompt to add at the end of its kind and section.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseReviewPrompt"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewPrompt"
+        ]
+      },
+      "CreateReviewPromptResponse": {
+        "type": "object",
+        "properties": {
+          "reviewPrompt": {
+            "description": "The prompt as created.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewPrompt"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewPrompt"
+        ]
+      },
+      "ReorderReviewPromptsRequest": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "The kind of review whose prompts are reordered",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewKind"
+              }
+            ]
+          },
+          "section": {
+            "description": "The step whose prompts are reordered",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewPromptSection"
+              }
+            ]
+          },
+          "promptIds": {
+            "description": "Every one of the caller's prompt IDs of that kind and section, archived ones included, in the order they should appear.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "section",
+          "promptIds"
+        ]
+      },
+      "ReorderReviewPromptsResponse": {
+        "type": "object",
+        "properties": {
+          "reviewPrompts": {
+            "description": "All of the caller's prompts, in their new order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewPrompt"
+            }
+          }
+        },
+        "required": [
+          "reviewPrompts"
+        ]
+      },
+      "DescribeReviewPromptResponse": {
+        "type": "object",
+        "properties": {
+          "reviewPrompt": {
+            "description": "The prompt.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewPrompt"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewPrompt"
+        ]
+      },
+      "PartialReviewPrompt": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The question, 1 to 120 characters"
+          },
+          "placeholder": {
+            "type": "string",
+            "description": "A hint shown in the empty answer box, at most 200 characters"
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "Whether the prompt is archived: no longer asked, its answers kept"
+          }
+        }
+      },
+      "UpdateReviewPromptRequest": {
+        "type": "object",
+        "properties": {
+          "reviewPrompt": {
+            "description": "The changes to the prompt. A placeholder of null removes it; archived true archives it and false brings it back.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialReviewPrompt"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewPrompt"
+        ]
+      },
+      "UpdateReviewPromptResponse": {
+        "type": "object",
+        "properties": {
+          "reviewPrompt": {
+            "description": "The prompt with the changes applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewPrompt"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewPrompt"
+        ]
+      },
+      "ReviewAnswer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the answer"
+          },
+          "promptId": {
+            "type": "string",
+            "description": "The prompt the answer is to"
+          },
+          "body": {
+            "type": "string",
+            "description": "What was written, at most 10,000 characters"
+          },
+          "editedLater": {
+            "type": "boolean",
+            "description": "Whether the answer was written or last changed after its review was completed"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the answer was first written"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the answer was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "promptId",
+          "body",
+          "editedLater",
+          "createdTime"
+        ]
+      },
+      "Review": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the review"
+          },
+          "kind": {
+            "description": "Whether the review is of a day or a week",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewKind"
+              }
+            ]
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date",
+            "description": "The day reviewed, or the Monday of the ISO week reviewed, as YYYY-MM-DD"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date",
+            "description": "The last day the review covers as YYYY-MM-DD: the day itself, or the week's Sunday"
+          },
+          "step": {
+            "type": "number",
+            "description": "The guided step the author reached: 1 to 4 for a day, 1 to 5 for a week"
+          },
+          "overall": {
+            "type": "number",
+            "description": "How the day or week went overall, 1 (low) to 5 (high)"
+          },
+          "mood": {
+            "type": "number",
+            "description": "A day's mood, 1 (low) to 5 (high); never on a week"
+          },
+          "energy": {
+            "type": "number",
+            "description": "A day's energy, 1 (low) to 5 (high); never on a week"
+          },
+          "focus": {
+            "type": "number",
+            "description": "A day's focus, 1 (scattered) to 5 (locked in); never on a week"
+          },
+          "progress": {
+            "type": "number",
+            "description": "A week's progress, 1 (stalled) to 5 (moved a lot); never on a day"
+          },
+          "balance": {
+            "type": "number",
+            "description": "A week's balance, 1 (work-heavy) to 5 (balanced); never on a day"
+          },
+          "completed": {
+            "type": "boolean",
+            "description": "Whether the review has been completed; a completed review's ratings no longer change"
+          },
+          "completedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the review was completed"
+          },
+          "answers": {
+            "description": "What the author wrote, one answer per prompt answered",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewAnswer"
+            }
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the review was started"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the review was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "periodStart",
+          "periodEnd",
+          "step",
+          "completed",
+          "answers",
+          "createdTime"
+        ]
+      },
+      "ListReviewsResponse": {
+        "type": "object",
+        "properties": {
+          "reviews": {
+            "description": "The caller's reviews in the range, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Review"
+            }
+          }
+        },
+        "required": [
+          "reviews"
+        ]
+      },
+      "BaseReview": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "Whether the review is of a day or a week",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewKind"
+              }
+            ]
+          },
+          "period": {
+            "type": "string",
+            "description": "The period reviewed: a day as YYYY-MM-DD; a week as YYYY-Www (2026-W40) or its Monday as YYYY-MM-DD"
+          }
+        },
+        "required": [
+          "kind",
+          "period"
+        ]
+      },
+      "CreateReviewRequest": {
+        "type": "object",
+        "properties": {
+          "review": {
+            "description": "The kind of review and the period it is of.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseReview"
+              }
+            ]
+          }
+        },
+        "required": [
+          "review"
+        ]
+      },
+      "CreateReviewResponse": {
+        "type": "object",
+        "properties": {
+          "review": {
+            "description": "The review as started.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Review"
+              }
+            ]
+          }
+        },
+        "required": [
+          "review"
+        ]
+      },
+      "DescribeReviewResponse": {
+        "type": "object",
+        "properties": {
+          "review": {
+            "description": "The review.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Review"
+              }
+            ]
+          }
+        },
+        "required": [
+          "review"
+        ]
+      },
+      "PartialReview": {
+        "type": "object",
+        "properties": {
+          "step": {
+            "type": "number",
+            "description": "The guided step the author reached: 1 to 4 for a day, 1 to 5 for a week"
+          },
+          "overall": {
+            "type": "number",
+            "description": "How the day or week went overall, 1 (low) to 5 (high)"
+          },
+          "mood": {
+            "type": "number",
+            "description": "A day's mood, 1 (low) to 5 (high); never on a week"
+          },
+          "energy": {
+            "type": "number",
+            "description": "A day's energy, 1 (low) to 5 (high); never on a week"
+          },
+          "focus": {
+            "type": "number",
+            "description": "A day's focus, 1 (scattered) to 5 (locked in); never on a week"
+          },
+          "progress": {
+            "type": "number",
+            "description": "A week's progress, 1 (stalled) to 5 (moved a lot); never on a day"
+          },
+          "balance": {
+            "type": "number",
+            "description": "A week's balance, 1 (work-heavy) to 5 (balanced); never on a day"
+          }
+        }
+      },
+      "UpdateReviewRequest": {
+        "type": "object",
+        "properties": {
+          "review": {
+            "description": "The step reached and the ratings. A rating of null clears it; ratings are refused once the review is completed, and each kind takes only its own.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialReview"
+              }
+            ]
+          }
+        },
+        "required": [
+          "review"
+        ]
+      },
+      "UpdateReviewResponse": {
+        "type": "object",
+        "properties": {
+          "review": {
+            "description": "The review with the changes applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Review"
+              }
+            ]
+          }
+        },
+        "required": [
+          "review"
+        ]
+      },
+      "CompleteReviewResponse": {
+        "type": "object",
+        "properties": {
+          "review": {
+            "description": "The review, completed.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Review"
+              }
+            ]
+          }
+        },
+        "required": [
+          "review"
+        ]
+      },
+      "PartialReviewAnswer": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "description": "What was written, at most 10,000 characters"
+          }
+        }
+      },
+      "UpdateReviewAnswerRequest": {
+        "type": "object",
+        "properties": {
+          "answer": {
+            "description": "The answer as it should now read. A body that is empty or only whitespace removes the answer.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialReviewAnswer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "answer"
+        ]
+      },
+      "UpdateReviewAnswerResponse": {
+        "type": "object",
+        "properties": {
+          "answer": {
+            "description": "The answer as saved.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewAnswer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "answer"
         ]
       }
     }

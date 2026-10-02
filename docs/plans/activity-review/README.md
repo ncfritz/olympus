@@ -76,35 +76,57 @@ test, typecheck and the convention checks pass for the model, API and
 site (the site built with placeholder `NEXT_PUBLIC_*` values). Opening
 the pages in a browser is Neil's to check.
 
-## Phase 1 — Reviews, prompts and answers
+## Phase 1 — Reviews, prompts and answers — built 2026-10-02, not signed off
 
-1. **Migration** `1791000000000_minerva_reviews`:
+1. **Shared helpers**: **done** — `localDates`, `validation` and
+   `hasuraErrors` moved unchanged from `minerva/goals/utils` to
+   `minerva/utils`, with Goals' imports and the date tests following, as
+   their own commit before any review code.
+2. **Migration** `1791000000000_minerva_reviews`: **done**
    - `minerva.review_user_settings`: `user_id` (primary key, cascade),
      `starter_prompts_at`, audit columns.
    - `minerva.reviews`: `id`, `user_id`, `kind` (`daily`, `weekly`),
-     `period_start` (date; a Monday when weekly), `step` (1 to 5; 4 at
-     most when daily), the ratings `overall`, `mood`, `energy`, `focus`,
-     `progress`, `balance` (1 to 5, nullable; mood, energy and focus null
-     when weekly, progress and balance null when daily), `completed_at`
-     (nullable), audit columns. Unique `(user_id, kind, period_start)`.
+     `period_start` (a Monday when weekly), `step` (default 1; 1 to 4
+     daily, 1 to 5 weekly), the ratings `overall`, `mood`, `energy`,
+     `focus`, `progress`, `balance` (1 to 5, nullable; mood, energy and
+     focus null on a week, progress and balance null on a day),
+     `completed_at`, audit columns. Unique `(user_id, kind,
+period_start)`, and `(id, user_id, kind)` for the answers' key.
    - `minerva.review_prompts`: `id`, `user_id`, `kind`, `section`
-     (`reflect`, `plan`), `label` (1 to 120, not blank), `placeholder`
-     (optional), `position`, `archived`, audit columns.
-   - `minerva.review_answers`: `id`, `review_id` (cascade), `prompt_id`
-     (restrict), `body` (not blank), audit columns. Unique
-     `(review_id, prompt_id)`; a trigger refuses a prompt of the other
-     kind or of another user.
-     Hasura: admin only, custom column names in camelCase.
-2. **Starter prompts**, given the first time a user's prompts are read:
+     (`reflect`, `plan`), `label` (something besides whitespace, at most
+     120), `placeholder` (at most 200), `position` (unique per user, kind
+     and section, deferred so a reorder can pass through a collision),
+     `archived_at`, audit columns.
+   - `minerva.review_answers`: `id`, `review_id`, `prompt_id`, and the
+     review's `user_id` and `kind` repeated, `body` (something besides
+     whitespace, at most 10,000), audit columns. Unique `(review_id,
+prompt_id)`. **Two composite foreign keys instead of a trigger**:
+     `(review_id, user_id, kind)` to the review (cascade) and
+     `(prompt_id, user_id, kind)` to the prompt (no action), so an answer
+     can only be to a prompt of its review's user and kind, an answered
+     prompt cannot be deleted, and deleting a user still removes
+     everything in one statement.
+   - Hasura: admin only, custom column names in camelCase; `answers` on
+     reviews and prompts and `prompt` and `review` on answers are manual
+     relationships, since the keys are composite.
+3. **Starter prompts**: **done** — given the first time a user's prompts
+   are read, once, after any the user already has in each section:
 
    | Kind   | Section | Prompts                                                                              |
    | ------ | ------- | ------------------------------------------------------------------------------------ |
-   | Daily  | Reflect | What went well?; What didn't go well?; What's on my mind?; Anything else about today |
+   | Daily  | Reflect | What went well?; What didn’t go well?; What’s on my mind?; Anything else about today |
    | Daily  | Plan    | Thoughts for tomorrow                                                                |
    | Weekly | Reflect | Biggest win; What got in the way; What I learned; What to change next week           |
    | Weekly | Plan    | Theme for the week; Start; Stop                                                      |
 
-3. **Operations**, tag `Reviews`:
+   What’s on my mind?, Anything else about today, What I learned and What
+   to change next week carry the canvas's placeholders.
+
+4. **Operations**: **done** — thirteen, tags `Reviews` and
+   `Review Prompts`. The prompts sit under `/reviews/` (as goal
+   categories sit under `/goals/`), so no static route meets
+   `/review/:reviewId`; `DescribeReviewPrompt` was added so a created
+   prompt answers with a `Location` header.
 
    | Operation              | Route                                    |
    | ---------------------- | ---------------------------------------- |
@@ -115,30 +137,49 @@ the pages in a browser is Neil's to check.
    | `CompleteReview`       | `POST /review/:reviewId/complete`        |
    | `DeleteReview`         | `DELETE /review/:reviewId`               |
    | `UpdateReviewAnswer`   | `PUT /review/:reviewId/answer/:promptId` |
-   | `ListReviewPrompts`    | `GET /review/prompts`                    |
-   | `CreateReviewPrompt`   | `POST /review/prompts`                   |
-   | `UpdateReviewPrompt`   | `PUT /review/prompt/:promptId`           |
-   | `ReorderReviewPrompts` | `PUT /review/prompts/order`              |
-   | `DeleteReviewPrompt`   | `DELETE /review/prompt/:promptId`        |
+   | `ListReviewPrompts`    | `GET /reviews/prompts`                   |
+   | `CreateReviewPrompt`   | `POST /reviews/prompts`                  |
+   | `ReorderReviewPrompts` | `PUT /reviews/prompts/order`             |
+   | `DescribeReviewPrompt` | `GET /reviews/prompt/:promptId`          |
+   | `UpdateReviewPrompt`   | `PUT /reviews/prompt/:promptId`          |
+   | `DeleteReviewPrompt`   | `DELETE /reviews/prompt/:promptId`       |
+   - `ListReviews` takes `kind`, `from` and `to` (period starts, at most
+     400 days apart) and returns the reviews, oldest first, with their
+     answers and `periodEnd`.
+   - `CreateReview` takes `kind` and `period`: a day as `YYYY-MM-DD`; a
+     week as `YYYY-Www` or its Monday. A period after the current one in
+     the caller's timezone (`x-ncfritz-tz`) is a 400; one already
+     reviewed is a 409. It answers with a `Location` header.
+   - `UpdateReview` sets `step` and the ratings (1 to 5, or null to
+     clear). A rating the kind does not take, or a step past its last, is
+     a 400; a rating that would change on a completed review is a 409,
+     while the step still moves; an empty body is a 304.
+   - `CompleteReview` records the time once; again is a 304.
+   - `UpdateReviewAnswer` trims the body and upserts it (an answer saved
+     again keeps its row and created time); empty or only whitespace
+     removes the answer and answers 204. A prompt of the other kind is a
+     400, another user's review or prompt a 404. An answer written or
+     changed after completion comes back `editedLater`.
+   - `ListReviewPrompts` takes an optional `kind`. `ReorderReviewPrompts`
+     takes `kind`, `section` and every prompt ID of that section.
+     `DeleteReviewPrompt` on an answered prompt is a 409 (archive it).
 
-   `ListReviews` takes `kind`, `from` and `to` (dates) and returns the
-   reviews in the range with their answers. `CreateReview` takes the
-   kind and the period (a day, or an ISO week `YYYY-Www`); a second one
-   for the same period is a 409, a week not starting Monday a 400.
-   `UpdateReview` sets the step and the ratings; a rating changed on a
-   completed review is a 409, a rating of the other kind a 400.
-   `CompleteReview` records the time once; again is a 304.
-   `UpdateReviewAnswer` upserts the answer, and an empty body deletes it.
-   `DeleteReviewPrompt` on an answered prompt is a 409 (archive it).
-   The static `/review/prompts` routes register before `/review/:reviewId`.
+5. **Tests**: **done** — `test/unit/minerva/reviews/` for the period
+   rules (`utils/periods.ts`: days, ISO weeks with week 53, a week's
+   Sunday, this week's Monday, which ratings each kind takes) and both
+   converters; `test/api/minerva/reviews.spec.ts` and
+   `reviewPrompts.spec.ts` (102 cases: no identity, another user's
+   review and prompt, duplicates, the rating lock, the timezone deciding
+   today, the starter set given once and racing, bad input before
+   Hasura); `infra/hasura/tests/minerva_reviews.sql` for every
+   constraint, both composite keys, the deferred positions, the upsert,
+   audit times and cascades. Verified 2026-10-02 against a scratch
+   PostgreSQL 16 with every migration applied, `down.sql` and `up.sql`
+   run twice; and model, API, SDK and site build, lint, typecheck, test
+   and pass the convention checks.
 
-4. **Tests**: converter units; endpoint tests including another user's
-   review and prompt (404), no identity (401), duplicates (409), the
-   rating lock (409) and bad input (400, before Hasura);
-   `infra/hasura/tests/minerva_reviews.sql` for the constraints, the
-   kind checks, audit times and cascades, with `down.sql` exercised.
-
-**Sign-off:** R1, R2 from the OpenAPI page.
+**Sign-off:** R1, R2 from the OpenAPI page against `hasura-dev` (the
+migration and metadata applied there first).
 
 ## Phase 2 — Plan items
 
@@ -155,12 +196,12 @@ the pages in a browser is Neil's to check.
 
    | Operation            | Route                               |
    | -------------------- | ----------------------------------- |
-   | `ListReviewItems`    | `GET /review/items`                 |
+   | `ListReviewItems`    | `GET /reviews/items`                |
    | `CreateReviewItem`   | `POST /review/:reviewId/items`      |
-   | `UpdateReviewItem`   | `PUT /review/item/:itemId`          |
+   | `UpdateReviewItem`   | `PUT /reviews/item/:itemId`         |
    | `ReorderReviewItems` | `PUT /review/:reviewId/items/order` |
-   | `CarryReviewItem`    | `POST /review/item/:itemId/carry`   |
-   | `DeleteReviewItem`   | `DELETE /review/item/:itemId`       |
+   | `CarryReviewItem`    | `POST /reviews/item/:itemId/carry`  |
+   | `DeleteReviewItem`   | `DELETE /reviews/item/:itemId`      |
 
    `ListReviewItems` takes `scope`, `from` and `to` and returns the items
    for those periods with their carry count. `CreateReviewItem` creates

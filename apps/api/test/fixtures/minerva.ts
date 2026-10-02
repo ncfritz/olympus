@@ -10,6 +10,11 @@ import type { GraphQlGoalCycle } from "../../src/minerva/goals/converters/GoalCy
 import type { GraphQlGoalCheckin } from "../../src/minerva/goals/converters/GoalCheckinConverter";
 import type { GraphQlGoalHabitLog } from "../../src/minerva/goals/converters/GoalHabitLogConverter";
 import type { GraphQlTag } from "../../src/minerva/tags/converters/TagConverter";
+import type {
+  GraphQlReview,
+  GraphQlReviewAnswer,
+} from "../../src/minerva/reviews/converters/ReviewConverter";
+import type { GraphQlReviewPrompt } from "../../src/minerva/reviews/converters/ReviewPromptConverter";
 
 export const graphQlNote = (
   overrides: Partial<GraphQlNote> = {},
@@ -230,5 +235,57 @@ export const graphQlGoalHabitLog = (
   note: null,
   createdTime: "2026-09-28T15:00:00Z",
   lastUpdatedTime: null,
+  ...overrides,
+});
+
+export const REVIEW_ID = "7b3e1d00-0000-4000-8000-000000000001";
+export const REVIEW_PROMPT_ID = "8c4f2e00-0000-4000-8000-000000000001";
+export const REVIEW_ANSWER_ID = "9d5a3f00-0000-4000-8000-000000000001";
+
+/** "What went well?" on the design canvas's Thursday, 2026-10-01. */
+export const graphQlReviewAnswer = (
+  overrides: Partial<GraphQlReviewAnswer> = {},
+): GraphQlReviewAnswer => ({
+  id: REVIEW_ANSWER_ID,
+  promptId: REVIEW_PROMPT_ID,
+  body: "Design review landed: we agreed on the rollup tiers.",
+  createdTime: "2026-10-01T21:30:00Z",
+  lastUpdatedTime: "2026-10-01T21:30:00Z",
+  ...overrides,
+});
+
+/** The daily review of 2026-10-01 as the canvas draws it: a draft at Reflect. */
+export const graphQlReview = (
+  overrides: Partial<GraphQlReview> = {},
+): GraphQlReview => ({
+  id: REVIEW_ID,
+  kind: "daily",
+  periodStart: "2026-10-01",
+  step: 2,
+  overall: 4,
+  mood: 4,
+  energy: 3,
+  focus: 2,
+  progress: null,
+  balance: null,
+  completedTime: null,
+  createdTime: "2026-10-01T21:00:00Z",
+  lastUpdatedTime: "2026-10-01T21:30:00Z",
+  answers: [graphQlReviewAnswer()],
+  ...overrides,
+});
+
+export const graphQlReviewPrompt = (
+  overrides: Partial<GraphQlReviewPrompt> = {},
+): GraphQlReviewPrompt => ({
+  id: REVIEW_PROMPT_ID,
+  kind: "daily",
+  section: "reflect",
+  label: "What went well?",
+  placeholder: null,
+  position: 0,
+  archivedTime: null,
+  createdTime: "2026-10-01T12:00:00Z",
+  lastUpdatedTime: "2026-10-01T12:00:00Z",
   ...overrides,
 });
