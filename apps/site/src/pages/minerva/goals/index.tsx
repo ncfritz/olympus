@@ -3,7 +3,7 @@ import { PlusOutlined, SettingOutlined } from "@ant-design/icons";
 import { Button, Flex, message, Space, Spin, Typography } from "antd";
 import { DateTime } from "luxon";
 import { useRouter } from "next/router";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import goalsApi from "../../../api/goalsApi";
 import BoardView from "../../../components/minerva/goals/BoardView";
 import CategoriesDrawer from "../../../components/minerva/goals/CategoriesDrawer";
@@ -40,16 +40,6 @@ const GoalsPage: React.FunctionComponent = () => {
       ? router.query.view
       : "board";
   const [statuses, setStatuses] = useState<string[]>(OPEN_STATUSES);
-  // The bar's height, so the roadmap's header can stick just beneath it.
-  const barRef = useRef<HTMLDivElement>(null);
-  const [barHeight, setBarHeight] = useState(0);
-  useEffect(() => {
-    const bar = barRef.current;
-    if (!bar) return;
-    const observer = new ResizeObserver(() => setBarHeight(bar.offsetHeight));
-    observer.observe(bar);
-    return () => observer.disconnect();
-  }, []);
   const [horizon, setHorizon] = useState<HorizonChoice>("all");
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [title, setTitle] = useState("");
@@ -156,7 +146,6 @@ const GoalsPage: React.FunctionComponent = () => {
           onTags={setTagIds}
           onStatuses={setStatuses}
           legend={view !== "roadmap"}
-          barRef={barRef}
         />
         <div style={{ padding: 16 }}>
           {data.loading ? (
@@ -181,7 +170,6 @@ const GoalsPage: React.FunctionComponent = () => {
               categories={data.categories}
               cycles={data.cycles}
               today={today}
-              stickyTop={barHeight}
             />
           ) : (
             view === "board" && (

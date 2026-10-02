@@ -8,7 +8,7 @@ import type {
 import { Button, Empty, Flex, Space, Tooltip, Typography } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import goalsApi from "../../../api/goalsApi";
 import {
   type Band,
@@ -183,8 +183,6 @@ export interface RoadmapViewProps {
   categories: GoalCategory[];
   cycles: GoalCycle[];
   today: string;
-  /** Where the header sticks: the height of what sticks above it. */
-  stickyTop?: number;
 }
 
 /** What the roadmap's marks mean. */
@@ -252,10 +250,24 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
   categories,
   cycles,
   today,
-  stickyTop = 0,
 }) => {
   const [year, setYear] = useState(DateTime.fromISO(today).year);
   const [open, setOpen] = useState<Set<string>>(new Set());
+  // The roadmap fills the window below where it starts, so only its lanes
+  // scroll and the header above them holds still.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number>();
+  useEffect(() => {
+    const fit = () => {
+      const top = rootRef.current?.getBoundingClientRect().top;
+      if (top !== undefined) {
+        setHeight(Math.max(320, window.innerHeight - top - 16));
+      }
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
   const [milestones, setMilestones] = useState<Map<string, GoalMilestone[]>>(
     new Map(),
   );
@@ -294,19 +306,18 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
     goal.type === "milestone" && goal.progressMode === "milestones";
 
   return (
-    <div style={{ minWidth: 900 }}>
-      {/* The year bar, bands and months stay put while the lanes scroll
-          beneath them. */}
-      <div
-        style={{
-          position: "sticky",
-          top: stickyTop,
-          zIndex: 3,
-          background: "#ffffff",
-          paddingTop: 8,
-          marginTop: -8,
-        }}
-      >
+    <div
+      ref={rootRef}
+      style={{
+        minWidth: 900,
+        height,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* The year bar, bands and months hold still; only the lanes below
+          them scroll. */}
+      <div style={{ flexShrink: 0 }}>
         <Flex
           justify={"space-between"}
           align={"center"}
@@ -375,131 +386,145 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
           </div>
         </Flex>
       </div>
-      <div style={{ position: "relative" }}>
-        {lanes.length === 0 && <Empty description={`No goals in ${year}`} />}
-        {lanes.map(({ category, goals: inLane }) => (
-          <div
-            key={category.id}
-            style={{ borderBottom: "1px solid #f0f0f0", paddingBlock: 4 }}
-          >
-            <Space style={{ height: 24 }}>
-              <CategoryIcon icon={category.icon} color={category.color} />
-              <Text strong={true}>{category.name}</Text>
-            </Space>
-            {goalTree(inLane, 99).map(({ goal, depth }) => (
-              <React.Fragment key={goal.id}>
-                <Flex style={{ height: ROW }} align={"center"}>
-                  <Flex
-                    align={"center"}
-                    gap={2}
-                    style={{
-                      width: LABEL,
-                      paddingLeft: 4 + depth * 16,
-                      paddingRight: 8,
-                      minWidth: 0,
-                    }}
-                  >
-                    {hasMilestones(goal) ? (
-                      <Button
-                        type={"text"}
-                        size={"small"}
-                        icon={
-                          open.has(goal.id) ? (
-                            <DownOutlined />
-                          ) : (
-                            <RightOutlined />
-                          )
-                        }
-                        aria-expanded={open.has(goal.id)}
-                        aria-label={`${open.has(goal.id) ? "Hide" : "Show"} ${goal.title}'s milestones`}
-                        onClick={() => toggle(goal)}
-                        style={{ width: 18, minWidth: 18, height: 18 }}
-                      />
-                    ) : (
-                      <span style={{ width: 18, flexShrink: 0 }} />
-                    )}
-                    <Link
-                      href={`/minerva/goals/${goal.id}`}
-                      style={{ minWidth: 0 }}
-                    >
-                      <Text
-                        ellipsis={{ tooltip: goal.title }}
-                        style={{ fontSize: 13 }}
-                      >
-                        {goal.title}
-                      </Text>
-                    </Link>
-                  </Flex>
-                  <div
-                    style={{ position: "relative", flex: 1, height: "100%" }}
-                  >
-                    <GoalMark goal={goal} year={year} today={today} />
-                  </div>
-                </Flex>
-                {open.has(goal.id) &&
-                  (milestones.get(goal.id) ?? []).map((m) => (
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          overflowX: "hidden",
+          scrollbarGutter: "stable",
+        }}
+      >
+        <div style={{ position: "relative" }}>
+          {lanes.length === 0 && <Empty description={`No goals in ${year}`} />}
+          {lanes.map(({ category, goals: inLane }) => (
+            <div
+              key={category.id}
+              style={{ borderBottom: "1px solid #f0f0f0", paddingBlock: 4 }}
+            >
+              <Space style={{ height: 24 }}>
+                <CategoryIcon icon={category.icon} color={category.color} />
+                <Text strong={true}>{category.name}</Text>
+              </Space>
+              {goalTree(inLane, 99).map(({ goal, depth }) => (
+                <React.Fragment key={goal.id}>
+                  <Flex style={{ height: ROW }} align={"center"}>
                     <Flex
-                      key={m.id}
-                      style={{ height: ROW - 6 }}
                       align={"center"}
+                      gap={2}
+                      style={{
+                        width: LABEL,
+                        paddingLeft: 4 + depth * 16,
+                        paddingRight: 8,
+                        minWidth: 0,
+                      }}
                     >
-                      <div
-                        style={{
-                          width: LABEL,
-                          paddingLeft: 4 + depth * 16 + 34,
-                          paddingRight: 8,
-                          minWidth: 0,
-                        }}
+                      {hasMilestones(goal) ? (
+                        <Button
+                          type={"text"}
+                          size={"small"}
+                          icon={
+                            open.has(goal.id) ? (
+                              <DownOutlined />
+                            ) : (
+                              <RightOutlined />
+                            )
+                          }
+                          aria-expanded={open.has(goal.id)}
+                          aria-label={`${open.has(goal.id) ? "Hide" : "Show"} ${goal.title}'s milestones`}
+                          onClick={() => toggle(goal)}
+                          style={{ width: 18, minWidth: 18, height: 18 }}
+                        />
+                      ) : (
+                        <span style={{ width: 18, flexShrink: 0 }} />
+                      )}
+                      <Link
+                        href={`/minerva/goals/${goal.id}`}
+                        style={{ minWidth: 0 }}
                       >
                         <Text
-                          type={"secondary"}
-                          delete={m.done}
-                          ellipsis={{ tooltip: m.title }}
-                          style={{ fontSize: 12 }}
+                          ellipsis={{ tooltip: goal.title }}
+                          style={{ fontSize: 13 }}
                         >
-                          {m.title}
+                          {goal.title}
                         </Text>
-                      </div>
-                      <div
+                      </Link>
+                    </Flex>
+                    <div
+                      style={{ position: "relative", flex: 1, height: "100%" }}
+                    >
+                      <GoalMark goal={goal} year={year} today={today} />
+                    </div>
+                  </Flex>
+                  {open.has(goal.id) &&
+                    (milestones.get(goal.id) ?? []).map((m) => (
+                      <Flex
+                        key={m.id}
+                        style={{ height: ROW - 6 }}
+                        align={"center"}
+                      >
+                        <div
+                          style={{
+                            width: LABEL,
+                            paddingLeft: 4 + depth * 16 + 34,
+                            paddingRight: 8,
+                            minWidth: 0,
+                          }}
+                        >
+                          <Text
+                            type={"secondary"}
+                            delete={m.done}
+                            ellipsis={{ tooltip: m.title }}
+                            style={{ fontSize: 12 }}
+                          >
+                            {m.title}
+                          </Text>
+                        </div>
+                        <div
+                          style={{
+                            position: "relative",
+                            flex: 1,
+                            height: "100%",
+                          }}
+                        >
+                          <MilestoneMark
+                            milestone={m}
+                            year={year}
+                            today={today}
+                          />
+                        </div>
+                      </Flex>
+                    ))}
+                  {open.has(goal.id) &&
+                    milestones.get(goal.id)?.length === 0 && (
+                      <Text
+                        type={"secondary"}
                         style={{
-                          position: "relative",
-                          flex: 1,
-                          height: "100%",
+                          fontSize: 12,
+                          paddingLeft: 4 + depth * 16 + 34,
                         }}
                       >
-                        <MilestoneMark
-                          milestone={m}
-                          year={year}
-                          today={today}
-                        />
-                      </div>
-                    </Flex>
-                  ))}
-                {open.has(goal.id) && milestones.get(goal.id)?.length === 0 && (
-                  <Text
-                    type={"secondary"}
-                    style={{ fontSize: 12, paddingLeft: 4 + depth * 16 + 34 }}
-                  >
-                    No milestones
-                  </Text>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        ))}
-        {todayAt !== undefined && (
-          <div
-            aria-hidden={true}
-            style={{
-              position: "absolute",
-              top: 0,
-              bottom: 0,
-              left: `calc(${LABEL}px + (100% - ${LABEL}px) * ${todayAt})`,
-              borderLeft: "2px solid #ff4d4f",
-              pointerEvents: "none",
-            }}
-          />
-        )}
+                        No milestones
+                      </Text>
+                    )}
+                </React.Fragment>
+              ))}
+            </div>
+          ))}
+          {todayAt !== undefined && (
+            <div
+              aria-hidden={true}
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                left: `calc(${LABEL}px + (100% - ${LABEL}px) * ${todayAt})`,
+                borderLeft: "2px solid #ff4d4f",
+                pointerEvents: "none",
+              }}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
