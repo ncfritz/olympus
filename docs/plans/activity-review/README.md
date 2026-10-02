@@ -50,20 +50,31 @@ migration test checks that an update moves `updated_at` and leaves
 
 No new configuration: the feature has no provider, secret or schedule.
 
-## Phase 0 — Decision and scaffolding
+## Phase 0 — Decision and scaffolding — done 2026-10-02
 
 1. **ADR 0027 accepted**: **done** 2026-10-01.
-2. **Model**: `minerva/reviews/index.ts`, exported up to `src/index.ts`;
-   no shapes yet.
-3. **API**: `ReviewsModule` in `MINERVA_MODULES`, no operations.
-4. **Site**: the menu's Daily Review and Weekly Review open
-   `pages/minerva/review/daily/[[...date]].tsx` and
-   `pages/minerva/review/weekly/[[...date]].tsx`, empty, behind the
-   sign-in Goals uses; the menu matchers select them for every route in
-   the design's table. Monthly Review stays without a route.
+2. **Model**: **done** — `minerva/reviews/index.ts`, exported up to
+   `src/index.ts`; no shapes yet.
+3. **API**: **done** — `ReviewsModule` in `MINERVA_MODULES`, no
+   operations.
+4. **Site**: **done** — the menu's Daily Review and Weekly Review open
+   today's review and this week's
+   (`pages/minerva/review/daily/[[...date]].tsx` and
+   `pages/minerva/review/weekly/[[...date]].tsx`), and the menu selects
+   them for every route in the design's table. Each page shows its
+   breadcrumbs and an empty state naming the day, week or month the
+   route asks for; an address that is no review says so. Monthly Review
+   is disabled until it has a route.
+5. **Routes**: **done** — `src/utils/reviews.ts` reads and writes the
+   design's routes (ISO weeks with their week-year, so week 53 of 2026
+   is reached from 2027-01-01; a week listed under its Thursday's
+   month), unit-tested in `test/unit/reviews.spec.ts`.
 
 **Sign-off:** the API boots, both menu entries open their pages, and the
-Turbo tasks pass.
+Turbo tasks pass. Verified 2026-10-02 from a clean install: build, lint,
+test, typecheck and the convention checks pass for the model, API and
+site (the site built with placeholder `NEXT_PUBLIC_*` values). Opening
+the pages in a browser is Neil's to check.
 
 ## Phase 1 — Reviews, prompts and answers
 
