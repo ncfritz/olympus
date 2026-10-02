@@ -5,7 +5,7 @@ import type {
 } from "@ncfritz/olympus-sdk/minerva";
 import { message } from "antd";
 import type React from "react";
-import { useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import reviewsApi from "../../../api/reviewsApi";
 import { apiProblems } from "../../../utils/goals";
 
@@ -193,4 +193,37 @@ export const useAnswerActions = (
       }
     },
   };
+};
+
+/**
+ * The height that fills the window below where an element starts, kept
+ * as the window resizes, so a review can be a screen whose parts scroll on
+ * their own (as the goals' focus view does). The ref is a callback, so the
+ * element is measured whenever it appears, after loading as much as on
+ * mount.
+ */
+export const useFillHeight = (): [
+  (node: HTMLDivElement | null) => void,
+  number | undefined,
+] => {
+  const node = useRef<HTMLDivElement | null>(null);
+  const [height, setHeight] = useState<number>();
+  const fit = useCallback(() => {
+    const top = node.current?.getBoundingClientRect().top;
+    if (top !== undefined) {
+      setHeight(Math.max(480, Math.floor(window.innerHeight - top)));
+    }
+  }, []);
+  useEffect(() => {
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [fit]);
+  const ref = useCallback(
+    (element: HTMLDivElement | null) => {
+      node.current = element;
+      fit();
+    },
+    [fit],
+  );
+  return [ref, height];
 };
