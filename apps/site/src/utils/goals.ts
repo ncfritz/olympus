@@ -430,13 +430,15 @@ export const outcomeSeries = (
 /* A habit's grid ---------------------------------------------------------- */
 
 export type HabitCell =
-  "done" | "partial" | "missed" | "off" | "future" | "before";
+  "done" | "partial" | "missed" | "off" | "future" | "before" | "after";
 
 /**
- * The habit panel's grid: the last `weeks` ISO weeks, oldest first, each
- * a column of seven days (Monday first) and the week's count of days met.
- * A weekdays habit's other days are "off"; days not due by a daily or
- * weekdays rule are never "missed" for a weekly or monthly habit.
+ * The habit panel's grid: the last `weeks` ISO weeks and up to `ahead`
+ * weeks after this one, stopping at the week of `dueDate`; oldest first,
+ * each a column of seven days (Monday first) and the week's count of days
+ * met. A weekdays habit's other days are "off"; days not due by a daily or
+ * weekdays rule are never "missed" for a weekly or monthly habit; days
+ * past the due date are "after".
  */
 export const habitGrid = (
   logs: GoalHabitLog[],
@@ -444,17 +446,27 @@ export const habitGrid = (
   startDate: string,
   today: string,
   weeks = 12,
+  ahead = 0,
+  dueDate?: string,
 ): { weekOf: string; days: HabitCell[]; met: number }[] => {
   const byDay = new Map(logs.map((l) => [l.logDate, l]));
   const t = DateTime.fromISO(today);
-  const first = t.startOf("week").minus({ weeks: weeks - 1 });
-  return Array.from({ length: weeks }, (_, w) => {
+  const thisWeek = t.startOf("week");
+  const first = thisWeek.minus({ weeks: weeks - 1 });
+  const toDue = dueDate
+    ? Math.round(
+        DateTime.fromISO(dueDate).startOf("week").diff(thisWeek, "weeks").weeks,
+      )
+    : ahead;
+  const later = Math.max(0, Math.min(ahead, toDue));
+  return Array.from({ length: weeks + later }, (_, w) => {
     const monday = first.plus({ weeks: w });
     let met = 0;
     const days = Array.from({ length: 7 }, (_, d): HabitCell => {
       const day = monday.plus({ days: d });
       const iso = day.toISODate()!;
       if (iso < startDate) return "before";
+      if (dueDate && iso > dueDate) return "after";
       if (day > t) return "future";
       const log = byDay.get(iso);
       if (log?.met) {

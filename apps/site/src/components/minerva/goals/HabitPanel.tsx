@@ -49,6 +49,11 @@ const CELL: Record<
     border: "transparent",
     label: "before the habit started",
   },
+  after: {
+    background: "transparent",
+    border: "transparent",
+    label: "after the due date",
+  },
 };
 
 const ruleText = (goal: FullGoal) => {
@@ -69,7 +74,8 @@ const ruleText = (goal: FullGoal) => {
 };
 
 /**
- * A habit's adherence and streaks, its last twelve weeks as a grid
+ * A habit's adherence and streaks, its last twelve weeks and up to
+ * twelve ahead as a grid
  * (weekday by week, oldest left, each week's count beneath), and today's
  * log in one step.
  */
@@ -103,7 +109,15 @@ const HabitPanel: React.FunctionComponent<{
   if (!logs || !rule) return <Skeleton active={true} />;
 
   const todayLog = logs.find((l) => l.logDate === today);
-  const grid = habitGrid(logs, rule, goal.startDate, today);
+  const grid = habitGrid(
+    logs,
+    rule,
+    goal.startDate,
+    today,
+    12,
+    12,
+    goal.dueDate,
+  );
 
   const log = async (work: () => Promise<unknown>) => {
     try {
@@ -172,14 +186,15 @@ const HabitPanel: React.FunctionComponent<{
               );
             })}
             <Text type={"secondary"} style={{ fontSize: 11 }}>
-              {week.met}
+              {/* Weeks still to come have nothing to count yet. */}
+              {week.weekOf > today ? "\u00a0" : week.met}
             </Text>
           </Flex>
         ))}
       </Flex>
       <Text type={"secondary"} style={{ fontSize: 12 }}>
-        Last 12 weeks, oldest left; the bottom row counts the days met. Dashed:
-        still to come.
+        The last 12 weeks and up to 12 ahead (to the due date), oldest left; the
+        bottom row counts the days met. Dashed: still to come.
       </Text>
       {!readOnly && (
         <Flex

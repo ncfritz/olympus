@@ -376,6 +376,37 @@ describe("habitGrid", () => {
   const log = (logDate: string, met = true) =>
     ({ logDate, met, done: met }) as GoalHabitLog;
 
+  it("shows up to twelve weeks ahead, stopping at the due date's week", () => {
+    const rule = { frequency: "daily" as const };
+    const open = habitGrid([], rule, "2026-07-01", TODAY, 12, 12);
+    expect(open).toHaveLength(24);
+    expect(open[23].weekOf).toBe("2026-12-21");
+    expect(open[23].days.every((c) => c === "future")).toBe(true);
+
+    const due = habitGrid([], rule, "2026-07-01", TODAY, 12, 12, "2026-10-14");
+    expect(due).toHaveLength(14);
+    expect(due[13].weekOf).toBe("2026-10-12");
+    expect(due[13].days).toEqual([
+      "future",
+      "future",
+      "future",
+      "after",
+      "after",
+      "after",
+      "after",
+    ]);
+
+    const over = habitGrid([], rule, "2026-07-01", TODAY, 12, 12, "2026-09-02");
+    expect(over).toHaveLength(12);
+    expect(over[7].days.slice(2)).toEqual([
+      "missed",
+      "after",
+      "after",
+      "after",
+      "after",
+    ]);
+  });
+
   it("lays twelve weeks out Monday first, oldest left, counting days met", () => {
     const grid = habitGrid(
       [log("2026-09-28"), log("2026-09-30"), log("2026-09-29", false)],
