@@ -36,24 +36,36 @@ export interface GoalsFilterBarProps {
   tags: GoalTag[];
   onTags: (tagIds: string[]) => void;
   onStatuses: (statuses: string[]) => void;
-  /** Show the legend of the type icons and the pace tick. */
-  legend: boolean;
+  /** The legend row's contents under the bar, the same height in every view. */
+  legend: React.ReactNode;
 }
 
-/** What the board's icons and marks mean. */
-const Legend: React.FunctionComponent = () => (
+/** The row under the bar that holds a view's legend, one height for all. */
+const LegendBar: React.FunctionComponent<{ children: React.ReactNode }> = ({
+  children,
+}) => (
   <div
     style={{
+      height: 32,
+      boxSizing: "border-box",
       display: "flex",
       alignItems: "center",
+      justifyContent: "space-between",
       gap: 16,
-      padding: "6px 16px",
+      padding: "0 16px",
       fontSize: 12,
       color: "#6b6b6b",
       background: "#ffffff",
       borderBottom: "1px solid #f0f0f0",
     }}
   >
+    {children}
+  </div>
+);
+
+/** What the board's and Focus's icons and marks mean. */
+export const BoardLegend: React.FunctionComponent = () => (
+  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
     {(Object.keys(TYPE_LABEL) as GoalType[]).map((t) => (
       <span
         key={t}
@@ -100,8 +112,9 @@ const GoalsFilterBar: React.FunctionComponent<GoalsFilterBarProps> = ({
       style={{
         backgroundColor: "#efefef",
         width: "100%",
+        boxSizing: "border-box",
         justifyContent: "space-between",
-        padding: 8,
+        padding: "8px 16px 8px 8px",
       }}
     >
       <Space orientation={"horizontal"} size={8}>
@@ -166,7 +179,7 @@ const GoalsFilterBar: React.FunctionComponent<GoalsFilterBarProps> = ({
         />
       </Space>
     </Space>
-    {legend && <Legend />}
+    <LegendBar>{legend}</LegendBar>
   </div>
 );
 

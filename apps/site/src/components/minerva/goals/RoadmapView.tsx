@@ -206,13 +206,15 @@ export interface RoadmapViewProps {
   categories: GoalCategory[];
   cycles: GoalCycle[];
   today: string;
+  /** The year shown; the page's legend row moves it. */
+  year: number;
   /** The categories in a new order; the caller saves it. */
   onReorder: (categoryIds: string[]) => Promise<void>;
 }
 
 /** What the roadmap's marks mean. */
-const Legend: React.FunctionComponent = () => (
-  <Flex gap={16} wrap={true}>
+export const RoadmapLegend: React.FunctionComponent = () => (
+  <Flex gap={16} style={{ whiteSpace: "nowrap", overflow: "hidden" }}>
     {[
       "▭ Start to due date, filled to progress",
       "┄ Ongoing habit",
@@ -225,6 +227,32 @@ const Legend: React.FunctionComponent = () => (
       </Text>
     ))}
   </Flex>
+);
+
+/** The roadmap's year, a step back or on, for the page's legend row. */
+export const YearSelector: React.FunctionComponent<{
+  year: number;
+  onYear: (year: number) => void;
+}> = ({ year, onYear }) => (
+  <Space size={4}>
+    <Button
+      type={"text"}
+      size={"small"}
+      icon={<LeftOutlined />}
+      aria-label={"Previous year"}
+      onClick={() => onYear(year - 1)}
+    />
+    <Text strong={true} style={{ fontSize: 13 }}>
+      {year} roadmap
+    </Text>
+    <Button
+      type={"text"}
+      size={"small"}
+      icon={<RightOutlined />}
+      aria-label={"Next year"}
+      onClick={() => onYear(year + 1)}
+    />
+  </Space>
 );
 
 /** A milestone's mark: a dot on its due date, filled once done. */
@@ -473,9 +501,9 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
   categories,
   cycles,
   today,
+  year,
   onReorder,
 }) => {
-  const [year, setYear] = useState(DateTime.fromISO(today).year);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [order, setOrder] = useState(categories);
@@ -562,35 +590,9 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
         flexDirection: "column",
       }}
     >
-      {/* The year bar, bands and months hold still; only the lanes below
-          them scroll. */}
+      {/* The bands and months hold still; only the lanes below them
+          scroll. */}
       <div style={{ flexShrink: 0 }}>
-        <Flex
-          justify={"space-between"}
-          align={"center"}
-          gap={16}
-          wrap={true}
-          style={{ marginBottom: 8 }}
-        >
-          <Legend />
-          <Space>
-            <Button
-              type={"text"}
-              size={"small"}
-              icon={<LeftOutlined />}
-              aria-label={"Previous year"}
-              onClick={() => setYear((y) => y - 1)}
-            />
-            <Text strong={true}>{year} roadmap</Text>
-            <Button
-              type={"text"}
-              size={"small"}
-              icon={<RightOutlined />}
-              aria-label={"Next year"}
-              onClick={() => setYear((y) => y + 1)}
-            />
-          </Space>
-        </Flex>
         <BandRow title={"Quarters"} bands={quarterBands(year)} />
         <BandRow title={"12-week cycles"} bands={cycleBands(cycles, year)} />
         <Flex style={{ height: 22, borderBottom: "1px solid #f0f0f0" }}>

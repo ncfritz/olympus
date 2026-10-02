@@ -16,10 +16,14 @@ import CyclesDrawer from "../../../components/minerva/goals/CyclesDrawer";
 import PlanCycleModal from "../../../components/minerva/goals/PlanCycleModal";
 import CloseGoalModal from "../../../components/minerva/goals/CloseGoalModal";
 import FocusView from "../../../components/minerva/goals/FocusView";
-import RoadmapView from "../../../components/minerva/goals/RoadmapView";
+import RoadmapView, {
+  RoadmapLegend,
+  YearSelector,
+} from "../../../components/minerva/goals/RoadmapView";
 import GoalFormDrawer from "../../../components/minerva/goals/GoalFormDrawer";
 import GoalsBreadcrumbs from "../../../components/minerva/goals/GoalsBreadcrumbs";
 import GoalsFilterBar, {
+  BoardLegend,
   type GoalsView,
   OPEN_STATUSES,
 } from "../../../components/minerva/goals/GoalsFilterBar";
@@ -56,6 +60,7 @@ const GoalsPage: React.FunctionComponent = () => {
   }>({ open: false });
   const [managing, setManaging] = useState(false);
   const [managingCycles, setManagingCycles] = useState(false);
+  const [roadmapYear, setRoadmapYear] = useState(DateTime.now().year);
   const [planning, setPlanning] = useState(false);
   const [checkingIn, setCheckingIn] = useState<Goal>();
   const [dropping, setDropping] = useState<Goal>();
@@ -125,7 +130,7 @@ const GoalsPage: React.FunctionComponent = () => {
                 ? "By category"
                 : view === "focus"
                   ? "What needs you now"
-                  : `${year.year} roadmap`}
+                  : `${roadmapYear} roadmap`}
             </Text>
           </Space>
           <Space size={8}>
@@ -171,7 +176,16 @@ const GoalsPage: React.FunctionComponent = () => {
           tags={data.tags}
           onTags={setTagIds}
           onStatuses={setStatuses}
-          legend={view !== "roadmap"}
+          legend={
+            view === "roadmap" ? (
+              <>
+                <RoadmapLegend />
+                <YearSelector year={roadmapYear} onYear={setRoadmapYear} />
+              </>
+            ) : (
+              <BoardLegend />
+            )
+          }
         />
         <div style={{ padding: 16 }}>
           {data.loading ? (
@@ -194,6 +208,7 @@ const GoalsPage: React.FunctionComponent = () => {
             />
           ) : view === "roadmap" ? (
             <RoadmapView
+              year={roadmapYear}
               goals={shown}
               categories={data.categories}
               cycles={data.cycles}
