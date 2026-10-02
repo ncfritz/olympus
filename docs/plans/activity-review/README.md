@@ -252,14 +252,20 @@ user_id)`), `scope` (`day`, `week`), `period_start` (a Monday for a
 
 **Sign-off:** R3 from the OpenAPI page against `hasura-dev`.
 
-## Phase 3 — The summary and pins
+## Phase 3 — The summary and pins — built 2026-10-02, not signed off
 
-1. **Migration** `1791020000000_minerva_review_pins`:
-   `minerva.review_pins`: `id`, `review_id` (a weekly review, cascade),
-   `answer_id` (references `review_answers`, cascade) or `note_id`
-   (references `minerva.notes`, cascade), exactly one, audit columns.
-   Unique per review and target.
-2. **Operations**:
+1. **Migration** `1791020000000_minerva_review_pins`: **done** —
+   `minerva.review_pins`: `id`, `user_id`, `review_id`, `kind` (always
+   `weekly`), `answer_id` or `note_id` (exactly one), audit columns.
+   `(review_id, user_id, kind)` keys the review, so only a weekly review
+   of the pin's user holds pins; `(answer_id, user_id)` keys the answer
+   (cascade; `review_answers` gains `unique (id, user_id)`), so an answer
+   is the pin's user's; `note_id` keys the note alone (cascade), since
+   notes belong to no user yet. Unique per review and answer, and per
+   review and note (partial indexes). Notes are soft-deleted, so a pin
+   outlives a deleted note until it is purged. Hasura: `pins` on reviews;
+   `answer`, `note` and `review` on pins.
+2. **Operations**: **done** — four.
 
    | Operation          | Route                                 |
    | ------------------ | ------------------------------------- |
@@ -267,20 +273,44 @@ user_id)`), `scope` (`day`, `week`), `period_start` (a Monday for a
    | `ListReviewPins`   | `GET /review/:reviewId/pins`          |
    | `CreateReviewPin`  | `POST /review/:reviewId/pins`         |
    | `DeleteReviewPin`  | `DELETE /review/:reviewId/pin/:pinId` |
+   - `GetReviewSummary` takes `kind`, `from` and `to` (days, or the
+     Mondays of the first and last weeks; at most 400 days) and
+     `x-ncfritz-tz`, and reads the range and as many periods before it in
+     one document. Per period: `status`, `current`, the review's ID,
+     ratings and `headline`. **The statuses are refined** from the
+     ADR's four to five: `complete`, `draft`, `missed` (past, no review),
+     `open` (the current period, not reviewed yet) and `upcoming`, with
+     `current` marking the period today falls in; the lists need "no
+     review" apart from "not yet" and from the future. Then `averages`
+     (completed reviews only, to two decimals: a review's ratings settle
+     when it is completed) and `previousAverages`; `complete`, `drafts`
+     and `due` (every period but the upcoming); `currentStreak` (from the
+     current period when complete, else from the one before, so a day
+     not reviewed yet does not break it; followed back up to 1,000
+     periods) and `bestStreak` (within the range). The headline is the
+     first non-empty line of the first answered Reflect prompt, in the
+     prompts' order, cut to 140 characters.
+   - `CreateReviewPin` takes `answerId` or `noteId`. A pin on a daily
+     review, or an answer not from a daily review of the week, is a 400;
+     another user's review or answer, or a missing note, a 404; pinning
+     twice a 409. Pins have no route of their own, so no `Location`.
+   - `ListReviewPins` returns a review's pins, oldest first;
+     `DeleteReviewPin` unpins.
 
-   `GetReviewSummary` takes `kind`, `from`, `to` and `x-ncfritz-tz` and
-   returns, per period, the status (`complete`, `draft`, `none`,
-   `today`), the ratings and the headline; the range's averages and the
-   previous range's; how many were reviewed; and the current and best
-   streaks. A pin on a daily review, or to an answer outside the weekly
-   review's week, is a 400.
+3. **Tests**: **done** — `summary/summary.ts` as pure functions in
+   `test/unit/minerva/reviews/summary/summary.spec.ts` (week 39 from the
+   canvas against week 38, statuses with today open and the rest
+   upcoming, weeks, headlines across lines and prompts, averages leaving
+   out drafts, streaks from yesterday, today and across a missed day);
+   the pin converter; `reviewSummary.spec.ts` (today from two timezones
+   either side of midnight) and `reviewPins.spec.ts` (the week's first
+   and last days, the weeks either side, a daily review, notes);
+   `infra/hasura/tests/minerva_review_pins.sql` for the keys, the
+   one-of rule, duplicates, a soft-deleted and a purged note, audit
+   times and cascades. Verified 2026-10-02 against the scratch
+   PostgreSQL 16 and the Turbo tasks for model, API, SDK and site.
 
-3. **Tests**: `summary/` as pure functions (statuses across a day
-   boundary in two timezones, averages over partly rated ranges, streaks
-   broken by a missed day, headlines from multi-line answers); endpoint
-   tests as before; `infra/hasura/tests/minerva_review_pins.sql`.
-
-**Sign-off:** R4 from the OpenAPI page.
+**Sign-off:** R4 from the OpenAPI page against `hasura-dev`.
 
 ## Phase 4 — The site: the daily review
 

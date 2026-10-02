@@ -1,54 +1,47 @@
 table:
-  name: reviews
+  name: review_pins
   schema: minerva
 configuration:
   column_config:
-    completed_at:
-      custom_name: completedTime
+    answer_id:
+      custom_name: answerId
     created_at:
       custom_name: createdTime
-    period_start:
-      custom_name: periodStart
+    note_id:
+      custom_name: noteId
+    review_id:
+      custom_name: reviewId
     updated_at:
       custom_name: lastUpdatedTime
     user_id:
       custom_name: userId
   custom_column_names:
-    completed_at: completedTime
+    answer_id: answerId
     created_at: createdTime
-    period_start: periodStart
+    note_id: noteId
+    review_id: reviewId
     updated_at: lastUpdatedTime
     user_id: userId
   custom_root_fields: {}
 object_relationships:
-  - name: user
-    using:
-      foreign_key_constraint_on: user_id
-array_relationships:
-  - name: answers
+  - name: answer
     using:
       manual_configuration:
         column_mapping:
-          id: review_id
+          answer_id: id
         insertion_order: null
         remote_table:
           name: review_answers
           schema: minerva
-  - name: items
+  - name: note
+    using:
+      foreign_key_constraint_on: note_id
+  - name: review
     using:
       manual_configuration:
         column_mapping:
-          id: review_id
+          review_id: id
         insertion_order: null
         remote_table:
-          name: review_items
-          schema: minerva
-  - name: pins
-    using:
-      manual_configuration:
-        column_mapping:
-          id: review_id
-        insertion_order: null
-        remote_table:
-          name: review_pins
+          name: reviews
           schema: minerva

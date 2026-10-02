@@ -47,3 +47,10 @@ export const REVIEW_ITEM = `id
   scheduledEnd
   createdTime
   lastUpdatedTime`;
+
+export const REVIEW_PIN = `id
+  reviewId
+  answerId
+  noteId
+  createdTime
+  lastUpdatedTime`;

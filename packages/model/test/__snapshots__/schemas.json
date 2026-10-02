@@ -1434,6 +1434,19 @@
     ],
     "type": "object"
   },
+  "BaseReviewPin": {
+    "properties": {
+      "answerId": {
+        "description": "An answer from one of the week's daily reviews; give this or noteId",
+        "type": "string"
+      },
+      "noteId": {
+        "description": "A note; give this or answerId",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
   "BaseReviewPrompt": {
     "properties": {
       "kind": {
@@ -4068,6 +4081,38 @@
     },
     "required": [
       "reviewItem"
+    ],
+    "type": "object"
+  },
+  "CreateReviewPinRequest": {
+    "properties": {
+      "reviewPin": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseReviewPin"
+          }
+        ],
+        "description": "What to pin: an answer from the week, or a note."
+      }
+    },
+    "required": [
+      "reviewPin"
+    ],
+    "type": "object"
+  },
+  "CreateReviewPinResponse": {
+    "properties": {
+      "reviewPin": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewPin"
+          }
+        ],
+        "description": "The pin as made."
+      }
+    },
+    "required": [
+      "reviewPin"
     ],
     "type": "object"
   },
@@ -6842,6 +6887,22 @@
     ],
     "type": "object"
   },
+  "GetReviewSummaryResponse": {
+    "properties": {
+      "summary": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewSummary"
+          }
+        ],
+        "description": "The summary of the range."
+      }
+    },
+    "required": [
+      "summary"
+    ],
+    "type": "object"
+  },
   "GetSummaryResponse": {
     "properties": {
       "counts": {
@@ -9331,6 +9392,21 @@
     },
     "required": [
       "reviewItems"
+    ],
+    "type": "object"
+  },
+  "ListReviewPinsResponse": {
+    "properties": {
+      "reviewPins": {
+        "description": "The review's pins, oldest first.",
+        "items": {
+          "$ref": "#/components/schemas/ReviewPin"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "reviewPins"
     ],
     "type": "object"
   },
@@ -16525,6 +16601,101 @@
     ],
     "type": "string"
   },
+  "ReviewPeriodStatus": {
+    "description": "complete, draft, missed (past, no review), open (the current period, not reviewed yet) or upcoming",
+    "enum": [
+      "complete",
+      "draft",
+      "missed",
+      "open",
+      "upcoming"
+    ],
+    "type": "string"
+  },
+  "ReviewPeriodSummary": {
+    "properties": {
+      "current": {
+        "description": "Whether this is the period today falls in, where the caller is",
+        "type": "boolean"
+      },
+      "headline": {
+        "description": "The first line of the review's first answered Reflect prompt, at most 140 characters",
+        "type": "string"
+      },
+      "periodEnd": {
+        "description": "The day itself, or the week's Sunday, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "periodStart": {
+        "description": "The day, or the week's Monday, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "ratings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewRatings"
+          }
+        ],
+        "description": "The review's ratings; empty with no review"
+      },
+      "reviewId": {
+        "description": "The period's review, when there is one",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewPeriodStatus"
+          }
+        ],
+        "description": "complete, draft, missed (past, no review), open (the current period, not reviewed yet) or upcoming"
+      }
+    },
+    "required": [
+      "current",
+      "periodEnd",
+      "periodStart",
+      "ratings",
+      "status"
+    ],
+    "type": "object"
+  },
+  "ReviewPin": {
+    "properties": {
+      "answerId": {
+        "description": "The daily review answer pinned; set when the pin is not a note's",
+        "type": "string"
+      },
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the pin was made",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the pin",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the pin was last changed",
+        "type": "string"
+      },
+      "noteId": {
+        "description": "The note pinned; set when the pin is not an answer's",
+        "type": "string"
+      },
+      "reviewId": {
+        "description": "The weekly review that keeps the pin",
+        "type": "string"
+      }
+    },
+    "required": [
+      "createdTime",
+      "id",
+      "reviewId"
+    ],
+    "type": "object"
+  },
   "ReviewPrompt": {
     "properties": {
       "archived": {
@@ -16594,6 +16765,108 @@
       "plan"
     ],
     "type": "string"
+  },
+  "ReviewRatings": {
+    "properties": {
+      "balance": {
+        "description": "A week's balance",
+        "type": "number"
+      },
+      "energy": {
+        "description": "A day's energy",
+        "type": "number"
+      },
+      "focus": {
+        "description": "A day's focus",
+        "type": "number"
+      },
+      "mood": {
+        "description": "A day's mood",
+        "type": "number"
+      },
+      "overall": {
+        "description": "Overall, on both kinds",
+        "type": "number"
+      },
+      "progress": {
+        "description": "A week's progress",
+        "type": "number"
+      }
+    },
+    "type": "object"
+  },
+  "ReviewSummary": {
+    "properties": {
+      "averages": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewRatings"
+          }
+        ],
+        "description": "Each rating's average over the range's completed reviews, to two decimals"
+      },
+      "bestStreak": {
+        "description": "The longest run of completed periods within the range",
+        "type": "number"
+      },
+      "complete": {
+        "description": "Periods in the range with a completed review",
+        "type": "number"
+      },
+      "currentStreak": {
+        "description": "Completed periods in a row up to now: from the current period when it is complete, otherwise from the one before",
+        "type": "number"
+      },
+      "drafts": {
+        "description": "Periods in the range whose review is a draft",
+        "type": "number"
+      },
+      "due": {
+        "description": "Periods in the range that have begun: everything but the upcoming ones",
+        "type": "number"
+      },
+      "kind": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewKind"
+          }
+        ],
+        "description": "Whether the summary is of days or of weeks"
+      },
+      "periods": {
+        "description": "Every day or week in the range, oldest first",
+        "items": {
+          "$ref": "#/components/schemas/ReviewPeriodSummary"
+        },
+        "type": "array"
+      },
+      "previousAverages": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewRatings"
+          }
+        ],
+        "description": "The same averages over as many periods just before the range, for comparison"
+      },
+      "today": {
+        "description": "Today where the caller is, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      }
+    },
+    "required": [
+      "averages",
+      "bestStreak",
+      "complete",
+      "currentStreak",
+      "drafts",
+      "due",
+      "kind",
+      "periods",
+      "previousAverages",
+      "today"
+    ],
+    "type": "object"
   },
   "RevokeSessionResponse": {
     "properties": {

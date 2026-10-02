@@ -4160,6 +4160,89 @@
         ]
       }
     },
+    "/minerva/reviews/summary": {
+      "get": {
+        "description": "For every day, or every week named by its Monday, from one date to another: its status (complete, draft, missed, open or upcoming, today deciding which), ratings and headline; the averages of the range's completed reviews against as many periods before; the counts; and the current and best streaks. The range is at most 400 days.",
+        "operationId": "GetReviewSummary",
+        "parameters": [
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "The last day, or the last week's Monday, as YYYY-MM-DD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "The first day, or the first week's Monday, as YYYY-MM-DD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": true,
+            "in": "query",
+            "description": "daily or weekly",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The summary of the range.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetReviewSummaryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets the summary of the signed-in user's reviews over a range",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
     "/minerva/reviews": {
       "get": {
         "description": "The caller's daily or weekly reviews whose periods start from one date to another, oldest first, each with its answers. The range is at most 400 days.",
@@ -4631,6 +4714,188 @@
           }
         },
         "summary": "Saves the answer to one of a review's prompts",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/minerva/review/{reviewId}/pins": {
+      "get": {
+        "description": "The answers and notes one of the caller's reviews keeps, oldest first. A note deleted since keeps its pin until it is purged.",
+        "operationId": "ListReviewPins",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the weekly review",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The review's pins.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListReviewPinsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists a weekly review's pins",
+        "tags": [
+          "Reviews"
+        ]
+      },
+      "post": {
+        "description": "Keeps an answer from one of the week's daily reviews, or a note, with one of the caller's weekly reviews. Each is pinned once; a daily review keeps no pins. Pins have no route of their own, so no Location is set.",
+        "operationId": "CreateReviewPin",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the weekly review",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateReviewPin operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewPinRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The pin was made.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateReviewPinResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The answer or note is already pinned to this week."
+          }
+        },
+        "summary": "Pins an answer from the week, or a note, to a weekly review",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/minerva/review/{reviewId}/pin/{pinId}": {
+      "delete": {
+        "description": "Removes a pin; the answer or note itself is untouched.",
+        "operationId": "DeleteReviewPin",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the weekly review",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pinId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the pin to remove",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The pin was removed."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Unpins one of a weekly review's pins",
         "tags": [
           "Reviews"
         ]
@@ -8910,6 +9175,185 @@
           "reviewPrompt"
         ]
       },
+      "ReviewPeriodStatus": {
+        "type": "string",
+        "enum": [
+          "complete",
+          "draft",
+          "missed",
+          "open",
+          "upcoming"
+        ],
+        "description": "complete, draft, missed (past, no review), open (the current period, not reviewed yet) or upcoming"
+      },
+      "ReviewRatings": {
+        "type": "object",
+        "properties": {
+          "overall": {
+            "type": "number",
+            "description": "Overall, on both kinds"
+          },
+          "mood": {
+            "type": "number",
+            "description": "A day's mood"
+          },
+          "energy": {
+            "type": "number",
+            "description": "A day's energy"
+          },
+          "focus": {
+            "type": "number",
+            "description": "A day's focus"
+          },
+          "progress": {
+            "type": "number",
+            "description": "A week's progress"
+          },
+          "balance": {
+            "type": "number",
+            "description": "A week's balance"
+          }
+        }
+      },
+      "ReviewPeriodSummary": {
+        "type": "object",
+        "properties": {
+          "periodStart": {
+            "type": "string",
+            "format": "date",
+            "description": "The day, or the week's Monday, as YYYY-MM-DD"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date",
+            "description": "The day itself, or the week's Sunday, as YYYY-MM-DD"
+          },
+          "status": {
+            "description": "complete, draft, missed (past, no review), open (the current period, not reviewed yet) or upcoming",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewPeriodStatus"
+              }
+            ]
+          },
+          "current": {
+            "type": "boolean",
+            "description": "Whether this is the period today falls in, where the caller is"
+          },
+          "reviewId": {
+            "type": "string",
+            "description": "The period's review, when there is one"
+          },
+          "ratings": {
+            "description": "The review's ratings; empty with no review",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewRatings"
+              }
+            ]
+          },
+          "headline": {
+            "type": "string",
+            "description": "The first line of the review's first answered Reflect prompt, at most 140 characters"
+          }
+        },
+        "required": [
+          "periodStart",
+          "periodEnd",
+          "status",
+          "current",
+          "ratings"
+        ]
+      },
+      "ReviewSummary": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "Whether the summary is of days or of weeks",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewKind"
+              }
+            ]
+          },
+          "today": {
+            "type": "string",
+            "format": "date",
+            "description": "Today where the caller is, as YYYY-MM-DD"
+          },
+          "periods": {
+            "description": "Every day or week in the range, oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewPeriodSummary"
+            }
+          },
+          "averages": {
+            "description": "Each rating's average over the range's completed reviews, to two decimals",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewRatings"
+              }
+            ]
+          },
+          "previousAverages": {
+            "description": "The same averages over as many periods just before the range, for comparison",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewRatings"
+              }
+            ]
+          },
+          "complete": {
+            "type": "number",
+            "description": "Periods in the range with a completed review"
+          },
+          "drafts": {
+            "type": "number",
+            "description": "Periods in the range whose review is a draft"
+          },
+          "due": {
+            "type": "number",
+            "description": "Periods in the range that have begun: everything but the upcoming ones"
+          },
+          "currentStreak": {
+            "type": "number",
+            "description": "Completed periods in a row up to now: from the current period when it is complete, otherwise from the one before"
+          },
+          "bestStreak": {
+            "type": "number",
+            "description": "The longest run of completed periods within the range"
+          }
+        },
+        "required": [
+          "kind",
+          "today",
+          "periods",
+          "averages",
+          "previousAverages",
+          "complete",
+          "drafts",
+          "due",
+          "currentStreak",
+          "bestStreak"
+        ]
+      },
+      "GetReviewSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "description": "The summary of the range.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewSummary"
+              }
+            ]
+          }
+        },
+        "required": [
+          "summary"
+        ]
+      },
       "ReviewAnswer": {
         "type": "object",
         "properties": {
@@ -9238,6 +9682,100 @@
         },
         "required": [
           "answer"
+        ]
+      },
+      "ReviewPin": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the pin"
+          },
+          "reviewId": {
+            "type": "string",
+            "description": "The weekly review that keeps the pin"
+          },
+          "answerId": {
+            "type": "string",
+            "description": "The daily review answer pinned; set when the pin is not a note's"
+          },
+          "noteId": {
+            "type": "string",
+            "description": "The note pinned; set when the pin is not an answer's"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the pin was made"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the pin was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "reviewId",
+          "createdTime"
+        ]
+      },
+      "ListReviewPinsResponse": {
+        "type": "object",
+        "properties": {
+          "reviewPins": {
+            "description": "The review's pins, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewPin"
+            }
+          }
+        },
+        "required": [
+          "reviewPins"
+        ]
+      },
+      "BaseReviewPin": {
+        "type": "object",
+        "properties": {
+          "answerId": {
+            "type": "string",
+            "description": "An answer from one of the week's daily reviews; give this or noteId"
+          },
+          "noteId": {
+            "type": "string",
+            "description": "A note; give this or answerId"
+          }
+        }
+      },
+      "CreateReviewPinRequest": {
+        "type": "object",
+        "properties": {
+          "reviewPin": {
+            "description": "What to pin: an answer from the week, or a note.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseReviewPin"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewPin"
+        ]
+      },
+      "CreateReviewPinResponse": {
+        "type": "object",
+        "properties": {
+          "reviewPin": {
+            "description": "The pin as made.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewPin"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewPin"
         ]
       },
       "ReviewItemScope": {

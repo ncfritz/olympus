@@ -642,8 +642,8 @@ describe("Location headers of created resources", () => {
     // own specs (weatherLocations, weatherStations, and minerva's tags,
     // goalCategories, goalCycles, goals, reviews, reviewPrompts and
     // reviewItems) assert their Location headers.
-    // CreateGoalMilestone and CreateGoalCheckin have no GET route, so they
-    // set none.
+    // CreateGoalMilestone, CreateGoalCheckin and CreateReviewPin have no GET
+    // route, so they set none.
     const exempt = [
       "CreateNotification",
       "UploadAssets",
@@ -659,6 +659,7 @@ describe("Location headers of created resources", () => {
       "CreateReviewPrompt",
       "CreateReviewItem",
       "CarryReviewItem",
+      "CreateReviewPin",
     ];
     const creates = controllers
       .filter((c) => "201" in (c.routes[0]?.responses ?? {}))

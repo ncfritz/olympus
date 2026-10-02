@@ -380,6 +380,13 @@
     "Daily": "daily",
     "Weekly": "weekly"
   },
+  "ReviewPeriodStatus": {
+    "Complete": "complete",
+    "Draft": "draft",
+    "Missed": "missed",
+    "Open": "open",
+    "Upcoming": "upcoming"
+  },
   "ReviewPromptSection": {
     "Plan": "plan",
     "Reflect": "reflect"

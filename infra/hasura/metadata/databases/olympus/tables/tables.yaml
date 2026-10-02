@@ -142,6 +142,7 @@
 - '!include minerva_notes_type_statistics_type.yaml'
 - '!include minerva_review_answers.yaml'
 - '!include minerva_review_items.yaml'
+- '!include minerva_review_pins.yaml'
 - '!include minerva_review_prompts.yaml'
 - '!include minerva_review_user_settings.yaml'
 - '!include minerva_reviews.yaml'

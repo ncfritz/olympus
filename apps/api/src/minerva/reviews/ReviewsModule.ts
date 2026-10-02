@@ -1,5 +1,9 @@
 import { Module } from "@nestjs/common";
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
+import { CreateReviewPinController } from "./controllers/CreateReviewPinController";
+import { DeleteReviewPinController } from "./controllers/DeleteReviewPinController";
+import { GetReviewSummaryController } from "./controllers/GetReviewSummaryController";
+import { ListReviewPinsController } from "./controllers/ListReviewPinsController";
 import { CarryReviewItemController } from "./controllers/CarryReviewItemController";
 import { CreateReviewItemController } from "./controllers/CreateReviewItemController";
 import { DeleteReviewItemController } from "./controllers/DeleteReviewItemController";
@@ -21,17 +25,25 @@ import { UpdateReviewAnswerController } from "./controllers/UpdateReviewAnswerCo
 import { UpdateReviewController } from "./controllers/UpdateReviewController";
 import { UpdateReviewPromptController } from "./controllers/UpdateReviewPromptController";
 import { ReviewItemService } from "./services/ReviewItemService";
+import { ReviewPinService } from "./services/ReviewPinService";
 import { ReviewPromptService } from "./services/ReviewPromptService";
 import { ReviewService } from "./services/ReviewService";
+import { ReviewSummaryService } from "./services/ReviewSummaryService";
 
 /**
  * Reviews: the daily and weekly reviews, each user's own (ADR 0027,
  * docs/plans/activity-review/README.md): reviews, prompts and answers,
- * and the items reviews plan.
+ * the items reviews plan, weekly pins and the summary.
  */
 @Module({
   imports: [GraphQLClientModule],
-  providers: [ReviewService, ReviewPromptService, ReviewItemService],
+  providers: [
+    ReviewService,
+    ReviewPromptService,
+    ReviewItemService,
+    ReviewPinService,
+    ReviewSummaryService,
+  ],
   controllers: [
     ListReviewPromptsController,
     CreateReviewPromptController,
@@ -39,6 +51,7 @@ import { ReviewService } from "./services/ReviewService";
     DescribeReviewPromptController,
     UpdateReviewPromptController,
     DeleteReviewPromptController,
+    GetReviewSummaryController,
     ListReviewsController,
     CreateReviewController,
     DescribeReviewController,
@@ -46,6 +59,9 @@ import { ReviewService } from "./services/ReviewService";
     CompleteReviewController,
     DeleteReviewController,
     UpdateReviewAnswerController,
+    ListReviewPinsController,
+    CreateReviewPinController,
+    DeleteReviewPinController,
     ListReviewItemsController,
     ReorderReviewItemsController,
     CreateReviewItemController,

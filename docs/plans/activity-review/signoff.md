@@ -67,8 +67,9 @@ recorded exception.
 ## R4 — Summary and pins
 
 1. `GetReviewSummary` for week 39 gives six complete days, Thursday
-   `none`, the averages drawn on the canvas, and last week's for the
-   comparison.
+   `missed`, the averages drawn on the canvas, and last week's for the
+   comparison; this week's today is `open` and the days after it
+   `upcoming`.
 2. On 2026-10-01 at 23:30 Pacific, today is 2026-10-01; with `tz-utc` it
    is 2026-10-02.
 3. The streak counts back from today and stops at a missed day.
