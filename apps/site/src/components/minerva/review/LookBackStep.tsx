@@ -1,21 +1,10 @@
-import { Card, Statistic } from "antd";
-import { DateTime } from "luxon";
+import { Card } from "antd";
 import React from "react";
-import { config } from "../../../utils/notes";
-import {
-  busyMinutes,
-  dayBarBlocks,
-  doneOfPlanned,
-  formatMinutes,
-  itemsOf,
-  meetingSpans,
-  noteTypeCounts,
-  openCount,
-} from "../../../utils/reviews";
-import DayBar from "./DayBar";
+import { itemsOf, openCount } from "../../../utils/reviews";
 import DayReference from "./DayReference";
 import styles from "./Review.module.css";
 import SplitStep from "./SplitStep";
+import TodayNumbers from "./TodayNumbers";
 import TriageList from "./TriageList";
 import type { DailyReviewData } from "./useDailyReview";
 import WeekPlanCard from "./WeekPlanCard";
@@ -39,18 +28,8 @@ const LookBackStep: React.FunctionComponent<LookBackStepProps> = ({
   intro,
   footer,
 }) => {
-  const date = DateTime.fromISO(data.day);
-  const spans = meetingSpans(data.meetings, date);
   const planned = itemsOf(data.items, data.day);
-  const { done, planned: kept } = doneOfPlanned(data.items, data.day);
   const left = openCount(data.items, data.day);
-  const types = [...noteTypeCounts(data.notes)]
-    .filter(([type]) => type !== 0)
-    .map(
-      ([type, count]) =>
-        `${count} ${(config[type] ?? config[0]).label.toLowerCase()}`,
-    )
-    .join(" · ");
 
   return (
     <SplitStep
@@ -65,31 +44,7 @@ const LookBackStep: React.FunctionComponent<LookBackStepProps> = ({
       }
     >
       {data.week && <WeekPlanCard week={data.week} />}
-      <Card
-        size={"small"}
-        variant={"borderless"}
-        className={styles.flat}
-        classNames={{ header: styles.flatPart, body: styles.flatPart }}
-        title={"Today in numbers"}
-      >
-        <div className={styles.stack}>
-          <div className={styles.numbers}>
-            <Statistic
-              title={`in meetings · ${spans.length} event${spans.length === 1 ? "" : "s"}`}
-              value={formatMinutes(busyMinutes(spans))}
-            />
-            <div>
-              <Statistic title={"notes"} value={data.notes.length} />
-              {types && <span className={styles.meta}>{types}</span>}
-            </div>
-            <Statistic
-              title={"planned items done"}
-              value={kept ? `${done} / ${kept}` : "–"}
-            />
-          </div>
-          <DayBar blocks={dayBarBlocks(spans)} />
-        </div>
-      </Card>
+      <TodayNumbers data={data} />
       <Card
         size={"small"}
         variant={"borderless"}

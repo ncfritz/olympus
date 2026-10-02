@@ -759,3 +759,44 @@
 .blockClose.blockClose .closeTodo {
   color: #52c41a;
 }
+
+/* The work at the full width beside the calendar, the footer with it. */
+.unlimited {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Wrap up: today and tomorrow side by side, beside tomorrow's calendar. */
+.wrapColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+@media (max-width: 1200px) {
+  .wrapColumns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.wrapHeading {
+  margin: 0;
+  padding-bottom: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* A decision shown, not chosen: its tag's width steady down the list. */
+.decisionTag {
+  margin-inline-end: 0;
+}
+
+/* A rating shown, not chosen: no pointer over its circles. */
+.rateReadOnly :global(.ant-rate-star) {
+  cursor: default;
+}

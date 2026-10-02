@@ -19,6 +19,8 @@ export interface CalendarPaneProps {
   onBlockDrop?: DayCalendarProps["onBlockDrop"];
   /** A line under the heading, such as the day's open time. */
   note?: React.ReactNode;
+  /** The pane's heading; "Calendar" by default. */
+  title?: string;
   /** Which side the pane sits on, for the border between it and the rest. */
   side?: "left" | "right";
 }
@@ -35,14 +37,15 @@ const CalendarPane: React.FunctionComponent<CalendarPaneProps> = ({
   onBlockRemove,
   onBlockDrop,
   note,
+  title = "Calendar",
   side = "right",
 }) => (
   <section
     className={`${styles.calendarPane} ${side === "left" ? styles.calendarLeft : ""}`}
-    aria-label={"Calendar"}
+    aria-label={title}
   >
     <div className={styles.paneHeader}>
-      <span>Calendar</span>
+      <span>{title}</span>
       <span className={styles.meta}>
         {formatMinutes(
           busyMinutes(meetingSpans(meetings, DateTime.fromISO(day))),

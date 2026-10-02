@@ -36,10 +36,12 @@ export interface PlanListProps {
    * time: it carries `data-block-item` for a FullCalendar Draggable.
    */
   calendarDrag?: boolean;
-  placeholder: string;
-  onAdd: (title: string) => Promise<void>;
-  onRemove: (item: ReviewItem) => Promise<void>;
-  onReorder: (ids: string[]) => Promise<void>;
+  placeholder?: string;
+  onAdd?: (title: string) => Promise<void>;
+  onRemove?: (item: ReviewItem) => Promise<void>;
+  onReorder?: (ids: string[]) => Promise<void>;
+  /** Only show the items, as the list draws them: no adding, moving or removing. */
+  readOnly?: boolean;
   /** Anything more a row shows before its remove button. */
   extra?: (item: ReviewItem) => React.ReactNode;
 }
@@ -52,10 +54,20 @@ const PlanRow: React.FunctionComponent<{
   showBlock: boolean;
   extra?: PlanListProps["extra"];
   calendarDrag: boolean;
-}> = ({ item, rank, disabled, onRemove, showBlock, extra, calendarDrag }) => {
+  readOnly: boolean;
+}> = ({
+  item,
+  rank,
+  disabled,
+  onRemove,
+  showBlock,
+  extra,
+  calendarDrag,
+  readOnly,
+}) => {
   const kind = PLAN_KINDS[item.kind];
   const block = formatBlock(item.scheduledStart, item.scheduledEnd);
-  const sortable = useSortable({ id: item.id, disabled });
+  const sortable = useSortable({ id: item.id, disabled: disabled || readOnly });
   return (
     <div
       ref={sortable.setNodeRef}
@@ -65,22 +77,24 @@ const PlanRow: React.FunctionComponent<{
         transition: sortable.transition,
       }}
     >
-      <Button
-        size={"small"}
-        type={"text"}
-        className={styles.handle}
-        icon={<HolderOutlined />}
-        aria-label={`Move ${item.title}`}
-        disabled={disabled}
-        {...sortable.attributes}
-        {...sortable.listeners}
-      />
+      {!readOnly && (
+        <Button
+          size={"small"}
+          type={"text"}
+          className={styles.handle}
+          icon={<HolderOutlined />}
+          aria-label={`Move ${item.title}`}
+          disabled={disabled}
+          {...sortable.attributes}
+          {...sortable.listeners}
+        />
+      )}
       {rank !== undefined && <span className={styles.rank}>{rank}</span>}
       <span className={kind.tint} title={kind.label}>
         {kind.icon}
       </span>
       <div className={styles.rowMain}>
-        {calendarDrag && !disabled ? (
+        {calendarDrag && !disabled && !readOnly ? (
           <Text
             className={styles.blockSource}
             data-block-item={item.id}
@@ -100,14 +114,16 @@ const PlanRow: React.FunctionComponent<{
         </span>
       )}
       {extra?.(item)}
-      <Button
-        size={"small"}
-        type={"text"}
-        icon={<CloseOutlined />}
-        disabled={disabled}
-        aria-label={`Remove ${item.title}`}
-        onClick={() => void onRemove(item)}
-      />
+      {!readOnly && (
+        <Button
+          size={"small"}
+          type={"text"}
+          icon={<CloseOutlined />}
+          disabled={disabled}
+          aria-label={`Remove ${item.title}`}
+          onClick={() => void onRemove?.(item)}
+        />
+      )}
     </div>
   );
 };
@@ -116,6 +132,7 @@ const PlanRow: React.FunctionComponent<{
  * The next period's priorities or to-dos: drag (or move with the keyboard) to
  * reorder, add at the end from the box at the top, remove, and show the time an
  * item has blocked, which is set by dragging its title onto the calendar.
+ * Read only, it shows the rows alone.
  */
 const PlanList: React.FunctionComponent<PlanListProps> = ({
   kind,
@@ -127,6 +144,7 @@ const PlanList: React.FunctionComponent<PlanListProps> = ({
   onAdd,
   onRemove,
   onReorder,
+  readOnly = false,
   extra,
 }) => {
   const [order, setOrder] = useState(items);
@@ -147,19 +165,19 @@ const PlanList: React.FunctionComponent<PlanListProps> = ({
       order.findIndex((i) => i.id === over.id),
     );
     setOrder(next);
-    void onReorder(next.map((i) => i.id));
+    void onReorder?.(next.map((i) => i.id));
   };
 
   const add = async () => {
     const title = adding.trim();
-    if (!title) return;
+    if (!title || !onAdd) return;
     await onAdd(title);
     setAdding("");
   };
 
   return (
     <div>
-      {!disabled && (
+      {!disabled && !readOnly && (
         <Space.Compact className={styles.addRow} block={true}>
           <Input
             value={adding}
@@ -197,6 +215,7 @@ const PlanList: React.FunctionComponent<PlanListProps> = ({
               showBlock={blocks}
               extra={extra}
               calendarDrag={calendarDrag}
+              readOnly={readOnly}
             />
           ))}
         </SortableContext>

@@ -9,8 +9,13 @@ export interface RatingInputProps {
   disabled?: boolean;
   /** Whether to show the words at each end beneath the circles. */
   showEnds?: boolean;
+  /**
+   * Only show the rating: drawn as it is to choose, with no pointer or
+   * hover, and nothing to change.
+   */
+  readOnly?: boolean;
   /** The new rating, or null when it is cleared. */
-  onChange: (value: number | null) => void;
+  onChange?: (value: number | null) => void;
 }
 
 /**
@@ -24,6 +29,7 @@ const RatingInput: React.FunctionComponent<RatingInputProps> = ({
   value,
   disabled = false,
   showEnds = true,
+  readOnly = false,
   onChange,
 }) => {
   const [hovered, setHovered] = useState<number>();
@@ -36,16 +42,16 @@ const RatingInput: React.FunctionComponent<RatingInputProps> = ({
       <div className={styles.rateBox}>
         <div className={styles.rateRow}>
           <Rate
-            className={styles.rate}
+            className={`${styles.rate} ${readOnly ? styles.rateReadOnly : ""}`}
             allowHalf={true}
-            disabled={disabled}
+            disabled={disabled || readOnly}
             value={value ?? 0}
             character={<span className={styles.rateDot} />}
             aria-labelledby={`rating-${field.key}`}
             onHoverChange={(rating) => setHovered(rating || undefined)}
             onChange={(rating) => {
               setHovered(undefined);
-              onChange(rating || null);
+              onChange?.(rating || null);
             }}
           />
           <span

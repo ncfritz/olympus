@@ -56,6 +56,24 @@ const LOOKS: Record<
   },
 };
 
+/** A decision as a tag in its colour, as its chosen button is; or "Open". */
+const DecisionTag: React.FunctionComponent<{
+  decision?: { label: string; value: string };
+}> = ({ decision }) => {
+  if (!decision) return <Tag className={styles.decisionTag}>Open</Tag>;
+  const look = LOOKS[decision.value] ?? LOOKS.done;
+  return (
+    <Tag
+      className={styles.decisionTag}
+      variant={"solid"}
+      color={look.color}
+      icon={look.icon}
+    >
+      {decision.label}
+    </Tag>
+  );
+};
+
 export interface TriageListProps<D extends string = Triage> {
   items: ReviewItem[];
   disabled?: boolean;
@@ -68,13 +86,18 @@ export interface TriageListProps<D extends string = Triage> {
   empty?: string;
   /** Where an item was planned, under its title. */
   whereOf?: (item: ReviewItem) => string | undefined;
+  /**
+   * Only show each item's decision, as a tag filled with its colour, as
+   * the chosen button is; nothing can be changed.
+   */
+  readOnly?: boolean;
 }
 
 /**
  * Planned items, each with its decision: by default a day's, done, on to
  * tomorrow, later (someday) or dropped. Clicking the chosen decision again
  * takes it back; a carried item can be decided again too, which takes its
- * copy back first.
+ * copy back first. Read only, it shows each decision as a tag instead.
  */
 const TriageList = <D extends string = Triage>({
   items,
@@ -84,6 +107,7 @@ const TriageList = <D extends string = Triage>({
   decisionOf = triageOf as (status: ReviewItem["status"]) => D | undefined,
   empty = "Nothing was planned for today",
   whereOf,
+  readOnly = false,
 }: TriageListProps<D>): React.ReactElement => {
   if (items.length === 0) {
     return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={empty} />;
@@ -106,47 +130,53 @@ const TriageList = <D extends string = Triage>({
             {item.carryCount > 0 && item.status === "open" && (
               <Tag color={"orange"}>Carried over</Tag>
             )}
-            {/* Radio buttons, not Segmented: an open item has no decision yet. */}
-            <Radio.Group
-              size={"small"}
-              buttonStyle={"solid"}
-              aria-label={`What happens to ${item.title}`}
-              disabled={disabled}
-              value={chosen ?? null}
-              onChange={(e) => void onDecide(item, e.target.value as D)}
-            >
-              {decisions.map((decision) => {
-                const look = LOOKS[decision.value] ?? LOOKS.done;
-                return (
-                  // Each button in its decision's colour, as AntD draws a
-                  // chosen button in the primary one.
-                  <ConfigProvider
-                    key={decision.value}
-                    theme={{ token: { colorPrimary: look.color } }}
-                  >
-                    <Radio.Button
-                      value={decision.value}
-                      // Clicking the chosen decision again takes it back;
-                      // a radio sends no change for that, so it is caught here.
-                      onClick={() => {
-                        if (chosen === decision.value) {
-                          void onDecide(item, null);
-                        }
-                      }}
+            {readOnly ? (
+              <DecisionTag
+                decision={decisions.find((d) => d.value === chosen)}
+              />
+            ) : (
+              /* Radio buttons, not Segmented: an open item has no decision yet. */
+              <Radio.Group
+                size={"small"}
+                buttonStyle={"solid"}
+                aria-label={`What happens to ${item.title}`}
+                disabled={disabled}
+                value={chosen ?? null}
+                onChange={(e) => void onDecide(item, e.target.value as D)}
+              >
+                {decisions.map((decision) => {
+                  const look = LOOKS[decision.value] ?? LOOKS.done;
+                  return (
+                    // Each button in its decision's colour, as AntD draws a
+                    // chosen button in the primary one.
+                    <ConfigProvider
+                      key={decision.value}
+                      theme={{ token: { colorPrimary: look.color } }}
                     >
-                      <span
-                        className={
-                          chosen === decision.value ? undefined : look.tint
-                        }
+                      <Radio.Button
+                        value={decision.value}
+                        // Clicking the chosen decision again takes it back;
+                        // a radio sends no change for that, so it is caught here.
+                        onClick={() => {
+                          if (chosen === decision.value) {
+                            void onDecide(item, null);
+                          }
+                        }}
                       >
-                        {look.icon}
-                      </span>{" "}
-                      {decision.label}
-                    </Radio.Button>
-                  </ConfigProvider>
-                );
-              })}
-            </Radio.Group>
+                        <span
+                          className={
+                            chosen === decision.value ? undefined : look.tint
+                          }
+                        >
+                          {look.icon}
+                        </span>{" "}
+                        {decision.label}
+                      </Radio.Button>
+                    </ConfigProvider>
+                  );
+                })}
+              </Radio.Group>
+            )}
           </div>
         );
       })}

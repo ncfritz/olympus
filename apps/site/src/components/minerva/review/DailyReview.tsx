@@ -184,14 +184,7 @@ const DailyReview: React.FunctionComponent<DailyReviewProps> = ({ date }) => {
         ) : step === 3 ? (
           <PlanTomorrowStep data={data} intro={INTROS[2]} footer={footer} />
         ) : (
-          // Keyed by step, so each step opens at its top.
-          <div key={step} className={styles.scroller}>
-            <div className={styles.body}>
-              <p className={styles.intro}>{INTROS[step - 1]}</p>
-              {step === 4 && <WrapUpStep data={data} onEdit={go} />}
-            </div>
-            <div className={styles.stickyFooter}>{footer}</div>
-          </div>
+          <WrapUpStep data={data} intro={INTROS[3]} footer={footer} />
         )}
       </div>
     </>

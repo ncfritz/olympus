@@ -1,142 +1,84 @@
 import { LockOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Descriptions, Empty } from "antd";
+import type { ReviewPrompt } from "@ncfritz/olympus-sdk/minerva";
+import { Alert, Card } from "antd";
 import { DateTime } from "luxon";
 import React from "react";
-import {
-  answeredPrompts,
-  busyMinutes,
-  doneOfPlanned,
-  formatBlock,
-  formatMinutes,
-  itemsOf,
-  meetingSpans,
-  RATING_FIELDS,
-} from "../../../utils/reviews";
-import AnswerBody from "./AnswerBody";
+import { itemsOf, RATING_FIELDS } from "../../../utils/reviews";
+import CalendarPane from "./CalendarPane";
+import CalendarStep from "./CalendarStep";
+import PlanList from "./PlanList";
+import PromptAnswer from "./PromptAnswer";
+import RatingInput from "./RatingInput";
+import { answersOf } from "./reviewHooks";
 import styles from "./Review.module.css";
+import TodayNumbers from "./TodayNumbers";
+import { tomorrowPlan } from "./tomorrowPlan";
+import TriageList from "./TriageList";
 import type { DailyReviewData } from "./useDailyReview";
 
 export interface WrapUpStepProps {
   data: DailyReviewData;
-  onEdit: (step: number) => void;
+  /** What the step asks, above its content. */
+  intro: string;
+  /** Back, Save and exit, Complete: kept at the foot. */
+  footer: React.ReactNode;
 }
 
-/** Step 4: how the review reads later, and completing it. */
+const flat = {
+  size: "small" as const,
+  variant: "borderless" as const,
+  className: styles.flat,
+  classNames: { header: styles.flatPart, body: styles.flatPart },
+};
+
+/**
+ * Step 4: the review as it reads later, nothing in it changeable here, and
+ * completing it. Three columns: today (its ratings, numbers, what became
+ * of its plan, and the reflection), tomorrow (its priorities, to-dos and
+ * thoughts), and tomorrow's calendar with the time they have blocked.
+ */
 const WrapUpStep: React.FunctionComponent<WrapUpStepProps> = ({
   data,
-  onEdit,
+  intro,
+  footer,
 }) => {
   const { review } = data;
-  const answered = (section: "reflect" | "plan") =>
-    answeredPrompts(data.prompts, review?.answers ?? [], section);
-  const spans = meetingSpans(data.meetings, DateTime.fromISO(data.day));
-  const { done, planned } = doneOfPlanned(data.items, data.day);
-  const priorities = itemsOf(data.items, data.tomorrow, "priority");
-  const todos = itemsOf(data.items, data.tomorrow, "todo");
-  const ratings = RATING_FIELDS.daily
-    .map((f) => `${f.label} ${review?.[f.key] ?? "–"}`)
-    .join(" · ");
+  const answers = review?.answers ?? [];
+  // Archived prompts are shown only where this review answered them.
+  const promptsOf = (section: ReviewPrompt["section"]) =>
+    data.prompts.filter(
+      (p) =>
+        p.section === section &&
+        (!p.archived || answers.some((a) => a.promptId === p.id)),
+    );
+  const today = itemsOf(data.items, data.day);
+  const { priorities, todos, blocks, openLine } = tomorrowPlan(data);
+  const shown = (prompt: ReviewPrompt) => (
+    <PromptAnswer
+      key={prompt.id}
+      prompt={prompt}
+      answers={answersOf(review, prompt.id)}
+      todoFor={"tomorrow"}
+      readOnly={true}
+    />
+  );
 
   return (
-    <>
-      <div className={styles.columns}>
-        <Card
-          size={"small"}
-          title={"Today"}
-          extra={
-            <Button size={"small"} type={"link"} onClick={() => onEdit(2)}>
-              Edit
-            </Button>
-          }
-        >
-          <Descriptions
-            column={1}
-            size={"small"}
-            layout={"vertical"}
-            colon={false}
-            items={[
-              { key: "ratings", label: "Ratings", children: ratings },
-              ...answered("reflect").map(({ prompt, answers }) => ({
-                key: prompt.id,
-                label: prompt.label,
-                children: <AnswerBody prompt={prompt} answers={answers} />,
-              })),
-              {
-                key: "record",
-                label: "Record",
-                children: `${formatMinutes(busyMinutes(spans))} meetings · ${data.notes.length} notes · ${done} of ${planned} planned items done`,
-              },
-            ]}
-          />
-        </Card>
-        <Card
-          size={"small"}
-          title={"Tomorrow"}
-          extra={
-            <Button size={"small"} type={"link"} onClick={() => onEdit(3)}>
-              Edit
-            </Button>
-          }
-        >
-          {priorities.length + todos.length + answered("plan").length === 0 ? (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={"Nothing planned yet"}
-            />
-          ) : (
-            <Descriptions
-              column={1}
-              size={"small"}
-              layout={"vertical"}
-              colon={false}
-              items={[
-                {
-                  key: "top",
-                  label: "Top priorities",
-                  children: priorities.length ? (
-                    <ol>
-                      {priorities.map((item) => {
-                        const block = formatBlock(
-                          item.scheduledStart,
-                          item.scheduledEnd,
-                        );
-                        return (
-                          <li key={item.id}>
-                            {item.title}
-                            {block && ` (${block})`}
-                          </li>
-                        );
-                      })}
-                    </ol>
-                  ) : (
-                    "None"
-                  ),
-                },
-                {
-                  key: "todos",
-                  label: "To-dos",
-                  children: todos.length
-                    ? todos
-                        .map((t) => {
-                          const block = formatBlock(
-                            t.scheduledStart,
-                            t.scheduledEnd,
-                          );
-                          return block ? `${t.title} (${block})` : t.title;
-                        })
-                        .join(" · ")
-                    : "None",
-                },
-                ...answered("plan").map(({ prompt, answers }) => ({
-                  key: prompt.id,
-                  label: prompt.label,
-                  children: <AnswerBody prompt={prompt} answers={answers} />,
-                })),
-              ]}
-            />
-          )}
-        </Card>
-      </div>
+    <CalendarStep
+      side={"right"}
+      limited={false}
+      intro={intro}
+      footer={footer}
+      calendar={
+        <CalendarPane
+          title={"Tomorrow's calendar"}
+          day={data.tomorrow}
+          meetings={data.tomorrowMeetings}
+          blocks={blocks}
+          note={openLine}
+        />
+      }
+    >
       {review?.completed ? (
         <Alert
           type={"success"}
@@ -153,8 +95,69 @@ const WrapUpStep: React.FunctionComponent<WrapUpStepProps> = ({
           }
         />
       )}
-    </>
+      <div className={styles.wrapColumns}>
+        <section className={styles.stack} aria-label={"Today"}>
+          <h2 className={styles.wrapHeading}>Today</h2>
+          <Card {...flat} title={"How was the day?"}>
+            <div className={styles.stack}>
+              {RATING_FIELDS.daily.map((field, index, fields) => (
+                <RatingInput
+                  key={field.key}
+                  field={field}
+                  showEnds={index === fields.length - 1}
+                  value={review?.[field.key]}
+                  readOnly={true}
+                />
+              ))}
+            </div>
+          </Card>
+          <TodayNumbers data={data} />
+          <Card {...flat} title={"Today's plan"}>
+            <TriageList items={today} readOnly={true} onDecide={noop} />
+          </Card>
+          <Card {...flat} title={"Reflection"}>
+            <div className={styles.stack}>
+              {promptsOf("reflect").map(shown)}
+            </div>
+          </Card>
+        </section>
+        <section className={styles.stack} aria-label={"Tomorrow"}>
+          <h2 className={styles.wrapHeading}>Tomorrow</h2>
+          <Card {...flat} title={"Top priorities"}>
+            {priorities.length ? (
+              <PlanList
+                kind={"priority"}
+                items={priorities}
+                blocks={true}
+                readOnly={true}
+              />
+            ) : (
+              <span className={styles.meta}>None planned</span>
+            )}
+          </Card>
+          <Card {...flat} title={"To-dos"}>
+            {todos.length ? (
+              <PlanList
+                kind={"todo"}
+                items={todos}
+                blocks={true}
+                readOnly={true}
+              />
+            ) : (
+              <span className={styles.meta}>None planned</span>
+            )}
+          </Card>
+          {promptsOf("plan").map((prompt) => (
+            <Card key={prompt.id} {...flat}>
+              {shown(prompt)}
+            </Card>
+          ))}
+        </section>
+      </div>
+    </CalendarStep>
   );
 };
+
+const noop = async () => undefined;
 
 export default WrapUpStep;

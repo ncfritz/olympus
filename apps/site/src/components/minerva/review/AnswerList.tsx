@@ -32,6 +32,8 @@ const { Text } = Typography;
 const MAX_ITEM = 200;
 
 export interface AnswerListProps {
+  /** Only show the items, as the list draws them: no changing them. */
+  readOnly?: boolean;
   /** For the add box's label. */
   label: string;
   items: ReviewAnswer[];
@@ -39,11 +41,11 @@ export interface AnswerListProps {
   placeholder?: string;
   /** What a to-do made from an item is for: "tomorrow", "next week". */
   todoFor: string;
-  onAdd: (body: string) => Promise<void>;
-  onEdit: (item: ReviewAnswer, body: string) => Promise<void>;
-  onRemove: (item: ReviewAnswer) => Promise<void>;
-  onReorder: (ids: string[]) => Promise<void>;
-  onTodo: (item: ReviewAnswer) => Promise<void>;
+  onAdd?: (body: string) => Promise<void>;
+  onEdit?: (item: ReviewAnswer, body: string) => Promise<void>;
+  onRemove?: (item: ReviewAnswer) => Promise<void>;
+  onReorder?: (ids: string[]) => Promise<void>;
+  onTodo?: (item: ReviewAnswer) => Promise<void>;
 }
 
 const AnswerRow: React.FunctionComponent<{
@@ -53,8 +55,9 @@ const AnswerRow: React.FunctionComponent<{
   onEdit: AnswerListProps["onEdit"];
   onRemove: AnswerListProps["onRemove"];
   onTodo: AnswerListProps["onTodo"];
-}> = ({ item, disabled, todoFor, onEdit, onRemove, onTodo }) => {
-  const sortable = useSortable({ id: item.id, disabled });
+  readOnly: boolean;
+}> = ({ item, disabled, todoFor, onEdit, onRemove, onTodo, readOnly }) => {
+  const sortable = useSortable({ id: item.id, disabled: disabled || readOnly });
   return (
     <div
       ref={sortable.setNodeRef}
@@ -64,26 +67,28 @@ const AnswerRow: React.FunctionComponent<{
         transition: sortable.transition,
       }}
     >
-      <Button
-        size={"small"}
-        type={"text"}
-        className={styles.handle}
-        icon={<HolderOutlined />}
-        aria-label={`Move ${item.body}`}
-        disabled={disabled}
-        {...sortable.attributes}
-        {...sortable.listeners}
-      />
+      {!readOnly && (
+        <Button
+          size={"small"}
+          type={"text"}
+          className={styles.handle}
+          icon={<HolderOutlined />}
+          aria-label={`Move ${item.body}`}
+          disabled={disabled}
+          {...sortable.attributes}
+          {...sortable.listeners}
+        />
+      )}
       <div className={styles.rowMain}>
         <Text
           editable={
-            disabled
+            disabled || readOnly
               ? false
               : {
                   maxLength: MAX_ITEM,
                   triggerType: ["text"],
                   onChange: (body) => {
-                    if (body.trim()) void onEdit(item, body);
+                    if (body.trim()) void onEdit?.(item, body);
                   },
                 }
           }
@@ -94,7 +99,7 @@ const AnswerRow: React.FunctionComponent<{
       {item.editedLater && <Tag>Edited later</Tag>}
       {item.reviewItemId ? (
         <Tag color={"green"}>To-do {todoFor}</Tag>
-      ) : (
+      ) : readOnly ? null : (
         <Tooltip title={`Make it a to-do for ${todoFor}`}>
           <Button
             size={"small"}
@@ -102,18 +107,20 @@ const AnswerRow: React.FunctionComponent<{
             icon={<CheckSquareOutlined />}
             disabled={disabled}
             aria-label={`Make ${item.body} a to-do for ${todoFor}`}
-            onClick={() => void onTodo(item)}
+            onClick={() => void onTodo?.(item)}
           />
         </Tooltip>
       )}
-      <Button
-        size={"small"}
-        type={"text"}
-        icon={<CloseOutlined />}
-        disabled={disabled}
-        aria-label={`Remove ${item.body}`}
-        onClick={() => void onRemove(item)}
-      />
+      {!readOnly && (
+        <Button
+          size={"small"}
+          type={"text"}
+          icon={<CloseOutlined />}
+          disabled={disabled}
+          aria-label={`Remove ${item.body}`}
+          onClick={() => void onRemove?.(item)}
+        />
+      )}
     </div>
   );
 };
@@ -121,7 +128,8 @@ const AnswerRow: React.FunctionComponent<{
 /**
  * A list prompt's items, as the plan's lists work: add at the end, click
  * one to rewrite it, drag (or move with the keyboard) to reorder, remove,
- * and make one a to-do of the next period.
+ * and make one a to-do of the next period. Read only, it shows the rows
+ * alone, with what was made a to-do.
  */
 const AnswerList: React.FunctionComponent<AnswerListProps> = ({
   label,
@@ -134,6 +142,7 @@ const AnswerList: React.FunctionComponent<AnswerListProps> = ({
   onRemove,
   onReorder,
   onTodo,
+  readOnly = false,
 }) => {
   const [order, setOrder] = useState(items);
   const [adding, setAdding] = useState("");
@@ -153,19 +162,19 @@ const AnswerList: React.FunctionComponent<AnswerListProps> = ({
       order.findIndex((i) => i.id === over.id),
     );
     setOrder(next);
-    void onReorder(next.map((i) => i.id));
+    void onReorder?.(next.map((i) => i.id));
   };
 
   const add = async () => {
     const body = adding.trim();
-    if (!body) return;
+    if (!body || !onAdd) return;
     await onAdd(body);
     setAdding("");
   };
 
   return (
     <div>
-      {!disabled && (
+      {!disabled && !readOnly && (
         <Space.Compact className={styles.addRow} block={true}>
           <Input
             value={adding}
@@ -202,6 +211,7 @@ const AnswerList: React.FunctionComponent<AnswerListProps> = ({
               onEdit={onEdit}
               onRemove={onRemove}
               onTodo={onTodo}
+              readOnly={readOnly}
             />
           ))}
         </SortableContext>

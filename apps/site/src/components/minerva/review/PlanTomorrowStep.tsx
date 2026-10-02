@@ -2,19 +2,13 @@ import { Draggable } from "@fullcalendar/interaction";
 import { Card } from "antd";
 import { DateTime } from "luxon";
 import React, { useEffect, useRef } from "react";
-import {
-  blockedSpan,
-  formatSpan,
-  itemsOf,
-  meetingSpans,
-  openTime,
-} from "../../../utils/reviews";
 import CalendarPane from "./CalendarPane";
 import CalendarStep from "./CalendarStep";
 import PlanList from "./PlanList";
 import PromptAnswer from "./PromptAnswer";
 import { answersOf } from "./reviewHooks";
 import styles from "./Review.module.css";
+import { tomorrowPlan } from "./tomorrowPlan";
 import type { DailyReviewData } from "./useDailyReview";
 
 export interface PlanTomorrowStepProps {
@@ -39,25 +33,7 @@ const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
   footer,
 }) => {
   const date = DateTime.fromISO(data.tomorrow);
-  const spans = meetingSpans(data.tomorrowMeetings, date);
-  const priorities = itemsOf(data.items, data.tomorrow, "priority");
-  const todos = itemsOf(data.items, data.tomorrow, "todo");
-  const planned = [...priorities, ...todos].filter(
-    (i) => i.status !== "dropped" && i.status !== "carried",
-  );
-  const blocks = planned
-    .map((item) => {
-      const span = blockedSpan(item);
-      return span ? { item, span } : undefined;
-    })
-    .filter((b) => b !== undefined);
-  // Time already blocked is not open any more.
-  const open = openTime(
-    [...spans, ...blocks.map((b) => b.span)].sort(
-      (a, b) => a.start.toMillis() - b.start.toMillis(),
-    ),
-    date,
-  );
+  const { priorities, todos, planned, blocks, openLine } = tomorrowPlan(data);
   const prompts = data.prompts.filter(
     (p) =>
       p.section === "plan" &&
@@ -116,21 +92,11 @@ const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
           side={"left"}
           day={data.tomorrow}
           meetings={data.tomorrowMeetings}
-          blocks={blocks.map(({ item, span }) => ({
-            id: item.id,
-            title: item.title,
-            kind: item.kind,
-            start: span.start.toJSDate(),
-            end: span.end.toJSDate(),
-          }))}
+          blocks={blocks}
           onBlockChange={disabled ? undefined : place}
           onBlockRemove={disabled ? undefined : unplace}
           onBlockDrop={disabled ? undefined : drop}
-          note={
-            open.length
-              ? `Open: ${open.map((g) => formatSpan(g.start, g.end)).join(" · ")}`
-              : "No open time between 9:00 and 5:00 PM."
-          }
+          note={openLine}
         />
       }
     >
