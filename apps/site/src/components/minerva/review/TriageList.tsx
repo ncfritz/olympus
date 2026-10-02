@@ -1,8 +1,8 @@
 import {
   ArrowRightOutlined,
-  CheckCircleFilled,
-  ClockCircleFilled,
-  CloseCircleFilled,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  CloseCircleOutlined,
 } from "@ant-design/icons";
 import type { ReviewItem } from "@ncfritz/olympus-sdk/minerva";
 import { ConfigProvider, Empty, Radio, Tag, Typography } from "antd";
@@ -31,7 +31,7 @@ const LOOKS: Record<
 > = {
   done: {
     color: "#003f5c",
-    icon: <CheckCircleFilled />,
+    icon: <CheckCircleOutlined />,
     tint: styles.tintDone,
   },
   tomorrow: {
@@ -46,12 +46,12 @@ const LOOKS: Record<
   },
   later: {
     color: "#ef527a",
-    icon: <ClockCircleFilled />,
+    icon: <ClockCircleOutlined />,
     tint: styles.tintLater,
   },
   drop: {
     color: "#ffa600",
-    icon: <CloseCircleFilled />,
+    icon: <CloseCircleOutlined />,
     tint: styles.tintDrop,
   },
 };
