@@ -31,12 +31,14 @@ import {
   type GoalHabitLog,
   type GoalHabitSummary,
   type GoalMilestone,
+  type ListGoalsForTodayResponse,
   getGoalExecution,
   listGoalCategories,
   listGoalCheckins,
   listGoalCycles,
   listGoalHabitLogs,
   listGoalHabitsForDay,
+  listGoalsForToday,
   listGoals,
   logGoalHabit,
   type PartialGoalCategory,
@@ -254,6 +256,12 @@ class GoalsApi {
 
   async deleteHabitLog(goalId: string, date: string): Promise<void> {
     await deleteGoalHabitLog({ path: { goalId, date }, ...this.tz });
+  }
+
+  /** What is left on today's goals, by type, for the home widget. */
+  async listGoalsForToday(): Promise<ListGoalsForTodayResponse> {
+    const { data } = await listGoalsForToday({ ...this.tz });
+    return data;
   }
 
   async listHabitsForDay(date = "today"): Promise<GoalHabitDay[]> {

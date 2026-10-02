@@ -9,6 +9,7 @@ import type {
   GoalHabitLog,
   GoalHealth,
   GoalHorizon,
+  GoalMilestone,
   GoalProgressMode,
   GoalRollup,
   GoalStatus,
@@ -701,6 +702,57 @@ export const habitCountPercent = (habit: GoalHabitDay): number | undefined => {
   const target = habit.habitRule.quantityTarget;
   if (!target) return undefined;
   return Math.min(100, ((habit.log?.quantity ?? 0) / target) * 100);
+};
+
+const WEEKDAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/**
+ * A habit left to do today, in words for the home widget: today's amount
+ * against its target, or what its rule asks, and how far its week or month
+ * has come.
+ */
+export const habitTodayText = (habit: GoalHabitDay): string => {
+  const rule = habit.habitRule;
+  const period =
+    rule.frequency === "monthly"
+      ? "month"
+      : rule.frequency === "weekly"
+        ? "week"
+        : undefined;
+  const sofar = period
+    ? `${habit.periodDone} of ${habit.periodCapacity} this ${period}`
+    : "not yet today";
+  if (rule.quantityTarget !== undefined) {
+    const amount = `${formatValue(habit.log?.quantity ?? 0)} of ${formatValue(rule.quantityTarget)}${rule.quantityUnit ? ` ${rule.quantityUnit}` : ""} today`;
+    return period ? `${amount} · ${sofar}` : amount;
+  }
+  switch (rule.frequency) {
+    case "daily":
+      return `Daily · ${sofar}`;
+    case "weekdays":
+      return `${(rule.weekdays ?? []).map((d) => WEEKDAY_NAMES[d - 1]).join(", ")} · ${sofar}`;
+    case "weekly":
+      return `${rule.timesPerPeriod}× a week · ${sofar}`;
+    case "monthly":
+      return `${rule.timesPerPeriod}× a month · ${sofar}`;
+  }
+};
+
+/** When a milestone is due, for the home widget, and whether it is late. */
+export const milestoneDueText = (
+  milestone: GoalMilestone,
+  today: string,
+): { text: string; late: boolean } => {
+  if (!milestone.dueDate) return { text: "", late: false };
+  if (milestone.dueDate === today) return { text: "due today", late: false };
+  if (milestone.dueDate > today) {
+    return { text: `due ${formatDay(milestone.dueDate, today)}`, late: false };
+  }
+  const late = Math.round(
+    DateTime.fromISO(today).diff(DateTime.fromISO(milestone.dueDate), "days")
+      .days,
+  );
+  return { text: `${late} day${late === 1 ? "" : "s"} late`, late: true };
 };
 
 /** A drawn piece of a band row: a band, or a cycle's buffer after it. */

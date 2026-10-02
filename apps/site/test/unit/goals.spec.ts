@@ -4,6 +4,7 @@ import type {
   GoalCycle,
   GoalHabitDay,
   GoalHabitLog,
+  GoalMilestone,
 } from "@ncfritz/olympus-sdk/minerva";
 import { describe, expect, it } from "vitest";
 import {
@@ -23,9 +24,11 @@ import {
   goalTree,
   habitCountPercent,
   habitGrid,
+  habitTodayText,
   habitTap,
   healthCounts,
   inHorizon,
+  milestoneDueText,
   metricText,
   outcomeNumbers,
   outcomeSeries,
@@ -542,6 +545,88 @@ describe("the goal form", () => {
       goal: { title: "Read 30 books", targetValue: 30, why: null },
       tagIds: ["t1", "t2"],
     });
+  });
+});
+
+describe("the home widget's words", () => {
+  const day = (
+    rule: Partial<GoalHabitDay["habitRule"]>,
+    extra: Partial<GoalHabitDay> = {},
+  ) =>
+    ({
+      goal: goal("h", { type: "habit", progressMode: "habit" }),
+      habitRule: {
+        frequency: "daily",
+        timesPerPeriod: 1,
+        createdTime: "",
+        ...rule,
+      },
+      periodDone: 0,
+      periodCapacity: 1,
+      ...extra,
+    }) as GoalHabitDay;
+
+  it("says what each habit rule asks and how far it has come", () => {
+    expect(habitTodayText(day({}))).toBe("Daily · not yet today");
+    expect(
+      habitTodayText(day({ frequency: "weekdays", weekdays: [1, 3, 5] })),
+    ).toBe("Mon, Wed, Fri · not yet today");
+    expect(
+      habitTodayText(
+        day(
+          { frequency: "weekly", timesPerPeriod: 3 },
+          { periodDone: 2, periodCapacity: 3 },
+        ),
+      ),
+    ).toBe("3× a week · 2 of 3 this week");
+    expect(
+      habitTodayText(
+        day(
+          { frequency: "monthly", timesPerPeriod: 8 },
+          { periodDone: 1, periodCapacity: 8 },
+        ),
+      ),
+    ).toBe("8× a month · 1 of 8 this month");
+  });
+
+  it("gives a counted habit's amount today", () => {
+    expect(
+      habitTodayText(
+        day(
+          { quantityTarget: 8, quantityUnit: "glasses" },
+          { log: { quantity: 5 } as GoalHabitLog },
+        ),
+      ),
+    ).toBe("5 of 8 glasses today");
+    expect(
+      habitTodayText(
+        day(
+          { frequency: "weekly", timesPerPeriod: 3, quantityTarget: 30 },
+          { periodDone: 1, periodCapacity: 3 },
+        ),
+      ),
+    ).toBe("0 of 30 today · 1 of 3 this week");
+  });
+
+  it("says when a milestone is due, and how late", () => {
+    const step = (dueDate?: string) =>
+      ({ id: "m", title: "Step", dueDate }) as GoalMilestone;
+    expect(milestoneDueText(step(), TODAY)).toEqual({ text: "", late: false });
+    expect(milestoneDueText(step("2026-10-01"), TODAY)).toEqual({
+      text: "due today",
+      late: false,
+    });
+    expect(milestoneDueText(step("2026-10-09"), TODAY)).toEqual({
+      text: "due Oct 9",
+      late: false,
+    });
+    expect(milestoneDueText(step("2026-09-30"), TODAY)).toEqual({
+      text: "1 day late",
+      late: true,
+    });
+    expect(milestoneDueText(step("2026-09-28"), TODAY).text).toBe(
+      "3 days late",
+    );
   });
 });
 

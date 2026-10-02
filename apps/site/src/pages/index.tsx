@@ -1,5 +1,6 @@
 import { Content } from "antd/lib/layout/layout";
 import HomeColumns from "../components/home/HomeColumns";
+import GoalsWidget from "../components/widgets/goals/GoalsWidget";
 import WeatherWidget from "../components/widgets/weather/WeatherWidget";
 
 const IndexPage: React.FunctionComponent = () => {
@@ -15,7 +16,7 @@ const IndexPage: React.FunctionComponent = () => {
         }}
       >
         <HomeColumns>
-          <div>Somewhere! Over the rainbow</div>
+          <GoalsWidget />
           <div />
           <WeatherWidget />
         </HomeColumns>
