@@ -212,7 +212,7 @@ export interface RoadmapViewProps {
 
 /** What the roadmap's marks mean. */
 const Legend: React.FunctionComponent = () => (
-  <Flex gap={16} wrap={true} justify={"flex-end"}>
+  <Flex gap={16} wrap={true}>
     {[
       "▭ Start to due date, filled to progress",
       "┄ Ongoing habit",
@@ -338,6 +338,21 @@ const Lane: React.FunctionComponent<{
       }}
     >
       <Flex align={"center"} style={{ width: LABEL, height: 26 }}>
+        <Button
+          type={"text"}
+          size={"small"}
+          icon={<HolderOutlined />}
+          aria-label={`Move ${category.name}`}
+          style={{
+            cursor: "grab",
+            width: STEP,
+            minWidth: STEP,
+            padding: 0,
+            flexShrink: 0,
+          }}
+          {...sortable.attributes}
+          {...sortable.listeners}
+        />
         <Caret
           open={!collapsed}
           label={`${collapsed ? "Show" : "Hide"} ${category.name}`}
@@ -361,19 +376,12 @@ const Lane: React.FunctionComponent<{
             {goals.length}
           </Text>
         )}
-        <Button
-          type={"text"}
-          size={"small"}
-          icon={<HolderOutlined />}
-          aria-label={`Move ${category.name}`}
-          style={{ cursor: "grab" }}
-          {...sortable.attributes}
-          {...sortable.listeners}
-        />
       </Flex>
       {!collapsed &&
         goalTree(goals, 99).map(({ goal, depth }) => {
-          const indent = STEP + depth * STEP;
+          // Past the heading's handle and caret: a goal's caret sits under
+          // the category's icon, its title under the name.
+          const indent = 2 * STEP + depth * STEP;
           const isOpen = open.has(goal.id);
           return (
             <React.Fragment key={goal.id}>
@@ -564,6 +572,7 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
           wrap={true}
           style={{ marginBottom: 8 }}
         >
+          <Legend />
           <Space>
             <Button
               type={"text"}
@@ -581,7 +590,6 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
               onClick={() => setYear((y) => y + 1)}
             />
           </Space>
-          <Legend />
         </Flex>
         <BandRow title={"Quarters"} bands={quarterBands(year)} />
         <BandRow title={"12-week cycles"} bands={cycleBands(cycles, year)} />
