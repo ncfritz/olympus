@@ -287,51 +287,100 @@ Turbo tasks pass.
 
 **Sign-off:** G3 and G4 from the OpenAPI page.
 
-## Phase 4 — Check-ins, habits and execution
+## Phase 4 — Check-ins, habits and execution — built 2026-10-01, not signed off
 
-1. **Migration** `<ts>_minerva_goal_checkins_habits`:
+1. **Migration** `1790930000000_minerva_goal_checkins_habits`: **done**
    - `minerva.goal_checkins`: `id`, `goal_id` (cascade), `checkin_date`,
-     `value` (numeric, required for outcome goals), `confidence`
-     (`on_track`, `at_risk`, `off_track`), `note`, `source` (`goal`,
-     `daily_review`, `weekly_review`), audit columns. Index
-     `(goal_id, checkin_date desc)`.
+     `value` (numeric), `confidence` (`on_track`, `at_risk`,
+     `off_track`), `note` (at most 2,000), `source` (`goal`,
+     `daily_review`, `weekly_review`; default `goal`), audit columns. A
+     check-in holds a value, a confidence or both. Index
+     `(goal_id, checkin_date desc, created_at desc)`.
    - `minerva.goal_habit_logs`: `id`, `goal_id` (cascade), `log_date`,
-     `done` (boolean), `quantity`, `note`, audit columns. Unique
-     `(goal_id, log_date)`; logging the same day again is an upsert.
-2. **Operations**:
+     `done` (default false), `quantity` (at least 0), `note` (at most
+     500), audit columns. A log is done or has a quantity. Unique
+     `(goal_id, log_date)`; logging the same day again is an upsert on it.
+   - `goals` gains the `checkins` and `habitLogs` relationships, so every
+     goals read carries what progress needs.
+2. **Operations**, tag `Goals`: **done**
 
    | Operation              | Route                                     |
    | ---------------------- | ----------------------------------------- |
    | `ListGoalCheckins`     | `GET /goal/:goalId/checkins`              |
    | `CreateGoalCheckin`    | `POST /goal/:goalId/checkins`             |
+   | `SuggestGoalCheckin`   | `GET /goal/:goalId/checkin/suggestion`    |
    | `UpdateGoalCheckin`    | `PUT /goal/:goalId/checkin/:checkinId`    |
    | `DeleteGoalCheckin`    | `DELETE /goal/:goalId/checkin/:checkinId` |
-   | `SuggestGoalCheckin`   | `GET /goal/:goalId/checkin/suggestion`    |
+   | `ListGoalHabitLogs`    | `GET /goal/:goalId/habit`                 |
    | `LogGoalHabit`         | `PUT /goal/:goalId/habit/:date`           |
    | `DeleteGoalHabitLog`   | `DELETE /goal/:goalId/habit/:date`        |
-   | `ListGoalHabitLogs`    | `GET /goal/:goalId/habit`                 |
    | `ListGoalHabitsForDay` | `GET /goals/habits/:date`                 |
    | `GetGoalExecution`     | `GET /goals/execution`                    |
    | `CloseGoal`            | `POST /goal/:goalId/close`                |
-   - `SuggestGoalCheckin` answers the form's defaults: the current value,
-     the expected value today and the confidence pace suggests.
+   - Days are the caller's local days (`x-ncfritz-tz`). A path `:date`
+     may be `today`. Check-in and log days after today are a 400; a
+     backfilled day is fine, but not one before the goal started, nor a
+     log after it closed.
+   - Check-ins: an outcome goal's needs a value (its confidence is
+     optional); any other goal's needs a confidence and takes no value.
+     The date defaults to today and the source to `goal`. A closed goal
+     takes no new check-ins (409); its existing ones can still be edited.
+     `CreateGoalCheckin` answers 201 with no `Location` (no route reads
+     one check-in).
+   - `SuggestGoalCheckin` answers the form's defaults: progress, the
+     current value, where pace says the goal should be (as progress and,
+     for an outcome, as a value) and the confidence those numbers
+     suggest, ignoring earlier check-ins.
+   - `LogGoalHabit` takes `{ done, quantity, note }`; with no body the day
+     is marked done, and a quantity alone records progress towards the
+     rule's target (`met` says whether the day counts). Clearing a day is
+     `DeleteGoalHabitLog`.
+   - `ListGoalHabitLogs` answers the logs from `from` to `to` (the last
+     twelve weeks by default) and the habit's summary as of today:
+     adherence, done and due, current and best streak, and the current
+     period's count.
    - `ListGoalHabitsForDay` is the "today's habits" strip: every active
-     habit due on the caller's local day, with its log if any and the
-     period's count so far.
-   - `GetGoalExecution` takes an ISO week (`2026-W40`) or a cycle and
-     answers the score overall, per goal and per day, done over due.
-   - `CloseGoal` records the final status, date, final value or
-     progress, and a lessons note; it is the one way into `achieved`,
-     `missed` or `dropped` from here on.
-   - Check-in and log dates in the future are a 400; a backfilled date
-     is fine.
+     habit whose rule asks for one that day and whose week or month is not
+     yet met, or that was logged that day, with the day's log and its
+     period so far. A weekdays habit off its days is not listed.
+   - `GetGoalExecution` takes `week` (`2026-W40`) or `cycleId` (its
+     execution weeks, buffer excluded); this ISO week by default. It
+     answers done over due overall, per habit goal and per day.
+   - `CloseGoal` takes the final status (achieved, missed or dropped),
+     `closedOn` (today by default), an outcome's `finalValue` (recorded as
+     a check-in on the closing day), a hand-set goal's `finalProgress`,
+     and the lessons `note`. A closed goal cannot be closed again (409).
+     It is the one way into a closed status: `UpdateGoal` now refuses one
+     (400), and still reopens a closed goal and edits its note or date.
 
-3. **Engine additions**: execution, and the at-risk streak (three
-   check-ins running at risk or worse) surfaced as a flag on the goal in
-   `ListGoals` and `DescribeGoal`.
-4. **Tests**: engine tables for execution across a week boundary in two
-   timezones; endpoint tests per operation; a habit day that is today in
-   Seattle and tomorrow in UTC.
+3. **Engine additions**: **done**
+   - **Health** (ADR 0026: "the latest check-in's confidence, or, with
+     none since the last change, the one pace suggests"): the latest
+     confidence stands until the goal's progress moves after it — a later
+     value check-in, a milestone done on a later day (in the caller's
+     timezone), or, for a habit, the start of a new period. Then pace,
+     adherence or the due date decides, as before.
+   - **The decision flag**: an active goal whose last three confidences
+     are all at risk or off track has `needsDecision` set, in `ListGoals`
+     and `DescribeGoal`.
+   - **Execution** (`progress/execution.ts`): each habit period (a day,
+     an ISO week, a month) counts on the day it ends, when that day is in
+     the span. Nothing after today is due. The period running today, or
+     the one a goal closed or fell due part-way through, is due only as
+     far as it is done. Draft, paused and deleted goals are left out; a
+     closed goal counts up to its closing day. A month counts in the week
+     it ends. Tasks join the score in phase 9.
+   - **A habit that stopped** (closed, or past its due date) is measured
+     as of that day, in progress, health and its summary, so its numbers
+     do not decay afterwards.
+4. **Tests**: **done** — engine tables for health, the flag, execution
+   (including W40 seen at 18:00 on Sunday in Seattle, still running, and
+   in UTC, already over) and stopped habits; ISO week and local-day
+   units; endpoint tests for all eleven operations, including a habit day
+   and a check-in date that are today in Seattle and tomorrow in UTC;
+   `infra/hasura/tests/minerva_goal_checkins_habits.sql` for the
+   constraints, the upsert, audit times and cascades, with `down.sql`
+   exercised.
 
 **Sign-off:** G5–G7 from the OpenAPI page.
 

@@ -85,6 +85,9 @@ recorded exception.
    track clears it.
 4. A check-in dated tomorrow is refused; one backfilled to last month
    lands in order in the history and the chart.
+5. The suggestion's confidence follows the numbers even after a
+   check-in said otherwise; the goal's health follows the check-in until
+   its progress moves.
 
 ## G6 — Habits
 
@@ -95,12 +98,19 @@ recorded exception.
    one; the same request with the Pacific header is the Pacific day.
 4. Adherence and streaks on the habit panel match a count by hand over
    twelve weeks.
+5. A weekdays habit is not on the strip on its days off; a weekly habit
+   leaves the strip once the week's count is met, unless logged that day.
 
 ## G7 — Execution and close-out
 
 1. This week's execution equals habit occurrences done over due, by hand.
 2. Closing a goal as Missed with a note shows the close-out on its page
    and removes it from active lists; Achieved and Dropped likewise.
+3. Closing an outcome with a final value adds that check-in; closing a
+   goal again is refused, and setting a closed status through UpdateGoal
+   is refused; reopening it through UpdateGoal clears its closing date.
+4. `infra/hasura/tests/minerva_goal_checkins_habits.sql` passes against
+   `hasura-dev`'s database.
 
 ## G8 — The site
 
