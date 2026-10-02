@@ -1,10 +1,14 @@
 import { DownOutlined, HolderOutlined, PlusOutlined } from "@ant-design/icons";
 import {
   closestCenter,
+  type CollisionDetection,
   DndContext,
-  type DragEndEvent,
+  type DragOverEvent,
+  DragOverlay,
+  type DraggableAttributes,
   KeyboardSensor,
   PointerSensor,
+  pointerWithin,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -14,11 +18,11 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import type { Goal, GoalCategory } from "@ncfritz/olympus-sdk/minerva";
 import { Button, Empty, Masonry } from "antd";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
+import { useWindowSize } from "usehooks-ts";
 import {
   byCategory,
   dueText,
@@ -119,18 +123,28 @@ const GoalTile: React.FunctionComponent<{
   </div>
 );
 
-/**
- * A category's card, as the design board draws it: grey, its colour across
- * the top, its icon, name and health counts, the vision line, its goals
- * as tiles. Dragged by its handle to reorder the board.
- */
-const CategoryCard: React.FunctionComponent<{
+type CardProps = {
   category: GoalCategory;
   goals: Goal[];
   today: string;
   onAddGoal: (categoryId: string) => void;
-}> = ({ category, goals, today, onAddGoal }) => {
-  const sortable = useSortable({ id: category.id });
+};
+
+/**
+ * A category's card, as the design board draws it: grey, its colour across
+ * the top, its icon, name and health counts, the vision line, its goals
+ * as tiles, and a handle to drag it by.
+ */
+const CategoryCard = React.forwardRef<
+  HTMLElement,
+  CardProps & {
+    handle?: {
+      attributes: DraggableAttributes;
+      listeners?: ReturnType<typeof useSortable>["listeners"];
+    };
+    style?: React.CSSProperties;
+  }
+>(({ category, goals, today, onAddGoal, handle, style }, ref) => {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const health = (["on_track", "at_risk", "off_track"] as const)
     .map((h) => [h, goals.filter((g) => g.health === h).length] as const)
@@ -138,7 +152,7 @@ const CategoryCard: React.FunctionComponent<{
 
   return (
     <section
-      ref={sortable.setNodeRef}
+      ref={ref}
       aria-label={category.name}
       style={{
         display: "flex",
@@ -150,13 +164,7 @@ const CategoryCard: React.FunctionComponent<{
         borderTop: `3px solid ${category.color}`,
         background: "#fafafa",
         minWidth: 0,
-        transform: CSS.Translate.toString(sortable.transform),
-        transition: sortable.transition,
-        position: "relative",
-        zIndex: sortable.isDragging ? 10 : undefined,
-        boxShadow: sortable.isDragging
-          ? "0 6px 16px rgba(0, 0, 0, 0.12)"
-          : undefined,
+        ...style,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -188,8 +196,8 @@ const CategoryCard: React.FunctionComponent<{
           icon={<HolderOutlined />}
           aria-label={`Move ${category.name}`}
           style={{ cursor: "grab" }}
-          {...sortable.attributes}
-          {...sortable.listeners}
+          {...handle?.attributes}
+          {...handle?.listeners}
         />
       </div>
       {category.vision && (
@@ -230,6 +238,33 @@ const CategoryCard: React.FunctionComponent<{
       </Button>
     </section>
   );
+});
+CategoryCard.displayName = "CategoryCard";
+
+/** A card in its place on the board; while dragged, a faint placeholder. */
+const SortableCard: React.FunctionComponent<CardProps> = (props) => {
+  const sortable = useSortable({ id: props.category.id });
+  return (
+    <CategoryCard
+      {...props}
+      ref={sortable.setNodeRef}
+      handle={{
+        attributes: sortable.attributes,
+        listeners: sortable.listeners,
+      }}
+      style={{ opacity: sortable.isDragging ? 0.35 : 1 }}
+    />
+  );
+};
+
+/** Columns by the window's width: four from 1900 px. */
+const columnsFor = (width: number) =>
+  width >= 1900 ? 4 : width >= 1600 ? 3 : width >= 992 ? 2 : 1;
+
+/** The pointer's card when it is over one; otherwise the nearest. */
+const collision: CollisionDetection = (args) => {
+  const within = pointerWithin(args);
+  return within.length ? within : closestCenter(args);
 };
 
 /**
@@ -246,6 +281,8 @@ const BoardView: React.FunctionComponent<BoardViewProps> = ({
   onReorder,
 }) => {
   const [order, setOrder] = useState(categories);
+  const [dragging, setDragging] = useState<string>();
+  const { width } = useWindowSize();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, {
@@ -261,32 +298,47 @@ const BoardView: React.FunctionComponent<BoardViewProps> = ({
 
   const columns = byCategory(goals, order);
 
-  const dragEnd = async ({ active, over }: DragEndEvent) => {
+  // The order changes as a card is dragged over others, so the masonry
+  // makes room for it as it goes; it is saved on drop.
+  const dragOver = ({ active, over }: DragOverEvent) => {
     if (!over || active.id === over.id) return;
-    const next = arrayMove(
-      order,
-      order.findIndex((c) => c.id === active.id),
-      order.findIndex((c) => c.id === over.id),
-    );
-    setOrder(next);
+    setOrder((was) => {
+      const from = was.findIndex((c) => c.id === active.id);
+      const to = was.findIndex((c) => c.id === over.id);
+      return from < 0 || to < 0 ? was : arrayMove(was, from, to);
+    });
+  };
+
+  const dragEnd = async () => {
+    setDragging(undefined);
+    const ids = order.map((c) => c.id);
+    if (ids.join() === categories.map((c) => c.id).join()) return;
     try {
-      await onReorder(next.map((c) => c.id));
+      await onReorder(ids);
     } catch {
       setOrder(categories);
     }
   };
 
+  const draggingColumn = columns.find((c) => c.category.id === dragging);
+
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={collision}
+      onDragStart={({ active }) => setDragging(String(active.id))}
+      onDragOver={dragOver}
       onDragEnd={dragEnd}
+      onDragCancel={() => {
+        setDragging(undefined);
+        setOrder(categories);
+      }}
     >
-      {/* Cards do not shuffle while one is dragged: in a masonry they
-          would jump between columns. The order changes on drop. */}
+      {/* The masonry places the cards; the dragged card follows the
+          pointer in the overlay. */}
       <SortableContext items={order.map((c) => c.id)} strategy={() => null}>
         <Masonry
-          columns={{ xs: 1, lg: 2, xxl: 3 }}
+          columns={columnsFor(width)}
           gutter={16}
           fresh={true}
           items={columns.map(({ category, goals: inCategory }) => ({
@@ -294,7 +346,7 @@ const BoardView: React.FunctionComponent<BoardViewProps> = ({
             data: { category, goals: inCategory },
           }))}
           itemRender={({ data }) => (
-            <CategoryCard
+            <SortableCard
               category={data.category}
               goals={data.goals}
               today={today}
@@ -303,6 +355,20 @@ const BoardView: React.FunctionComponent<BoardViewProps> = ({
           )}
         />
       </SortableContext>
+      <DragOverlay>
+        {draggingColumn && (
+          <CategoryCard
+            category={draggingColumn.category}
+            goals={draggingColumn.goals}
+            today={today}
+            onAddGoal={onAddGoal}
+            style={{
+              boxShadow: "0 6px 16px rgba(0, 0, 0, 0.16)",
+              cursor: "grabbing",
+            }}
+          />
+        )}
+      </DragOverlay>
     </DndContext>
   );
 };

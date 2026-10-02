@@ -25,7 +25,7 @@ import {
   inHorizon,
 } from "../../../utils/goals";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 /**
  * Goals home (docs/plans/goals/design.md): Board, Roadmap and Focus over
@@ -94,9 +94,18 @@ const GoalsPage: React.FunctionComponent = () => {
           align={"center"}
           style={{ padding: 16 }}
         >
-          <Title level={3} style={{ margin: 0 }}>
-            Goals
-          </Title>
+          <Space align={"baseline"} size={12}>
+            <Title level={3} style={{ margin: 0 }}>
+              Goals
+            </Title>
+            <Text type={"secondary"} style={{ fontSize: 15 }}>
+              {view === "board"
+                ? "By category"
+                : view === "focus"
+                  ? "What needs you now"
+                  : `${year.year} roadmap`}
+            </Text>
+          </Space>
           <Space size={8}>
             <Button
               type={"text"}
