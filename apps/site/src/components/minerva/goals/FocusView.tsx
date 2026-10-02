@@ -469,7 +469,7 @@ const FocusView: React.FunctionComponent<FocusViewProps> = ({
           defaultSize={"66%"}
           min={"40%"}
           max={"80%"}
-          style={{ overflowY: "auto" }}
+          style={{ overflowY: "auto", scrollbarWidth: "none" }}
         >
           <div style={{ paddingRight: 16 }}>
             <CycleBanner
@@ -507,7 +507,10 @@ const FocusView: React.FunctionComponent<FocusViewProps> = ({
             />
           </div>
         </Splitter.Panel>
-        <Splitter.Panel min={"20%"} style={{ overflowY: "auto" }}>
+        <Splitter.Panel
+          min={"20%"}
+          style={{ overflowY: "auto", scrollbarWidth: "none" }}
+        >
           <div style={{ paddingLeft: 16 }}>
             <Flex
               justify={"space-between"}
