@@ -346,7 +346,7 @@ const CycleBanner: React.FunctionComponent<{
         )}
       </Flex>
       {canPlan && (
-        <Button icon={<CalendarOutlined />} onClick={onPlan}>
+        <Button type={"primary"} icon={<CalendarOutlined />} onClick={onPlan}>
           Plan next cycle
         </Button>
       )}
