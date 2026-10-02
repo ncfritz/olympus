@@ -33,7 +33,7 @@ const WeekReflectStep: React.FunctionComponent<WeekReflectStepProps> = ({
         <Card
           size={"small"}
           title={"How was the week?"}
-          extra={<span className={styles.meta}>1 = low · 5 = high</span>}
+          extra={<span className={styles.meta}>0.5 to 5</span>}
         >
           <div className={styles.stack}>
             {locked && (

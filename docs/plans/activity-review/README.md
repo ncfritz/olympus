@@ -508,6 +508,29 @@ user_id)`), cleared when the to-do is deleted, and unique, so an item
 
 **Sign-off:** with R5 and R6, on the site.
 
+## UX revisions to the daily review — 2026-10-02
+
+From Neil's use of phases 4 to 5a, each its own commit:
+
+- **The review as a screen**: the title and steps stay at the top over a
+  bottom border and the step scrolls under them; Save and exit joins Back
+  and Next in a footer kept at the bottom.
+- **Look back and Reflect split the full width** (`SplitStep`): the step's
+  work on the left as frameless cards over the footer; on the right the
+  day's notes, scrolling under their heading, beside a 500px calendar of
+  the day at full height (`DayReference`, FullCalendar's day grid as
+  Meetings draws it), shown whether or not the day has meetings.
+- **Triage**: each decision in its colour with an outlined icon (Done
+  #003f5c, Tomorrow or Next week #7a4f99, Later or Someday #ef527a, Drop
+  #ffa600); clicking the chosen one takes it back; a carried item stays
+  editable, its copy taken back first (`triage.ts`, unit-tested).
+- **Half ratings**: ratings are AntD's Rate with circles and halves.
+  Migration `1791040000000_minerva_review_half_ratings` makes the six
+  ratings `numeric(2,1)`, 0.5 to 5 in halves (`down.sql` rounds a half
+  up); the API takes halves and reads a rating Hasura sends as text.
+- **Lists' add box** joins its input and Add button.
+- Minerva's submenus close when the menu is collapsed.
+
 ## Phase 6 — The site: the lists
 
 1. **Daily list** at `/minerva/review/daily` and `.../yyyy/Www`, and

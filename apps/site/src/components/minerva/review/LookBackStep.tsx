@@ -1,4 +1,4 @@
-import { Card, Splitter, Statistic } from "antd";
+import { Card, Statistic } from "antd";
 import { DateTime } from "luxon";
 import React from "react";
 import { config } from "../../../utils/notes";
@@ -13,9 +13,9 @@ import {
   openCount,
 } from "../../../utils/reviews";
 import DayBar from "./DayBar";
-import DayCalendar from "./DayCalendar";
-import NoteList from "./NoteList";
+import DayReference from "./DayReference";
 import styles from "./Review.module.css";
+import SplitStep from "./SplitStep";
 import TriageList from "./TriageList";
 import type { DailyReviewData } from "./useDailyReview";
 import WeekPlanCard from "./WeekPlanCard";
@@ -53,88 +53,62 @@ const LookBackStep: React.FunctionComponent<LookBackStepProps> = ({
     .join(" · ");
 
   return (
-    <Splitter className={styles.fill}>
-      <Splitter.Panel defaultSize={"45%"} min={"30%"} max={"65%"}>
-        <div className={styles.column}>
-          <div className={styles.columnScroll}>
-            <p className={styles.intro}>{intro}</p>
-            {data.week && <WeekPlanCard week={data.week} />}
-            <Card
-              size={"small"}
-              variant={"borderless"}
-              className={styles.flat}
-              classNames={{ header: styles.flatPart, body: styles.flatPart }}
-              title={"Today in numbers"}
-            >
-              <div className={styles.stack}>
-                <div className={styles.numbers}>
-                  <Statistic
-                    title={`in meetings · ${spans.length} event${spans.length === 1 ? "" : "s"}`}
-                    value={formatMinutes(busyMinutes(spans))}
-                  />
-                  <div>
-                    <Statistic title={"notes"} value={data.notes.length} />
-                    {types && <span className={styles.meta}>{types}</span>}
-                  </div>
-                  <Statistic
-                    title={"planned items done"}
-                    value={kept ? `${done} / ${kept}` : "–"}
-                  />
-                </div>
-                <DayBar blocks={dayBarBlocks(spans)} />
-              </div>
-            </Card>
-            <Card
-              size={"small"}
-              variant={"borderless"}
-              className={styles.flat}
-              classNames={{ header: styles.flatPart, body: styles.flatPart }}
-              title={"Today's plan"}
-              extra={
-                <span className={styles.meta}>
-                  {left
-                    ? `${left} left open`
-                    : planned.length
-                      ? "All decided"
-                      : ""}
-                </span>
-              }
-            >
-              <TriageList
-                items={planned}
-                disabled={!data.started}
-                onDecide={data.triage}
-              />
-            </Card>
+    <SplitStep
+      intro={intro}
+      footer={footer}
+      aside={
+        <DayReference
+          day={data.day}
+          notes={data.notes}
+          meetings={data.meetings}
+        />
+      }
+    >
+      {data.week && <WeekPlanCard week={data.week} />}
+      <Card
+        size={"small"}
+        variant={"borderless"}
+        className={styles.flat}
+        classNames={{ header: styles.flatPart, body: styles.flatPart }}
+        title={"Today in numbers"}
+      >
+        <div className={styles.stack}>
+          <div className={styles.numbers}>
+            <Statistic
+              title={`in meetings · ${spans.length} event${spans.length === 1 ? "" : "s"}`}
+              value={formatMinutes(busyMinutes(spans))}
+            />
+            <div>
+              <Statistic title={"notes"} value={data.notes.length} />
+              {types && <span className={styles.meta}>{types}</span>}
+            </div>
+            <Statistic
+              title={"planned items done"}
+              value={kept ? `${done} / ${kept}` : "–"}
+            />
           </div>
-          <div className={styles.columnFooter}>{footer}</div>
+          <DayBar blocks={dayBarBlocks(spans)} />
         </div>
-      </Splitter.Panel>
-      <Splitter.Panel min={"35%"}>
-        <div className={styles.sidePanes}>
-          <section className={styles.notesPane} aria-label={"Notes"}>
-            <div className={styles.paneHeader}>
-              <span>Notes</span>
-              <span className={styles.meta}>{data.notes.length}</span>
-            </div>
-            <div className={styles.paneScroll}>
-              <NoteList notes={data.notes} />
-            </div>
-          </section>
-          <section className={styles.calendarPane} aria-label={"Calendar"}>
-            <div className={styles.paneHeader}>
-              <span>Calendar</span>
-              <span className={styles.meta}>
-                {formatMinutes(busyMinutes(spans))}
-              </span>
-            </div>
-            <div className={styles.calendarFill}>
-              <DayCalendar day={data.day} meetings={data.meetings} />
-            </div>
-          </section>
-        </div>
-      </Splitter.Panel>
-    </Splitter>
+      </Card>
+      <Card
+        size={"small"}
+        variant={"borderless"}
+        className={styles.flat}
+        classNames={{ header: styles.flatPart, body: styles.flatPart }}
+        title={"Today's plan"}
+        extra={
+          <span className={styles.meta}>
+            {left ? `${left} left open` : planned.length ? "All decided" : ""}
+          </span>
+        }
+      >
+        <TriageList
+          items={planned}
+          disabled={!data.started}
+          onDecide={data.triage}
+        />
+      </Card>
+    </SplitStep>
   );
 };
 

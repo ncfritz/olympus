@@ -179,12 +179,13 @@ const DailyReview: React.FunctionComponent<DailyReviewProps> = ({ date }) => {
         </div>
         {step === 1 ? (
           <LookBackStep data={data} intro={INTROS[0]} footer={footer} />
+        ) : step === 2 ? (
+          <ReflectStep data={data} intro={INTROS[1]} footer={footer} />
         ) : (
           // Keyed by step, so each step opens at its top.
           <div key={step} className={styles.scroller}>
             <div className={styles.body}>
               <p className={styles.intro}>{INTROS[step - 1]}</p>
-              {step === 2 && <ReflectStep data={data} />}
               {step === 3 && <PlanTomorrowStep data={data} />}
               {step === 4 && <WrapUpStep data={data} onEdit={go} />}
             </div>

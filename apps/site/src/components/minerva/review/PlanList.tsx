@@ -232,7 +232,7 @@ const PlanList: React.FunctionComponent<PlanListProps> = ({
         </SortableContext>
       </DndContext>
       {!disabled && (
-        <Space.Compact className={styles.row} block={true}>
+        <Space.Compact className={styles.addRow} block={true}>
           <Input
             value={adding}
             maxLength={200}

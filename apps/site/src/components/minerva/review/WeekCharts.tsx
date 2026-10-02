@@ -43,7 +43,7 @@ export const RatingsChart: React.FunctionComponent<RatingsChartProps> = ({
         xAxis: { categories: days },
         yAxis: {
           title: { text: undefined },
-          min: 1,
+          min: 0,
           max: 5,
           tickInterval: 1,
         },

@@ -86,8 +86,9 @@ recorded exception.
    day's Top 3 or to-dos.
 4. Completing locks the ratings in the page; Wrap up's Edit links reach
    the right step.
-5. Every icon-only button has an accessible name; ratings are buttons
-   with their number, not colour alone.
+5. Every icon-only button has an accessible name; ratings are AntD's Rate
+   as circles with their value beside them, a half filling half a circle,
+   not colour alone. A half rating survives a reload.
 6. What went well?, What didn't go well?, What's on my mind? and Thoughts
    for tomorrow take items that can be added, rewritten, dragged into
    order and removed, and survive a reload in that order; Anything else

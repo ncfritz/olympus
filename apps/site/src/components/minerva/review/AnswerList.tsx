@@ -188,7 +188,7 @@ const AnswerList: React.FunctionComponent<AnswerListProps> = ({
         </SortableContext>
       </DndContext>
       {!disabled && (
-        <Space.Compact className={styles.row} block={true}>
+        <Space.Compact className={styles.addRow} block={true}>
           <Input
             value={adding}
             maxLength={MAX_ITEM}

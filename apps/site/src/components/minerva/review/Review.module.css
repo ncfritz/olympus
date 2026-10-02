@@ -573,3 +573,35 @@
 .tintDrop {
   color: #ffa600;
 }
+
+/* A rating as circles, halves filling half a circle. */
+.rateBox {
+  display: flex;
+  flex-direction: column;
+}
+
+.rateRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rateDot {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.rateValue {
+  width: 24px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+/* The add box under a list: its input and button joined, as AntD's compact
+ * space draws them, so no row gap between. */
+.addRow {
+  margin-top: 8px;
+}
