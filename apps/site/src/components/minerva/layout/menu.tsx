@@ -107,7 +107,9 @@ const MinervaMenu: React.FunctionComponent = () => {
       theme={"light"}
       defaultSelectedKeys={["/"]}
       selectedKeys={[sideMenuItem]}
-      openKeys={sideMenuSubMenuItems}
+      // Collapsed, the submenus are popovers: leave them to open on hover
+      // rather than holding the current page's open, as Dionysus does.
+      openKeys={submenuExpanded ? sideMenuSubMenuItems : undefined}
       mode={"inline"}
       onSelect={({ key }) => {
         setSideMenuItem(getKeyForPath(key));
