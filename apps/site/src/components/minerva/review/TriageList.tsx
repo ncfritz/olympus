@@ -1,5 +1,11 @@
+import {
+  ArrowRightOutlined,
+  CheckOutlined,
+  ClockCircleOutlined,
+  StopOutlined,
+} from "@ant-design/icons";
 import type { ReviewItem } from "@ncfritz/olympus-sdk/minerva";
-import { Empty, Radio, Tag, Typography } from "antd";
+import { ConfigProvider, Empty, Radio, Tag, Typography } from "antd";
 import React from "react";
 import { type Triage, triageOf } from "../../../utils/reviews";
 import styles from "./Review.module.css";
@@ -12,6 +18,35 @@ const DECISIONS: { label: string; value: Triage }[] = [
   { label: "Later", value: "later" },
   { label: "Drop", value: "drop" },
 ];
+
+/**
+ * How each decision looks: its colour, filling the button once chosen and
+ * tinting its icon until then, and its icon. On to the next period, a
+ * day's Tomorrow or a week's Next week, looks the same either way; so do a
+ * day's Later and a week's Someday, both `later`.
+ */
+const LOOKS: Record<
+  string,
+  { color: string; icon: React.ReactNode; tint: string }
+> = {
+  done: { color: "#003f5c", icon: <CheckOutlined />, tint: styles.tintDone },
+  tomorrow: {
+    color: "#7a4f99",
+    icon: <ArrowRightOutlined />,
+    tint: styles.tintNext,
+  },
+  next: {
+    color: "#7a4f99",
+    icon: <ArrowRightOutlined />,
+    tint: styles.tintNext,
+  },
+  later: {
+    color: "#ef527a",
+    icon: <ClockCircleOutlined />,
+    tint: styles.tintLater,
+  },
+  drop: { color: "#ffa600", icon: <StopOutlined />, tint: styles.tintDrop },
+};
 
 export interface TriageListProps<D extends string = Triage> {
   items: ReviewItem[];
@@ -45,33 +80,57 @@ const TriageList = <D extends string = Triage>({
   }
   return (
     <div>
-      {items.map((item) => (
-        <div key={item.id} className={styles.row}>
-          <div className={styles.rowMain}>
-            <Text delete={item.status === "dropped"}>{item.title}</Text>
-            <span className={styles.meta}>
-              {whereOf?.(item) && `${whereOf(item)} · `}
-              {item.kind === "priority" ? "Priority" : "To-do"}
-              {item.carryCount > 0 &&
-                ` · carried ${item.carryCount} time${item.carryCount === 1 ? "" : "s"}`}
-            </span>
+      {items.map((item) => {
+        const chosen = decisionOf(item.status);
+        return (
+          <div key={item.id} className={styles.row}>
+            <div className={styles.rowMain}>
+              <Text delete={item.status === "dropped"}>{item.title}</Text>
+              <span className={styles.meta}>
+                {whereOf?.(item) && `${whereOf(item)} · `}
+                {item.kind === "priority" ? "Priority" : "To-do"}
+                {item.carryCount > 0 &&
+                  ` · carried ${item.carryCount} time${item.carryCount === 1 ? "" : "s"}`}
+              </span>
+            </div>
+            {item.carryCount > 0 && item.status === "open" && (
+              <Tag color={"orange"}>Carried over</Tag>
+            )}
+            {/* Radio buttons, not Segmented: an open item has no decision yet. */}
+            <Radio.Group
+              size={"small"}
+              buttonStyle={"solid"}
+              aria-label={`What happens to ${item.title}`}
+              disabled={disabled || item.status === "carried"}
+              value={chosen ?? null}
+              onChange={(e) => void onDecide(item, e.target.value as D)}
+            >
+              {decisions.map((decision) => {
+                const look = LOOKS[decision.value] ?? LOOKS.done;
+                return (
+                  // Each button in its decision's colour, as AntD draws a
+                  // chosen button in the primary one.
+                  <ConfigProvider
+                    key={decision.value}
+                    theme={{ token: { colorPrimary: look.color } }}
+                  >
+                    <Radio.Button value={decision.value}>
+                      <span
+                        className={
+                          chosen === decision.value ? undefined : look.tint
+                        }
+                      >
+                        {look.icon}
+                      </span>{" "}
+                      {decision.label}
+                    </Radio.Button>
+                  </ConfigProvider>
+                );
+              })}
+            </Radio.Group>
           </div>
-          {item.carryCount > 0 && item.status === "open" && (
-            <Tag color={"orange"}>Carried over</Tag>
-          )}
-          {/* Radio buttons, not Segmented: an open item has no decision yet. */}
-          <Radio.Group
-            size={"small"}
-            optionType={"button"}
-            buttonStyle={"solid"}
-            aria-label={`What happens to ${item.title}`}
-            disabled={disabled || item.status === "carried"}
-            value={decisionOf(item.status) ?? null}
-            options={decisions}
-            onChange={(e) => void onDecide(item, e.target.value as D)}
-          />
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

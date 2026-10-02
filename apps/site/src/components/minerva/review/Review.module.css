@@ -556,3 +556,20 @@
 .columnScroll .flat .flatPart {
   padding-inline: 0;
 }
+
+/* A triage decision's icon, in its colour until it is the one chosen. */
+.tintDone {
+  color: #003f5c;
+}
+
+.tintNext {
+  color: #7a4f99;
+}
+
+.tintLater {
+  color: #ef527a;
+}
+
+.tintDrop {
+  color: #ffa600;
+}
