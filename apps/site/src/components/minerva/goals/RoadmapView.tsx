@@ -1,18 +1,23 @@
-import { LeftOutlined, RightOutlined } from "@ant-design/icons";
+import { DownOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import type {
   Goal,
   GoalCategory,
   GoalCycle,
+  GoalMilestone,
 } from "@ncfritz/olympus-sdk/minerva";
-import { Button, Card, Empty, Flex, Space, Tooltip, Typography } from "antd";
+import { Button, Empty, Flex, Space, Tooltip, Typography } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import React, { useState } from "react";
+import goalsApi from "../../../api/goalsApi";
 import {
   type Band,
+  bandSegments,
   byCategory,
   cycleBands,
   dueText,
+  formatDay,
+  goalTree,
   HEALTH,
   metricText,
   quarterBands,
@@ -34,7 +39,10 @@ const HEALTH_COLOR = {
 
 const pct = (f: number) => `${f * 100}%`;
 
-/** A row of labelled bands across the year: quarters, or cycles with their buffer. */
+/**
+ * A row of labelled bands across the year: quarters, or cycles with their
+ * buffer hatched. Pieces that meet have square corners between them.
+ */
 const BandRow: React.FunctionComponent<{ title: string; bands: Band[] }> = ({
   title,
   bands,
@@ -44,46 +52,50 @@ const BandRow: React.FunctionComponent<{ title: string; bands: Band[] }> = ({
       {title}
     </Text>
     <div style={{ position: "relative", flex: 1 }}>
-      {bands.map((b) => (
-        <React.Fragment key={b.label}>
+      {bandSegments(bands).map((piece) => {
+        const radius = `${piece.roundLeft ? 4 : 0}px ${piece.roundRight ? 4 : 0}px ${piece.roundRight ? 4 : 0}px ${piece.roundLeft ? 4 : 0}px`;
+        const box: React.CSSProperties = {
+          position: "absolute",
+          left: pct(piece.from),
+          width: pct(piece.to - piece.from),
+          top: 2,
+          bottom: 2,
+          borderRadius: radius,
+        };
+        return piece.kind === "buffer" ? (
+          <Tooltip
+            key={`${piece.label}-buffer`}
+            title={`${piece.label} buffer`}
+          >
+            <div
+              aria-label={`${piece.label} buffer`}
+              style={{
+                ...box,
+                background:
+                  "repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 3px, #fff 3px, #fff 6px)",
+                border: "1px solid #d9d9d9",
+                borderLeft: "none",
+              }}
+            />
+          </Tooltip>
+        ) : (
           <div
+            key={piece.label}
             style={{
-              position: "absolute",
-              left: pct(b.from),
-              width: pct(b.to - b.from),
-              top: 2,
-              bottom: 2,
+              ...box,
               background: "#f0f5ff",
               border: "1px solid #d6e4ff",
-              borderRadius: 4,
+              borderLeft: piece.roundLeft ? "1px solid #d6e4ff" : "none",
               fontSize: 12,
               paddingInline: 6,
               overflow: "hidden",
               whiteSpace: "nowrap",
             }}
           >
-            {b.label}
+            {piece.label}
           </div>
-          {b.buffer !== undefined && b.buffer > b.to && (
-            <Tooltip title={`${b.label} buffer`}>
-              <div
-                aria-label={`${b.label} buffer`}
-                style={{
-                  position: "absolute",
-                  left: pct(b.to),
-                  width: pct(b.buffer - b.to),
-                  top: 2,
-                  bottom: 2,
-                  background:
-                    "repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 3px, #fff 3px, #fff 6px)",
-                  border: "1px solid #d9d9d9",
-                  borderRadius: 4,
-                }}
-              />
-            </Tooltip>
-          )}
-        </React.Fragment>
-      ))}
+        );
+      })}
     </div>
   </Flex>
 );
@@ -173,9 +185,65 @@ export interface RoadmapViewProps {
   today: string;
 }
 
+/** What the roadmap's marks mean. */
+const Legend: React.FunctionComponent = () => (
+  <Flex gap={16} wrap={true} justify={"flex-end"}>
+    {[
+      "▭ Start to due date, filled to progress",
+      "┄ Ongoing habit",
+      "◇ Achievement date",
+      "● Milestone",
+      "▨ Cycle buffer week",
+    ].map((item) => (
+      <Text key={item} type={"secondary"} style={{ fontSize: 12 }}>
+        {item}
+      </Text>
+    ))}
+  </Flex>
+);
+
+/** A milestone's mark: a dot on its due date, filled once done. */
+const MilestoneMark: React.FunctionComponent<{
+  milestone: GoalMilestone;
+  year: number;
+  today: string;
+}> = ({ milestone, year, today }) => {
+  const from = `${year}-01-01`;
+  const to = `${year}-12-31`;
+  if (
+    !milestone.dueDate ||
+    milestone.dueDate < from ||
+    milestone.dueDate > to
+  ) {
+    return null;
+  }
+  const tip = `${milestone.title}: ${milestone.done ? "done" : `due ${formatDay(milestone.dueDate, today)}`}`;
+  return (
+    <Tooltip title={tip}>
+      <div
+        role={"img"}
+        aria-label={tip}
+        style={{
+          position: "absolute",
+          left: pct(spanFraction(milestone.dueDate, from, to)),
+          top: ROW / 2 - 5,
+          width: 10,
+          height: 10,
+          marginLeft: -5,
+          borderRadius: 5,
+          border: "2px solid #4096ff",
+          background: milestone.done ? "#4096ff" : "#ffffff",
+        }}
+      />
+    </Tooltip>
+  );
+};
+
 /**
  * The Roadmap: a year as a timeline, quarters and 12-week cycles side by
- * side (the buffer hatched), a lane per category, and a today line.
+ * side (the buffer hatched), a lane per category with sub-goals indented
+ * under their parents, a milestone goal's steps a click away, and a today
+ * line.
  */
 const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
   goals,
@@ -184,6 +252,10 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
   today,
 }) => {
   const [year, setYear] = useState(DateTime.fromISO(today).year);
+  const [open, setOpen] = useState<Set<string>>(new Set());
+  const [milestones, setMilestones] = useState<Map<string, GoalMilestone[]>>(
+    new Map(),
+  );
   const from = `${year}-01-01`;
   const to = `${year}-12-31`;
   const lanes = byCategory(
@@ -196,10 +268,37 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
     DateTime.fromObject({ year, month: m + 1, day: 1 }),
   );
 
+  const toggle = async (goal: Goal) => {
+    const next = new Set(open);
+    if (next.has(goal.id)) {
+      next.delete(goal.id);
+      setOpen(next);
+      return;
+    }
+    next.add(goal.id);
+    setOpen(next);
+    if (!milestones.has(goal.id)) {
+      try {
+        const full = await goalsApi.describeGoal(goal.id);
+        setMilestones((was) => new Map(was).set(goal.id, full.milestones));
+      } catch {
+        setMilestones((was) => new Map(was).set(goal.id, []));
+      }
+    }
+  };
+
+  const hasMilestones = (goal: Goal) =>
+    goal.type === "milestone" && goal.progressMode === "milestones";
+
   return (
-    <Card
-      size={"small"}
-      title={
+    <div>
+      <Flex
+        justify={"space-between"}
+        align={"center"}
+        gap={16}
+        wrap={true}
+        style={{ marginBottom: 8 }}
+      >
         <Space>
           <Button
             type={"text"}
@@ -208,7 +307,7 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
             aria-label={"Previous year"}
             onClick={() => setYear((y) => y - 1)}
           />
-          <span>{year} roadmap</span>
+          <Text strong={true}>{year} roadmap</Text>
           <Button
             type={"text"}
             size={"small"}
@@ -217,8 +316,8 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
             onClick={() => setYear((y) => y + 1)}
           />
         </Space>
-      }
-    >
+        <Legend />
+      </Flex>
       <div style={{ position: "relative", minWidth: 900 }}>
         <BandRow title={"Quarters"} bands={quarterBands(year)} />
         <BandRow title={"12-week cycles"} bands={cycleBands(cycles, year)} />
@@ -252,29 +351,104 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
               <CategoryIcon icon={category.icon} color={category.color} />
               <Text strong={true}>{category.name}</Text>
             </Space>
-            {inLane.map((goal) => (
-              <Flex key={goal.id} style={{ height: ROW }} align={"center"}>
-                <div
-                  style={{
-                    width: LABEL,
-                    paddingLeft: 22,
-                    paddingRight: 8,
-                    minWidth: 0,
-                  }}
-                >
-                  <Link href={`/minerva/goals/${goal.id}`}>
-                    <Text
-                      ellipsis={{ tooltip: goal.title }}
-                      style={{ fontSize: 13 }}
+            {goalTree(inLane, 99).map(({ goal, depth }) => (
+              <React.Fragment key={goal.id}>
+                <Flex style={{ height: ROW }} align={"center"}>
+                  <Flex
+                    align={"center"}
+                    gap={2}
+                    style={{
+                      width: LABEL,
+                      paddingLeft: 4 + depth * 16,
+                      paddingRight: 8,
+                      minWidth: 0,
+                    }}
+                  >
+                    {hasMilestones(goal) ? (
+                      <Button
+                        type={"text"}
+                        size={"small"}
+                        icon={
+                          open.has(goal.id) ? (
+                            <DownOutlined />
+                          ) : (
+                            <RightOutlined />
+                          )
+                        }
+                        aria-expanded={open.has(goal.id)}
+                        aria-label={`${open.has(goal.id) ? "Hide" : "Show"} ${goal.title}'s milestones`}
+                        onClick={() => toggle(goal)}
+                        style={{ width: 18, minWidth: 18, height: 18 }}
+                      />
+                    ) : (
+                      <span style={{ width: 18, flexShrink: 0 }} />
+                    )}
+                    <Link
+                      href={`/minerva/goals/${goal.id}`}
+                      style={{ minWidth: 0 }}
                     >
-                      {goal.title}
-                    </Text>
-                  </Link>
-                </div>
-                <div style={{ position: "relative", flex: 1, height: "100%" }}>
-                  <GoalMark goal={goal} year={year} today={today} />
-                </div>
-              </Flex>
+                      <Text
+                        ellipsis={{ tooltip: goal.title }}
+                        style={{ fontSize: 13 }}
+                      >
+                        {goal.title}
+                      </Text>
+                    </Link>
+                  </Flex>
+                  <div
+                    style={{ position: "relative", flex: 1, height: "100%" }}
+                  >
+                    <GoalMark goal={goal} year={year} today={today} />
+                  </div>
+                </Flex>
+                {open.has(goal.id) &&
+                  (milestones.get(goal.id) ?? []).map((m) => (
+                    <Flex
+                      key={m.id}
+                      style={{ height: ROW - 6 }}
+                      align={"center"}
+                    >
+                      <div
+                        style={{
+                          width: LABEL,
+                          paddingLeft: 4 + depth * 16 + 34,
+                          paddingRight: 8,
+                          minWidth: 0,
+                        }}
+                      >
+                        <Text
+                          type={"secondary"}
+                          delete={m.done}
+                          ellipsis={{ tooltip: m.title }}
+                          style={{ fontSize: 12 }}
+                        >
+                          {m.title}
+                        </Text>
+                      </div>
+                      <div
+                        style={{
+                          position: "relative",
+                          flex: 1,
+                          height: "100%",
+                        }}
+                      >
+                        <MilestoneMark
+                          milestone={m}
+                          year={year}
+                          today={today}
+                        />
+                      </div>
+                    </Flex>
+                  ))}
+                {open.has(goal.id) && milestones.get(goal.id)?.length === 0 && (
+                  <Text
+                    type={"secondary"}
+                    style={{ fontSize: 12, paddingLeft: 4 + depth * 16 + 34 }}
+                  >
+                    No milestones
+                  </Text>
+                )}
+              </React.Fragment>
             ))}
           </div>
         ))}
@@ -305,21 +479,7 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
           </div>
         )}
       </div>
-      <Flex gap={24} wrap={true} style={{ marginTop: 12 }}>
-        <Text type={"secondary"} style={{ fontSize: 12 }}>
-          ▭ Start to due date, filled to progress
-        </Text>
-        <Text type={"secondary"} style={{ fontSize: 12 }}>
-          ┄ Ongoing habit
-        </Text>
-        <Text type={"secondary"} style={{ fontSize: 12 }}>
-          ◇ Achievement date
-        </Text>
-        <Text type={"secondary"} style={{ fontSize: 12 }}>
-          ▨ Cycle buffer week
-        </Text>
-      </Flex>
-    </Card>
+    </div>
   );
 };
 

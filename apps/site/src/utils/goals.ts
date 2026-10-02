@@ -690,3 +690,43 @@ export const habitCountPercent = (habit: GoalHabitDay): number | undefined => {
   if (!target) return undefined;
   return Math.min(100, ((habit.log?.quantity ?? 0) / target) * 100);
 };
+
+/** A drawn piece of a band row: a band, or a cycle's buffer after it. */
+export type BandSegment = {
+  label?: string;
+  kind: "band" | "buffer";
+  from: number;
+  to: number;
+  /** Round a side only where nothing abuts it. */
+  roundLeft: boolean;
+  roundRight: boolean;
+};
+
+/**
+ * A band row's pieces, left to right, each rounded only on a side where
+ * no other piece touches it: quarters meet square, and a cycle meets its
+ * buffer square.
+ */
+export const bandSegments = (bands: Band[]): BandSegment[] => {
+  const pieces = bands
+    .flatMap((b): Omit<BandSegment, "roundLeft" | "roundRight">[] => [
+      { label: b.label, kind: "band", from: b.from, to: b.to },
+      ...(b.buffer !== undefined && b.buffer > b.to
+        ? [
+            {
+              label: b.label,
+              kind: "buffer" as const,
+              from: b.to,
+              to: b.buffer,
+            },
+          ]
+        : []),
+    ])
+    .sort((a, b) => a.from - b.from);
+  const touches = (x: number, y: number) => Math.abs(x - y) < 1e-6;
+  return pieces.map((p, i) => ({
+    ...p,
+    roundLeft: !(i > 0 && touches(pieces[i - 1].to, p.from)),
+    roundRight: !(i < pieces.length - 1 && touches(pieces[i + 1].from, p.to)),
+  }));
+};

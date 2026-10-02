@@ -7,6 +7,7 @@ import type {
 } from "@ncfritz/olympus-sdk/minerva";
 import { describe, expect, it } from "vitest";
 import {
+  bandSegments,
   cycleBands,
   dueText,
   emptyGoalForm,
@@ -535,5 +536,30 @@ describe("a habit's Done", () => {
     expect(habitCountPercent(day({ quantityTarget: 8 }, { quantity: 9 }))).toBe(
       100,
     );
+  });
+});
+
+describe("bandSegments", () => {
+  it("squares the sides where quarters meet", () => {
+    expect(
+      bandSegments(quarterBands(2026)).map((s) => [s.roundLeft, s.roundRight]),
+    ).toEqual([
+      [true, false],
+      [false, false],
+      [false, false],
+      [false, true],
+    ]);
+  });
+
+  it("squares a cycle where its buffer meets it, and rounds apart cycles", () => {
+    const pieces = bandSegments([
+      { label: "Cycle 3", from: 0.4, to: 0.6, buffer: 0.62 },
+      { label: "Cycle 4", from: 0.7, to: 0.9 },
+    ]);
+    expect(pieces.map((s) => [s.kind, s.roundLeft, s.roundRight])).toEqual([
+      ["band", true, false],
+      ["buffer", false, true],
+      ["band", true, true],
+    ]);
   });
 });
