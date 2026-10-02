@@ -179,14 +179,15 @@ const WeekBars: React.FunctionComponent<{
  * a cell per week (done, this one, to come) and the buffer hatched; this
  * week's and the cycle's execution.
  */
-const CycleBanner: React.FunctionComponent<{
+export const CycleBanner: React.FunctionComponent<{
   cycle?: GoalCycle;
   execution?: GoalExecution;
   cycleExecution?: GoalExecution;
   today: string;
   /** Offer to plan the next cycle: none is planned after this one. */
   canPlan: boolean;
-  onPlan: () => void;
+  /** Without it, neither Plan a cycle nor Plan next cycle shows. */
+  onPlan?: () => void;
 }> = ({ cycle, execution, cycleExecution, today, canPlan, onPlan }) => {
   const box: React.CSSProperties = {
     display: "flex",
@@ -221,9 +222,11 @@ const CycleBanner: React.FunctionComponent<{
             Focus shows its week and execution.
           </span>
         </Flex>
-        <Button type={"primary"} icon={<CalendarOutlined />} onClick={onPlan}>
-          Plan a cycle
-        </Button>
+        {onPlan && (
+          <Button type={"primary"} icon={<CalendarOutlined />} onClick={onPlan}>
+            Plan a cycle
+          </Button>
+        )}
       </div>
     );
   }
@@ -331,7 +334,7 @@ const CycleBanner: React.FunctionComponent<{
           cycle.currentWeek !== undefined ? `weeks 1–${cycle.currentWeek}` : "",
         )}
       </Flex>
-      {canPlan && (
+      {canPlan && onPlan && (
         <Button type={"primary"} icon={<CalendarOutlined />} onClick={onPlan}>
           Plan next cycle
         </Button>

@@ -27,7 +27,6 @@ import {
   apiProblems,
   currentCycle,
   dueText,
-  formatValue,
   type HomeGoalRow,
   homeGoalRows,
   inHorizon,
@@ -40,6 +39,7 @@ import {
   storeToLocalStorage,
 } from "../../../utils/storage";
 import CheckinModal from "../goals/CheckinModal";
+import { CycleBanner } from "../goals/FocusView";
 import { HEALTH_COLORS, HealthDot, PaceBar } from "../goals/GoalBits";
 import TodaysHabits from "../goals/TodaysHabits";
 import styles from "./GoalsPanel.module.css";
@@ -67,7 +67,8 @@ type Loaded = {
  * Minerva Home's goals (phase 7): a tab per goal type. Habits is today's
  * habits, logged in one tap as on Focus; the others list the current
  * cycle's (or quarter's) active goals in Focus's order, each with Done on
- * its next milestone or Check in, and marked once done today.
+ * its next milestone or Check in, and marked once done today. Focus's
+ * cycle banner sits above, without its plan buttons.
  */
 const GoalsPanel: React.FunctionComponent = () => {
   const router = useRouter();
@@ -83,7 +84,9 @@ const GoalsPanel: React.FunctionComponent = () => {
 
   const [data, setData] = useState<Loaded>();
   const [failed, setFailed] = useState(false);
-  const [execution, setExecution] = useState<GoalExecution>();
+  // This week's execution and the cycle's, for the cycle banner.
+  const [weekExecution, setWeekExecution] = useState<GoalExecution>();
+  const [cycleExecution, setCycleExecution] = useState<GoalExecution>();
   const [checkingIn, setCheckingIn] = useState<Goal>();
   const [busy, setBusy] = useState<string>();
   const [habitsVersion, setHabitsVersion] = useState(0);
@@ -111,11 +114,19 @@ const GoalsPanel: React.FunctionComponent = () => {
   const shown: Span = cycle ? span : "quarter";
 
   useEffect(() => {
+    if (!data) return;
+    goalsApi
+      .getExecution()
+      .then(setWeekExecution)
+      .catch(() => setWeekExecution(undefined));
+  }, [data]);
+
+  useEffect(() => {
     if (!cycle) return;
     goalsApi
       .getExecution({ cycleId: cycle.id })
-      .then(setExecution)
-      .catch(() => setExecution(undefined));
+      .then(setCycleExecution)
+      .catch(() => setCycleExecution(undefined));
   }, [cycle?.id]);
 
   if (failed && !data) {
@@ -272,41 +283,30 @@ const GoalsPanel: React.FunctionComponent = () => {
     children: body(t.key),
   }));
 
-  const where =
-    shown === "cycle" && cycle
-      ? [
-          cycle.name,
-          cycle.currentWeek !== undefined
-            ? `week ${cycle.currentWeek} of ${cycle.weeks}`
-            : cycle.status === "buffer"
-              ? "buffer week"
-              : "starts " + DateTime.fromISO(cycle.startDate).toFormat("LLL d"),
-          ...(execution?.score !== undefined
-            ? [`execution ${formatValue(execution.score)}%`]
-            : []),
-        ].join(" · ")
-      : quarterWeekText(today);
-
   return (
     <section aria-label={"Goals"}>
       <div className={styles.header}>
         <span style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
           <h2 className={styles.title}>Goals</h2>
-          <span className={styles.muted}>{where}</span>
+          {shown === "quarter" && (
+            <span className={styles.muted}>{quarterWeekText(today)}</span>
+          )}
         </span>
         <Link href={"/minerva/goals?view=focus"} className={styles.muted}>
           Open Goals
         </Link>
       </div>
-      {!cycle && (
-        <div className={styles.noCycle}>
-          <span>No cycle running; showing this quarter.</span>
-          <Link href={"/minerva/goals?view=focus"}>Plan a cycle</Link>
-        </div>
-      )}
+      <div style={{ marginTop: 12 }}>
+        <CycleBanner
+          cycle={cycle}
+          execution={weekExecution}
+          cycleExecution={cycleExecution}
+          today={today}
+          canPlan={false}
+        />
+      </div>
       <Tabs
         id={"minerva-home-goals"}
-        className={styles.tabs}
         activeKey={tab}
         items={items}
         onChange={(key) => {
