@@ -28,3 +28,17 @@ export const buildFilterDefinitionForTable = (
     return columnFilters[0];
   }
 };
+
+/**
+ * A checkbox filter's keys after one is clicked: added when it was not
+ * there, removed when it was.
+ */
+export const toggleKey = (keys: string[], key: string): string[] => {
+  const next = [...keys];
+  if (next.includes(key)) {
+    next.splice(next.indexOf(key));
+  } else {
+    next.push(key);
+  }
+  return next;
+};

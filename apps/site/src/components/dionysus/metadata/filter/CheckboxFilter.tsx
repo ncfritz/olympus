@@ -1,6 +1,7 @@
 import { Checkbox, Menu, Space } from "antd";
 import type { MenuItemType } from "antd/es/menu/interface";
 import { type ReactNode, useState } from "react";
+import { toggleKey } from "../../../../utils/filters";
 import FilterWrapper from "./FilterWrapper";
 
 export interface CheckboxFilterProps {
@@ -21,7 +22,6 @@ const CheckboxFilter: React.FunctionComponent<CheckboxFilterProps> = ({
   const [selectedKeys, setSelectedKeys] = useState<string[]>(
     initialValues || [],
   );
-  const [values, setValues] = useState<React.Key[]>([]);
 
   const menuItems = items.map((item) => {
     return {
@@ -40,18 +40,7 @@ const CheckboxFilter: React.FunctionComponent<CheckboxFilterProps> = ({
       style={{ boxShadow: "none" }}
       items={menuItems}
       onClick={({ key }) => {
-        const newKeys = [...selectedKeys];
-        const newValues = [...values];
-
-        if (newKeys.includes(key.toString())) {
-          const index = newKeys.indexOf(key.toString());
-
-          newKeys.splice(index);
-          newValues.splice(index);
-        } else {
-          newKeys.push(key.toString());
-          newValues.push(key);
-        }
+        const newKeys = toggleKey(selectedKeys, key.toString());
 
         setSelectedKeys(filterValues ? filterValues(newKeys) : newKeys);
       }}
@@ -65,7 +54,6 @@ const CheckboxFilter: React.FunctionComponent<CheckboxFilterProps> = ({
       initialFiltersPresent={(initialValues?.length ?? 0) > 0}
       onReset={() => {
         setSelectedKeys(initialValues || []);
-        setValues([]);
       }}
       onClose={() => {
         onFiltersSet(selectedKeys);
