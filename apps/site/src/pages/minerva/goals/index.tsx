@@ -74,6 +74,17 @@ const GoalsPage: React.FunctionComponent = () => {
 
   const year = DateTime.fromISO(today);
 
+  /** Saves a new order of the categories, from the Board or the Roadmap. */
+  const reorderCategories = async (categoryIds: string[]) => {
+    try {
+      await goalsApi.reorderCategories(categoryIds);
+      await data.reload();
+    } catch (error) {
+      message.error("Could not save the new order");
+      throw error;
+    }
+  };
+
   const replan = async (goal: Goal) => {
     try {
       setForm({ open: true, goal: await goalsApi.describeGoal(goal.id) });
@@ -170,6 +181,7 @@ const GoalsPage: React.FunctionComponent = () => {
               categories={data.categories}
               cycles={data.cycles}
               today={today}
+              onReorder={reorderCategories}
             />
           ) : (
             view === "board" && (
@@ -199,15 +211,7 @@ const GoalsPage: React.FunctionComponent = () => {
                   },
                   onAchieved: setAchieving,
                 }}
-                onReorder={async (categoryIds) => {
-                  try {
-                    await goalsApi.reorderCategories(categoryIds);
-                    await data.reload();
-                  } catch (error) {
-                    message.error("Could not save the new order");
-                    throw error;
-                  }
-                }}
+                onReorder={reorderCategories}
               />
             )
           )}

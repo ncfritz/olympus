@@ -1,4 +1,27 @@
-import { DownOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
+import {
+  CaretDownOutlined,
+  CaretRightOutlined,
+  HolderOutlined,
+  LeftOutlined,
+  RightOutlined,
+} from "@ant-design/icons";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type {
   Goal,
   GoalCategory,
@@ -183,6 +206,8 @@ export interface RoadmapViewProps {
   categories: GoalCategory[];
   cycles: GoalCycle[];
   today: string;
+  /** The categories in a new order; the caller saves it. */
+  onReorder: (categoryIds: string[]) => Promise<void>;
 }
 
 /** What the roadmap's marks mean. */
@@ -239,6 +264,196 @@ const MilestoneMark: React.FunctionComponent<{
   );
 };
 
+/** The label column's steps: a caret, an icon, and each level of nesting. */
+const STEP = 22;
+
+/** An expand caret. */
+const Caret: React.FunctionComponent<{
+  open: boolean;
+  label: string;
+  onClick: () => void;
+}> = ({ open, label, onClick }) => (
+  <Button
+    type={"text"}
+    size={"small"}
+    icon={open ? <CaretDownOutlined /> : <CaretRightOutlined />}
+    aria-expanded={open}
+    aria-label={label}
+    onClick={onClick}
+    style={{
+      width: STEP,
+      minWidth: STEP,
+      height: STEP,
+      padding: 0,
+      flexShrink: 0,
+    }}
+  />
+);
+
+/**
+ * A category's lane: its heading (a caret to collapse it, its icon and
+ * name, a handle to drag it by) and its goals, sub-goals indented under
+ * their parents and a milestone goal's steps a caret away. A goal's caret
+ * and title line up with the heading's icon and name.
+ */
+const Lane: React.FunctionComponent<{
+  category: GoalCategory;
+  goals: Goal[];
+  year: number;
+  today: string;
+  collapsed: boolean;
+  onCollapse: () => void;
+  open: Set<string>;
+  milestones: Map<string, GoalMilestone[]>;
+  onToggleGoal: (goal: Goal) => void;
+}> = ({
+  category,
+  goals,
+  year,
+  today,
+  collapsed,
+  onCollapse,
+  open,
+  milestones,
+  onToggleGoal,
+}) => {
+  const sortable = useSortable({ id: category.id });
+  const hasMilestones = (goal: Goal) =>
+    goal.type === "milestone" && goal.progressMode === "milestones";
+
+  return (
+    <div
+      ref={sortable.setNodeRef}
+      style={{
+        borderBottom: "1px solid #f0f0f0",
+        paddingBlock: 4,
+        background: "#ffffff",
+        transform: CSS.Translate.toString(sortable.transform),
+        transition: sortable.transition,
+        position: "relative",
+        zIndex: sortable.isDragging ? 2 : undefined,
+        boxShadow: sortable.isDragging
+          ? "0 6px 16px rgba(0, 0, 0, 0.12)"
+          : undefined,
+      }}
+    >
+      <Flex align={"center"} style={{ width: LABEL, height: 26 }}>
+        <Caret
+          open={!collapsed}
+          label={`${collapsed ? "Show" : "Hide"} ${category.name}`}
+          onClick={onCollapse}
+        />
+        <span
+          style={{
+            width: STEP,
+            display: "flex",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <CategoryIcon icon={category.icon} color={category.color} />
+        </span>
+        <Text strong={true} ellipsis={true} style={{ flex: 1, minWidth: 0 }}>
+          {category.name}
+        </Text>
+        {collapsed && (
+          <Text type={"secondary"} style={{ fontSize: 12, marginInline: 4 }}>
+            {goals.length}
+          </Text>
+        )}
+        <Button
+          type={"text"}
+          size={"small"}
+          icon={<HolderOutlined />}
+          aria-label={`Move ${category.name}`}
+          style={{ cursor: "grab" }}
+          {...sortable.attributes}
+          {...sortable.listeners}
+        />
+      </Flex>
+      {!collapsed &&
+        goalTree(goals, 99).map(({ goal, depth }) => {
+          const indent = STEP + depth * STEP;
+          const isOpen = open.has(goal.id);
+          return (
+            <React.Fragment key={goal.id}>
+              <Flex style={{ height: ROW }} align={"center"}>
+                <Flex
+                  align={"center"}
+                  style={{
+                    width: LABEL,
+                    paddingLeft: indent,
+                    paddingRight: 8,
+                    minWidth: 0,
+                  }}
+                >
+                  {hasMilestones(goal) ? (
+                    <Caret
+                      open={isOpen}
+                      label={`${isOpen ? "Hide" : "Show"} ${goal.title}'s milestones`}
+                      onClick={() => onToggleGoal(goal)}
+                    />
+                  ) : (
+                    <span style={{ width: STEP, flexShrink: 0 }} />
+                  )}
+                  <Link
+                    href={`/minerva/goals/${goal.id}`}
+                    style={{ minWidth: 0 }}
+                  >
+                    <Text
+                      ellipsis={{ tooltip: goal.title }}
+                      style={{ fontSize: 13 }}
+                    >
+                      {goal.title}
+                    </Text>
+                  </Link>
+                </Flex>
+                <div style={{ position: "relative", flex: 1, height: "100%" }}>
+                  <GoalMark goal={goal} year={year} today={today} />
+                </div>
+              </Flex>
+              {isOpen &&
+                (milestones.get(goal.id) ?? []).map((m) => (
+                  <Flex key={m.id} style={{ height: ROW - 6 }} align={"center"}>
+                    <div
+                      style={{
+                        width: LABEL,
+                        paddingLeft: indent + STEP,
+                        paddingRight: 8,
+                        minWidth: 0,
+                      }}
+                    >
+                      <Text
+                        type={"secondary"}
+                        delete={m.done}
+                        ellipsis={{ tooltip: m.title }}
+                        style={{ fontSize: 12 }}
+                      >
+                        {m.title}
+                      </Text>
+                    </div>
+                    <div
+                      style={{ position: "relative", flex: 1, height: "100%" }}
+                    >
+                      <MilestoneMark milestone={m} year={year} today={today} />
+                    </div>
+                  </Flex>
+                ))}
+              {isOpen && milestones.get(goal.id)?.length === 0 && (
+                <Text
+                  type={"secondary"}
+                  style={{ fontSize: 12, paddingLeft: indent + STEP }}
+                >
+                  No milestones
+                </Text>
+              )}
+            </React.Fragment>
+          );
+        })}
+    </div>
+  );
+};
+
 /**
  * The Roadmap: a year as a timeline, quarters and 12-week cycles side by
  * side (the buffer hatched), a lane per category with sub-goals indented
@@ -250,9 +465,19 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
   categories,
   cycles,
   today,
+  onReorder,
 }) => {
   const [year, setYear] = useState(DateTime.fromISO(today).year);
   const [open, setOpen] = useState<Set<string>>(new Set());
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [order, setOrder] = useState(categories);
+  useEffect(() => setOrder(categories), [categories]);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
   // The roadmap fills the window below where it starts, so only its lanes
   // scroll and the header above them holds still.
   const rootRef = useRef<HTMLDivElement>(null);
@@ -275,8 +500,25 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
   const to = `${year}-12-31`;
   const lanes = byCategory(
     goals.filter((g) => roadmapMark(g, year)),
-    categories,
+    order,
   ).filter((l) => l.goals.length > 0);
+
+  // Lanes move aside as one is dragged; the new order is saved on drop, for
+  // the categories everywhere. Categories with no lane keep their places.
+  const dragEnd = async ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const next = arrayMove(
+      order,
+      order.findIndex((c) => c.id === active.id),
+      order.findIndex((c) => c.id === over.id),
+    );
+    setOrder(next);
+    try {
+      await onReorder(next.map((c) => c.id));
+    } catch {
+      setOrder(categories);
+    }
+  };
   const todayAt =
     today >= from && today <= to ? spanFraction(today, from, to) : undefined;
   const months = Array.from({ length: 12 }, (_, m) =>
@@ -301,9 +543,6 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
       }
     }
   };
-
-  const hasMilestones = (goal: Goal) =>
-    goal.type === "milestone" && goal.progressMode === "milestones";
 
   return (
     <div
@@ -397,120 +636,38 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
       >
         <div style={{ position: "relative" }}>
           {lanes.length === 0 && <Empty description={`No goals in ${year}`} />}
-          {lanes.map(({ category, goals: inLane }) => (
-            <div
-              key={category.id}
-              style={{ borderBottom: "1px solid #f0f0f0", paddingBlock: 4 }}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={dragEnd}
+          >
+            <SortableContext
+              items={lanes.map((l) => l.category.id)}
+              strategy={verticalListSortingStrategy}
             >
-              <Space style={{ height: 24 }}>
-                <CategoryIcon icon={category.icon} color={category.color} />
-                <Text strong={true}>{category.name}</Text>
-              </Space>
-              {goalTree(inLane, 99).map(({ goal, depth }) => (
-                <React.Fragment key={goal.id}>
-                  <Flex style={{ height: ROW }} align={"center"}>
-                    <Flex
-                      align={"center"}
-                      gap={2}
-                      style={{
-                        width: LABEL,
-                        paddingLeft: 4 + depth * 16,
-                        paddingRight: 8,
-                        minWidth: 0,
-                      }}
-                    >
-                      {hasMilestones(goal) ? (
-                        <Button
-                          type={"text"}
-                          size={"small"}
-                          icon={
-                            open.has(goal.id) ? (
-                              <DownOutlined />
-                            ) : (
-                              <RightOutlined />
-                            )
-                          }
-                          aria-expanded={open.has(goal.id)}
-                          aria-label={`${open.has(goal.id) ? "Hide" : "Show"} ${goal.title}'s milestones`}
-                          onClick={() => toggle(goal)}
-                          style={{ width: 18, minWidth: 18, height: 18 }}
-                        />
-                      ) : (
-                        <span style={{ width: 18, flexShrink: 0 }} />
-                      )}
-                      <Link
-                        href={`/minerva/goals/${goal.id}`}
-                        style={{ minWidth: 0 }}
-                      >
-                        <Text
-                          ellipsis={{ tooltip: goal.title }}
-                          style={{ fontSize: 13 }}
-                        >
-                          {goal.title}
-                        </Text>
-                      </Link>
-                    </Flex>
-                    <div
-                      style={{ position: "relative", flex: 1, height: "100%" }}
-                    >
-                      <GoalMark goal={goal} year={year} today={today} />
-                    </div>
-                  </Flex>
-                  {open.has(goal.id) &&
-                    (milestones.get(goal.id) ?? []).map((m) => (
-                      <Flex
-                        key={m.id}
-                        style={{ height: ROW - 6 }}
-                        align={"center"}
-                      >
-                        <div
-                          style={{
-                            width: LABEL,
-                            paddingLeft: 4 + depth * 16 + 34,
-                            paddingRight: 8,
-                            minWidth: 0,
-                          }}
-                        >
-                          <Text
-                            type={"secondary"}
-                            delete={m.done}
-                            ellipsis={{ tooltip: m.title }}
-                            style={{ fontSize: 12 }}
-                          >
-                            {m.title}
-                          </Text>
-                        </div>
-                        <div
-                          style={{
-                            position: "relative",
-                            flex: 1,
-                            height: "100%",
-                          }}
-                        >
-                          <MilestoneMark
-                            milestone={m}
-                            year={year}
-                            today={today}
-                          />
-                        </div>
-                      </Flex>
-                    ))}
-                  {open.has(goal.id) &&
-                    milestones.get(goal.id)?.length === 0 && (
-                      <Text
-                        type={"secondary"}
-                        style={{
-                          fontSize: 12,
-                          paddingLeft: 4 + depth * 16 + 34,
-                        }}
-                      >
-                        No milestones
-                      </Text>
-                    )}
-                </React.Fragment>
+              {lanes.map(({ category, goals: inLane }) => (
+                <Lane
+                  key={category.id}
+                  category={category}
+                  goals={inLane}
+                  year={year}
+                  today={today}
+                  collapsed={collapsed.has(category.id)}
+                  onCollapse={() =>
+                    setCollapsed((was) => {
+                      const next = new Set(was);
+                      if (next.has(category.id)) next.delete(category.id);
+                      else next.add(category.id);
+                      return next;
+                    })
+                  }
+                  open={open}
+                  milestones={milestones}
+                  onToggleGoal={toggle}
+                />
               ))}
-            </div>
-          ))}
+            </SortableContext>
+          </DndContext>
           {todayAt !== undefined && (
             <div
               aria-hidden={true}
