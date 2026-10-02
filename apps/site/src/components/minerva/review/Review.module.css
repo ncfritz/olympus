@@ -511,7 +511,7 @@
 
 .notesPane {
   flex: 1;
-  min-width: 0;
+  min-width: 200px;
   display: flex;
   flex-direction: column;
 }
@@ -536,7 +536,7 @@
 
 .calendarPane {
   flex: none;
-  width: 200px;
+  width: 500px;
   display: flex;
   flex-direction: column;
   border-left: 1px solid #f0f0f0;

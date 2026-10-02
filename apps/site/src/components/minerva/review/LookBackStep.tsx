@@ -54,7 +54,7 @@ const LookBackStep: React.FunctionComponent<LookBackStepProps> = ({
 
   return (
     <Splitter className={styles.fill}>
-      <Splitter.Panel defaultSize={"55%"} min={"35%"} max={"75%"}>
+      <Splitter.Panel defaultSize={"45%"} min={"30%"} max={"65%"}>
         <div className={styles.column}>
           <div className={styles.columnScroll}>
             <p className={styles.intro}>{intro}</p>
@@ -110,7 +110,7 @@ const LookBackStep: React.FunctionComponent<LookBackStepProps> = ({
           <div className={styles.columnFooter}>{footer}</div>
         </div>
       </Splitter.Panel>
-      <Splitter.Panel min={"25%"}>
+      <Splitter.Panel min={"35%"}>
         <div className={styles.sidePanes}>
           <section className={styles.notesPane} aria-label={"Notes"}>
             <div className={styles.paneHeader}>
