@@ -257,8 +257,10 @@ export const HealthLabel: React.FunctionComponent<{ health?: GoalHealth }> = ({
  */
 export const PaceBar: React.FunctionComponent<{
   goal: Pick<Goal, "progress" | "expectedProgress" | "health">;
-  width?: number;
-}> = ({ goal, width = 120 }) => {
+  /** A width in pixels, or a CSS width such as "75%". */
+  width?: number | string;
+  style?: React.CSSProperties;
+}> = ({ goal, width = 120, style }) => {
   const fill =
     goal.health === "off_track"
       ? "#f5222d"
@@ -282,6 +284,7 @@ export const PaceBar: React.FunctionComponent<{
         borderRadius: 6,
         background: "#f0f0f0",
         flexShrink: 0,
+        ...style,
       }}
     >
       <span

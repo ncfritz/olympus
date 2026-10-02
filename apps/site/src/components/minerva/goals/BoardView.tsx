@@ -89,9 +89,17 @@ const GoalTile: React.FunctionComponent<{
         <HealthLabel health={goal.health} />
       </span>
       <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <PaceBar goal={goal} />
+        {/* The bar takes up to three quarters of the tile; the metric
+            has the rest. */}
+        <PaceBar
+          goal={goal}
+          width={"auto"}
+          style={{ flex: "1 1 75%", maxWidth: "75%", minWidth: 80 }}
+        />
         <span
           style={{
+            flex: "0 1 auto",
+            minWidth: 0,
             fontSize: 12,
             color: "#595959",
             whiteSpace: "nowrap",
