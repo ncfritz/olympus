@@ -122,6 +122,7 @@ const MilestonePanel: React.FunctionComponent<{
     >
       <GoalProgress goal={goal} size={"default"} />
       <List
+        style={{ marginTop: 16 }}
         dataSource={goal.milestones}
         locale={{ emptyText: "No milestones yet" }}
         renderItem={(m, index) => (
