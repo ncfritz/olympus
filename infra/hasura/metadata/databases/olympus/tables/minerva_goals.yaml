@@ -74,12 +74,26 @@ object_relationships:
     using:
       foreign_key_constraint_on: user_id
 array_relationships:
+  - name: checkins
+    using:
+      foreign_key_constraint_on:
+        column: goal_id
+        table:
+          name: goal_checkins
+          schema: minerva
   - name: goalTags
     using:
       foreign_key_constraint_on:
         column: goal_id
         table:
           name: goal_tags
+          schema: minerva
+  - name: habitLogs
+    using:
+      foreign_key_constraint_on:
+        column: goal_id
+        table:
+          name: goal_habit_logs
           schema: minerva
   - name: milestones
     using:
