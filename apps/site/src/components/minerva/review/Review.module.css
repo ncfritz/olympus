@@ -697,6 +697,7 @@
 }
 
 .blockTitle {
+  padding-top: 4px;
   display: flex;
   gap: 4px;
   align-items: center;
@@ -742,4 +743,19 @@
  * it, is never covered by a meeting over it. */
 .calendarEditable :global(.fc-timegrid-col-events) {
   margin-right: 30px;
+}
+
+/* A block's close icon: 16px, in the colour of the block's left border.
+ * Doubled to outweigh the size AntD gives a small button's icon. */
+.blockClose.blockClose .closePriority,
+.blockClose.blockClose .closeTodo {
+  font-size: 16px;
+}
+
+.blockClose.blockClose .closePriority {
+  color: #ffcc33;
+}
+
+.blockClose.blockClose .closeTodo {
+  color: #52c41a;
 }

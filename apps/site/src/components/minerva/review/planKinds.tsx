@@ -10,18 +10,27 @@ import styles from "./Review.module.css";
  */
 export const PLAN_KINDS: Record<
   ReviewItemKind,
-  { label: string; icon: React.ReactNode; block: string; tint: string }
+  {
+    label: string;
+    icon: React.ReactNode;
+    block: string;
+    tint: string;
+    /** The block's close icon, in the colour of its left border. */
+    close: string;
+  }
 > = {
   priority: {
     label: "Top priority",
     icon: <ExclamationOutlined />,
     block: styles.blockPriority,
     tint: styles.tintPriority,
+    close: styles.closePriority,
   },
   todo: {
     label: "To-do",
     icon: <UnorderedListOutlined />,
     block: styles.blockTodo,
     tint: styles.tintTodo,
+    close: styles.closeTodo,
   },
 };

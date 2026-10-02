@@ -3,7 +3,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import FullCalendar from "@fullcalendar/react";
 import type { Meeting, ReviewItemKind } from "@ncfritz/olympus-sdk/minerva";
-import { CloseOutlined } from "@ant-design/icons";
+import { CloseCircleFilled } from "@ant-design/icons";
 import { Button } from "antd";
 import { DateTime } from "luxon";
 import React, { useEffect, useRef, useState } from "react";
@@ -212,7 +212,11 @@ const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
                   className={styles.blockClose}
                   size={"small"}
                   type={"text"}
-                  icon={<CloseOutlined />}
+                  icon={
+                    <CloseCircleFilled
+                      className={PLAN_KINDS[block.kind].close}
+                    />
+                  }
                   aria-label={`Take ${block.title} off the calendar`}
                   title={"Take it off the calendar"}
                   // Not the start of a move.
