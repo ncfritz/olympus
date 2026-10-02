@@ -1413,6 +1413,27 @@
     ],
     "type": "object"
   },
+  "BaseReviewItem": {
+    "properties": {
+      "kind": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewItemKind"
+          }
+        ],
+        "description": "Whether the item is a priority or a to-do"
+      },
+      "title": {
+        "description": "What is to be done, 1 to 200 characters",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "title"
+    ],
+    "type": "object"
+  },
   "BaseReviewPrompt": {
     "properties": {
       "kind": {
@@ -2028,6 +2049,42 @@
     },
     "required": [
       "updates"
+    ],
+    "type": "object"
+  },
+  "CarryReviewItemRequest": {
+    "properties": {
+      "reviewId": {
+        "description": "The review doing the carrying; the copy is for the period after it",
+        "type": "string"
+      },
+      "scope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewItemScope"
+          }
+        ],
+        "description": "Whether the copy is for the next day or the next week; the item's own scope when absent"
+      }
+    },
+    "required": [
+      "reviewId"
+    ],
+    "type": "object"
+  },
+  "CarryReviewItemResponse": {
+    "properties": {
+      "reviewItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewItem"
+          }
+        ],
+        "description": "The copy, open in its new period."
+      }
+    },
+    "required": [
+      "reviewItem"
     ],
     "type": "object"
   },
@@ -3982,6 +4039,38 @@
     ],
     "type": "object"
   },
+  "CreateReviewItemRequest": {
+    "properties": {
+      "reviewItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseReviewItem"
+          }
+        ],
+        "description": "The item to plan, at the end of its kind for the period after the review's."
+      }
+    },
+    "required": [
+      "reviewItem"
+    ],
+    "type": "object"
+  },
+  "CreateReviewItemResponse": {
+    "properties": {
+      "reviewItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewItem"
+          }
+        ],
+        "description": "The item as planned."
+      }
+    },
+    "required": [
+      "reviewItem"
+    ],
+    "type": "object"
+  },
   "CreateReviewPromptRequest": {
     "properties": {
       "reviewPrompt": {
@@ -5133,6 +5222,22 @@
     },
     "required": [
       "company"
+    ],
+    "type": "object"
+  },
+  "DescribeReviewItemResponse": {
+    "properties": {
+      "reviewItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewItem"
+          }
+        ],
+        "description": "The item."
+      }
+    },
+    "required": [
+      "reviewItem"
     ],
     "type": "object"
   },
@@ -9211,6 +9316,21 @@
     },
     "required": [
       "radarFrames"
+    ],
+    "type": "object"
+  },
+  "ListReviewItemsResponse": {
+    "properties": {
+      "reviewItems": {
+        "description": "The caller's items for the periods in the range: by period, priorities before to-dos, each in its order.",
+        "items": {
+          "$ref": "#/components/schemas/ReviewItem"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "reviewItems"
     ],
     "type": "object"
   },
@@ -14481,6 +14601,36 @@
     },
     "type": "object"
   },
+  "PartialReviewItem": {
+    "properties": {
+      "scheduledEnd": {
+        "description": "When the item's block of time ends on its day, as HH:mm in the caller's local time",
+        "type": "string"
+      },
+      "scheduledOn": {
+        "description": "The day the item is planned on as YYYY-MM-DD: its own day, or a day of its week",
+        "format": "date",
+        "type": "string"
+      },
+      "scheduledStart": {
+        "description": "When the item's block of time starts on its day, as HH:mm in the caller's local time",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewItemStatus"
+          }
+        ],
+        "description": "open, done, carried (a copy carries on in a later period), someday or dropped"
+      },
+      "title": {
+        "description": "What is to be done, 1 to 200 characters",
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
   "PartialReviewPrompt": {
     "properties": {
       "archived": {
@@ -15957,6 +16107,60 @@
     ],
     "type": "object"
   },
+  "ReorderReviewItemsRequest": {
+    "properties": {
+      "itemIds": {
+        "description": "Every one of the caller's item IDs of that period and kind, whatever their status, in the order they should appear.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "kind": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewItemKind"
+          }
+        ],
+        "description": "The kind of item reordered"
+      },
+      "periodStart": {
+        "description": "The day, or the week's Monday, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "scope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewItemScope"
+          }
+        ],
+        "description": "Whether the items reordered are a day's or a week's"
+      }
+    },
+    "required": [
+      "itemIds",
+      "kind",
+      "periodStart",
+      "scope"
+    ],
+    "type": "object"
+  },
+  "ReorderReviewItemsResponse": {
+    "properties": {
+      "reviewItems": {
+        "description": "The period's items of that kind, in their new order.",
+        "items": {
+          "$ref": "#/components/schemas/ReviewItem"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "reviewItems"
+    ],
+    "type": "object"
+  },
   "ReorderReviewPromptsRequest": {
     "properties": {
       "kind": {
@@ -16190,6 +16394,128 @@
       "promptId"
     ],
     "type": "object"
+  },
+  "ReviewItem": {
+    "properties": {
+      "carriedFromId": {
+        "description": "The item this one was carried from, while it exists",
+        "type": "string"
+      },
+      "carryCount": {
+        "description": "How many times the item has been carried to get here",
+        "type": "number"
+      },
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the item was planned",
+        "type": "string"
+      },
+      "doneTime": {
+        "description": "An ISO-8601 formatted string indicating when the item was done",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the item",
+        "type": "string"
+      },
+      "kind": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewItemKind"
+          }
+        ],
+        "description": "Whether the item is a priority or a to-do"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the item was last changed",
+        "type": "string"
+      },
+      "periodStart": {
+        "description": "The day the item is for, or the Monday of its week, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "position": {
+        "description": "Where the item sits among its period's items of its kind; lower comes first",
+        "type": "number"
+      },
+      "reviewId": {
+        "description": "The review that planned the item, or carried it here",
+        "type": "string"
+      },
+      "scheduledEnd": {
+        "description": "When the item's block of time ends on its day, as HH:mm in the caller's local time",
+        "type": "string"
+      },
+      "scheduledOn": {
+        "description": "The day the item is planned on as YYYY-MM-DD: its own day, or a day of its week",
+        "format": "date",
+        "type": "string"
+      },
+      "scheduledStart": {
+        "description": "When the item's block of time starts on its day, as HH:mm in the caller's local time",
+        "type": "string"
+      },
+      "scope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewItemScope"
+          }
+        ],
+        "description": "Whether the item is for a day or a week"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewItemStatus"
+          }
+        ],
+        "description": "open, done, carried (a copy carries on in a later period), someday or dropped"
+      },
+      "title": {
+        "description": "What is to be done, 1 to 200 characters",
+        "type": "string"
+      }
+    },
+    "required": [
+      "carryCount",
+      "createdTime",
+      "id",
+      "kind",
+      "periodStart",
+      "position",
+      "reviewId",
+      "scope",
+      "status",
+      "title"
+    ],
+    "type": "object"
+  },
+  "ReviewItemKind": {
+    "description": "A plan item's kind: a priority or a to-do",
+    "enum": [
+      "priority",
+      "todo"
+    ],
+    "type": "string"
+  },
+  "ReviewItemScope": {
+    "description": "Whether a plan item is for a day or for an ISO week",
+    "enum": [
+      "day",
+      "week"
+    ],
+    "type": "string"
+  },
+  "ReviewItemStatus": {
+    "description": "Where a plan item stands",
+    "enum": [
+      "open",
+      "done",
+      "carried",
+      "someday",
+      "dropped"
+    ],
+    "type": "string"
   },
   "ReviewKind": {
     "description": "Whether a review is of a day or of an ISO week",
@@ -19572,6 +19898,38 @@
     },
     "required": [
       "answer"
+    ],
+    "type": "object"
+  },
+  "UpdateReviewItemRequest": {
+    "properties": {
+      "reviewItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialReviewItem"
+          }
+        ],
+        "description": "The changes to the item. status may be open, done, someday or dropped (carrying has its own operation); scheduledOn, scheduledStart and scheduledEnd of null remove them."
+      }
+    },
+    "required": [
+      "reviewItem"
+    ],
+    "type": "object"
+  },
+  "UpdateReviewItemResponse": {
+    "properties": {
+      "reviewItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewItem"
+          }
+        ],
+        "description": "The item with the changes applied."
+      }
+    },
+    "required": [
+      "reviewItem"
     ],
     "type": "object"
   },

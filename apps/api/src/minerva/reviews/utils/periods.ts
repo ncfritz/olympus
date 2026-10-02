@@ -1,4 +1,4 @@
-import { ReviewKind } from "@ncfritz/olympus-model";
+import { ReviewItemScope, ReviewKind } from "@ncfritz/olympus-model";
 import {
   addDays,
   type IsoDate,
@@ -78,4 +78,30 @@ export const currentPeriodStart = (
 const isoWeekdayOf = (date: IsoDate): number => {
   const day = new Date(`${date}T00:00:00Z`).getUTCDay();
   return day === 0 ? 7 : day;
+};
+
+/** The scope of the items a kind of review plans: a day's, or a week's. */
+export const SCOPE_OF: Record<ReviewKind, ReviewItemScope> = {
+  [ReviewKind.Daily]: ReviewItemScope.Day,
+  [ReviewKind.Weekly]: ReviewItemScope.Week,
+};
+
+/** The last day an item's period covers: its day, or its week's Sunday. */
+export const itemPeriodEndOf = (scope: ReviewItemScope, start: IsoDate) =>
+  scope === ReviewItemScope.Day ? start : addDays(start, 6);
+
+/**
+ * The first period of `scope` after a review's: the next day, or the
+ * Monday after the review's week. Thursday's daily review plans Friday, or
+ * next week; a week's review plans its next Monday, or next week.
+ */
+export const nextPeriodStart = (
+  kind: ReviewKind,
+  reviewStart: IsoDate,
+  scope: ReviewItemScope,
+): IsoDate => {
+  const last = periodEndOf(kind, reviewStart);
+  return scope === ReviewItemScope.Day
+    ? addDays(last, 1)
+    : addDays(currentPeriodStart(ReviewKind.Weekly, last), 7);
 };

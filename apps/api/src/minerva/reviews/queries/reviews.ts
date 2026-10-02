@@ -30,3 +30,20 @@ export const REVIEW_PROMPT = `id
   archivedTime
   createdTime
   lastUpdatedTime`;
+
+export const REVIEW_ITEM = `id
+  reviewId
+  scope
+  periodStart
+  kind
+  title
+  position
+  status
+  doneTime
+  carriedFromId
+  carryCount
+  scheduledOn
+  scheduledStart
+  scheduledEnd
+  createdTime
+  lastUpdatedTime`;

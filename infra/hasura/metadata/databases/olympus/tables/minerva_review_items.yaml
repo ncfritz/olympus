@@ -1,0 +1,56 @@
+table:
+  name: review_items
+  schema: minerva
+configuration:
+  column_config:
+    carried_from_id:
+      custom_name: carriedFromId
+    carry_count:
+      custom_name: carryCount
+    created_at:
+      custom_name: createdTime
+    done_at:
+      custom_name: doneTime
+    period_start:
+      custom_name: periodStart
+    review_id:
+      custom_name: reviewId
+    scheduled_end:
+      custom_name: scheduledEnd
+    scheduled_on:
+      custom_name: scheduledOn
+    scheduled_start:
+      custom_name: scheduledStart
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+  custom_column_names:
+    carried_from_id: carriedFromId
+    carry_count: carryCount
+    created_at: createdTime
+    done_at: doneTime
+    period_start: periodStart
+    review_id: reviewId
+    scheduled_end: scheduledEnd
+    scheduled_on: scheduledOn
+    scheduled_start: scheduledStart
+    updated_at: lastUpdatedTime
+    user_id: userId
+  custom_root_fields: {}
+object_relationships:
+  - name: carriedFrom
+    using:
+      foreign_key_constraint_on: carried_from_id
+  - name: review
+    using:
+      manual_configuration:
+        column_mapping:
+          review_id: id
+        insertion_order: null
+        remote_table:
+          name: reviews
+          schema: minerva
+  - name: user
+    using:
+      foreign_key_constraint_on: user_id

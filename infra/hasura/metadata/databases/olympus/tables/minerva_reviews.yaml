@@ -34,3 +34,12 @@ array_relationships:
         remote_table:
           name: review_answers
           schema: minerva
+  - name: items
+    using:
+      manual_configuration:
+        column_mapping:
+          id: review_id
+        insertion_order: null
+        remote_table:
+          name: review_items
+          schema: minerva

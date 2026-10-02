@@ -38,9 +38,11 @@ const weekly = () =>
 describe("Reviews API", () => {
   const ctx = signedInApp();
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-02T06:30:00Z"));
+    // Signed again at the pinned time, so the token is current there.
+    await ctx.signInAs(USER);
   });
 
   afterEach(() => {

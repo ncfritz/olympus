@@ -76,7 +76,7 @@ test, typecheck and the convention checks pass for the model, API and
 site (the site built with placeholder `NEXT_PUBLIC_*` values). Opening
 the pages in a browser is Neil's to check.
 
-## Phase 1 — Reviews, prompts and answers — built 2026-10-02, not signed off
+## Phase 1 — Reviews, prompts and answers — done 2026-10-02
 
 1. **Shared helpers**: **done** — `localDates`, `validation` and
    `hasuraErrors` moved unchanged from `minerva/goals/utils` to
@@ -179,42 +179,78 @@ prompt_id)`. **Two composite foreign keys instead of a trigger**:
    and pass the convention checks.
 
 **Sign-off:** R1, R2 from the OpenAPI page against `hasura-dev` (the
-migration and metadata applied there first).
+migration and metadata applied there first): clean (Neil, 2026-10-02).
 
-## Phase 2 — Plan items
+## Phase 2 — Plan items — built 2026-10-02, not signed off
 
-1. **Migration** `1791010000000_minerva_review_items`:
-   `minerva.review_items`: `id`, `user_id`, `review_id` (the review it
-   was planned in, cascade), `scope` (`day`, `week`), `period_start`
-   (the day, or the Monday, it is for), `kind` (`priority`, `todo`),
-   `title` (1 to 200, not blank), `position`, `status` (`open`, `done`,
-   `carried`, `someday`, `dropped`), `done_at`, `carried_from_id`
-   (references `review_items`, set null), `scheduled_on` (a day in the
-   week, weekly only), `scheduled_start` and `scheduled_end` (times,
-   both or neither, start before end), audit columns.
-2. **Operations**:
+1. **Migration** `1791010000000_minerva_review_items`: **done** —
+   `minerva.review_items`: `id`, `user_id`, `review_id` (the review that
+   planned the item or carried it there; with `user_id` a composite key
+   to the review, cascade, for which `reviews` gains `unique (id,
+user_id)`), `scope` (`day`, `week`), `period_start` (a Monday for a
+   week), `kind` (`priority`, `todo`), `title` (something besides
+   whitespace, at most 200), `position` (unique per user, scope, period
+   and kind, deferred), `status` (`open`, `done`, `carried`, `someday`,
+   `dropped`), `done_at` (set exactly when done), `carried_from_id`
+   (set null when that item goes; unique, so an item is carried once),
+   `carry_count` (stored at the carry: the chain's length even after an
+   earlier link is deleted), `scheduled_on` (the item's day, or a day of
+   its week), `scheduled_start` and `scheduled_end` (`time`; both or
+   neither, start before end, only on a day), audit columns. Hasura:
+   `items` on reviews; `review` and `carriedFrom` on items.
+2. **Operations**: **done** — seven, tag `Review Items`.
+   `DescribeReviewItem` was added for the `Location` of a planned or
+   carried item, and the reorder moved under `/reviews/` with the period
+   in its body, since a period's items can come from several reviews.
 
-   | Operation            | Route                               |
-   | -------------------- | ----------------------------------- |
-   | `ListReviewItems`    | `GET /reviews/items`                |
-   | `CreateReviewItem`   | `POST /review/:reviewId/items`      |
-   | `UpdateReviewItem`   | `PUT /reviews/item/:itemId`         |
-   | `ReorderReviewItems` | `PUT /review/:reviewId/items/order` |
-   | `CarryReviewItem`    | `POST /reviews/item/:itemId/carry`  |
-   | `DeleteReviewItem`   | `DELETE /reviews/item/:itemId`      |
+   | Operation            | Route                              |
+   | -------------------- | ---------------------------------- |
+   | `ListReviewItems`    | `GET /reviews/items`               |
+   | `ReorderReviewItems` | `PUT /reviews/items/order`         |
+   | `CreateReviewItem`   | `POST /review/:reviewId/items`     |
+   | `DescribeReviewItem` | `GET /reviews/item/:itemId`        |
+   | `UpdateReviewItem`   | `PUT /reviews/item/:itemId`        |
+   | `CarryReviewItem`    | `POST /reviews/item/:itemId/carry` |
+   | `DeleteReviewItem`   | `DELETE /reviews/item/:itemId`     |
+   - `ListReviewItems` takes `scope`, `from` and `to` (period starts, at
+     most 400 days apart) and returns every status: by period, priorities
+     before to-dos, each in its order, with `carryCount`.
+   - `CreateReviewItem` plans a priority or to-do for the period after
+     the review's: a daily review plans the next day, a weekly review the
+     next week; it goes last of its kind.
+   - `UpdateReviewItem` changes the title, the status (open, done,
+     someday, dropped; done records `doneTime`, anything else clears it;
+     `carried` is refused, and a carried item's status is a 409), and the
+     schedule, checked whole against the item's period (`HH:mm` times;
+     clearing the day clears the block).
+   - `ReorderReviewItems` takes `scope`, `periodStart`, `kind` and every
+     item ID of that period and kind.
+   - `CarryReviewItem` takes the carrying review's `reviewId` and an
+     optional `scope`: the copy, open, last of its kind, is for the period
+     after that review (Friday's review carries to Saturday, or with
+     `week` to next week), counting one more carry. Only an open or
+     someday item is carried (409 otherwise); a copy that would not be
+     after the item's own period is a 400. The item is marked carried and
+     the copy inserted in one transaction.
+   - `DeleteReviewItem` removes an item; removing a carried copy undoes
+     the carry, opening the item it came from again. Deleting a review
+     removes the items it planned, and an item it carried in leaves its
+     original marked carried.
 
-   `ListReviewItems` takes `scope`, `from` and `to` and returns the items
-   for those periods with their carry count. `CreateReviewItem` creates
-   an item for the period after the review's (tomorrow, next week).
-   `UpdateReviewItem` changes the title, status (done records
-   `done_at`), schedule and position. `CarryReviewItem` marks the item
-   `carried` and creates its copy for the next period, returning it with
-   a `Location` header; carrying a done, dropped or carried item is a 409.
+3. **Tests**: **done** — the period after a review and an item's period
+   end in `test/unit/minerva/reviews/utils/periods.spec.ts`, the
+   converter (times as `HH:mm`); `test/api/minerva/reviewItems.spec.ts`
+   (68 cases: planning from a day and a week, triage and `doneTime`,
+   schedules on a day and across a week, the carry, its count, scope and
+   refusals, undoing a carry, another user's review and item, bad input
+   before Hasura); `infra/hasura/tests/minerva_review_items.sql` for
+   every constraint, the one-copy rule, the deferred positions, audit
+   times and cascades. Verified 2026-10-02 against the scratch
+   PostgreSQL 16 (`down.sql` and `up.sql` both ways) and the Turbo tasks
+   for model, API, SDK and site. The review specs now sign their token at
+   the pinned clock, so they pass whatever day they run.
 
-3. **Tests**: as phase 1, plus the carry chain and its count, and
-   `infra/hasura/tests/minerva_review_items.sql`.
-
-**Sign-off:** R3 from the OpenAPI page.
+**Sign-off:** R3 from the OpenAPI page against `hasura-dev`.
 
 ## Phase 3 — The summary and pins
 

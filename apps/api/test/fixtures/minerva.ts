@@ -14,6 +14,7 @@ import type {
   GraphQlReview,
   GraphQlReviewAnswer,
 } from "../../src/minerva/reviews/converters/ReviewConverter";
+import type { GraphQlReviewItem } from "../../src/minerva/reviews/converters/ReviewItemConverter";
 import type { GraphQlReviewPrompt } from "../../src/minerva/reviews/converters/ReviewPromptConverter";
 
 export const graphQlNote = (
@@ -287,5 +288,30 @@ export const graphQlReviewPrompt = (
   archivedTime: null,
   createdTime: "2026-10-01T12:00:00Z",
   lastUpdatedTime: "2026-10-01T12:00:00Z",
+  ...overrides,
+});
+
+export const REVIEW_ITEM_ID = "a1b2c3d4-0000-4000-8000-000000000001";
+
+/** Thursday's review plans Friday 2026-10-02's first priority. */
+export const graphQlReviewItem = (
+  overrides: Partial<GraphQlReviewItem> = {},
+): GraphQlReviewItem => ({
+  id: REVIEW_ITEM_ID,
+  reviewId: REVIEW_ID,
+  scope: "day",
+  periodStart: "2026-10-02",
+  kind: "priority",
+  title: "Draft Q4 OKRs",
+  position: 0,
+  status: "open",
+  doneTime: null,
+  carriedFromId: null,
+  carryCount: 0,
+  scheduledOn: null,
+  scheduledStart: null,
+  scheduledEnd: null,
+  createdTime: "2026-10-01T21:40:00Z",
+  lastUpdatedTime: "2026-10-01T21:40:00Z",
   ...overrides,
 });

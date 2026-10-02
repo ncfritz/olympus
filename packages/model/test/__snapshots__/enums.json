@@ -361,6 +361,21 @@
     "NONE": 0,
     "RAR_PASS": 1
   },
+  "ReviewItemKind": {
+    "Priority": "priority",
+    "Todo": "todo"
+  },
+  "ReviewItemScope": {
+    "Day": "day",
+    "Week": "week"
+  },
+  "ReviewItemStatus": {
+    "Carried": "carried",
+    "Done": "done",
+    "Dropped": "dropped",
+    "Open": "open",
+    "Someday": "someday"
+  },
   "ReviewKind": {
     "Daily": "daily",
     "Weekly": "weekly"

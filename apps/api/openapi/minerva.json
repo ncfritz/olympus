@@ -4635,6 +4635,474 @@
           "Reviews"
         ]
       }
+    },
+    "/minerva/reviews/items": {
+      "get": {
+        "description": "The caller's day or week items whose periods start from one date to another, whatever their status: by period, priorities before to-dos, each in its order, each with its carry count. The range is at most 400 days.",
+        "operationId": "ListReviewItems",
+        "parameters": [
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "The last period start to include, as YYYY-MM-DD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "The first period start to include, as YYYY-MM-DD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": true,
+            "in": "query",
+            "description": "day or week",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The caller's items in the range.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListReviewItemsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the signed-in user's plan items for a range of periods",
+        "tags": [
+          "Review Items"
+        ]
+      }
+    },
+    "/minerva/reviews/items/order": {
+      "put": {
+        "description": "Puts a day's or week's priorities, or its to-dos, in the order given, which must name every one of them, whatever their status, exactly once.",
+        "operationId": "ReorderReviewItems",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ReorderReviewItems operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderReviewItemsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The period's items of that kind, in their new order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderReviewItemsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reorders the signed-in user's plan items of one period and kind",
+        "tags": [
+          "Review Items"
+        ]
+      }
+    },
+    "/minerva/review/{reviewId}/items": {
+      "post": {
+        "description": "Plans a priority or to-do for the period after the review's: a daily review plans the next day, a weekly review the next week. The item goes at the end of its kind, open.",
+        "operationId": "CreateReviewItem",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the review planning the item",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateReviewItem operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The item was planned.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the item"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateReviewItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Another item took the same place at the same time."
+          }
+        },
+        "summary": "Plans an item in one of the signed-in user's reviews",
+        "tags": [
+          "Review Items"
+        ]
+      }
+    },
+    "/minerva/reviews/item/{itemId}": {
+      "get": {
+        "description": "Returns a single item of the caller's. Another user's item is not found.",
+        "operationId": "DescribeReviewItem",
+        "parameters": [
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the item",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The item was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeReviewItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Describes one of the signed-in user's plan items",
+        "tags": [
+          "Review Items"
+        ]
+      },
+      "put": {
+        "description": "Retitles an item, sets it open, done, someday or dropped (done records when), or plans it on a day of its period, with an optional block of time. A carried item's status no longer changes; its copy carries on.",
+        "operationId": "UpdateReviewItem",
+        "parameters": [
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the item to change",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateReviewItem operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReviewItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The item with the changes applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateReviewItemResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The request named nothing to change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The item was carried, so its status no longer changes."
+          }
+        },
+        "summary": "Changes one of the signed-in user's plan items",
+        "tags": [
+          "Review Items"
+        ]
+      },
+      "delete": {
+        "description": "Removes an item for good. Removing a carried copy undoes the carry: the item it came from is open again.",
+        "operationId": "DeleteReviewItem",
+        "parameters": [
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the item to delete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The item was deleted."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Deletes one of the signed-in user's plan items",
+        "tags": [
+          "Review Items"
+        ]
+      }
+    },
+    "/minerva/reviews/item/{itemId}/carry": {
+      "post": {
+        "description": "Marks an open or someday item carried and makes its copy, open, for the period after the carrying review: the next day or the next week, in the item's scope unless another is asked for. The copy counts one more carry. An item is carried once; a done, dropped or carried item is refused.",
+        "operationId": "CarryReviewItem",
+        "parameters": [
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the item to carry",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CarryReviewItem operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CarryReviewItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The item was carried; the body is its copy.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the copy"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarryReviewItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The item is done, dropped or already carried."
+          }
+        },
+        "summary": "Carries one of the signed-in user's plan items on",
+        "tags": [
+          "Review Items"
+        ]
+      }
     }
   },
   "info": {
@@ -4666,6 +5134,9 @@
     },
     {
       "name": "Notes"
+    },
+    {
+      "name": "Review Items"
     },
     {
       "name": "Review Prompts"
@@ -8767,6 +9238,364 @@
         },
         "required": [
           "answer"
+        ]
+      },
+      "ReviewItemScope": {
+        "type": "string",
+        "description": "Whether a plan item is for a day or for an ISO week",
+        "enum": [
+          "day",
+          "week"
+        ]
+      },
+      "ReviewItemKind": {
+        "type": "string",
+        "description": "A plan item's kind: a priority or a to-do",
+        "enum": [
+          "priority",
+          "todo"
+        ]
+      },
+      "ReviewItemStatus": {
+        "type": "string",
+        "description": "Where a plan item stands",
+        "enum": [
+          "open",
+          "done",
+          "carried",
+          "someday",
+          "dropped"
+        ]
+      },
+      "ReviewItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the item"
+          },
+          "reviewId": {
+            "type": "string",
+            "description": "The review that planned the item, or carried it here"
+          },
+          "scope": {
+            "description": "Whether the item is for a day or a week",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewItemScope"
+              }
+            ]
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date",
+            "description": "The day the item is for, or the Monday of its week, as YYYY-MM-DD"
+          },
+          "kind": {
+            "description": "Whether the item is a priority or a to-do",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewItemKind"
+              }
+            ]
+          },
+          "title": {
+            "type": "string",
+            "description": "What is to be done, 1 to 200 characters"
+          },
+          "position": {
+            "type": "number",
+            "description": "Where the item sits among its period's items of its kind; lower comes first"
+          },
+          "status": {
+            "description": "open, done, carried (a copy carries on in a later period), someday or dropped",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewItemStatus"
+              }
+            ]
+          },
+          "doneTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the item was done"
+          },
+          "carriedFromId": {
+            "type": "string",
+            "description": "The item this one was carried from, while it exists"
+          },
+          "carryCount": {
+            "type": "number",
+            "description": "How many times the item has been carried to get here"
+          },
+          "scheduledOn": {
+            "type": "string",
+            "format": "date",
+            "description": "The day the item is planned on as YYYY-MM-DD: its own day, or a day of its week"
+          },
+          "scheduledStart": {
+            "type": "string",
+            "description": "When the item's block of time starts on its day, as HH:mm in the caller's local time"
+          },
+          "scheduledEnd": {
+            "type": "string",
+            "description": "When the item's block of time ends on its day, as HH:mm in the caller's local time"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the item was planned"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the item was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "reviewId",
+          "scope",
+          "periodStart",
+          "kind",
+          "title",
+          "position",
+          "status",
+          "carryCount",
+          "createdTime"
+        ]
+      },
+      "ListReviewItemsResponse": {
+        "type": "object",
+        "properties": {
+          "reviewItems": {
+            "description": "The caller's items for the periods in the range: by period, priorities before to-dos, each in its order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewItem"
+            }
+          }
+        },
+        "required": [
+          "reviewItems"
+        ]
+      },
+      "ReorderReviewItemsRequest": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "description": "Whether the items reordered are a day's or a week's",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewItemScope"
+              }
+            ]
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date",
+            "description": "The day, or the week's Monday, as YYYY-MM-DD"
+          },
+          "kind": {
+            "description": "The kind of item reordered",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewItemKind"
+              }
+            ]
+          },
+          "itemIds": {
+            "description": "Every one of the caller's item IDs of that period and kind, whatever their status, in the order they should appear.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "scope",
+          "periodStart",
+          "kind",
+          "itemIds"
+        ]
+      },
+      "ReorderReviewItemsResponse": {
+        "type": "object",
+        "properties": {
+          "reviewItems": {
+            "description": "The period's items of that kind, in their new order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewItem"
+            }
+          }
+        },
+        "required": [
+          "reviewItems"
+        ]
+      },
+      "BaseReviewItem": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "Whether the item is a priority or a to-do",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewItemKind"
+              }
+            ]
+          },
+          "title": {
+            "type": "string",
+            "description": "What is to be done, 1 to 200 characters"
+          }
+        },
+        "required": [
+          "kind",
+          "title"
+        ]
+      },
+      "CreateReviewItemRequest": {
+        "type": "object",
+        "properties": {
+          "reviewItem": {
+            "description": "The item to plan, at the end of its kind for the period after the review's.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseReviewItem"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewItem"
+        ]
+      },
+      "CreateReviewItemResponse": {
+        "type": "object",
+        "properties": {
+          "reviewItem": {
+            "description": "The item as planned.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewItem"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewItem"
+        ]
+      },
+      "DescribeReviewItemResponse": {
+        "type": "object",
+        "properties": {
+          "reviewItem": {
+            "description": "The item.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewItem"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewItem"
+        ]
+      },
+      "PartialReviewItem": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "What is to be done, 1 to 200 characters"
+          },
+          "status": {
+            "description": "open, done, carried (a copy carries on in a later period), someday or dropped",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewItemStatus"
+              }
+            ]
+          },
+          "scheduledOn": {
+            "type": "string",
+            "format": "date",
+            "description": "The day the item is planned on as YYYY-MM-DD: its own day, or a day of its week"
+          },
+          "scheduledStart": {
+            "type": "string",
+            "description": "When the item's block of time starts on its day, as HH:mm in the caller's local time"
+          },
+          "scheduledEnd": {
+            "type": "string",
+            "description": "When the item's block of time ends on its day, as HH:mm in the caller's local time"
+          }
+        }
+      },
+      "UpdateReviewItemRequest": {
+        "type": "object",
+        "properties": {
+          "reviewItem": {
+            "description": "The changes to the item. status may be open, done, someday or dropped (carrying has its own operation); scheduledOn, scheduledStart and scheduledEnd of null remove them.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialReviewItem"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewItem"
+        ]
+      },
+      "UpdateReviewItemResponse": {
+        "type": "object",
+        "properties": {
+          "reviewItem": {
+            "description": "The item with the changes applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewItem"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewItem"
+        ]
+      },
+      "CarryReviewItemRequest": {
+        "type": "object",
+        "properties": {
+          "reviewId": {
+            "type": "string",
+            "description": "The review doing the carrying; the copy is for the period after it"
+          },
+          "scope": {
+            "description": "Whether the copy is for the next day or the next week; the item's own scope when absent",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewItemScope"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewId"
+        ]
+      },
+      "CarryReviewItemResponse": {
+        "type": "object",
+        "properties": {
+          "reviewItem": {
+            "description": "The copy, open in its new period.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewItem"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewItem"
         ]
       }
     }
