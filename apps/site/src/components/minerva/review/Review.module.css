@@ -599,9 +599,15 @@
 }
 
 .rateValue {
-  width: 24px;
-  font-size: 12px;
-  color: rgba(0, 0, 0, 0.55);
+  width: 28px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+/* A hovered value, not yet chosen. */
+.ratePreview {
+  color: rgba(0, 0, 0, 0.35);
 }
 
 /* The add box under a list: its input and button joined, as AntD's compact
