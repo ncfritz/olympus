@@ -47,8 +47,11 @@ export interface FocusViewProps {
   goals: Goal[];
   categories: GoalCategory[];
   cycle?: GoalCycle;
+  /** Every cycle of the caller's, to know whether one is planned next. */
+  cycles: GoalCycle[];
   execution?: GoalExecution;
   today: string;
+  onPlanCycle: () => void;
   onCheckIn: (goal: Goal) => void;
   onReplan: (goal: Goal) => void;
   onDrop: (goal: Goal) => void;
@@ -195,7 +198,10 @@ const CycleBanner: React.FunctionComponent<{
   execution?: GoalExecution;
   cycleExecution?: GoalExecution;
   today: string;
-}> = ({ cycle, execution, cycleExecution, today }) => {
+  /** Offer to plan the next cycle: none is planned after this one. */
+  canPlan: boolean;
+  onPlan: () => void;
+}> = ({ cycle, execution, cycleExecution, today, canPlan, onPlan }) => {
   const box: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
@@ -209,10 +215,29 @@ const CycleBanner: React.FunctionComponent<{
   };
   if (!cycle) {
     return (
-      <div style={box}>
-        <Text type={"secondary"}>
-          No cycle is running. Add one to plan in 12-week cycles.
-        </Text>
+      <div
+        style={{ ...box, border: "1px dashed #91caff", background: "#f5faff" }}
+      >
+        <Flex vertical={true} gap={4} style={{ flex: 1 }}>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: "#0958d9",
+            }}
+          >
+            No cycle running
+          </span>
+          <span>
+            Plan in 12-week cycles: goals set for a cycle take its dates, and
+            Focus shows its week and execution.
+          </span>
+        </Flex>
+        <Button type={"primary"} icon={<CalendarOutlined />} onClick={onPlan}>
+          Plan a cycle
+        </Button>
       </div>
     );
   }
@@ -320,6 +345,11 @@ const CycleBanner: React.FunctionComponent<{
           cycle.currentWeek !== undefined ? `weeks 1–${cycle.currentWeek}` : "",
         )}
       </Flex>
+      {canPlan && (
+        <Button icon={<CalendarOutlined />} onClick={onPlan}>
+          Plan next cycle
+        </Button>
+      )}
     </div>
   );
 };
@@ -348,8 +378,10 @@ const FocusView: React.FunctionComponent<FocusViewProps> = ({
   goals,
   categories,
   cycle,
+  cycles,
   execution,
   today,
+  onPlanCycle,
   onCheckIn,
   onReplan,
   onDrop,
@@ -477,6 +509,8 @@ const FocusView: React.FunctionComponent<FocusViewProps> = ({
               execution={execution}
               cycleExecution={cycleExecution}
               today={today}
+              canPlan={!cycles.some((c) => c.status === "upcoming")}
+              onPlan={onPlanCycle}
             />
             <Collapse
               ghost={true}

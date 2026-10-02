@@ -1,5 +1,9 @@
 import type { FullGoal, Goal } from "@ncfritz/olympus-sdk/minerva";
-import { PlusOutlined, SettingOutlined } from "@ant-design/icons";
+import {
+  CalendarOutlined,
+  PlusOutlined,
+  SettingOutlined,
+} from "@ant-design/icons";
 import { Button, Flex, message, Space, Spin, Typography } from "antd";
 import { DateTime } from "luxon";
 import { useRouter } from "next/router";
@@ -8,6 +12,8 @@ import goalsApi from "../../../api/goalsApi";
 import BoardView from "../../../components/minerva/goals/BoardView";
 import CategoriesDrawer from "../../../components/minerva/goals/CategoriesDrawer";
 import CheckinModal from "../../../components/minerva/goals/CheckinModal";
+import CyclesDrawer from "../../../components/minerva/goals/CyclesDrawer";
+import PlanCycleModal from "../../../components/minerva/goals/PlanCycleModal";
 import CloseGoalModal from "../../../components/minerva/goals/CloseGoalModal";
 import FocusView from "../../../components/minerva/goals/FocusView";
 import RoadmapView from "../../../components/minerva/goals/RoadmapView";
@@ -49,6 +55,8 @@ const GoalsPage: React.FunctionComponent = () => {
     categoryId?: string;
   }>({ open: false });
   const [managing, setManaging] = useState(false);
+  const [managingCycles, setManagingCycles] = useState(false);
+  const [planning, setPlanning] = useState(false);
   const [checkingIn, setCheckingIn] = useState<Goal>();
   const [dropping, setDropping] = useState<Goal>();
   const [achieving, setAchieving] = useState<Goal>();
@@ -123,6 +131,13 @@ const GoalsPage: React.FunctionComponent = () => {
           <Space size={8}>
             <Button
               type={"text"}
+              icon={<CalendarOutlined />}
+              onClick={() => setManagingCycles(true)}
+            >
+              Manage cycles
+            </Button>
+            <Button
+              type={"text"}
               icon={<SettingOutlined />}
               onClick={() => setManaging(true)}
             >
@@ -168,8 +183,10 @@ const GoalsPage: React.FunctionComponent = () => {
               goals={shown}
               categories={data.categories}
               cycle={cycle}
+              cycles={data.cycles}
               execution={data.execution}
               today={today}
+              onPlanCycle={() => setPlanning(true)}
               onCheckIn={setCheckingIn}
               onReplan={replan}
               onDrop={setDropping}
@@ -253,6 +270,24 @@ const GoalsPage: React.FunctionComponent = () => {
         onClose={() => setDropping(undefined)}
         onClosed={() => {
           setDropping(undefined);
+          void data.reload();
+        }}
+      />
+      <CyclesDrawer
+        open={managingCycles}
+        cycles={data.cycles}
+        goals={data.goals}
+        today={today}
+        onClose={() => setManagingCycles(false)}
+        onChanged={data.reload}
+      />
+      <PlanCycleModal
+        open={planning}
+        cycles={data.cycles}
+        today={today}
+        onClose={() => setPlanning(false)}
+        onCreated={() => {
+          setPlanning(false);
           void data.reload();
         }}
       />

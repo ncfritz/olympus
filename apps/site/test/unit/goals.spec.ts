@@ -8,6 +8,10 @@ import type {
 import { describe, expect, it } from "vitest";
 import {
   bandSegments,
+  cycleSpan,
+  cycleSpanText,
+  nextCycleDefaults,
+  nextMonday,
   cycleBands,
   dueText,
   emptyGoalForm,
@@ -561,5 +565,63 @@ describe("bandSegments", () => {
       ["buffer", false, true],
       ["band", true, true],
     ]);
+  });
+});
+
+describe("cycles", () => {
+  const cycle4 = {
+    id: "c4",
+    name: "Cycle 4",
+    startDate: "2026-09-07",
+    weeks: 12,
+    bufferWeeks: 1,
+    endDate: "2026-11-29",
+    bufferEndDate: "2026-12-06",
+  } as GoalCycle;
+
+  it("works out a cycle's end and buffer", () => {
+    expect(cycleSpan("2026-09-07", 12, 1)).toEqual({
+      endDate: "2026-11-29",
+      bufferEndDate: "2026-12-06",
+    });
+    expect(cycleSpan("2026-12-07", 6, 0)).toEqual({
+      endDate: "2027-01-17",
+      bufferEndDate: "2027-01-17",
+    });
+    expect(cycleSpanText("2026-12-07", 12, 1, TODAY)).toBe(
+      "Dec 7 – Feb 28, 2027, buffer to Mar 7, 2027",
+    );
+  });
+
+  it("finds the next Monday, today when it is one", () => {
+    expect(nextMonday("2026-10-01")).toBe("2026-10-05");
+    expect(nextMonday("2026-10-05")).toBe("2026-10-05");
+    expect(nextMonday("2026-10-04")).toBe("2026-10-05");
+  });
+
+  it("plans the next cycle from the latest", () => {
+    expect(nextCycleDefaults([cycle4], TODAY)).toEqual({
+      name: "Cycle 5",
+      startDate: "2026-12-07",
+      weeks: 12,
+      bufferWeeks: 1,
+    });
+  });
+
+  it("starts next Monday when the latest cycle is long past", () => {
+    const old = { ...cycle4, name: "Spring", bufferEndDate: "2026-06-07" };
+    expect(nextCycleDefaults([old], TODAY)).toMatchObject({
+      name: "Cycle 2",
+      startDate: "2026-10-05",
+    });
+  });
+
+  it("plans Cycle 1 when there are none", () => {
+    expect(nextCycleDefaults([], TODAY)).toEqual({
+      name: "Cycle 1",
+      startDate: "2026-10-05",
+      weeks: 12,
+      bufferWeeks: 1,
+    });
   });
 });

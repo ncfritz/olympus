@@ -730,3 +730,75 @@ export const bandSegments = (bands: Band[]): BandSegment[] => {
     roundRight: !(i < pieces.length - 1 && touches(pieces[i + 1].from, p.to)),
   }));
 };
+
+/* Cycles ------------------------------------------------------------------ */
+
+/** A cycle's last execution day and the last of its buffer, as YYYY-MM-DD. */
+export const cycleSpan = (
+  startDate: string,
+  weeks: number,
+  bufferWeeks: number,
+): { endDate: string; bufferEndDate: string } => {
+  const start = DateTime.fromISO(startDate);
+  const end = start.plus({ days: weeks * 7 - 1 });
+  return {
+    endDate: end.toISODate()!,
+    bufferEndDate: end.plus({ days: bufferWeeks * 7 }).toISODate()!,
+  };
+};
+
+/** A cycle's dates in words: "Dec 7 – Feb 28, 2027, buffer to Mar 7". */
+export const cycleSpanText = (
+  startDate: string,
+  weeks: number,
+  bufferWeeks: number,
+  today: string,
+): string => {
+  const { endDate, bufferEndDate } = cycleSpan(startDate, weeks, bufferWeeks);
+  return `${formatDay(startDate, today)} – ${formatDay(endDate, today)}${
+    bufferWeeks > 0 ? `, buffer to ${formatDay(bufferEndDate, today)}` : ""
+  }`;
+};
+
+/** Today if it is a Monday, else the Monday after. */
+export const nextMonday = (today: string): string => {
+  const day = DateTime.fromISO(today);
+  return day.plus({ days: (8 - day.weekday) % 7 }).toISODate()!;
+};
+
+/**
+ * The next cycle, filled in from the latest: the next number in its name,
+ * the Monday after its buffer (or the next Monday, when that has passed),
+ * the same weeks and buffer. With no cycles: Cycle 1, 12 weeks and 1
+ * buffer week, from the next Monday.
+ */
+export const nextCycleDefaults = (
+  cycles: GoalCycle[],
+  today: string,
+): { name: string; startDate: string; weeks: number; bufferWeeks: number } => {
+  const latest = [...cycles].sort((a, b) =>
+    b.startDate.localeCompare(a.startDate),
+  )[0];
+  if (!latest) {
+    return {
+      name: "Cycle 1",
+      startDate: nextMonday(today),
+      weeks: 12,
+      bufferWeeks: 1,
+    };
+  }
+  const number = /^(.*?)(\d+)\s*$/.exec(latest.name);
+  const name = number
+    ? `${number[1]}${Number(number[2]) + 1}`
+    : `Cycle ${cycles.length + 1}`;
+  const afterBuffer = DateTime.fromISO(latest.bufferEndDate)
+    .plus({ days: 1 })
+    .toISODate()!;
+  const soonest = nextMonday(today);
+  return {
+    name,
+    startDate: afterBuffer >= soonest ? nextMonday(afterBuffer) : soonest,
+    weeks: latest.weeks,
+    bufferWeeks: latest.bufferWeeks,
+  };
+};

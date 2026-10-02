@@ -1,5 +1,6 @@
 import {
   type BaseGoalCategory,
+  type BaseGoalCycle,
   type BaseGoalCheckin,
   type BaseGoalHabitLog,
   type BaseGoalMilestone,
@@ -9,10 +10,12 @@ import {
   type CreateGoalRequest,
   createGoalCategory,
   createGoalCheckin,
+  createGoalCycle,
   createGoalMilestone,
   deleteGoal,
   deleteGoalCategory,
   deleteGoalCheckin,
+  deleteGoalCycle,
   deleteGoalHabitLog,
   deleteGoalMilestone,
   describeGoal,
@@ -38,6 +41,7 @@ import {
   logGoalHabit,
   type PartialGoalCategory,
   type PartialGoalCheckin,
+  type PartialGoalCycle,
   type PartialGoalMilestone,
   reorderGoalCategories,
   reorderGoalMilestones,
@@ -48,6 +52,7 @@ import {
   updateGoalCategory,
   type UpdateGoalRequest,
   updateGoalCheckin,
+  updateGoalCycle,
   updateGoalMilestone,
 } from "@ncfritz/olympus-sdk/minerva";
 
@@ -301,6 +306,28 @@ class GoalsApi {
   async listCycles(): Promise<GoalCycle[]> {
     const { data } = await listGoalCycles({ ...this.tz });
     return data.goalCycles;
+  }
+
+  async createCycle(goalCycle: BaseGoalCycle): Promise<GoalCycle> {
+    const { data } = await createGoalCycle({ body: { goalCycle }, ...this.tz });
+    return data.goalCycle;
+  }
+
+  async updateCycle(
+    cycleId: string,
+    goalCycle: PartialGoalCycle,
+  ): Promise<void> {
+    await updateGoalCycle({
+      path: { cycleId },
+      body: { goalCycle },
+      ...this.tz,
+      validateStatus: (status) => status === 200 || status === 304,
+    });
+  }
+
+  /** Deletes a cycle; its goals keep their dates and become custom-horizon goals. */
+  async deleteCycle(cycleId: string): Promise<void> {
+    await deleteGoalCycle({ path: { cycleId } });
   }
 }
 
