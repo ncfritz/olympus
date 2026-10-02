@@ -128,7 +128,10 @@ const WrapUpStep: React.FunctionComponent<WrapUpStepProps> = ({
             </Card>
           </div>
         </section>
-        <section className={styles.wrapColumn} aria-label={"Tomorrow"}>
+        <section
+          className={`${styles.wrapColumn} ${styles.wrapTomorrow}`}
+          aria-label={"Tomorrow"}
+        >
           <h2 className={styles.wrapHeading}>Tomorrow</h2>
           <div className={styles.wrapScroll}>
             <Card {...flat} title={"Top priorities"}>

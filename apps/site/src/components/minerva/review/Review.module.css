@@ -140,6 +140,15 @@
   transform: translateX(-50%);
 }
 
+/* The labels at the bar's ends sit inside it, not half past its edges. */
+.tick:first-child {
+  transform: none;
+}
+
+.tick:last-child {
+  transform: translateX(-100%);
+}
+
 /* A row in a list: something on the left, its details, actions at right. */
 .row {
   display: flex;
@@ -777,7 +786,6 @@
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 32px;
   margin-top: 8px;
 }
 
@@ -803,7 +811,12 @@
   display: none;
 }
 
+/* Today and tomorrow, a divider between them. */
 .wrapToday {
+  padding-right: 16px;
+}
+
+.wrapTomorrow {
   border-left: 1px solid #f0f0f0;
   padding-left: 16px;
 }
@@ -812,12 +825,22 @@
 @media (max-width: 1200px) {
   .wrapColumns {
     grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
     overflow-y: auto;
     scrollbar-width: none;
   }
 
   .wrapScroll {
     overflow-y: visible;
+  }
+
+  .wrapToday {
+    padding-right: 0;
+  }
+
+  .wrapTomorrow {
+    border-left: 0;
+    padding-left: 0;
   }
 }
 
