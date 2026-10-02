@@ -1,8 +1,8 @@
 import {
   ArrowRightOutlined,
-  CheckOutlined,
-  ClockCircleOutlined,
-  StopOutlined,
+  CheckCircleFilled,
+  ClockCircleFilled,
+  CloseCircleFilled,
 } from "@ant-design/icons";
 import type { ReviewItem } from "@ncfritz/olympus-sdk/minerva";
 import { ConfigProvider, Empty, Radio, Tag, Typography } from "antd";
@@ -29,7 +29,11 @@ const LOOKS: Record<
   string,
   { color: string; icon: React.ReactNode; tint: string }
 > = {
-  done: { color: "#003f5c", icon: <CheckOutlined />, tint: styles.tintDone },
+  done: {
+    color: "#003f5c",
+    icon: <CheckCircleFilled />,
+    tint: styles.tintDone,
+  },
   tomorrow: {
     color: "#7a4f99",
     icon: <ArrowRightOutlined />,
@@ -42,16 +46,21 @@ const LOOKS: Record<
   },
   later: {
     color: "#ef527a",
-    icon: <ClockCircleOutlined />,
+    icon: <ClockCircleFilled />,
     tint: styles.tintLater,
   },
-  drop: { color: "#ffa600", icon: <StopOutlined />, tint: styles.tintDrop },
+  drop: {
+    color: "#ffa600",
+    icon: <CloseCircleFilled />,
+    tint: styles.tintDrop,
+  },
 };
 
 export interface TriageListProps<D extends string = Triage> {
   items: ReviewItem[];
   disabled?: boolean;
-  onDecide: (item: ReviewItem, decision: D) => Promise<void>;
+  /** A decision; null when the chosen one is clicked again, taking it back. */
+  onDecide: (item: ReviewItem, decision: D | null) => Promise<void>;
   /** The decisions offered, and the one an item's status shows: a day's by default. */
   decisions?: { label: string; value: D }[];
   decisionOf?: (status: ReviewItem["status"]) => D | undefined;
@@ -63,8 +72,9 @@ export interface TriageListProps<D extends string = Triage> {
 
 /**
  * Planned items, each with its decision: by default a day's, done, on to
- * tomorrow, later (someday) or dropped. A carried item stays carried; its
- * copy carries on in the next period's plan.
+ * tomorrow, later (someday) or dropped. Clicking the chosen decision again
+ * takes it back; a carried item can be decided again too, which takes its
+ * copy back first.
  */
 const TriageList = <D extends string = Triage>({
   items,
@@ -101,7 +111,7 @@ const TriageList = <D extends string = Triage>({
               size={"small"}
               buttonStyle={"solid"}
               aria-label={`What happens to ${item.title}`}
-              disabled={disabled || item.status === "carried"}
+              disabled={disabled}
               value={chosen ?? null}
               onChange={(e) => void onDecide(item, e.target.value as D)}
             >
@@ -114,7 +124,16 @@ const TriageList = <D extends string = Triage>({
                     key={decision.value}
                     theme={{ token: { colorPrimary: look.color } }}
                   >
-                    <Radio.Button value={decision.value}>
+                    <Radio.Button
+                      value={decision.value}
+                      // Clicking the chosen decision again takes it back;
+                      // a radio sends no change for that, so it is caught here.
+                      onClick={() => {
+                        if (chosen === decision.value) {
+                          void onDecide(item, null);
+                        }
+                      }}
+                    >
                       <span
                         className={
                           chosen === decision.value ? undefined : look.tint

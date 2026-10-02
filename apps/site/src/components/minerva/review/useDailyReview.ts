@@ -23,6 +23,7 @@ import {
   useAnswerActions,
   useStartReview,
 } from "./reviewHooks";
+import { applyTriage } from "./triage";
 
 export type DailyReviewData = AnswerActions & {
   loading: boolean;
@@ -44,7 +45,8 @@ export type DailyReviewData = AnswerActions & {
   week?: WeekPlan;
   setRating: (key: RatingField["key"], value: number | null) => Promise<void>;
   setStep: (step: number) => Promise<void>;
-  triage: (item: ReviewItem, decision: Triage) => Promise<void>;
+  /** A decision on a planned item; null takes it back. */
+  triage: (item: ReviewItem, decision: Triage | null) => Promise<void>;
   addItem: (kind: ReviewItemKind, title: string) => Promise<void>;
   removeItem: (item: ReviewItem) => Promise<void>;
   reorderItems: (kind: ReviewItemKind, ids: string[]) => Promise<void>;
@@ -175,28 +177,20 @@ export const useDailyReview = (date: DateTime): DailyReviewData => {
     }
   };
 
-  const triage = async (item: ReviewItem, decision: Triage) => {
+  const triage = async (item: ReviewItem, decision: Triage | null) => {
     try {
-      if (decision === "tomorrow") {
-        const current = await ensureReview();
-        // Only an open or someday item is carried: one marked done or
-        // dropped by mistake is opened again first.
-        if (item.status === "done" || item.status === "dropped") {
-          await reviewsApi.updateItem(item.id, { status: "open" });
-        }
-        await reviewsApi.carryItem(item.id, current.id);
-      } else {
-        await reviewsApi.updateItem(item.id, {
-          status:
-            decision === "done"
-              ? "done"
-              : decision === "later"
-                ? "someday"
-                : "dropped",
-        });
-      }
+      await applyTriage(
+        item,
+        decision === "tomorrow" ? "carry" : decision,
+        items,
+        async () => {
+          const current = await ensureReview();
+          await reviewsApi.carryItem(item.id, current.id);
+        },
+      );
       await refreshItems();
     } catch (error) {
+      await refreshItems().catch(() => undefined);
       fail(error, "Could not save that");
     }
   };

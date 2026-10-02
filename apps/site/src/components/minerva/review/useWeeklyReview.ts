@@ -20,6 +20,7 @@ import {
   useAnswerActions,
   useStartReview,
 } from "./reviewHooks";
+import { applyTriage } from "./triage";
 
 export type WeeklyReviewData = AnswerActions & {
   loading: boolean;
@@ -51,7 +52,8 @@ export type WeeklyReviewData = AnswerActions & {
   setRating: (key: RatingField["key"], value: number | null) => Promise<void>;
   setStep: (step: number) => Promise<void>;
   quickScore: (day: string, overall: number) => Promise<void>;
-  triage: (item: ReviewItem, decision: WeekTriage) => Promise<void>;
+  /** A decision on a planned item; null takes it back. */
+  triage: (item: ReviewItem, decision: WeekTriage | null) => Promise<void>;
   pin: (target: { answerId: string } | { noteId: string }) => Promise<void>;
   unpin: (pin: ReviewPin) => Promise<void>;
   addItem: (kind: ReviewItemKind, title: string) => Promise<void>;
@@ -205,28 +207,20 @@ export const useWeeklyReview = (week: DateTime): WeeklyReviewData => {
     }
   };
 
-  const triage = async (item: ReviewItem, decision: WeekTriage) => {
+  const triage = async (item: ReviewItem, decision: WeekTriage | null) => {
     try {
-      if (decision === "next") {
-        const current = await ensureReview();
-        // Only an open or someday item is carried: one marked done or
-        // dropped by mistake is opened again first.
-        if (item.status === "done" || item.status === "dropped") {
-          await reviewsApi.updateItem(item.id, { status: "open" });
-        }
-        await reviewsApi.carryItem(item.id, current.id, "week");
-      } else {
-        await reviewsApi.updateItem(item.id, {
-          status:
-            decision === "done"
-              ? "done"
-              : decision === "later"
-                ? "someday"
-                : "dropped",
-        });
-      }
+      await applyTriage(
+        item,
+        decision === "next" ? "carry" : decision,
+        [...dayItems, ...weekItems],
+        async () => {
+          const current = await ensureReview();
+          await reviewsApi.carryItem(item.id, current.id, "week");
+        },
+      );
       await refreshItems();
     } catch (error) {
+      await refreshItems().catch(() => undefined);
       fail(error, "Could not save that");
     }
   };

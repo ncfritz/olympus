@@ -11,6 +11,11 @@ import { apiProblems } from "../../../utils/goals";
 
 /** Says what went wrong: the API's problems, else the fallback. */
 export const fail = (error: unknown, fallback: string) => {
+  // A reason of the page's own, rather than the API's.
+  if (error instanceof Error && !("response" in error)) {
+    message.error(error.message);
+    return;
+  }
   const problems = apiProblems(error);
   message.error(
     problems[0] === "Something went wrong; try again."
