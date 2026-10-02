@@ -751,6 +751,7 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
                     background: "#ffffff",
                     borderBottom: "2px solid #ff4d4f",
                     whiteSpace: "nowrap",
+                    zIndex: 2,
                   }}
                 >
                   {DateTime.fromISO(today).toFormat("LLL d")}
@@ -804,21 +805,23 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
                 ))}
               </SortableContext>
             </DndContext>
-            {todayAt !== undefined && (
-              <div
-                aria-hidden={true}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  bottom: 0,
-                  left: `calc(${label}px + (100% - ${label}px) * ${todayAt})`,
-                  borderLeft: "2px solid #ff4d4f",
-                  pointerEvents: "none",
-                }}
-              />
-            )}
           </div>
         </div>
+        {/* Today, from the bands to the bottom, over the bars. */}
+        {todayAt !== undefined && (
+          <div
+            aria-hidden={true}
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: `calc(${label}px + (100% - ${label}px) * ${todayAt})`,
+              borderLeft: "2px solid #ff4d4f",
+              pointerEvents: "none",
+              zIndex: 1,
+            }}
+          />
+        )}
       </div>
     </LabelWidth.Provider>
   );
