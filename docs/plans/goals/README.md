@@ -384,31 +384,66 @@ Turbo tasks pass.
 
 **Sign-off:** G5–G7 from the OpenAPI page.
 
-## Phase 5 — The site
+## Phase 5 — The site — built 2026-10-01, not signed off
 
 Built with AntD's own components in their standard style; charts with
-Highcharts, which the site already uses; dates with Luxon.
+Highcharts, which the site already uses; dates with Luxon, and Day.js
+for AntD's date pickers (now a direct dependency of the site).
 
-1. **`goalsApi.ts`** and **`tagsApi.ts`** over the SDK, as the other
-   `src/api` classes.
-2. **Goals home** (`/minerva/goals`): the Board, Roadmap and Focus views
-   behind one `Segmented` switch, the horizon, tag and status filters,
-   the summary strip. Built in the order chosen in the design review
-   (see [design.md](design.md#open)); the first view ships alone if
-   needed.
-3. **Goal page** (`/minerva/goals/:goalId`): header, the type's panel
-   (outcome chart with pace band and projection; milestone checklist;
-   habit 12-week grid with streaks; achievement toggle), sub-goals,
-   linked tasks placeholder, and the right-hand sider with the check-in
-   form and history.
-4. **New and edit goal**: the form that adapts to the type (or the guided
-   steps, per the design review), in a drawer.
-5. **Check-in**: the sider form on the goal page and the same form as a
-   modal from any list row.
-6. **Categories and tags**: a management drawer (reorder, vision, colour,
-   archive), and a tag picker that creates tags inline.
-7. **Tests**: component tests with MSW for the goal page and the check-in
-   form; a Playwright smoke of create → check in → close.
+Decided in the design review (2026-10-01): all three home views ship as
+one page behind a `Segmented` switch, built Board, then Focus, then
+Roadmap; new goal is one adaptive form; Focus ranks by health, then the
+due date; the site keeps its convention of unit-testing DOM-free modules
+only, so the browser is signed off by G8 rather than by MSW and
+Playwright tests.
+
+1. **`goalsApi.ts`** and **`tagsApi.ts`** over the SDK: **done**. Every
+   call that depends on today sends the browser's timezone.
+2. **Goals home** (`/minerva/goals`): **done** — Board, Focus and
+   Roadmap behind one `Segmented` switch (kept in the URL as `?view=`),
+   over the horizon (all, the year, the quarter, the current cycle,
+   ongoing), tag and status filters, and the summary strip (active goals
+   by health, this week's execution against 85 %, the cycle's week).
+   - **Board**: a card per category with its colour, icon, vision line
+     and health counts; goals as a tree three levels deep, with "n more
+     below" to go further; "Add goal to <category>".
+   - **Focus**: the current cycle (week, this week's and the cycle's
+     execution); active goals needing attention, then on track, each with
+     Check in; the decision banner (Replan opens the form, Push due date
+     moves it, Drop opens the close-out); at the side today's habits
+     (ticked off in one step), the week's done-against-due bars and what
+     is due next.
+   - **Roadmap**: the year with quarter and cycle bands (buffer
+     hatched), months, a lane per category, bars filled to progress,
+     dashed ongoing habits, achievement diamonds, a today line; other
+     years a click away.
+3. **Goal page** (`/minerva/goals/:goalId`): **done** — the header and
+   its actions (edit; close as achieved, missed or dropped; pause and
+   resume; reopen; delete and restore), the decision banner and the
+   close-out, the type's panel (outcome numbers and chart with pace band
+   and projection; milestone checklist with add, move, remove and the
+   next one marked, or a slider when set by hand; habit adherence,
+   streaks, 12-week grid and today's log; achievement with days left and
+   Mark achieved), sub-goals with Add sub-goal, a linked-tasks
+   placeholder, and the sider with the check-in form and history.
+   Linked notes come with phase 6.
+4. **New and edit goal**: **done** — one drawer form: the type first
+   (fixed once created), then what, why, category and parent; horizon,
+   cycle and dates; how progress comes (rollup, manual progress, an
+   outcome's start, target and unit, a habit's rule, milestones on
+   create); tolerance, tags, weight, and draft or active.
+5. **Check-in**: **done** — the sider form on the goal page and the
+   same form as a modal from Focus. It starts from the suggestion (today,
+   the current value, pace's confidence picked) and refuses future days.
+6. **Categories and tags**: **done** — a management drawer (drag to
+   reorder, colour, icon, name, vision, archive, delete with a category
+   to move the goals to, add) and a tag picker that creates tags inline.
+7. **Tests**: **done** — `src/utils/goals.ts` holds the words, order and
+   arithmetic the views draw (metric text, Focus ranking, the goal tree,
+   horizon filtering, roadmap geometry, an outcome's numbers and series,
+   the habit grid, form to request and back) with unit tests in
+   `test/unit/goals.spec.ts`. The site builds (`next build`) with both
+   pages.
 
 **Sign-off:** G1–G8 on the site.
 

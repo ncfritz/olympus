@@ -122,6 +122,16 @@ recorded exception.
    and the history shows the source.
 4. Every icon-only button has an accessible name; health is shown with
    words or an icon, not colour alone.
+5. A tree four levels deep shows three on the Board, and "more below"
+   shows the fourth.
+6. Focus lists a goal needing a decision first; Replan, Push due date and
+   Drop each do what they say.
+7. Today's habits tick off from Focus and from a habit's page, and the
+   week's bars and execution follow.
+8. Categories reorder, recolour, archive and delete (moving their goals)
+   from the drawer; a tag typed in the goal form is created.
+9. The goal page's panel matches each type, and closing, reopening,
+   deleting and restoring work from its menu.
 
 ## G9 — Notes on goals
 

@@ -54,13 +54,16 @@ and the check-in history with each entry's source.
 
 ## Not drawn yet
 
-New goal (one adaptive form or guided steps), the category page, the
-check-in modal on its own, the review panels (daily habits, the weekly
-check-in in Reflect), iOS.
+The category page, the review panels (daily habits, the weekly check-in
+in Reflect), iOS. The new goal form and the check-in modal were built in
+phase 5 without drawings, in AntD's standard style.
 
-## Open
+## Decided
 
-1. Which home view ships first, and whether all three ship as views of one
-   page (as drawn) or one is chosen.
-2. New goal: one adaptive form or guided steps.
-3. Whether Focus's ranking should weigh the due date as well as health.
+In the design review of 2026-10-01:
+
+1. All three home views ship as views of one page, as drawn, built in
+   the order Board, Focus, Roadmap.
+2. New goal is one adaptive form, in a drawer; the same form edits.
+3. Focus ranks goals needing a decision first, then by health, the
+   soonest due breaking ties.
