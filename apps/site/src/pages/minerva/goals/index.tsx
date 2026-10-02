@@ -26,6 +26,7 @@ import CategoriesDrawer from "../../../components/minerva/goals/CategoriesDrawer
 import CheckinModal from "../../../components/minerva/goals/CheckinModal";
 import CloseGoalModal from "../../../components/minerva/goals/CloseGoalModal";
 import FocusView from "../../../components/minerva/goals/FocusView";
+import RoadmapView from "../../../components/minerva/goals/RoadmapView";
 import GoalFormDrawer from "../../../components/minerva/goals/GoalFormDrawer";
 import GoalsBreadcrumbs from "../../../components/minerva/goals/GoalsBreadcrumbs";
 import SummaryStrip from "../../../components/minerva/goals/SummaryStrip";
@@ -41,19 +42,9 @@ const { Title, Text } = Typography;
 
 type View = "board" | "roadmap" | "focus";
 
-const VIEWS: {
-  value: View;
-  label: string;
-  icon: React.ReactNode;
-  disabled?: boolean;
-}[] = [
+const VIEWS: { value: View; label: string; icon: React.ReactNode }[] = [
   { value: "board", label: "Board", icon: <AppstoreOutlined /> },
-  {
-    value: "roadmap",
-    label: "Roadmap",
-    icon: <ScheduleOutlined />,
-    disabled: true,
-  },
+  { value: "roadmap", label: "Roadmap", icon: <ScheduleOutlined /> },
   { value: "focus", label: "Focus", icon: <AimOutlined /> },
 ];
 
@@ -134,7 +125,6 @@ const GoalsPage: React.FunctionComponent = () => {
                 value: v.value,
                 label: v.label,
                 icon: v.icon,
-                disabled: v.disabled,
               }))}
             />
             <Button
@@ -221,6 +211,15 @@ const GoalsPage: React.FunctionComponent = () => {
               onDrop={setDropping}
               onChanged={() => void data.reload()}
             />
+          ) : view === "roadmap" ? (
+            <div style={{ overflowX: "auto" }}>
+              <RoadmapView
+                goals={shown}
+                categories={data.categories}
+                cycles={data.cycles}
+                today={today}
+              />
+            </div>
           ) : (
             view === "board" && (
               <BoardView
