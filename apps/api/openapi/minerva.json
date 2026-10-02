@@ -4642,7 +4642,7 @@
     },
     "/minerva/review/{reviewId}/answer/{promptId}": {
       "put": {
-        "description": "Writes or rewrites the answer to a prompt of the caller's, of the review's kind. An answer saved again keeps its created time; one saved after the review was completed is marked as edited later. A body that is empty or only whitespace removes the answer.",
+        "description": "Writes or rewrites the answer to a text prompt of the caller's, of the review's kind; a list prompt's items have operations of their own. An answer saved again keeps its created time; one saved after the review was completed is marked as edited later. A body that is empty or only whitespace removes the answer.",
         "operationId": "UpdateReviewAnswer",
         "parameters": [
           {
@@ -4713,7 +4713,397 @@
             }
           }
         },
-        "summary": "Saves the answer to one of a review's prompts",
+        "summary": "Saves the answer to one of a review's text prompts",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/minerva/review/{reviewId}/answer/{promptId}/items": {
+      "post": {
+        "description": "Adds an item at the end of a list prompt's answer in one of the caller's reviews; the prompt must be the caller's and of the review's kind. Items have no route of their own, so no Location.",
+        "operationId": "CreateReviewAnswerItem",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the review",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "promptId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the list prompt",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateReviewAnswerItem operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewAnswerItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The item was added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateReviewAnswerItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Another item took the same place at the same time."
+          }
+        },
+        "summary": "Adds an item to one of a review's list prompts",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/minerva/review/{reviewId}/answer/{promptId}/items/order": {
+      "put": {
+        "description": "Puts a list prompt's items in one of the caller's reviews in the order given, which must name every one of them exactly once.",
+        "operationId": "ReorderReviewAnswerItems",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the review",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "promptId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the list prompt",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ReorderReviewAnswerItems operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderReviewAnswerItemsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The prompt's items in the review, in their new order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderReviewAnswerItemsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reorders the items of one of a review's list prompts",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/minerva/review/{reviewId}/answer/{promptId}/item/{answerId}": {
+      "put": {
+        "description": "Rewrites one item of a list prompt's answer in one of the caller's reviews. One rewritten after the review was completed is marked as edited later.",
+        "operationId": "UpdateReviewAnswerItem",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the review",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "promptId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the list prompt",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "answerId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the item",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateReviewAnswerItem operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReviewAnswerItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The item as saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateReviewAnswerItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Rewrites an item of one of a review's list prompts",
+        "tags": [
+          "Reviews"
+        ]
+      },
+      "delete": {
+        "description": "Removes one item of a list prompt's answer in one of the caller's reviews. A to-do it became stays.",
+        "operationId": "DeleteReviewAnswerItem",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the review",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "promptId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the list prompt",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "answerId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the item",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The item was removed."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Removes an item of one of a review's list prompts",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/minerva/review/{reviewId}/answer/{promptId}/item/{answerId}/todo": {
+      "post": {
+        "description": "Plans a to-do titled as the item reads for the period after the review's (tomorrow for a daily review, next week for a weekly one), last of its to-dos, and links the item to it. An item becomes one to-do, once.",
+        "operationId": "CreateReviewAnswerTodo",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the review",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "promptId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the list prompt",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "answerId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the item",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The to-do was planned and the item linked to it.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the to-do"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateReviewAnswerTodoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The item is already a to-do."
+          }
+        },
+        "summary": "Makes an item of a list prompt a to-do",
         "tags": [
           "Reviews"
         ]
@@ -8919,6 +9309,14 @@
           "plan"
         ]
       },
+      "ReviewPromptStyle": {
+        "type": "string",
+        "description": "How a review prompt is answered: one block of text, or a list of short items",
+        "enum": [
+          "text",
+          "list"
+        ]
+      },
       "ReviewPrompt": {
         "type": "object",
         "properties": {
@@ -8939,6 +9337,14 @@
             "allOf": [
               {
                 "$ref": "#/components/schemas/ReviewPromptSection"
+              }
+            ]
+          },
+          "style": {
+            "description": "How the prompt is answered",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewPromptStyle"
               }
             ]
           },
@@ -8975,6 +9381,7 @@
           "id",
           "kind",
           "section",
+          "style",
           "label",
           "position",
           "archived",
@@ -9022,6 +9429,14 @@
           "placeholder": {
             "type": "string",
             "description": "A hint shown in the empty answer box, at most 200 characters"
+          },
+          "style": {
+            "description": "How the prompt is answered; text when left out",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewPromptStyle"
+              }
+            ]
           }
         },
         "required": [
@@ -9129,6 +9544,14 @@
       "PartialReviewPrompt": {
         "type": "object",
         "properties": {
+          "style": {
+            "description": "How the prompt is answered",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewPromptStyle"
+              }
+            ]
+          },
           "label": {
             "type": "string",
             "description": "The question, 1 to 120 characters"
@@ -9147,7 +9570,7 @@
         "type": "object",
         "properties": {
           "reviewPrompt": {
-            "description": "The changes to the prompt. A placeholder of null removes it; archived true archives it and false brings it back.",
+            "description": "The changes to the prompt. A placeholder of null removes it; archived true archives it and false brings it back. A prompt becomes text only while no review holds more than one item for it.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/PartialReviewPrompt"
@@ -9367,7 +9790,15 @@
           },
           "body": {
             "type": "string",
-            "description": "What was written, at most 10,000 characters"
+            "description": "What was written: at most 10,000 characters for a text prompt, 200 for a list item"
+          },
+          "position": {
+            "type": "number",
+            "description": "Where the item sits among its prompt's items in the review; lower comes first. A text answer is at 0."
+          },
+          "reviewItemId": {
+            "type": "string",
+            "description": "The to-do the item became, if it did"
           },
           "editedLater": {
             "type": "boolean",
@@ -9386,6 +9817,7 @@
           "id",
           "promptId",
           "body",
+          "position",
           "editedLater",
           "createdTime"
         ]
@@ -9648,7 +10080,7 @@
         "properties": {
           "body": {
             "type": "string",
-            "description": "What was written, at most 10,000 characters"
+            "description": "What was written: at most 10,000 characters for a text prompt, 200 for a list item"
           }
         }
       },
@@ -9684,98 +10116,98 @@
           "answer"
         ]
       },
-      "ReviewPin": {
+      "CreateReviewAnswerItemRequest": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "description": "The unique ID of the pin"
-          },
-          "reviewId": {
-            "type": "string",
-            "description": "The weekly review that keeps the pin"
-          },
-          "answerId": {
-            "type": "string",
-            "description": "The daily review answer pinned; set when the pin is not a note's"
-          },
-          "noteId": {
-            "type": "string",
-            "description": "The note pinned; set when the pin is not an answer's"
-          },
-          "createdTime": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string indicating when the pin was made"
-          },
-          "lastUpdatedTime": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string indicating when the pin was last changed"
+          "answer": {
+            "description": "The item to add at the end of the prompt's list: 1 to 200 characters.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialReviewAnswer"
+              }
+            ]
           }
         },
         "required": [
-          "id",
-          "reviewId",
-          "createdTime"
+          "answer"
         ]
       },
-      "ListReviewPinsResponse": {
+      "CreateReviewAnswerItemResponse": {
         "type": "object",
         "properties": {
-          "reviewPins": {
-            "description": "The review's pins, oldest first.",
+          "answer": {
+            "description": "The item as added.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewAnswer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "answer"
+        ]
+      },
+      "ReorderReviewAnswerItemsRequest": {
+        "type": "object",
+        "properties": {
+          "answerIds": {
+            "description": "Every item ID of the prompt's list in the review, in the order they should appear.",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ReviewPin"
+              "type": "string"
             }
           }
         },
         "required": [
-          "reviewPins"
+          "answerIds"
         ]
       },
-      "BaseReviewPin": {
+      "ReorderReviewAnswerItemsResponse": {
         "type": "object",
         "properties": {
-          "answerId": {
-            "type": "string",
-            "description": "An answer from one of the week's daily reviews; give this or noteId"
-          },
-          "noteId": {
-            "type": "string",
-            "description": "A note; give this or answerId"
+          "answers": {
+            "description": "The prompt's items in the review, in their new order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewAnswer"
+            }
           }
-        }
+        },
+        "required": [
+          "answers"
+        ]
       },
-      "CreateReviewPinRequest": {
+      "UpdateReviewAnswerItemRequest": {
         "type": "object",
         "properties": {
-          "reviewPin": {
-            "description": "What to pin: an answer from the week, or a note.",
+          "answer": {
+            "description": "The item as it should now read: 1 to 200 characters.",
             "allOf": [
               {
-                "$ref": "#/components/schemas/BaseReviewPin"
+                "$ref": "#/components/schemas/PartialReviewAnswer"
               }
             ]
           }
         },
         "required": [
-          "reviewPin"
+          "answer"
         ]
       },
-      "CreateReviewPinResponse": {
+      "UpdateReviewAnswerItemResponse": {
         "type": "object",
         "properties": {
-          "reviewPin": {
-            "description": "The pin as made.",
+          "answer": {
+            "description": "The item as saved.",
             "allOf": [
               {
-                "$ref": "#/components/schemas/ReviewPin"
+                "$ref": "#/components/schemas/ReviewAnswer"
               }
             ]
           }
         },
         "required": [
-          "reviewPin"
+          "answer"
         ]
       },
       "ReviewItemScope": {
@@ -9898,6 +10330,125 @@
           "status",
           "carryCount",
           "createdTime"
+        ]
+      },
+      "CreateReviewAnswerTodoResponse": {
+        "type": "object",
+        "properties": {
+          "answer": {
+            "description": "The item, linked to its to-do.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewAnswer"
+              }
+            ]
+          },
+          "reviewItem": {
+            "description": "The to-do: last of the period after the review's, titled as the item reads.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewItem"
+              }
+            ]
+          }
+        },
+        "required": [
+          "answer",
+          "reviewItem"
+        ]
+      },
+      "ReviewPin": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the pin"
+          },
+          "reviewId": {
+            "type": "string",
+            "description": "The weekly review that keeps the pin"
+          },
+          "answerId": {
+            "type": "string",
+            "description": "The daily review answer pinned; set when the pin is not a note's"
+          },
+          "noteId": {
+            "type": "string",
+            "description": "The note pinned; set when the pin is not an answer's"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the pin was made"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the pin was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "reviewId",
+          "createdTime"
+        ]
+      },
+      "ListReviewPinsResponse": {
+        "type": "object",
+        "properties": {
+          "reviewPins": {
+            "description": "The review's pins, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewPin"
+            }
+          }
+        },
+        "required": [
+          "reviewPins"
+        ]
+      },
+      "BaseReviewPin": {
+        "type": "object",
+        "properties": {
+          "answerId": {
+            "type": "string",
+            "description": "An answer from one of the week's daily reviews; give this or noteId"
+          },
+          "noteId": {
+            "type": "string",
+            "description": "A note; give this or answerId"
+          }
+        }
+      },
+      "CreateReviewPinRequest": {
+        "type": "object",
+        "properties": {
+          "reviewPin": {
+            "description": "What to pin: an answer from the week, or a note.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseReviewPin"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewPin"
+        ]
+      },
+      "CreateReviewPinResponse": {
+        "type": "object",
+        "properties": {
+          "reviewPin": {
+            "description": "The pin as made.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewPin"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewPin"
         ]
       },
       "ListReviewItemsResponse": {
