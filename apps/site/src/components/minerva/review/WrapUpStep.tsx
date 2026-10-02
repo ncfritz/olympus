@@ -67,6 +67,7 @@ const WrapUpStep: React.FunctionComponent<WrapUpStepProps> = ({
     <CalendarStep
       side={"right"}
       limited={false}
+      hideScrollbar={true}
       intro={intro}
       footer={footer}
       calendar={

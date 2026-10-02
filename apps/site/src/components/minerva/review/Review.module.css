@@ -800,3 +800,13 @@
 .rateReadOnly :global(.ant-rate-star) {
   cursor: default;
 }
+
+/* Scrolls with no scroll bar showing; scrollbar-width covers current
+ * browsers, the WebKit rule older Safari. */
+.noScrollbar {
+  scrollbar-width: none;
+}
+
+.noScrollbar::-webkit-scrollbar {
+  display: none;
+}
