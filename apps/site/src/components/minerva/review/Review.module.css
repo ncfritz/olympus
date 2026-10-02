@@ -649,3 +649,70 @@
   color: rgba(0, 0, 0, 0.55);
   border-bottom: 1px solid #f0f0f0;
 }
+
+/* A plan item's kind, as an icon in its list. */
+.tintPriority {
+  color: #d9a400;
+}
+
+.tintTodo {
+  color: #389e0d;
+}
+
+/* A plan item's title, which can be dragged onto the calendar. */
+.blockSource {
+  cursor: grab;
+}
+
+/* A planned block of time on the calendar: drawn behind the meetings,
+ * which keep their place and width over it. Scoped by the calendar so it
+ * outweighs FullCalendar's own background-event style. */
+.calendarFill .block.block {
+  opacity: 1;
+  border-left: 3px solid;
+  cursor: grab;
+}
+
+.calendarFill .blockPriority.blockPriority {
+  background: #fff5d6;
+  border-left-color: #ffcc33;
+  color: #614700;
+}
+
+.calendarFill .blockTodo.blockTodo {
+  background: #f6ffed;
+  border-left-color: #52c41a;
+  color: #135200;
+}
+
+.blockContent {
+  position: absolute;
+  inset: 0;
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 16px;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+
+.blockTitle {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-weight: 500;
+}
+
+/* The block's foot: drag it to change how long the block is. */
+.blockHandle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.calendarRoot {
+  height: 100%;
+}

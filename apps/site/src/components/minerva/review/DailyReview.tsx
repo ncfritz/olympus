@@ -26,7 +26,7 @@ import WrapUpStep from "./WrapUpStep";
 const INTROS = [
   "Here's what happened today. Decide what happens to anything planned for it; what goes to tomorrow shows up in step 3.",
   "Score the day, then answer what's useful. Skip any prompt; an empty one isn't saved.",
-  "Map out tomorrow. Give a priority a block of open time; what you plan here opens tomorrow's review.",
+  "Map out tomorrow. Drag a priority or to-do onto the calendar to block time for it; what you plan here opens tomorrow's review.",
   "This is how the review reads later, in the day's history and the weekly review.",
 ];
 

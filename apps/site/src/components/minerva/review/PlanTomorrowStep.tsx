@@ -1,11 +1,11 @@
-import type { ReviewItem } from "@ncfritz/olympus-sdk/minerva";
+import { Draggable } from "@fullcalendar/interaction";
 import { Card } from "antd";
 import { DateTime } from "luxon";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
+  blockedSpan,
   formatSpan,
   itemsOf,
-  type MeetingSpan,
   meetingSpans,
   openTime,
 } from "../../../utils/reviews";
@@ -25,29 +25,12 @@ export interface PlanTomorrowStepProps {
   footer: React.ReactNode;
 }
 
-/** A priority's block of time as a span on its day. */
-const blockSpan = (item: ReviewItem): MeetingSpan | undefined => {
-  if (!item.scheduledStart || !item.scheduledEnd) return undefined;
-  const at = (clock: string) =>
-    DateTime.fromISO(`${item.periodStart}T${clock}`);
-  return {
-    meeting: {
-      id: item.id,
-      subject: item.title,
-      startTime: at(item.scheduledStart).toISO()!,
-      isAllDay: false,
-      isDeleted: false,
-      status: "Busy",
-    },
-    start: at(item.scheduledStart),
-    end: at(item.scheduledEnd),
-  };
-};
-
 /**
- * Step 3: tomorrow mapped out: its calendar on the left with the blocked
- * priorities drawn in and its open time above; Top 3, to-dos and thoughts
- * beside it.
+ * Step 3: tomorrow mapped out: its calendar on the left with its open time
+ * above, and beside it the top priorities, to-dos and thoughts. An item's
+ * title dragged onto the calendar blocks 30 minutes for it there; the block
+ * then moves by dragging it and changes length by dragging its foot, drawn
+ * behind the meetings so they keep their place.
  */
 const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
   data,
@@ -58,12 +41,18 @@ const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
   const spans = meetingSpans(data.tomorrowMeetings, date);
   const priorities = itemsOf(data.items, data.tomorrow, "priority");
   const todos = itemsOf(data.items, data.tomorrow, "todo");
-  const blocks = priorities
-    .map(blockSpan)
-    .filter((span): span is MeetingSpan => span !== undefined);
-  // Time already given to a priority is not open any more.
+  const planned = [...priorities, ...todos].filter(
+    (i) => i.status !== "dropped" && i.status !== "carried",
+  );
+  const blocks = planned
+    .map((item) => {
+      const span = blockedSpan(item);
+      return span ? { item, span } : undefined;
+    })
+    .filter((b) => b !== undefined);
+  // Time already blocked is not open any more.
   const open = openTime(
-    [...spans, ...blocks].sort(
+    [...spans, ...blocks.map((b) => b.span)].sort(
       (a, b) => a.start.toMillis() - b.start.toMillis(),
     ),
     date,
@@ -74,6 +63,37 @@ const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
       (!p.archived || data.review?.answers.some((a) => a.promptId === p.id)),
   );
   const disabled = !data.started;
+
+  // A list item's title is dragged onto the calendar by FullCalendar's
+  // Draggable, which drops a 30-minute block.
+  const lists = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!lists.current || disabled) return;
+    const draggable = new Draggable(lists.current, {
+      itemSelector: "[data-block-item]",
+      eventData: (el) => ({
+        title: el.textContent ?? "",
+        duration: "00:30",
+        create: false,
+      }),
+    });
+    return () => draggable.destroy();
+  }, [disabled]);
+
+  const clock = (time: Date) => DateTime.fromJSDate(time).toFormat("HH:mm");
+  const itemOf = (id: string) => planned.find((i) => i.id === id);
+  const place = (id: string, start: Date, end: Date) => {
+    const item = itemOf(id);
+    if (item)
+      void data.blockItem(item, { start: clock(start), end: clock(end) });
+  };
+  const drop = (id: string, start: Date) => {
+    const from = DateTime.fromJSDate(start);
+    const dayEnd = date.endOf("day");
+    // Thirty minutes, or up to the end of the day.
+    const to = from.plus({ minutes: 30 });
+    place(id, start, (to > dayEnd ? dayEnd : to).toJSDate());
+  };
 
   const flat = {
     size: "small" as const,
@@ -91,12 +111,15 @@ const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
           side={"left"}
           day={data.tomorrow}
           meetings={data.tomorrowMeetings}
-          blocks={blocks.map((b) => ({
-            id: b.meeting.id,
-            title: b.meeting.subject,
-            start: b.start.toJSDate(),
-            end: b.end.toJSDate(),
+          blocks={blocks.map(({ item, span }) => ({
+            id: item.id,
+            title: item.title,
+            kind: item.kind,
+            start: span.start.toJSDate(),
+            end: span.end.toJSDate(),
           }))}
+          onBlockChange={disabled ? undefined : place}
+          onBlockDrop={disabled ? undefined : drop}
           note={
             open.length
               ? `Open: ${open.map((g) => formatSpan(g.start, g.end)).join(" · ")}`
@@ -105,36 +128,44 @@ const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
         />
       }
     >
-      <Card
-        {...flat}
-        title={"Top 3"}
-        extra={
-          <span className={styles.meta}>the day is a win if these happen</span>
-        }
-      >
-        <PlanList
-          kind={"priority"}
-          items={priorities}
-          disabled={disabled}
-          blocks={true}
-          placeholder={"Add a priority"}
-          onAdd={(title) => data.addItem("priority", title)}
-          onRemove={data.removeItem}
-          onReorder={(ids) => data.reorderItems("priority", ids)}
-          onBlock={data.blockItem}
-        />
-      </Card>
-      <Card {...flat} title={"To-dos"}>
-        <PlanList
-          kind={"todo"}
-          items={todos}
-          disabled={disabled}
-          placeholder={"Add a to-do"}
-          onAdd={(title) => data.addItem("todo", title)}
-          onRemove={data.removeItem}
-          onReorder={(ids) => data.reorderItems("todo", ids)}
-        />
-      </Card>
+      <div ref={lists} className={styles.stack}>
+        <Card
+          {...flat}
+          title={"Top priorities"}
+          extra={
+            <span className={styles.meta}>
+              the day is a win if these happen
+            </span>
+          }
+        >
+          <PlanList
+            kind={"priority"}
+            items={priorities}
+            disabled={disabled}
+            blocks={true}
+            placeholder={"Add a priority"}
+            onAdd={(title) => data.addItem("priority", title)}
+            onRemove={data.removeItem}
+            onReorder={(ids) => data.reorderItems("priority", ids)}
+            onBlock={data.blockItem}
+            calendarDrag={true}
+          />
+        </Card>
+        <Card {...flat} title={"To-dos"}>
+          <PlanList
+            kind={"todo"}
+            items={todos}
+            disabled={disabled}
+            blocks={true}
+            placeholder={"Add a to-do"}
+            onAdd={(title) => data.addItem("todo", title)}
+            onRemove={data.removeItem}
+            onReorder={(ids) => data.reorderItems("todo", ids)}
+            onBlock={data.blockItem}
+            calendarDrag={true}
+          />
+        </Card>
+      </div>
       {prompts.map((prompt) => (
         <Card key={prompt.id} {...flat}>
           <PromptAnswer

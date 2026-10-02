@@ -34,6 +34,7 @@ import {
 import dayjs, { type Dayjs } from "dayjs";
 import React, { useEffect, useState } from "react";
 import { formatBlock } from "../../../utils/reviews";
+import { PLAN_KINDS } from "./planKinds";
 import styles from "./Review.module.css";
 
 const { Text } = Typography;
@@ -42,8 +43,13 @@ export interface PlanListProps {
   kind: ReviewItemKind;
   items: ReviewItem[];
   disabled?: boolean;
-  /** Whether items can be given a block of time (priorities). */
+  /** Whether items can be given a block of time. */
   blocks?: boolean;
+  /**
+   * Whether an item's title can be dragged onto a calendar to block its
+   * time: it carries `data-block-item` for a FullCalendar Draggable.
+   */
+  calendarDrag?: boolean;
   placeholder: string;
   onAdd: (title: string) => Promise<void>;
   onRemove: (item: ReviewItem) => Promise<void>;
@@ -121,7 +127,9 @@ const PlanRow: React.FunctionComponent<{
   onRemove: PlanListProps["onRemove"];
   onBlock?: PlanListProps["onBlock"];
   extra?: PlanListProps["extra"];
-}> = ({ item, rank, disabled, onRemove, onBlock, extra }) => {
+  calendarDrag: boolean;
+}> = ({ item, rank, disabled, onRemove, onBlock, extra, calendarDrag }) => {
+  const kind = PLAN_KINDS[item.kind];
   const sortable = useSortable({ id: item.id, disabled });
   return (
     <div
@@ -143,8 +151,22 @@ const PlanRow: React.FunctionComponent<{
         {...sortable.listeners}
       />
       {rank !== undefined && <span className={styles.rank}>{rank}</span>}
+      <span className={kind.tint} title={kind.label}>
+        {kind.icon}
+      </span>
       <div className={styles.rowMain}>
-        <Text>{item.title}</Text>
+        {calendarDrag && !disabled ? (
+          <Text
+            className={styles.blockSource}
+            data-block-item={item.id}
+            data-kind={item.kind}
+            title={"Drag onto the calendar to block time for it"}
+          >
+            {item.title}
+          </Text>
+        ) : (
+          <Text>{item.title}</Text>
+        )}
       </div>
       {item.carryCount > 0 && <Tag color={"orange"}>Carried over</Tag>}
       {onBlock && (
@@ -165,13 +187,15 @@ const PlanRow: React.FunctionComponent<{
 
 /**
  * The next period's priorities or to-dos: drag (or move with the keyboard) to
- * reorder, add at the end, remove, and give a priority a block of time.
+ * reorder, add at the end, remove, and give an item a block of time (from its
+ * clock, or by dragging its title onto the calendar).
  */
 const PlanList: React.FunctionComponent<PlanListProps> = ({
   kind,
   items,
   disabled = false,
   blocks = false,
+  calendarDrag = false,
   placeholder,
   onAdd,
   onRemove,
@@ -227,6 +251,7 @@ const PlanList: React.FunctionComponent<PlanListProps> = ({
               onRemove={onRemove}
               onBlock={blocks ? onBlock : undefined}
               extra={extra}
+              calendarDrag={calendarDrag}
             />
           ))}
         </SortableContext>

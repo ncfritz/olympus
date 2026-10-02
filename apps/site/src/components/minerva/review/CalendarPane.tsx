@@ -14,6 +14,8 @@ export interface CalendarPaneProps {
   day: string;
   meetings: Meeting[];
   blocks?: DayCalendarProps["blocks"];
+  onBlockChange?: DayCalendarProps["onBlockChange"];
+  onBlockDrop?: DayCalendarProps["onBlockDrop"];
   /** A line under the heading, such as the day's open time. */
   note?: React.ReactNode;
   /** Which side the pane sits on, for the border between it and the rest. */
@@ -28,6 +30,8 @@ const CalendarPane: React.FunctionComponent<CalendarPaneProps> = ({
   day,
   meetings,
   blocks,
+  onBlockChange,
+  onBlockDrop,
   note,
   side = "right",
 }) => (
@@ -45,7 +49,13 @@ const CalendarPane: React.FunctionComponent<CalendarPaneProps> = ({
     </div>
     {note && <div className={styles.paneNote}>{note}</div>}
     <div className={styles.calendarFill}>
-      <DayCalendar day={day} meetings={meetings} blocks={blocks} />
+      <DayCalendar
+        day={day}
+        meetings={meetings}
+        blocks={blocks}
+        onBlockChange={onBlockChange}
+        onBlockDrop={onBlockDrop}
+      />
     </div>
   </section>
 );

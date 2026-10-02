@@ -92,7 +92,7 @@ const WrapUpStep: React.FunctionComponent<WrapUpStepProps> = ({
               items={[
                 {
                   key: "top",
-                  label: "Top 3",
+                  label: "Top priorities",
                   children: priorities.length ? (
                     <ol>
                       {priorities.map((item) => {
@@ -116,7 +116,15 @@ const WrapUpStep: React.FunctionComponent<WrapUpStepProps> = ({
                   key: "todos",
                   label: "To-dos",
                   children: todos.length
-                    ? todos.map((t) => t.title).join(" · ")
+                    ? todos
+                        .map((t) => {
+                          const block = formatBlock(
+                            t.scheduledStart,
+                            t.scheduledEnd,
+                          );
+                          return block ? `${t.title} (${block})` : t.title;
+                        })
+                        .join(" · ")
                     : "None",
                 },
                 ...answered("plan").map(({ prompt, answers }) => ({
