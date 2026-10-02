@@ -360,6 +360,7 @@ const Frame = ({
   count?: (tab: TabKey) => number | undefined;
   body: (tab: TabKey) => React.ReactNode;
 }) => {
+  const router = useRouter();
   const items: TabsProps["items"] = TABS.map((t) => {
     const n = count?.(t.key);
     return {
@@ -386,7 +387,16 @@ const Frame = ({
   });
   return (
     <div className={styles.card}>
-      <h2 className={styles.title}>Goals</h2>
+      <div className={styles.header}>
+        <h2 className={styles.title}>Goals</h2>
+        <Button
+          type={"text"}
+          size={"small"}
+          onClick={() => void router.push("/minerva/goals")}
+        >
+          Go to Goals
+        </Button>
+      </div>
       <Tabs
         id={"goals"}
         className={styles.tabs}
