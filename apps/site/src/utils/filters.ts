@@ -36,7 +36,7 @@ export const buildFilterDefinitionForTable = (
 export const toggleKey = (keys: string[], key: string): string[] => {
   const next = [...keys];
   if (next.includes(key)) {
-    next.splice(next.indexOf(key));
+    next.splice(next.indexOf(key), 1);
   } else {
     next.push(key);
   }
