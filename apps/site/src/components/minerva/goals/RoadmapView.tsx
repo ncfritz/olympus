@@ -52,6 +52,15 @@ import { CategoryIcon } from "./GoalBits";
 const { Text } = Typography;
 
 const LABEL = 240;
+const LABEL_MIN = 160;
+const LABEL_MAX = 560;
+const LABEL_KEY = "minerva.goals.roadmap.labelWidth";
+
+/** How wide the goal column is; the divider beside it sets this. */
+const LabelWidth = React.createContext(LABEL);
+
+const clampLabel = (width: number) =>
+  Math.round(Math.min(LABEL_MAX, Math.max(LABEL_MIN, width)));
 const ROW = 30;
 
 const HEALTH_COLOR = {
@@ -71,7 +80,16 @@ const BandRow: React.FunctionComponent<{ title: string; bands: Band[] }> = ({
   bands,
 }) => (
   <Flex style={{ height: 24 }}>
-    <Text type={"secondary"} style={{ width: LABEL, fontSize: 12 }}>
+    <Text
+      type={"secondary"}
+      ellipsis={true}
+      style={{
+        width: React.useContext(LabelWidth),
+        flexShrink: 0,
+        paddingRight: 8,
+        fontSize: 12,
+      }}
+    >
       {title}
     </Text>
     <div style={{ position: "relative", flex: 1 }}>
@@ -346,6 +364,7 @@ const Lane: React.FunctionComponent<{
   onToggleGoal,
 }) => {
   const sortable = useSortable({ id: category.id });
+  const label = React.useContext(LabelWidth);
   const hasMilestones = (goal: Goal) =>
     goal.type === "milestone" && goal.progressMode === "milestones";
 
@@ -365,7 +384,10 @@ const Lane: React.FunctionComponent<{
           : undefined,
       }}
     >
-      <Flex align={"center"} style={{ width: LABEL, height: 26 }}>
+      <Flex
+        align={"center"}
+        style={{ width: label, flexShrink: 0, height: 26, paddingRight: 8 }}
+      >
         <Button
           type={"text"}
           size={"small"}
@@ -417,7 +439,8 @@ const Lane: React.FunctionComponent<{
                 <Flex
                   align={"center"}
                   style={{
-                    width: LABEL,
+                    width: label,
+                    flexShrink: 0,
                     paddingLeft: indent,
                     paddingRight: 8,
                     minWidth: 0,
@@ -453,7 +476,8 @@ const Lane: React.FunctionComponent<{
                   <Flex key={m.id} style={{ height: ROW - 6 }} align={"center"}>
                     <div
                       style={{
-                        width: LABEL,
+                        width: label,
+                        flexShrink: 0,
                         paddingLeft: indent + STEP,
                         paddingRight: 8,
                         minWidth: 0,
@@ -529,6 +553,46 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
   }, []);
+  // The goal column's width: dragged from the divider on its right, or
+  // nudged with the arrow keys once it has focus; remembered in this
+  // browser.
+  const [label, setLabel] = useState(LABEL);
+  const [resizing, setResizing] = useState(false);
+  const [hover, setHover] = useState(false);
+  const lit = resizing || hover;
+  useEffect(() => {
+    try {
+      const saved = Number(window.localStorage.getItem(LABEL_KEY));
+      if (saved) setLabel(clampLabel(saved));
+    } catch {
+      // No storage: the default width stands.
+    }
+  }, []);
+  const keepLabel = (width: number) => {
+    const next = clampLabel(width);
+    setLabel(next);
+    try {
+      window.localStorage.setItem(LABEL_KEY, String(next));
+    } catch {
+      // Not remembered; the width still applies here.
+    }
+  };
+  const startResize = (event: React.PointerEvent) => {
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = label;
+    setResizing(true);
+    const move = (e: PointerEvent) =>
+      setLabel(clampLabel(startWidth + e.clientX - startX));
+    const up = (e: PointerEvent) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      setResizing(false);
+      keepLabel(startWidth + e.clientX - startX);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
   const [milestones, setMilestones] = useState<Map<string, GoalMilestone[]>>(
     new Map(),
   );
@@ -581,119 +645,165 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
   };
 
   return (
-    <div
-      ref={rootRef}
-      style={{
-        minWidth: 900,
-        height,
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      {/* The bands and months hold still; only the lanes below them
-          scroll. */}
-      <div style={{ flexShrink: 0 }}>
-        <BandRow title={"Quarters"} bands={quarterBands(year)} />
-        <BandRow title={"12-week cycles"} bands={cycleBands(cycles, year)} />
-        <Flex style={{ height: 22, borderBottom: "1px solid #f0f0f0" }}>
-          <div style={{ width: LABEL }} />
-          <div style={{ position: "relative", flex: 1 }}>
-            {months.map((m) => (
-              <Text
-                key={m.month}
-                type={"secondary"}
-                style={{
-                  position: "absolute",
-                  left: pct(spanFraction(m.toISODate()!, from, to)),
-                  fontSize: 12,
-                  paddingLeft: 4,
-                  borderLeft: "1px solid #f0f0f0",
-                }}
-              >
-                {m.toFormat("LLL")}
-              </Text>
-            ))}
-            {todayAt !== undefined && (
-              <Text
-                style={{
-                  position: "absolute",
-                  left: pct(todayAt),
-                  bottom: 0,
-                  transform: "translateX(-50%)",
-                  paddingInline: 4,
-                  fontSize: 11,
-                  lineHeight: "16px",
-                  color: "#ff4d4f",
-                  background: "#ffffff",
-                  borderBottom: "2px solid #ff4d4f",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {DateTime.fromISO(today).toFormat("LLL d")}
-              </Text>
-            )}
-          </div>
-        </Flex>
-      </div>
+    <LabelWidth.Provider value={label}>
       <div
+        ref={rootRef}
         style={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: "auto",
-          overflowX: "hidden",
-          scrollbarGutter: "stable",
+          minWidth: 900,
+          height,
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+          userSelect: resizing ? "none" : undefined,
+          cursor: resizing ? "col-resize" : undefined,
         }}
       >
-        <div style={{ position: "relative" }}>
-          {lanes.length === 0 && <Empty description={`No goals in ${year}`} />}
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={dragEnd}
-          >
-            <SortableContext
-              items={lanes.map((l) => l.category.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {lanes.map(({ category, goals: inLane }) => (
-                <Lane
-                  key={category.id}
-                  category={category}
-                  goals={inLane}
-                  year={year}
-                  today={today}
-                  collapsed={collapsed.has(category.id)}
-                  onCollapse={() =>
-                    setCollapsed((was) => {
-                      const next = new Set(was);
-                      if (next.has(category.id)) next.delete(category.id);
-                      else next.add(category.id);
-                      return next;
-                    })
-                  }
-                  open={open}
-                  milestones={milestones}
-                  onToggleGoal={toggle}
-                />
+        {/* The goal column's right border, which drags to resize it. */}
+        <div
+          role={"separator"}
+          aria-orientation={"vertical"}
+          aria-label={"Resize the goal column"}
+          aria-valuenow={label}
+          aria-valuemin={LABEL_MIN}
+          aria-valuemax={LABEL_MAX}
+          tabIndex={0}
+          onPointerDown={startResize}
+          onDoubleClick={() => keepLabel(LABEL)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowLeft") keepLabel(label - 16);
+            else if (e.key === "ArrowRight") keepLabel(label + 16);
+          }}
+          onPointerEnter={() => setHover(true)}
+          onPointerLeave={() => setHover(false)}
+          onFocus={() => setHover(true)}
+          onBlur={() => setHover(false)}
+          style={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: label - 4,
+            width: 9,
+            zIndex: 3,
+            cursor: "col-resize",
+            display: "flex",
+            justifyContent: "center",
+            outline: "none",
+          }}
+        >
+          <div
+            style={{
+              width: lit ? 2 : 1,
+              background: lit ? "#1677ff" : "#f0f0f0",
+            }}
+          />
+        </div>
+        {/* The bands and months hold still; only the lanes below them
+          scroll. */}
+        <div style={{ flexShrink: 0 }}>
+          <BandRow title={"Quarters"} bands={quarterBands(year)} />
+          <BandRow title={"12-week cycles"} bands={cycleBands(cycles, year)} />
+          <Flex style={{ height: 22, borderBottom: "1px solid #f0f0f0" }}>
+            <div style={{ width: label, flexShrink: 0 }} />
+            <div style={{ position: "relative", flex: 1 }}>
+              {months.map((m) => (
+                <Text
+                  key={m.month}
+                  type={"secondary"}
+                  style={{
+                    position: "absolute",
+                    left: pct(spanFraction(m.toISODate()!, from, to)),
+                    fontSize: 12,
+                    paddingLeft: 4,
+                    borderLeft: "1px solid #f0f0f0",
+                  }}
+                >
+                  {m.toFormat("LLL")}
+                </Text>
               ))}
-            </SortableContext>
-          </DndContext>
-          {todayAt !== undefined && (
-            <div
-              aria-hidden={true}
-              style={{
-                position: "absolute",
-                top: 0,
-                bottom: 0,
-                left: `calc(${LABEL}px + (100% - ${LABEL}px) * ${todayAt})`,
-                borderLeft: "2px solid #ff4d4f",
-                pointerEvents: "none",
-              }}
-            />
-          )}
+              {todayAt !== undefined && (
+                <Text
+                  style={{
+                    position: "absolute",
+                    left: pct(todayAt),
+                    bottom: 0,
+                    transform: "translateX(-50%)",
+                    paddingInline: 4,
+                    fontSize: 11,
+                    lineHeight: "16px",
+                    color: "#ff4d4f",
+                    background: "#ffffff",
+                    borderBottom: "2px solid #ff4d4f",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {DateTime.fromISO(today).toFormat("LLL d")}
+                </Text>
+              )}
+            </div>
+          </Flex>
+        </div>
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            overflowX: "hidden",
+            scrollbarGutter: "stable",
+          }}
+        >
+          <div style={{ position: "relative" }}>
+            {lanes.length === 0 && (
+              <Empty description={`No goals in ${year}`} />
+            )}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={dragEnd}
+            >
+              <SortableContext
+                items={lanes.map((l) => l.category.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {lanes.map(({ category, goals: inLane }) => (
+                  <Lane
+                    key={category.id}
+                    category={category}
+                    goals={inLane}
+                    year={year}
+                    today={today}
+                    collapsed={collapsed.has(category.id)}
+                    onCollapse={() =>
+                      setCollapsed((was) => {
+                        const next = new Set(was);
+                        if (next.has(category.id)) next.delete(category.id);
+                        else next.add(category.id);
+                        return next;
+                      })
+                    }
+                    open={open}
+                    milestones={milestones}
+                    onToggleGoal={toggle}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+            {todayAt !== undefined && (
+              <div
+                aria-hidden={true}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: `calc(${label}px + (100% - ${label}px) * ${todayAt})`,
+                  borderLeft: "2px solid #ff4d4f",
+                  pointerEvents: "none",
+                }}
+              />
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </LabelWidth.Provider>
   );
 };
 
