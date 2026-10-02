@@ -27,7 +27,7 @@ import {
 import dayjs from "dayjs";
 import { DateTime } from "luxon";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import goalsApi from "../../../api/goalsApi";
 import {
   apiProblems,
@@ -356,6 +356,21 @@ const FocusView: React.FunctionComponent<FocusViewProps> = ({
   onChanged,
 }) => {
   const [cycleExecution, setCycleExecution] = useState<GoalExecution>();
+  // The split fills the window below where it starts; each side scrolls on
+  // its own.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number>();
+  useEffect(() => {
+    const fit = () => {
+      const top = rootRef.current?.getBoundingClientRect().top;
+      if (top !== undefined) {
+        setHeight(Math.max(320, window.innerHeight - top - 16));
+      }
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
   const names = new Map(categories.map((c) => [c.id, c.name]));
   const titles = new Map(goals.map((g) => [g.id, g.title]));
   const active = goals.filter((g) => g.status === "active");
@@ -448,103 +463,110 @@ const FocusView: React.FunctionComponent<FocusViewProps> = ({
   );
 
   return (
-    <Splitter>
-      <Splitter.Panel defaultSize={"66%"} min={"40%"} max={"80%"}>
-        <div style={{ paddingRight: 16 }}>
-          <CycleBanner
-            cycle={cycle}
-            execution={execution}
-            cycleExecution={cycleExecution}
-            today={today}
-          />
-          <Collapse
-            ghost={true}
-            defaultActiveKey={["attention", "fine"]}
-            items={[
-              ...(attention.length
-                ? [
-                    section(
-                      "attention",
-                      `Needs attention · ${attention.length}`,
-                      <List dataSource={attention} renderItem={row} />,
-                      <Text type={"secondary"} style={{ fontSize: 12 }}>
-                        Off track first, then at risk
-                      </Text>,
-                    ),
-                  ]
-                : []),
-              section(
-                "fine",
-                `On track · ${fine.length}`,
-                fine.length ? (
-                  <List dataSource={fine} renderItem={row} />
-                ) : (
-                  <Empty description={"No goals on track yet"} />
+    <div ref={rootRef}>
+      <Splitter style={{ height }}>
+        <Splitter.Panel
+          defaultSize={"66%"}
+          min={"40%"}
+          max={"80%"}
+          style={{ overflowY: "auto" }}
+        >
+          <div style={{ paddingRight: 16 }}>
+            <CycleBanner
+              cycle={cycle}
+              execution={execution}
+              cycleExecution={cycleExecution}
+              today={today}
+            />
+            <Collapse
+              ghost={true}
+              defaultActiveKey={["attention", "fine"]}
+              items={[
+                ...(attention.length
+                  ? [
+                      section(
+                        "attention",
+                        `Needs attention · ${attention.length}`,
+                        <List dataSource={attention} renderItem={row} />,
+                        <Text type={"secondary"} style={{ fontSize: 12 }}>
+                          Off track first, then at risk
+                        </Text>,
+                      ),
+                    ]
+                  : []),
+                section(
+                  "fine",
+                  `On track · ${fine.length}`,
+                  fine.length ? (
+                    <List dataSource={fine} renderItem={row} />
+                  ) : (
+                    <Empty description={"No goals on track yet"} />
+                  ),
                 ),
-              ),
-            ]}
-          />
-        </div>
-      </Splitter.Panel>
-      <Splitter.Panel min={"20%"}>
-        <div style={{ paddingLeft: 16 }}>
-          <Flex
-            justify={"space-between"}
-            align={"baseline"}
-            style={{ paddingBlock: 12 }}
-          >
-            <Heading>This week</Heading>
-            {execution && (
-              <Text type={"secondary"} style={{ fontSize: 12 }}>
-                {formatValue(execution.score)}% · {execution.done} of{" "}
-                {execution.due} done
-              </Text>
-            )}
-          </Flex>
-          <WeekBars execution={execution} today={today} />
-          <Collapse
-            ghost={true}
-            defaultActiveKey={["habits", "due"]}
-            style={{ marginTop: 8 }}
-            items={[
-              section(
-                "habits",
-                "Today’s habits",
-                <TodaysHabits onLogged={onChanged} />,
+              ]}
+            />
+          </div>
+        </Splitter.Panel>
+        <Splitter.Panel min={"20%"} style={{ overflowY: "auto" }}>
+          <div style={{ paddingLeft: 16 }}>
+            <Flex
+              justify={"space-between"}
+              align={"baseline"}
+              style={{ paddingBlock: 12 }}
+            >
+              <Heading>This week</Heading>
+              {execution && (
                 <Text type={"secondary"} style={{ fontSize: 12 }}>
-                  {DateTime.fromISO(today).toFormat("ccc LLL d")}
-                </Text>,
-              ),
-              section(
-                "due",
-                "Due next",
-                dueNext.length ? (
-                  <List
-                    size={"small"}
-                    dataSource={dueNext}
-                    renderItem={(g) => (
-                      <List.Item style={{ paddingInline: 0 }}>
-                        <Text type={"secondary"} style={{ width: 64 }}>
-                          {formatDay(g.dueDate, today)}
-                        </Text>
-                        <Link
-                          href={`/minerva/goals/${g.id}`}
-                          style={{ flex: 1 }}
-                        >
-                          {g.title}
-                        </Link>
-                      </List.Item>
-                    )}
-                  />
-                ) : (
-                  <Empty description={"Nothing due"} />
+                  {formatValue(execution.score)}% · {execution.done} of{" "}
+                  {execution.due} done
+                </Text>
+              )}
+            </Flex>
+            <WeekBars execution={execution} today={today} />
+            <Collapse
+              ghost={true}
+              defaultActiveKey={["habits", "due"]}
+              style={{ marginTop: 8 }}
+              items={[
+                section(
+                  "habits",
+                  "Today’s habits",
+                  <TodaysHabits onLogged={onChanged} />,
+                  <Text type={"secondary"} style={{ fontSize: 12 }}>
+                    {DateTime.fromISO(today).toFormat("ccc LLL d")}
+                  </Text>,
                 ),
-              ),
-            ]}
-          />
-        </div>
-      </Splitter.Panel>
-    </Splitter>
+                section(
+                  "due",
+                  "Due next",
+                  dueNext.length ? (
+                    <List
+                      size={"small"}
+                      dataSource={dueNext}
+                      renderItem={(g) => (
+                        <List.Item style={{ paddingInline: 0 }}>
+                          <Text type={"secondary"} style={{ width: 64 }}>
+                            {formatDay(g.dueDate, today)}
+                          </Text>
+                          <Link
+                            href={`/minerva/goals/${g.id}`}
+                            style={{ flex: 1 }}
+                          >
+                            {g.title}
+                          </Link>
+                        </List.Item>
+                      )}
+                    />
+                  ) : (
+                    <Empty description={"Nothing due"} />
+                  ),
+                ),
+              ]}
+            />
+          </div>
+        </Splitter.Panel>
+      </Splitter>
+    </div>
   );
 };
 
