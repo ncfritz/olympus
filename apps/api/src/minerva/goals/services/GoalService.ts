@@ -7,10 +7,15 @@ import {
   GoalClose,
   GoalExecution,
   GoalHabitDay,
+  GoalHealth,
   GoalHorizon,
+  GoalNextStep,
   GoalProgressMode,
   GoalStatus,
   GoalType,
+  GoalTypeCounts,
+  HabitFrequency,
+  ListGoalsForTodayResponse,
   UpdateGoalRequest,
 } from "@ncfritz/olympus-model";
 import {
@@ -28,6 +33,7 @@ import {
   toEngineGoal,
   toFullGoal,
   toHabitRule,
+  toMilestone,
   weekdaysToMask,
 } from "../converters/GoalConverter";
 import {
@@ -578,6 +584,107 @@ export class GoalService {
     if (problems.length) throw new BadRequestException(problems);
 
     const rows = await this.rows(userId);
+    const view = this.view(rows, today, tz);
+    return {
+      date: day,
+      habits: await this.habitDays(userId, rows, view, day, tz),
+    };
+  }
+
+  /**
+   * What is left to do on the caller's goals today, for the home widget:
+   * habits due and not yet met today, milestone goals and their next step,
+   * outcome and achievement goals not checked in on today; then the goals
+   * already done for today and how many of each type are active.
+   */
+  async today(userId: string, tz: string): Promise<ListGoalsForTodayResponse> {
+    const today = todayIn(checkTimezone(tz));
+    const rows = await this.rows(userId);
+    const view = this.view(rows, today, tz);
+    const days = await this.habitDays(userId, rows, view, today, tz);
+
+    const active: GoalTypeCounts = {
+      habit: 0,
+      milestone: 0,
+      outcome: 0,
+      achievement: 0,
+    };
+    const milestones: GoalNextStep[] = [];
+    const outcomes: Goal[] = [];
+    const achievements: Goal[] = [];
+    const done: Goal[] = days.filter((d) => d.log?.met).map((d) => d.goal);
+
+    for (const row of rows) {
+      const engine = toEngineGoal(row, tz);
+      if (
+        row.deletedTime !== null ||
+        engine.status !== GoalStatus.Active ||
+        engine.startDate > today
+      ) {
+        continue;
+      }
+      active[engine.type as keyof GoalTypeCounts] += 1;
+      if (engine.type === GoalType.Habit) continue;
+
+      const goal = view.goals.get(row.id)!;
+      // A check-in today, or a milestone ticked today, is today's step.
+      if (
+        engine.checkins.some((c) => c.date === today) ||
+        engine.milestones.some((m) => m.doneOn === today)
+      ) {
+        done.push(goal);
+        continue;
+      }
+      if (engine.type === GoalType.Milestone) {
+        const next =
+          engine.progressMode === GoalProgressMode.Milestones
+            ? [...row.milestones]
+                .sort((a, b) => a.position - b.position)
+                .find((m) => m.doneTime === null)
+            : undefined;
+        milestones.push(
+          next ? { goal, milestone: toMilestone(next) } : { goal },
+        );
+      } else if (engine.type === GoalType.Outcome) {
+        outcomes.push(goal);
+      } else {
+        achievements.push(goal);
+      }
+    }
+
+    // Habits due every day or on set weekdays come before weekly and
+    // monthly ones, which can wait for another day of their period.
+    const everyDay = (d: GoalHabitDay) =>
+      d.habitRule.frequency === HabitFrequency.Daily ||
+      d.habitRule.frequency === HabitFrequency.Weekdays
+        ? 0
+        : 1;
+    const habits = days
+      .filter((d) => !d.log?.met && d.periodDone < d.periodCapacity)
+      .sort((a, b) => everyDay(a) - everyDay(b) || byAttention(a.goal, b.goal));
+
+    return {
+      date: today,
+      habits,
+      milestones: milestones.sort((a, b) => byAttention(a.goal, b.goal)),
+      outcomes: outcomes.sort(byAttention),
+      achievements: achievements.sort(byAttention),
+      done: done.sort((a, b) => a.position - b.position),
+      active,
+    };
+  }
+
+  /**
+   * The habits due on a day: active habit goals whose rule asks for one
+   * that day and whose period is not yet met, or that were logged that day.
+   */
+  private async habitDays(
+    userId: string,
+    rows: GraphQlGoal[],
+    view: GoalsView,
+    day: string,
+    tz: string,
+  ): Promise<GoalHabitDay[]> {
     const document = gql`
       query ListGoalHabitsForDay($userId: uuid!, $logDate: date!) {
         minerva_goal_habit_logs(
@@ -598,7 +705,6 @@ export class GoalService {
     const logs = new Map(
       result.minerva_goal_habit_logs.map((l) => [l.goalId, l]),
     );
-    const view = this.view(rows, today, tz);
 
     const habits: GoalHabitDay[] = [];
     for (const row of rows) {
@@ -634,7 +740,7 @@ export class GoalService {
         periodCapacity: summary.periodCapacity,
       });
     }
-    return { date: day, habits };
+    return habits;
   }
 
   /**
@@ -1063,4 +1169,25 @@ const checkFilters = (filters: ListGoalsFilters): ((goal: Goal) => boolean) => {
       (parentId === "none"
         ? goal.parentId === undefined
         : goal.parentId === parentId));
+};
+
+const HEALTH_RANK: Record<GoalHealth, number> = {
+  [GoalHealth.OffTrack]: 0,
+  [GoalHealth.AtRisk]: 1,
+  [GoalHealth.OnTrack]: 2,
+};
+
+/**
+ * Focus's order: a goal asking for a decision first, then the least
+ * healthy, then the soonest due, then the caller's own order.
+ */
+const byAttention = (a: Goal, b: Goal): number => {
+  if (a.needsDecision !== b.needsDecision) return a.needsDecision ? -1 : 1;
+  const ha = a.health === undefined ? 3 : HEALTH_RANK[a.health];
+  const hb = b.health === undefined ? 3 : HEALTH_RANK[b.health];
+  if (ha !== hb) return ha - hb;
+  const da = a.dueDate ?? "9999-12-31";
+  const db = b.dueDate ?? "9999-12-31";
+  if (da !== db) return da < db ? -1 : 1;
+  return a.position - b.position;
 };

@@ -7640,6 +7640,30 @@
     ],
     "type": "object"
   },
+  "GoalNextStep": {
+    "properties": {
+      "goal": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Goal"
+          }
+        ],
+        "description": "The milestone goal"
+      },
+      "milestone": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalMilestone"
+          }
+        ],
+        "description": "Its first milestone not yet done; absent when it has none left, or its progress comes from sub-goals or is set by hand"
+      }
+    },
+    "required": [
+      "goal"
+    ],
+    "type": "object"
+  },
   "GoalProgressMode": {
     "description": "Where the goal's progress comes from: outcome goals check-ins or sub-goals; milestone goals milestones, sub-goals or by hand; habit goals their habit; achievement goals their status",
     "enum": [
@@ -7682,6 +7706,33 @@
       "achievement"
     ],
     "type": "string"
+  },
+  "GoalTypeCounts": {
+    "properties": {
+      "achievement": {
+        "description": "Achievement goals",
+        "type": "number"
+      },
+      "habit": {
+        "description": "Habit goals",
+        "type": "number"
+      },
+      "milestone": {
+        "description": "Milestone goals",
+        "type": "number"
+      },
+      "outcome": {
+        "description": "Outcome goals",
+        "type": "number"
+      }
+    },
+    "required": [
+      "achievement",
+      "habit",
+      "milestone",
+      "outcome"
+    ],
+    "type": "object"
   },
   "GroupType": {
     "description": "The group the dog belongs to",
@@ -8356,6 +8407,68 @@
     "required": [
       "date",
       "habits"
+    ],
+    "type": "object"
+  },
+  "ListGoalsForTodayResponse": {
+    "properties": {
+      "achievements": {
+        "description": "Achievement goals not checked in on today, by decision, health, due date and order.",
+        "items": {
+          "$ref": "#/components/schemas/Goal"
+        },
+        "type": "array"
+      },
+      "active": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalTypeCounts"
+          }
+        ],
+        "description": "The active, started goals of each type, done or not."
+      },
+      "date": {
+        "description": "Today in the caller's timezone, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "done": {
+        "description": "Active goals of any type already done for today: a habit met today, a milestone done or a check-in made today; in goal order.",
+        "items": {
+          "$ref": "#/components/schemas/Goal"
+        },
+        "type": "array"
+      },
+      "habits": {
+        "description": "Habits due today and not yet met today: those due every day or on set weekdays first, then weekly and monthly ones short of their count; each by decision, health, due date and order.",
+        "items": {
+          "$ref": "#/components/schemas/GoalHabitDay"
+        },
+        "type": "array"
+      },
+      "milestones": {
+        "description": "Milestone goals with no milestone done and no check-in today, by decision, health, due date and order.",
+        "items": {
+          "$ref": "#/components/schemas/GoalNextStep"
+        },
+        "type": "array"
+      },
+      "outcomes": {
+        "description": "Outcome goals not checked in on today, by decision, health, due date and order.",
+        "items": {
+          "$ref": "#/components/schemas/Goal"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "achievements",
+      "active",
+      "date",
+      "done",
+      "habits",
+      "milestones",
+      "outcomes"
     ],
     "type": "object"
   },

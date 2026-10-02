@@ -30,6 +30,7 @@ import { GetGoalExecutionController } from "./controllers/GetGoalExecutionContro
 import { ListGoalCheckinsController } from "./controllers/ListGoalCheckinsController";
 import { ListGoalHabitLogsController } from "./controllers/ListGoalHabitLogsController";
 import { ListGoalHabitsForDayController } from "./controllers/ListGoalHabitsForDayController";
+import { ListGoalsForTodayController } from "./controllers/ListGoalsForTodayController";
 import { LogGoalHabitController } from "./controllers/LogGoalHabitController";
 import { SuggestGoalCheckinController } from "./controllers/SuggestGoalCheckinController";
 import { UpdateGoalCheckinController } from "./controllers/UpdateGoalCheckinController";
@@ -70,6 +71,7 @@ import { GoalService } from "./services/GoalService";
     CreateGoalController,
     GetGoalExecutionController,
     ListGoalHabitsForDayController,
+    ListGoalsForTodayController,
     ReorderGoalsController,
     DescribeGoalController,
     UpdateGoalController,

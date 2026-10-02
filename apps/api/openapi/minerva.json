@@ -2473,6 +2473,62 @@
         ]
       }
     },
+    "/minerva/goals/today": {
+      "get": {
+        "description": "For the home widget, by goal type: habits due and not yet met today; milestone goals with their next milestone; outcome and achievement goals. A goal leaves its list for the day once it is met, has a milestone done or is checked in on today, and is listed under done instead. Only active goals that have started count. today is today in the caller's timezone.",
+        "operationId": "ListGoalsForToday",
+        "parameters": [
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Today's goals, left to do and done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListGoalsForTodayResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists what is left to do on the signed-in user's goals today",
+        "tags": [
+          "Goals"
+        ]
+      }
+    },
     "/minerva/goals/order": {
       "put": {
         "description": "Puts the goals named in the order given, sharing out the positions they already hold among them, so one list can be reordered without naming every goal.",
@@ -6391,6 +6447,119 @@
         "required": [
           "date",
           "habits"
+        ]
+      },
+      "GoalNextStep": {
+        "type": "object",
+        "properties": {
+          "goal": {
+            "description": "The milestone goal",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Goal"
+              }
+            ]
+          },
+          "milestone": {
+            "description": "Its first milestone not yet done; absent when it has none left, or its progress comes from sub-goals or is set by hand",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalMilestone"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goal"
+        ]
+      },
+      "GoalTypeCounts": {
+        "type": "object",
+        "properties": {
+          "habit": {
+            "type": "number",
+            "description": "Habit goals"
+          },
+          "milestone": {
+            "type": "number",
+            "description": "Milestone goals"
+          },
+          "outcome": {
+            "type": "number",
+            "description": "Outcome goals"
+          },
+          "achievement": {
+            "type": "number",
+            "description": "Achievement goals"
+          }
+        },
+        "required": [
+          "habit",
+          "milestone",
+          "outcome",
+          "achievement"
+        ]
+      },
+      "ListGoalsForTodayResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Today in the caller's timezone, as YYYY-MM-DD"
+          },
+          "habits": {
+            "description": "Habits due today and not yet met today: those due every day or on set weekdays first, then weekly and monthly ones short of their count; each by decision, health, due date and order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalHabitDay"
+            }
+          },
+          "milestones": {
+            "description": "Milestone goals with no milestone done and no check-in today, by decision, health, due date and order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalNextStep"
+            }
+          },
+          "outcomes": {
+            "description": "Outcome goals not checked in on today, by decision, health, due date and order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Goal"
+            }
+          },
+          "achievements": {
+            "description": "Achievement goals not checked in on today, by decision, health, due date and order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Goal"
+            }
+          },
+          "done": {
+            "description": "Active goals of any type already done for today: a habit met today, a milestone done or a check-in made today; in goal order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Goal"
+            }
+          },
+          "active": {
+            "description": "The active, started goals of each type, done or not.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalTypeCounts"
+              }
+            ]
+          }
+        },
+        "required": [
+          "date",
+          "habits",
+          "milestones",
+          "outcomes",
+          "achievements",
+          "done",
+          "active"
         ]
       },
       "ReorderGoalsRequest": {
