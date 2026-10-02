@@ -1,10 +1,26 @@
 import {
-  ArrowDownOutlined,
-  ArrowUpOutlined,
   DeleteOutlined,
+  HolderOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import type { FullGoal } from "@ncfritz/olympus-sdk/minerva";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import type { FullGoal, GoalMilestone } from "@ncfritz/olympus-sdk/minerva";
 import {
   Button,
   Checkbox,
@@ -21,7 +37,7 @@ import {
 } from "antd";
 import GoalSection from "./GoalSection";
 import type { Dayjs } from "dayjs";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import goalsApi from "../../../api/goalsApi";
 import { apiProblems, formatDay, formatValue } from "../../../utils/goals";
 import { GoalProgress } from "./GoalBits";
@@ -29,8 +45,88 @@ import { GoalProgress } from "./GoalBits";
 const { Text } = Typography;
 
 /**
- * A milestone goal's ordered checklist: tick, add, move and remove steps;
- * the next one undone stands out. A goal set by hand gets a slider instead.
+ * One milestone: a drag handle, then its tick, title, a Next tag on the
+ * first undone, its due day and a remove button.
+ */
+const MilestoneRow: React.FunctionComponent<{
+  milestone: GoalMilestone;
+  isNext: boolean;
+  today: string;
+  readOnly: boolean;
+  onDone: (done: boolean) => void;
+  onRemove: () => void;
+}> = ({ milestone: m, isNext, today, readOnly, onDone, onRemove }) => {
+  const sortable = useSortable({ id: m.id, disabled: readOnly });
+  return (
+    <List.Item
+      ref={sortable.setNodeRef}
+      style={{
+        transform: CSS.Translate.toString(sortable.transform),
+        transition: sortable.transition,
+        position: "relative",
+        zIndex: sortable.isDragging ? 2 : undefined,
+        background: sortable.isDragging ? "#ffffff" : undefined,
+        boxShadow: sortable.isDragging
+          ? "0 6px 16px rgba(0, 0, 0, 0.12)"
+          : undefined,
+      }}
+      actions={
+        readOnly
+          ? []
+          : [
+              <Popconfirm
+                key={"delete"}
+                title={`Remove ${m.title}?`}
+                onConfirm={onRemove}
+              >
+                <Button
+                  type={"text"}
+                  size={"small"}
+                  icon={<DeleteOutlined />}
+                  aria-label={`Remove ${m.title}`}
+                />
+              </Popconfirm>,
+            ]
+      }
+    >
+      <Flex gap={8} align={"center"} style={{ width: "100%" }}>
+        {!readOnly && (
+          <Button
+            type={"text"}
+            size={"small"}
+            icon={<HolderOutlined />}
+            aria-label={`Move ${m.title}`}
+            style={{ cursor: "grab", flexShrink: 0 }}
+            {...sortable.attributes}
+            {...sortable.listeners}
+          />
+        )}
+        <Checkbox
+          checked={m.done}
+          disabled={readOnly}
+          aria-label={`${m.title} done`}
+          onChange={(e) => onDone(e.target.checked)}
+        />
+        <Text
+          strong={isNext}
+          delete={m.done}
+          type={m.done ? "secondary" : undefined}
+          style={{ flex: 1, marginLeft: 4 }}
+        >
+          {m.title}
+        </Text>
+        {isNext && <Tag color={"processing"}>Next</Tag>}
+        <Text type={"secondary"} style={{ fontSize: 12 }}>
+          {formatDay(m.dueDate, today)}
+        </Text>
+      </Flex>
+    </List.Item>
+  );
+};
+
+/**
+ * A milestone goal's ordered checklist: add steps at the top, tick them,
+ * drag them into order and remove them; the next one undone stands out. A goal set by hand gets a slider instead.
  */
 const MilestonePanel: React.FunctionComponent<{
   goal: FullGoal;
@@ -41,8 +137,17 @@ const MilestonePanel: React.FunctionComponent<{
   const [title, setTitle] = useState("");
   const [due, setDue] = useState<Dayjs | null>(null);
   const [manual, setManual] = useState(goal.manualProgress ?? 0);
-  const done = goal.milestones.filter((m) => m.done).length;
-  const next = goal.milestones.find((m) => !m.done);
+  // The order shown: moved at once on a drop, then saved.
+  const [order, setOrder] = useState(goal.milestones);
+  useEffect(() => setOrder(goal.milestones), [goal.milestones]);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+  const done = order.filter((m) => m.done).length;
+  const next = order.find((m) => !m.done);
 
   const act = async (work: () => Promise<unknown>) => {
     try {
@@ -53,11 +158,25 @@ const MilestonePanel: React.FunctionComponent<{
     }
   };
 
-  const move = (index: number, by: number) => {
-    const ids = goal.milestones.map((m) => m.id);
-    const [id] = ids.splice(index, 1);
-    ids.splice(index + by, 0, id);
-    void act(() => goalsApi.reorderMilestones(goal.id, ids));
+  const dragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const moved = arrayMove(
+      order,
+      order.findIndex((m) => m.id === active.id),
+      order.findIndex((m) => m.id === over.id),
+    );
+    setOrder(moved);
+    void act(async () => {
+      try {
+        await goalsApi.reorderMilestones(
+          goal.id,
+          moved.map((m) => m.id),
+        );
+      } catch (error) {
+        setOrder(goal.milestones);
+        throw error;
+      }
+    });
   };
 
   const add = () => {
@@ -121,82 +240,8 @@ const MilestonePanel: React.FunctionComponent<{
       }
     >
       <GoalProgress goal={goal} size={"default"} />
-      <List
-        style={{ marginTop: 16 }}
-        dataSource={goal.milestones}
-        locale={{ emptyText: "No milestones yet" }}
-        renderItem={(m, index) => (
-          <List.Item
-            actions={
-              readOnly
-                ? []
-                : [
-                    <Button
-                      key={"up"}
-                      type={"text"}
-                      size={"small"}
-                      icon={<ArrowUpOutlined />}
-                      disabled={index === 0}
-                      aria-label={`Move ${m.title} up`}
-                      onClick={() => move(index, -1)}
-                    />,
-                    <Button
-                      key={"down"}
-                      type={"text"}
-                      size={"small"}
-                      icon={<ArrowDownOutlined />}
-                      disabled={index === goal.milestones.length - 1}
-                      aria-label={`Move ${m.title} down`}
-                      onClick={() => move(index, 1)}
-                    />,
-                    <Popconfirm
-                      key={"delete"}
-                      title={`Remove ${m.title}?`}
-                      onConfirm={() =>
-                        act(() => goalsApi.deleteMilestone(goal.id, m.id))
-                      }
-                    >
-                      <Button
-                        type={"text"}
-                        size={"small"}
-                        icon={<DeleteOutlined />}
-                        aria-label={`Remove ${m.title}`}
-                      />
-                    </Popconfirm>,
-                  ]
-            }
-          >
-            <Flex gap={12} align={"center"} style={{ width: "100%" }}>
-              <Checkbox
-                checked={m.done}
-                disabled={readOnly}
-                aria-label={`${m.title} done`}
-                onChange={(e) =>
-                  act(() =>
-                    goalsApi.updateMilestone(goal.id, m.id, {
-                      done: e.target.checked,
-                    }),
-                  )
-                }
-              />
-              <Text
-                strong={m.id === next?.id}
-                delete={m.done}
-                type={m.done ? "secondary" : undefined}
-                style={{ flex: 1 }}
-              >
-                {m.title}
-              </Text>
-              {m.id === next?.id && <Tag color={"processing"}>Next</Tag>}
-              <Text type={"secondary"} style={{ fontSize: 12 }}>
-                {formatDay(m.dueDate, today)}
-              </Text>
-            </Flex>
-          </List.Item>
-        )}
-      />
       {!readOnly && (
-        <Space.Compact style={{ width: "100%" }}>
+        <Space.Compact style={{ width: "100%", marginTop: 16 }}>
           <Input
             value={title}
             maxLength={120}
@@ -210,6 +255,39 @@ const MilestonePanel: React.FunctionComponent<{
           </Button>
         </Space.Compact>
       )}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={dragEnd}
+      >
+        <SortableContext
+          items={order.map((m) => m.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <List
+            style={{ marginTop: readOnly ? 16 : 8 }}
+            dataSource={order}
+            rowKey={(m) => m.id}
+            locale={{ emptyText: "No milestones yet" }}
+            renderItem={(m) => (
+              <MilestoneRow
+                milestone={m}
+                isNext={m.id === next?.id}
+                today={today}
+                readOnly={readOnly}
+                onDone={(checked) =>
+                  act(() =>
+                    goalsApi.updateMilestone(goal.id, m.id, { done: checked }),
+                  )
+                }
+                onRemove={() =>
+                  act(() => goalsApi.deleteMilestone(goal.id, m.id))
+                }
+              />
+            )}
+          />
+        </SortableContext>
+      </DndContext>
     </GoalSection>
   );
 };
