@@ -7,6 +7,8 @@ import type {
   GraphQlGoalMilestone,
 } from "../../src/minerva/goals/converters/GoalConverter";
 import type { GraphQlGoalCycle } from "../../src/minerva/goals/converters/GoalCycleConverter";
+import type { GraphQlGoalCheckin } from "../../src/minerva/goals/converters/GoalCheckinConverter";
+import type { GraphQlGoalHabitLog } from "../../src/minerva/goals/converters/GoalHabitLogConverter";
 import type { GraphQlTag } from "../../src/minerva/tags/converters/TagConverter";
 
 export const graphQlNote = (
@@ -191,5 +193,42 @@ export const graphQlGoal = (
     }),
   ),
   goalTags: [{ tag: graphQlTag() }],
+  checkins: [],
+  habitLogs: [],
+  ...overrides,
+});
+
+export const GOAL_CHECKIN_ID = "7d4e0000-0000-4000-8000-000000000001";
+
+/** A check-in on the canvas goal: on track, from the goal page. */
+export const graphQlGoalCheckin = (
+  overrides: Partial<GraphQlGoalCheckin> = {},
+): GraphQlGoalCheckin => ({
+  id: GOAL_CHECKIN_ID,
+  goalId: GOAL_ID,
+  checkinDate: "2026-09-25",
+  value: null,
+  confidence: "on_track",
+  note: "Schema merged",
+  source: "goal",
+  createdTime: "2026-09-25T20:00:00Z",
+  lastUpdatedTime: null,
+  ...overrides,
+});
+
+export const GOAL_HABIT_LOG_ID = "3a5f0000-0000-4000-8000-000000000001";
+
+/** A run logged on Monday Sep 28. */
+export const graphQlGoalHabitLog = (
+  overrides: Partial<GraphQlGoalHabitLog> = {},
+): GraphQlGoalHabitLog => ({
+  id: GOAL_HABIT_LOG_ID,
+  goalId: GOAL_ID,
+  logDate: "2026-09-28",
+  done: true,
+  quantity: null,
+  note: null,
+  createdTime: "2026-09-28T15:00:00Z",
+  lastUpdatedTime: null,
   ...overrides,
 });

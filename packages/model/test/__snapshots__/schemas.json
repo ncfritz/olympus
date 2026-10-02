@@ -629,6 +629,41 @@
     ],
     "type": "object"
   },
+  "BaseGoalCheckin": {
+    "properties": {
+      "checkinDate": {
+        "description": "The day the check-in is for, as YYYY-MM-DD; today or earlier in the caller's timezone",
+        "format": "date",
+        "type": "string"
+      },
+      "confidence": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHealth"
+          }
+        ],
+        "description": "How the goal felt that day; required unless the check-in only records a closing value"
+      },
+      "note": {
+        "description": "A note, at most 2,000 characters",
+        "type": "string"
+      },
+      "source": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCheckinSource"
+          }
+        ],
+        "default": "goal",
+        "description": "Where the check-in was made"
+      },
+      "value": {
+        "description": "An outcome goal's value that day; required for outcome goals",
+        "type": "number"
+      }
+    },
+    "type": "object"
+  },
   "BaseGoalCycle": {
     "properties": {
       "bufferWeeks": {
@@ -655,6 +690,23 @@
       "name",
       "startDate"
     ],
+    "type": "object"
+  },
+  "BaseGoalHabitLog": {
+    "properties": {
+      "done": {
+        "description": "Whether the habit was marked done that day",
+        "type": "boolean"
+      },
+      "note": {
+        "description": "A note, at most 500 characters",
+        "type": "string"
+      },
+      "quantity": {
+        "description": "How much was done that day, in the rule's quantity unit",
+        "type": "number"
+      }
+    },
     "type": "object"
   },
   "BaseGoalHabitRule": {
@@ -2040,6 +2092,38 @@
     ],
     "type": "object"
   },
+  "CloseGoalRequest": {
+    "properties": {
+      "goalClose": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalClose"
+          }
+        ],
+        "description": "How the goal ends."
+      }
+    },
+    "required": [
+      "goalClose"
+    ],
+    "type": "object"
+  },
+  "CloseGoalResponse": {
+    "properties": {
+      "goal": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FullGoal"
+          }
+        ],
+        "description": "The goal, closed."
+      }
+    },
+    "required": [
+      "goal"
+    ],
+    "type": "object"
+  },
   "Collection": {
     "properties": {
       "backdropPath": {
@@ -3207,6 +3291,38 @@
     },
     "required": [
       "goalCategory"
+    ],
+    "type": "object"
+  },
+  "CreateGoalCheckinRequest": {
+    "properties": {
+      "goalCheckin": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseGoalCheckin"
+          }
+        ],
+        "description": "The check-in. An outcome goal's needs a value; every other needs a confidence."
+      }
+    },
+    "required": [
+      "goalCheckin"
+    ],
+    "type": "object"
+  },
+  "CreateGoalCheckinResponse": {
+    "properties": {
+      "goalCheckin": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCheckin"
+          }
+        ],
+        "description": "The check-in as made."
+      }
+    },
+    "required": [
+      "goalCheckin"
     ],
     "type": "object"
   },
@@ -5732,6 +5848,10 @@
         },
         "type": "array"
       },
+      "needsDecision": {
+        "description": "Whether an active goal's last three check-ins were all at risk or off track, so it needs a decision",
+        "type": "boolean"
+      },
       "parentId": {
         "description": "The ID of the goal this one is a sub-goal of",
         "type": "string"
@@ -5847,6 +5967,7 @@
       "horizon",
       "id",
       "milestones",
+      "needsDecision",
       "position",
       "progress",
       "progressMode",
@@ -6185,6 +6306,22 @@
     "required": [
       "categories",
       "series"
+    ],
+    "type": "object"
+  },
+  "GetGoalExecutionResponse": {
+    "properties": {
+      "execution": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalExecution"
+          }
+        ],
+        "description": "The execution score for the week or cycle asked for."
+      }
+    },
+    "required": [
+      "execution"
     ],
     "type": "object"
   },
@@ -6683,6 +6820,10 @@
         "description": "Progress set by hand, 0 to 100, in manual mode",
         "type": "number"
       },
+      "needsDecision": {
+        "description": "Whether an active goal's last three check-ins were all at risk or off track, so it needs a decision",
+        "type": "boolean"
+      },
       "parentId": {
         "description": "The ID of the goal this one is a sub-goal of",
         "type": "string"
@@ -6783,6 +6924,7 @@
       "deleted",
       "horizon",
       "id",
+      "needsDecision",
       "position",
       "progress",
       "progressMode",
@@ -6871,6 +7013,145 @@
     ],
     "type": "string"
   },
+  "GoalCheckin": {
+    "properties": {
+      "checkinDate": {
+        "description": "The day the check-in is for, as YYYY-MM-DD; today or earlier in the caller's timezone",
+        "format": "date",
+        "type": "string"
+      },
+      "confidence": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHealth"
+          }
+        ],
+        "description": "How the goal felt that day; required unless the check-in only records a closing value"
+      },
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the check-in was made",
+        "type": "string"
+      },
+      "goalId": {
+        "description": "The ID of the goal checked in on",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the check-in",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the check-in was last changed",
+        "type": "string"
+      },
+      "note": {
+        "description": "A note, at most 2,000 characters",
+        "type": "string"
+      },
+      "source": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCheckinSource"
+          }
+        ],
+        "default": "goal",
+        "description": "Where the check-in was made"
+      },
+      "value": {
+        "description": "An outcome goal's value that day; required for outcome goals",
+        "type": "number"
+      }
+    },
+    "required": [
+      "checkinDate",
+      "createdTime",
+      "goalId",
+      "id",
+      "source"
+    ],
+    "type": "object"
+  },
+  "GoalCheckinSource": {
+    "description": "Where the check-in was made",
+    "enum": [
+      "goal",
+      "daily_review",
+      "weekly_review"
+    ],
+    "type": "string"
+  },
+  "GoalCheckinSuggestion": {
+    "properties": {
+      "checkinDate": {
+        "description": "Today in the caller's timezone, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "confidence": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHealth"
+          }
+        ],
+        "description": "The confidence pace (or a habit's adherence) suggests, ignoring earlier check-ins"
+      },
+      "currentValue": {
+        "description": "An outcome goal's current value",
+        "type": "number"
+      },
+      "expectedProgress": {
+        "description": "Where pace says the goal should be today, 0 to 100",
+        "type": "number"
+      },
+      "expectedValue": {
+        "description": "Where pace says an outcome goal's value should be today",
+        "type": "number"
+      },
+      "progress": {
+        "description": "How far the goal has come, 0 to 100",
+        "type": "number"
+      }
+    },
+    "required": [
+      "checkinDate",
+      "confidence",
+      "progress"
+    ],
+    "type": "object"
+  },
+  "GoalClose": {
+    "properties": {
+      "closedOn": {
+        "description": "The day the goal closed, as YYYY-MM-DD; defaults to today in the caller's timezone",
+        "format": "date",
+        "type": "string"
+      },
+      "finalProgress": {
+        "description": "A goal with progress set by hand: its final progress, 0 to 100",
+        "type": "number"
+      },
+      "finalValue": {
+        "description": "An outcome goal's final value, recorded as a check-in on the closing day",
+        "type": "number"
+      },
+      "note": {
+        "description": "What was learned, at most 2,000 characters",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalStatus"
+          }
+        ],
+        "description": "How the goal ended: achieved, missed or dropped"
+      }
+    },
+    "required": [
+      "status"
+    ],
+    "type": "object"
+  },
   "GoalCycle": {
     "properties": {
       "bufferEndDate": {
@@ -6950,6 +7231,213 @@
     ],
     "type": "string"
   },
+  "GoalExecution": {
+    "properties": {
+      "days": {
+        "description": "Every day of the span up to today, in order",
+        "items": {
+          "$ref": "#/components/schemas/GoalExecutionDay"
+        },
+        "type": "array"
+      },
+      "done": {
+        "description": "Occurrences done",
+        "type": "number"
+      },
+      "due": {
+        "description": "Occurrences due",
+        "type": "number"
+      },
+      "from": {
+        "description": "The first day of the span, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "goals": {
+        "description": "Each habit goal with something due or done, in goal order",
+        "items": {
+          "$ref": "#/components/schemas/GoalExecutionGoal"
+        },
+        "type": "array"
+      },
+      "score": {
+        "description": "Done over due, 0 to 100; absent when nothing was due",
+        "type": "number"
+      },
+      "to": {
+        "description": "The last day of the span, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      }
+    },
+    "required": [
+      "days",
+      "done",
+      "due",
+      "from",
+      "goals",
+      "to"
+    ],
+    "type": "object"
+  },
+  "GoalExecutionCount": {
+    "properties": {
+      "done": {
+        "description": "Occurrences done",
+        "type": "number"
+      },
+      "due": {
+        "description": "Occurrences due",
+        "type": "number"
+      },
+      "score": {
+        "description": "Done over due, 0 to 100; absent when nothing was due",
+        "type": "number"
+      }
+    },
+    "required": [
+      "done",
+      "due"
+    ],
+    "type": "object"
+  },
+  "GoalExecutionDay": {
+    "properties": {
+      "date": {
+        "description": "The day, as YYYY-MM-DD; a week's or month's occurrences count on the day the period ends, or today while it runs",
+        "format": "date",
+        "type": "string"
+      },
+      "done": {
+        "description": "Occurrences done",
+        "type": "number"
+      },
+      "due": {
+        "description": "Occurrences due",
+        "type": "number"
+      },
+      "score": {
+        "description": "Done over due, 0 to 100; absent when nothing was due",
+        "type": "number"
+      }
+    },
+    "required": [
+      "date",
+      "done",
+      "due"
+    ],
+    "type": "object"
+  },
+  "GoalExecutionGoal": {
+    "properties": {
+      "done": {
+        "description": "Occurrences done",
+        "type": "number"
+      },
+      "due": {
+        "description": "Occurrences due",
+        "type": "number"
+      },
+      "goalId": {
+        "description": "The ID of the habit goal",
+        "type": "string"
+      },
+      "score": {
+        "description": "Done over due, 0 to 100; absent when nothing was due",
+        "type": "number"
+      }
+    },
+    "required": [
+      "done",
+      "due",
+      "goalId"
+    ],
+    "type": "object"
+  },
+  "GoalHabitDay": {
+    "properties": {
+      "goal": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Goal"
+          }
+        ],
+        "description": "The habit goal"
+      },
+      "log": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHabitLog"
+          }
+        ],
+        "description": "The day's log, if it has one"
+      },
+      "periodCapacity": {
+        "description": "Occurrences the day's period holds",
+        "type": "number"
+      },
+      "periodDone": {
+        "description": "Occurrences done in the day's period, up to and including it",
+        "type": "number"
+      }
+    },
+    "required": [
+      "goal",
+      "periodCapacity",
+      "periodDone"
+    ],
+    "type": "object"
+  },
+  "GoalHabitLog": {
+    "properties": {
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the day was first logged",
+        "type": "string"
+      },
+      "done": {
+        "description": "Whether the habit was marked done that day",
+        "type": "boolean"
+      },
+      "goalId": {
+        "description": "The ID of the habit goal",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the log",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the log was last changed",
+        "type": "string"
+      },
+      "logDate": {
+        "description": "The day logged, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "met": {
+        "description": "Whether the day counts: marked done, or its quantity reached the rule's target",
+        "type": "boolean"
+      },
+      "note": {
+        "description": "A note, at most 500 characters",
+        "type": "string"
+      },
+      "quantity": {
+        "description": "How much was done that day, in the rule's quantity unit",
+        "type": "number"
+      }
+    },
+    "required": [
+      "createdTime",
+      "done",
+      "goalId",
+      "id",
+      "logDate",
+      "met"
+    ],
+    "type": "object"
+  },
   "GoalHabitRule": {
     "properties": {
       "createdTime": {
@@ -6996,8 +7484,49 @@
     ],
     "type": "object"
   },
+  "GoalHabitSummary": {
+    "properties": {
+      "adherence": {
+        "description": "Done over due across the last 28 days, 4 weeks or 3 months, 0 to 100; absent when nothing was due yet",
+        "type": "number"
+      },
+      "bestStreak": {
+        "description": "The longest run of periods met",
+        "type": "number"
+      },
+      "currentStreak": {
+        "description": "Periods met in a row, back from today; a current period not met yet does not break it",
+        "type": "number"
+      },
+      "done": {
+        "description": "Occurrences done in that window",
+        "type": "number"
+      },
+      "due": {
+        "description": "Occurrences due in that window; the current period is due only as much as it is done",
+        "type": "number"
+      },
+      "periodCapacity": {
+        "description": "Occurrences the current period holds",
+        "type": "number"
+      },
+      "periodDone": {
+        "description": "Occurrences done so far in the current period",
+        "type": "number"
+      }
+    },
+    "required": [
+      "bestStreak",
+      "currentStreak",
+      "done",
+      "due",
+      "periodCapacity",
+      "periodDone"
+    ],
+    "type": "object"
+  },
   "GoalHealth": {
-    "description": "How an active goal is doing; absent for others",
+    "description": "How a goal is doing: on track, at risk or off track",
     "enum": [
       "on_track",
       "at_risk",
@@ -7094,7 +7623,7 @@
     "type": "string"
   },
   "GoalStatus": {
-    "description": "Where the goal is in its life",
+    "description": "Where a goal is in its life",
     "enum": [
       "draft",
       "active",
@@ -7716,6 +8245,21 @@
     ],
     "type": "object"
   },
+  "ListGoalCheckinsResponse": {
+    "properties": {
+      "goalCheckins": {
+        "description": "The goal's check-ins, latest first.",
+        "items": {
+          "$ref": "#/components/schemas/GoalCheckin"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "goalCheckins"
+    ],
+    "type": "object"
+  },
   "ListGoalCyclesResponse": {
     "properties": {
       "goalCycles": {
@@ -7728,6 +8272,51 @@
     },
     "required": [
       "goalCycles"
+    ],
+    "type": "object"
+  },
+  "ListGoalHabitLogsResponse": {
+    "properties": {
+      "goalHabitLogs": {
+        "description": "The habit's logs in the range asked for, oldest first.",
+        "items": {
+          "$ref": "#/components/schemas/GoalHabitLog"
+        },
+        "type": "array"
+      },
+      "summary": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHabitSummary"
+          }
+        ],
+        "description": "Adherence and streaks as of today."
+      }
+    },
+    "required": [
+      "goalHabitLogs",
+      "summary"
+    ],
+    "type": "object"
+  },
+  "ListGoalHabitsForDayResponse": {
+    "properties": {
+      "date": {
+        "description": "The day listed, as YYYY-MM-DD",
+        "format": "date",
+        "type": "string"
+      },
+      "habits": {
+        "description": "The active habits due that day, in goal order.",
+        "items": {
+          "$ref": "#/components/schemas/GoalHabitDay"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "date",
+      "habits"
     ],
     "type": "object"
   },
@@ -8630,6 +9219,35 @@
     "required": [
       "count",
       "countryCode"
+    ],
+    "type": "object"
+  },
+  "LogGoalHabitRequest": {
+    "properties": {
+      "goalHabitLog": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseGoalHabitLog"
+          }
+        ],
+        "description": "The day's log, replacing any already there. Omitted, the day is marked done."
+      }
+    },
+    "type": "object"
+  },
+  "LogGoalHabitResponse": {
+    "properties": {
+      "goalHabitLog": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHabitLog"
+          }
+        ],
+        "description": "The day's log as saved."
+      }
+    },
+    "required": [
+      "goalHabitLog"
     ],
     "type": "object"
   },
@@ -12123,6 +12741,32 @@
       "vision": {
         "description": "What good looks like in this area of life, at most 2,000 characters",
         "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "PartialGoalCheckin": {
+    "properties": {
+      "checkinDate": {
+        "description": "The day the check-in is for, as YYYY-MM-DD; today or earlier in the caller's timezone",
+        "format": "date",
+        "type": "string"
+      },
+      "confidence": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalHealth"
+          }
+        ],
+        "description": "How the goal felt that day; required unless the check-in only records a closing value"
+      },
+      "note": {
+        "description": "A note, at most 2,000 characters",
+        "type": "string"
+      },
+      "value": {
+        "description": "An outcome goal's value that day; required for outcome goals",
+        "type": "number"
       }
     },
     "type": "object"
@@ -16586,6 +17230,22 @@
     ],
     "type": "object"
   },
+  "SuggestGoalCheckinResponse": {
+    "properties": {
+      "suggestion": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCheckinSuggestion"
+          }
+        ],
+        "description": "The check-in form's defaults for today."
+      }
+    },
+    "required": [
+      "suggestion"
+    ],
+    "type": "object"
+  },
   "SynoChatDestination": {
     "properties": {
       "destination": {
@@ -17858,6 +18518,38 @@
     ],
     "type": "object"
   },
+  "UpdateGoalCheckinRequest": {
+    "properties": {
+      "goalCheckin": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialGoalCheckin"
+          }
+        ],
+        "description": "The changes to the check-in."
+      }
+    },
+    "required": [
+      "goalCheckin"
+    ],
+    "type": "object"
+  },
+  "UpdateGoalCheckinResponse": {
+    "properties": {
+      "goalCheckin": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GoalCheckin"
+          }
+        ],
+        "description": "The check-in with the changes applied."
+      }
+    },
+    "required": [
+      "goalCheckin"
+    ],
+    "type": "object"
+  },
   "UpdateGoalCycleRequest": {
     "properties": {
       "goalCycle": {
@@ -17930,7 +18622,7 @@
             "$ref": "#/components/schemas/PartialGoal"
           }
         ],
-        "description": "The changes to the goal. Null clears an optional field; achieved, missed and dropped need closedOn."
+        "description": "The changes to the goal. Null clears an optional field. A goal is achieved, missed or dropped with CloseGoal; setting an open status reopens a closed goal and clears its closedOn."
       },
       "habitRule": {
         "allOf": [

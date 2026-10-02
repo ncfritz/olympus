@@ -6,6 +6,9 @@ import {
   daysBetween,
   isIsoDate,
   isMonday,
+  isoWeekBounds,
+  isoWeekOf,
+  localDateOf,
   todayIn,
 } from "../../../../../src/minerva/goals/utils/localDates";
 
@@ -48,5 +51,37 @@ describe("localDates", () => {
   it("knows a Monday", () => {
     expect(isMonday("2026-09-07")).toBe(true);
     expect(isMonday("2026-09-08")).toBe(false);
+  });
+
+  it("dates a moment by the caller's day", () => {
+    expect(localDateOf("2026-10-02T01:00:00Z", "America/Los_Angeles")).toBe(
+      "2026-10-01",
+    );
+    expect(localDateOf("2026-10-02T01:00:00Z", "Etc/UTC")).toBe("2026-10-02");
+  });
+
+  it.each([
+    ["2026-W40", "2026-09-28", "2026-10-04"],
+    ["2026-W01", "2025-12-29", "2026-01-04"],
+    ["2026-W53", "2026-12-28", "2027-01-03"],
+    ["2020-W53", "2020-12-28", "2021-01-03"],
+  ])("reads ISO week %s as %s to %s", (week, from, to) => {
+    expect(isoWeekBounds(week)).toEqual({ from, to });
+  });
+
+  it.each(["2027-W53", "2026-W00", "2026-W54", "2026-40", "W40", 40])(
+    "refuses %j as an ISO week",
+    (week) => {
+      expect(isoWeekBounds(week)).toBeUndefined();
+    },
+  );
+
+  it.each([
+    ["2026-10-01", "2026-W40"],
+    ["2026-10-04", "2026-W40"],
+    ["2026-10-05", "2026-W41"],
+    ["2027-01-01", "2026-W53"],
+  ])("puts %s in %s", (date, week) => {
+    expect(isoWeekOf(date)).toBe(week);
   });
 });

@@ -111,6 +111,11 @@
     "Trophy": "trophy",
     "Wallet": "wallet"
   },
+  "GoalCheckinSource": {
+    "DailyReview": "daily_review",
+    "Goal": "goal",
+    "WeeklyReview": "weekly_review"
+  },
   "GoalCycleStatus": {
     "Buffer": "buffer",
     "Current": "current",

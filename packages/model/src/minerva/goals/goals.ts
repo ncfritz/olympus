@@ -284,6 +284,7 @@ export class Goal {
   @ApiProperty({
     enum: () => GoalStatus,
     enumName: "GoalStatus",
+    enumSchema: { description: "Where a goal is in its life" },
     required: true,
     description: "Where the goal is in its life",
   })
@@ -441,10 +442,21 @@ export class Goal {
   @ApiProperty({
     enum: () => GoalHealth,
     enumName: "GoalHealth",
+    enumSchema: {
+      description: "How a goal is doing: on track, at risk or off track",
+    },
     required: false,
     description: "How an active goal is doing; absent for others",
   })
   health?: GoalHealth;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "Whether an active goal's last three check-ins were all at risk or off track, so it needs a decision",
+  })
+  needsDecision: boolean;
 
   @ApiProperty({
     type: Boolean,
@@ -578,6 +590,50 @@ export class PartialGoal extends PartialType(
   ] as const),
 ) {}
 
+/** How a goal ends: its final status, date, result and lessons. */
+export class GoalClose {
+  @ApiProperty({
+    enum: () => GoalStatus,
+    enumName: "GoalStatus",
+    enumSchema: { description: "Where a goal is in its life" },
+    required: true,
+    description: "How the goal ended: achieved, missed or dropped",
+  })
+  status: GoalStatus;
+
+  @ApiProperty({
+    type: String,
+    format: "date",
+    required: false,
+    description:
+      "The day the goal closed, as YYYY-MM-DD; defaults to today in the caller's timezone",
+  })
+  closedOn?: string;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description:
+      "An outcome goal's final value, recorded as a check-in on the closing day",
+  })
+  finalValue?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description:
+      "A goal with progress set by hand: its final progress, 0 to 100",
+  })
+  finalProgress?: number;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "What was learned, at most 2,000 characters",
+  })
+  note?: string;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -619,7 +675,7 @@ export class UpdateGoalRequest {
     type: () => PartialGoal,
     required: false,
     description:
-      "The changes to the goal. Null clears an optional field; achieved, missed and dropped need closedOn.",
+      "The changes to the goal. Null clears an optional field. A goal is achieved, missed or dropped with CloseGoal; setting an open status reopens a closed goal and clears its closedOn.",
   })
   goal?: PartialGoal;
 
@@ -637,6 +693,15 @@ export class UpdateGoalRequest {
     description: "The goal's tags, replacing the old set.",
   })
   tagIds?: string[];
+}
+
+export class CloseGoalRequest {
+  @ApiProperty({
+    type: () => GoalClose,
+    required: true,
+    description: "How the goal ends.",
+  })
+  goalClose: GoalClose;
 }
 
 export class ReorderGoalsRequest {
@@ -725,6 +790,15 @@ export class RestoreGoalResponse {
     type: () => FullGoal,
     required: true,
     description: "The goal, restored.",
+  })
+  goal: FullGoal;
+}
+
+export class CloseGoalResponse {
+  @ApiProperty({
+    type: () => FullGoal,
+    required: true,
+    description: "The goal, closed.",
   })
   goal: FullGoal;
 }

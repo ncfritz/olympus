@@ -12,14 +12,14 @@ const WINDOW: Record<HabitFrequency, number> = {
 };
 
 /** One period of a habit: a day, an ISO week or a calendar month. */
-type Period = {
+export type Period = {
   start: IsoDate;
   end: IsoDate;
   /** Occurrences the period can hold, given the rule and the goal's start. */
   capacity: number;
   /** Logs that count, capped at the capacity. */
   done: number;
-  /** Whether today falls in this period. */
+  /** Whether the last day looked at (usually today) falls in this period. */
   current: boolean;
 };
 
@@ -47,7 +47,7 @@ export const isMet = (log: EngineHabitLog, rule: EngineHabitRule): boolean =>
     (log.quantity ?? 0) >= rule.quantityTarget);
 
 /** The period of a frequency that contains a date. */
-const periodBounds = (
+export const periodBounds = (
   frequency: HabitFrequency,
   date: IsoDate,
 ): { start: IsoDate; end: IsoDate } => {
@@ -70,9 +70,10 @@ const periodBounds = (
 
 /**
  * Every period from the one holding the goal's start to the one holding
- * today, oldest first, with what each holds and what was done in it.
+ * `today` (the last day looked at), oldest first, with what each holds and
+ * what was done in it up to that day.
  */
-const periods = (
+export const periods = (
   rule: EngineHabitRule,
   logs: EngineHabitLog[],
   startDate: IsoDate,
@@ -125,12 +126,30 @@ const periods = (
  * rule's history is not kept, so a changed rule is applied to the past
  * too). The current period is not counted against the habit until it is
  * over: it is due only as much as it has been done.
+ *
+ * A habit that stopped (closed, or past its due date) on `until` is
+ * measured as of that day. The period it stopped in counts in full when
+ * `until` was that period's last day, and otherwise only as far as done.
  */
 export const habitSummary = (
   rule: EngineHabitRule,
   logs: EngineHabitLog[],
   startDate: IsoDate,
   today: IsoDate,
+  until?: IsoDate,
+): HabitSummary => {
+  const stopped = until !== undefined && until < today;
+  const asOf = stopped ? until : today;
+  const over = stopped && periodBounds(rule.frequency, asOf).end === asOf;
+  return summarise(rule, logs, startDate, asOf, over);
+};
+
+const summarise = (
+  rule: EngineHabitRule,
+  logs: EngineHabitLog[],
+  startDate: IsoDate,
+  today: IsoDate,
+  over: boolean,
 ): HabitSummary => {
   if (today < startDate) {
     return {
@@ -143,6 +162,7 @@ export const habitSummary = (
     };
   }
   const all = periods(rule, logs, startDate, today);
+  if (over) all[all.length - 1].current = false;
   const window = all.slice(-WINDOW[rule.frequency]);
   let done = 0;
   let due = 0;

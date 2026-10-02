@@ -18,6 +18,25 @@ export const GOAL_MILESTONE = `id
   createdTime
   lastUpdatedTime`;
 
+export const GOAL_CHECKIN = `id
+  goalId
+  checkinDate
+  value
+  confidence
+  note
+  source
+  createdTime
+  lastUpdatedTime`;
+
+export const GOAL_HABIT_LOG = `id
+  goalId
+  logDate
+  done
+  quantity
+  note
+  createdTime
+  lastUpdatedTime`;
+
 /**
  * A goal with everything progress is computed from and a FullGoal shows:
  * a user holds tens of goals, so every read takes them whole.
@@ -57,4 +76,15 @@ export const GOAL = `id
     tag {
       ${TAG}
     }
+  }
+  checkins(order_by: [{ checkinDate: asc }, { createdTime: asc }]) {
+    checkinDate
+    value
+    confidence
+    createdTime
+  }
+  habitLogs(order_by: { logDate: asc }) {
+    logDate
+    done
+    quantity
   }`;

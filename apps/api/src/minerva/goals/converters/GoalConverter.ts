@@ -2,6 +2,7 @@ import {
   FullGoal,
   Goal,
   GoalHabitRule,
+  GoalHealth,
   GoalHorizon,
   GoalMilestone,
   GoalProgressMode,
@@ -16,6 +17,7 @@ import {
   toDomainObject as toTag,
 } from "../../tags/converters/TagConverter";
 import type { EngineGoal, GoalProgress } from "../progress";
+import { localDateOf } from "../utils/localDates";
 
 /** Hasura sends `numeric` as a JSON number; a string is read as one too. */
 type Numeric = number | string;
@@ -73,6 +75,14 @@ export type GraphQlGoal = {
   habitRule: GraphQlGoalHabitRule | null;
   milestones: GraphQlGoalMilestone[];
   goalTags: { tag: GraphQlTag }[];
+  /** Only what progress needs; ListGoalCheckins reads them whole. */
+  checkins: {
+    checkinDate: string;
+    value: Numeric | null;
+    confidence: string | null;
+    createdTime: string;
+  }[];
+  habitLogs: { logDate: string; done: boolean; quantity: Numeric | null }[];
 };
 
 const num = (value: Numeric): number => Number(value);
@@ -112,8 +122,11 @@ export const toMilestone = (input: GraphQlGoalMilestone): GoalMilestone => ({
   lastUpdatedTime: time(input.lastUpdatedTime),
 });
 
-/** What the progress engine reads from a row; check-ins and logs come in phase 4. */
-export const toEngineGoal = (input: GraphQlGoal): EngineGoal => ({
+/**
+ * What the progress engine reads from a row. Times become the caller's
+ * local days, as the engine counts in days.
+ */
+export const toEngineGoal = (input: GraphQlGoal, tz: string): EngineGoal => ({
   id: input.id,
   parentId: optional(input.parentId),
   deleted: input.deletedTime !== null,
@@ -125,6 +138,7 @@ export const toEngineGoal = (input: GraphQlGoal): EngineGoal => ({
   manualProgress: optional(input.manualProgress),
   startDate: input.startDate,
   dueDate: optional(input.dueDate),
+  closedOn: optional(input.closedOn),
   unit: optional(input.unit),
   startValue: optionalNum(input.startValue),
   targetValue: optionalNum(input.targetValue),
@@ -132,6 +146,7 @@ export const toEngineGoal = (input: GraphQlGoal): EngineGoal => ({
   milestones: input.milestones.map((m) => ({
     weight: num(m.weight),
     done: m.doneTime !== null,
+    doneOn: m.doneTime === null ? undefined : localDateOf(m.doneTime, tz),
   })),
   habitRule: input.habitRule
     ? {
@@ -144,8 +159,17 @@ export const toEngineGoal = (input: GraphQlGoal): EngineGoal => ({
         quantityTarget: optionalNum(input.habitRule.quantityTarget),
       }
     : undefined,
-  checkins: [],
-  habitLogs: [],
+  checkins: input.checkins.map((c) => ({
+    date: c.checkinDate,
+    value: optionalNum(c.value),
+    confidence: optional(c.confidence) as GoalHealth | undefined,
+    createdTime: c.createdTime,
+  })),
+  habitLogs: input.habitLogs.map((l) => ({
+    date: l.logDate,
+    done: l.done,
+    quantity: optionalNum(l.quantity),
+  })),
 });
 
 /** The goal as the model has it, with what the engine worked out for it. */
@@ -182,6 +206,7 @@ export const toDomainObject = (
   currentValue: progress.currentValue,
   expectedProgress: progress.expectedProgress,
   health: progress.health,
+  needsDecision: progress.needsDecision ?? false,
   deleted: input.deletedTime !== null,
   createdTime: moment(input.createdTime),
   lastUpdatedTime: time(input.lastUpdatedTime),

@@ -215,4 +215,33 @@ describe("habitSummary", () => {
       expect(s).toMatchObject({ done: 1, due: 2, adherence: 50 });
     });
   });
+
+  describe("a habit that stopped", () => {
+    const rule = { frequency: HabitFrequency.Weekly, timesPerPeriod: 3 };
+    const runs = done(
+      "2026-09-14",
+      "2026-09-16",
+      "2026-09-18",
+      "2026-09-22",
+      "2026-09-24",
+    );
+
+    it("is measured as of the day it stopped, a finished last week in full", () => {
+      const s = habitSummary(rule, runs, "2026-09-14", TODAY, "2026-09-27");
+      expect(s).toMatchObject({ done: 5, due: 6, adherence: 83.3 });
+      expect(s.currentStreak).toBe(0);
+      expect(s.bestStreak).toBe(1);
+    });
+
+    it("counts a week it stopped partway through only as far as done", () => {
+      const s = habitSummary(rule, runs, "2026-09-14", TODAY, "2026-09-23");
+      expect(s).toMatchObject({ done: 4, due: 4, periodDone: 1 });
+      expect(s.currentStreak).toBe(1);
+    });
+
+    it("is measured as of today while the stop is still to come", () => {
+      const s = habitSummary(rule, runs, "2026-09-14", TODAY, "2026-12-31");
+      expect(s).toMatchObject({ done: 5, due: 6, periodDone: 0 });
+    });
+  });
 });

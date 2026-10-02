@@ -22,15 +22,27 @@ import { ReorderGoalsController } from "./controllers/ReorderGoalsController";
 import { RestoreGoalController } from "./controllers/RestoreGoalController";
 import { UpdateGoalController } from "./controllers/UpdateGoalController";
 import { UpdateGoalMilestoneController } from "./controllers/UpdateGoalMilestoneController";
+import { CloseGoalController } from "./controllers/CloseGoalController";
+import { CreateGoalCheckinController } from "./controllers/CreateGoalCheckinController";
+import { DeleteGoalCheckinController } from "./controllers/DeleteGoalCheckinController";
+import { DeleteGoalHabitLogController } from "./controllers/DeleteGoalHabitLogController";
+import { GetGoalExecutionController } from "./controllers/GetGoalExecutionController";
+import { ListGoalCheckinsController } from "./controllers/ListGoalCheckinsController";
+import { ListGoalHabitLogsController } from "./controllers/ListGoalHabitLogsController";
+import { ListGoalHabitsForDayController } from "./controllers/ListGoalHabitsForDayController";
+import { LogGoalHabitController } from "./controllers/LogGoalHabitController";
+import { SuggestGoalCheckinController } from "./controllers/SuggestGoalCheckinController";
+import { UpdateGoalCheckinController } from "./controllers/UpdateGoalCheckinController";
 import { GoalCategoryService } from "./services/GoalCategoryService";
+import { GoalCheckinService } from "./services/GoalCheckinService";
 import { GoalCycleService } from "./services/GoalCycleService";
+import { GoalHabitService } from "./services/GoalHabitService";
 import { GoalMilestoneService } from "./services/GoalMilestoneService";
 import { GoalService } from "./services/GoalService";
 
 /**
  * Goals: categories, cycles, goals, check-ins and habits, each user's own
- * (ADR 0026, docs/plans/goals/README.md). The operations arrive phase by
- * phase.
+ * (ADR 0026, docs/plans/goals/README.md).
  */
 @Module({
   imports: [GraphQLClientModule],
@@ -39,6 +51,8 @@ import { GoalService } from "./services/GoalService";
     GoalCycleService,
     GoalService,
     GoalMilestoneService,
+    GoalCheckinService,
+    GoalHabitService,
   ],
   controllers: [
     ListGoalCategoriesController,
@@ -54,6 +68,8 @@ import { GoalService } from "./services/GoalService";
     DeleteGoalCycleController,
     ListGoalsController,
     CreateGoalController,
+    GetGoalExecutionController,
+    ListGoalHabitsForDayController,
     ReorderGoalsController,
     DescribeGoalController,
     UpdateGoalController,
@@ -63,6 +79,15 @@ import { GoalService } from "./services/GoalService";
     ReorderGoalMilestonesController,
     UpdateGoalMilestoneController,
     DeleteGoalMilestoneController,
+    CloseGoalController,
+    ListGoalCheckinsController,
+    CreateGoalCheckinController,
+    SuggestGoalCheckinController,
+    UpdateGoalCheckinController,
+    DeleteGoalCheckinController,
+    ListGoalHabitLogsController,
+    LogGoalHabitController,
+    DeleteGoalHabitLogController,
   ],
 })
 export class GoalsModule {}

@@ -2334,6 +2334,145 @@
         ]
       }
     },
+    "/minerva/goals/execution": {
+      "get": {
+        "description": "Habit occurrences done over due for an ISO week or a cycle's execution weeks, overall, per goal and per day; this week in the caller's timezone when neither is given. Days after today are not due yet.",
+        "operationId": "GetGoalExecution",
+        "parameters": [
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cycleId",
+            "required": false,
+            "in": "query",
+            "description": "A cycle of the caller's, for its execution weeks",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "week",
+            "required": false,
+            "in": "query",
+            "description": "An ISO week written YYYY-Www, e.g. 2026-W40",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The execution score.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetGoalExecutionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets the signed-in user's execution score",
+        "tags": [
+          "Goals"
+        ]
+      }
+    },
+    "/minerva/goals/habits/{date}": {
+      "get": {
+        "description": "The active habit goals due on a day: each whose rule asks for one that day and whose week or month is not yet met, or that was logged that day, with the day's log and its period so far. today is today in the caller's timezone.",
+        "operationId": "ListGoalHabitsForDay",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "description": "The day, as YYYY-MM-DD or today; not after today in the caller's timezone",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The habits due that day.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListGoalHabitsForDayResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the signed-in user's habits due on a day",
+        "tags": [
+          "Goals"
+        ]
+      }
+    },
     "/minerva/goals/order": {
       "put": {
         "description": "Puts the goals named in the order given, sharing out the positions they already hold among them, so one list can be reordered without naming every goal.",
@@ -2939,6 +3078,667 @@
           }
         },
         "summary": "Removes a milestone from one of the signed-in user's goals",
+        "tags": [
+          "Goals"
+        ]
+      }
+    },
+    "/minerva/goal/{goalId}/close": {
+      "post": {
+        "description": "Closes an open goal as achieved, missed or dropped, on a day (today by default, never a future one), with an outcome's final value, a hand-set goal's final progress, and what was learned. The one way into a closed status; UpdateGoal reopens.",
+        "operationId": "CloseGoal",
+        "parameters": [
+          {
+            "name": "goalId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the goal",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CloseGoal operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseGoalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The goal, closed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloseGoalResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The goal is already closed."
+          }
+        },
+        "summary": "Closes one of the signed-in user's goals",
+        "tags": [
+          "Goals"
+        ]
+      }
+    },
+    "/minerva/goal/{goalId}/checkins": {
+      "get": {
+        "description": "A goal's check-ins, latest first, each with where it was made. Another user's goal is not found.",
+        "operationId": "ListGoalCheckins",
+        "parameters": [
+          {
+            "name": "goalId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the goal",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The goal's check-ins, latest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListGoalCheckinsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the check-ins on one of the signed-in user's goals",
+        "tags": [
+          "Goals"
+        ]
+      },
+      "post": {
+        "description": "Records where a goal stands on a day: today unless a past day is given, never a future one. An outcome goal's check-in needs a value; any other goal's needs a confidence. A closed goal takes no check-ins (409).",
+        "operationId": "CreateGoalCheckin",
+        "parameters": [
+          {
+            "name": "goalId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the goal",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateGoalCheckin operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGoalCheckinRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The check-in was made.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateGoalCheckinResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The goal is closed."
+          }
+        },
+        "summary": "Checks in on one of the signed-in user's goals",
+        "tags": [
+          "Goals"
+        ]
+      }
+    },
+    "/minerva/goal/{goalId}/checkin/suggestion": {
+      "get": {
+        "description": "The check-in form's defaults for today in the caller's timezone: the goal's progress and current value, where pace says it should be, and the confidence those numbers suggest.",
+        "operationId": "SuggestGoalCheckin",
+        "parameters": [
+          {
+            "name": "goalId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the goal",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The check-in form's defaults.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestGoalCheckinResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Suggests a check-in for one of the signed-in user's goals",
+        "tags": [
+          "Goals"
+        ]
+      }
+    },
+    "/minerva/goal/{goalId}/checkin/{checkinId}": {
+      "put": {
+        "description": "Changes a check-in's day, value, confidence or note; the check-in as it would stand must still be valid.",
+        "operationId": "UpdateGoalCheckin",
+        "parameters": [
+          {
+            "name": "goalId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the goal",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "checkinId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the check-in",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateGoalCheckin operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGoalCheckinRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The check-in with the changes applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateGoalCheckinResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The request named nothing to change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Changes a check-in on one of the signed-in user's goals",
+        "tags": [
+          "Goals"
+        ]
+      },
+      "delete": {
+        "description": "Removes a check-in; the goal's progress and health follow the check-ins left.",
+        "operationId": "DeleteGoalCheckin",
+        "parameters": [
+          {
+            "name": "goalId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the goal",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "checkinId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the check-in",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The check-in was removed."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Removes a check-in from one of the signed-in user's goals",
+        "tags": [
+          "Goals"
+        ]
+      }
+    },
+    "/minerva/goal/{goalId}/habit": {
+      "get": {
+        "description": "A habit goal's logs from one day to another, the last twelve weeks by default, with its adherence and current and best streaks as of today in the caller's timezone.",
+        "operationId": "ListGoalHabitLogs",
+        "parameters": [
+          {
+            "name": "goalId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the goal",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "The last day, as YYYY-MM-DD; today when absent",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "The first day, as YYYY-MM-DD; twelve weeks before to when absent",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The habit's logs and where it stands.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListGoalHabitLogsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the logs of one of the signed-in user's habits",
+        "tags": [
+          "Goals"
+        ]
+      }
+    },
+    "/minerva/goal/{goalId}/habit/{date}": {
+      "put": {
+        "description": "Records a habit goal's day, replacing any log already there: marked done, or a quantity towards the rule's target. The day is the caller's local day and not after today; a day before the goal started, or after it closed, is refused.",
+        "operationId": "LogGoalHabit",
+        "parameters": [
+          {
+            "name": "goalId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the goal",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "description": "The day, as YYYY-MM-DD or today; not after today in the caller's timezone",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "Input for the LogGoalHabit operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogGoalHabitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The day's log as saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogGoalHabitResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Logs a day of one of the signed-in user's habits",
+        "tags": [
+          "Goals"
+        ]
+      },
+      "delete": {
+        "description": "Removes a habit goal's log for a day.",
+        "operationId": "DeleteGoalHabitLog",
+        "parameters": [
+          {
+            "name": "goalId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the goal",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "description": "The day, as YYYY-MM-DD or today; not after today in the caller's timezone",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which decides today's date; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The day's log was removed."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Clears a day of one of the signed-in user's habits",
         "tags": [
           "Goals"
         ]
@@ -4528,6 +5328,7 @@
       },
       "GoalStatus": {
         "type": "string",
+        "description": "Where a goal is in its life",
         "enum": [
           "draft",
           "active",
@@ -4535,8 +5336,7 @@
           "achieved",
           "missed",
           "dropped"
-        ],
-        "description": "Where the goal is in its life"
+        ]
       },
       "GoalHorizon": {
         "type": "string",
@@ -4572,12 +5372,12 @@
       },
       "GoalHealth": {
         "type": "string",
+        "description": "How a goal is doing: on track, at risk or off track",
         "enum": [
           "on_track",
           "at_risk",
           "off_track"
-        ],
-        "description": "How an active goal is doing; absent for others"
+        ]
       },
       "Goal": {
         "type": "object",
@@ -4729,6 +5529,10 @@
               }
             ]
           },
+          "needsDecision": {
+            "type": "boolean",
+            "description": "Whether an active goal's last three check-ins were all at risk or off track, so it needs a decision"
+          },
           "deleted": {
             "type": "boolean",
             "description": "Whether the goal is deleted and can be restored"
@@ -4757,6 +5561,7 @@
           "tagIds",
           "subGoalIds",
           "progress",
+          "needsDecision",
           "deleted",
           "createdTime"
         ]
@@ -5241,6 +6046,10 @@
               }
             ]
           },
+          "needsDecision": {
+            "type": "boolean",
+            "description": "Whether an active goal's last three check-ins were all at risk or off track, so it needs a decision"
+          },
           "deleted": {
             "type": "boolean",
             "description": "Whether the goal is deleted and can be restored"
@@ -5298,6 +6107,7 @@
           "tagIds",
           "subGoalIds",
           "progress",
+          "needsDecision",
           "deleted",
           "createdTime",
           "milestones",
@@ -5319,6 +6129,229 @@
         },
         "required": [
           "goal"
+        ]
+      },
+      "GoalExecutionGoal": {
+        "type": "object",
+        "properties": {
+          "done": {
+            "type": "number",
+            "description": "Occurrences done"
+          },
+          "due": {
+            "type": "number",
+            "description": "Occurrences due"
+          },
+          "score": {
+            "type": "number",
+            "description": "Done over due, 0 to 100; absent when nothing was due"
+          },
+          "goalId": {
+            "type": "string",
+            "description": "The ID of the habit goal"
+          }
+        },
+        "required": [
+          "done",
+          "due",
+          "goalId"
+        ]
+      },
+      "GoalExecutionDay": {
+        "type": "object",
+        "properties": {
+          "done": {
+            "type": "number",
+            "description": "Occurrences done"
+          },
+          "due": {
+            "type": "number",
+            "description": "Occurrences due"
+          },
+          "score": {
+            "type": "number",
+            "description": "Done over due, 0 to 100; absent when nothing was due"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "The day, as YYYY-MM-DD; a week's or month's occurrences count on the day the period ends, or today while it runs"
+          }
+        },
+        "required": [
+          "done",
+          "due",
+          "date"
+        ]
+      },
+      "GoalExecution": {
+        "type": "object",
+        "properties": {
+          "done": {
+            "type": "number",
+            "description": "Occurrences done"
+          },
+          "due": {
+            "type": "number",
+            "description": "Occurrences due"
+          },
+          "score": {
+            "type": "number",
+            "description": "Done over due, 0 to 100; absent when nothing was due"
+          },
+          "from": {
+            "type": "string",
+            "format": "date",
+            "description": "The first day of the span, as YYYY-MM-DD"
+          },
+          "to": {
+            "type": "string",
+            "format": "date",
+            "description": "The last day of the span, as YYYY-MM-DD"
+          },
+          "goals": {
+            "description": "Each habit goal with something due or done, in goal order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalExecutionGoal"
+            }
+          },
+          "days": {
+            "description": "Every day of the span up to today, in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalExecutionDay"
+            }
+          }
+        },
+        "required": [
+          "done",
+          "due",
+          "from",
+          "to",
+          "goals",
+          "days"
+        ]
+      },
+      "GetGoalExecutionResponse": {
+        "type": "object",
+        "properties": {
+          "execution": {
+            "description": "The execution score for the week or cycle asked for.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalExecution"
+              }
+            ]
+          }
+        },
+        "required": [
+          "execution"
+        ]
+      },
+      "GoalHabitLog": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the log"
+          },
+          "goalId": {
+            "type": "string",
+            "description": "The ID of the habit goal"
+          },
+          "logDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The day logged, as YYYY-MM-DD"
+          },
+          "done": {
+            "type": "boolean",
+            "description": "Whether the habit was marked done that day"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "How much was done that day, in the rule's quantity unit"
+          },
+          "note": {
+            "type": "string",
+            "description": "A note, at most 500 characters"
+          },
+          "met": {
+            "type": "boolean",
+            "description": "Whether the day counts: marked done, or its quantity reached the rule's target"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the day was first logged"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the log was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "goalId",
+          "logDate",
+          "done",
+          "met",
+          "createdTime"
+        ]
+      },
+      "GoalHabitDay": {
+        "type": "object",
+        "properties": {
+          "goal": {
+            "description": "The habit goal",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Goal"
+              }
+            ]
+          },
+          "log": {
+            "description": "The day's log, if it has one",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalHabitLog"
+              }
+            ]
+          },
+          "periodDone": {
+            "type": "number",
+            "description": "Occurrences done in the day's period, up to and including it"
+          },
+          "periodCapacity": {
+            "type": "number",
+            "description": "Occurrences the day's period holds"
+          }
+        },
+        "required": [
+          "goal",
+          "periodDone",
+          "periodCapacity"
+        ]
+      },
+      "ListGoalHabitsForDayResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "The day listed, as YYYY-MM-DD"
+          },
+          "habits": {
+            "description": "The active habits due that day, in goal order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalHabitDay"
+            }
+          }
+        },
+        "required": [
+          "date",
+          "habits"
         ]
       },
       "ReorderGoalsRequest": {
@@ -5473,7 +6506,7 @@
         "type": "object",
         "properties": {
           "goal": {
-            "description": "The changes to the goal. Null clears an optional field; achieved, missed and dropped need closedOn.",
+            "description": "The changes to the goal. Null clears an optional field. A goal is achieved, missed or dropped with CloseGoal; setting an open status reopens a closed goal and clears its closedOn.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/PartialGoal"
@@ -5644,6 +6677,444 @@
         },
         "required": [
           "goalMilestone"
+        ]
+      },
+      "GoalClose": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "description": "How the goal ended: achieved, missed or dropped",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalStatus"
+              }
+            ]
+          },
+          "closedOn": {
+            "type": "string",
+            "format": "date",
+            "description": "The day the goal closed, as YYYY-MM-DD; defaults to today in the caller's timezone"
+          },
+          "finalValue": {
+            "type": "number",
+            "description": "An outcome goal's final value, recorded as a check-in on the closing day"
+          },
+          "finalProgress": {
+            "type": "number",
+            "description": "A goal with progress set by hand: its final progress, 0 to 100"
+          },
+          "note": {
+            "type": "string",
+            "description": "What was learned, at most 2,000 characters"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "CloseGoalRequest": {
+        "type": "object",
+        "properties": {
+          "goalClose": {
+            "description": "How the goal ends.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalClose"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalClose"
+        ]
+      },
+      "CloseGoalResponse": {
+        "type": "object",
+        "properties": {
+          "goal": {
+            "description": "The goal, closed.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullGoal"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goal"
+        ]
+      },
+      "GoalCheckinSource": {
+        "type": "string",
+        "enum": [
+          "goal",
+          "daily_review",
+          "weekly_review"
+        ],
+        "description": "Where the check-in was made"
+      },
+      "GoalCheckin": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the check-in"
+          },
+          "goalId": {
+            "type": "string",
+            "description": "The ID of the goal checked in on"
+          },
+          "checkinDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The day the check-in is for, as YYYY-MM-DD; today or earlier in the caller's timezone"
+          },
+          "value": {
+            "type": "number",
+            "description": "An outcome goal's value that day; required for outcome goals"
+          },
+          "confidence": {
+            "description": "How the goal felt that day; required unless the check-in only records a closing value",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalHealth"
+              }
+            ]
+          },
+          "note": {
+            "type": "string",
+            "description": "A note, at most 2,000 characters"
+          },
+          "source": {
+            "default": "goal",
+            "description": "Where the check-in was made",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCheckinSource"
+              }
+            ]
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the check-in was made"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the check-in was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "goalId",
+          "checkinDate",
+          "source",
+          "createdTime"
+        ]
+      },
+      "ListGoalCheckinsResponse": {
+        "type": "object",
+        "properties": {
+          "goalCheckins": {
+            "description": "The goal's check-ins, latest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalCheckin"
+            }
+          }
+        },
+        "required": [
+          "goalCheckins"
+        ]
+      },
+      "BaseGoalCheckin": {
+        "type": "object",
+        "properties": {
+          "checkinDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The day the check-in is for, as YYYY-MM-DD; today or earlier in the caller's timezone"
+          },
+          "value": {
+            "type": "number",
+            "description": "An outcome goal's value that day; required for outcome goals"
+          },
+          "confidence": {
+            "description": "How the goal felt that day; required unless the check-in only records a closing value",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalHealth"
+              }
+            ]
+          },
+          "note": {
+            "type": "string",
+            "description": "A note, at most 2,000 characters"
+          },
+          "source": {
+            "default": "goal",
+            "description": "Where the check-in was made",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCheckinSource"
+              }
+            ]
+          }
+        }
+      },
+      "CreateGoalCheckinRequest": {
+        "type": "object",
+        "properties": {
+          "goalCheckin": {
+            "description": "The check-in. An outcome goal's needs a value; every other needs a confidence.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseGoalCheckin"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCheckin"
+        ]
+      },
+      "CreateGoalCheckinResponse": {
+        "type": "object",
+        "properties": {
+          "goalCheckin": {
+            "description": "The check-in as made.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCheckin"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCheckin"
+        ]
+      },
+      "GoalCheckinSuggestion": {
+        "type": "object",
+        "properties": {
+          "checkinDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Today in the caller's timezone, as YYYY-MM-DD"
+          },
+          "progress": {
+            "type": "number",
+            "description": "How far the goal has come, 0 to 100"
+          },
+          "currentValue": {
+            "type": "number",
+            "description": "An outcome goal's current value"
+          },
+          "expectedProgress": {
+            "type": "number",
+            "description": "Where pace says the goal should be today, 0 to 100"
+          },
+          "expectedValue": {
+            "type": "number",
+            "description": "Where pace says an outcome goal's value should be today"
+          },
+          "confidence": {
+            "description": "The confidence pace (or a habit's adherence) suggests, ignoring earlier check-ins",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalHealth"
+              }
+            ]
+          }
+        },
+        "required": [
+          "checkinDate",
+          "progress",
+          "confidence"
+        ]
+      },
+      "SuggestGoalCheckinResponse": {
+        "type": "object",
+        "properties": {
+          "suggestion": {
+            "description": "The check-in form's defaults for today.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCheckinSuggestion"
+              }
+            ]
+          }
+        },
+        "required": [
+          "suggestion"
+        ]
+      },
+      "PartialGoalCheckin": {
+        "type": "object",
+        "properties": {
+          "checkinDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The day the check-in is for, as YYYY-MM-DD; today or earlier in the caller's timezone"
+          },
+          "value": {
+            "type": "number",
+            "description": "An outcome goal's value that day; required for outcome goals"
+          },
+          "confidence": {
+            "description": "How the goal felt that day; required unless the check-in only records a closing value",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalHealth"
+              }
+            ]
+          },
+          "note": {
+            "type": "string",
+            "description": "A note, at most 2,000 characters"
+          }
+        }
+      },
+      "UpdateGoalCheckinRequest": {
+        "type": "object",
+        "properties": {
+          "goalCheckin": {
+            "description": "The changes to the check-in.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialGoalCheckin"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCheckin"
+        ]
+      },
+      "UpdateGoalCheckinResponse": {
+        "type": "object",
+        "properties": {
+          "goalCheckin": {
+            "description": "The check-in with the changes applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalCheckin"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalCheckin"
+        ]
+      },
+      "GoalHabitSummary": {
+        "type": "object",
+        "properties": {
+          "adherence": {
+            "type": "number",
+            "description": "Done over due across the last 28 days, 4 weeks or 3 months, 0 to 100; absent when nothing was due yet"
+          },
+          "done": {
+            "type": "number",
+            "description": "Occurrences done in that window"
+          },
+          "due": {
+            "type": "number",
+            "description": "Occurrences due in that window; the current period is due only as much as it is done"
+          },
+          "currentStreak": {
+            "type": "number",
+            "description": "Periods met in a row, back from today; a current period not met yet does not break it"
+          },
+          "bestStreak": {
+            "type": "number",
+            "description": "The longest run of periods met"
+          },
+          "periodDone": {
+            "type": "number",
+            "description": "Occurrences done so far in the current period"
+          },
+          "periodCapacity": {
+            "type": "number",
+            "description": "Occurrences the current period holds"
+          }
+        },
+        "required": [
+          "done",
+          "due",
+          "currentStreak",
+          "bestStreak",
+          "periodDone",
+          "periodCapacity"
+        ]
+      },
+      "ListGoalHabitLogsResponse": {
+        "type": "object",
+        "properties": {
+          "goalHabitLogs": {
+            "description": "The habit's logs in the range asked for, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalHabitLog"
+            }
+          },
+          "summary": {
+            "description": "Adherence and streaks as of today.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalHabitSummary"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalHabitLogs",
+          "summary"
+        ]
+      },
+      "BaseGoalHabitLog": {
+        "type": "object",
+        "properties": {
+          "done": {
+            "type": "boolean",
+            "description": "Whether the habit was marked done that day"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "How much was done that day, in the rule's quantity unit"
+          },
+          "note": {
+            "type": "string",
+            "description": "A note, at most 500 characters"
+          }
+        }
+      },
+      "LogGoalHabitRequest": {
+        "type": "object",
+        "properties": {
+          "goalHabitLog": {
+            "description": "The day's log, replacing any already there. Omitted, the day is marked done.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseGoalHabitLog"
+              }
+            ]
+          }
+        }
+      },
+      "LogGoalHabitResponse": {
+        "type": "object",
+        "properties": {
+          "goalHabitLog": {
+            "description": "The day's log as saved.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalHabitLog"
+              }
+            ]
+          }
+        },
+        "required": [
+          "goalHabitLog"
         ]
       }
     }

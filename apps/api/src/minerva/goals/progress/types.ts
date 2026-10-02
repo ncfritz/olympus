@@ -8,7 +8,7 @@ import type {
 } from "@ncfritz/olympus-model";
 import type { IsoDate } from "../utils/localDates";
 
-/** A check-in as the engine needs it (the table arrives in phase 4). */
+/** A check-in as the engine needs it. */
 export type EngineCheckin = {
   date: IsoDate;
   value?: number;
@@ -32,7 +32,12 @@ export type EngineHabitRule = {
   quantityTarget?: number;
 };
 
-export type EngineMilestone = { weight: number; done: boolean };
+export type EngineMilestone = {
+  weight: number;
+  done: boolean;
+  /** The caller's local day it was done on. */
+  doneOn?: IsoDate;
+};
 
 /** Everything the engine reads about one goal. */
 export type EngineGoal = {
@@ -47,6 +52,8 @@ export type EngineGoal = {
   manualProgress?: number;
   startDate: IsoDate;
   dueDate?: IsoDate;
+  /** When an achieved, missed or dropped goal closed. */
+  closedOn?: IsoDate;
   unit?: string;
   startValue?: number;
   targetValue?: number;
@@ -67,4 +74,6 @@ export type GoalProgress = {
   expectedProgress?: number;
   /** For active goals only. */
   health?: GoalHealth;
+  /** An active goal whose last three confidences were at risk or worse. */
+  needsDecision?: boolean;
 };

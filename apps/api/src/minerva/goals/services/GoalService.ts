@@ -2,7 +2,13 @@ import {
   CreateGoalRequest,
   FullGoal,
   Goal,
+  GoalCheckinSource,
+  GoalCheckinSuggestion,
+  GoalClose,
+  GoalExecution,
+  GoalHabitDay,
   GoalHorizon,
+  GoalProgressMode,
   GoalStatus,
   GoalType,
   UpdateGoalRequest,
@@ -23,8 +29,17 @@ import {
   toFullGoal,
   weekdaysToMask,
 } from "../converters/GoalConverter";
-import { computeProgress } from "../progress";
-import { GOAL } from "../queries/goals";
+import {
+  type GraphQlGoalHabitLog,
+  toDomainObject as toHabitLog,
+} from "../converters/GoalHabitLogConverter";
+import {
+  computeExecution,
+  computeProgress,
+  habitSummary,
+  suggestedHealth,
+} from "../progress";
+import { GOAL, GOAL_HABIT_LOG } from "../queries/goals";
 import {
   checkGoalValues,
   checkHabitRule,
@@ -35,8 +50,20 @@ import {
   type GoalValues,
   type HabitRuleValues,
 } from "../utils/goalValues";
-import { checkTimezone, todayIn } from "../utils/localDates";
-import { checkEnum, isUuid } from "../utils/validation";
+import {
+  checkPastDay,
+  checkTimezone,
+  isoWeekBounds,
+  isoWeekOf,
+  todayIn,
+} from "../utils/localDates";
+import {
+  checkEnum,
+  checkInteger,
+  checkNumber,
+  checkOptionalText,
+  isUuid,
+} from "../utils/validation";
 
 /** The statuses ListGoals shows unless told otherwise: the open ones. */
 const OPEN = [GoalStatus.Draft, GoalStatus.Active, GoalStatus.Paused];
@@ -79,7 +106,7 @@ export class GoalService {
   ): Promise<Goal[]> {
     const today = todayIn(checkTimezone(tz));
     const matches = checkFilters(filters);
-    const view = this.view(await this.rows(userId), today);
+    const view = this.view(await this.rows(userId), today, tz);
     return [...view.goals.values()].filter((g) => !g.deleted && matches(g));
   }
 
@@ -90,7 +117,7 @@ export class GoalService {
     tz: string,
   ): Promise<FullGoal> {
     const today = todayIn(checkTimezone(tz));
-    return this.full(this.view(await this.rows(userId), today), goalId);
+    return this.full(this.view(await this.rows(userId), today, tz), goalId);
   }
 
   /**
@@ -207,7 +234,7 @@ export class GoalService {
       object,
     });
     const id = result.insert_minerva_goals_one.id;
-    return this.full(this.view(await this.rows(userId), today), id);
+    return this.full(this.view(await this.rows(userId), today, tz), id);
   }
 
   /**
@@ -266,6 +293,14 @@ export class GoalService {
     ) {
       merged.closedOn = null;
     }
+    if (
+      !CLOSED.includes(current.status) &&
+      CLOSED.includes(merged.status as GoalStatus)
+    ) {
+      throw new BadRequestException(
+        "a goal is achieved, missed or dropped with CloseGoal",
+      );
+    }
     const values = checkGoalValues(merged, problems);
 
     let rule: HabitRuleValues | undefined;
@@ -318,7 +353,7 @@ export class GoalService {
     const hasSet = Object.keys(set).length > 0;
     const hasTags = addTags.length > 0 || removeTagIds.length > 0;
     if (!hasSet && !ruleChanged && !hasTags) {
-      return this.full(this.view(rows, today), goalId);
+      return this.full(this.view(rows, today, tz), goalId);
     }
 
     // One transaction: Hasura runs a mutation's root fields in order. The
@@ -378,7 +413,7 @@ export class GoalService {
       addTags: addTags.map((tagId) => ({ goalId, tagId })),
       hasTags,
     });
-    return this.full(this.view(await this.rows(userId), today), goalId);
+    return this.full(this.view(await this.rows(userId), today, tz), goalId);
   }
 
   /**
@@ -443,7 +478,7 @@ export class GoalService {
       }
     `;
     await this.graphQLClient.request(document, { userId, goalId });
-    return this.full(this.view(await this.rows(userId), today), goalId);
+    return this.full(this.view(await this.rows(userId), today, tz), goalId);
   }
 
   /**
@@ -480,8 +515,300 @@ export class GoalService {
         _set: { position: positions[i] },
       })),
     });
-    const view = this.view(await this.rows(userId), today);
+    const view = this.view(await this.rows(userId), today, tz);
     return ids.map((id) => view.goals.get(id)!);
+  }
+
+  /**
+   * The check-in form's defaults for a goal today: where it is, where pace
+   * says it should be, and the confidence those numbers suggest.
+   */
+  async suggestCheckin(
+    userId: string,
+    goalId: string,
+    tz: string,
+  ): Promise<GoalCheckinSuggestion> {
+    const today = todayIn(checkTimezone(tz));
+    const rows = await this.rows(userId);
+    const row = rows.find((r) => r.id === goalId && r.deletedTime === null);
+    if (!row) throw notFound(goalId);
+    const view = this.view(rows, today, tz);
+    const goal = view.goals.get(goalId)!;
+    const progress = {
+      progress: goal.progress,
+      currentValue: goal.currentValue,
+      expectedProgress: goal.expectedProgress,
+    };
+    const suggestion: GoalCheckinSuggestion = {
+      checkinDate: today,
+      progress: goal.progress,
+      currentValue: goal.currentValue,
+      expectedProgress: goal.expectedProgress,
+      confidence: suggestedHealth(toEngineGoal(row, tz), progress, today),
+    };
+    if (
+      goal.expectedProgress !== undefined &&
+      goal.startValue !== undefined &&
+      goal.targetValue !== undefined
+    ) {
+      suggestion.expectedValue =
+        Math.round(
+          (goal.startValue +
+            (goal.expectedProgress / 100) *
+              (goal.targetValue - goal.startValue)) *
+            100,
+        ) / 100;
+    }
+    return suggestion;
+  }
+
+  /**
+   * The habits due on a day: active habit goals whose rule asks for one
+   * that day and whose period is not yet met, or that were logged that day.
+   */
+  async habitsForDay(
+    userId: string,
+    date: string,
+    tz: string,
+  ): Promise<{ date: string; habits: GoalHabitDay[] }> {
+    const today = todayIn(checkTimezone(tz));
+    const problems: string[] = [];
+    const day = checkPastDay(date, "date", today, problems);
+    if (problems.length) throw new BadRequestException(problems);
+
+    const rows = await this.rows(userId);
+    const document = gql`
+      query ListGoalHabitsForDay($userId: uuid!, $logDate: date!) {
+        minerva_goal_habit_logs(
+          where: {
+            logDate: { _eq: $logDate }
+            goal: { userId: { _eq: $userId } }
+          }
+        ) {
+          ${GOAL_HABIT_LOG}
+        }
+      }
+    `;
+    type Result = { minerva_goal_habit_logs: GraphQlGoalHabitLog[] };
+    const result = await this.graphQLClient.request<Result>(document, {
+      userId,
+      logDate: day,
+    });
+    const logs = new Map(
+      result.minerva_goal_habit_logs.map((l) => [l.goalId, l]),
+    );
+    const view = this.view(rows, today, tz);
+
+    const habits: GoalHabitDay[] = [];
+    for (const row of rows) {
+      const engine = toEngineGoal(row, tz);
+      if (
+        row.deletedTime !== null ||
+        engine.type !== GoalType.Habit ||
+        engine.status !== GoalStatus.Active ||
+        !engine.habitRule ||
+        engine.startDate > day ||
+        (engine.dueDate !== undefined && engine.dueDate < day)
+      ) {
+        continue;
+      }
+      const summary = habitSummary(
+        engine.habitRule,
+        engine.habitLogs,
+        engine.startDate,
+        day,
+      );
+      const log = logs.get(row.id);
+      if (
+        summary.periodCapacity === 0 ||
+        (summary.periodDone >= summary.periodCapacity && !log)
+      ) {
+        continue;
+      }
+      habits.push({
+        goal: view.goals.get(row.id)!,
+        log: log ? toHabitLog(log, engine.habitRule) : undefined,
+        periodDone: summary.periodDone,
+        periodCapacity: summary.periodCapacity,
+      });
+    }
+    return { date: day, habits };
+  }
+
+  /**
+   * Habit occurrences done over due for an ISO week (`2026-W40`) or a
+   * cycle's execution weeks; this week when neither is given.
+   */
+  async execution(
+    userId: string,
+    span: { week?: unknown; cycleId?: unknown },
+    tz: string,
+  ): Promise<GoalExecution> {
+    const today = todayIn(checkTimezone(tz));
+    const week = span.week === "" ? undefined : span.week;
+    const cycleId = span.cycleId === "" ? undefined : span.cycleId;
+    if (week !== undefined && cycleId !== undefined) {
+      throw new BadRequestException("give a week or a cycleId, not both");
+    }
+    let range: { from: string; to: string } | undefined;
+    if (cycleId !== undefined) {
+      if (!isUuid(cycleId)) {
+        throw new BadRequestException("cycleId must be an ID");
+      }
+      const document = gql`
+        query GetGoalExecution($userId: uuid!, $cycleId: uuid!) {
+          minerva_goal_cycles(
+            where: { id: { _eq: $cycleId }, userId: { _eq: $userId } }
+          ) {
+            startDate
+            weeks
+            bufferWeeks
+          }
+        }
+      `;
+      type Result = {
+        minerva_goal_cycles: {
+          startDate: string;
+          weeks: number;
+          bufferWeeks: number;
+        }[];
+      };
+      const result = await this.graphQLClient.request<Result>(document, {
+        userId,
+        cycleId,
+      });
+      const cycle = result.minerva_goal_cycles[0];
+      if (!cycle) {
+        throw new NotFoundException(`Goal cycle with id ${cycleId} not found`);
+      }
+      range = {
+        from: cycle.startDate,
+        to: cycleEnds(cycle.startDate, cycle.weeks, cycle.bufferWeeks).endDate,
+      };
+    } else {
+      range = isoWeekBounds(week ?? isoWeekOf(today));
+      if (!range) {
+        throw new BadRequestException(
+          "week must be an ISO week written YYYY-Www, e.g. 2026-W40",
+        );
+      }
+    }
+    const rows = await this.rows(userId);
+    return computeExecution(
+      rows.map((row) => toEngineGoal(row, tz)),
+      range.from,
+      range.to,
+      today,
+    );
+  }
+
+  /**
+   * Closes a goal as achieved, missed or dropped, with the day, a final
+   * value or progress, and what was learned. The one way into a closed
+   * status; UpdateGoal reopens.
+   */
+  async close(
+    userId: string,
+    goalId: string,
+    close: GoalClose | undefined,
+    tz: string,
+  ): Promise<FullGoal> {
+    const today = todayIn(checkTimezone(tz));
+    if (!close || typeof close !== "object") {
+      throw new BadRequestException("goalClose is required");
+    }
+    const input = close as unknown as Record<string, unknown>;
+    const problems: string[] = [];
+    const status = checkEnum(input.status, GoalStatus, "status", problems);
+    if (!problems.length && !CLOSED.includes(status)) {
+      problems.push("status must be achieved, missed or dropped");
+    }
+    const closedOn =
+      input.closedOn === undefined
+        ? today
+        : checkPastDay(input.closedOn, "closedOn", today, problems);
+    const finalValue =
+      input.finalValue === undefined || input.finalValue === null
+        ? undefined
+        : checkNumber(input.finalValue, "finalValue", problems);
+    const finalProgress =
+      input.finalProgress === undefined || input.finalProgress === null
+        ? undefined
+        : checkInteger(input.finalProgress, "finalProgress", 0, 100, problems);
+    const note = checkOptionalText(input.note, "note", 2000, problems);
+    if (problems.length) throw new BadRequestException(problems);
+
+    const rows = await this.rows(userId);
+    const row = rows.find((r) => r.id === goalId && r.deletedTime === null);
+    if (!row) throw notFound(goalId);
+    if (CLOSED.includes(row.status as GoalStatus)) {
+      throw new ConflictException(
+        `The goal is already ${row.status}; reopen it first`,
+      );
+    }
+    if (finalValue !== undefined && row.type !== GoalType.Outcome) {
+      problems.push("only outcome goals have a finalValue");
+    }
+    if (
+      finalProgress !== undefined &&
+      row.progressMode !== GoalProgressMode.Manual
+    ) {
+      problems.push(
+        "only goals with progress set by hand have a finalProgress",
+      );
+    }
+    if (closedOn < row.startDate) {
+      problems.push(
+        `closedOn must not be before the goal starts, ${row.startDate}`,
+      );
+    }
+    if (problems.length) throw new BadRequestException(problems);
+
+    const set: Record<string, unknown> = { status, closedOn };
+    if (note !== null) set.closeNote = note;
+    if (finalProgress !== undefined) set.manualProgress = finalProgress;
+    // The final value is a check-in on the closing day, so the goal's
+    // current value and history end where it closed.
+    const document = gql`
+      mutation CloseGoal(
+        $userId: uuid!
+        $goalId: uuid!
+        $set: minerva_goals_set_input!
+        $checkin: minerva_goal_checkins_insert_input!
+        $hasCheckin: Boolean!
+      ) {
+        update_minerva_goals(
+          where: {
+            id: { _eq: $goalId }
+            userId: { _eq: $userId }
+            deletedTime: { _is_null: true }
+          }
+          _set: $set
+        ) {
+          affected_rows
+        }
+        insert_minerva_goal_checkins_one(object: $checkin)
+          @include(if: $hasCheckin) {
+          id
+        }
+      }
+    `;
+    await this.graphQLClient.request(document, {
+      userId,
+      goalId,
+      set,
+      checkin:
+        finalValue === undefined
+          ? { goalId }
+          : {
+              goalId,
+              checkinDate: closedOn,
+              value: finalValue,
+              source: GoalCheckinSource.Goal,
+            },
+      hasCheckin: finalValue !== undefined,
+    });
+    return this.full(this.view(await this.rows(userId), today, tz), goalId);
   }
 
   /** Every one of the user's goals, deleted ones included. */
@@ -561,8 +888,11 @@ export class GoalService {
   }
 
   /** The user's goals with progress worked out for `today`. */
-  private view(rows: GraphQlGoal[], today: string): GoalsView {
-    const progress = computeProgress(rows.map(toEngineGoal), today);
+  private view(rows: GraphQlGoal[], today: string, tz: string): GoalsView {
+    const progress = computeProgress(
+      rows.map((row) => toEngineGoal(row, tz)),
+      today,
+    );
     const children = new Map<string, GraphQlGoal[]>();
     for (const row of rows) {
       if (row.deletedTime !== null || row.parentId === null) continue;

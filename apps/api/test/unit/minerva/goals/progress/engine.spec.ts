@@ -71,6 +71,7 @@ describe("computeProgress", () => {
         currentValue: 17,
         expectedProgress: 75,
         health: GoalHealth.OnTrack,
+        needsDecision: false,
       });
     });
 
@@ -163,6 +164,7 @@ describe("computeProgress", () => {
         progress: 33.3,
         expectedProgress: 28.9,
         health: GoalHealth.OnTrack,
+        needsDecision: false,
       });
     });
 
@@ -187,7 +189,11 @@ describe("computeProgress", () => {
         ],
         TODAY,
       ).get("plan");
-      expect(result).toEqual({ progress: 40, health: GoalHealth.OnTrack });
+      expect(result).toEqual({
+        progress: 40,
+        health: GoalHealth.OnTrack,
+        needsDecision: false,
+      });
     });
   });
 
@@ -213,7 +219,11 @@ describe("computeProgress", () => {
         ],
         TODAY,
       ).get("run");
-      expect(result).toEqual({ progress: 85.7, health: GoalHealth.OnTrack });
+      expect(result).toEqual({
+        progress: 85.7,
+        health: GoalHealth.OnTrack,
+        needsDecision: false,
+      });
     });
 
     it("are on track with nothing due yet", () => {
@@ -229,8 +239,34 @@ describe("computeProgress", () => {
         ],
         TODAY,
       ).get("new");
-      expect(result).toEqual({ progress: 0, health: GoalHealth.OnTrack });
+      expect(result).toEqual({
+        progress: 0,
+        health: GoalHealth.OnTrack,
+        needsDecision: false,
+      });
     });
+  });
+
+  it("measures a closed habit as of the day it closed", () => {
+    const run = (closedOn?: string) =>
+      goal(closedOn ?? "open", {
+        type: GoalType.Habit,
+        progressMode: GoalProgressMode.Habit,
+        status: closedOn ? GoalStatus.Dropped : GoalStatus.Active,
+        closedOn,
+        startDate: "2026-09-14",
+        dueDate: undefined,
+        habitRule: { frequency: HabitFrequency.Weekly, timesPerPeriod: 3 },
+        habitLogs: ["2026-09-14", "2026-09-16", "2026-09-18"].map((date) => ({
+          date,
+          done: true,
+        })),
+      });
+    const result = computeProgress([run("2026-09-20"), run()], TODAY);
+    // Closed after one full week of three: 100. Still running, the week
+    // since and the one before fall short: 3 of 6.
+    expect(result.get("2026-09-20")?.progress).toBe(100);
+    expect(result.get("open")?.progress).toBe(50);
   });
 
   describe("achievement goals", () => {
@@ -247,6 +283,7 @@ describe("computeProgress", () => {
       expect(computeProgress([ham()], TODAY).get("ham")).toEqual({
         progress: 0,
         health: GoalHealth.OnTrack,
+        needsDecision: false,
       });
     });
 
@@ -438,6 +475,172 @@ describe("computeProgress", () => {
       );
       expect(result.get("x")?.progress).toBe(0);
       expect(result.get("y")?.progress).toBe(0);
+    });
+  });
+
+  describe("health from check-ins", () => {
+    const confident = (
+      date: string,
+      confidence: GoalHealth,
+      value?: number,
+    ) => ({
+      date,
+      confidence,
+      value,
+      createdTime: `${date}T20:00:00Z`,
+    });
+
+    it("lets a confidence stand until a later value moves the goal", () => {
+      // 4 of 24 books against 75 % pace is off track by the numbers.
+      const stands = books({
+        checkins: [confident("2026-09-20", GoalHealth.OnTrack, 4)],
+      });
+      const moved = books({
+        checkins: [
+          confident("2026-09-20", GoalHealth.OnTrack, 4),
+          { date: "2026-09-28", value: 5, createdTime: "2026-09-28T20:00:00Z" },
+        ],
+      });
+      const result = computeProgress(
+        [stands, { ...moved, id: "moved" }],
+        TODAY,
+      );
+      expect(result.get("books")?.health).toBe(GoalHealth.OnTrack);
+      expect(result.get("moved")?.health).toBe(GoalHealth.OffTrack);
+    });
+
+    it("lets a milestone done on a later day hand health back to pace", () => {
+      const ticked = (doneOn: string) =>
+        goal(doneOn, {
+          milestones: [
+            { weight: 1, done: true, doneOn },
+            { weight: 3, done: false },
+          ],
+          checkins: [confident("2026-09-25", GoalHealth.AtRisk)],
+        });
+      const result = computeProgress(
+        [ticked("2026-09-25"), ticked("2026-09-26")],
+        TODAY,
+      );
+      // 25 % done against 75 % pace: off track by the numbers.
+      expect(result.get("2026-09-25")?.health).toBe(GoalHealth.AtRisk);
+      expect(result.get("2026-09-26")?.health).toBe(GoalHealth.OffTrack);
+    });
+
+    it("holds a habit's confidence through the period it was given in", () => {
+      const run = (date: string) =>
+        goal(date, {
+          type: GoalType.Habit,
+          progressMode: GoalProgressMode.Habit,
+          startDate: "2026-09-14",
+          dueDate: undefined,
+          habitRule: { frequency: HabitFrequency.Weekly, timesPerPeriod: 3 },
+          checkins: [confident(date, GoalHealth.AtRisk)],
+        });
+      // Oct 1 is in the ISO week from Sep 28; no runs logged at all.
+      const result = computeProgress(
+        [run("2026-09-28"), run("2026-09-27")],
+        TODAY,
+      );
+      expect(result.get("2026-09-28")?.health).toBe(GoalHealth.AtRisk);
+      expect(result.get("2026-09-27")?.health).toBe(GoalHealth.OffTrack);
+    });
+
+    it("lets an achievement's confidence stand: nothing else moves it", () => {
+      const result = computeProgress(
+        [
+          goal("trip", {
+            type: GoalType.Achievement,
+            progressMode: GoalProgressMode.Status,
+            checkins: [confident("2026-03-01", GoalHealth.AtRisk)],
+          }),
+        ],
+        TODAY,
+      );
+      expect(result.get("trip")?.health).toBe(GoalHealth.AtRisk);
+    });
+  });
+
+  describe("the decision flag", () => {
+    const checkins = (...confidences: (GoalHealth | undefined)[]) =>
+      confidences.map((confidence, i) => ({
+        date: `2026-09-${String(10 + i).padStart(2, "0")}`,
+        confidence,
+        value: confidence === undefined ? 1 : undefined,
+        createdTime: `2026-09-${String(10 + i).padStart(2, "0")}T20:00:00Z`,
+      }));
+    const { OnTrack, AtRisk, OffTrack } = GoalHealth;
+
+    it.each([
+      ["three at risk or worse running", [AtRisk, OffTrack, AtRisk], true],
+      [
+        "a fourth on track after them",
+        [AtRisk, OffTrack, AtRisk, OnTrack],
+        false,
+      ],
+      ["only two", [AtRisk, OffTrack], false],
+      [
+        "an on-track one among the three",
+        [AtRisk, OnTrack, OffTrack, AtRisk],
+        false,
+      ],
+      [
+        "value-only check-ins between them",
+        [AtRisk, undefined, OffTrack, undefined, AtRisk],
+        true,
+      ],
+    ])("is %s: %j", (_, confidences, flagged) => {
+      const result = computeProgress(
+        [goal("g", { checkins: checkins(...confidences) })],
+        TODAY,
+      );
+      expect(result.get("g")?.needsDecision).toBe(flagged);
+    });
+
+    it("orders check-ins on the same day by when they were made", () => {
+      const result = computeProgress(
+        [
+          goal("g", {
+            checkins: [
+              {
+                date: "2026-09-20",
+                confidence: OnTrack,
+                createdTime: "2026-09-20T21:00:00Z",
+              },
+              {
+                date: "2026-09-20",
+                confidence: AtRisk,
+                createdTime: "2026-09-20T09:00:00Z",
+              },
+              {
+                date: "2026-09-19",
+                confidence: AtRisk,
+                createdTime: "2026-09-19T09:00:00Z",
+              },
+              {
+                date: "2026-09-18",
+                confidence: AtRisk,
+                createdTime: "2026-09-18T09:00:00Z",
+              },
+            ],
+          }),
+        ],
+        TODAY,
+      );
+      expect(result.get("g")?.needsDecision).toBe(false);
+    });
+
+    it("is only for active goals", () => {
+      const result = computeProgress(
+        [
+          goal("g", {
+            status: GoalStatus.Paused,
+            checkins: checkins(AtRisk, AtRisk, AtRisk),
+          }),
+        ],
+        TODAY,
+      );
+      expect(result.get("g")?.needsDecision).toBeUndefined();
     });
   });
 });

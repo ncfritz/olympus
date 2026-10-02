@@ -6,7 +6,7 @@ import {
   GoalType,
 } from "@ncfritz/olympus-model";
 import type { IsoDate } from "../utils/localDates";
-import { habitSummary } from "./habits";
+import { habitSummary, periodBounds } from "./habits";
 import {
   habitHealth,
   latestCheckin,
@@ -16,7 +16,7 @@ import {
   paceHealth,
   percent,
 } from "./measures";
-import type { EngineGoal, GoalProgress } from "./types";
+import type { EngineCheckin, EngineGoal, GoalProgress } from "./types";
 
 /**
  * Progress, pace and health for every goal given, as of `today` in the
@@ -49,6 +49,9 @@ export const computeProgress = (
     if (expected !== undefined) result.expectedProgress = expected;
     const health = healthOf(goal, result, today);
     if (health !== undefined) result.health = health;
+    if (goal.status === GoalStatus.Active) {
+      result.needsDecision = needsDecision(goal.checkins);
+    }
 
     visiting.delete(goal.id);
     results.set(goal.id, result);
@@ -65,8 +68,13 @@ export const computeProgress = (
 
   const habitAdherence = (goal: EngineGoal): number | undefined =>
     goal.habitRule
-      ? habitSummary(goal.habitRule, goal.habitLogs, goal.startDate, today)
-          .adherence
+      ? habitSummary(
+          goal.habitRule,
+          goal.habitLogs,
+          goal.startDate,
+          today,
+          habitStop(goal),
+        ).adherence
       : undefined;
 
   const progressOf = (
@@ -169,8 +177,10 @@ const rollup = (
 };
 
 /**
- * An active goal's health: its latest check-in's confidence when it has
- * one; otherwise a habit's adherence, or progress against pace; an
+ * An active goal's health (ADR 0026). Its latest check-in's confidence
+ * stands until the goal's progress changes after it: a later value, a
+ * milestone done on a later day, or, for a habit, a new period starting.
+ * Otherwise a habit's adherence, or progress against pace, decides; an
  * achievement past its due date is off track. Other statuses have none.
  */
 const healthOf = (
@@ -183,21 +193,33 @@ const healthOf = (
     goal.checkins,
     (c) => c.confidence !== undefined,
   );
-  if (checkin?.confidence) return checkin.confidence;
+  if (checkin?.confidence && checkin.date >= lastChange(goal, today)) {
+    return checkin.confidence;
+  }
+  return suggestedHealth(goal, result, today);
+};
+
+/**
+ * The confidence a goal's numbers suggest, ignoring check-ins: a habit's
+ * adherence, progress against pace, or an achievement's due date.
+ */
+export const suggestedHealth = (
+  goal: EngineGoal,
+  result: GoalProgress,
+  today: IsoDate,
+): GoalHealth => {
   if (goal.type === GoalType.Habit) {
-    return goal.habitRule
-      ? (() => {
-          const summary = habitSummary(
-            goal.habitRule,
-            goal.habitLogs,
-            goal.startDate,
-            today,
-          );
-          return summary.adherence === undefined
-            ? GoalHealth.OnTrack
-            : habitHealth(summary.adherence);
-        })()
-      : GoalHealth.OnTrack;
+    if (!goal.habitRule) return GoalHealth.OnTrack;
+    const summary = habitSummary(
+      goal.habitRule,
+      goal.habitLogs,
+      goal.startDate,
+      today,
+      habitStop(goal),
+    );
+    return summary.adherence === undefined
+      ? GoalHealth.OnTrack
+      : habitHealth(summary.adherence);
   }
   if (result.expectedProgress !== undefined) {
     return paceHealth(
@@ -210,6 +232,43 @@ const healthOf = (
     return GoalHealth.OffTrack;
   }
   return GoalHealth.OnTrack;
+};
+
+/** The last day the goal's progress moved by something other than a confidence. */
+const lastChange = (goal: EngineGoal, today: IsoDate): IsoDate => {
+  let last = "";
+  const later = (date: IsoDate | undefined) => {
+    if (date !== undefined && date > last) last = date;
+  };
+  const value = latestCheckin(goal.checkins, (c) => c.value !== undefined);
+  later(value?.date);
+  for (const m of goal.milestones) if (m.done) later(m.doneOn);
+  if (goal.habitRule) {
+    later(periodBounds(goal.habitRule.frequency, today).start);
+  }
+  return last;
+};
+
+/** The last day a habit ran: the earlier of its closing and due dates. */
+export const habitStop = (goal: EngineGoal): IsoDate | undefined =>
+  [goal.closedOn, goal.dueDate]
+    .filter((d): d is IsoDate => d !== undefined)
+    .sort()[0];
+
+/** Whether the last three confidences given were all at risk or off track. */
+export const needsDecision = (checkins: EngineCheckin[]): boolean => {
+  const recent = checkins
+    .filter((c) => c.confidence !== undefined)
+    .sort((a, b) =>
+      a.date === b.date
+        ? b.createdTime.localeCompare(a.createdTime)
+        : b.date.localeCompare(a.date),
+    )
+    .slice(0, 3);
+  return (
+    recent.length === 3 &&
+    recent.every((c) => c.confidence !== GoalHealth.OnTrack)
+  );
 };
 
 const finish = (

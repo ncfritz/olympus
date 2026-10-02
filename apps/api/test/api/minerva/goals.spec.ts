@@ -744,24 +744,19 @@ describe("Goals API", () => {
       });
     });
 
-    it("closes a goal with its date and note", async () => {
-      goals(graphQlGoal());
+    it("changes a closed goal's note and date, keeping it closed", async () => {
+      goals(graphQlGoal({ status: "missed", closedOn: "2026-09-30" }));
       references({ categories: [] });
       updated();
 
       const res = await update({
-        goal: {
-          status: "dropped",
-          closedOn: "2026-10-01",
-          closeNote: "Folded into Minerva v2",
-        },
+        goal: { closedOn: "2026-09-29", closeNote: "Scope was too big" },
       });
 
       expect(res.status).toBe(200);
       expect(mutation()?.set).toEqual({
-        status: "dropped",
-        closedOn: "2026-10-01",
-        closeNote: "Folded into Minerva v2",
+        closedOn: "2026-09-29",
+        closeNote: "Scope was too big",
       });
     });
 
@@ -848,9 +843,9 @@ describe("Goals API", () => {
 
     it.each([
       [
-        "closing with no date",
-        { goal: { status: "achieved" } },
-        "closedOn is needed exactly when the goal is achieved, missed or dropped",
+        "closing, which is CloseGoal's to do",
+        { goal: { status: "dropped", closedOn: "2026-10-01" } },
+        "a goal is achieved, missed or dropped with CloseGoal",
       ],
       [
         "a habit rule on a milestone goal",
@@ -1377,6 +1372,210 @@ describe("Goals API", () => {
         expect(res.status).toBe(400);
         expect(ctx.t.graphql.request).not.toHaveBeenCalled();
       });
+    });
+  });
+
+  describe("CloseGoal", () => {
+    const close = (body: object, goalId = GOAL_ID) =>
+      ctx.as(
+        pacific(ctx.t.http().post(`${BASE}/goal/${goalId}/close`).send(body)),
+      );
+    const closed = () =>
+      ctx.t.graphql.on("CloseGoal", {
+        update_minerva_goals: { affected_rows: 1 },
+      });
+    const mutation = () =>
+      ctx.t.graphql.calls("CloseGoal")[0]?.variables as
+        Record<string, unknown> | undefined;
+
+    it("closes a goal as missed today, with what was learned", async () => {
+      goalsInTurn(
+        [graphQlGoal()],
+        [
+          graphQlGoal({
+            status: "missed",
+            closedOn: "2026-10-01",
+            closeNote: "Scope was too big",
+          }),
+        ],
+      );
+      closed();
+
+      const res = await close({
+        goalClose: { status: "missed", note: "Scope was too big" },
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.body.goal).toMatchObject({
+        status: "missed",
+        closedOn: "2026-10-01",
+        closeNote: "Scope was too big",
+      });
+      expect(res.body.goal.health).toBeUndefined();
+      expect(mutation()).toEqual({
+        userId: USER,
+        goalId: GOAL_ID,
+        set: {
+          status: "missed",
+          closedOn: "2026-10-01",
+          closeNote: "Scope was too big",
+        },
+        checkin: { goalId: GOAL_ID },
+        hasCheckin: false,
+      });
+    });
+
+    it("records an outcome's final value as a check-in on the closing day", async () => {
+      goals(books());
+      closed();
+
+      const res = await close(
+        {
+          goalClose: {
+            status: "achieved",
+            closedOn: "2026-09-30",
+            finalValue: 24,
+          },
+        },
+        BOOKS,
+      );
+
+      expect(res.status).toBe(200);
+      expect(mutation()).toMatchObject({
+        set: { status: "achieved", closedOn: "2026-09-30" },
+        checkin: {
+          goalId: BOOKS,
+          checkinDate: "2026-09-30",
+          value: 24,
+          source: "goal",
+        },
+        hasCheckin: true,
+      });
+      expect(ctx.t.graphql.calls("CloseGoal")[0].document).toMatch(
+        /@include\(if: \$hasCheckin\)/,
+      );
+    });
+
+    it("sets a hand-set goal's final progress", async () => {
+      goals(graphQlGoal({ progressMode: "manual", manualProgress: 40 }));
+      closed();
+
+      const res = await close({
+        goalClose: { status: "dropped", finalProgress: 55 },
+      });
+
+      expect(res.status).toBe(200);
+      expect(mutation()?.set).toEqual({
+        status: "dropped",
+        closedOn: "2026-10-01",
+        manualProgress: 55,
+      });
+    });
+
+    it.each([
+      ["no close", {}, "goalClose is required"],
+      [
+        "an open status",
+        { goalClose: { status: "active" } },
+        "status must be achieved, missed or dropped",
+      ],
+      [
+        "tomorrow",
+        { goalClose: { status: "achieved", closedOn: "2026-10-02" } },
+        "closedOn must not be after today, 2026-10-01",
+      ],
+      [
+        "a final progress over 100",
+        { goalClose: { status: "dropped", finalProgress: 101 } },
+        "finalProgress must be a whole number from 0 to 100",
+      ],
+      [
+        "a note too long",
+        { goalClose: { status: "dropped", note: "x".repeat(2001) } },
+        "note must be text of at most 2000 characters",
+      ],
+    ])("answers 400 for %s, before Hasura", async (_, body, problem) => {
+      const res = await close(body);
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain(problem);
+      expect(ctx.t.graphql.request).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      [
+        "a final value on a milestone goal",
+        { finalValue: 6 },
+        "only outcome goals have a finalValue",
+      ],
+      [
+        "a final progress on a goal measured by milestones",
+        { finalProgress: 50 },
+        "only goals with progress set by hand have a finalProgress",
+      ],
+      [
+        "a day before the goal starts",
+        { closedOn: "2026-09-01" },
+        "closedOn must not be before the goal starts, 2026-09-07",
+      ],
+    ])("answers 400 for %s, closing nothing", async (_, change, problem) => {
+      goals(graphQlGoal());
+
+      const res = await close({ goalClose: { status: "achieved", ...change } });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain(problem);
+      expect(mutation()).toBeUndefined();
+    });
+
+    it("answers 409 for a goal already closed", async () => {
+      goals(graphQlGoal({ status: "achieved", closedOn: "2026-09-30" }));
+
+      const res = await close({ goalClose: { status: "missed" } });
+
+      expect(res.status).toBe(409);
+      expect(mutation()).toBeUndefined();
+    });
+
+    it.each([
+      [
+        "a deleted goal",
+        [graphQlGoal({ deletedTime: "2026-09-30T12:00:00Z" })],
+      ],
+      ["someone else's goal", []],
+    ])("answers 404 for %s", async (_, rows) => {
+      goals(...rows);
+
+      expect((await close({ goalClose: { status: "dropped" } })).status).toBe(
+        404,
+      );
+      expect(mutation()).toBeUndefined();
+    });
+  });
+
+  describe("the decision flag", () => {
+    it("flags a goal whose last three check-ins ran at risk or worse, and a fourth on track clears it", async () => {
+      const checkin = (day: number, confidence: string) => ({
+        checkinDate: `2026-09-${day}`,
+        value: null,
+        confidence,
+        createdTime: `2026-09-${day}T20:00:00Z`,
+      });
+      const risky = [
+        checkin(21, "at_risk"),
+        checkin(23, "off_track"),
+        checkin(25, "at_risk"),
+      ];
+      goals(
+        graphQlGoal({ checkins: risky }),
+        books({ checkins: [...risky, checkin(28, "on_track")] }),
+      );
+
+      const res = await ctx.as(pacific(ctx.t.http().get(`${BASE}/goals`)));
+
+      expect(
+        res.body.goals.map((g: { needsDecision: boolean }) => g.needsDecision),
+      ).toEqual([true, false]);
     });
   });
 });

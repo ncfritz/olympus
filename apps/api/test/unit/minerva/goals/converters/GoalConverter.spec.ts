@@ -66,6 +66,7 @@ describe("GoalConverter", () => {
         progress: 33.3,
         expectedProgress: 28.9,
         health: "on_track",
+        needsDecision: false,
         deleted: false,
       });
       expect(goal.parentId).toBeUndefined();
@@ -132,6 +133,7 @@ describe("GoalConverter", () => {
           milestones: graphQlGoal().milestones.slice(0, 3),
           weight: "3",
         }),
+        "America/Los_Angeles",
       );
 
       expect(engine).toMatchObject({
@@ -140,8 +142,8 @@ describe("GoalConverter", () => {
         weight: 3,
         tolerancePct: 10,
         milestones: [
-          { weight: 1, done: true },
-          { weight: 1, done: true },
+          { weight: 1, done: true, doneOn: "2026-09-20" },
+          { weight: 1, done: true, doneOn: "2026-09-20" },
           { weight: 1, done: false },
         ],
         habitRule: {
@@ -154,6 +156,52 @@ describe("GoalConverter", () => {
         habitLogs: [],
       });
       expect(engine.parentId).toBeUndefined();
+      expect(engine.milestones[2].doneOn).toBeUndefined();
+    });
+
+    it("dates milestones by the caller's day, and reads check-ins and logs", () => {
+      const row = graphQlGoal({
+        status: "missed",
+        closedOn: "2026-09-30",
+        milestones: [
+          {
+            ...graphQlGoal().milestones[0],
+            doneTime: "2026-09-21T03:00:00Z",
+          },
+        ],
+        checkins: [
+          {
+            checkinDate: "2026-09-20",
+            value: "17.5",
+            confidence: null,
+            createdTime: "2026-09-20T20:00:00Z",
+          },
+          {
+            checkinDate: "2026-09-21",
+            value: null,
+            confidence: "at_risk",
+            createdTime: "2026-09-21T20:00:00Z",
+          },
+        ],
+        habitLogs: [{ logDate: "2026-09-20", done: false, quantity: "12" }],
+      });
+
+      expect(toEngineGoal(row, "America/Los_Angeles")).toMatchObject({
+        closedOn: "2026-09-30",
+        milestones: [{ doneOn: "2026-09-20" }],
+        checkins: [
+          {
+            date: "2026-09-20",
+            value: 17.5,
+            createdTime: "2026-09-20T20:00:00Z",
+          },
+          { date: "2026-09-21", confidence: "at_risk" },
+        ],
+        habitLogs: [{ date: "2026-09-20", done: false, quantity: 12 }],
+      });
+      expect(toEngineGoal(row, "Etc/UTC").milestones[0].doneOn).toBe(
+        "2026-09-21",
+      );
     });
   });
 
