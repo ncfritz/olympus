@@ -1,4 +1,10 @@
-import { DownOutlined, HolderOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  CheckOutlined,
+  DownOutlined,
+  HolderOutlined,
+  PlusOutlined,
+  TrophyOutlined,
+} from "@ant-design/icons";
 import {
   closestCenter,
   type CollisionDetection,
@@ -18,15 +24,22 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
 } from "@dnd-kit/sortable";
-import type { Goal, GoalCategory } from "@ncfritz/olympus-sdk/minerva";
-import { Button, Empty, Masonry } from "antd";
+import type {
+  Goal,
+  GoalCategory,
+  GoalHabitDay,
+} from "@ncfritz/olympus-sdk/minerva";
+import { Button, Empty, Masonry, Tooltip } from "antd";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { useWindowSize } from "usehooks-ts";
 import {
   byCategory,
   dueText,
+  formatValue,
   goalTree,
+  habitCountPercent,
   metricText,
 } from "../../../utils/goals";
 import {
@@ -42,99 +55,216 @@ export interface BoardViewProps {
   categories: GoalCategory[];
   today: string;
   onAddGoal: (categoryId: string) => void;
+  done: DoneActions;
   /** The categories in a new order; the caller saves it. */
   onReorder: (categoryIds: string[]) => Promise<void>;
 }
 
-/** One goal on a category card: a white tile, indented under its parent. */
+/** What a tile's Done buttons do; the board's caller does the saving. */
+export type DoneActions = {
+  /** Today's entry for each habit due today, by goal ID. */
+  habits: Map<string, GoalHabitDay>;
+  onHabitDone: (habit: GoalHabitDay) => Promise<void>;
+  onAchieved: (goal: Goal) => void;
+};
+
+/**
+ * A habit's or an achievement's Done. A habit due today is marked done
+ * (or unmarked), or counted up by one; an achievement opens its close-out.
+ */
+const DoneButton: React.FunctionComponent<{
+  goal: Goal;
+  done: DoneActions;
+}> = ({ goal, done }) => {
+  const [busy, setBusy] = useState(false);
+  const habit = done.habits.get(goal.id);
+
+  if (goal.type === "achievement" && goal.status === "active") {
+    return (
+      <Button
+        size={"small"}
+        icon={<TrophyOutlined />}
+        onClick={() => done.onAchieved(goal)}
+        aria-label={`${goal.title}: achieved`}
+      >
+        Done
+      </Button>
+    );
+  }
+  if (goal.type !== "habit" || !habit) return null;
+
+  const target = habit.habitRule.quantityTarget;
+  const met = habit.log?.met ?? false;
+  const label =
+    target !== undefined
+      ? `${goal.title}: add one, ${formatValue(habit.log?.quantity ?? 0)} of ${formatValue(target)} today`
+      : met
+        ? `${goal.title}: done today; undo`
+        : `${goal.title}: done today`;
+  return (
+    <Tooltip
+      title={
+        target === undefined && met ? "Done today. Click to undo." : undefined
+      }
+    >
+      <Button
+        size={"small"}
+        loading={busy}
+        type={met ? "primary" : "default"}
+        ghost={met}
+        icon={<CheckOutlined />}
+        aria-label={label}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            await done.onHabitDone(habit);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {target !== undefined
+          ? `Done · ${formatValue(habit.log?.quantity ?? 0)}/${formatValue(target)}`
+          : "Done"}
+      </Button>
+    </Tooltip>
+  );
+};
+
+/**
+ * One goal on a category card: a white tile, indented under its parent.
+ * The title is the link; a click anywhere else on the tile but a button
+ * opens the goal too. A habit counted to an amount shows today's share
+ * as a line along the tile's foot.
+ */
 const GoalTile: React.FunctionComponent<{
   goal: Goal;
   depth: number;
   hiddenBelow: number;
   today: string;
+  done: DoneActions;
   onExpand: () => void;
-}> = ({ goal, depth, hiddenBelow, today, onExpand }) => (
-  <div style={{ marginLeft: depth * 16 }}>
-    <Link
-      href={`/minerva/goals/${goal.id}`}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 6,
-        padding: "10px 12px",
-        borderRadius: 6,
-        border: "1px solid #f0f0f0",
-        background: "#ffffff",
-        color: "#1f1f1f",
-      }}
-    >
-      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ display: "flex", color: "#595959" }}>
-          <GoalTypeIcon type={goal.type} />
-        </span>
-        <span
-          style={{
-            fontSize: 14,
-            fontWeight: 500,
-            flexGrow: 1,
-            minWidth: 0,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-          title={goal.title}
-        >
-          {goal.title}
-        </span>
-        <HealthLabel health={goal.health} />
-      </span>
-      <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {/* The bar takes up to three quarters of the tile; the metric
-            has the rest. */}
-        <PaceBar
-          goal={goal}
-          width={"auto"}
-          style={{ flex: "1 1 75%", maxWidth: "75%", minWidth: 80 }}
-        />
-        <span
-          style={{
-            flex: "0 1 auto",
-            minWidth: 0,
-            fontSize: 12,
-            color: "#595959",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {metricText(goal)}
-          {goal.subGoalIds.length > 0 && goal.progressMode !== "subgoals"
-            ? ` · ${goal.subGoalIds.length} sub-goal${goal.subGoalIds.length === 1 ? "" : "s"}`
-            : ""}
-        </span>
-      </span>
-      <span style={{ fontSize: 12, color: "#6b6b6b" }}>
-        {dueText(goal, today)}
-      </span>
-    </Link>
-    {hiddenBelow > 0 && (
-      <Button
-        type={"link"}
-        size={"small"}
-        icon={<DownOutlined />}
-        onClick={onExpand}
-        style={{ paddingInline: 0 }}
+}> = ({ goal, depth, hiddenBelow, today, done, onExpand }) => {
+  const router = useRouter();
+  const href = `/minerva/goals/${goal.id}`;
+  const habit = done.habits.get(goal.id);
+  const counted = habit ? habitCountPercent(habit) : undefined;
+  return (
+    <div style={{ marginLeft: depth * 16 }}>
+      <div
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("button, a")) return;
+          void router.push(href);
+        }}
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          padding: "10px 12px",
+          borderRadius: 6,
+          border: "1px solid #f0f0f0",
+          background: "#ffffff",
+          color: "#1f1f1f",
+          cursor: "pointer",
+        }}
       >
-        {hiddenBelow} more below
-      </Button>
-    )}
-  </div>
-);
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ display: "flex", color: "#595959" }}>
+            <GoalTypeIcon type={goal.type} />
+          </span>
+          <Link
+            href={href}
+            title={goal.title}
+            style={{
+              color: "#1f1f1f",
+              fontSize: 14,
+              fontWeight: 500,
+              flexGrow: 1,
+              minWidth: 0,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {goal.title}
+          </Link>
+          <HealthLabel health={goal.health} />
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* The bar takes up to three fifths of the tile; the metric has
+              the rest. */}
+          <PaceBar
+            goal={goal}
+            width={"auto"}
+            style={{ flex: "1 1 60%", maxWidth: "60%", minWidth: 80 }}
+          />
+          <span
+            style={{
+              flex: "0 1 auto",
+              minWidth: 0,
+              fontSize: 12,
+              color: "#595959",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {metricText(goal)}
+            {goal.subGoalIds.length > 0 && goal.progressMode !== "subgoals"
+              ? ` · ${goal.subGoalIds.length} sub-goal${goal.subGoalIds.length === 1 ? "" : "s"}`
+              : ""}
+          </span>
+        </span>
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            minHeight: 24,
+          }}
+        >
+          <span style={{ fontSize: 12, color: "#6b6b6b" }}>
+            {dueText(goal, today)}
+          </span>
+          <DoneButton goal={goal} done={done} />
+        </span>
+        {counted !== undefined && (
+          <span
+            aria-hidden={true}
+            style={{
+              position: "absolute",
+              left: 0,
+              bottom: 0,
+              height: 3,
+              width: `${counted}%`,
+              background: counted >= 100 ? "#52c41a" : "#4096ff",
+              transition: "width 0.2s",
+            }}
+          />
+        )}
+      </div>
+      {hiddenBelow > 0 && (
+        <Button
+          type={"link"}
+          size={"small"}
+          icon={<DownOutlined />}
+          onClick={onExpand}
+          style={{ paddingInline: 0 }}
+        >
+          {hiddenBelow} more below
+        </Button>
+      )}
+    </div>
+  );
+};
 
 type CardProps = {
   category: GoalCategory;
   goals: Goal[];
   today: string;
+  done: DoneActions;
   onAddGoal: (categoryId: string) => void;
 };
 
@@ -152,7 +282,7 @@ const CategoryCard = React.forwardRef<
     };
     style?: React.CSSProperties;
   }
->(({ category, goals, today, onAddGoal, handle, style }, ref) => {
+>(({ category, goals, today, done, onAddGoal, handle, style }, ref) => {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const health = (["on_track", "at_risk", "off_track"] as const)
     .map((h) => [h, goals.filter((g) => g.health === h).length] as const)
@@ -228,6 +358,7 @@ const CategoryCard = React.forwardRef<
               key={row.goal.id}
               {...row}
               today={today}
+              done={done}
               onExpand={() =>
                 setExpanded((was) => new Set(was).add(row.goal.id))
               }
@@ -286,6 +417,7 @@ const BoardView: React.FunctionComponent<BoardViewProps> = ({
   categories,
   today,
   onAddGoal,
+  done,
   onReorder,
 }) => {
   const [order, setOrder] = useState(categories);
@@ -358,6 +490,7 @@ const BoardView: React.FunctionComponent<BoardViewProps> = ({
               category={data.category}
               goals={data.goals}
               today={today}
+              done={done}
               onAddGoal={onAddGoal}
             />
           )}
@@ -369,6 +502,7 @@ const BoardView: React.FunctionComponent<BoardViewProps> = ({
             category={draggingColumn.category}
             goals={draggingColumn.goals}
             today={today}
+            done={done}
             onAddGoal={onAddGoal}
             style={{
               boxShadow: "0 6px 16px rgba(0, 0, 0, 0.16)",

@@ -2,6 +2,7 @@ import type {
   FullGoal,
   Goal,
   GoalCycle,
+  GoalHabitDay,
   GoalHabitLog,
 } from "@ncfritz/olympus-sdk/minerva";
 import { describe, expect, it } from "vitest";
@@ -15,7 +16,9 @@ import {
   formToUpdate,
   goalToForm,
   goalTree,
+  habitCountPercent,
   habitGrid,
+  habitTap,
   healthCounts,
   inHorizon,
   metricText,
@@ -482,5 +485,55 @@ describe("the goal form", () => {
       goal: { title: "Read 30 books", targetValue: 30, why: null },
       tagIds: ["t1", "t2"],
     });
+  });
+});
+
+describe("a habit's Done", () => {
+  const day = (
+    rule: Partial<GoalHabitDay["habitRule"]>,
+    log?: Partial<GoalHabitLog>,
+  ) =>
+    ({
+      goal: goal("h", { type: "habit", progressMode: "habit" }),
+      habitRule: {
+        frequency: "daily",
+        timesPerPeriod: 1,
+        createdTime: "",
+        ...rule,
+      },
+      log: log as GoalHabitLog | undefined,
+      periodDone: 0,
+      periodCapacity: 1,
+    }) as GoalHabitDay;
+
+  it("marks a yes-or-no habit done, and undoes it once done", () => {
+    expect(habitTap(day({}))).toEqual({ action: "log" });
+    expect(habitTap(day({}, { met: true, done: true }))).toEqual({
+      action: "clear",
+    });
+  });
+
+  it("counts a habit with a target up by one", () => {
+    expect(habitTap(day({ quantityTarget: 8 }))).toEqual({
+      action: "log",
+      log: { quantity: 1 },
+    });
+    expect(
+      habitTap(day({ quantityTarget: 8 }, { quantity: 8, met: true })),
+    ).toEqual({
+      action: "log",
+      log: { quantity: 9 },
+    });
+  });
+
+  it("fills a counted habit's line to its share of the target", () => {
+    expect(habitCountPercent(day({}))).toBeUndefined();
+    expect(habitCountPercent(day({ quantityTarget: 8 }))).toBe(0);
+    expect(habitCountPercent(day({ quantityTarget: 8 }, { quantity: 2 }))).toBe(
+      25,
+    );
+    expect(habitCountPercent(day({ quantityTarget: 8 }, { quantity: 9 }))).toBe(
+      100,
+    );
   });
 });

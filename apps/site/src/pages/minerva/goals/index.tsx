@@ -22,6 +22,8 @@ import { useGoalsData } from "../../../components/minerva/goals/useGoalsData";
 import {
   currentCycle,
   type HorizonChoice,
+  apiProblems,
+  habitTap,
   inHorizon,
 } from "../../../utils/goals";
 
@@ -49,6 +51,7 @@ const GoalsPage: React.FunctionComponent = () => {
   const [managing, setManaging] = useState(false);
   const [checkingIn, setCheckingIn] = useState<Goal>();
   const [dropping, setDropping] = useState<Goal>();
+  const [achieving, setAchieving] = useState<Goal>();
   const data = useGoalsData(statuses);
   const today = DateTime.now().toISODate()!;
   const cycle = currentCycle(data.cycles);
@@ -177,6 +180,27 @@ const GoalsPage: React.FunctionComponent = () => {
                 categories={data.categories}
                 today={today}
                 onAddGoal={(categoryId) => setForm({ open: true, categoryId })}
+                done={{
+                  habits: new Map(data.habits.map((h) => [h.goal.id, h])),
+                  onHabitDone: async (habit) => {
+                    const tap = habitTap(habit);
+                    try {
+                      if (tap.action === "clear") {
+                        await goalsApi.deleteHabitLog(habit.goal.id, "today");
+                      } else {
+                        await goalsApi.logHabit(
+                          habit.goal.id,
+                          "today",
+                          tap.log,
+                        );
+                      }
+                      await data.reload();
+                    } catch (error) {
+                      message.error(apiProblems(error).join("; "));
+                    }
+                  },
+                  onAchieved: setAchieving,
+                }}
                 onReorder={async (categoryIds) => {
                   try {
                     await goalsApi.reorderCategories(categoryIds);
@@ -211,6 +235,15 @@ const GoalsPage: React.FunctionComponent = () => {
         goal={checkingIn}
         onClose={() => setCheckingIn(undefined)}
         onSaved={() => void data.reload()}
+      />
+      <CloseGoalModal
+        goal={achieving}
+        status={"achieved"}
+        onClose={() => setAchieving(undefined)}
+        onClosed={() => {
+          setAchieving(undefined);
+          void data.reload();
+        }}
       />
       <CloseGoalModal
         goal={dropping}

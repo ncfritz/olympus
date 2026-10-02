@@ -3,6 +3,7 @@ import type {
   GoalCategory,
   GoalCycle,
   GoalExecution,
+  GoalHabitDay,
   Tag,
 } from "@ncfritz/olympus-sdk/minerva";
 import { message } from "antd";
@@ -18,6 +19,8 @@ export type GoalsData = {
   tags: Tag[];
   /** This ISO week's execution. */
   execution?: GoalExecution;
+  /** The habits due today, with today's logs. */
+  habits: GoalHabitDay[];
   /** Loads everything again, after a change. */
   reload: () => Promise<void>;
 };
@@ -33,22 +36,25 @@ export const useGoalsData = (statuses: string[]): GoalsData => {
   const [cycles, setCycles] = useState<GoalCycle[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [execution, setExecution] = useState<GoalExecution>();
+  const [habits, setHabits] = useState<GoalHabitDay[]>([]);
   const status = statuses.join(",");
 
   const reload = useCallback(async () => {
     try {
-      const [g, c, cy, t, e] = await Promise.all([
+      const [g, c, cy, t, e, h] = await Promise.all([
         goalsApi.listGoals(status ? { status } : {}),
         goalsApi.listCategories(),
         goalsApi.listCycles(),
         tagsApi.listTags(),
         goalsApi.getExecution(),
+        goalsApi.listHabitsForDay("today"),
       ]);
       setGoals(g);
       setCategories(c);
       setCycles(cy);
       setTags(t);
       setExecution(e);
+      setHabits(h);
     } catch {
       message.error("Could not load your goals");
     } finally {
@@ -60,5 +66,14 @@ export const useGoalsData = (statuses: string[]): GoalsData => {
     void reload();
   }, [reload]);
 
-  return { loading, goals, categories, cycles, tags, execution, reload };
+  return {
+    loading,
+    goals,
+    categories,
+    cycles,
+    tags,
+    execution,
+    habits,
+    reload,
+  };
 };

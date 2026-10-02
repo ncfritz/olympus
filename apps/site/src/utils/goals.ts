@@ -5,6 +5,7 @@ import type {
   GoalCategory,
   GoalCheckin,
   GoalCycle,
+  GoalHabitDay,
   GoalHabitLog,
   GoalHealth,
   GoalHorizon,
@@ -661,4 +662,31 @@ export const apiProblems = (error: unknown): string[] => {
   if (Array.isArray(said)) return said.map(String);
   if (typeof said === "string") return [said];
   return ["Something went wrong; try again."];
+};
+
+/* A habit's Done button ---------------------------------------------------- */
+
+/** What Done does to today's log of a habit due today. */
+export type HabitTap =
+  { action: "log"; log?: { quantity: number } } | { action: "clear" };
+
+/**
+ * A habit's Done: a yes-or-no habit is marked done today, or unmarked when
+ * it already is; a habit counted to an amount goes up by one.
+ */
+export const habitTap = (habit: GoalHabitDay): HabitTap => {
+  if (habit.habitRule.quantityTarget !== undefined) {
+    return {
+      action: "log",
+      log: { quantity: (habit.log?.quantity ?? 0) + 1 },
+    };
+  }
+  return habit.log?.met ? { action: "clear" } : { action: "log" };
+};
+
+/** How far today's amount has come towards a counted habit's target, 0 to 100. */
+export const habitCountPercent = (habit: GoalHabitDay): number | undefined => {
+  const target = habit.habitRule.quantityTarget;
+  if (!target) return undefined;
+  return Math.min(100, ((habit.log?.quantity ?? 0) / target) * 100);
 };
