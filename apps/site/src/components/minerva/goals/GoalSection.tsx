@@ -1,4 +1,4 @@
-import { Collapse, Flex } from "antd";
+import { Collapse } from "antd";
 import React from "react";
 
 /** A section heading in the mocks' style: small capitals. */
@@ -41,32 +41,29 @@ const GoalSection: React.FunctionComponent<GoalSectionProps> = ({
     // A button in the heading acts without folding the section.
     <span onClick={(e) => e.stopPropagation()}>{extra}</span>
   );
-  if (!collapsible) {
-    return (
-      <div style={{ marginBottom: 8 }}>
-        <Flex
-          justify={"space-between"}
-          align={"center"}
-          style={{ paddingBlock: 12 }}
-        >
-          <Heading>{title}</Heading>
-          {aside}
-        </Flex>
-        {children}
-      </div>
-    );
-  }
   return (
+    // A section that always shows is still a Collapse, without the arrow
+    // and fixed open, so its heading lines up with the ones beside it.
     <Collapse
       ghost={true}
       defaultActiveKey={["section"]}
+      {...(collapsible ? {} : { activeKey: ["section"] })}
       items={[
         {
           key: "section",
           label: <Heading>{title}</Heading>,
           extra: aside,
           children,
-          styles: { header: { paddingInline: 0 }, body: { paddingInline: 0 } },
+          ...(collapsible
+            ? {}
+            : { showArrow: false, collapsible: "disabled" as const }),
+          styles: {
+            header: {
+              paddingInline: 0,
+              ...(collapsible ? {} : { cursor: "default" }),
+            },
+            body: { paddingInline: 0 },
+          },
         },
       ]}
     />
