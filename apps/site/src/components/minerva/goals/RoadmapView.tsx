@@ -79,7 +79,7 @@ const BandRow: React.FunctionComponent<{ title: string; bands: Band[] }> = ({
   title,
   bands,
 }) => (
-  <Flex style={{ height: 24 }}>
+  <Flex align={"center"} style={{ height: 24 }}>
     <Text
       type={"secondary"}
       ellipsis={true}
@@ -92,7 +92,7 @@ const BandRow: React.FunctionComponent<{ title: string; bands: Band[] }> = ({
     >
       {title}
     </Text>
-    <div style={{ position: "relative", flex: 1 }}>
+    <div style={{ position: "relative", flex: 1, height: "100%" }}>
       {bandSegments(bands).map((piece) => {
         const radius = `${piece.roundLeft ? 4 : 0}px ${piece.roundRight ? 4 : 0}px ${piece.roundRight ? 4 : 0}px ${piece.roundLeft ? 4 : 0}px`;
         const box: React.CSSProperties = {
@@ -128,6 +128,9 @@ const BandRow: React.FunctionComponent<{ title: string; bands: Band[] }> = ({
               border: "1px solid #d6e4ff",
               borderLeft: piece.roundLeft ? "1px solid #d6e4ff" : "none",
               fontSize: 12,
+              lineHeight: 1,
+              display: "flex",
+              alignItems: "center",
               paddingInline: 6,
               overflow: "hidden",
               whiteSpace: "nowrap",
@@ -182,10 +185,15 @@ const GoalMark: React.FunctionComponent<{
             position: "absolute",
             left: pct(mark.from),
             right: 0,
-            top: ROW / 2 - 1,
-            borderTop: `3px dashed ${color}`,
+            // A 1px line with room around it to hover.
+            top: ROW / 2 - 5,
+            height: 10,
+            display: "flex",
+            alignItems: "center",
           }}
-        />
+        >
+          <div style={{ width: "100%", borderTop: `1px dashed ${color}` }} />
+        </div>
       </Tooltip>
     );
   }
