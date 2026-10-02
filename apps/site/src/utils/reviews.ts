@@ -654,11 +654,11 @@ export type PromptAnswers<P, A> = {
 /**
  * The week's daily answers grouped under their prompts, for Highlights:
  * the section's prompts in their order, archived ones only where some day
- * answered them, each day's answer in day order.
+ * answered them, each day's answers in day order, a list's items in theirs.
  */
 export const answersByPrompt = <
   P extends { id: string; section: string; archived?: boolean },
-  A extends { promptId: string; body: string },
+  A extends { promptId: string; body: string; position?: number },
 >(
   prompts: P[],
   reviews: { periodStart: string; answers: A[] }[],
@@ -674,6 +674,7 @@ export const answersByPrompt = <
       answers: ordered.flatMap((review) =>
         review.answers
           .filter((a) => a.promptId === prompt.id && a.body.trim())
+          .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
           .map((answer) => ({ day: review.periodStart, answer })),
       ),
     }))
@@ -695,3 +696,25 @@ export const placeInGap = (
   const end = latest < gap.end ? latest : gap.end;
   return { start: start.toFormat("HH:mm"), end: end.toFormat("HH:mm") };
 };
+
+/**
+ * A review's answered prompts of a section, in the prompts' order, each
+ * with its answers in their order: a text prompt's one, a list's items.
+ */
+export const answeredPrompts = <
+  P extends { id: string; section: string },
+  A extends { promptId: string; position: number },
+>(
+  prompts: P[],
+  answers: A[],
+  section: string,
+): { prompt: P; answers: A[] }[] =>
+  prompts
+    .filter((p) => p.section === section)
+    .map((prompt) => ({
+      prompt,
+      answers: answers
+        .filter((a) => a.promptId === prompt.id)
+        .sort((a, b) => a.position - b.position),
+    }))
+    .filter((pair) => pair.answers.length > 0);

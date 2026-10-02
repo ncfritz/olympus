@@ -107,6 +107,12 @@ the goals panels (the goals plan's phase 8), the monthly review, and iOS
 - Guided steps for both reviews (Neil, 2026-10-01).
 - Lists with a calendar sider; days chosen by week, weeks by month; rows
   expand in place (Neil, 2026-10-01).
+- Answers as lists (Neil, 2026-10-02): What went well?, What didn't go
+  well?, What's on my mind?, Thoughts for tomorrow, Biggest win, What got
+  in the way, What I learned and What to change next week are lists of
+  items that work like Top 3 and To-dos (add, rewrite, reorder, remove),
+  and any item can become a to-do of the next period. Anything else about
+  today, Theme for the week, Start and Stop stay text.
 - The defaults in ADR 0027: answers as rows, ratings as columns, plan
   items as their own rows until Tasks, activity read live, ratings locked
   on completion, ISO weeks listed by their Thursday (Neil, 2026-10-01).

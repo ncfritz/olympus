@@ -391,6 +391,10 @@
     "Plan": "plan",
     "Reflect": "reflect"
   },
+  "ReviewPromptStyle": {
+    "List": "list",
+    "Text": "text"
+  },
   "SMTPPriority": {
     "High": "2",
     "Highest": "1",

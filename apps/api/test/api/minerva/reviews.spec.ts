@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   graphQlReview,
-  graphQlReviewAnswer,
   REVIEW_ID,
   REVIEW_PROMPT_ID,
 } from "../../fixtures/minerva";
@@ -15,7 +14,6 @@ import {
 const BASE = "/v1/minerva";
 const PACIFIC = "America/Los_Angeles";
 const WEEKLY_ID = "7b3e1d00-0000-4000-8000-000000000002";
-const WEEKLY_PROMPT_ID = "8c4f2e00-0000-4000-8000-000000000009";
 
 const weekly = () =>
   graphQlReview({
@@ -436,134 +434,6 @@ describe("Reviews API", () => {
       );
 
       expect(res.status).toBe(404);
-    });
-  });
-
-  describe("UpdateReviewAnswer", () => {
-    const answer = (body: unknown, promptId = REVIEW_PROMPT_ID) =>
-      ctx.as(
-        ctx.t
-          .http()
-          .put(`${BASE}/review/${REVIEW_ID}/answer/${promptId}`)
-          .send({ answer: { body } }),
-      );
-    const context = (
-      review: { kind: string; completedTime: string | null } | null = {
-        kind: "daily",
-        completedTime: null,
-      },
-      prompt: { kind: string } | null = { kind: "daily" },
-    ) => ({
-      minerva_reviews: review ? [review] : [],
-      minerva_review_prompts: prompt ? [prompt] : [],
-    });
-
-    it("saves the answer, trimmed, as an upsert", async () => {
-      ctx.t.graphql
-        .on("GetReviewAnswerContext", context())
-        .on("UpdateReviewAnswer", {
-          insert_minerva_review_answers_one: graphQlReviewAnswer(),
-        });
-
-      const res = await answer("  Design review landed.  \n");
-
-      expect(res.status).toBe(200);
-      expect(res.body.answer).toMatchObject({
-        promptId: REVIEW_PROMPT_ID,
-        editedLater: false,
-      });
-      const call = ctx.t.graphql.calls("UpdateReviewAnswer")[0];
-      expect(call.variables).toEqual({
-        object: {
-          reviewId: REVIEW_ID,
-          promptId: REVIEW_PROMPT_ID,
-          userId: USER,
-          kind: "daily",
-          body: "Design review landed.",
-        },
-      });
-      expect(call.document).toContain("review_answers_review_id_prompt_id_key");
-      expect(
-        ctx.t.graphql.calls("GetReviewAnswerContext")[0].variables,
-      ).toEqual({
-        userId: USER,
-        reviewId: REVIEW_ID,
-        promptId: REVIEW_PROMPT_ID,
-      });
-    });
-
-    it("marks an answer saved after completion as edited later", async () => {
-      ctx.t.graphql
-        .on(
-          "GetReviewAnswerContext",
-          context({ kind: "daily", completedTime: "2026-10-01T22:00:00Z" }),
-        )
-        .on("UpdateReviewAnswer", {
-          insert_minerva_review_answers_one: graphQlReviewAnswer({
-            lastUpdatedTime: "2026-10-02T06:30:00Z",
-          }),
-        });
-
-      const res = await answer("Added the next morning.");
-
-      expect(res.status).toBe(200);
-      expect(res.body.answer.editedLater).toBe(true);
-    });
-
-    it.each([[""], ["   \n\t "]])(
-      "removes the answer for a body of %j, answering 204",
-      async (body) => {
-        ctx.t.graphql
-          .on("GetReviewAnswerContext", context())
-          .on("RemoveReviewAnswer", {
-            delete_minerva_review_answers: { affected_rows: 1 },
-          });
-
-        const res = await answer(body);
-
-        expect(res.status).toBe(204);
-        expect(ctx.t.graphql.calls("UpdateReviewAnswer")).toHaveLength(0);
-        expect(ctx.t.graphql.calls("RemoveReviewAnswer")[0].variables).toEqual({
-          userId: USER,
-          reviewId: REVIEW_ID,
-          promptId: REVIEW_PROMPT_ID,
-        });
-      },
-    );
-
-    it("answers 400 for a weekly prompt on a daily review", async () => {
-      ctx.t.graphql.on(
-        "GetReviewAnswerContext",
-        context(undefined, { kind: "weekly" }),
-      );
-
-      const res = await answer("Wrong kind", WEEKLY_PROMPT_ID);
-
-      expect(res.status).toBe(400);
-      expect(ctx.t.graphql.calls("UpdateReviewAnswer")).toHaveLength(0);
-    });
-
-    it.each([
-      ["review", context(null)],
-      ["prompt", context(undefined, null)],
-    ])("answers 404 for someone else's %s", async (_, found) => {
-      ctx.t.graphql.on("GetReviewAnswerContext", found);
-      await ctx.signInAs(OTHER_USER);
-
-      const res = await answer("Not mine");
-
-      expect(res.status).toBe(404);
-      expect(ctx.t.graphql.calls("UpdateReviewAnswer")).toHaveLength(0);
-    });
-
-    it.each([
-      ["no body", undefined],
-      ["a body that is not text", 42],
-      ["a body over 10,000 characters", "x".repeat(10001)],
-    ])("answers 400 for %s, before Hasura", async (_, body) => {
-      const res = await answer(body);
-      expect(res.status).toBe(400);
-      expect(ctx.t.graphql.request).not.toHaveBeenCalled();
     });
   });
 });

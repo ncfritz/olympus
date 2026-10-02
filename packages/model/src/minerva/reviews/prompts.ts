@@ -13,6 +13,12 @@ export enum ReviewPromptSection {
   Plan = "plan",
 }
 
+/** How a prompt is answered: one block of text, or a list of short items. */
+export enum ReviewPromptStyle {
+  Text = "text",
+  List = "list",
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Domain Objects                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -50,6 +56,18 @@ export class ReviewPrompt {
     description: "The step the prompt is asked in",
   })
   section: ReviewPromptSection;
+
+  @ApiProperty({
+    enum: () => ReviewPromptStyle,
+    enumName: "ReviewPromptStyle",
+    enumSchema: {
+      description:
+        "How a review prompt is answered: one block of text, or a list of short items",
+    },
+    required: true,
+    description: "How the prompt is answered",
+  })
+  style: ReviewPromptStyle;
 
   @ApiProperty({
     type: String,
@@ -109,11 +127,28 @@ export class BaseReviewPrompt extends PickType(ReviewPrompt, [
   "section",
   "label",
   "placeholder",
-] as const) {}
+] as const) {
+  @ApiProperty({
+    enum: () => ReviewPromptStyle,
+    enumName: "ReviewPromptStyle",
+    enumSchema: {
+      description:
+        "How a review prompt is answered: one block of text, or a list of short items",
+    },
+    required: false,
+    description: "How the prompt is answered; text when left out",
+  })
+  style?: ReviewPromptStyle;
+}
 
 /** The changes to a prompt; its kind and section are fixed. */
 export class PartialReviewPrompt extends PartialType(
-  PickType(ReviewPrompt, ["label", "placeholder", "archived"] as const),
+  PickType(ReviewPrompt, [
+    "label",
+    "style",
+    "placeholder",
+    "archived",
+  ] as const),
 ) {}
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -134,7 +169,7 @@ export class UpdateReviewPromptRequest {
     type: () => PartialReviewPrompt,
     required: true,
     description:
-      "The changes to the prompt. A placeholder of null removes it; archived true archives it and false brings it back.",
+      "The changes to the prompt. A placeholder of null removes it; archived true archives it and false brings it back. A prompt becomes text only while no review holds more than one item for it.",
   })
   reviewPrompt: PartialReviewPrompt;
 }

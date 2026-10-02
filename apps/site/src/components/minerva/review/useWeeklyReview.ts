@@ -14,9 +14,14 @@ import meetingsApi from "../../../api/meetingsApi";
 import notesApi from "../../../api/notestApi";
 import reviewsApi from "../../../api/reviewsApi";
 import type { RatingField, WeekTriage } from "../../../utils/reviews";
-import { fail, useStartReview } from "./reviewHooks";
+import {
+  type AnswerActions,
+  fail,
+  useAnswerActions,
+  useStartReview,
+} from "./reviewHooks";
 
-export type WeeklyReviewData = {
+export type WeeklyReviewData = AnswerActions & {
   loading: boolean;
   /** The week's Monday and Sunday, next week's Monday, and today, as YYYY-MM-DD. */
   monday: string;
@@ -45,7 +50,6 @@ export type WeeklyReviewData = {
   weekItems: ItemList;
   setRating: (key: RatingField["key"], value: number | null) => Promise<void>;
   setStep: (step: number) => Promise<void>;
-  saveAnswer: (promptId: string, body: string) => Promise<void>;
   quickScore: (day: string, overall: number) => Promise<void>;
   triage: (item: ReviewItem, decision: WeekTriage) => Promise<void>;
   pin: (target: { answerId: string } | { noteId: string }) => Promise<void>;
@@ -147,6 +151,13 @@ export const useWeeklyReview = (week: DateTime): WeeklyReviewData => {
     setWeekItems(wi);
   };
 
+  const answerActions = useAnswerActions(
+    review,
+    setReview,
+    ensureReview,
+    refreshItems,
+  );
+
   const setRating = async (key: RatingField["key"], value: number | null) => {
     try {
       const current = await ensureReview();
@@ -170,28 +181,6 @@ export const useWeeklyReview = (week: DateTime): WeeklyReviewData => {
       }
     } catch (error) {
       fail(error, "Could not save your place");
-    }
-  };
-
-  const saveAnswer = async (promptId: string, body: string) => {
-    const existing = review?.answers.find((a) => a.promptId === promptId);
-    if ((existing?.body ?? "") === body.trim()) return;
-    try {
-      const current = await ensureReview();
-      const saved = await reviewsApi.saveAnswer(current.id, promptId, body);
-      setReview((r) =>
-        r
-          ? {
-              ...r,
-              answers: [
-                ...r.answers.filter((a) => a.promptId !== promptId),
-                ...(saved ? [saved] : []),
-              ],
-            }
-          : r,
-      );
-    } catch (error) {
-      fail(error, "Could not save your answer");
     }
   };
 
@@ -366,7 +355,7 @@ export const useWeeklyReview = (week: DateTime): WeeklyReviewData => {
     weekItems,
     setRating,
     setStep,
-    saveAnswer,
+    ...answerActions,
     quickScore,
     triage,
     pin,

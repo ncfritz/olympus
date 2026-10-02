@@ -3,6 +3,7 @@ import { Alert, Button, Card, Descriptions, Empty } from "antd";
 import { DateTime } from "luxon";
 import React from "react";
 import {
+  answeredPrompts,
   busyMinutes,
   doneOfPlanned,
   formatBlock,
@@ -11,6 +12,7 @@ import {
   meetingSpans,
   RATING_FIELDS,
 } from "../../../utils/reviews";
+import AnswerBody from "./AnswerBody";
 import styles from "./Review.module.css";
 import type { DailyReviewData } from "./useDailyReview";
 
@@ -25,15 +27,8 @@ const WrapUpStep: React.FunctionComponent<WrapUpStepProps> = ({
   onEdit,
 }) => {
   const { review } = data;
-  const answers = review?.answers ?? [];
   const answered = (section: "reflect" | "plan") =>
-    data.prompts
-      .filter((p) => p.section === section)
-      .map((p) => ({
-        prompt: p,
-        answer: answers.find((a) => a.promptId === p.id),
-      }))
-      .filter((pair) => pair.answer);
+    answeredPrompts(data.prompts, review?.answers ?? [], section);
   const spans = meetingSpans(data.meetings, DateTime.fromISO(data.day));
   const { done, planned } = doneOfPlanned(data.items, data.day);
   const priorities = itemsOf(data.items, data.tomorrow, "priority");
@@ -61,10 +56,10 @@ const WrapUpStep: React.FunctionComponent<WrapUpStepProps> = ({
             colon={false}
             items={[
               { key: "ratings", label: "Ratings", children: ratings },
-              ...answered("reflect").map(({ prompt, answer }) => ({
+              ...answered("reflect").map(({ prompt, answers }) => ({
                 key: prompt.id,
                 label: prompt.label,
-                children: <span className={styles.answer}>{answer?.body}</span>,
+                children: <AnswerBody prompt={prompt} answers={answers} />,
               })),
               {
                 key: "record",
@@ -124,12 +119,10 @@ const WrapUpStep: React.FunctionComponent<WrapUpStepProps> = ({
                     ? todos.map((t) => t.title).join(" · ")
                     : "None",
                 },
-                ...answered("plan").map(({ prompt, answer }) => ({
+                ...answered("plan").map(({ prompt, answers }) => ({
                   key: prompt.id,
                   label: prompt.label,
-                  children: (
-                    <span className={styles.answer}>{answer?.body}</span>
-                  ),
+                  children: <AnswerBody prompt={prompt} answers={answers} />,
                 })),
               ]}
             />

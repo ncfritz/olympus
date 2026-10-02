@@ -3,6 +3,7 @@ import { Alert, Button, Card, Descriptions, Empty } from "antd";
 import { DateTime } from "luxon";
 import React from "react";
 import {
+  answeredPrompts,
   daysOfWeek,
   doneOfPlanned,
   formatMinutes,
@@ -14,6 +15,7 @@ import {
 import { pinnedHighlights } from "./pinned";
 import PinnedList from "./PinnedList";
 import { placeLabel } from "./PlacePicker";
+import AnswerBody from "./AnswerBody";
 import styles from "./Review.module.css";
 import type { WeeklyReviewData } from "./useWeeklyReview";
 
@@ -28,15 +30,8 @@ const WeekWrapUpStep: React.FunctionComponent<WeekWrapUpStepProps> = ({
   onEdit,
 }) => {
   const { review } = data;
-  const answers = review?.answers ?? [];
   const answered = (section: "reflect" | "plan") =>
-    data.prompts
-      .filter((p) => p.section === section)
-      .map((p) => ({
-        prompt: p,
-        answer: answers.find((a) => a.promptId === p.id),
-      }))
-      .filter((pair) => pair.answer);
+    answeredPrompts(data.prompts, review?.answers ?? [], section);
   const days = daysOfWeek(DateTime.fromISO(data.monday));
   const periods = data.days?.periods ?? [];
   const reviewed = periods.filter((p) => p.status === "complete").length;
@@ -70,10 +65,10 @@ const WeekWrapUpStep: React.FunctionComponent<WeekWrapUpStepProps> = ({
             colon={false}
             items={[
               { key: "ratings", label: "Ratings", children: ratings },
-              ...answered("reflect").map(({ prompt, answer }) => ({
+              ...answered("reflect").map(({ prompt, answers }) => ({
                 key: prompt.id,
                 label: prompt.label,
-                children: <span className={styles.answer}>{answer?.body}</span>,
+                children: <AnswerBody prompt={prompt} answers={answers} />,
               })),
               {
                 key: "pinned",
@@ -111,12 +106,10 @@ const WeekWrapUpStep: React.FunctionComponent<WeekWrapUpStepProps> = ({
               layout={"vertical"}
               colon={false}
               items={[
-                ...answered("plan").map(({ prompt, answer }) => ({
+                ...answered("plan").map(({ prompt, answers }) => ({
                   key: prompt.id,
                   label: prompt.label,
-                  children: (
-                    <span className={styles.answer}>{answer?.body}</span>
-                  ),
+                  children: <AnswerBody prompt={prompt} answers={answers} />,
                 })),
                 {
                   key: "priorities",

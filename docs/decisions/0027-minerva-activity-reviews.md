@@ -2,6 +2,8 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-01
+- **Revised:** 2026-10-02: a prompt is answered as text or as a list of
+  items, each item its own answer row (Neil; plan phase 5a)
 
 ## Context
 
@@ -67,8 +69,8 @@ and their sider, which `GetReviewSummary` computes on read (below).
 | Table                  | Holds                                                                                                                            |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `reviews`              | kind (daily, weekly), period start, status, the step reached, the ratings, completed time                                        |
-| `review_prompts`       | kind, section (reflect, plan), label, placeholder, position, archived                                                            |
-| `review_answers`       | review, prompt, body; one per review and prompt                                                                                  |
+| `review_prompts`       | kind, section (reflect, plan), style (text, list), label, placeholder, position, archived                                        |
+| `review_answers`       | review, prompt, body, position, the to-do it became; one per review and text prompt, one per item of a list prompt               |
 | `review_items`         | the review it was planned in, scope (day, week), the period it is for, kind (priority, to-do), title, position, status, schedule |
 | `review_pins`          | a weekly review's pinned highlights: a daily review's answer, or a note                                                          |
 | `review_user_settings` | one per user: when the starter prompts were given                                                                                |
@@ -102,8 +104,8 @@ and their sider, which `GetReviewSummary` computes on read (below).
   month its Thursday falls in.
 - Every table carries the audit columns as in ADR 0026: `created_at`,
   `updated_at` with the `set_minerva_<table>_updated_at` trigger, exposed
-  as `createdTime` and `lastUpdatedTime`. Answers saved again are upserts,
-  so `created_at` survives.
+  as `createdTime` and `lastUpdatedTime`. An answer saved again is
+  rewritten in its row, so `created_at` survives.
 
 ### Completing a review locks its ratings
 
@@ -121,7 +123,8 @@ go with them; items carried out of them keep their copies.
 
 `GetReviewSummary` (kind, a date range, `x-ncfritz-tz`) returns, per
 period, the status (complete, draft, none, or today), the ratings and a
-headline (the first line of the first reflect prompt's answer), plus the
+headline (the first line of the first reflect prompt's answer, or of a
+list's first item), plus the
 range's averages, the same averages for the range before it, the count
 reviewed and the current streak. A user writes a few hundred reviews a
 year, so this is a small read; a SQL function in the pattern of the notes

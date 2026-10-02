@@ -147,21 +147,22 @@ describe("Review prompts API", () => {
       expect(give.settings.userId).toBe(USER);
       expect(
         give.objects.map(
-          (o) => `${o.kind}/${o.section}/${o.position}: ${o.label}`,
+          (o) =>
+            `${o.kind}/${o.section}/${o.position}: ${o.label} (${o.style})`,
         ),
       ).toEqual([
-        "daily/reflect/0: What went well?",
-        "daily/reflect/1: What didn’t go well?",
-        "daily/reflect/2: What’s on my mind?",
-        "daily/reflect/3: Anything else about today",
-        "daily/plan/0: Thoughts for tomorrow",
-        "weekly/reflect/0: Biggest win",
-        "weekly/reflect/1: What got in the way",
-        "weekly/reflect/2: What I learned",
-        "weekly/reflect/3: What to change next week",
-        "weekly/plan/0: Theme for the week",
-        "weekly/plan/1: Start",
-        "weekly/plan/2: Stop",
+        "daily/reflect/0: What went well? (list)",
+        "daily/reflect/1: What didn’t go well? (list)",
+        "daily/reflect/2: What’s on my mind? (list)",
+        "daily/reflect/3: Anything else about today (text)",
+        "daily/plan/0: Thoughts for tomorrow (list)",
+        "weekly/reflect/0: Biggest win (list)",
+        "weekly/reflect/1: What got in the way (list)",
+        "weekly/reflect/2: What I learned (list)",
+        "weekly/reflect/3: What to change next week (list)",
+        "weekly/plan/0: Theme for the week (text)",
+        "weekly/plan/1: Start (text)",
+        "weekly/plan/2: Stop (text)",
       ]);
       expect(give.objects).toHaveLength(STARTER_PROMPTS.length);
       expect(give.objects.every((o) => o.userId === USER)).toBe(true);
@@ -240,11 +241,34 @@ describe("Review prompts API", () => {
           userId: USER,
           kind: "daily",
           section: "reflect",
+          style: "text",
           label: "Who did I help?",
           placeholder: null,
           position: 2,
         },
       });
+    });
+
+    it("adds a list prompt", async () => {
+      listed().on("CreateReviewPrompt", {
+        insert_minerva_review_prompts_one: graphQlReviewPrompt({
+          label: "Who did I help?",
+          position: 2,
+        }),
+      });
+
+      const res = await create({
+        kind: "daily",
+        section: "reflect",
+        style: "list",
+        label: "Who did I help?",
+      });
+
+      expect(res.status).toBe(201);
+      expect(res.body.reviewPrompt.style).toBe("list");
+      expect(
+        ctx.t.graphql.calls("CreateReviewPrompt")[0].variables,
+      ).toMatchObject({ object: { style: "list" } });
     });
 
     it("starts a section that is empty at 0", async () => {
@@ -376,6 +400,65 @@ describe("Review prompts API", () => {
       expect(typeof set.archivedTime).toBe("string");
     });
 
+    it("makes a text prompt a list", async () => {
+      ctx.t.graphql
+        .on("DescribeReviewPrompt", {
+          minerva_review_prompts: [graphQlReviewPrompt({ style: "text" })],
+        })
+        .on("UpdateReviewPrompt", {
+          update_minerva_review_prompts: {
+            returning: [graphQlReviewPrompt()],
+          },
+        });
+
+      const res = await update({ style: "list" });
+
+      expect(res.status).toBe(200);
+      expect(ctx.t.graphql.calls("GetReviewPromptAnswerCounts")).toHaveLength(
+        0,
+      );
+      expect(
+        ctx.t.graphql.calls("UpdateReviewPrompt")[0].variables,
+      ).toMatchObject({ set: { style: "list" } });
+    });
+
+    it("makes a list prompt text while no review holds two items", async () => {
+      ctx.t.graphql
+        .on("DescribeReviewPrompt", {
+          minerva_review_prompts: [graphQlReviewPrompt()],
+        })
+        .on("GetReviewPromptAnswerCounts", { minerva_review_answers: [] })
+        .on("UpdateReviewPrompt", {
+          update_minerva_review_prompts: {
+            returning: [graphQlReviewPrompt({ style: "text" })],
+          },
+        });
+
+      const res = await update({ style: "text" });
+
+      expect(res.status).toBe(200);
+      expect(
+        ctx.t.graphql.calls("GetReviewPromptAnswerCounts")[0].variables,
+      ).toEqual({ userId: USER, promptId: REVIEW_PROMPT_ID });
+    });
+
+    it("answers 409 making a list text while a review holds two items", async () => {
+      ctx.t.graphql
+        .on("DescribeReviewPrompt", {
+          minerva_review_prompts: [graphQlReviewPrompt()],
+        })
+        .on("GetReviewPromptAnswerCounts", {
+          minerva_review_answers: [
+            { id: "9d5a3f00-0000-4000-8000-000000000002" },
+          ],
+        });
+
+      const res = await update({ style: "text" });
+
+      expect(res.status).toBe(409);
+      expect(ctx.t.graphql.calls("UpdateReviewPrompt")).toHaveLength(0);
+    });
+
     it("brings an archived prompt back and removes its placeholder", async () => {
       ctx.t.graphql
         .on("DescribeReviewPrompt", {
@@ -422,6 +505,7 @@ describe("Review prompts API", () => {
     it.each([
       ["no prompt", undefined],
       ["a blank label", { label: "" }],
+      ["a style that is neither", { style: "essay" }],
       ["archived as text", { archived: "yes" }],
     ])("answers 400 for %s, before Hasura", async (_, reviewPrompt) => {
       const res = await update(reviewPrompt);

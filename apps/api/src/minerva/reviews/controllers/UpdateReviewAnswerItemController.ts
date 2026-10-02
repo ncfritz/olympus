@@ -1,6 +1,6 @@
 import {
-  UpdateReviewAnswerRequest,
-  UpdateReviewAnswerResponse,
+  UpdateReviewAnswerItemRequest,
+  UpdateReviewAnswerItemResponse,
 } from "@ncfritz/olympus-model";
 import {
   Body,
@@ -14,7 +14,6 @@ import {
 import {
   ApiBody,
   ApiConsumes,
-  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -31,16 +30,16 @@ import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { ReviewAnswerService } from "../services/ReviewAnswerService";
 
 @Controller({ version: "1" })
-export class UpdateReviewAnswerController {
+export class UpdateReviewAnswerItemController {
   constructor(private readonly answers: ReviewAnswerService) {}
 
-  @Put("/review/:reviewId/answer/:promptId")
+  @Put("/review/:reviewId/answer/:promptId/item/:answerId")
   @RequiresIdentity()
   @ApiOperation({
-    summary: "Saves the answer to one of a review's text prompts",
+    summary: "Rewrites an item of one of a review's list prompts",
     description:
-      "Writes or rewrites the answer to a text prompt of the caller's, of the review's kind; a list prompt's items have operations of their own. An answer saved again keeps its created time; one saved after the review was completed is marked as edited later. A body that is empty or only whitespace removes the answer.",
-    operationId: "UpdateReviewAnswer",
+      "Rewrites one item of a list prompt's answer in one of the caller's reviews. One rewritten after the review was completed is marked as edited later.",
+    operationId: "UpdateReviewAnswerItem",
     tags: ["Reviews"],
   })
   @ApiConsumes("application/json")
@@ -52,20 +51,22 @@ export class UpdateReviewAnswerController {
   })
   @ApiParam({
     name: "promptId",
-    description: "The ID of the prompt answered",
+    description: "The ID of the list prompt",
+    type: String,
+  })
+  @ApiParam({
+    name: "answerId",
+    description: "The ID of the item",
     type: String,
   })
   @ApiBody({
-    type: UpdateReviewAnswerRequest,
+    type: UpdateReviewAnswerItemRequest,
     required: true,
-    description: "Input for the UpdateReviewAnswer operation",
+    description: "Input for the UpdateReviewAnswerItem operation",
   })
   @ApiOkResponse({
-    type: UpdateReviewAnswerResponse,
-    description: "The answer as saved.",
-  })
-  @ApiNoContentResponse({
-    description: "The body was empty, so there is no answer now.",
+    type: UpdateReviewAnswerItemResponse,
+    description: "The item as saved.",
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
@@ -76,21 +77,20 @@ export class UpdateReviewAnswerController {
     @CurrentPrincipal() principal: Principal | undefined,
     @Param("reviewId", ParseUUIDPipe) reviewId: string,
     @Param("promptId", ParseUUIDPipe) promptId: string,
-    @Body() request: UpdateReviewAnswerRequest,
+    @Param("answerId", ParseUUIDPipe) answerId: string,
+    @Body() request: UpdateReviewAnswerItemRequest,
     @Res() response: Response,
   ): Promise<void> {
     const user = requireUser(principal);
-    const answer = await this.answers.save(
-      user.userId,
-      reviewId,
-      promptId,
-      request?.answer,
-    );
-    if (!answer) {
-      response.status(HttpStatus.NO_CONTENT).send();
-      return;
-    }
-    const body: UpdateReviewAnswerResponse = { answer };
+    const body: UpdateReviewAnswerItemResponse = {
+      answer: await this.answers.updateItem(
+        user.userId,
+        reviewId,
+        promptId,
+        answerId,
+        request?.answer,
+      ),
+    };
     response.status(HttpStatus.OK).send(body);
   }
 }

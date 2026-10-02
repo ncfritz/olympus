@@ -1,6 +1,7 @@
 import { DateTime, Settings } from "luxon";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+  answeredPrompts,
   answersByPrompt,
   blockedSpan,
   busyMinutes,
@@ -727,7 +728,11 @@ describe("the weekly review's arithmetic, in Seattle", () => {
       const groups = answersByPrompt(prompts, [
         {
           periodStart: "2026-09-30",
-          answers: [answer("well", "Shipped"), answer("tomorrow", "Rest")],
+          answers: [
+            { ...answer("well", "Lunch"), position: 1 },
+            { ...answer("well", "Shipped"), position: 0 },
+            answer("tomorrow", "Rest"),
+          ],
         },
         {
           periodStart: "2026-09-28",
@@ -741,12 +746,49 @@ describe("the weekly review's arithmetic, in Seattle", () => {
           g.answers.map((a) => `${a.day} ${a.answer.body}`),
         ]),
       ).toEqual([
-        ["well", ["2026-09-28 Approved", "2026-09-30 Shipped"]],
+        [
+          "well",
+          ["2026-09-28 Approved", "2026-09-30 Shipped", "2026-09-30 Lunch"],
+        ],
         // Asked but unanswered: an empty column; a blank answer is none.
         ["not", []],
         // Archived, kept where a day answered it.
         ["old", ["2026-09-28 Kept"]],
       ]);
+    });
+  });
+
+  describe("answeredPrompts", () => {
+    const prompts = [
+      { id: "well", section: "reflect" },
+      { id: "else", section: "reflect" },
+      { id: "not", section: "reflect" },
+      { id: "tomorrow", section: "plan" },
+    ];
+    const answer = (promptId: string, body: string, position = 0) => ({
+      promptId,
+      body,
+      position,
+    });
+
+    it("keeps a section's answered prompts, each list in its order", () => {
+      const answers = [
+        answer("else", "A long day."),
+        answer("well", "Lunch outside", 2),
+        answer("tomorrow", "Rest"),
+        answer("well", "Design review landed", 0),
+        answer("well", "Vendor call", 1),
+      ];
+      expect(
+        answeredPrompts(prompts, answers, "reflect").map((g) => [
+          g.prompt.id,
+          g.answers.map((a) => a.body),
+        ]),
+      ).toEqual([
+        ["well", ["Design review landed", "Vendor call", "Lunch outside"]],
+        ["else", ["A long day."]],
+      ]);
+      expect(answeredPrompts(prompts, answers, "plan")).toHaveLength(1);
     });
   });
 

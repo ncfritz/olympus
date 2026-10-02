@@ -2,6 +2,7 @@ import type {
   Meeting,
   Note,
   Review,
+  ReviewAnswer,
   ReviewItem,
   ReviewItemKind,
   ReviewPrompt,
@@ -11,10 +12,19 @@ import { useCallback, useEffect, useState } from "react";
 import meetingsApi from "../../../api/meetingsApi";
 import notesApi from "../../../api/notestApi";
 import reviewsApi from "../../../api/reviewsApi";
-import type { RatingField, Triage } from "../../../utils/reviews";
-import { fail, useStartReview } from "./reviewHooks";
+import {
+  answeredPrompts,
+  type RatingField,
+  type Triage,
+} from "../../../utils/reviews";
+import {
+  type AnswerActions,
+  fail,
+  useAnswerActions,
+  useStartReview,
+} from "./reviewHooks";
 
-export type DailyReviewData = {
+export type DailyReviewData = AnswerActions & {
   loading: boolean;
   /** The day reviewed and the next, as YYYY-MM-DD. */
   day: string;
@@ -34,7 +44,6 @@ export type DailyReviewData = {
   week?: WeekPlan;
   setRating: (key: RatingField["key"], value: number | null) => Promise<void>;
   setStep: (step: number) => Promise<void>;
-  saveAnswer: (promptId: string, body: string) => Promise<void>;
   triage: (item: ReviewItem, decision: Triage) => Promise<void>;
   addItem: (kind: ReviewItemKind, title: string) => Promise<void>;
   removeItem: (item: ReviewItem) => Promise<void>;
@@ -48,7 +57,7 @@ export type DailyReviewData = {
 
 /** A week as its weekly review planned it: the plan answers, the priorities. */
 export type WeekPlan = {
-  answers: { id: string; label: string; body: string }[];
+  answers: { prompt: ReviewPrompt; answers: ReviewAnswer[] }[];
   priorities: ReviewItem[];
 };
 
@@ -64,14 +73,7 @@ const weekPlanOf = async (monday: DateTime): Promise<WeekPlan | undefined> => {
     reviewsApi.listPrompts("weekly"),
     reviewsApi.listItems("week", day, day),
   ]);
-  const answers = prompts
-    .filter((p) => p.section === "plan")
-    .flatMap((prompt) => {
-      const answer = reviews[0]?.answers.find((a) => a.promptId === prompt.id);
-      return answer
-        ? [{ id: answer.id, label: prompt.label, body: answer.body }]
-        : [];
-    });
+  const answers = answeredPrompts(prompts, reviews[0]?.answers ?? [], "plan");
   const priorities = items.filter(
     (i) => i.kind === "priority" && i.status !== "carried",
   );
@@ -140,6 +142,13 @@ export const useDailyReview = (date: DateTime): DailyReviewData => {
     setItems(await reviewsApi.listItems("day", day, tomorrow));
   };
 
+  const answerActions = useAnswerActions(
+    review,
+    setReview,
+    ensureReview,
+    refreshItems,
+  );
+
   const setRating = async (key: RatingField["key"], value: number | null) => {
     try {
       const current = await ensureReview();
@@ -163,28 +172,6 @@ export const useDailyReview = (date: DateTime): DailyReviewData => {
       }
     } catch (error) {
       fail(error, "Could not save your place");
-    }
-  };
-
-  const saveAnswer = async (promptId: string, body: string) => {
-    const existing = review?.answers.find((a) => a.promptId === promptId);
-    if ((existing?.body ?? "") === body.trim()) return;
-    try {
-      const current = await ensureReview();
-      const saved = await reviewsApi.saveAnswer(current.id, promptId, body);
-      setReview((r) =>
-        r
-          ? {
-              ...r,
-              answers: [
-                ...r.answers.filter((a) => a.promptId !== promptId),
-                ...(saved ? [saved] : []),
-              ],
-            }
-          : r,
-      );
-    } catch (error) {
-      fail(error, "Could not save your answer");
     }
   };
 
@@ -298,7 +285,7 @@ export const useDailyReview = (date: DateTime): DailyReviewData => {
     week,
     setRating,
     setStep,
-    saveAnswer,
+    ...answerActions,
     triage,
     addItem,
     removeItem,

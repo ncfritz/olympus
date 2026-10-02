@@ -14,6 +14,7 @@ import DayBar from "./DayBar";
 import MeetingList from "./MeetingList";
 import PlanList from "./PlanList";
 import PromptAnswer from "./PromptAnswer";
+import { answersOf } from "./reviewHooks";
 import styles from "./Review.module.css";
 import type { DailyReviewData } from "./useDailyReview";
 
@@ -117,12 +118,11 @@ const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
           <Card key={prompt.id} size={"small"}>
             <PromptAnswer
               prompt={prompt}
-              answer={data.review?.answers.find(
-                (a) => a.promptId === prompt.id,
-              )}
+              answers={answersOf(data.review, prompt.id)}
+              actions={data}
+              todoFor={"tomorrow"}
               disabled={disabled}
               rows={3}
-              onSave={(body) => data.saveAnswer(prompt.id, body)}
             />
           </Card>
         ))}

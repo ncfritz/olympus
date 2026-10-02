@@ -5,6 +5,7 @@ import { meetingSpans, RATING_FIELDS } from "../../../utils/reviews";
 import MeetingList from "./MeetingList";
 import NoteList from "./NoteList";
 import PromptAnswer from "./PromptAnswer";
+import { answersOf } from "./reviewHooks";
 import RatingInput from "./RatingInput";
 import styles from "./Review.module.css";
 import type { DailyReviewData } from "./useDailyReview";
@@ -24,8 +25,6 @@ const ReflectStep: React.FunctionComponent<ReflectStepProps> = ({ data }) => {
       p.section === "reflect" &&
       (!p.archived || answers.some((a) => a.promptId === p.id)),
   );
-  const answerOf = (promptId: string) =>
-    answers.find((a) => a.promptId === promptId);
 
   return (
     <div className={styles.withRail}>
@@ -60,10 +59,11 @@ const ReflectStep: React.FunctionComponent<ReflectStepProps> = ({ data }) => {
               <PromptAnswer
                 key={prompt.id}
                 prompt={prompt}
-                answer={answerOf(prompt.id)}
+                answers={answersOf(review, prompt.id)}
+                actions={data}
+                todoFor={"tomorrow"}
                 disabled={!data.started}
                 rows={3}
-                onSave={(body) => data.saveAnswer(prompt.id, body)}
               />
             ))}
           </div>

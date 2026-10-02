@@ -21,9 +21,15 @@ import { DescribeReviewPromptController } from "./controllers/DescribeReviewProm
 import { ListReviewPromptsController } from "./controllers/ListReviewPromptsController";
 import { ListReviewsController } from "./controllers/ListReviewsController";
 import { ReorderReviewPromptsController } from "./controllers/ReorderReviewPromptsController";
+import { CreateReviewAnswerItemController } from "./controllers/CreateReviewAnswerItemController";
+import { CreateReviewAnswerTodoController } from "./controllers/CreateReviewAnswerTodoController";
+import { DeleteReviewAnswerItemController } from "./controllers/DeleteReviewAnswerItemController";
+import { ReorderReviewAnswerItemsController } from "./controllers/ReorderReviewAnswerItemsController";
 import { UpdateReviewAnswerController } from "./controllers/UpdateReviewAnswerController";
+import { UpdateReviewAnswerItemController } from "./controllers/UpdateReviewAnswerItemController";
 import { UpdateReviewController } from "./controllers/UpdateReviewController";
 import { UpdateReviewPromptController } from "./controllers/UpdateReviewPromptController";
+import { ReviewAnswerService } from "./services/ReviewAnswerService";
 import { ReviewItemService } from "./services/ReviewItemService";
 import { ReviewPinService } from "./services/ReviewPinService";
 import { ReviewPromptService } from "./services/ReviewPromptService";
@@ -39,6 +45,7 @@ import { ReviewSummaryService } from "./services/ReviewSummaryService";
   imports: [GraphQLClientModule],
   providers: [
     ReviewService,
+    ReviewAnswerService,
     ReviewPromptService,
     ReviewItemService,
     ReviewPinService,
@@ -59,6 +66,11 @@ import { ReviewSummaryService } from "./services/ReviewSummaryService";
     CompleteReviewController,
     DeleteReviewController,
     UpdateReviewAnswerController,
+    CreateReviewAnswerItemController,
+    ReorderReviewAnswerItemsController,
+    UpdateReviewAnswerItemController,
+    DeleteReviewAnswerItemController,
+    CreateReviewAnswerTodoController,
     ListReviewPinsController,
     CreateReviewPinController,
     DeleteReviewPinController,

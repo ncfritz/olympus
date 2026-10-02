@@ -88,6 +88,12 @@ recorded exception.
    the right step.
 5. Every icon-only button has an accessible name; ratings are buttons
    with their number, not colour alone.
+6. What went well?, What didn't go well?, What's on my mind? and Thoughts
+   for tomorrow take items that can be added, rewritten, dragged into
+   order and removed, and survive a reload in that order; Anything else
+   about today stays one box.
+7. A thought made a to-do shows in tomorrow's to-dos and is tagged To-do
+   tomorrow; it cannot be made twice; deleting the to-do clears the tag.
 
 ## R6 — The weekly review
 
@@ -98,6 +104,10 @@ recorded exception.
 3. A priority dragged onto Wednesday's open time reads back scheduled;
    the load per day matches Meetings.
 4. Next week's theme and priorities show on Monday's daily review.
+5. Biggest win, What got in the way, What I learned and What to change
+   next week are lists; an item of What to change next week made a to-do
+   shows in next week's to-dos. Highlights shows each daily item on its
+   own, pinnable.
 
 ## R7 — The lists
 

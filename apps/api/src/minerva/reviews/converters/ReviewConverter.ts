@@ -7,6 +7,8 @@ export type GraphQlReviewAnswer = {
   id: string;
   promptId: string;
   body: string;
+  position: number;
+  reviewItemId: string | null;
   createdTime: string;
   lastUpdatedTime: string | null;
 };
@@ -42,6 +44,8 @@ export const toReviewAnswer = (
     id: input.id,
     promptId: input.promptId,
     body: input.body,
+    position: input.position,
+    reviewItemId: input.reviewItemId ?? undefined,
     editedLater:
       completedTime !== null && written.isAfter(moment(completedTime)),
     createdTime: moment(input.createdTime),

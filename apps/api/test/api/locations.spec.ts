@@ -640,10 +640,10 @@ describe("Location headers of created resources", () => {
     // No GET route for a notification; an upload creates several workflows.
     // These need a signed-in caller, which this app has no keys for; their
     // own specs (weatherLocations, weatherStations, and minerva's tags,
-    // goalCategories, goalCycles, goals, reviews, reviewPrompts and
-    // reviewItems) assert their Location headers.
-    // CreateGoalMilestone, CreateGoalCheckin and CreateReviewPin have no GET
-    // route, so they set none.
+    // goalCategories, goalCycles, goals, reviews, reviewPrompts,
+    // reviewItems and reviewAnswers) assert their Location headers.
+    // CreateGoalMilestone, CreateGoalCheckin, CreateReviewPin and
+    // CreateReviewAnswerItem have no GET route, so they set none.
     const exempt = [
       "CreateNotification",
       "UploadAssets",
@@ -660,6 +660,8 @@ describe("Location headers of created resources", () => {
       "CreateReviewItem",
       "CarryReviewItem",
       "CreateReviewPin",
+      "CreateReviewAnswerItem",
+      "CreateReviewAnswerTodo",
     ];
     const creates = controllers
       .filter((c) => "201" in (c.routes[0]?.responses ?? {}))

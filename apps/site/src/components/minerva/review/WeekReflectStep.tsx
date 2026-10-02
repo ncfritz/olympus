@@ -4,6 +4,7 @@ import { RATING_FIELDS } from "../../../utils/reviews";
 import { pinnedHighlights } from "./pinned";
 import PinnedList from "./PinnedList";
 import PromptAnswer from "./PromptAnswer";
+import { answersOf } from "./reviewHooks";
 import RatingInput from "./RatingInput";
 import styles from "./Review.module.css";
 import type { WeeklyReviewData } from "./useWeeklyReview";
@@ -59,10 +60,11 @@ const WeekReflectStep: React.FunctionComponent<WeekReflectStepProps> = ({
               <PromptAnswer
                 key={prompt.id}
                 prompt={prompt}
-                answer={answers.find((a) => a.promptId === prompt.id)}
+                answers={answersOf(review, prompt.id)}
+                actions={data}
+                todoFor={"next week"}
                 disabled={!data.started}
                 rows={3}
-                onSave={(body) => data.saveAnswer(prompt.id, body)}
               />
             ))}
           </div>

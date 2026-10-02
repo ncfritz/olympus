@@ -1,9 +1,7 @@
 import {
   BaseReview,
   PartialReview,
-  PartialReviewAnswer,
   Review,
-  ReviewAnswer,
   ReviewKind,
 } from "@ncfritz/olympus-model";
 import {
@@ -21,13 +19,8 @@ import {
   todayIn,
 } from "../../utils/localDates";
 import { checkEnum, checkInteger } from "../../utils/validation";
-import {
-  GraphQlReview,
-  GraphQlReviewAnswer,
-  toDomainObject,
-  toReviewAnswer,
-} from "../converters/ReviewConverter";
-import { REVIEW, REVIEW_ANSWER } from "../queries/reviews";
+import { GraphQlReview, toDomainObject } from "../converters/ReviewConverter";
+import { REVIEW } from "../queries/reviews";
 import {
   ALL_RATINGS,
   currentPeriodStart,
@@ -37,7 +30,6 @@ import {
   takesRating,
 } from "../utils/periods";
 
-const MAX_ANSWER = 10000;
 /** The longest range ListReviews answers, in days: a little over a year. */
 const MAX_RANGE_DAYS = 400;
 
@@ -316,120 +308,6 @@ export class ReviewService {
     if (result.delete_minerva_reviews.affected_rows === 0) {
       throw notFound(reviewId);
     }
-  }
-
-  /**
-   * Saves the answer to one of the review's prompts, which must be the
-   * caller's and of the review's kind. A body that is empty or only
-   * whitespace removes the answer, and answers `undefined`.
-   */
-  async answer(
-    userId: string,
-    reviewId: string,
-    promptId: string,
-    answer: PartialReviewAnswer | undefined,
-  ): Promise<ReviewAnswer | undefined> {
-    if (!answer || typeof answer !== "object") {
-      throw new BadRequestException("answer is required");
-    }
-    if (typeof answer.body !== "string" || answer.body.length > MAX_ANSWER) {
-      throw new BadRequestException(
-        `body must be text of at most ${MAX_ANSWER} characters`,
-      );
-    }
-    const body = answer.body.trim();
-
-    const contextDocument = gql`
-      query GetReviewAnswerContext(
-        $userId: uuid!
-        $reviewId: uuid!
-        $promptId: uuid!
-      ) {
-        minerva_reviews(
-          where: { id: { _eq: $reviewId }, userId: { _eq: $userId } }
-        ) {
-          kind
-          completedTime
-        }
-        minerva_review_prompts(
-          where: { id: { _eq: $promptId }, userId: { _eq: $userId } }
-        ) {
-          kind
-        }
-      }
-    `;
-    type ContextResult = {
-      minerva_reviews: { kind: string; completedTime: string | null }[];
-      minerva_review_prompts: { kind: string }[];
-    };
-    const context = await this.graphQLClient.request<ContextResult>(
-      contextDocument,
-      { userId, reviewId, promptId },
-    );
-    const review = context.minerva_reviews[0];
-    const prompt = context.minerva_review_prompts[0];
-    if (!review) throw notFound(reviewId);
-    if (!prompt) {
-      throw new NotFoundException(
-        `Review prompt with id ${promptId} not found`,
-      );
-    }
-    if (prompt.kind !== review.kind) {
-      throw new BadRequestException(
-        `The prompt is asked in ${prompt.kind} reviews, not ${review.kind} ones`,
-      );
-    }
-
-    if (!body) {
-      const removeDocument = gql`
-        mutation RemoveReviewAnswer(
-          $userId: uuid!
-          $reviewId: uuid!
-          $promptId: uuid!
-        ) {
-          delete_minerva_review_answers(
-            where: {
-              reviewId: { _eq: $reviewId }
-              promptId: { _eq: $promptId }
-              userId: { _eq: $userId }
-            }
-          ) {
-            affected_rows
-          }
-        }
-      `;
-      await this.graphQLClient.request(removeDocument, {
-        userId,
-        reviewId,
-        promptId,
-      });
-      return undefined;
-    }
-
-    // An upsert, so an answer saved again keeps its row and created time.
-    const document = gql`
-      mutation UpdateReviewAnswer(
-        $object: minerva_review_answers_insert_input!
-      ) {
-        insert_minerva_review_answers_one(
-          object: $object
-          on_conflict: {
-            constraint: review_answers_review_id_prompt_id_key
-            update_columns: [body]
-          }
-        ) {
-          ${REVIEW_ANSWER}
-        }
-      }
-    `;
-    type Result = { insert_minerva_review_answers_one: GraphQlReviewAnswer };
-    const result = await this.graphQLClient.request<Result>(document, {
-      object: { reviewId, promptId, userId, kind: review.kind, body },
-    });
-    return toReviewAnswer(
-      result.insert_minerva_review_answers_one,
-      review.completedTime,
-    );
   }
 }
 

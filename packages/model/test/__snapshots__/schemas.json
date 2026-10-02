@@ -1472,6 +1472,14 @@
           }
         ],
         "description": "The step the prompt is asked in"
+      },
+      "style": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewPromptStyle"
+          }
+        ],
+        "description": "How the prompt is answered; text when left out"
       }
     },
     "required": [
@@ -4049,6 +4057,63 @@
       "metadataType",
       "status",
       "targetStatus"
+    ],
+    "type": "object"
+  },
+  "CreateReviewAnswerItemRequest": {
+    "properties": {
+      "answer": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialReviewAnswer"
+          }
+        ],
+        "description": "The item to add at the end of the prompt's list: 1 to 200 characters."
+      }
+    },
+    "required": [
+      "answer"
+    ],
+    "type": "object"
+  },
+  "CreateReviewAnswerItemResponse": {
+    "properties": {
+      "answer": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewAnswer"
+          }
+        ],
+        "description": "The item as added."
+      }
+    },
+    "required": [
+      "answer"
+    ],
+    "type": "object"
+  },
+  "CreateReviewAnswerTodoResponse": {
+    "properties": {
+      "answer": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewAnswer"
+          }
+        ],
+        "description": "The item, linked to its to-do."
+      },
+      "reviewItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewItem"
+          }
+        ],
+        "description": "The to-do: last of the period after the review's, titled as the item reads."
+      }
+    },
+    "required": [
+      "answer",
+      "reviewItem"
     ],
     "type": "object"
   },
@@ -14671,7 +14736,7 @@
   "PartialReviewAnswer": {
     "properties": {
       "body": {
-        "description": "What was written, at most 10,000 characters",
+        "description": "What was written: at most 10,000 characters for a text prompt, 200 for a list item",
         "type": "string"
       }
     },
@@ -14720,6 +14785,14 @@
       "placeholder": {
         "description": "A hint shown in the empty answer box, at most 200 characters",
         "type": "string"
+      },
+      "style": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewPromptStyle"
+          }
+        ],
+        "description": "How the prompt is answered"
       }
     },
     "type": "object"
@@ -16183,6 +16256,36 @@
     ],
     "type": "object"
   },
+  "ReorderReviewAnswerItemsRequest": {
+    "properties": {
+      "answerIds": {
+        "description": "Every item ID of the prompt's list in the review, in the order they should appear.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "answerIds"
+    ],
+    "type": "object"
+  },
+  "ReorderReviewAnswerItemsResponse": {
+    "properties": {
+      "answers": {
+        "description": "The prompt's items in the review, in their new order.",
+        "items": {
+          "$ref": "#/components/schemas/ReviewAnswer"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "answers"
+    ],
+    "type": "object"
+  },
   "ReorderReviewItemsRequest": {
     "properties": {
       "itemIds": {
@@ -16438,7 +16541,7 @@
   "ReviewAnswer": {
     "properties": {
       "body": {
-        "description": "What was written, at most 10,000 characters",
+        "description": "What was written: at most 10,000 characters for a text prompt, 200 for a list item",
         "type": "string"
       },
       "createdTime": {
@@ -16457,8 +16560,16 @@
         "description": "An ISO-8601 formatted string indicating when the answer was last changed",
         "type": "string"
       },
+      "position": {
+        "description": "Where the item sits among its prompt's items in the review; lower comes first. A text answer is at 0.",
+        "type": "number"
+      },
       "promptId": {
         "description": "The prompt the answer is to",
+        "type": "string"
+      },
+      "reviewItemId": {
+        "description": "The to-do the item became, if it did",
         "type": "string"
       }
     },
@@ -16467,6 +16578,7 @@
       "createdTime",
       "editedLater",
       "id",
+      "position",
       "promptId"
     ],
     "type": "object"
@@ -16745,6 +16857,14 @@
           }
         ],
         "description": "The step the prompt is asked in"
+      },
+      "style": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewPromptStyle"
+          }
+        ],
+        "description": "How the prompt is answered"
       }
     },
     "required": [
@@ -16754,7 +16874,8 @@
       "kind",
       "label",
       "position",
-      "section"
+      "section",
+      "style"
     ],
     "type": "object"
   },
@@ -16763,6 +16884,14 @@
     "enum": [
       "reflect",
       "plan"
+    ],
+    "type": "string"
+  },
+  "ReviewPromptStyle": {
+    "description": "How a review prompt is answered: one block of text, or a list of short items",
+    "enum": [
+      "text",
+      "list"
     ],
     "type": "string"
   },
@@ -20142,6 +20271,38 @@
     ],
     "type": "object"
   },
+  "UpdateReviewAnswerItemRequest": {
+    "properties": {
+      "answer": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialReviewAnswer"
+          }
+        ],
+        "description": "The item as it should now read: 1 to 200 characters."
+      }
+    },
+    "required": [
+      "answer"
+    ],
+    "type": "object"
+  },
+  "UpdateReviewAnswerItemResponse": {
+    "properties": {
+      "answer": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReviewAnswer"
+          }
+        ],
+        "description": "The item as saved."
+      }
+    },
+    "required": [
+      "answer"
+    ],
+    "type": "object"
+  },
   "UpdateReviewAnswerRequest": {
     "properties": {
       "answer": {
@@ -20214,7 +20375,7 @@
             "$ref": "#/components/schemas/PartialReviewPrompt"
           }
         ],
-        "description": "The changes to the prompt. A placeholder of null removes it; archived true archives it and false brings it back."
+        "description": "The changes to the prompt. A placeholder of null removes it; archived true archives it and false brings it back. A prompt becomes text only while no review holds more than one item for it."
       }
     },
     "required": [

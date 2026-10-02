@@ -28,7 +28,8 @@ export type SummaryReview = {
   periodStart: IsoDate;
   completed: boolean;
   ratings: Partial<Record<RatingName, number | null>>;
-  answers: { promptId: string; body: string }[];
+  /** A list prompt's items each, at their positions; a text answer at 0. */
+  answers: { promptId: string; body: string; position?: number }[];
 };
 
 export type SummaryInput = {
@@ -101,7 +102,10 @@ export const headlineOf = (
   reflectPromptIds: string[],
 ): string | undefined => {
   for (const promptId of reflectPromptIds) {
-    const answer = review.answers.find((a) => a.promptId === promptId);
+    // A list's first item, by position.
+    const answer = review.answers
+      .filter((a) => a.promptId === promptId)
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))[0];
     const line = answer?.body
       .split(/\r?\n/)
       .map((l) => l.trim())

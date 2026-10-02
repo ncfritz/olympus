@@ -4,6 +4,7 @@ import {
   ReviewKind,
   ReviewPrompt,
   ReviewPromptSection,
+  ReviewPromptStyle,
 } from "@ncfritz/olympus-model";
 import {
   BadRequestException,
@@ -30,6 +31,8 @@ const MAX_PLACEHOLDER = 200;
 type StarterPrompt = {
   kind: ReviewKind;
   section: ReviewPromptSection;
+  /** Text when left out. */
+  style?: ReviewPromptStyle;
   label: string;
   placeholder?: string;
 };
@@ -42,16 +45,19 @@ export const STARTER_PROMPTS: ReadonlyArray<StarterPrompt> = [
   {
     kind: ReviewKind.Daily,
     section: ReviewPromptSection.Reflect,
+    style: ReviewPromptStyle.List,
     label: "What went well?",
   },
   {
     kind: ReviewKind.Daily,
     section: ReviewPromptSection.Reflect,
+    style: ReviewPromptStyle.List,
     label: "What didn’t go well?",
   },
   {
     kind: ReviewKind.Daily,
     section: ReviewPromptSection.Reflect,
+    style: ReviewPromptStyle.List,
     label: "What’s on my mind?",
     placeholder: "Something you keep coming back to, a worry, an open question",
   },
@@ -65,27 +71,32 @@ export const STARTER_PROMPTS: ReadonlyArray<StarterPrompt> = [
   {
     kind: ReviewKind.Daily,
     section: ReviewPromptSection.Plan,
+    style: ReviewPromptStyle.List,
     label: "Thoughts for tomorrow",
   },
   {
     kind: ReviewKind.Weekly,
     section: ReviewPromptSection.Reflect,
+    style: ReviewPromptStyle.List,
     label: "Biggest win",
   },
   {
     kind: ReviewKind.Weekly,
     section: ReviewPromptSection.Reflect,
+    style: ReviewPromptStyle.List,
     label: "What got in the way",
   },
   {
     kind: ReviewKind.Weekly,
     section: ReviewPromptSection.Reflect,
+    style: ReviewPromptStyle.List,
     label: "What I learned",
     placeholder: "Something about how you work, a pattern in the dailies",
   },
   {
     kind: ReviewKind.Weekly,
     section: ReviewPromptSection.Reflect,
+    style: ReviewPromptStyle.List,
     label: "What to change next week",
     placeholder: "One concrete change to carry into next week’s plan",
   },
@@ -109,17 +120,21 @@ export const STARTER_PROMPTS: ReadonlyArray<StarterPrompt> = [
 type PromptValues = {
   kind: ReviewKind;
   section: ReviewPromptSection;
+  style: ReviewPromptStyle;
   label: string;
   placeholder: string | null;
 };
 
 type PromptChanges = {
   label?: string;
+  style?: ReviewPromptStyle;
   placeholder?: string | null;
   archived?: boolean;
 };
 
-type PromptSet = Partial<Pick<PromptValues, "label" | "placeholder">> & {
+type PromptSet = Partial<
+  Pick<PromptValues, "label" | "style" | "placeholder">
+> & {
   archivedTime?: string | null;
 };
 
@@ -236,8 +251,9 @@ export class ReviewPromptService {
   }
 
   /**
-   * Changes a prompt: its label, its placeholder, or whether it is
-   * archived. Answers `undefined` when the body names nothing to change.
+   * Changes a prompt: its label, its style, its placeholder, or whether
+   * it is archived. A prompt becomes text only while no review holds more
+   * than one item for it. Answers `undefined` when the body names nothing to change.
    */
   async update(
     userId: string,
@@ -251,6 +267,12 @@ export class ReviewPromptService {
     const set: PromptSet = {};
     if (changed.label !== undefined && changed.label !== current.label) {
       set.label = changed.label;
+    }
+    if (changed.style !== undefined && changed.style !== current.style) {
+      if (changed.style === ReviewPromptStyle.Text) {
+        await this.refuseListsOf(userId, promptId);
+      }
+      set.style = changed.style;
     }
     if (
       changed.placeholder !== undefined &&
@@ -406,6 +428,37 @@ export class ReviewPromptService {
   }
 
   /**
+   * Refuses to make a prompt text while a review holds more than one item
+   * for it: a text prompt has one answer per review.
+   */
+  private async refuseListsOf(userId: string, promptId: string) {
+    const document = gql`
+      query GetReviewPromptAnswerCounts($userId: uuid!, $promptId: uuid!) {
+        minerva_review_answers(
+          where: {
+            promptId: { _eq: $promptId }
+            userId: { _eq: $userId }
+            position: { _gt: 0 }
+          }
+          limit: 1
+        ) {
+          id
+        }
+      }
+    `;
+    type Result = { minerva_review_answers: { id: string }[] };
+    const result = await this.graphQLClient.request<Result>(document, {
+      userId,
+      promptId,
+    });
+    if (result.minerva_review_answers.length) {
+      throw new ConflictException(
+        "A review holds more than one item for the prompt, so it stays a list",
+      );
+    }
+  }
+
+  /**
    * Records the user's settings and inserts the starter prompts after any
    * they already have in each section, in one transaction. A concurrent
    * first read that got there first makes the settings insert a conflict,
@@ -428,6 +481,7 @@ export class ReviewPromptService {
         userId,
         kind: prompt.kind,
         section: prompt.section,
+        style: prompt.style ?? ReviewPromptStyle.Text,
         label: prompt.label,
         placeholder: prompt.placeholder ?? null,
         position,
@@ -482,6 +536,10 @@ const validateBase = (prompt: BaseReviewPrompt | undefined): PromptValues => {
       "section",
       problems,
     ),
+    style:
+      prompt.style === undefined
+        ? ReviewPromptStyle.Text
+        : checkEnum(prompt.style, ReviewPromptStyle, "style", problems),
     label: checkLabel(prompt.label, problems),
     placeholder: checkOptionalText(
       prompt.placeholder,
@@ -504,6 +562,14 @@ const validatePartial = (
   const changed: PromptChanges = {};
   if (changes.label !== undefined) {
     changed.label = checkLabel(changes.label, problems);
+  }
+  if (changes.style !== undefined) {
+    changed.style = checkEnum(
+      changes.style,
+      ReviewPromptStyle,
+      "style",
+      problems,
+    );
   }
   if (changes.placeholder !== undefined) {
     changed.placeholder = checkOptionalText(

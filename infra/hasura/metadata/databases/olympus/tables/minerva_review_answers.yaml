@@ -9,6 +9,8 @@ configuration:
       custom_name: promptId
     review_id:
       custom_name: reviewId
+    review_item_id:
+      custom_name: reviewItemId
     updated_at:
       custom_name: lastUpdatedTime
     user_id:
@@ -17,6 +19,7 @@ configuration:
     created_at: createdTime
     prompt_id: promptId
     review_id: reviewId
+    review_item_id: reviewItemId
     updated_at: lastUpdatedTime
     user_id: userId
   custom_root_fields: {}
@@ -38,4 +41,13 @@ object_relationships:
         insertion_order: null
         remote_table:
           name: reviews
+          schema: minerva
+  - name: reviewItem
+    using:
+      manual_configuration:
+        column_mapping:
+          review_item_id: id
+        insertion_order: null
+        remote_table:
+          name: review_items
           schema: minerva

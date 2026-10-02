@@ -4,7 +4,10 @@ import {
   completeReview,
   createReview,
   createReviewItem,
+  createReviewAnswerItem,
+  createReviewAnswerTodo,
   createReviewPin,
+  deleteReviewAnswerItem,
   deleteReviewItem,
   deleteReviewPin,
   getReviewSummary,
@@ -14,6 +17,7 @@ import {
   listReviews,
   type PartialReview,
   type PartialReviewItem,
+  reorderReviewAnswerItems,
   reorderReviewItems,
   type Review,
   type ReviewAnswer,
@@ -26,6 +30,7 @@ import {
   type ReviewSummary,
   updateReview,
   updateReviewAnswer,
+  updateReviewAnswerItem,
   updateReviewItem,
 } from "@ncfritz/olympus-sdk/minerva";
 
@@ -93,7 +98,7 @@ class ReviewsApi {
     return response.status === 304 ? undefined : response.data.review;
   }
 
-  /** Saves an answer; an empty body removes it and answers undefined. */
+  /** Saves a text prompt's answer; an empty body removes it and answers undefined. */
   async saveAnswer(
     reviewId: string,
     promptId: string,
@@ -107,6 +112,65 @@ class ReviewsApi {
     return response.status === 204 || !response.data
       ? undefined
       : response.data.answer;
+  }
+
+  /** Adds an item at the end of a list prompt's answer. */
+  async addAnswerItem(
+    reviewId: string,
+    promptId: string,
+    body: string,
+  ): Promise<ReviewAnswer> {
+    const { data } = await createReviewAnswerItem({
+      path: { reviewId, promptId },
+      body: { answer: { body } },
+    });
+    return data.answer;
+  }
+
+  async updateAnswerItem(
+    reviewId: string,
+    promptId: string,
+    answerId: string,
+    body: string,
+  ): Promise<ReviewAnswer> {
+    const { data } = await updateReviewAnswerItem({
+      path: { reviewId, promptId, answerId },
+      body: { answer: { body } },
+    });
+    return data.answer;
+  }
+
+  async deleteAnswerItem(
+    reviewId: string,
+    promptId: string,
+    answerId: string,
+  ): Promise<void> {
+    await deleteReviewAnswerItem({ path: { reviewId, promptId, answerId } });
+  }
+
+  /** Puts a list prompt's items in the order given; answers them so. */
+  async reorderAnswerItems(
+    reviewId: string,
+    promptId: string,
+    answerIds: string[],
+  ): Promise<ReviewAnswer[]> {
+    const { data } = await reorderReviewAnswerItems({
+      path: { reviewId, promptId },
+      body: { answerIds },
+    });
+    return data.answers;
+  }
+
+  /** Makes an item a to-do of the period after the review's. */
+  async answerItemToTodo(
+    reviewId: string,
+    promptId: string,
+    answerId: string,
+  ): Promise<{ answer: ReviewAnswer; reviewItem: ReviewItem }> {
+    const { data } = await createReviewAnswerTodo({
+      path: { reviewId, promptId, answerId },
+    });
+    return data;
   }
 
   /* Prompts -------------------------------------------------------------- */

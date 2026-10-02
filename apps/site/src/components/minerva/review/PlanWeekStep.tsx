@@ -5,6 +5,7 @@ import { daysOfWeek, itemsOf } from "../../../utils/reviews";
 import PlanList from "./PlanList";
 import PlacePicker from "./PlacePicker";
 import PromptAnswer from "./PromptAnswer";
+import { answersOf } from "./reviewHooks";
 import styles from "./Review.module.css";
 import type { WeeklyReviewData } from "./useWeeklyReview";
 import WeekGrid from "./WeekGrid";
@@ -122,12 +123,11 @@ const PlanWeekStep: React.FunctionComponent<PlanWeekStepProps> = ({ data }) => {
               <PromptAnswer
                 key={prompt.id}
                 prompt={prompt}
-                answer={data.review?.answers.find(
-                  (a) => a.promptId === prompt.id,
-                )}
+                answers={answersOf(data.review, prompt.id)}
+                actions={data}
+                todoFor={"next week"}
                 disabled={disabled}
                 rows={2}
-                onSave={(body) => data.saveAnswer(prompt.id, body)}
               />
             ))}
           </div>

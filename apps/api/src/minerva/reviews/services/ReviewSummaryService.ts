@@ -31,7 +31,7 @@ type GraphQlSummaryReview = {
   focus: number | null;
   progress: number | null;
   balance: number | null;
-  answers: { promptId: string; body: string }[];
+  answers: { promptId: string; body: string; position: number }[];
 };
 
 /**
@@ -101,9 +101,10 @@ export class ReviewSummaryService {
           focus
           progress
           balance
-          answers {
+          answers(order_by: { position: asc }) {
             promptId
             body
+            position
           }
         }
         prompts: minerva_review_prompts(

@@ -117,8 +117,12 @@ INSERT INTO minerva.review_answers (id, review_id, prompt_id, user_id, kind, bod
     ('9d5a3f00-0000-4000-8000-000000000002', '7b3e1d00-0000-4000-8000-000000000002',
      '8c4f2e00-0000-4000-8000-000000000003', '5f1a0c6e-0000-4000-8000-000000000001', 'weekly',
      'Weather station views shipped.');
-SELECT pg_temp.expect_refused('a second answer to the prompt',
-    $q$INSERT INTO minerva.review_answers (review_id, prompt_id, user_id, kind, body) VALUES ('7b3e1d00-0000-4000-8000-000000000001', '8c4f2e00-0000-4000-8000-000000000001', '5f1a0c6e-0000-4000-8000-000000000001', 'daily', 'Again')$q$, '23505');
+-- A prompt can hold several answers, as a list's items, each at its own
+-- position (migration 1791030000000_minerva_review_answer_lists).
+SELECT pg_temp.expect_refused('a second answer at the same position',
+    $q$INSERT INTO minerva.review_answers (review_id, prompt_id, user_id, kind, body) VALUES ('7b3e1d00-0000-4000-8000-000000000001', '8c4f2e00-0000-4000-8000-000000000001', '5f1a0c6e-0000-4000-8000-000000000001', 'daily', 'Again');
+       SET CONSTRAINTS ALL IMMEDIATE$q$, '23505');
+SET CONSTRAINTS ALL DEFERRED;
 SELECT pg_temp.expect_refused('a weekly prompt on a daily review',
     $q$INSERT INTO minerva.review_answers (review_id, prompt_id, user_id, kind, body) VALUES ('7b3e1d00-0000-4000-8000-000000000001', '8c4f2e00-0000-4000-8000-000000000003', '5f1a0c6e-0000-4000-8000-000000000001', 'daily', 'Wrong kind')$q$, '23503');
 SELECT pg_temp.expect_refused('another user''s prompt',
@@ -133,12 +137,11 @@ SELECT pg_temp.expect_refused('deleting an answered prompt',
     $q$DELETE FROM minerva.review_prompts WHERE id = '8c4f2e00-0000-4000-8000-000000000001'$q$, '23503');
 DELETE FROM minerva.review_prompts WHERE id = '8c4f2e00-0000-4000-8000-000000000002';
 
--- An answer saved again keeps its row and created_at.
+-- An answer saved again keeps its row and created_at: the API rewrites
+-- it in place.
 UPDATE minerva.review_answers SET created_at = '2026-01-01T00:00:00Z', updated_at = '2026-01-01T00:00:00Z';
-INSERT INTO minerva.review_answers (review_id, prompt_id, user_id, kind, body)
-    VALUES ('7b3e1d00-0000-4000-8000-000000000001', '8c4f2e00-0000-4000-8000-000000000001',
-            '5f1a0c6e-0000-4000-8000-000000000001', 'daily', 'Design review landed; ADR merged.')
-    ON CONFLICT ON CONSTRAINT review_answers_review_id_prompt_id_key DO UPDATE SET body = EXCLUDED.body;
+UPDATE minerva.review_answers SET body = 'Design review landed; ADR merged.'
+    WHERE id = '9d5a3f00-0000-4000-8000-000000000001';
 DO $$
 BEGIN
     IF NOT EXISTS (

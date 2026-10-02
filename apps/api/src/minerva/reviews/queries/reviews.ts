@@ -1,6 +1,8 @@
 export const REVIEW_ANSWER = `id
   promptId
   body
+  position
+  reviewItemId
   createdTime
   lastUpdatedTime`;
 
@@ -17,13 +19,14 @@ export const REVIEW = `id
   completedTime
   createdTime
   lastUpdatedTime
-  answers(order_by: { createdTime: asc }) {
+  answers(order_by: [{ position: asc }, { createdTime: asc }]) {
     ${REVIEW_ANSWER}
   }`;
 
 export const REVIEW_PROMPT = `id
   kind
   section
+  style
   label
   placeholder
   position

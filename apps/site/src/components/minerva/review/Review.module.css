@@ -414,3 +414,9 @@
 .dragging {
   opacity: 0.4;
 }
+
+/* A list prompt's items as they read later. */
+.answerList {
+  margin: 0;
+  padding-left: 20px;
+}

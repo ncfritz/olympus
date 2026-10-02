@@ -100,6 +100,17 @@ describe("headlineOf", () => {
     expect(headlineOf(review, order)).toBe("Design review landed.");
   });
 
+  it("takes a list's first item by position, whatever order they come in", () => {
+    const review = day("2026-10-01", [4, 4, 3, 2], {
+      answers: [
+        { promptId: WENT_WELL, body: "Lunch outside", position: 2 },
+        { promptId: WENT_WELL, body: "Design review landed", position: 0 },
+        { promptId: WENT_WELL, body: "ADR merged", position: 1 },
+      ],
+    });
+    expect(headlineOf(review, order)).toBe("Design review landed");
+  });
+
   it("falls to the next prompt when the first is unanswered", () => {
     const review = day("2026-10-01", [4, 4, 3, 2], {
       answers: [

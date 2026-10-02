@@ -3,8 +3,8 @@ import { DateTime } from "luxon";
 import Link from "next/link";
 import React from "react";
 import { weeklyReviewPath } from "../../../utils/reviews";
+import AnswerBody from "./AnswerBody";
 import { placeLabel } from "./PlacePicker";
-import styles from "./Review.module.css";
 import type { WeekPlan } from "./useDailyReview";
 
 export interface WeekPlanCardProps {
@@ -36,10 +36,10 @@ const WeekPlanCard: React.FunctionComponent<WeekPlanCardProps> = ({ week }) => {
         layout={"vertical"}
         colon={false}
         items={[
-          ...week.answers.map((answer) => ({
-            key: answer.id,
-            label: answer.label,
-            children: <span className={styles.answer}>{answer.body}</span>,
+          ...week.answers.map(({ prompt, answers }) => ({
+            key: prompt.id,
+            label: prompt.label,
+            children: <AnswerBody prompt={prompt} answers={answers} />,
           })),
           ...(week.priorities.length
             ? [

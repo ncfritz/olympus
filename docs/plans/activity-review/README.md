@@ -441,6 +441,73 @@ weekly list, Complete review on Wrap up.
 **Sign-off:** R6 on the site, which needs phases 1 to 3's migrations on
 `hasura-dev`.
 
+## Phase 5a — Answers as lists — built 2026-10-02, not signed off
+
+After using the daily review, Neil asked for reflections as lists
+(2026-10-02): What went well?, What didn't go well?, What's on my mind?
+and Thoughts for tomorrow in the daily review, and Biggest win, What got
+in the way, What I learned and What to change next week in the weekly,
+each working like Top 3 and To-dos, and each item able to become a to-do.
+Anything else about today, Theme for the week, Start and Stop stay text.
+ADR 0027 is revised to match.
+
+1. **Migration** `1791030000000_minerva_review_answer_lists`: **done** —
+   `review_prompts.style` (`text` default, `list`), with the starter lists
+   above turned over for users who already have them (by kind and label);
+   `review_answers.position` (0 for a text answer; the one-per-prompt key
+   becomes unique per review, prompt and position, deferred like the
+   other orders); `review_answers.review_item_id`, keyed with `user_id` to
+   the to-do the item became (`review_items` gains `unique (id,
+user_id)`), cleared when the to-do is deleted, and unique, so an item
+   becomes one to-do. `down.sql` keeps each list's first item. Hasura:
+   `reviewItemId` and a `reviewItem` relationship on answers.
+2. **Operations**: **done** — a new `ReviewAnswerService` owns answers.
+   `UpdateReviewAnswer` is for text prompts (a list prompt is a 400) and
+   now rewrites its row in place rather than upserting, since a deferred
+   key cannot arbitrate an upsert. Five new, tag `Reviews`:
+
+   | Operation                  | Route                                                         |
+   | -------------------------- | ------------------------------------------------------------- |
+   | `CreateReviewAnswerItem`   | `POST /review/:reviewId/answer/:promptId/items`               |
+   | `ReorderReviewAnswerItems` | `PUT /review/:reviewId/answer/:promptId/items/order`          |
+   | `UpdateReviewAnswerItem`   | `PUT /review/:reviewId/answer/:promptId/item/:answerId`       |
+   | `DeleteReviewAnswerItem`   | `DELETE /review/:reviewId/answer/:promptId/item/:answerId`    |
+   | `CreateReviewAnswerTodo`   | `POST /review/:reviewId/answer/:promptId/item/:answerId/todo` |
+   - Items are 1 to 200 characters (a to-do's title), added last, and only
+     on a list prompt (a text prompt is a 400).
+   - `CreateReviewAnswerTodo` plans a to-do titled as the item for the
+     period after the review's, last of its to-dos, and links the item;
+     an item already a to-do is a 409, and if another request linked it
+     first the new to-do is deleted again. `Location` is the to-do's.
+   - Prompts take `style` on create (text when left out) and update; a
+     list becomes text only while no review holds more than one item for
+     it (409 otherwise).
+   - The summary's headline takes a list's first item by position.
+
+3. **The site**: **done** — `AnswerList` (as `PlanList`: add at the end,
+   click to rewrite, drag or move with the keyboard, remove, and a to-do
+   button that tags the item "To-do tomorrow" or "To-do next week" once
+   made); `PromptAnswer` draws a list prompt with it and a text prompt as
+   before. The daily and weekly hooks share their answer actions
+   (`useAnswerActions`); a to-do made shows in the plan at once. Wrap up,
+   Highlights (items in their order, each pinnable) and Monday's plan card
+   read lists.
+4. **Tests**: **done** — `reviewAnswers.spec.ts` (a text answer written,
+   rewritten, removed and raced; items added, rewritten, removed and
+   reordered; a to-do made, refused twice and undone when raced; list and
+   text prompts refused each other's routes; another user's review), the
+   prompts' style and its 409, the headline's first item, the site's
+   `answeredPrompts` and Highlights' order, and
+   `infra/hasura/tests/minerva_review_answer_lists.sql` (style, positions
+   and a reorder through a shared one, the to-do link's owner, uniqueness
+   and clearing). Verified against the scratch PostgreSQL 16 (all
+   migrations, `down.sql` and `up.sql` with a two-item list, every review
+   check) and the Turbo tasks for model, API, SDK and site; the lists
+   were driven in a throwaway page by Playwright (an item added, rewritten
+   and made a to-do).
+
+**Sign-off:** with R5 and R6, on the site.
+
 ## Phase 6 — The site: the lists
 
 1. **Daily list** at `/minerva/review/daily` and `.../yyyy/Www`, and

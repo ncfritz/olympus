@@ -2,6 +2,7 @@ import {
   ReviewKind,
   ReviewPrompt,
   ReviewPromptSection,
+  ReviewPromptStyle,
 } from "@ncfritz/olympus-model";
 import moment from "moment";
 
@@ -10,6 +11,7 @@ export type GraphQlReviewPrompt = {
   id: string;
   kind: string;
   section: string;
+  style: string;
   label: string;
   placeholder: string | null;
   position: number;
@@ -22,6 +24,7 @@ export const toDomainObject = (input: GraphQlReviewPrompt): ReviewPrompt => ({
   id: input.id,
   kind: input.kind as ReviewKind,
   section: input.section as ReviewPromptSection,
+  style: input.style as ReviewPromptStyle,
   label: input.label,
   placeholder: input.placeholder ?? undefined,
   position: input.position,
