@@ -183,6 +183,8 @@ export interface RoadmapViewProps {
   categories: GoalCategory[];
   cycles: GoalCycle[];
   today: string;
+  /** Where the header sticks: the height of what sticks above it. */
+  stickyTop?: number;
 }
 
 /** What the roadmap's marks mean. */
@@ -250,6 +252,7 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
   categories,
   cycles,
   today,
+  stickyTop = 0,
 }) => {
   const [year, setYear] = useState(DateTime.fromISO(today).year);
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -291,34 +294,45 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
     goal.type === "milestone" && goal.progressMode === "milestones";
 
   return (
-    <div>
-      <Flex
-        justify={"space-between"}
-        align={"center"}
-        gap={16}
-        wrap={true}
-        style={{ marginBottom: 8 }}
+    <div style={{ minWidth: 900 }}>
+      {/* The year bar, bands and months stay put while the lanes scroll
+          beneath them. */}
+      <div
+        style={{
+          position: "sticky",
+          top: stickyTop,
+          zIndex: 3,
+          background: "#ffffff",
+          paddingTop: 8,
+          marginTop: -8,
+        }}
       >
-        <Space>
-          <Button
-            type={"text"}
-            size={"small"}
-            icon={<LeftOutlined />}
-            aria-label={"Previous year"}
-            onClick={() => setYear((y) => y - 1)}
-          />
-          <Text strong={true}>{year} roadmap</Text>
-          <Button
-            type={"text"}
-            size={"small"}
-            icon={<RightOutlined />}
-            aria-label={"Next year"}
-            onClick={() => setYear((y) => y + 1)}
-          />
-        </Space>
-        <Legend />
-      </Flex>
-      <div style={{ position: "relative", minWidth: 900 }}>
+        <Flex
+          justify={"space-between"}
+          align={"center"}
+          gap={16}
+          wrap={true}
+          style={{ marginBottom: 8 }}
+        >
+          <Space>
+            <Button
+              type={"text"}
+              size={"small"}
+              icon={<LeftOutlined />}
+              aria-label={"Previous year"}
+              onClick={() => setYear((y) => y - 1)}
+            />
+            <Text strong={true}>{year} roadmap</Text>
+            <Button
+              type={"text"}
+              size={"small"}
+              icon={<RightOutlined />}
+              aria-label={"Next year"}
+              onClick={() => setYear((y) => y + 1)}
+            />
+          </Space>
+          <Legend />
+        </Flex>
         <BandRow title={"Quarters"} bands={quarterBands(year)} />
         <BandRow title={"12-week cycles"} bands={cycleBands(cycles, year)} />
         <Flex style={{ height: 22, borderBottom: "1px solid #f0f0f0" }}>
@@ -339,8 +353,29 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
                 {m.toFormat("LLL")}
               </Text>
             ))}
+            {todayAt !== undefined && (
+              <Text
+                style={{
+                  position: "absolute",
+                  left: pct(todayAt),
+                  bottom: 0,
+                  transform: "translateX(-50%)",
+                  paddingInline: 4,
+                  fontSize: 11,
+                  lineHeight: "16px",
+                  color: "#ff4d4f",
+                  background: "#ffffff",
+                  borderBottom: "2px solid #ff4d4f",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {DateTime.fromISO(today).toFormat("LLL d")}
+              </Text>
+            )}
           </div>
         </Flex>
+      </div>
+      <div style={{ position: "relative" }}>
         {lanes.length === 0 && <Empty description={`No goals in ${year}`} />}
         {lanes.map(({ category, goals: inLane }) => (
           <div
@@ -463,20 +498,7 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
               borderLeft: "2px solid #ff4d4f",
               pointerEvents: "none",
             }}
-          >
-            <Text
-              style={{
-                position: "absolute",
-                top: -18,
-                left: -20,
-                fontSize: 11,
-                color: "#ff4d4f",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {DateTime.fromISO(today).toFormat("LLL d")}
-            </Text>
-          </div>
+          />
         )}
       </div>
     </div>

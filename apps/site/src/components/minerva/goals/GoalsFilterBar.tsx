@@ -38,6 +38,8 @@ export interface GoalsFilterBarProps {
   onStatuses: (statuses: string[]) => void;
   /** Show the legend of the type icons and the pace tick. */
   legend: boolean;
+  /** The bar's own element, so what sticks beneath it can measure it. */
+  barRef?: React.Ref<HTMLDivElement>;
 }
 
 /** What the board's icons and marks mean. */
@@ -92,8 +94,9 @@ const GoalsFilterBar: React.FunctionComponent<GoalsFilterBarProps> = ({
   onTags,
   onStatuses,
   legend,
+  barRef,
 }) => (
-  <div style={{ position: "sticky", top: 0, zIndex: 4 }}>
+  <div ref={barRef} style={{ position: "sticky", top: 0, zIndex: 4 }}>
     <Space
       orientation={"horizontal"}
       size={8}
