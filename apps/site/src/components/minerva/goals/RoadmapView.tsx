@@ -543,8 +543,12 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
   // scroll and the header above them holds still.
   const rootRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number>();
+  // Where the month row ends: the today line starts there, under its date.
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
   useEffect(() => {
     const fit = () => {
+      setHeaderHeight(headerRef.current?.offsetHeight ?? 0);
       const top = rootRef.current?.getBoundingClientRect().top;
       if (top !== undefined) {
         setHeight(Math.max(320, window.innerHeight - top - 16));
@@ -717,7 +721,7 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
         </div>
         {/* The bands and months hold still; only the lanes below them
           scroll. */}
-        <div style={{ flexShrink: 0 }}>
+        <div ref={headerRef} style={{ flexShrink: 0 }}>
           <BandRow title={"Quarters"} bands={quarterBands(year)} />
           <BandRow title={"12-week cycles"} bands={cycleBands(cycles, year)} />
           <Flex style={{ height: 22, borderBottom: "1px solid #f0f0f0" }}>
@@ -807,13 +811,13 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
             </DndContext>
           </div>
         </div>
-        {/* Today, from the bands to the bottom, over the bars. */}
+        {/* Today, from under its date to the bottom, over the bars. */}
         {todayAt !== undefined && (
           <div
             aria-hidden={true}
             style={{
               position: "absolute",
-              top: 0,
+              top: headerHeight,
               bottom: 0,
               left: `calc(${label}px + (100% - ${label}px) * ${todayAt})`,
               borderLeft: "2px solid #ff4d4f",
