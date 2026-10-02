@@ -5,10 +5,11 @@ import {
   ScheduleOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
-import type { FullGoal } from "@ncfritz/olympus-sdk/minerva";
+import type { FullGoal, Goal } from "@ncfritz/olympus-sdk/minerva";
 import {
   Button,
   Flex,
+  message,
   Segmented,
   Select,
   Space,
@@ -19,8 +20,12 @@ import {
 import { DateTime } from "luxon";
 import { useRouter } from "next/router";
 import React, { useMemo, useState } from "react";
+import goalsApi from "../../../api/goalsApi";
 import BoardView from "../../../components/minerva/goals/BoardView";
 import CategoriesDrawer from "../../../components/minerva/goals/CategoriesDrawer";
+import CheckinModal from "../../../components/minerva/goals/CheckinModal";
+import CloseGoalModal from "../../../components/minerva/goals/CloseGoalModal";
+import FocusView from "../../../components/minerva/goals/FocusView";
 import GoalFormDrawer from "../../../components/minerva/goals/GoalFormDrawer";
 import GoalsBreadcrumbs from "../../../components/minerva/goals/GoalsBreadcrumbs";
 import SummaryStrip from "../../../components/minerva/goals/SummaryStrip";
@@ -49,7 +54,7 @@ const VIEWS: {
     icon: <ScheduleOutlined />,
     disabled: true,
   },
-  { value: "focus", label: "Focus", icon: <AimOutlined />, disabled: true },
+  { value: "focus", label: "Focus", icon: <AimOutlined /> },
 ];
 
 const SUBTITLE: Record<View, string> = {
@@ -79,6 +84,8 @@ const GoalsPage: React.FunctionComponent = () => {
     categoryId?: string;
   }>({ open: false });
   const [managing, setManaging] = useState(false);
+  const [checkingIn, setCheckingIn] = useState<Goal>();
+  const [dropping, setDropping] = useState<Goal>();
   const data = useGoalsData(statuses);
   const today = DateTime.now().toISODate()!;
   const cycle = currentCycle(data.cycles);
@@ -99,6 +106,14 @@ const GoalsPage: React.FunctionComponent = () => {
     });
 
   const year = DateTime.fromISO(today);
+
+  const replan = async (goal: Goal) => {
+    try {
+      setForm({ open: true, goal: await goalsApi.describeGoal(goal.id) });
+    } catch {
+      message.error("Could not open the goal");
+    }
+  };
 
   return (
     <>
@@ -194,6 +209,18 @@ const GoalsPage: React.FunctionComponent = () => {
             <Flex justify={"center"} style={{ padding: 48 }}>
               <Spin />
             </Flex>
+          ) : view === "focus" ? (
+            <FocusView
+              goals={shown}
+              categories={data.categories}
+              cycle={cycle}
+              execution={data.execution}
+              today={today}
+              onCheckIn={setCheckingIn}
+              onReplan={replan}
+              onDrop={setDropping}
+              onChanged={() => void data.reload()}
+            />
           ) : (
             view === "board" && (
               <BoardView
@@ -219,6 +246,20 @@ const GoalsPage: React.FunctionComponent = () => {
         onClose={() => setForm({ open: false })}
         onSaved={() => {
           setForm({ open: false });
+          void data.reload();
+        }}
+      />
+      <CheckinModal
+        goal={checkingIn}
+        onClose={() => setCheckingIn(undefined)}
+        onSaved={() => void data.reload()}
+      />
+      <CloseGoalModal
+        goal={dropping}
+        status={"dropped"}
+        onClose={() => setDropping(undefined)}
+        onClosed={() => {
+          setDropping(undefined);
           void data.reload();
         }}
       />
