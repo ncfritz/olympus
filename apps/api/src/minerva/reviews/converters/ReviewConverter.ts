@@ -55,6 +55,15 @@ export const toReviewAnswer = (
   };
 };
 
+/**
+ * A rating as Hasura returns it: numeric(2,1), a number unless the
+ * engine is set to stringify numerics, so either is read.
+ */
+export const ratingOf = (
+  value: number | string | null | undefined,
+): number | undefined =>
+  value === null || value === undefined ? undefined : Number(value);
+
 export const toDomainObject = (input: GraphQlReview): Review => {
   const kind = input.kind as ReviewKind;
   return {
@@ -63,12 +72,12 @@ export const toDomainObject = (input: GraphQlReview): Review => {
     periodStart: input.periodStart,
     periodEnd: periodEndOf(kind, input.periodStart),
     step: input.step,
-    overall: input.overall ?? undefined,
-    mood: input.mood ?? undefined,
-    energy: input.energy ?? undefined,
-    focus: input.focus ?? undefined,
-    progress: input.progress ?? undefined,
-    balance: input.balance ?? undefined,
+    overall: ratingOf(input.overall),
+    mood: ratingOf(input.mood),
+    energy: ratingOf(input.energy),
+    focus: ratingOf(input.focus),
+    progress: ratingOf(input.progress),
+    balance: ratingOf(input.balance),
     completed: input.completedTime !== null,
     completedTime: input.completedTime
       ? moment(input.completedTime)

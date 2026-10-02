@@ -268,6 +268,29 @@ describe("Reviews API", () => {
       });
     });
 
+    it("takes half ratings, and reads one Hasura sends as text", async () => {
+      ctx.t.graphql
+        .on("DescribeReview", { minerva_reviews: [graphQlReview()] })
+        .on("UpdateReview", {
+          update_minerva_reviews: {
+            returning: [
+              graphQlReview({
+                overall: 3.5,
+                mood: "0.5" as unknown as number,
+              }),
+            ],
+          },
+        });
+
+      const res = await update({ overall: 3.5, mood: 0.5 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.review).toMatchObject({ overall: 3.5, mood: 0.5 });
+      expect(ctx.t.graphql.calls("UpdateReview")[0].variables).toMatchObject({
+        set: { overall: 3.5, mood: 0.5 },
+      });
+    });
+
     it("answers 304 for a body that names nothing", async () => {
       ctx.t.graphql.on("DescribeReview", {
         minerva_reviews: [graphQlReview()],
@@ -341,7 +364,9 @@ describe("Reviews API", () => {
     it.each([
       ["no review", undefined],
       ["a rating of 6", { overall: 6 }],
-      ["a rating of 2.5", { focus: 2.5 }],
+      ["a rating of 2.25", { focus: 2.25 }],
+      ["a rating of 0", { overall: 0 }],
+      ["a rating of 5.5", { overall: 5.5 }],
       ["a rating as text", { mood: "4" }],
       ["step 0", { step: 0 }],
       ["step 6", { step: 6 }],

@@ -14,6 +14,7 @@ import {
   summarise,
   type SummaryReview,
 } from "../summary/summary";
+import { ratingOf } from "../converters/ReviewConverter";
 import { currentPeriodStart } from "../utils/periods";
 
 /** The longest range a summary covers, in days: a little over a year. */
@@ -150,12 +151,12 @@ export class ReviewSummaryService {
       periodStart: row.periodStart,
       completed: row.completedTime !== null,
       ratings: {
-        overall: row.overall,
-        mood: row.mood,
-        energy: row.energy,
-        focus: row.focus,
-        progress: row.progress,
-        balance: row.balance,
+        overall: ratingOf(row.overall) ?? null,
+        mood: ratingOf(row.mood) ?? null,
+        energy: ratingOf(row.energy) ?? null,
+        focus: ratingOf(row.focus) ?? null,
+        progress: ratingOf(row.progress) ?? null,
+        balance: ratingOf(row.balance) ?? null,
       },
       answers: row.answers,
     }));

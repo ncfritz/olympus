@@ -63,6 +63,16 @@ SELECT pg_temp.expect_refused('an overall of 6',
     $q$UPDATE minerva.reviews SET overall = 6 WHERE id = '7b3e1d00-0000-4000-8000-000000000001'$q$, '23514');
 SELECT pg_temp.expect_refused('a focus of 0',
     $q$UPDATE minerva.reviews SET focus = 0 WHERE id = '7b3e1d00-0000-4000-8000-000000000001'$q$, '23514');
+-- Halves are ratings too (migration 1791040000000_minerva_review_half_ratings);
+-- quarters and anything under a half are not.
+UPDATE minerva.reviews SET focus = 3.5 WHERE id = '7b3e1d00-0000-4000-8000-000000000001';
+UPDATE minerva.reviews SET focus = 0.5 WHERE id = '7b3e1d00-0000-4000-8000-000000000001';
+SELECT pg_temp.expect_refused('a focus of 2.25',
+    $q$UPDATE minerva.reviews SET focus = 2.25 WHERE id = '7b3e1d00-0000-4000-8000-000000000001'$q$, '23514');
+SELECT pg_temp.expect_refused('a focus of 0.4',
+    $q$UPDATE minerva.reviews SET focus = 0.4 WHERE id = '7b3e1d00-0000-4000-8000-000000000001'$q$, '23514');
+SELECT pg_temp.expect_refused('an overall of 5.5',
+    $q$UPDATE minerva.reviews SET overall = 5.5 WHERE id = '7b3e1d00-0000-4000-8000-000000000001'$q$, '23514');
 SELECT pg_temp.expect_refused('progress on a day',
     $q$UPDATE minerva.reviews SET progress = 3 WHERE id = '7b3e1d00-0000-4000-8000-000000000001'$q$, '23514');
 SELECT pg_temp.expect_refused('mood on a week',

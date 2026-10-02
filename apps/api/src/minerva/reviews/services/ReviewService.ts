@@ -314,13 +314,24 @@ export class ReviewService {
 const notFound = (reviewId: string) =>
   new NotFoundException(`Review with id ${reviewId} not found`);
 
-/** A rating: a whole number from 1 to 5, or null to clear it. */
+/** A rating: 0.5 to 5 in steps of a half, or null to clear it. */
 const checkRating = (
   value: unknown,
   name: string,
   problems: string[],
-): number | null =>
-  value === null ? null : checkInteger(value, name, 1, 5, problems);
+): number | null => {
+  if (value === null) return null;
+  if (
+    typeof value !== "number" ||
+    !Number.isInteger(value * 2) ||
+    value < 0.5 ||
+    value > 5
+  ) {
+    problems.push(`${name} must be 0.5 to 5, in steps of a half`);
+    return 0;
+  }
+  return value;
+};
 
 const validatePartial = (changes: PartialReview | undefined): ReviewChanges => {
   if (!changes || typeof changes !== "object") {

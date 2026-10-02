@@ -23,7 +23,7 @@ export enum ReviewPeriodStatus {
 /* Domain Objects                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
 
-/** A review's ratings, or averages of them; each 1 to 5, absent when unrated. */
+/** A review's ratings, or averages of them; each 0.5 to 5, absent when unrated. */
 export class ReviewRatings {
   @ApiProperty({
     type: Number,

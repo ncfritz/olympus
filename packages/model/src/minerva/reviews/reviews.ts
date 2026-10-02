@@ -69,21 +69,24 @@ export class Review {
   @ApiProperty({
     type: Number,
     required: false,
-    description: "How the day or week went overall, 1 (low) to 5 (high)",
+    description:
+      "How the day or week went overall, 0.5 (low) to 5 (high) in halves",
   })
   overall?: number;
 
   @ApiProperty({
     type: Number,
     required: false,
-    description: "A day's mood, 1 (low) to 5 (high); never on a week",
+    description:
+      "A day's mood, 0.5 (low) to 5 (high) in halves; never on a week",
   })
   mood?: number;
 
   @ApiProperty({
     type: Number,
     required: false,
-    description: "A day's energy, 1 (low) to 5 (high); never on a week",
+    description:
+      "A day's energy, 0.5 (low) to 5 (high) in halves; never on a week",
   })
   energy?: number;
 
@@ -91,7 +94,7 @@ export class Review {
     type: Number,
     required: false,
     description:
-      "A day's focus, 1 (scattered) to 5 (locked in); never on a week",
+      "A day's focus, 0.5 (scattered) to 5 (locked in) in halves; never on a week",
   })
   focus?: number;
 
@@ -99,7 +102,7 @@ export class Review {
     type: Number,
     required: false,
     description:
-      "A week's progress, 1 (stalled) to 5 (moved a lot); never on a day",
+      "A week's progress, 0.5 (stalled) to 5 (moved a lot) in halves; never on a day",
   })
   progress?: number;
 
@@ -107,7 +110,7 @@ export class Review {
     type: Number,
     required: false,
     description:
-      "A week's balance, 1 (work-heavy) to 5 (balanced); never on a day",
+      "A week's balance, 0.5 (work-heavy) to 5 (balanced) in halves; never on a day",
   })
   balance?: number;
 
