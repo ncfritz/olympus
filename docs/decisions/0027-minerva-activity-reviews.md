@@ -1,6 +1,6 @@
 # 0027. Minerva reviews: per-user, what is written stored, activity read live
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-01
 
 ## Context
