@@ -241,7 +241,11 @@ const PlanList: React.FunctionComponent<PlanListProps> = ({
             onChange={(e) => setAdding(e.target.value)}
             onPressEnter={() => void add()}
           />
-          <Button icon={<PlusOutlined />} onClick={() => void add()}>
+          <Button
+            type={"primary"}
+            icon={<PlusOutlined />}
+            onClick={() => void add()}
+          >
             Add
           </Button>
         </Space.Compact>

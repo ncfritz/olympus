@@ -67,10 +67,11 @@ const ReflectStep: React.FunctionComponent<ReflectStepProps> = ({
               title={"The review is complete, so its ratings are set."}
             />
           )}
-          {RATING_FIELDS.daily.map((field) => (
+          {RATING_FIELDS.daily.map((field, index, fields) => (
             <RatingInput
               key={field.key}
               field={field}
+              showEnds={index === fields.length - 1}
               value={review?.[field.key]}
               disabled={locked || !data.started}
               onChange={(value) => void data.setRating(field.key, value)}

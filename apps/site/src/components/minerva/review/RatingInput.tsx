@@ -7,19 +7,22 @@ export interface RatingInputProps {
   field: RatingField;
   value?: number;
   disabled?: boolean;
+  /** Whether to show the words at each end beneath the circles. */
+  showEnds?: boolean;
   /** The new rating, or null when it is cleared. */
   onChange: (value: number | null) => void;
 }
 
 /**
- * A rating from 0.5 to 5 in halves, as AntD's Rate with circles, the words
- * at each end beneath it and the value beside. Clicking the rating given
- * clears it.
+ * A rating from 0.5 to 5 in halves, as AntD's Rate with blue circles, the
+ * value beside it and, when asked, the words at each end beneath. Clicking
+ * the rating given clears it.
  */
 const RatingInput: React.FunctionComponent<RatingInputProps> = ({
   field,
   value,
   disabled = false,
+  showEnds = true,
   onChange,
 }) => (
   <div className={styles.rating}>
@@ -29,6 +32,7 @@ const RatingInput: React.FunctionComponent<RatingInputProps> = ({
     <div className={styles.rateBox}>
       <div className={styles.rateRow}>
         <Rate
+          className={styles.rate}
           allowHalf={true}
           disabled={disabled}
           value={value ?? 0}
@@ -38,10 +42,12 @@ const RatingInput: React.FunctionComponent<RatingInputProps> = ({
         />
         <span className={styles.rateValue}>{value ?? "–"}</span>
       </div>
-      <div className={styles.ratingEnds}>
-        <span>{field.low}</span>
-        <span>{field.high}</span>
-      </div>
+      {showEnds && (
+        <div className={styles.ratingEnds}>
+          <span>{field.low}</span>
+          <span>{field.high}</span>
+        </div>
+      )}
     </div>
   </div>
 );

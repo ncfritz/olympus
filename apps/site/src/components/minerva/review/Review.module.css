@@ -575,6 +575,10 @@
 }
 
 /* A rating as circles, halves filling half a circle. */
+.rate:global(.ant-rate) {
+  color: #1677ff;
+}
+
 .rateBox {
   display: flex;
   flex-direction: column;

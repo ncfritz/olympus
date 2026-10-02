@@ -165,7 +165,7 @@ export const RATING_FIELDS: Record<ReviewKind, RatingField[]> = {
     { key: "overall", label: "Overall", low: "Low", high: "High" },
     { key: "mood", label: "Mood", low: "Low", high: "High" },
     { key: "energy", label: "Energy", low: "Low", high: "High" },
-    { key: "focus", label: "Focus", low: "Scattered", high: "Locked in" },
+    { key: "focus", label: "Focus", low: "Low", high: "High" },
   ],
   weekly: [
     { key: "overall", label: "Overall", low: "Low", high: "High" },
