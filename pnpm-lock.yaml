@@ -1406,6 +1406,9 @@ importers:
       csstype:
         specifier: ^3.2.3
         version: 3.2.3
+      dayjs:
+        specifier: ^1.11.23
+        version: 1.11.23
       highcharts:
         specifier: 12.0.1
         version: 12.0.1
