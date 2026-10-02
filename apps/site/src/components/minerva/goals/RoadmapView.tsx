@@ -374,7 +374,8 @@ const Lane: React.FunctionComponent<{
       style={{
         borderBottom: "1px solid #f0f0f0",
         paddingBlock: 4,
-        background: "#ffffff",
+        // See-through so the month lines show, except while it is lifted.
+        background: sortable.isDragging ? "#ffffff" : undefined,
         transform: CSS.Translate.toString(sortable.transform),
         transition: sortable.transition,
         position: "relative",
@@ -752,6 +753,22 @@ const RoadmapView: React.FunctionComponent<RoadmapViewProps> = ({
           }}
         >
           <div style={{ position: "relative" }}>
+            {/* A line where each month starts, behind the lanes; the months
+    keep their share of the timeline whatever the goal column's width. */}
+            {months.slice(1).map((m) => (
+              <div
+                key={m.month}
+                aria-hidden={true}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: `calc(${label}px + (100% - ${label}px) * ${spanFraction(m.toISODate()!, from, to)})`,
+                  borderLeft: "1px solid #f0f0f0",
+                  pointerEvents: "none",
+                }}
+              />
+            ))}
             {lanes.length === 0 && (
               <Empty description={`No goals in ${year}`} />
             )}
