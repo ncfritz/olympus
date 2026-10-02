@@ -1,13 +1,7 @@
-import {
-  CalendarOutlined,
-  CarryOutOutlined,
-  RadarChartOutlined,
-} from "@ant-design/icons";
-import { Empty, Flex, Space } from "antd";
-import Link from "next/link";
+import { Empty, Flex } from "antd";
 import React from "react";
 import { type ReviewRoute, reviewRouteLabel } from "../../../utils/reviews";
-import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
+import ReviewBreadcrumbs from "./ReviewBreadcrumbs";
 
 export interface ReviewPlaceholderProps {
   route: ReviewRoute;
@@ -19,8 +13,9 @@ const WHAT: Record<ReviewRoute["kind"], string> = {
 };
 
 /**
- * Where a review page stands until docs/plans/activity-review phases 4 to 6
- * build it: the breadcrumbs for the route, and what will be there.
+ * Where a review page stands until docs/plans/activity-review builds it
+ * (the weekly review in phase 5, the lists in phase 6): the breadcrumbs for
+ * the route, and what will be there.
  */
 const ReviewPlaceholder: React.FunctionComponent<ReviewPlaceholderProps> = ({
   route,
@@ -37,37 +32,7 @@ const ReviewPlaceholder: React.FunctionComponent<ReviewPlaceholderProps> = ({
 
   return (
     <>
-      <OlympusBreadcrumbs
-        className={"dark"}
-        items={[
-          {
-            title: (
-              <Link href={"/minerva"}>
-                <Space size={4}>
-                  <RadarChartOutlined />
-                  <span>Minerva</span>
-                </Space>
-              </Link>
-            ),
-          },
-          {
-            title: (
-              <Space size={4}>
-                <CarryOutOutlined />
-                <span>{WHAT[route.kind]}</span>
-              </Space>
-            ),
-          },
-          {
-            title: (
-              <Space size={4}>
-                <CalendarOutlined />
-                <span>{label}</span>
-              </Space>
-            ),
-          },
-        ]}
-      />
+      <ReviewBreadcrumbs what={WHAT[route.kind]} label={label} />
       <Flex vertical={true} align={"center"} justify={"center"} flex={1}>
         <Empty description={description} />
       </Flex>

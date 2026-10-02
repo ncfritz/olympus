@@ -312,27 +312,66 @@ user_id)`), `scope` (`day`, `week`), `period_start` (a Monday for a
 
 **Sign-off:** R4 from the OpenAPI page against `hasura-dev`.
 
-## Phase 4 — The site: the daily review
+## Phase 4 — The site: the daily review — built 2026-10-02, not signed off
 
-Built with AntD's own components in their standard style (`Steps`,
-`Rate`-style button groups as drawn, `Card`, `List`, `Segmented`), Luxon
-for dates, and the existing FullCalendar for the time grid.
+Built as option B, guided steps, for both reviews (Neil, 2026-10-02):
+the weekly review follows in phase 5 the same way. AntD's own components
+in their standard style (`Steps`, `Card`, `Statistic`, `Radio.Group` as
+buttons, `Descriptions`, `TimePicker.RangePicker`), Luxon for dates,
+`@dnd-kit` for reordering as the goals drawers do, and a CSS module
+(`Review.module.css`) rather than inline styles; geometry computed from
+the data (the day bar's blocks) is the only inline style.
 
-1. **`reviewsApi.ts`** over the SDK; every call that depends on today
-   sends the browser's timezone.
-2. **The daily review** at `/minerva/review/daily/yyyy/MM/dd`, the step
-   in `?step=`: Look back (numbers, day bar, calendar, notes, Left open
-   with its triage), Reflect (ratings, prompts, reference rail), Plan
-   tomorrow (time grid, Top 3, to-dos, thoughts), Wrap up (summaries,
-   Complete review). The calendar and notes come from `ListCalendarItems`,
-   `ListNotesForDay`, `GetMeetingsSummary` and `GetNotesSummary`; the
-   review is created on its first save.
-3. **Tests**: `src/utils/reviews.ts` holds the words, order and
-   arithmetic the steps draw (the day's numbers, the day bar's blocks,
-   open time, which items are left open, the summaries), with unit tests
-   in `test/unit/reviews.spec.ts`. The site builds.
+1. **`reviewsApi.ts`**: **done** — over the SDK, as `goalsApi`; calls
+   that depend on today send the browser's timezone. Clearing an item's
+   schedule sends `null`, which the generated types do not allow, so
+   that one call (`unscheduleItem`) casts in one place.
+2. **The daily review** at `/minerva/review/daily/yyyy/MM/dd`: **done**
+   — `components/minerva/review/DailyReview.tsx` and its steps, the step
+   in `?step=` (opening at the step asked, else the one reached, else the
+   first), Back and Next, Save and exit to the list, Complete review on
+   Wrap up. `useDailyReview` loads the day's review, the daily prompts,
+   two days of calendar (`ListCalendarItems`), the day's notes
+   (`ListNotesForDay`) and two days of items (`ListReviewItems`), and
+   owns every change. **The review is started on the first thing saved**
+   (a rating, an answer, a step moved on, an item planned or carried),
+   not on opening the page; two saves at once start it once. A day that
+   has not begun shows that instead of the steps.
+   - **Look back**: the day in numbers (meeting time with overlaps
+     counted once, notes with their types, planned items done of those
+     kept), the day bar 7:00 to 22:00, the calendar and notes, and
+     Today's plan: each item planned for the day decided Done, Tomorrow
+     (carried by today's review; one marked done or dropped by mistake is
+     opened first), Later (someday) or Drop. A carried item shows
+     Tomorrow and no longer changes.
+   - **Reflect**: Overall, Mood, Energy and Focus as 1 to 5 buttons with
+     each end's words, disabled once the review is complete; the Reflect
+     prompts (archived ones only where this review answered them), each
+     saved when its box is left; the day's calendar and notes beside.
+   - **Plan tomorrow**: tomorrow's calendar, day bar with blocked
+     priorities drawn dashed, and its open time from 9:00 to 17:00
+     (meetings and blocks both taken out); Top 3 and To-dos, each added,
+     removed and dragged (or moved with the keyboard) into order, carried
+     ones tagged; a priority given a block of time; the Plan prompts.
+   - **Wrap up**: Today (ratings, answers, the record) and Tomorrow (Top
+     3 with blocks, to-dos, plan answers), each with Edit to its step;
+     completing sets the ratings, and a completed review says when.
+     Goals do not appear yet: the goals panels in the reviews are the
+     goals plan's phase 8.
+3. **Tests**: **done** — `src/utils/reviews.ts` holds what the steps
+   compute: the day's busy spans (all-day, deleted and free ones left
+   out, clipped to the day), busy minutes with overlaps once, times and
+   spans as the design writes them, the day bar's blocks, open time, note
+   counts by type, a day's items in order, open and done-of-kept counts,
+   each status's triage, the step to open and each kind's ratings,
+   unit-tested in Seattle's zone in `test/unit/reviews.spec.ts`. The site
+   builds (`next build`). The four steps were rendered with the canvas's
+   sample data in a throwaway page and checked by screenshot, which
+   caught a triage control showing Done chosen on open items and open
+   time ignoring blocked priorities, both fixed.
 
-**Sign-off:** R5 on the site.
+**Sign-off:** R5 on the site, which needs phases 1 to 3's migrations on
+`hasura-dev`.
 
 ## Phase 5 — The site: the weekly review
 
