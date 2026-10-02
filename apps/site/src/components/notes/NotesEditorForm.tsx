@@ -58,6 +58,8 @@ export interface NotesEditorFormProps {
   style?: CSSProperties;
   className?: string;
   buttonsPosition?: "left" | "right";
+  /** Side padding of the title, type and button rows; the editor has none. */
+  gutter?: number;
 }
 
 export interface NotesFormInput {
@@ -98,6 +100,7 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
   style = {},
   className,
   buttonsPosition = "right",
+  gutter = 20,
 }: NotesEditorFormProps) => {
   // This prevents Antd from stealing focus from TinyMCE
   // https://stackoverflow.com/questions/17271634/tinymce-modal-in-jquery-modal-not-editable
@@ -181,8 +184,8 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
   const title = (
     <Space
       style={{
-        paddingLeft: 20,
-        paddingRight: 20,
+        paddingLeft: gutter,
+        paddingRight: gutter,
         width: "100%",
       }}
       styles={{
@@ -241,8 +244,8 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
   const additionalDataControls = (
     <Space
       style={{
-        paddingLeft: 20,
-        paddingRight: 20,
+        paddingLeft: gutter,
+        paddingRight: gutter,
         justifyContent: "space-between",
         width: "100%",
       }}
@@ -328,7 +331,7 @@ const NotesEditorForm: React.FunctionComponent<NotesEditorFormProps> = ({
         size={8}
         style={{
           justifyContent: buttonsPosition === "left" ? "start" : "end",
-          padding: 20,
+          padding: `20px ${gutter}px`,
           width: "100%",
         }}
       >

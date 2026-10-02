@@ -82,6 +82,7 @@ const GoalNotes: React.FunctionComponent<{
           afterCreate={changed}
           formControl={{ control, reset, handleSubmit }}
           mainEditorHeight={240}
+          gutter={0}
           showTitle={false}
           showSummary={false}
           style={{ marginBottom: 16 }}
