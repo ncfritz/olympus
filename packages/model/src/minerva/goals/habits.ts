@@ -1,7 +1,7 @@
 import { ApiProperty, PartialType, PickType } from "@nestjs/swagger";
 import type { Moment } from "moment";
 import { ApiTimestamp } from "../../decorators";
-import { Goal } from "./goals";
+import { Goal, GoalHabitRule } from "./goals";
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Domain Objects                                                                                                     */
@@ -138,6 +138,14 @@ export class GoalHabitDay {
     description: "The habit goal",
   })
   goal: Goal;
+
+  @ApiProperty({
+    type: () => GoalHabitRule,
+    required: true,
+    description:
+      "The habit's schedule, and the amount a day must reach to count",
+  })
+  habitRule: GoalHabitRule;
 
   @ApiProperty({
     type: () => GoalHabitLog,

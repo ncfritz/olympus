@@ -481,7 +481,9 @@ describe("Goal habits API", () => {
       expect(res.body.habits[0]).toMatchObject({
         periodDone: 2,
         periodCapacity: 3,
+        habitRule: { frequency: "weekly", timesPerPeriod: 3 },
       });
+      expect(res.body.habits[0].habitRule.quantityTarget).toBeUndefined();
       expect(res.body.habits[0].log).toBeUndefined();
       expect(res.body.habits[1]).toMatchObject({
         periodDone: 1,

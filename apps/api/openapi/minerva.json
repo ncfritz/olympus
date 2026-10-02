@@ -6340,6 +6340,14 @@
               }
             ]
           },
+          "habitRule": {
+            "description": "The habit's schedule, and the amount a day must reach to count",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GoalHabitRule"
+              }
+            ]
+          },
           "log": {
             "description": "The day's log, if it has one",
             "allOf": [
@@ -6359,6 +6367,7 @@
         },
         "required": [
           "goal",
+          "habitRule",
           "periodDone",
           "periodCapacity"
         ]

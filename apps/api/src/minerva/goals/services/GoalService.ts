@@ -27,6 +27,7 @@ import {
   toDomainObject,
   toEngineGoal,
   toFullGoal,
+  toHabitRule,
   weekdaysToMask,
 } from "../converters/GoalConverter";
 import {
@@ -627,6 +628,7 @@ export class GoalService {
       }
       habits.push({
         goal: view.goals.get(row.id)!,
+        habitRule: toHabitRule(row.habitRule!),
         log: log ? toHabitLog(log, engine.habitRule) : undefined,
         periodDone: summary.periodDone,
         periodCapacity: summary.periodCapacity,
