@@ -39,7 +39,7 @@ INSERT INTO minerva.goal_categories (id, user_id, name, color, icon, position) V
 SELECT pg_temp.expect_refused('same name, other case',
     $q$INSERT INTO minerva.goal_categories (user_id, name, color, icon, position) VALUES ('5f1a0c6e-0000-4000-8000-000000000001', 'HEALTH', '#52c41a', 'heart', 2)$q$, '23505');
 SELECT pg_temp.expect_refused('an icon not in the list',
-    $q$INSERT INTO minerva.goal_categories (user_id, name, color, icon, position) VALUES ('5f1a0c6e-0000-4000-8000-000000000001', 'Craft', '#52c41a', 'rocket', 2)$q$, '23514');
+    $q$INSERT INTO minerva.goal_categories (user_id, name, color, icon, position) VALUES ('5f1a0c6e-0000-4000-8000-000000000001', 'Craft', '#52c41a', 'unicorn', 2)$q$, '23514');
 SELECT pg_temp.expect_refused('an uppercase colour',
     $q$INSERT INTO minerva.goal_categories (user_id, name, color, icon, position) VALUES ('5f1a0c6e-0000-4000-8000-000000000001', 'Craft', '#52C41A', 'star', 2)$q$, '23514');
 SELECT pg_temp.expect_refused('no colour',

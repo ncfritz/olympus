@@ -303,7 +303,7 @@ describe("Goal categories API", () => {
       ],
       [
         "an unknown icon",
-        { goalCategory: { name: "a", color: "#52c41a", icon: "rocket" } },
+        { goalCategory: { name: "a", color: "#52c41a", icon: "unicorn" } },
       ],
       [
         "a long vision",
@@ -462,7 +462,7 @@ describe("Goal categories API", () => {
     it.each([
       ["no category", {}],
       ["archived that is not a boolean", { goalCategory: { archived: "yes" } }],
-      ["an unknown icon", { goalCategory: { icon: "rocket" } }],
+      ["an unknown icon", { goalCategory: { icon: "unicorn" } }],
     ])("answers 400 for %s, before Hasura", async (_, body) => {
       const res = await update(body);
 
