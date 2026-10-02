@@ -1,5 +1,5 @@
 import { GoalHealth } from "@ncfritz/olympus-model";
-import { daysBetween, type IsoDate } from "../utils/localDates";
+import { daysBetween, type IsoDate } from "../../utils/localDates";
 import type { EngineCheckin, EngineMilestone } from "./types";
 
 /** A number held to 0–100 and one decimal place. */

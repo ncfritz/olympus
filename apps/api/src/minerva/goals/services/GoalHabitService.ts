@@ -28,8 +28,8 @@ import {
   checkTimezone,
   isIsoDate,
   todayIn,
-} from "../utils/localDates";
-import { checkNumber, checkOptionalText } from "../utils/validation";
+} from "../../utils/localDates";
+import { checkNumber, checkOptionalText } from "../../utils/validation";
 
 const MAX_NOTE = 500;
 

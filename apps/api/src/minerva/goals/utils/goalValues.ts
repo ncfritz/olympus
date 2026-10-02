@@ -6,7 +6,7 @@ import {
   GoalType,
   HabitFrequency,
 } from "@ncfritz/olympus-model";
-import { isIsoDate } from "./localDates";
+import { isIsoDate } from "../../utils/localDates";
 import {
   checkEnum,
   checkInteger,
@@ -14,7 +14,7 @@ import {
   checkOptionalText,
   isStringList,
   isUuid,
-} from "./validation";
+} from "../../utils/validation";
 
 /**
  * A goal's stored values, by Hasura's column names. Create validates a new

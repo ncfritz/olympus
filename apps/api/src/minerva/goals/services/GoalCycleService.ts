@@ -15,15 +15,15 @@ import {
   GraphQlGoalCycle,
   toDomainObject,
 } from "../converters/GoalCycleConverter";
-import { isUniqueViolation } from "../utils/hasuraErrors";
+import { isUniqueViolation } from "../../utils/hasuraErrors";
 import { GOAL_CYCLE } from "../queries/goalCycles";
 import {
   checkTimezone,
   isIsoDate,
   isMonday,
   todayIn,
-} from "../utils/localDates";
-import { checkInteger, checkName } from "../utils/validation";
+} from "../../utils/localDates";
+import { checkInteger, checkName } from "../../utils/validation";
 
 type CycleValues = {
   name: string;

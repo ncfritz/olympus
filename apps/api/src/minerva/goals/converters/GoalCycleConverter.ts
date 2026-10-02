@@ -1,6 +1,6 @@
 import { GoalCycle, GoalCycleStatus } from "@ncfritz/olympus-model";
 import moment from "moment";
-import { addDays, daysBetween, type IsoDate } from "../utils/localDates";
+import { addDays, daysBetween, type IsoDate } from "../../utils/localDates";
 
 /** A `minerva.goal_cycles` row as Hasura returns it (custom column names). */
 export type GraphQlGoalCycle = {

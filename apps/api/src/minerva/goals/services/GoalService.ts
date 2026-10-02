@@ -63,14 +63,14 @@ import {
   isoWeekBounds,
   isoWeekOf,
   todayIn,
-} from "../utils/localDates";
+} from "../../utils/localDates";
 import {
   checkEnum,
   checkInteger,
   checkNumber,
   checkOptionalText,
   isUuid,
-} from "../utils/validation";
+} from "../../utils/validation";
 
 /** The statuses ListGoals shows unless told otherwise: the open ones. */
 const OPEN = [GoalStatus.Draft, GoalStatus.Active, GoalStatus.Paused];

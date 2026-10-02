@@ -1,7 +1,8 @@
 /**
- * Checks shared by the goals services. The global ValidationPipe is off
- * (docs/conventions/model.md), and these values reach the database, so the
- * services check them and collect every problem before answering 400.
+ * Checks shared by the Minerva services (goals, reviews). The global
+ * ValidationPipe is off (docs/conventions/model.md), and these values reach
+ * the database, so the services check them and collect every problem
+ * before answering 400.
  */
 
 const COLOR = /^#[0-9a-f]{6}$/;

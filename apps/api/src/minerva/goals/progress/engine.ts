@@ -5,7 +5,7 @@ import {
   GoalStatus,
   GoalType,
 } from "@ncfritz/olympus-model";
-import type { IsoDate } from "../utils/localDates";
+import type { IsoDate } from "../../utils/localDates";
 import { habitSummary, periodBounds } from "./habits";
 import {
   habitHealth,

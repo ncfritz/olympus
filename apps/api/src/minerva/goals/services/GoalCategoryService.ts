@@ -15,7 +15,7 @@ import {
   GraphQlGoalCategory,
   toDomainObject,
 } from "../converters/GoalCategoryConverter";
-import { isUniqueViolation } from "../utils/hasuraErrors";
+import { isUniqueViolation } from "../../utils/hasuraErrors";
 import { GOAL_CATEGORY } from "../queries/goalCategories";
 import {
   checkColor,
@@ -24,7 +24,7 @@ import {
   checkOptionalText,
   isStringList,
   isUuid,
-} from "../utils/validation";
+} from "../../utils/validation";
 
 const MAX_VISION = 2000;
 

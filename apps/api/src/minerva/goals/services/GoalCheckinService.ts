@@ -20,8 +20,12 @@ import {
 } from "../converters/GoalCheckinConverter";
 import { GOAL_CHECKIN } from "../queries/goals";
 import { CLOSED } from "../utils/goalValues";
-import { checkPastDay, checkTimezone, todayIn } from "../utils/localDates";
-import { checkEnum, checkNumber, checkOptionalText } from "../utils/validation";
+import { checkPastDay, checkTimezone, todayIn } from "../../utils/localDates";
+import {
+  checkEnum,
+  checkNumber,
+  checkOptionalText,
+} from "../../utils/validation";
 
 const MAX_NOTE = 2000;
 

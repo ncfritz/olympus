@@ -1,5 +1,5 @@
 import { GoalStatus, GoalType } from "@ncfritz/olympus-model";
-import { addDays, type IsoDate } from "../utils/localDates";
+import { addDays, type IsoDate } from "../../utils/localDates";
 import { periods } from "./habits";
 import { percent } from "./measures";
 import type { EngineGoal } from "./types";

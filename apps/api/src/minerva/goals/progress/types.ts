@@ -6,7 +6,7 @@ import type {
   GoalType,
   HabitFrequency,
 } from "@ncfritz/olympus-model";
-import type { IsoDate } from "../utils/localDates";
+import type { IsoDate } from "../../utils/localDates";
 
 /** A check-in as the engine needs it. */
 export type EngineCheckin = {

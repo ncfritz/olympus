@@ -1,6 +1,6 @@
 import { HabitFrequency } from "@ncfritz/olympus-model";
 import moment from "moment";
-import type { IsoDate } from "../utils/localDates";
+import type { IsoDate } from "../../utils/localDates";
 import type { EngineHabitLog, EngineHabitRule } from "./types";
 
 /** How many periods back adherence looks: four weeks of days, four weeks, three months. */

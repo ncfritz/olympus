@@ -10,7 +10,7 @@ import {
   isoWeekOf,
   localDateOf,
   todayIn,
-} from "../../../../../src/minerva/goals/utils/localDates";
+} from "../../../../src/minerva/utils/localDates";
 
 describe("localDates", () => {
   it("takes today in the caller's timezone, not the server's", () => {

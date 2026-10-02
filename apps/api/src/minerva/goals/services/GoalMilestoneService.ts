@@ -21,7 +21,7 @@ import {
   checkMilestone,
   checkTitle,
 } from "../utils/goalValues";
-import { checkNumber } from "../utils/validation";
+import { checkNumber } from "../../utils/validation";
 
 type MilestoneGoal = {
   id: string;

@@ -17,7 +17,7 @@ import {
   toDomainObject as toTag,
 } from "../../tags/converters/TagConverter";
 import type { EngineGoal, GoalProgress } from "../progress";
-import { localDateOf } from "../utils/localDates";
+import { localDateOf } from "../../utils/localDates";
 
 /** Hasura sends `numeric` as a JSON number; a string is read as one too. */
 type Numeric = number | string;
