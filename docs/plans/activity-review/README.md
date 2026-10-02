@@ -373,18 +373,73 @@ the data (the day bar's blocks) is the only inline style.
 **Sign-off:** R5 on the site, which needs phases 1 to 3's migrations on
 `hasura-dev`.
 
-## Phase 5 — The site: the weekly review
+## Phase 5 — The site: the weekly review — built 2026-10-02, not signed off
 
-1. **The weekly review** at `/minerva/review/weekly/yyyy/Www`: Look back
-   (day cards, quick score, ratings chart against last week, time, notes
-   by type, Slipped this week with its triage), Highlights (answers by
-   prompt, flagged notes, pins), Reflect (ratings, prompts, pinned rail),
-   Plan next week (week grid with load, priorities placed by drag, theme,
-   start, stop, carried in), Wrap up.
-2. **Tests**: the week's arithmetic (load per day, slipped items, the
-   chart's series and gaps) in `src/utils/reviews.ts`, unit-tested.
+Guided steps, as the daily review (option B), with the same components
+and CSS module; the step in `?step=`, Back and Next, Save and exit to the
+weekly list, Complete review on Wrap up.
 
-**Sign-off:** R6 on the site.
+1. **The weekly review** at `/minerva/review/weekly/yyyy/Www`: **done** —
+   `components/minerva/review/WeeklyReview.tsx` and its steps.
+   `useWeeklyReview` loads the week's review and pins, the weekly and
+   daily prompts, the daily summary of the week (`GetReviewSummary`, with
+   last week's averages), the week's daily reviews (for their answers),
+   twelve days of calendar (the week and next week's working days), the
+   week's notes, the week's day items, and this week's and next week's
+   week items. As the daily review does, it starts the review on the first
+   thing saved; that start and the error messages are now shared
+   (`reviewHooks.ts`). `reviewsApi` gains the pin calls. A week that has
+   not begun shows that instead of the steps.
+   - **Look back**: the seven day cards (status, overall rating,
+     headline, a link to the day's review); a missed day takes a **quick
+     score**, Overall 1 to 5, saved as that day's review completed with
+     just the score, so it fills the chart's gap and counts in the
+     averages; or Full review. The daily ratings chart (a line per rating,
+     broken where a day has none) and each average against last week's;
+     time (meetings and focus blocks per day, stacked); notes by type.
+     **This week's priorities** and **Slipped this week**, each decided
+     Done, Next week (carried by the weekly review with scope `week`),
+     Someday or Drop. Slipped is each chain's last link in the week when
+     it was carried at least once, **and anything left open on a day
+     before today** (a day with no review leaves its items open; they
+     slipped too). Goals wait for the goals plan's phase 8.
+   - **Highlights**: the week's daily answers in columns by Reflect prompt
+     (archived prompts only where answered), and the week's flagged notes;
+     a pin button on each pins it to the week or unpins it.
+   - **Reflect**: Overall, Progress and Balance; the weekly Reflect
+     prompts; the pins in a rail beside them, each unpinnable.
+   - **Plan next week**: a Monday-to-Friday grid, 8:00 to 18:00, of next
+     week's meetings, each day's meeting count and time, and its load (the
+     share of 9:00 to 17:00 taken by meetings and placed priorities,
+     overlaps once: light, moderate, heavy). Priorities not yet placed
+     wait in a strip; **dragged** (or moved with the keyboard) onto open
+     time, one takes up to two hours of it from the quarter hour; dragged
+     back to the strip it is unplaced. A placed one can also be put on a
+     day and time from its row, without dragging. Priorities (three to
+     five, reordered as the daily ones are), to-dos, what was carried in,
+     and the Plan prompts (Theme for the week, Start, Stop).
+   - **Wrap up**: This week (ratings, answers, pins, the record) and Next
+     week (theme, start, stop, priorities with their places, to-dos),
+     each with Edit; completing sets the ratings.
+   - **Monday's daily review** opens Look back with **This week's plan**:
+     the Plan answers of the week before's review and the week's
+     priorities with their places (R6.4).
+2. **Tests**: **done** — the week's arithmetic in `src/utils/reviews.ts`:
+   a week's days, each day's meetings, focus blocks and load (all-day,
+   free, dropped and carried left out; a meeting across midnight split
+   between its days), the load levels, an item's block as a span,
+   slipped items (chains in and out of the week, left open before today,
+   the order), the weekly triage, the ratings chart's series with its
+   gaps and a quick score filling one, averages against last week, the
+   answers by prompt, and a dropped priority's block, unit-tested in
+   Seattle's zone. The site builds and its Turbo tasks pass. The five
+   steps were rendered with the canvas's week 39 in a throwaway page and
+   checked by screenshot, including a priority dragged onto Tuesday's
+   open time; that caught the day cards' quick score wrapping (now a
+   select) and the averages truncating rather than rounding.
+
+**Sign-off:** R6 on the site, which needs phases 1 to 3's migrations on
+`hasura-dev`.
 
 ## Phase 6 — The site: the lists
 

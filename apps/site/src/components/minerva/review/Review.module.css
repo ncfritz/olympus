@@ -225,3 +225,192 @@
 .answer {
   white-space: pre-line;
 }
+
+/* The weekly review ------------------------------------------------------ */
+
+/* The week's seven days, a card each. */
+.dayCards {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 1100px) {
+  .dayCards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .dayCards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dayCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.headline {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.65);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.score {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* Three columns, then two, then one. */
+.threeColumns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .threeColumns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .threeColumns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.changes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.up {
+  color: #389e0d;
+}
+
+.down {
+  color: #cf1322;
+}
+
+.noteTypes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.noteType {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Next week's grid: a column a day, its hours top to bottom. */
+.weekGrid {
+  display: grid;
+  grid-template-columns: 40px repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.dayHead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 64px;
+}
+
+.hours {
+  position: relative;
+  height: 400px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+}
+
+.hourLabels {
+  position: relative;
+  height: 400px;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.hourLabel {
+  position: absolute;
+  right: 4px;
+  transform: translateY(-50%);
+}
+
+.vblock {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 14px;
+  box-sizing: border-box;
+}
+
+.meetingBlock {
+  background: #bae0ff;
+  color: #002c8c;
+}
+
+.placedBlock {
+  background: #f6ffed;
+  border: 1px dashed #52c41a;
+  color: #135200;
+  cursor: grab;
+  z-index: 1;
+}
+
+/* Open time, where a priority can be dropped. */
+.gap {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  border-radius: 3px;
+  box-sizing: border-box;
+}
+
+.gapActive {
+  border: 1px dashed #91caff;
+  background: rgba(22, 119, 255, 0.04);
+}
+
+.gapOver {
+  border: 1px solid #1677ff;
+  background: rgba(22, 119, 255, 0.12);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 32px;
+  align-items: center;
+}
+
+.chip {
+  cursor: grab;
+  touch-action: none;
+}
+
+.dragging {
+  opacity: 0.4;
+}

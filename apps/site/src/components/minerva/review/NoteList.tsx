@@ -13,7 +13,7 @@ export interface NoteListProps {
 }
 
 /** The first line of a note's title, or of what it says. */
-const firstLine = (note: Note): string =>
+export const firstLine = (note: Note): string =>
   (note.title || note.summary || note.value)
     .replace(/<[^>]+>/g, " ")
     .split(/\n/)

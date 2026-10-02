@@ -1,7 +1,19 @@
 import { DateTime, Settings } from "luxon";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+  answersByPrompt,
+  blockedSpan,
   busyMinutes,
+  type ChainItem,
+  daysOfWeek,
+  loadLevel,
+  placeInGap,
+  ratingChanges,
+  ratingSeries,
+  slippedItems,
+  weekLoad,
+  weekTriageOf,
+  WEEKLY_STEPS,
   dailyListPath,
   dayBarBlocks,
   doneOfPlanned,
@@ -376,5 +388,398 @@ describe("the review steps' helpers, in Seattle", () => {
       "Progress",
       "Balance",
     ]);
+  });
+});
+
+describe("the weekly review's arithmetic, in Seattle", () => {
+  const zone = Settings.defaultZone;
+  beforeAll(() => {
+    Settings.defaultZone = "America/Los_Angeles";
+  });
+  afterAll(() => {
+    Settings.defaultZone = zone;
+  });
+
+  // Week 40: Monday 2026-09-28 to Sunday 2026-10-04.
+  const monday = () => DateTime.fromISO("2026-09-28");
+  const days = () => daysOfWeek(monday()).map((d) => d.toISODate()!);
+  const meeting = (
+    id: string,
+    day: string,
+    start: string,
+    end: string,
+    extra: Partial<ReviewMeeting> = {},
+  ): ReviewMeeting => ({
+    id,
+    subject: id,
+    startTime: `${day}T${start}:00-07:00`,
+    endTime: `${day}T${end}:00-07:00`,
+    isAllDay: false,
+    isDeleted: false,
+    status: "Busy",
+    ...extra,
+  });
+
+  it("walks five steps", () => {
+    expect(WEEKLY_STEPS).toEqual([
+      "Look back",
+      "Highlights",
+      "Reflect",
+      "Plan next week",
+      "Wrap up",
+    ]);
+  });
+
+  it("lists a week's seven days, or its five working ones", () => {
+    expect(days()).toEqual([
+      "2026-09-28",
+      "2026-09-29",
+      "2026-09-30",
+      "2026-10-01",
+      "2026-10-02",
+      "2026-10-03",
+      "2026-10-04",
+    ]);
+    expect(daysOfWeek(monday(), 5).map((d) => d.toFormat("ccc"))).toEqual([
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+    ]);
+  });
+
+  describe("weekLoad", () => {
+    const meetings = () => [
+      meeting("Standup", "2026-09-28", "08:30", "08:45"),
+      meeting("Design review", "2026-09-28", "10:00", "11:00"),
+      meeting("Planning", "2026-09-28", "14:00", "15:00"),
+      meeting("Hiring sync", "2026-09-28", "14:30", "15:30"),
+      meeting("Offsite", "2026-09-29", "00:00", "23:59", { isAllDay: true }),
+      meeting("Free", "2026-09-29", "10:00", "12:00", { status: "Free" }),
+      meeting("All morning", "2026-09-30", "09:00", "13:00"),
+      meeting("All afternoon", "2026-09-30", "13:00", "16:00"),
+      // Late on Thursday, running past midnight into Friday.
+      meeting("Release", "2026-10-01", "23:00", "23:59"),
+      meeting("Release, after", "2026-10-02", "00:00", "01:00"),
+    ];
+    const block = (
+      id: string,
+      on: string,
+      start: string,
+      end: string,
+      status: ChainItem["status"] = "open",
+    ) => ({
+      id,
+      title: id,
+      status,
+      scheduledOn: on,
+      scheduledStart: start,
+      scheduledEnd: end,
+    });
+
+    it("counts each day's meetings, minutes and load", () => {
+      const load = weekLoad(meetings(), daysOfWeek(monday(), 5));
+      expect(load.map((d) => d.day)).toEqual(days().slice(0, 5));
+      expect(load[0]).toEqual({
+        day: "2026-09-28",
+        meetings: 4,
+        meetingMinutes: 165,
+        focusMinutes: 0,
+        // 10:00–11:00 and 14:00–15:30 of 9 to 5; the standup is before 9.
+        load: 0.31,
+        level: "light",
+      });
+      // All-day and free events take no time.
+      expect(load[1]).toMatchObject({ meetings: 0, load: 0, level: "light" });
+      expect(load[2]).toMatchObject({
+        meetings: 2,
+        meetingMinutes: 420,
+        load: 0.88,
+        level: "heavy",
+      });
+      // Each day keeps its own part of the night.
+      expect(load[3]).toMatchObject({ meetings: 1, meetingMinutes: 59 });
+      expect(load[4]).toMatchObject({ meetings: 1, meetingMinutes: 60 });
+    });
+
+    it("adds blocked priorities to the load, but not dropped or carried ones", () => {
+      const load = weekLoad(meetings(), daysOfWeek(monday(), 2), [
+        block("Weather plan", "2026-09-28", "13:00", "15:00"),
+        block("Dropped", "2026-09-28", "09:00", "10:00", "dropped"),
+        block("Carried", "2026-09-28", "11:00", "12:00", "carried"),
+        block("Tuesday", "2026-09-29", "09:00", "11:00"),
+        { id: "Unblocked", title: "Unblocked", status: "open" as const },
+      ]);
+      expect(load[0]).toMatchObject({
+        focusMinutes: 120,
+        // 10–11, then 13:00–15:30 with the overlap once: 3h 30m of 8h.
+        load: 0.44,
+        level: "moderate",
+      });
+      expect(load[1]).toMatchObject({ focusMinutes: 120, load: 0.25 });
+    });
+
+    it("reads a day's level from its share", () => {
+      expect(loadLevel(0)).toBe("light");
+      expect(loadLevel(0.39)).toBe("light");
+      expect(loadLevel(0.4)).toBe("moderate");
+      expect(loadLevel(0.69)).toBe("moderate");
+      expect(loadLevel(0.7)).toBe("heavy");
+    });
+
+    it("makes a span of a blocked item, on its day", () => {
+      const span = blockedSpan(
+        block("Weather plan", "2026-09-30", "13:00", "15:00"),
+      );
+      expect(span?.start.toISO()).toBe("2026-09-30T13:00:00.000-07:00");
+      expect(span?.end.toFormat("HH:mm")).toBe("15:00");
+      expect(
+        blockedSpan({
+          id: "x",
+          title: "x",
+          status: "open",
+          scheduledOn: "2026-09-30",
+        }),
+      ).toBeUndefined();
+    });
+  });
+
+  describe("slippedItems", () => {
+    const item = (
+      id: string,
+      periodStart: string,
+      extra: Partial<ChainItem> = {},
+    ): ChainItem => ({
+      id,
+      periodStart,
+      kind: "priority",
+      status: "open",
+      position: 0,
+      carryCount: 0,
+      ...extra,
+    });
+    const ids = (items: ChainItem[]) => items.map((i) => i.id);
+
+    it("keeps each chain's last link in the week", () => {
+      const items = [
+        // Planned Monday, carried Tuesday and Wednesday, open on Wednesday.
+        item("mon", "2026-09-28", { status: "carried" }),
+        item("tue", "2026-09-29", {
+          status: "carried",
+          carryCount: 1,
+          carriedFromId: "mon",
+        }),
+        item("wed", "2026-09-30", { carryCount: 2, carriedFromId: "tue" }),
+        // Carried once, then done.
+        item("thu", "2026-10-01", { status: "carried" }),
+        item("fri", "2026-10-02", {
+          status: "done",
+          carryCount: 1,
+          carriedFromId: "thu",
+        }),
+        // Done the day it was planned: not slipped.
+        item("kept", "2026-09-29", { status: "done" }),
+      ];
+      expect(ids(slippedItems(items, monday(), "2026-10-03"))).toEqual([
+        "wed",
+        "fri",
+      ]);
+    });
+
+    it("keeps an item carried out of the week, and one carried in from before it", () => {
+      const items = [
+        item("before", "2026-09-27", { status: "carried" }),
+        item("in", "2026-09-28", { carryCount: 1, carriedFromId: "before" }),
+        item("sun", "2026-10-04", { status: "carried" }),
+        item("next", "2026-10-05", { carryCount: 1, carriedFromId: "sun" }),
+      ];
+      expect(ids(slippedItems(items, monday(), "2026-10-05"))).toEqual([
+        "in",
+        "sun",
+      ]);
+    });
+
+    it("keeps what was left open on a day before today, not today's", () => {
+      const items = [
+        item("tuesday", "2026-09-29"),
+        item("someday", "2026-09-29", { status: "someday" }),
+        item("today", "2026-10-01"),
+        item("friday", "2026-10-02"),
+      ];
+      expect(ids(slippedItems(items, monday(), "2026-10-01"))).toEqual([
+        "tuesday",
+      ]);
+    });
+
+    it("orders by day, priorities first, each in its order", () => {
+      const items = [
+        item("wed-todo", "2026-09-30", { kind: "todo", carryCount: 1 }),
+        item("wed-2", "2026-09-30", { position: 1, carryCount: 1 }),
+        item("wed-1", "2026-09-30", { position: 0, carryCount: 1 }),
+        item("mon", "2026-09-28", { carryCount: 1 }),
+      ];
+      expect(ids(slippedItems(items, monday(), "2026-10-05"))).toEqual([
+        "mon",
+        "wed-1",
+        "wed-2",
+        "wed-todo",
+      ]);
+    });
+
+    it("shows a carried item as gone to next week", () => {
+      expect(weekTriageOf("open")).toBeUndefined();
+      expect(weekTriageOf("carried")).toBe("next");
+      expect(weekTriageOf("someday")).toBe("later");
+      expect(weekTriageOf("done")).toBe("done");
+      expect(weekTriageOf("dropped")).toBe("drop");
+    });
+  });
+
+  describe("the ratings chart", () => {
+    // The canvas's week 39 with Thursday missed, as week 40.
+    const periods = [
+      {
+        periodStart: "2026-09-28",
+        ratings: { overall: 4, mood: 4, energy: 4, focus: 4 },
+      },
+      {
+        periodStart: "2026-09-29",
+        ratings: { overall: 3, mood: 3, energy: 3 },
+      },
+      {
+        periodStart: "2026-09-30",
+        ratings: { overall: 2, mood: 3, energy: 2, focus: 2 },
+      },
+      { periodStart: "2026-10-01", ratings: {} },
+      {
+        periodStart: "2026-10-02",
+        ratings: { overall: 4, mood: 4, energy: 3, focus: 4 },
+      },
+    ];
+
+    it("draws a series per rating, a gap where a day has none", () => {
+      const series = ratingSeries(periods, days(), RATING_FIELDS.daily);
+      expect(series.map((s) => s.label)).toEqual([
+        "Overall",
+        "Mood",
+        "Energy",
+        "Focus",
+      ]);
+      expect(series[0].data).toEqual([4, 3, 2, null, 4, null, null]);
+      expect(series[3].data).toEqual([4, null, 2, null, 4, null, null]);
+    });
+
+    it("fills a gap once a quick score is saved", () => {
+      const scored = periods.map((p) =>
+        p.periodStart === "2026-10-01" ? { ...p, ratings: { overall: 3 } } : p,
+      );
+      const [overall, mood] = ratingSeries(scored, days(), RATING_FIELDS.daily);
+      expect(overall.data[3]).toBe(3);
+      expect(mood.data[3]).toBeNull();
+    });
+
+    it("sets each average against last week's", () => {
+      expect(
+        ratingChanges(
+          { overall: 3.67, mood: 3.5, energy: 3 },
+          { overall: 3.2, mood: 3.5, focus: 3 },
+          RATING_FIELDS.daily,
+        ),
+      ).toEqual([
+        {
+          key: "overall",
+          label: "Overall",
+          value: 3.67,
+          previous: 3.2,
+          change: 0.47,
+        },
+        { key: "mood", label: "Mood", value: 3.5, previous: 3.5, change: 0 },
+        {
+          key: "energy",
+          label: "Energy",
+          value: 3,
+          previous: undefined,
+          change: undefined,
+        },
+        {
+          key: "focus",
+          label: "Focus",
+          value: undefined,
+          previous: 3,
+          change: undefined,
+        },
+      ]);
+    });
+  });
+
+  describe("answersByPrompt", () => {
+    const prompts = [
+      { id: "well", section: "reflect", archived: false },
+      { id: "not", section: "reflect", archived: false },
+      { id: "old", section: "reflect", archived: true },
+      { id: "gone", section: "reflect", archived: true },
+      { id: "tomorrow", section: "plan", archived: false },
+    ];
+    const answer = (promptId: string, body: string) => ({ promptId, body });
+
+    it("groups the week's answers under their prompts, by day", () => {
+      const groups = answersByPrompt(prompts, [
+        {
+          periodStart: "2026-09-30",
+          answers: [answer("well", "Shipped"), answer("tomorrow", "Rest")],
+        },
+        {
+          periodStart: "2026-09-28",
+          answers: [answer("well", "Approved"), answer("old", "Kept")],
+        },
+        { periodStart: "2026-09-29", answers: [answer("not", "   ")] },
+      ]);
+      expect(
+        groups.map((g) => [
+          g.prompt.id,
+          g.answers.map((a) => `${a.day} ${a.answer.body}`),
+        ]),
+      ).toEqual([
+        ["well", ["2026-09-28 Approved", "2026-09-30 Shipped"]],
+        // Asked but unanswered: an empty column; a blank answer is none.
+        ["not", []],
+        // Archived, kept where a day answered it.
+        ["old", ["2026-09-28 Kept"]],
+      ]);
+    });
+  });
+
+  describe("placeInGap", () => {
+    const gap = (start: string, end: string) => ({
+      start: DateTime.fromISO(`2026-09-30T${start}`),
+      end: DateTime.fromISO(`2026-09-30T${end}`),
+    });
+
+    it("takes up to two hours from the gap's start", () => {
+      expect(placeInGap(gap("13:00", "17:00"))).toEqual({
+        start: "13:00",
+        end: "15:00",
+      });
+      expect(placeInGap(gap("11:00", "12:00"))).toEqual({
+        start: "11:00",
+        end: "12:00",
+      });
+      expect(placeInGap(gap("09:00", "17:00"), 90)).toEqual({
+        start: "09:00",
+        end: "10:30",
+      });
+    });
+
+    it("starts on the quarter hour after a meeting that ends off it", () => {
+      expect(placeInGap(gap("10:50", "17:00"))).toEqual({
+        start: "11:00",
+        end: "13:00",
+      });
+      expect(placeInGap(gap("10:46", "11:30"))).toEqual({
+        start: "11:00",
+        end: "11:30",
+      });
+    });
   });
 });

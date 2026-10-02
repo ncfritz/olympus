@@ -4,9 +4,12 @@ import {
   completeReview,
   createReview,
   createReviewItem,
+  createReviewPin,
   deleteReviewItem,
+  deleteReviewPin,
   getReviewSummary,
   listReviewItems,
+  listReviewPins,
   listReviewPrompts,
   listReviews,
   type PartialReview,
@@ -18,6 +21,7 @@ import {
   type ReviewItemKind,
   type ReviewItemScope,
   type ReviewKind,
+  type ReviewPin,
   type ReviewPrompt,
   type ReviewSummary,
   updateReview,
@@ -193,6 +197,30 @@ class ReviewsApi {
       body: { scope, periodStart, kind, itemIds },
     });
     return data.reviewItems;
+  }
+
+  /* Pins ----------------------------------------------------------------- */
+
+  /** What a weekly review keeps from its week, oldest first. */
+  async listPins(reviewId: string): Promise<ReviewPin[]> {
+    const { data } = await listReviewPins({ path: { reviewId } });
+    return data.reviewPins;
+  }
+
+  /** Pins a daily answer from the week, or a note, to a weekly review. */
+  async createPin(
+    reviewId: string,
+    pin: { answerId: string } | { noteId: string },
+  ): Promise<ReviewPin> {
+    const { data } = await createReviewPin({
+      path: { reviewId },
+      body: { reviewPin: pin },
+    });
+    return data.reviewPin;
+  }
+
+  async deletePin(reviewId: string, pinId: string): Promise<void> {
+    await deleteReviewPin({ path: { reviewId, pinId } });
   }
 
   /* Summary -------------------------------------------------------------- */

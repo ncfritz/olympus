@@ -52,6 +52,8 @@ export interface PlanListProps {
     item: ReviewItem,
     block: { start: string; end: string } | null,
   ) => Promise<void>;
+  /** Anything more a row shows before its remove button. */
+  extra?: (item: ReviewItem) => React.ReactNode;
 }
 
 /** Picks a block of time for an item, on its day. */
@@ -118,7 +120,8 @@ const PlanRow: React.FunctionComponent<{
   disabled: boolean;
   onRemove: PlanListProps["onRemove"];
   onBlock?: PlanListProps["onBlock"];
-}> = ({ item, rank, disabled, onRemove, onBlock }) => {
+  extra?: PlanListProps["extra"];
+}> = ({ item, rank, disabled, onRemove, onBlock, extra }) => {
   const sortable = useSortable({ id: item.id, disabled });
   return (
     <div
@@ -147,6 +150,7 @@ const PlanRow: React.FunctionComponent<{
       {onBlock && (
         <BlockPicker item={item} onBlock={onBlock} disabled={disabled} />
       )}
+      {extra?.(item)}
       <Button
         size={"small"}
         type={"text"}
@@ -160,7 +164,7 @@ const PlanRow: React.FunctionComponent<{
 };
 
 /**
- * Tomorrow's priorities or to-dos: drag (or move with the keyboard) to
+ * The next period's priorities or to-dos: drag (or move with the keyboard) to
  * reorder, add at the end, remove, and give a priority a block of time.
  */
 const PlanList: React.FunctionComponent<PlanListProps> = ({
@@ -173,6 +177,7 @@ const PlanList: React.FunctionComponent<PlanListProps> = ({
   onRemove,
   onReorder,
   onBlock,
+  extra,
 }) => {
   const [order, setOrder] = useState(items);
   const [adding, setAdding] = useState("");
@@ -221,6 +226,7 @@ const PlanList: React.FunctionComponent<PlanListProps> = ({
               disabled={disabled}
               onRemove={onRemove}
               onBlock={blocks ? onBlock : undefined}
+              extra={extra}
             />
           ))}
         </SortableContext>

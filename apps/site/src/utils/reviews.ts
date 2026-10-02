@@ -407,3 +407,291 @@ export const formatBlock = (
   const at = (clock: string) => DateTime.fromFormat(clock, "HH:mm");
   return formatSpan(at(start), at(end));
 };
+
+/* ------------------------------------------------------------------------ */
+/* The weekly review: the week's arithmetic                                  */
+/* ------------------------------------------------------------------------ */
+
+/** A weekly review's guided steps, in order. */
+export const WEEKLY_STEPS = [
+  "Look back",
+  "Highlights",
+  "Reflect",
+  "Plan next week",
+  "Wrap up",
+] as const;
+
+/** The days of a week from its Monday: seven, or five for the work week. */
+export const daysOfWeek = (monday: DateTime, count = 7): DateTime[] =>
+  Array.from({ length: count }, (_, i) =>
+    monday.startOf("day").plus({ days: i }),
+  );
+
+/** A plan item that may hold a block of time on a day. */
+export type BlockedItem = {
+  id: string;
+  title: string;
+  status: ReviewPlanItem["status"];
+  scheduledOn?: string;
+  scheduledStart?: string;
+  scheduledEnd?: string;
+};
+
+/** An item's block of time as a span on its day, if it has one. */
+export const blockedSpan = (item: BlockedItem): MeetingSpan | undefined => {
+  if (!item.scheduledOn || !item.scheduledStart || !item.scheduledEnd) {
+    return undefined;
+  }
+  const at = (clock: string) =>
+    DateTime.fromISO(`${item.scheduledOn}T${clock}`);
+  const start = at(item.scheduledStart);
+  return {
+    meeting: {
+      id: item.id,
+      subject: item.title,
+      startTime: start.toISO()!,
+      isAllDay: false,
+      isDeleted: false,
+      status: "Busy",
+    },
+    start,
+    end: at(item.scheduledEnd),
+  };
+};
+
+/** The spans clipped to a window of the day, those outside it left out. */
+const clipTo = (
+  spans: MeetingSpan[],
+  day: DateTime,
+  fromHour: number,
+  toHour: number,
+): MeetingSpan[] => {
+  const from = day.startOf("day").set({ hour: fromHour });
+  const to = day.startOf("day").set({ hour: toHour });
+  return spans
+    .map((span) => ({
+      ...span,
+      start: span.start < from ? from : span.start,
+      end: span.end > to ? to : span.end,
+    }))
+    .filter((span) => span.end > span.start);
+};
+
+/** How full a day is, by the share of its working hours taken. */
+export type LoadLevel = "light" | "moderate" | "heavy";
+
+/** A day of the week as its time card and the plan's grid show it. */
+export type DayLoad = {
+  day: string;
+  /** Timed meetings that take time, and the minutes they cover. */
+  meetings: number;
+  meetingMinutes: number;
+  /** Minutes blocked for priorities. */
+  focusMinutes: number;
+  /** The share of the working hours taken by both, overlaps once, 0 to 1. */
+  load: number;
+  level: LoadLevel;
+};
+
+/** The level a share of the working day reads as. */
+export const loadLevel = (load: number): LoadLevel =>
+  load < 0.4 ? "light" : load < 0.7 ? "moderate" : "heavy";
+
+/**
+ * Each day's meetings, focus blocks and load: the share of the working
+ * hours, `fromHour` to `toHour`, that meetings and blocks take between
+ * them. Dropped and carried items hold no time.
+ */
+export const weekLoad = (
+  meetings: ReviewMeeting[],
+  days: DateTime[],
+  items: BlockedItem[] = [],
+  fromHour = 9,
+  toHour = 17,
+): DayLoad[] =>
+  days.map((day) => {
+    const date = day.toISODate()!;
+    const spans = meetingSpans(meetings, day);
+    const blocks = items
+      .filter(
+        (i) =>
+          i.scheduledOn === date &&
+          i.status !== "dropped" &&
+          i.status !== "carried",
+      )
+      .map(blockedSpan)
+      .filter((span): span is MeetingSpan => span !== undefined);
+    const taken = clipTo([...spans, ...blocks], day, fromHour, toHour).sort(
+      (a, b) => a.start.toMillis() - b.start.toMillis(),
+    );
+    const load = Math.min(1, busyMinutes(taken) / ((toHour - fromHour) * 60));
+    return {
+      day: date,
+      meetings: spans.length,
+      meetingMinutes: busyMinutes(spans),
+      focusMinutes: busyMinutes(
+        [...blocks].sort((a, b) => a.start.toMillis() - b.start.toMillis()),
+      ),
+      load: Math.round(load * 100) / 100,
+      level: loadLevel(load),
+    };
+  });
+
+/** A plan item with its place in a chain of carries. */
+export type ChainItem = ReviewPlanItem & {
+  carryCount: number;
+  carriedFromId?: string;
+};
+
+/**
+ * What slipped in a week: for each chain of carries, its last link in the
+ * week, when the chain was carried at least once (the link is a copy, or
+ * was itself carried out of the week); and anything planned for a day
+ * before `today` still left open. In day order, then each day's order.
+ */
+export const slippedItems = <T extends ChainItem>(
+  items: T[],
+  monday: DateTime,
+  today: string,
+): T[] => {
+  const days = daysOfWeek(monday).map((d) => d.toISODate()!);
+  const inWeek = items.filter((i) => days.includes(i.periodStart));
+  // An item whose copy is also in the week is not the chain's last link.
+  const carriedOn = new Set(
+    inWeek.map((i) => i.carriedFromId).filter((id) => id !== undefined),
+  );
+  const slipped = inWeek.filter(
+    (i) =>
+      !carriedOn.has(i.id) &&
+      (i.carryCount > 0 ||
+        i.status === "carried" ||
+        (i.status === "open" && i.periodStart < today)),
+  );
+  return days.flatMap((day) => itemsOf(slipped, day));
+};
+
+/** A decision on a slipped item, as the weekly Look back offers it. */
+export type WeekTriage = "done" | "next" | "later" | "drop";
+
+/** The decision a slipped item's status shows: carried on is next week. */
+export const weekTriageOf = (
+  status: ReviewPlanItem["status"],
+): WeekTriage | undefined =>
+  ({
+    open: undefined,
+    done: "done",
+    carried: "next",
+    someday: "later",
+    dropped: "drop",
+  })[status] as WeekTriage | undefined;
+
+/** A rating's line on the week's chart: null where a day has none. */
+export type RatingSeries = {
+  key: RatingField["key"];
+  label: string;
+  data: (number | null)[];
+};
+
+type Ratings = Partial<Record<RatingField["key"], number | null>>;
+
+/**
+ * The chart of a week's daily ratings: one series per rating, a value per
+ * day, and a gap (null) for a day with no review or no rating, so the line
+ * breaks there instead of joining across it.
+ */
+export const ratingSeries = (
+  periods: { periodStart: string; ratings: Ratings }[],
+  days: string[],
+  fields: RatingField[],
+): RatingSeries[] =>
+  fields.map((field) => ({
+    key: field.key,
+    label: field.label,
+    data: days.map((day) => {
+      const value = periods.find((p) => p.periodStart === day)?.ratings[
+        field.key
+      ];
+      return value ?? null;
+    }),
+  }));
+
+/** A rating's average this period against the one before. */
+export type RatingChange = {
+  key: RatingField["key"];
+  label: string;
+  value?: number;
+  previous?: number;
+  change?: number;
+};
+
+/** Each rating's average against the period before's, and the change. */
+export const ratingChanges = (
+  averages: Ratings,
+  previous: Ratings,
+  fields: RatingField[],
+): RatingChange[] =>
+  fields.map((field) => {
+    const value = averages[field.key] ?? undefined;
+    const before = previous[field.key] ?? undefined;
+    return {
+      key: field.key,
+      label: field.label,
+      value,
+      previous: before,
+      change:
+        value !== undefined && before !== undefined
+          ? Math.round((value - before) * 100) / 100
+          : undefined,
+    };
+  });
+
+/** A prompt and every answer the week's reviews gave it, by day. */
+export type PromptAnswers<P, A> = {
+  prompt: P;
+  answers: { day: string; answer: A }[];
+};
+
+/**
+ * The week's daily answers grouped under their prompts, for Highlights:
+ * the section's prompts in their order, archived ones only where some day
+ * answered them, each day's answer in day order.
+ */
+export const answersByPrompt = <
+  P extends { id: string; section: string; archived?: boolean },
+  A extends { promptId: string; body: string },
+>(
+  prompts: P[],
+  reviews: { periodStart: string; answers: A[] }[],
+  section = "reflect",
+): PromptAnswers<P, A>[] => {
+  const ordered = [...reviews].sort((a, b) =>
+    a.periodStart.localeCompare(b.periodStart),
+  );
+  return prompts
+    .filter((p) => p.section === section)
+    .map((prompt) => ({
+      prompt,
+      answers: ordered.flatMap((review) =>
+        review.answers
+          .filter((a) => a.promptId === prompt.id && a.body.trim())
+          .map((answer) => ({ day: review.periodStart, answer })),
+      ),
+    }))
+    .filter((group) => !group.prompt.archived || group.answers.length > 0);
+};
+
+/**
+ * The block a priority dropped on open time takes: from the gap's start,
+ * at most `minutes` long, on the quarter hour, as `HH:mm`.
+ */
+export const placeInGap = (
+  gap: { start: DateTime; end: DateTime },
+  minutes = 120,
+): { start: string; end: string } => {
+  const quarter = (t: DateTime) =>
+    t.startOf("hour").plus({ minutes: Math.ceil(t.minute / 15) * 15 });
+  const start = quarter(gap.start);
+  const latest = start.plus({ minutes });
+  const end = latest < gap.end ? latest : gap.end;
+  return { start: start.toFormat("HH:mm"), end: end.toFormat("HH:mm") };
+};

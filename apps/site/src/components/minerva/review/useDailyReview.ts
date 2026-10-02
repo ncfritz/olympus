@@ -6,14 +6,13 @@ import type {
   ReviewItemKind,
   ReviewPrompt,
 } from "@ncfritz/olympus-sdk/minerva";
-import { message } from "antd";
 import { DateTime } from "luxon";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import meetingsApi from "../../../api/meetingsApi";
 import notesApi from "../../../api/notestApi";
 import reviewsApi from "../../../api/reviewsApi";
-import { apiProblems } from "../../../utils/goals";
 import type { RatingField, Triage } from "../../../utils/reviews";
+import { fail, useStartReview } from "./reviewHooks";
 
 export type DailyReviewData = {
   loading: boolean;
@@ -31,6 +30,8 @@ export type DailyReviewData = {
   notes: Note[];
   /** The items planned for the day and for the next. */
   items: ReviewItem[];
+  /** On a Monday, the week as last week's review planned it. */
+  week?: WeekPlan;
   setRating: (key: RatingField["key"], value: number | null) => Promise<void>;
   setStep: (step: number) => Promise<void>;
   saveAnswer: (promptId: string, body: string) => Promise<void>;
@@ -45,13 +46,38 @@ export type DailyReviewData = {
   complete: () => Promise<boolean>;
 };
 
-const fail = (error: unknown, fallback: string) => {
-  const problems = apiProblems(error);
-  message.error(
-    problems[0] === "Something went wrong; try again."
-      ? fallback
-      : problems.join("; "),
+/** A week as its weekly review planned it: the plan answers, the priorities. */
+export type WeekPlan = {
+  answers: { id: string; label: string; body: string }[];
+  priorities: ReviewItem[];
+};
+
+/**
+ * The week a Monday starts, as the week before's review planned it, or
+ * undefined when nothing was planned for it.
+ */
+const weekPlanOf = async (monday: DateTime): Promise<WeekPlan | undefined> => {
+  const day = monday.toISODate()!;
+  const before = monday.minus({ weeks: 1 }).toISODate()!;
+  const [reviews, prompts, items] = await Promise.all([
+    reviewsApi.listReviews("weekly", before, before),
+    reviewsApi.listPrompts("weekly"),
+    reviewsApi.listItems("week", day, day),
+  ]);
+  const answers = prompts
+    .filter((p) => p.section === "plan")
+    .flatMap((prompt) => {
+      const answer = reviews[0]?.answers.find((a) => a.promptId === prompt.id);
+      return answer
+        ? [{ id: answer.id, label: prompt.label, body: answer.body }]
+        : [];
+    });
+  const priorities = items.filter(
+    (i) => i.kind === "priority" && i.status !== "carried",
   );
+  return answers.length || priorities.length
+    ? { answers, priorities }
+    : undefined;
 };
 
 /**
@@ -71,19 +97,21 @@ export const useDailyReview = (date: DateTime): DailyReviewData => {
   const [tomorrowMeetings, setTomorrowMeetings] = useState<Meeting[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [items, setItems] = useState<ReviewItem[]>([]);
-  // A pending start, so two saves at once start the review once.
-  const starting = useRef<Promise<Review> | undefined>(undefined);
+  const [week, setWeek] = useState<WeekPlan>();
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [reviews, p, calendar, n, i] = await Promise.all([
+      const [reviews, p, calendar, n, i, w] = await Promise.all([
         reviewsApi.listReviews("daily", day, day),
         reviewsApi.listPrompts("daily"),
         meetingsApi.getMeetings(date.startOf("day"), 2),
         notesApi.getNotes(date.startOf("day").toUTC()),
         reviewsApi.listItems("day", day, tomorrow),
+        // A Monday opens with the week its review planned.
+        date.weekday === 1 ? weekPlanOf(date) : undefined,
       ]);
+      setWeek(w);
       setReview(reviews[0]);
       setPrompts(p);
       const onDay = (m: Meeting, d: string) =>
@@ -106,27 +134,7 @@ export const useDailyReview = (date: DateTime): DailyReviewData => {
   }, [load]);
 
   /** The day's review, started now when there is none yet. */
-  const ensureReview = async (): Promise<Review> => {
-    if (review) return review;
-    if (!starting.current) {
-      starting.current = reviewsApi
-        .createReview("daily", day)
-        .catch(async (error) => {
-          // Started elsewhere meanwhile: use that one.
-          const [existing] = await reviewsApi.listReviews("daily", day, day);
-          if (existing) return existing;
-          throw error;
-        })
-        .then((started) => {
-          setReview(started);
-          return started;
-        })
-        .finally(() => {
-          starting.current = undefined;
-        });
-    }
-    return starting.current;
-  };
+  const ensureReview = useStartReview("daily", day, day, review, setReview);
 
   const refreshItems = async () => {
     setItems(await reviewsApi.listItems("day", day, tomorrow));
@@ -287,6 +295,7 @@ export const useDailyReview = (date: DateTime): DailyReviewData => {
     tomorrowMeetings,
     notes,
     items,
+    week,
     setRating,
     setStep,
     saveAnswer,

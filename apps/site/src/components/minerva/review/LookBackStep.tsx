@@ -17,6 +17,7 @@ import MeetingList from "./MeetingList";
 import NoteList from "./NoteList";
 import styles from "./Review.module.css";
 import TriageList from "./TriageList";
+import WeekPlanCard from "./WeekPlanCard";
 import type { DailyReviewData } from "./useDailyReview";
 
 export interface LookBackStepProps {
@@ -40,6 +41,7 @@ const LookBackStep: React.FunctionComponent<LookBackStepProps> = ({ data }) => {
 
   return (
     <>
+      {data.week && <WeekPlanCard week={data.week} />}
       <Card size={"small"} title={"Today in numbers"}>
         <div className={styles.stack}>
           <div className={styles.numbers}>

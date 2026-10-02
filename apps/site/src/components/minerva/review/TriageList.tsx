@@ -13,29 +13,35 @@ const DECISIONS: { label: string; value: Triage }[] = [
   { label: "Drop", value: "drop" },
 ];
 
-export interface TriageListProps {
+export interface TriageListProps<D extends string = Triage> {
   items: ReviewItem[];
   disabled?: boolean;
-  onDecide: (item: ReviewItem, decision: Triage) => Promise<void>;
+  onDecide: (item: ReviewItem, decision: D) => Promise<void>;
+  /** The decisions offered, and the one an item's status shows: a day's by default. */
+  decisions?: { label: string; value: D }[];
+  decisionOf?: (status: ReviewItem["status"]) => D | undefined;
+  /** What an empty list says. */
+  empty?: string;
+  /** Where an item was planned, under its title. */
+  whereOf?: (item: ReviewItem) => string | undefined;
 }
 
 /**
- * The day's planned items, each with its decision: done, on to tomorrow,
- * later (someday) or dropped. A carried item stays carried; its copy
- * carries on in tomorrow's plan.
+ * Planned items, each with its decision: by default a day's, done, on to
+ * tomorrow, later (someday) or dropped. A carried item stays carried; its
+ * copy carries on in the next period's plan.
  */
-const TriageList: React.FunctionComponent<TriageListProps> = ({
+const TriageList = <D extends string = Triage>({
   items,
   disabled = false,
   onDecide,
-}) => {
+  decisions = DECISIONS as { label: string; value: D }[],
+  decisionOf = triageOf as (status: ReviewItem["status"]) => D | undefined,
+  empty = "Nothing was planned for today",
+  whereOf,
+}: TriageListProps<D>): React.ReactElement => {
   if (items.length === 0) {
-    return (
-      <Empty
-        image={Empty.PRESENTED_IMAGE_SIMPLE}
-        description={"Nothing was planned for today"}
-      />
-    );
+    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={empty} />;
   }
   return (
     <div>
@@ -44,6 +50,7 @@ const TriageList: React.FunctionComponent<TriageListProps> = ({
           <div className={styles.rowMain}>
             <Text delete={item.status === "dropped"}>{item.title}</Text>
             <span className={styles.meta}>
+              {whereOf?.(item) && `${whereOf(item)} · `}
               {item.kind === "priority" ? "Priority" : "To-do"}
               {item.carryCount > 0 &&
                 ` · carried ${item.carryCount} time${item.carryCount === 1 ? "" : "s"}`}
@@ -59,9 +66,9 @@ const TriageList: React.FunctionComponent<TriageListProps> = ({
             buttonStyle={"solid"}
             aria-label={`What happens to ${item.title}`}
             disabled={disabled || item.status === "carried"}
-            value={triageOf(item.status) ?? null}
-            options={DECISIONS}
-            onChange={(e) => void onDecide(item, e.target.value as Triage)}
+            value={decisionOf(item.status) ?? null}
+            options={decisions}
+            onChange={(e) => void onDecide(item, e.target.value as D)}
           />
         </div>
       ))}
